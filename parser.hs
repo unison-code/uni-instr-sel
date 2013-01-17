@@ -1,5 +1,5 @@
 import Text.ParserCombinators.Parsec
-import Data.Text
+import Data.String.Utils
 
 type LlvmInstruction = String
 type LlvmConstraint = String
@@ -11,8 +11,8 @@ data LlvmPattern = LlvmPattern {
                       , code :: LlvmCode
                    } deriving (Show)
 
-trim :: String -> String
-trim = unpack . strip . pack
+istrip :: String -> String
+istrip = join " " . filter (\x -> x /= "") . split " "
 
 whitespace = " \r\n\t"
 
@@ -34,32 +34,47 @@ llvmPattern =
      return (LlvmPattern inst constraints code)
   
 llvmInstruction :: GenParser Char st LlvmInstruction
-llvmInstruction = 
-  do inst <- labeledData "instruction" (many (noneOf ")"))
-     return (trim inst)
+llvmInstruction = labeledData "instruction" pData
 
 llvmAllConstraints :: GenParser Char st [LlvmConstraint]
 llvmAllConstraints = labeledData "constraints" (many llvmConstraint)
 
 llvmConstraint :: GenParser Char st LlvmConstraint
-llvmConstraint =
-  do constraint <- parens (many (noneOf ")"))
-     return (trim constraint)
+llvmConstraint = parens pData
      
 llvmAllCode :: GenParser Char st LlvmCode
 llvmAllCode = labeledData "code" (many llvmStatement)
 
 llvmStatement :: GenParser Char st LlvmStatement
-llvmStatement =
-  do statement <- parens (many (noneOf ")"))
-     return (trim statement)
+llvmStatement = parens pData
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
 labeledData str p =
   do whiteSpace
      string str
+     whiteSpace
      result <- parens p
+     whiteSpace
      return result
+
+pData :: GenParser Char st String
+pData =
+  do list <- many1 morePData
+     return $ istrip $ Prelude.foldr (++) [] list
+
+morePData :: GenParser Char st String
+morePData =
+  do first <- many1 (noneOf "()")
+     nested <- nestedPData
+     return $ first ++ nested
+
+nestedPData :: GenParser Char st String
+nestedPData =
+      do char '('
+         pdata <- pData
+         char ')'
+         return $ ['('] ++ pdata ++ [')']
+  <|> (return "")
 
 whiteSpace :: GenParser Char st String
 whiteSpace = many (oneOf whitespace)
@@ -72,3 +87,11 @@ parens c = do whiteSpace
 
 parseLlvmPatterns :: String -> Either ParseError [LlvmPattern]
 parseLlvmPatterns input = parse llvmPatternFile "" input
+
+
+
+main = do
+  contents <- getContents
+  putStr "\n"
+  putStr $ show (parseLlvmPatterns contents)
+  putStr "\n"
