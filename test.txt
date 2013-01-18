@@ -1,5 +1,22 @@
 (
-  instruction (inst1 (fsdf) fs (fsf (fsdf)))
-  constraints ((c1) ( c2) (c3 ) ( c4 (f) more (stuff (f))))
-  code ((stmt1)     (stmt2 more) (  stmt3    even    (test) more (nested   (f))))
+  (
+    instruction (
+      inst1 (fsdf) fs (fsf (fsdf))
+    )
+  )
+  (
+    constraints (
+      (c1)
+      ( c2)
+      (c3 )
+      ( c4 (f) more (stuff (f)))
+    )
+  )
+  (
+    code (
+      (stmt1)
+      (stmt2 more)
+      (  stmt3    even    (test) more (nested   (f)))
+    )
+  )
 )
