@@ -1,22 +1,33 @@
-(
-  (
-    instruction (
-      inst1 (fsdf) fs (fsf (fsdf))
-    )
-  )
-  (
-    constraints (
-      (c1)
-      ( c2)
-      (c3 )
-      ( c4 (f) more (stuff (f)))
-    )
-  )
-  (
-    code (
-      (stmt1)
-      (stmt2 more)
-      (  stmt3    even    (test) more (nested   (f)))
-    )
-  )
-)
+(instruction
+  flabs_a40_a40
+  (pattern 
+    (constraints 
+      (allocate-in src a40)
+      (allocate-in dst a40))
+    (code 
+      (= (tmp 0) (fcmp olt (constant ? 32) src (constant ? 0)))
+      (br (tmp 0) bb_0 bb_1)
+      (label bb_0)
+      (= (tmp 1) (fsub (constant ? 0) src))
+      (br bb_2)
+      (label bb_1)
+      (br bb_2)
+      (label bb_2)
+      (= (tmp 2) (phi (((tmp 1) . bb_0) (src . bb_1))))
+      (= dst (tmp 2))
+      (op-flags! dst (ac exx mi of)))))
+
+(instruction
+  sbit_nimm4_a16
+  (pattern 
+    (constraints 
+      (allocate-in dst a16)
+      (imm 0 15 UImm)
+      (allocate-in (tmp 0) (reg-flag c dst))
+      (allocate-in (tmp 3) (reg-flag a dst)))
+    (code 
+      (= (tmp 1) (reg-range dst UImm UImm))
+      (= (tmp 0) (tmp 1))
+      (= (tmp 2) (reg-range dst UImm UImm))
+      (= (tmp 2) (constant ? 1))
+      (op-flags! (tmp 3) (ac mi ms ls op)))))

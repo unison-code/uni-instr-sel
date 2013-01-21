@@ -3,6 +3,7 @@ parser: parser.hs
 
 run: parser
 	./parser < test.txt
+#	./parser < patterns-dump.sexpr
 
 clean:
 	-rm *.hi
