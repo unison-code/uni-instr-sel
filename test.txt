@@ -17,17 +17,3 @@
       (= dst (tmp 2))
       (op-flags! dst (ac exx mi of)))))
 
-(instruction
-  sbit_nimm4_a16
-  (pattern 
-    (constraints 
-      (allocate-in dst a16)
-      (imm 0 15 UImm)
-      (allocate-in (tmp 0) (reg-flag c dst))
-      (allocate-in (tmp 3) (reg-flag a dst)))
-    (code 
-      (= (tmp 1) (reg-range dst UImm UImm))
-      (= (tmp 0) (tmp 1))
-      (= (tmp 2) (reg-range dst UImm UImm))
-      (= (tmp 2) (constant ? 1))
-      (op-flags! (tmp 3) (ac mi ms ls op)))))

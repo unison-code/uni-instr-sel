@@ -39,17 +39,54 @@ import Text.ParserCombinators.Parsec
 import Data.String.Utils
 
 type AssemblyCode = String
-type LlvmConstraint = String
 type LlvmStatement = String
 type LlvmCode = [LlvmStatement]
+data RegisterClass = RegisterClass {
+                        name :: String
+                     }
+                   deriving (Show, Eq)
+data Temporary = Temporary {
+                        tId :: Integer
+                 }
+               deriving (Show, Eq)
+data Immediate = Immediate {
+                        iId :: String
+                 }
+               deriving (Show, Eq)
+data Parameter = Parameter {
+                        pId :: String
+                 }
+               deriving (Show, Eq)
+data Variable = VTemporary Temporary
+              | VParameter Parameter
+              deriving (Show, Eq)
+data PatternConstraint = AllocateIn {
+                                var :: Variable
+                              , reg :: RegisterClass
+                         }
+                       | ImmediateRange {
+                                imm :: Immediate
+                              , lowerBound :: Integer
+                              , upperBound :: Integer
+                         }
+                       | Alias {
+                                temp1 :: Temporary
+                              , temp2 :: Temporary
+                         }
+                       | Assert {
+                                condition :: String
+                         }
+                       deriving (Show)
 data LlvmPattern = LlvmPattern {
-                        constraints :: [LlvmConstraint]
+                        constraints :: [PatternConstraint]
                       , code :: LlvmCode
-                   } deriving (Show)
+                   }
+                 deriving (Show)
 data LlvmInstruction = LlvmInstruction {
                         assembly :: AssemblyCode
                       , patterns :: [LlvmPattern]
-                   } deriving (Show)
+                     }
+                     deriving (Show)
 
 istrip :: String -> String
 istrip = join " " . filter (\x -> x /= "") . split " "
@@ -80,21 +117,98 @@ llvmPattern = labeledData "pattern" llvmPattern'
 
 llvmPattern' :: GenParser Char st LlvmPattern
 llvmPattern' =
-  do constraints <- labeledData "constraints" llvmAllConstraints
-     code <- labeledData "code" llvmAllCode
+  do constraints <- labeledData "constraints" allPatternConstraints
+     code <- labeledData "code" allLlvmCode
      return (LlvmPattern constraints code)
 
-llvmAllConstraints :: GenParser Char st [LlvmConstraint]
-llvmAllConstraints = many llvmConstraint
+allPatternConstraints :: GenParser Char st [PatternConstraint]
+allPatternConstraints = many patternConstraint
 
-llvmConstraint :: GenParser Char st LlvmConstraint
-llvmConstraint = parens pData
-     
-llvmAllCode :: GenParser Char st LlvmCode
-llvmAllCode = many llvmStatement
+patternConstraint :: GenParser Char st PatternConstraint
+patternConstraint = parens patternConstraint'
+
+patternConstraint' :: GenParser Char st PatternConstraint
+patternConstraint' = 
+  do whiteSpace
+     (    try allocPatternConstraint
+      <|> try immPatternConstraint
+      <|> try aliasPatternConstraint
+      <|> try assertPatternConstraint)
+
+allocPatternConstraint :: GenParser Char st PatternConstraint
+allocPatternConstraint = 
+  do string "allocate-in"
+     whiteSpace
+     var <- variable
+     whiteSpace
+     reg <- registerClass
+     whiteSpace
+     return (AllocateIn var reg)
+
+immPatternConstraint :: GenParser Char st PatternConstraint
+immPatternConstraint = 
+  do try (string "zimm") <|> try (string "imm")
+     whiteSpace
+     lower <- many1 digit
+     whiteSpace
+     upper <- many1 digit
+     whiteSpace
+     imm <- immediate
+     whiteSpace
+     return (ImmediateRange imm (read lower) (read upper))
+
+aliasPatternConstraint :: GenParser Char st PatternConstraint
+aliasPatternConstraint = 
+  do string "alias"
+     whiteSpace
+     temp1 <- temporary
+     whiteSpace        
+     temp2 <- temporary
+     whiteSpace
+     return (Alias temp1 temp2)
+
+assertPatternConstraint :: GenParser Char st PatternConstraint
+assertPatternConstraint = 
+  do string "assert"
+     code <- parens pData
+     whiteSpace
+     return (Assert code)
+
+allLlvmCode :: GenParser Char st LlvmCode
+allLlvmCode = many llvmStatement
 
 llvmStatement :: GenParser Char st LlvmStatement
 llvmStatement = parens pData
+
+variable :: GenParser Char st Variable
+variable = 
+  do (    try (do temp <- temporary
+                  return (VTemporary temp))
+      <|> try (do param <- parameter
+                  return (VParameter param)))
+
+temporary :: GenParser Char st Temporary
+temporary = labeledData "tmp" temporary'
+
+temporary' :: GenParser Char st Temporary
+temporary' = 
+  do int <- many1 digit
+     return (Temporary (read int))
+
+immediate :: GenParser Char st Immediate
+immediate = 
+  do imm <- many1 alphaNum
+     return (Immediate (read imm))
+     
+parameter :: GenParser Char st Parameter
+parameter = 
+  do param <- many1 alphaNum
+     return (Parameter param)
+
+registerClass :: GenParser Char st RegisterClass
+registerClass = 
+  do reg <- many1 (try alphaNum <|> try (char '_'))
+     return (RegisterClass reg)
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
 labeledData str p = parens (labeledData' str p)
