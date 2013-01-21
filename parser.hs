@@ -30,7 +30,8 @@ expressed as LLVM IR statements. The LLVM IR statements of each instruction is
 then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
-module Parser (
+module Main (
+                main,
                 parseLlvmPatterns
               ) where
 
@@ -68,18 +69,18 @@ llvmPattern =
      char ')'
      whiteSpace
      return (LlvmPattern inst constraints code)
-  
+
 llvmInstruction :: GenParser Char st LlvmInstruction
-llvmInstruction = labeledData "instruction" pData
+llvmInstruction = parens (labeledData "instruction" pData)
 
 llvmAllConstraints :: GenParser Char st [LlvmConstraint]
-llvmAllConstraints = labeledData "constraints" (many llvmConstraint)
+llvmAllConstraints = parens (labeledData "constraints" (many llvmConstraint))
 
 llvmConstraint :: GenParser Char st LlvmConstraint
 llvmConstraint = parens pData
      
 llvmAllCode :: GenParser Char st LlvmCode
-llvmAllCode = labeledData "code" (many llvmStatement)
+llvmAllCode = parens (labeledData "code" (many llvmStatement))
 
 llvmStatement :: GenParser Char st LlvmStatement
 llvmStatement = parens pData
