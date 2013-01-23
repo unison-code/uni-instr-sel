@@ -1,92 +1,29 @@
-{-
-Copyright (c) 2013, Gabriel Hjort Blindell <ghb@kth.se>
-All rights reserved.
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Language.InstSel.Patterns.Parser
+-- Copyright   :  (c) Gabriel Hjort Blindell 2013
+-- License     :  BSD-style (see the LICENSE file)
+-- 
+-- Maintainer  :  ghb@kth.se
+-- Stability   :  experimental
+-- Portability :  portable
+-- 
+-- Parses a file of instruction patterns formatted as S-expressions. The
+-- instruction patterns consists of a set of constraints and one or more
+-- patterns expressed as LLVM IR code.
+-- 
+--------------------------------------------------------------------------------
 
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
+module Language.InstSel.Patterns.Parser (
+      parsePatterns
+    ) where
 
- * Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
-
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--}
-
-{-
-Parses a file of S-expressions containing a set of instruction patterns
-expressed as LLVM IR statements. The LLVM IR statements of each instruction is
-then transformed into a corresponding DAG and then output as S-expressions.
--}
-
-module Language. (
-              parsePatterns
-            ) where
-
+import Language.InstSel.LLVM.IR
+import Language.InstSel.Patterns.Base
 import Text.ParserCombinators.Parsec
 import Data.String.Utils
 
-type AssemblyCode = String
-type LlvmStatement = String
-type LlvmCode = [LlvmStatement]
-data RegisterClass = RegisterClass {
-                        name :: String
-                     }
-                   deriving (Show, Eq)
-data Temporary = Temporary {
-                        tId :: Integer
-                 }
-               deriving (Show, Eq)
-data Immediate = Immediate {
-                        iId :: String
-                 }
-               deriving (Show, Eq)
-data Parameter = Parameter {
-                        pId :: String
-                 }
-               deriving (Show, Eq)
-data Variable = VTemporary Temporary
-              | VParameter Parameter
-              deriving (Show, Eq)
 
-data PatternConstraint = AllocateIn {
-                                var :: Variable
-                              , reg :: RegisterClass
-                         }
-                       | ImmediateRange {
-                                imm :: Immediate
-                              , lowerBound :: Integer
-                              , upperBound :: Integer
-                         }
-                       | Alias {
-                                temp1 :: Temporary
-                              , temp2 :: Temporary
-                         }
-                       | Assert {
-                                condition :: String
-                         }
-                       deriving (Show)
-data LlvmPattern = LlvmPattern {
-                        constraints :: [PatternConstraint]
-                      , code :: LlvmCode
-                   }
-                 deriving (Show)
-data LlvmInstruction = LlvmInstruction {
-                        assembly :: AssemblyCode
-                      , patterns :: [LlvmPattern]
-                     }
-                     deriving (Show)
 
 istrip :: String -> String
 istrip = join " " . filter (\x -> x /= "") . split " "
@@ -244,11 +181,3 @@ parens c = do whiteSpace
 
 parsePatterns :: String -> Either ParseError [LlvmInstruction]
 parsePatterns input = parse llvmInstructions "" input
-
-
-
-main = do
-  contents <- getContents
-  putStr "\n"
-  putStr $ show (parsePatterns contents)
-  putStr "\n"
