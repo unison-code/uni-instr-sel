@@ -8,13 +8,15 @@
 -- Stability   :  experimental
 -- Portability :  portable
 -- 
--- Contains the data and types for representing programs. The computational
--- parts (i.e. the code within the blocks) are represented as DAGs which
--- capture the data flow whilst permitting common subexpression elimination.
+-- Contains the data and types for representing programs. The expressions
+-- (i.e. the code within the blocks) are represented as DAGs which capture the
+-- data flow whilst permitting common subexpression elimination.
 -- 
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Program.Base where
+
+import Data.Graph.Inductive.Tree
 
 -- | Record for containing a temporary.
 
@@ -26,33 +28,52 @@ data Temporary
 
 -- | Record for containing a constant value.
 
-data Const
-    = Const {
+data Constant
+    = Constant {
           constValue :: Integer
       }
     deriving (Show, Eq)
 
--- | Record for describing a node in the @Computation@ graph.
+-- | Record for describing a data value. This is simply a wrapper to allow
+-- many different types of values.
 
-data ComputationNode
+data DataValue
+    = TemporaryDataValue {
+          tempDataValue :: Temporary
+      }
+    | ConstantDataValue {
+          constDataValue :: Constant
+      }
+    deriving (Show)
 
-       -- | The @DataNode@ represents a computation value. This value may need,
-       -- at a later point in the compilation, to be stored at a data location
-       -- such as in a register or in memory. However, it may also be that the
-       -- value is computed as an intermediate value as part of a complex
+-- | Record for describing an operation.
+
+data Operation
+    = IntAdd
+    | FloatAdd
+    deriving (Show)
+
+-- | Record for describing a node in the @Expression@ graph.
+
+data ExpressionNode
+
+       -- | The @DataNode@ represents a data value. This value may need, at a
+       -- later point in the compilation, to be stored at a data location such
+       -- as in a register or in memory. However, it may also be that the value
+       -- is computed as an intermediate value as part of a complex
        -- instruction. In such instances the value is located within the
        -- pipeline and thus do not require to be allocated a particular data
        -- location.
 
      = DataNode {
-           -- | TODO: add data
+           dataValue :: DataValue
        }
 
        -- | The @OpNode@ represents an operation which consumes one or more data
        -- values and produces one or more data values.
 
      | OpNode {
-           -- | TODO: add data
+           op :: Operation
        }
 
        -- | The @TransferNode@ represents a transfer of data located at one
@@ -72,45 +93,54 @@ data ComputationNode
 
      deriving (Show)
 
--- | Record for describing a computation. The @Computation@ is a directed
--- acyclic graph (DAG) where the nodes represent computations and the edges
--- represent data dependencies between computations. The graph itself is
--- represented using @Data.Graph.Inductive.Tree.Gr@ where the nodes are labeled
--- with @ComputationNode@s and the edges are labeled with
--- @ComputationDescription@s.
+-- | Record for describing additional information about a data
+-- dependency. Currently none is needed, but if it should be required in the
+-- future then this data type should facilitate that addition.
 
-data Computation
-    = Computation {
+data DataDependencyInfo
+    = DataDependencyInfo
+    deriving (Show)
+
+-- | Record for describing an expression. The @Expression@ is a directed acyclic
+-- graph (DAG) where the nodes represent operations and the edges represent data
+-- dependencies between operations. The graph itself is represented using
+-- @Data.Graph.Inductive.Tree.Gr@ where the nodes are labeled with
+-- @ExpressionNode@s and the edges are labeled with @DataDependencyInfo@s.
+
+data Expression
+    = Expression {
+          expGraph :: Gr ExpressionNode DataDependencyInfo
       }
     deriving (Show)
 
+-- | Record for describing a branching edge between two @Block@s. Right now it
+-- contains nothing, but if additional edge information turns out to be required
+-- in the future, this should facilitate such augmentations.
+
+data BranchingInfo
+    = BranchingInfo
+    deriving (Show)
+
 -- | Record for describing a block within the @CFG@. The @Block@ consists of a
--- forest of @Computation@s. Two @Computation@s within the same @Block@ are
+-- forest of @Expression@s. Two @Expression@s within the same @Block@ are
 -- completely independent of each other and can be processed separately without
--- affecting the expected behaviour of the program (provided the @Computation@s
+-- affecting the expected behaviour of the program (provided the @Expression@s
 -- do not migrate to another @Block@).
 
 data Block
     = Block {
-
-          dags :: [Computation]
-
+          dags :: [Expression]
       }
     deriving (Show)
 
 -- | Record for describing a directed control flow graph (CFG). The graph is
 -- represented internally using @Data.Graph.Inductive.Tree.Gr@ where the nodes
--- consists of @Block@s and the edges (labeled as @BranchingData@) between the
+-- consists of @Block@s and the edges (labeled as @BranchingInfo@) between the
 -- @Block@s denote the possible branchings at runtime.
 
 data CFG 
     = CFG {
-
-          -- | Graph where the nodes are labeled with @Block@ and the edges are
-          -- labeled with @BranchingData@.
-      
-          graph :: Gr Block BranchingData
-
+          cfgGraph :: Gr Block BranchingInfo
       }
     deriving (Show)
 
@@ -121,11 +151,7 @@ data CFG
 
 data Function
     = Function {
-
-          -- | The control-flow graph of this @Function@.
-
           cfg :: CFG
-
       }
     deriving (Show)
 

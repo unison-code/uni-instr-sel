@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstSel.Misc.Base
+-- Module      :  Language.InstructionSelection.Misc.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 -- 
@@ -12,7 +12,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Misc.Base where
+module Language.InstructionSelection.Misc.Base where
 
 -- | Record for representing a range.
 
