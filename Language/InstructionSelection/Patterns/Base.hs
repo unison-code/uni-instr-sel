@@ -15,21 +15,8 @@
 module Language.InstructionSelection.Patterns.Base where
 
 import Language.InstructionSelection.Misc (Range)
-import Language.InstructionSelection.Program -- TODO: import only what is needed
+import Language.InstructionSelection.Program (Expression)
 import Data.Graph.Inductive.Tree (Gr)
-
--- | Record for containing the assembly string to produce during code emission.
-
-data AssemblyString
-    = AssemblyString {
-
-          -- | Assembly string. This needs to be refactored into something that
-          -- is easier to process.
-
-          string :: String
-
-      }
-    deriving (Show)
 
 -- | Record for describing a data space.
 
@@ -53,30 +40,8 @@ data DataSpace
 
     deriving (Show, Eq)
 
--- | Record for containing an instruction operand.
 
-data Operand
-    = Operand {
-          opId :: String
-      }
-    deriving (Show, Eq)
-             
--- | Record for containing a temporary.
-
-data Temporary
-    = Temporary {
-          tempId :: Integer
-      }
-    deriving (Show, Eq)
-
--- | Record for containing a value.
-
-data DataValue
-    = TemporaryData Temporary
-    | OperandData Operand
-    deriving (Show, Eq)
-
--- | Record for an immediate.
+-- | Record for describing an immediate.
 
 data Immediate
 
@@ -95,6 +60,40 @@ data Immediate
 
     deriving (Show, Eq)
 
+-- | Record for describing an instruction operand.
+
+data InstructionOperand
+    = InstructionOperand {
+          opId :: String
+      }
+    deriving (Show, Eq)             
+
+
+-- | Record for describing a data value. This is simply a wrapper to allow
+-- many different types of values.
+
+data DataValue t
+    = DataValue {
+          value :: t
+      }
+    deriving (Show, Eq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- | Record for a pattern constraint.
 
 data Constraint
@@ -103,13 +102,7 @@ data Constraint
       -- located in a particular space.
 
     = AllocateIn {
-
-          -- | Data location to constrain.
-
           value :: DataValue
-
-          -- | Space to constraint the location to.
-
         , space :: DataSpace
 
       }
@@ -118,13 +111,7 @@ data Constraint
       -- immediate value may take.
 
     | ImmediateRange {
-
-          -- | Immediate to constrain.
-
           imm :: Immediate
-
-          -- | Allowed value range.
-
         , immRange :: Range Integer
 
       }
@@ -142,20 +129,33 @@ data Constraint
       -- | TODO: add description
 
     | Assert {
+          -- | TODO: refactor into more exact data types
           condition :: String
       }
 
     deriving (Show)
 
+-- | Record for containing the assembly string to produce during code emission.
+
+data AssemblyString
+    = AssemblyString {
+
+          -- | Assembly string. TODO: refactor into something that is easier to
+          -- process.
+
+          string :: String
+
+      }
+    deriving (Show)
 
 -- | Record for representing a pattern including the constraints.
 
 data Pattern 
     = Pattern {
 
-          -- | The DAG which represents the pattern.
+          -- | The expression DAG which represents the pattern.
 
-          graph :: Gr () ()
+          expr :: Expression
 
           -- | Constraints that need to hold for the pattern.
 
@@ -177,8 +177,8 @@ data Tile
 
           assembly :: AssemblyString
 
-          -- | Patterns which correspond to the instruction (there may be more
-          -- than one).
+          -- | Patterns which correspond to the instruction. There must be at
+          -- least one pattern.
 
         , patterns :: [Pattern]
 

@@ -18,7 +18,11 @@ module Language.InstructionSelection.Program.Base where
 
 import Data.Graph.Inductive.Tree
 
--- | Record for containing a temporary.
+------------------------------------------------------------
+-- Data elements
+------------------------------------------------------------
+
+-- | Record for describing a temporary.
 
 data Temporary
     = Temporary {
@@ -37,20 +41,22 @@ data Constant
 -- | Record for describing a data value. This is simply a wrapper to allow
 -- many different types of values.
 
-data DataValue
-    = TemporaryDataValue {
-          tempDataValue :: Temporary
-      }
-    | ConstantDataValue {
-          constDataValue :: Constant
-      }
-    deriving (Show)
+data DataValue t
+    = DataValue {
+         dataValue :: t
+    }
+    deriving (Show, Eq)
+
+------------------------------------------------------------
+-- Expression elements
+------------------------------------------------------------
 
 -- | Record for describing an operation.
 
 data Operation
     = IntAdd
     | FloatAdd
+    -- | TODO: add more operations  
     deriving (Show)
 
 -- | Record for describing a node in the @Expression@ graph.
@@ -109,13 +115,17 @@ data DataDependencyInfo
 
 data Expression
     = Expression {
-          expGraph :: Gr ExpressionNode DataDependencyInfo
+          exprGraph :: Gr ExpressionNode DataDependencyInfo
       }
     deriving (Show)
 
 -- | Record for describing a branching edge between two @Block@s. Right now it
 -- contains nothing, but if additional edge information turns out to be required
 -- in the future, this should facilitate such augmentations.
+
+------------------------------------------------------------
+-- Function elements
+------------------------------------------------------------
 
 data BranchingInfo
     = BranchingInfo
