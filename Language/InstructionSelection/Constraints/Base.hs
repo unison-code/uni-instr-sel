@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Program
+-- Module      :  Language.InstructionSelection.Constraints.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 -- 
@@ -8,10 +8,16 @@
 -- Stability   :  experimental
 -- Portability :  portable
 -- 
+-- Contains the data and types for representing constraints.
+-- 
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Program (
-      module Language.InstructionSelection.Program.Base
-    ) where
+module Language.InstructionSelection.Constraints.Base where
 
-import Language.InstructionSelection.Program.Base
+
+
+-- | TODO
+
+data Constraint
+    = Constraint
+    deriving (Show)

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Program
+-- Module      :  Language.InstructionSelection.Constraints
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 -- 
@@ -10,8 +10,8 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Program (
-      module Language.InstructionSelection.Program.Base
+module Language.InstructionSelection.Constraints (
+      module Language.InstructionSelection.Constraints.Base
     ) where
 
-import Language.InstructionSelection.Program.Base
+import Language.InstructionSelection.Constraints.Base

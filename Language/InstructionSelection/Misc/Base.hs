@@ -28,3 +28,25 @@ data Range t
 
        }
      deriving (Show, Eq)
+
+-- | Creates a new data type that allows numbers from 0 to positive infinity.
+
+newtype Natural = Natural Integer
+    deriving (Show)
+             
+toNatural :: Integer -> Natural
+toNatural x | x < 0     = error "Natural cannot be negative"
+            | otherwise = Natural x
+                          
+fromNatural :: Natural -> Integer
+fromNatural (Natural i) = i
+
+instance Num Natural where
+    fromInteger = toNatural
+    x + y       = toNatural (fromNatural x + fromNatural y)
+    x - y       = let r = fromNatural x - fromNatural y in
+                      if r < 0 then error "Subtraction yielded a negative value"
+                               else toNatural r
+    x * y       = toNatural (fromNatural x * fromNatural y)
+    abs x       = x
+    signum x    = toNatural $ signum $ fromNatural x

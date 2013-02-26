@@ -16,152 +16,323 @@
 
 module Language.InstructionSelection.Program.Base where
 
+import Language.InstructionSelection.Constraints
+import Language.InstructionSelection.Misc
 import Data.Graph.Inductive.Tree
+
+
 
 ------------------------------------------------------------
 -- Data elements
 ------------------------------------------------------------
 
--- | Record for describing a temporary.
+-- | Record for describing data. The data can be of many different types, e.g. a
+-- constant, an immediate, a temporary, etc.
 
-data Temporary
-    = Temporary {
-          tempId :: Integer
-      }
-    deriving (Show, Eq)
+data Data
 
--- | Record for containing a constant value.
-
-data Constant
     = Constant {
           constValue :: Integer
       }
+
+    | Immediate {
+          immId :: String
+      }
+
+    | Temporary {
+          tempId :: String
+      }
+
     deriving (Show, Eq)
 
--- | Record for describing a data value. This is simply a wrapper to allow
--- many different types of values.
 
-data DataValue t
-    = DataValue {
-         dataValue :: t
-    }
-    deriving (Show, Eq)
 
 ------------------------------------------------------------
--- Expression elements
+-- Operation elements
 ------------------------------------------------------------
 
--- | Record for describing an operation.
+-- | Record for describing a pure data operation that consumes and/or produces
+-- data. Pure operations are those that do not depend on any external state,
+-- meaning that they will always produce the same output for the same set of
+-- inputs. The consequence of this is that such operations can be ordered in any
+-- arbitrary way with respect to other operations. Hence, pure operations are
+-- the opposite of side-effect operations.
+--
+-- For comparison, see @SideEffectOperation@.
+
+data PureOperation
+
+    ------------------------------------------------------------
+    -- Arithmetic and logical operations
+    ------------------------------------------------------------
+
+    ------------------------------
+    -- Integer operations
+    ------------------------------
+
+    -- | Integer addition.
+
+    = IAdd
+
+    -- | Integer subtraction.
+
+    | ISub
+
+    -- | Integer multiplication.
+
+    | IMul
+
+    -- | Unsigned integer division.
+
+    | IUDiv
+
+    -- | Signed integer division.
+
+    | ISDiv
+
+    -- | Unsigned integer remainder.
+
+    | IURem
+      
+    -- | Signed integer remainder.
+
+    | ISRem
+
+    ------------------------------
+    -- Floating-point operations
+    ------------------------------
+
+    -- | Float addition.
+
+    | FAdd
+
+    -- | Float subtraction.
+
+    | FSub
+
+    -- | Float multiplication.
+
+    | FMul
+
+    -- | Float division.
+
+    | FDiv
+
+    -- | Float remainder.
+
+    | FRem
+      
+    ------------------------------
+    -- Bit operations
+    ------------------------------
+
+    -- | Bitwise left shift.
+
+    | Shl
+
+    -- | Bitwise logical right shift.
+
+    | LShr
+      
+    -- | Bitwise arithmetic right shift (with sign extension).
+
+    | AShr
+
+    -- | Bitwise AND (&).
+
+    | And
+      
+    -- | Bitwise OR (|).
+
+    | Or
+
+    -- | Bitwise XOR (^).
+
+    | Xor
+
+    ------------------------------------------------------------
+    -- Comparison operations
+    ------------------------------------------------------------
+
+    -- | Integer comparison.
+
+    | ICmp
+      
+    -- | Float comparison.
+
+    | FCmp
+
+    ------------------------------------------------------------
+    -- Other operations
+    ------------------------------------------------------------
+
+    -- | TODO  
+
+    | Phi
+    
+    deriving (Show)
+             
+-- | Record for describing a side-effect data operation that consumes and/or
+-- produces data. Side-effect operations are those that depend on or modify some
+-- external state, meaning that they can produce different results even if the
+-- set of inputs is the same. Consequently the execution order in which
+-- side-effect operations are arranged with respect to other side-effect
+-- operations must be maintained. Hence, side-effect operations are the opposite
+-- of pure operations.
+--
+-- To enforce this execution order, all side-effect operations consume a state
+-- node and produce a state node. If a side-effect operation A consumes the
+-- state produce by another side-effect operation B, then B must be scheduled
+-- before A.
+--
+-- The edge from the state node to the side-effect operation node must always
+-- have input number 0 (i.e. it is always the first edge into the side-effect
+-- operation node).
+--
+-- For comparison, see @PureOperation@.
+
+data SideEffectOperation
+
+    ------------------------------------------------------------
+    -- Memory operations
+    ------------------------------------------------------------
+
+    -- | Memory load.
+
+    = MemLoad
+      
+    -- | Memory store.
+
+    | MemStore
+    
+    deriving (Show)
+
+-- | Record for an operation. An operation is either pure or has side effects.
 
 data Operation
-    = IntAdd
-    | FloatAdd
-    -- | TODO: add more operations  
+    = POperation {
+          pureOp :: PureOperation
+      }
+    | SEOperation {
+          sideEfOp :: SideEffectOperation
+    }
     deriving (Show)
 
--- | Record for describing a node in the @Expression@ graph.
 
-data ExpressionNode
 
-       -- | The @DataNode@ represents a data value. This value may need, at a
-       -- later point in the compilation, to be stored at a data location such
-       -- as in a register or in memory. However, it may also be that the value
-       -- is computed as an intermediate value as part of a complex
-       -- instruction. In such instances the value is located within the
-       -- pipeline and thus do not require to be allocated a particular data
-       -- location.
+------------------------------------------------------------
+-- Control and data flow elements
+------------------------------------------------------------
 
-     = DataNode {
-           dataValue :: DataValue
-       }
+-- | Record for describing the node type.
 
-       -- | The @OpNode@ represents an operation which consumes one or more data
-       -- values and produces one or more data values.
+data NodeType
 
-     | OpNode {
-           op :: Operation
-       }
+      -- | The @DataNode@ represents nodes which denote data. The data may need,
+      -- at a later point in the compilation, to be stored at a data location
+      -- such as in a register or in memory. However, it may also be that the
+      -- value is computed as an intermediate value as part of a complex
+      -- instruction. In such instances the value is located within the pipeline
+      -- and thus do not require to be allocated a particular data
+      -- location. This depends of course on which instructions are available
+      -- and selected.
 
-       -- | The @TransferNode@ represents a transfer of data located at one
-       -- particular location to another. If the data locations belong to
-       -- different storage classes, then an operation is necessary to enable
-       -- that transfer. In contrast, if the data locations belong to the same
-       -- storage class, then no such operation is required. In traditional
-       -- compilers this transfer has been treated either through approximation
-       -- or as a post-step in code emission (i.e. after instruction selection
-       -- and register allocation has been performed), but through the use of
-       -- data nodes this transfer becomes apparent already in the instruction
-       -- selection phase.
+    = DataNodeType {
+          nodeData :: Data
+      }
 
-     | TransferNode {
-           -- | TODO: add data
-       }
+      -- | The @OpNode@ represents nodes involved in operations which consume
+      -- data and/or produce data.
 
-     deriving (Show)
+    | OpNodeType {
+          nodeOp :: Operation
+      }
+      
+      -- | The @TransferNode@ represents nodes involved in transfers of data
+      -- located at one particular location to another. If the data locations
+      -- belong to different storage classes, then an operation is necessary to
+      -- enable that transfer. In contrast, if the data locations belong to the
+      -- same storage class, then no such operation is required. In traditional
+      -- compilers this transfer has been treated either through approximation
+      -- or as a post-step in code emission (i.e. after instruction selection
+      -- and register allocation has been performed), but through the use of
+      -- data nodes this transfer becomes apparent already in the instruction
+      -- selection phase.
 
--- | Record for describing additional information about a data
--- dependency. Currently none is needed, but if it should be required in the
--- future then this data type should facilitate that addition.
+    | TransferNodeType {
+      }
 
-data DataDependencyInfo
-    = DataDependencyInfo
+      -- | The @BranchNodeType@ represents nodes involved in branching from one
+      -- basic code block to another.
+
+    | BranchNodeType {
+      }
+
+      -- | The @LabelNodeType@ represents nodes which denote code block labels.
+      
+    | LabelNodeType {
+      }
+      
+      -- | The @StateNodeType@ represents nodes involved in enforcing execution
+      -- order between two or more operations.
+
+    | StateNodeType {
+      }
+
     deriving (Show)
 
--- | Record for describing an expression. The @Expression@ is a directed acyclic
--- graph (DAG) where the nodes represent operations and the edges represent data
--- dependencies between operations. The graph itself is represented using
--- @Data.Graph.Inductive.Tree.Gr@ where the nodes are labeled with
--- @ExpressionNode@s and the edges are labeled with @DataDependencyInfo@s.
+-- | Record for describing a node in the control and data flow graph. Each node
+-- is described by a @NodeType@, and each node can also have an arbitrary set of
+-- constraints applied to it (although this list may of course be empty).
 
-data Expression
-    = Expression {
-          exprGraph :: Gr ExpressionNode DataDependencyInfo
+data Node
+    = Node {
+          nodeType :: NodeType
+        , nodeConstraints :: [Constraint]
       }
     deriving (Show)
 
--- | Record for describing a branching edge between two @Block@s. Right now it
--- contains nothing, but if additional edge information turns out to be required
--- in the future, this should facilitate such augmentations.
+-- | Record for embedding edge information. Currently this information consists
+-- of numbers which allow the edges to be ordered with respect to input to and
+-- output from a node. Hence, the numbering of the outputs are only related to
+-- the source of the edge, and the numbering of the inputs are only related to
+-- the destination of the edge. The edges must be numbered such that each input
+-- to or output from a node has a strictly increasing number, starting from
+-- 0. There must be no gaps in the numbers.
 
-------------------------------------------------------------
--- Function elements
-------------------------------------------------------------
+data EdgeInfo
+    = EdgeInfo {
 
-data BranchingInfo
-    = BranchingInfo
-    deriving (Show)
+          -- | Edge number with regard to the outputs from a node.
 
--- | Record for describing a block within the @CFG@. The @Block@ consists of a
--- forest of @Expression@s. Two @Expression@s within the same @Block@ are
--- completely independent of each other and can be processed separately without
--- affecting the expected behaviour of the program (provided the @Expression@s
--- do not migrate to another @Block@).
+          outputEdgeNumber :: Natural
 
-data Block
-    = Block {
-          dags :: [Expression]
+          -- | Edge number with regard to the inputs to a node.
+
+        , inputEdgeNumber :: Natural
+
       }
     deriving (Show)
 
--- | Record for describing a directed control flow graph (CFG). The graph is
--- represented internally using @Data.Graph.Inductive.Tree.Gr@ where the nodes
--- consists of @Block@s and the edges (labeled as @BranchingInfo@) between the
--- @Block@s denote the possible branchings at runtime.
+-- | Record for describing a directed, unified control and data flow graph
+-- (CDFG). The graph is represented internally using
+-- @Data.Graph.Inductive.Tree.Gr@ where the nodes consists of @Node@s and the
+-- edges of @EdgeInfo@s.
 
-data CFG 
-    = CFG {
-          cfgGraph :: Gr Block BranchingInfo
+data CDFG 
+    = CDFG {
+          cdfgGraph :: Gr Node EdgeInfo
       }
     deriving (Show)
 
 -- | Record for describing a function. A @Function@ is, like @Module@, a unit
--- which can be compiled on its own. Each @Function@ consists of a control-flow
--- graph (@CFG@) which describes the possible flows of execution for the
--- @Function@.
+-- which can be compiled on its own. Each @Function@ consists of a unified
+-- control and data flow graph (CDFG) which describes the possible flows of
+-- execution and data dependencies for the @Function@.
 
 data Function
     = Function {
-          cfg :: CFG
+          cdfg :: CDFG
       }
     deriving (Show)
 
