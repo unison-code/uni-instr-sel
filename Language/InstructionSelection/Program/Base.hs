@@ -58,7 +58,11 @@ data Data
 -- arbitrary way with respect to other operations. Hence, pure operations are
 -- the opposite of side-effect operations.
 --
--- For comparison, see @SideEffectOperation@.
+-- Concerning floating-point: A floating-point value can either denote a \real
+-- value\ or \not a number\ (NaN) which indicate errors. NaNs in turn can be
+-- classified as \quiet NaNs\ (QNaN) and \signaling NaNs\ (SNaN).
+--
+-- For comparison, see 'SideEffectOperation'.
 
 data PureOperation
 
@@ -70,31 +74,41 @@ data PureOperation
     -- Integer operations
     ------------------------------
 
-    -- | Integer addition.
+    -- | Integer addition. Consumes 2 data nodes and produces 1 data
+    -- node. Commutative.
 
     = IAdd
 
-    -- | Integer subtraction.
+    -- | Integer subtraction. Consumes 2 data nodes and produces 1 data node. If
+    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
+    -- then this operation represents @x - y@.
 
     | ISub
 
-    -- | Integer multiplication.
+    -- | Integer multiplication. Consumes 2 data nodes and produces 1 data
+    -- node. Commutative.
 
     | IMul
 
-    -- | Unsigned integer division.
+    -- | Unsigned integer division. Consumes 2 data nodes and produces 1 data
+    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+    -- denoted by @y@, then this operation represents @x / y@.
 
     | IUDiv
 
-    -- | Signed integer division.
+    -- | Unsigned integer remainder. Same as for 'IUDiv' but for signed integer
+    -- data.
 
     | ISDiv
 
-    -- | Unsigned integer remainder.
+    -- | Unsigned integer remainder. Consumes 2 data nodes and produces 1 data
+    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+    -- denoted by @y@, then this operation represents @x % y@.
 
     | IURem
       
-    -- | Signed integer remainder.
+    -- | Signed integer remainder. Same as for 'IURem' but for signed integer
+    -- data.
 
     | ISRem
 
@@ -102,23 +116,31 @@ data PureOperation
     -- Floating-point operations
     ------------------------------
 
-    -- | Float addition.
+    -- | Float addition. Consumes 2 data nodes and produces 1 data
+    -- node. Commutative.
 
     | FAdd
 
-    -- | Float subtraction.
+    -- | Float subtraction. Consumes 2 data nodes and produces 1 data node. If
+    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
+    -- then this operation represents @x - y@.
 
     | FSub
 
-    -- | Float multiplication.
+    -- | Float multiplication. Consumes 2 data nodes and produces 1 data
+    -- node. Commutative.
 
     | FMul
 
-    -- | Float division.
+    -- | Float division. Consumes 2 data nodes and produces 1 data node. If data
+    -- at input 0 is denoted by @x@, and data at input 1 is denoted by @y@, then
+    -- this operation represents @x / y@.
 
     | FDiv
 
-    -- | Float remainder.
+    -- | Float remainder. Consumes 2 data nodes and produces 1 data node. If
+    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
+    -- then this operation represents @x % y@.
 
     | FRem
       
@@ -126,27 +148,37 @@ data PureOperation
     -- Bit operations
     ------------------------------
 
-    -- | Bitwise left shift.
+    -- | Bitwise left shift. Consumes 2 data node and produces 1 data node. If
+    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
+    -- then this operation represents @x < y@.
 
     | Shl
 
-    -- | Bitwise logical right shift.
+    -- | Bitwise logical right shift. Consumes 2 data node and produces 1 data
+    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+    -- denoted by @y@, then this operation represents @x > y@.
 
     | LShr
       
-    -- | Bitwise arithmetic right shift (with sign extension).
+    -- | Bitwise arithmetic right shift (with sign extension). Consumes 2 data
+    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
+    -- data at input 1 is denoted by @y@, then this operation represents @x >
+    -- y@.
 
     | AShr
 
-    -- | Bitwise AND (&).
+    -- | Bitwise AND (@\&@). Consumes 2 data node and produces 1 data
+    -- node. Commutative.
 
     | And
       
-    -- | Bitwise OR (|).
+    -- | Bitwise OR (@|@). Consumes 2 data node and produces 1 data
+    -- node. Commutative.
 
     | Or
 
-    -- | Bitwise XOR (^).
+    -- | Bitwise XOR (@^@). Consumes 2 data node and produces 1 data
+    -- node. Commutative.
 
     | Xor
 
@@ -154,21 +186,180 @@ data PureOperation
     -- Comparison operations
     ------------------------------------------------------------
 
-    -- | Integer comparison.
+    ------------------------------
+    -- Integer operations
+    ------------------------------
 
-    | ICmp
+    -- | Integer equality comparison (@==@). Consumes 2 data node and produces 1
+    -- data node. Commutative.
+
+    | ICmpEq
       
-    -- | Float comparison.
+    -- | Integer inequality comparison (@!=@). Consumes 2 data node and produces
+    -- 1 data node. Commutative.
 
-    | FCmp
+    | ICmpNEq
+      
+    -- | Unsigned integer greater-than comparison (@>@). Consumes 2 data node
+    -- and produces 1 data node. If data at input 0 is denoted by @x@, and data
+    -- at input 1 is denoted by @y@, then this operation represents @x > y@.
+
+    | IUCmpGT
+      
+    -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT' but
+    -- for signed integer data.
+
+    | ISCmpGT
+      
+    -- | Unsigned integer greater-than-or-equal comparison (@>=@). Consumes 2
+    -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
+    -- and data at input 1 is denoted by @y@, then this operation represents @x
+    -- >= y@.
+
+    | IUCmpGE
+      
+    -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
+    -- 'IUCmpGE' but for signed integer data.
+
+    | ISCmpGE
+      
+    -- | Unsigned integer less-than comparison (@<@). Consumes 2 data node and
+    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+    -- input 1 is denoted by @y@, then this operation represents @x < y@.
+
+    | IUCmpLT
+      
+    -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
+    -- for signed integer data.
+
+    | ISCmpLT
+      
+    -- | Unsigned integer less-than-or-equal comparison (@<=@). Consumes 2 data
+    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
+    -- data at input 1 is denoted by @y@, then this operation represents @x <=
+    -- y@.
+
+    | IUCmpLE
+      
+    -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
+    -- 'IUCmpLE' but for signed integer data.
+
+    | ISCmpLE
+      
+    ------------------------------
+    -- Floating-point operations
+    ------------------------------
+
+    -- | Unordered float equality comparison (@==@). Consumes 2 data node and
+    -- produces 1 data node. If any of the input values is a QNaN or both values
+    -- are equal, then the operation returns @True@. Commutative.
+
+    | FUCmpEq
+      
+    -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
+    -- produces 1 data node. If none of the input values is a QNaN and both
+    -- values are equal, then the operation returns @True@. Commutative.
+      
+    | FOCmpEq
+      
+    -- | Unordered float inequality comparison (@!=@). Consumes 2 data node and
+    -- produces 1 data node. If any of the input values is a QNaN or both values
+    -- are inequal, then the operation returns @True@. Commutative.
+
+    | FUCmpNEq
+      
+    -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
+    -- produces 1 data node. If none of the input values is a QNaN and both
+    -- values are inequal, then the operation returns @True@. Commutative.
+      
+    | FOCmpNEq
+      
+    -- | Unordered float greater-than comparison (@>@). Consumes 2 data node and
+    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+    -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
+    -- if any of the input values is a QNaN or @x > y@ holds, then the operation
+    -- returns @True@.
+
+    | FUCmpGT
+      
+    -- | Ordered float greater-than comparison (@>@). Consumes 2 data node and
+    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+    -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
+    -- if none of the input values is a QNaN and @x > y@ holds, then the
+    -- operation returns @True@.
+
+    | FOCmpGT
+      
+    -- | Unordered float greater-than-or-equal comparison (@>=@). Consumes 2
+    -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
+    -- and data at input 1 is denoted by @y@, then this operation represents @x
+    -- >= y@. Hence, if any of the input values is a QNaN or @x >= y@ holds,
+    -- then the operation returns @True@.
+
+    | FUCmpGE
+      
+    -- | Ordered float greater-than-or-equal comparison (@>=@). Consumes 2 data
+    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
+    -- data at input 1 is denoted by @y@, then this operation represents @x >=
+    -- y@. Hence, if none of the input values is a QNaN and @x >= y@ holds, then
+    -- the operation returns @True@.
+
+    | FOCmpGE
+      
+    -- | Unordered float less-than comparison (@<@). Consumes 2 data node and
+    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+    -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
+    -- if any of the input values is a QNaN or @x < y@ holds, then the operation
+    -- returns @True@.
+
+    | FUCmpLT
+      
+    -- | Ordered float less-than comparison (@<@). Consumes 2 data node and
+    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+    -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
+    -- if none of the input values is a QNaN and @x < y@ holds, then the
+    -- operation returns @True@.
+
+    | FOCmpLT
+      
+    -- | Unordered float less-than-or-equal comparison (@<=@). Consumes 2 data
+    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
+    -- data at input 1 is denoted by @y@, then this operation represents @x <=
+    -- y@. Hence, if any of the input values is a QNaN or @x <= y@ holds, then
+    -- the operation returns @True@.
+
+    | FUCmpLE
+      
+    -- | Ordered float less-than-or-equal comparison (@<=@). Consumes 2 data
+    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
+    -- data at input 1 is denoted by @y@, then this operation represents @x <=
+    -- y@. Hence, if none of the input values is a QNaN and @x <= y@ holds, then
+    -- the operation returns @True@.
+
+    | FOCmpLE
+
+    -- | Float unordering check. Consumes 2 data nodes and produces 1 data node.
+    -- If any of the input values is a QNaN, then the operation returns
+    -- @True@. Commutative.
+
+    | FCmpUn 
 
     ------------------------------------------------------------
     -- Other operations
     ------------------------------------------------------------
 
-    -- | TODO  
+    -- | 2-value-input phi operation. Consumes 2 tuples of data nodes and label
+    -- nodes and 1 label node and produces 1 data node. Input 0 is expected to
+    -- always be the label wherein the phi operation resides, and inputs 1 and 2
+    -- are the tuples. Inputs 1 and 2 are commutative.
 
     | Phi
+
+    -- | 1-value-input phi operation. Consumes 1 tuple of data node and label
+    -- node and 1 data node and produces 1 data node. Input 0 is expected to
+    -- always be a data node produced by another 'Phi' or 'PhiCascade' node.
+
+    | PhiCascade
     
     deriving (Show)
              
@@ -180,16 +371,17 @@ data PureOperation
 -- operations must be maintained. Hence, side-effect operations are the opposite
 -- of pure operations.
 --
--- To enforce this execution order, all side-effect operations consume a state
--- node and produce a state node. If a side-effect operation A consumes the
--- state produce by another side-effect operation B, then B must be scheduled
--- before A.
+-- To enforce this execution order, all side-effect operations consume exactly
+-- one state node and produce exactly one state node (of course, they may
+-- consume and produce data nodes in addition to the state nodes). If a
+-- side-effect operation A consumes the state produce by another side-effect
+-- operation B, then B must be scheduled before A.
 --
 -- The edge from the state node to the side-effect operation node must always
 -- have input number 0 (i.e. it is always the first edge into the side-effect
 -- operation node).
 --
--- For comparison, see @PureOperation@.
+-- For comparison, see 'PureOperation'.
 
 data SideEffectOperation
 
@@ -204,6 +396,20 @@ data SideEffectOperation
     -- | Memory store.
 
     | MemStore
+
+    ------------------------------------------------------------
+    -- Function calls
+    ------------------------------------------------------------
+
+      -- | Immediate call, where the function to invoke is determined via a
+      -- function label.
+      
+    | ImmediateCall
+      
+      -- | Indirect call, where the function to invoke is determined via a
+      -- register.
+
+    | IndirectCall
     
     deriving (Show)
 
@@ -228,7 +434,7 @@ data Operation
 
 data NodeType
 
-      -- | The @DataNode@ represents nodes which denote data. The data may need,
+      -- | The 'DataNode' represents nodes which denote data. The data may need,
       -- at a later point in the compilation, to be stored at a data location
       -- such as in a register or in memory. However, it may also be that the
       -- value is computed as an intermediate value as part of a complex
@@ -241,14 +447,14 @@ data NodeType
           nodeData :: Data
       }
 
-      -- | The @OpNode@ represents nodes involved in operations which consume
+      -- | The 'OpNode' represents nodes involved in operations which consume
       -- data and/or produce data.
 
     | OpNodeType {
           nodeOp :: Operation
       }
       
-      -- | The @TransferNode@ represents nodes involved in transfers of data
+      -- | The 'TransferNode' represents nodes involved in transfers of data
       -- located at one particular location to another. If the data locations
       -- belong to different storage classes, then an operation is necessary to
       -- enable that transfer. In contrast, if the data locations belong to the
@@ -262,18 +468,18 @@ data NodeType
     | TransferNodeType {
       }
 
-      -- | The @BranchNodeType@ represents nodes involved in branching from one
+      -- | The 'BranchNodeType' represents nodes involved in branching from one
       -- basic code block to another.
 
     | BranchNodeType {
       }
 
-      -- | The @LabelNodeType@ represents nodes which denote code block labels.
+      -- | The 'LabelNodeType' represents nodes which denote code block labels.
       
     | LabelNodeType {
       }
       
-      -- | The @StateNodeType@ represents nodes involved in enforcing execution
+      -- | The 'StateNodeType' represents nodes involved in enforcing execution
       -- order between two or more operations.
 
     | StateNodeType {
@@ -282,7 +488,7 @@ data NodeType
     deriving (Show)
 
 -- | Record for describing a node in the control and data flow graph. Each node
--- is described by a @NodeType@, and each node can also have an arbitrary set of
+-- is described by a 'NodeType', and each node can also have an arbitrary set of
 -- constraints applied to it (although this list may of course be empty).
 
 data Node
@@ -316,8 +522,8 @@ data EdgeInfo
 
 -- | Record for describing a directed, unified control and data flow graph
 -- (CDFG). The graph is represented internally using
--- @Data.Graph.Inductive.Tree.Gr@ where the nodes consists of @Node@s and the
--- edges of @EdgeInfo@s.
+-- 'Data.Graph.Inductive.Tree.Gr' where the nodes consists of 'Node's and the
+-- edges of 'EdgeInfo's.
 
 data CDFG 
     = CDFG {
@@ -325,10 +531,10 @@ data CDFG
       }
     deriving (Show)
 
--- | Record for describing a function. A @Function@ is, like @Module@, a unit
--- which can be compiled on its own. Each @Function@ consists of a unified
+-- | Record for describing a function. A 'Function' is, like 'Module', a unit
+-- which can be compiled on its own. Each 'Function' consists of a unified
 -- control and data flow graph (CDFG) which describes the possible flows of
--- execution and data dependencies for the @Function@.
+-- execution and data dependencies for the 'Function'.
 
 data Function
     = Function {
@@ -336,31 +542,31 @@ data Function
       }
     deriving (Show)
 
--- | Record for describing a module. A @Module@ is a self-contained unit which
--- can be compiled on its own. In turn, each @Module@ consists of a set of
--- @Function@s, which also are compiled in isolation.
+-- | Record for describing a module. A 'Module' is a self-contained unit which
+-- can be compiled on its own. In turn, each 'Module' consists of a set of
+-- 'Function's, which also are compiled in isolation.
 
 data Module
     = Module {
 
-          -- | List of @Function@s which comprises the @Module@. The @Module@
-          -- must consist of at least one @Function@.
+          -- | List of 'Function's which comprises the 'Module'. The 'Module'
+          -- must consist of at least one 'Function'.
 
           functions :: [Function]
 
       }
     deriving (Show)
 
--- | Record for describing a program. All @Program@s consists of a set of
--- @Module@s, which is a self-contained unit which can be compiled on its own
+-- | Record for describing a program. All 'Program's consists of a set of
+-- 'Module's, which is a self-contained unit which can be compiled on its own
 -- (dependencies on other functions are resolved at linking time, not compile
 -- time). This is the outer-most level of data records.
 
 data Program 
     = Program {
 
-          -- | List of @Module@s which comprises the @Program@. The @Program@
-          -- must consist of at least one @Module@.
+          -- | List of 'Module's which comprises the 'Program'. The 'Program'
+          -- must consist of at least one 'Module'.
 
           modules :: [Module]
 
