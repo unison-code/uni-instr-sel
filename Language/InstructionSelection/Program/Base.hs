@@ -8,9 +8,8 @@
 -- Stability   :  experimental
 -- Portability :  portable
 -- 
--- Contains the data and types for representing programs. The expressions
--- (i.e. the code within the blocks) are represented as DAGs which capture the
--- data flow whilst permitting common subexpression elimination.
+-- Contains the data and types for representing programs as unified control and
+-- data flow graphs on a per-function basis.
 -- 
 --------------------------------------------------------------------------------
 
@@ -31,13 +30,23 @@ import Data.Graph.Inductive.Tree
 
 data Data
 
+      -- | Represents all data values which are fixed and known at compile time.
+
     = Constant {
           constValue :: Integer
       }
 
+      -- | Represents all data values which are fixed but unknown from the scope
+      -- of where it is used. It is intended to be used within patterns only and
+      -- should never appear as part of the program. The idea is to represent
+      -- immediate values in patterns through symbolic names which will be
+      -- replaced by the constant values upon code emission.
+
     | Immediate {
           immId :: String
       }
+
+      -- | Represents all temporary data values.
 
     | Temporary {
           tempId :: String
@@ -466,23 +475,27 @@ data NodeType
       -- selection phase.
 
     | TransferNodeType {
+          -- TODO: add types? Maybe it's not needed
       }
 
       -- | The 'BranchNodeType' represents nodes involved in branching from one
       -- basic code block to another.
 
     | BranchNodeType {
+          -- TODO: add types
       }
 
       -- | The 'LabelNodeType' represents nodes which denote code block labels.
       
     | LabelNodeType {
+          -- TODO: add types
       }
       
       -- | The 'StateNodeType' represents nodes involved in enforcing execution
       -- order between two or more operations.
 
     | StateNodeType {
+          -- TODO: add
       }
 
     deriving (Show)
