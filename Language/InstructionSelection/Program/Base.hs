@@ -432,6 +432,20 @@ data Operation
           sideEfOp :: SideEffectOperation
     }
     deriving (Show)
+             
+-- | Record for a branching.
+
+data Branching
+
+      -- | Unconditional jump.
+
+    = Jmp
+
+      -- | Conditional jump.
+
+    | CondJmp
+
+    deriving (Show)
 
 
 
@@ -482,7 +496,7 @@ data NodeType
       -- basic code block to another.
 
     | BranchNodeType {
-          -- TODO: add types
+          branch :: Branching
       }
 
       -- | The 'LabelNodeType' represents nodes which denote code block labels.
