@@ -3,13 +3,13 @@
 -- Module      :  Language.InstructionSelection.Patterns.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
--- 
+--
 -- Maintainer  :  ghb@kth.se
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Contains the data and types most commonly used for representing the patterns.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Patterns.Base where
@@ -66,7 +66,7 @@ data InstructionOperand
     = InstructionOperand {
           opId :: String
       }
-    deriving (Show, Eq)             
+    deriving (Show, Eq)
 
 
 -- | Record for describing a data value. This is simply a wrapper to allow
@@ -150,7 +150,7 @@ data AssemblyString
 
 -- | Record for representing a pattern including the constraints.
 
-data Pattern 
+data Pattern
     = Pattern {
 
           -- | The expression DAG which represents the pattern.

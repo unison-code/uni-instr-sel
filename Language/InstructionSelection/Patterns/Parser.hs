@@ -3,15 +3,15 @@
 -- Module      :  Language.InstSel.Patterns.Parser
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
--- 
+--
 -- Maintainer  :  ghb@kth.se
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Parses a file of instruction patterns formatted as S-expressions. The
 -- instruction patterns consists of a set of constraints and one or more
 -- patterns expressed as LLVM IR code.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Patterns.Parser (
@@ -31,11 +31,11 @@ istrip = join " " . filter (\x -> x /= "") . split " "
 whitespace = " \r\n\t"
 
 llvmInstructions :: GenParser Char st [LlvmInstruction]
-llvmInstructions = 
+llvmInstructions =
   do instructions <- many llvmInstruction
      eof
      return instructions
-     
+
 llvmInstruction :: GenParser Char st LlvmInstruction
 llvmInstruction = labeledData "instruction" llvmInstruction'
 
@@ -65,7 +65,7 @@ patternConstraint :: GenParser Char st PatternConstraint
 patternConstraint = parens patternConstraint'
 
 patternConstraint' :: GenParser Char st PatternConstraint
-patternConstraint' = 
+patternConstraint' =
   do whiteSpace
      (    try allocPatternConstraint
       <|> try immPatternConstraint
@@ -73,7 +73,7 @@ patternConstraint' =
       <|> try assertPatternConstraint)
 
 allocPatternConstraint :: GenParser Char st PatternConstraint
-allocPatternConstraint = 
+allocPatternConstraint =
   do string "allocate-in"
      whiteSpace
      var <- variable
@@ -83,7 +83,7 @@ allocPatternConstraint =
      return (AllocateIn var reg)
 
 immPatternConstraint :: GenParser Char st PatternConstraint
-immPatternConstraint = 
+immPatternConstraint =
   do try (string "zimm") <|> try (string "imm")
      whiteSpace
      lower <- many1 digit
@@ -95,17 +95,17 @@ immPatternConstraint =
      return (ImmediateRange imm (read lower) (read upper))
 
 aliasPatternConstraint :: GenParser Char st PatternConstraint
-aliasPatternConstraint = 
+aliasPatternConstraint =
   do string "alias"
      whiteSpace
      temp1 <- temporary
-     whiteSpace        
+     whiteSpace
      temp2 <- temporary
      whiteSpace
      return (Alias temp1 temp2)
 
 assertPatternConstraint :: GenParser Char st PatternConstraint
-assertPatternConstraint = 
+assertPatternConstraint =
   do string "assert"
      code <- parens pData
      whiteSpace
@@ -118,7 +118,7 @@ llvmStatement :: GenParser Char st LlvmStatement
 llvmStatement = parens pData
 
 variable :: GenParser Char st Variable
-variable = 
+variable =
   do (    try (do temp <- temporary
                   return (VTemporary temp))
       <|> try (do param <- parameter
@@ -128,22 +128,22 @@ temporary :: GenParser Char st Temporary
 temporary = labeledData "tmp" temporary'
 
 temporary' :: GenParser Char st Temporary
-temporary' = 
+temporary' =
   do int <- many1 digit
      return (Temporary (read int))
 
 immediate :: GenParser Char st Immediate
-immediate = 
+immediate =
   do imm <- many1 alphaNum
      return (Immediate (read imm))
-     
+
 parameter :: GenParser Char st Parameter
-parameter = 
+parameter =
   do param <- many1 alphaNum
      return (Parameter param)
 
 registerClass :: GenParser Char st RegisterClass
-registerClass = 
+registerClass =
   do reg <- many1 (try alphaNum <|> try (char '_'))
      return (RegisterClass reg)
 
@@ -151,7 +151,7 @@ labeledData :: String -> GenParser Char st a -> GenParser Char st a
 labeledData str p = parens (labeledData' str p)
 
 labeledData' :: String -> GenParser Char st a -> GenParser Char st a
-labeledData' str p = 
+labeledData' str p =
   do string str
      whiteSpace
      result <- p

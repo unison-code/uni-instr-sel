@@ -3,13 +3,13 @@
 -- Module      :  Language.LLVM.IR.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
--- 
+--
 -- Maintainer  :  ghb@kth.se
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Contains the data and types most commonly used for representing LLVM IR code.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Language.LLVM.IR.Base where
@@ -81,9 +81,9 @@ data Code
           -- | Chunk of LLVM IR code. The order of the statements is
           -- significant: list ordering of left to right corresponds to code
           -- ordering of top to bottom.
-  
+
           cCode :: [Statement]
-  
+
       }
     deriving (Show)
 
@@ -103,11 +103,11 @@ data Block
 
 data Function
     = Function {
-  
+
           -- | Function body. The order of blocks is significant and must be as
           -- provided by LLVM.
-      
+
           blocks :: [Block]
-  
+
       }
     deriving (Show)

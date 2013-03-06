@@ -3,14 +3,14 @@
 -- Module      :  Language.InstructionSelection.Program.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
--- 
+--
 -- Maintainer  :  ghb@kth.se
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Contains the data and types for representing programs as unified control and
 -- data flow graphs on a per-function basis.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Program.Base where
@@ -115,7 +115,7 @@ data PureOperation
     -- denoted by @y@, then this operation represents @x % y@.
 
     | IURem
-      
+
     -- | Signed integer remainder. Same as for 'IURem' but for signed integer
     -- data.
 
@@ -152,7 +152,7 @@ data PureOperation
     -- then this operation represents @x % y@.
 
     | FRem
-      
+
     ------------------------------
     -- Bit operations
     ------------------------------
@@ -168,7 +168,7 @@ data PureOperation
     -- denoted by @y@, then this operation represents @x > y@.
 
     | LShr
-      
+
     -- | Bitwise arithmetic right shift (with sign extension). Consumes 2 data
     -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
     -- data at input 1 is denoted by @y@, then this operation represents @x >
@@ -180,7 +180,7 @@ data PureOperation
     -- node. Commutative.
 
     | And
-      
+
     -- | Bitwise OR (@|@). Consumes 2 data node and produces 1 data
     -- node. Commutative.
 
@@ -203,58 +203,58 @@ data PureOperation
     -- data node. Commutative.
 
     | ICmpEq
-      
+
     -- | Integer inequality comparison (@!=@). Consumes 2 data node and produces
     -- 1 data node. Commutative.
 
     | ICmpNEq
-      
+
     -- | Unsigned integer greater-than comparison (@>@). Consumes 2 data node
     -- and produces 1 data node. If data at input 0 is denoted by @x@, and data
     -- at input 1 is denoted by @y@, then this operation represents @x > y@.
 
     | IUCmpGT
-      
+
     -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT' but
     -- for signed integer data.
 
     | ISCmpGT
-      
+
     -- | Unsigned integer greater-than-or-equal comparison (@>=@). Consumes 2
     -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
     -- and data at input 1 is denoted by @y@, then this operation represents @x
     -- >= y@.
 
     | IUCmpGE
-      
+
     -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
     -- 'IUCmpGE' but for signed integer data.
 
     | ISCmpGE
-      
+
     -- | Unsigned integer less-than comparison (@<@). Consumes 2 data node and
     -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
     -- input 1 is denoted by @y@, then this operation represents @x < y@.
 
     | IUCmpLT
-      
+
     -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
     -- for signed integer data.
 
     | ISCmpLT
-      
+
     -- | Unsigned integer less-than-or-equal comparison (@<=@). Consumes 2 data
     -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
     -- data at input 1 is denoted by @y@, then this operation represents @x <=
     -- y@.
 
     | IUCmpLE
-      
+
     -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
     -- 'IUCmpLE' but for signed integer data.
 
     | ISCmpLE
-      
+
     ------------------------------
     -- Floating-point operations
     ------------------------------
@@ -264,25 +264,25 @@ data PureOperation
     -- are equal, then the operation returns @True@. Commutative.
 
     | FUCmpEq
-      
+
     -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
     -- produces 1 data node. If none of the input values is a QNaN and both
     -- values are equal, then the operation returns @True@. Commutative.
-      
+
     | FOCmpEq
-      
+
     -- | Unordered float inequality comparison (@!=@). Consumes 2 data node and
     -- produces 1 data node. If any of the input values is a QNaN or both values
     -- are inequal, then the operation returns @True@. Commutative.
 
     | FUCmpNEq
-      
+
     -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
     -- produces 1 data node. If none of the input values is a QNaN and both
     -- values are inequal, then the operation returns @True@. Commutative.
-      
+
     | FOCmpNEq
-      
+
     -- | Unordered float greater-than comparison (@>@). Consumes 2 data node and
     -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
     -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
@@ -290,7 +290,7 @@ data PureOperation
     -- returns @True@.
 
     | FUCmpGT
-      
+
     -- | Ordered float greater-than comparison (@>@). Consumes 2 data node and
     -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
     -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
@@ -298,7 +298,7 @@ data PureOperation
     -- operation returns @True@.
 
     | FOCmpGT
-      
+
     -- | Unordered float greater-than-or-equal comparison (@>=@). Consumes 2
     -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
     -- and data at input 1 is denoted by @y@, then this operation represents @x
@@ -306,7 +306,7 @@ data PureOperation
     -- then the operation returns @True@.
 
     | FUCmpGE
-      
+
     -- | Ordered float greater-than-or-equal comparison (@>=@). Consumes 2 data
     -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
     -- data at input 1 is denoted by @y@, then this operation represents @x >=
@@ -314,7 +314,7 @@ data PureOperation
     -- the operation returns @True@.
 
     | FOCmpGE
-      
+
     -- | Unordered float less-than comparison (@<@). Consumes 2 data node and
     -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
     -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
@@ -322,7 +322,7 @@ data PureOperation
     -- returns @True@.
 
     | FUCmpLT
-      
+
     -- | Ordered float less-than comparison (@<@). Consumes 2 data node and
     -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
     -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
@@ -330,7 +330,7 @@ data PureOperation
     -- operation returns @True@.
 
     | FOCmpLT
-      
+
     -- | Unordered float less-than-or-equal comparison (@<=@). Consumes 2 data
     -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
     -- data at input 1 is denoted by @y@, then this operation represents @x <=
@@ -338,7 +338,7 @@ data PureOperation
     -- the operation returns @True@.
 
     | FUCmpLE
-      
+
     -- | Ordered float less-than-or-equal comparison (@<=@). Consumes 2 data
     -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
     -- data at input 1 is denoted by @y@, then this operation represents @x <=
@@ -351,7 +351,7 @@ data PureOperation
     -- If any of the input values is a QNaN, then the operation returns
     -- @True@. Commutative.
 
-    | FCmpUn 
+    | FCmpUn
 
     ------------------------------------------------------------
     -- Other operations
@@ -369,9 +369,9 @@ data PureOperation
     -- always be a data node produced by another 'Phi' or 'PhiCascade' node.
 
     | PhiCascade
-    
+
     deriving (Show)
-             
+
 -- | Record for describing a side-effect data operation that consumes and/or
 -- produces data. Side-effect operations are those that depend on or modify some
 -- external state, meaning that they can produce different results even if the
@@ -401,7 +401,7 @@ data SideEffectOperation
     -- | Memory load.
 
     = MemLoad
-      
+
     -- | Memory store.
 
     | MemStore
@@ -412,14 +412,14 @@ data SideEffectOperation
 
       -- | Immediate call, where the function to invoke is determined via a
       -- function label.
-      
+
     | ImmediateCall
-      
+
       -- | Indirect call, where the function to invoke is determined via a
       -- register.
 
     | IndirectCall
-    
+
     deriving (Show)
 
 -- | Record for an operation. An operation is either pure or has side effects.
@@ -432,7 +432,7 @@ data Operation
           sideEfOp :: SideEffectOperation
     }
     deriving (Show)
-             
+
 -- | Record for a branching.
 
 data Branching
@@ -476,7 +476,7 @@ data NodeType
     | OpNodeType {
           nodeOp :: Operation
       }
-      
+
       -- | The 'TransferNode' represents nodes involved in transfers of data
       -- located at one particular location to another. If the data locations
       -- belong to different storage classes, then an operation is necessary to
@@ -500,11 +500,11 @@ data NodeType
       }
 
       -- | The 'LabelNodeType' represents nodes which denote code block labels.
-      
+
     | LabelNodeType {
           -- TODO: add types
       }
-      
+
       -- | The 'StateNodeType' represents nodes involved in enforcing execution
       -- order between two or more operations.
 
@@ -552,7 +552,7 @@ data EdgeInfo
 -- 'Data.Graph.Inductive.Tree.Gr' where the nodes consists of 'Node's and the
 -- edges of 'EdgeInfo's.
 
-data CDFG 
+data CDFG
     = CDFG {
           cdfgGraph :: Gr Node EdgeInfo
       }
@@ -589,7 +589,7 @@ data Module
 -- (dependencies on other functions are resolved at linking time, not compile
 -- time). This is the outer-most level of data records.
 
-data Program 
+data Program
     = Program {
 
           -- | List of 'Module's which comprises the 'Program'. The 'Program'

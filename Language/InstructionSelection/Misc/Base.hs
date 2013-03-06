@@ -3,13 +3,13 @@
 -- Module      :  Language.InstructionSelection.Misc.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
--- 
+--
 -- Maintainer  :  ghb@kth.se
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Contains generic data and types.
--- 
+--
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Misc.Base where
@@ -21,7 +21,7 @@ data Range t
           -- | Smallest possible value (i.e. inclusive).
 
           lowerBound :: t
-          
+
           -- | Largest possible value (i.e. inclusive).
 
         , upperBound :: t
@@ -33,11 +33,11 @@ data Range t
 
 newtype Natural = Natural Integer
     deriving (Show)
-             
+
 toNatural :: Integer -> Natural
 toNatural x | x < 0     = error "Natural cannot be negative"
             | otherwise = Natural x
-                          
+
 fromNatural :: Natural -> Integer
 fromNatural (Natural i) = i
 
