@@ -31,6 +31,8 @@ import Data.Graph.Inductive.Tree
 data Data
 
       -- | Represents all data values which are fixed and known at compile time.
+      --
+      -- Data nodes with constant values have no inputs.
 
     = Constant {
           constValue :: Integer
@@ -41,12 +43,16 @@ data Data
       -- should never appear as part of the program. The idea is to represent
       -- immediate values in patterns through symbolic names which will be
       -- replaced by the constant values upon code emission.
+      --
+      -- Data nodes with immediate symbols have no inputs.
 
     | Immediate {
           immId :: String
       }
 
       -- | Represents all temporary data values.
+      --
+      -- Data nodes with temporaries have exactly one input.
 
     | Temporary {
           tempId :: String
@@ -366,11 +372,26 @@ data PureOperation
 
     | Phi
 
-      -- | 1-value-input phi operation. Consumes 1 tuple of data node and label
-      -- node and 1 data node and produces 1 data node. Input 0 is expected to
-      -- always be a data node produced by another 'Phi' or 'PhiCascade' node.
+      -- | 1-value-input phi operation. Consumes 1 tuple of data node and 1 data
+      -- node produced by another 'Phi' or 'PhiCascade' node and produces 1 data
+      -- node. Input 0 is expected to always be the consumed data node.
+      --
+      -- A 'PhiCascade' node should never appear on its own (i.e. without a
+      -- 'Phi' node) inside a pattern.
 
     | PhiCascade
+
+      -- | Data transfer operation. Consumes 1 data node and produces 1 data
+      -- node. This is used to enable data to be transferred from one register
+      -- class to another if two dataflow-related operations operate on
+      -- different register classes. In traditional compilers this transfer has
+      -- been treated either through approximation or as a post-step in code
+      -- emission (i.e. after instruction selection and register allocation has
+      -- been performed), but through the use of data nodes and transfer
+      -- operations this overhead is taken into account already in the
+      -- instruction selection phase.
+
+    | Transfer
 
     deriving (Show)
 
@@ -438,11 +459,13 @@ data SideEffectOperation
     | ImmediateCallNoParams
 
       -- | Immediate call with one or more parameters where the function to
-      -- invoke is determined via a function label. Consumes 1 label node, 1
-      -- parameter-collecter node and 1 state node and produces 1 state node and
-      -- 1 data node. Input 0 and output 0 are expected to always be the states
-      -- node consumed and produced, respectively, and input 1 is expected to
-      -- always be the label node consumed.
+      -- invoke is determined via a function label. Consumes 1 label node, 1 ???
+      -- node and 1 state node and produces 1 state node and 1 data node. Input
+      -- 0 and output 0 are expected to always be the states node consumed and
+      -- produced, respectively, and input 1 is expected to always be the
+      -- function label node consumed.
+      --
+      -- TODO: What to call the node which represents the parameters?
 
     | ImmediateCallWithParams
 
@@ -469,18 +492,32 @@ data Operation
     }
     deriving (Show)
 
--- | Record for a branching.
+------------------------------------------------------------
+-- Other elements
+------------------------------------------------------------
 
-data Branching
+-- | Record for a jump.
 
-      -- | Unconditional jump.
+data Jump
+
+      -- | Unconditional jump. Consumes no nodes and produces 1 label node.
 
     = Jmp
 
-      -- | Conditional jump.
+      -- | Conditional jump. Consumes 1 data node and produces 2 label nodes.
+      -- Output 0 is expected to always be the label which is reached when the
+      -- data is evaluated to @False@.
 
     | CondJmp
 
+    deriving (Show)
+
+-- | Record for a label of a basic code block or a function.
+
+data Label
+    = Label {
+          label :: String
+      }
     deriving (Show)
 
 
@@ -514,55 +551,75 @@ data NodeType
           nodeOp :: Operation
       }
 
-      -- | The 'TransferNodeType' represents nodes involved in transfers of data
-      -- located at one particular location to another. Such nodes are
-      -- collectively called /transfer nodes/.If the data locations belong to
-      -- different storage classes, then an operation is necessary to enable
-      -- that transfer. In contrast, if the data locations belong to the same
-      -- storage class, then no such operation is required. In traditional
-      -- compilers this transfer has been treated either through approximation
-      -- or as a post-step in code emission (i.e. after instruction selection
-      -- and register allocation has been performed), but through the use of
-      -- data nodes this transfer becomes apparent already in the instruction
-      -- selection phase.
+      -- | The 'JumpNodeType' represents nodes involved in jumping (also known
+      -- as branching) from one basic code block to another. Such nodes are
+      -- collectively called /jump nodes/.
 
-    | TransferNodeType {
-          -- TODO: add types? Maybe it's not needed
+    | JumpNodeType {
+          nodeJump :: Jump
       }
 
-      -- | The 'BranchNodeType' represents nodes involved in branching from one
-      -- basic code block to another. Such nodes are collectively called
-      -- /branch nodes/
-
-    | BranchNodeType {
-          branch :: Branching
-      }
-
-      -- | The 'LabelNodeType' represents nodes which denote code block
-      -- labels. Such nodes are collectively called /label nodes/.
+      -- | The 'LabelNodeType' represents nodes which denote basic code block
+      -- labels or function labels. Such nodes are collectively called /label
+      -- nodes/.
+      --
+      -- Label nodes have exactly one input. The input may come from either a
+      -- jump node, a label-merger node, or a dummy node.
 
     | LabelNodeType {
-          -- TODO: add types
+          nodeLabel :: Label
       }
 
       -- | The 'StateNodeType' represents nodes involved in enforcing execution
       -- order between two or more operations. Such nodes are collectively
       -- called /state nodes/.
+      --
+      -- State nodes have exactly one input. If a state is an initial state
+      -- (i.e. has no natural input) the input comes from a dummy node.
 
-    | StateNodeType {
-          -- TODO: add types? Maybe it's not needed
-      }
+    | StateNodeType
+
+      -- | The 'LabelMergerNodeType' represents nodes which consumes two
+      -- identical labels and produces single identical label, and such nodes
+      -- are thus called /label-merger nodes/.
+      --
+      -- This is needed for the pattern matching phase where each node must have
+      -- a fixed number of inputs. Since a label may have an arbitrary number of
+      -- branches to it, this restriction is worked around by multiplying the
+      -- label nodes and then merging them through label-merger nodes. This also
+      -- prevents matching of complex patterns which would yield situations
+      -- where branchings would occur to an intermediate point inside the
+      -- instruction (which is not possible).
+
+    | LabelMergerNodeType
+
+      -- | The 'DummyNodeType' represents nodes which are only used to provide
+      -- input to nodes where there is no other natural source of input. Such
+      -- nodes are thus called /dummy nodes/.
+      --
+      -- The reason behind the requirement of each node being required to have a
+      -- fixed number of inputs is due to the pattern matcher algorithm. The
+      -- pattern matcher operates by doing a table lookup for each node. There
+      -- is a table for each node type with a dimension equal to the number of
+      -- inputs to that node type. Since the tables are precompiled the number
+      -- of inputs must be fixed. After matching the dummy nodes are no longer
+      -- needed and can safely be removed.
+
+    | DummyNodeType
 
     deriving (Show)
 
 -- | Record for describing a node in the control and data flow graph. Each node
 -- is described by a 'NodeType', and each node can also have an arbitrary set of
--- constraints applied to it (although this list may of course be empty).
+-- constraints applied to it (although this list may of course be empty). All
+-- nodes are also assigned a node number which is required to be unique for the
+-- entire graph (i.e. within each function).
 
 data Node
     = Node {
           nodeType :: NodeType
         , nodeConstraints :: [Constraint]
+        , nodeNumber :: Integer
       }
     deriving (Show)
 
