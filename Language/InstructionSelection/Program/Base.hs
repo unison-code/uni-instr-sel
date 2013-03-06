@@ -65,7 +65,8 @@ data Data
 -- meaning that they will always produce the same output for the same set of
 -- inputs. The consequence of this is that such operations can be ordered in any
 -- arbitrary way with respect to other operations. Hence, pure operations are
--- the opposite of side-effect operations.
+-- the opposite of side-effect operations and never consume or produce state
+-- nodes.
 --
 -- Concerning floating-point: A floating-point value can either denote a \real
 -- value\ or \not a number\ (NaN) which indicate errors. NaNs in turn can be
@@ -83,41 +84,41 @@ data PureOperation
     -- Integer operations
     ------------------------------
 
-    -- | Integer addition. Consumes 2 data nodes and produces 1 data
-    -- node. Commutative.
+      -- | Integer addition. Consumes 2 data nodes and produces 1 data
+      -- node. Commutative.
 
     = IAdd
 
-    -- | Integer subtraction. Consumes 2 data nodes and produces 1 data node. If
-    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
-    -- then this operation represents @x - y@.
+      -- | Integer subtraction. Consumes 2 data nodes and produces 1 data
+      -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+      -- denoted by @y@, then this operation represents @x - y@.
 
     | ISub
 
-    -- | Integer multiplication. Consumes 2 data nodes and produces 1 data
-    -- node. Commutative.
+      -- | Integer multiplication. Consumes 2 data nodes and produces 1 data
+      -- node. Commutative.
 
     | IMul
 
-    -- | Unsigned integer division. Consumes 2 data nodes and produces 1 data
-    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
-    -- denoted by @y@, then this operation represents @x / y@.
+      -- | Unsigned integer division. Consumes 2 data nodes and produces 1 data
+      -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+      -- denoted by @y@, then this operation represents @x / y@.
 
     | IUDiv
 
-    -- | Unsigned integer remainder. Same as for 'IUDiv' but for signed integer
-    -- data.
+      -- | Unsigned integer remainder. Same as for 'IUDiv' but for signed
+      -- integer data.
 
     | ISDiv
 
-    -- | Unsigned integer remainder. Consumes 2 data nodes and produces 1 data
-    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
-    -- denoted by @y@, then this operation represents @x % y@.
+      -- | Unsigned integer remainder. Consumes 2 data nodes and produces 1 data
+      -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+      -- denoted by @y@, then this operation represents @x % y@.
 
     | IURem
 
-    -- | Signed integer remainder. Same as for 'IURem' but for signed integer
-    -- data.
+      -- | Signed integer remainder. Same as for 'IURem' but for signed integer
+      -- data.
 
     | ISRem
 
@@ -125,31 +126,31 @@ data PureOperation
     -- Floating-point operations
     ------------------------------
 
-    -- | Float addition. Consumes 2 data nodes and produces 1 data
-    -- node. Commutative.
+      -- | Float addition. Consumes 2 data nodes and produces 1 data
+      -- node. Commutative.
 
     | FAdd
 
-    -- | Float subtraction. Consumes 2 data nodes and produces 1 data node. If
-    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
-    -- then this operation represents @x - y@.
+      -- | Float subtraction. Consumes 2 data nodes and produces 1 data node. If
+      -- data at input 0 is denoted by @x@, and data at input 1 is denoted by
+      -- @y@, then this operation represents @x - y@.
 
     | FSub
 
-    -- | Float multiplication. Consumes 2 data nodes and produces 1 data
-    -- node. Commutative.
+      -- | Float multiplication. Consumes 2 data nodes and produces 1 data
+      -- node. Commutative.
 
     | FMul
 
-    -- | Float division. Consumes 2 data nodes and produces 1 data node. If data
-    -- at input 0 is denoted by @x@, and data at input 1 is denoted by @y@, then
-    -- this operation represents @x / y@.
+      -- | Float division. Consumes 2 data nodes and produces 1 data node. If
+      -- data at input 0 is denoted by @x@, and data at input 1 is denoted by
+      -- @y@, then this operation represents @x / y@.
 
     | FDiv
 
-    -- | Float remainder. Consumes 2 data nodes and produces 1 data node. If
-    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
-    -- then this operation represents @x % y@.
+      -- | Float remainder. Consumes 2 data nodes and produces 1 data node. If
+      -- data at input 0 is denoted by @x@, and data at input 1 is denoted by
+      -- @y@, then this operation represents @x % y@.
 
     | FRem
 
@@ -157,37 +158,37 @@ data PureOperation
     -- Bit operations
     ------------------------------
 
-    -- | Bitwise left shift. Consumes 2 data node and produces 1 data node. If
-    -- data at input 0 is denoted by @x@, and data at input 1 is denoted by @y@,
-    -- then this operation represents @x < y@.
+      -- | Bitwise left shift. Consumes 2 data node and produces 1 data node. If
+      -- data at input 0 is denoted by @x@, and data at input 1 is denoted by
+      -- @y@, then this operation represents @x < y@.
 
     | Shl
 
-    -- | Bitwise logical right shift. Consumes 2 data node and produces 1 data
-    -- node. If data at input 0 is denoted by @x@, and data at input 1 is
-    -- denoted by @y@, then this operation represents @x > y@.
+      -- | Bitwise logical right shift. Consumes 2 data node and produces 1 data
+      -- node. If data at input 0 is denoted by @x@, and data at input 1 is
+      -- denoted by @y@, then this operation represents @x > y@.
 
     | LShr
 
-    -- | Bitwise arithmetic right shift (with sign extension). Consumes 2 data
-    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
-    -- data at input 1 is denoted by @y@, then this operation represents @x >
-    -- y@.
+      -- | Bitwise arithmetic right shift (with sign extension). Consumes 2 data
+      -- node and produces 1 data node. If data at input 0 is denoted by @x@,
+      -- and data at input 1 is denoted by @y@, then this operation represents
+      -- @x > y@.
 
     | AShr
 
-    -- | Bitwise AND (@\&@). Consumes 2 data node and produces 1 data
-    -- node. Commutative.
+      -- | Bitwise AND (@\&@). Consumes 2 data node and produces 1 data
+      -- node. Commutative.
 
     | And
 
-    -- | Bitwise OR (@|@). Consumes 2 data node and produces 1 data
-    -- node. Commutative.
+      -- | Bitwise OR (@|@). Consumes 2 data node and produces 1 data
+      -- node. Commutative.
 
     | Or
 
-    -- | Bitwise XOR (@^@). Consumes 2 data node and produces 1 data
-    -- node. Commutative.
+      -- | Bitwise XOR (@^@). Consumes 2 data node and produces 1 data
+      -- node. Commutative.
 
     | Xor
 
@@ -199,59 +200,60 @@ data PureOperation
     -- Integer operations
     ------------------------------
 
-    -- | Integer equality comparison (@==@). Consumes 2 data node and produces 1
-    -- data node. Commutative.
+      -- | Integer equality comparison (@==@). Consumes 2 data node and produces
+      -- 1 data node. Commutative.
 
     | ICmpEq
 
-    -- | Integer inequality comparison (@!=@). Consumes 2 data node and produces
-    -- 1 data node. Commutative.
+      -- | Integer inequality comparison (@!=@). Consumes 2 data node and
+      -- produces 1 data node. Commutative.
 
     | ICmpNEq
 
-    -- | Unsigned integer greater-than comparison (@>@). Consumes 2 data node
-    -- and produces 1 data node. If data at input 0 is denoted by @x@, and data
-    -- at input 1 is denoted by @y@, then this operation represents @x > y@.
+      -- | Unsigned integer greater-than comparison (@>@). Consumes 2 data node
+      -- and produces 1 data node. If data at input 0 is denoted by @x@, and
+      -- data at input 1 is denoted by @y@, then this operation represents @x >
+      -- y@.
 
     | IUCmpGT
 
-    -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT' but
-    -- for signed integer data.
+      -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT'
+      -- but for signed integer data.
 
     | ISCmpGT
 
-    -- | Unsigned integer greater-than-or-equal comparison (@>=@). Consumes 2
-    -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
-    -- and data at input 1 is denoted by @y@, then this operation represents @x
-    -- >= y@.
+      -- | Unsigned integer greater-than-or-equal comparison (@>=@). Consumes 2
+      -- data node and produces 1 data node. If data at input 0 is denoted by
+      -- @x@, and data at input 1 is denoted by @y@, then this operation
+      -- represents @x >= y@.
 
     | IUCmpGE
 
-    -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
-    -- 'IUCmpGE' but for signed integer data.
+      -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
+      -- 'IUCmpGE' but for signed integer data.
 
     | ISCmpGE
 
-    -- | Unsigned integer less-than comparison (@<@). Consumes 2 data node and
-    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
-    -- input 1 is denoted by @y@, then this operation represents @x < y@.
+      -- | Unsigned integer less-than comparison (@<@). Consumes 2 data node and
+      -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+      -- input 1 is denoted by @y@, then this operation represents @x < y@.
 
     | IUCmpLT
 
-    -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
-    -- for signed integer data.
+      -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
+      -- for signed integer data.
 
     | ISCmpLT
 
-    -- | Unsigned integer less-than-or-equal comparison (@<=@). Consumes 2 data
-    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
-    -- data at input 1 is denoted by @y@, then this operation represents @x <=
-    -- y@.
+      -- | Unsigned integer less-than-or-equal comparison (@<=@). Consumes 2
+      -- data node and produces 1 data node. If data at input 0 is denoted by
+      -- @x@, and data at input 1 is denoted by @y@, then this operation
+      -- represents @x <= y@.
 
     | IUCmpLE
 
-    -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
-    -- 'IUCmpLE' but for signed integer data.
+      -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
+      -- 'IUCmpLE' but for signed integer data.
 
     | ISCmpLE
 
@@ -259,97 +261,97 @@ data PureOperation
     -- Floating-point operations
     ------------------------------
 
-    -- | Unordered float equality comparison (@==@). Consumes 2 data node and
-    -- produces 1 data node. If any of the input values is a QNaN or both values
-    -- are equal, then the operation returns @True@. Commutative.
+      -- | Unordered float equality comparison (@==@). Consumes 2 data node and
+      -- produces 1 data node. If any of the input values is a QNaN or both
+      -- values are equal, then the operation returns @True@. Commutative.
 
     | FUCmpEq
 
-    -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
-    -- produces 1 data node. If none of the input values is a QNaN and both
-    -- values are equal, then the operation returns @True@. Commutative.
+      -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
+      -- produces 1 data node. If none of the input values is a QNaN and both
+      -- values are equal, then the operation returns @True@. Commutative.
 
     | FOCmpEq
 
-    -- | Unordered float inequality comparison (@!=@). Consumes 2 data node and
-    -- produces 1 data node. If any of the input values is a QNaN or both values
-    -- are inequal, then the operation returns @True@. Commutative.
+      -- | Unordered float inequality comparison (@!=@). Consumes 2 data node
+      -- and produces 1 data node. If any of the input values is a QNaN or both
+      -- values are inequal, then the operation returns @True@. Commutative.
 
     | FUCmpNEq
 
-    -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
-    -- produces 1 data node. If none of the input values is a QNaN and both
-    -- values are inequal, then the operation returns @True@. Commutative.
+      -- | Ordered float inequality comparison (@!=@). Consumes 2 data node and
+      -- produces 1 data node. If none of the input values is a QNaN and both
+      -- values are inequal, then the operation returns @True@. Commutative.
 
     | FOCmpNEq
 
-    -- | Unordered float greater-than comparison (@>@). Consumes 2 data node and
-    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
-    -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
-    -- if any of the input values is a QNaN or @x > y@ holds, then the operation
-    -- returns @True@.
+      -- | Unordered float greater-than comparison (@>@). Consumes 2 data node
+      -- and produces 1 data node. If data at input 0 is denoted by @x@, and
+      -- data at input 1 is denoted by @y@, then this operation represents @x >
+      -- y@. Hence, if any of the input values is a QNaN or @x > y@ holds, then
+      -- the operation returns @True@.
 
     | FUCmpGT
 
-    -- | Ordered float greater-than comparison (@>@). Consumes 2 data node and
-    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
-    -- input 1 is denoted by @y@, then this operation represents @x > y@. Hence,
-    -- if none of the input values is a QNaN and @x > y@ holds, then the
-    -- operation returns @True@.
+      -- | Ordered float greater-than comparison (@>@). Consumes 2 data node and
+      -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+      -- input 1 is denoted by @y@, then this operation represents @x >
+      -- y@. Hence, if none of the input values is a QNaN and @x > y@ holds,
+      -- then the operation returns @True@.
 
     | FOCmpGT
 
-    -- | Unordered float greater-than-or-equal comparison (@>=@). Consumes 2
-    -- data node and produces 1 data node. If data at input 0 is denoted by @x@,
-    -- and data at input 1 is denoted by @y@, then this operation represents @x
-    -- >= y@. Hence, if any of the input values is a QNaN or @x >= y@ holds,
-    -- then the operation returns @True@.
+      -- | Unordered float greater-than-or-equal comparison (@>=@). Consumes 2
+      -- data node and produces 1 data node. If data at input 0 is denoted by
+      -- @x@, and data at input 1 is denoted by @y@, then this operation
+      -- represents @x >= y@. Hence, if any of the input values is a QNaN or @x
+      -- >= y@ holds, then the operation returns @True@.
 
     | FUCmpGE
 
-    -- | Ordered float greater-than-or-equal comparison (@>=@). Consumes 2 data
-    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
-    -- data at input 1 is denoted by @y@, then this operation represents @x >=
-    -- y@. Hence, if none of the input values is a QNaN and @x >= y@ holds, then
-    -- the operation returns @True@.
+      -- | Ordered float greater-than-or-equal comparison (@>=@). Consumes 2
+      -- data node and produces 1 data node. If data at input 0 is denoted by
+      -- @x@, and data at input 1 is denoted by @y@, then this operation
+      -- represents @x >= y@. Hence, if none of the input values is a QNaN and
+      -- @x >= y@ holds, then the operation returns @True@.
 
     | FOCmpGE
 
-    -- | Unordered float less-than comparison (@<@). Consumes 2 data node and
-    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
-    -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
-    -- if any of the input values is a QNaN or @x < y@ holds, then the operation
-    -- returns @True@.
+      -- | Unordered float less-than comparison (@<@). Consumes 2 data node and
+      -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+      -- input 1 is denoted by @y@, then this operation represents @x <
+      -- y@. Hence, if any of the input values is a QNaN or @x < y@ holds, then
+      -- the operation returns @True@.
 
     | FUCmpLT
 
-    -- | Ordered float less-than comparison (@<@). Consumes 2 data node and
-    -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
-    -- input 1 is denoted by @y@, then this operation represents @x < y@. Hence,
-    -- if none of the input values is a QNaN and @x < y@ holds, then the
-    -- operation returns @True@.
+      -- | Ordered float less-than comparison (@<@). Consumes 2 data node and
+      -- produces 1 data node. If data at input 0 is denoted by @x@, and data at
+      -- input 1 is denoted by @y@, then this operation represents @x <
+      -- y@. Hence, if none of the input values is a QNaN and @x < y@ holds,
+      -- then the operation returns @True@.
 
     | FOCmpLT
 
-    -- | Unordered float less-than-or-equal comparison (@<=@). Consumes 2 data
-    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
-    -- data at input 1 is denoted by @y@, then this operation represents @x <=
-    -- y@. Hence, if any of the input values is a QNaN or @x <= y@ holds, then
-    -- the operation returns @True@.
+      -- | Unordered float less-than-or-equal comparison (@<=@). Consumes 2 data
+      -- node and produces 1 data node. If data at input 0 is denoted by @x@,
+      -- and data at input 1 is denoted by @y@, then this operation represents
+      -- @x <= y@. Hence, if any of the input values is a QNaN or @x <= y@
+      -- holds, then the operation returns @True@.
 
     | FUCmpLE
 
-    -- | Ordered float less-than-or-equal comparison (@<=@). Consumes 2 data
-    -- node and produces 1 data node. If data at input 0 is denoted by @x@, and
-    -- data at input 1 is denoted by @y@, then this operation represents @x <=
-    -- y@. Hence, if none of the input values is a QNaN and @x <= y@ holds, then
-    -- the operation returns @True@.
+      -- | Ordered float less-than-or-equal comparison (@<=@). Consumes 2 data
+      -- node and produces 1 data node. If data at input 0 is denoted by @x@,
+      -- and data at input 1 is denoted by @y@, then this operation represents
+      -- @x <= y@. Hence, if none of the input values is a QNaN and @x <= y@
+      -- holds, then the operation returns @True@.
 
     | FOCmpLE
 
-    -- | Float unordering check. Consumes 2 data nodes and produces 1 data node.
-    -- If any of the input values is a QNaN, then the operation returns
-    -- @True@. Commutative.
+      -- | Float unordering check. Consumes 2 data nodes and produces 1 data
+      -- node.  If any of the input values is a QNaN, then the operation returns
+      -- @True@. Commutative.
 
     | FCmpUn
 
@@ -357,16 +359,16 @@ data PureOperation
     -- Other operations
     ------------------------------------------------------------
 
-    -- | 2-value-input phi operation. Consumes 2 tuples of data nodes and label
-    -- nodes and 1 label node and produces 1 data node. Input 0 is expected to
-    -- always be the label wherein the phi operation resides, and inputs 1 and 2
-    -- are the tuples. Inputs 1 and 2 are commutative.
+      -- | 2-value-input phi operation. Consumes 2 tuples of data nodes and
+      -- label nodes and 1 label node and produces 1 data node. Input 0 is
+      -- expected to always be the label wherein the phi operation resides, and
+      -- inputs 1 and 2 are the tuples. Inputs 1 and 2 are commutative.
 
     | Phi
 
-    -- | 1-value-input phi operation. Consumes 1 tuple of data node and label
-    -- node and 1 data node and produces 1 data node. Input 0 is expected to
-    -- always be a data node produced by another 'Phi' or 'PhiCascade' node.
+      -- | 1-value-input phi operation. Consumes 1 tuple of data node and label
+      -- node and 1 data node and produces 1 data node. Input 0 is expected to
+      -- always be a data node produced by another 'Phi' or 'PhiCascade' node.
 
     | PhiCascade
 
@@ -386,9 +388,19 @@ data PureOperation
 -- side-effect operation A consumes the state produce by another side-effect
 -- operation B, then B must be scheduled before A.
 --
--- The edge from the state node to the side-effect operation node must always
--- have input number 0 (i.e. it is always the first edge into the side-effect
--- operation node).
+-- The edge from the consumed state node to the side-effect operation node must
+-- always have input number 0 (i.e. it is always the first edge into the
+-- side-effect operation node). Similarly, the edge from the side-effect
+-- operation node to the produced state node must always have output number 0
+-- (i.e. it is always the first edge out from the side-effect operation node).
+--
+-- Concerning function calls: There is no distinction between functions that
+-- return data from those that do not; all functions will be assumed to return 1
+-- data node. However, for the latter, this data will then never be used
+-- anywhere and thus not inflict any additional constraints on the program to be
+-- generated. The reason for this is to avoid having to differentiate between
+-- function with return values and those without return values, thus simplifying
+-- matters.
 --
 -- For comparison, see 'PureOperation'.
 
@@ -398,11 +410,18 @@ data SideEffectOperation
     -- Memory operations
     ------------------------------------------------------------
 
-    -- | Memory load.
+      -- | Memory load. Consumes 1 data node containing the address and 1 state
+      -- node and produces 1 data node and 1 state node. Input 0 and output 0
+      -- are expected to always be the state nodes consumed and produced,
+      -- respectively.
 
     = MemLoad
 
-    -- | Memory store.
+      -- | Memory store. Consumes 2 data nodes, one containing the address and
+      -- another containing the data to store, and 1 state node. Input 0 and
+      -- output 0 are expected to always be the state nodes consumed and
+      -- produced, respectively, and input 1 is expected to always be the
+      -- address.
 
     | MemStore
 
@@ -410,15 +429,32 @@ data SideEffectOperation
     -- Function calls
     ------------------------------------------------------------
 
-      -- | Immediate call, where the function to invoke is determined via a
-      -- function label.
+      -- | Immediate call with no parameters where the function to invoke is
+      -- determined via a function label. Consumes 1 label node and 1 state node
+      -- and produces 1 state node and 1 data node. Input 0 and output 0 are
+      -- expected to always be the states node consumed and produced,
+      -- respectively.
 
-    | ImmediateCall
+    | ImmediateCallNoParams
 
-      -- | Indirect call, where the function to invoke is determined via a
-      -- register.
+      -- | Immediate call with one or more parameters where the function to
+      -- invoke is determined via a function label. Consumes 1 label node, 1
+      -- parameter-collecter node and 1 state node and produces 1 state node and
+      -- 1 data node. Input 0 and output 0 are expected to always be the states
+      -- node consumed and produced, respectively, and input 1 is expected to
+      -- always be the label node consumed.
 
-    | IndirectCall
+    | ImmediateCallWithParams
+
+      -- | Indirect call. Same as 'ImmediateCallNoParams' but where the label
+      -- node is replaced by a data node.
+
+    | IndirectCallNoParams
+
+      -- | Indirect call. Same as 'ImmediateCallWithParams' but where the label
+      -- node is replaced by a data node.
+
+    | IndirectCallWithParams
 
     deriving (Show)
 
@@ -457,31 +493,33 @@ data Branching
 
 data NodeType
 
-      -- | The 'DataNode' represents nodes which denote data. The data may need,
-      -- at a later point in the compilation, to be stored at a data location
-      -- such as in a register or in memory. However, it may also be that the
-      -- value is computed as an intermediate value as part of a complex
-      -- instruction. In such instances the value is located within the pipeline
-      -- and thus do not require to be allocated a particular data
-      -- location. This depends of course on which instructions are available
-      -- and selected.
+      -- | The 'DataNodeType' represents nodes which denote data. Such nodes are
+      -- collectively called /data nodes/. The data may need, at a later point
+      -- in the compilation, to be stored at a data location such as in a
+      -- register or in memory. However, it may also be that the value is
+      -- computed as an intermediate value as part of a complex instruction. In
+      -- such instances the value is located within the pipeline and thus do not
+      -- require to be allocated a particular data location. This depends of
+      -- course on which instructions are available and selected.
 
     = DataNodeType {
           nodeData :: Data
       }
 
-      -- | The 'OpNode' represents nodes involved in operations which consume
-      -- data and/or produce data.
+      -- | The 'OpNodeType' represents nodes involved in operations which
+      -- consume data and/or produce data. Such nodes are collectively called
+      -- /operation nodes/.
 
     | OpNodeType {
           nodeOp :: Operation
       }
 
-      -- | The 'TransferNode' represents nodes involved in transfers of data
-      -- located at one particular location to another. If the data locations
-      -- belong to different storage classes, then an operation is necessary to
-      -- enable that transfer. In contrast, if the data locations belong to the
-      -- same storage class, then no such operation is required. In traditional
+      -- | The 'TransferNodeType' represents nodes involved in transfers of data
+      -- located at one particular location to another. Such nodes are
+      -- collectively called /transfer nodes/.If the data locations belong to
+      -- different storage classes, then an operation is necessary to enable
+      -- that transfer. In contrast, if the data locations belong to the same
+      -- storage class, then no such operation is required. In traditional
       -- compilers this transfer has been treated either through approximation
       -- or as a post-step in code emission (i.e. after instruction selection
       -- and register allocation has been performed), but through the use of
@@ -493,23 +531,26 @@ data NodeType
       }
 
       -- | The 'BranchNodeType' represents nodes involved in branching from one
-      -- basic code block to another.
+      -- basic code block to another. Such nodes are collectively called
+      -- /branch nodes/
 
     | BranchNodeType {
           branch :: Branching
       }
 
-      -- | The 'LabelNodeType' represents nodes which denote code block labels.
+      -- | The 'LabelNodeType' represents nodes which denote code block
+      -- labels. Such nodes are collectively called /label nodes/.
 
     | LabelNodeType {
           -- TODO: add types
       }
 
       -- | The 'StateNodeType' represents nodes involved in enforcing execution
-      -- order between two or more operations.
+      -- order between two or more operations. Such nodes are collectively
+      -- called /state nodes/.
 
     | StateNodeType {
-          -- TODO: add
+          -- TODO: add types? Maybe it's not needed
       }
 
     deriving (Show)
