@@ -365,21 +365,43 @@ data PureOperation
     -- Other operations
     ------------------------------------------------------------
 
+      -- | Variable value-input phi operation. Consumes a variable number
+      -- (although at least 2) of tuples of data nodes and label nodes and 1
+      -- label node and produces 1 data node. Input 0 is expected to always be
+      -- the label wherein the phi operation resides, and the remaining are the
+      -- tuples (which are commutative).
+      --
+      -- Since the pattern matcher requires nodes with fixed number of inputs,
+      -- all 'PhiVI' nodes will need to be replaced by 'PhiFI' followed by a
+      -- cascaded series of 'PhiFIC' nodes. Since this is an automated process,
+      -- the subject graph and pattern graphs to the instruction selection tool
+      -- should only use 'PhiVI' and never 'PhiFI' and 'PhiFIC' nodes as the
+      -- tool will take care of this conversion.
+
+    | PhiVI
+
       -- | 2-value-input phi operation. Consumes 2 tuples of data nodes and
       -- label nodes and 1 label node and produces 1 data node. Input 0 is
       -- expected to always be the label wherein the phi operation resides, and
       -- inputs 1 and 2 are the tuples. Inputs 1 and 2 are commutative.
-
-    | Phi
-
-      -- | 1-value-input phi operation. Consumes 1 tuple of data node and 1 data
-      -- node produced by another 'Phi' or 'PhiCascade' node and produces 1 data
-      -- node. Input 0 is expected to always be the consumed data node.
       --
-      -- A 'PhiCascade' node should never appear on its own (i.e. without a
-      -- 'Phi' node) inside a pattern.
+      -- This node type should never be used in the subject or pattern graphs!
+      -- Instead, only use the 'PhiVI' type.
 
-    | PhiCascade
+    | PhiFI
+
+      -- | 1-value-input phi cascade operation. Consumes 1 tuple of data node
+      -- and 1 data node produced by another 'PhiFI' or 'PhiFIC' node and
+      -- produces 1 data node. Input 0 is expected to always be the consumed
+      -- data node.
+      --
+      -- This node type should never be used in the subject or pattern graphs!
+      -- Instead, only use the 'PhiVI' type.
+      --
+      -- A 'PhiFIC' must be used in conjunction with a 'PhiFI' or another
+      -- 'PhiFIC' and must thus never appear on its own inside a pattern.
+
+    | PhiFIC
 
       -- | Data transfer operation. Consumes 1 data node and produces 1 data
       -- node. This is used to enable data to be transferred from one register
@@ -392,6 +414,29 @@ data PureOperation
       -- instruction selection phase.
 
     | Transfer
+
+      -- | Variable parameter-input join operation. Consumes a variable number
+      -- of data nodes and produces 1 data node. Commutative.
+      --
+      -- This is used to provide multiple parameter inputs to a function call
+      -- node (see 'ImmCallFIWParams'). Since the pattern matcher requires nodes
+      -- with fixed number of inputs, all 'ParamJoinVI' nodes will need to be
+      -- replaced by a cascaded series of 'ParamJoinFI' nodes. Since this is an
+      -- automated process, the subject graph and pattern graphs to the
+      -- instruction selection tool should only use 'ParamJoinVI' and never
+      -- 'ParamJoinFI' nodes as the tool will take care of this conversion.
+
+    | ParamJoinVI
+
+      -- | 2-parameter-input join operation. Consumes 2 data nodes and produces
+      -- 1 data node. Commutative.
+      --
+      -- This is used to provide multiple parameter inputs to a function call
+      -- node (see 'ImmCallFIWParams'). This node type should never be used in
+      -- the subject or pattern graphs! Instead, only use the 'ParamJoinVI'
+      -- type.
+
+    | ParamJoinFI
 
     deriving (Show)
 
@@ -450,34 +495,38 @@ data SideEffectOperation
     -- Function calls
     ------------------------------------------------------------
 
-      -- | Immediate call with no parameters where the function to invoke is
-      -- determined via a function label. Consumes 1 label node and 1 state node
-      -- and produces 1 state node and 1 data node. Input 0 and output 0 are
-      -- expected to always be the states node consumed and produced,
+      -- | Immediate call with no input parameters where the function to invoke
+      -- is determined via a function label. Consumes 1 label node and 1 state
+      -- node and produces 1 state node and 1 data node. Input 0 and output 0
+      -- are expected to always be the states node consumed and produced,
       -- respectively.
 
-    | ImmediateCallNoParams
+    | ImmCallNoParams
 
-      -- | Immediate call with one or more parameters where the function to
-      -- invoke is determined via a function label. Consumes 1 label node, 1 ???
-      -- node and 1 state node and produces 1 state node and 1 data node. Input
-      -- 0 and output 0 are expected to always be the states node consumed and
-      -- produced, respectively, and input 1 is expected to always be the
-      -- function label node consumed.
+      -- | Immediate call with one or more input parameters where the function
+      -- to invoke is determined via a function label. Consumes 1 label node, 1
+      -- data node and 1 state node and produces 1 state node and 1 data
+      -- node. Input 0 and output 0 are expected to always be the states node
+      -- consumed and produced, respectively, and input 1 is expected to always
+      -- be the function label node consumed.
       --
-      -- TODO: What to call the node which represents the parameters?
+      -- The input data node may be produced from either an operation (for a
+      -- single input), a 'ParamJoinVI' operation (for multiple inputs), or
+      -- through a cascaded series of 'ParamJoinFI' nodes (for multiple inputs).
+      -- However, for subject and pattern graphs no 'ParamJoinFI' nodes should
+      -- never be present; instead, only use the 'ParamJoinVI' node type.
 
-    | ImmediateCallWithParams
+    | ImmCallWParams
 
-      -- | Indirect call. Same as 'ImmediateCallNoParams' but where the label
-      -- node is replaced by a data node.
+      -- | Indirect call. Same as 'ImmCallNoParams' but where the label node
+      -- is replaced by a data node.
 
-    | IndirectCallNoParams
+    | IndCallNoParams
 
-      -- | Indirect call. Same as 'ImmediateCallWithParams' but where the label
-      -- node is replaced by a data node.
+      -- | Indirect call. Same as 'ImmCallNoParams' but where the label node
+      -- is replaced by a data node.
 
-    | IndirectCallWithParams
+    | IndCallWParams
 
     deriving (Show)
 
