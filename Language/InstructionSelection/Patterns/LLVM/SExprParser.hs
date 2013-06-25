@@ -182,13 +182,6 @@ pConstant' =
      int <- many1 digit
      return (read int)
 
---variable :: GenParser Char st Variable
---variable =
---  do (    try (do temp <- temporary
---                  return (VTemporary temp))
---      <|> try (do param <- parameter
---                  return (VParameter param)))
-
 pTemporary :: GenParser Char st Temporary
 pTemporary = labeledData "tmp" temporary'
 
