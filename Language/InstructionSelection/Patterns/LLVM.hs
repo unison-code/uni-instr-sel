@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.LlvmPatterns
+-- Module      :  Language.InstructionSelection.Patterns.LLVM
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,10 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Patterns.LlvmPatterns (
-      module Language.InstructionSelection.Patterns.LlvmPatterns.Base
+module Language.InstructionSelection.Patterns.LLVM (
+      module Language.InstructionSelection.Patterns.LLVM.Base
+      module Language.InstructionSelection.Patterns.LLVM.SExprParser
     ) where
 
-import Language.InstructionSelection.Patterns.LlvmPatterns.Base
+import Language.InstructionSelection.Patterns.LLVM.Base
+import Language.InstructionSelection.Patterns.LLVM.SExprParser
