@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstSel.Patterns.Parser
+-- Module      :  Language.InstructionSelection.Patterns.LlvmPatterns.SExprParser
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Patterns.Parser (
+module Language.InstructionSelection.Patterns.LlvmPatterns.SExprParser (
       parsePatterns
     ) where
 
