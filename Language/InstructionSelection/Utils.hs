@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Misc
+-- Module      :  Language.InstructionSelection.Utils
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Misc (
-      module Language.InstructionSelection.Misc.Base
+module Language.InstructionSelection.Utils (
+      module Language.InstructionSelection.Utils.Base
     ) where
 
-import Language.InstructionSelection.Misc.Base
+import Language.InstructionSelection.Utils.Base

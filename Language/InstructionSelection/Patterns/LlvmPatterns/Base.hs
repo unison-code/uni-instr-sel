@@ -15,10 +15,8 @@
 
 module Language.InstructionSelection.Patterns.LlvmPatterns.Base where
 
-import Language.InstructionSelection.Misc (Range)
-import Language.InstructionSelection.Misc (BinaryOp)
-import Language.InstructionSelection.Misc (ArithmeticOp)
-import Language.InstructionSelection.Misc (CompareOp)
+import Language.InstructionSelection.Utils (Range)
+import Language.InstructionSelection.OpTypes
 
 
 
@@ -171,9 +169,14 @@ data Constraint
     = AllocateIn RegisterSymbol DataSpace
 
       -- | The @ImmediateRange@ constraint limits the range of values that an
-      -- immediate value may take.
+      -- immediate value may take (including 0).
 
     | ImmediateRange ImmediateSymbol (Range Integer)
+
+      -- | The @ImmediateRange@ constraint limits the range of values that an
+      -- immediate value may take (excluding 0).
+
+    | ImmediateRangeNoZero ImmediateSymbol (Range Integer)
 
       -- | The @Alias@ constraint dictates that two temporaries must be the
       -- same, in the sense that both temporaries must be assigned the same
@@ -181,7 +184,7 @@ data Constraint
 
     | Alias Temporary Temporary
 
-      -- | TODO: add description
+      -- | The @Assert@ constraints contain any other, arbitrary constraints.
 
     | Assert AssertExpression
 
