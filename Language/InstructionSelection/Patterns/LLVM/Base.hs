@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.LlvmPatterns.Base
+-- Module      :  Language.InstructionSelection.LLVM.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -13,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Patterns.LlvmPatterns.Base where
+module Language.InstructionSelection.Patterns.LLVM.Base where
 
 import Language.InstructionSelection.Utils (Range)
 import Language.InstructionSelection.OpTypes
