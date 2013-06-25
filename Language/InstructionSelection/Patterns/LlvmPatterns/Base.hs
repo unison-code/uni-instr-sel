@@ -16,252 +16,11 @@
 module Language.InstructionSelection.Patterns.LlvmPatterns.Base where
 
 import Language.InstructionSelection.Misc (Range)
+import Language.InstructionSelection.Misc (BinaryOp)
+import Language.InstructionSelection.Misc (ArithmeticOp)
+import Language.InstructionSelection.Misc (CompareOp)
 
--- | Binary operation types.
 
-data BinaryOp
-
-    ------------------------------------------------------------
-    -- Arithmetic and logical operations
-    ------------------------------------------------------------
-
-    ------------------------------
-    -- Integer operations
-    ------------------------------
-
-      -- | Integer addition. Commutative.
-
-    = IAdd
-
-      -- | Integer subtraction.
-
-    | ISub
-
-      -- | Integer multiplication. Commutative.
-
-    | IMul
-
-      -- | Unsigned integer division.
-
-    | IUDiv
-
-      -- | Signed integer division.
-
-    | ISDiv
-
-      -- | Unsigned integer remainder.
-
-    | IURem
-
-      -- | Signed integer remainder.
-
-    | ISRem
-
-    ------------------------------
-    -- Floating-point operations
-    ------------------------------
-
-      -- | Float addition. Commutative.
-
-    | FAdd
-
-      -- | Float subtraction.
-
-    | FSub
-
-      -- | Float multiplication. Commutative.
-
-    | FMul
-
-      -- | Float division.
-
-    | FDiv
-
-      -- | Float remainder.
-
-    | FRem
-
-    ------------------------------
-    -- Bit operations
-    ------------------------------
-
-      -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
-      -- by @y@, then this operation represents @x < y@.
-
-    | Shl
-
-      -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
-      -- denoted by @y@, then this operation represents @x > y@.
-
-    | LShr
-
-      -- | Bitwise arithmetic right shift (with sign extension). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x > y@.
-
-    | AShr
-
-      -- | Bitwise AND (@\&@). Commutative.
-
-    | And
-
-      -- | Bitwise OR (@|@). Commutative.
-
-    | Or
-
-      -- | Bitwise XOR (@^@). Commutative.
-
-    | Xor
-
-    ------------------------------------------------------------
-    -- Comparison operations
-    ------------------------------------------------------------
-
-    ------------------------------
-    -- Integer operations
-    ------------------------------
-
-      -- | Integer equality comparison (@==@). Commutative.
-
-    | ICmpEq
-
-      -- | Integer inequality comparison (@!=@). Commutative.
-
-    | ICmpNEq
-
-      -- | Unsigned integer greater-than comparison (@>@). If LHS is denoted
-      -- by @x@, and RHS is denoted by @y@, then this operation represents
-      -- @x > y@.
-
-    | IUCmpGT
-
-      -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT'
-      -- but for signed integer data.
-
-    | ISCmpGT
-
-      -- | Unsigned integer greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@.
-
-    | IUCmpGE
-
-      -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
-      -- 'IUCmpGE' but for signed integer data.
-
-    | ISCmpGE
-
-      -- | Unsigned integer less-than comparison (@<@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x < y@.
-
-    | IUCmpLT
-
-      -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
-      -- for signed integer data.
-
-    | ISCmpLT
-
-      -- | Unsigned integer less-than-or-equal comparison (@<=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x <= y@.
-
-    | IUCmpLE
-
-      -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
-      -- 'IUCmpLE' but for signed integer data.
-
-    | ISCmpLE
-
-    ------------------------------
-    -- Floating-point operations
-    ------------------------------
-
-      -- | Unordered float equality comparison (@==@). If any of the values is a
-      -- QNaN or both values are equal, then the operation returns
-      -- @True@. Commutative.
-
-    | FUCmpEq
-
-      -- | Ordered float inequality comparison (@!=@). If none of the values is
-      -- a QNaN and both values are equal, then the operation returns
-      -- @True@. Commutative.
-
-    | FOCmpEq
-
-      -- | Unordered float inequality comparison (@!=@). If any of the values is
-      -- a QNaN or both values are inequal, then the operation returns
-      -- @True@. Commutative.
-
-    | FUCmpNEq
-
-      -- | Ordered float inequality comparison (@!=@). If none of the values is
-      -- a QNaN and both values are inequal, then the operation returns
-      -- @True@. Commutative.
-
-    | FOCmpNEq
-
-      -- | Unordered float greater-than comparison (@>@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
-      -- Hence, if any of the values is a QNaN or @x > y@ holds, then the
-      -- operation returns @True@.
-
-    | FUCmpGT
-
-      -- | Ordered float greater-than comparison (@>@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
-      -- Hence, if none of the values is a QNaN and @x > y@ holds, then the
-      -- operation returns @True@.
-
-    | FOCmpGT
-
-      -- | Unordered float greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@. Hence, if any of the values is a QNaN or @x >= y@
-      -- holds, then the operation returns @True@.
-
-    | FUCmpGE
-
-      -- | Ordered float greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@. Hence, if none of the values is a QNaN and
-      -- @x >= y@ holds, then the operation returns @True@.
-
-    | FOCmpGE
-
-      -- | Unordered float less-than comparison (@<@). If LHS is denoted by @x@,
-      -- and RHS is denoted by @y@, then this operation represents @x < y@.
-      -- Hence, if any of the values is a QNaN or @x < y@ holds, then the
-      -- operation returns @True@.
-
-    | FUCmpLT
-
-      -- | Ordered float less-than comparison (@<@). If LHS is denoted by @x@,
-      -- and RHS is denoted by @y@, then this operation represents @x < y@.
-      -- Hence, if none of the values is a QNaN and @x < y@ holds, then the
-      -- operation returns @True@.
-
-    | FOCmpLT
-
-      -- | Unordered float less-than-or-equal comparison (@<=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x <= y@. Hence, if any of the values is a QNaN or @x <= y@
-      -- holds, then the operation returns @True@.
-
-    | FUCmpLE
-
-      -- | Ordered float less-than-or-equal comparison (@<=@). If LHS is denoted
-      -- by @x@, and RHS is denoted by @y@, then this operation represents
-      -- @x <= y@. Hence, if none of the values is a QNaN and @x <= y@ holds,
-      -- then the operation returns @True@.
-
-    | FOCmpLE
-
-      -- | Float unordering check. If any of the values is a QNaN, then the
-      -- operation returns @True@. Commutative.
-
-    | FCmpUn
-
-    deriving (Show, Eq)
 
 -- | Record for a temporary.
 
@@ -279,6 +38,12 @@ data Temporary
 
 data RegisterSymbol
     = RegisterSymbol String
+    deriving (Show)
+
+-- | Record for describing a register flag symbol.
+
+data RegisterFlagSymbol
+    = RegisterFlagSymbol String
     deriving (Show)
 
 -- | Record for describing a data space.
@@ -318,7 +83,7 @@ data ImmediateSymbol
 
 data Data
 
-      -- | An integer value which is fixed and known at compile time.
+      -- | A value which is fixed and known at compile time.
 
     = ConstantData Integer
 
@@ -418,10 +183,30 @@ data Constraint
 
       -- | TODO: add description
 
-    | Assert {
-          -- | TODO: refactor into more exact data types
-          condition :: String
-      }
+    | Assert AssertExpression
+
+    deriving (Show)
+
+-- | Record for containing an assert expression.
+
+data AssertExpression
+
+      -- | Checks whether a register is within a certain data space.
+
+    = ContainsExpr RegisterSymbol DataSpace
+
+      -- | Checks whether a comparison between an immediate symbol and a
+      -- constant integer value holds.
+
+    | CompareExpr CompareOp ImmediateSymbol Integer
+
+      -- | Checks whether a certain flag in a register is set.
+
+    | RegFlagExpr RegisterFlagSymbol RegisterSymbol
+
+      -- | Negates an assert expression.
+
+    | NotExpr AssertExpression
 
     deriving (Show)
 

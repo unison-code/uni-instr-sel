@@ -14,6 +14,257 @@
 
 module Language.InstructionSelection.Misc.Base where
 
+-- | Binary operation types.
+
+data BinaryOp
+    = BinArithmeticOp ArithmeticOp
+    | BinCompareOp CompareOp
+    deriving (Show, Eq)
+
+-- | Arithmetic operation types.
+
+data ArithmeticOp
+
+    ------------------------------
+    -- Integer operations
+    ------------------------------
+
+      -- | Integer addition. Commutative.
+
+    = IAdd
+
+      -- | Integer subtraction.
+
+    | ISub
+
+      -- | Integer multiplication. Commutative.
+
+    | IMul
+
+      -- | Unsigned integer division.
+
+    | IUDiv
+
+      -- | Signed integer division.
+
+    | ISDiv
+
+      -- | Unsigned integer remainder.
+
+    | IURem
+
+      -- | Signed integer remainder.
+
+    | ISRem
+
+    ------------------------------
+    -- Floating-point operations
+    ------------------------------
+
+      -- | Float addition. Commutative.
+
+    | FAdd
+
+      -- | Float subtraction.
+
+    | FSub
+
+      -- | Float multiplication. Commutative.
+
+    | FMul
+
+      -- | Float division.
+
+    | FDiv
+
+      -- | Float remainder.
+
+    | FRem
+
+    ------------------------------
+    -- Bit operations
+    ------------------------------
+
+      -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
+      -- by @y@, then this operation represents @x < y@.
+
+    | Shl
+
+      -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
+      -- denoted by @y@, then this operation represents @x > y@.
+
+    | LShr
+
+      -- | Bitwise arithmetic right shift (with sign extension). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x > y@.
+
+    | AShr
+
+      -- | Bitwise AND (@\&@). Commutative.
+
+    | And
+
+      -- | Bitwise OR (@|@). Commutative.
+
+    | Or
+
+      -- | Bitwise XOR (@^@). Commutative.
+
+    | Xor
+
+    deriving (Show, Eq)
+
+-- | Comparison operation types.
+
+data CompareOp
+
+    ------------------------------
+    -- Integer operations
+    ------------------------------
+
+      -- | Integer equality comparison (@==@). Commutative.
+
+    = ICmpEq
+
+      -- | Integer inequality comparison (@!=@). Commutative.
+
+    | ICmpNEq
+
+      -- | Unsigned integer greater-than comparison (@>@). If LHS is denoted
+      -- by @x@, and RHS is denoted by @y@, then this operation represents
+      -- @x > y@.
+
+    | IUCmpGT
+
+      -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT'
+      -- but for signed integer data.
+
+    | ISCmpGT
+
+      -- | Unsigned integer greater-than-or-equal comparison (@>=@). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x >= y@.
+
+    | IUCmpGE
+
+      -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
+      -- 'IUCmpGE' but for signed integer data.
+
+    | ISCmpGE
+
+      -- | Unsigned integer less-than comparison (@<@). If LHS is denoted by
+      -- @x@, and RHS is denoted by @y@, then this operation represents @x < y@.
+
+    | IUCmpLT
+
+      -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
+      -- for signed integer data.
+
+    | ISCmpLT
+
+      -- | Unsigned integer less-than-or-equal comparison (@<=@). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x <= y@.
+
+    | IUCmpLE
+
+      -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
+      -- 'IUCmpLE' but for signed integer data.
+
+    | ISCmpLE
+
+    ------------------------------
+    -- Floating-point operations
+    ------------------------------
+
+      -- | Unordered float equality comparison (@==@). If any of the values is a
+      -- QNaN or both values are equal, then the operation returns
+      -- @True@. Commutative.
+
+    | FUCmpEq
+
+      -- | Ordered float inequality comparison (@!=@). If none of the values is
+      -- a QNaN and both values are equal, then the operation returns
+      -- @True@. Commutative.
+
+    | FOCmpEq
+
+      -- | Unordered float inequality comparison (@!=@). If any of the values is
+      -- a QNaN or both values are inequal, then the operation returns
+      -- @True@. Commutative.
+
+    | FUCmpNEq
+
+      -- | Ordered float inequality comparison (@!=@). If none of the values is
+      -- a QNaN and both values are inequal, then the operation returns
+      -- @True@. Commutative.
+
+    | FOCmpNEq
+
+      -- | Unordered float greater-than comparison (@>@). If LHS is denoted by
+      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
+      -- Hence, if any of the values is a QNaN or @x > y@ holds, then the
+      -- operation returns @True@.
+
+    | FUCmpGT
+
+      -- | Ordered float greater-than comparison (@>@). If LHS is denoted by
+      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
+      -- Hence, if none of the values is a QNaN and @x > y@ holds, then the
+      -- operation returns @True@.
+
+    | FOCmpGT
+
+      -- | Unordered float greater-than-or-equal comparison (@>=@). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x >= y@. Hence, if any of the values is a QNaN or @x >= y@
+      -- holds, then the operation returns @True@.
+
+    | FUCmpGE
+
+      -- | Ordered float greater-than-or-equal comparison (@>=@). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x >= y@. Hence, if none of the values is a QNaN and
+      -- @x >= y@ holds, then the operation returns @True@.
+
+    | FOCmpGE
+
+      -- | Unordered float less-than comparison (@<@). If LHS is denoted by @x@,
+      -- and RHS is denoted by @y@, then this operation represents @x < y@.
+      -- Hence, if any of the values is a QNaN or @x < y@ holds, then the
+      -- operation returns @True@.
+
+    | FUCmpLT
+
+      -- | Ordered float less-than comparison (@<@). If LHS is denoted by @x@,
+      -- and RHS is denoted by @y@, then this operation represents @x < y@.
+      -- Hence, if none of the values is a QNaN and @x < y@ holds, then the
+      -- operation returns @True@.
+
+    | FOCmpLT
+
+      -- | Unordered float less-than-or-equal comparison (@<=@). If LHS is
+      -- denoted by @x@, and RHS is denoted by @y@, then this operation
+      -- represents @x <= y@. Hence, if any of the values is a QNaN or @x <= y@
+      -- holds, then the operation returns @True@.
+
+    | FUCmpLE
+
+      -- | Ordered float less-than-or-equal comparison (@<=@). If LHS is denoted
+      -- by @x@, and RHS is denoted by @y@, then this operation represents
+      -- @x <= y@. Hence, if none of the values is a QNaN and @x <= y@ holds,
+      -- then the operation returns @True@.
+
+    | FOCmpLE
+
+      -- | Float unordering check. If any of the values is a QNaN, then the
+      -- operation returns @True@. Commutative.
+
+    | FCmpUn
+
+    deriving (Show, Eq)
+
 -- | Record for representing a range.
 
 data Range t
