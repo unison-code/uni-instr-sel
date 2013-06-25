@@ -20,6 +20,12 @@ import Language.InstructionSelection.OpTypes
 
 
 
+-- | Record for representing a constant value.
+
+data ConstantValue
+    = ConstIntValue Integer
+    deriving (Show, Eq)
+
 -- | Record for a temporary.
 
 data Temporary
@@ -42,6 +48,13 @@ data RegisterSymbol
 
 data RegisterFlagSymbol
     = RegisterFlagSymbol String
+    deriving (Show)
+
+-- | Record for describing a register flag. All flags are associated with a
+-- specific register.
+
+data RegisterFlag
+    = RegisterFlag RegisterFlagSymbol RegisterSymbol
     deriving (Show)
 
 -- | Record for describing a data space.
@@ -76,14 +89,16 @@ data ImmediateSymbol
     = ImmediateSymbol String
     deriving (Show, Eq)
 
--- | Record for describing data. The data can be of many different types, e.g. a
--- constant, an immediate, a temporary, etc.
+-- | Record for containing an potentially nested expression.
 
-data Data
+-- | Record for describing program data. The data can be of many different
+-- types, e.g. a constant, an immediate, a temporary, etc.
+
+data ProgramData
 
       -- | A value which is fixed and known at compile time.
 
-    = ConstantData Integer
+    = ConstantData ConstantValue
 
       -- | An immediate value represented by a symbol.
 
@@ -93,9 +108,18 @@ data Data
 
     | TemporaryData Temporary
 
-    deriving (Show, Eq)
+    deriving (Show)
 
--- | Record for containing an potentially nested expression.
+-- | Record for representing any form of data (register, register flag,
+-- constant, temporary, etc.).
+
+data AnyData
+    = ADTemporary Temporary
+    | ADRegister RegisterSymbol
+    | ADRegisterFlag RegisterFlagSymbol
+    | ADConstant ConstantValue
+    | ADImmediate ImmediateSymbol
+    deriving (Show)
 
 data Expression
 
@@ -119,7 +143,7 @@ data Expression
 
       -- | A data expression.
 
-    | DataExpr Data
+    | DataExpr ProgramData
 
     deriving (Show)
 
@@ -198,14 +222,13 @@ data AssertExpression
 
     = ContainsExpr RegisterSymbol DataSpace
 
-      -- | Checks whether a comparison between an immediate symbol and a
-      -- constant integer value holds.
+      -- | Checks whether a comparison between two data holds.
 
-    | CompareExpr CompareOp ImmediateSymbol Integer
+    | CompareExpr CompareOp AnyData AnyData
 
       -- | Checks whether a certain flag in a register is set.
 
-    | RegFlagExpr RegisterFlagSymbol RegisterSymbol
+    | RegFlagExpr RegisterFlag
 
       -- | Negates an assert expression.
 
