@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.LlvmPatterns.SExprParser
+-- Module      :  Language.InstructionSelection.Patterns.LLVM.SExprParser
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -14,146 +14,267 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Patterns.LlvmPatterns.SExprParser (
+module Language.InstructionSelection.Patterns.LLVM.SExprParser (
       parsePatterns
     ) where
 
-import Language.InstSel.LLVM.IR
-import Language.InstSel.Patterns.Base
+import Language.InstructionSelection.Patterns.LLVM.Base
+import Language.InstructionSelection.OpTypes (CompareOp (..))
+import Language.InstructionSelection.Utils (Range (..))
 import Text.ParserCombinators.Parsec
 import Data.String.Utils
 
 
 
-istrip :: String -> String
-istrip = join " " . filter (\x -> x /= "") . split " "
+parsePatterns :: String -> Either ParseError [Instruction]
+parsePatterns input = parse pInstructions "" input
 
-whitespace = " \r\n\t"
-
-llvmInstructions :: GenParser Char st [LlvmInstruction]
-llvmInstructions =
-  do instructions <- many llvmInstruction
+pInstructions :: GenParser Char st [Instruction]
+pInstructions =
+  do instructions <- many pInstruction
      eof
      return instructions
 
-llvmInstruction :: GenParser Char st LlvmInstruction
-llvmInstruction = labeledData "instruction" llvmInstruction'
+pInstruction :: GenParser Char st Instruction
+pInstruction = labeledData "instruction" pInstruction'
 
-llvmInstruction' :: GenParser Char st LlvmInstruction
-llvmInstruction' =
-  do whiteSpace
-     assembly <- assemblyCode
-     patterns <- many llvmPattern
-     return (LlvmInstruction assembly patterns)
+pInstruction' :: GenParser Char st Instruction
+pInstruction' =
+  do pWhitespace
+     assemblyStr <- pAssemblyStr
+     patterns    <- many pPattern
+     return (Instruction assemblyStr patterns)
 
-assemblyCode :: GenParser Char st AssemblyCode
-assemblyCode = many1 (noneOf $ whitespace ++ "(")
+pAssemblyStr :: GenParser Char st AssemblyString
+pAssemblyStr =
+  do str <- many1 (noneOf $ whitespace ++ "(")
+     return (AssemblyString str)
 
-llvmPattern :: GenParser Char st LlvmPattern
-llvmPattern = labeledData "pattern" llvmPattern'
+pPattern :: GenParser Char st Pattern
+pPattern = labeledData "pattern" pPattern'
 
-llvmPattern' :: GenParser Char st LlvmPattern
-llvmPattern' =
-  do constraints <- labeledData "constraints" allPatternConstraints
-     code <- labeledData "code" allLlvmCode
-     return (LlvmPattern constraints code)
+pPattern' :: GenParser Char st Pattern
+pPattern' =
+  do constraints <- labeledData "constraints" pAllConstraints
+     statements  <- labeledData "code" pAllStatements
+     return (Pattern statements constraints)
 
-allPatternConstraints :: GenParser Char st [PatternConstraint]
-allPatternConstraints = many patternConstraint
+pAllConstraints :: GenParser Char st [Constraint]
+pAllConstraints = many pConstraint
 
-patternConstraint :: GenParser Char st PatternConstraint
-patternConstraint = parens patternConstraint'
+pConstraint :: GenParser Char st Constraint
+pConstraint = pParens pConstraint'
 
-patternConstraint' :: GenParser Char st PatternConstraint
-patternConstraint' =
-  do whiteSpace
-     (    try allocPatternConstraint
-      <|> try immPatternConstraint
-      <|> try aliasPatternConstraint
-      <|> try assertPatternConstraint)
+pConstraint' :: GenParser Char st Constraint
+pConstraint' =
+  do pWhitespace
+     (    try pAllocConstraint
+      <|> try pImmConstraint
+      <|> try pZimmConstraint
+      <|> try pAliasConstraint
+      <|> try pAssertConstraint)
 
-allocPatternConstraint :: GenParser Char st PatternConstraint
-allocPatternConstraint =
+pAllocConstraint :: GenParser Char st Constraint
+pAllocConstraint =
   do string "allocate-in"
-     whiteSpace
-     var <- variable
-     whiteSpace
-     reg <- registerClass
-     whiteSpace
-     return (AllocateIn var reg)
+     pWhitespace
+     symbol <- pRegisterSymbol
+     pWhitespace
+     regclass <- pRegisterClass
+     pWhitespace
+     return (AllocateIn symbol regclass)
 
-immPatternConstraint :: GenParser Char st PatternConstraint
-immPatternConstraint =
-  do try (string "zimm") <|> try (string "imm")
-     whiteSpace
+pImmConstraint :: GenParser Char st Constraint
+pImmConstraint =
+  do string "imm"
+     pWhitespace
      lower <- many1 digit
-     whiteSpace
+     pWhitespace
      upper <- many1 digit
-     whiteSpace
-     imm <- immediate
-     whiteSpace
-     return (ImmediateRange imm (read lower) (read upper))
+     pWhitespace
+     imm <- pImmediateSymbol
+     pWhitespace
+     return (ImmediateRange imm (Range (read lower) (read upper)))
 
-aliasPatternConstraint :: GenParser Char st PatternConstraint
-aliasPatternConstraint =
+pZimmConstraint :: GenParser Char st Constraint
+pZimmConstraint =
+  do string "zimm"
+     pWhitespace
+     lower <- many1 digit
+     pWhitespace
+     upper <- many1 digit
+     pWhitespace
+     imm <- pImmediateSymbol
+     pWhitespace
+     return (ImmediateRangeNoZero imm (Range (read lower) (read upper)))
+
+pAliasConstraint :: GenParser Char st Constraint
+pAliasConstraint =
   do string "alias"
-     whiteSpace
-     temp1 <- temporary
-     whiteSpace
-     temp2 <- temporary
-     whiteSpace
+     pWhitespace
+     temp1 <- pTemporary
+     pWhitespace
+     temp2 <- pTemporary
+     pWhitespace
      return (Alias temp1 temp2)
 
-assertPatternConstraint :: GenParser Char st PatternConstraint
-assertPatternConstraint =
+pAssertConstraint :: GenParser Char st Constraint
+pAssertConstraint =
   do string "assert"
-     code <- parens pData
-     whiteSpace
-     return (Assert code)
+     expr <- pParens pAssertExpression
+     return (Assert expr)
 
-allLlvmCode :: GenParser Char st LlvmCode
-allLlvmCode = many llvmStatement
+pAssertExpression :: GenParser Char st AssertExpression
+pAssertExpression =
+      try pContainsAssert
+  <|> try pCompareAssert
+  <|> try pRegFlagAssert
+  <|> try pNotAssert
 
-llvmStatement :: GenParser Char st LlvmStatement
-llvmStatement = parens pData
+pContainsAssert :: GenParser Char st AssertExpression
+pContainsAssert =
+  do string "contains?"
+     regclass <- pParens pPrefixedRegisterClass
+     reg      <- pRegisterSymbol
+     return (ContainsExpr reg regclass)
 
-variable :: GenParser Char st Variable
-variable =
-  do (    try (do temp <- temporary
-                  return (VTemporary temp))
-      <|> try (do param <- parameter
-                  return (VParameter param)))
+pCompareAssert :: GenParser Char st AssertExpression
+pCompareAssert =
+  do string "icmp"
+     pWhitespace
+     cmpOp <- pCompareOp
+     pWhitespace
+     _ <- pSymbolWidth
+     pWhitespace
+     data1 <- pAnyData
+     data2 <- pAnyData
+     return (CompareExpr cmpOp data1 data2)
 
-temporary :: GenParser Char st Temporary
-temporary = labeledData "tmp" temporary'
+pRegFlagAssert :: GenParser Char st AssertExpression
+pRegFlagAssert =
+  do regFlag <- pRegisterFlag
+     return (RegFlagExpr regFlag)
+
+pNotAssert :: GenParser Char st AssertExpression
+pNotAssert =
+  do string "not"
+     expr <- pParens pAssertExpression
+     return (NotExpr expr)
+
+pAllStatements :: GenParser Char st [Statement]
+pAllStatements = many pStatement
+
+pStatement :: GenParser Char st Statement
+pStatement = pParens pData -- TODO: fix
+
+pSymbolWidth :: GenParser Char st Integer
+pSymbolWidth = pConstant
+
+pConstant :: GenParser Char st Integer
+pConstant = pParens pConstant'
+
+pConstant' :: GenParser Char st Integer
+pConstant' =
+  do string "constant"
+     pWhitespace
+     string "?"
+     pWhitespace
+     int <- many1 digit
+     return (read int)
+
+--variable :: GenParser Char st Variable
+--variable =
+--  do (    try (do temp <- temporary
+--                  return (VTemporary temp))
+--      <|> try (do param <- parameter
+--                  return (VParameter param)))
+
+pTemporary :: GenParser Char st Temporary
+pTemporary = labeledData "tmp" temporary'
 
 temporary' :: GenParser Char st Temporary
 temporary' =
   do int <- many1 digit
      return (Temporary (read int))
 
-immediate :: GenParser Char st Immediate
-immediate =
-  do imm <- many1 alphaNum
-     return (Immediate (read imm))
+pSymbol :: GenParser Char st String
+pSymbol = many1 alphaNum
 
-parameter :: GenParser Char st Parameter
-parameter =
-  do param <- many1 alphaNum
-     return (Parameter param)
+pImmediateSymbol :: GenParser Char st ImmediateSymbol
+pImmediateSymbol =
+  do symbol <- pSymbol
+     return (ImmediateSymbol symbol)
 
-registerClass :: GenParser Char st RegisterClass
-registerClass =
+pRegisterFlag :: GenParser Char st RegisterFlag
+pRegisterFlag =
+  do string "reg-flag"
+     pWhitespace
+     flag <- pRegisterFlagSymbol
+     pWhitespace
+     reg <- (    try pRegisterSymbol
+             <|> try pPrefixedRegisterSymbol)
+     return (RegisterFlag flag reg)
+
+pRegisterFlagSymbol :: GenParser Char st RegisterFlagSymbol
+pRegisterFlagSymbol =
+  do symbol <- pSymbol
+     return (RegisterFlagSymbol symbol)
+
+pRegisterSymbol :: GenParser Char st RegisterSymbol
+pRegisterSymbol =
+  do symbol <- pSymbol
+     return (RegisterSymbol symbol)
+
+pPrefixedRegisterSymbol :: GenParser Char st RegisterSymbol
+pPrefixedRegisterSymbol =
+  do string "register"
+     pWhitespace
+     pRegisterSymbol
+
+pRegisterClass :: GenParser Char st DataSpace
+pRegisterClass =
   do reg <- many1 (try alphaNum <|> try (char '_'))
      return (RegisterClass reg)
 
+pPrefixedRegisterClass :: GenParser Char st DataSpace
+pPrefixedRegisterClass =
+  do string "register-class"
+     pWhitespace
+     pRegisterClass
+
+pAnyData :: GenParser Char st AnyData
+pAnyData =
+      try (do const <- pConstant
+              return (ADConstant (ConstIntValue const)))
+  <|> try (do temp <- pTemporary
+              return (ADTemporary temp))
+  <|> try (do reg <- pRegisterSymbol
+              return (ADRegister reg))
+  <|> try (do reg <- pPrefixedRegisterSymbol
+              return (ADRegister reg))
+  <|> try (do flag <- pRegisterFlagSymbol
+              return (ADRegisterFlag flag))
+  <|> try (do imm <- pImmediateSymbol
+              return (ADImmediate imm))
+
+pCompareOp :: GenParser Char st CompareOp
+pCompareOp =
+  do op <- (    try (do string "slt"
+                        return ISCmpLT)
+            <|> try (do string "eq"
+                        return ICmpEq)
+           )
+     pWhitespace
+     _ <- pConstant
+     return op
+
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
-labeledData str p = parens (labeledData' str p)
+labeledData str p = pParens (labeledData' str p)
 
 labeledData' :: String -> GenParser Char st a -> GenParser Char st a
 labeledData' str p =
   do string str
-     whiteSpace
+     pWhitespace
      result <- p
      return result
 
@@ -164,20 +285,23 @@ pData =
 
 morePData :: GenParser Char st String
 morePData =
-      try (do nested <- parens pData
+      try (do nested <- pParens pData
               return $ ['('] ++ nested ++ [')']
           )
-  <|> do whiteSpace
+  <|> do pWhitespace
          many1 (noneOf "()")
 
-whiteSpace :: GenParser Char st String
-whiteSpace = many (oneOf whitespace)
+pWhitespace :: GenParser Char st String
+pWhitespace = many (oneOf whitespace)
 
-parens :: GenParser Char st a -> GenParser Char st a
-parens c = do whiteSpace
-              result <- between (char '(') (char ')') c
-              whiteSpace
-              return result
+pParens :: GenParser Char st a -> GenParser Char st a
+pParens c =
+  do pWhitespace
+     result <- between (char '(') (char ')') c
+     pWhitespace
+     return result
 
-parsePatterns :: String -> Either ParseError [LlvmInstruction]
-parsePatterns input = parse llvmInstructions "" input
+istrip :: String -> String
+istrip = join " " . filter (\x -> x /= "") . split " "
+
+whitespace = " \r\n\t"
