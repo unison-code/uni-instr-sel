@@ -20,7 +20,7 @@ module Language.InstructionSelection.Patterns.LLVM.SExprParser (
 
 import Language.InstructionSelection.Patterns.LLVM.Base
 import Language.InstructionSelection.OpTypes
-import Language.InstructionSelection.Utils (Range (..))
+import Language.InstructionSelection.Utils (Range (..), Natural, toNatural)
 import Text.ParserCombinators.Parsec
 import Data.String.Utils
 import Debug.Trace
@@ -247,8 +247,24 @@ pStmtExpression :: GenParser Char st StmtExpression
 pStmtExpression =
       try pBinaryOpStmtExpr
   <|> try pDataStmtExpr
+  <|> try pRegRangeStmtExpr
 -- TODO: fix
+--  <|> try pUnaryOpStmtExpr
 --  <|> try pPhiStmtExpr
+
+pRegRangeStmtExpr :: GenParser Char st StmtExpression
+pRegRangeStmtExpr = pParens pRegRangeStmtExpr'
+
+pRegRangeStmtExpr' :: GenParser Char st StmtExpression
+pRegRangeStmtExpr' =
+  do string "reg-range"
+     pWhitespace
+     reg <- pRegister
+     pWhitespace
+     (ConstIntValue lower) <- pConstant
+     pWhitespace
+     (ConstIntValue upper) <- pConstant
+     return (RegRangeStmtExpr reg (Range (toNatural lower) (toNatural upper)))
 
 pBinaryOpStmtExpr :: GenParser Char st StmtExpression
 pBinaryOpStmtExpr = pParens pBinaryOpStmtExpr'

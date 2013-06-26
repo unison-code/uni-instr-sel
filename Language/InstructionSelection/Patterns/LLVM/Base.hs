@@ -15,7 +15,7 @@
 
 module Language.InstructionSelection.Patterns.LLVM.Base where
 
-import Language.InstructionSelection.Utils (Range)
+import Language.InstructionSelection.Utils (Range, Natural)
 import Language.InstructionSelection.OpTypes
 
 
@@ -182,6 +182,12 @@ data StmtExpression
       -- | A data expression.
 
     | DataStmtExpr ProgramData
+
+      -- | A register range expression, which takes a range of bits from a
+      -- register. The same effect can be achieved with a series of bit
+      -- operations.
+
+    | RegRangeStmtExpr Register (Range Natural)
 
     deriving (Show)
 
