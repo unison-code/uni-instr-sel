@@ -238,12 +238,12 @@ data Constraint
 
     | ImmediateRangeNoZero ImmediateSymbol (Range Integer)
 
-      -- | The @Alias@ constraint dictates that two temporaries must be the
+      -- | The @Alias@ constraint dictates that a temporary must be the
       -- same, in the sense that both temporaries must be assigned the same
       -- register. Sometimes a temporary may be aliased with @no-value@, upon
       -- which there is no second temporary.
 
-    | Alias Temporary (Maybe Temporary)
+    | Alias Temporary (Maybe Register)
 
       -- | The @Assert@ constraints contain any other, arbitrary constraints.
 

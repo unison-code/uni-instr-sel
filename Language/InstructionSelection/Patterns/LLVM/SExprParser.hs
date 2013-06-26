@@ -115,14 +115,14 @@ pAliasConstraint :: GenParser Char st Constraint
 pAliasConstraint =
   do string "alias"
      pWhitespace
-     temp1 <- pTemporary
+     temp <- pTemporary
      pWhitespace
-     temp2 <-     try (do temp <- pTemporary
-                          return (Just temp))
-              <|> (do pNoValue
-                      return Nothing)
+     reg <-      try (do pNoValue
+                         return Nothing)
+            <|> (do rg <- pRegister
+                    return (Just rg))
      pWhitespace
-     return (Alias temp1 temp2)
+     return (Alias temp reg)
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint =
