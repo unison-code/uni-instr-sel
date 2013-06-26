@@ -213,7 +213,7 @@ data ExprResultSize
 
       -- | Size of a given register.
 
-    = ERSSize Register
+    = ERSRegSize Register
 
       -- | Constant size.
 

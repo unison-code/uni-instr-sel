@@ -250,7 +250,13 @@ pStmtExpression =
   <|> try pBinaryOpStmtExpr
   <|> try pDataStmtExpr
   <|> try pRegRangeStmtExpr
+  <|> try pSizeStmtExpr
   <|> try pPhiStmtExpr
+
+pSizeStmtExpr :: GenParser Char st StmtExpression
+pSizeStmtExpr =
+  do reg <- pRegSizeExpr
+     return (SizeStmtExpr reg)
 
 pPhiStmtExpr :: GenParser Char st StmtExpression
 pPhiStmtExpr = pParens pPhiStmtExpr'
@@ -377,8 +383,19 @@ pSymbolWidth =
 
 pExprResultSize :: GenParser Char st ExprResultSize
 pExprResultSize =
-  do const <- pConstant
-     return (ERSConst const)
+      try (do const <- pConstant
+              return (ERSConst const))
+  <|> try (do reg <- pRegSizeExpr
+              return (ERSRegSize reg))
+
+pRegSizeExpr :: GenParser Char st Register
+pRegSizeExpr = pParens pRegSizeExpr'
+
+pRegSizeExpr' :: GenParser Char st Register
+pRegSizeExpr' =
+  do string "size"
+     pWhitespace
+     pRegister
 
 pConstant :: GenParser Char st ConstantValue
 pConstant = pParens pConstant'
@@ -582,6 +599,14 @@ pArithmeticStmtOpType =
               return Shl)
   <|> try (do string "lshr"
               return LShr)
+  <|> try (do string "udiv"
+              return IUDiv)
+  <|> try (do string "sdiv"
+              return ISDiv)
+  <|> try (do string "urem"
+              return IURem)
+  <|> try (do string "srem"
+              return ISRem)
   <|> try (do string "sub"
               return ISub)
   <|> try (do string "zext"
