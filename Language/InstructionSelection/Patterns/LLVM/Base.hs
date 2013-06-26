@@ -122,6 +122,10 @@ data ProgramData
 
     | PDTemporary Temporary
 
+      -- | A value located in a register.
+
+    | PDRegister Register
+
     deriving (Show)
 
 -- | Record for representing any form of data (register, register flag,

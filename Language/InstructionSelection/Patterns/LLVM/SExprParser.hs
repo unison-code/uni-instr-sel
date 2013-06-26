@@ -301,6 +301,8 @@ pProgramData =
               return (PDImmediate imm))
   <|> try (do temp <- pTemporary
               return (PDTemporary temp))
+  <|> try (do reg <- pRegister
+              return (PDRegister reg))
 
 pBranchStmt :: GenParser Char st Statement
 pBranchStmt = pParens pBranchStmt'
