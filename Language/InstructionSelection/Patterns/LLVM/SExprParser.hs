@@ -582,6 +582,8 @@ pArithmeticStmtOpType =
               return LShr)
   <|> try (do string "sub"
               return ISub)
+  <|> try (do string "zext"
+              return ZExt)
   -- TOOD: add missing operations
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a

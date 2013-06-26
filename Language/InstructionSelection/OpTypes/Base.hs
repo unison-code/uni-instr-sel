@@ -131,6 +131,11 @@ data ArithmeticOp
 
     | Xor
 
+      -- | Zero-extension. LHS denotes the value to zero extend, and RHS denotes
+      -- the amount of bits to extend with.
+
+    | ZExt
+
     deriving (Show, Eq)
 
 -- | Comparison operation types.
