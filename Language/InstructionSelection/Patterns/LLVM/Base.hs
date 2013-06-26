@@ -126,6 +126,10 @@ data ProgramData
 
     | PDRegister Register
 
+      -- | An undefined value.
+
+    | PDNoValue
+
     deriving (Show)
 
 -- | Record for representing any form of data (register, register flag,

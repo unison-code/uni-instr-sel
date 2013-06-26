@@ -250,8 +250,32 @@ pStmtExpression =
   <|> try pBinaryOpStmtExpr
   <|> try pDataStmtExpr
   <|> try pRegRangeStmtExpr
--- TODO: fix
---  <|> try pPhiStmtExpr
+  <|> try pPhiStmtExpr
+
+pPhiStmtExpr :: GenParser Char st StmtExpression
+pPhiStmtExpr = pParens pPhiStmtExpr'
+
+pPhiStmtExpr' :: GenParser Char st StmtExpression
+pPhiStmtExpr' =
+  do string "phi"
+     pWhitespace
+     elems <- pParens pAllPhiElements
+     return (PhiStmtExpr elems)
+
+pAllPhiElements :: GenParser Char st [PhiElement]
+pAllPhiElements = many1 (pPhiElement)
+
+pPhiElement :: GenParser Char st PhiElement
+pPhiElement = pParens pPhiElement'
+
+pPhiElement' :: GenParser Char st PhiElement
+pPhiElement' =
+  do expr <- pStmtExpression
+     pWhitespace
+     string "."
+     pWhitespace
+     label <- pLabel
+     return (PhiElement expr label)
 
 pRegRangeStmtExpr :: GenParser Char st StmtExpression
 pRegRangeStmtExpr = pParens pRegRangeStmtExpr'
@@ -296,7 +320,9 @@ pDataStmtExpr =
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =
-      try (do const <- pConstant
+      try (do pNoValue
+              return PDNoValue)
+  <|> try (do const <- pConstant
               return (PDConstant const))
   <|> try (do imm <- pImmediateSymbol
               return (PDImmediate imm))
@@ -453,7 +479,9 @@ pPrefixedRegisterClass =
 
 pAnyData :: GenParser Char st AnyData
 pAnyData =
-      try (do const <- pConstant
+      try (do pNoValue
+              return (ADNoValue))
+  <|> try (do const <- pConstant
               return (ADConstant const))
   <|> try (do temp <- pTemporary
               return (ADTemporary temp))
@@ -463,8 +491,6 @@ pAnyData =
               return (ADRegisterFlag flag))
   <|> try (do imm <- pImmediateSymbol
               return (ADImmediate imm))
-  <|> try (do pNoValue
-              return (ADNoValue))
 
 pNoValue :: GenParser Char st ()
 pNoValue =
