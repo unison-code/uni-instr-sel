@@ -529,6 +529,10 @@ pArithmeticStmtOpType =
               return And)
   <|> try (do string "shl"
               return Shl)
+  <|> try (do string "lshr"
+              return LShr)
+  <|> try (do string "sub"
+              return ISub)
   -- TOOD: add missing operations
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
