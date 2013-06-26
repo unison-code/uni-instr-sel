@@ -171,6 +171,10 @@ data StmtExpression
     = BinaryOpStmtExpr
           BinaryOp
 
+          -- | Size (in bits) of result
+
+          (Maybe ExprResultSize)
+
           -- | LHS.
 
           StmtExpression
@@ -181,7 +185,7 @@ data StmtExpression
 
       -- | A unary expression.
 
-    | UnaryOpStmtExpr UnaryOp StmtExpression
+    | UnaryOpStmtExpr UnaryOp (Maybe ExprResultSize) StmtExpression
 
       -- | A phi expression.
 
@@ -191,11 +195,29 @@ data StmtExpression
 
     | DataStmtExpr ProgramData
 
+      -- | Gets the size (in bits) of a register.
+
+    | SizeStmtExpr Register
+
       -- | A register range expression, which takes a range of bits from a
       -- register. The same effect can be achieved with a series of bit
       -- operations.
 
     | RegRangeStmtExpr Register (Range Natural)
+
+    deriving (Show)
+
+-- | Record for representing the size of the result of an expression.
+
+data ExprResultSize
+
+      -- | Size of a given register.
+
+    = ERSSize Register
+
+      -- | Constant size.
+
+    | ERSConst ConstantValue
 
     deriving (Show)
 
@@ -303,7 +325,7 @@ data AssertExpression
 
       -- | Checks whether a comparison between two data holds.
 
-    | AssertCompareExpr CompareOp AnyData AnyData
+    | AssertCompareExpr CompareOp (Maybe ExprResultSize) AnyData AnyData
 
       -- | Checks whether a certain flag in a register is set.
 

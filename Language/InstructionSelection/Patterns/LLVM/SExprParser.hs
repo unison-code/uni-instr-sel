@@ -172,12 +172,12 @@ pCompareAssertExpr = pParens pCompareAssertExpr'
 
 pCompareAssertExpr' :: GenParser Char st AssertExpression
 pCompareAssertExpr' =
-  do op <- pCompareAssertOp
+  do (op, size) <- pCompareAssertOp
      pWhitespace
      data1 <- pAnyData
      pWhitespace
      data2 <- pAnyData
-     return (AssertCompareExpr op data1 data2)
+     return (AssertCompareExpr op size data1 data2)
 
 pRegFlagAssertExpr :: GenParser Char st AssertExpression
 pRegFlagAssertExpr = pParens pRegFlagAssertExpr'
@@ -296,22 +296,22 @@ pUnaryOpStmtExpr = pParens pUnaryOpStmtExpr'
 
 pUnaryOpStmtExpr' :: GenParser Char st StmtExpression
 pUnaryOpStmtExpr' =
-  do op <- pUnaryStmtOp
+  do (op, size) <- pUnaryStmtOp
      pWhitespace
      expr <- pStmtExpression
-     return (UnaryOpStmtExpr op expr)
+     return (UnaryOpStmtExpr op size expr)
 
 pBinaryOpStmtExpr :: GenParser Char st StmtExpression
 pBinaryOpStmtExpr = pParens pBinaryOpStmtExpr'
 
 pBinaryOpStmtExpr' :: GenParser Char st StmtExpression
 pBinaryOpStmtExpr' =
-  do op <- pBinaryStmtOp
+  do (op, size) <- pBinaryStmtOp
      pWhitespace
      expr1 <- pStmtExpression
      pWhitespace
      expr2 <- pStmtExpression
-     return (BinaryOpStmtExpr op expr1 expr2)
+     return (BinaryOpStmtExpr op size expr1 expr2)
 
 pDataStmtExpr :: GenParser Char st StmtExpression
 pDataStmtExpr =
@@ -375,10 +375,10 @@ pSymbolWidth =
   do (ConstIntValue int) <- pConstant
      return int
 
-pOpWidth :: GenParser Char st Integer
-pOpWidth =
-  do (ConstIntValue int) <- pConstant
-     return int
+pExprResultSize :: GenParser Char st ExprResultSize
+pExprResultSize =
+  do const <- pConstant
+     return (ERSConst const)
 
 pConstant :: GenParser Char st ConstantValue
 pConstant = pParens pConstant'
@@ -513,40 +513,40 @@ pAnyStorageSpace =
   <|> try (do flag <- pRegisterFlag
               return (ASSRegisterFlag flag))
 
-pUnaryStmtOp :: GenParser Char st UnaryOp
+pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
      try (do string "fixpointsqrt"
-             return FixPointSqrt)
+             return (FixPointSqrt, Nothing))
  <|> try (do string "bit_not"
              pWhitespace
-             _ <- pOpWidth
-             return FixPointSqrt)
+             size <- pExprResultSize
+             return (FixPointSqrt, Just size))
 
-pBinaryStmtOp :: GenParser Char st BinaryOp
+pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
 pBinaryStmtOp =
-      try (do op <- pCompareStmtOp
-              return (BinCompareOp op))
-  <|> try (do op <- pArithmeticStmtOp
-              return (BinArithmeticOp op))
+      try (do (op, size) <- pCompareStmtOp
+              return (BinCompareOp op, size))
+  <|> try (do (op, size) <- pArithmeticStmtOp
+              return (BinArithmeticOp op, size))
 
-pCompareAssertOp :: GenParser Char st CompareOp
+pCompareAssertOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareAssertOp =
   do string "icmp"
      pWhitespace
      op <- pIntCompareOp
      pWhitespace
-     _ <- pOpWidth
-     return op
+     size <- pExprResultSize
+     return (op, Just size)
   -- TODO: handle floats
 
-pCompareStmtOp :: GenParser Char st CompareOp
+pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
   do string "icmp"
      pWhitespace
-     _ <- pOpWidth
+     size <- pExprResultSize
      pWhitespace
      op <- pIntCompareOp
-     return op
+     return (op, Just size)
   -- TODO: handle floats
 
 pIntCompareOp :: GenParser Char st CompareOp
@@ -563,12 +563,12 @@ pIntCompareOp =
               return ISCmpGT)
   -- TOOD: add missing operations
 
-pArithmeticStmtOp :: GenParser Char st ArithmeticOp
+pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
      pWhitespace
-     tmp <- pOpWidth
-     return op
+     size <- pExprResultSize
+     return (op, Just size)
 
 pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =
