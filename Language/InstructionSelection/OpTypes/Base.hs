@@ -17,7 +17,15 @@ module Language.InstructionSelection.OpTypes.Base where
 -- | Unary operation types.
 
 data UnaryOp
+
+      -- | Fix-point arithmetic square root function.
+
     = FixPointSqrt
+
+      -- | Bit-wise NOT (@|@).
+
+    | Not
+
     deriving (Show, Eq)
 
 -- | Binary operation types.
