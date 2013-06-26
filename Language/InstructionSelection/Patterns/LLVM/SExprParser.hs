@@ -68,14 +68,13 @@ pConstraint = pParens pConstraint'
 
 pConstraint' :: GenParser Char st Constraint
 pConstraint' =
-  do pWhitespace
-     (    try pAllocConstraint
-      <|> try pImmConstraint
-      <|> try pZimmConstraint
-      <|> try pAliasConstraint
-      <|> try pRelAddressConstraint
-      <|> try pAbsAddressConstraint
-      <|> try pAssertConstraint)
+      try pAllocConstraint
+  <|> try pImmConstraint
+  <|> try pZimmConstraint
+  <|> try pAliasConstraint
+  <|> try pRelAddressConstraint
+  <|> try pAbsAddressConstraint
+  <|> try pAssertConstraint
 
 pAllocConstraint :: GenParser Char st Constraint
 pAllocConstraint =
@@ -259,8 +258,7 @@ pInt :: GenParser Char st Integer
 pInt =
   do     try (do string "-"
                  num <- pInt'
-                 return (num * (-1))
-             )
+                 return (num * (-1)))
      <|> pInt'
 
 pInt' :: GenParser Char st Integer
@@ -394,8 +392,7 @@ pData =
 morePData :: GenParser Char st String
 morePData =
       try (do nested <- pParens pData
-              return $ ['('] ++ nested ++ [')']
-          )
+              return $ ['('] ++ nested ++ [')'])
   <|> do pWhitespace
          many1 (noneOf "()")
 
@@ -405,7 +402,14 @@ pWhitespace = many (oneOf whitespace)
 pParens :: GenParser Char st a -> GenParser Char st a
 pParens c =
   do pWhitespace
-     result <- between (char '(') (char ')') c
+     result <- between (char '(') (char ')') (pInnerParens c)
+     pWhitespace
+     return result
+
+pInnerParens :: GenParser Char st a -> GenParser Char st a
+pInnerParens c =
+  do pWhitespace
+     result <- c
      pWhitespace
      return result
 
