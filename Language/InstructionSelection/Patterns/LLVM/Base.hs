@@ -280,6 +280,18 @@ data AssertExpression
 
     | NotExpr AssertExpression
 
+      -- | Always evaluate to 'False'.
+
+    | FalseExpr
+
+      -- | Always evaluate to 'True'.
+
+    | TrueExpr
+
+      -- | An immediate symbol.
+
+    | ImmediateExpr ImmediateSymbol
+
     deriving (Show)
 
 -- | Record for containing the assembly string to produce during code emission.

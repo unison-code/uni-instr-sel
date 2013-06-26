@@ -151,25 +151,33 @@ pAbsAddressConstraint =
 pAssertConstraint :: GenParser Char st Constraint
 pAssertConstraint =
   do string "assert"
-     expr <- pParens pAssertExpression
+     expr <- pAssertExpression
      return (Assert expr)
 
 pAssertExpression :: GenParser Char st AssertExpression
 pAssertExpression =
-      try pContainsAssert
-  <|> try pCompareAssert
-  <|> try pRegFlagAssert
-  <|> try pNotAssert
+      try pContainsAssertExpr
+  <|> try pCompareAssertExpr
+  <|> try pRegFlagAssertExpr
+  <|> try pNotAssertExpr
+  <|> try pTrueFalseAssertExpr
+  <|> try pImmediateAssertExpr
 
-pContainsAssert :: GenParser Char st AssertExpression
-pContainsAssert =
+pContainsAssertExpr :: GenParser Char st AssertExpression
+pContainsAssertExpr = pParens pContainsAssertExpr'
+
+pContainsAssertExpr' :: GenParser Char st AssertExpression
+pContainsAssertExpr' =
   do string "contains?"
      regclass <- pParens pPrefixedRegisterClass
      reg      <- pRegister
      return (ContainsExpr reg regclass)
 
-pCompareAssert :: GenParser Char st AssertExpression
-pCompareAssert =
+pCompareAssertExpr :: GenParser Char st AssertExpression
+pCompareAssertExpr = pParens pCompareAssertExpr'
+
+pCompareAssertExpr' :: GenParser Char st AssertExpression
+pCompareAssertExpr' =
   do string "icmp"
      pWhitespace
      cmpOp <- pCompareOp
@@ -180,16 +188,36 @@ pCompareAssert =
      data2 <- pAnyData
      return (CompareExpr cmpOp data1 data2)
 
-pRegFlagAssert :: GenParser Char st AssertExpression
-pRegFlagAssert =
+pRegFlagAssertExpr :: GenParser Char st AssertExpression
+pRegFlagAssertExpr = pParens pRegFlagAssertExpr'
+
+pRegFlagAssertExpr' :: GenParser Char st AssertExpression
+pRegFlagAssertExpr' =
   do regFlag <- pRegisterFlag'
      return (RegFlagExpr regFlag)
 
-pNotAssert :: GenParser Char st AssertExpression
-pNotAssert =
+pNotAssertExpr :: GenParser Char st AssertExpression
+pNotAssertExpr = pParens pNotAssertExpr'
+
+pNotAssertExpr' :: GenParser Char st AssertExpression
+pNotAssertExpr' =
   do string "not"
-     expr <- pParens pAssertExpression
+     expr <- pAssertExpression
      return (NotExpr expr)
+
+pTrueFalseAssertExpr :: GenParser Char st AssertExpression
+pTrueFalseAssertExpr =
+  do int <- pConstant
+     if int == (ConstIntValue 0)
+        then return FalseExpr
+        else return TrueExpr
+
+pImmediateAssertExpr :: GenParser Char st AssertExpression
+pImmediateAssertExpr =
+  do pWhitespace
+     imm <- pImmediateSymbol
+     pWhitespace
+     return (ImmediateExpr imm)
 
 pAllStatements :: GenParser Char st [Statement]
 pAllStatements = many pStatement
@@ -200,18 +228,21 @@ pStatement =
      return DummyStmt
 
 pSymbolWidth :: GenParser Char st Integer
-pSymbolWidth = pConstant
+pSymbolWidth =
+  do (ConstIntValue int) <- pConstant
+     return int
 
-pConstant :: GenParser Char st Integer
+pConstant :: GenParser Char st ConstantValue
 pConstant = pParens pConstant'
 
-pConstant' :: GenParser Char st Integer
+pConstant' :: GenParser Char st ConstantValue
 pConstant' =
   do string "constant"
      pWhitespace
      string "?"
      pWhitespace
-     pInt
+     int <- pInt
+     return (ConstIntValue int)
 
 pTemporary :: GenParser Char st Temporary
 pTemporary = labeledData "tmp" temporary'
@@ -302,7 +333,7 @@ pPrefixedRegisterClass =
 pAnyData :: GenParser Char st AnyData
 pAnyData =
       try (do const <- pConstant
-              return (ADConstant (ConstIntValue const)))
+              return (ADConstant const))
   <|> try (do temp <- pTemporary
               return (ADTemporary temp))
   <|> try (do reg <- pRegister
