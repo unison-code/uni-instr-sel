@@ -245,11 +245,11 @@ pSetRegStmt' =
 
 pStmtExpression :: GenParser Char st StmtExpression
 pStmtExpression =
-      try pBinaryOpStmtExpr
+      try pUnaryOpStmtExpr
+  <|> try pBinaryOpStmtExpr
   <|> try pDataStmtExpr
   <|> try pRegRangeStmtExpr
 -- TODO: fix
---  <|> try pUnaryOpStmtExpr
 --  <|> try pPhiStmtExpr
 
 pRegRangeStmtExpr :: GenParser Char st StmtExpression
@@ -265,6 +265,16 @@ pRegRangeStmtExpr' =
      pWhitespace
      (ConstIntValue upper) <- pConstant
      return (RegRangeStmtExpr reg (Range (toNatural lower) (toNatural upper)))
+
+pUnaryOpStmtExpr :: GenParser Char st StmtExpression
+pUnaryOpStmtExpr = pParens pUnaryOpStmtExpr'
+
+pUnaryOpStmtExpr' :: GenParser Char st StmtExpression
+pUnaryOpStmtExpr' =
+  do op <- pUnaryStmtOp
+     pWhitespace
+     expr <- pStmtExpression
+     return (UnaryOpStmtExpr op expr)
 
 pBinaryOpStmtExpr :: GenParser Char st StmtExpression
 pBinaryOpStmtExpr = pParens pBinaryOpStmtExpr'
@@ -459,6 +469,11 @@ pAnyStorageSpace =
               return (ASSDataSpace space))
   <|> try (do flag <- pRegisterFlag
               return (ASSRegisterFlag flag))
+
+pUnaryStmtOp :: GenParser Char st UnaryOp
+pUnaryStmtOp =
+      try (do string "fixpointsqrt"
+              return FixPointSqrt)
 
 pBinaryStmtOp :: GenParser Char st BinaryOp
 pBinaryStmtOp =

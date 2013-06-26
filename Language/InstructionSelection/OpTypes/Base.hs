@@ -17,7 +17,7 @@ module Language.InstructionSelection.OpTypes.Base where
 -- | Unary operation types.
 
 data UnaryOp
-    = DummyUnaryOp
+    = FixPointSqrt
     deriving (Show, Eq)
 
 -- | Binary operation types.
