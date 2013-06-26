@@ -572,7 +572,9 @@ pArithmeticStmtOp =
 
 pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =
-      try (do string "satadd"
+      try (do string "add"
+              return IAdd)
+  <|> try (do string "satadd"
               return ISatAdd)
   <|> try (do string "bit_and"
               return And)
