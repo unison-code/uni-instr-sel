@@ -510,10 +510,16 @@ pCompareStmtOp =
 
 pIntCompareOp :: GenParser Char st CompareOp
 pIntCompareOp =
-      try (do string "slt"
-              return ISCmpLT)
-  <|> try (do string "eq"
+      try (do string "eq"
               return ICmpEq)
+  <|> try (do string "ult"
+              return IUCmpLT)
+  <|> try (do string "slt"
+              return ISCmpLT)
+  <|> try (do string "ugt"
+              return IUCmpGT)
+  <|> try (do string "sgt"
+              return ISCmpGT)
   -- TOOD: add missing operations
 
 pArithmeticStmtOp :: GenParser Char st ArithmeticOp
