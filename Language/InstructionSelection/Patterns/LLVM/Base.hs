@@ -38,6 +38,14 @@ data Temporary
 
     deriving (Show, Eq)
 
+-- | Record for a register. A register can either by denoted by a register
+-- symbol or via a temporary (which will, in some way, refer to a register).
+
+data Register
+    = RegByTemporary Temporary
+    | RegBySymbol RegisterSymbol
+    deriving (Show)
+
 -- | Record for describing a register symbol.
 
 data RegisterSymbol
@@ -54,7 +62,7 @@ data RegisterFlagSymbol
 -- specific register.
 
 data RegisterFlag
-    = RegisterFlag RegisterFlagSymbol RegisterSymbol
+    = RegisterFlag RegisterFlagSymbol Register
     deriving (Show)
 
 -- | Record for describing a data space.
@@ -115,10 +123,27 @@ data ProgramData
 
 data AnyData
     = ADTemporary Temporary
-    | ADRegister RegisterSymbol
-    | ADRegisterFlag RegisterFlagSymbol
+    | ADRegister Register
+    | ADRegisterFlag RegisterFlag
     | ADConstant ConstantValue
     | ADImmediate ImmediateSymbol
+    deriving (Show)
+
+-- | Record for representing any form of storage unit (register, register flag,
+-- temporary, etc.).
+
+data AnyStorage
+    = ASTemporary Temporary
+    | ASRegister Register
+    | ASRegisterFlag RegisterFlag
+    deriving (Show)
+
+-- | Record for representing any form of storage space (register flag or data
+-- space).
+
+data AnyStorageSpace
+    = ASSRegisterFlag RegisterFlag
+    | ASSDataSpace DataSpace
     deriving (Show)
 
 data Expression
@@ -181,16 +206,20 @@ data Statement
 
     | LabelStmt Label
 
+      -- | For testing purposes.
+
+    | DummyStmt
+
     deriving (Show)
 
 -- | Record for a pattern constraint.
 
 data Constraint
 
-      -- | The @AllocateIn@ constraint dictates that a register value must be
-      -- located in a particular space.
+      -- | The @AllocateIn@ constraint dictates that a storage unit must be
+      -- located in a particular storage space.
 
-    = AllocateIn RegisterSymbol DataSpace
+    = AllocateIn AnyStorage AnyStorageSpace
 
       -- | The @ImmediateRange@ constraint limits the range of values that an
       -- immediate value may take (including 0).
@@ -220,7 +249,7 @@ data AssertExpression
 
       -- | Checks whether a register is within a certain data space.
 
-    = ContainsExpr RegisterSymbol DataSpace
+    = ContainsExpr Register DataSpace
 
       -- | Checks whether a comparison between two data holds.
 

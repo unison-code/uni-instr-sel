@@ -23,6 +23,7 @@ import Language.InstructionSelection.OpTypes (CompareOp (..))
 import Language.InstructionSelection.Utils (Range (..))
 import Text.ParserCombinators.Parsec
 import Data.String.Utils
+import Debug.Trace
 
 
 
@@ -78,35 +79,35 @@ pAllocConstraint :: GenParser Char st Constraint
 pAllocConstraint =
   do string "allocate-in"
      pWhitespace
-     symbol <- pRegisterSymbol
+     storage <- pAnyStorage
      pWhitespace
-     regclass <- pRegisterClass
+     space <- pAnyStorageSpace
      pWhitespace
-     return (AllocateIn symbol regclass)
+     return (AllocateIn storage space)
 
 pImmConstraint :: GenParser Char st Constraint
 pImmConstraint =
   do string "imm"
      pWhitespace
-     lower <- many1 digit
+     lower <- pInt
      pWhitespace
-     upper <- many1 digit
+     upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
      pWhitespace
-     return (ImmediateRange imm (Range (read lower) (read upper)))
+     return (ImmediateRange imm (Range lower upper))
 
 pZimmConstraint :: GenParser Char st Constraint
 pZimmConstraint =
   do string "zimm"
      pWhitespace
-     lower <- many1 digit
+     lower <- pInt
      pWhitespace
-     upper <- many1 digit
+     upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
      pWhitespace
-     return (ImmediateRangeNoZero imm (Range (read lower) (read upper)))
+     return (ImmediateRangeNoZero imm (Range lower upper))
 
 pAliasConstraint :: GenParser Char st Constraint
 pAliasConstraint =
@@ -135,7 +136,7 @@ pContainsAssert :: GenParser Char st AssertExpression
 pContainsAssert =
   do string "contains?"
      regclass <- pParens pPrefixedRegisterClass
-     reg      <- pRegisterSymbol
+     reg      <- pRegister
      return (ContainsExpr reg regclass)
 
 pCompareAssert :: GenParser Char st AssertExpression
@@ -152,7 +153,7 @@ pCompareAssert =
 
 pRegFlagAssert :: GenParser Char st AssertExpression
 pRegFlagAssert =
-  do regFlag <- pRegisterFlag
+  do regFlag <- pRegisterFlag'
      return (RegFlagExpr regFlag)
 
 pNotAssert :: GenParser Char st AssertExpression
@@ -165,7 +166,9 @@ pAllStatements :: GenParser Char st [Statement]
 pAllStatements = many pStatement
 
 pStatement :: GenParser Char st Statement
-pStatement = pParens pData -- TODO: fix
+pStatement =
+  do pParens pData -- TODO: fix
+     return DummyStmt
 
 pSymbolWidth :: GenParser Char st Integer
 pSymbolWidth = pConstant
@@ -179,8 +182,7 @@ pConstant' =
      pWhitespace
      string "?"
      pWhitespace
-     int <- many1 digit
-     return (read int)
+     pInt
 
 pTemporary :: GenParser Char st Temporary
 pTemporary = labeledData "tmp" temporary'
@@ -193,19 +195,34 @@ temporary' =
 pSymbol :: GenParser Char st String
 pSymbol = many1 alphaNum
 
+pInt :: GenParser Char st Integer
+pInt =
+  do     try (do string "-"
+                 num <- pInt'
+                 return (num * (-1))
+             )
+     <|> pInt'
+
+pInt' :: GenParser Char st Integer
+pInt' =
+  do int <- many1 digit
+     return (read int)
+
 pImmediateSymbol :: GenParser Char st ImmediateSymbol
 pImmediateSymbol =
   do symbol <- pSymbol
      return (ImmediateSymbol symbol)
 
 pRegisterFlag :: GenParser Char st RegisterFlag
-pRegisterFlag =
+pRegisterFlag = pParens pRegisterFlag'
+
+pRegisterFlag' :: GenParser Char st RegisterFlag
+pRegisterFlag' =
   do string "reg-flag"
      pWhitespace
      flag <- pRegisterFlagSymbol
      pWhitespace
-     reg <- (    try pRegisterSymbol
-             <|> try pPrefixedRegisterSymbol)
+     reg <- pRegister
      return (RegisterFlag flag reg)
 
 pRegisterFlagSymbol :: GenParser Char st RegisterFlagSymbol
@@ -213,16 +230,32 @@ pRegisterFlagSymbol =
   do symbol <- pSymbol
      return (RegisterFlagSymbol symbol)
 
+pRegister :: GenParser Char st Register
+pRegister =
+      try (do symbol <- pRegisterSymbol
+              return (RegBySymbol symbol))
+  <|> try (do symbol <- pPrefixedRegisterSymbol
+              return (RegBySymbol symbol))
+  <|> try (do temp <- pTemporary
+              return (RegByTemporary temp))
+
 pRegisterSymbol :: GenParser Char st RegisterSymbol
 pRegisterSymbol =
   do symbol <- pSymbol
      return (RegisterSymbol symbol)
 
 pPrefixedRegisterSymbol :: GenParser Char st RegisterSymbol
-pPrefixedRegisterSymbol =
+pPrefixedRegisterSymbol = pParens pPrefixedRegisterSymbol'
+
+pPrefixedRegisterSymbol' :: GenParser Char st RegisterSymbol
+pPrefixedRegisterSymbol' =
   do string "register"
      pWhitespace
      pRegisterSymbol
+
+pDataSpace :: GenParser Char st DataSpace
+pDataSpace = pRegisterClass
+     -- TODO: add memory class
 
 pRegisterClass :: GenParser Char st DataSpace
 pRegisterClass =
@@ -241,25 +274,36 @@ pAnyData =
               return (ADConstant (ConstIntValue const)))
   <|> try (do temp <- pTemporary
               return (ADTemporary temp))
-  <|> try (do reg <- pRegisterSymbol
+  <|> try (do reg <- pRegister
               return (ADRegister reg))
-  <|> try (do reg <- pPrefixedRegisterSymbol
-              return (ADRegister reg))
-  <|> try (do flag <- pRegisterFlagSymbol
+  <|> try (do flag <- pRegisterFlag
               return (ADRegisterFlag flag))
   <|> try (do imm <- pImmediateSymbol
               return (ADImmediate imm))
 
+pAnyStorage :: GenParser Char st AnyStorage
+pAnyStorage =
+      try (do temp <- pTemporary
+              return (ASTemporary temp))
+  <|> try (do reg <- pRegister
+              return (ASRegister reg))
+  <|> try (do flag <- pRegisterFlag
+              return (ASRegisterFlag flag))
+
+pAnyStorageSpace :: GenParser Char st AnyStorageSpace
+pAnyStorageSpace =
+      try (do space <- pDataSpace
+              return (ASSDataSpace space))
+  <|> try (do flag <- pRegisterFlag
+              return (ASSRegisterFlag flag))
+
+
 pCompareOp :: GenParser Char st CompareOp
 pCompareOp =
-  do op <- (    try (do string "slt"
-                        return ISCmpLT)
-            <|> try (do string "eq"
-                        return ICmpEq)
-           )
-     pWhitespace
-     _ <- pConstant
-     return op
+      try (do string "slt"
+              return ISCmpLT)
+  <|> try (do string "eq"
+              return ICmpEq)
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
 labeledData str p = pParens (labeledData' str p)
