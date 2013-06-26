@@ -227,7 +227,20 @@ data Statement
 
       -- | Performs an unconditional branch (or jump) to a label.
 
-    | BranchStmt Label
+    | UncondBranchStmt Label
+
+      -- | Performs an conditional branch (or jump) to a label.
+
+    | CondBranchStmt
+          Register
+
+          -- | Label taken if the register evaluates to @False@.
+
+          Label
+
+          -- | Label taken if the register evaluates to @True@.
+
+          Label
 
       -- | Declares a label.
 

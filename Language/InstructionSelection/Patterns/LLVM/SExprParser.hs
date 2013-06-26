@@ -216,7 +216,8 @@ pStatement :: GenParser Char st Statement
 pStatement =
       try pAssignmentStmt
   <|> try pSetRegStmt
-  <|> try pBranchStmt
+  <|> try pUncondBranchStmt
+  <|> try pCondBranchStmt
   <|> try pLabelStmt
 
 pAssignmentStmt :: GenParser Char st Statement
@@ -304,15 +305,29 @@ pProgramData =
   <|> try (do reg <- pRegister
               return (PDRegister reg))
 
-pBranchStmt :: GenParser Char st Statement
-pBranchStmt = pParens pBranchStmt'
+pUncondBranchStmt :: GenParser Char st Statement
+pUncondBranchStmt = pParens pUncondBranchStmt'
 
-pBranchStmt' :: GenParser Char st Statement
-pBranchStmt' =
+pUncondBranchStmt' :: GenParser Char st Statement
+pUncondBranchStmt' =
   do string "br"
      pWhitespace
      label <- pLabel
-     return (BranchStmt label)
+     return (UncondBranchStmt label)
+
+pCondBranchStmt :: GenParser Char st Statement
+pCondBranchStmt = pParens pCondBranchStmt'
+
+pCondBranchStmt' :: GenParser Char st Statement
+pCondBranchStmt' =
+  do string "br"
+     pWhitespace
+     reg <- pRegister
+     pWhitespace
+     falseLabel <- pLabel
+     pWhitespace
+     trueLabel <- pLabel
+     return (CondBranchStmt reg falseLabel trueLabel)
 
 pLabelStmt :: GenParser Char st Statement
 pLabelStmt = pParens pLabelStmt'
