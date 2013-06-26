@@ -19,7 +19,7 @@ module Language.InstructionSelection.Patterns.LLVM.SExprParser (
     ) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
-import Language.InstructionSelection.OpTypes (CompareOp (..))
+import Language.InstructionSelection.OpTypes
 import Language.InstructionSelection.Utils (Range (..))
 import Text.ParserCombinators.Parsec
 import Data.String.Utils
@@ -83,7 +83,6 @@ pAllocConstraint =
      storage <- pAnyStorage
      pWhitespace
      space <- pAnyStorageSpace
-     pWhitespace
      return (AllocateIn storage space)
 
 pImmConstraint :: GenParser Char st Constraint
@@ -95,7 +94,6 @@ pImmConstraint =
      upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
-     pWhitespace
      return (ImmediateRange imm (Range lower upper))
 
 pZimmConstraint :: GenParser Char st Constraint
@@ -107,7 +105,6 @@ pZimmConstraint =
      upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
-     pWhitespace
      return (ImmediateRangeNoZero imm (Range lower upper))
 
 pAliasConstraint :: GenParser Char st Constraint
@@ -120,7 +117,6 @@ pAliasConstraint =
                          return Nothing)
             <|> (do rg <- pRegister
                     return (Just rg))
-     pWhitespace
      return (Alias temp reg)
 
 pRelAddressConstraint :: GenParser Char st Constraint
@@ -132,7 +128,6 @@ pRelAddressConstraint =
      upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
-     pWhitespace
      return (RelAddressConstraint imm (MemoryClass "local" (Range lower upper)))
 
 pAbsAddressConstraint :: GenParser Char st Constraint
@@ -144,7 +139,6 @@ pAbsAddressConstraint =
      upper <- pInt
      pWhitespace
      imm <- pImmediateSymbol
-     pWhitespace
      return (AbsAddressConstraint imm (MemoryClass "local" (Range lower upper)))
 
 pAssertConstraint :: GenParser Char st Constraint
@@ -169,23 +163,21 @@ pContainsAssertExpr' :: GenParser Char st AssertExpression
 pContainsAssertExpr' =
   do string "contains?"
      regclass <- pParens pPrefixedRegisterClass
+     pWhitespace
      reg      <- pRegister
-     return (ContainsExpr reg regclass)
+     return (AssertContainsExpr reg regclass)
 
 pCompareAssertExpr :: GenParser Char st AssertExpression
 pCompareAssertExpr = pParens pCompareAssertExpr'
 
 pCompareAssertExpr' :: GenParser Char st AssertExpression
 pCompareAssertExpr' =
-  do string "icmp"
-     pWhitespace
-     cmpOp <- pCompareOp
-     pWhitespace
-     _ <- pSymbolWidth
+  do op <- pCompareAssertOp
      pWhitespace
      data1 <- pAnyData
+     pWhitespace
      data2 <- pAnyData
-     return (CompareExpr cmpOp data1 data2)
+     return (AssertCompareExpr op data1 data2)
 
 pRegFlagAssertExpr :: GenParser Char st AssertExpression
 pRegFlagAssertExpr = pParens pRegFlagAssertExpr'
@@ -193,7 +185,7 @@ pRegFlagAssertExpr = pParens pRegFlagAssertExpr'
 pRegFlagAssertExpr' :: GenParser Char st AssertExpression
 pRegFlagAssertExpr' =
   do regFlag <- pRegisterFlag'
-     return (RegFlagExpr regFlag)
+     return (AssertRegFlagExpr regFlag)
 
 pNotAssertExpr :: GenParser Char st AssertExpression
 pNotAssertExpr = pParens pNotAssertExpr'
@@ -202,32 +194,120 @@ pNotAssertExpr' :: GenParser Char st AssertExpression
 pNotAssertExpr' =
   do string "not"
      expr <- pAssertExpression
-     return (NotExpr expr)
+     return (AssertNotExpr expr)
 
 pTrueFalseAssertExpr :: GenParser Char st AssertExpression
 pTrueFalseAssertExpr =
   do int <- pConstant
      if int == (ConstIntValue 0)
-        then return FalseExpr
-        else return TrueExpr
+        then return AssertFalseExpr
+        else return AssertTrueExpr
 
 pImmediateAssertExpr :: GenParser Char st AssertExpression
 pImmediateAssertExpr =
   do pWhitespace
      imm <- pImmediateSymbol
-     pWhitespace
-     return (ImmediateExpr imm)
+     return (AssertImmediateExpr imm)
 
 pAllStatements :: GenParser Char st [Statement]
 pAllStatements = many pStatement
 
 pStatement :: GenParser Char st Statement
 pStatement =
-  do pParens pData -- TODO: fix
-     return DummyStmt
+      try pAssignmentStmt
+  <|> try pSetRegStmt
+  <|> try pBranchStmt
+  <|> try pLabelStmt
+
+pAssignmentStmt :: GenParser Char st Statement
+pAssignmentStmt = pParens pAssignmentStmt'
+
+pAssignmentStmt' :: GenParser Char st Statement
+pAssignmentStmt' =
+  do string "="
+     pWhitespace
+     temp <- pTemporary
+     pWhitespace
+     expr <- pStmtExpression
+     return (AssignmentStmt temp expr)
+
+pSetRegStmt :: GenParser Char st Statement
+pSetRegStmt = pParens pSetRegStmt'
+
+pSetRegStmt' :: GenParser Char st Statement
+pSetRegStmt' =
+  do string "set-reg"
+     pWhitespace
+     reg <- pRegister
+     pWhitespace
+     expr <- pStmtExpression
+     return (SetRegStmt reg expr)
+
+pStmtExpression :: GenParser Char st StmtExpression
+pStmtExpression =
+      try pBinaryOpStmtExpr
+  <|> try pDataStmtExpr
+-- TODO: fix
+--  <|> try pPhiStmtExpr
+
+pBinaryOpStmtExpr :: GenParser Char st StmtExpression
+pBinaryOpStmtExpr = pParens pBinaryOpStmtExpr'
+
+pBinaryOpStmtExpr' :: GenParser Char st StmtExpression
+pBinaryOpStmtExpr' =
+  do op <- pBinaryStmtOp
+     pWhitespace
+     expr1 <- pStmtExpression
+     pWhitespace
+     expr2 <- pStmtExpression
+     return (BinaryOpStmtExpr op expr1 expr2)
+
+pDataStmtExpr :: GenParser Char st StmtExpression
+pDataStmtExpr =
+  do pdata <- pProgramData
+     return (DataStmtExpr pdata)
+
+pProgramData :: GenParser Char st ProgramData
+pProgramData =
+      try (do const <- pConstant
+              return (PDConstant const))
+  <|> try (do imm <- pImmediateSymbol
+              return (PDImmediate imm))
+  <|> try (do temp <- pTemporary
+              return (PDTemporary temp))
+
+pBranchStmt :: GenParser Char st Statement
+pBranchStmt = pParens pBranchStmt'
+
+pBranchStmt' :: GenParser Char st Statement
+pBranchStmt' =
+  do string "br"
+     pWhitespace
+     label <- pLabel
+     return (BranchStmt label)
+
+pLabelStmt :: GenParser Char st Statement
+pLabelStmt = pParens pLabelStmt'
+
+pLabelStmt' :: GenParser Char st Statement
+pLabelStmt' =
+  do string "label"
+     pWhitespace
+     label <- pLabel
+     return (LabelStmt label)
+
+pLabel :: GenParser Char st Label
+pLabel =
+  do label <- many1 (try alphaNum <|> try (char '_'))
+     return (Label label)
 
 pSymbolWidth :: GenParser Char st Integer
 pSymbolWidth =
+  do (ConstIntValue int) <- pConstant
+     return int
+
+pOpWidth :: GenParser Char st Integer
+pOpWidth =
   do (ConstIntValue int) <- pConstant
      return int
 
@@ -345,9 +425,7 @@ pAnyData =
 
 pNoValue :: GenParser Char st ()
 pNoValue =
-  do pWhitespace
-     string "no-value"
-     pWhitespace
+  do string "no-value"
      return ()
 
 pAnyStorage :: GenParser Char st AnyStorage
@@ -366,13 +444,55 @@ pAnyStorageSpace =
   <|> try (do flag <- pRegisterFlag
               return (ASSRegisterFlag flag))
 
+pBinaryStmtOp :: GenParser Char st BinaryOp
+pBinaryStmtOp =
+      try (do op <- pCompareStmtOp
+              return (BinCompareOp op))
+  <|> try (do op <- pArithmeticStmtOp
+              return (BinArithmeticOp op))
 
-pCompareOp :: GenParser Char st CompareOp
-pCompareOp =
+pCompareAssertOp :: GenParser Char st CompareOp
+pCompareAssertOp =
+  do string "icmp"
+     pWhitespace
+     op <- pIntCompareOp
+     pWhitespace
+     _ <- pOpWidth
+     return op
+  -- TODO: handle floats
+
+pCompareStmtOp :: GenParser Char st CompareOp
+pCompareStmtOp =
+  do string "icmp"
+     pWhitespace
+     _ <- pOpWidth
+     pWhitespace
+     op <- pIntCompareOp
+     return op
+  -- TODO: handle floats
+
+pIntCompareOp :: GenParser Char st CompareOp
+pIntCompareOp =
       try (do string "slt"
               return ISCmpLT)
   <|> try (do string "eq"
               return ICmpEq)
+  -- TOOD: add missing operations
+
+pArithmeticStmtOp :: GenParser Char st ArithmeticOp
+pArithmeticStmtOp =
+  do op <- pArithmeticStmtOpType
+     pWhitespace
+     tmp <- pOpWidth
+     return op
+
+pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
+pArithmeticStmtOpType =
+      try (do string "satadd"
+              return ISatAdd)
+  <|> try (do string "bit_and"
+              return And)
+  -- TOOD: add missing operations
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
 labeledData str p = pParens (labeledData' str p)

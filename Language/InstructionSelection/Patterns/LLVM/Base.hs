@@ -112,15 +112,15 @@ data ProgramData
 
       -- | A value which is fixed and known at compile time.
 
-    = ConstantData ConstantValue
+    = PDConstant ConstantValue
 
       -- | An immediate value represented by a symbol.
 
-    | ImmediateData ImmediateSymbol
+    | PDImmediate ImmediateSymbol
 
       -- | A value located in a temporary.
 
-    | TemporaryData Temporary
+    | PDTemporary Temporary
 
     deriving (Show)
 
@@ -153,37 +153,43 @@ data AnyStorageSpace
     | ASSDataSpace DataSpace
     deriving (Show)
 
-data Expression
+-- | Record for representing an expression for a statement.
+
+data StmtExpression
 
       -- | A binary expression. The first expression is the LHS and the second
       -- expression is the RHS.
 
-    = BinaryOpExpr
+    = BinaryOpStmtExpr
           BinaryOp
 
           -- | LHS.
 
-          Expression
+          StmtExpression
 
           -- | RHS.
 
-          Expression
+          StmtExpression
+
+      -- | A unary expression.
+
+    | UnaryOpStmtExpr UnaryOp StmtExpression
 
       -- | A phi expression.
 
-    | PhiExpr [PhiExpression]
+    | PhiStmtExpr [PhiElement]
 
       -- | A data expression.
 
-    | DataExpr ProgramData
+    | DataStmtExpr ProgramData
 
     deriving (Show)
 
--- | Record for containing an expression inside a phi function. The label
--- indicates from where the value comes from.
+-- | Record for containing an element inside a phi function. The label indicates
+-- from where the value comes from.
 
-data PhiExpression
-    = PhiExpression Expression Label
+data PhiElement
+    = PhiElement StmtExpression Label
     deriving (Show)
 
 -- | Record for containing a label.
@@ -203,7 +209,11 @@ data Statement
 
       -- | Assigns the result of an expression to a temporary.
 
-    = AssignmentStmt Temporary Expression
+    = AssignmentStmt Temporary StmtExpression
+
+      -- | Assigns the result of an expression to a register.
+
+    | SetRegStmt Register StmtExpression
 
       -- | Performs an unconditional branch (or jump) to a label.
 
@@ -212,10 +222,6 @@ data Statement
       -- | Declares a label.
 
     | LabelStmt Label
-
-      -- | For testing purposes.
-
-    | DummyStmt
 
     deriving (Show)
 
@@ -266,31 +272,31 @@ data AssertExpression
 
       -- | Checks whether a register is within a certain register class.
 
-    = ContainsExpr Register RegisterClass
+    = AssertContainsExpr Register RegisterClass
 
       -- | Checks whether a comparison between two data holds.
 
-    | CompareExpr CompareOp AnyData AnyData
+    | AssertCompareExpr CompareOp AnyData AnyData
 
       -- | Checks whether a certain flag in a register is set.
 
-    | RegFlagExpr RegisterFlag
+    | AssertRegFlagExpr RegisterFlag
 
       -- | Negates an assert expression.
 
-    | NotExpr AssertExpression
+    | AssertNotExpr AssertExpression
 
       -- | Always evaluate to 'False'.
 
-    | FalseExpr
+    | AssertFalseExpr
 
       -- | Always evaluate to 'True'.
 
-    | TrueExpr
+    | AssertTrueExpr
 
       -- | An immediate symbol.
 
-    | ImmediateExpr ImmediateSymbol
+    | AssertImmediateExpr ImmediateSymbol
 
     deriving (Show)
 

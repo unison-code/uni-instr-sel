@@ -14,6 +14,12 @@
 
 module Language.InstructionSelection.OpTypes.Base where
 
+-- | Unary operation types.
+
+data UnaryOp
+    = DummyUnaryOp
+    deriving (Show, Eq)
+
 -- | Binary operation types.
 
 data BinaryOp
@@ -32,6 +38,10 @@ data ArithmeticOp
       -- | Integer addition. Commutative.
 
     = IAdd
+
+      -- | Integer saturated addition. Commutative.
+
+    | ISatAdd
 
       -- | Integer subtraction.
 
