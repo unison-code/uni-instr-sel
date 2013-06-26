@@ -527,6 +527,8 @@ pArithmeticStmtOpType =
               return ISatAdd)
   <|> try (do string "bit_and"
               return And)
+  <|> try (do string "shl"
+              return Shl)
   -- TOOD: add missing operations
 
 labeledData :: String -> GenParser Char st a -> GenParser Char st a
