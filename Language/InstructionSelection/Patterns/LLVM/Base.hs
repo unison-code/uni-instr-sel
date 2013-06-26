@@ -65,19 +65,19 @@ data RegisterFlag
     = RegisterFlag RegisterFlagSymbol Register
     deriving (Show)
 
--- | Record for describing a data space.
+-- | Record for describing a register class.
 
-data DataSpace
-
-      -- | Constructor for a register class.
-
+data RegisterClass
     = RegisterClass
-
           -- | Identifier for the class.
 
           String
+    deriving (Show, Eq)
 
-    | MemoryClass
+-- | Record for describing a memory class.
+
+data MemoryClass
+    = MemoryClass
 
           -- | Identifier for the class.
 
@@ -87,7 +87,13 @@ data DataSpace
           -- range of the memory space, or a restricted subset.
 
           (Range Integer)
+    deriving (Show, Eq)
 
+-- | Record for describing a data space.
+
+data DataSpace
+    = DSRegisterClass RegisterClass
+    | DSMemoryClass MemoryClass
     deriving (Show, Eq)
 
 -- | Record for an immediate value symbol. This is used to represent an
@@ -127,6 +133,7 @@ data AnyData
     | ADRegisterFlag RegisterFlag
     | ADConstant ConstantValue
     | ADImmediate ImmediateSymbol
+    | ADNoValue
     deriving (Show)
 
 -- | Record for representing any form of storage unit (register, register flag,
@@ -233,13 +240,23 @@ data Constraint
 
       -- | The @Alias@ constraint dictates that two temporaries must be the
       -- same, in the sense that both temporaries must be assigned the same
-      -- register.
+      -- register. Sometimes a temporary may be aliased with @no-value@, upon
+      -- which there is no second temporary.
 
-    | Alias Temporary Temporary
+    | Alias Temporary (Maybe Temporary)
 
       -- | The @Assert@ constraints contain any other, arbitrary constraints.
 
     | Assert AssertExpression
+
+      -- | The @RelAddressConstraint@ constraint forces an immediate value to be
+      -- within a certain relative memory address range.
+
+    | RelAddressConstraint ImmediateSymbol MemoryClass
+
+      -- | Same as for @RelAddressConstraint@ but for absolute values.
+
+    | AbsAddressConstraint ImmediateSymbol MemoryClass
 
     deriving (Show)
 
@@ -247,9 +264,9 @@ data Constraint
 
 data AssertExpression
 
-      -- | Checks whether a register is within a certain data space.
+      -- | Checks whether a register is within a certain register class.
 
-    = ContainsExpr Register DataSpace
+    = ContainsExpr Register RegisterClass
 
       -- | Checks whether a comparison between two data holds.
 

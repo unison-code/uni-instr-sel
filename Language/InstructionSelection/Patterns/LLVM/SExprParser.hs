@@ -73,6 +73,8 @@ pConstraint' =
       <|> try pImmConstraint
       <|> try pZimmConstraint
       <|> try pAliasConstraint
+      <|> try pRelAddressConstraint
+      <|> try pAbsAddressConstraint
       <|> try pAssertConstraint)
 
 pAllocConstraint :: GenParser Char st Constraint
@@ -115,9 +117,36 @@ pAliasConstraint =
      pWhitespace
      temp1 <- pTemporary
      pWhitespace
-     temp2 <- pTemporary
+     temp2 <-     try (do temp <- pTemporary
+                          return (Just temp))
+              <|> (do pNoValue
+                      return Nothing)
      pWhitespace
      return (Alias temp1 temp2)
+
+pRelAddressConstraint :: GenParser Char st Constraint
+pRelAddressConstraint =
+  do string "rel-address"
+     pWhitespace
+     lower <- pInt
+     pWhitespace
+     upper <- pInt
+     pWhitespace
+     imm <- pImmediateSymbol
+     pWhitespace
+     return (RelAddressConstraint imm (MemoryClass "local" (Range lower upper)))
+
+pAbsAddressConstraint :: GenParser Char st Constraint
+pAbsAddressConstraint =
+  do string "abs-address"
+     pWhitespace
+     lower <- pInt
+     pWhitespace
+     upper <- pInt
+     pWhitespace
+     imm <- pImmediateSymbol
+     pWhitespace
+     return (AbsAddressConstraint imm (MemoryClass "local" (Range lower upper)))
 
 pAssertConstraint :: GenParser Char st Constraint
 pAssertConstraint =
@@ -254,15 +283,17 @@ pPrefixedRegisterSymbol' =
      pRegisterSymbol
 
 pDataSpace :: GenParser Char st DataSpace
-pDataSpace = pRegisterClass
+pDataSpace =
+      try (do regClass <- pRegisterClass
+              return (DSRegisterClass regClass))
      -- TODO: add memory class
 
-pRegisterClass :: GenParser Char st DataSpace
+pRegisterClass :: GenParser Char st RegisterClass
 pRegisterClass =
   do reg <- many1 (try alphaNum <|> try (char '_'))
      return (RegisterClass reg)
 
-pPrefixedRegisterClass :: GenParser Char st DataSpace
+pPrefixedRegisterClass :: GenParser Char st RegisterClass
 pPrefixedRegisterClass =
   do string "register-class"
      pWhitespace
@@ -280,6 +311,15 @@ pAnyData =
               return (ADRegisterFlag flag))
   <|> try (do imm <- pImmediateSymbol
               return (ADImmediate imm))
+  <|> try (do pNoValue
+              return (ADNoValue))
+
+pNoValue :: GenParser Char st ()
+pNoValue =
+  do pWhitespace
+     string "no-value"
+     pWhitespace
+     return ()
 
 pAnyStorage :: GenParser Char st AnyStorage
 pAnyStorage =
