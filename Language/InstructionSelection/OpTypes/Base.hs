@@ -84,6 +84,10 @@ data ArithmeticOp
 
     | IMul
 
+      -- | Integer saturated multiplication. Commutative.
+
+    | ISatMul
+
       -- | Unsigned integer division.
 
     | IUDiv

@@ -627,6 +627,10 @@ pArithmeticStmtOpType =
               return ISub)
   <|> try (do string "satsub"
               return ISatSub)
+  <|> try (do string "mul"
+              return IMul)
+  <|> try (do string "satmul"
+              return ISatMul)
   <|> try (do string "bit_and"
               return And)
   <|> try (do string "bit_or"
