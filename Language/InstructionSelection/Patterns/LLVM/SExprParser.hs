@@ -637,6 +637,8 @@ pArithmeticStmtOpType =
               return IUDiv)
   <|> try (do string "sdiv"
               return ISDiv)
+  <|> try (do string "fdiv"
+              return FDiv)
   <|> try (do string "urem"
               return IURem)
   <|> try (do string "srem"
