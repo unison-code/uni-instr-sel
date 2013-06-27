@@ -40,12 +40,25 @@ data BinaryOp
 data ArithmeticOp
 
     ------------------------------
+    -- Meta operations
+    -- (does not require any result size)
+    ------------------------------
+
+      -- | Addition. Commutative.
+
+    = Plus
+
+      -- | Subtraction. Commutative.
+
+    | Minus
+
+    ------------------------------
     -- Integer operations
     ------------------------------
 
       -- | Integer addition. Commutative.
 
-    = IAdd
+    | IAdd
 
       -- | Integer saturated addition. Commutative.
 

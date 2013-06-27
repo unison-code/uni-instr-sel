@@ -537,11 +537,12 @@ pAnyStorageSpace =
   <|> try (do flag <- pRegisterFlag
               return (ASSRegisterFlag flag))
 
-pUnaryStmtOp :: GenParser Char st (UnaryOp, ExprResultSize)
+pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
   do op <- pUnaryStmtOpType
      pWhitespace
-     size <- pExprResultSize
+     size' <- pExprResultSize
+     let size = Just size'
      return (FixPointSqrt, size)
 
 pUnaryStmtOpType :: GenParser Char st UnaryOp
@@ -551,28 +552,30 @@ pUnaryStmtOpType =
  <|> try (do string "bit_not"
              return FixPointSqrt)
 
-pBinaryStmtOp :: GenParser Char st (BinaryOp, ExprResultSize)
+pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
 pBinaryStmtOp =
       try (do (op, size) <- pCompareStmtOp
               return (BinCompareOp op, size))
   <|> try (do (op, size) <- pArithmeticStmtOp
               return (BinArithmeticOp op, size))
 
-pCompareAssertOp :: GenParser Char st (CompareOp, ExprResultSize)
+pCompareAssertOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareAssertOp =
   do string "icmp"
      pWhitespace
      op <- pIntCompareOp
      pWhitespace
-     size <- pExprResultSize
+     size' <- pExprResultSize
+     let size = Just size'
      return (op, size)
   -- TODO: handle floats
 
-pCompareStmtOp :: GenParser Char st (CompareOp, ExprResultSize)
+pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
   do string "icmp"
      pWhitespace
-     size <- pExprResultSize
+     size' <- pExprResultSize
+     let size = Just size'
      pWhitespace
      op <- pIntCompareOp
      return (op, size)
@@ -592,12 +595,15 @@ pIntCompareOp =
               return ISCmpGT)
   -- TOOD: add missing operations
 
-pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, ExprResultSize)
+pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
      pWhitespace
-     size <- pExprResultSize
-     return (op, size)
+     if (op == Plus) || (op == Minus)
+        then return (op, Nothing)
+        else (do size' <- pExprResultSize
+                 let size = Just size'
+                 return (op, size))
 
 pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =

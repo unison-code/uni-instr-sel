@@ -180,7 +180,7 @@ data StmtExpression
 
           -- | Size (in bits) of result
 
-          ExprResultSize
+          (Maybe ExprResultSize)
 
           -- | LHS.
 
@@ -192,7 +192,7 @@ data StmtExpression
 
       -- | A unary expression.
 
-    | UnaryOpStmtExpr UnaryOp ExprResultSize StmtExpression
+    | UnaryOpStmtExpr UnaryOp (Maybe ExprResultSize) StmtExpression
 
       -- | A phi expression.
 
@@ -332,7 +332,7 @@ data AssertExpression
 
       -- | Checks whether a comparison between two data holds.
 
-    | AssertCompareExpr CompareOp ExprResultSize AnyData AnyData
+    | AssertCompareExpr CompareOp (Maybe ExprResultSize) AnyData AnyData
 
       -- | Checks whether a certain flag in a register is set.
 
