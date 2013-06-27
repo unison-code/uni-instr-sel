@@ -647,6 +647,8 @@ pArithmeticStmtOpType =
               return IUDiv)
   <|> try (do string "sdiv"
               return ISDiv)
+  <|> try (do string "fixpointdiv"
+              return FixPointDiv)
   <|> try (do string "fdiv"
               return FDiv)
   <|> try (do string "urem"

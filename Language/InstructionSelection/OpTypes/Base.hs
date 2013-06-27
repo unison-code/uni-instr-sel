@@ -105,6 +105,14 @@ data ArithmeticOp
     | ISRem
 
     ------------------------------
+    -- Fix-point operations
+    ------------------------------
+
+      -- | Fix-point division.
+
+    | FixPointDiv
+
+    ------------------------------
     -- Floating-point operations
     ------------------------------
 
