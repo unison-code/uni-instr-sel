@@ -18,9 +18,17 @@ module Language.InstructionSelection.OpTypes.Base where
 
 data UnaryOp
 
+      -- | Unsigned arithmetic square root function.
+
+    = USqrt
+
+      -- | Signed arithmetic square root function.
+
+    | SSqrt
+
       -- | Fix-point arithmetic square root function.
 
-    = FixPointSqrt
+    | FixPointSqrt
 
       -- | Bit-wise NOT (@|@).
 
