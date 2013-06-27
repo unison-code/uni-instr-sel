@@ -530,12 +530,12 @@ pAnyStorageSpace =
   <|> try (do flag <- pRegisterFlag
               return (ASSRegisterFlag flag))
 
-pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
+pUnaryStmtOp :: GenParser Char st (UnaryOp, ExprResultSize)
 pUnaryStmtOp =
   do op <- pUnaryStmtOpType
      pWhitespace
      size <- pExprResultSize
-     return (FixPointSqrt, Just size)
+     return (FixPointSqrt, size)
 
 pUnaryStmtOpType :: GenParser Char st UnaryOp
 pUnaryStmtOpType =
@@ -544,31 +544,31 @@ pUnaryStmtOpType =
  <|> try (do string "bit_not"
              return FixPointSqrt)
 
-pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
+pBinaryStmtOp :: GenParser Char st (BinaryOp, ExprResultSize)
 pBinaryStmtOp =
       try (do (op, size) <- pCompareStmtOp
               return (BinCompareOp op, size))
   <|> try (do (op, size) <- pArithmeticStmtOp
               return (BinArithmeticOp op, size))
 
-pCompareAssertOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pCompareAssertOp :: GenParser Char st (CompareOp, ExprResultSize)
 pCompareAssertOp =
   do string "icmp"
      pWhitespace
      op <- pIntCompareOp
      pWhitespace
      size <- pExprResultSize
-     return (op, Just size)
+     return (op, size)
   -- TODO: handle floats
 
-pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pCompareStmtOp :: GenParser Char st (CompareOp, ExprResultSize)
 pCompareStmtOp =
   do string "icmp"
      pWhitespace
      size <- pExprResultSize
      pWhitespace
      op <- pIntCompareOp
-     return (op, Just size)
+     return (op, size)
   -- TODO: handle floats
 
 pIntCompareOp :: GenParser Char st CompareOp
@@ -585,12 +585,12 @@ pIntCompareOp =
               return ISCmpGT)
   -- TOOD: add missing operations
 
-pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
+pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
      pWhitespace
      size <- pExprResultSize
-     return (op, Just size)
+     return (op, size)
 
 pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =
