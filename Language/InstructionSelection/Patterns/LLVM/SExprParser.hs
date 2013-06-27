@@ -633,6 +633,8 @@ pArithmeticStmtOpType =
               return Shl)
   <|> try (do string "lshr"
               return LShr)
+  <|> try (do string "ashr"
+              return AShr)
   <|> try (do string "udiv"
               return IUDiv)
   <|> try (do string "sdiv"
