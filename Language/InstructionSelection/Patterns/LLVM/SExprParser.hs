@@ -639,18 +639,6 @@ pLabeledData' str p =
      result <- p
      return result
 
-pData :: GenParser Char st String
-pData =
-  do list <- many1 morePData
-     return $ istrip $ Prelude.foldr (++) [] list
-
-morePData :: GenParser Char st String
-morePData =
-      try (do nested <- pParens pData
-              return $ ['('] ++ nested ++ [')'])
-  <|> do pWhitespace
-         many1 (noneOf "()")
-
 pWhitespace :: GenParser Char st String
 pWhitespace = many (oneOf whitespace)
 
@@ -670,8 +658,5 @@ pInnerParens c =
      result <- c
      pWhitespace
      return result
-
-istrip :: String -> String
-istrip = join " " . filter (\x -> x /= "") . split " "
 
 whitespace = " \r\n\t"
