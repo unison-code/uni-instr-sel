@@ -272,7 +272,7 @@ pPhiElement' =
   do expr <- pStmtExpression
      pWhitespace
      string "."
-     pWhitespace
+     pWhitespace1
      label <- pLabel
      return (PhiElement expr label)
 
@@ -547,7 +547,7 @@ pCompareAssertOp =
 pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
   do string "icmp"
-     pWhitespace
+     pWhitespace1
      op <- pIntCompareOp
      pWhitespace1
      size' <- pExprResultSize
