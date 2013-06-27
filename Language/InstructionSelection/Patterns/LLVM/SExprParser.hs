@@ -79,7 +79,7 @@ pConstraint' =
 pAllocConstraint :: GenParser Char st Constraint
 pAllocConstraint =
   do string "allocate-in"
-     pWhitespace
+     pWhitespace1
      storage <- pAnyStorage
      pWhitespace
      space <- pAnyStorageSpace
@@ -88,7 +88,7 @@ pAllocConstraint =
 pImmConstraint :: GenParser Char st Constraint
 pImmConstraint =
   do string "imm"
-     pWhitespace
+     pWhitespace1
      lower <- pInt
      pWhitespace
      upper <- pInt
@@ -99,7 +99,7 @@ pImmConstraint =
 pZimmConstraint :: GenParser Char st Constraint
 pZimmConstraint =
   do string "zimm"
-     pWhitespace
+     pWhitespace1
      lower <- pInt
      pWhitespace
      upper <- pInt
@@ -110,7 +110,7 @@ pZimmConstraint =
 pAliasConstraint :: GenParser Char st Constraint
 pAliasConstraint =
   do string "alias"
-     pWhitespace
+     pWhitespace1
      temp <- pTemporary
      pWhitespace
      reg <-      try (do pNoValue
@@ -122,7 +122,7 @@ pAliasConstraint =
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint =
   do string "rel-address"
-     pWhitespace
+     pWhitespace1
      lower <- pInt
      pWhitespace
      upper <- pInt
@@ -133,7 +133,7 @@ pRelAddressConstraint =
 pAbsAddressConstraint :: GenParser Char st Constraint
 pAbsAddressConstraint =
   do string "abs-address"
-     pWhitespace
+     pWhitespace1
      lower <- pInt
      pWhitespace
      upper <- pInt
@@ -226,7 +226,7 @@ pAssignmentStmt = pParens pAssignmentStmt'
 pAssignmentStmt' :: GenParser Char st Statement
 pAssignmentStmt' =
   do string "="
-     pWhitespace
+     pWhitespace1
      temp <- pTemporary
      pWhitespace
      expr <- pStmtExpression
@@ -238,7 +238,7 @@ pSetRegStmt = pParens pSetRegStmt'
 pSetRegStmt' :: GenParser Char st Statement
 pSetRegStmt' =
   do string "set-reg"
-     pWhitespace
+     pWhitespace1
      reg <- pRegister
      pWhitespace
      expr <- pStmtExpression
@@ -264,7 +264,7 @@ pPhiStmtExpr = pParens pPhiStmtExpr'
 pPhiStmtExpr' :: GenParser Char st StmtExpression
 pPhiStmtExpr' =
   do string "phi"
-     pWhitespace
+     pWhitespace1
      elems <- pParens pAllPhiElements
      return (PhiStmtExpr elems)
 
@@ -289,7 +289,7 @@ pRegRangeStmtExpr = pParens pRegRangeStmtExpr'
 pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
   do string "reg-range"
-     pWhitespace
+     pWhitespace1
      reg <- pRegister
      pWhitespace
      lower <- pConstProgramData
@@ -343,7 +343,7 @@ pUncondBranchStmt = pParens pUncondBranchStmt'
 pUncondBranchStmt' :: GenParser Char st Statement
 pUncondBranchStmt' =
   do string "br"
-     pWhitespace
+     pWhitespace1
      label <- pLabel
      return (UncondBranchStmt label)
 
@@ -353,7 +353,7 @@ pCondBranchStmt = pParens pCondBranchStmt'
 pCondBranchStmt' :: GenParser Char st Statement
 pCondBranchStmt' =
   do string "br"
-     pWhitespace
+     pWhitespace1
      reg <- pRegister
      pWhitespace
      falseLabel <- pLabel
@@ -367,7 +367,7 @@ pLabelStmt = pParens pLabelStmt'
 pLabelStmt' :: GenParser Char st Statement
 pLabelStmt' =
   do string "label"
-     pWhitespace
+     pWhitespace1
      label <- pLabel
      return (LabelStmt label)
 
@@ -396,7 +396,7 @@ pRegSizeExpr = pParens pRegSizeExpr'
 pRegSizeExpr' :: GenParser Char st Register
 pRegSizeExpr' =
   do string "size"
-     pWhitespace
+     pWhitespace1
      pRegister
 
 pConstProgramData :: GenParser Char st ConstProgramData
@@ -412,7 +412,7 @@ pConstant = pParens pConstant'
 pConstant' :: GenParser Char st ConstantValue
 pConstant' =
   do string "constant"
-     pWhitespace
+     pWhitespace1
      string "?"
      pWhitespace
      int <- pInt
@@ -452,7 +452,7 @@ pRegisterFlag = pParens pRegisterFlag'
 pRegisterFlag' :: GenParser Char st RegisterFlag
 pRegisterFlag' =
   do string "reg-flag"
-     pWhitespace
+     pWhitespace1
      flag <- pRegisterFlagSymbol
      pWhitespace
      reg <- pRegister
@@ -483,7 +483,7 @@ pPrefixedRegisterSymbol = pParens pPrefixedRegisterSymbol'
 pPrefixedRegisterSymbol' :: GenParser Char st RegisterSymbol
 pPrefixedRegisterSymbol' =
   do string "register"
-     pWhitespace
+     pWhitespace1
      pRegisterSymbol
 
 pDataSpace :: GenParser Char st DataSpace
@@ -500,7 +500,7 @@ pRegisterClass =
 pPrefixedRegisterClass :: GenParser Char st RegisterClass
 pPrefixedRegisterClass =
   do string "register-class"
-     pWhitespace
+     pWhitespace1
      pRegisterClass
 
 pAnyData :: GenParser Char st AnyData
@@ -542,7 +542,7 @@ pAnyStorageSpace =
 pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
   do op <- pUnaryStmtOpType
-     pWhitespace
+     pWhitespace1
      size' <- pExprResultSize
      let size = Just size'
      return (FixPointSqrt, size)
@@ -564,7 +564,7 @@ pBinaryStmtOp =
 pCompareAssertOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareAssertOp =
   do string "icmp"
-     pWhitespace
+     pWhitespace1
      op <- pIntCompareOp
      pWhitespace
      size' <- pExprResultSize
@@ -575,7 +575,7 @@ pCompareAssertOp =
 pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
   do string "icmp"
-     pWhitespace
+     pWhitespace1
      size' <- pExprResultSize
      let size = Just size'
      pWhitespace
@@ -591,6 +591,8 @@ pIntCompareOp =
               return IUCmpLT)
   <|> try (do string "slt"
               return ISCmpLT)
+  <|> try (do string "gt"
+              return IUCmpGT)
   <|> try (do string "ugt"
               return IUCmpGT)
   <|> try (do string "sgt"
@@ -600,7 +602,7 @@ pIntCompareOp =
 pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
-     pWhitespace
+     pWhitespace1
      if (op == Plus) || (op == Minus)
         then return (op, Nothing)
         else (do size' <- pExprResultSize
@@ -669,6 +671,9 @@ morePData =
 
 pWhitespace :: GenParser Char st String
 pWhitespace = many (oneOf whitespace)
+
+pWhitespace1 :: GenParser Char st String
+pWhitespace1 = many1 (oneOf whitespace)
 
 pParens :: GenParser Char st a -> GenParser Char st a
 pParens c =
