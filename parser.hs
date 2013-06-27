@@ -31,9 +31,12 @@ then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
+import Language.InstructionSelection.SExpressions
 
-main = do
-  contents <- getContents
-  putStr "\n"
-  putStr $ show (parsePatterns contents)
-  putStr "\n"
+main =
+  do contents <- getContents
+     putStr "\n"
+     let result = parse contents
+     case result of (Right insts) -> putStr $ showSEList insts
+                    (Left error)  -> putStr $ show error
+     putStr "\n"

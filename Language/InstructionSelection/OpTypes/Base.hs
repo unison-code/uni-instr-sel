@@ -14,6 +14,27 @@
 
 module Language.InstructionSelection.OpTypes.Base where
 
+
+
+--------------------------------------------------
+-- Type classes
+--------------------------------------------------
+
+-- | A class for providing a way of checking if an operation is expecting a
+-- result size or not.
+
+class Operation a where
+
+  -- | Checks whether an operation requires a result size.
+
+  hasResultSize :: a -> Bool
+
+
+
+--------------------------------------------------
+-- Data types
+--------------------------------------------------
+
 -- | Unary operation types.
 
 data UnaryOp
@@ -329,15 +350,10 @@ data CompareOp
 
     deriving (Show, Eq)
 
--- | TODO: write description
 
-class Operation a where
-
-  -- | TODO: write description
-
-  hasResultSize :: a -> Bool
-
--- | TODO: write description
+--------------------------------------------------
+-- Operation instances
+--------------------------------------------------
 
 instance Operation UnaryOp where
   hasResultSize op

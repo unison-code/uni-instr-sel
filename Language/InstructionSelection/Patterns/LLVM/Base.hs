@@ -17,6 +17,7 @@ module Language.InstructionSelection.Patterns.LLVM.Base where
 
 import Language.InstructionSelection.Utils (Range, Natural)
 import Language.InstructionSelection.OpTypes
+import Language.InstructionSelection.SExpressions
 
 
 
@@ -398,3 +399,25 @@ data Instruction
           [Pattern]
 
     deriving (Show)
+
+
+
+--------------------------------------------------
+-- Show instances
+--------------------------------------------------
+
+instance SExpressionable Instruction where
+  prettySE (Instruction ass pats) i =
+    let i1 = i + 1
+    in indent i ++ "(instruction"
+       ++ "\n" ++ (prettySE ass i1)
+       ++ "\n" ++ (prettySEList pats i1)
+       ++ "\n" ++ indent i ++ ")"
+
+instance SExpressionable AssemblyString where
+  prettySE (AssemblyString str) i = indent i ++ str
+
+instance SExpressionable Pattern where
+  prettySE (Pattern stmts cnstrs) i =
+    let i1 = i + 1
+    in indent i ++ "(pattern)"
