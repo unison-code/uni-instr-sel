@@ -136,6 +136,11 @@ data ArithmeticOp
 
     | ZExt
 
+      -- | Sign-extension. LHS denotes the value to sign extend, and RHS denotes
+      -- the amount of bits to extend with.
+
+    | SExt
+
     deriving (Show, Eq)
 
 -- | Comparison operation types.
