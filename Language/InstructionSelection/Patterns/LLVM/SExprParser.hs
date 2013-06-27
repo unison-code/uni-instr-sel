@@ -598,7 +598,7 @@ pIntCompareOp =
 pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
-     trace (show op) pWhitespace
+     pWhitespace
      if (op == Plus) || (op == Minus)
         then return (op, Nothing)
         else (do size' <- pExprResultSize
