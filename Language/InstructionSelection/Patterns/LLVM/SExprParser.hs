@@ -37,7 +37,7 @@ pInstructions =
      return instructions
 
 pInstruction :: GenParser Char st Instruction
-pInstruction = labeledData "instruction" pInstruction'
+pInstruction = pLabeledData "instruction" pInstruction'
 
 pInstruction' :: GenParser Char st Instruction
 pInstruction' =
@@ -51,12 +51,12 @@ pAssemblyStr =
      return (AssemblyString str)
 
 pPattern :: GenParser Char st Pattern
-pPattern = labeledData "pattern" pPattern'
+pPattern = pLabeledData "pattern" pPattern'
 
 pPattern' :: GenParser Char st Pattern
 pPattern' =
-  do constraints <- labeledData "constraints" pAllConstraints
-     statements  <- labeledData "code" pAllStatements
+  do constraints <- pLabeledData "constraints" pAllConstraints
+     statements  <- pLabeledData "code" pAllStatements
      return (Pattern statements constraints)
 
 pAllConstraints :: GenParser Char st [Constraint]
@@ -73,7 +73,7 @@ pConstraint =
   <|> try pAssertConstraint
 
 pAllocConstraint :: GenParser Char st Constraint
-pAllocConstraint = labeledData "allocate-in" pAllocConstraint'
+pAllocConstraint = pLabeledData "allocate-in" pAllocConstraint'
 
 pAllocConstraint' :: GenParser Char st Constraint
 pAllocConstraint' =
@@ -83,7 +83,7 @@ pAllocConstraint' =
      return (AllocateIn storage space)
 
 pImmConstraint :: GenParser Char st Constraint
-pImmConstraint = labeledData "imm" pImmConstraint'
+pImmConstraint = pLabeledData "imm" pImmConstraint'
 
 pImmConstraint' :: GenParser Char st Constraint
 pImmConstraint' =
@@ -91,7 +91,7 @@ pImmConstraint' =
      return (ImmediateRange imm range)
 
 pZimmConstraint :: GenParser Char st Constraint
-pZimmConstraint = labeledData "zimm" pZimmConstraint
+pZimmConstraint = pLabeledData "zimm" pZimmConstraint
 
 pZimmConstraint' :: GenParser Char st Constraint
 pZimmConstraint' =
@@ -113,7 +113,7 @@ pIntRange =
      return (Range lower upper)
 
 pAliasConstraint :: GenParser Char st Constraint
-pAliasConstraint = labeledData "alias" pAliasConstraint'
+pAliasConstraint = pLabeledData "alias" pAliasConstraint'
 
 pAliasConstraint' :: GenParser Char st Constraint
 pAliasConstraint' =
@@ -126,7 +126,7 @@ pAliasConstraint' =
      return (Alias temp reg)
 
 pRelAddressConstraint :: GenParser Char st Constraint
-pRelAddressConstraint = labeledData "rel-address" pRelAddressConstraint'
+pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'
 
 pRelAddressConstraint' :: GenParser Char st Constraint
 pRelAddressConstraint' =
@@ -134,7 +134,7 @@ pRelAddressConstraint' =
      return (RelAddressConstraint imm (MemoryClass "local" range))
 
 pAbsAddressConstraint :: GenParser Char st Constraint
-pAbsAddressConstraint = labeledData "abs-address" pAbsAddressConstraint'
+pAbsAddressConstraint = pLabeledData "abs-address" pAbsAddressConstraint'
 
 pAbsAddressConstraint' :: GenParser Char st Constraint
 pAbsAddressConstraint' =
@@ -142,7 +142,7 @@ pAbsAddressConstraint' =
      return (AbsAddressConstraint imm (MemoryClass "local" range))
 
 pAssertConstraint :: GenParser Char st Constraint
-pAssertConstraint = labeledData "assert" pAssertConstraint'
+pAssertConstraint = pLabeledData "assert" pAssertConstraint'
 
 pAssertConstraint' :: GenParser Char st Constraint
 pAssertConstraint' =
@@ -159,7 +159,7 @@ pAssertExpression =
   <|> try pImmediateAssertExpr
 
 pContainsAssertExpr :: GenParser Char st AssertExpression
-pContainsAssertExpr = labeledData "contains?" pContainsAssertExpr'
+pContainsAssertExpr = pLabeledData "contains?" pContainsAssertExpr'
 
 pContainsAssertExpr' :: GenParser Char st AssertExpression
 pContainsAssertExpr' =
@@ -188,7 +188,7 @@ pRegFlagAssertExpr' =
      return (AssertRegFlagExpr regFlag)
 
 pNotAssertExpr :: GenParser Char st AssertExpression
-pNotAssertExpr = labeledData "not" pNotAssertExpr'
+pNotAssertExpr = pLabeledData "not" pNotAssertExpr'
 
 pNotAssertExpr' :: GenParser Char st AssertExpression
 pNotAssertExpr' =
@@ -220,7 +220,7 @@ pStatement =
   <|> try pLabelStmt
 
 pAssignmentStmt :: GenParser Char st Statement
-pAssignmentStmt = labeledData "=" pAssignmentStmt'
+pAssignmentStmt = pLabeledData "=" pAssignmentStmt'
 
 pAssignmentStmt' :: GenParser Char st Statement
 pAssignmentStmt' =
@@ -230,7 +230,7 @@ pAssignmentStmt' =
      return (AssignmentStmt temp expr)
 
 pSetRegStmt :: GenParser Char st Statement
-pSetRegStmt = labeledData "set-reg" pSetRegStmt'
+pSetRegStmt = pLabeledData "set-reg" pSetRegStmt'
 
 pSetRegStmt' :: GenParser Char st Statement
 pSetRegStmt' =
@@ -254,7 +254,7 @@ pSizeStmtExpr =
      return (SizeStmtExpr reg)
 
 pPhiStmtExpr :: GenParser Char st StmtExpression
-pPhiStmtExpr = labeledData "phi" pPhiStmtExpr'
+pPhiStmtExpr = pLabeledData "phi" pPhiStmtExpr'
 
 pPhiStmtExpr' :: GenParser Char st StmtExpression
 pPhiStmtExpr' =
@@ -277,7 +277,7 @@ pPhiElement' =
      return (PhiElement expr label)
 
 pRegRangeStmtExpr :: GenParser Char st StmtExpression
-pRegRangeStmtExpr = labeledData "reg-range" pRegRangeStmtExpr'
+pRegRangeStmtExpr = pLabeledData "reg-range" pRegRangeStmtExpr'
 
 pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
@@ -329,7 +329,7 @@ pProgramData =
               return (PDRegister reg))
 
 pUncondBranchStmt :: GenParser Char st Statement
-pUncondBranchStmt = labeledData "br" pUncondBranchStmt'
+pUncondBranchStmt = pLabeledData "br" pUncondBranchStmt'
 
 pUncondBranchStmt' :: GenParser Char st Statement
 pUncondBranchStmt' =
@@ -337,7 +337,7 @@ pUncondBranchStmt' =
      return (UncondBranchStmt label)
 
 pCondBranchStmt :: GenParser Char st Statement
-pCondBranchStmt = labeledData "br" pCondBranchStmt'
+pCondBranchStmt = pLabeledData "br" pCondBranchStmt'
 
 pCondBranchStmt' :: GenParser Char st Statement
 pCondBranchStmt' =
@@ -349,7 +349,7 @@ pCondBranchStmt' =
      return (CondBranchStmt reg falseLabel trueLabel)
 
 pLabelStmt :: GenParser Char st Statement
-pLabelStmt = labeledData "label" pLabelStmt'
+pLabelStmt = pLabeledData "label" pLabelStmt'
 
 pLabelStmt' :: GenParser Char st Statement
 pLabelStmt' =
@@ -376,7 +376,7 @@ pExprResultSize =
               return (ERSConstTemporary temp))
 
 pRegSizeExpr :: GenParser Char st Register
-pRegSizeExpr = labeledData "size" pRegister
+pRegSizeExpr = pLabeledData "size" pRegister
 
 pConstProgramData :: GenParser Char st ConstProgramData
 pConstProgramData =
@@ -386,7 +386,7 @@ pConstProgramData =
               return (CPDImmediate imm))
 
 pConstant :: GenParser Char st ConstantValue
-pConstant = labeledData "constant" pConstant'
+pConstant = pLabeledData "constant" pConstant'
 
 pConstant' :: GenParser Char st ConstantValue
 pConstant' =
@@ -396,7 +396,7 @@ pConstant' =
      return (ConstIntValue int)
 
 pTemporary :: GenParser Char st Temporary
-pTemporary = labeledData "tmp" pTemporary'
+pTemporary = pLabeledData "tmp" pTemporary'
 
 pTemporary' :: GenParser Char st Temporary
 pTemporary' =
@@ -424,7 +424,7 @@ pImmediateSymbol =
      return (ImmediateSymbol symbol)
 
 pRegisterFlag :: GenParser Char st RegisterFlag
-pRegisterFlag = labeledData "reg-flag" pRegisterFlag'
+pRegisterFlag = pLabeledData "reg-flag" pRegisterFlag'
 
 pRegisterFlag' :: GenParser Char st RegisterFlag
 pRegisterFlag' =
@@ -453,7 +453,7 @@ pRegisterSymbol =
      return (RegisterSymbol symbol)
 
 pPrefixedRegisterSymbol :: GenParser Char st RegisterSymbol
-pPrefixedRegisterSymbol = labeledData "register" pRegisterSymbol
+pPrefixedRegisterSymbol = pLabeledData "register" pRegisterSymbol
 
 pDataSpace :: GenParser Char st DataSpace
 pDataSpace =
@@ -467,7 +467,7 @@ pRegisterClass =
      return (RegisterClass reg)
 
 pPrefixedRegisterClass :: GenParser Char st RegisterClass
-pPrefixedRegisterClass = labeledData "register-class" pRegisterClass
+pPrefixedRegisterClass = pLabeledData "register-class" pRegisterClass
 
 pAnyData :: GenParser Char st AnyData
 pAnyData =
@@ -629,11 +629,11 @@ pArithmeticStmtOpType =
               return SExt)
   -- TOOD: add missing operations
 
-labeledData :: String -> GenParser Char st a -> GenParser Char st a
-labeledData str p = pParens (labeledData' str p)
+pLabeledData :: String -> GenParser Char st a -> GenParser Char st a
+pLabeledData str p = pParens (pLabeledData' str p)
 
-labeledData' :: String -> GenParser Char st a -> GenParser Char st a
-labeledData' str p =
+pLabeledData' :: String -> GenParser Char st a -> GenParser Char st a
+pLabeledData' str p =
   do string str
      pWhitespace1
      result <- p
