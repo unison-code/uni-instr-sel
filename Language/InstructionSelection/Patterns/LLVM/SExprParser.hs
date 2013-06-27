@@ -607,6 +607,8 @@ pArithmeticStmtOpType =
               return ISatAdd)
   <|> try (do string "bit_and"
               return And)
+  <|> try (do string "bit_xor"
+              return Xor)
   <|> try (do string "shl"
               return Shl)
   <|> try (do string "lshr"
