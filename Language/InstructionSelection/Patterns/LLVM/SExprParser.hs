@@ -41,8 +41,7 @@ pInstruction = labeledData "instruction" pInstruction'
 
 pInstruction' :: GenParser Char st Instruction
 pInstruction' =
-  do pWhitespace
-     assemblyStr <- pAssemblyStr
+  do assemblyStr <- pAssemblyStr
      patterns    <- many pPattern
      return (Instruction assemblyStr patterns)
 
@@ -64,10 +63,7 @@ pAllConstraints :: GenParser Char st [Constraint]
 pAllConstraints = many pConstraint
 
 pConstraint :: GenParser Char st Constraint
-pConstraint = pParens pConstraint'
-
-pConstraint' :: GenParser Char st Constraint
-pConstraint' =
+pConstraint =
       try pAllocConstraint
   <|> try pImmConstraint
   <|> try pZimmConstraint
@@ -77,41 +73,51 @@ pConstraint' =
   <|> try pAssertConstraint
 
 pAllocConstraint :: GenParser Char st Constraint
-pAllocConstraint =
-  do string "allocate-in"
-     pWhitespace1
-     storage <- pAnyStorage
+pAllocConstraint = labeledData "allocate-in" pAllocConstraint'
+
+pAllocConstraint' :: GenParser Char st Constraint
+pAllocConstraint' =
+  do storage <- pAnyStorage
      pWhitespace
      space <- pAnyStorageSpace
      return (AllocateIn storage space)
 
 pImmConstraint :: GenParser Char st Constraint
-pImmConstraint =
-  do string "imm"
-     pWhitespace1
-     lower <- pInt
-     pWhitespace
-     upper <- pInt
-     pWhitespace
-     imm <- pImmediateSymbol
-     return (ImmediateRange imm (Range lower upper))
+pImmConstraint = labeledData "imm" pImmConstraint'
+
+pImmConstraint' :: GenParser Char st Constraint
+pImmConstraint' =
+  do (range, imm) <- pImmRangeAndSymbol
+     return (ImmediateRange imm range)
 
 pZimmConstraint :: GenParser Char st Constraint
-pZimmConstraint =
-  do string "zimm"
-     pWhitespace1
-     lower <- pInt
-     pWhitespace
-     upper <- pInt
+pZimmConstraint = labeledData "zimm" pZimmConstraint
+
+pZimmConstraint' :: GenParser Char st Constraint
+pZimmConstraint' =
+  do (range, imm) <- pImmRangeAndSymbol
+     return (ImmediateRangeNoZero imm range)
+
+pImmRangeAndSymbol :: GenParser Char st (Range Integer, ImmediateSymbol)
+pImmRangeAndSymbol =
+  do range <- pIntRange
      pWhitespace
      imm <- pImmediateSymbol
-     return (ImmediateRangeNoZero imm (Range lower upper))
+     return (range, imm)
+
+pIntRange :: GenParser Char st (Range Integer)
+pIntRange =
+  do lower <- pInt
+     pWhitespace
+     upper <- pInt
+     return (Range lower upper)
 
 pAliasConstraint :: GenParser Char st Constraint
-pAliasConstraint =
-  do string "alias"
-     pWhitespace1
-     temp <- pTemporary
+pAliasConstraint = labeledData "alias" pAliasConstraint'
+
+pAliasConstraint' :: GenParser Char st Constraint
+pAliasConstraint' =
+  do temp <- pTemporary
      pWhitespace
      reg <-      try (do pNoValue
                          return Nothing)
@@ -120,31 +126,27 @@ pAliasConstraint =
      return (Alias temp reg)
 
 pRelAddressConstraint :: GenParser Char st Constraint
-pRelAddressConstraint =
-  do string "rel-address"
-     pWhitespace1
-     lower <- pInt
-     pWhitespace
-     upper <- pInt
-     pWhitespace
-     imm <- pImmediateSymbol
-     return (RelAddressConstraint imm (MemoryClass "local" (Range lower upper)))
+pRelAddressConstraint = labeledData "rel-address" pRelAddressConstraint'
+
+pRelAddressConstraint' :: GenParser Char st Constraint
+pRelAddressConstraint' =
+  do (range, imm) <- pImmRangeAndSymbol
+     return (RelAddressConstraint imm (MemoryClass "local" range))
 
 pAbsAddressConstraint :: GenParser Char st Constraint
-pAbsAddressConstraint =
-  do string "abs-address"
-     pWhitespace1
-     lower <- pInt
-     pWhitespace
-     upper <- pInt
-     pWhitespace
-     imm <- pImmediateSymbol
-     return (AbsAddressConstraint imm (MemoryClass "local" (Range lower upper)))
+pAbsAddressConstraint = labeledData "abs-address" pAbsAddressConstraint'
+
+pAbsAddressConstraint' :: GenParser Char st Constraint
+pAbsAddressConstraint' =
+  do (range, imm) <- pImmRangeAndSymbol
+     return (AbsAddressConstraint imm (MemoryClass "local" range))
 
 pAssertConstraint :: GenParser Char st Constraint
-pAssertConstraint =
-  do string "assert"
-     expr <- pAssertExpression
+pAssertConstraint = labeledData "assert" pAssertConstraint'
+
+pAssertConstraint' :: GenParser Char st Constraint
+pAssertConstraint' =
+  do expr <- pAssertExpression
      return (Assert expr)
 
 pAssertExpression :: GenParser Char st AssertExpression
@@ -157,13 +159,11 @@ pAssertExpression =
   <|> try pImmediateAssertExpr
 
 pContainsAssertExpr :: GenParser Char st AssertExpression
-pContainsAssertExpr = pParens pContainsAssertExpr'
+pContainsAssertExpr = labeledData "contains?" pContainsAssertExpr'
 
 pContainsAssertExpr' :: GenParser Char st AssertExpression
 pContainsAssertExpr' =
-  do string "contains?"
-     regclass <- pParens pPrefixedRegisterClass
-     pWhitespace
+  do regclass <- pPrefixedRegisterClass
      reg      <- pRegister
      return (AssertContainsExpr reg regclass)
 
@@ -188,12 +188,11 @@ pRegFlagAssertExpr' =
      return (AssertRegFlagExpr regFlag)
 
 pNotAssertExpr :: GenParser Char st AssertExpression
-pNotAssertExpr = pParens pNotAssertExpr'
+pNotAssertExpr = labeledData "not" pNotAssertExpr'
 
 pNotAssertExpr' :: GenParser Char st AssertExpression
 pNotAssertExpr' =
-  do string "not"
-     expr <- pAssertExpression
+  do expr <- pAssertExpression
      return (AssertNotExpr expr)
 
 pTrueFalseAssertExpr :: GenParser Char st AssertExpression
@@ -221,25 +220,21 @@ pStatement =
   <|> try pLabelStmt
 
 pAssignmentStmt :: GenParser Char st Statement
-pAssignmentStmt = pParens pAssignmentStmt'
+pAssignmentStmt = labeledData "=" pAssignmentStmt'
 
 pAssignmentStmt' :: GenParser Char st Statement
 pAssignmentStmt' =
-  do string "="
-     pWhitespace1
-     temp <- pTemporary
+  do temp <- pTemporary
      pWhitespace
      expr <- pStmtExpression
      return (AssignmentStmt temp expr)
 
 pSetRegStmt :: GenParser Char st Statement
-pSetRegStmt = pParens pSetRegStmt'
+pSetRegStmt = labeledData "set-reg" pSetRegStmt'
 
 pSetRegStmt' :: GenParser Char st Statement
 pSetRegStmt' =
-  do string "set-reg"
-     pWhitespace1
-     reg <- pRegister
+  do reg <- pRegister
      pWhitespace
      expr <- pStmtExpression
      return (SetRegStmt reg expr)
@@ -259,13 +254,11 @@ pSizeStmtExpr =
      return (SizeStmtExpr reg)
 
 pPhiStmtExpr :: GenParser Char st StmtExpression
-pPhiStmtExpr = pParens pPhiStmtExpr'
+pPhiStmtExpr = labeledData "phi" pPhiStmtExpr'
 
 pPhiStmtExpr' :: GenParser Char st StmtExpression
 pPhiStmtExpr' =
-  do string "phi"
-     pWhitespace1
-     elems <- pParens pAllPhiElements
+  do elems <- pParens pAllPhiElements
      return (PhiStmtExpr elems)
 
 pAllPhiElements :: GenParser Char st [PhiElement]
@@ -284,13 +277,11 @@ pPhiElement' =
      return (PhiElement expr label)
 
 pRegRangeStmtExpr :: GenParser Char st StmtExpression
-pRegRangeStmtExpr = pParens pRegRangeStmtExpr'
+pRegRangeStmtExpr = labeledData "reg-range" pRegRangeStmtExpr'
 
 pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
-  do string "reg-range"
-     pWhitespace1
-     reg <- pRegister
+  do reg <- pRegister
      pWhitespace
      lower <- pConstProgramData
      pWhitespace
@@ -338,23 +329,19 @@ pProgramData =
               return (PDRegister reg))
 
 pUncondBranchStmt :: GenParser Char st Statement
-pUncondBranchStmt = pParens pUncondBranchStmt'
+pUncondBranchStmt = labeledData "br" pUncondBranchStmt'
 
 pUncondBranchStmt' :: GenParser Char st Statement
 pUncondBranchStmt' =
-  do string "br"
-     pWhitespace1
-     label <- pLabel
+  do label <- pLabel
      return (UncondBranchStmt label)
 
 pCondBranchStmt :: GenParser Char st Statement
-pCondBranchStmt = pParens pCondBranchStmt'
+pCondBranchStmt = labeledData "br" pCondBranchStmt'
 
 pCondBranchStmt' :: GenParser Char st Statement
 pCondBranchStmt' =
-  do string "br"
-     pWhitespace1
-     reg <- pRegister
+  do reg <- pRegister
      pWhitespace
      falseLabel <- pLabel
      pWhitespace
@@ -362,13 +349,11 @@ pCondBranchStmt' =
      return (CondBranchStmt reg falseLabel trueLabel)
 
 pLabelStmt :: GenParser Char st Statement
-pLabelStmt = pParens pLabelStmt'
+pLabelStmt = labeledData "label" pLabelStmt'
 
 pLabelStmt' :: GenParser Char st Statement
 pLabelStmt' =
-  do string "label"
-     pWhitespace1
-     label <- pLabel
+  do label <- pLabel
      return (LabelStmt label)
 
 pLabel :: GenParser Char st Label
@@ -391,13 +376,7 @@ pExprResultSize =
               return (ERSConstTemporary temp))
 
 pRegSizeExpr :: GenParser Char st Register
-pRegSizeExpr = pParens pRegSizeExpr'
-
-pRegSizeExpr' :: GenParser Char st Register
-pRegSizeExpr' =
-  do string "size"
-     pWhitespace1
-     pRegister
+pRegSizeExpr = labeledData "size" pRegister
 
 pConstProgramData :: GenParser Char st ConstProgramData
 pConstProgramData =
@@ -407,22 +386,20 @@ pConstProgramData =
               return (CPDImmediate imm))
 
 pConstant :: GenParser Char st ConstantValue
-pConstant = pParens pConstant'
+pConstant = labeledData "constant" pConstant'
 
 pConstant' :: GenParser Char st ConstantValue
 pConstant' =
-  do string "constant"
+  do string "?"
      pWhitespace1
-     string "?"
-     pWhitespace
      int <- pInt
      return (ConstIntValue int)
 
 pTemporary :: GenParser Char st Temporary
-pTemporary = labeledData "tmp" temporary'
+pTemporary = labeledData "tmp" pTemporary'
 
-temporary' :: GenParser Char st Temporary
-temporary' =
+pTemporary' :: GenParser Char st Temporary
+pTemporary' =
   do int <- many1 digit
      return (Temporary (read int))
 
@@ -447,13 +424,11 @@ pImmediateSymbol =
      return (ImmediateSymbol symbol)
 
 pRegisterFlag :: GenParser Char st RegisterFlag
-pRegisterFlag = pParens pRegisterFlag'
+pRegisterFlag = labeledData "reg-flag" pRegisterFlag'
 
 pRegisterFlag' :: GenParser Char st RegisterFlag
 pRegisterFlag' =
-  do string "reg-flag"
-     pWhitespace1
-     flag <- pRegisterFlagSymbol
+  do flag <- pRegisterFlagSymbol
      pWhitespace
      reg <- pRegister
      return (RegisterFlag flag reg)
@@ -478,13 +453,7 @@ pRegisterSymbol =
      return (RegisterSymbol symbol)
 
 pPrefixedRegisterSymbol :: GenParser Char st RegisterSymbol
-pPrefixedRegisterSymbol = pParens pPrefixedRegisterSymbol'
-
-pPrefixedRegisterSymbol' :: GenParser Char st RegisterSymbol
-pPrefixedRegisterSymbol' =
-  do string "register"
-     pWhitespace1
-     pRegisterSymbol
+pPrefixedRegisterSymbol = labeledData "register" pRegisterSymbol
 
 pDataSpace :: GenParser Char st DataSpace
 pDataSpace =
@@ -498,10 +467,7 @@ pRegisterClass =
      return (RegisterClass reg)
 
 pPrefixedRegisterClass :: GenParser Char st RegisterClass
-pPrefixedRegisterClass =
-  do string "register-class"
-     pWhitespace1
-     pRegisterClass
+pPrefixedRegisterClass = labeledData "register-class" pRegisterClass
 
 pAnyData :: GenParser Char st AnyData
 pAnyData =
@@ -669,7 +635,7 @@ labeledData str p = pParens (labeledData' str p)
 labeledData' :: String -> GenParser Char st a -> GenParser Char st a
 labeledData' str p =
   do string str
-     pWhitespace
+     pWhitespace1
      result <- p
      return result
 
