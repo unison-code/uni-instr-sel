@@ -222,9 +222,13 @@ data ExprResultSize
 
     = ERSRegSize Register
 
-      -- | Constant size.
+      -- | Constant size represented via a constant value.
 
-    | ERSConst ConstantValue
+    | ERSConstValue ConstantValue
+
+      -- | Constant size represented via a temporary.
+
+    | ERSConstTemporary Temporary
 
     deriving (Show)
 

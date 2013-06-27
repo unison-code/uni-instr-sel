@@ -384,9 +384,11 @@ pSymbolWidth =
 pExprResultSize :: GenParser Char st ExprResultSize
 pExprResultSize =
       try (do const <- pConstant
-              return (ERSConst const))
+              return (ERSConstValue const))
   <|> try (do reg <- pRegSizeExpr
               return (ERSRegSize reg))
+  <|> try (do temp <- pTemporary
+              return (ERSConstTemporary temp))
 
 pRegSizeExpr :: GenParser Char st Register
 pRegSizeExpr = pParens pRegSizeExpr'
