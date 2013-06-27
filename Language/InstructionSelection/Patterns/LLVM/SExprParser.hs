@@ -292,10 +292,10 @@ pRegRangeStmtExpr' =
      pWhitespace
      reg <- pRegister
      pWhitespace
-     (ConstIntValue lower) <- pConstant
+     lower <- pConstProgramData
      pWhitespace
-     (ConstIntValue upper) <- pConstant
-     return (RegRangeStmtExpr reg (Range (toNatural lower) (toNatural upper)))
+     upper <- pConstProgramData
+     return (RegRangeStmtExpr reg (Range lower upper))
 
 pUnaryOpStmtExpr :: GenParser Char st StmtExpression
 pUnaryOpStmtExpr = pParens pUnaryOpStmtExpr'
@@ -396,6 +396,13 @@ pRegSizeExpr' =
   do string "size"
      pWhitespace
      pRegister
+
+pConstProgramData :: GenParser Char st ConstProgramData
+pConstProgramData =
+      try (do const <- pConstant
+              return (CPDConstant const))
+  <|> try (do imm <- pImmediateSymbol
+              return (CPDImmediate imm))
 
 pConstant :: GenParser Char st ConstantValue
 pConstant = pParens pConstant'

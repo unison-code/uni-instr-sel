@@ -132,6 +132,13 @@ data ProgramData
 
     deriving (Show)
 
+-- | Record for representing values that are constant at compile time.
+
+data ConstProgramData
+    = CPDConstant ConstantValue
+    | CPDImmediate ImmediateSymbol
+    deriving (Show)
+
 -- | Record for representing any form of data (register, register flag,
 -- constant, temporary, etc.).
 
@@ -203,7 +210,7 @@ data StmtExpression
       -- register. The same effect can be achieved with a series of bit
       -- operations.
 
-    | RegRangeStmtExpr Register (Range Natural)
+    | RegRangeStmtExpr Register (Range ConstProgramData)
 
     deriving (Show)
 
