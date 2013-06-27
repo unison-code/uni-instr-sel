@@ -55,6 +55,10 @@ data ArithmeticOp
 
     | ISub
 
+      -- | Integer saturated subtraction. Commutative.
+
+    | ISatSub
+
       -- | Integer multiplication. Commutative.
 
     | IMul

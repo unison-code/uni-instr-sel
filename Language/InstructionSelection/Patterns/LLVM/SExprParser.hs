@@ -603,8 +603,16 @@ pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =
       try (do string "add"
               return IAdd)
+  <|> try (do string "+"
+              return IAdd)
   <|> try (do string "satadd"
               return ISatAdd)
+  <|> try (do string "-"
+              return ISub)
+  <|> try (do string "sub"
+              return ISub)
+  <|> try (do string "satsub"
+              return ISatSub)
   <|> try (do string "bit_and"
               return And)
   <|> try (do string "bit_xor"
@@ -621,8 +629,6 @@ pArithmeticStmtOpType =
               return IURem)
   <|> try (do string "srem"
               return ISRem)
-  <|> try (do string "sub"
-              return ISub)
   <|> try (do string "zext"
               return ZExt)
   <|> try (do string "sext"
