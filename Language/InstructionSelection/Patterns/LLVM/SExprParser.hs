@@ -532,12 +532,17 @@ pAnyStorageSpace =
 
 pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
+  do op <- pUnaryStmtOpType
+     pWhitespace
+     size <- pExprResultSize
+     return (FixPointSqrt, Just size)
+
+pUnaryStmtOpType :: GenParser Char st UnaryOp
+pUnaryStmtOpType =
      try (do string "fixpointsqrt"
-             return (FixPointSqrt, Nothing))
+             return FixPointSqrt)
  <|> try (do string "bit_not"
-             pWhitespace
-             size <- pExprResultSize
-             return (FixPointSqrt, Just size))
+             return FixPointSqrt)
 
 pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
 pBinaryStmtOp =
