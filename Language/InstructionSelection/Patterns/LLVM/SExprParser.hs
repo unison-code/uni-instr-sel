@@ -578,25 +578,8 @@ pCompareAssertOp =
      return (op, size)
   -- TODO: handle floats
 
-  -- TODO: remove once the spec has been fixed
 pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
-      try pCompareStmtOp'
-  <|> try pCompareStmtOp''
-
-pCompareStmtOp' :: GenParser Char st (CompareOp, Maybe ExprResultSize)
-pCompareStmtOp' =
-  do string "icmp"
-     pWhitespace1
-     size' <- pExprResultSize
-     let size = Just size'
-     pWhitespace
-     op <- pIntCompareOp
-     return (op, size)
-  -- TODO: handle floats
-
-pCompareStmtOp'' :: GenParser Char st (CompareOp, Maybe ExprResultSize)
-pCompareStmtOp'' =
   do string "icmp"
      pWhitespace
      op <- pIntCompareOp
