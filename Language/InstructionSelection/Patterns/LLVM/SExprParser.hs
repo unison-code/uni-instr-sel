@@ -543,9 +543,11 @@ pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
   do op <- pUnaryStmtOpType
      pWhitespace1
-     size' <- pExprResultSize
-     let size = Just size'
-     return (FixPointSqrt, size)
+     if (hasResultSize op)
+        then (do size' <- pExprResultSize
+                 let size = Just size'
+                 return (op, size))
+        else return (op, Nothing)
 
 pUnaryStmtOpType :: GenParser Char st UnaryOp
 pUnaryStmtOpType =
@@ -556,7 +558,7 @@ pUnaryStmtOpType =
   <|> try (do string "fixpointsqrt"
               return FixPointSqrt)
   <|> try (do string "bit_not"
-              return FixPointSqrt)
+              return Not)
 
 pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
 pBinaryStmtOp =
@@ -576,14 +578,31 @@ pCompareAssertOp =
      return (op, size)
   -- TODO: handle floats
 
+  -- TODO: remove once the spec has been fixed
 pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =
+      try pCompareStmtOp'
+  <|> try pCompareStmtOp''
+
+pCompareStmtOp' :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pCompareStmtOp' =
   do string "icmp"
      pWhitespace1
      size' <- pExprResultSize
      let size = Just size'
      pWhitespace
      op <- pIntCompareOp
+     return (op, size)
+  -- TODO: handle floats
+
+pCompareStmtOp'' :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pCompareStmtOp'' =
+  do string "icmp"
+     pWhitespace
+     op <- pIntCompareOp
+     pWhitespace1
+     size' <- pExprResultSize
+     let size = Just size'
      return (op, size)
   -- TODO: handle floats
 
@@ -607,11 +626,11 @@ pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
   do op <- pArithmeticStmtOpType
      pWhitespace1
-     if (op == Plus) || (op == Minus)
-        then return (op, Nothing)
-        else (do size' <- pExprResultSize
+     if (hasResultSize op)
+        then (do size' <- pExprResultSize
                  let size = Just size'
                  return (op, size))
+        else return (op, Nothing)
 
 pArithmeticStmtOpType :: GenParser Char st ArithmeticOp
 pArithmeticStmtOpType =

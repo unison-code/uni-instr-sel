@@ -49,7 +49,6 @@ data ArithmeticOp
 
     ------------------------------
     -- Meta operations
-    -- (does not require any result size)
     ------------------------------
 
       -- | Addition. Commutative.
@@ -329,3 +328,31 @@ data CompareOp
     | FCmpUn
 
     deriving (Show, Eq)
+
+-- | TODO: write description
+
+class Operation a where
+
+  -- | TODO: write description
+
+  hasResultSize :: a -> Bool
+
+-- | TODO: write description
+
+instance Operation UnaryOp where
+  hasResultSize op
+    | op `elem` [USqrt, SSqrt, FixPointSqrt] = False
+    | otherwise = True
+
+instance Operation BinaryOp where
+  hasResultSize (BinArithmeticOp op) = hasResultSize op
+  hasResultSize (BinCompareOp op) = hasResultSize op
+
+instance Operation ArithmeticOp where
+  hasResultSize op
+    | op `elem` [Plus, Minus, IUDiv, ISDiv, FDiv, IURem, ISRem,
+                 FixPointDiv] = False
+    | otherwise = True
+
+instance Operation CompareOp where
+  hasResultSize _ = True
