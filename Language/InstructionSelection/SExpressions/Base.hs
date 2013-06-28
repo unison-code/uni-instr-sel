@@ -13,9 +13,11 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Language.InstructionSelection.SExpressions.Base where
 
-import Language.InstructionSelection.Utils (Natural, fromNatural)
+import Language.InstructionSelection.Utils (Range (..), Natural, fromNatural)
 import Data.List (intercalate)
 
 
@@ -58,3 +60,6 @@ instance SExpressionable Integer where
 
 instance SExpressionable String where
   prettySE str _ = str
+
+instance SExpressionable (Range Integer) where
+  prettySE (Range lower upper) i = prettySE lower i ++ " " ++ prettySE upper i

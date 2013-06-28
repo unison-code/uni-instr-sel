@@ -486,19 +486,13 @@ instance SExpressionable AssertExpression where
     ++ " " ++ prettySE data1 i
     ++ " " ++ prettySE data2 i
     ++ ")"
-  prettySE (AssertRegFlagExpr flag) i =
-    "()"
-    -- TODO: implement
+  prettySE (AssertRegFlagExpr flag) i = prettySE flag i
   prettySE (AssertNotExpr expr) i =
     "(not"
     ++ " " ++ prettySE expr i
     ++ ")"
-  prettySE AssertFalseExpr i =
-    "()"
-    -- TODO: implement
-  prettySE AssertTrueExpr i =
-    "()"
-    -- TODO: implement
+  prettySE AssertFalseExpr i = "(false)"
+  prettySE AssertTrueExpr i = "(true)"
   prettySE (AssertImmediateExpr imm) i =
     prettySE imm i
 
@@ -562,9 +556,71 @@ instance SExpressionable MemoryClass where
   prettySE (MemoryClass str range) i = str ++ " " ++ prettySE range i
 
 instance SExpressionable ConstantValue where
-  prettySE (ConstIntValue int) i = prettySE int i
+  prettySE (ConstIntValue int) i =
+    "(constant ?"
+    ++ " " ++ prettySE int i
+    ++ ")"
 
-instance SExpressionable (Range Integer) where
-  prettySE (Range lower upper) i = prettySE lower i ++ " " ++ prettySE upper i
+instance SExpressionable UnaryOp where
+  prettySE USqrt _ = "usqrt"
+  prettySE FixPointSqrt _ = "fixpointsqrt"
+  prettySE Not _ = "bit_not"
+
+instance SExpressionable BinaryOp where
+  prettySE (BinArithmeticOp op) i = prettySE op i
+  prettySE (BinCompareOp op) i = prettySE op i
+
+instance SExpressionable ArithmeticOp where
+  prettySE Plus _ = "+"
+  prettySE Minus _ = "-"
+  prettySE IAdd _ = "add"
+  prettySE ISatAdd _ = "satadd"
+  prettySE ISub _ = "sub"
+  prettySE ISatSub _ = "satsub"
+  prettySE IMul _ = "mul"
+  prettySE ISatMul _ = "satmul"
+  prettySE IUDiv _ = "udiv"
+  prettySE ISDiv _ = "sdiv"
+  prettySE IURem _ = "urem"
+  prettySE ISRem _ = "srem"
+  prettySE FixPointDiv _ = "fixpointdiv"
+  prettySE FAdd _ = "fadd"
+  prettySE FSub _ = "fsub"
+  prettySE FMul _ = "fmul"
+  prettySE FDiv _ = "fdiv"
+  prettySE FRem _ = "frem"
+  prettySE Shl _ = "shl"
+  prettySE LShr _ = "lhsr"
+  prettySE AShr _ = "ashr"
+  prettySE And _ = "bit_and"
+  prettySE Or _ = "bit_or"
+  prettySE Xor _ = "bit_xor"
+  prettySE ZExt _ = "zext"
+  prettySE SExt _ = "sext"
+
+instance SExpressionable CompareOp where
+  prettySE ICmpEq i = "icmp eq"
+  prettySE ICmpNEq i = "icmp neq"
+  prettySE IUCmpGT i = "icmp ugt"
+  prettySE ISCmpGT i = "icmp sgt"
+  prettySE IUCmpGE i = "icmp uge"
+  prettySE ISCmpGE i = "icmp sge"
+  prettySE IUCmpLT i = "icmp ult"
+  prettySE ISCmpLT i = "icmp slt"
+  prettySE IUCmpLE i = "icmp ule"
+  prettySE ISCmpLE i = "icmp sle"
+  prettySE FUCmpEq i = "fcmp ueq"
+  prettySE FOCmpEq i = "fcmp oeq"
+  prettySE FUCmpNEq i = "fcmp une"
+  prettySE FOCmpNEq i = "fcmp one"
+  prettySE FUCmpGT i = "fcmp ugt"
+  prettySE FOCmpGT i = "fcmp ogt"
+  prettySE FUCmpGE i = "fcmp uge"
+  prettySE FOCmpGE i = "fcmp oge"
+  prettySE FUCmpLT i = "fcmp ult"
+  prettySE FOCmpLT i = "fcmp olt"
+  prettySE FUCmpLE i = "fcmp ule"
+  prettySE FOCmpLE i = "fcmp ole"
+  prettySE FCmpUn i = "fcmp uno"
 
 noValueStr = "no-value"

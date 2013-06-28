@@ -14,6 +14,9 @@
 --
 --------------------------------------------------------------------------------
 
+-- TODO: Fix so that "(register ...)" gets its own data type
+-- TODO: Fix handling of "zext" and other conversion operations
+
 module Language.InstructionSelection.Patterns.LLVM.SExprParser (
       parse
     ) where
@@ -25,6 +28,43 @@ import Text.ParserCombinators.Parsec hiding (parse)
 import qualified Text.ParserCombinators.Parsec as Parsec (parse)
 import Data.String.Utils
 import Debug.Trace
+
+
+
+--------------------------------------------------
+-- Type classes
+--------------------------------------------------
+
+-- | A class for providing a way of checking if an operation is expecting a
+-- result size or not.
+
+class Operation a where
+
+  -- | Checks whether an operation requires a result size.
+
+  hasResultSize :: a -> Bool
+
+--------------------------------------------------
+-- Operation instances
+--------------------------------------------------
+
+instance Operation UnaryOp where
+  hasResultSize op
+    | op `elem` [USqrt, FixPointSqrt] = False
+    | otherwise = True
+
+instance Operation BinaryOp where
+  hasResultSize (BinArithmeticOp op) = hasResultSize op
+  hasResultSize (BinCompareOp op) = hasResultSize op
+
+instance Operation ArithmeticOp where
+  hasResultSize op
+    | op `elem` [Plus, Minus, IUDiv, ISDiv, FDiv, IURem, ISRem,
+                 FixPointDiv] = False
+    | otherwise = True
+
+instance Operation CompareOp where
+  hasResultSize _ = True
 
 
 
@@ -92,7 +132,7 @@ pImmConstraint' =
      return (ImmediateRange imm range)
 
 pZimmConstraint :: GenParser Char st Constraint
-pZimmConstraint = pLabeledData "zimm" pZimmConstraint
+pZimmConstraint = pLabeledData "zimm" pZimmConstraint'
 
 pZimmConstraint' :: GenParser Char st Constraint
 pZimmConstraint' =
@@ -181,11 +221,8 @@ pCompareAssertExpr' =
      return (AssertCompareExpr op size data1 data2)
 
 pRegFlagAssertExpr :: GenParser Char st AssertExpression
-pRegFlagAssertExpr = pParens pRegFlagAssertExpr'
-
-pRegFlagAssertExpr' :: GenParser Char st AssertExpression
-pRegFlagAssertExpr' =
-  do regFlag <- pRegisterFlag'
+pRegFlagAssertExpr =
+  do regFlag <- pRegisterFlag
      return (AssertRegFlagExpr regFlag)
 
 pNotAssertExpr :: GenParser Char st AssertExpression
@@ -520,8 +557,6 @@ pUnaryStmtOpType :: GenParser Char st UnaryOp
 pUnaryStmtOpType =
       try (do string "usqrt"
               return USqrt)
-  <|> try (do string "ssqrt"
-              return SSqrt)
   <|> try (do string "fixpointsqrt"
               return FixPointSqrt)
   <|> try (do string "bit_not"

@@ -14,23 +14,6 @@
 
 module Language.InstructionSelection.OpTypes.Base where
 
-import Language.InstructionSelection.SExpressions
-
-
-
---------------------------------------------------
--- Type classes
---------------------------------------------------
-
--- | A class for providing a way of checking if an operation is expecting a
--- result size or not.
-
-class Operation a where
-
-  -- | Checks whether an operation requires a result size.
-
-  hasResultSize :: a -> Bool
-
 
 
 --------------------------------------------------
@@ -46,10 +29,6 @@ data UnaryOp
     = USqrt
 
       -- | Signed arithmetic square root function.
-
-    | SSqrt
-
-      -- | Fix-point arithmetic square root function.
 
     | FixPointSqrt
 
@@ -351,38 +330,3 @@ data CompareOp
     | FCmpUn
 
     deriving (Show, Eq)
-
-
---------------------------------------------------
--- Operation instances
---------------------------------------------------
-
-instance Operation UnaryOp where
-  hasResultSize op
-    | op `elem` [USqrt, SSqrt, FixPointSqrt] = False
-    | otherwise = True
-
-instance Operation BinaryOp where
-  hasResultSize (BinArithmeticOp op) = hasResultSize op
-  hasResultSize (BinCompareOp op) = hasResultSize op
-
-instance Operation ArithmeticOp where
-  hasResultSize op
-    | op `elem` [Plus, Minus, IUDiv, ISDiv, FDiv, IURem, ISRem,
-                 FixPointDiv] = False
-    | otherwise = True
-
-instance Operation CompareOp where
-  hasResultSize _ = True
-
-
-
---------------------------------------------------
--- SExpressionable instances
---------------------------------------------------
-
-instance SExpressionable UnaryOp where
-  prettySE USqrt i = prettySE "usqrt" i
-  prettySE SSqrt i = prettySE "ssqrt" i
-  prettySE FixPointSqrt i = prettySE "fixpointsqrt" i
-  prettySE Not i = prettySE "bit_not" i
