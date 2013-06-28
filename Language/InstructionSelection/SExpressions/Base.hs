@@ -46,3 +46,15 @@ showSE a = prettySE a 0
 
 showSEList :: (SExpressionable a) => [a] -> String
 showSEList a = prettySEList a 0
+
+
+
+--------------------------------------------------
+-- Basic instances
+--------------------------------------------------
+
+instance SExpressionable Integer where
+  prettySE int _ = show int
+
+instance SExpressionable String where
+  prettySE str _ = str

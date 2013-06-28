@@ -405,7 +405,7 @@ data Instruction
 
 
 --------------------------------------------------
--- Show instances
+-- SExpressionable instances
 --------------------------------------------------
 
 instance SExpressionable Instruction where
@@ -456,7 +456,7 @@ instance SExpressionable Constraint where
   prettySE  (Alias temp Nothing) i =
     "(alias"
     ++ " " ++ prettySE temp i
-    ++ " " ++ noValueStr
+    ++ " " ++ prettySE noValueStr i
     ++ ")"
   prettySE  (Assert expr) i =
     "(assert"
@@ -475,11 +475,17 @@ instance SExpressionable Constraint where
 
 instance SExpressionable AssertExpression where
   prettySE (AssertContainsExpr reg regClass) i =
-    "()"
-    -- TODO: implement
+    "(contains?"
+    ++ " " ++ prettySE regClass i
+    ++ " " ++ prettySE reg i
+    ++ ")"
   prettySE (AssertCompareExpr op (Just size) data1 data2) i =
-    "()"
-    -- TODO: implement
+    "("
+    ++ prettySE op i
+    ++ " " ++ prettySE size i
+    ++ " " ++ prettySE data1 i
+    ++ " " ++ prettySE data2 i
+    ++ ")"
   prettySE (AssertRegFlagExpr flag) i =
     "()"
     -- TODO: implement
@@ -487,10 +493,10 @@ instance SExpressionable AssertExpression where
     "(not"
     ++ " " ++ prettySE expr i
     ++ ")"
-  prettySE (AssertFalseExpr) i =
+  prettySE AssertFalseExpr i =
     "()"
     -- TODO: implement
-  prettySE (AssertTrueExpr) i =
+  prettySE AssertTrueExpr i =
     "()"
     -- TODO: implement
   prettySE (AssertImmediateExpr imm) i =
@@ -499,6 +505,19 @@ instance SExpressionable AssertExpression where
 instance SExpressionable Statement where
   prettySE _ i = "()"
   -- TODO: implement
+
+instance SExpressionable ExprResultSize where
+  prettySE (ERSRegSize reg) i = prettySE reg i
+  prettySE (ERSConstValue const) i = prettySE const i
+  prettySE (ERSConstTemporary temp) i = prettySE temp i
+
+instance SExpressionable AnyData where
+  prettySE (ADTemporary temp) i = prettySE temp i
+  prettySE (ADRegister reg) i = prettySE reg i
+  prettySE (ADRegisterFlag flag) i = prettySE flag i
+  prettySE (ADConstant const) i = prettySE const i
+  prettySE (ADImmediate imm) i = prettySE imm i
+  prettySE ADNoValue i = prettySE noValueStr i
 
 instance SExpressionable AnyStorage where
   prettySE  (ASTemporary temp) i = prettySE temp i
@@ -534,18 +553,18 @@ instance SExpressionable DataSpace where
   prettySE (DSMemoryClass memClass) i = prettySE memClass i
 
 instance SExpressionable RegisterClass where
-  prettySE (RegisterClass str) i = prettySE str i
+  prettySE (RegisterClass str) i =
+    "(register-class"
+    ++ " " ++ str
+    ++ ")"
 
 instance SExpressionable MemoryClass where
   prettySE (MemoryClass str range) i = str ++ " " ++ prettySE range i
 
+instance SExpressionable ConstantValue where
+  prettySE (ConstIntValue int) i = prettySE int i
+
 instance SExpressionable (Range Integer) where
   prettySE (Range lower upper) i = prettySE lower i ++ " " ++ prettySE upper i
-
-instance SExpressionable Integer where
-  prettySE int _ = show int
-
-instance SExpressionable String where
-  prettySE str _ = str
 
 noValueStr = "no-value"

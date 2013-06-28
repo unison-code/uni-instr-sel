@@ -14,6 +14,8 @@
 
 module Language.InstructionSelection.OpTypes.Base where
 
+import Language.InstructionSelection.SExpressions
+
 
 
 --------------------------------------------------
@@ -372,3 +374,15 @@ instance Operation ArithmeticOp where
 
 instance Operation CompareOp where
   hasResultSize _ = True
+
+
+
+--------------------------------------------------
+-- SExpressionable instances
+--------------------------------------------------
+
+instance SExpressionable UnaryOp where
+  prettySE USqrt i = prettySE "usqrt" i
+  prettySE SSqrt i = prettySE "ssqrt" i
+  prettySE FixPointSqrt i = prettySE "fixpointsqrt" i
+  prettySE Not i = prettySE "bit_not" i
