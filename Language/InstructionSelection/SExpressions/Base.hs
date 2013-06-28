@@ -39,7 +39,7 @@ indent :: Natural -> String
 indent i = replicate (2 * (fromInteger $ fromNatural i)) ' '
 
 prettySEList :: (SExpressionable a) => [a] -> Natural -> String
-prettySEList as i = intercalate "\n" $ map (\a -> (prettySE a i)) as
+prettySEList as i = intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as
 
 showSE :: (SExpressionable a) => a -> String
 showSE a = prettySE a 0

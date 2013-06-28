@@ -13,9 +13,11 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Language.InstructionSelection.Patterns.LLVM.Base where
 
-import Language.InstructionSelection.Utils (Range, Natural)
+import Language.InstructionSelection.Utils (Range (..), Natural)
 import Language.InstructionSelection.OpTypes
 import Language.InstructionSelection.SExpressions
 
@@ -409,15 +411,141 @@ data Instruction
 instance SExpressionable Instruction where
   prettySE (Instruction ass pats) i =
     let i1 = i + 1
-    in indent i ++ "(instruction"
-       ++ "\n" ++ (prettySE ass i1)
+    in "(instruction"
+       ++ "\n" ++ indent i1 ++ (prettySE ass i1)
        ++ "\n" ++ (prettySEList pats i1)
-       ++ "\n" ++ indent i ++ ")"
+       ++ ")"
 
 instance SExpressionable AssemblyString where
-  prettySE (AssemblyString str) i = indent i ++ str
+  prettySE (AssemblyString str) i = str
 
 instance SExpressionable Pattern where
   prettySE (Pattern stmts cnstrs) i =
     let i1 = i + 1
-    in indent i ++ "(pattern)"
+        i2 = i + 2
+    in "(pattern"
+       ++ "\n" ++ indent i1 ++ "(constraints"
+       ++ "\n" ++ (prettySEList cnstrs i2)
+       ++ ")"
+       ++ "\n" ++ indent i1 ++ "(code"
+       ++ "\n" ++ (prettySEList stmts i2)
+       ++ ")"
+       ++ ")"
+
+instance SExpressionable Constraint where
+  prettySE  (AllocateIn store space) i =
+    "(allocate-in"
+    ++ " " ++ prettySE store i
+    ++ " " ++ prettySE space i
+    ++ ")"
+  prettySE  (ImmediateRange imm range) i =
+    "(imm"
+    ++ " " ++ prettySE imm i
+    ++ " " ++ prettySE range i
+    ++ ")"
+  prettySE  (ImmediateRangeNoZero imm range) i =
+    "(zimm"
+    ++ " " ++ prettySE imm i
+    ++ " " ++ prettySE range i
+    ++ ")"
+  prettySE  (Alias temp (Just reg)) i =
+    "(alias"
+    ++ " " ++ prettySE temp i
+    ++ " " ++ prettySE reg i
+    ++ ")"
+  prettySE  (Alias temp Nothing) i =
+    "(alias"
+    ++ " " ++ prettySE temp i
+    ++ " " ++ noValueStr
+    ++ ")"
+  prettySE  (Assert expr) i =
+    "(assert"
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE  (RelAddressConstraint imm memClass) i =
+    "(rel-address"
+    ++ " " ++ prettySE memClass i
+    ++ " " ++ prettySE imm i
+    ++ ")"
+  prettySE  (AbsAddressConstraint imm memClass) i =
+    "(abs-address"
+    ++ " " ++ prettySE memClass i
+    ++ " " ++ prettySE imm i
+    ++ ")"
+
+instance SExpressionable AssertExpression where
+  prettySE (AssertContainsExpr reg regClass) i =
+    "()"
+    -- TODO: implement
+  prettySE (AssertCompareExpr op (Just size) data1 data2) i =
+    "()"
+    -- TODO: implement
+  prettySE (AssertRegFlagExpr flag) i =
+    "()"
+    -- TODO: implement
+  prettySE (AssertNotExpr expr) i =
+    "(not"
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE (AssertFalseExpr) i =
+    "()"
+    -- TODO: implement
+  prettySE (AssertTrueExpr) i =
+    "()"
+    -- TODO: implement
+  prettySE (AssertImmediateExpr imm) i =
+    prettySE imm i
+
+instance SExpressionable Statement where
+  prettySE _ i = "()"
+  -- TODO: implement
+
+instance SExpressionable AnyStorage where
+  prettySE  (ASTemporary temp) i = prettySE temp i
+  prettySE  (ASRegister reg) i = prettySE reg i
+  prettySE  (ASRegisterFlag flag) i = prettySE flag i
+
+instance SExpressionable Temporary where
+  prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
+
+instance SExpressionable Register where
+  prettySE (RegByTemporary temp) i = prettySE temp i
+  prettySE (RegBySymbol sym) i = prettySE sym i
+
+instance SExpressionable RegisterSymbol where
+  prettySE (RegisterSymbol str) i = prettySE str i
+
+instance SExpressionable RegisterFlag where
+  prettySE (RegisterFlag sym reg) i =
+    "(reg-flag " ++ prettySE sym i ++ " " ++ prettySE reg i ++ ")"
+
+instance SExpressionable RegisterFlagSymbol where
+  prettySE (RegisterFlagSymbol str) i = prettySE str i
+
+instance SExpressionable ImmediateSymbol where
+  prettySE (ImmediateSymbol str) i = prettySE str i
+
+instance SExpressionable AnyStorageSpace where
+  prettySE (ASSRegisterFlag flag) i = prettySE flag i
+  prettySE (ASSDataSpace space) i = prettySE space i
+
+instance SExpressionable DataSpace where
+  prettySE (DSRegisterClass regClass) i = prettySE regClass i
+  prettySE (DSMemoryClass memClass) i = prettySE memClass i
+
+instance SExpressionable RegisterClass where
+  prettySE (RegisterClass str) i = prettySE str i
+
+instance SExpressionable MemoryClass where
+  prettySE (MemoryClass str range) i = str ++ " " ++ prettySE range i
+
+instance SExpressionable (Range Integer) where
+  prettySE (Range lower upper) i = prettySE lower i ++ " " ++ prettySE upper i
+
+instance SExpressionable Integer where
+  prettySE int _ = show int
+
+instance SExpressionable String where
+  prettySE str _ = str
+
+noValueStr = "no-value"
