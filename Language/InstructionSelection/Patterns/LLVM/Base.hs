@@ -274,11 +274,11 @@ data Statement
     | CondBranchStmt
           Register
 
-          -- | Label taken if the register evaluates to @False@.
+          -- | Label taken if the register evaluates to @True@.
 
           Label
 
-          -- | Label taken if the register evaluates to @True@.
+          -- | Label taken if the register evaluates to @False@.
 
           Label
 
@@ -497,8 +497,72 @@ instance SExpressionable AssertExpression where
     prettySE imm i
 
 instance SExpressionable Statement where
-  prettySE _ i = "()"
-  -- TODO: implement
+  prettySE (AssignmentStmt temp expr) i =
+    "(="
+    ++ " " ++ prettySE temp i
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE (SetRegStmt reg expr) i =
+    "(set-reg"
+    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE (UncondBranchStmt label) i =
+    "(br"
+    ++ " " ++ prettySE label i
+    ++ ")"
+  prettySE (CondBranchStmt reg tLabel fLabel) i =
+    "(br"
+    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE tLabel i
+    ++ " " ++ prettySE fLabel i
+    ++ ")"
+  prettySE (LabelStmt label) i =
+    "(label"
+    ++ " " ++ prettySE label i
+    ++ ")"
+
+instance SExpressionable StmtExpression where
+  prettySE (BinaryOpStmtExpr op (Just result) lhs rhs) i =
+    "(" ++ prettySE op i
+    ++ " " ++ prettySE result i
+    ++ " " ++ prettySE lhs i
+    ++ " " ++ prettySE rhs i
+    ++ ")"
+  prettySE (BinaryOpStmtExpr op Nothing lhs rhs) i =
+    "(" ++ prettySE op i
+    ++ " " ++ prettySE lhs i
+    ++ " " ++ prettySE rhs i
+    ++ ")"
+  prettySE (UnaryOpStmtExpr op (Just result) expr) i =
+    "(" ++ prettySE op i
+    ++ " " ++ prettySE result i
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE (UnaryOpStmtExpr op Nothing expr) i =
+    "(" ++ prettySE op i
+    ++ " " ++ prettySE expr i
+    ++ ")"
+  prettySE (PhiStmtExpr elements) i =
+    "(phi"
+    ++ " " ++ prettySEListNoBreak elements i
+    ++ ")"
+  prettySE (DataStmtExpr pdata) i = prettySE pdata i
+  prettySE (SizeStmtExpr reg) i = prettySE reg i
+  prettySE (RegRangeStmtExpr reg range) i =
+    "(reg-range"
+    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE range i
+    ++ ")"
+
+instance SExpressionable PhiElement where
+  prettySE (PhiElement expr label) i =
+    "(" ++ prettySE expr i
+    ++ " . " ++ prettySE label i
+    ++ ")"
+
+instance SExpressionable Label where
+  prettySE (Label str) i = prettySE str i
 
 instance SExpressionable ExprResultSize where
   prettySE (ERSRegSize reg) i = prettySE reg i
@@ -622,5 +686,21 @@ instance SExpressionable CompareOp where
   prettySE FUCmpLE i = "fcmp ule"
   prettySE FOCmpLE i = "fcmp ole"
   prettySE FCmpUn i = "fcmp uno"
+
+instance SExpressionable (Range ConstProgramData) where
+  prettySE (Range lower upper) i =
+    prettySE lower i
+    ++ " " ++ prettySE upper i
+
+instance SExpressionable ConstProgramData where
+  prettySE (CPDConstant const) i = prettySE const i
+  prettySE (CPDImmediate imm) i = prettySE imm i
+
+instance SExpressionable ProgramData where
+  prettySE (PDConstant const) i = prettySE const i
+  prettySE (PDImmediate imm) i = prettySE imm i
+  prettySE (PDTemporary temp) i = prettySE temp i
+  prettySE (PDRegister reg) i = prettySE reg i
+  prettySE PDNoValue i = prettySE noValueStr i
 
 noValueStr = "no-value"
