@@ -111,7 +111,6 @@ pConstraint =
   <|> try pAliasConstraint
   <|> try pRelAddressConstraint
   <|> try pAbsAddressConstraint
-  <|> try pAssertConstraint
 
 pAllocConstraint :: GenParser Char st Constraint
 pAllocConstraint = pLabeledData "allocate-in" pAllocConstraint'
@@ -181,70 +180,6 @@ pAbsAddressConstraint' :: GenParser Char st Constraint
 pAbsAddressConstraint' =
   do (range, imm) <- pImmRangeAndSymbol
      return (AbsAddressConstraint imm (MemoryClass "local" range))
-
-pAssertConstraint :: GenParser Char st Constraint
-pAssertConstraint = pLabeledData "assert" pAssertConstraint'
-
-pAssertConstraint' :: GenParser Char st Constraint
-pAssertConstraint' =
-  do expr <- pAssertExpression
-     return (Assert expr)
-
-pAssertExpression :: GenParser Char st AssertExpression
-pAssertExpression =
-      try pContainsAssertExpr
-  <|> try pCompareAssertExpr
-  <|> try pRegFlagAssertExpr
-  <|> try pNotAssertExpr
-  <|> try pTrueFalseAssertExpr
-  <|> try pImmediateAssertExpr
-
-pContainsAssertExpr :: GenParser Char st AssertExpression
-pContainsAssertExpr = pLabeledData "contains?" pContainsAssertExpr'
-
-pContainsAssertExpr' :: GenParser Char st AssertExpression
-pContainsAssertExpr' =
-  do regclass <- pPrefixedRegisterClass
-     reg      <- pRegister
-     return (AssertContainsExpr reg regclass)
-
-pCompareAssertExpr :: GenParser Char st AssertExpression
-pCompareAssertExpr = pParens pCompareAssertExpr'
-
-pCompareAssertExpr' :: GenParser Char st AssertExpression
-pCompareAssertExpr' =
-  do (op, size) <- pCompareAssertOp
-     pWhitespace
-     data1 <- pAnyData
-     pWhitespace
-     data2 <- pAnyData
-     return (AssertCompareExpr op size data1 data2)
-
-pRegFlagAssertExpr :: GenParser Char st AssertExpression
-pRegFlagAssertExpr =
-  do regFlag <- pRegisterFlag
-     return (AssertRegFlagExpr regFlag)
-
-pNotAssertExpr :: GenParser Char st AssertExpression
-pNotAssertExpr = pLabeledData "not" pNotAssertExpr'
-
-pNotAssertExpr' :: GenParser Char st AssertExpression
-pNotAssertExpr' =
-  do expr <- pAssertExpression
-     return (AssertNotExpr expr)
-
-pTrueFalseAssertExpr :: GenParser Char st AssertExpression
-pTrueFalseAssertExpr =
-  do int <- pConstant
-     if int == (ConstIntValue 0)
-        then return AssertFalseExpr
-        else return AssertTrueExpr
-
-pImmediateAssertExpr :: GenParser Char st AssertExpression
-pImmediateAssertExpr =
-  do pWhitespace
-     imm <- pImmediateSymbol
-     return (AssertImmediateExpr imm)
 
 pAllStatements :: GenParser Char st [Statement]
 pAllStatements = many pStatement
@@ -500,12 +435,19 @@ pDataSpace =
      -- TODO: add memory class
 
 pRegisterClass :: GenParser Char st RegisterClass
-pRegisterClass =
-  do reg <- many1 (try alphaNum <|> try (char '_'))
-     return (RegisterClass reg)
+pRegisterClass = pParens pRegisterClass'
 
-pPrefixedRegisterClass :: GenParser Char st RegisterClass
-pPrefixedRegisterClass = pLabeledData "register-class" pRegisterClass
+pRegisterClass' :: GenParser Char st RegisterClass
+pRegisterClass' =
+  do regs <- many1 pRegisterSymbolEatWhitespace
+     return (RegisterClass regs)
+
+pRegisterSymbolEatWhitespace :: GenParser Char st RegisterSymbol
+pRegisterSymbolEatWhitespace =
+  do pWhitespace
+     reg <- pRegisterSymbol
+     pWhitespace
+     return reg
 
 pAnyData :: GenParser Char st AnyData
 pAnyData =
@@ -568,17 +510,6 @@ pBinaryStmtOp =
               return (BinCompareOp op, size))
   <|> try (do (op, size) <- pArithmeticStmtOp
               return (BinArithmeticOp op, size))
-
-pCompareAssertOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
-pCompareAssertOp =
-  do string "icmp"
-     pWhitespace1
-     op <- pIntCompareOp
-     pWhitespace
-     size' <- pExprResultSize
-     let size = Just size'
-     return (op, size)
-  -- TODO: handle floats
 
 pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pCompareStmtOp =

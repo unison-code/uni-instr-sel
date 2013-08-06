@@ -59,7 +59,7 @@ data RegisterSymbol
 
 data RegisterFlagSymbol
     = RegisterFlagSymbol String
-    deriving (Show)
+    deriving (Show, Eq)
 
 -- | Record for describing a register flag. All flags are associated with a
 -- specific register.
@@ -72,10 +72,12 @@ data RegisterFlag
 
 data RegisterClass
     = RegisterClass
-          -- | Identifier for the class.
 
-          String
-    deriving (Show, Eq)
+          -- | Set of registers.
+
+          [RegisterSymbol]
+
+    deriving (Show)
 
 -- | Record for describing a memory class.
 
@@ -97,7 +99,7 @@ data MemoryClass
 data DataSpace
     = DSRegisterClass RegisterClass
     | DSMemoryClass MemoryClass
-    deriving (Show, Eq)
+    deriving (Show)
 
 -- | Record for an immediate value symbol. This is used to represent an
 -- immediate value which will become available during pattern matching.
@@ -314,10 +316,6 @@ data Constraint
 
     | Alias Temporary (Maybe Register)
 
-      -- | The @Assert@ constraints contain any other, arbitrary constraints.
-
-    | Assert AssertExpression
-
       -- | The @RelAddressConstraint@ constraint forces an immediate value to be
       -- within a certain relative memory address range.
 
@@ -326,40 +324,6 @@ data Constraint
       -- | Same as for @RelAddressConstraint@ but for absolute values.
 
     | AbsAddressConstraint ImmediateSymbol MemoryClass
-
-    deriving (Show)
-
--- | Record for containing an assert expression.
-
-data AssertExpression
-
-      -- | Checks whether a register is within a certain register class.
-
-    = AssertContainsExpr Register RegisterClass
-
-      -- | Checks whether a comparison between two data holds.
-
-    | AssertCompareExpr CompareOp (Maybe ExprResultSize) AnyData AnyData
-
-      -- | Checks whether a certain flag in a register is set.
-
-    | AssertRegFlagExpr RegisterFlag
-
-      -- | Negates an assert expression.
-
-    | AssertNotExpr AssertExpression
-
-      -- | Always evaluate to 'False'.
-
-    | AssertFalseExpr
-
-      -- | Always evaluate to 'True'.
-
-    | AssertTrueExpr
-
-      -- | An immediate symbol.
-
-    | AssertImmediateExpr ImmediateSymbol
 
     deriving (Show)
 
@@ -458,10 +422,6 @@ instance SExpressionable Constraint where
     ++ " " ++ prettySE temp i
     ++ " " ++ prettySE noValueStr i
     ++ ")"
-  prettySE  (Assert expr) i =
-    "(assert"
-    ++ " " ++ prettySE expr i
-    ++ ")"
   prettySE  (RelAddressConstraint imm memClass) i =
     "(rel-address"
     ++ " " ++ prettySE memClass i
@@ -472,29 +432,6 @@ instance SExpressionable Constraint where
     ++ " " ++ prettySE memClass i
     ++ " " ++ prettySE imm i
     ++ ")"
-
-instance SExpressionable AssertExpression where
-  prettySE (AssertContainsExpr reg regClass) i =
-    "(contains?"
-    ++ " " ++ prettySE regClass i
-    ++ " " ++ prettySE reg i
-    ++ ")"
-  prettySE (AssertCompareExpr op (Just size) data1 data2) i =
-    "("
-    ++ prettySE op i
-    ++ " " ++ prettySE size i
-    ++ " " ++ prettySE data1 i
-    ++ " " ++ prettySE data2 i
-    ++ ")"
-  prettySE (AssertRegFlagExpr flag) i = prettySE flag i
-  prettySE (AssertNotExpr expr) i =
-    "(not"
-    ++ " " ++ prettySE expr i
-    ++ ")"
-  prettySE AssertFalseExpr i = "(false)"
-  prettySE AssertTrueExpr i = "(true)"
-  prettySE (AssertImmediateExpr imm) i =
-    prettySE imm i
 
 instance SExpressionable Statement where
   prettySE (AssignmentStmt temp expr) i =
@@ -611,9 +548,9 @@ instance SExpressionable DataSpace where
   prettySE (DSMemoryClass memClass) i = prettySE memClass i
 
 instance SExpressionable RegisterClass where
-  prettySE (RegisterClass str) i =
-    "(register-class"
-    ++ " " ++ str
+  prettySE (RegisterClass regs) i =
+    "("
+    ++ prettySEListNoBreak regs i
     ++ ")"
 
 instance SExpressionable MemoryClass where
