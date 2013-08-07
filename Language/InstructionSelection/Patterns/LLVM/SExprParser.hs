@@ -159,9 +159,21 @@ pAlias =
 
 pAliasWithValue :: GenParser Char st Alias
 pAliasWithValue =
+          pAliasWithValue'
+  <|> try pAliasWithValue''
+
+pAliasWithValue' :: GenParser Char st Alias
+pAliasWithValue' =
   do temp <- pTemporary
      pWhitespace
      reg <- pRegister
+     return (Alias temp (Just reg))
+
+pAliasWithValue'' :: GenParser Char st Alias
+pAliasWithValue'' =
+  do reg <- pRegister
+     pWhitespace
+     temp <- pTemporary
      return (Alias temp (Just reg))
 
 pAliasNoValue :: GenParser Char st Alias
