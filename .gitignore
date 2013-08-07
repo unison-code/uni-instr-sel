@@ -1,3 +1,4 @@
 *.o
 *.hi
 parser
+test.txt
