@@ -294,27 +294,26 @@ data Statement
 
 data Constraint
 
-      -- | The @AllocateIn@ constraint dictates that a storage unit must be
-      -- located in a particular storage space.
+      -- | The @AllocateInConstraint@ constraint dictates that a storage unit
+      -- must be located in a particular storage space.
 
-    = AllocateIn AnyStorage AnyStorageSpace
+    = AllocateInConstraint AnyStorage AnyStorageSpace
 
-      -- | The @ImmediateRange@ constraint limits the range of values that an
-      -- immediate value may take (including 0).
+      -- | The @ImmediateConstraint@ constraint limits the range of values that
+      -- an immediate value may take.
 
-    | ImmediateRange ImmediateSymbol (Range Integer)
+    | ImmediateConstraint ImmediateSymbol [Range Integer]
 
-      -- | The @ImmediateRange@ constraint limits the range of values that an
-      -- immediate value may take (excluding 0).
+      -- | The @RegFlagConstraint@ constraint dictates that a register flag
+      -- must be assigned any of the values within the set of ranges.
 
-    | ImmediateRangeNoZero ImmediateSymbol (Range Integer)
+    | RegFlagConstraint RegisterFlag [Range Integer]
 
-      -- | The @Alias@ constraint dictates that a temporary must be the
-      -- same, in the sense that both temporaries must be assigned the same
-      -- register. Sometimes a temporary may be aliased with @no-value@, upon
-      -- which there is no second temporary.
+      -- | The @AliasesConstraint@ constraint dictates that two temporaries are
+      -- actually the same (i.e. one temporary is simply a name alias for
+      -- another).
 
-    | Alias Temporary (Maybe Register)
+    | AliasesConstraint [Alias]
 
       -- | The @RelAddressConstraint@ constraint forces an immediate value to be
       -- within a certain relative memory address range.
@@ -324,6 +323,17 @@ data Constraint
       -- | Same as for @RelAddressConstraint@ but for absolute values.
 
     | AbsAddressConstraint ImmediateSymbol MemoryClass
+
+    deriving (Show)
+
+-- | Record for an alias. An alias dictates that a temporary and another
+-- temporary or register must be the same, in the sense that both temporaries
+-- must be assigned the same register. Sometimes a temporary may be aliased with
+-- @no-value@, upon which there is no second temporary.
+
+data Alias
+
+    = Alias Temporary (Maybe Register)
 
     deriving (Show)
 
@@ -397,40 +407,46 @@ instance SExpressionable Pattern where
        ++ ")"
 
 instance SExpressionable Constraint where
-  prettySE  (AllocateIn store space) i =
+  prettySE  (AllocateInConstraint store space) i =
     "(allocate-in"
     ++ " " ++ prettySE store i
     ++ " " ++ prettySE space i
     ++ ")"
-  prettySE  (ImmediateRange imm range) i =
-    "(imm"
+  prettySE  (ImmediateConstraint imm ranges) i =
+    "(immediate"
     ++ " " ++ prettySE imm i
-    ++ " " ++ prettySE range i
+    ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
     ++ ")"
-  prettySE  (ImmediateRangeNoZero imm range) i =
-    "(zimm"
-    ++ " " ++ prettySE imm i
-    ++ " " ++ prettySE range i
+  prettySE  (RegFlagConstraint flag ranges) i =
+    "(reg-flag"
+    ++ " " ++ prettySE flag i
+    ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
     ++ ")"
-  prettySE  (Alias temp (Just reg)) i =
-    "(alias"
-    ++ " " ++ prettySE temp i
-    ++ " " ++ prettySE reg i
-    ++ ")"
-  prettySE  (Alias temp Nothing) i =
-    "(alias"
-    ++ " " ++ prettySE temp i
-    ++ " " ++ prettySE noValueStr i
+  prettySE  (AliasesConstraint aliases) i =
+    "(aliases"
+    ++ " " ++ prettySEListNoBreak aliases i
     ++ ")"
   prettySE  (RelAddressConstraint imm memClass) i =
     "(rel-address"
-    ++ " " ++ prettySE memClass i
     ++ " " ++ prettySE imm i
+    ++ " " ++ prettySE memClass i
     ++ ")"
   prettySE  (AbsAddressConstraint imm memClass) i =
     "(abs-address"
-    ++ " " ++ prettySE memClass i
     ++ " " ++ prettySE imm i
+    ++ " " ++ prettySE memClass i
+    ++ ")"
+
+instance SExpressionable Alias where
+  prettySE  (Alias temp (Just reg)) i =
+    "("
+    ++ prettySE temp i
+    ++ " " ++ prettySE reg i
+    ++ ")"
+  prettySE  (Alias temp Nothing) i =
+    "("
+    ++ " " ++ prettySE temp i
+    ++ " " ++ prettySE noValueStr i
     ++ ")"
 
 instance SExpressionable Statement where

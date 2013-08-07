@@ -107,10 +107,10 @@ pConstraint :: GenParser Char st Constraint
 pConstraint =
       try pAllocConstraint
   <|> try pImmConstraint
-  <|> try pZimmConstraint
-  <|> try pAliasConstraint
+  <|> try pAliasesConstraint
   <|> try pRelAddressConstraint
   <|> try pAbsAddressConstraint
+  <|> try pRegFlagConstraint
 
 pAllocConstraint :: GenParser Char st Constraint
 pAllocConstraint = pLabeledData "allocate-in" pAllocConstraint'
@@ -120,57 +120,77 @@ pAllocConstraint' =
   do storage <- pAnyStorage
      pWhitespace
      space <- pAnyStorageSpace
-     return (AllocateIn storage space)
+     return (AllocateInConstraint storage space)
 
 pImmConstraint :: GenParser Char st Constraint
-pImmConstraint = pLabeledData "imm" pImmConstraint'
+pImmConstraint = pLabeledData "immediate" pImmConstraint'
 
 pImmConstraint' :: GenParser Char st Constraint
 pImmConstraint' =
-  do (range, imm) <- pImmRangeAndSymbol
-     return (ImmediateRange imm range)
-
-pZimmConstraint :: GenParser Char st Constraint
-pZimmConstraint = pLabeledData "zimm" pZimmConstraint'
-
-pZimmConstraint' :: GenParser Char st Constraint
-pZimmConstraint' =
-  do (range, imm) <- pImmRangeAndSymbol
-     return (ImmediateRangeNoZero imm range)
-
-pImmRangeAndSymbol :: GenParser Char st (Range Integer, ImmediateSymbol)
-pImmRangeAndSymbol =
-  do range <- pIntRange
-     pWhitespace
-     imm <- pImmediateSymbol
-     return (range, imm)
+  do imm <- pImmediateSymbol
+     pWhitespace1
+     ranges <- pParens (many1 pIntRange)
+     return (ImmediateConstraint imm ranges)
 
 pIntRange :: GenParser Char st (Range Integer)
-pIntRange =
+pIntRange = pParens pIntRange'
+
+pIntRange' :: GenParser Char st (Range Integer)
+pIntRange' =
   do lower <- pInt
-     pWhitespace
+     pWhitespace1
+     string "."
+     pWhitespace1
      upper <- pInt
      return (Range lower upper)
 
-pAliasConstraint :: GenParser Char st Constraint
-pAliasConstraint = pLabeledData "alias" pAliasConstraint'
+pAliasesConstraint :: GenParser Char st Constraint
+pAliasesConstraint = pLabeledData "aliases" pAliasesConstraint'
 
-pAliasConstraint' :: GenParser Char st Constraint
-pAliasConstraint' =
+pAliasesConstraint' :: GenParser Char st Constraint
+pAliasesConstraint' =
+  do aliases <- many1 (pParens pAlias)
+     return (AliasesConstraint aliases)
+
+pAlias :: GenParser Char st Alias
+pAlias =
+      try pAliasWithValue
+  <|> try pAliasNoValue
+
+pAliasWithValue :: GenParser Char st Alias
+pAliasWithValue =
   do temp <- pTemporary
      pWhitespace
-     reg <-      try (do pNoValue
-                         return Nothing)
-            <|> (do rg <- pRegister
-                    return (Just rg))
-     return (Alias temp reg)
+     reg <- pRegister
+     return (Alias temp (Just reg))
+
+pAliasNoValue :: GenParser Char st Alias
+pAliasNoValue =
+      try pAliasNoValue'
+  <|> try pAliasNoValue''
+
+pAliasNoValue' :: GenParser Char st Alias
+pAliasNoValue' =
+  do temp <- pTemporary
+     pWhitespace
+     pNoValue
+     return (Alias temp Nothing)
+
+pAliasNoValue'' :: GenParser Char st Alias
+pAliasNoValue'' =
+  do pNoValue
+     pWhitespace
+     temp <- pTemporary
+     return (Alias temp Nothing)
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'
 
 pRelAddressConstraint' :: GenParser Char st Constraint
 pRelAddressConstraint' =
-  do (range, imm) <- pImmRangeAndSymbol
+  do imm <- pImmediateSymbol
+     pWhitespace1
+     range <- pAddressRange
      return (RelAddressConstraint imm (MemoryClass "local" range))
 
 pAbsAddressConstraint :: GenParser Char st Constraint
@@ -178,8 +198,27 @@ pAbsAddressConstraint = pLabeledData "abs-address" pAbsAddressConstraint'
 
 pAbsAddressConstraint' :: GenParser Char st Constraint
 pAbsAddressConstraint' =
-  do (range, imm) <- pImmRangeAndSymbol
+  do imm <- pImmediateSymbol
+     pWhitespace1
+     range <- pAddressRange
      return (AbsAddressConstraint imm (MemoryClass "local" range))
+
+pAddressRange :: GenParser Char st (Range Integer)
+pAddressRange =
+  do lower <- pInt
+     pWhitespace1
+     upper <- pInt
+     return (Range lower upper)
+
+pRegFlagConstraint :: GenParser Char st Constraint
+pRegFlagConstraint = pLabeledData "reg-flag" pRegFlagConstraint'
+
+pRegFlagConstraint' :: GenParser Char st Constraint
+pRegFlagConstraint' =
+  do flag <- pRegisterFlagDetails
+     pWhitespace
+     ranges <- pParens (many1 pIntRange)
+     return (RegFlagConstraint flag ranges)
 
 pAllStatements :: GenParser Char st [Statement]
 pAllStatements = many pStatement
@@ -397,10 +436,10 @@ pImmediateSymbol =
      return (ImmediateSymbol symbol)
 
 pRegisterFlag :: GenParser Char st RegisterFlag
-pRegisterFlag = pLabeledData "reg-flag" pRegisterFlag'
+pRegisterFlag = pLabeledData "reg-flag" pRegisterFlagDetails
 
-pRegisterFlag' :: GenParser Char st RegisterFlag
-pRegisterFlag' =
+pRegisterFlagDetails :: GenParser Char st RegisterFlag
+pRegisterFlagDetails =
   do flag <- pRegisterFlagSymbol
      pWhitespace
      reg <- pRegister
