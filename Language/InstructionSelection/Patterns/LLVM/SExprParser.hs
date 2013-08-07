@@ -149,51 +149,20 @@ pAliasesConstraint = pLabeledData "aliases" pAliasesConstraint'
 
 pAliasesConstraint' :: GenParser Char st Constraint
 pAliasesConstraint' =
-  do aliases <- many1 (pParens pAlias)
+  do aliases <- many1 pAliases
      return (AliasesConstraint aliases)
 
-pAlias :: GenParser Char st Alias
-pAlias =
-      try pAliasWithValue
-  <|> try pAliasNoValue
+pAliases :: GenParser Char st [AliasValue]
+pAliases = pParens (many1 pAliasValue)
 
-pAliasWithValue :: GenParser Char st Alias
-pAliasWithValue =
-          pAliasWithValue'
-  <|> try pAliasWithValue''
-
-pAliasWithValue' :: GenParser Char st Alias
-pAliasWithValue' =
-  do temp <- pTemporary
-     pWhitespace
-     reg <- pRegister
-     return (Alias temp (Just reg))
-
-pAliasWithValue'' :: GenParser Char st Alias
-pAliasWithValue'' =
-  do reg <- pRegister
-     pWhitespace
-     temp <- pTemporary
-     return (Alias temp (Just reg))
-
-pAliasNoValue :: GenParser Char st Alias
-pAliasNoValue =
-      try pAliasNoValue'
-  <|> try pAliasNoValue''
-
-pAliasNoValue' :: GenParser Char st Alias
-pAliasNoValue' =
-  do temp <- pTemporary
-     pWhitespace1
-     pNoValue
-     return (Alias temp Nothing)
-
-pAliasNoValue'' :: GenParser Char st Alias
-pAliasNoValue'' =
-  do pNoValue
-     pWhitespace1
-     temp <- pTemporary
-     return (Alias temp Nothing)
+pAliasValue :: GenParser Char st AliasValue
+pAliasValue =
+      try (do temp <- pTemporary
+              return (AVTemporary temp))
+  <|> try (do reg <- pRegister
+              return (AVRegister reg))
+  <|> try (do pNoValue
+              return AVNoValue)
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'

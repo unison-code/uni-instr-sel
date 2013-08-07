@@ -345,11 +345,11 @@ data Constraint
 
     | RegFlagConstraint RegisterFlag [Range Integer]
 
-      -- | The @AliasesConstraint@ constraint dictates that two temporaries are
-      -- actually the same (i.e. one temporary is simply a name alias for
-      -- another).
+      -- | The @AliasesConstraint@ constraint indicates that two or more
+      -- temporaries (or registers) are actually the same (i.e. one temporary is
+      -- simply a name alias for another).
 
-    | AliasesConstraint [Alias]
+    | AliasesConstraint [[AliasValue]]
 
       -- | The @RelAddressConstraint@ constraint forces an immediate value to be
       -- within a certain relative memory address range.
@@ -362,15 +362,12 @@ data Constraint
 
     deriving (Show)
 
--- | Record for an alias. An alias dictates that a temporary and another
--- temporary or register must be the same, in the sense that both temporaries
--- must be assigned the same register. Sometimes a temporary may be aliased with
--- @no-value@, upon which there is no second temporary.
+-- | Record for containing values used for aliasing.
 
-data Alias
-
-    = Alias Temporary (Maybe Register)
-
+data AliasValue
+    = AVTemporary Temporary
+    | AVRegister Register
+    | AVNoValue
     deriving (Show)
 
 -- | Record for containing the assembly string to produce during code emission.
@@ -443,47 +440,46 @@ instance SExpressionable Pattern where
        ++ ")"
 
 instance SExpressionable Constraint where
-  prettySE  (AllocateInConstraint store space) i =
+  prettySE (AllocateInConstraint store space) i =
     "(allocate-in"
     ++ " " ++ prettySE store i
     ++ " " ++ prettySE space i
     ++ ")"
-  prettySE  (ImmediateConstraint imm ranges) i =
+  prettySE (ImmediateConstraint imm ranges) i =
     "(immediate"
     ++ " " ++ prettySE imm i
     ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
     ++ ")"
-  prettySE  (RegFlagConstraint flag ranges) i =
+  prettySE (RegFlagConstraint flag ranges) i =
     "(reg-flag"
     ++ " " ++ prettySE flag i
     ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
     ++ ")"
-  prettySE  (AliasesConstraint aliases) i =
+  prettySE (AliasesConstraint aliases) i =
     "(aliases"
     ++ " " ++ prettySEListNoBreak aliases i
     ++ ")"
-  prettySE  (RelAddressConstraint imm memClass) i =
+  prettySE (RelAddressConstraint imm memClass) i =
     "(rel-address"
     ++ " " ++ prettySE imm i
     ++ " " ++ prettySE memClass i
     ++ ")"
-  prettySE  (AbsAddressConstraint imm memClass) i =
+  prettySE (AbsAddressConstraint imm memClass) i =
     "(abs-address"
     ++ " " ++ prettySE imm i
     ++ " " ++ prettySE memClass i
     ++ ")"
 
-instance SExpressionable Alias where
-  prettySE  (Alias temp (Just reg)) i =
+instance SExpressionable [AliasValue] where
+  prettySE values i =
     "("
-    ++ prettySE temp i
-    ++ " " ++ prettySE reg i
+    ++ prettySEListNoBreak values i
     ++ ")"
-  prettySE  (Alias temp Nothing) i =
-    "("
-    ++ " " ++ prettySE temp i
-    ++ " " ++ prettySE noValueStr i
-    ++ ")"
+
+instance SExpressionable AliasValue where
+  prettySE (AVTemporary tmp) i = prettySE tmp i
+  prettySE (AVRegister reg) i = prettySE reg i
+  prettySE (AVNoValue) i = prettySE noValueStr i
 
 instance SExpressionable Statement where
   prettySE (AssignmentStmt temp expr) i =
