@@ -237,6 +237,7 @@ pStoreStmt' =
      area <- pSymbol
      pWhitespace1
      dst <- pStmtExpression
+     pWhitespace
      value <- pStmtExpression
      return (StoreStmt dst area size value)
 
