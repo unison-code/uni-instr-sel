@@ -273,6 +273,7 @@ pStmtExpression =
   <|> try pRegRangeStmtExpr
   <|> try pSizeStmtExpr
   <|> try pPhiStmtExpr
+  <|> try pLoadStmtExpr
 
 pSizeStmtExpr :: GenParser Char st StmtExpression
 pSizeStmtExpr =
@@ -340,6 +341,18 @@ pDataStmtExpr :: GenParser Char st StmtExpression
 pDataStmtExpr =
   do pdata <- pProgramData
      return (DataStmtExpr pdata)
+
+pLoadStmtExpr :: GenParser Char st StmtExpression
+pLoadStmtExpr = pLabeledData "load-mem" pLoadStmtExpr'
+
+pLoadStmtExpr' :: GenParser Char st StmtExpression
+pLoadStmtExpr' =
+  do size <- pExprResultSize
+     pWhitespace
+     area <- pSymbol
+     pWhitespace1
+     src <- pStmtExpression
+     return (LoadStmtExpr area size src)
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =

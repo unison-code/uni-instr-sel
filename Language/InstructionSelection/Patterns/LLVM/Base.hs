@@ -199,6 +199,22 @@ data StmtExpression
 
     | UnaryOpStmtExpr UnaryOp (Maybe ExprResultSize) StmtExpression
 
+      -- | A load expression.
+
+    | LoadStmtExpr
+
+          -- | Memory area to load from.
+
+          String
+
+          -- | Size (in bits) of result.
+
+          ExprResultSize
+
+          -- | Memory address expression.
+
+          StmtExpression
+
       -- | A phi expression.
 
     | PhiStmtExpr [PhiElement]
@@ -524,6 +540,13 @@ instance SExpressionable StmtExpression where
     "(" ++ prettySE op i
     ++ " " ++ prettySE expr i
     ++ ")"
+  prettySE (LoadStmtExpr area size src) i =
+    "(load-mem"
+    ++ " " ++ prettySE area i
+    ++ " " ++ prettySE size i
+    ++ " " ++ prettySE src i
+    ++ ")"
+
   prettySE (PhiStmtExpr elements) i =
     "(phi"
     ++ " " ++ prettySEListNoBreak elements i
