@@ -96,12 +96,9 @@ pPattern = pLabeledData "pattern" pPattern'
 
 pPattern' :: GenParser Char st Pattern
 pPattern' =
-  do constraints <- pLabeledData "constraints" pAllConstraints
-     statements  <- pLabeledData "code" pAllStatements
+  do constraints <- pLabeledDataList "constraints" pConstraint
+     statements  <- pLabeledDataList "code" pStatement
      return (Pattern statements constraints)
-
-pAllConstraints :: GenParser Char st [Constraint]
-pAllConstraints = many pConstraint
 
 pConstraint :: GenParser Char st Constraint
 pConstraint =
@@ -200,9 +197,6 @@ pRegFlagConstraint' =
      pWhitespace
      ranges <- pParens (many1 pIntRange)
      return (RegFlagConstraint flag ranges)
-
-pAllStatements :: GenParser Char st [Statement]
-pAllStatements = many pStatement
 
 pStatement :: GenParser Char st Statement
 pStatement =
@@ -651,6 +645,26 @@ pLabeledData' str p =
   do string str
      pWhitespace1
      result <- p
+     return result
+
+pLabeledDataList :: String -> GenParser Char st a -> GenParser Char st [a]
+pLabeledDataList str p = pParens (pLabeledDataList' str p)
+
+pLabeledDataList' :: String -> GenParser Char st a -> GenParser Char st [a]
+pLabeledDataList' str p =
+  do string str
+     option [] (do pWhitespace1
+                   result <- many p
+                   return result)
+
+pLabeledDataList1 :: String -> GenParser Char st a -> GenParser Char st [a]
+pLabeledDataList1 str p = pParens (pLabeledDataList1' str p)
+
+pLabeledDataList1' :: String -> GenParser Char st a -> GenParser Char st [a]
+pLabeledDataList1' str p =
+  do string str
+     pWhitespace1
+     result <- many1 p
      return result
 
 pWhitespace :: GenParser Char st String
