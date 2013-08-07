@@ -37,11 +37,23 @@ class SExpressionable a where
               -> Natural        -- ^ Current depth level (starts at 0).
               -> String
 
+-- | Prints indentation according to the depth level (each level incurs 2
+-- spaces).
+
 indent :: Natural -> String
 indent i = replicate (2 * (fromInteger $ fromNatural i)) ' '
 
+-- | Pretty-prints a list. If the list is not empty, it first prints a new line,
+-- and each element in the list will be separated by a new line. Each element
+-- will also be indented according to the depth level.
+
 prettySEList :: (SExpressionable a) => [a] -> Natural -> String
-prettySEList as i = intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as
+prettySEList [] i = ""
+prettySEList as i =
+  "\n" ++ (intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as)
+
+-- | Pretty-prints a list but with no line breaks between each element. The list
+-- itself will also not be indented.
 
 prettySEListNoBreak :: (SExpressionable a) => [a] -> Natural -> String
 prettySEListNoBreak as i =

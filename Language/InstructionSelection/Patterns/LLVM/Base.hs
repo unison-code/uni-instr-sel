@@ -419,8 +419,8 @@ instance SExpressionable Instruction where
   prettySE (Instruction ass pats) i =
     let i1 = i + 1
     in "(instruction"
-       ++ "\n" ++ indent i1 ++ (prettySE ass i1)
-       ++ "\n" ++ (prettySEList pats i1)
+       ++ "\n" ++ indent i1 ++ prettySE ass i1
+       ++ prettySEList pats i1
        ++ ")"
 
 instance SExpressionable AssemblyString where
@@ -432,10 +432,10 @@ instance SExpressionable Pattern where
         i2 = i + 2
     in "(pattern"
        ++ "\n" ++ indent i1 ++ "(constraints"
-       ++ "\n" ++ (prettySEList cnstrs i2)
+       ++ prettySEList cnstrs i2
        ++ ")"
        ++ "\n" ++ indent i1 ++ "(code"
-       ++ "\n" ++ (prettySEList stmts i2)
+       ++ prettySEList stmts i2
        ++ ")"
        ++ ")"
 
