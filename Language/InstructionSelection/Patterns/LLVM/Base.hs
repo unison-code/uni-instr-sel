@@ -183,7 +183,7 @@ data StmtExpression
     = BinaryOpStmtExpr
           BinaryOp
 
-          -- | Size (in bits) of result
+          -- | Size (in bits) of result.
 
           (Maybe ExprResultSize)
 
@@ -266,6 +266,26 @@ data Statement
       -- | Assigns the result of an expression to a register.
 
     | SetRegStmt Register StmtExpression
+
+      -- | Stores the result of an expression to a memory location.
+
+    | StoreStmt
+
+          -- | Location to store in.
+
+          StmtExpression
+
+          -- | Memory area to store in.
+
+          String
+
+          -- | Size (in bits) of value to store.
+
+          ExprResultSize
+
+          -- | Value to store.
+
+          StmtExpression
 
       -- | Performs an unconditional branch (or jump) to a label.
 
@@ -460,6 +480,14 @@ instance SExpressionable Statement where
     ++ " " ++ prettySE reg i
     ++ " " ++ prettySE expr i
     ++ ")"
+  prettySE (StoreStmt dst area size value) i =
+    "(store"
+    ++ " " ++ prettySE dst i
+    ++ " " ++ prettySE area i
+    ++ " " ++ prettySE size i
+    ++ " " ++ prettySE value i
+    ++ ")"
+
   prettySE (UncondBranchStmt label) i =
     "(br"
     ++ " " ++ prettySE label i

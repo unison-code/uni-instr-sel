@@ -128,7 +128,7 @@ pImmConstraint = pLabeledData "immediate" pImmConstraint'
 pImmConstraint' :: GenParser Char st Constraint
 pImmConstraint' =
   do imm <- pImmediateSymbol
-     pWhitespace1
+     pWhitespace
      ranges <- pParens (many1 pIntRange)
      return (ImmediateConstraint imm ranges)
 
@@ -172,14 +172,14 @@ pAliasNoValue =
 pAliasNoValue' :: GenParser Char st Alias
 pAliasNoValue' =
   do temp <- pTemporary
-     pWhitespace
+     pWhitespace1
      pNoValue
      return (Alias temp Nothing)
 
 pAliasNoValue'' :: GenParser Char st Alias
 pAliasNoValue'' =
   do pNoValue
-     pWhitespace
+     pWhitespace1
      temp <- pTemporary
      return (Alias temp Nothing)
 
@@ -227,6 +227,7 @@ pStatement :: GenParser Char st Statement
 pStatement =
       try pAssignmentStmt
   <|> try pSetRegStmt
+  <|> try pStoreStmt
   <|> try pUncondBranchStmt
   <|> try pCondBranchStmt
   <|> try pLabelStmt
@@ -250,6 +251,19 @@ pSetRegStmt' =
      pWhitespace
      expr <- pStmtExpression
      return (SetRegStmt reg expr)
+
+pStoreStmt :: GenParser Char st Statement
+pStoreStmt = pLabeledData "store" pStoreStmt'
+
+pStoreStmt' :: GenParser Char st Statement
+pStoreStmt' =
+  do size <- pExprResultSize
+     pWhitespace
+     area <- pSymbol
+     pWhitespace1
+     dst <- pStmtExpression
+     value <- pStmtExpression
+     return (StoreStmt dst area size value)
 
 pStmtExpression :: GenParser Char st StmtExpression
 pStmtExpression =
