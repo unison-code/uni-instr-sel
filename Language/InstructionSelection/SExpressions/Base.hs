@@ -66,4 +66,5 @@ instance SExpressionable String where
   prettySE str _ = str
 
 instance SExpressionable (Range Integer) where
-  prettySE (Range lower upper) i = prettySE lower i ++ " " ++ prettySE upper i
+  prettySE (Range lower upper) i =
+    "(" ++ prettySE lower i ++ " . " ++ prettySE upper i ++ ")"
