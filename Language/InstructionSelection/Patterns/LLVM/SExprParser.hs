@@ -157,12 +157,12 @@ pAliases = pParens (many1 pAliasValue)
 
 pAliasValue :: GenParser Char st AliasValue
 pAliasValue =
-      try (do temp <- pTemporary
+      try (do pNoValue
+              return AVNoValue)
+  <|> try (do temp <- pTemporary
               return (AVTemporary temp))
   <|> try (do reg <- pRegister
               return (AVRegister reg))
-  <|> try (do pNoValue
-              return AVNoValue)
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'
