@@ -231,7 +231,7 @@ data StmtExpression
       -- register. The same effect can be achieved with a series of bit
       -- operations.
 
-    | RegRangeStmtExpr Register (Range ConstProgramData)
+    | RegRangeStmtExpr Register (Range AnyData)
 
     deriving (Show)
 
@@ -687,7 +687,7 @@ instance SExpressionable CompareOp where
   prettySE FOCmpLE i = "fcmp ole"
   prettySE FCmpUn i = "fcmp uno"
 
-instance SExpressionable (Range ConstProgramData) where
+instance SExpressionable (Range AnyData) where
   prettySE (Range lower upper) i =
     prettySE lower i
     ++ " " ++ prettySE upper i

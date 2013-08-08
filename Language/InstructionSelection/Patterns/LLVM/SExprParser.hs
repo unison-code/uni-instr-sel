@@ -286,9 +286,9 @@ pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
   do reg <- pRegister
      pWhitespace
-     lower <- pConstProgramData
+     lower <- pAnyData
      pWhitespace
-     upper <- pConstProgramData
+     upper <- pAnyData
      return (RegRangeStmtExpr reg (Range lower upper))
 
 pUnaryOpStmtExpr :: GenParser Char st StmtExpression
