@@ -28,6 +28,10 @@ data UnaryOp
 
     = USqrt
 
+      -- | Floating-point square root function.
+
+    | Sqrt
+
       -- | Signed arithmetic square root function.
 
     | FixPointSqrt

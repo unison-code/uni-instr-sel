@@ -541,6 +541,8 @@ pUnaryStmtOpType :: GenParser Char st UnaryOp
 pUnaryStmtOpType =
       try (do string "usqrt"
               return USqrt)
+  <|> try (do string "sqrt"
+              return Sqrt)
   <|> try (do string "fixpointsqrt"
               return FixPointSqrt)
   <|> try (do string "bit_not"
