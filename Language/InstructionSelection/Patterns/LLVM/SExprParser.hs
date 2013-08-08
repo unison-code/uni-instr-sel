@@ -50,7 +50,7 @@ class Operation a where
 
 instance Operation UnaryOp where
   hasResultSize op
-    | op `elem` [USqrt, FixPointSqrt] = False
+    | op `elem` [USqrt, Sqrt, FixPointSqrt] = False
     | otherwise = True
 
 instance Operation BinaryOp where
@@ -59,8 +59,7 @@ instance Operation BinaryOp where
 
 instance Operation ArithmeticOp where
   hasResultSize op
-    | op `elem` [Plus, Minus, IUDiv, ISDiv, FDiv, IURem, ISRem,
-                 FixPointDiv] = False
+    | op `elem` [Plus, Minus, FixPointDiv] = False
     | otherwise = True
 
 instance Operation CompareOp where
