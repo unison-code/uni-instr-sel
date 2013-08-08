@@ -373,7 +373,7 @@ pLabelStmt' =
 
 pLabel :: GenParser Char st Label
 pLabel =
-  do label <- many1 (try alphaNum <|> try (char '_'))
+  do label <- many1 (try alphaNum <|> try (char '-') <|> try (char '_'))
      return (Label label)
 
 pSymbolWidth :: GenParser Char st Integer
@@ -419,7 +419,7 @@ pTemporary' =
      return (Temporary (read int))
 
 pSymbol :: GenParser Char st String
-pSymbol = many1 alphaNum
+pSymbol = many1 (try alphaNum <|> try (char '-') <|> try (char '_'))
 
 pInt :: GenParser Char st Integer
 pInt =
