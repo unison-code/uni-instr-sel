@@ -570,17 +570,24 @@ pIntCompareOp :: GenParser Char st CompareOp
 pIntCompareOp =
       try (do string "eq"
               return ICmpEq)
-  <|> try (do string "ult"
-              return IUCmpLT)
-  <|> try (do string "slt"
-              return ISCmpLT)
-  <|> try (do string "gt"
-              return IUCmpGT)
+  <|> try (do string "ne"
+              return ICmpNEq)
   <|> try (do string "ugt"
               return IUCmpGT)
   <|> try (do string "sgt"
               return ISCmpGT)
-  -- TOOD: add missing operations
+  <|> try (do string "uge"
+              return IUCmpGE)
+  <|> try (do string "sge"
+              return ISCmpGE)
+  <|> try (do string "ult"
+              return IUCmpLT)
+  <|> try (do string "slt"
+              return ISCmpLT)
+  <|> try (do string "ule"
+              return IUCmpLE)
+  <|> try (do string "sle"
+              return ISCmpLE)
 
 pFloatCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
 pFloatCompareStmtOp =
@@ -679,7 +686,7 @@ pArithmeticStmtOpType =
               return ZExt)
   <|> try (do string "sext"
               return SExt)
-  -- TOOD: add missing operations
+  -- TODO: add missing operations
 
 pLabeledData :: String -> GenParser Char st a -> GenParser Char st a
 pLabeledData str p = pParens (pLabeledData' str p)
