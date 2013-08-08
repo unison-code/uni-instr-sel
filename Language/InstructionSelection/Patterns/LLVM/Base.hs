@@ -215,6 +215,22 @@ data StmtExpression
 
           StmtExpression
 
+      -- | A float-to-int conversion expression.
+
+    | FP2IStmtExpr
+
+          -- | Size (in bits) of source.
+
+          ExprResultSize
+
+          -- | Expression to convert.
+
+          StmtExpression
+
+          -- | Size (in bits) of result.
+
+          ExprResultSize
+
       -- | A phi expression.
 
     | PhiStmtExpr [PhiElement]
@@ -541,6 +557,12 @@ instance SExpressionable StmtExpression where
     ++ " " ++ prettySE area i
     ++ " " ++ prettySE size i
     ++ " " ++ prettySE src i
+    ++ ")"
+  prettySE (FP2IStmtExpr size_src expr size_dst) i =
+    "(fptosi"
+    ++ " " ++ prettySE size_src i
+    ++ " " ++ prettySE expr i
+    ++ " " ++ prettySE size_dst i
     ++ ")"
 
   prettySE (PhiStmtExpr elements) i =

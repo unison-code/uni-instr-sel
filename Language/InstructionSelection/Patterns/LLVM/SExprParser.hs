@@ -249,6 +249,7 @@ pStmtExpression =
   <|> try pSizeStmtExpr
   <|> try pPhiStmtExpr
   <|> try pLoadStmtExpr
+  <|> try pFP2IStmtExpr
 
 pSizeStmtExpr :: GenParser Char st StmtExpression
 pSizeStmtExpr =
@@ -328,6 +329,18 @@ pLoadStmtExpr' =
      pWhitespace1
      src <- pStmtExpression
      return (LoadStmtExpr area size src)
+
+pFP2IStmtExpr :: GenParser Char st StmtExpression
+pFP2IStmtExpr = pLabeledData "fptosi" pFP2IStmtExpr'
+
+pFP2IStmtExpr' :: GenParser Char st StmtExpression
+pFP2IStmtExpr' =
+  do size_src <- pExprResultSize
+     pWhitespace
+     expr <- pStmtExpression
+     pWhitespace
+     size_dst <- pExprResultSize
+     return (FP2IStmtExpr size_src expr size_dst)
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =
