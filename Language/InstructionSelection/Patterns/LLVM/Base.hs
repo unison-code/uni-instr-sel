@@ -649,6 +649,7 @@ instance SExpressionable ConstantValue where
 
 instance SExpressionable UnaryOp where
   prettySE USqrt _ = "usqrt"
+  prettySE Sqrt _ = "sqrt"
   prettySE FixPointSqrt _ = "fixpointsqrt"
   prettySE Not _ = "bit_not"
 
