@@ -250,6 +250,7 @@ pStmtExpression =
   <|> try pPhiStmtExpr
   <|> try pLoadStmtExpr
   <|> try pFP2IStmtExpr
+  <|> try pTruncStmtExpr
 
 pSizeStmtExpr :: GenParser Char st StmtExpression
 pSizeStmtExpr =
@@ -341,6 +342,18 @@ pFP2IStmtExpr' =
      pWhitespace
      size_dst <- pExprResultSize
      return (FP2IStmtExpr size_src expr size_dst)
+
+pTruncStmtExpr :: GenParser Char st StmtExpression
+pTruncStmtExpr = pLabeledData "trunc" pTruncStmtExpr'
+
+pTruncStmtExpr' :: GenParser Char st StmtExpression
+pTruncStmtExpr' =
+  do size_src <- pExprResultSize
+     pWhitespace
+     expr <- pStmtExpression
+     pWhitespace
+     size_dst <- pExprResultSize
+     return (TruncStmtExpr size_src expr size_dst)
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =

@@ -231,6 +231,23 @@ data StmtExpression
 
           ExprResultSize
 
+      -- | Truncates a value to the nearest integer not larger than the
+      -- magnitude of the operand.
+
+    | TruncStmtExpr
+
+          -- | Size (in bits) of source.
+
+          ExprResultSize
+
+          -- | Expression to convert.
+
+          StmtExpression
+
+          -- | Size (in bits) of result.
+
+          ExprResultSize
+
       -- | A phi expression.
 
     | PhiStmtExpr [PhiElement]
@@ -564,7 +581,12 @@ instance SExpressionable StmtExpression where
     ++ " " ++ prettySE expr i
     ++ " " ++ prettySE size_dst i
     ++ ")"
-
+  prettySE (TruncStmtExpr size_src expr size_dst) i =
+    "(trunc"
+    ++ " " ++ prettySE size_src i
+    ++ " " ++ prettySE expr i
+    ++ " " ++ prettySE size_dst i
+    ++ ")"
   prettySE (PhiStmtExpr elements) i =
     "(phi"
     ++ " " ++ prettySEListNoBreak elements i
