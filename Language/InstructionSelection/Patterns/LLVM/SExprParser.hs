@@ -549,13 +549,15 @@ pUnaryStmtOpType =
 
 pBinaryStmtOp :: GenParser Char st (BinaryOp, Maybe ExprResultSize)
 pBinaryStmtOp =
-      try (do (op, size) <- pCompareStmtOp
+      try (do (op, size) <- pIntCompareStmtOp
+              return (BinCompareOp op, size))
+  <|> try (do (op, size) <- pFloatCompareStmtOp
               return (BinCompareOp op, size))
   <|> try (do (op, size) <- pArithmeticStmtOp
               return (BinArithmeticOp op, size))
 
-pCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
-pCompareStmtOp =
+pIntCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pIntCompareStmtOp =
   do string "icmp"
      pWhitespace1
      op <- pIntCompareOp
@@ -563,7 +565,6 @@ pCompareStmtOp =
      size' <- pExprResultSize
      let size = Just size'
      return (op, size)
-  -- TODO: handle floats
 
 pIntCompareOp :: GenParser Char st CompareOp
 pIntCompareOp =
@@ -580,6 +581,45 @@ pIntCompareOp =
   <|> try (do string "sgt"
               return ISCmpGT)
   -- TOOD: add missing operations
+
+pFloatCompareStmtOp :: GenParser Char st (CompareOp, Maybe ExprResultSize)
+pFloatCompareStmtOp =
+  do string "fcmp"
+     pWhitespace1
+     op <- pFloatCompareOp
+     pWhitespace1
+     size' <- pExprResultSize
+     let size = Just size'
+     return (op, size)
+
+pFloatCompareOp :: GenParser Char st CompareOp
+pFloatCompareOp =
+      try (do string "ueq"
+              return FUCmpEq)
+  <|> try (do string "oeq"
+              return FOCmpEq)
+  <|> try (do string "une"
+              return FUCmpNEq)
+  <|> try (do string "one"
+              return FOCmpNEq)
+  <|> try (do string "ugt"
+              return FUCmpGT)
+  <|> try (do string "ogt"
+              return FOCmpGT)
+  <|> try (do string "uge"
+              return FUCmpGE)
+  <|> try (do string "oge"
+              return FOCmpGE)
+  <|> try (do string "ult"
+              return FUCmpLT)
+  <|> try (do string "olt"
+              return FOCmpLT)
+  <|> try (do string "ule"
+              return FUCmpLE)
+  <|> try (do string "ole"
+              return FOCmpLE)
+  <|> try (do string "uno"
+              return FCmpUn)
 
 pArithmeticStmtOp :: GenParser Char st (ArithmeticOp, Maybe ExprResultSize)
 pArithmeticStmtOp =
