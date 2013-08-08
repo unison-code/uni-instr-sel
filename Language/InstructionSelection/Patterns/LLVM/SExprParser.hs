@@ -627,6 +627,8 @@ pArithmeticStmtOpType =
               return ISDiv)
   <|> try (do string "fixpointdiv"
               return FixPointDiv)
+  <|> try (do string "fadd"
+              return FAdd)
   <|> try (do string "fdiv"
               return FDiv)
   <|> try (do string "urem"
