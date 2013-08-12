@@ -6,8 +6,8 @@ run: parser
 #	./parser < patterns-dump.sexpr
 
 clean:
-	-rm *.hi
-	-rm *.o
+	find . -name "*.hi" -type f -exec rm {} \;
+	find . -name "*.o" -type f -exec rm {} \;
 
 veryclean: clean
 	-rm parser
