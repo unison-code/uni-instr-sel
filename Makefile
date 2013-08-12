@@ -1,4 +1,4 @@
-parser: parser.hs
+parser:
 	ghc parser.hs
 
 run: parser
@@ -12,4 +12,4 @@ clean:
 veryclean: clean
 	-rm parser
 
-.PHONY: clean veryclean
+.PHONY: parser clean veryclean
