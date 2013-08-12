@@ -172,7 +172,7 @@ convertAliasValueToAnyData (AVRegister d) = ADRegister d
 
 getAliases :: Pattern -> [[AliasValue]]
 getAliases (Pattern _ cs) =
-  let aliases_list = [as | (AliasesConstraint as) <- cs]
+  let aliases_list = [c | (AliasesConstraint c) <- cs]
       aliases = foldr (++) [] aliases_list
       no_novalue_aliases = map removeNoValueAliases aliases
       no_empty_aliases = filter (not . null) no_novalue_aliases
