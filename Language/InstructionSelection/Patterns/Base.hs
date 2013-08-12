@@ -15,6 +15,6 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
-
 module Language.InstructionSelection.Patterns.Base where
+
+import Data.Graph.Inductive.Tree (Gr)

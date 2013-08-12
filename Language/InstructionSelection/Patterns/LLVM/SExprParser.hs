@@ -22,6 +22,7 @@ module Language.InstructionSelection.Patterns.LLVM.SExprParser (
 ) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
+import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.OpTypes
 import Language.InstructionSelection.Utils (Range (..), Natural, toNatural)
 import Text.ParserCombinators.Parsec hiding (parse)

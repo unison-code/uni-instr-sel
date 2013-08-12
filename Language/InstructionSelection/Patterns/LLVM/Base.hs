@@ -17,6 +17,7 @@
 
 module Language.InstructionSelection.Patterns.LLVM.Base where
 
+import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Utils (Range (..), Natural)
 import Language.InstructionSelection.OpTypes
 import Language.InstructionSelection.SExpressions
@@ -423,14 +424,6 @@ isAVRegister (AVRegister _) = True
 isAVRegister _ = False
 isAVNoValue AVNoValue = True
 isAVNoValue _ = False
-
--- | Record for containing the assembly string to produce during code emission.
-
-data AssemblyString
-    = AssemblyString
-          -- | TODO: refactor into something that is easier to process.
-          String
-    deriving (Show)
 
 -- | Record for representing a pattern including the constraints.
 
