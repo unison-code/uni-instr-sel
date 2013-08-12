@@ -24,13 +24,13 @@ import Language.InstructionSelection.SExpressions
 
 
 
--- | Record for representing a constant value.
+-- | Data type for representing a constant value.
 
 data ConstantValue
     = ConstIntValue Integer
     deriving (Show, Eq)
 
--- | Record for a temporary.
+-- | Data type for a temporary.
 
 data Temporary
     = Temporary
@@ -42,7 +42,7 @@ data Temporary
 
     deriving (Show, Eq)
 
--- | Record for a register. A register can either by denoted by a register
+-- | Data type for a register. A register can either by denoted by a register
 -- symbol or via a temporary (which will, in some way, refer to a register).
 
 data Register
@@ -50,26 +50,26 @@ data Register
     | RegBySymbol RegisterSymbol
     deriving (Show, Eq)
 
--- | Record for describing a register symbol.
+-- | Data type for describing a register symbol.
 
 data RegisterSymbol
     = RegisterSymbol String
     deriving (Show, Eq)
 
--- | Record for describing a register flag symbol.
+-- | Data type for describing a register flag symbol.
 
 data RegisterFlagSymbol
     = RegisterFlagSymbol String
     deriving (Show, Eq)
 
--- | Record for describing a register flag. All flags are associated with a
+-- | Data type for describing a register flag. All flags are associated with a
 -- specific register.
 
 data RegisterFlag
     = RegisterFlag RegisterFlagSymbol Register
     deriving (Show)
 
--- | Record for describing a register class.
+-- | Data type for describing a register class.
 
 data RegisterClass
     = RegisterClass
@@ -80,7 +80,7 @@ data RegisterClass
 
     deriving (Show)
 
--- | Record for describing a memory class.
+-- | Data type for describing a memory class.
 
 data MemoryClass
     = MemoryClass
@@ -95,23 +95,23 @@ data MemoryClass
           (Range Integer)
     deriving (Show, Eq)
 
--- | Record for describing a data space.
+-- | Data type for describing a data space.
 
 data DataSpace
     = DSRegisterClass RegisterClass
     | DSMemoryClass MemoryClass
     deriving (Show)
 
--- | Record for an immediate value symbol. This is used to represent an
+-- | Data type for an immediate value symbol. This is used to represent an
 -- immediate value which will become available during pattern matching.
 
 data ImmediateSymbol
     = ImmediateSymbol String
     deriving (Show, Eq)
 
--- | Record for containing an potentially nested expression.
+-- | Data type for containing an potentially nested expression.
 
--- | Record for describing program data. The data can be of many different
+-- | Data type for describing program data. The data can be of many different
 -- types, e.g. a constant, an immediate, a temporary, etc.
 
 data ProgramData
@@ -138,14 +138,14 @@ data ProgramData
 
     deriving (Show)
 
--- | Record for representing values that are constant at compile time.
+-- | Data type for representing values that are constant at compile time.
 
 data ConstProgramData
     = CPDConstant ConstantValue
     | CPDImmediate ImmediateSymbol
     deriving (Show)
 
--- | Record for representing any form of data (register, register flag,
+-- | Data type for representing any form of data (register, register flag,
 -- constant, temporary, etc.).
 
 data AnyData
@@ -157,8 +157,8 @@ data AnyData
     | ADNoValue
     deriving (Show)
 
--- | Record for representing any form of storage unit (register, register flag,
--- temporary, etc.).
+-- | Data type for representing any form of storage unit (register, register
+-- flag, temporary, etc.).
 
 data AnyStorage
     = ASTemporary Temporary
@@ -166,7 +166,7 @@ data AnyStorage
     | ASRegisterFlag RegisterFlag
     deriving (Show)
 
--- | Record for representing any form of storage space (register flag or data
+-- | Data type for representing any form of storage space (register flag or data
 -- space).
 
 data AnyStorageSpace
@@ -174,7 +174,7 @@ data AnyStorageSpace
     | ASSDataSpace DataSpace
     deriving (Show)
 
--- | Record for representing an expression for a statement.
+-- | Data type for representing an expression for a statement.
 
 data StmtExpression
 
@@ -269,7 +269,7 @@ data StmtExpression
 
     deriving (Show)
 
--- | Record for representing the size of the result of an expression.
+-- | Data type for representing the size of the result of an expression.
 
 data ExprResultSize
 
@@ -287,14 +287,14 @@ data ExprResultSize
 
     deriving (Show)
 
--- | Record for containing an element inside a phi function. The label indicates
--- from where the value comes from.
+-- | Data type for containing an element inside a phi function. The label
+-- indicates from where the value comes from.
 
 data PhiElement
     = PhiElement StmtExpression Label
     deriving (Show)
 
--- | Record for containing a label.
+-- | Data type for containing a label.
 
 data Label
     = Label
@@ -305,7 +305,7 @@ data Label
 
     deriving (Show, Eq)
 
--- | Record for representing an LLVM statement.
+-- | Data type for representing an LLVM statement.
 
 data Statement
 
@@ -360,7 +360,7 @@ data Statement
 
     deriving (Show)
 
--- | Record for a pattern constraint.
+-- | Data type for a pattern constraint.
 
 data Constraint
 
@@ -410,7 +410,7 @@ isRelAddressConstraint _ = False
 isAbsAddressConstraint (AbsAddressConstraint _ _) = True
 isAbsAddressConstraint _ = False
 
--- | Record for containing values used for aliasing.
+-- | Data type for containing values used for aliasing.
 
 data AliasValue
     = AVTemporary Temporary
@@ -425,7 +425,7 @@ isAVRegister _ = False
 isAVNoValue AVNoValue = True
 isAVNoValue _ = False
 
--- | Record for representing a pattern including the constraints.
+-- | Data type for representing a pattern including the constraints.
 
 data Pattern
     = Pattern
@@ -440,7 +440,7 @@ data Pattern
 
     deriving (Show)
 
--- | Record for representing an instruction.
+-- | Data type for representing an instruction.
 
 data Instruction
     = Instruction
