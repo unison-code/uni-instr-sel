@@ -18,8 +18,8 @@
 -- TODO: Fix handling of "zext" and other conversion operations
 
 module Language.InstructionSelection.Patterns.LLVM.SExprParser (
-      parse
-    ) where
+  parse
+) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
 import Language.InstructionSelection.OpTypes
@@ -27,7 +27,6 @@ import Language.InstructionSelection.Utils (Range (..), Natural, toNatural)
 import Text.ParserCombinators.Parsec hiding (parse)
 import qualified Text.ParserCombinators.Parsec as Parsec (parse)
 import Data.String.Utils
-import Debug.Trace
 
 
 

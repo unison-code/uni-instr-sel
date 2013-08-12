@@ -31,12 +31,24 @@ then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
+import Language.InstructionSelection.Patterns.LLVM.Legalizer
 import Language.InstructionSelection.SExpressions
+import Control.Monad
+import System.Exit
+
+isLeft (Left _) = True
+isLeft _ = False
 
 main =
   do contents <- getContents
      putStr "\n"
      let result = parse contents
-     case result of (Right insts) -> putStr $ showSEList insts
-                    (Left error)  -> putStr $ show error
+     when (isLeft result) $ do let (Left error) = result
+                               putStr $ show error
+                               exitFailure
+
+     let (Right instructions) = result
+         resolved_instructions = map resolveAliases instructions
+     putStr $ showSEList resolved_instructions
+
      putStr "\n"

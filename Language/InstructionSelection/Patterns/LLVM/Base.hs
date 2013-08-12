@@ -47,13 +47,13 @@ data Temporary
 data Register
     = RegByTemporary Temporary
     | RegBySymbol RegisterSymbol
-    deriving (Show)
+    deriving (Show, Eq)
 
 -- | Record for describing a register symbol.
 
 data RegisterSymbol
     = RegisterSymbol String
-    deriving (Show)
+    deriving (Show, Eq)
 
 -- | Record for describing a register flag symbol.
 
@@ -395,13 +395,34 @@ data Constraint
 
     deriving (Show)
 
+isAllocateInConstraint (AllocateInConstraint _ _) = True
+isAllocateInConstraint _ = False
+
+isImmediateConstraint (ImmediateConstraint _ _) = True
+isImmediateConstraint _ = False
+isRegFlagConstraint (RegFlagConstraint _ _) = True
+isRegFlagConstraint _ = False
+isAliasesConstraint (AliasesConstraint _) = True
+isAliasesConstraint _ = False
+isRelAddressConstraint (RelAddressConstraint _ _) = True
+isRelAddressConstraint _ = False
+isAbsAddressConstraint (AbsAddressConstraint _ _) = True
+isAbsAddressConstraint _ = False
+
 -- | Record for containing values used for aliasing.
 
 data AliasValue
     = AVTemporary Temporary
     | AVRegister Register
     | AVNoValue
-    deriving (Show)
+    deriving (Show, Eq)
+
+isAVTemporary (AVTemporary _) = True
+isAVTemporary _ = False
+isAVRegister (AVRegister _) = True
+isAVRegister _ = False
+isAVNoValue AVNoValue = True
+isAVNoValue _ = False
 
 -- | Record for containing the assembly string to produce during code emission.
 
@@ -622,9 +643,9 @@ instance SExpressionable AnyData where
   prettySE ADNoValue i = prettySE noValueStr i
 
 instance SExpressionable AnyStorage where
-  prettySE  (ASTemporary temp) i = prettySE temp i
-  prettySE  (ASRegister reg) i = prettySE reg i
-  prettySE  (ASRegisterFlag flag) i = prettySE flag i
+  prettySE (ASTemporary temp) i = prettySE temp i
+  prettySE (ASRegister reg) i = prettySE reg i
+  prettySE (ASRegisterFlag flag) i = prettySE flag i
 
 instance SExpressionable Temporary where
   prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"

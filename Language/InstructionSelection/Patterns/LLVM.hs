@@ -11,9 +11,11 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Patterns.LLVM (
-      module Language.InstructionSelection.Patterns.LLVM.Base
-      module Language.InstructionSelection.Patterns.LLVM.SExprParser
-    ) where
+  module Language.InstructionSelection.Patterns.LLVM.Base
+  module Language.InstructionSelection.Patterns.LLVM.SExprParser
+  module Language.InstructionSelection.Patterns.LLVM.Legalizer
+) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
+import Language.InstructionSelection.Patterns.LLVM.Legalizer

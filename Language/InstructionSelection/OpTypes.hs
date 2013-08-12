@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.OpTypes (
-      module Language.InstructionSelection.OpTypes.Base
-    ) where
+  module Language.InstructionSelection.OpTypes.Base
+) where
 
 import Language.InstructionSelection.OpTypes.Base

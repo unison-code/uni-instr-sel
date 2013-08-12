@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Utils (
-      module Language.InstructionSelection.Utils.Base
-    ) where
+  module Language.InstructionSelection.Utils.Base
+) where
 
 import Language.InstructionSelection.Utils.Base
