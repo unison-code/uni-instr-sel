@@ -17,4 +17,59 @@
 
 module Language.InstructionSelection.Patterns.Base where
 
-import Data.Graph.Inductive.Tree (Gr)
+import Language.InstructionSelection.Patterns.AssemblyString
+import Data.Graph.Inductive
+
+
+
+-- | TODO: write description
+
+data NodeType
+      -- | TODO: implement
+    = NodeType
+    deriving (Show)
+
+-- | TODO: write description
+
+data EdgeType
+      -- | TODO: implement
+    = EdgeType
+    deriving (Show)
+
+-- | TODO: write description
+
+data Constraint
+      -- | TODO: implement
+    = Constraint
+    deriving (Show)
+
+-- | Data type for representing a pattern including the constraints.
+
+data Pattern
+    = Pattern
+
+          -- | The pattern graph.
+
+          (Gr (LNode NodeType) (LEdge EdgeType))
+
+          -- | Constraints that must be enforced for the pattern.
+
+          [Constraint]
+
+    deriving (Show)
+
+-- | Data type for representing an instruction.
+
+data Instruction
+    = Instruction
+
+          -- | Assembly string to produce upon code emission.
+
+          AssemblyString
+
+          -- | Patterns which correspond to the instruction. There must be at
+          -- least one pattern.
+
+          [Pattern]
+
+    deriving (Show)

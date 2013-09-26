@@ -30,8 +30,8 @@ expressed as LLVM IR statements. The LLVM IR statements of each instruction is
 then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
+import Language.InstructionSelection.Patterns
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
-import Language.InstructionSelection.Patterns.LLVM.Legalizer
 import Language.InstructionSelection.SExpressions
 import Control.Monad
 import System.Exit
@@ -48,7 +48,7 @@ main =
                                exitFailure
 
      let (Right instructions) = result
-         resolved_instructions = map resolveAliases instructions
+         resolved_instructions = instructions
      putStr $ showSEList resolved_instructions
 
      putStr "\n"
