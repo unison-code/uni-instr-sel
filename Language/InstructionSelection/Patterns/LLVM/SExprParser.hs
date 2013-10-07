@@ -14,9 +14,6 @@
 --
 --------------------------------------------------------------------------------
 
--- TODO: Fix so that "(register ...)" gets its own data type
--- TODO: Fix handling of "zext" and other conversion operations
-
 module Language.InstructionSelection.Patterns.LLVM.SExprParser (
   parse
 ) where
@@ -67,8 +64,18 @@ instance Operation CompareOp where
 
 
 
+--------------------------------------------------
+-- Public functions
+--------------------------------------------------
+
 parse :: String -> Either ParseError [Instruction]
 parse input = Parsec.parse pInstructions "" input
+
+
+
+--------------------------------------------------
+-- Parsec functions
+--------------------------------------------------
 
 pInstructions :: GenParser Char st [Instruction]
 pInstructions =
