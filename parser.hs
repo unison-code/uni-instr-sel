@@ -30,14 +30,22 @@ expressed as LLVM IR statements. The LLVM IR statements of each instruction is
 then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
-import Language.InstructionSelection.Patterns
+import Language.InstructionSelection.Patterns.LLVM
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
+import Language.InstructionSelection.Patterns.LLVM.GraphMaker
+import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.SExpressions
 import Control.Monad
 import System.Exit
+import Data.GraphViz hiding (parse)
+import Data.GraphViz.Commands.IO
 
 isLeft (Left _) = True
 isLeft _ = False
+
+getPatterns (Instruction _ pats) = pats
+getStatements (Pattern stmts _) = stmts
+getGr (Graph g) = g
 
 main =
   do contents <- getContents
@@ -48,7 +56,9 @@ main =
                                exitFailure
 
      let (Right instructions) = result
-         resolved_instructions = instructions
-     putStr $ showSEList resolved_instructions
-
+         patterns = concat $ map getPatterns instructions
+         statements_list = map getStatements patterns
+         graphs = map graphify statements_list
+         dots = map (graphToDot nonClusteredParams . getGr) graphs
+     mapM_ (writeDotFile "test.dot") dots
      putStr "\n"

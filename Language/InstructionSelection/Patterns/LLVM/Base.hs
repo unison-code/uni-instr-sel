@@ -285,6 +285,10 @@ data ExprResultSize
 
     | ERSConstTemporary Temporary
 
+      -- | Constant size represented via an immediate.
+
+    | ERSConstImmediate ImmediateSymbol
+
     deriving (Show)
 
 -- | Data type for containing an element inside a phi function. The label

@@ -2010,17 +2010,7 @@
       (= (tmp 11) (phi (((constant ? 1) . bb_0) ((constant ? 0) . bb_1))))
       (set-reg (tmp 9) (tmp 11)))))
 
-(instruction
-  div16
-  (pattern
-    (constraints
-      (allocate-in (tmp 0) (reg-flag al (register a4h)))
-      (allocate-in (tmp 1) (reg-flag ag (register a4h))))
-    (code
-      (set-reg (tmp 0) (constant ? 0))
-      (set-reg (tmp 1) (constant ? 0))
-      (= (tmp 2) (udiv (register a4h) (register a5h)))
-      (set-reg (register a4h) (tmp 2)))))
+
 
 (instruction
   subsp_nimm13
@@ -2402,19 +2392,6 @@
       (= (tmp 12) (phi (((constant ? 1) . bb_0) ((constant ? 0) . bb_1))))
       (set-reg (tmp 10) (tmp 12)))))
 
-(instruction
-  divm16
-  (pattern
-    (constraints
-      (allocate-in (tmp 3) (reg-flag ah (register a4h)))
-      (allocate-in (tmp 2) (reg-flag al (register a4h))))
-    (code
-      (= (tmp 0) (udiv (register a4h) (register a5h)))
-      (= (tmp 1) (urem (register a4h) (register a5h)))
-      (set-reg (tmp 2) (constant ? 0))
-      (set-reg (tmp 3) (constant ? 0))
-      (set-reg (register a4h) (tmp 0))
-      (set-reg (register a5h) (tmp 1)))))
 
 (instruction
   mva_a40_r16--Imm
@@ -3463,19 +3440,7 @@
       (= (tmp 261) (trunc (constant ? 64) (tmp 260) (constant ? 40)))
       (set-reg dst (tmp 523)))))
 
-(instruction
-  divm24
-  (pattern
-    (constraints
-      (allocate-in (tmp 4) (reg-flag al (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 16) (constant ? 39)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 16) (constant ? 39)))
-      (= (tmp 2) (udiv (tmp 1) (tmp 0)))
-      (= (tmp 3) (urem (tmp 1) (tmp 0)))
-      (set-reg (tmp 4) (constant ? 0))
-      (set-reg (tmp 1) (tmp 2))
-      (set-reg (tmp 0) (tmp 3)))))
+
 
 (instruction
   mva_a40_r16--m
@@ -3587,19 +3552,7 @@
       (= (tmp 3) (reg-range src (constant ? 32) (constant ? 39)))
       (store (constant ? 8) ldm (tmp 2) (tmp 3)))))
 
-(instruction
-  divm32
-  (pattern
-    (constraints
-      (allocate-in (tmp 4) (reg-flag ag (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 0) (constant ? 31)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 0) (constant ? 31)))
-      (= (tmp 2) (udiv (tmp 1) (tmp 0)))
-      (= (tmp 3) (urem (tmp 1) (tmp 0)))
-      (set-reg (tmp 4) (constant ? 0))
-      (set-reg (tmp 1) (tmp 2))
-      (set-reg (tmp 0) (tmp 3)))))
+
 
 (instruction
   or_nimm16_a40
@@ -4702,15 +4655,7 @@
       (= (tmp 6) (sub (constant ? 16) rN (constant ? 1)))
       (set-reg rN (tmp 6)))))
 
-(instruction
-  divm40
-  (pattern
-    (constraints)
-    (code
-      (= (tmp 0) (udiv (register a4) (register a5)))
-      (= (tmp 1) (urem (register a4) (register a5)))
-      (set-reg (register a4) (tmp 0))
-      (set-reg (register a5) (tmp 1)))))
+
 
 (instruction
   mva_r16_a40++Imm
@@ -4844,17 +4789,7 @@
       (= (tmp 12) (phi (((constant ? 1) . bb_0) ((constant ? 0) . bb_1))))
       (set-reg (tmp 10) (tmp 12)))))
 
-(instruction
-  div32
-  (pattern
-    (constraints
-      (allocate-in (tmp 2) (reg-flag ag (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 0) (constant ? 31)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 0) (constant ? 31)))
-      (set-reg (tmp 2) (constant ? 0))
-      (= (tmp 3) (udiv (tmp 1) (tmp 0)))
-      (set-reg (tmp 1) (tmp 3)))))
+
 
 (instruction
   mva_r16_a40--Imm
@@ -5999,13 +5934,7 @@
       (= (tmp 5) (load-mem (constant ? 16) ldm (tmp 4)))
       (set-reg (tmp 3) (tmp 5)))))
 
-(instruction
-  mod40
-  (pattern
-    (constraints)
-    (code
-      (= (tmp 0) (urem (register a4) (register a5)))
-      (set-reg (register a4) (tmp 0)))))
+
 
 (instruction
   mv_any32_dp16_nimm13
@@ -6501,19 +6430,7 @@
       (= (tmp 9) (reg-range (tmp 4) (constant ? 0) (constant ? 15)))
       (store (constant ? 16) ldm (tmp 8) (tmp 9)))))
 
-(instruction
-  div24
-  (pattern
-    (constraints
-      (allocate-in (tmp 3) (reg-flag ag (tmp 1)))
-      (allocate-in (tmp 2) (reg-flag al (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 16) (constant ? 39)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 16) (constant ? 39)))
-      (set-reg (tmp 2) (constant ? 0))
-      (set-reg (tmp 3) (constant ? 0))
-      (= (tmp 4) (udiv (tmp 1) (tmp 0)))
-      (set-reg (tmp 1) (tmp 4)))))
+
 
 (instruction
   mv_r16_a16l_any32
@@ -7604,17 +7521,7 @@
       (= (tmp 263) (trunc (constant ? 64) (tmp 262) (constant ? 40)))
       (set-reg dst (tmp 527)))))
 
-(instruction
-  mod16
-  (pattern
-    (constraints
-      (allocate-in (tmp 0) (reg-flag ag (register a4h)))
-      (allocate-in (tmp 1) (reg-flag al (register a4h))))
-    (code
-      (set-reg (tmp 0) (constant ? 0))
-      (set-reg (tmp 1) (constant ? 0))
-      (= (tmp 2) (urem (register a4h) (register a5h)))
-      (set-reg (register a4h) (tmp 2)))))
+
 
 (instruction
   mv_any32_r16++
@@ -7882,13 +7789,7 @@
       (= (tmp 10) (sub (constant ? 16) rN (constant ? 1)))
       (set-reg rN (tmp 10)))))
 
-(instruction
-  div40
-  (pattern
-    (constraints)
-    (code
-      (= (tmp 0) (udiv (register a4) (register a5)))
-      (set-reg (register a4) (tmp 0)))))
+
 
 (instruction
   shfts_a40_a16_a40
@@ -8067,7 +7968,7 @@
       (allocate-in (tmp 17) (reg-flag nb (register cuf))))
     (code
       (= (tmp 0) (reg-range src1 (constant ? 16) (constant ? 31)))
-      (= (tmp 1) (icmp gt (constant ? 16) (tmp 0) (register cb)))
+      (= (tmp 1) (icmp sgt (constant ? 16) (tmp 0) (register cb)))
       (br (tmp 1) bb_0 bb_1)
       (label bb_0)
       (set-reg (register cb) (tmp 0))
@@ -8079,7 +7980,7 @@
       (= (tmp 2) (phi ((no-value . bb_0) (no-value . bb_1))))
       (= (tmp 3) (reg-range src1 (constant ? 0) (constant ? 15)))
       (= (tmp 4) (add (constant ? 16) (register ct) (constant ? 1)))
-      (= (tmp 5) (icmp gt (constant ? 16) (tmp 3) (register cb)))
+      (= (tmp 5) (icmp sgt (constant ? 16) (tmp 3) (register cb)))
       (br (tmp 5) bb_3 bb_4)
       (label bb_3)
       (set-reg (register cb) (tmp 3))
@@ -8091,7 +7992,7 @@
       (= (tmp 6) (phi ((no-value . bb_3) (no-value . bb_4))))
       (= (tmp 7) (reg-range src2 (constant ? 16) (constant ? 31)))
       (= (tmp 8) (add (constant ? 16) (register ct) (constant ? 2)))
-      (= (tmp 9) (icmp gt (constant ? 16) (tmp 7) (register cb)))
+      (= (tmp 9) (icmp sgt (constant ? 16) (tmp 7) (register cb)))
       (br (tmp 9) bb_6 bb_7)
       (label bb_6)
       (set-reg (register cb) (tmp 7))
@@ -8103,7 +8004,7 @@
       (= (tmp 10) (phi ((no-value . bb_6) (no-value . bb_7))))
       (= (tmp 11) (reg-range src2 (constant ? 0) (constant ? 15)))
       (= (tmp 12) (add (constant ? 16) (register ct) (constant ? 3)))
-      (= (tmp 13) (icmp gt (constant ? 16) (tmp 11) (register cb)))
+      (= (tmp 13) (icmp sgt (constant ? 16) (tmp 11) (register cb)))
       (br (tmp 13) bb_9 bb_10)
       (label bb_9)
       (set-reg (register cb) (tmp 11))
@@ -8681,7 +8582,7 @@
     (code
       (= (tmp 0) (reg-range src1 (constant ? 24) (constant ? 31)))
       (= (tmp 1) (shl (constant ? 16) (tmp 0) (constant ? 8)))
-      (= (tmp 2) (icmp gt (constant ? 16) (tmp 1) (register cb)))
+      (= (tmp 2) (icmp sgt (constant ? 16) (tmp 1) (register cb)))
       (br (tmp 2) bb_0 bb_1)
       (label bb_0)
       (set-reg (register cb) (tmp 1))
@@ -8694,7 +8595,7 @@
       (= (tmp 4) (reg-range src1 (constant ? 16) (constant ? 23)))
       (= (tmp 5) (shl (constant ? 16) (tmp 4) (constant ? 8)))
       (= (tmp 6) (add (constant ? 16) (register ct) (constant ? 1)))
-      (= (tmp 7) (icmp gt (constant ? 16) (tmp 5) (register cb)))
+      (= (tmp 7) (icmp sgt (constant ? 16) (tmp 5) (register cb)))
       (br (tmp 7) bb_3 bb_4)
       (label bb_3)
       (set-reg (register cb) (tmp 5))
@@ -8707,7 +8608,7 @@
       (= (tmp 9) (reg-range src1 (constant ? 8) (constant ? 15)))
       (= (tmp 10) (shl (constant ? 16) (tmp 9) (constant ? 8)))
       (= (tmp 11) (add (constant ? 16) (register ct) (constant ? 2)))
-      (= (tmp 12) (icmp gt (constant ? 16) (tmp 10) (register cb)))
+      (= (tmp 12) (icmp sgt (constant ? 16) (tmp 10) (register cb)))
       (br (tmp 12) bb_6 bb_7)
       (label bb_6)
       (set-reg (register cb) (tmp 10))
@@ -8720,7 +8621,7 @@
       (= (tmp 14) (reg-range src1 (constant ? 0) (constant ? 7)))
       (= (tmp 15) (shl (constant ? 16) (tmp 14) (constant ? 8)))
       (= (tmp 16) (add (constant ? 16) (register ct) (constant ? 3)))
-      (= (tmp 17) (icmp gt (constant ? 16) (tmp 15) (register cb)))
+      (= (tmp 17) (icmp sgt (constant ? 16) (tmp 15) (register cb)))
       (br (tmp 17) bb_9 bb_10)
       (label bb_9)
       (set-reg (register cb) (tmp 15))
@@ -8733,7 +8634,7 @@
       (= (tmp 19) (reg-range src2 (constant ? 24) (constant ? 31)))
       (= (tmp 20) (shl (constant ? 16) (tmp 19) (constant ? 8)))
       (= (tmp 21) (add (constant ? 16) (register ct) (constant ? 4)))
-      (= (tmp 22) (icmp gt (constant ? 16) (tmp 20) (register cb)))
+      (= (tmp 22) (icmp sgt (constant ? 16) (tmp 20) (register cb)))
       (br (tmp 22) bb_12 bb_13)
       (label bb_12)
       (set-reg (register cb) (tmp 20))
@@ -8746,7 +8647,7 @@
       (= (tmp 24) (reg-range src2 (constant ? 16) (constant ? 23)))
       (= (tmp 25) (shl (constant ? 16) (tmp 24) (constant ? 8)))
       (= (tmp 26) (add (constant ? 16) (register ct) (constant ? 5)))
-      (= (tmp 27) (icmp gt (constant ? 16) (tmp 25) (register cb)))
+      (= (tmp 27) (icmp sgt (constant ? 16) (tmp 25) (register cb)))
       (br (tmp 27) bb_15 bb_16)
       (label bb_15)
       (set-reg (register cb) (tmp 25))
@@ -8759,7 +8660,7 @@
       (= (tmp 29) (reg-range src2 (constant ? 8) (constant ? 15)))
       (= (tmp 30) (shl (constant ? 16) (tmp 29) (constant ? 8)))
       (= (tmp 31) (add (constant ? 16) (register ct) (constant ? 6)))
-      (= (tmp 32) (icmp gt (constant ? 16) (tmp 30) (register cb)))
+      (= (tmp 32) (icmp sgt (constant ? 16) (tmp 30) (register cb)))
       (br (tmp 32) bb_18 bb_19)
       (label bb_18)
       (set-reg (register cb) (tmp 30))
@@ -8772,7 +8673,7 @@
       (= (tmp 34) (reg-range src2 (constant ? 0) (constant ? 7)))
       (= (tmp 35) (shl (constant ? 16) (tmp 34) (constant ? 8)))
       (= (tmp 36) (add (constant ? 16) (register ct) (constant ? 7)))
-      (= (tmp 37) (icmp gt (constant ? 16) (tmp 35) (register cb)))
+      (= (tmp 37) (icmp sgt (constant ? 16) (tmp 35) (register cb)))
       (br (tmp 37) bb_21 bb_22)
       (label bb_21)
       (set-reg (register cb) (tmp 35))
@@ -9453,17 +9354,7 @@
       (= (tmp 57) (sext (constant ? 32) dst (constant ? 40)))
       (set-reg (tmp 56) (tmp 57)))))
 
-(instruction
-  mod32
-  (pattern
-    (constraints
-      (allocate-in (tmp 2) (reg-flag ag (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 0) (constant ? 31)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 0) (constant ? 31)))
-      (set-reg (tmp 2) (constant ? 0))
-      (= (tmp 3) (urem (tmp 1) (tmp 0)))
-      (set-reg (tmp 1) (tmp 3)))))
+
 
 (instruction
   abs_a16_a40
@@ -9530,7 +9421,7 @@
       (allocate-in (tmp 17) (reg-flag nb (register cuf))))
     (code
       (= (tmp 0) (reg-range src1 (constant ? 16) (constant ? 31)))
-      (= (tmp 1) (icmp (constant ? 16) lt (tmp 0) (register cb)))
+      (= (tmp 1) (icmp slt (constant ? 16) (tmp 0) (register cb)))
       (br (tmp 1) bb_0 bb_1)
       (label bb_0)
       (set-reg (register cb) (tmp 0))
@@ -9542,7 +9433,7 @@
       (= (tmp 2) (phi ((no-value . bb_0) (no-value . bb_1))))
       (= (tmp 3) (reg-range src1 (constant ? 0) (constant ? 15)))
       (= (tmp 4) (add (constant ? 16) (register ct) (constant ? 1)))
-      (= (tmp 5) (icmp (constant ? 16) lt (tmp 3) (register cb)))
+      (= (tmp 5) (icmp slt (constant ? 16) (tmp 3) (register cb)))
       (br (tmp 5) bb_3 bb_4)
       (label bb_3)
       (set-reg (register cb) (tmp 3))
@@ -9554,7 +9445,7 @@
       (= (tmp 6) (phi ((no-value . bb_3) (no-value . bb_4))))
       (= (tmp 7) (reg-range src2 (constant ? 16) (constant ? 31)))
       (= (tmp 8) (add (constant ? 16) (register ct) (constant ? 2)))
-      (= (tmp 9) (icmp (constant ? 16) lt (tmp 7) (register cb)))
+      (= (tmp 9) (icmp slt (constant ? 16) (tmp 7) (register cb)))
       (br (tmp 9) bb_6 bb_7)
       (label bb_6)
       (set-reg (register cb) (tmp 7))
@@ -9566,7 +9457,7 @@
       (= (tmp 10) (phi ((no-value . bb_6) (no-value . bb_7))))
       (= (tmp 11) (reg-range src2 (constant ? 0) (constant ? 15)))
       (= (tmp 12) (add (constant ? 16) (register ct) (constant ? 3)))
-      (= (tmp 13) (icmp (constant ? 16) lt (tmp 11) (register cb)))
+      (= (tmp 13) (icmp slt (constant ? 16) (tmp 11) (register cb)))
       (br (tmp 13) bb_9 bb_10)
       (label bb_9)
       (set-reg (register cb) (tmp 11))
@@ -10117,7 +10008,7 @@
     (code
       (= (tmp 0) (reg-range src1 (constant ? 24) (constant ? 31)))
       (= (tmp 1) (shl (constant ? 16) (tmp 0) (constant ? 8)))
-      (= (tmp 2) (icmp (constant ? 16) lt (tmp 1) (register cb)))
+      (= (tmp 2) (icmp slt (constant ? 16) (tmp 1) (register cb)))
       (br (tmp 2) bb_0 bb_1)
       (label bb_0)
       (set-reg (register cb) (tmp 1))
@@ -10130,7 +10021,7 @@
       (= (tmp 4) (reg-range src1 (constant ? 16) (constant ? 23)))
       (= (tmp 5) (shl (constant ? 16) (tmp 4) (constant ? 8)))
       (= (tmp 6) (add (constant ? 16) (register ct) (constant ? 1)))
-      (= (tmp 7) (icmp (constant ? 16) lt (tmp 5) (register cb)))
+      (= (tmp 7) (icmp slt (constant ? 16) (tmp 5) (register cb)))
       (br (tmp 7) bb_3 bb_4)
       (label bb_3)
       (set-reg (register cb) (tmp 5))
@@ -10143,7 +10034,7 @@
       (= (tmp 9) (reg-range src1 (constant ? 8) (constant ? 15)))
       (= (tmp 10) (shl (constant ? 16) (tmp 9) (constant ? 8)))
       (= (tmp 11) (add (constant ? 16) (register ct) (constant ? 2)))
-      (= (tmp 12) (icmp (constant ? 16) lt (tmp 10) (register cb)))
+      (= (tmp 12) (icmp slt (constant ? 16) (tmp 10) (register cb)))
       (br (tmp 12) bb_6 bb_7)
       (label bb_6)
       (set-reg (register cb) (tmp 10))
@@ -10156,7 +10047,7 @@
       (= (tmp 14) (reg-range src1 (constant ? 0) (constant ? 7)))
       (= (tmp 15) (shl (constant ? 16) (tmp 14) (constant ? 8)))
       (= (tmp 16) (add (constant ? 16) (register ct) (constant ? 3)))
-      (= (tmp 17) (icmp (constant ? 16) lt (tmp 15) (register cb)))
+      (= (tmp 17) (icmp slt (constant ? 16) (tmp 15) (register cb)))
       (br (tmp 17) bb_9 bb_10)
       (label bb_9)
       (set-reg (register cb) (tmp 15))
@@ -10169,7 +10060,7 @@
       (= (tmp 19) (reg-range src2 (constant ? 24) (constant ? 31)))
       (= (tmp 20) (shl (constant ? 16) (tmp 19) (constant ? 8)))
       (= (tmp 21) (add (constant ? 16) (register ct) (constant ? 4)))
-      (= (tmp 22) (icmp (constant ? 16) lt (tmp 20) (register cb)))
+      (= (tmp 22) (icmp slt (constant ? 16) (tmp 20) (register cb)))
       (br (tmp 22) bb_12 bb_13)
       (label bb_12)
       (set-reg (register cb) (tmp 20))
@@ -10182,7 +10073,7 @@
       (= (tmp 24) (reg-range src2 (constant ? 16) (constant ? 23)))
       (= (tmp 25) (shl (constant ? 16) (tmp 24) (constant ? 8)))
       (= (tmp 26) (add (constant ? 16) (register ct) (constant ? 5)))
-      (= (tmp 27) (icmp (constant ? 16) lt (tmp 25) (register cb)))
+      (= (tmp 27) (icmp slt (constant ? 16) (tmp 25) (register cb)))
       (br (tmp 27) bb_15 bb_16)
       (label bb_15)
       (set-reg (register cb) (tmp 25))
@@ -10195,7 +10086,7 @@
       (= (tmp 29) (reg-range src2 (constant ? 8) (constant ? 15)))
       (= (tmp 30) (shl (constant ? 16) (tmp 29) (constant ? 8)))
       (= (tmp 31) (add (constant ? 16) (register ct) (constant ? 6)))
-      (= (tmp 32) (icmp (constant ? 16) lt (tmp 30) (register cb)))
+      (= (tmp 32) (icmp slt (constant ? 16) (tmp 30) (register cb)))
       (br (tmp 32) bb_18 bb_19)
       (label bb_18)
       (set-reg (register cb) (tmp 30))
@@ -10208,7 +10099,7 @@
       (= (tmp 34) (reg-range src2 (constant ? 0) (constant ? 7)))
       (= (tmp 35) (shl (constant ? 16) (tmp 34) (constant ? 8)))
       (= (tmp 36) (add (constant ? 16) (register ct) (constant ? 7)))
-      (= (tmp 37) (icmp (constant ? 16) lt (tmp 35) (register cb)))
+      (= (tmp 37) (icmp slt (constant ? 16) (tmp 35) (register cb)))
       (br (tmp 37) bb_21 bb_22)
       (label bb_21)
       (set-reg (register cb) (tmp 35))
@@ -10367,19 +10258,7 @@
       (= (tmp 29) (sext (constant ? 32) dst (constant ? 40)))
       (set-reg (tmp 28) (tmp 29)))))
 
-(instruction
-  lcallr_addr
-  (pattern
-    (constraints
-      (rel-address addr -524288 524287))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (= (tmp 2) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 2))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   sat_a40_a40
@@ -10471,19 +10350,7 @@
       (= (tmp 4) (satadd (constant ? 32) (tmp 2) (constant ? 0)))
       (set-reg dst (tmp 5)))))
 
-(instruction
-  lcallr_addr_alias
-  (pattern
-    (constraints
-      (rel-address addr -524288 524287))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (= (tmp 2) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 2))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   add_a16_a40
@@ -10570,33 +10437,9 @@
       (= (tmp 4) (sub (constant ? 40) dst (tmp 3)))
       (set-reg dst (tmp 4)))))
 
-(instruction
-  fcallr_addr
-  (pattern
-    (constraints
-      (rel-address addr -1073741824 1073741823))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (= (tmp 2) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 2))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 1)))))
 
-(instruction
-  fcallr_addr_alias
-  (pattern
-    (constraints
-      (rel-address addr -1073741824 1073741823))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (= (tmp 2) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 2))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 1)))))
+
+
 
 (instruction
   subh_nimm5_a40
@@ -10663,19 +10506,7 @@
       (= (tmp 6) (satadd (constant ? 16) (tmp 4) (constant ? 0)))
       (set-reg dst (tmp 7)))))
 
-(instruction
-  callr_acc
-  (pattern
-    (constraints
-      (allocate-in aN (a0 a1 a2 a3 a4 a5 a6 a7)))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) aN))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (= (tmp 2) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 2))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   addh_a16_a40
@@ -10750,7 +10581,7 @@
       (allocate-in src2 (a0 a1 a2 a3 a4 a5 a6 a7))
       (allocate-in dst (a0 a1 a2 a3 a4 a5 a6 a7)))
     (code
-      (= (tmp 0) (fadd src1 src2))
+      (= (tmp 0) (fadd (constant ? 40) src1 src2))
       (set-reg dst (tmp 0)))))
 
 (instruction
@@ -10772,7 +10603,7 @@
   (pattern
     (constraints)
     (code
-      (= (tmp 0) (fdiv (register a4) (register a5)))
+      (= (tmp 0) (fdiv  (register a4) (register a5)))
       (set-reg (register a4) (tmp 0)))))
 
 (instruction
@@ -10800,18 +10631,7 @@
       (= (tmp 6) (add (constant ? 40) (tmp 5) src1))
       (set-reg dst (tmp 6)))))
 
-(instruction
-  calla_acc
-  (pattern
-    (constraints
-      (allocate-in aN (a0 a1 a2 a3 a4 a5 a6 a7)))
-    (code
-      (= (tmp 0) (urem aN (size pc)))
-      (= (tmp 1) (sub (size sp) (register sp) (constant ? 2)))
-      (set-reg (register sp) (tmp 1))
-      (store (constant ? 23) ldm (register sp) (register retpc))
-      (set-reg (register retpc) (register pc))
-      (set-reg (register pc) (tmp 0)))))
+
 
 (instruction
   subh_nimm16_a40
@@ -10854,15 +10674,7 @@
       (= (tmp 1) (phi ((src1 . bb_0) (src2 . bb_1))))
       (set-reg dst (tmp 1)))))
 
-(instruction
-  lbrr_offset
-  (pattern
-    (constraints
-      (rel-address addr -524288 524287))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   flmax_a40_a40_a40
@@ -10962,15 +10774,7 @@
       (= (tmp 2) (phi (((tmp 1) . bb_0) (src . bb_1))))
       (set-reg dst (tmp 2)))))
 
-(instruction
-  lbrr_offset_alias
-  (pattern
-    (constraints
-      (rel-address addr -524288 524287))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   sub_a40_a16_a40
@@ -11018,27 +10822,9 @@
       (= (tmp 6) (add (constant ? 40) (tmp 5) dst))
       (set-reg dst (tmp 6)))))
 
-(instruction
-  fbrr_offset
-  (pattern
-    (constraints
-      (rel-address addr -1073741824 1073741823))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (set-reg (register pc) (tmp 1)))))
 
-(instruction
-  mod24
-  (pattern
-    (constraints
-      (allocate-in (tmp 2) (reg-flag al (tmp 1))))
-    (code
-      (= (tmp 0) (reg-range (register a5) (constant ? 16) (constant ? 39)))
-      (= (tmp 1) (reg-range (register a4) (constant ? 16) (constant ? 39)))
-      (set-reg (tmp 2) (constant ? 0))
-      (= (tmp 3) (urem (tmp 1) (tmp 0)))
-      (set-reg (tmp 1) (tmp 3)))))
+
+
 
 (instruction
   abss_a40_a40
@@ -11078,15 +10864,7 @@
       (= (tmp 4) (satadd (constant ? 32) (tmp 2) (constant ? 0)))
       (set-reg dst (tmp 5)))))
 
-(instruction
-  fbrr_offset_alias
-  (pattern
-    (constraints
-      (rel-address addr -1073741824 1073741823))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) addr))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   subh_a16_a40
@@ -11157,15 +10935,7 @@
       (= (tmp 4) (add (constant ? 40) (tmp 3) src1))
       (set-reg dst (tmp 4)))))
 
-(instruction
-  brr_offset_acc
-  (pattern
-    (constraints
-      (allocate-in aN (a0 a1 a2 a3 a4 a5 a6 a7)))
-    (code
-      (= (tmp 0) (add (size pc) (register pc) aN))
-      (= (tmp 1) (urem (tmp 0) (size pc)))
-      (set-reg (register pc) (tmp 1)))))
+
 
 (instruction
   andnot_a40_a40_a40
@@ -11291,14 +11061,7 @@
     (code
       (set-reg (register pc) addr))))
 
-(instruction
-  bra_accumulator
-  (pattern
-    (constraints
-      (allocate-in aN (a0 a1 a2 a3 a4 a5 a6 a7)))
-    (code
-      (= (tmp 0) (urem aN (size pc)))
-      (set-reg (register pc) (tmp 0)))))
+
 
 (instruction
   flsub_a40_a40_a40
@@ -13973,7 +13736,7 @@
       (allocate-in dst (a0 a1 a2 a3 a4 a5 a6 a7))
       (reg-flag sa (register cuc) ((0 . 0))))
     (code
-      (= (tmp 0) (icmp gt (constant ? 40) src1 src2))
+      (= (tmp 0) (icmp sgt (constant ? 40) src1 src2))
       (br (tmp 0) bb_0 bb_1)
       (label bb_0)
       (= (tmp 3) (sub (constant ? 40) src1 src2))
@@ -13992,7 +13755,7 @@
       (allocate-in dst (a0 a1 a2 a3 a4 a5 a6 a7))
       (reg-flag sa (register cuc) ((1 . 1))))
     (code
-      (= (tmp 0) (icmp gt (constant ? 40) src1 src2))
+      (= (tmp 0) (icmp sgt (constant ? 40) src1 src2))
       (br (tmp 0) bb_0 bb_1)
       (label bb_0)
       (= (tmp 2) (satsub (constant ? 32) src1 src2))
@@ -14486,7 +14249,7 @@
     (code
       (= (tmp 0) (reg-range src1 (constant ? 0) (constant ? 7)))
       (= (tmp 1) (reg-range src2 (constant ? 0) (constant ? 7)))
-      (= (tmp 2) (icmp lt (constant ? 8) (tmp 0) (tmp 1)))
+      (= (tmp 2) (icmp slt (constant ? 8) (tmp 0) (tmp 1)))
       (br (tmp 2) bb_0 bb_1)
       (label bb_0)
       (= (tmp 3) (sub (constant ? 8) (tmp 1) (tmp 0)))
@@ -14498,7 +14261,7 @@
       (= (tmp 5) (phi (((tmp 3) . bb_0) ((tmp 4) . bb_1))))
       (= (tmp 6) (reg-range src1 (constant ? 8) (constant ? 15)))
       (= (tmp 7) (reg-range src2 (constant ? 8) (constant ? 15)))
-      (= (tmp 8) (icmp lt (constant ? 8) (tmp 6) (tmp 7)))
+      (= (tmp 8) (icmp slt (constant ? 8) (tmp 6) (tmp 7)))
       (br (tmp 8) bb_3 bb_4)
       (label bb_3)
       (= (tmp 9) (sub (constant ? 8) (tmp 7) (tmp 6)))
@@ -14510,7 +14273,7 @@
       (= (tmp 11) (phi (((tmp 9) . bb_3) ((tmp 10) . bb_4))))
       (= (tmp 12) (reg-range src1 (constant ? 16) (constant ? 23)))
       (= (tmp 13) (reg-range src2 (constant ? 16) (constant ? 23)))
-      (= (tmp 14) (icmp lt (constant ? 8) (tmp 12) (tmp 13)))
+      (= (tmp 14) (icmp slt (constant ? 8) (tmp 12) (tmp 13)))
       (br (tmp 14) bb_6 bb_7)
       (label bb_6)
       (= (tmp 15) (sub (constant ? 8) (tmp 13) (tmp 12)))
@@ -14522,7 +14285,7 @@
       (= (tmp 17) (phi (((tmp 15) . bb_6) ((tmp 16) . bb_7))))
       (= (tmp 18) (reg-range src1 (constant ? 24) (constant ? 31)))
       (= (tmp 19) (reg-range src2 (constant ? 24) (constant ? 31)))
-      (= (tmp 20) (icmp lt (constant ? 8) (tmp 18) (tmp 19)))
+      (= (tmp 20) (icmp slt (constant ? 8) (tmp 18) (tmp 19)))
       (br (tmp 20) bb_9 bb_10)
       (label bb_9)
       (= (tmp 21) (sub (constant ? 8) (tmp 19) (tmp 18)))
@@ -14958,7 +14721,7 @@
     (code
       (= (tmp 0) (reg-range src1 (constant ? 0) (constant ? 7)))
       (= (tmp 1) (reg-range src2 (constant ? 0) (constant ? 7)))
-      (= (tmp 2) (icmp lt (constant ? 8) (tmp 0) (tmp 1)))
+      (= (tmp 2) (icmp slt (constant ? 8) (tmp 0) (tmp 1)))
       (br (tmp 2) bb_0 bb_1)
       (label bb_0)
       (= (tmp 3) (sub (constant ? 8) (tmp 1) (tmp 0)))
@@ -14970,7 +14733,7 @@
       (= (tmp 5) (phi (((tmp 3) . bb_0) ((tmp 4) . bb_1))))
       (= (tmp 6) (reg-range src1 (constant ? 8) (constant ? 15)))
       (= (tmp 7) (reg-range src2 (constant ? 8) (constant ? 15)))
-      (= (tmp 8) (icmp lt (constant ? 8) (tmp 6) (tmp 7)))
+      (= (tmp 8) (icmp slt (constant ? 8) (tmp 6) (tmp 7)))
       (br (tmp 8) bb_3 bb_4)
       (label bb_3)
       (= (tmp 9) (sub (constant ? 8) (tmp 7) (tmp 6)))
@@ -14982,7 +14745,7 @@
       (= (tmp 11) (phi (((tmp 9) . bb_3) ((tmp 10) . bb_4))))
       (= (tmp 12) (reg-range src1 (constant ? 16) (constant ? 23)))
       (= (tmp 13) (reg-range src2 (constant ? 16) (constant ? 23)))
-      (= (tmp 14) (icmp lt (constant ? 8) (tmp 12) (tmp 13)))
+      (= (tmp 14) (icmp slt (constant ? 8) (tmp 12) (tmp 13)))
       (br (tmp 14) bb_6 bb_7)
       (label bb_6)
       (= (tmp 15) (sub (constant ? 8) (tmp 13) (tmp 12)))
@@ -14994,7 +14757,7 @@
       (= (tmp 17) (phi (((tmp 15) . bb_6) ((tmp 16) . bb_7))))
       (= (tmp 18) (reg-range src1 (constant ? 24) (constant ? 31)))
       (= (tmp 19) (reg-range src2 (constant ? 24) (constant ? 31)))
-      (= (tmp 20) (icmp lt (constant ? 8) (tmp 18) (tmp 19)))
+      (= (tmp 20) (icmp slt (constant ? 8) (tmp 18) (tmp 19)))
       (br (tmp 20) bb_9 bb_10)
       (label bb_9)
       (= (tmp 21) (sub (constant ? 8) (tmp 19) (tmp 18)))

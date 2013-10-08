@@ -25,6 +25,7 @@ import Language.InstructionSelection.Utils (Range (..), Natural, toNatural)
 import Text.ParserCombinators.Parsec hiding (parse)
 import qualified Text.ParserCombinators.Parsec as Parsec (parse)
 import Data.String.Utils
+import Debug.Trace -- TODO: remove when not needed anymore
 
 
 
@@ -421,6 +422,8 @@ pExprResultSize =
               return (ERSRegSize reg))
   <|> try (do temp <- pTemporary
               return (ERSConstTemporary temp))
+  <|> try (do imm <- pImmediateSymbol
+              return (ERSConstImmediate imm))
 
 pRegSizeExpr :: GenParser Char st Register
 pRegSizeExpr = pLabeledData "size" pRegister
