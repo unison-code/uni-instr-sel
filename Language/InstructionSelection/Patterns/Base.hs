@@ -19,46 +19,76 @@ module Language.InstructionSelection.Patterns.Base where
 
 import Language.InstructionSelection.Patterns.AssemblyString
 import Data.Graph.Inductive
+import Language.InstructionSelection.Utils
+import Language.InstructionSelection.OpTypes
 
 
 
--- | TODO: write description
+data Label
+    = Label String
+    deriving (Show)
 
 data NodeType
-      -- | TODO: implement
-    = NodeType
+    = NTBinaryOp BinaryOp
+    | NTUnaryOp UnaryOp
+    | NTMemoryLoad
+    | NTMemoryStore
+    | NTUncondBranch Label
+    | NTCondBranch
+
+          -- | Label taken if the register evaluates to @True@.
+
+          Label
+
+          -- | Label taken if the register evaluates to @False@.
+
+          Label
+
+    | NTPhi
+    | NTData
     deriving (Show)
 
--- | TODO: write description
+data NodeLabel
+    = NodeLabel
 
-data EdgeType
-      -- | TODO: implement
+      -- | Node identifier.
+
+      Natural
+
+      NodeType
+
+    deriving (Show)
+
+data EdgeLabel
     = EdgeType
-    deriving (Show)
 
--- | TODO: write description
+      -- | Source identifier.
+
+      Natural
+
+      -- | Destination identifier.
+
+      Natural
+
+    deriving (Show)
 
 data Constraint
       -- | TODO: implement
     = Constraint
     deriving (Show)
 
--- | Data type for representing a pattern including the constraints.
-
 data Pattern
     = Pattern
 
           -- | The pattern graph.
 
-          (Gr (LNode NodeType) (LEdge EdgeType))
+          (Gr (LNode NodeLabel) (LEdge EdgeLabel))
 
           -- | Constraints that must be enforced for the pattern.
 
           [Constraint]
 
     deriving (Show)
-
--- | Data type for representing an instruction.
 
 data Instruction
     = Instruction
