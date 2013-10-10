@@ -59,15 +59,12 @@ selectAliasValueToKeep avs =
 
 class TempReplaceable a where
 
-  -- | Pretty-prints something as an S-expression by converting it into a
-  -- string.
+  -- | Replaces the use of one temp for another.
 
   replaceTemp :: AliasValue     -- ^ Alias to replace with.
               -> AliasValue     -- ^ Alias to replace.
               -> a
               -> a
-
--- | Replaces the use of one temp for another.
 
 instance TempReplaceable Pattern where
   replaceTemp d s (Pattern stmts cons) =

@@ -32,7 +32,8 @@ then transformed into a corresponding DAG and then output as S-expressions.
 
 import Language.InstructionSelection.Patterns.LLVM
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
-import Language.InstructionSelection.Patterns.LLVM.GraphMaker
+import Language.InstructionSelection.Patterns.LLVM.GeneralPatternMaker
+import qualified Language.InstructionSelection.Patterns as General
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.SExpressions
 import Control.Monad
@@ -44,7 +45,7 @@ isLeft (Left _) = True
 isLeft _ = False
 
 getPatterns (Instruction _ pats) = pats
-getStatements (Pattern stmts _) = stmts
+getGraph (General.Pattern g _) = g
 getGr (Graph g) = g
 
 main =
@@ -57,8 +58,7 @@ main =
 
      let (Right instructions) = result
          patterns = concat $ map getPatterns instructions
-         statements_list = map getStatements patterns
-         graphs = map graphify statements_list
-         dots = map (graphToDot nonClusteredParams . getGr) graphs
+         graphs = map toGeneralPattern patterns
+         dots = map (graphToDot nonClusteredParams . getGr . getGraph) graphs
      mapM_ (writeDotFile "test.dot") dots
      putStr "\n"

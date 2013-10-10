@@ -21,8 +21,8 @@ import Language.InstructionSelection.OpTypes
 
 
 
-data Label
-    = Label String
+data BBLabel
+    = BBLabel String
     deriving (Show)
 
 data NodeType
@@ -30,45 +30,72 @@ data NodeType
     | NTUnaryOp UnaryOp
     | NTMemoryLoad
     | NTMemoryStore
-    | NTUncondBranch Label
+    | NTUncondBranch BBLabel
     | NTCondBranch
 
           -- | Label taken if the register evaluates to @True@.
 
-          Label
+          BBLabel
 
           -- | Label taken if the register evaluates to @False@.
 
-          Label
+          BBLabel
 
     | NTPhi
-    | NTData
+
+    -- | Both temporary nodes (appearing in IR and pattern code) and register
+    -- nodes (appearing only in pattern code) are represented as registers.
+    -- For the latter, the specific register is specified as a constraint.
+
+    | NTRegister
+
+          -- | Does this register represent an observable output?
+
+          Bool
+
+    -- | Both constant values (appearing in IR and pattern code) and immediates
+    -- (appearing only in pattern code) are represented as constants. For the
+    -- former, the specific value is specified as a constraint.
+
+    | NTConstant
+
     deriving (Show)
 
 data NodeLabel
     = NodeLabel
 
-          -- | Node identifier.
+          -- | Node identifier. Most often this is equal to the 'Node'
+          -- identifier used by FGL, but it does not need to be.
 
           Natural
 
+          -- | Type of node.
+
           NodeType
+
+          -- | Label of the basic block that the node belongs to.
+
+          BBLabel
+
+          -- | A field to put arbitrary text in; used when printing the graph.
+
+          String
 
     deriving (Show)
 
 data EdgeLabel
-    = EdgeType
+    = EdgeLabel
 
-          -- | Source identifier.
+          -- | Source edge number.
 
           Natural
 
-          -- | Destination identifier.
+          -- | Destination edge number.
 
           Natural
 
     deriving (Show)
 
 data Graph
-    = Graph (Gr (LNode NodeLabel) (LEdge EdgeLabel))
+    = Graph (Gr NodeLabel EdgeLabel)
     deriving (Show)
