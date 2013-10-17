@@ -19,13 +19,24 @@ module Language.InstructionSelection.Patterns.Base where
 
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Patterns.AssemblyString
+import Language.InstructionSelection.Utils (Range (..))
 
 
+
+data Register
+    = Register String
+    deriving (Show,Eq)
+
+data Constant
+    = IntConstant Integer
+    deriving (Show,Eq)
 
 data Constraint
       -- | TODO: implement
     = Constraint
-    deriving (Show)
+    | InRegisterConstraint NodeId [Register]
+    | ConstantValueConstraint NodeId [Range Constant]
+    deriving (Show,Eq)
 
 data Pattern
     = Pattern

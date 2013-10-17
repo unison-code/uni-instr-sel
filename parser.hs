@@ -59,6 +59,11 @@ main =
      let (Right instructions) = result
          patterns = concat $ map getPatterns instructions
          graphs = map toGeneralPattern patterns
-         dots = map (graphToDot nonClusteredParams . getGr . getGraph) graphs
+         dots = map (graphToDot params . getGr . getGraph) graphs
      mapM_ (writeDotFile "test.dot") dots
      putStr "\n"
+
+params = nonClusteredParams { fmtNode = nodeAttr }
+nodeAttr (_, (NodeLabel _ NTRegister _ str)) = [toLabel str, shape BoxShape]
+nodeAttr (_, (NodeLabel _ NTConstant _ str)) = [toLabel str, shape BoxShape]
+nodeAttr (_, (NodeLabel _ _ _ str)) = [toLabel str]

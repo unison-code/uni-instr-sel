@@ -3,6 +3,7 @@ parser:
 
 run: parser
 	./parser < test.txt
+	dot -Tpdf test.dot -o test.pdf
 #	./parser < patterns-dump.sexpr
 
 clean:

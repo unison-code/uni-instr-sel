@@ -493,7 +493,7 @@ pRegister =
       try (do symbol <- pRegisterSymbol
               return (RegBySymbol symbol))
   <|> try (do symbol <- pPrefixedRegisterSymbol
-              return (RegBySymbol symbol))
+              return (RegByRegister symbol))
   <|> try (do temp <- pTemporary
               return (RegByTemporary temp))
 
@@ -502,8 +502,8 @@ pRegisterSymbol =
   do symbol <- pSymbol
      return (RegisterSymbol symbol)
 
-pPrefixedRegisterSymbol :: GenParser Char st RegisterSymbol
-pPrefixedRegisterSymbol = pLabeledData "register" pRegisterSymbol
+pPrefixedRegisterSymbol :: GenParser Char st String
+pPrefixedRegisterSymbol = pLabeledData "register" pSymbol
 
 pDataSpace :: GenParser Char st DataSpace
 pDataSpace =

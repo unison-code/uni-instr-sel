@@ -32,7 +32,7 @@ data Range t
 -- | Creates a new data type that allows numbers from 0 to positive infinity.
 
 newtype Natural = Natural Integer
-    deriving (Show)
+    deriving (Show,Eq,Ord)
 
 toNatural :: Integer -> Natural
 toNatural x | x < 0     = error "Natural cannot be negative"

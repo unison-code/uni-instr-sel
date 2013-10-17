@@ -42,12 +42,14 @@ data Temporary
 
     deriving (Show, Eq)
 
--- | Data type for a register. A register can either by denoted by a register
--- symbol or via a temporary (which will, in some way, refer to a register).
+-- | Data type for a register. A register can either by denoted by an actual
+-- register, a register symbol, or via a temporary (which will, in some way,
+-- refer to a register).
 
 data Register
-    = RegByTemporary Temporary
+    = RegByRegister String
     | RegBySymbol RegisterSymbol
+    | RegByTemporary Temporary
     deriving (Show, Eq)
 
 -- | Data type for describing a register symbol.
@@ -648,8 +650,9 @@ instance SExpressionable Temporary where
   prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
 
 instance SExpressionable Register where
-  prettySE (RegByTemporary temp) i = prettySE temp i
+  prettySE (RegByRegister reg) i = prettySE reg i
   prettySE (RegBySymbol sym) i = prettySE sym i
+  prettySE (RegByTemporary temp) i = prettySE temp i
 
 instance SExpressionable RegisterSymbol where
   prettySE (RegisterSymbol str) i = prettySE str i

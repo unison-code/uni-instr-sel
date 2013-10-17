@@ -21,9 +21,12 @@ import Language.InstructionSelection.OpTypes
 
 
 
+type NodeId = Natural
+type EdgeId = Natural
+
 data BBLabel
     = BBLabel String
-    deriving (Show)
+    deriving (Show,Eq)
 
 data NodeType
     = NTBinaryOp BinaryOp
@@ -49,17 +52,13 @@ data NodeType
 
     | NTRegister
 
-          -- | Does this register represent an observable output?
-
-          Bool
-
     -- | Both constant values (appearing in IR and pattern code) and immediates
     -- (appearing only in pattern code) are represented as constants. For the
     -- former, the specific value is specified as a constraint.
 
     | NTConstant
 
-    deriving (Show)
+    deriving (Show,Eq)
 
 data NodeLabel
     = NodeLabel
@@ -67,7 +66,7 @@ data NodeLabel
           -- | Node identifier. Most often this is equal to the 'Node'
           -- identifier used by FGL, but it does not need to be.
 
-          Natural
+          NodeId
 
           -- | Type of node.
 
@@ -81,20 +80,20 @@ data NodeLabel
 
           String
 
-    deriving (Show)
+    deriving (Show,Eq)
 
 data EdgeLabel
     = EdgeLabel
 
           -- | Source edge number.
 
-          Natural
+          EdgeId
 
           -- | Destination edge number.
 
-          Natural
+          EdgeId
 
-    deriving (Show)
+    deriving (Show,Eq)
 
 data Graph
     = Graph (Gr NodeLabel EdgeLabel)
