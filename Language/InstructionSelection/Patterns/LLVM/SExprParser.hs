@@ -499,6 +499,13 @@ pRegister =
   do str <- pSymbol
      return (Register str)
 
+pActualRegister :: GenParser Char st Register
+pActualRegister =
+      try (do symbol <- pSymbol
+              return (RegByRegister symbol))
+  <|> try (do symbol <- pPrefixedRegisterSymbol
+              return (RegByRegister symbol))
+
 pRegisterSymbol :: GenParser Char st RegisterSymbol
 pRegisterSymbol =
   do symbol <- pSymbol

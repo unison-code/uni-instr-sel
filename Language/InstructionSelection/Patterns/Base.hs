@@ -32,10 +32,10 @@ data Constant
     deriving (Show,Eq)
 
 data Constraint
-      -- | TODO: implement
     = Constraint
-    | InRegisterConstraint NodeId [Register]
+    | AllocateInRegisterConstraint NodeId [Register]
     | ConstantValueConstraint NodeId [Range Constant]
+    | IsAliasConstraint NodeId NodeId
     deriving (Show,Eq)
 
 data Pattern
