@@ -12,6 +12,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Language.InstructionSelection.Patterns.LLVM.GeneralPatternMaker (
   toGeneralPattern
 ) where
@@ -143,7 +145,7 @@ instance GraphFormable LLVM.Temporary where
     in t'
 
 instance GraphFormable LLVM.Register where
-  formGraph (LLVM.RegByRegister reg) t =
+  formGraph (LLVM.Register reg) t =
     let reg_node_int = nextNodeInt $ getNodeList t
         reg_node = ( reg_node_int
                     , NodeLabel (toNatural $ toInteger reg_node_int)
@@ -154,16 +156,15 @@ instance GraphFormable LLVM.Register where
                      [(General.Register reg)]
     in addConstraint constraint $ addNode reg_node t
 
-  formGraph (LLVM.RegBySymbol (LLVM.RegisterSymbol reg_sym)) t =
+instance GraphFormable LLVM.RegisterSymbol where
+  formGraph (LLVM.RegisterSymbol sym) t =
     let reg_node_int = nextNodeInt $ getNodeList t
         reg_node = ( reg_node_int
                     , NodeLabel (toNatural $ toInteger reg_node_int)
-                      NTRegister (getCurrentLabel t) reg_sym
+                      NTRegister (getCurrentLabel t) sym
                     )
-        mapping = (reg_node_int, RegisterSymbol reg_sym)
+        mapping = (reg_node_int, RegisterSymbol sym)
     in addNode reg_node $ addMapping mapping t
-
-  formGraph (LLVM.RegByTemporary temp) t = formGraph temp t
 
 instance GraphFormable LLVM.StmtExpression where
   formGraph (LLVM.BinaryOpStmtExpr op _ lhs rhs) t =
@@ -263,6 +264,10 @@ instance GraphFormable LLVM.ImmediateSymbol where
                      NTConstant (getCurrentLabel t) imm_sym
                    )
     in addNode imm_node t
+
+instance GraphFormable (Either LLVM.Register LLVM.Temporary) where
+  formGraph (Left reg) t = formGraph reg t
+  formGraph (Right tmp) t = formGraph tmp t
 
 getCurrentLabel (l, _, _, _, _) = l
 changeCurrentLabel l (_, ns, es, ms, cs) = (l, ns, es, ms, cs)

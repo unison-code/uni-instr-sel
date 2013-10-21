@@ -121,10 +121,19 @@ pAllocConstraint = pLabeledData "allocate-in" pAllocConstraint'
 
 pAllocConstraint' :: GenParser Char st Constraint
 pAllocConstraint' =
-  do storage <- pAnyStorage
+  do storage <- pTemporaryOrRegSymbol
      pWhitespace
-     space <- pAnyStorageSpace
+     space <- pDataSpace
      return (AllocateInConstraint storage space)
+
+pTemporaryOrRegSymbol :: GenParser Char st (Either Temporary RegisterSymbol)
+pTemporaryOrRegSymbol =
+      try (do temp <- pTemporary
+              return (Left temp)
+          )
+  <|> try (do reg <- pRegisterSymbol
+              return (Right reg)
+          )
 
 pImmConstraint :: GenParser Char st Constraint
 pImmConstraint = pLabeledData "immediate" pImmConstraint'
@@ -200,7 +209,7 @@ pRegFlagConstraint = pLabeledData "reg-flag" pRegFlagConstraint'
 
 pRegFlagConstraint' :: GenParser Char st Constraint
 pRegFlagConstraint' =
-  do flag <- pRegisterFlagDetails
+  do flag <- pRegisterFlag'
      pWhitespace
      ranges <- pParens (many1 pIntRange)
      return (RegFlagConstraint flag ranges)
@@ -229,10 +238,19 @@ pSetRegStmt = pLabeledData "set-reg" pSetRegStmt'
 
 pSetRegStmt' :: GenParser Char st Statement
 pSetRegStmt' =
-  do reg <- pRegister
+  do storage <- pRegisterOrTemporary
      pWhitespace
      expr <- pStmtExpression
-     return (SetRegStmt reg expr)
+     return (SetRegStmt storage expr)
+
+pRegisterOrTemporary :: GenParser Char st (Either Register Temporary)
+pRegisterOrTemporary =
+      try (do reg <- pRegister
+              return (Left reg)
+          )
+  <|> try (do temp <- pTemporary
+              return (Right temp)
+          )
 
 pStoreStmt :: GenParser Char st Statement
 pStoreStmt = pLabeledData "store" pStoreStmt'
@@ -295,9 +313,9 @@ pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
   do reg <- pRegister
      pWhitespace
-     lower <- pAnyData
+     lower <- pProgramData
      pWhitespace
-     upper <- pAnyData
+     upper <- pProgramData
      return (RegRangeStmtExpr reg (Range lower upper))
 
 pUnaryOpStmtExpr :: GenParser Char st StmtExpression
@@ -428,13 +446,6 @@ pExprResultSize =
 pRegSizeExpr :: GenParser Char st Register
 pRegSizeExpr = pLabeledData "size" pRegister
 
-pConstProgramData :: GenParser Char st ConstProgramData
-pConstProgramData =
-      try (do const <- pConstant
-              return (CPDConstant const))
-  <|> try (do imm <- pImmediateSymbol
-              return (CPDImmediate imm))
-
 pConstant :: GenParser Char st ConstantValue
 pConstant = pLabeledData "constant" pConstant'
 
@@ -474,28 +485,19 @@ pImmediateSymbol =
      return (ImmediateSymbol symbol)
 
 pRegisterFlag :: GenParser Char st RegisterFlag
-pRegisterFlag = pLabeledData "reg-flag" pRegisterFlagDetails
+pRegisterFlag = pLabeledData "reg-flag" pRegisterFlag'
 
-pRegisterFlagDetails :: GenParser Char st RegisterFlag
-pRegisterFlagDetails =
-  do flag <- pRegisterFlagSymbol
+pRegisterFlag' :: GenParser Char st RegisterFlag
+pRegisterFlag' =
+  do flag <- pSymbol
      pWhitespace
      reg <- pRegister
      return (RegisterFlag flag reg)
 
-pRegisterFlagSymbol :: GenParser Char st RegisterFlagSymbol
-pRegisterFlagSymbol =
-  do symbol <- pSymbol
-     return (RegisterFlagSymbol symbol)
-
 pRegister :: GenParser Char st Register
 pRegister =
-      try (do symbol <- pRegisterSymbol
-              return (RegBySymbol symbol))
-  <|> try (do symbol <- pPrefixedRegisterSymbol
-              return (RegByRegister symbol))
-  <|> try (do temp <- pTemporary
-              return (RegByTemporary temp))
+  do str <- pSymbol
+     return (Register str)
 
 pRegisterSymbol :: GenParser Char st RegisterSymbol
 pRegisterSymbol =
@@ -516,51 +518,20 @@ pRegisterClass = pParens pRegisterClass'
 
 pRegisterClass' :: GenParser Char st RegisterClass
 pRegisterClass' =
-  do regs <- many1 pRegisterSymbolEatWhitespace
+  do regs <- many1 pRegisterEatWhitespace
      return (RegisterClass regs)
 
-pRegisterSymbolEatWhitespace :: GenParser Char st RegisterSymbol
-pRegisterSymbolEatWhitespace =
+pRegisterEatWhitespace :: GenParser Char st Register
+pRegisterEatWhitespace =
   do pWhitespace
-     reg <- pRegisterSymbol
+     reg <- pRegister
      pWhitespace
      return reg
-
-pAnyData :: GenParser Char st AnyData
-pAnyData =
-      try (do pNoValue
-              return (ADNoValue))
-  <|> try (do const <- pConstant
-              return (ADConstant const))
-  <|> try (do temp <- pTemporary
-              return (ADTemporary temp))
-  <|> try (do reg <- pRegister
-              return (ADRegister reg))
-  <|> try (do flag <- pRegisterFlag
-              return (ADRegisterFlag flag))
-  <|> try (do imm <- pImmediateSymbol
-              return (ADImmediate imm))
 
 pNoValue :: GenParser Char st ()
 pNoValue =
   do string "no-value"
      return ()
-
-pAnyStorage :: GenParser Char st AnyStorage
-pAnyStorage =
-      try (do temp <- pTemporary
-              return (ASTemporary temp))
-  <|> try (do reg <- pRegister
-              return (ASRegister reg))
-  <|> try (do flag <- pRegisterFlag
-              return (ASRegisterFlag flag))
-
-pAnyStorageSpace :: GenParser Char st AnyStorageSpace
-pAnyStorageSpace =
-      try (do space <- pDataSpace
-              return (ASSDataSpace space))
-  <|> try (do flag <- pRegisterFlag
-              return (ASSRegisterFlag flag))
 
 pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =

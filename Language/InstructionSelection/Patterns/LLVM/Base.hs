@@ -42,34 +42,11 @@ data Temporary
 
     deriving (Show, Eq)
 
--- | Data type for a register. A register can either by denoted by an actual
--- register, a register symbol, or via a temporary (which will, in some way,
--- refer to a register).
+-- | Data type for representing a physical regsiter.
 
 data Register
-    = RegByRegister String
-    | RegBySymbol RegisterSymbol
-    | RegByTemporary Temporary
+    = Register String
     deriving (Show, Eq)
-
--- | Data type for describing a register symbol.
-
-data RegisterSymbol
-    = RegisterSymbol String
-    deriving (Show, Eq)
-
--- | Data type for describing a register flag symbol.
-
-data RegisterFlagSymbol
-    = RegisterFlagSymbol String
-    deriving (Show, Eq)
-
--- | Data type for describing a register flag. All flags are associated with a
--- specific register.
-
-data RegisterFlag
-    = RegisterFlag RegisterFlagSymbol Register
-    deriving (Show)
 
 -- | Data type for describing a register class.
 
@@ -78,7 +55,7 @@ data RegisterClass
 
           -- | Set of registers.
 
-          [RegisterSymbol]
+          [Register]
 
     deriving (Show)
 
@@ -95,12 +72,28 @@ data MemoryClass
           -- range of the memory space, or a restricted subset.
 
           (Range Integer)
+
     deriving (Show, Eq)
+
+-- | Data type for describing a register flag. All flags are associated with a
+-- specific register.
+
+data RegisterFlag
+    = RegisterFlag
+
+          -- | Name of the flag itself.
+
+          String
+
+          Register
+
+    deriving (Show)
 
 -- | Data type for describing a data space.
 
 data DataSpace
     = DSRegisterClass RegisterClass
+    | DSRegisterFlag RegisterFlag
     | DSMemoryClass MemoryClass
     deriving (Show)
 
@@ -109,6 +102,14 @@ data DataSpace
 
 data ImmediateSymbol
     = ImmediateSymbol String
+    deriving (Show, Eq)
+
+-- | Data type for a register symbol. This should be viewed as a variable which
+-- denotes a specific register (unlike a temporary which denotes a specific
+-- value).
+
+data RegisterSymbol
+    = RegisterSymbol String
     deriving (Show, Eq)
 
 -- | Data type for containing an potentially nested expression.
@@ -130,7 +131,11 @@ data ProgramData
 
     | PDTemporary Temporary
 
-      -- | A value located in a register.
+      -- | A value denoted by a register symbol.
+
+    | PDRegisterSymbol RegisterSymbol
+
+      -- | A value located in a specific register.
 
     | PDRegister Register
 
@@ -138,42 +143,6 @@ data ProgramData
 
     | PDNoValue
 
-    deriving (Show)
-
--- | Data type for representing values that are constant at compile time.
-
-data ConstProgramData
-    = CPDConstant ConstantValue
-    | CPDImmediate ImmediateSymbol
-    deriving (Show)
-
--- | Data type for representing any form of data (register, register flag,
--- constant, temporary, etc.).
-
-data AnyData
-    = ADTemporary Temporary
-    | ADRegister Register
-    | ADRegisterFlag RegisterFlag
-    | ADConstant ConstantValue
-    | ADImmediate ImmediateSymbol
-    | ADNoValue
-    deriving (Show)
-
--- | Data type for representing any form of storage unit (register, register
--- flag, temporary, etc.).
-
-data AnyStorage
-    = ASTemporary Temporary
-    | ASRegister Register
-    | ASRegisterFlag RegisterFlag
-    deriving (Show)
-
--- | Data type for representing any form of storage space (register flag or data
--- space).
-
-data AnyStorageSpace
-    = ASSRegisterFlag RegisterFlag
-    | ASSDataSpace DataSpace
     deriving (Show)
 
 -- | Data type for representing an expression for a statement.
@@ -267,7 +236,7 @@ data StmtExpression
       -- register. The same effect can be achieved with a series of bit
       -- operations.
 
-    | RegRangeStmtExpr Register (Range AnyData)
+    | RegRangeStmtExpr Register (Range ProgramData)
 
     deriving (Show)
 
@@ -319,9 +288,11 @@ data Statement
 
     = AssignmentStmt Temporary StmtExpression
 
-      -- | Assigns the result of an expression to a register.
+      -- | Assigns the result of an expression to a register (but it could also
+      -- be assigned to a temporary, which in turn will reference to a specific
+      -- register).
 
-    | SetRegStmt Register StmtExpression
+    | SetRegStmt (Either Register Temporary) StmtExpression
 
       -- | Stores the result of an expression to a memory location.
 
@@ -373,7 +344,7 @@ data Constraint
       -- | The @AllocateInConstraint@ constraint dictates that a storage unit
       -- must be located in a particular storage space.
 
-    = AllocateInConstraint AnyStorage AnyStorageSpace
+    = AllocateInConstraint (Either Temporary RegisterSymbol) DataSpace
 
       -- | The @ImmediateConstraint@ constraint limits the range of values that
       -- an immediate value may take.
@@ -633,26 +604,11 @@ instance SExpressionable ExprResultSize where
   prettySE (ERSConstValue const) i = prettySE const i
   prettySE (ERSConstTemporary temp) i = prettySE temp i
 
-instance SExpressionable AnyData where
-  prettySE (ADTemporary temp) i = prettySE temp i
-  prettySE (ADRegister reg) i = prettySE reg i
-  prettySE (ADRegisterFlag flag) i = prettySE flag i
-  prettySE (ADConstant const) i = prettySE const i
-  prettySE (ADImmediate imm) i = prettySE imm i
-  prettySE ADNoValue i = prettySE noValueStr i
-
-instance SExpressionable AnyStorage where
-  prettySE (ASTemporary temp) i = prettySE temp i
-  prettySE (ASRegister reg) i = prettySE reg i
-  prettySE (ASRegisterFlag flag) i = prettySE flag i
-
 instance SExpressionable Temporary where
   prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
 
 instance SExpressionable Register where
-  prettySE (RegByRegister reg) i = prettySE reg i
-  prettySE (RegBySymbol sym) i = prettySE sym i
-  prettySE (RegByTemporary temp) i = prettySE temp i
+  prettySE (Register str) i = prettySE str i
 
 instance SExpressionable RegisterSymbol where
   prettySE (RegisterSymbol str) i = prettySE str i
@@ -661,15 +617,8 @@ instance SExpressionable RegisterFlag where
   prettySE (RegisterFlag sym reg) i =
     "(reg-flag " ++ prettySE sym i ++ " " ++ prettySE reg i ++ ")"
 
-instance SExpressionable RegisterFlagSymbol where
-  prettySE (RegisterFlagSymbol str) i = prettySE str i
-
 instance SExpressionable ImmediateSymbol where
   prettySE (ImmediateSymbol str) i = prettySE str i
-
-instance SExpressionable AnyStorageSpace where
-  prettySE (ASSRegisterFlag flag) i = prettySE flag i
-  prettySE (ASSDataSpace space) i = prettySE space i
 
 instance SExpressionable DataSpace where
   prettySE (DSRegisterClass regClass) i = prettySE regClass i
@@ -753,20 +702,23 @@ instance SExpressionable CompareOp where
   prettySE FOCmpLE i = "fcmp ole"
   prettySE FCmpUn i = "fcmp uno"
 
-instance SExpressionable (Range AnyData) where
-  prettySE (Range lower upper) i =
-    prettySE lower i
-    ++ " " ++ prettySE upper i
-
-instance SExpressionable ConstProgramData where
-  prettySE (CPDConstant const) i = prettySE const i
-  prettySE (CPDImmediate imm) i = prettySE imm i
-
 instance SExpressionable ProgramData where
   prettySE (PDConstant const) i = prettySE const i
   prettySE (PDImmediate imm) i = prettySE imm i
   prettySE (PDTemporary temp) i = prettySE temp i
   prettySE (PDRegister reg) i = prettySE reg i
   prettySE PDNoValue i = prettySE noValueStr i
+
+instance SExpressionable (Either Register Temporary) where
+  prettySE (Left lhs) i = prettySE lhs i
+  prettySE (Right rhs) i = prettySE rhs i
+
+instance SExpressionable (Either Temporary RegisterSymbol) where
+  prettySE (Left lhs) i = prettySE lhs i
+  prettySE (Right rhs) i = prettySE rhs i
+
+instance SExpressionable (Range ProgramData) where
+  prettySE (Range lower upper) i =
+    "(" ++ prettySE lower i ++ " " ++ prettySE upper i ++ ")"
 
 noValueStr = "no-value"
