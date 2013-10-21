@@ -391,14 +391,14 @@ isAbsAddressConstraint _ = False
 
 data AliasValue
     = AVTemporary Temporary
-    | AVRegister Register
+    | AVRegisterSymbol RegisterSymbol
     | AVNoValue
     deriving (Show, Eq)
 
 isAVTemporary (AVTemporary _) = True
 isAVTemporary _ = False
-isAVRegister (AVRegister _) = True
-isAVRegister _ = False
+isAVRegisterSymbol (AVRegisterSymbol _) = True
+isAVRegisterSymbol _ = False
 isAVNoValue AVNoValue = True
 isAVNoValue _ = False
 
@@ -502,7 +502,7 @@ instance SExpressionable [AliasValue] where
 
 instance SExpressionable AliasValue where
   prettySE (AVTemporary tmp) i = prettySE tmp i
-  prettySE (AVRegister reg) i = prettySE reg i
+  prettySE (AVRegisterSymbol reg) i = prettySE reg i
   prettySE (AVNoValue) i = prettySE noValueStr i
 
 instance SExpressionable Statement where

@@ -334,12 +334,14 @@ instance SymbolFormable LLVM.RegisterSymbol where
   toSymbol (LLVM.RegisterSymbol str) = RegisterSymbol str
 instance SymbolFormable LLVM.Temporary where
   toSymbol (LLVM.Temporary int) = TemporarySymbol int
-instance SymbolFormable LLVM.Register where
-  toSymbol (LLVM.RegBySymbol sym) = toSymbol sym
-  toSymbol (LLVM.RegByTemporary temp) = toSymbol temp
-instance SymbolFormable LLVM.AnyStorage where
-  toSymbol (LLVM.ASTemporary temp) = toSymbol temp
-  toSymbol (LLVM.ASRegister reg) = toSymbol reg
+instance SymbolFormable (Either LLVM.Temporary LLVM.RegisterSymbol) where
+  toSymbol (Left temp) = toSymbol temp
+  toSymbol (Right reg) = toSymbol reg
+instance SymbolFormable LLVM.ImmediateSymbol where
+  toSymbol (LLVM.ImmediateSymbol str) = ImmediateSymbol str
+instance SymbolFormable LLVM.AliasValue where
+  toSymbol (LLVM.AVTemporary temp) = toSymbol temp
+  toSymbol (LLVM.AVRegisterSymbol reg) = toSymbol reg
 
 class RegisterFormable a where
   toRegisters :: a -> [General.Register]
@@ -353,19 +355,42 @@ instance RegisterFormable LLVM.RegisterClass where
 instance RegisterFormable LLVM.Register where
   toRegister (LLVM.RegByRegister str) = General.Register str
 
+class ConstRangeFormable a where
+  toConstRange :: a -> (Range General.Constant)
+instance ConstRangeFormable (Range Integer) where
+  toConstRange (Range lower upper) = Range (General.IntConstant lower)
+                                     (General.IntConstant upper)
+
 convertConstraints :: [LLVM.Constraint]
                    -> [(NodeId, Symbol)]
                    -> [General.Constraint]
 convertConstraints cons maps = concatMap (convertConstraint maps) cons
 convertConstraint maps (LLVM.AllocateInConstraint store space) =
-  let sym = toSymbol store
-      node_id = head $ filter (\(n, s) -> s == sym) maps
+  let node_id = getNodeId maps (toSymbol store)
       regs = toRegisters space
-  in General.AllocateInRegisterConstraint node_id regs
-convertConstraint maps (LLVM.ImmediateConstraint imm ranges) = []
-convertConstraint maps (LLVM.AliasesConstraint aliases) = []
--- TOOD: handle reg-flag constraint
+  in [General.AllocateInRegisterConstraint node_id regs]
+convertConstraint maps (LLVM.ImmediateConstraint imm ranges) =
+  let node_id = getNodeId maps (toSymbol imm)
+      const_ranges = map toConstRange ranges
+  in [General.ConstantValueConstraint node_id const_ranges]
+convertConstraint maps (LLVM.AliasesConstraint aliases) =
+  concatMap (convertAliases maps) aliases
+convertConstraint maps (LLVM.RegFlagConstraint flag ranges) =
+  [General.RegFlagConstraint (convertRegFlag flag) (map toConstRange ranges)]
 -- TODO: handle address constraints
+
+convertRegFlag (LLVM.RegisterFlag flag reg) =
+  General.RegisterFlag flag (head $ toRegisters reg)
+
+convertAliases maps aliases =
+  let original = getNodeId maps $ toSymbol $ head aliases
+      rest = map (getNodeId maps . toSymbol) $ tail aliases
+      combinations = zip (repeat original) rest
+  in map (\(o, t) -> General.IsAliasConstraint o t) combinations
+
+getNodeId maps sym =
+  let (node_id, _) = last $ filter (\(n, s) -> s == sym) maps
+  in node_id
 
 resolveAliases :: General.Pattern -> General.Pattern
 resolveAliases g = g

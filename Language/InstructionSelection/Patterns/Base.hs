@@ -27,6 +27,10 @@ data Register
     = Register String
     deriving (Show,Eq)
 
+data RegisterFlag
+    = RegisterFlag String Register
+    deriving (Show,Eq)
+
 data Constant
     = IntConstant Integer
     deriving (Show,Eq)
@@ -36,6 +40,7 @@ data Constraint
     | AllocateInRegisterConstraint NodeId [Register]
     | ConstantValueConstraint NodeId [Range Constant]
     | IsAliasConstraint NodeId NodeId
+    | RegFlagConstraint RegisterFlag [Range Constant]
     deriving (Show,Eq)
 
 data Pattern

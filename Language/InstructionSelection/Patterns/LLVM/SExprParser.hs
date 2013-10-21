@@ -174,8 +174,8 @@ pAliasValue =
               return AVNoValue)
   <|> try (do temp <- pTemporary
               return (AVTemporary temp))
-  <|> try (do reg <- pRegister
-              return (AVRegister reg))
+  <|> try (do reg <- pRegisterSymbol
+              return (AVRegisterSymbol reg))
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'
