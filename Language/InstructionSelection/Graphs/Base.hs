@@ -82,6 +82,10 @@ data NodeLabel
 
     deriving (Show,Eq)
 
+-- | Gets the node ID from a (Node, NodeLabel) tuple.
+
+nodeId (_, (NodeLabel id _ _ _)) = id
+
 data EdgeLabel
     = EdgeLabel
 

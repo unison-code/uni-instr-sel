@@ -39,7 +39,7 @@ data Constraint
     = Constraint
     | AllocateInRegisterConstraint NodeId [Register]
     | ConstantValueConstraint NodeId [Range Constant]
-    | IsAliasConstraint NodeId NodeId
+    | AliasConstraint [[NodeId]]
     | RegFlagConstraint RegisterFlag [Range Constant]
     deriving (Show,Eq)
 
