@@ -238,18 +238,24 @@ pSetRegStmt = pLabeledData "set-reg" pSetRegStmt'
 
 pSetRegStmt' :: GenParser Char st Statement
 pSetRegStmt' =
-  do storage <- pRegisterOrTemporary
+  do storage <- pSetRegDestination
      pWhitespace
      expr <- pStmtExpression
      return (SetRegStmt storage expr)
 
-pRegisterOrTemporary :: GenParser Char st (Either Register Temporary)
-pRegisterOrTemporary =
-      try (do reg <- pRegister
-              return (Left reg)
+pSetRegDestination :: GenParser Char st SetRegDestination
+pSetRegDestination =
+      try (do reg <- pPrefixedRegister
+              return (SRDRegister reg)
+          )
+  <|> try (do flag <- pRegisterFlag
+              return (SRDRegisterFlag flag)
           )
   <|> try (do temp <- pTemporary
-              return (Right temp)
+              return (SRDTemporary temp)
+          )
+  <|> try (do reg <- pRegisterSymbol
+              return (SRDRegisterSymbol reg)
           )
 
 pStoreStmt :: GenParser Char st Statement
@@ -391,6 +397,8 @@ pProgramData =
               return (PDImmediate imm))
   <|> try (do temp <- pTemporary
               return (PDTemporary temp))
+  <|> try (do reg <- pPrefixedRegister
+              return (PDRegister reg))
   <|> try (do reg <- pRegister
               return (PDRegister reg))
 
@@ -511,8 +519,8 @@ pRegisterSymbol =
   do symbol <- pSymbol
      return (RegisterSymbol symbol)
 
-pPrefixedRegisterSymbol :: GenParser Char st String
-pPrefixedRegisterSymbol = pLabeledData "register" pSymbol
+pPrefixedRegister :: GenParser Char st Register
+pPrefixedRegister = pLabeledData "register" pRegister
 
 pDataSpace :: GenParser Char st DataSpace
 pDataSpace =

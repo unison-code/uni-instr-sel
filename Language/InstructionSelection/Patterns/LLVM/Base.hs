@@ -24,6 +24,26 @@ import Language.InstructionSelection.SExpressions
 
 
 
+-- | Data type for representing a physical regsiter.
+
+data Register
+    = Register String
+    deriving (Show, Eq)
+
+-- | Data type for describing a register flag. All flags are associated with a
+-- specific register.
+
+data RegisterFlag
+    = RegisterFlag
+
+          -- | Name of the flag itself.
+
+          String
+
+          Register
+
+    deriving (Show, Eq)
+
 -- | Data type for representing a constant value.
 
 data ConstantValue
@@ -42,10 +62,19 @@ data Temporary
 
     deriving (Show, Eq)
 
--- | Data type for representing a physical regsiter.
+-- | Data type for an immediate value symbol. This is used to represent an
+-- immediate value which will become available during pattern matching.
 
-data Register
-    = Register String
+data ImmediateSymbol
+    = ImmediateSymbol String
+    deriving (Show, Eq)
+
+-- | Data type for a register symbol. This should be viewed as a variable which
+-- denotes a specific register (unlike a temporary which denotes a specific
+-- value).
+
+data RegisterSymbol
+    = RegisterSymbol String
     deriving (Show, Eq)
 
 -- | Data type for describing a register class.
@@ -75,20 +104,6 @@ data MemoryClass
 
     deriving (Show, Eq)
 
--- | Data type for describing a register flag. All flags are associated with a
--- specific register.
-
-data RegisterFlag
-    = RegisterFlag
-
-          -- | Name of the flag itself.
-
-          String
-
-          Register
-
-    deriving (Show)
-
 -- | Data type for describing a data space.
 
 data DataSpace
@@ -96,23 +111,6 @@ data DataSpace
     | DSRegisterFlag RegisterFlag
     | DSMemoryClass MemoryClass
     deriving (Show)
-
--- | Data type for an immediate value symbol. This is used to represent an
--- immediate value which will become available during pattern matching.
-
-data ImmediateSymbol
-    = ImmediateSymbol String
-    deriving (Show, Eq)
-
--- | Data type for a register symbol. This should be viewed as a variable which
--- denotes a specific register (unlike a temporary which denotes a specific
--- value).
-
-data RegisterSymbol
-    = RegisterSymbol String
-    deriving (Show, Eq)
-
--- | Data type for containing an potentially nested expression.
 
 -- | Data type for describing program data. The data can be of many different
 -- types, e.g. a constant, an immediate, a temporary, etc.
@@ -280,6 +278,15 @@ data Label
 
     deriving (Show, Eq)
 
+-- | Data type for expressing the destination in a 'set-reg' statement.
+
+data SetRegDestination
+    = SRDRegister Register
+    | SRDRegisterSymbol RegisterSymbol
+    | SRDRegisterFlag RegisterFlag
+    | SRDTemporary Temporary
+    deriving (Show, Eq)
+
 -- | Data type for representing an LLVM statement.
 
 data Statement
@@ -288,11 +295,11 @@ data Statement
 
     = AssignmentStmt Temporary StmtExpression
 
-      -- | Assigns the result of an expression to a register (but it could also
-      -- be assigned to a temporary, which in turn will reference to a specific
-      -- register).
+      -- | Assigns the result of an expression to a register, register flag,
+      -- register symbol, or a temporary (which in turn will reference to a
+      -- specific register).
 
-    | SetRegStmt (Either Register Temporary) StmtExpression
+    | SetRegStmt SetRegDestination StmtExpression
 
       -- | Stores the result of an expression to a memory location.
 
@@ -511,9 +518,9 @@ instance SExpressionable Statement where
     ++ " " ++ prettySE temp i
     ++ " " ++ prettySE expr i
     ++ ")"
-  prettySE (SetRegStmt reg expr) i =
+  prettySE (SetRegStmt dest expr) i =
     "(set-reg"
-    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE dest i
     ++ " " ++ prettySE expr i
     ++ ")"
   prettySE (StoreStmt dst area size value) i =
@@ -709,9 +716,11 @@ instance SExpressionable ProgramData where
   prettySE (PDRegister reg) i = prettySE reg i
   prettySE PDNoValue i = prettySE noValueStr i
 
-instance SExpressionable (Either Register Temporary) where
-  prettySE (Left lhs) i = prettySE lhs i
-  prettySE (Right rhs) i = prettySE rhs i
+instance SExpressionable SetRegDestination where
+  prettySE (SRDRegister reg) i = prettySE reg i
+  prettySE (SRDRegisterSymbol reg) i = prettySE reg i
+  prettySE (SRDRegisterFlag flag) i = prettySE flag i
+  prettySE (SRDTemporary temp) i = prettySE temp i
 
 instance SExpressionable (Either Temporary RegisterSymbol) where
   prettySE (Left lhs) i = prettySE lhs i

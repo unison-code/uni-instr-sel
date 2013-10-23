@@ -23,6 +23,7 @@ import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Utils
 import Data.Graph.Inductive.Graph hiding (Graph)
+import Data.Maybe
 import Debug.Trace -- TODO: remove when no longer necessary
 
 
@@ -88,17 +89,19 @@ instance GraphFormable LLVM.Pattern where
 
 makeMappingsForNoNodeSymbols cons t =
   foldr makeMappingsForNoNodeSymbols' t (filter LLVM.isAliasesConstraint cons)
-makeMappingsForNoNodeSymbols' (LLVM.AliasesConstraint aliases) t =
+makeMappingsForNoNodeSymbols' (LLVM.AliasesConstraint list_of_aliases) t =
   let new_maps = concatMap (makeMappingsForNoNodeSymbols'' (getMappingList t))
-                 aliases
+                 list_of_aliases
   in addMappings new_maps t
 makeMappingsForNoNodeSymbols'' _ [] = []
 makeMappingsForNoNodeSymbols'' _ (_:[]) = []
 makeMappingsForNoNodeSymbols'' maps aliases =
-  let sym_that_has_node = maybeGetNodeIdFromSym maps $ toSymbol $ head aliases
-      rest = map (maybeGetNodeIdFromSym maps . toSymbol) $ tail aliases
-      alias_pairs = zip (repeat original) rest
-  in map (\(o, t) -> General.IsAliasConstraint o t) alias_pairs
+  let (Just node_of_some_sym) = head $ filter isJust
+                                $ map ((maybeGetNodeIdFromSym maps) . toSymbol)
+                                      aliases
+      syms_with_no_node = filter (not . isJust . (maybeGetNodeIdFromSym maps))
+                          $ map toSymbol aliases
+  in zip (repeat node_of_some_sym) syms_with_no_node
 
 instance GraphFormable LLVM.Statement where
   formGraph (LLVM.AssignmentStmt tmp expr) t =
@@ -110,12 +113,12 @@ instance GraphFormable LLVM.Statement where
         t''' = addEdge e t''
     in t'''
 
-  formGraph (LLVM.SetRegStmt reg expr) t =
-    let t' = formGraph reg t
-        reg_node = last $ getNodeList t'
+  formGraph (LLVM.SetRegStmt dest expr) t =
+    let t' = formGraph dest t
+        dest_node = last $ getNodeList t'
         t'' = formGraph expr t'
         expr_node = last $ getNodeList t''
-        e = createNewEdge expr_node reg_node (getEdgeList t'')
+        e = createNewEdge expr_node dest_node (getEdgeList t'')
         t''' = addEdge e t''
     in t'''
 
@@ -164,6 +167,12 @@ instance GraphFormable LLVM.Statement where
   formGraph (LLVM.LabelStmt (LLVM.Label label)) t =
     changeCurrentLabel (BBLabel label) t
 
+instance GraphFormable LLVM.SetRegDestination where
+  formGraph (LLVM.SRDRegister reg) t = formGraph reg t
+  formGraph (LLVM.SRDRegisterSymbol reg) t = formGraph reg t
+  formGraph (LLVM.SRDRegisterFlag flag) t = formGraph flag t
+  formGraph (LLVM.SRDTemporary temp) t = formGraph temp t
+
 instance GraphFormable LLVM.Temporary where
   formGraph (LLVM.Temporary temp_int) t =
     let temp_node_int = nextNodeInt $ getNodeList t
@@ -188,6 +197,10 @@ instance GraphFormable LLVM.Register where
                      (toNatural $ toInteger reg_node_int)
                      [(General.Register reg)]
     in addConstraint constraint $ addNode reg_node t
+
+instance GraphFormable LLVM.RegisterFlag where
+  formGraph (LLVM.RegisterFlag str reg) t = t
+  -- TODO: implement
 
 instance GraphFormable LLVM.RegisterSymbol where
   formGraph (LLVM.RegisterSymbol sym) t =
@@ -387,72 +400,63 @@ instance ConstRangeFormable (Range Integer) where
   toConstRange (Range lower upper) = Range (General.IntConstant lower)
                                      (General.IntConstant upper)
 
-convertConstraints :: [LLVM.Constraint]
-                   -> [(NodeId, Symbol)]
-                   -> [General.Constraint]
 convertConstraints cons maps = concatMap (convertConstraint maps) cons
 convertConstraint maps (LLVM.AllocateInConstraint store space) =
   let node_id = getNodeIdFromSym maps (toSymbol store)
       regs = toRegisters space
   in [General.AllocateInRegisterConstraint node_id regs]
+convertConstraint maps (LLVM.RegFlagConstraint flag ranges) =
+  [General.RegFlagConstraint (convertRegFlag flag) (map toConstRange ranges)]
 convertConstraint maps (LLVM.ImmediateConstraint imm ranges) =
   let node_id = getNodeIdFromSym maps (toSymbol imm)
       const_ranges = map toConstRange ranges
   in [General.ConstantValueConstraint node_id const_ranges]
-
--- | In the converted constraints, it is assumed that the node ID acting as the
--- target will always appear as the first argument to @IsAliasConstraint@, and
--- the node ID to replace will always appear as the second argument.
-
-convertConstraint maps (LLVM.AliasesConstraint aliases) =
-  concatMap (convertAliases maps) aliases
-
-convertConstraint maps (LLVM.RegFlagConstraint flag ranges) =
-  [General.RegFlagConstraint (convertRegFlag flag) (map toConstRange ranges)]
+convertConstraint maps (LLVM.AliasesConstraint list_of_aliases) =
+  map (convertAliases maps) list_of_aliases
 -- TODO: handle address constraints
 
 convertRegFlag (LLVM.RegisterFlag flag reg) =
   General.RegisterFlag flag (head $ toRegisters reg)
-
 convertAliases maps aliases =
-  let original = getNodeIdFromSym maps $ toSymbol $ head aliases
-      rest = map (getNodeIdFromSym maps . toSymbol) $ tail aliases
-      combinations = zip (repeat original) rest
-  in map (\(o, t) -> General.IsAliasConstraint o t) combinations
+  let maybe_nodes = map ((maybeGetNodeIdFromSym maps) . toSymbol) aliases
+      only_actual_nodes = filter isJust maybe_nodes
+      nodes = map (\(Just n) -> n) only_actual_nodes
+  in General.AliasConstraint nodes
 
 getNodeIdFromSym maps sym =
   let (Just node_id) = maybeGetNodeIdFromSym maps sym
   in node_id
-
 maybeGetNodeIdFromSym maps sym =
   let node_list = filter (\(n, s) -> s == sym) maps
-  in if not $ empty node_list
+  in if not $ null node_list
      then let (node_id, _) = last node_list
           in Just node_id
      else Nothing
 
-resolveAliases (General.Pattern g cons) =
-  let alias_cons = filter isAlias cons
-      (General.Pattern new_g new_cons) =
-        foldr resolveAliases' (General.Pattern g cons) alias_cons
-      all_but_alias = filter (not . isAlias) new_cons
+resolveAliases pat@(General.Pattern g cons) =
+  let alias_cons = filter General.isAliasConstraint cons
+      (General.Pattern new_g new_cons) = foldr resolveAliases' pat alias_cons
+      all_but_alias = filter (not . General.isAliasConstraint) new_cons
   in General.Pattern new_g all_but_alias
 
-resolveAliases' (General.IsAliasConstraint n1 n2)
-                (General.Pattern (Graph g) cons) =
+resolveAliases' (General.AliasConstraint []) pat = pat
+resolveAliases' (General.AliasConstraint (_:[])) pat = pat
+resolveAliases' (General.AliasConstraint nodes) pat =
+  let node_to_replace_with = head nodes
+      nodes_to_replace = tail nodes
+      combinations = zip (repeat node_to_replace_with) nodes_to_replace
+  in foldr resolveAliases'' pat combinations
+resolveAliases'' (n1, n2) (General.Pattern (Graph g) cons) =
   let nodes = labNodes g
       n1_node = head $ filter (sameNodeId n1) nodes
       n2_nodes = filter (sameNodeId n2) nodes
       new_n1_nodes = map (makeCopyWithSameNodeId n1_node) n2_nodes
       all_but_n2 = filter (not . sameNodeId n2) nodes
-      new_nodes = trace (show all_but_n2) $ all_but_n2 ++ new_n1_nodes
+      new_nodes = all_but_n2 ++ new_n1_nodes
       -- TODO: update constraints
       new_cons = cons
       edges = labEdges g
   in General.Pattern (Graph (mkGraph new_nodes edges)) new_cons
-
-isAlias (General.IsAliasConstraint _ _) = True
-isAlias _ = False
 
 makeCopyWithSameNodeId (_  , NodeLabel _  node_type label str)
                        (int, NodeLabel id _         _     _  ) =
