@@ -13,9 +13,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Graphs.Base where
+module Language.InstructionSelection.Graphs.Base (
+  NodeId
+, EdgeId
+, BBLabel (..)
+, NodeType (..)
+, NodeLabel (..)
+, EdgeLabel (..)
+, Graph (..)
+, I.Node
+, I.LNode
+, I.LEdge
+, mkGraph
+, toNodeId
+, nodes
+, nodeId
+, isSameNodeId
+, haveSameNodeIds
+, copyNodeLabel
+, mergeNodesWithSameId
+) where
 
-import Data.Graph.Inductive
+import qualified Data.Graph.Inductive as I
 import Language.InstructionSelection.Utils
 import Language.InstructionSelection.OpTypes
 
@@ -82,10 +101,6 @@ data NodeLabel
 
     deriving (Show,Eq)
 
--- | Gets the node ID from a (Node, NodeLabel) tuple.
-
-nodeId (_, (NodeLabel id _ _ _)) = id
-
 data EdgeLabel
     = EdgeLabel
 
@@ -100,5 +115,74 @@ data EdgeLabel
     deriving (Show,Eq)
 
 data Graph
-    = Graph (Gr NodeLabel EdgeLabel)
+    = Graph (I.Gr NodeLabel EdgeLabel)
     deriving (Show)
+
+-- | Makes a graph.
+
+mkGraph nodes edges = I.mkGraph nodes edges
+
+-- | Makes a node ID.
+
+toNodeId i = toNatural i
+
+-- | Gets the node ID from a (Node, NodeLabel) tuple.
+
+nodeId (_, (NodeLabel id _ _ _)) = id
+
+-- | Gets the internal node ID from a (Node, NodeLabel) tuple.
+
+nodeInt (int, (NodeLabel _ _ _ _)) = int
+
+-- | Checks if a (Node, NodeLabel) tuple has a given node ID.
+
+isSameNodeId id1 (_, (NodeLabel id2 _ _ _)) = id1 == id2
+
+-- | Checks if two (Node, NodeLabel) tuples have the same node ID.
+
+haveSameNodeIds (_, (NodeLabel id1 _ _ _)) (_, (NodeLabel id2 _ _ _)) =
+  id1 == id2
+
+-- | Gets the list of nodes.
+nodes (Graph g) = I.labNodes g
+
+-- | Copies the node label from one node to another node.
+copyNodeLabel to_id from_id (Graph g) =
+  let nodes = I.labNodes g
+      to_node = head $ filter (isSameNodeId to_id) nodes
+      from_nodes = filter (isSameNodeId from_id) nodes
+      new_to_nodes = map (makeCopyWithSameNodeId to_node) from_nodes
+      all_but_from_nodes = filter (not . isSameNodeId from_id) nodes
+      new_nodes = all_but_from_nodes ++ new_to_nodes
+  in Graph (I.mkGraph new_nodes (I.labEdges g))
+makeCopyWithSameNodeId (_  , NodeLabel _  node_type label str)
+                       (int, NodeLabel id _         _     _  ) =
+  (int, NodeLabel id node_type label str)
+
+-- | Merges all nodes with the same ID to a single node.
+
+mergeNodesWithSameId id (Graph g) =
+  let nodes_with_same_id = filter (isSameNodeId id) (I.labNodes g)
+      node_to_merge_with = head nodes_with_same_id
+      nodes_to_merge = tail nodes_with_same_id
+      redirected_g = foldr (redirectEdges (nodeInt node_to_merge_with))
+                           g (map nodeInt nodes_to_merge)
+      pruned_g = I.delNodes (map nodeInt nodes_to_merge) redirected_g
+  in Graph pruned_g
+redirectEdges dst_int replace_int g =
+  redirectOutEdges dst_int replace_int $ redirectInEdges dst_int replace_int g
+redirectInEdges dst_int replace_int g =
+  foldr (redirectInEdge dst_int) g (I.inn g replace_int)
+redirectInEdge dst_int e@(out_int, _, EdgeLabel out_nr in_nr) g =
+  let new_e = (out_int, dst_int, EdgeLabel out_nr (nextInEdgeNr g dst_int))
+  in I.insEdge new_e $ I.delLEdge e g
+redirectOutEdges dst_int replace_int g =
+  foldr (redirectOutEdge dst_int) g (I.out g replace_int)
+redirectOutEdge dst_int e@(_, in_int, EdgeLabel out_nr in_nr) g =
+  let new_e = (dst_int, in_int, EdgeLabel (nextOutEdgeNr g dst_int) in_nr)
+  in I.insEdge new_e $ I.delLEdge e g
+nextInEdgeNr :: (I.Gr NodeLabel EdgeLabel) -> I.Node -> EdgeId
+nextInEdgeNr g int = 1 + (maximum $ map inEdgeNr $ I.inn g int)
+nextOutEdgeNr g int = 1 + (maximum $ map outEdgeNr $ I.out g int)
+inEdgeNr (_, _, EdgeLabel _ nr) = nr
+outEdgeNr (_, _, EdgeLabel nr _) = nr

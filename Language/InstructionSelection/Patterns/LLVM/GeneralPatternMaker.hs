@@ -22,7 +22,7 @@ import qualified Language.InstructionSelection.Patterns as General
 import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Utils
-import Data.Graph.Inductive.Graph hiding (Graph)
+import Data.List
 import Data.Maybe
 import Debug.Trace -- TODO: remove when no longer necessary
 
@@ -128,7 +128,7 @@ instance GraphFormable LLVM.Statement where
         t'' = formGraph value_expr t'
         value_node = last $ getNodeList t''
         store_node_int = nextNodeInt $ getNodeList t''
-        store_node_id = toNatural $ toInteger store_node_int
+        store_node_id = toNodeId $ toInteger store_node_int
         store_node = ( store_node_int
                      , NodeLabel (store_node_id)
                        NTMemoryStore (getCurrentLabel t) "store"
@@ -141,7 +141,7 @@ instance GraphFormable LLVM.Statement where
 
   formGraph (LLVM.UncondBranchStmt (LLVM.Label l)) t =
     let br_node_int = nextNodeInt $ getNodeList t
-        br_node_id = toNatural $ toInteger br_node_int
+        br_node_id = toNodeId $ toInteger br_node_int
         br_node = ( br_node_int
                   , NodeLabel br_node_id
                     (NTUncondBranch (BBLabel l)) (getCurrentLabel t) "br"
@@ -153,7 +153,7 @@ instance GraphFormable LLVM.Statement where
     let t' = formGraph reg t
         reg_node = last $ getNodeList t'
         br_node_int = nextNodeInt $ getNodeList t'
-        br_node_id = toNatural $ toInteger br_node_int
+        br_node_id = toNodeId $ toInteger br_node_int
         br_node = ( br_node_int
                   , NodeLabel br_node_id
                     (NTCondBranch (BBLabel true_l) (BBLabel false_l))
@@ -174,27 +174,33 @@ instance GraphFormable LLVM.SetRegDestination where
   formGraph (LLVM.SRDTemporary temp) t = formGraph temp t
 
 instance GraphFormable LLVM.Temporary where
-  formGraph (LLVM.Temporary temp_int) t =
-    let temp_node_int = nextNodeInt $ getNodeList t
-        temp_node_id = toNatural $ toInteger temp_node_int
+  formGraph (LLVM.Temporary temp) t =
+    let temp_sym = TemporarySymbol temp
+        temp_node_int = nextNodeInt $ getNodeList t
+        maybe_node_id = maybeGetNodeIdFromSym (getMappingList t) temp_sym
+        temp_node_id = case maybe_node_id of
+                            (Just id) -> id
+                            otherwise -> toNodeId $ toInteger temp_node_int
         temp_node = ( temp_node_int
-                    , NodeLabel temp_node_id
-                      NTRegister (getCurrentLabel t) ("t" ++ show temp_int)
+                    , NodeLabel temp_node_id NTRegister
+                      (getCurrentLabel t) ("t" ++ show temp)
                     )
-        mapping = (temp_node_id, TemporarySymbol temp_int)
-        t' = addNode temp_node $ addMapping mapping t
-    in t'
+        t' = addNode temp_node t
+        t'' = if isJust maybe_node_id
+                 then t'
+                 else addMapping (temp_node_id, temp_sym) t'
+    in t''
 
 instance GraphFormable LLVM.Register where
   formGraph (LLVM.Register reg) t =
     let reg_node_int = nextNodeInt $ getNodeList t
-        reg_node_id = toNatural $ toInteger reg_node_int
+        reg_node_id = toNodeId $ toInteger reg_node_int
         reg_node = ( reg_node_int
-                    , NodeLabel reg_node_id
-                      NTRegister (getCurrentLabel t) ""
+                    , NodeLabel reg_node_id NTRegister
+                      (getCurrentLabel t) ""
                     )
         constraint = General.AllocateInRegisterConstraint
-                     (toNatural $ toInteger reg_node_int)
+                     (toNodeId $ toInteger reg_node_int)
                      [(General.Register reg)]
     in addConstraint constraint $ addNode reg_node t
 
@@ -204,14 +210,21 @@ instance GraphFormable LLVM.RegisterFlag where
 
 instance GraphFormable LLVM.RegisterSymbol where
   formGraph (LLVM.RegisterSymbol sym) t =
-    let reg_node_int = nextNodeInt $ getNodeList t
-        reg_node_id = toNatural $ toInteger reg_node_int
+    let reg_sym = RegisterSymbol sym
+        reg_node_int = nextNodeInt $ getNodeList t
+        maybe_node_id = maybeGetNodeIdFromSym (getMappingList t) reg_sym
+        reg_node_id = case maybe_node_id of
+                           (Just id) -> id
+                           otherwise -> toNodeId $ toInteger reg_node_int
         reg_node = ( reg_node_int
                     , NodeLabel (toNatural $ toInteger reg_node_int)
                       NTRegister (getCurrentLabel t) sym
                     )
-        mapping = (reg_node_int, RegisterSymbol sym)
-    in addNode reg_node $ addMapping mapping t
+        t' = addNode reg_node t
+        t'' = if isJust maybe_node_id
+                 then t'
+                 else addMapping (reg_node_id, reg_sym) t'
+    in t''
 
 instance GraphFormable LLVM.StmtExpression where
   formGraph (LLVM.BinaryOpStmtExpr op _ lhs rhs) t =
@@ -220,7 +233,7 @@ instance GraphFormable LLVM.StmtExpression where
         t'' = formGraph rhs t'
         rhs_node = last $ getNodeList t''
         op_node_int = nextNodeInt $ getNodeList t''
-        op_node_id = toNatural $ toInteger op_node_int
+        op_node_id = toNodeId $ toInteger op_node_int
         op_node = ( op_node_int
                   , NodeLabel op_node_id
                     (NTBinaryOp op) (getCurrentLabel t) (show op)
@@ -235,7 +248,7 @@ instance GraphFormable LLVM.StmtExpression where
     let t' = formGraph expr t
         expr_node = last $ getNodeList t'
         op_node_int = nextNodeInt $ getNodeList t'
-        op_node_id = toNatural $ toInteger op_node_int
+        op_node_id = toNodeId $ toInteger op_node_int
         op_node = ( op_node_int
                   , NodeLabel op_node_id
                     (NTUnaryOp op) (getCurrentLabel t) (show op)
@@ -249,7 +262,7 @@ instance GraphFormable LLVM.StmtExpression where
     let t' = formGraph expr t
         expr_node = last $ getNodeList t'
         load_node_int = nextNodeInt $ getNodeList t'
-        load_node_id = toNatural $ toInteger load_node_int
+        load_node_id = toNodeId $ toInteger load_node_int
         load_node = ( load_node_int
                     , NodeLabel load_node_id
                       NTMemoryLoad (getCurrentLabel t) "load"
@@ -266,7 +279,7 @@ instance GraphFormable LLVM.StmtExpression where
           in (ns ++ [data_node], t')
         (data_nodes, t') = foldl f ([], t) phis
         phi_node_int = nextNodeInt $ getNodeList t'
-        phi_node_id = toNatural $ toInteger phi_node_int
+        phi_node_id = toNodeId $ toInteger phi_node_int
         phi_node = ( phi_node_int
                    , NodeLabel phi_node_id
                      NTPhi (getCurrentLabel t) "phi"
@@ -298,7 +311,7 @@ instance GraphFormable LLVM.ProgramData where
 instance GraphFormable LLVM.ConstantValue where
   formGraph (LLVM.ConstIntValue val) t =
     let const_node_int = nextNodeInt $ getNodeList t
-        const_node_id = toNatural $ toInteger const_node_int
+        const_node_id = toNodeId $ toInteger const_node_int
         const_node = ( const_node_int
                      , NodeLabel const_node_id
                        NTConstant (getCurrentLabel t) (show val)
@@ -310,7 +323,7 @@ instance GraphFormable LLVM.ConstantValue where
 instance GraphFormable LLVM.ImmediateSymbol where
   formGraph (LLVM.ImmediateSymbol imm_sym) t =
     let imm_node_int = nextNodeInt $ getNodeList t
-        imm_node_id = toNatural $ toInteger imm_node_int
+        imm_node_id = toNodeId $ toInteger imm_node_int
         imm_node = ( imm_node_int
                    , NodeLabel imm_node_id
                      NTConstant (getCurrentLabel t) imm_sym
@@ -343,9 +356,9 @@ createNewEdge src@(src_id, _) dst@(dst_id, _) es =
   let src_edges = getSourceEdgesPerNode src es
       dst_edges = getDestEdgesPerNode dst es
       src_edge_nr =
-        1 + (maximum $ map (\(_, _, (EdgeLabel nr _)) -> nr) src_edges)
+        1 + (maximum $ [0] ++ map (\(_, _, (EdgeLabel nr _)) -> nr) src_edges)
       dst_edge_nr =
-        1 + (maximum $ map (\(_, _, (EdgeLabel _ nr)) -> nr) dst_edges)
+        1 + (maximum $ [0] ++ map (\(_, _, (EdgeLabel _ nr)) -> nr) dst_edges)
   in (src_id, dst_id, (EdgeLabel src_edge_nr dst_edge_nr))
 getSourceEdgesPerNode (id, _) es =
   filter f es
@@ -429,44 +442,41 @@ getNodeIdFromSym maps sym =
 maybeGetNodeIdFromSym maps sym =
   let node_list = filter (\(n, s) -> s == sym) maps
   in if not $ null node_list
-     then let (node_id, _) = last node_list
-          in Just node_id
-     else Nothing
+        then let (node_id, _) = last node_list
+             in Just node_id
+        else Nothing
 
-resolveAliases pat@(General.Pattern g cons) =
+resolveAliases (General.Pattern g cons) =
   let alias_cons = filter General.isAliasConstraint cons
-      (General.Pattern new_g new_cons) = foldr resolveAliases' pat alias_cons
-      all_but_alias = filter (not . General.isAliasConstraint) new_cons
-  in General.Pattern new_g all_but_alias
+      all_cons_but_alias = filter (not . General.isAliasConstraint) cons
+      (new_g, new_cons) = foldr resolveAliases' (g, all_cons_but_alias)
+                                alias_cons
+  in General.Pattern new_g new_cons
 
-resolveAliases' (General.AliasConstraint []) pat = pat
-resolveAliases' (General.AliasConstraint (_:[])) pat = pat
-resolveAliases' (General.AliasConstraint nodes) pat =
+resolveAliases' (General.AliasConstraint []) t = t
+resolveAliases' (General.AliasConstraint (_:[])) t = t
+resolveAliases' (General.AliasConstraint nodes) t =
   let node_to_replace_with = head nodes
       nodes_to_replace = tail nodes
       combinations = zip (repeat node_to_replace_with) nodes_to_replace
-  in foldr resolveAliases'' pat combinations
-resolveAliases'' (n1, n2) (General.Pattern (Graph g) cons) =
-  let nodes = labNodes g
-      n1_node = head $ filter (sameNodeId n1) nodes
-      n2_nodes = filter (sameNodeId n2) nodes
-      new_n1_nodes = map (makeCopyWithSameNodeId n1_node) n2_nodes
-      all_but_n2 = filter (not . sameNodeId n2) nodes
-      new_nodes = all_but_n2 ++ new_n1_nodes
-      -- TODO: update constraints
-      new_cons = cons
-      edges = labEdges g
-  in General.Pattern (Graph (mkGraph new_nodes edges)) new_cons
+  in foldr resolveAliases'' t combinations
+resolveAliases'' (n1, n2) (g, cons) =
+  let new_g = copyNodeLabel n1 n2 g
+      new_cons = map (updateNodeInConstraint n1 n2) cons
+  in (new_g, new_cons)
 
-makeCopyWithSameNodeId (_  , NodeLabel _  node_type label str)
-                       (int, NodeLabel id _         _     _  ) =
-  (int, NodeLabel id node_type label str)
-sameNodeId id1 (_, NodeLabel id2 _ _ _) = id1 == id2
-nodeAppearsInEdge id (src_id, dst_id, _) = src_id == id || dst_id == id
+updateNodeInConstraint n1 n2 con@(General.AllocateInRegisterConstraint id regs)
+  | n2 == id = General.AllocateInRegisterConstraint n1 regs
+  | otherwise = con
+updateNodeInConstraint n1 n2 con@(General.ConstantValueConstraint id ranges)
+  | n2 == id = General.ConstantValueConstraint n1 ranges
+  | otherwise = con
+updateNodeInConstraint _ _ con = con
 
 mergeIdenticalNodes :: General.Pattern -> General.Pattern
-mergeIdenticalNodes g = g
--- TODO: implement
+mergeIdenticalNodes (General.Pattern g cons) =
+  let node_ids = nubBy haveSameNodeIds (nodes g)
+  in (General.Pattern (foldr (mergeNodesWithSameId . nodeId) g node_ids) cons)
 
 mergeAdjacentDataNodes :: General.Pattern -> General.Pattern
 mergeAdjacentDataNodes g = g
