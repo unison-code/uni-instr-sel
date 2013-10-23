@@ -30,8 +30,10 @@ module Language.InstructionSelection.Graphs.Base (
 , nodeId
 , isSameNodeId
 , haveSameNodeIds
+, isSameLabel
+, haveSameLabels
 , copyNodeLabel
-, mergeNodesWithSameId
+, mergeNodes
 ) where
 
 import qualified Data.Graph.Inductive as I
@@ -128,20 +130,29 @@ toNodeId i = toNatural i
 
 -- | Gets the node ID from a (Node, NodeLabel) tuple.
 
-nodeId (_, (NodeLabel id _ _ _)) = id
+nodeId (_, NodeLabel id _ _ _) = id
 
 -- | Gets the internal node ID from a (Node, NodeLabel) tuple.
 
-nodeInt (int, (NodeLabel _ _ _ _)) = int
+nodeInt (int, NodeLabel _ _ _ _) = int
 
 -- | Checks if a (Node, NodeLabel) tuple has a given node ID.
 
-isSameNodeId id1 (_, (NodeLabel id2 _ _ _)) = id1 == id2
+isSameNodeId id1 (_, NodeLabel id2 _ _ _) = id1 == id2
 
 -- | Checks if two (Node, NodeLabel) tuples have the same node ID.
 
-haveSameNodeIds (_, (NodeLabel id1 _ _ _)) (_, (NodeLabel id2 _ _ _)) =
+haveSameNodeIds (_, NodeLabel id1 _ _ _) (_, NodeLabel id2 _ _ _) =
   id1 == id2
+
+-- | Checks if a (Node, NodeLabel) tuple has a given label.
+
+isSameLabel label1 (_, NodeLabel _ _ label2 _) = label1 == label2
+
+-- | Checks if two (Node, NodeLabel) tuples have the same label.
+
+haveSameLabels (_, NodeLabel _ _ label1 _) (_, NodeLabel _ _ label2 _) =
+  label1 == label2
 
 -- | Gets the list of nodes.
 nodes (Graph g) = I.labNodes g
@@ -159,13 +170,18 @@ makeCopyWithSameNodeId (_  , NodeLabel _  node_type label str)
                        (int, NodeLabel id _         _     _  ) =
   (int, NodeLabel id node_type label str)
 
--- | Merges all nodes with the same ID to a single node.
+-- | Merges all nodes that are the same as a given node according to some
+-- user-defined criteria.
 
-mergeNodesWithSameId id (Graph g) =
-  let nodes_with_same_id = filter (isSameNodeId id) (I.labNodes g)
-      node_to_merge_with = head nodes_with_same_id
-      nodes_to_merge = tail nodes_with_same_id
-      redirected_g = foldr (redirectEdges (nodeInt node_to_merge_with))
+mergeNodes :: (I.LNode NodeLabel -> I.LNode NodeLabel -> Bool) -- ^ Test
+                                                               -- function.
+              -> I.LNode NodeLabel -- ^ Node to merge to.
+              -> Graph
+              -> Graph
+mergeNodes f node (Graph g) =
+  let same_nodes = filter (f node) (I.labNodes g)
+      nodes_to_merge = filter (/= node) same_nodes
+      redirected_g = foldr (redirectEdges (nodeInt node))
                            g (map nodeInt nodes_to_merge)
       pruned_g = I.delNodes (map nodeInt nodes_to_merge) redirected_g
   in Graph pruned_g

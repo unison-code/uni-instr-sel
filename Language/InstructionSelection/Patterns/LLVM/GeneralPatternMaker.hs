@@ -477,8 +477,9 @@ updateNodeInConstraint _ _ con = con
 
 mergeIdenticalNodes :: General.Pattern -> General.Pattern
 mergeIdenticalNodes (General.Pattern g cons) =
-  let node_ids = nubBy haveSameNodeIds (nodes g)
-  in (General.Pattern (foldr (mergeNodesWithSameId . nodeId) g node_ids) cons)
+  let isSame n1 n2 = haveSameNodeIds n1 n2 && haveSameLabels n1 n2
+      unique_nodes = nubBy isSame (nodes g)
+  in (General.Pattern (foldr (mergeNodes isSame) g unique_nodes) cons)
 
 mergeAdjacentDataNodes :: General.Pattern -> General.Pattern
 mergeAdjacentDataNodes g = g
