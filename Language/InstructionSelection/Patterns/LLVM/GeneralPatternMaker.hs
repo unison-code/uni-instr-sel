@@ -10,6 +10,8 @@
 --
 -- Converts an LLVM pattern into the internal general graph-based format.
 --
+-- TODO: Refactor so that the graph is created incrementally instead of
+-- maintaining a list of nodes and edges.
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleInstances #-}
