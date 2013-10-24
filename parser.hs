@@ -64,7 +64,10 @@ main =
      putStr "\n"
 
 params = nonClusteredParams { fmtNode = nodeAttr }
-nodeAttr n@(_, (NodeLabel _ NTRegister _ str)) = [makeLabel n, shape BoxShape]
-nodeAttr n@(_, (NodeLabel _ NTConstant _ str)) = [makeLabel n, shape BoxShape]
-nodeAttr n@(_, (NodeLabel _ _ label str)) = [makeLabel n]
-makeLabel (_, (NodeLabel _ _ (BBLabel l) str)) = toLabel (l ++ ":" ++ str)
+nodeAttr n@(_, (NodeLabel _ (NodeInfo NTRegister _ str))) =
+  [makeLabel n, shape BoxShape]
+nodeAttr n@(_, (NodeLabel _ (NodeInfo NTConstant _ str))) =
+  [makeLabel n, shape BoxShape]
+nodeAttr n@(_, (NodeLabel _ (NodeInfo _ label str))) = [makeLabel n]
+makeLabel (_, (NodeLabel _ (NodeInfo _ (BBLabel l) str))) =
+  toLabel (l ++ ":" ++ str)

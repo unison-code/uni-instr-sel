@@ -41,10 +41,8 @@ toGeneralPattern = mergeAdjacentDataNodes . mergeIdenticalNodes
 
 graphify :: LLVM.Pattern -> General.Pattern
 graphify llvm =
-  let (_, nodes, edges, mappings, constraints) =
-        formGraph llvm (BBLabel "", [], [], [], [])
-      graph = Graph (mkGraph nodes edges)
-  in General.Pattern graph constraints
+  let (_, g, _, cons) = formGraph llvm (BBLabel "", empty, [], [])
+  in General.Pattern g cons
 
 class GraphFormable a where
 
@@ -57,15 +55,12 @@ class GraphFormable a where
 
   formGraph :: a                      -- ^ LLVM tree node to form graph from.
             -> ( BBLabel              -- ^ Current label that the process is in.
-               , [LNode NodeLabel]    -- ^ List of nodes created so far.
-               , [LEdge EdgeLabel]    -- ^ List of edges created so far.
-               , [(NodeId, Symbol)]   -- ^ List of node-to-symbol mappings
-                                      -- created so far.
+               , Graph                -- ^ The graph so far.
+               , [(NodeId, Symbol)]   -- ^ List of node-to-symbol mappings.
                , [General.Constraint]
                )
             -> ( BBLabel
-               , [LNode NodeLabel]
-               , [LEdge EdgeLabel]
+               , Graph
                , [(NodeId, Symbol)]
                , [General.Constraint]
                )
@@ -108,63 +103,50 @@ makeMappingsForNoNodeSymbols'' maps aliases =
 instance GraphFormable LLVM.Statement where
   formGraph (LLVM.AssignmentStmt tmp expr) t =
     let t' = formGraph tmp t
-        dst_node = last $ getNodeList t'
+        (Just dst_node) = lastAddedNode $ getGraph t'
         t'' = formGraph expr t'
-        expr_node = last $ getNodeList t''
-        e = createNewEdge expr_node dst_node (getEdgeList t'')
-        t''' = addEdge e t''
+        (Just expr_node) = lastAddedNode $ getGraph t''
+        t''' = updateGraph (addNewEdge expr_node dst_node $ getGraph t'') t''
     in t'''
 
-  formGraph (LLVM.SetRegStmt dest expr) t =
-    let t' = formGraph dest t
-        dest_node = last $ getNodeList t'
+  formGraph (LLVM.SetRegStmt dst expr) t =
+    let t' = formGraph dst t
+        (Just dst_node) = lastAddedNode $ getGraph t'
         t'' = formGraph expr t'
-        expr_node = last $ getNodeList t''
-        e = createNewEdge expr_node dest_node (getEdgeList t'')
-        t''' = addEdge e t''
+        (Just expr_node) = lastAddedNode $ getGraph t''
+        t''' = updateGraph (addNewEdge expr_node dst_node $ getGraph t'') t''
     in t'''
 
-  formGraph (LLVM.StoreStmt addr_expr str ressize value_expr) t =
+  formGraph (LLVM.StoreStmt addr_expr _ _ value_expr) t =
     let t' = formGraph addr_expr t
-        addr_node = last $ getNodeList t'
+        (Just addr_node) = lastAddedNode $ getGraph t'
         t'' = formGraph value_expr t'
-        value_node = last $ getNodeList t''
-        store_node_int = nextNodeInt $ getNodeList t''
-        store_node_id = toNodeId $ toInteger store_node_int
-        store_node = ( store_node_int
-                     , NodeLabel (store_node_id)
-                       NTMemoryStore (getCurrentLabel t) "store"
-                     )
-        t''' = addNode store_node t''
-        edges = createNewEdgesManySources [addr_node, value_node] store_node
-                (getEdgeList t''')
-        t'''' = addEdges edges t'''
-    in t''''
+        g = getGraph t''
+        (Just value_node) = lastAddedNode g
+        (store_node, g') =
+          makeAndAddNewNode (NodeInfo NTMemoryStore (getCurrentLabel t'')
+                             "store") g
+        g'' = addNewEdgesManySources [addr_node, value_node] store_node g'
+        t''' = updateGraph g'' t''
+    in t'''
 
   formGraph (LLVM.UncondBranchStmt (LLVM.Label l)) t =
-    let br_node_int = nextNodeInt $ getNodeList t
-        br_node_id = toNodeId $ toInteger br_node_int
-        br_node = ( br_node_int
-                  , NodeLabel br_node_id
-                    (NTUncondBranch (BBLabel l)) (getCurrentLabel t) "br"
-                  )
-    in addNode br_node t
+    let (_, g) = makeAndAddNewNode (NodeInfo (NTUncondBranch (BBLabel l))
+                                    (getCurrentLabel t) "br") (getGraph t)
+    in updateGraph g t
 
   formGraph (LLVM.CondBranchStmt reg (LLVM.Label true_l) (LLVM.Label false_l))
             t =
     let t' = formGraph reg t
-        reg_node = last $ getNodeList t'
-        br_node_int = nextNodeInt $ getNodeList t'
-        br_node_id = toNodeId $ toInteger br_node_int
-        br_node = ( br_node_int
-                  , NodeLabel br_node_id
-                    (NTCondBranch (BBLabel true_l) (BBLabel false_l))
-                    (getCurrentLabel t) "br"
-                  )
-        t'' = addNode br_node t'
-        e = createNewEdge reg_node br_node (getEdgeList t'')
-        t''' = addEdge e t''
-    in t'''
+        g = getGraph t'
+        (Just reg_node) = lastAddedNode g
+        (br_node, g') =
+          makeAndAddNewNode (NodeInfo (NTCondBranch (BBLabel true_l)
+                                       (BBLabel false_l)) (getCurrentLabel t)
+                             "br") g
+        g'' = addNewEdge reg_node br_node g'
+        t'' = updateGraph g'' t'
+    in t''
 
   formGraph (LLVM.LabelStmt (LLVM.Label label)) t =
     changeCurrentLabel (BBLabel label) t
@@ -178,33 +160,22 @@ instance GraphFormable LLVM.SetRegDestination where
 instance GraphFormable LLVM.Temporary where
   formGraph (LLVM.Temporary temp) t =
     let temp_sym = TemporarySymbol temp
-        temp_node_int = nextNodeInt $ getNodeList t
-        maybe_node_id = maybeGetNodeIdFromSym (getMappingList t) temp_sym
-        temp_node_id = case maybe_node_id of
-                            (Just id) -> id
-                            otherwise -> toNodeId $ toInteger temp_node_int
-        temp_node = ( temp_node_int
-                    , NodeLabel temp_node_id NTRegister
-                      (getCurrentLabel t) ("t" ++ show temp)
-                    )
-        t' = addNode temp_node t
-        t'' = if isJust maybe_node_id
-                 then t'
-                 else addMapping (temp_node_id, temp_sym) t'
+        maybe_id = (maybeGetNodeIdFromSym (getMappingList t) temp_sym)
+        g = getGraph t
+        node_id = maybe (newNodeId g) id maybe_id
+        node_label = NodeLabel node_id (NodeInfo NTRegister (getCurrentLabel t)
+                                        ("t" ++ show temp))
+        t' = updateGraph (addNewNode node_label g) t
+        t'' = maybe t' (\_ -> addMapping (node_id, temp_sym) t') maybe_id
     in t''
 
 instance GraphFormable LLVM.Register where
   formGraph (LLVM.Register reg) t =
-    let reg_node_int = nextNodeInt $ getNodeList t
-        reg_node_id = toNodeId $ toInteger reg_node_int
-        reg_node = ( reg_node_int
-                    , NodeLabel reg_node_id NTRegister
-                      (getCurrentLabel t) ""
-                    )
-        constraint = General.AllocateInRegisterConstraint
-                     (toNodeId $ toInteger reg_node_int)
+    let (node, g) = makeAndAddNewNode (NodeInfo NTRegister
+                                       (getCurrentLabel t) "") $ getGraph t
+        constraint = General.AllocateInRegisterConstraint (nodeId node)
                      [(General.Register reg)]
-    in addConstraint constraint $ addNode reg_node t
+    in addConstraint constraint $ updateGraph g t
 
 instance GraphFormable LLVM.RegisterFlag where
   formGraph (LLVM.RegisterFlag str reg) t = t
@@ -213,83 +184,57 @@ instance GraphFormable LLVM.RegisterFlag where
 instance GraphFormable LLVM.RegisterSymbol where
   formGraph (LLVM.RegisterSymbol sym) t =
     let reg_sym = RegisterSymbol sym
-        reg_node_int = nextNodeInt $ getNodeList t
-        maybe_node_id = maybeGetNodeIdFromSym (getMappingList t) reg_sym
-        reg_node_id = case maybe_node_id of
-                           (Just id) -> id
-                           otherwise -> toNodeId $ toInteger reg_node_int
-        reg_node = ( reg_node_int
-                    , NodeLabel (toNatural $ toInteger reg_node_int)
-                      NTRegister (getCurrentLabel t) sym
-                    )
-        t' = addNode reg_node t
-        t'' = if isJust maybe_node_id
-                 then t'
-                 else addMapping (reg_node_id, reg_sym) t'
+        maybe_id = maybeGetNodeIdFromSym (getMappingList t) reg_sym
+        g = getGraph t
+        node_id = maybe (newNodeId g) id maybe_id
+        node_label = NodeLabel node_id (NodeInfo NTRegister (getCurrentLabel t)
+                                        sym)
+        t' = updateGraph (addNewNode node_label g) t
+        t'' = maybe t' (\_ -> addMapping (node_id, reg_sym) t') maybe_id
     in t''
 
 instance GraphFormable LLVM.StmtExpression where
   formGraph (LLVM.BinaryOpStmtExpr op _ lhs rhs) t =
     let t' = formGraph lhs t
-        lhs_node = last $ getNodeList t'
+        (Just lhs_node) = lastAddedNode $ getGraph t'
         t'' = formGraph rhs t'
-        rhs_node = last $ getNodeList t''
-        op_node_int = nextNodeInt $ getNodeList t''
-        op_node_id = toNodeId $ toInteger op_node_int
-        op_node = ( op_node_int
-                  , NodeLabel op_node_id
-                    (NTBinaryOp op) (getCurrentLabel t) (show op)
-                  )
-        t''' = addNode op_node t''
-        edges = createNewEdgesManySources [lhs_node, rhs_node] op_node
-                (getEdgeList t''')
-        t'''' = addEdges edges t'''
-    in t''''
+        g = getGraph t''
+        (Just rhs_node) = lastAddedNode g
+        (op_node, g') = makeAndAddNewNode (NodeInfo (NTBinaryOp op)
+                                           (getCurrentLabel t) (show op)) g
+        g'' = addNewEdgesManySources [lhs_node, rhs_node] op_node g'
+        t''' = updateGraph g'' t''
+    in t'''
 
   formGraph (LLVM.UnaryOpStmtExpr op _ expr) t =
     let t' = formGraph expr t
-        expr_node = last $ getNodeList t'
-        op_node_int = nextNodeInt $ getNodeList t'
-        op_node_id = toNodeId $ toInteger op_node_int
-        op_node = ( op_node_int
-                  , NodeLabel op_node_id
-                    (NTUnaryOp op) (getCurrentLabel t) (show op)
-                  )
-        t'' = addNode op_node t'
-        e = createNewEdge expr_node op_node (getEdgeList t'')
-        t''' = addEdge e t''
-    in t'''
+        g = getGraph t'
+        (Just expr_node) = lastAddedNode g
+        (op_node, g') = makeAndAddNewNode (NodeInfo (NTUnaryOp op)
+                                           (getCurrentLabel t) (show op)) g
+        t'' = updateGraph (addNewEdge expr_node op_node g) t'
+    in t''
 
   formGraph (LLVM.LoadStmtExpr _ _ expr) t =
     let t' = formGraph expr t
-        expr_node = last $ getNodeList t'
-        load_node_int = nextNodeInt $ getNodeList t'
-        load_node_id = toNodeId $ toInteger load_node_int
-        load_node = ( load_node_int
-                    , NodeLabel load_node_id
-                      NTMemoryLoad (getCurrentLabel t) "load"
-                    )
-        t'' = addNode load_node t'
-        e = createNewEdge expr_node load_node (getEdgeList t'')
-        t''' = addEdge e t''
-    in t'''
+        g = getGraph t'
+        (Just expr_node) = lastAddedNode g
+        (op_node, g') = makeAndAddNewNode (NodeInfo NTMemoryLoad
+                                           (getCurrentLabel t) "load") g
+        t'' = updateGraph (addNewEdge expr_node op_node g) t'
+    in t''
 
   formGraph (LLVM.PhiStmtExpr phis) t =
     let f (ns, t) elem =
           let t' = formGraph elem t
-              data_node = last $ getNodeList t'
+              (Just data_node) = lastAddedNode $ getGraph t'
           in (ns ++ [data_node], t')
         (data_nodes, t') = foldl f ([], t) phis
-        phi_node_int = nextNodeInt $ getNodeList t'
-        phi_node_id = toNodeId $ toInteger phi_node_int
-        phi_node = ( phi_node_int
-                   , NodeLabel phi_node_id
-                     NTPhi (getCurrentLabel t) "phi"
-                   )
-        t'' = addNode phi_node t'
-        edges = createNewEdgesManySources data_nodes phi_node (getEdgeList t)
-        t''' = addEdges edges t''
-    in t'''
+        (phi_node, g) = makeAndAddNewNode (NodeInfo NTPhi (getCurrentLabel t')
+                                           "phi") $ getGraph t'
+        g' = addNewEdgesManySources data_nodes phi_node g
+        t'' = updateGraph g' t'
+    in t''
 
   formGraph (LLVM.DataStmtExpr d) t = formGraph d t
 
@@ -312,68 +257,39 @@ instance GraphFormable LLVM.ProgramData where
 
 instance GraphFormable LLVM.ConstantValue where
   formGraph (LLVM.ConstIntValue val) t =
-    let const_node_int = nextNodeInt $ getNodeList t
-        const_node_id = toNodeId $ toInteger const_node_int
-        const_node = ( const_node_int
-                     , NodeLabel const_node_id
-                       NTConstant (getCurrentLabel t) (show val)
-                     )
-        constraint = General.ConstantValueConstraint const_node_id
+    let (n, g) = makeAndAddNewNode (NodeInfo NTConstant (getCurrentLabel t)
+                                    (show val)) $ getGraph t
+        constraint = General.ConstantValueConstraint (nodeId n)
                      [Range (General.IntConstant val) (General.IntConstant val)]
-    in addConstraint constraint $ addNode const_node t
+    in addConstraint constraint $ updateGraph g t
 
 instance GraphFormable LLVM.ImmediateSymbol where
-  formGraph (LLVM.ImmediateSymbol imm_sym) t =
-    let imm_node_int = nextNodeInt $ getNodeList t
-        imm_node_id = toNodeId $ toInteger imm_node_int
-        imm_node = ( imm_node_int
-                   , NodeLabel imm_node_id
-                     NTConstant (getCurrentLabel t) imm_sym
-                   )
-    in addNode imm_node t
+  formGraph (LLVM.ImmediateSymbol sym) t =
+    let imm_sym = ImmediateSymbol sym
+        maybe_id = maybeGetNodeIdFromSym (getMappingList t) imm_sym
+        g = getGraph t
+        id = case maybe_id of (Just id) -> id
+                              otherwise -> newNodeId g
+        node_label = NodeLabel id (NodeInfo NTConstant (getCurrentLabel t) sym)
+        t' = updateGraph (addNewNode node_label g) t
+        t'' = if isJust maybe_id
+                 then t'
+                 else addMapping (id, imm_sym) t'
+    in t''
 
 instance GraphFormable (Either LLVM.Register LLVM.Temporary) where
   formGraph (Left reg) t = formGraph reg t
   formGraph (Right tmp) t = formGraph tmp t
 
-getCurrentLabel (l, _, _, _, _) = l
-changeCurrentLabel l (_, ns, es, ms, cs) = (l, ns, es, ms, cs)
-getNodeList (_, ns, _, _, _) = ns
-replaceNodeList ns (l, _, es, ms, cs) = (l, ns, es, ms, cs)
-getEdgeList (_, _, es, _, _) = es
-getMappingList (_, _, _, ms, _) = ms
-getNodeInt (int, _) = int
-nextNodeInt [] = 0
-nextNodeInt ns = (getNodeInt $ last ns) + 1
-addNode n (l, ns, es, ms, cs) = (l, ns ++ [n], es, ms, cs)
-addNodes more_ns (l, ns, es, ms, cs) = (l, ns ++ more_ns, es, ms, cs)
-addEdge e (l, ns, es, ms, cs) = (l, ns, es ++ [e], ms, cs)
-addEdges more_es (l, ns, es, ms, cs) = (l, ns, es ++ more_es, ms, cs)
-addMapping m (l, ns, es, ms, cs) = (l, ns, es, ms ++ [m], cs)
-addMappings more_ms (l, ns, es, ms, cs) = (l, ns, es, ms ++ more_ms, cs)
-addConstraint c (l, ns, es, ms, cs) = (l, ns, es, ms, cs ++ [c])
-addConstraints more_cs (l, ns, es, ms, cs) = (l, ns, es, ms, cs ++ more_cs)
-
-createNewEdge src@(src_id, _) dst@(dst_id, _) es =
-  let src_edges = getSourceEdgesPerNode src es
-      dst_edges = getDestEdgesPerNode dst es
-      src_edge_nr =
-        1 + (maximum $ [0] ++ map (\(_, _, (EdgeLabel nr _)) -> nr) src_edges)
-      dst_edge_nr =
-        1 + (maximum $ [0] ++ map (\(_, _, (EdgeLabel _ nr)) -> nr) dst_edges)
-  in (src_id, dst_id, (EdgeLabel src_edge_nr dst_edge_nr))
-getSourceEdgesPerNode (id, _) es =
-  filter f es
-  where f (src_id, dst_id, _) = if id == src_id then True else False
-getDestEdgesPerNode (id, _) es =
-  filter f es
-  where f (src_id, dst_id, _) = if id == dst_id then True else False
-createNewEdgesManySources srcs dst es =
-  foldl f [] srcs
-  where f new_edges node = new_edges ++ [createNewEdge node dst es]
-createNewEdgesManyDests src dsts es =
-  foldl f [] dsts
-  where f new_edges node = new_edges ++ [createNewEdge src node es]
+getCurrentLabel (l, _, _, _) = l
+changeCurrentLabel l (_, g, ms, cs) = (l, g, ms, cs)
+getGraph (_, g, _, _) = g
+updateGraph g (l, _, ms, cs) = (l, g, ms, cs)
+getMappingList (_, _, ms, _) = ms
+addMapping m (l, g, ms, cs) = (l, g, ms ++ [m], cs)
+addMappings more_ms (l, g, ms, cs) = (l, g, ms ++ more_ms, cs)
+addConstraint c (l, g, ms, cs) = (l, g, ms, cs ++ [c])
+addConstraints more_cs (l, g, ms, cs) = (l, g, ms, cs ++ more_cs)
 
 data Symbol
     = RegisterSymbol String
@@ -484,3 +400,8 @@ mergeIdenticalNodes (General.Pattern g cons) =
 mergeAdjacentDataNodes :: General.Pattern -> General.Pattern
 mergeAdjacentDataNodes g = g
 -- TODO: implement
+
+makeAndAddNewNode node_info g =
+  let new_g = addNewNode (NodeLabel (newNodeId g) node_info) g
+      (Just node) = lastAddedNode new_g
+  in (node, new_g)
