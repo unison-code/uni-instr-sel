@@ -30,12 +30,13 @@ expressed as LLVM IR statements. The LLVM IR statements of each instruction is
 then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
-import Language.InstructionSelection.Patterns.LLVM
+import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
+import Language.InstructionSelection.Patterns.LLVM.OSMaker
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
-import Language.InstructionSelection.Patterns.LLVM.GeneralPatternMaker
-import qualified Language.InstructionSelection.Patterns as General
+import qualified Language.InstructionSelection.Patterns as IntP
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.SExpressions
+import Language.InstructionSelection.OperationStructures
 import Control.Monad
 import System.Exit
 import Data.GraphViz hiding (parse)
@@ -44,8 +45,7 @@ import Data.GraphViz.Commands.IO
 isLeft (Left _) = True
 isLeft _ = False
 
-getPatterns (Instruction _ pats) = pats
-getGraph (General.Pattern g _) = g
+getPatterns (LLVM.Instruction _ pats) = pats
 getGr (Graph g) = g
 
 main =
@@ -57,9 +57,9 @@ main =
                                exitFailure
 
      let (Right instructions) = result
-         patterns = concat $ map getPatterns instructions
-         graphs = map toGeneralPattern patterns
-         dots = map (graphToDot params . getGr . getGraph) graphs
+         llvm_patterns = concat $ map getPatterns instructions
+         int_patterns = map mkOpStructure llvm_patterns
+         dots = map (graphToDot params . getGr . graph) int_patterns
      mapM_ (writeDotFile "test.dot") dots
      putStr "\n"
 

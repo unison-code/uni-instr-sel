@@ -29,8 +29,6 @@ module Language.InstructionSelection.Graphs.Base (
 , mkGraph
 , addNewNode
 , addNewEdge
-, addNewEdgesManySources
-, addNewEdgesManyDests
 , newNodeId
 , nodes
 , nodesByNodeId
@@ -256,27 +254,16 @@ addNewNode nl (Graph g) = Graph (I.insNode (nextNodeInt g, nl) g)
 -- | Adds a new edge between to nodes to the graph. The edge numberings will be
 -- set accordingly.
 
-addNewEdge :: I.LNode NodeLabel     -- ^ Source node (from).
-              -> I.LNode NodeLabel  -- ^ Destination node (to).
+addNewEdge :: Graph
+              -> ( I.LNode NodeLabel -- ^ Source node (from).
+                 , I.LNode NodeLabel -- ^ Destination node (to).
+                 )
               -> Graph
-              -> Graph
-addNewEdge (from_node_int, from_nl) (to_node_int, to_nl) (Graph g) =
+addNewEdge (Graph g) ((from_node_int, from_nl), (to_node_int, to_nl)) =
   let out_edge_nr = nextOutEdgeNr g from_node_int
       in_edge_nr = nextInEdgeNr g to_node_int
       new_e = (from_node_int, to_node_int, EdgeLabel out_edge_nr in_edge_nr)
   in Graph (I.insEdge new_e g)
-
-addNewEdgesManySources :: [I.LNode NodeLabel]  -- ^ Source nodes (from).
-                          -> I.LNode NodeLabel -- ^ Destination node (to).
-                          -> Graph
-                          -> Graph
-addNewEdgesManySources srcs dst g = foldr ((flip addNewEdge) dst) g srcs
-
-addNewEdgesManyDests :: I.LNode NodeLabel      -- ^ Source node (from).
-                        -> [I.LNode NodeLabel] -- ^ Destination nodes (to).
-                        -> Graph
-                        -> Graph
-addNewEdgesManyDests src dsts g = foldr (addNewEdge src) g dsts
 
 lastAddedNode (Graph g) =
   let last_int = maximum $ I.nodes g

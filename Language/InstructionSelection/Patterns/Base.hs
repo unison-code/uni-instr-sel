@@ -18,40 +18,11 @@
 module Language.InstructionSelection.Patterns.Base where
 
 import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.OperationStructures
 import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Utils (Range (..))
 
 
-
-data Register
-    = Register String
-    deriving (Show,Eq)
-
-data RegisterFlag
-    = RegisterFlag String Register
-    deriving (Show,Eq)
-
-data Constant
-    = IntConstant Integer
-    deriving (Show,Eq)
-
-data Constraint
-    = Constraint
-    | AllocateInRegisterConstraint NodeId [Register]
-    | ConstantValueConstraint NodeId [Range Constant]
-    | AliasConstraint [NodeId]
-    | RegFlagConstraint RegisterFlag [Range Constant]
-    deriving (Show,Eq)
-
-isAliasConstraint (AliasConstraint _) = True
-isAliasConstraint _ = False
-
-data Pattern
-    = Pattern
-          Graph
-          [Constraint]
-
-    deriving (Show)
 
 data Instruction
     = Instruction
@@ -63,6 +34,6 @@ data Instruction
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern.
 
-          [Pattern]
+          [OpStructure]
 
     deriving (Show)
