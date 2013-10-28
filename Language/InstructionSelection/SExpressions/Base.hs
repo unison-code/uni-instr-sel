@@ -48,7 +48,7 @@ indent i = replicate (2 * (fromInteger $ fromNatural i)) ' '
 -- will also be indented according to the depth level.
 
 prettySEList :: (SExpressionable a) => [a] -> Natural -> String
-prettySEList [] i = ""
+prettySEList [] _ = ""
 prettySEList as i =
   "\n" ++ (intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as)
 

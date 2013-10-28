@@ -24,13 +24,13 @@ module Language.InstructionSelection.OperationStructures.Base (
 , Constant (..)
 , Constraint (..)
 , isAliasConstraint
-, fromAliasConstraint
 , OpStructure (..)
 , empty
 , updateGraph
 , addConstraint
 , updateConstraints
 , resolveAliases
+, normalize
 ) where
 
 import qualified Language.InstructionSelection.Graphs as G
@@ -58,10 +58,13 @@ data Constraint
     | RegFlagConstraint RegisterFlag [Range Constant]
     deriving (Show,Eq)
 
+isAliasConstraint :: Constraint -> Bool
 isAliasConstraint (AliasConstraint _) = True
 isAliasConstraint _ = False
 
+fromAliasConstraint :: Constraint -> [G.NodeId]
 fromAliasConstraint (AliasConstraint ns) = ns
+fromAliasConstraint s = error $ "Cannot be invoked on " ++ (show s)
 
 data OpStructure
     = OpStructure { graph :: G.Graph
@@ -88,6 +91,8 @@ resolveAliases (OpStructure g cs) =
       all_cs_but_alias = filter (not . isAliasConstraint) cs
       aliases = map fromAliasConstraint alias_cs
   in foldl resolveAliases' (OpStructure g all_cs_but_alias) aliases
+
+resolveAliases' :: OpStructure -> [G.NodeId] -> OpStructure
 resolveAliases' os [] = os
 resolveAliases' os (_:[]) = os
 resolveAliases' os ns =
@@ -95,6 +100,8 @@ resolveAliases' os ns =
       nodes_to_replace = tail ns
       combinations = zip (repeat node_to_replace_with) nodes_to_replace
   in foldl resolveAliases'' os combinations
+
+resolveAliases'' :: OpStructure -> (G.NodeId, G.NodeId) -> OpStructure
 resolveAliases'' os (n1, n2) =
   let g = graph os
       new_g = G.copyNodeLabel n1 n2 g
@@ -102,13 +109,21 @@ resolveAliases'' os (n1, n2) =
       new_cs = map (updateNodeInConstraint n1 n2) cs
   in updateConstraints (updateGraph os new_g) new_cs
 
-updateNodeInConstraint n1 n2 con@(AllocateInRegisterConstraint id regs)
-  | n2 == id = AllocateInRegisterConstraint n1 regs
+updateNodeInConstraint :: G.NodeId -> G.NodeId -> Constraint -> Constraint
+updateNodeInConstraint i1 i2 con@(AllocateInRegisterConstraint i regs)
+  | i2 == i = AllocateInRegisterConstraint i1 regs
   | otherwise = con
-updateNodeInConstraint n1 n2 con@(ConstantValueConstraint id ranges)
-  | n2 == id = ConstantValueConstraint n1 ranges
+updateNodeInConstraint i1 i2 con@(ConstantValueConstraint i ranges)
+  | i2 == i = ConstantValueConstraint i1 ranges
   | otherwise = con
 updateNodeInConstraint _ _ con = con
+
+-- | Normalizes an operation structure by merging all nodes which have the same
+-- node ID and label, and then merges all adjacent data nodes (the parent is
+-- kept).
+
+normalize :: OpStructure -> OpStructure
+normalize = mergeAdjacentDataNodes . mergeIdenticalNodes
 
 -- | Merges all nodes that have the same node ID and label to a single node.
 

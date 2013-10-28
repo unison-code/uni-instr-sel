@@ -18,7 +18,7 @@
 module Language.InstructionSelection.Patterns.LLVM.Base where
 
 import Language.InstructionSelection.Patterns.AssemblyString
-import Language.InstructionSelection.Utils (Range (..), Natural)
+import Language.InstructionSelection.Utils (Range (..))
 import Language.InstructionSelection.OpTypes
 import Language.InstructionSelection.SExpressions
 
@@ -380,17 +380,27 @@ data Constraint
 
     deriving (Show)
 
+isAllocateInConstraint :: Constraint -> Bool
 isAllocateInConstraint (AllocateInConstraint _ _) = True
 isAllocateInConstraint _ = False
 
+isImmediateConstraint :: Constraint -> Bool
 isImmediateConstraint (ImmediateConstraint _ _) = True
 isImmediateConstraint _ = False
+
+isRegFlagConstraint :: Constraint -> Bool
 isRegFlagConstraint (RegFlagConstraint _ _) = True
 isRegFlagConstraint _ = False
+
+isAliasesConstraint :: Constraint -> Bool
 isAliasesConstraint (AliasesConstraint _) = True
 isAliasesConstraint _ = False
+
+isRelAddressConstraint :: Constraint -> Bool
 isRelAddressConstraint (RelAddressConstraint _ _) = True
 isRelAddressConstraint _ = False
+
+isAbsAddressConstraint :: Constraint -> Bool
 isAbsAddressConstraint (AbsAddressConstraint _ _) = True
 isAbsAddressConstraint _ = False
 
@@ -402,10 +412,15 @@ data AliasValue
     | AVNoValue
     deriving (Show, Eq)
 
+isAVTemporary :: AliasValue -> Bool
 isAVTemporary (AVTemporary _) = True
 isAVTemporary _ = False
+
+isAVRegisterSymbol :: AliasValue -> Bool
 isAVRegisterSymbol (AVRegisterSymbol _) = True
 isAVRegisterSymbol _ = False
+
+isAVNoValue :: AliasValue -> Bool
 isAVNoValue AVNoValue = True
 isAVNoValue _ = False
 
@@ -455,7 +470,7 @@ instance SExpressionable Instruction where
        ++ ")"
 
 instance SExpressionable AssemblyString where
-  prettySE (AssemblyString str) i = str
+  prettySE (AssemblyString str) _ = str
 
 instance SExpressionable Pattern where
   prettySE (Pattern stmts cnstrs) i =
@@ -608,8 +623,9 @@ instance SExpressionable Label where
 
 instance SExpressionable ExprResultSize where
   prettySE (ERSRegSize reg) i = prettySE reg i
-  prettySE (ERSConstValue const) i = prettySE const i
+  prettySE (ERSConstValue c) i = prettySE c i
   prettySE (ERSConstTemporary temp) i = prettySE temp i
+  prettySE (ERSConstImmediate imm) i = prettySE imm i
 
 instance SExpressionable Temporary where
   prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
@@ -628,8 +644,9 @@ instance SExpressionable ImmediateSymbol where
   prettySE (ImmediateSymbol str) i = prettySE str i
 
 instance SExpressionable DataSpace where
-  prettySE (DSRegisterClass regClass) i = prettySE regClass i
-  prettySE (DSMemoryClass memClass) i = prettySE memClass i
+  prettySE (DSRegisterClass rc) i = prettySE rc i
+  prettySE (DSRegisterFlag flag) i = prettySE flag i
+  prettySE (DSMemoryClass mc) i = prettySE mc i
 
 instance SExpressionable RegisterClass where
   prettySE (RegisterClass regs) i =
@@ -685,35 +702,36 @@ instance SExpressionable ArithmeticOp where
   prettySE SExt _ = "sext"
 
 instance SExpressionable CompareOp where
-  prettySE ICmpEq i = "icmp eq"
-  prettySE ICmpNEq i = "icmp neq"
-  prettySE IUCmpGT i = "icmp ugt"
-  prettySE ISCmpGT i = "icmp sgt"
-  prettySE IUCmpGE i = "icmp uge"
-  prettySE ISCmpGE i = "icmp sge"
-  prettySE IUCmpLT i = "icmp ult"
-  prettySE ISCmpLT i = "icmp slt"
-  prettySE IUCmpLE i = "icmp ule"
-  prettySE ISCmpLE i = "icmp sle"
-  prettySE FUCmpEq i = "fcmp ueq"
-  prettySE FOCmpEq i = "fcmp oeq"
-  prettySE FUCmpNEq i = "fcmp une"
-  prettySE FOCmpNEq i = "fcmp one"
-  prettySE FUCmpGT i = "fcmp ugt"
-  prettySE FOCmpGT i = "fcmp ogt"
-  prettySE FUCmpGE i = "fcmp uge"
-  prettySE FOCmpGE i = "fcmp oge"
-  prettySE FUCmpLT i = "fcmp ult"
-  prettySE FOCmpLT i = "fcmp olt"
-  prettySE FUCmpLE i = "fcmp ule"
-  prettySE FOCmpLE i = "fcmp ole"
-  prettySE FCmpUn i = "fcmp uno"
+  prettySE ICmpEq _ = "icmp eq"
+  prettySE ICmpNEq _ = "icmp neq"
+  prettySE IUCmpGT _ = "icmp ugt"
+  prettySE ISCmpGT _ = "icmp sgt"
+  prettySE IUCmpGE _ = "icmp uge"
+  prettySE ISCmpGE _ = "icmp sge"
+  prettySE IUCmpLT _ = "icmp ult"
+  prettySE ISCmpLT _ = "icmp slt"
+  prettySE IUCmpLE _ = "icmp ule"
+  prettySE ISCmpLE _ = "icmp sle"
+  prettySE FUCmpEq _ = "fcmp ueq"
+  prettySE FOCmpEq _ = "fcmp oeq"
+  prettySE FUCmpNEq _ = "fcmp une"
+  prettySE FOCmpNEq _ = "fcmp one"
+  prettySE FUCmpGT _ = "fcmp ugt"
+  prettySE FOCmpGT _ = "fcmp ogt"
+  prettySE FUCmpGE _ = "fcmp uge"
+  prettySE FOCmpGE _ = "fcmp oge"
+  prettySE FUCmpLT _ = "fcmp ult"
+  prettySE FOCmpLT _ = "fcmp olt"
+  prettySE FUCmpLE _ = "fcmp ule"
+  prettySE FOCmpLE _ = "fcmp ole"
+  prettySE FCmpUn _ = "fcmp uno"
 
 instance SExpressionable ProgramData where
-  prettySE (PDConstant const) i = prettySE const i
+  prettySE (PDConstant c) i = prettySE c i
   prettySE (PDImmediate imm) i = prettySE imm i
   prettySE (PDTemporary temp) i = prettySE temp i
   prettySE (PDRegister reg) i = prettySE reg i
+  prettySE (PDRegisterSymbol reg) i = prettySE reg i
   prettySE PDNoValue i = prettySE noValueStr i
 
 instance SExpressionable SetRegDestination where
@@ -730,4 +748,5 @@ instance SExpressionable (Range ProgramData) where
   prettySE (Range lower upper) i =
     "(" ++ prettySE lower i ++ " " ++ prettySE upper i ++ ")"
 
+noValueStr :: [Char]
 noValueStr = "no-value"

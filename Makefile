@@ -1,5 +1,5 @@
 parser:
-	ghc parser.hs
+	ghc -Wall parser.hs
 
 run: parser
 	./parser < test.txt

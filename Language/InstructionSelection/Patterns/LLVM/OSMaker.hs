@@ -22,9 +22,7 @@ import qualified Language.InstructionSelection.OperationStructures as OS
 import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils
-import Data.List
 import Data.Maybe
-import Debug.Trace -- TODO: remove when no longer necessary
 
 
 
@@ -54,11 +52,14 @@ instance SymbolFormable LLVM.ImmediateSymbol where
 instance SymbolFormable LLVM.AliasValue where
   toSymbol (LLVM.AVTemporary temp) = toSymbol temp
   toSymbol (LLVM.AVRegisterSymbol reg) = toSymbol reg
+  toSymbol s = error $ "Unmatched to symbol " ++ (show s)
 
 class RegisterFormable a where
   toRegisters :: a -> [OS.Register]
 instance RegisterFormable LLVM.DataSpace where
   toRegisters (LLVM.DSRegisterClass rc) = toRegisters rc
+  toRegisters s = error $ "Not handling " ++ (show s) ++ " yet"
+  -- TODO: handle memory space
 instance RegisterFormable LLVM.RegisterClass where
   toRegisters (LLVM.RegisterClass regs) = concatMap toRegisters regs
 instance RegisterFormable LLVM.Register where
@@ -70,8 +71,15 @@ instance ConstRangeFormable (Range Integer) where
   toConstRange (Range lower upper) = Range (OS.IntConstant lower)
                                      (OS.IntConstant upper)
 
+toRegisterFlag :: LLVM.RegisterFlag -> OS.RegisterFlag
 toRegisterFlag (LLVM.RegisterFlag flag reg) =
   OS.RegisterFlag flag (head $ toRegisters reg)
+
+type Mapping = (G.NodeId, Symbol)
+type State = ( OS.OpStructure       -- ^ The corresponding operation structure.
+             , G.BBLabel            -- ^ Current label that the process is in.
+             , [Mapping]            -- ^ List of node-to-symbol mappings.
+             )
 
 class LlvmToOS a where
 
@@ -82,38 +90,50 @@ class LlvmToOS a where
   -- NOTE: Each declaration node and use node will be kept separate to be merged
   -- as a post-step.
 
-  extend
-    :: ( OS.OpStructure        -- ^ The corresponding operation structure.
-       , G.BBLabel             -- ^ Current label that the process is in.
-       , [(G.NodeId, Symbol)]  -- ^ List of node-to-symbol mappings.
-       )
-       -> a                    -- ^ The LLVM data type to process.
-       -> ( OS.OpStructure
-          , G.BBLabel
-          , [(G.NodeId, Symbol)]
-          )                    -- ^ The extended tuple.
+  extend :: State    -- ^ Current state.
+            -> a     -- ^ The LLVM data type to process.
+            -> State -- ^The new, extended state.
 
+currentOS :: State -> OS.OpStructure
 currentOS (os, _, _) = os
+updateOS :: State -> OS.OpStructure -> State
 updateOS (_, l, ms) os = (os, l, ms)
+currentGraph :: State -> G.Graph
 currentGraph = OS.graph . currentOS
+updateGraph :: State -> G.Graph -> State
 updateGraph t g = updateOS t $ OS.updateGraph (currentOS t) g
+newNodeId :: State -> G.NodeId
 newNodeId = G.newNodeId . currentGraph
+addNewNodeWithNL :: State -> G.NodeLabel -> State
 addNewNodeWithNL t nl = updateGraph t $ G.addNewNode nl (currentGraph t)
+addNewNodeWithNI :: State -> G.NodeInfo -> State
 addNewNodeWithNI t ni = addNewNodeWithNL t (G.NodeLabel (newNodeId t) ni)
+lastAddedNode :: State -> Maybe G.Node
 lastAddedNode = G.lastAddedNode . currentGraph
-addNewEdge t src dst = updateGraph t $ G.addNewEdge (currentGraph t) (src, dst)
+addNewEdge :: State
+              -> G.Node -- ^ Source node.
+              -> G.Node -- ^ Destination node.
+              -> State
+addNewEdge t src dst = updateGraph t $ G.addNewEdge (src, dst) (currentGraph t)
+addNewEdgesManySources :: State
+                          -> [G.Node] -- ^ Source nodes.
+                          -> G.Node   -- ^ Destination node.
+                          -> State
 addNewEdgesManySources t srcs dst =
   let es = zip srcs (repeat dst)
-  in updateGraph t $ foldl G.addNewEdge (currentGraph t) es
-addNewEdgesManyDests t src dsts =
-  let es = zip (repeat src) dsts
-  in updateGraph t $ foldl G.addNewEdge (currentGraph t) es
+  in updateGraph t $ foldl (flip G.addNewEdge) (currentGraph t) es
+addConstraint :: State -> OS.Constraint -> State
 addConstraint t c = updateOS t $ OS.addConstraint (currentOS t) c
+currentLabel :: State -> G.BBLabel
 currentLabel (_, l, _) = l
+updateLabel :: State -> G.BBLabel -> State
 updateLabel (os, _, ms) l = (os, l, ms)
+currentMappings :: State -> [Mapping]
 currentMappings (_, _, ms) = ms
+addMapping :: State -> Mapping -> State
 addMapping (os, l, ms) m = (os, l, ms ++ [m])
 
+nodeIdFromSym :: [Mapping] -> Symbol -> Maybe G.NodeId
 nodeIdFromSym ms sym =
   let ns = filter (\t -> snd t == sym) ms
   in if not $ null ns
@@ -138,8 +158,10 @@ instance LlvmToOS LLVM.Pattern where
         t''' = foldl extend t'' cons
     in t'''
 
+addMappingsForNoNodeSymbols :: State -> [[LLVM.AliasValue]] -> State
 addMappingsForNoNodeSymbols t aliases =
   foldl addMappingsForNoNodeSymbols' t aliases
+addMappingsForNoNodeSymbols' :: State -> [LLVM.AliasValue] -> State
 addMappingsForNoNodeSymbols' t [] = t
 addMappingsForNoNodeSymbols' t (_:[]) = t
 addMappingsForNoNodeSymbols' t avs =
@@ -201,8 +223,8 @@ instance LlvmToOS LLVM.SetRegDestination where
   extend t (LLVM.SRDTemporary temp) = extend t temp
 
 instance LlvmToOS LLVM.Temporary where
-  extend t (LLVM.Temporary int) =
-    let sym = TemporarySymbol int
+  extend t temp@(LLVM.Temporary int) =
+    let sym = toSymbol temp
         nid_already_in_use = nodeIdFromSym (currentMappings t) sym
         nid = maybe (newNodeId t) id nid_already_in_use
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
@@ -220,12 +242,12 @@ instance LlvmToOS LLVM.Register where
     in t''
 
 instance LlvmToOS LLVM.RegisterFlag where
-  extend t (LLVM.RegisterFlag str reg) = t
+  extend t (LLVM.RegisterFlag _ _) = t
   -- TODO: implement
 
 instance LlvmToOS LLVM.RegisterSymbol where
-  extend t (LLVM.RegisterSymbol str) =
-    let sym = RegisterSymbol str
+  extend t reg@(LLVM.RegisterSymbol str) =
+    let sym = toSymbol reg
         nid_already_in_use = nodeIdFromSym (currentMappings t) sym
         nid = maybe (newNodeId t) id nid_already_in_use
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
@@ -240,8 +262,8 @@ instance LlvmToOS LLVM.StmtExpression where
         lhs_node = fromJust $ lastAddedNode t'
         t'' = extend t' rhs
         rhs_node = fromJust $ lastAddedNode t''
-        t''' = addNewNodeWithNI t (G.NodeInfo (G.NTBinaryOp op)
-                                   (currentLabel t'') (show op))
+        t''' = addNewNodeWithNI t'' (G.NodeInfo (G.NTBinaryOp op)
+                                     (currentLabel t'') (show op))
         op_node = fromJust $ lastAddedNode t'''
         t'''' = addNewEdgesManySources t''' [lhs_node, rhs_node] op_node
     in t''''
@@ -265,10 +287,10 @@ instance LlvmToOS LLVM.StmtExpression where
     in t'''
 
   extend t (LLVM.PhiStmtExpr phis) =
-    let f (ns, t) e =
-          let t' = extend t e
-              n = fromJust $ lastAddedNode t'
-          in (ns ++ [n], t')
+    let f (ns, local_t) e =
+          let local_t' = extend local_t e
+              n = fromJust $ lastAddedNode local_t'
+          in (ns ++ [n], local_t')
         (data_nodes, t') = foldl f ([], t) phis
         t'' = addNewNodeWithNI t' (G.NodeInfo G.NTPhi (currentLabel t') "phi")
         phi_node = fromJust $ lastAddedNode t''
@@ -286,12 +308,14 @@ instance LlvmToOS LLVM.StmtExpression where
 
 instance LlvmToOS LLVM.PhiElement where
   extend t (LLVM.PhiElement expr l) = extend t expr
+  -- TODO: what to do with label on the expression?
 
 instance LlvmToOS LLVM.ProgramData where
-  extend t (LLVM.PDConstant const) = extend t const
+  extend t (LLVM.PDConstant c) = extend t c
   extend t (LLVM.PDImmediate imm) = extend t imm
   extend t (LLVM.PDTemporary temp) = extend t temp
   extend t (LLVM.PDRegister reg) = extend t reg
+  extend t (LLVM.PDRegisterSymbol reg) = extend t reg
   -- TODO: what to do with PDNoValue?
 
 instance LlvmToOS LLVM.ConstantValue where
@@ -335,5 +359,6 @@ instance LlvmToOS LLVM.Constraint where
 
 instance LlvmToOS [LLVM.AliasValue] where
   extend t avs =
-    let ns = mapMaybe (nodeIdFromSym (currentMappings t) . toSymbol) avs
+    let only_values = filter (not . LLVM.isAVNoValue) avs
+        ns = mapMaybe (nodeIdFromSym (currentMappings t) . toSymbol) only_values
     in addConstraint t $ OS.AliasConstraint ns

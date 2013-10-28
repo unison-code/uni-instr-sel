@@ -33,41 +33,41 @@ then transformed into a corresponding DAG and then output as S-expressions.
 import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import Language.InstructionSelection.Patterns.LLVM.OSMaker
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
-import qualified Language.InstructionSelection.Patterns as IntP
 import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.SExpressions
 import Language.InstructionSelection.OperationStructures
 import Control.Monad
 import System.Exit
 import Data.GraphViz hiding (parse)
 import Data.GraphViz.Commands.IO
 
-isLeft (Left _) = True
-isLeft _ = False
+isError :: Either ParseError [LLVM.Instruction] -> Bool
+isError (Left _) = True
+isError _ = False
 
-getPatterns (LLVM.Instruction _ pats) = pats
-getGr (Graph g) = g
+getPatterns :: LLVM.Instruction -> [LLVM.Pattern]
+getPatterns (LLVM.Instruction _ ps) = ps
 
+main :: IO ()
 main =
   do contents <- getContents
      putStr "\n"
      let result = parse contents
-     when (isLeft result) $ do let (Left error) = result
-                               putStr $ show error
-                               exitFailure
+     when (isError result) $ do let (Left e) = result
+                                putStr $ show e
+                                exitFailure
 
      let (Right instructions) = result
          llvm_patterns = concat $ map getPatterns instructions
          int_patterns = map mkOpStructure llvm_patterns
-         dots = map (graphToDot params . getGr . graph) int_patterns
+         dots = map (graphToDot params . intGraph . graph) int_patterns
      mapM_ (writeDotFile "test.dot") dots
      putStr "\n"
 
 params = nonClusteredParams { fmtNode = nodeAttr }
-nodeAttr n@(_, (NodeLabel _ (NodeInfo NTRegister _ str))) =
+nodeAttr n@(_, (NodeLabel _ (NodeInfo NTRegister _ _))) =
   [makeLabel n, shape BoxShape]
-nodeAttr n@(_, (NodeLabel _ (NodeInfo NTConstant _ str))) =
+nodeAttr n@(_, (NodeLabel _ (NodeInfo NTConstant _ _))) =
   [makeLabel n, shape BoxShape]
-nodeAttr n@(_, (NodeLabel _ (NodeInfo _ label str))) = [makeLabel n]
+nodeAttr n@(_, (NodeLabel _ (NodeInfo _ _ _))) = [makeLabel n]
 makeLabel (_, (NodeLabel _ (NodeInfo _ (BBLabel l) str))) =
   toLabel (l ++ ":" ++ str)

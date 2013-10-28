@@ -14,15 +14,16 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.Base (
-  NodeId
-, EdgeId
+  Node
+, NodeId
+, Edge
+, EdgeNr
 , BBLabel (..)
 , NodeType (..)
 , NodeInfo (..)
 , NodeLabel (..)
 , EdgeLabel (..)
 , Graph (..)
-, I.Node
 , I.LNode
 , I.LEdge
 , empty
@@ -39,6 +40,7 @@ module Language.InstructionSelection.Graphs.Base (
 , haveSameLabels
 , haveSameNodeIdsAndLabels
 , replaceNodeLabel
+, replaceNodeInfo
 , copyNodeLabel
 , mergeNodes
 , lastAddedNode
@@ -51,8 +53,11 @@ import Data.Maybe
 
 
 
+type Node = I.LNode NodeLabel
 type NodeId = Natural
-type EdgeId = Natural
+type Edge = I.LEdge EdgeLabel
+type EdgeNr = Natural
+type IntGraph = I.Gr NodeLabel EdgeLabel
 
 data BBLabel
     = BBLabel String
@@ -131,99 +136,110 @@ data EdgeLabel
 
           -- | Source edge number.
 
-          EdgeId
+          EdgeNr
 
           -- | Destination edge number.
 
-          EdgeId
+          EdgeNr
 
     deriving (Show,Eq)
 
 data Graph
-    = Graph (I.Gr NodeLabel EdgeLabel)
+    = Graph { intGraph :: IntGraph }
     deriving (Show)
 
 -- | Creates an empty graph.
 
+empty :: Graph
 empty = Graph I.empty
 
--- | Makes a graph.
+-- | Makes a graph from a list of nodes and edges.
 
-mkGraph nodes edges = Graph (I.mkGraph nodes edges)
+mkGraph :: [Node] -> [Edge] -> Graph
+mkGraph ns es = Graph (I.mkGraph ns es)
 
 -- | Gets the next internal node ID which does not currently appear in the
 -- graph.
 
+nextNodeInt :: IntGraph -> I.Node
 nextNodeInt g = 1 + (maximum $ [0] ++ I.nodes g)
 
 -- | Makes a unique node ID not already appearing in the graph.
 
+newNodeId :: Graph -> NodeId
 newNodeId (Graph g) = toNatural $ toInteger $ nextNodeInt g
 
--- | Gets the node ID from a (Node, NodeLabel) tuple.
+-- | Gets the node ID from a node.
 
-nodeId (_, NodeLabel id _) = id
+nodeId :: Node -> NodeId
+nodeId (_, NodeLabel i _) = i
 
--- | Gets the internal node ID from a (Node, NodeLabel) tuple.
+-- | Gets the internal node ID from a node.
 
+nodeInt :: Node -> I.Node
 nodeInt (int, _) = int
 
--- | Checks if a (Node, NodeLabel) tuple has a given node ID.
+-- | Checks if an has a given node ID.
 
-hasSameNodeId id1 (_, NodeLabel id2 _) = id1 == id2
+hasSameNodeId :: NodeId -> Node -> Bool
+hasSameNodeId i1 (_, NodeLabel i2 _) = i1 == i2
 
--- | Checks if two (Node, NodeLabel) tuples have the same node ID.
+-- | Checks if two nodes have the same node ID.
 
-haveSameNodeIds (_, NodeLabel id1 _) (_, NodeLabel id2 _) =
-  id1 == id2
+haveSameNodeIds :: Node -> Node -> Bool
+haveSameNodeIds (_, NodeLabel i1 _) (_, NodeLabel i2 _) = i1 == i2
 
--- | Checks if a (Node, NodeLabel) tuple has a given label.
+-- | Checks if a node has a given basic-block label.
 
+hasSameLabel :: BBLabel -> Node -> Bool
 hasSameLabel label1 (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 
--- | Checks if two (Node, NodeLabel) tuples have the same label.
+-- | Checks if two nodes have the same label.
 
+haveSameLabels :: Node -> Node -> Bool
 haveSameLabels (_, NodeLabel _ (NodeInfo _ label1 _))
                (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 
--- | Checks if two (Node, NodeLabel) tuples have the same node ID and label.
+-- | Checks if two nodes have the same node ID and label.
 
+haveSameNodeIdsAndLabels :: Node -> Node -> Bool
 haveSameNodeIdsAndLabels n1 n2 = haveSameNodeIds n1 n2 && haveSameLabels n1 n2
 
 -- | Gets the list of nodes.
 
+nodes :: Graph -> [Node]
 nodes (Graph g) = I.labNodes g
 
 -- | Gets a list of nodes with the same node ID.
 
-nodesByNodeId id g = filter (hasSameNodeId id) $ nodes g
+nodesByNodeId :: NodeId -> Graph -> [Node]
+nodesByNodeId i g = filter (hasSameNodeId i) $ nodes g
 
 -- | Replaces the node label of an already existing node.
 
-replaceNodeLabel :: NodeLabel -> (I.LNode NodeLabel) -> Graph -> Graph
+replaceNodeLabel :: NodeLabel -> Node -> Graph -> Graph
 replaceNodeLabel new_label (int, _) (Graph g) =
   Graph (I.insNode (int, new_label) $ I.delNode int g)
 
 -- | Replaces the node info of an already existing node.
 
-replaceNodeInfo :: NodeInfo -> (I.LNode NodeLabel) -> Graph -> Graph
-replaceNodeInfo new_info (int, NodeLabel id _) (Graph g) =
-  Graph (I.insNode (int, NodeLabel id new_info) $ I.delNode int g)
+replaceNodeInfo :: NodeInfo -> Node -> Graph -> Graph
+replaceNodeInfo new_info (int, NodeLabel i _) (Graph g) =
+  Graph (I.insNode (int, NodeLabel i new_info) $ I.delNode int g)
 
 -- | Copies the node label from one node to another node.
 
 copyNodeLabel :: NodeId -> NodeId -> Graph -> Graph
-copyNodeLabel to_id from_id g =
-  let (_, new_label) = head $ nodesByNodeId to_id g
-      nodes_to_update = nodesByNodeId from_id g
+copyNodeLabel to_i from_i g =
+  let (_, new_label) = head $ nodesByNodeId to_i g
+      nodes_to_update = nodesByNodeId from_i g
   in foldr (replaceNodeLabel new_label) g nodes_to_update
 
 -- | Merges all nodes that are the same as a given node according to some
 -- user-defined criteria.
 
-mergeNodes :: (I.LNode NodeLabel -> I.LNode NodeLabel -> Bool) -- ^ Test
-                                                               -- function.
-              -> I.LNode NodeLabel -- ^ Node to merge to.
+mergeNodes :: (Node -> Node -> Bool) -- ^ Test function.
+              -> Node                -- ^ Node to merge to.
               -> Graph
               -> Graph
 mergeNodes f node (Graph g) =
@@ -233,52 +249,57 @@ mergeNodes f node (Graph g) =
                      g (map nodeInt nodes_to_merge)
       pruned_g = I.delNodes (map nodeInt nodes_to_merge) redirected_g
   in Graph pruned_g
+
+redirectEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
 redirectEdges dst_int replace_int g =
   redirectOutEdges dst_int replace_int $ redirectInEdges dst_int replace_int g
+redirectInEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
 redirectInEdges dst_int replace_int g =
   foldr (redirectInEdge dst_int) g (I.inn g replace_int)
-redirectInEdge dst_int e@(out_int, _, EdgeLabel out_nr in_nr) g =
+redirectInEdge :: I.Node -> Edge -> IntGraph -> IntGraph
+redirectInEdge dst_int e@(out_int, _, EdgeLabel out_nr _) g =
   let new_e = (out_int, dst_int, EdgeLabel out_nr (nextInEdgeNr g dst_int))
   in I.insEdge new_e $ I.delLEdge e g
+redirectOutEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
 redirectOutEdges dst_int replace_int g =
   foldr (redirectOutEdge dst_int) g (I.out g replace_int)
-redirectOutEdge dst_int e@(_, in_int, EdgeLabel out_nr in_nr) g =
+redirectOutEdge :: I.Node -> Edge -> IntGraph -> IntGraph
+redirectOutEdge dst_int e@(_, in_int, EdgeLabel _ in_nr) g =
   let new_e = (dst_int, in_int, EdgeLabel (nextOutEdgeNr g dst_int) in_nr)
   in I.insEdge new_e $ I.delLEdge e g
-nextInEdgeNr :: (I.Gr NodeLabel EdgeLabel) -> I.Node -> EdgeId
+nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextInEdgeNr g int = 1 + (maximum $ [0] ++ (map inEdgeNr $ I.inn g int))
+nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int = 1 + (maximum $ [0] ++ (map outEdgeNr $ I.out g int))
+inEdgeNr :: Edge -> EdgeNr
 inEdgeNr (_, _, EdgeLabel _ nr) = nr
+outEdgeNr :: Edge -> EdgeNr
 outEdgeNr (_, _, EdgeLabel nr _) = nr
 
 -- | Adds a new node to the graph.
 
+addNewNode :: NodeLabel -> Graph -> Graph
 addNewNode nl (Graph g) = Graph (I.insNode (nextNodeInt g, nl) g)
 
 -- | Adds a new edge between to nodes to the graph. The edge numberings will be
 -- set accordingly.
 
-addNewEdge :: Graph
-              -> ( I.LNode NodeLabel -- ^ Source node (from).
-                 , I.LNode NodeLabel -- ^ Destination node (to).
-                 )
+addNewEdge :: ( Node -- ^ Source node (from).
+              , Node -- ^ Destination node (to).
+              )
               -> Graph
-addNewEdge (Graph g) ((from_node_int, from_nl), (to_node_int, to_nl)) =
+              -> Graph
+addNewEdge ((from_node_int, _), (to_node_int, _)) (Graph g) =
   let out_edge_nr = nextOutEdgeNr g from_node_int
       in_edge_nr = nextInEdgeNr g to_node_int
       new_e = (from_node_int, to_node_int, EdgeLabel out_edge_nr in_edge_nr)
   in Graph (I.insEdge new_e g)
 
+lastAddedNode :: Graph -> Maybe Node
 lastAddedNode (Graph g) =
-  let last_int = maximum $ I.nodes g
-      label = I.lab g last_int
-  in if isJust label
-        then Just (last_int, fromJust label)
+  let ns = I.nodes g
+  in if not $ null ns
+        then let last_int = maximum ns
+                 label = I.lab g last_int
+             in Just (last_int, fromJust label)
         else Nothing
-
--- | Normalizes a graph by merging nodes with identical node IDs and labels, as
--- well as adjacent data nodes (the parent will be kept).
-
-normalize :: Graph -> Graph
-normalize g = g
--- TODO: implement

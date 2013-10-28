@@ -20,10 +20,8 @@ module Language.InstructionSelection.Patterns.Base (
 , resolveAliases
 ) where
 
-import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OperationStructures
 import Language.InstructionSelection.Patterns.AssemblyString
-import Language.InstructionSelection.Utils (Range (..))
 
 
 
