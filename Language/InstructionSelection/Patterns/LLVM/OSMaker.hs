@@ -23,6 +23,7 @@ import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils
 import Data.Maybe
+import Debug.Trace
 
 
 
@@ -230,7 +231,7 @@ instance LlvmToOS LLVM.Temporary where
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
                                                   (currentLabel t)
                                                   ("t" ++ show int)))
-        t'' = maybe t' (\_ -> addMapping t' (nid, sym)) nid_already_in_use
+        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
     in t''
 
 instance LlvmToOS LLVM.Register where
@@ -253,7 +254,7 @@ instance LlvmToOS LLVM.RegisterSymbol where
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
                                                   (currentLabel t) str))
 
-        t'' = maybe t' (\_ -> addMapping t' (nid, sym)) nid_already_in_use
+        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
     in t''
 
 instance LlvmToOS LLVM.StmtExpression where
@@ -335,7 +336,7 @@ instance LlvmToOS LLVM.ImmediateSymbol where
         nid = maybe (newNodeId t) id nid_already_in_use
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTConstant
                                                   (currentLabel t) str))
-        t'' = maybe t' (\_ -> addMapping t' (nid, sym)) nid_already_in_use
+        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
     in t''
 
 instance LlvmToOS (Either LLVM.Register LLVM.Temporary) where

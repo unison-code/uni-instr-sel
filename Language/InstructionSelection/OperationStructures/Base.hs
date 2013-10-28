@@ -110,13 +110,13 @@ resolveAliases'' os (n1, n2) =
   in updateConstraints (updateGraph os new_g) new_cs
 
 updateNodeInConstraint :: G.NodeId -> G.NodeId -> Constraint -> Constraint
-updateNodeInConstraint i1 i2 con@(AllocateInRegisterConstraint i regs)
+updateNodeInConstraint i1 i2 c@(AllocateInRegisterConstraint i regs)
   | i2 == i = AllocateInRegisterConstraint i1 regs
-  | otherwise = con
-updateNodeInConstraint i1 i2 con@(ConstantValueConstraint i ranges)
+  | otherwise = c
+updateNodeInConstraint i1 i2 c@(ConstantValueConstraint i ranges)
   | i2 == i = ConstantValueConstraint i1 ranges
-  | otherwise = con
-updateNodeInConstraint _ _ con = con
+  | otherwise = c
+updateNodeInConstraint _ _ c = c
 
 -- | Normalizes an operation structure by merging all nodes which have the same
 -- node ID and label, and then merges all adjacent data nodes (the parent is

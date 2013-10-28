@@ -58,7 +58,7 @@ main =
 
      let (Right instructions) = result
          llvm_patterns = concat $ map getPatterns instructions
-         int_patterns = map mkOpStructure llvm_patterns
+         int_patterns = map (normalize . resolveAliases . mkOpStructure) llvm_patterns
          dots = map (graphToDot params . intGraph . graph) int_patterns
      mapM_ (writeDotFile "test.dot") dots
      putStr "\n"
