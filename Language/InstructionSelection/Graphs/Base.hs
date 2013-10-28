@@ -34,6 +34,8 @@ module Language.InstructionSelection.Graphs.Base (
 , nodes
 , nodesByNodeId
 , nodeId
+, nodeLabel
+, nodeInfo
 , hasSameNodeId
 , haveSameNodeIds
 , hasSameLabel
@@ -44,6 +46,7 @@ module Language.InstructionSelection.Graphs.Base (
 , copyNodeLabel
 , mergeNodes
 , lastAddedNode
+, isDataNode
 ) where
 
 import qualified Data.Graph.Inductive as I
@@ -81,19 +84,21 @@ data NodeType
 
     | NTPhi
 
-    -- | Both temporary nodes (appearing in IR and pattern code) and register
-    -- nodes (appearing only in pattern code) are represented as registers.
-    -- For the latter, the specific register is specified as a constraint.
+    -- | Temporary and constant nodes (appearing in IR and pattern code), as
+    -- well as register and immediate nodes (appearing only in pattern code),
+    -- are all represented as a data node. What distinguishes one from another
+    -- is the constraints applied to it.
 
-    | NTRegister
-
-    -- | Both constant values (appearing in IR and pattern code) and immediates
-    -- (appearing only in pattern code) are represented as constants. For the
-    -- former, the specific value is specified as a constraint.
-
-    | NTConstant
+    | NTData
 
     deriving (Show,Eq)
+
+isDataNodeType :: NodeType -> Bool
+isDataNodeType NTData = True
+isDataNodeType _ = False
+
+isDataNode :: Node -> Bool
+isDataNode (_, NodeLabel _ (NodeInfo nt _ _)) = isDataNodeType nt
 
 data NodeInfo
     = NodeInfo
@@ -173,6 +178,16 @@ newNodeId (Graph g) = toNatural $ toInteger $ nextNodeInt g
 
 nodeId :: Node -> NodeId
 nodeId (_, NodeLabel i _) = i
+
+-- | Gets the node label from a node.
+
+nodeLabel :: Node -> NodeLabel
+nodeLabel (_, nl) = nl
+
+-- | Gets the node info from a node.
+
+nodeInfo :: Node -> NodeInfo
+nodeInfo (_, NodeLabel _ ni) = ni
 
 -- | Gets the internal node ID from a node.
 

@@ -23,6 +23,7 @@ import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils
 import Data.Maybe
+import Debug.Trace
 
 
 
@@ -32,26 +33,22 @@ mkOpStructure llvm =
   in os
 
 data Symbol
-    = RegisterSymbol String
+    = StringSymbol String
     | TemporarySymbol Integer
-    | ImmediateSymbol String
-    | ConstantSymbol Integer
     deriving (Show, Eq)
 
 class SymbolFormable a where
   toSymbol :: a -> Symbol
-instance SymbolFormable LLVM.RegisterSymbol where
-  toSymbol (LLVM.RegisterSymbol str) = RegisterSymbol str
+instance SymbolFormable LLVM.Symbol where
+  toSymbol (LLVM.Symbol str) = StringSymbol str
 instance SymbolFormable LLVM.Temporary where
   toSymbol (LLVM.Temporary int) = TemporarySymbol int
-instance SymbolFormable (Either LLVM.Temporary LLVM.RegisterSymbol) where
+instance SymbolFormable (Either LLVM.Temporary LLVM.Symbol) where
   toSymbol (Left temp) = toSymbol temp
-  toSymbol (Right reg) = toSymbol reg
-instance SymbolFormable LLVM.ImmediateSymbol where
-  toSymbol (LLVM.ImmediateSymbol str) = ImmediateSymbol str
+  toSymbol (Right sym) = toSymbol sym
 instance SymbolFormable LLVM.AliasValue where
   toSymbol (LLVM.AVTemporary temp) = toSymbol temp
-  toSymbol (LLVM.AVRegisterSymbol reg) = toSymbol reg
+  toSymbol (LLVM.AVSymbol sym) = toSymbol sym
   toSymbol s = error $ "Unmatched to symbol " ++ (show s)
 
 class RegisterFormable a where
@@ -218,8 +215,8 @@ instance LlvmToOS LLVM.Statement where
 
 instance LlvmToOS LLVM.SetRegDestination where
   extend t (LLVM.SRDRegister reg) = extend t reg
-  extend t (LLVM.SRDRegisterSymbol reg) = extend t reg
   extend t (LLVM.SRDRegisterFlag flag) = extend t flag
+  extend t (LLVM.SRDSymbol sym) = extend t sym
   extend t (LLVM.SRDTemporary temp) = extend t temp
 
 instance LlvmToOS LLVM.Temporary where
@@ -227,7 +224,7 @@ instance LlvmToOS LLVM.Temporary where
     let sym = toSymbol temp
         nid_already_in_use = nodeIdFromSym (currentMappings t) sym
         nid = maybe (newNodeId t) id nid_already_in_use
-        t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
+        t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
                                                   (currentLabel t)
                                                   ("t" ++ show int)))
         t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
@@ -235,7 +232,7 @@ instance LlvmToOS LLVM.Temporary where
 
 instance LlvmToOS LLVM.Register where
   extend t (LLVM.Register str) =
-    let t' = addNewNodeWithNI t (G.NodeInfo G.NTRegister (currentLabel t) "")
+    let t' = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) "")
         n = fromJust $ lastAddedNode t'
         t'' = addConstraint t' (OS.AllocateInRegisterConstraint (G.nodeId n)
                                 [OS.Register str])
@@ -245,12 +242,12 @@ instance LlvmToOS LLVM.RegisterFlag where
   extend t (LLVM.RegisterFlag _ _) = t
   -- TODO: implement
 
-instance LlvmToOS LLVM.RegisterSymbol where
-  extend t reg@(LLVM.RegisterSymbol str) =
-    let sym = toSymbol reg
+instance LlvmToOS LLVM.Symbol where
+  extend t org_sym@(LLVM.Symbol str) =
+    let sym = toSymbol org_sym
         nid_already_in_use = nodeIdFromSym (currentMappings t) sym
         nid = maybe (newNodeId t) id nid_already_in_use
-        t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTRegister
+        t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
                                                   (currentLabel t) str))
 
         t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
@@ -312,30 +309,19 @@ instance LlvmToOS LLVM.PhiElement where
 
 instance LlvmToOS LLVM.ProgramData where
   extend t (LLVM.PDConstant c) = extend t c
-  extend t (LLVM.PDImmediate imm) = extend t imm
   extend t (LLVM.PDTemporary temp) = extend t temp
   extend t (LLVM.PDRegister reg) = extend t reg
-  extend t (LLVM.PDRegisterSymbol reg) = extend t reg
+  extend t (LLVM.PDSymbol sym) = extend t sym
   -- TODO: what to do with PDNoValue?
 
 instance LlvmToOS LLVM.ConstantValue where
   extend t (LLVM.ConstIntValue val) =
-    let t' = addNewNodeWithNI t (G.NodeInfo G.NTConstant (currentLabel t)
+    let t' = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t)
                                  (show val))
         n = fromJust $ lastAddedNode t'
         t'' = addConstraint t'' (OS.ConstantValueConstraint (G.nodeId n)
                                  [Range (OS.IntConstant val)
                                   (OS.IntConstant val)])
-    in t''
-
-instance LlvmToOS LLVM.ImmediateSymbol where
-  extend t (LLVM.ImmediateSymbol str) =
-    let sym = ImmediateSymbol str
-        nid_already_in_use = nodeIdFromSym (currentMappings t) sym
-        nid = maybe (newNodeId t) id nid_already_in_use
-        t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTConstant
-                                                  (currentLabel t) str))
-        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
     in t''
 
 instance LlvmToOS (Either LLVM.Register LLVM.Temporary) where
@@ -346,7 +332,7 @@ instance LlvmToOS LLVM.Constraint where
   extend t (LLVM.AllocateInConstraint store space) =
     let nid = fromJust $ nodeIdFromSym (currentMappings t) (toSymbol store)
         regs = toRegisters space
-    in addConstraint t $ OS.AllocateInRegisterConstraint nid regs
+    in trace (show t ++ "\n\n") $ addConstraint t $ OS.AllocateInRegisterConstraint nid regs
   extend t (LLVM.RegFlagConstraint flag ranges) =
     addConstraint t $ OS.RegFlagConstraint (toRegisterFlag flag)
                       (map toConstRange ranges)

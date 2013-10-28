@@ -62,19 +62,11 @@ data Temporary
 
     deriving (Show, Eq)
 
--- | Data type for an immediate value symbol. This is used to represent an
--- immediate value which will become available during pattern matching.
+-- | Data type for a symbol, which could basically represent any kind of
+-- variable (immediate, register, etc.).
 
-data ImmediateSymbol
-    = ImmediateSymbol String
-    deriving (Show, Eq)
-
--- | Data type for a register symbol. This should be viewed as a variable which
--- denotes a specific register (unlike a temporary which denotes a specific
--- value).
-
-data RegisterSymbol
-    = RegisterSymbol String
+data Symbol
+    = Symbol String
     deriving (Show, Eq)
 
 -- | Data type for describing a register class.
@@ -121,17 +113,13 @@ data ProgramData
 
     = PDConstant ConstantValue
 
-      -- | An immediate value represented by a symbol.
+      -- | A value represented by a symbol.
 
-    | PDImmediate ImmediateSymbol
+    | PDSymbol Symbol
 
       -- | A value located in a temporary.
 
     | PDTemporary Temporary
-
-      -- | A value denoted by a register symbol.
-
-    | PDRegisterSymbol RegisterSymbol
 
       -- | A value located in a specific register.
 
@@ -256,7 +244,7 @@ data ExprResultSize
 
       -- | Constant size represented via an immediate.
 
-    | ERSConstImmediate ImmediateSymbol
+    | ERSConstSymbol Symbol
 
     deriving (Show)
 
@@ -282,8 +270,8 @@ data Label
 
 data SetRegDestination
     = SRDRegister Register
-    | SRDRegisterSymbol RegisterSymbol
     | SRDRegisterFlag RegisterFlag
+    | SRDSymbol Symbol
     | SRDTemporary Temporary
     deriving (Show, Eq)
 
@@ -351,12 +339,12 @@ data Constraint
       -- | The @AllocateInConstraint@ constraint dictates that a storage unit
       -- must be located in a particular storage space.
 
-    = AllocateInConstraint (Either Temporary RegisterSymbol) DataSpace
+    = AllocateInConstraint (Either Temporary Symbol) DataSpace
 
       -- | The @ImmediateConstraint@ constraint limits the range of values that
       -- an immediate value may take.
 
-    | ImmediateConstraint ImmediateSymbol [Range Integer]
+    | ImmediateConstraint Symbol [Range Integer]
 
       -- | The @RegFlagConstraint@ constraint dictates that a register flag
       -- must be assigned any of the values within the set of ranges.
@@ -372,11 +360,11 @@ data Constraint
       -- | The @RelAddressConstraint@ constraint forces an immediate value to be
       -- within a certain relative memory address range.
 
-    | RelAddressConstraint ImmediateSymbol MemoryClass
+    | RelAddressConstraint Symbol MemoryClass
 
       -- | Same as for @RelAddressConstraint@ but for absolute values.
 
-    | AbsAddressConstraint ImmediateSymbol MemoryClass
+    | AbsAddressConstraint Symbol MemoryClass
 
     deriving (Show)
 
@@ -408,7 +396,7 @@ isAbsAddressConstraint _ = False
 
 data AliasValue
     = AVTemporary Temporary
-    | AVRegisterSymbol RegisterSymbol
+    | AVSymbol Symbol
     | AVNoValue
     deriving (Show, Eq)
 
@@ -416,9 +404,9 @@ isAVTemporary :: AliasValue -> Bool
 isAVTemporary (AVTemporary _) = True
 isAVTemporary _ = False
 
-isAVRegisterSymbol :: AliasValue -> Bool
-isAVRegisterSymbol (AVRegisterSymbol _) = True
-isAVRegisterSymbol _ = False
+isAVSymbol :: AliasValue -> Bool
+isAVSymbol (AVSymbol _) = True
+isAVSymbol _ = False
 
 isAVNoValue :: AliasValue -> Bool
 isAVNoValue AVNoValue = True
@@ -521,7 +509,7 @@ instance SExpressionable [AliasValue] where
 
 instance SExpressionable AliasValue where
   prettySE (AVTemporary tmp) i = prettySE tmp i
-  prettySE (AVRegisterSymbol reg) i = prettySE reg i
+  prettySE (AVSymbol sym) i = prettySE sym i
   prettySE (AVNoValue) i = prettySE noValueStr i
 
 instance SExpressionable Statement where
@@ -622,7 +610,7 @@ instance SExpressionable ExprResultSize where
   prettySE (ERSRegSize reg) i = prettySE reg i
   prettySE (ERSConstValue c) i = prettySE c i
   prettySE (ERSConstTemporary temp) i = prettySE temp i
-  prettySE (ERSConstImmediate imm) i = prettySE imm i
+  prettySE (ERSConstSymbol sym) i = prettySE sym i
 
 instance SExpressionable Temporary where
   prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
@@ -630,15 +618,12 @@ instance SExpressionable Temporary where
 instance SExpressionable Register where
   prettySE (Register str) i = prettySE str i
 
-instance SExpressionable RegisterSymbol where
-  prettySE (RegisterSymbol str) i = prettySE str i
+instance SExpressionable Symbol where
+  prettySE (Symbol str) i = prettySE str i
 
 instance SExpressionable RegisterFlag where
   prettySE (RegisterFlag sym reg) i =
     "(reg-flag " ++ prettySE sym i ++ " " ++ prettySE reg i ++ ")"
-
-instance SExpressionable ImmediateSymbol where
-  prettySE (ImmediateSymbol str) i = prettySE str i
 
 instance SExpressionable DataSpace where
   prettySE (DSRegisterClass rc) i = prettySE rc i
@@ -662,19 +647,18 @@ instance SExpressionable ConstantValue where
 
 instance SExpressionable ProgramData where
   prettySE (PDConstant c) i = prettySE c i
-  prettySE (PDImmediate imm) i = prettySE imm i
+  prettySE (PDSymbol sym) i = prettySE sym i
   prettySE (PDTemporary temp) i = prettySE temp i
   prettySE (PDRegister reg) i = prettySE reg i
-  prettySE (PDRegisterSymbol reg) i = prettySE reg i
   prettySE PDNoValue i = prettySE noValueStr i
 
 instance SExpressionable SetRegDestination where
   prettySE (SRDRegister reg) i = prettySE reg i
-  prettySE (SRDRegisterSymbol reg) i = prettySE reg i
   prettySE (SRDRegisterFlag flag) i = prettySE flag i
+  prettySE (SRDSymbol reg) i = prettySE reg i
   prettySE (SRDTemporary temp) i = prettySE temp i
 
-instance SExpressionable (Either Temporary RegisterSymbol) where
+instance SExpressionable (Either Temporary Symbol) where
   prettySE (Left lhs) i = prettySE lhs i
   prettySE (Right rhs) i = prettySE rhs i
 

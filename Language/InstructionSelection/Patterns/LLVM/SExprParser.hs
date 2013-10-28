@@ -120,18 +120,18 @@ pAllocConstraint = pLabeledData "allocate-in" pAllocConstraint'
 
 pAllocConstraint' :: GenParser Char st Constraint
 pAllocConstraint' =
-  do sto <- pTemporaryOrRegSymbol
+  do sto <- pTemporaryOrSymbol
      pWhitespace
      sp <- pDataSpace
      return (AllocateInConstraint sto sp)
 
-pTemporaryOrRegSymbol :: GenParser Char st (Either Temporary RegisterSymbol)
-pTemporaryOrRegSymbol =
+pTemporaryOrSymbol :: GenParser Char st (Either Temporary Symbol)
+pTemporaryOrSymbol =
       try (do temp <- pTemporary
               return (Left temp)
           )
-  <|> try (do reg <- pRegisterSymbol
-              return (Right reg)
+  <|> try (do sym <- pSymbol
+              return (Right sym)
           )
 
 pImmConstraint :: GenParser Char st Constraint
@@ -139,7 +139,7 @@ pImmConstraint = pLabeledData "immediate" pImmConstraint'
 
 pImmConstraint' :: GenParser Char st Constraint
 pImmConstraint' =
-  do imm <- pImmediateSymbol
+  do imm <- pSymbol
      pWhitespace
      ranges <- pParens (many1 pIntRange)
      return (ImmediateConstraint imm ranges)
@@ -173,15 +173,15 @@ pAliasValue =
               return AVNoValue)
   <|> try (do temp <- pTemporary
               return (AVTemporary temp))
-  <|> try (do reg <- pRegisterSymbol
-              return (AVRegisterSymbol reg))
+  <|> try (do reg <- pSymbol
+              return (AVSymbol reg))
 
 pRelAddressConstraint :: GenParser Char st Constraint
 pRelAddressConstraint = pLabeledData "rel-address" pRelAddressConstraint'
 
 pRelAddressConstraint' :: GenParser Char st Constraint
 pRelAddressConstraint' =
-  do imm <- pImmediateSymbol
+  do imm <- pSymbol
      pWhitespace1
      range <- pAddressRange
      return (RelAddressConstraint imm (MemoryClass "local" range))
@@ -191,7 +191,7 @@ pAbsAddressConstraint = pLabeledData "abs-address" pAbsAddressConstraint'
 
 pAbsAddressConstraint' :: GenParser Char st Constraint
 pAbsAddressConstraint' =
-  do imm <- pImmediateSymbol
+  do imm <- pSymbol
      pWhitespace1
      range <- pAddressRange
      return (AbsAddressConstraint imm (MemoryClass "local" range))
@@ -253,8 +253,8 @@ pSetRegDestination =
   <|> try (do temp <- pTemporary
               return (SRDTemporary temp)
           )
-  <|> try (do reg <- pRegisterSymbol
-              return (SRDRegisterSymbol reg)
+  <|> try (do reg <- pSymbol
+              return (SRDSymbol reg)
           )
 
 pStoreStmt :: GenParser Char st Statement
@@ -264,7 +264,7 @@ pStoreStmt' :: GenParser Char st Statement
 pStoreStmt' =
   do size <- pExprResultSize
      pWhitespace
-     area <- pSymbol
+     area <- pString
      pWhitespace1
      dst <- pStmtExpression
      pWhitespace
@@ -357,7 +357,7 @@ pLoadStmtExpr' :: GenParser Char st StmtExpression
 pLoadStmtExpr' =
   do size <- pExprResultSize
      pWhitespace
-     area <- pSymbol
+     area <- pString
      pWhitespace1
      src <- pStmtExpression
      return (LoadStmtExpr area size src)
@@ -392,8 +392,8 @@ pProgramData =
               return PDNoValue)
   <|> try (do c <- pConstant
               return (PDConstant c))
-  <|> try (do imm <- pImmediateSymbol
-              return (PDImmediate imm))
+  <|> try (do sym <- pSymbol
+              return (PDSymbol sym))
   <|> try (do temp <- pTemporary
               return (PDTemporary temp))
   <|> try (do reg <- pPrefixedRegister
@@ -442,8 +442,8 @@ pExprResultSize =
               return (ERSRegSize reg))
   <|> try (do temp <- pTemporary
               return (ERSConstTemporary temp))
-  <|> try (do imm <- pImmediateSymbol
-              return (ERSConstImmediate imm))
+  <|> try (do imm <- pSymbol
+              return (ERSConstSymbol imm))
 
 pRegSizeExpr :: GenParser Char st Register
 pRegSizeExpr = pLabeledData "size" pRegister
@@ -466,8 +466,13 @@ pTemporary' =
   do int <- many1 digit
      return (Temporary (read int))
 
-pSymbol :: GenParser Char st String
-pSymbol = many1 (try alphaNum <|> try (char '-') <|> try (char '_'))
+pSymbol :: GenParser Char st Symbol
+pSymbol =
+  do str <- many1 (try alphaNum <|> try (char '-') <|> try (char '_'))
+     return (Symbol str)
+
+pString :: GenParser Char st String
+pString = many1 (try alphaNum <|> try (char '-') <|> try (char '_'))
 
 pInt :: GenParser Char st Integer
 pInt =
@@ -481,37 +486,20 @@ pInt' =
   do int <- many1 digit
      return (read int)
 
-pImmediateSymbol :: GenParser Char st ImmediateSymbol
-pImmediateSymbol =
-  do symbol <- pSymbol
-     return (ImmediateSymbol symbol)
-
 pRegisterFlag :: GenParser Char st RegisterFlag
 pRegisterFlag = pLabeledData "reg-flag" pRegisterFlag'
 
 pRegisterFlag' :: GenParser Char st RegisterFlag
 pRegisterFlag' =
-  do flag <- pSymbol
+  do flag <- pString
      pWhitespace
      reg <- pRegister
      return (RegisterFlag flag reg)
 
 pRegister :: GenParser Char st Register
 pRegister =
-  do str <- pSymbol
+  do str <- pString
      return (Register str)
-
-pActualRegister :: GenParser Char st Register
-pActualRegister =
-      try (do symbol <- pSymbol
-              return (RegByRegister symbol))
-  <|> try (do symbol <- pPrefixedRegisterSymbol
-              return (RegByRegister symbol))
-
-pRegisterSymbol :: GenParser Char st RegisterSymbol
-pRegisterSymbol =
-  do symbol <- pSymbol
-     return (RegisterSymbol symbol)
 
 pPrefixedRegister :: GenParser Char st Register
 pPrefixedRegister = pLabeledData "register" pRegister

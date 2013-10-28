@@ -58,15 +58,23 @@ main =
 
      let (Right instructions) = result
          llvm_patterns = concat $ map getPatterns instructions
-         int_patterns = map (normalize . resolveAliases . mkOpStructure) llvm_patterns
-         dots = map (graphToDot params . intGraph . graph) int_patterns
+         ops = map mkOpStructure llvm_patterns
+         resolved_ops = map resolveAliases ops
+         normalized_ops = map normalize resolved_ops
+         dots = map (graphToDot params . intGraph . graph) normalized_ops
+     putStr "After make:\n"
+     putStr (show ops)
+     putStr "\n\n"
+     putStr "After alias resolving:\n"
+     putStr (show resolved_ops)
+     putStr "\n\n"
+     putStr "After normalization:\n"
+     putStr (show normalized_ops)
+     putStr "\n\n"
      mapM_ (writeDotFile "test.dot") dots
-     putStr "\n"
 
 params = nonClusteredParams { fmtNode = nodeAttr }
-nodeAttr n@(_, (NodeLabel _ (NodeInfo NTRegister _ _))) =
-  [makeLabel n, shape BoxShape]
-nodeAttr n@(_, (NodeLabel _ (NodeInfo NTConstant _ _))) =
+nodeAttr n@(_, (NodeLabel _ (NodeInfo NTData _ _))) =
   [makeLabel n, shape BoxShape]
 nodeAttr n@(_, (NodeLabel _ (NodeInfo _ _ _))) = [makeLabel n]
 makeLabel (_, (NodeLabel _ (NodeInfo _ (BBLabel l) str))) =
