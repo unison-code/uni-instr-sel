@@ -23,7 +23,6 @@ import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils
 import Data.Maybe
-import Debug.Trace
 
 
 

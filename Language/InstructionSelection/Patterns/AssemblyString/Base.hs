@@ -15,6 +15,8 @@
 
 module Language.InstructionSelection.Patterns.AssemblyString.Base where
 
+import Language.InstructionSelection.SExpressions
+
 
 
 -- | Record for containing the assembly string to produce during code emission.
@@ -24,3 +26,6 @@ data AssemblyString
           -- | TODO: refactor into something that is easier to process.
           String
     deriving (Show)
+
+instance SExpressionable AssemblyString where
+  prettySE (AssemblyString str) _ = str

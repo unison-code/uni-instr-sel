@@ -469,9 +469,6 @@ instance SExpressionable Instruction where
        ++ prettySEList pats i1
        ++ ")"
 
-instance SExpressionable AssemblyString where
-  prettySE (AssemblyString str) _ = str
-
 instance SExpressionable Pattern where
   prettySE (Pattern stmts cnstrs) i =
     let i1 = i + 1
@@ -662,69 +659,6 @@ instance SExpressionable ConstantValue where
     "(constant ?"
     ++ " " ++ prettySE int i
     ++ ")"
-
-instance SExpressionable UnaryOp where
-  prettySE USqrt _ = "usqrt"
-  prettySE Sqrt _ = "sqrt"
-  prettySE FixPointSqrt _ = "fixpointsqrt"
-  prettySE Not _ = "bit_not"
-
-instance SExpressionable BinaryOp where
-  prettySE (BinArithmeticOp op) i = prettySE op i
-  prettySE (BinCompareOp op) i = prettySE op i
-
-instance SExpressionable ArithmeticOp where
-  prettySE Plus _ = "+"
-  prettySE Minus _ = "-"
-  prettySE IAdd _ = "add"
-  prettySE ISatAdd _ = "satadd"
-  prettySE ISub _ = "sub"
-  prettySE ISatSub _ = "satsub"
-  prettySE IMul _ = "mul"
-  prettySE ISatMul _ = "satmul"
-  prettySE IUDiv _ = "udiv"
-  prettySE ISDiv _ = "sdiv"
-  prettySE IURem _ = "urem"
-  prettySE ISRem _ = "srem"
-  prettySE FixPointDiv _ = "fixpointdiv"
-  prettySE FAdd _ = "fadd"
-  prettySE FSub _ = "fsub"
-  prettySE FMul _ = "fmul"
-  prettySE FDiv _ = "fdiv"
-  prettySE FRem _ = "frem"
-  prettySE Shl _ = "shl"
-  prettySE LShr _ = "lhsr"
-  prettySE AShr _ = "ashr"
-  prettySE And _ = "bit_and"
-  prettySE Or _ = "bit_or"
-  prettySE Xor _ = "bit_xor"
-  prettySE ZExt _ = "zext"
-  prettySE SExt _ = "sext"
-
-instance SExpressionable CompareOp where
-  prettySE ICmpEq _ = "icmp eq"
-  prettySE ICmpNEq _ = "icmp neq"
-  prettySE IUCmpGT _ = "icmp ugt"
-  prettySE ISCmpGT _ = "icmp sgt"
-  prettySE IUCmpGE _ = "icmp uge"
-  prettySE ISCmpGE _ = "icmp sge"
-  prettySE IUCmpLT _ = "icmp ult"
-  prettySE ISCmpLT _ = "icmp slt"
-  prettySE IUCmpLE _ = "icmp ule"
-  prettySE ISCmpLE _ = "icmp sle"
-  prettySE FUCmpEq _ = "fcmp ueq"
-  prettySE FOCmpEq _ = "fcmp oeq"
-  prettySE FUCmpNEq _ = "fcmp une"
-  prettySE FOCmpNEq _ = "fcmp one"
-  prettySE FUCmpGT _ = "fcmp ugt"
-  prettySE FOCmpGT _ = "fcmp ogt"
-  prettySE FUCmpGE _ = "fcmp uge"
-  prettySE FOCmpGE _ = "fcmp oge"
-  prettySE FUCmpLT _ = "fcmp ult"
-  prettySE FOCmpLT _ = "fcmp olt"
-  prettySE FUCmpLE _ = "fcmp ule"
-  prettySE FOCmpLE _ = "fcmp ole"
-  prettySE FCmpUn _ = "fcmp uno"
 
 instance SExpressionable ProgramData where
   prettySE (PDConstant c) i = prettySE c i
