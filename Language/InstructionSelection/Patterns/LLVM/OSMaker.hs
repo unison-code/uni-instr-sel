@@ -23,7 +23,6 @@ import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils
 import Data.Maybe
-import Debug.Trace
 
 
 
@@ -239,7 +238,6 @@ instance LlvmToOS LLVM.Register where
     in t''
 
 instance LlvmToOS LLVM.RegisterFlag where
-  extend t (LLVM.RegisterFlag _ _) = t
   -- TODO: implement
 
 instance LlvmToOS LLVM.Symbol where
@@ -332,7 +330,7 @@ instance LlvmToOS LLVM.Constraint where
   extend t (LLVM.AllocateInConstraint store space) =
     let nid = fromJust $ nodeIdFromSym (currentMappings t) (toSymbol store)
         regs = toRegisters space
-    in trace (show t ++ "\n\n") $ addConstraint t $ OS.AllocateInRegisterConstraint nid regs
+    in addConstraint t $ OS.AllocateInRegisterConstraint nid regs
   extend t (LLVM.RegFlagConstraint flag ranges) =
     addConstraint t $ OS.RegFlagConstraint (toRegisterFlag flag)
                       (map toConstRange ranges)

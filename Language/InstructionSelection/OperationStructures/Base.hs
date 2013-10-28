@@ -96,26 +96,32 @@ resolveAliases (OpStructure g cs) =
 resolveAliases' :: OpStructure -> [G.NodeId] -> OpStructure
 resolveAliases' os [] = os
 resolveAliases' os (_:[]) = os
-resolveAliases' os ns =
-  let node_to_replace_with = head ns
-      nodes_to_replace = tail ns
-      combinations = zip (repeat node_to_replace_with) nodes_to_replace
-  in foldl resolveAliases'' os combinations
+resolveAliases' os is =
+  let i_to_resolve_to = head is
+      is_to_resolve = tail is
+  in foldr (resolveAliases'' i_to_resolve_to) os is_to_resolve
 
-resolveAliases'' :: OpStructure -> (G.NodeId, G.NodeId) -> OpStructure
-resolveAliases'' os (n1, n2) =
-  let g = graph os
-      new_g = G.copyNodeLabel n1 n2 g
-      cs = constraints os
-      new_cs = map (updateNodeInConstraint n1 n2) cs
-  in updateConstraints (updateGraph os new_g) new_cs
+resolveAliases'' :: G.NodeId       -- ^ Node ID to resolve to.
+                    -> G.NodeId    -- ^ Node ID to replace.
+                    -> OpStructure
+                    -> OpStructure
+resolveAliases'' i_to i_from os =
+  let new_g = copyNodeLabels i_to i_from (graph os)
+      new_cs = map (updateNodeInConstraint i_to i_from) (constraints os)
+  in OpStructure new_g new_cs
+
+copyNodeLabels :: G.NodeId -> G.NodeId -> G.Graph -> G.Graph
+copyNodeLabels i_to i_from g =
+  let n_to = head $ G.nodesByNodeId i_to g
+      ns_to_resolve = G.nodesByNodeId i_from g
+  in foldr (G.copyNodeLabel n_to) g ns_to_resolve
 
 updateNodeInConstraint :: G.NodeId -> G.NodeId -> Constraint -> Constraint
-updateNodeInConstraint i1 i2 c@(AllocateInRegisterConstraint i regs)
-  | i2 == i = AllocateInRegisterConstraint i1 regs
+updateNodeInConstraint i_to i_from c@(AllocateInRegisterConstraint i regs)
+  | i_from == i = AllocateInRegisterConstraint i_to regs
   | otherwise = c
-updateNodeInConstraint i1 i2 c@(ConstantValueConstraint i ranges)
-  | i2 == i = ConstantValueConstraint i1 ranges
+updateNodeInConstraint i_to i_from c@(ConstantValueConstraint i ranges)
+  | i_from == i = ConstantValueConstraint i_to ranges
   | otherwise = c
 updateNodeInConstraint _ _ c = c
 
@@ -130,13 +136,39 @@ normalize = mergeAdjacentDataNodes . mergeIdenticalNodes
 
 mergeIdenticalNodes :: OpStructure -> OpStructure
 mergeIdenticalNodes os =
-  let unique_nodes = nubBy G.haveSameNodeIdsAndLabels (G.nodes $ graph os)
+  let nCompare n1 n2 = G.haveSameNodeIds n1 n2 && G.haveSameBBLabels n1 n2
+      unique_nodes = nubBy nCompare (G.nodes $ graph os)
+      is_and_labels = map (\n -> (G.nodeId n, G.bbLabel n)) unique_nodes
   in updateGraph os
-     $ foldr (G.mergeNodes G.haveSameNodeIdsAndLabels) (graph os) unique_nodes
+     $ foldr mergeNodesWithSameNodeIdAndLabel (graph os) is_and_labels
+
+mergeNodesWithSameNodeIdAndLabel :: (G.NodeId, G.BBLabel) -> G.Graph -> G.Graph
+mergeNodesWithSameNodeIdAndLabel (i, l) g =
+  let nCompare n = G.hasSameNodeId i n && G.hasSameBBLabel l n
+      same_ns = filter nCompare (G.nodes g)
+      new_g = foldr (G.mergeNodes (head same_ns)) g same_ns
+  in new_g
 
 -- | Merges data nodes which are adjacent (between two nodes, the parent is
--- kept).
+-- kept). Constraints are updated accordingly.
 
 mergeAdjacentDataNodes :: OpStructure -> OpStructure
-mergeAdjacentDataNodes g = g
--- TODO: implement
+mergeAdjacentDataNodes os =
+  foldl mergeAdjacentDataNodes' os (reverse $ G.topSort (graph os))
+
+mergeAdjacentDataNodes' :: OpStructure -> G.Node -> OpStructure
+mergeAdjacentDataNodes' os n
+  | isDataNode n = let g = graph os
+                       data_cs = filter isDataNode $ G.children n g
+                   in foldr (mergeAdjacentDataNodes'' n) os data_cs
+  | otherwise = os
+
+mergeAdjacentDataNodes'' :: G.Node -> G.Node -> OpStructure -> OpStructure
+mergeAdjacentDataNodes'' n_to n_from os =
+  let new_g = G.mergeNodes n_to n_from (graph os)
+      new_cs = map (updateNodeInConstraint (G.nodeId n_to) (G.nodeId n_from))
+               (constraints os)
+  in OpStructure new_g new_cs
+
+isDataNode :: G.Node -> Bool
+isDataNode n = G.isDataNodeType $ G.nodeType n
