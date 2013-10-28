@@ -18,10 +18,24 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.OperationStructures.Base where
+module Language.InstructionSelection.OperationStructures.Base (
+  Register (..)
+, RegisterFlag (..)
+, Constant (..)
+, Constraint (..)
+, isAliasConstraint
+, fromAliasConstraint
+, OpStructure (..)
+, empty
+, updateGraph
+, addConstraint
+, updateConstraints
+, resolveAliases
+) where
 
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils (Range (..))
+import Data.List
 
 
 data Register
@@ -47,6 +61,8 @@ data Constraint
 isAliasConstraint (AliasConstraint _) = True
 isAliasConstraint _ = False
 
+fromAliasConstraint (AliasConstraint ns) = ns
+
 data OpStructure
     = OpStructure { graph :: G.Graph
                   , constraints :: [Constraint]
@@ -60,3 +76,51 @@ updateGraph (OpStructure _ cs) g = OpStructure g cs
 
 addConstraint :: OpStructure -> Constraint -> OpStructure
 addConstraint (OpStructure g cs) c = OpStructure g (cs ++ [c])
+
+updateConstraints :: OpStructure -> [Constraint] -> OpStructure
+updateConstraints (OpStructure g _) cs = OpStructure g cs
+
+-- | Resolves and removes all alias constraints.
+
+resolveAliases :: OpStructure -> OpStructure
+resolveAliases (OpStructure g cs) =
+  let alias_cs = filter isAliasConstraint cs
+      all_cs_but_alias = filter (not . isAliasConstraint) cs
+      aliases = map fromAliasConstraint alias_cs
+  in foldl resolveAliases' (OpStructure g all_cs_but_alias) aliases
+resolveAliases' os [] = os
+resolveAliases' os (_:[]) = os
+resolveAliases' os ns =
+  let node_to_replace_with = head ns
+      nodes_to_replace = tail ns
+      combinations = zip (repeat node_to_replace_with) nodes_to_replace
+  in foldl resolveAliases'' os combinations
+resolveAliases'' os (n1, n2) =
+  let g = graph os
+      new_g = G.copyNodeLabel n1 n2 g
+      cs = constraints os
+      new_cs = map (updateNodeInConstraint n1 n2) cs
+  in updateConstraints (updateGraph os new_g) new_cs
+
+updateNodeInConstraint n1 n2 con@(AllocateInRegisterConstraint id regs)
+  | n2 == id = AllocateInRegisterConstraint n1 regs
+  | otherwise = con
+updateNodeInConstraint n1 n2 con@(ConstantValueConstraint id ranges)
+  | n2 == id = ConstantValueConstraint n1 ranges
+  | otherwise = con
+updateNodeInConstraint _ _ con = con
+
+-- | Merges all nodes that have the same node ID and label to a single node.
+
+mergeIdenticalNodes :: OpStructure -> OpStructure
+mergeIdenticalNodes os =
+  let unique_nodes = nubBy G.haveSameNodeIdsAndLabels (G.nodes $ graph os)
+  in updateGraph os
+     $ foldr (G.mergeNodes G.haveSameNodeIdsAndLabels) (graph os) unique_nodes
+
+-- | Merges data nodes which are adjacent (between two nodes, the parent is
+-- kept).
+
+mergeAdjacentDataNodes :: OpStructure -> OpStructure
+mergeAdjacentDataNodes g = g
+-- TODO: implement

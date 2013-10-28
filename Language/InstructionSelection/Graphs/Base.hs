@@ -37,6 +37,7 @@ module Language.InstructionSelection.Graphs.Base (
 , haveSameNodeIds
 , hasSameLabel
 , haveSameLabels
+, haveSameNodeIdsAndLabels
 , replaceNodeLabel
 , copyNodeLabel
 , mergeNodes
@@ -185,6 +186,10 @@ hasSameLabel label1 (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 haveSameLabels (_, NodeLabel _ (NodeInfo _ label1 _))
                (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 
+-- | Checks if two (Node, NodeLabel) tuples have the same node ID and label.
+
+haveSameNodeIdsAndLabels n1 n2 = haveSameNodeIds n1 n2 && haveSameLabels n1 n2
+
 -- | Gets the list of nodes.
 
 nodes (Graph g) = I.labNodes g
@@ -196,17 +201,16 @@ nodesByNodeId id g = filter (hasSameNodeId id) $ nodes g
 -- | Replaces the node label of an already existing node.
 
 replaceNodeLabel :: NodeLabel -> (I.LNode NodeLabel) -> Graph -> Graph
-replaceNodeLabel new_label node@(int, _) (Graph g) =
+replaceNodeLabel new_label (int, _) (Graph g) =
   Graph (I.insNode (int, new_label) $ I.delNode int g)
 
 -- | Replaces the node info of an already existing node.
 
 replaceNodeInfo :: NodeInfo -> (I.LNode NodeLabel) -> Graph -> Graph
-replaceNodeInfo new_info node@(int, NodeLabel id _) (Graph g) =
+replaceNodeInfo new_info (int, NodeLabel id _) (Graph g) =
   Graph (I.insNode (int, NodeLabel id new_info) $ I.delNode int g)
 
 -- | Copies the node label from one node to another node.
--- TODO: this function does not seem to belong in this module
 
 copyNodeLabel :: NodeId -> NodeId -> Graph -> Graph
 copyNodeLabel to_id from_id g =
