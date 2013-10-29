@@ -317,9 +317,9 @@ instance LlvmToOS LLVM.ConstantValue where
     let t' = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t)
                                  (show val))
         n = fromJust $ lastAddedNode t'
-        t'' = addConstraint t'' (OS.ConstantValueConstraint (G.nodeId n)
-                                 [Range (OS.IntConstant val)
-                                  (OS.IntConstant val)])
+        t'' = addConstraint t' (OS.ConstantValueConstraint (G.nodeId n)
+                                [Range (OS.IntConstant val)
+                                 (OS.IntConstant val)])
     in t''
 
 instance LlvmToOS (Either LLVM.Register LLVM.Temporary) where

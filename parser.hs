@@ -31,6 +31,7 @@ then transformed into a corresponding DAG and then output as S-expressions.
 -}
 
 import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
+import Language.InstructionSelection.SExpressions
 import Language.InstructionSelection.Patterns.LLVM.OSMaker
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
 import Language.InstructionSelection.Graphs

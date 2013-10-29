@@ -316,12 +316,12 @@ pRegRangeStmtExpr = pLabeledData "reg-range" pRegRangeStmtExpr'
 
 pRegRangeStmtExpr' :: GenParser Char st StmtExpression
 pRegRangeStmtExpr' =
-  do reg <- pRegister
+  do sto <- pProgramStorage
      pWhitespace
      lo <- pProgramData
      pWhitespace
      up <- pProgramData
-     return (RegRangeStmtExpr reg (Range lo up))
+     return (RegRangeStmtExpr sto (Range lo up))
 
 pUnaryOpStmtExpr :: GenParser Char st StmtExpression
 pUnaryOpStmtExpr = pParens pUnaryOpStmtExpr'
@@ -401,6 +401,15 @@ pProgramData =
   <|> try (do reg <- pRegister
               return (PDRegister reg))
 
+pProgramStorage :: GenParser Char st ProgramStorage
+pProgramStorage =
+      try (do sym <- pSymbol
+              return (PSSymbol sym))
+  <|> try (do temp <- pTemporary
+              return (PSTemporary temp))
+  <|> try (do reg <- pPrefixedRegister
+              return (PSRegister reg))
+
 pUncondBranchStmt :: GenParser Char st Statement
 pUncondBranchStmt = pLabeledData "br" pUncondBranchStmt'
 
@@ -414,12 +423,12 @@ pCondBranchStmt = pLabeledData "br" pCondBranchStmt'
 
 pCondBranchStmt' :: GenParser Char st Statement
 pCondBranchStmt' =
-  do reg <- pRegister
+  do d <- pProgramData
      pWhitespace
      fl <- pLabel
      pWhitespace
      tl <- pLabel
-     return (CondBranchStmt reg fl tl)
+     return (CondBranchStmt d fl tl)
 
 pLabelStmt :: GenParser Char st Statement
 pLabelStmt = pLabeledData "label" pLabelStmt'

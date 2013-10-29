@@ -131,6 +131,25 @@ data ProgramData
 
     deriving (Show)
 
+-- | Data type for describing program storage. The storage can be represented
+-- through many different types, e.g. symbol, temporary, or register.
+
+data ProgramStorage
+
+      -- | A space represented by a symbol.
+
+    = PSSymbol Symbol
+
+      -- | A value located in a temporary.
+
+    | PSTemporary Temporary
+
+      -- | A value located in a specific register.
+
+    | PSRegister Register
+
+    deriving (Show)
+
 -- | Data type for representing an expression for a statement.
 
 data StmtExpression
@@ -222,7 +241,7 @@ data StmtExpression
       -- register. The same effect can be achieved with a series of bit
       -- operations.
 
-    | RegRangeStmtExpr Register (Range ProgramData)
+    | RegRangeStmtExpr ProgramStorage (Range ProgramData)
 
     deriving (Show)
 
@@ -316,7 +335,7 @@ data Statement
       -- | Performs an conditional branch (or jump) to a label.
 
     | CondBranchStmt
-          Register
+          ProgramData
 
           -- | Label taken if the register evaluates to @True@.
 
@@ -449,6 +468,9 @@ data Instruction
 -- SExpressionable instances
 --------------------------------------------------
 
+instance SExpressionable [Instruction] where
+  prettySE is i = prettySEList is i
+
 instance SExpressionable Instruction where
   prettySE (Instruction ass pats) i =
     let i1 = i + 1
@@ -535,9 +557,9 @@ instance SExpressionable Statement where
     "(br"
     ++ " " ++ prettySE label i
     ++ ")"
-  prettySE (CondBranchStmt reg tLabel fLabel) i =
+  prettySE (CondBranchStmt d tLabel fLabel) i =
     "(br"
-    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE d i
     ++ " " ++ prettySE tLabel i
     ++ " " ++ prettySE fLabel i
     ++ ")"
@@ -591,9 +613,9 @@ instance SExpressionable StmtExpression where
     ++ ")"
   prettySE (DataStmtExpr pdata) i = prettySE pdata i
   prettySE (SizeStmtExpr reg) i = prettySE reg i
-  prettySE (RegRangeStmtExpr reg range) i =
+  prettySE (RegRangeStmtExpr sto range) i =
     "(reg-range"
-    ++ " " ++ prettySE reg i
+    ++ " " ++ prettySE sto i
     ++ " " ++ prettySE range i
     ++ ")"
 
@@ -665,6 +687,11 @@ instance SExpressionable (Either Temporary Symbol) where
 instance SExpressionable (Range ProgramData) where
   prettySE (Range lower upper) i =
     "(" ++ prettySE lower i ++ " " ++ prettySE upper i ++ ")"
+
+instance SExpressionable ProgramStorage where
+  prettySE (PSSymbol sym) i = prettySE sym i
+  prettySE (PSTemporary temp) i = prettySE temp i
+  prettySE (PSRegister reg) i = prettySE reg i
 
 noValueStr :: [Char]
 noValueStr = "no-value"

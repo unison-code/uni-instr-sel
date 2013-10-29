@@ -52,8 +52,7 @@ data Constant
     deriving (Show,Eq)
 
 data Constraint
-    = Constraint
-    | AllocateInRegisterConstraint G.NodeId [Register]
+    = AllocateInRegisterConstraint G.NodeId [Register]
     | ConstantValueConstraint G.NodeId [Range Constant]
     | AliasConstraint [G.NodeId]
     | RegFlagConstraint RegisterFlag [Range Constant]
