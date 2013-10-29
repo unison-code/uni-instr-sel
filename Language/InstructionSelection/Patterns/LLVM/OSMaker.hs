@@ -18,9 +18,10 @@ module Language.InstructionSelection.Patterns.LLVM.OSMaker (
   mkOpStructure
 ) where
 
-import qualified Language.InstructionSelection.OperationStructures as OS
-import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import qualified Language.InstructionSelection.Graphs as G
+import qualified Language.InstructionSelection.OperationStructures as OS
+import qualified Language.InstructionSelection.OpTypes as Op
+import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
 import Language.InstructionSelection.Utils
 import Data.Maybe
 
@@ -74,7 +75,10 @@ toRegisterFlag (LLVM.RegisterFlag flag reg) =
 type Mapping = (G.NodeId, Symbol)
 type State = ( OS.OpStructure       -- ^ The corresponding operation structure.
              , G.BBLabel            -- ^ Current label that the process is in.
-             , [Mapping]            -- ^ List of node-to-symbol mappings.
+             , [Mapping]            -- ^ List of node-to-symbol mappings. If
+                                    -- there are more than one mapping using the
+                                    -- same symbol, then the last one occuring
+                                    -- in the list should be picked.
              )
 
 class LlvmToOS a where
@@ -221,12 +225,12 @@ instance LlvmToOS LLVM.SetRegDestination where
 instance LlvmToOS LLVM.Temporary where
   extend t temp@(LLVM.Temporary int) =
     let sym = toSymbol temp
-        nid_already_in_use = nodeIdFromSym (currentMappings t) sym
-        nid = maybe (newNodeId t) id nid_already_in_use
+        existing_nid = nodeIdFromSym (currentMappings t) sym
+        nid = maybe (newNodeId t) id existing_nid
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
                                                   (currentLabel t)
                                                   ("t" ++ show int)))
-        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
+        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') existing_nid
     in t''
 
 instance LlvmToOS LLVM.Register where
@@ -241,14 +245,16 @@ instance LlvmToOS LLVM.RegisterFlag where
   -- TODO: implement
 
 instance LlvmToOS LLVM.Symbol where
-  extend t org_sym@(LLVM.Symbol str) =
-    let sym = toSymbol org_sym
-        nid_already_in_use = nodeIdFromSym (currentMappings t) sym
-        nid = maybe (newNodeId t) id nid_already_in_use
+  extend t llvm_sym@(LLVM.Symbol str) =
+    let nid = newNodeId t
         t' = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
                                                   (currentLabel t) str))
-
-        t'' = maybe (addMapping t' (nid, sym)) (\_ -> t') nid_already_in_use
+        sym = toSymbol llvm_sym
+        existing_nid = nodeIdFromSym (currentMappings t) sym
+        t'' = if isNothing existing_nid
+                 then addMapping t' (nid, sym)
+              else addConstraint t' (OS.AssignSameRegisterConstraint nid
+                                     (fromJust existing_nid))
     in t''
 
 instance LlvmToOS LLVM.StmtExpression where
@@ -290,16 +296,94 @@ instance LlvmToOS LLVM.StmtExpression where
         t'' = addNewNodeWithNI t' (G.NodeInfo G.NTPhi (currentLabel t') "phi")
         phi_node = fromJust $ lastAddedNode t''
         t''' = addNewEdgesManySources t'' data_nodes phi_node
-    in t'''
+        t'''' = insertAndConnectDataNode t'''
+        last_node = fromJust $ lastAddedNode t''''
+        makeSameRegs lt (n1, n2) = addConstraint lt
+                                   (OS.AssignSameRegisterConstraint
+                                    (G.nodeId n1) (G.nodeId n2))
+        t''''' = foldl makeSameRegs t'''' $ zip (repeat last_node) data_nodes
+    in t'''''
 
   extend t (LLVM.DataStmtExpr d) = extend t d
 
   extend t (LLVM.SizeStmtExpr reg) = extend t reg
 
+  extend t (LLVM.RegRangeStmtExpr val (Range lo up)) =
+    let t' = extend t val
+        val_node = fromJust $ lastAddedNode t'
+        t'' = extend t' lo
+        lo_node = fromJust $ lastAddedNode t''
+        shift_op = Op.BinArithmeticOp Op.LShr
+        t''' = addNewNodeWithNI t'' (G.NodeInfo (G.NTBinaryOp shift_op)
+                                     (currentLabel t'') (show shift_op))
+        shift_node = fromJust $ lastAddedNode t'''
+        t'''' = addNewEdgesManySources t''' [val_node, lo_node] shift_node
+        t''''' = insertAndConnectDataNode t''''
+        d_node = fromJust $ lastAddedNode t'''''
+        t'''''' = insertMaskNodesForRegRange t''''' lo up
+        mask_node = fromJust $ lastAddedNode t''''''
+        and_op = Op.BinArithmeticOp Op.And
+        t''''''' = addNewNodeWithNI t'''''' (G.NodeInfo (G.NTBinaryOp and_op)
+                                             (currentLabel t'''''')
+                                             (show and_op))
+        and_node = fromJust $ lastAddedNode t'''''''
+        t'''''''' = addNewEdgesManySources t''''''' [d_node, mask_node] and_node
+    in t''''''''
+
+insertMaskNodesForRegRange :: State -> LLVM.ProgramData -> LLVM.ProgramData
+                              -> State
+insertMaskNodesForRegRange t lo up =
+  let t1 = extend t up
+      up_node = fromJust $ lastAddedNode t1
+      t2 = extend t1 lo
+      lo_node = fromJust $ lastAddedNode t2
+      op1 = Op.BinArithmeticOp Op.ISub
+      t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp op1)
+                                (currentLabel t2) (show op1))
+      op1_node = fromJust $ lastAddedNode t3
+      t4 = addNewEdgesManySources t3 [up_node, lo_node] op1_node
+      t5 = insertAndConnectDataNode t4
+      d1_node = fromJust $ lastAddedNode t5
+      t6 = extend t5 (LLVM.ConstIntValue 1)
+      c1_node = fromJust $ lastAddedNode t6
+      op2 = Op.BinArithmeticOp Op.IAdd
+      t7 = addNewNodeWithNI t6 (G.NodeInfo (G.NTBinaryOp op2) (currentLabel t6)
+                                (show op2))
+      op2_node = fromJust $ lastAddedNode t7
+      t8 = addNewEdgesManySources t7 [d1_node, c1_node] op2_node
+      t9 = insertAndConnectDataNode t8
+      d2_node = fromJust $ lastAddedNode t9
+      t10 = extend t9 (LLVM.ConstIntValue 1)
+      c2_node = fromJust $ lastAddedNode t10
+      op3 = Op.BinArithmeticOp Op.Shl
+      t11 = addNewNodeWithNI t10 (G.NodeInfo (G.NTBinaryOp op3)
+                                  (currentLabel t10) (show op3))
+      op3_node = fromJust $ lastAddedNode t11
+      t12 = addNewEdgesManySources t11 [c2_node, d2_node] op3_node
+      t13 = insertAndConnectDataNode t12
+      d3_node = fromJust $ lastAddedNode t13
+      t14 = extend t13 (LLVM.ConstIntValue 1)
+      c3_node = fromJust $ lastAddedNode t14
+      op4 = Op.BinArithmeticOp Op.ISub
+      t15 = addNewNodeWithNI t14 (G.NodeInfo (G.NTBinaryOp op4)
+                                  (currentLabel t14) (show op4))
+      op4_node = fromJust $ lastAddedNode t15
+      t16 = addNewEdgesManySources t15 [d3_node, c3_node] op4_node
+      t17 = insertAndConnectDataNode t16
+  in t17
+
+insertAndConnectDataNode :: State -> State
+insertAndConnectDataNode t =
+  let op_node = fromJust $ lastAddedNode t
+      t' = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) "")
+      d_node = fromJust $ lastAddedNode t'
+      t'' = addNewEdge t' op_node d_node
+  in t''
+
 -- TODO: implement
 -- LLVM.FP2IStmtExpr ExprResultSize StmtExpression ExprResultSize
 -- LLVM.TruncStmtExpr ExprResultSize StmtExpression ExprResultSize
--- LLVM.RegRangeStmtExpr Register (Range AnyData)
+
 
 instance LlvmToOS LLVM.PhiElement where
   extend t (LLVM.PhiElement expr l) = extend t expr
@@ -311,6 +395,11 @@ instance LlvmToOS LLVM.ProgramData where
   extend t (LLVM.PDRegister reg) = extend t reg
   extend t (LLVM.PDSymbol sym) = extend t sym
   -- TODO: what to do with PDNoValue?
+
+instance LlvmToOS LLVM.ProgramStorage where
+  extend t (LLVM.PSTemporary temp) = extend t temp
+  extend t (LLVM.PSRegister reg) = extend t reg
+  extend t (LLVM.PSSymbol sym) = extend t sym
 
 instance LlvmToOS LLVM.ConstantValue where
   extend t (LLVM.ConstIntValue val) =
@@ -328,9 +417,12 @@ instance LlvmToOS (Either LLVM.Register LLVM.Temporary) where
 
 instance LlvmToOS LLVM.Constraint where
   extend t (LLVM.AllocateInConstraint store space) =
-    let nid = fromJust $ nodeIdFromSym (currentMappings t) (toSymbol store)
+    let nid = nodeIdFromSym (currentMappings t) (toSymbol store)
         regs = toRegisters space
-    in addConstraint t $ OS.AllocateInRegisterConstraint nid regs
+    in if isJust nid
+          then addConstraint t $ OS.AllocateInRegisterConstraint (fromJust nid)
+               regs
+       else t
   extend t (LLVM.RegFlagConstraint flag ranges) =
     addConstraint t $ OS.RegFlagConstraint (toRegisterFlag flag)
                       (map toConstRange ranges)

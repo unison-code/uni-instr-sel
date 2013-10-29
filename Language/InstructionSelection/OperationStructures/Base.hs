@@ -56,6 +56,7 @@ data Constraint
     | ConstantValueConstraint G.NodeId [Range Constant]
     | AliasConstraint [G.NodeId]
     | RegFlagConstraint RegisterFlag [Range Constant]
+    | AssignSameRegisterConstraint G.NodeId G.NodeId
     deriving (Show,Eq)
 
 isAliasConstraint :: Constraint -> Bool
@@ -129,7 +130,7 @@ updateNodeInConstraint _ _ c = c
 -- kept).
 
 normalize :: OpStructure -> OpStructure
-normalize = mergeAdjacentDataNodes . mergeIdenticalNodes
+normalize =  mergeAdjacentDataNodes . mergeIdenticalNodes
 
 -- | Merges all nodes that have the same node ID and label to a single node.
 
