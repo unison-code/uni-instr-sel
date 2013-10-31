@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Program
+-- Module      :  Language.InstructionSelection.Programs.LLVM.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -8,10 +8,10 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
+-- Contains the data types and records for representing LLVM input programs.
+--
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Program (
-      module Language.InstructionSelection.Program.Base
-    ) where
+{-# LANGUAGE FlexibleInstances #-}
 
-import Language.InstructionSelection.Program.Base
+module Language.InstructionSelection.Programs.LLVM.Base where
