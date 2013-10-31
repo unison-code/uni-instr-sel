@@ -17,7 +17,6 @@
 
 module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
-, resolveAliases
 ) where
 
 import Language.InstructionSelection.OperationStructures
