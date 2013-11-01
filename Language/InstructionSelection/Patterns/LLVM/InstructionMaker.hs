@@ -9,6 +9,9 @@
 -- Portability :  portable
 --
 -- Converts an LLVM pattern into the internal instruction format.
+--
+-- TODO: Proper edges are not drawn to indicate which value is actually used
+-- when the value is reflected through a register symbol.
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleInstances #-}
