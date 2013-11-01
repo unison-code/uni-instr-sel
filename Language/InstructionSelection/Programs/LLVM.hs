@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Programs.LLVM (
-    module Language.InstructionSelection.Programs.LLVM.Base
+    module Language.InstructionSelection.Programs.LLVM.OSMaker
 ) where
 
-import Language.InstructionSelection.Programs.LLVM.Base
+import Language.InstructionSelection.Programs.LLVM.OSMaker

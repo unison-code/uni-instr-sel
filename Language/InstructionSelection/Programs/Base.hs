@@ -24,5 +24,7 @@ import Language.InstructionSelection.OperationStructures
 
 
 data Program
-    = Program OpStructure
+    = Program {
+          functions :: [OpStructure]
+      }
     deriving (Show)
