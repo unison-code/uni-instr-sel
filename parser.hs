@@ -85,41 +85,41 @@ processOpStructure os =
      writeDotFile "test.dot" dot
      return ()
 
---main :: IO ()
---main =
---  do MyArgs {..} <- cmdArgs parseArgs
---     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
---                                  exitFailure
---     src <- readFile $ fromJust llFile
---     result <- withContext $ \context ->
---       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
---     when (isError result) $ do let (Left e) = result
---                                putStrLn $ show e
---                                exitFailure
---     let (Right ast) = result
---     putStrLn "Module AST:"
---     putStrLn (showPretty ast)
---     putStrLn ""
---     let m = LLVMPro.mkProgramModule ast
---     processOpStructures $ PM.functions m
---     return ()
+main :: IO ()
+main =
+  do MyArgs {..} <- cmdArgs parseArgs
+     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
+                                  exitFailure
+     src <- readFile $ fromJust llFile
+     result <- withContext $ \context ->
+       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+     when (isError result) $ do let (Left e) = result
+                                putStrLn $ show e
+                                exitFailure
+     let (Right ast) = result
+     putStrLn "Module AST:"
+     putStrLn (showPretty ast)
+     putStrLn ""
+     let m = LLVMPro.mkProgramModule ast
+     processOpStructure $ head $ PM.functions m
+     return ()
 
 getPatterns :: LLVMPat.Instruction -> [LLVMPat.Pattern]
 getPatterns (LLVMPat.Instruction _ ps) = ps
 
 --main :: IO ()
-main =
-  do contents <- getContents
-     putStrLn ""
-     let result = LLVMPat.parse contents
-     when (isError result) $ do let (Left e) = result
-                                putStr $ show e
-                                exitFailure
-
-     let (Right llvm_insts) = result
-         insts = map LLVMPat.mkInstruction llvm_insts
-         os = head $ Pat.patterns $ head insts
-     processOpStructure os
+--main =
+--  do contents <- getContents
+--     putStrLn ""
+--     let result = LLVMPat.parse contents
+--     when (isError result) $ do let (Left e) = result
+--                                putStr $ show e
+--                                exitFailure
+--
+--     let (Right llvm_insts) = result
+--         insts = map LLVMPat.mkInstruction llvm_insts
+--         os = head $ Pat.patterns $ head insts
+--     processOpStructure os
 
 params = nonClusteredParams { fmtNode = nodeAttr }
 nodeAttr n@(_, (NodeLabel _ (NodeInfo NTData _ _))) =
