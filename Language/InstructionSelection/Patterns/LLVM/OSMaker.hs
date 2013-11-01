@@ -21,7 +21,7 @@ module Language.InstructionSelection.Patterns.LLVM.OSMaker (
 import qualified Language.InstructionSelection.Graphs as G
 import qualified Language.InstructionSelection.OperationStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
-import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
+import qualified Language.InstructionSelection.Patterns.LLVM.Base as LLVM
 import Language.InstructionSelection.Utils
 import Data.Maybe
 
