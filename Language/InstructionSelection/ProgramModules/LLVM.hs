@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Programs.LLVM
+-- Module      :  Language.InstructionSelection.ProgramModules.LLVM
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Programs.LLVM (
-    module Language.InstructionSelection.Programs.LLVM.OSMaker
+module Language.InstructionSelection.ProgramModules.LLVM (
+  module Language.InstructionSelection.ProgramModules.LLVM.PMMaker
 ) where
 
-import Language.InstructionSelection.Programs.LLVM.OSMaker
+import Language.InstructionSelection.ProgramModules.LLVM.PMMaker

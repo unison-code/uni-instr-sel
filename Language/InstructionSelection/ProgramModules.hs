@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Programs
+-- Module      :  Language.InstructionSelection.ProgramModules
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Programs (
-      module Language.InstructionSelection.Programs.Base
-    ) where
+module Language.InstructionSelection.ProgramModules (
+  module Language.InstructionSelection.ProgramModules.Base
+) where
 
-import Language.InstructionSelection.Programs.Base
+import Language.InstructionSelection.ProgramModules.Base
