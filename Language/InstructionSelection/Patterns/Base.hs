@@ -25,15 +25,17 @@ import Language.InstructionSelection.Patterns.AssemblyString
 
 
 data Instruction
-    = Instruction
+    = Instruction {
 
           -- | Assembly string to produce upon code emission.
 
-          AssemblyString
+          assemblyStr :: AssemblyString
 
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern.
 
-          [OpStructure]
+        , patterns :: [OpStructure]
+
+      }
 
     deriving (Show)

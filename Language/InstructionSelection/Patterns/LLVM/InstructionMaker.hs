@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.LLVM.OSMaker
+-- Module      :  Language.InstructionSelection.Patterns.LLVM.InstructionMaker
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -8,29 +8,30 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- Converts an LLVM pattern into the internal operation structure-based pattern
--- format.
+-- Converts an LLVM pattern into the internal instruction format.
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleInstances #-}
 
-module Language.InstructionSelection.Patterns.LLVM.OSMaker (
-  mkOpStructure
+module Language.InstructionSelection.Patterns.LLVM.InstructionMaker (
+  mkInstruction
 ) where
 
 import qualified Language.InstructionSelection.Graphs as G
 import qualified Language.InstructionSelection.OperationStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
+import qualified Language.InstructionSelection.Patterns.Base as P
 import qualified Language.InstructionSelection.Patterns.LLVM.Base as LLVM
 import Language.InstructionSelection.Utils
 import Data.Maybe
 
 
 
-mkOpStructure :: LLVM.Pattern -> OS.OpStructure
-mkOpStructure llvm =
-  let (os, _, _) = extend (OS.empty, G.BBLabel "", []) llvm
-  in os
+mkInstruction :: LLVM.Instruction -> P.Instruction
+mkInstruction (LLVM.Instruction ass ps) =
+  let sts = map (extend (OS.empty, G.BBLabel "", [])) ps
+      oss = map (\(os, _, _) -> os) sts
+  in P.Instruction ass oss
 
 data Symbol
     = StringSymbol String

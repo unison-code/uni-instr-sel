@@ -32,85 +32,94 @@ then transformed into a corresponding DAG and then output as S-expressions.
 
 {-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
 
-import qualified Language.InstructionSelection.Patterns.LLVM as LLVM
-import Language.InstructionSelection.SExpressions
-import Language.InstructionSelection.Patterns.LLVM.OSMaker
-import Language.InstructionSelection.Patterns.LLVM.SExprParser
-import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.OperationStructures
 import Control.Monad
-import System.Exit
+import Control.Monad.Error
 import Data.GraphViz hiding (parse)
 import Data.GraphViz.Commands.IO
-
-import System.FilePath
-import System.Console.CmdArgs
+import Data.Maybe
+import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.OperationStructures
+import qualified Language.InstructionSelection.Patterns as Pat
+import qualified Language.InstructionSelection.Patterns.LLVM as LLVMPat
+import qualified Language.InstructionSelection.ProgramModules as PM
+import qualified Language.InstructionSelection.ProgramModules.LLVM as LLVMPro
+import Language.InstructionSelection.SExpressions
 import LLVM.General
-import LLVM.General.Analysis
+import LLVM.General.AST
 import LLVM.General.Context
 import LLVM.General.PrettyPrint
-import Control.Monad.Error
-import Debug.Trace
+import System.Console.CmdArgs
+import System.Exit
+import System.FilePath
+
+
 
 data MyArgs
     = MyArgs {
-          llFile :: String
+          llFile :: Maybe String
       }
     deriving (Data, Typeable, Show)
 
 parseArgs =
   MyArgs {
-    llFile = "" &= typFile
+    llFile = Nothing &= typFile &= help "LLVM IR file (mandatory)"
   }
 
 isError (Left _) = True
 isError _ = False
 
-main :: IO ()
+processOpStructure :: OpStructure -> IO ()
+processOpStructure os =
+  do let resolved_os = resolveAliases os
+         normalized_os = normalize resolved_os
+         dot = graphToDot params $ intGraph $ graph normalized_os
+     putStrLn "After make:"
+     putStrLn (show os)
+     putStrLn ""
+     putStrLn "After alias resolving:"
+     putStrLn (show resolved_os)
+     putStrLn ""
+     putStrLn "After normalization:"
+     putStrLn (show normalized_os)
+     putStrLn ""
+     writeDotFile "test.dot" dot
+     return ()
+
+--main :: IO ()
+--main =
+--  do MyArgs {..} <- cmdArgs parseArgs
+--     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
+--                                  exitFailure
+--     src <- readFile $ fromJust llFile
+--     result <- withContext $ \context ->
+--       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+--     when (isError result) $ do let (Left e) = result
+--                                putStrLn $ show e
+--                                exitFailure
+--     let (Right ast) = result
+--     putStrLn "Module AST:"
+--     putStrLn (showPretty ast)
+--     putStrLn ""
+--     let m = LLVMPro.mkProgramModule ast
+--     processOpStructures $ PM.functions m
+--     return ()
+
+getPatterns :: LLVMPat.Instruction -> [LLVMPat.Pattern]
+getPatterns (LLVMPat.Instruction _ ps) = ps
+
+--main :: IO ()
 main =
-  do MyArgs {..} <- cmdArgs parseArgs
-     src <- readFile llFile
-     result <- withContext $ \context ->
-       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+  do contents <- getContents
+     putStrLn ""
+     let result = LLVMPat.parse contents
      when (isError result) $ do let (Left e) = result
                                 putStr $ show e
                                 exitFailure
-     let (Right ast) = result
-     putStrLn (showPretty ast)
-     return ()
 
---isError :: Either ParseError [LLVM.Instruction] -> Bool
---isError (Left _) = True
---isError _ = False
---
---getPatterns :: LLVM.Instruction -> [LLVM.Pattern]
---getPatterns (LLVM.Instruction _ ps) = ps
---
-----main :: IO ()
---main =
---  do contents <- getContents
---     putStr "\n"
---     let result = parse contents
---     when (isError result) $ do let (Left e) = result
---                                putStr $ show e
---                                exitFailure
---
---     let (Right instructions) = result
---         llvm_patterns = concat $ map getPatterns instructions
---         ops = map mkOpStructure llvm_patterns
---         resolved_ops = map resolveAliases ops
---         normalized_ops = map normalize resolved_ops
---         dots = map (graphToDot params . intGraph . graph) normalized_ops
---     putStr "After make:\n"
---     putStr (show ops)
---     putStr "\n\n"
---     putStr "After alias resolving:\n"
---     putStr (show resolved_ops)
---     putStr "\n\n"
---     putStr "After normalization:\n"
---     putStr (show normalized_ops)
---     putStr "\n\n"
---     mapM_ (writeDotFile "test.dot") dots
+     let (Right llvm_insts) = result
+         insts = map LLVMPat.mkInstruction llvm_insts
+         os = head $ Pat.patterns $ head insts
+     processOpStructure os
 
 params = nonClusteredParams { fmtNode = nodeAttr }
 nodeAttr n@(_, (NodeLabel _ (NodeInfo NTData _ _))) =

@@ -12,10 +12,10 @@
 
 module Language.InstructionSelection.Patterns.LLVM (
   module Language.InstructionSelection.Patterns.LLVM.Base
-, module Language.InstructionSelection.Patterns.LLVM.PatternMaker
+, module Language.InstructionSelection.Patterns.LLVM.InstructionMaker
 , module Language.InstructionSelection.Patterns.LLVM.SExprParser
 ) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
-import Language.InstructionSelection.Patterns.LLVM.PatternMaker
+import Language.InstructionSelection.Patterns.LLVM.InstructionMaker
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
