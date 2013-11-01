@@ -11,11 +11,11 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Patterns.LLVM (
-    module Language.InstructionSelection.Patterns.LLVM.Base
-  , module Language.InstructionSelection.Patterns.LLVM.OSMaker
-  , module Language.InstructionSelection.Patterns.LLVM.SExprParser
+  module Language.InstructionSelection.Patterns.LLVM.Base
+, module Language.InstructionSelection.Patterns.LLVM.PatternMaker
+, module Language.InstructionSelection.Patterns.LLVM.SExprParser
 ) where
 
 import Language.InstructionSelection.Patterns.LLVM.Base
-import Language.InstructionSelection.Patterns.LLVM.OSMaker
+import Language.InstructionSelection.Patterns.LLVM.PatternMaker
 import Language.InstructionSelection.Patterns.LLVM.SExprParser
