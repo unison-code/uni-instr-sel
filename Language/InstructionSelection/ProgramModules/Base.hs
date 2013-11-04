@@ -17,14 +17,22 @@
 
 module Language.InstructionSelection.ProgramModules.Base (
   Module (..)
+, Function (..)
 ) where
 
 import Language.InstructionSelection.OperationStructures
 
 
 
+data Function
+    = Function {
+          getFunctionName :: String
+        , getFunctionOS :: OpStructure
+      }
+    deriving (Show)
+
 data Module
     = Module {
-          functions :: [OpStructure]
+          getFunctions :: [Function]
       }
     deriving (Show)

@@ -101,7 +101,7 @@ main =
      putStrLn (showPretty ast)
      putStrLn ""
      let m = LLVMPro.mkProgramModule ast
-     processOpStructure $ head $ PM.functions m
+     processOpStructure $ PM.getFunctionOS $ head $ PM.getFunctions m
      return ()
 
 getPatterns :: LLVMPat.Instruction -> [LLVMPat.Pattern]
