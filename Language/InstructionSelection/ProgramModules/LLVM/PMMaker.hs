@@ -11,8 +11,6 @@
 -- Converts and LLVM IR module into the internal program format.
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
-
 module Language.InstructionSelection.ProgramModules.LLVM.PMMaker (
   mkProgramModule
 ) where
@@ -121,8 +119,18 @@ nodeIdFromSym ms sym =
         then Just $ fst $ last ns
         else Nothing
 
-instance LlvmToOS [LLVM.BasicBlock] where
+instance (LlvmToOS a) => LlvmToOS [a] where
   extend = foldl extend
+
+instance (LlvmToOS n) => LlvmToOS (LLVM.Named n) where
+  extend t (name LLVM.:= expr) =
+    let t' = extend t name
+        dst_node = fromJust $ lastAddedNode t'
+        t'' = extend t' expr
+        expr_node = fromJust $ lastAddedNode t''
+        t''' = addNewEdge t'' expr_node dst_node
+    in t'''
+  extend t (LLVM.Do expr) = extend t expr
 
 instance LlvmToOS LLVM.BasicBlock where
   extend t (LLVM.BasicBlock (LLVM.Name l) insts term_inst) =
@@ -130,26 +138,6 @@ instance LlvmToOS LLVM.BasicBlock where
         t'' = foldl extend t' insts
         t''' = extend t'' term_inst
     in t'''
-
-instance LlvmToOS (LLVM.Named LLVM.Instruction) where
-  extend t (name LLVM.:= expr) =
-    let t' = extend t name
-        dst_node = fromJust $ lastAddedNode t'
-        t'' = extend t' expr
-        expr_node = fromJust $ lastAddedNode t''
-        t''' = addNewEdge t'' expr_node dst_node
-    in t'''
-  extend t (LLVM.Do expr) = extend t expr
-
-instance LlvmToOS (LLVM.Named LLVM.Terminator) where
-  extend t (name LLVM.:= expr) =
-    let t' = extend t name
-        dst_node = fromJust $ lastAddedNode t'
-        t'' = extend t' expr
-        expr_node = fromJust $ lastAddedNode t''
-        t''' = addNewEdge t'' expr_node dst_node
-    in t'''
-  extend t (LLVM.Do expr) = extend t expr
 
 instance LlvmToOS LLVM.Name where
   extend t name@(LLVM.Name str) =

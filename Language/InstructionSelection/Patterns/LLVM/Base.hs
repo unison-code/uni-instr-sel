@@ -13,8 +13,6 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
-
 module Language.InstructionSelection.Patterns.LLVM.Base where
 
 import Language.InstructionSelection.Patterns.AssemblyString
@@ -468,9 +466,6 @@ data Instruction
 -- SExpressionable instances
 --------------------------------------------------
 
-instance SExpressionable [Instruction] where
-  prettySE is i = prettySEList is i
-
 instance SExpressionable Instruction where
   prettySE (Instruction ass pats) i =
     let i1 = i + 1
@@ -510,8 +505,8 @@ instance SExpressionable Constraint where
     ++ ")"
   prettySE (AliasesConstraint aliases) i =
     "(aliases"
-    ++ " " ++ prettySEListNoBreak aliases i
-    ++ ")"
+    ++ " (" ++ prettySEListNoBreak aliases i
+    ++ "))"
   prettySE (RelAddressConstraint imm memClass) i =
     "(rel-address"
     ++ " " ++ prettySE imm i
@@ -521,12 +516,6 @@ instance SExpressionable Constraint where
     "(abs-address"
     ++ " " ++ prettySE imm i
     ++ " " ++ prettySE memClass i
-    ++ ")"
-
-instance SExpressionable [AliasValue] where
-  prettySE values i =
-    "("
-    ++ prettySEListNoBreak values i
     ++ ")"
 
 instance SExpressionable AliasValue where
@@ -679,14 +668,6 @@ instance SExpressionable SetRegDestination where
   prettySE (SRDRegisterFlag flag) i = prettySE flag i
   prettySE (SRDSymbol reg) i = prettySE reg i
   prettySE (SRDTemporary temp) i = prettySE temp i
-
-instance SExpressionable (Either Temporary Symbol) where
-  prettySE (Left lhs) i = prettySE lhs i
-  prettySE (Right rhs) i = prettySE rhs i
-
-instance SExpressionable (Range ProgramData) where
-  prettySE (Range lower upper) i =
-    "(" ++ prettySE lower i ++ " " ++ prettySE upper i ++ ")"
 
 instance SExpressionable ProgramStorage where
   prettySE (PSSymbol sym) i = prettySE sym i

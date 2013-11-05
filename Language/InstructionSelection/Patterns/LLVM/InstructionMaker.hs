@@ -14,7 +14,7 @@
 -- when the value is reflected through a register symbol.
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
+
 
 module Language.InstructionSelection.Patterns.LLVM.InstructionMaker (
   mkInstruction
@@ -47,9 +47,10 @@ instance SymbolFormable LLVM.Symbol where
   toSymbol (LLVM.Symbol str) = StringSymbol str
 instance SymbolFormable LLVM.Temporary where
   toSymbol (LLVM.Temporary int) = TemporarySymbol int
-instance SymbolFormable (Either LLVM.Temporary LLVM.Symbol) where
-  toSymbol (Left temp) = toSymbol temp
-  toSymbol (Right sym) = toSymbol sym
+instance (SymbolFormable a, SymbolFormable b) =>
+         SymbolFormable (Either a b) where
+  toSymbol (Left l) = toSymbol l
+  toSymbol (Right r) = toSymbol r
 instance SymbolFormable LLVM.AliasValue where
   toSymbol (LLVM.AVTemporary temp) = toSymbol temp
   toSymbol (LLVM.AVSymbol sym) = toSymbol sym
@@ -68,9 +69,9 @@ instance RegisterFormable LLVM.Register where
 
 class ConstRangeFormable a where
   toConstRange :: a -> (Range OS.Constant)
-instance ConstRangeFormable (Range Integer) where
-  toConstRange (Range lower upper) = Range (OS.IntConstant lower)
-                                     (OS.IntConstant upper)
+instance (Integral i) => ConstRangeFormable (Range i) where
+  toConstRange (Range lower upper) = Range (OS.IntConstant $ toInteger lower)
+                                     (OS.IntConstant $ toInteger upper)
 
 toRegisterFlag :: LLVM.RegisterFlag -> OS.RegisterFlag
 toRegisterFlag (LLVM.RegisterFlag flag reg) =
@@ -415,9 +416,9 @@ instance LlvmToOS LLVM.ConstantValue where
                                  (OS.IntConstant val)])
     in t''
 
-instance LlvmToOS (Either LLVM.Register LLVM.Temporary) where
-  extend t (Left reg) = extend t reg
-  extend t (Right tmp) = extend t tmp
+instance (LlvmToOS l, LlvmToOS r) => LlvmToOS (Either l r) where
+  extend t (Left l) = extend t l
+  extend t (Right r) = extend t r
 
 instance LlvmToOS LLVM.Constraint where
   extend t (LLVM.AllocateInConstraint store space) =
@@ -434,11 +435,11 @@ instance LlvmToOS LLVM.Constraint where
     let nid = fromJust $ nodeIdFromSym (currentMappings t) (toSymbol imm)
         const_ranges = map toConstRange ranges
     in addConstraint t $ OS.ConstantValueConstraint nid const_ranges
-  extend t (LLVM.AliasesConstraint as) = foldl extend t as
+  extend t (LLVM.AliasesConstraint as) =
+    let f localT avs =
+          let only_values = filter (not . LLVM.isAVNoValue) avs
+              ns = mapMaybe (nodeIdFromSym (currentMappings localT) . toSymbol)
+                   only_values
+          in addConstraint localT $ OS.AliasConstraint ns
+    in foldl f t as
   -- TODO: handle address constraints
-
-instance LlvmToOS [LLVM.AliasValue] where
-  extend t avs =
-    let only_values = filter (not . LLVM.isAVNoValue) avs
-        ns = mapMaybe (nodeIdFromSym (currentMappings t) . toSymbol) only_values
-    in addConstraint t $ OS.AliasConstraint ns

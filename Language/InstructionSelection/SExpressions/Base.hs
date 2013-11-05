@@ -13,7 +13,7 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Language.InstructionSelection.SExpressions.Base where
 
@@ -37,27 +37,28 @@ class SExpressionable a where
               -> Natural        -- ^ Current depth level (starts at 0).
               -> String
 
+  -- | Pretty-prints a list. If the list is not empty, it first prints a new
+  -- line, and each element in the list will be separated by a new line. Each
+  -- element will also be indented according to the depth level.
+
+  prettySEList :: [a] -> Natural -> String
+  prettySEList [] _ = ""
+  prettySEList as i =
+    "\n" ++ (intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as)
+
+  -- | Pretty-prints a list but with no line breaks between each element. The
+  -- list itself will also not be indented.
+
+  prettySEListNoBreak :: [a] -> Natural -> String
+  prettySEListNoBreak as i = intercalate " " $ map (\a -> (prettySE a i)) as
+
+
+
 -- | Prints indentation according to the depth level (each level incurs 2
 -- spaces).
 
 indent :: Natural -> String
 indent i = replicate (2 * (fromInteger $ fromNatural i)) ' '
-
--- | Pretty-prints a list. If the list is not empty, it first prints a new line,
--- and each element in the list will be separated by a new line. Each element
--- will also be indented according to the depth level.
-
-prettySEList :: (SExpressionable a) => [a] -> Natural -> String
-prettySEList [] _ = ""
-prettySEList as i =
-  "\n" ++ (intercalate "\n" $ map (\a -> (indent i ++ prettySE a i)) as)
-
--- | Pretty-prints a list but with no line breaks between each element. The list
--- itself will also not be indented.
-
-prettySEListNoBreak :: (SExpressionable a) => [a] -> Natural -> String
-prettySEListNoBreak as i =
-  intercalate " " $ map (\a -> (prettySE a i)) as
 
 showSE :: (SExpressionable a) => a -> String
 showSE a = prettySE a 0
@@ -74,9 +75,19 @@ showSEList a = prettySEList a 0
 instance SExpressionable Integer where
   prettySE int _ = show int
 
-instance SExpressionable String where
-  prettySE str _ = str
+instance (SExpressionable a) => SExpressionable [a] where
+  prettySE as i = prettySEList as i
 
-instance SExpressionable (Range Integer) where
+instance SExpressionable Char where
+  prettySE c _ = [c]
+  prettySEList str _ = str
+  prettySEListNoBreak = prettySEList
+
+instance (SExpressionable i) => SExpressionable (Range i) where
   prettySE (Range lower upper) i =
     "(" ++ prettySE lower i ++ " . " ++ prettySE upper i ++ ")"
+
+instance (SExpressionable l, SExpressionable r) =>
+         SExpressionable (Either l r) where
+  prettySE (Left l) i = prettySE l i
+  prettySE (Right r) i = prettySE r i
