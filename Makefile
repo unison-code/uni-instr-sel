@@ -1,10 +1,11 @@
 parser:
 	ghc -Wall parser.hs
 
-run: parser
-	./parser < test.txt
+run: parser fact.ll
+	./parser -l fact.ll
+
+test.pdf: run
 	dot -Tpdf test.dot -o test.pdf
-#	./parser < patterns-dump.sexpr
 
 clean:
 	find . -name "*.hi" -type f -exec rm {} \;

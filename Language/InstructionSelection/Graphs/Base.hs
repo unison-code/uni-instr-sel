@@ -33,6 +33,7 @@ module Language.InstructionSelection.Graphs.Base (
 , newNodeId
 , nodes
 , nodesByNodeId
+, numNodes
 , nodeId
 , nodeLabel
 , nodeInfo
@@ -50,6 +51,7 @@ module Language.InstructionSelection.Graphs.Base (
 , topSort
 , children
 , isDataNodeType
+, inGraph
 ) where
 
 import qualified Data.Graph.Inductive as I
@@ -231,6 +233,11 @@ haveSameBBLabels :: Node -> Node -> Bool
 haveSameBBLabels (_, NodeLabel _ (NodeInfo _ label1 _))
                (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 
+-- | Gets the number of nodes.
+
+numNodes :: Graph -> Int
+numNodes g = length $ nodes g
+
 -- | Gets the list of nodes.
 
 nodes :: Graph -> [Node]
@@ -355,3 +362,8 @@ topSort (Graph g) = map (fromJust . fromNodeInt g) (I.topsort g)
 
 children :: Node -> Graph -> [Node]
 children n (Graph g) = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
+
+-- | Checks if a given node is within the graph.
+
+inGraph :: Graph -> Node -> Bool
+inGraph (Graph g) (int, _) = isJust $ fromNodeInt g int

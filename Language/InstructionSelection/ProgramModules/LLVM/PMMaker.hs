@@ -217,51 +217,42 @@ instance LlvmToOS LLVM.Instruction where
     insertBinaryOp t (Op.BinArithmeticOp Op.Or) op1 op2
   extend t (LLVM.Xor op1 op2 _) =
     insertBinaryOp t (Op.BinArithmeticOp Op.Xor) op1 op2
-  extend t (LLVM.Alloca typ numE align _) = error "Not implemented for alloca"
-  extend t (LLVM.Load vol addr atom align _) = error "Not implemented for load"
-  extend t (LLVM.Store vol addr val atom align _) =
-    error "Not implemented for store"
-  extend t (LLVM.GetElementPtr inb addr is _) =
-    error "Not implemented for getelementptr"
-  extend t (LLVM.Fence atom _) = error "Not implemented for fence"
-  extend t (LLVM.CmpXchg vol addr expect repl atom _) =
-    error "Not implemented for cmpxchg"
-  extend t (LLVM.AtomicRMW vol rmwOp addr val atom _) =
-    error "Not implemented for atomicrmw"
-  extend t (LLVM.Trunc op typ _) = error "Not implemented for trunc"
-  extend t (LLVM.ZExt op typ _) = error "Not implemented for zext"
-  extend t (LLVM.SExt op typ _) = error "Not implemented for sext"
-  extend t (LLVM.FPToUI op typ _) = error "Not implemented for fptoui"
-  extend t (LLVM.FPToSI op typ _) = error "Not implemented for fptosi"
-  extend t (LLVM.UIToFP op typ _) = error "Not implemented for uitofp"
-  extend t (LLVM.SIToFP op typ _) = error "Not implemented for sitofp"
-  extend t (LLVM.FPTrunc op typ _) = error "Not implemented for fptrunc"
-  extend t (LLVM.FPExt op typ _) = error "Not implemented for fpext"
-  extend t (LLVM.PtrToInt op typ _) = error "Not implemented for ptrtoint"
-  extend t (LLVM.IntToPtr op typ _) = error "Not implemented for inttoptr"
-  extend t (LLVM.BitCast op typ _) = error "Not implemented for bitcast"
-  extend t (LLVM.ICmp iPred op1 op2 _) =
+  extend t l@(LLVM.Load vol addr atom align _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Store vol addr val atom align _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.ICmp iPred op1 op2 _) =
     insertBinaryOp t (Op.BinCompareOp $ toICmp iPred) op1 op2
   extend t (LLVM.FCmp fPred op1 op2 _) =
     insertBinaryOp t (Op.BinCompareOp $ toFCmp fPred) op1 op2
-  extend t (LLVM.Phi typ ins _) = error "Not implemented for phi"
-  extend t (LLVM.Call isTail cc retAttr funOp args funAttrs _) =
-    error "Not implemented for call"
-  extend t (LLVM.Select cond trueV falseV _) =
-    error "Not implemented for select"
-  extend t (LLVM.VAArg arg typ _) = error "Not implemented for vaarg"
-  extend t (LLVM.ExtractElement vect i _) =
-    error "Not implemented for extractelement"
-  extend t (LLVM.InsertElement vect elem i _) =
-    error "Not implemented for insertelement"
-  extend t (LLVM.ShuffleVector op1 op2 mask _) =
-    error "Not implemented for shufflevector"
-  extend t (LLVM.ExtractValue aggr is _) =
-    error "Not implemented for extractvalue"
-  extend t (LLVM.InsertValue aggr elem is _) =
-    error "Not implemented for insertvalue"
-  extend t (LLVM.LandingPad typ perFun clean clauses _) =
-    error "Not implemented for landingpad"
+  extend t (LLVM.Phi typ ins _) =
+    let f (ns, local_t) e =
+          let local_t1 = processPhiElem local_t e
+              n = fromJust $ lastAddedNode local_t1
+          in (ns ++ [n], local_t1)
+        (data_nodes, t1) = foldl f ([], t) ins
+        t2 = addNewNodeWithNI t1 (G.NodeInfo G.NTPhi (currentLabel t1) "phi")
+        phi_node = fromJust $ lastAddedNode t2
+        t3 = addNewEdgesManySources t2 data_nodes phi_node
+        t4 = insertAndConnectDataNode t3
+    in t4
+  extend t l@(LLVM.Call isTail cc retAttr funOp args funAttrs _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Select cond trueV falseV _) =
+    error $ "Not implemented for " ++ show l
+  extend t l = error $ "'extend' not implemented for " ++ show l
+
+processPhiElem :: State -> (LLVM.Operand, LLVM.Name) -> State
+processPhiElem t (op, _) = extend t op
+  -- TODO: what to do with label on the element?
+
+insertAndConnectDataNode :: State -> State
+insertAndConnectDataNode t =
+  let op_node = fromJust $ lastAddedNode t
+      t1 = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) "")
+      d_node = fromJust $ lastAddedNode t1
+      t2 = addNewEdge t1 op_node d_node
+  in t2
 
 toICmp :: LLVMI.IntegerPredicate -> Op.CompareOp
 toICmp LLVMI.EQ = Op.ICmpEq
@@ -303,15 +294,25 @@ instance LlvmToOS LLVM.Terminator where
                      in addNewEdge t3 op_node ret_node
                 else t1
     in t2
-  extend t (LLVM.Br dst _) = error "Not implemented for br"
-  extend t (LLVM.CondBr op trueDst falseDst _) =
-    error "Not implemented for condbr"
-  extend t (LLVM.IndirectBr op dsts _) = error "Not implemented for indirectbr"
-  extend t (LLVM.Switch op defDst dsts _) = error "Not implemented for switch"
-  extend t (LLVM.Invoke cc retAttr funOp args funAttr retDst expDst _) =
-    error "Not implemented for invoke"
-  extend t (LLVM.Resume op _) = error "Not implemented for resume"
-  extend t (LLVM.Unreachable _) = error "Not implemented for unreachable"
+  extend t l@(LLVM.Br dst _) = error $ "Not implemented for " ++ show l
+  extend t (LLVM.CondBr op (LLVM.Name trueDst) (LLVM.Name falseDst) _) =
+    let t1 = extend t op
+        op_node = fromJust $ lastAddedNode t1
+        t2 = addNewNodeWithNI t1 (G.NodeInfo (G.NTCondBranch (G.BBLabel trueDst)
+                                              (G.BBLabel falseDst))
+                                  (currentLabel t1) "br")
+        br_node = fromJust $ lastAddedNode t2
+        t3 = addNewEdge t2 op_node br_node
+    in t3
+  extend t l@(LLVM.IndirectBr op dsts _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Switch op defDst dsts _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Invoke cc retAttr funOp args funAttr retDst expDst _) =
+    error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Resume op _) = error $ "Not implemented for " ++ show l
+  extend t l@(LLVM.Unreachable _) = error $ "Not implemented for " ++ show l
+  extend t l = error $ "'extend' not implemented for " ++ show l
   -- TODO: implement these functions
 
 instance LlvmToOS LLVM.Operand where
@@ -319,4 +320,11 @@ instance LlvmToOS LLVM.Operand where
   extend t (LLVM.ConstantOperand c) = extend t c
 
 instance LlvmToOS LLVMC.Constant where
+  extend t (LLVMC.Int _ v) =
+    let t1 = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) (show v))
+        n = fromJust $ lastAddedNode t1
+        t2 = addConstraint t1 (OS.ConstantValueConstraint (G.nodeId n)
+                                [Range (OS.IntConstant v) (OS.IntConstant v)])
+    in t2
 
+  extend t l = error $ "'extend' not implemented for " ++ show l

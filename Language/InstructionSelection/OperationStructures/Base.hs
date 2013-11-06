@@ -130,7 +130,7 @@ updateNodeInConstraint _ _ c = c
 -- kept).
 
 normalize :: OpStructure -> OpStructure
-normalize =  mergeAdjacentDataNodes . mergeIdenticalNodes
+normalize = mergeAdjacentDataNodes . mergeIdenticalNodes
 
 -- | Merges all nodes that have the same node ID and label to a single node.
 
@@ -154,17 +154,25 @@ mergeNodesWithSameNodeIdAndLabel (i, l) g =
 
 mergeAdjacentDataNodes :: OpStructure -> OpStructure
 mergeAdjacentDataNodes os =
-  foldl mergeAdjacentDataNodes' os (reverse $ G.topSort (graph os))
+  let os' = mergeAdjacentDataNodes' os
+  in if G.numNodes (graph os') < G.numNodes (graph os)
+        then mergeAdjacentDataNodes os'
+        else os
 
-mergeAdjacentDataNodes' :: OpStructure -> G.Node -> OpStructure
-mergeAdjacentDataNodes' os n
-  | isDataNode n = let g = graph os
-                       data_cs = filter isDataNode $ G.children n g
-                   in foldr (mergeAdjacentDataNodes'' n) os data_cs
+mergeAdjacentDataNodes' :: OpStructure -> OpStructure
+mergeAdjacentDataNodes' os =
+  foldl mergeAdjacentDataNodes'' os $ G.nodes $ graph os
+
+mergeAdjacentDataNodes'' :: OpStructure -> G.Node -> OpStructure
+mergeAdjacentDataNodes'' os n
+  | isDataNode n && G.inGraph (graph os) n =
+    let g = graph os
+        data_cs = filter isDataNode $ G.children n g
+    in foldr (mergeAdjacentDataNodes''' n) os data_cs
   | otherwise = os
 
-mergeAdjacentDataNodes'' :: G.Node -> G.Node -> OpStructure -> OpStructure
-mergeAdjacentDataNodes'' n_to n_from os =
+mergeAdjacentDataNodes''' :: G.Node -> G.Node -> OpStructure -> OpStructure
+mergeAdjacentDataNodes''' n_to n_from os =
   let new_g = G.mergeNodes n_to n_from (graph os)
       new_cs = map (updateNodeInConstraint (G.nodeId n_to) (G.nodeId n_from))
                (constraints os)

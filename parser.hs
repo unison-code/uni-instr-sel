@@ -73,6 +73,7 @@ processOpStructure os =
   do let resolved_os = resolveAliases os
          normalized_os = normalize resolved_os
          dot = graphToDot params $ intGraph $ graph normalized_os
+     writeDotFile "test.dot" dot
      putStrLn "After make:"
      putStrLn (show os)
      putStrLn ""
@@ -82,7 +83,6 @@ processOpStructure os =
      putStrLn "After normalization:"
      putStrLn (show normalized_os)
      putStrLn ""
-     writeDotFile "test.dot" dot
      return ()
 
 main :: IO ()
@@ -125,5 +125,5 @@ params = nonClusteredParams { fmtNode = nodeAttr }
 nodeAttr n@(_, (NodeLabel _ (NodeInfo NTData _ _))) =
   [makeLabel n, shape BoxShape]
 nodeAttr n@(_, (NodeLabel _ (NodeInfo _ _ _))) = [makeLabel n]
-makeLabel (_, (NodeLabel _ (NodeInfo _ (BBLabel l) str))) =
-  toLabel (l ++ ":" ++ str)
+makeLabel (_, (NodeLabel i (NodeInfo _ (BBLabel l) str))) =
+  toLabel (str ++ "\n" ++ show i ++ " : " ++ l)
