@@ -269,7 +269,7 @@ instance LlvmToOS LLVM.StmtExpression where
         t2 = extend t1 rhs
         rhs_node = fromJust $ lastAddedNode t2
         t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp op)
-                                  (currentLabel t2) (show op))
+                                  (currentLabel t2) (Op.tochars op))
         op_node = fromJust $ lastAddedNode t3
         t4 = addNewEdgesManySources t3 [lhs_node, rhs_node] op_node
     in t4
@@ -278,7 +278,7 @@ instance LlvmToOS LLVM.StmtExpression where
     let t1 = extend t expr
         expr_node = fromJust $ lastAddedNode t1
         t2 = addNewNodeWithNI t1 (G.NodeInfo (G.NTUnaryOp op)
-                                  (currentLabel t1) (show op))
+                                  (currentLabel t1) (Op.tochars op))
         op_node = fromJust $ lastAddedNode t2
         t3 = addNewEdge t2 expr_node op_node
     in t3
