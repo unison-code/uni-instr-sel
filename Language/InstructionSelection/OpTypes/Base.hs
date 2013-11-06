@@ -335,6 +335,19 @@ data CompareOp
 
     | FCmpUn
 
+      -- | Float ordering check. If none of the values is a QNaN, then the
+      -- operation returns @True@. Commutative.
+
+    | FCmpOrd
+
+      -- | Always returns @True@.
+
+    | FTrue
+
+      -- | Always returns @False@.
+
+    | FFalse
+
     deriving (Show, Eq)
 
 instance SExpressionable UnaryOp where
@@ -398,7 +411,10 @@ instance SExpressionable CompareOp where
   prettySE FOCmpLT _ = "fcmp olt"
   prettySE FUCmpLE _ = "fcmp ule"
   prettySE FOCmpLE _ = "fcmp ole"
+  prettySE FCmpOrd _ = "fcmp ord"
   prettySE FCmpUn _ = "fcmp uno"
+  prettySE FTrue _ = "fcmp true"
+  prettySE FFalse _ = "fcmp false"
 
 class ToChars a where
   tochars :: a -> String
@@ -460,4 +476,7 @@ instance ToChars CompareOp where
   tochars FOCmpLT = "<"
   tochars FUCmpLE = "<="
   tochars FOCmpLE = "<="
-  tochars FCmpUn = "?"
+  tochars FCmpUn = "Uno"
+  tochars FTrue = "T"
+  tochars FFalse = "F"
+  tochars FCmpOrd = "Ord"

@@ -39,7 +39,10 @@ mkInstruction (LLVM.Instruction ass ps) =
 data Symbol
     = StringSymbol String
     | TemporarySymbol Integer
-    deriving (Show, Eq)
+    deriving (Eq)
+instance Show Symbol where
+  show (StringSymbol str) = "%" ++ str
+  show (TemporarySymbol int) = "t" ++ show int
 
 class SymbolFormable a where
   toSymbol :: a -> Symbol
@@ -60,8 +63,7 @@ class RegisterFormable a where
   toRegisters :: a -> [OS.Register]
 instance RegisterFormable LLVM.DataSpace where
   toRegisters (LLVM.DSRegisterClass rc) = toRegisters rc
-  toRegisters s = error $ "Not handling " ++ (show s) ++ " yet"
-  -- TODO: handle memory space
+  toRegisters s = error $ "Not implemented for " ++ (show s)
 instance RegisterFormable LLVM.RegisterClass where
   toRegisters (LLVM.RegisterClass regs) = concatMap toRegisters regs
 instance RegisterFormable LLVM.Register where
@@ -234,7 +236,7 @@ instance LlvmToOS LLVM.Temporary where
         nid = maybe (newNodeId t) id existing_nid
         t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
                                                   (currentLabel t)
-                                                  ("t" ++ show int)))
+                                                  (show sym)))
         t2 = maybe (addMapping t1 (nid, sym)) (\_ -> t1) existing_nid
     in t2
 
@@ -320,7 +322,7 @@ instance LlvmToOS LLVM.StmtExpression where
         lo_node = fromJust $ lastAddedNode t2
         shift_op = Op.BinArithmeticOp Op.LShr
         t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp shift_op)
-                                  (currentLabel t2) (show shift_op))
+                                  (currentLabel t2) (Op.tochars shift_op))
         shift_node = fromJust $ lastAddedNode t3
         t4 = addNewEdgesManySources t3 [val_node, lo_node] shift_node
         t5 = insertAndConnectDataNode t4
@@ -330,7 +332,7 @@ instance LlvmToOS LLVM.StmtExpression where
         and_op = Op.BinArithmeticOp Op.And
         t7 = addNewNodeWithNI t6 (G.NodeInfo (G.NTBinaryOp and_op)
                                              (currentLabel t6)
-                                             (show and_op))
+                                             (Op.tochars and_op))
         and_node = fromJust $ lastAddedNode t7
         t8 = addNewEdgesManySources t7 [d_node, mask_node] and_node
     in t8
@@ -344,7 +346,7 @@ insertMaskNodesForRegRange t lo up =
       lo_node = fromJust $ lastAddedNode t2
       op1 = Op.BinArithmeticOp Op.ISub
       t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp op1)
-                                (currentLabel t2) (show op1))
+                                (currentLabel t2) (Op.tochars op1))
       op1_node = fromJust $ lastAddedNode t3
       t4 = addNewEdgesManySources t3 [up_node, lo_node] op1_node
       t5 = insertAndConnectDataNode t4
@@ -353,7 +355,7 @@ insertMaskNodesForRegRange t lo up =
       c1_node = fromJust $ lastAddedNode t6
       op2 = Op.BinArithmeticOp Op.IAdd
       t7 = addNewNodeWithNI t6 (G.NodeInfo (G.NTBinaryOp op2) (currentLabel t6)
-                                (show op2))
+                                (Op.tochars op2))
       op2_node = fromJust $ lastAddedNode t7
       t8 = addNewEdgesManySources t7 [d1_node, c1_node] op2_node
       t9 = insertAndConnectDataNode t8
@@ -362,7 +364,7 @@ insertMaskNodesForRegRange t lo up =
       c2_node = fromJust $ lastAddedNode t10
       op3 = Op.BinArithmeticOp Op.Shl
       t11 = addNewNodeWithNI t10 (G.NodeInfo (G.NTBinaryOp op3)
-                                  (currentLabel t10) (show op3))
+                                  (currentLabel t10) (Op.tochars op3))
       op3_node = fromJust $ lastAddedNode t11
       t12 = addNewEdgesManySources t11 [c2_node, d2_node] op3_node
       t13 = insertAndConnectDataNode t12
@@ -371,7 +373,7 @@ insertMaskNodesForRegRange t lo up =
       c3_node = fromJust $ lastAddedNode t14
       op4 = Op.BinArithmeticOp Op.ISub
       t15 = addNewNodeWithNI t14 (G.NodeInfo (G.NTBinaryOp op4)
-                                  (currentLabel t14) (show op4))
+                                  (currentLabel t14) (Op.tochars op4))
       op4_node = fromJust $ lastAddedNode t15
       t16 = addNewEdgesManySources t15 [d3_node, c3_node] op4_node
       t17 = insertAndConnectDataNode t16

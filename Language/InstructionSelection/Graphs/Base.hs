@@ -74,6 +74,7 @@ data NodeType
     | NTUnaryOp UnaryOp
     | NTMemoryLoad
     | NTMemoryStore
+    | NTRet
     | NTUncondBranch BBLabel
     | NTCondBranch
 
