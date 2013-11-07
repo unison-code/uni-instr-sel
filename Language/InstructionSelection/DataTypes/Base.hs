@@ -14,7 +14,8 @@
 
 module Language.InstructionSelection.DataTypes.Base where
 
-import Language.InstructionSelection.Utils (Natural (..))
+import Language.InstructionSelection.Utils (Natural (..), toNatural)
+import Language.InstructionSelection.PrettyPrint
 
 
 
@@ -27,3 +28,19 @@ data DataType
       -- TODO: add missing data types
 
     deriving (Show, Eq)
+
+instance PrettyPrint DataType where
+  prettyShow (IntType w) = "i" ++ show w
+
+-- | Gets the data type of a corresponding integer of a certain number of bits.
+
+fromIWidth :: (Integral a) => a -> DataType
+fromIWidth w = IntType $ toNatural w
+
+-- | Gets the data type of a corresponding integer value.
+
+fromIValue :: (Integral a) => a -> DataType
+fromIValue i =
+  let log2value = logBase 2 $ (fromIntegral $ abs i) :: Float
+      numbits = (ceiling log2value) :: Integer
+  in IntType $ toNatural numbits

@@ -36,9 +36,9 @@ newtype Natural = Natural Integer
 instance Show Natural where
   show (Natural i) = show i
 
-toNatural :: Integer -> Natural
+toNatural :: (Integral i) => i -> Natural
 toNatural x | x < 0     = error "Natural cannot be negative"
-            | otherwise = Natural x
+            | otherwise = Natural $ toInteger x
 
 fromNatural :: Natural -> Integer
 fromNatural (Natural i) = i

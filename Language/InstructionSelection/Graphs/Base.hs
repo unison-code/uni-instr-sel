@@ -55,8 +55,9 @@ module Language.InstructionSelection.Graphs.Base (
 ) where
 
 import qualified Data.Graph.Inductive as I
-import Language.InstructionSelection.Utils
+import Language.InstructionSelection.DataTypes
 import Language.InstructionSelection.OpTypes
+import Language.InstructionSelection.Utils
 import Data.Maybe
 
 
@@ -90,17 +91,18 @@ data NodeType
 
     | NTPhi
 
-    -- | Temporary and constant nodes (appearing in IR and pattern code), as
-    -- well as register and immediate nodes (appearing only in pattern code),
-    -- are all represented as a data node. What distinguishes one from another
-    -- is the constraints applied to it.
+      -- | Temporary and constant nodes (appearing in IR and pattern code), as
+      -- well as register and immediate nodes (appearing only in pattern code),
+      -- are all represented as a data node. What distinguishes one from another
+      -- is the constraints applied to it. A data node may (and should) also be
+      -- of a certain data type.
 
-    | NTData
+    | NTData (Maybe DataType)
 
     deriving (Show,Eq)
 
 isDataNodeType :: NodeType -> Bool
-isDataNodeType NTData = True
+isDataNodeType (NTData _) = True
 isDataNodeType _ = False
 
 data NodeInfo

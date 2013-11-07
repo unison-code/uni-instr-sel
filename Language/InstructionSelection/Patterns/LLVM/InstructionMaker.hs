@@ -27,6 +27,7 @@ import qualified Language.InstructionSelection.OperationStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.Patterns.Base as P
 import qualified Language.InstructionSelection.Patterns.LLVM.Base as LLVM
+import Language.InstructionSelection.DataTypes
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils
 import Data.Maybe
@@ -43,9 +44,9 @@ data Symbol
     = StringSymbol String
     | TemporarySymbol Integer
     deriving (Eq)
-instance Show Symbol where
-  show (StringSymbol str) = "%" ++ str
-  show (TemporarySymbol int) = "t" ++ show int
+instance PrettyPrint Symbol where
+  prettyShow (StringSymbol str) = "%" ++ str
+  prettyShow (TemporarySymbol int) = "t" ++ show int
 
 class SymbolFormable a where
   toSymbol :: a -> Symbol
@@ -233,19 +234,20 @@ instance LlvmToOS LLVM.SetRegDestination where
   extend t (LLVM.SRDTemporary temp) = extend t temp
 
 instance LlvmToOS LLVM.Temporary where
-  extend t temp@(LLVM.Temporary int) =
+  extend t temp =
     let sym = toSymbol temp
         existing_nid = nodeIdFromSym (currentMappings t) sym
         nid = maybe (newNodeId t) id existing_nid
-        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
+        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo (G.NTData Nothing)
                                                   (currentLabel t)
-                                                  (show sym)))
+                                                  (prettyShow sym)))
         t2 = maybe (addMapping t1 (nid, sym)) (\_ -> t1) existing_nid
     in t2
 
 instance LlvmToOS LLVM.Register where
   extend t (LLVM.Register str) =
-    let t1 = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) "")
+    let t1 = addNewNodeWithNI t (G.NodeInfo (G.NTData Nothing) (currentLabel t)
+                                 "")
         n = fromJust $ lastAddedNode t1
         t2 = addConstraint t1 (OS.AllocateInRegisterConstraint (G.nodeId n)
                                 [OS.Register str])
@@ -257,7 +259,7 @@ instance LlvmToOS LLVM.RegisterFlag where
 instance LlvmToOS LLVM.Symbol where
   extend t llvm_sym@(LLVM.Symbol str) =
     let nid = newNodeId t
-        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo G.NTData
+        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo (G.NTData Nothing)
                                                   (currentLabel t) str))
         sym = toSymbol llvm_sym
         existing_nid = nodeIdFromSym (currentMappings t) sym
@@ -287,6 +289,8 @@ instance LlvmToOS LLVM.StmtExpression where
         op_node = fromJust $ lastAddedNode t2
         t3 = addNewEdge t2 expr_node op_node
     in t3
+
+  -- TODO: implement extend for BitSizeModStmtExpr
 
   extend t (LLVM.LoadStmtExpr _ _ expr) =
     let t1 = extend t expr
@@ -385,7 +389,8 @@ insertMaskNodesForRegRange t lo up =
 insertAndConnectDataNode :: State -> State
 insertAndConnectDataNode t =
   let op_node = fromJust $ lastAddedNode t
-      t1 = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t) "")
+      t1 = addNewNodeWithNI t (G.NodeInfo (G.NTData Nothing) (currentLabel t)
+                               "")
       d_node = fromJust $ lastAddedNode t1
       t2 = addNewEdge t1 op_node d_node
   in t2
@@ -413,8 +418,8 @@ instance LlvmToOS LLVM.ProgramStorage where
 
 instance LlvmToOS LLVM.ConstantValue where
   extend t (LLVM.ConstIntValue val) =
-    let t1 = addNewNodeWithNI t (G.NodeInfo G.NTData (currentLabel t)
-                                 (show val))
+    let t1 = addNewNodeWithNI t (G.NodeInfo (G.NTData $ Just $ fromIValue val)
+                                 (currentLabel t) (show val))
         n = fromJust $ lastAddedNode t1
         t2 = addConstraint t1 (OS.ConstantValueConstraint (G.nodeId n)
                                 [Range (OS.IntConstant val)

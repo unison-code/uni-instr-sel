@@ -43,6 +43,7 @@ import qualified Language.InstructionSelection.Patterns as Pat
 import qualified Language.InstructionSelection.Patterns.LLVM as LLVMPat
 import qualified Language.InstructionSelection.ProgramModules as PM
 import qualified Language.InstructionSelection.ProgramModules.LLVM as LLVMPro
+import qualified Language.InstructionSelection.PrettyPrint as MyPP
 import Language.InstructionSelection.SExpressions
 import LLVM.General
 import LLVM.General.AST
@@ -122,8 +123,15 @@ getPatterns (LLVMPat.Instruction _ ps) = ps
 --     processOpStructure os
 
 params = nonClusteredParams { fmtNode = nodeAttr }
-nodeAttr n@(_, (NodeLabel _ (NodeInfo NTData _ _))) =
+nodeAttr n@(_, (NodeLabel _ (NodeInfo (NTData _) _ _))) =
   [makeLabel n, shape BoxShape]
 nodeAttr n@(_, (NodeLabel _ (NodeInfo _ _ _))) = [makeLabel n]
-makeLabel (_, (NodeLabel i (NodeInfo _ (BBLabel l) str))) =
-  toLabel (str ++ "\n" ++ show i ++ " : " ++ l)
+makeLabel (_, (NodeLabel i (NodeInfo nt (BBLabel l) str))) =
+  let topstr = if isDataNodeType nt
+                  then let NTData dt = nt
+                           typestr = if isJust dt
+                                        then MyPP.prettyShow $ fromJust dt
+                                        else "?"
+                       in typestr ++ ":" ++ str
+                  else str
+  in toLabel $ topstr ++ "\n" ++ show i ++ " : " ++ l
