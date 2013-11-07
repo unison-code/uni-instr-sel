@@ -23,6 +23,7 @@ import qualified Language.InstructionSelection.Graphs as G
 import qualified Language.InstructionSelection.OperationStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.ProgramModules.Base as PM
+import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils
 import Data.Maybe
 
@@ -175,7 +176,7 @@ insertBinaryOp t op lhs rhs =
       t2 = extend t1 rhs
       rhs_node = fromJust $ lastAddedNode t2
       t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp op)
-                                (currentLabel t2) (Op.tochars op))
+                                (currentLabel t2) (prettyShow op))
       op_node = fromJust $ lastAddedNode t3
       t4 = addNewEdgesManySources t3 [lhs_node, rhs_node] op_node
   in t4

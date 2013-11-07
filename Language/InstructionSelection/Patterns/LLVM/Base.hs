@@ -174,6 +174,21 @@ data StmtExpression
 
     | UnaryOpStmtExpr UnaryOp (Maybe ExprResultSize) StmtExpression
 
+      -- | A bit size modification expression.
+
+    | BitSizeModStmtExpr
+          BitModificationOp
+
+          -- | The 'to' bit size.
+
+          ExprResultSize
+
+          -- | The 'from' bit size.
+
+          ExprResultSize
+
+          StmtExpression
+
       -- | A load expression.
 
     | LoadStmtExpr
@@ -193,23 +208,6 @@ data StmtExpression
       -- | A float-to-int conversion expression.
 
     | FP2IStmtExpr
-
-          -- | Size (in bits) of source.
-
-          ExprResultSize
-
-          -- | Expression to convert.
-
-          StmtExpression
-
-          -- | Size (in bits) of result.
-
-          ExprResultSize
-
-      -- | Truncates a value to the nearest integer not larger than the
-      -- magnitude of the operand.
-
-    | TruncStmtExpr
 
           -- | Size (in bits) of source.
 
@@ -578,6 +576,12 @@ instance SExpressionable StmtExpression where
     "(" ++ prettySE op i
     ++ " " ++ prettySE expr i
     ++ ")"
+  prettySE (BitSizeModStmtExpr op size_dst size_src expr) i =
+    "(" ++ prettySE op i
+    ++ " " ++ prettySE size_src i
+    ++ " " ++ prettySE expr i
+    ++ " " ++ prettySE size_dst i
+    ++ ")"
   prettySE (LoadStmtExpr area size src) i =
     "(load-mem"
     ++ " " ++ prettySE area i
@@ -586,12 +590,6 @@ instance SExpressionable StmtExpression where
     ++ ")"
   prettySE (FP2IStmtExpr size_src expr size_dst) i =
     "(fptosi"
-    ++ " " ++ prettySE size_src i
-    ++ " " ++ prettySE expr i
-    ++ " " ++ prettySE size_dst i
-    ++ ")"
-  prettySE (TruncStmtExpr size_src expr size_dst) i =
-    "(trunc"
     ++ " " ++ prettySE size_src i
     ++ " " ++ prettySE expr i
     ++ " " ++ prettySE size_dst i

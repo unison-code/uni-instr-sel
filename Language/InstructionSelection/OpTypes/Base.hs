@@ -15,12 +15,31 @@
 module Language.InstructionSelection.OpTypes.Base where
 
 import Language.InstructionSelection.SExpressions
+import Language.InstructionSelection.PrettyPrint
 
 
 
 --------------------------------------------------
 -- Data types
 --------------------------------------------------
+
+-- | Bit size operation types.
+
+data BitModificationOp
+
+      -- | Zero extension.
+
+    = ZExt
+
+      -- | Sign extension.
+
+    | SExt
+
+      -- | Truncation.
+
+    | Trunc
+
+    deriving (Show, Eq)
 
 -- | Unary operation types.
 
@@ -174,16 +193,6 @@ data ArithmeticOp
       -- | Bitwise XOR (@^@). Commutative.
 
     | Xor
-
-      -- | Zero-extension. LHS denotes the value to zero extend, and RHS denotes
-      -- the amount of bits to extend with.
-
-    | ZExt
-
-      -- | Sign-extension. LHS denotes the value to sign extend, and RHS denotes
-      -- the amount of bits to extend with.
-
-    | SExt
 
     deriving (Show, Eq)
 
@@ -350,6 +359,11 @@ data CompareOp
 
     deriving (Show, Eq)
 
+instance SExpressionable BitModificationOp where
+  prettySE ZExt _ = "zext"
+  prettySE SExt _ = "sext"
+  prettySE Trunc _ = "trunc"
+
 instance SExpressionable UnaryOp where
   prettySE USqrt _ = "usqrt"
   prettySE Sqrt _ = "sqrt"
@@ -385,8 +399,6 @@ instance SExpressionable ArithmeticOp where
   prettySE And _ = "bit_and"
   prettySE Or _ = "bit_or"
   prettySE Xor _ = "bit_xor"
-  prettySE ZExt _ = "zext"
-  prettySE SExt _ = "sext"
 
 instance SExpressionable CompareOp where
   prettySE ICmpEq _ = "icmp eq"
@@ -416,67 +428,71 @@ instance SExpressionable CompareOp where
   prettySE FTrue _ = "fcmp true"
   prettySE FFalse _ = "fcmp false"
 
-class ToChars a where
-  tochars :: a -> String
-instance ToChars UnaryOp where
-  tochars USqrt = "usqrt"
-  tochars Sqrt = "sqrt"
-  tochars FixPointSqrt = "f.sqrt"
-  tochars Not = "!"
-instance ToChars BinaryOp where
-  tochars (BinArithmeticOp op) = tochars op
-  tochars (BinCompareOp op) = tochars op
-instance ToChars ArithmeticOp where
-  tochars Plus = "+"
-  tochars Minus = "-"
-  tochars IAdd = "+"
-  tochars ISatAdd = "+"
-  tochars ISub = "-"
-  tochars ISatSub = "-"
-  tochars IMul = "*"
-  tochars ISatMul = "*"
-  tochars IUDiv = "/"
-  tochars ISDiv = "/"
-  tochars IURem = "%"
-  tochars ISRem = "%"
-  tochars FixPointDiv = "/"
-  tochars FAdd = "+"
-  tochars FSub = "-"
-  tochars FMul = "*"
-  tochars FDiv = "%"
-  tochars FRem = "%"
-  tochars Shl = "<<"
-  tochars LShr = ">>"
-  tochars AShr = ">>"
-  tochars And = "&"
-  tochars Or = "|"
-  tochars Xor = "^"
-  tochars ZExt = "zext"
-  tochars SExt = "sext"
-instance ToChars CompareOp where
-  tochars ICmpEq = "=="
-  tochars ICmpNEq = "!="
-  tochars IUCmpGT = ">"
-  tochars ISCmpGT = ">"
-  tochars IUCmpGE = ">="
-  tochars ISCmpGE = ">="
-  tochars IUCmpLT = "<"
-  tochars ISCmpLT = "<"
-  tochars IUCmpLE = "<="
-  tochars ISCmpLE = "<="
-  tochars FUCmpEq = "=="
-  tochars FOCmpEq = "=="
-  tochars FUCmpNEq = "!="
-  tochars FOCmpNEq = "!="
-  tochars FUCmpGT = ">"
-  tochars FOCmpGT = ">"
-  tochars FUCmpGE = ">="
-  tochars FOCmpGE = ">="
-  tochars FUCmpLT = "<"
-  tochars FOCmpLT = "<"
-  tochars FUCmpLE = "<="
-  tochars FOCmpLE = "<="
-  tochars FCmpUn = "Uno"
-  tochars FTrue = "T"
-  tochars FFalse = "F"
-  tochars FCmpOrd = "Ord"
+instance PrettyPrint BitModificationOp where
+  prettyShow ZExt = "zext"
+  prettyShow SExt = "sext"
+  prettyShow Trunc = "trunc"
+
+instance PrettyPrint UnaryOp where
+  prettyShow USqrt = "usqrt"
+  prettyShow Sqrt = "sqrt"
+  prettyShow FixPointSqrt = "f.sqrt"
+  prettyShow Not = "!"
+
+instance PrettyPrint BinaryOp where
+  prettyShow (BinArithmeticOp op) = prettyShow op
+  prettyShow (BinCompareOp op) = prettyShow op
+
+instance PrettyPrint ArithmeticOp where
+  prettyShow Plus = "+"
+  prettyShow Minus = "-"
+  prettyShow IAdd = "+"
+  prettyShow ISatAdd = "+"
+  prettyShow ISub = "-"
+  prettyShow ISatSub = "-"
+  prettyShow IMul = "*"
+  prettyShow ISatMul = "*"
+  prettyShow IUDiv = "/"
+  prettyShow ISDiv = "/"
+  prettyShow IURem = "%"
+  prettyShow ISRem = "%"
+  prettyShow FixPointDiv = "/"
+  prettyShow FAdd = "+"
+  prettyShow FSub = "-"
+  prettyShow FMul = "*"
+  prettyShow FDiv = "%"
+  prettyShow FRem = "%"
+  prettyShow Shl = "<<"
+  prettyShow LShr = ">>"
+  prettyShow AShr = ">>"
+  prettyShow And = "&"
+  prettyShow Or = "|"
+  prettyShow Xor = "^"
+
+instance PrettyPrint CompareOp where
+  prettyShow ICmpEq = "=="
+  prettyShow ICmpNEq = "!="
+  prettyShow IUCmpGT = ">"
+  prettyShow ISCmpGT = ">"
+  prettyShow IUCmpGE = ">="
+  prettyShow ISCmpGE = ">="
+  prettyShow IUCmpLT = "<"
+  prettyShow ISCmpLT = "<"
+  prettyShow IUCmpLE = "<="
+  prettyShow ISCmpLE = "<="
+  prettyShow FUCmpEq = "=="
+  prettyShow FOCmpEq = "=="
+  prettyShow FUCmpNEq = "!="
+  prettyShow FOCmpNEq = "!="
+  prettyShow FUCmpGT = ">"
+  prettyShow FOCmpGT = ">"
+  prettyShow FUCmpGE = ">="
+  prettyShow FOCmpGE = ">="
+  prettyShow FUCmpLT = "<"
+  prettyShow FOCmpLT = "<"
+  prettyShow FUCmpLE = "<="
+  prettyShow FOCmpLE = "<="
+  prettyShow FCmpUn = "Uno"
+  prettyShow FTrue = "T"
+  prettyShow FFalse = "F"
+  prettyShow FCmpOrd = "Ord"

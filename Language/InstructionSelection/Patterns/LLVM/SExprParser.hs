@@ -35,31 +35,24 @@ import qualified Text.ParserCombinators.Parsec as Parsec (parse)
 -- | A class for providing a way of checking if an operation is expecting a
 -- result size or not.
 
-class Operation a where
-
-  -- | Checks whether an operation requires a result size.
-
+class HasResultSize a where
   hasResultSize :: a -> Bool
 
---------------------------------------------------
--- Operation instances
---------------------------------------------------
-
-instance Operation UnaryOp where
+instance HasResultSize UnaryOp where
   hasResultSize op
     | op `elem` [USqrt, Sqrt, FixPointSqrt] = False
     | otherwise = True
 
-instance Operation BinaryOp where
+instance HasResultSize BinaryOp where
   hasResultSize (BinArithmeticOp op) = hasResultSize op
   hasResultSize (BinCompareOp op) = hasResultSize op
 
-instance Operation ArithmeticOp where
+instance HasResultSize ArithmeticOp where
   hasResultSize op
     | op `elem` [Plus, Minus, FixPointDiv] = False
     | otherwise = True
 
-instance Operation CompareOp where
+instance HasResultSize CompareOp where
   hasResultSize _ = True
 
 
@@ -281,7 +274,7 @@ pStmtExpression =
   <|> try pPhiStmtExpr
   <|> try pLoadStmtExpr
   <|> try pFP2IStmtExpr
-  <|> try pTruncStmtExpr
+  <|> try pBitSizeModStmtExpr
 
 pSizeStmtExpr :: GenParser Char st StmtExpression
 pSizeStmtExpr =
@@ -374,17 +367,19 @@ pFP2IStmtExpr' =
      size_dst <- pExprResultSize
      return (FP2IStmtExpr size_src expr size_dst)
 
-pTruncStmtExpr :: GenParser Char st StmtExpression
-pTruncStmtExpr = pLabeledData "trunc" pTruncStmtExpr'
+pBitSizeModStmtExpr :: GenParser Char st StmtExpression
+pBitSizeModStmtExpr = pParens pBitSizeModStmtExpr'
 
-pTruncStmtExpr' :: GenParser Char st StmtExpression
-pTruncStmtExpr' =
-  do size_src <- pExprResultSize
+pBitSizeModStmtExpr' :: GenParser Char st StmtExpression
+pBitSizeModStmtExpr' =
+  do op <- pBitModificationOp
+     pWhitespace1
+     size_src <- pExprResultSize
      pWhitespace
      expr <- pStmtExpression
      pWhitespace
      size_dst <- pExprResultSize
-     return (TruncStmtExpr size_src expr size_dst)
+     return (BitSizeModStmtExpr op size_dst size_src expr)
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =
@@ -539,14 +534,23 @@ pNoValue =
   do _ <- string "no-value"
      return ()
 
+pBitModificationOp :: GenParser Char st BitModificationOp
+pBitModificationOp =
+      try (do _ <- string "zext"
+              return ZExt)
+  <|> try (do _ <- string "sext"
+              return SExt)
+  <|> try (do _ <- string "trunc"
+              return Trunc)
+
 pUnaryStmtOp :: GenParser Char st (UnaryOp, Maybe ExprResultSize)
 pUnaryStmtOp =
   do op <- pUnaryStmtOpType
      pWhitespace1
-     if (hasResultSize op)
-        then (do size' <- pExprResultSize
-                 let size = Just size'
-                 return (op, size))
+     if hasResultSize op
+        then do size' <- pExprResultSize
+                let size = Just size'
+                return (op, size)
         else return (op, Nothing)
 
 pUnaryStmtOpType :: GenParser Char st UnaryOp
@@ -699,11 +703,6 @@ pArithmeticStmtOpType =
               return IURem)
   <|> try (do _ <- string "srem"
               return ISRem)
-  <|> try (do _ <- string "zext"
-              return ZExt)
-  <|> try (do _ <- string "sext"
-              return SExt)
-  -- TODO: add missing operations
 
 pLabeledData :: String -> GenParser Char st a -> GenParser Char st a
 pLabeledData str p = pParens (pLabeledData' str p)
