@@ -9,6 +9,8 @@
 -- Portability :  portable
 --
 -- Converts and LLVM IR module into the internal program format.
+--
+-- TODO: add data type information to data nodes
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM.PMMaker (
