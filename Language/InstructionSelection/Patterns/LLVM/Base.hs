@@ -176,8 +176,8 @@ data StmtExpression
 
       -- | A bit size modification expression.
 
-    | BitSizeModStmtExpr
-          BitModificationOp
+    | TypeConvStmtExpr
+          TypeConversionOp
 
           -- | The 'to' bit size.
 
@@ -576,7 +576,7 @@ instance SExpressionable StmtExpression where
     "(" ++ prettySE op i
     ++ " " ++ prettySE expr i
     ++ ")"
-  prettySE (BitSizeModStmtExpr op size_dst size_src expr) i =
+  prettySE (TypeConvStmtExpr op size_dst size_src expr) i =
     "(" ++ prettySE op i
     ++ " " ++ prettySE size_src i
     ++ " " ++ prettySE expr i

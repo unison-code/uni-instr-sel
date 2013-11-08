@@ -23,9 +23,9 @@ import Language.InstructionSelection.PrettyPrint
 -- Data types
 --------------------------------------------------
 
--- | Bit size operation types.
+-- | Type conversion operation types.
 
-data BitModificationOp
+data TypeConversionOp
 
       -- | Zero extension.
 
@@ -359,7 +359,7 @@ data CompareOp
 
     deriving (Show, Eq)
 
-instance SExpressionable BitModificationOp where
+instance SExpressionable TypeConversionOp where
   prettySE ZExt _ = "zext"
   prettySE SExt _ = "sext"
   prettySE Trunc _ = "trunc"
@@ -428,7 +428,7 @@ instance SExpressionable CompareOp where
   prettySE FTrue _ = "fcmp true"
   prettySE FFalse _ = "fcmp false"
 
-instance PrettyPrint BitModificationOp where
+instance PrettyPrint TypeConversionOp where
   prettyShow ZExt = "zext"
   prettyShow SExt = "sext"
   prettyShow Trunc = "trunc"

@@ -274,7 +274,7 @@ pStmtExpression =
   <|> try pPhiStmtExpr
   <|> try pLoadStmtExpr
   <|> try pFP2IStmtExpr
-  <|> try pBitSizeModStmtExpr
+  <|> try pTypeConvStmtExpr
 
 pSizeStmtExpr :: GenParser Char st StmtExpression
 pSizeStmtExpr =
@@ -367,19 +367,19 @@ pFP2IStmtExpr' =
      size_dst <- pExprResultSize
      return (FP2IStmtExpr size_src expr size_dst)
 
-pBitSizeModStmtExpr :: GenParser Char st StmtExpression
-pBitSizeModStmtExpr = pParens pBitSizeModStmtExpr'
+pTypeConvStmtExpr :: GenParser Char st StmtExpression
+pTypeConvStmtExpr = pParens pTypeConvStmtExpr'
 
-pBitSizeModStmtExpr' :: GenParser Char st StmtExpression
-pBitSizeModStmtExpr' =
-  do op <- pBitModificationOp
+pTypeConvStmtExpr' :: GenParser Char st StmtExpression
+pTypeConvStmtExpr' =
+  do op <- pTypeConvOp
      pWhitespace1
      size_src <- pExprResultSize
      pWhitespace
      expr <- pStmtExpression
      pWhitespace
      size_dst <- pExprResultSize
-     return (BitSizeModStmtExpr op size_dst size_src expr)
+     return (TypeConvStmtExpr op size_dst size_src expr)
 
 pProgramData :: GenParser Char st ProgramData
 pProgramData =
@@ -534,8 +534,8 @@ pNoValue =
   do _ <- string "no-value"
      return ()
 
-pBitModificationOp :: GenParser Char st BitModificationOp
-pBitModificationOp =
+pTypeConvOp :: GenParser Char st TypeConversionOp
+pTypeConvOp =
       try (do _ <- string "zext"
               return ZExt)
   <|> try (do _ <- string "sext"
