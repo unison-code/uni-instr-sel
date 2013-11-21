@@ -2,9 +2,10 @@ parser:
 	ghc -Wall parser.hs
 
 run: parser fact.ll
-	./parser -l fact.ll
+#	./parser -l fact.ll
+	./parser < test.txt
 
-test.pdf: run
+test.pdf: test.dot
 	dot -Tpdf test.dot -o test.pdf
 
 clean:

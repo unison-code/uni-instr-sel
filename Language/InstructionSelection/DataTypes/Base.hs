@@ -40,6 +40,7 @@ fromIWidth w = IntType $ toNatural w
 -- | Gets the data type of a corresponding integer value.
 
 fromIValue :: (Integral a) => a -> DataType
+fromIValue 0 = IntType 1
 fromIValue i =
   let log2value = logBase 2 $ (fromIntegral $ abs i) :: Float
       numbits = (ceiling log2value) :: Integer

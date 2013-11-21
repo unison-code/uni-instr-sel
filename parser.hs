@@ -71,56 +71,62 @@ isError _ = False
 
 processOpStructure :: OpStructure -> IO ()
 processOpStructure os =
-  do let resolved_os = resolveAliases os
-         normalized_os = normalize resolved_os
-         dot = graphToDot params $ intGraph $ graph normalized_os
-     writeDotFile "test.dot" dot
-     putStrLn "After make:"
+  do putStrLn "After make:"
      putStrLn (show os)
      putStrLn ""
+     let resolved_os = resolveAliases os
      putStrLn "After alias resolving:"
      putStrLn (show resolved_os)
      putStrLn ""
+     let normalized_os = normalize resolved_os
      putStrLn "After normalization:"
      putStrLn (show normalized_os)
      putStrLn ""
+     let dot = graphToDot params $ intGraph $ graph normalized_os
+     writeDotFile "test.dot" dot
      return ()
 
-main :: IO ()
-main =
-  do MyArgs {..} <- cmdArgs parseArgs
-     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
-                                  exitFailure
-     src <- readFile $ fromJust llFile
-     result <- withContext $ \context ->
-       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
-     when (isError result) $ do let (Left e) = result
-                                putStrLn $ show e
-                                exitFailure
-     let (Right ast) = result
-     putStrLn "Module AST:"
-     putStrLn (showPretty ast)
-     putStrLn ""
-     let m = LLVMPro.mkProgramModule ast
-     processOpStructure $ PM.getFunctionOS $ head $ PM.getFunctions m
-     return ()
+--main :: IO ()
+--main =
+--  do MyArgs {..} <- cmdArgs parseArgs
+--     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
+--                                  exitFailure
+--     src <- readFile $ fromJust llFile
+--     result <- withContext $ \context ->
+--       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+--     when (isError result) $ do let (Left e) = result
+--                                putStrLn $ show e
+--                                exitFailure
+--     let (Right ast) = result
+--     putStrLn "Module AST:"
+--     putStrLn (showPretty ast)
+--     putStrLn ""
+--     let m = LLVMPro.mkProgramModule ast
+--     processOpStructure $ PM.getFunctionOS $ head $ PM.getFunctions m
+--     return ()
 
 getPatterns :: LLVMPat.Instruction -> [LLVMPat.Pattern]
 getPatterns (LLVMPat.Instruction _ ps) = ps
 
---main :: IO ()
---main =
---  do contents <- getContents
---     putStrLn ""
---     let result = LLVMPat.parse contents
---     when (isError result) $ do let (Left e) = result
---                                putStr $ show e
---                                exitFailure
---
---     let (Right llvm_insts) = result
---         insts = map LLVMPat.mkInstruction llvm_insts
---         os = head $ Pat.patterns $ head insts
---     processOpStructure os
+main :: IO ()
+main =
+  do contents <- getContents
+     putStrLn ""
+     let result = LLVMPat.parse contents
+     when (isError result) $ do let (Left e) = result
+                                putStr $ show e
+                                exitFailure
+
+     let (Right llvm_insts) = result
+     putStrLn "After parsing:"
+     putStrLn $ show result
+     putStrLn ""
+     let insts = map LLVMPat.mkInstruction llvm_insts
+     putStrLn "After mkinstruction:"
+     putStrLn $ show insts
+     putStrLn ""
+     let os = head $ Pat.patterns $ head insts
+     processOpStructure os
 
 params = nonClusteredParams { fmtNode = nodeAttr }
 nodeAttr n@(_, (NodeLabel _ (NodeInfo (NTData _) _ _))) =
