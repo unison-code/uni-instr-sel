@@ -1,5 +1,5 @@
 {-
-Copyright (c) 2013, Gabriel Hjort Blindell <ghb@kth.se>
+Copyright (c) 2013-2014, Gabriel Hjort Blindell <ghb@kth.se>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -57,13 +57,13 @@ import System.FilePath
 
 data MyArgs
     = MyArgs {
-          llFile :: Maybe String
+          llFile :: String
       }
     deriving (Data, Typeable, Show)
 
 parseArgs =
   MyArgs {
-    llFile = Nothing &= typFile &= help "LLVM IR file (mandatory)"
+    llFile = "" &= argPos 0 &= typFile
   }
 
 isError (Left _) = True
@@ -86,47 +86,49 @@ processOpStructure os =
      writeDotFile "test.dot" dot
      return ()
 
---main :: IO ()
---main =
---  do MyArgs {..} <- cmdArgs parseArgs
---     when (isNothing llFile) $ do putStrLn "No LLVM IR file"
---                                  exitFailure
---     src <- readFile $ fromJust llFile
---     result <- withContext $ \context ->
---       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
---     when (isError result) $ do let (Left e) = result
---                                putStrLn $ show e
---                                exitFailure
---     let (Right ast) = result
---     putStrLn "Module AST:"
---     putStrLn (showPretty ast)
---     putStrLn ""
---     let m = LLVMPro.mkProgramModule ast
---     processOpStructure $ PM.getFunctionOS $ head $ PM.getFunctions m
---     return ()
+main :: IO ()
+main =
+  do MyArgs {..} <- cmdArgs parseArgs
+     src <- readFile $ llFile
+     result <- withContext $ \context ->
+       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+     when (isError result) $ do let (Left e) = result
+                                putStrLn $ show e
+                                exitFailure
+     let (Right ast) = result
+     putStrLn "Module AST:"
+     putStrLn (showPretty ast)
+     putStrLn ""
+     let lowered_ast = LLVMPro.lower ast
+     putStrLn "Lowered module AST:"
+     putStrLn (showPretty lowered_ast)
+     putStrLn ""
+     let m = LLVMPro.mkProgramModule lowered_ast
+     processOpStructure $ PM.getFunctionOS $ head $ PM.getFunctions m
+     return ()
 
 getPatterns :: LLVMPat.Instruction -> [LLVMPat.Pattern]
 getPatterns (LLVMPat.Instruction _ ps) = ps
 
-main :: IO ()
-main =
-  do contents <- getContents
-     putStrLn ""
-     let result = LLVMPat.parse contents
-     when (isError result) $ do let (Left e) = result
-                                putStr $ show e
-                                exitFailure
-
-     let (Right llvm_insts) = result
-     putStrLn "After parsing:"
-     putStrLn $ show result
-     putStrLn ""
-     let insts = map LLVMPat.mkInstruction llvm_insts
-     putStrLn "After mkinstruction:"
-     putStrLn $ show insts
-     putStrLn ""
-     let os = head $ Pat.patterns $ head insts
-     processOpStructure os
+--main :: IO ()
+--main =
+--  do contents <- getContents
+--     putStrLn ""
+--     let result = LLVMPat.parse contents
+--     when (isError result) $ do let (Left e) = result
+--                                putStr $ show e
+--                                exitFailure
+--
+--     let (Right llvm_insts) = result
+--     putStrLn "After parsing:"
+--     putStrLn $ show result
+--     putStrLn ""
+--     let insts = map LLVMPat.mkInstruction llvm_insts
+--     putStrLn "After mkinstruction:"
+--     putStrLn $ show insts
+--     putStrLn ""
+--     let os = head $ Pat.patterns $ head insts
+--     processOpStructure os
 
 params = nonClusteredParams { fmtNode = nodeAttr }
 nodeAttr n@(_, (NodeLabel _ (NodeInfo (NTData _) _ _))) =
