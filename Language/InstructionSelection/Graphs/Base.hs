@@ -27,7 +27,6 @@ module Language.InstructionSelection.Graphs.Base (
 , NodeType (..)
 , addNewEdge
 , addNewNode
-, children
 , copyNodeLabel
 , empty
 , hasSameNodeId
@@ -47,8 +46,10 @@ module Language.InstructionSelection.Graphs.Base (
 , nodesByNodeId
 , nodeType
 , numNodes
+, predecessors
 , replaceNodeInfo
 , replaceNodeLabel
+, successors
 ) where
 
 import Language.InstructionSelection.DataTypes
@@ -344,13 +345,22 @@ lastAddedNode (Graph g) =
              in fromNodeInt g last_int
         else Nothing
 
+-- | Gets the corresponding node from an internal node ID.
+
 fromNodeInt :: IntGraph -> I.Node -> Maybe Node
 fromNodeInt g int = maybe Nothing (\nl -> Just (int, nl)) (I.lab g int)
 
--- | Gets the children (if any) of a given node.
+-- | Gets the predecessors (if any) of a given node. A node A is a predecessor
+-- of another node B if there is a directed edge from B to A.
 
-children :: Node -> Graph -> [Node]
-children n (Graph g) = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
+predecessors :: Node -> Graph -> [Node]
+predecessors n (Graph g) = map (fromJust . fromNodeInt g) $ I.pre g (nodeInt n)
+
+-- | Gets the successors (if any) of a given node. A node A is a successor of
+-- another node B if there is a directed edge from A to B.
+
+successors :: Node -> Graph -> [Node]
+successors n (Graph g) = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
 
 -- | Checks if a given node is within the graph.
 
