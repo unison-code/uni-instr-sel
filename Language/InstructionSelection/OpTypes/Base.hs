@@ -14,157 +14,70 @@
 
 module Language.InstructionSelection.OpTypes.Base where
 
-import Language.InstructionSelection.SExpressions
 import Language.InstructionSelection.PrettyPrint
+import Language.InstructionSelection.SExpressions
+import Prelude hiding (GT, LT)
 
 
 
---------------------------------------------------
+--------------
 -- Data types
---------------------------------------------------
+--------------
 
--- | Type conversion operation types.
+-- | Operations.
 
-data TypeConversionOp
+data Operation
 
-      -- | Zero extension.
+    -- | An unsigned integer operation.
 
-    = ZExt
+    = UIntOp OpType
 
-      -- | Sign extension.
+    -- | A signed integer operation.
 
-    | SExt
+    | SIntOp OpType
 
-      -- | Truncation.
+    -- | A fixed-point operation.
 
-    | Trunc
+    | FixpointOp OpType
 
-    deriving (Show, Eq)
+    -- | A floating-point operation.
 
--- | Unary operation types.
-
-data UnaryOp
-
-      -- | Unsigned arithmetic square root function.
-
-    = USqrt
-
-      -- | Floating-point square root function.
-
-    | Sqrt
-
-      -- | Signed arithmetic square root function.
-
-    | FixPointSqrt
-
-      -- | Bit-wise NOT (@|@).
-
-    | Not
+    | FloatOp OpType
 
     deriving (Show, Eq)
 
--- | Binary operation types.
 
-data BinaryOp
-    = BinArithmeticOp ArithmeticOp
-    | BinCompareOp CompareOp
-    deriving (Show, Eq)
+-- | Operation types.
 
--- | Arithmetic operation types.
-
-data ArithmeticOp
-
-    ------------------------------
-    -- Meta operations
-    ------------------------------
+data OpType
 
       -- | Addition. Commutative.
 
-    = Plus
+    = Add
 
-      -- | Subtraction. Commutative.
+      -- | Saturated addition. Commutative. Typically only used with fixpoint.
 
-    | Minus
+    | SatAdd
 
-    ------------------------------
-    -- Integer operations
-    ------------------------------
+      -- | Subtraction.
 
-      -- | Integer addition. Commutative.
+    | Sub
 
-    | IAdd
+      -- | Saturated subtraction. Typically only used with fixpoint.
 
-      -- | Integer saturated addition. Commutative.
+    | SatSub
 
-    | ISatAdd
+      -- | Multiplication. Commutative.
 
-      -- | Integer subtraction.
+    | Mul
 
-    | ISub
+      -- | Division.
 
-      -- | Integer saturated subtraction. Commutative.
+    | Div
 
-    | ISatSub
+      -- | Remainder.
 
-      -- | Integer multiplication. Commutative.
-
-    | IMul
-
-      -- | Integer saturated multiplication. Commutative.
-
-    | ISatMul
-
-      -- | Unsigned integer division.
-
-    | IUDiv
-
-      -- | Signed integer division.
-
-    | ISDiv
-
-      -- | Unsigned integer remainder.
-
-    | IURem
-
-      -- | Signed integer remainder.
-
-    | ISRem
-
-    ------------------------------
-    -- Fix-point operations
-    ------------------------------
-
-      -- | Fix-point division.
-
-    | FixPointDiv
-
-    ------------------------------
-    -- Floating-point operations
-    ------------------------------
-
-      -- | Float addition. Commutative.
-
-    | FAdd
-
-      -- | Float subtraction.
-
-    | FSub
-
-      -- | Float multiplication. Commutative.
-
-    | FMul
-
-      -- | Float division.
-
-    | FDiv
-
-      -- | Float remainder.
-
-    | FRem
-
-    ------------------------------
-    -- Bit operations
-    ------------------------------
+    | Rem
 
       -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
       -- by @y@, then this operation represents @x < y@.
@@ -194,305 +107,133 @@ data ArithmeticOp
 
     | Xor
 
-    deriving (Show, Eq)
+      -- | Bit-wise NOT (@|@).
 
--- | Comparison operation types.
+    | Not
 
-data CompareOp
+      -- | Equality comparison (@==@). Commutative.
 
-    ------------------------------
-    -- Integer operations
-    ------------------------------
+    | Eq
 
-      -- | Integer equality comparison (@==@). Commutative.
+      -- | Inequality comparison (@!=@). Commutative.
 
-    = ICmpEq
+    | NEq
 
-      -- | Integer inequality comparison (@!=@). Commutative.
+      -- | Greater-than comparison (@>@). If LHS is denoted by @x@, and RHS is
+      -- denoted by @y@, then this operation represents @x > y@.
 
-    | ICmpNEq
+    | GT
 
-      -- | Unsigned integer greater-than comparison (@>@). If LHS is denoted
-      -- by @x@, and RHS is denoted by @y@, then this operation represents
-      -- @x > y@.
+      -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@,
+      -- and RHS is denoted by @y@, then this operation represents @x >= y@.
 
-    | IUCmpGT
+    | GE
 
-      -- | Signed integer greater-than comparison (@>@). Same as for 'IUCmpGT'
-      -- but for signed integer data.
+      -- | Less-than comparison (@<@). If LHS is denoted by @x@, and RHS is
+      -- denoted by @y@, then this operation represents @x < y@.
 
-    | ISCmpGT
+    | LT
 
-      -- | Unsigned integer greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@.
+      -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and
+      -- RHS is denoted by @y@, then this operation represents @x <= y@.
 
-    | IUCmpGE
+    | LE
 
-      -- | Signed integer greater-than-or-equal comparison (@>=@). Same as for
-      -- 'IUCmpGE' but for signed integer data.
+      -- | Zero extension.
 
-    | ISCmpGE
+    | ZExt
 
-      -- | Unsigned integer less-than comparison (@<@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x < y@.
+      -- | Sign extension.
 
-    | IUCmpLT
+    | SExt
 
-      -- | Signed integer less-than comparison (@<@). Same as for 'IUCmpLT' but
-      -- for signed integer data.
+      -- | Truncation.
 
-    | ISCmpLT
+    | Trunc
 
-      -- | Unsigned integer less-than-or-equal comparison (@<=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x <= y@.
+      -- | Square root function.
 
-    | IUCmpLE
-
-      -- | Signed integer less-than-or-equal comparison (@<=@). Same as for
-      -- 'IUCmpLE' but for signed integer data.
-
-    | ISCmpLE
-
-    ------------------------------
-    -- Floating-point operations
-    ------------------------------
-
-      -- | Unordered float equality comparison (@==@). If any of the values is a
-      -- QNaN or both values are equal, then the operation returns
-      -- @True@. Commutative.
-
-    | FUCmpEq
-
-      -- | Ordered float inequality comparison (@!=@). If none of the values is
-      -- a QNaN and both values are equal, then the operation returns
-      -- @True@. Commutative.
-
-    | FOCmpEq
-
-      -- | Unordered float inequality comparison (@!=@). If any of the values is
-      -- a QNaN or both values are inequal, then the operation returns
-      -- @True@. Commutative.
-
-    | FUCmpNEq
-
-      -- | Ordered float inequality comparison (@!=@). If none of the values is
-      -- a QNaN and both values are inequal, then the operation returns
-      -- @True@. Commutative.
-
-    | FOCmpNEq
-
-      -- | Unordered float greater-than comparison (@>@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
-      -- Hence, if any of the values is a QNaN or @x > y@ holds, then the
-      -- operation returns @True@.
-
-    | FUCmpGT
-
-      -- | Ordered float greater-than comparison (@>@). If LHS is denoted by
-      -- @x@, and RHS is denoted by @y@, then this operation represents @x > y@.
-      -- Hence, if none of the values is a QNaN and @x > y@ holds, then the
-      -- operation returns @True@.
-
-    | FOCmpGT
-
-      -- | Unordered float greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@. Hence, if any of the values is a QNaN or @x >= y@
-      -- holds, then the operation returns @True@.
-
-    | FUCmpGE
-
-      -- | Ordered float greater-than-or-equal comparison (@>=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x >= y@. Hence, if none of the values is a QNaN and
-      -- @x >= y@ holds, then the operation returns @True@.
-
-    | FOCmpGE
-
-      -- | Unordered float less-than comparison (@<@). If LHS is denoted by @x@,
-      -- and RHS is denoted by @y@, then this operation represents @x < y@.
-      -- Hence, if any of the values is a QNaN or @x < y@ holds, then the
-      -- operation returns @True@.
-
-    | FUCmpLT
-
-      -- | Ordered float less-than comparison (@<@). If LHS is denoted by @x@,
-      -- and RHS is denoted by @y@, then this operation represents @x < y@.
-      -- Hence, if none of the values is a QNaN and @x < y@ holds, then the
-      -- operation returns @True@.
-
-    | FOCmpLT
-
-      -- | Unordered float less-than-or-equal comparison (@<=@). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x <= y@. Hence, if any of the values is a QNaN or @x <= y@
-      -- holds, then the operation returns @True@.
-
-    | FUCmpLE
-
-      -- | Ordered float less-than-or-equal comparison (@<=@). If LHS is denoted
-      -- by @x@, and RHS is denoted by @y@, then this operation represents
-      -- @x <= y@. Hence, if none of the values is a QNaN and @x <= y@ holds,
-      -- then the operation returns @True@.
-
-    | FOCmpLE
-
-      -- | Float unordering check. If any of the values is a QNaN, then the
-      -- operation returns @True@. Commutative.
-
-    | FCmpUn
-
-      -- | Float ordering check. If none of the values is a QNaN, then the
-      -- operation returns @True@. Commutative.
-
-    | FCmpOrd
-
-      -- | Always returns @True@.
-
-    | FTrue
-
-      -- | Always returns @False@.
-
-    | FFalse
+    | Sqrt
 
     deriving (Show, Eq)
 
-instance SExpressionable TypeConversionOp where
-  prettySE ZExt _ = "zext"
-  prettySE SExt _ = "sext"
-  prettySE Trunc _ = "trunc"
 
-instance SExpressionable UnaryOp where
-  prettySE USqrt _ = "usqrt"
-  prettySE Sqrt _ = "sqrt"
-  prettySE FixPointSqrt _ = "fixpointsqrt"
-  prettySE Not _ = "bit_not"
 
-instance SExpressionable BinaryOp where
-  prettySE (BinArithmeticOp op) i = prettySE op i
-  prettySE (BinCompareOp op) i = prettySE op i
+--------------
+-- Functions
+--------------
 
-instance SExpressionable ArithmeticOp where
-  prettySE Plus _ = "+"
-  prettySE Minus _ = "-"
-  prettySE IAdd _ = "add"
-  prettySE ISatAdd _ = "satadd"
-  prettySE ISub _ = "sub"
-  prettySE ISatSub _ = "satsub"
-  prettySE IMul _ = "mul"
-  prettySE ISatMul _ = "satmul"
-  prettySE IUDiv _ = "udiv"
-  prettySE ISDiv _ = "sdiv"
-  prettySE IURem _ = "urem"
-  prettySE ISRem _ = "srem"
-  prettySE FixPointDiv _ = "fixpointdiv"
-  prettySE FAdd _ = "fadd"
-  prettySE FSub _ = "fsub"
-  prettySE FMul _ = "fmul"
-  prettySE FDiv _ = "fdiv"
-  prettySE FRem _ = "frem"
-  prettySE Shl _ = "shl"
-  prettySE LShr _ = "lhsr"
-  prettySE AShr _ = "ashr"
-  prettySE And _ = "bit_and"
-  prettySE Or _ = "bit_or"
-  prettySE Xor _ = "bit_xor"
+-- | Gets the operation type from an operation.
 
-instance SExpressionable CompareOp where
-  prettySE ICmpEq _ = "icmp eq"
-  prettySE ICmpNEq _ = "icmp neq"
-  prettySE IUCmpGT _ = "icmp ugt"
-  prettySE ISCmpGT _ = "icmp sgt"
-  prettySE IUCmpGE _ = "icmp uge"
-  prettySE ISCmpGE _ = "icmp sge"
-  prettySE IUCmpLT _ = "icmp ult"
-  prettySE ISCmpLT _ = "icmp slt"
-  prettySE IUCmpLE _ = "icmp ule"
-  prettySE ISCmpLE _ = "icmp sle"
-  prettySE FUCmpEq _ = "fcmp ueq"
-  prettySE FOCmpEq _ = "fcmp oeq"
-  prettySE FUCmpNEq _ = "fcmp une"
-  prettySE FOCmpNEq _ = "fcmp one"
-  prettySE FUCmpGT _ = "fcmp ugt"
-  prettySE FOCmpGT _ = "fcmp ogt"
-  prettySE FUCmpGE _ = "fcmp uge"
-  prettySE FOCmpGE _ = "fcmp oge"
-  prettySE FUCmpLT _ = "fcmp ult"
-  prettySE FOCmpLT _ = "fcmp olt"
-  prettySE FUCmpLE _ = "fcmp ule"
-  prettySE FOCmpLE _ = "fcmp ole"
-  prettySE FCmpOrd _ = "fcmp ord"
-  prettySE FCmpUn _ = "fcmp uno"
-  prettySE FTrue _ = "fcmp true"
-  prettySE FFalse _ = "fcmp false"
+getOpType :: Operation -> OpType
+getOpType (UIntOp o) = o
+getOpType (SIntOp o) = o
+getOpType (FixpointOp o) = o
+getOpType (FloatOp o) = o
 
-instance PrettyPrint TypeConversionOp where
-  prettyShow ZExt = "zext"
-  prettyShow SExt = "sext"
-  prettyShow Trunc = "trunc"
 
-instance PrettyPrint UnaryOp where
-  prettyShow USqrt = "usqrt"
-  prettyShow Sqrt = "sqrt"
-  prettyShow FixPointSqrt = "f.sqrt"
-  prettyShow Not = "!"
 
-instance PrettyPrint BinaryOp where
-  prettyShow (BinArithmeticOp op) = prettyShow op
-  prettyShow (BinCompareOp op) = prettyShow op
+-------------------------
+-- Class implementations
+-------------------------
 
-instance PrettyPrint ArithmeticOp where
-  prettyShow Plus = "+"
-  prettyShow Minus = "-"
-  prettyShow IAdd = "+"
-  prettyShow ISatAdd = "+"
-  prettyShow ISub = "-"
-  prettyShow ISatSub = "-"
-  prettyShow IMul = "*"
-  prettyShow ISatMul = "*"
-  prettyShow IUDiv = "/"
-  prettyShow ISDiv = "/"
-  prettyShow IURem = "%"
-  prettyShow ISRem = "%"
-  prettyShow FixPointDiv = "/"
-  prettyShow FAdd = "+"
-  prettyShow FSub = "-"
-  prettyShow FMul = "*"
-  prettyShow FDiv = "%"
-  prettyShow FRem = "%"
-  prettyShow Shl = "<<"
-  prettyShow LShr = ">>"
-  prettyShow AShr = ">>"
-  prettyShow And = "&"
-  prettyShow Or = "|"
-  prettyShow Xor = "^"
+instance PrettyPrint Operation where
+  prettyShow = prettyShow . getOpType
 
-instance PrettyPrint CompareOp where
-  prettyShow ICmpEq = "=="
-  prettyShow ICmpNEq = "!="
-  prettyShow IUCmpGT = ">"
-  prettyShow ISCmpGT = ">"
-  prettyShow IUCmpGE = ">="
-  prettyShow ISCmpGE = ">="
-  prettyShow IUCmpLT = "<"
-  prettyShow ISCmpLT = "<"
-  prettyShow IUCmpLE = "<="
-  prettyShow ISCmpLE = "<="
-  prettyShow FUCmpEq = "=="
-  prettyShow FOCmpEq = "=="
-  prettyShow FUCmpNEq = "!="
-  prettyShow FOCmpNEq = "!="
-  prettyShow FUCmpGT = ">"
-  prettyShow FOCmpGT = ">"
-  prettyShow FUCmpGE = ">="
-  prettyShow FOCmpGE = ">="
-  prettyShow FUCmpLT = "<"
-  prettyShow FOCmpLT = "<"
-  prettyShow FUCmpLE = "<="
-  prettyShow FOCmpLE = "<="
-  prettyShow FCmpUn = "Uno"
-  prettyShow FTrue = "T"
-  prettyShow FFalse = "F"
-  prettyShow FCmpOrd = "Ord"
+instance PrettyPrint OpType where
+  prettyShow Add    = "+"
+  prettyShow SatAdd = "+"
+  prettyShow Sub    = "-"
+  prettyShow SatSub = "-"
+  prettyShow Mul    = "*"
+  prettyShow Div    = "/"
+  prettyShow Rem    = "%"
+  prettyShow Shl    = "<<"
+  prettyShow LShr   = ">>"
+  prettyShow AShr   = ">>"
+  prettyShow And    = "&&"
+  prettyShow Or     = "||"
+  prettyShow Xor    = "^"
+  prettyShow Not    = "!"
+  prettyShow Eq     = "=="
+  prettyShow NEq    = "!="
+  prettyShow GT     = ">"
+  prettyShow GE     = ">="
+  prettyShow LT     = "<"
+  prettyShow LE     = "<="
+  prettyShow ZExt   = "zext"
+  prettyShow SExt   = "sext"
+  prettyShow Trunc  = "trunc"
+  prettyShow Sqrt   = "sqrt"
+
+instance SExpressionable Operation where
+  prettySE (UIntOp o) i     = "u" ++ (prettySE o i)
+  prettySE (SIntOp o) i     = "s" ++ (prettySE o i)
+  prettySE (FixpointOp o) i = "fixp" ++ (prettySE o i)
+  prettySE (FloatOp o) i    = "f" ++ (prettySE o i)
+
+instance SExpressionable OpType where
+  prettySE Add    _ = "add"
+  prettySE SatAdd _ = "satadd"
+  prettySE Sub    _ = "sub"
+  prettySE SatSub _ = "satsub"
+  prettySE Mul    _ = "mul"
+  prettySE Div    _ = "div"
+  prettySE Rem    _ = "rem"
+  prettySE Shl    _ = "shl"
+  prettySE LShr   _ = "lshr"
+  prettySE AShr   _ = "ashr"
+  prettySE And    _ = "and"
+  prettySE Or     _ = "or"
+  prettySE Xor    _ = "xor"
+  prettySE Not    _ = "not"
+  prettySE Eq     _ = "eq"
+  prettySE NEq    _ = "neq"
+  prettySE GT     _ = "gt"
+  prettySE GE     _ = "ge"
+  prettySE LT     _ = "lt"
+  prettySE LE     _ = "le"
+  prettySE ZExt   _ = "zext"
+  prettySE SExt   _ = "sext"
+  prettySE Trunc  _ = "trunc"
+  prettySE Sqrt   _ = "sqrt"
