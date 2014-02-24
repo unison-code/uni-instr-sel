@@ -31,7 +31,9 @@ module Language.InstructionSelection.Graphs.Base (
 , copyNodeLabel
 , empty
 , hasSameNodeId
+, hasSameNodeType
 , haveSameNodeIds
+, haveSameNodeTypes
 , inGraph
 , isDataNodeType
 , lastAddedNode
@@ -201,17 +203,27 @@ nodeInt (int, _) = int
 -- | Checks if an has a given node ID.
 
 hasSameNodeId :: NodeId -> Node -> Bool
-hasSameNodeId i1 (_, NodeLabel i2 _) = i1 == i2
+hasSameNodeId i n = i == (nodeId n)
 
 -- | Checks if two nodes have the same node ID.
 
 haveSameNodeIds :: Node -> Node -> Bool
-haveSameNodeIds (_, NodeLabel i1 _) (_, NodeLabel i2 _) = i1 == i2
+haveSameNodeIds n1 n2 = (nodeId n1) == (nodeId n2)
 
 -- | Checks if two nodes have the same internal node IDs.
 
 haveSameNodeInts :: Node -> Node -> Bool
-haveSameNodeInts (i1, _) (i2, _) = i1 == i2
+haveSameNodeInts n1 n2 = (nodeInt n1) == (nodeInt n2)
+
+-- | Checks if an has a given node type
+
+hasSameNodeType :: NodeType -> Node -> Bool
+hasSameNodeType nt n = nt == (nodeType n)
+
+-- | Checks if two nodes have the same node types
+
+haveSameNodeTypes :: Node -> Node -> Bool
+haveSameNodeTypes n1 n2 = (nodeType n1) == (nodeType n2)
 
 -- | Gets the number of nodes.
 
@@ -247,9 +259,9 @@ copyNodeLabel :: Node     -- ^ Node to copy label from.
                  -> Node  -- ^ Node to copy label to.
                  -> Graph
                  -> Graph
-copyNodeLabel n_from n_to g
-  | haveSameNodeInts n_from n_to = g
-  | otherwise = replaceNodeLabel (nodeLabel n_from) n_to g
+copyNodeLabel from_n to_n g
+  | haveSameNodeInts from_n to_n = g
+  | otherwise = replaceNodeLabel (nodeLabel from_n) to_n g
 
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
 -- removes the merged node. Edges that goes between the two nodes are not
@@ -259,10 +271,10 @@ mergeNodes :: Node     -- ^ Node to merge to.
               -> Node  -- ^ Node to merge.
               -> Graph
               -> Graph
-mergeNodes n_to n_from (Graph g)
-  | haveSameNodeInts n_from n_to = (Graph g)
-  | otherwise =  Graph $ I.delNode (nodeInt n_from)
-                 $ redirectEdges (nodeInt n_to) (nodeInt n_from) g
+mergeNodes to_n from_n (Graph g)
+  | haveSameNodeInts from_n to_n = (Graph g)
+  | otherwise =  Graph $ I.delNode (nodeInt from_n)
+                 $ redirectEdges (nodeInt to_n) (nodeInt from_n) g
 
 redirectEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
 redirectEdges dst_int replace_int g =
@@ -314,8 +326,10 @@ addNewEdge :: ( Node -- ^ Source node (from).
               )
               -> Graph
               -> Graph
-addNewEdge ((from_node_int, _), (to_node_int, _)) (Graph g) =
-  let out_edge_nr = nextOutEdgeNr g from_node_int
+addNewEdge (from_n, to_n) (Graph g) =
+  let from_node_int = nodeInt from_n
+      to_node_int = nodeInt to_n
+      out_edge_nr = nextOutEdgeNr g from_node_int
       in_edge_nr = nextInEdgeNr g to_node_int
       new_e = (from_node_int, to_node_int, EdgeLabel out_edge_nr in_edge_nr)
   in Graph (I.insEdge new_e g)
@@ -341,4 +355,4 @@ children n (Graph g) = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
 -- | Checks if a given node is within the graph.
 
 inGraph :: Graph -> Node -> Bool
-inGraph (Graph g) (int, _) = isJust $ fromNodeInt g int
+inGraph (Graph g) n = isJust $ fromNodeInt g (nodeInt n)
