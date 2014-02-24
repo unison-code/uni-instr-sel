@@ -18,7 +18,6 @@ module Language.InstructionSelection.Graphs.Base (
 , NodeId
 , Edge
 , EdgeNr
-, BBLabel (..)
 , NodeType (..)
 , NodeInfo (..)
 , NodeLabel (..)
@@ -26,101 +25,58 @@ module Language.InstructionSelection.Graphs.Base (
 , Graph (..)
 , I.LNode
 , I.LEdge
-, empty
-, mkGraph
-, addNewNode
 , addNewEdge
-, newNodeId
-, nodes
-, nodesByNodeId
-, numNodes
-, nodeId
-, nodeLabel
-, nodeInfo
-, bbLabel
-, nodeType
+, addNewNode
+, children
+, copyNodeLabel
+, empty
 , hasSameNodeId
 , haveSameNodeIds
-, hasSameBBLabel
-, haveSameBBLabels
-, replaceNodeLabel
-, replaceNodeInfo
-, copyNodeLabel
-, mergeNodes
-, lastAddedNode
-, topSort
-, children
-, isDataNodeType
 , inGraph
+, isDataNodeType
+, lastAddedNode
+, mergeNodes
+, mkGraph
+, newNodeId
+, nodeId
+, nodeInfo
+, nodeLabel
+, nodes
+, nodesByNodeId
+, nodeType
+, numNodes
+, replaceNodeInfo
+, replaceNodeLabel
 ) where
 
-import qualified Data.Graph.Inductive as I
 import Language.InstructionSelection.DataTypes
-import Language.InstructionSelection.OpTypes
+import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.Utils
+import qualified Data.Graph.Inductive as I
 import Data.Maybe
 
 
 
+--------------
+-- Data types
+--------------
+
+type IntGraph = I.Gr NodeLabel EdgeLabel
 type Node = I.LNode NodeLabel
 type NodeId = Natural
 type Edge = I.LEdge EdgeLabel
 type EdgeNr = Natural
-type IntGraph = I.Gr NodeLabel EdgeLabel
+type BBLabel = String
 
-data BBLabel
-    = BBLabel String
-    deriving (Show,Eq)
+-- | The outer-most data type which contains the graph itself.
 
-data NodeType
-    = NTBinaryOp BinaryOp
-    | NTUnaryOp UnaryOp
-    | NTMemoryLoad
-    | NTMemoryStore
-    | NTRet
-    | NTUncondBranch BBLabel
-    | NTCondBranch
+data Graph
+    = Graph { intGraph :: IntGraph }
+    deriving (Show)
 
-          -- | Label taken if the register evaluates to @True@.
-
-          BBLabel
-
-          -- | Label taken if the register evaluates to @False@.
-
-          BBLabel
-
-    | NTPhi
-
-      -- | Temporary and constant nodes (appearing in IR and pattern code), as
-      -- well as register and immediate nodes (appearing only in pattern code),
-      -- are all represented as a data node. What distinguishes one from another
-      -- is the constraints applied to it. A data node may (and should) also be
-      -- of a certain data type.
-
-    | NTData (Maybe DataType)
-
-    deriving (Show,Eq)
-
-isDataNodeType :: NodeType -> Bool
-isDataNodeType (NTData _) = True
-isDataNodeType _ = False
-
-data NodeInfo
-    = NodeInfo
-
-          -- | Type of node.
-
-          NodeType
-
-          -- | Label of the basic block that the node belongs to.
-
-          BBLabel
-
-          -- | A field to put arbitrary text in; used when printing the graph.
-
-          String
-
-    deriving (Show, Eq)
+-- | Node label, consisting of an ID that can be shared by multiple nodes (thus
+-- representing that they are actually the same node) and node information which
+-- denotes the type of node and other auxiliary information.
 
 data NodeLabel
     = NodeLabel
@@ -133,6 +89,38 @@ data NodeLabel
           -- | Additional data to describe the node.
 
           NodeInfo
+
+    deriving (Show, Eq)
+
+-- | Node information. Most importantly this specifies the node type.
+
+data NodeInfo
+    = NodeInfo
+
+          -- | Type of node.
+
+          NodeType
+
+          -- | A field to put arbitrary text in (used when printing the graph).
+
+          String
+
+    deriving (Show, Eq)
+
+data NodeType
+    = ComputationNode O.CompOp
+    | ControlNode O.ControlOp
+
+      -- | Temporary and constant nodes (appearing in IR and pattern code), as
+      -- well as register and immediate nodes (appearing only in pattern code),
+      -- are all represented as data nodes. What distinguishes one from another
+      -- are the constraints applied to it.
+
+    | DataNode DataType
+    | LabelNode BBLabel
+    | PhiNode
+    | StateNode
+    | TransferNode
 
     deriving (Show, Eq)
 
@@ -154,9 +142,15 @@ data EdgeLabel
 
     deriving (Show,Eq)
 
-data Graph
-    = Graph { intGraph :: IntGraph }
-    deriving (Show)
+
+
+-------------
+-- Functions
+-------------
+
+isDataNodeType :: NodeType -> Bool
+isDataNodeType (DataNode _) = True
+isDataNodeType _ = False
 
 -- | Creates an empty graph.
 
@@ -197,12 +191,7 @@ nodeInfo (_, NodeLabel _ ni) = ni
 -- | Gets the node type from a node.
 
 nodeType :: Node -> NodeType
-nodeType (_, NodeLabel _ (NodeInfo nt _ _)) = nt
-
--- | Gets the basic-block label from a node.
-
-bbLabel :: Node -> BBLabel
-bbLabel (_, NodeLabel _ (NodeInfo _ l _)) = l
+nodeType (_, NodeLabel _ (NodeInfo nt _)) = nt
 
 -- | Gets the internal node ID from a node.
 
@@ -223,17 +212,6 @@ haveSameNodeIds (_, NodeLabel i1 _) (_, NodeLabel i2 _) = i1 == i2
 
 haveSameNodeInts :: Node -> Node -> Bool
 haveSameNodeInts (i1, _) (i2, _) = i1 == i2
-
--- | Checks if a node has a given basic-block label.
-
-hasSameBBLabel :: BBLabel -> Node -> Bool
-hasSameBBLabel label1 (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
-
--- | Checks if two nodes have the same label.
-
-haveSameBBLabels :: Node -> Node -> Bool
-haveSameBBLabels (_, NodeLabel _ (NodeInfo _ label1 _))
-               (_, NodeLabel _ (NodeInfo _ label2 _)) = label1 == label2
 
 -- | Gets the number of nodes.
 
@@ -354,11 +332,6 @@ lastAddedNode (Graph g) =
 
 fromNodeInt :: IntGraph -> I.Node -> Maybe Node
 fromNodeInt g int = maybe Nothing (\nl -> Just (int, nl)) (I.lab g int)
-
--- | Gets the list of nodes arragned in topological order.
-
-topSort :: Graph -> [Node]
-topSort (Graph g) = map (fromJust . fromNodeInt g) (I.topsort g)
 
 -- | Gets the children (if any) of a given node.
 
