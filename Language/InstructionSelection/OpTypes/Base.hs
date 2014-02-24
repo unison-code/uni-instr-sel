@@ -24,32 +24,31 @@ import Prelude hiding (GT, LT)
 -- Data types
 --------------
 
--- | Operations.
+-- | Computational operations.
 
-data Operation
+data CompOp
 
     -- | An unsigned integer operation.
 
-    = UIntOp OpType
+    = UIntOp CompOpType
 
     -- | A signed integer operation.
 
-    | SIntOp OpType
+    | SIntOp CompOpType
 
     -- | A fixed-point operation.
 
-    | FixpointOp OpType
+    | FixpointOp CompOpType
 
     -- | A floating-point operation.
 
-    | FloatOp OpType
+    | FloatOp CompOpType
 
     deriving (Show, Eq)
 
+-- | Computational operation types.
 
--- | Operation types.
-
-data OpType
+data CompOpType
 
       -- | Addition. Commutative.
 
@@ -157,19 +156,37 @@ data OpType
 
     deriving (Show, Eq)
 
+-- | Control operations.
+
+data ControlOp
+
+    -- | Conditional branch. Branching is done if the input value is not zero.
+
+    = CondBranch
+
+    -- | Unconditional branch.
+
+    | UnCondBranch
+
+    -- | Return.
+
+    | Ret
+
+    deriving (Show, Eq)
+
 
 
 --------------
 -- Functions
 --------------
 
--- | Gets the operation type from an operation.
+-- | Gets the operation type from a computational operation.
 
-getOpType :: Operation -> OpType
-getOpType (UIntOp o) = o
-getOpType (SIntOp o) = o
-getOpType (FixpointOp o) = o
-getOpType (FloatOp o) = o
+getCompOpType :: CompOp -> CompOpType
+getCompOpType (UIntOp o) = o
+getCompOpType (SIntOp o) = o
+getCompOpType (FixpointOp o) = o
+getCompOpType (FloatOp o) = o
 
 
 
@@ -177,10 +194,10 @@ getOpType (FloatOp o) = o
 -- Class implementations
 -------------------------
 
-instance PrettyPrint Operation where
-  prettyShow = prettyShow . getOpType
+instance PrettyPrint CompOp where
+  prettyShow = prettyShow . getCompOpType
 
-instance PrettyPrint OpType where
+instance PrettyPrint CompOpType where
   prettyShow Add    = "+"
   prettyShow SatAdd = "+"
   prettyShow Sub    = "-"
@@ -206,13 +223,18 @@ instance PrettyPrint OpType where
   prettyShow Trunc  = "trunc"
   prettyShow Sqrt   = "sqrt"
 
-instance SExpressionable Operation where
+instance PrettyPrint ControlOp where
+  prettyShow CondBranch = "bnz"
+  prettyShow UnCondBranch = "br"
+  prettyShow Ret = "ret"
+
+instance SExpressionable CompOp where
   prettySE (UIntOp o) i     = "u" ++ (prettySE o i)
   prettySE (SIntOp o) i     = "s" ++ (prettySE o i)
   prettySE (FixpointOp o) i = "fixp" ++ (prettySE o i)
   prettySE (FloatOp o) i    = "f" ++ (prettySE o i)
 
-instance SExpressionable OpType where
+instance SExpressionable CompOpType where
   prettySE Add    _ = "add"
   prettySE SatAdd _ = "satadd"
   prettySE Sub    _ = "sub"
@@ -237,3 +259,8 @@ instance SExpressionable OpType where
   prettySE SExt   _ = "sext"
   prettySE Trunc  _ = "trunc"
   prettySE Sqrt   _ = "sqrt"
+
+instance SExpressionable ControlOp where
+  prettySE CondBranch _ = "bnz"
+  prettySE UnCondBranch _ = "br"
+  prettySE Ret _ = "ret"
