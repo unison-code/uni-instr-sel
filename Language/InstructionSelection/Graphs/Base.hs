@@ -14,17 +14,17 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.Base (
-  Node
-, NodeId
-, Edge
-, EdgeNr
-, NodeType (..)
-, NodeInfo (..)
-, NodeLabel (..)
+  Edge
 , EdgeLabel (..)
+, EdgeNr
 , Graph (..)
 , I.LNode
 , I.LEdge
+, Node
+, NodeId
+, NodeInfo (..)
+, NodeLabel (..)
+, NodeType (..)
 , addNewEdge
 , addNewNode
 , children
