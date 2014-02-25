@@ -85,7 +85,7 @@ getCandidates sg pg st =
       pairs_in = [ (n, m) | n <- t_in_sg, m <- t_in_pg ]
       t_d_sg = filter (`notElem` mapped_ns_sg) (nodes sg)
       t_d_pg = filter (`notElem` mapped_ns_pg) (nodes pg)
-      pairs_d = [ (n, m) | n <- t_d_sg, m <- t_d_pg ]
+      pairs_d = [ (n, head t_d_pg) | n <- t_d_sg ]
   in if length pairs_out > 0
         then pairs_out
         else if length pairs_in > 0
@@ -142,7 +142,7 @@ checkSyntax sg pg st pair =
 
 -- | Checks that for each predecessor A of the matched node that appears in the
 -- current matching state, there also exists some node mapping for A (equation 3
--- in the paper).
+-- in the paper). This is a consistency check.
 
 checkSyntaxPred :: Graph          -- ^ The search graph.
                    -> Graph       -- ^ The pattern graph.
@@ -175,7 +175,7 @@ checkSyntaxSucc sg pg st (sn, pn) =
      && all (\m -> any (\n -> (n, m) `elem` st) succs_sn) succs_pn_in_st
 
 -- | Checks that there exists a sufficient number of predecessors to map in the
--- search graph (equation 5 in the paper).
+-- search graph (equation 5 in the paper). This is a 1-look-ahead check.
 
 checkSyntaxIn :: Graph          -- ^ The search graph.
                  -> Graph       -- ^ The pattern graph.
@@ -216,7 +216,7 @@ checkSyntaxOut sg pg st (sn, pn) =
         >= length (preds_pn `intersect` t_out_pg)
 
 -- | Not really sure what the intuition behind this check is (equation 7 in the
--- paper).
+-- paper), other than that it is a 2-look-ahead check.
 
 checkSyntaxNew :: Graph          -- ^ The search graph.
                   -> Graph       -- ^ The pattern graph.
