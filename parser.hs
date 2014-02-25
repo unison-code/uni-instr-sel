@@ -91,7 +91,7 @@ main =
   do MyArgs {..} <- cmdArgs parseArgs
      src <- readFile $ llFile
      result <- withContext $ \context ->
-       do runErrorT $ withModuleFromString context src $ \mod -> moduleAST mod
+       do runErrorT $ withModuleFromLLVMAssembly context src $ \mod -> moduleAST mod
      when (isError result) $ do let (Left e) = result
                                 putStrLn $ show e
                                 exitFailure
