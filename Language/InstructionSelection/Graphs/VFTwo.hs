@@ -125,7 +125,8 @@ checkEdges sg pg st (n, m) =
   -- TODO: implement
   True
 
--- | Checks that the syntax of matched nodes are compatible.
+-- | Checks that the syntax of matched nodes are compatible (equation 2 in the
+-- paper).
 
 checkSyntax :: Graph          -- ^ The search graph.
                -> Graph       -- ^ The pattern graph.
@@ -140,7 +141,8 @@ checkSyntax sg pg st pair =
   && (checkSyntaxNew sg pg st pair)
 
 -- | Checks that for each predecessor A of the matched node that appears in the
--- current matching state, there also exists some node mapping for A.
+-- current matching state, there also exists some node mapping for A (equation 3
+-- in the paper).
 
 checkSyntaxPred :: Graph          -- ^ The search graph.
                    -> Graph       -- ^ The pattern graph.
@@ -156,7 +158,7 @@ checkSyntaxPred sg pg st (sn, pn) =
   in    all (\n -> any (\m -> (n, m) `elem` st) preds_pn) preds_sn_in_st
      && all (\m -> any (\n -> (n, m) `elem` st) preds_sn) preds_pn_in_st
 
--- | Same as checkSyntaxPred but for the successors.
+-- | Same as checkSyntaxPred but for the successors (equation 4 in the paper).
 
 checkSyntaxSucc :: Graph          -- ^ The search graph.
                    -> Graph       -- ^ The pattern graph.
@@ -173,7 +175,7 @@ checkSyntaxSucc sg pg st (sn, pn) =
      && all (\m -> any (\n -> (n, m) `elem` st) succs_sn) succs_pn_in_st
 
 -- | Checks that there exists a sufficient number of predecessors to map in the
--- search graph.
+-- search graph (equation 5 in the paper).
 
 checkSyntaxIn :: Graph          -- ^ The search graph.
                  -> Graph       -- ^ The pattern graph.
@@ -193,7 +195,7 @@ checkSyntaxIn sg pg st (sn, pn) =
      && length (preds_sn `intersect` t_in_sg)
         >= length (preds_pn `intersect` t_in_pg)
 
--- | Same as checkSyntaxIn but for successors.
+-- | Same as checkSyntaxIn but for successors (equation 6 in the paper).
 
 checkSyntaxOut :: Graph          -- ^ The search graph.
                   -> Graph       -- ^ The pattern graph.
@@ -213,7 +215,8 @@ checkSyntaxOut sg pg st (sn, pn) =
      && length (preds_sn `intersect` t_out_sg)
         >= length (preds_pn `intersect` t_out_pg)
 
--- | TODO: write description
+-- | Not really sure what the intuition behind this check is (equation 7 in the
+-- paper).
 
 checkSyntaxNew :: Graph          -- ^ The search graph.
                   -> Graph       -- ^ The pattern graph.
@@ -222,10 +225,16 @@ checkSyntaxNew :: Graph          -- ^ The search graph.
                   -> Bool
 checkSyntaxNew sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      preds_sn = predecessors sn sg
+      preds_pn = predecessors pn pg
+      succs_sn = successors sn sg
+      succs_pn = successors pn pg
       new_ns_sg = getNonMappedNonAdjNodes mapped_ns_sg sg
       new_ns_pg = getNonMappedNonAdjNodes mapped_ns_pg pg
-  -- TODO: implement
-  in True
+  in    length (new_ns_sg `intersect` preds_sn)
+        >= length (new_ns_pg `intersect` preds_pn)
+     && length (new_ns_sg `intersect` succs_sn)
+        >= length (new_ns_pg `intersect` succs_pn)
 
 -- | Splits a match into two node sets: the ones contained in the search graph,
 -- and the ones contained in the pattern graph.
