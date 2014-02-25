@@ -23,6 +23,7 @@ module Language.InstructionSelection.Graphs.VFTwo (
 ) where
 
 import Language.InstructionSelection.Graphs.Base
+import Data.List (intersect, union, (\\))
 
 
 
@@ -75,17 +76,15 @@ getCandidates :: Graph    -- ^ The search graph.
                  -> Match -- ^ The current matching state.
                  -> Match -- ^ Potential candidates.
 getCandidates sg pg st =
-  let (g_sg, g_pg) = splitMatch st
-      t_out_sg = filter (`notElem` g_sg) (concatMap ((flip successors) sg) g_sg)
-      t_out_pg = filter (`notElem` g_pg) (concatMap ((flip successors) pg) g_pg)
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
+      t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
       pairs_out = [ (n, m) | n <- t_out_sg, m <- t_out_pg ]
-      t_in_sg = filter (`notElem` g_sg) (concatMap ((flip predecessors) sg)
-                                         g_sg)
-      t_in_pg = filter (`notElem` g_pg) (concatMap ((flip predecessors) pg)
-                                         g_pg)
+      t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
+      t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
       pairs_in = [ (n, m) | n <- t_in_sg, m <- t_in_pg ]
-      t_d_sg = filter (`notElem` g_sg) (nodes sg)
-      t_d_pg = filter (`notElem` g_pg) (nodes pg)
+      t_d_sg = filter (`notElem` mapped_ns_sg) (nodes sg)
+      t_d_pg = filter (`notElem` mapped_ns_pg) (nodes pg)
       pairs_d = [ (n, m) | n <- t_d_sg, m <- t_d_pg ]
   in if length pairs_out > 0
         then pairs_out
@@ -93,24 +92,177 @@ getCandidates sg pg st =
              then pairs_in
              else pairs_d
 
--- | TODO: write description
+-- | Checks that the node mapping is feasible by comparing their syntax and
+-- semantics.
 
 checkFeasibility :: Graph          -- ^ The search graph.
                     -> Graph       -- ^ The pattern graph.
                     -> Match       -- ^ Current matching state.
                     -> NodeMapping -- ^ Candidate mapping.
                     -> Bool
-checkFeasibility sg pg st (sn, pm) =
+checkFeasibility sg pg st pair =
+  (checkSemantics sg pg st pair) && (checkSyntax sg pg st pair)
+
+-- | Checks that the nodes are of the same type and that the edges are
+-- compatible.
+
+checkSemantics :: Graph          -- ^ The search graph.
+                  -> Graph       -- ^ The pattern graph.
+                  -> Match       -- ^ Current matching state.
+                  -> NodeMapping -- ^ Candidate mapping.
+                  -> Bool
+checkSemantics sg pg st (n, m) =
+  (nodeType n) == (nodeType m) && (checkEdges sg pg st (n, m))
+
+-- | TODO: write description
+
+checkEdges :: Graph          -- ^ The search graph.
+              -> Graph       -- ^ The pattern graph.
+              -> Match       -- ^ Current matching state.
+              -> NodeMapping -- ^ Candidate mapping.
+              -> Bool
+checkEdges sg pg st (n, m) =
   -- TODO: implement
-  False
+  True
+
+-- | Checks that the syntax of matched nodes are compatible.
+
+checkSyntax :: Graph          -- ^ The search graph.
+               -> Graph       -- ^ The pattern graph.
+               -> Match       -- ^ Current matching state.
+               -> NodeMapping -- ^ Candidate mapping.
+               -> Bool
+checkSyntax sg pg st pair =
+     (checkSyntaxPred sg pg st pair)
+  && (checkSyntaxSucc sg pg st pair)
+  && (checkSyntaxIn sg pg st pair)
+  && (checkSyntaxOut sg pg st pair)
+  && (checkSyntaxNew sg pg st pair)
+
+-- | Checks that for each predecessor A of the matched node that appears in the
+-- current matching state, there also exists some node mapping for A.
+
+checkSyntaxPred :: Graph          -- ^ The search graph.
+                   -> Graph       -- ^ The pattern graph.
+                   -> Match       -- ^ Current matching state.
+                   -> NodeMapping -- ^ Candidate mapping.
+                   -> Bool
+checkSyntaxPred sg pg st (sn, pn) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      preds_sn = predecessors sn sg
+      preds_pn = predecessors pn pg
+      preds_sn_in_st = preds_sn `intersect` mapped_ns_sg
+      preds_pn_in_st = preds_pn `intersect` mapped_ns_pg
+  in    all (\n -> any (\m -> (n, m) `elem` st) preds_pn) preds_sn_in_st
+     && all (\m -> any (\n -> (n, m) `elem` st) preds_sn) preds_pn_in_st
+
+-- | Same as checkSyntaxPred but for the successors.
+
+checkSyntaxSucc :: Graph          -- ^ The search graph.
+                   -> Graph       -- ^ The pattern graph.
+                   -> Match       -- ^ Current matching state.
+                   -> NodeMapping -- ^ Candidate mapping.
+                   -> Bool
+checkSyntaxSucc sg pg st (sn, pn) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      succs_sn = successors sn sg
+      succs_pn = successors pn pg
+      succs_sn_in_st = succs_sn `intersect` mapped_ns_sg
+      succs_pn_in_st = succs_pn `intersect` mapped_ns_pg
+  in    all (\n -> any (\m -> (n, m) `elem` st) succs_pn) succs_sn_in_st
+     && all (\m -> any (\n -> (n, m) `elem` st) succs_sn) succs_pn_in_st
+
+-- | Checks that there exists a sufficient number of predecessors to map in the
+-- search graph.
+
+checkSyntaxIn :: Graph          -- ^ The search graph.
+                 -> Graph       -- ^ The pattern graph.
+                 -> Match       -- ^ Current matching state.
+                 -> NodeMapping -- ^ Candidate mapping.
+                 -> Bool
+checkSyntaxIn sg pg st (sn, pn) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      preds_sn = predecessors sn sg
+      preds_pn = predecessors pn pg
+      succs_sn = successors sn sg
+      succs_pn = successors pn pg
+      t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
+      t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
+  in    length (succs_sn `intersect` t_in_sg)
+        >= length (succs_pn `intersect` t_in_pg)
+     && length (preds_sn `intersect` t_in_sg)
+        >= length (preds_pn `intersect` t_in_pg)
+
+-- | Same as checkSyntaxIn but for successors.
+
+checkSyntaxOut :: Graph          -- ^ The search graph.
+                  -> Graph       -- ^ The pattern graph.
+                  -> Match       -- ^ Current matching state.
+                  -> NodeMapping -- ^ Candidate mapping.
+                  -> Bool
+checkSyntaxOut sg pg st (sn, pn) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      preds_sn = predecessors sn sg
+      preds_pn = predecessors pn pg
+      succs_sn = successors sn sg
+      succs_pn = successors pn pg
+      t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
+      t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
+  in    length (succs_sn `intersect` t_out_sg)
+        >= length (succs_pn `intersect` t_out_pg)
+     && length (preds_sn `intersect` t_out_sg)
+        >= length (preds_pn `intersect` t_out_pg)
+
+-- | TODO: write description
+
+checkSyntaxNew :: Graph          -- ^ The search graph.
+                  -> Graph       -- ^ The pattern graph.
+                  -> Match       -- ^ Current matching state.
+                  -> NodeMapping -- ^ Candidate mapping.
+                  -> Bool
+checkSyntaxNew sg pg st (sn, pn) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      new_ns_sg = getNonMappedNonAdjNodes mapped_ns_sg sg
+      new_ns_pg = getNonMappedNonAdjNodes mapped_ns_pg pg
+  -- TODO: implement
+  in True
 
 -- | Splits a match into two node sets: the ones contained in the search graph,
 -- and the ones contained in the pattern graph.
 
-splitMatch :: Match -> ( [Node] -- ^ Nodes in the search graph.
-                       , [Node] -- ^ Nodes in the pattern graph.
+splitMatch :: Match -> ( [Node] -- ^ Matched nodes in the search graph.
+                       , [Node] -- ^ Matched nodes in the pattern graph.
                        )
 splitMatch m =
   let nodes_sg = map fst m
       nodes_pg = map snd m
   in (nodes_sg, nodes_pg)
+
+getNonMappedSuccsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
+                                  -> Graph -- ^ Original graph in which the
+                                           -- mapped nodes appear.
+                                  -> [Node]
+getNonMappedSuccsOfMappedNodes ns g =
+  filter (`notElem` ns) (concatMap ((flip successors) g) ns)
+
+getNonMappedPredsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
+                                  -> Graph -- ^ Original graph in which the
+                                           -- mapped nodes appear.
+                                  -> [Node]
+getNonMappedPredsOfMappedNodes ns g =
+  filter (`notElem` ns) (concatMap ((flip predecessors) g) ns)
+
+getNonMappedAdjsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
+                                 -> Graph -- ^ Original graph in which the
+                                          -- mapped nodes appear.
+                                 -> [Node]
+getNonMappedAdjsOfMappedNodes ns g =
+  (getNonMappedSuccsOfMappedNodes ns g) `union`
+  (getNonMappedPredsOfMappedNodes ns g)
+
+getNonMappedNonAdjNodes :: [Node]   -- ^ The already-mapped nodes.
+                           -> Graph -- ^ Original graph in which the mapped
+                                    -- nodes appear.
+                           -> [Node]
+getNonMappedNonAdjNodes ns g =
+  ((nodes g) \\ ns) \\ (getNonMappedAdjsOfMappedNodes ns g)
