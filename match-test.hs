@@ -36,12 +36,20 @@ main =
   do let search = mkGraph
                   [ (0, NodeLabel 0 (NodeInfo StateNode ""))
                   , (1, NodeLabel 1 (NodeInfo StateNode ""))
+                  , (2, NodeLabel 2 (NodeInfo StateNode ""))
                   ]
-                  [ (0, 1, EdgeLabel 0 0) ]
+                  [ (0, 1, EdgeLabel 0 0)
+                  , (1, 2, EdgeLabel 0 0)
+                  ]
          pattern = mkGraph
-                   [ (2, NodeLabel 2 (NodeInfo StateNode ""))
-                   , (3, NodeLabel 3 (NodeInfo StateNode ""))
+                   [ (3, NodeLabel 3 (NodeInfo StateNode ""))
+                   , (4, NodeLabel 4 (NodeInfo StateNode ""))
                    ]
-                   [ (2, 3, EdgeLabel 0 0) ]
+                   [ (3, 4, EdgeLabel 0 0)
+                   ]
          matchset = match search pattern
-     mapM_ print matchset
+     putStrLn $ "Number of matches: " ++ show (length matchset)
+     putStrLn ""
+     mapM_ (\x -> do mapM_ print x
+                     putStrLn "")
+           matchset
