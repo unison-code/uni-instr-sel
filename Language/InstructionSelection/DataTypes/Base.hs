@@ -27,6 +27,10 @@ data DataType
 
       -- TODO: add missing data types
 
+      -- | When the data type is not known.
+
+    | UnknownType
+
     deriving (Show, Eq)
 
 instance PrettyPrint DataType where
