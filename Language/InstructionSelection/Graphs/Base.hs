@@ -410,14 +410,20 @@ edges g from_n to_n =
 
 -- | Checks if a node has ordered inbound edges.
 
-hasOrderedInEdges :: Graph -> Node -> Bool
-hasOrderedInEdges g n =
-  -- TODO: implement
-  True
+hasOrderedInEdges :: Node -> Bool
+hasOrderedInEdges n = hasOrderedInEdges' (nodeType n)
+
+hasOrderedInEdges' :: NodeType -> Bool
+hasOrderedInEdges' (ComputationNode op) = not $ O.isOpCommutative op
+hasOrderedInEdges' (LabelNode _) = True
+hasOrderedInEdges' PhiNode = True
+hasOrderedInEdges' _ = False
 
   -- | Checks if a node has ordered outbound edges.
 
-hasOrderedOutEdges :: Graph -> Node -> Bool
-hasOrderedOutEdges g n =
-  -- TODO: implement
-  True
+hasOrderedOutEdges :: Node -> Bool
+hasOrderedOutEdges n = hasOrderedOutEdges' (nodeType n)
+
+hasOrderedOutEdges' :: NodeType -> Bool
+hasOrderedOutEdges' (ControlNode O.CondBranch) = True
+hasOrderedOutEdges' _ = False

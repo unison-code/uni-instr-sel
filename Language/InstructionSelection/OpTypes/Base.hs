@@ -188,6 +188,17 @@ getCompOpType (SIntOp o) = o
 getCompOpType (FixpointOp o) = o
 getCompOpType (FloatOp o) = o
 
+-- | Checks if an operation is commutative.
+
+isOpCommutative :: CompOp -> Bool
+isOpCommutative op = isOpTypeCommutative $ getCompOpType op
+
+-- | Checks if an operation type is commutative.
+
+isOpTypeCommutative :: CompOpType -> Bool
+isOpTypeCommutative op =
+  op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
+
 
 
 -------------------------

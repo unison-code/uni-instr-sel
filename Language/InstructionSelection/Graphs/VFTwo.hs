@@ -136,7 +136,7 @@ checkOutEdges :: Graph          -- ^ The search graph.
 checkOutEdges sg pg st (n, m) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
       mapped_preds_m = getMappedPredsOfMappedNode m mapped_ns_pg pg
-      pg_preds_to_check = filter (hasOrderedInEdges pg) mapped_preds_m
+      pg_preds_to_check = filter hasOrderedOutEdges mapped_preds_m
       sg_preds_to_check = map (getMappedSNode st) pg_preds_to_check
       pg_edges = concatMap (edges pg m) pg_preds_to_check
       sg_edges = concatMap (edges sg n) sg_preds_to_check
@@ -153,7 +153,7 @@ checkInEdges :: Graph          -- ^ The search graph.
 checkInEdges sg pg st (n, m) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
       mapped_succs_m = getMappedSuccsOfMappedNode m mapped_ns_pg pg
-      pg_succs_to_check = filter (hasOrderedOutEdges pg) mapped_succs_m
+      pg_succs_to_check = filter hasOrderedInEdges mapped_succs_m
       sg_succs_to_check = map (getMappedSNode st) pg_succs_to_check
       pg_edges = concatMap (edges pg m) pg_succs_to_check
       sg_edges = concatMap (edges sg n) sg_succs_to_check
