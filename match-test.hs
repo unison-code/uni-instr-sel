@@ -28,25 +28,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Tests the implementation of the VF2 algorithm.
 -}
 
+import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
+import qualified Language.InstructionSelection.OpTypes as O
 
 main :: IO ()
 main =
   do let search = mkGraph
-                  [ (0, NodeLabel 0 (NodeInfo StateNode ""))
-                  , (1, NodeLabel 1 (NodeInfo StateNode ""))
-                  , (2, NodeLabel 2 (NodeInfo StateNode ""))
+                  [ (0, NodeLabel 0 (NodeInfo (ComputationNode (O.UIntOp O.Sub))
+                                     ""))
+                  , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType)""))
+                  , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
+                  , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
                   ]
-                  [ (0, 1, EdgeLabel 0 0)
-                  , (1, 2, EdgeLabel 0 0)
+                  [ (1, 0, EdgeLabel 0 0)
+                  , (2, 0, EdgeLabel 0 1)
+                  , (0, 3, EdgeLabel 0 0)
                   ]
          pattern = mkGraph
-                   [ (3, NodeLabel 3 (NodeInfo StateNode ""))
-                   , (4, NodeLabel 4 (NodeInfo StateNode ""))
-                   ]
-                   [ (3, 4, EdgeLabel 0 0)
-                   ]
+                  [ (4, NodeLabel 4 (NodeInfo (ComputationNode (O.UIntOp O.Sub))
+                                     ""))
+                  , (5, NodeLabel 5 (NodeInfo (DataNode D.UnknownType)""))
+                  , (6, NodeLabel 6 (NodeInfo (DataNode D.UnknownType) ""))
+                  , (7, NodeLabel 7 (NodeInfo (DataNode D.UnknownType) ""))
+                  ]
+                  [ (5, 4, EdgeLabel 0 0)
+                  , (6, 4, EdgeLabel 0 1)
+                  , (4, 7, EdgeLabel 0 0)
+                  ]
          matchset = match search pattern
      putStrLn $ "Number of matches: " ++ show (length matchset)
      putStrLn ""
