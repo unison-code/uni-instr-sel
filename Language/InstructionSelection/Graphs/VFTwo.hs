@@ -83,8 +83,8 @@ getCandidates sg pg st =
       t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
       t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
       pairs_in = [ (n, head t_in_pg) | n <- t_in_sg ]
-      t_d_sg = filter (`notElem` mapped_ns_sg) (nodes sg)
-      t_d_pg = filter (`notElem` mapped_ns_pg) (nodes pg)
+      t_d_sg = filter (`notElem` mapped_ns_sg) (allNodes sg)
+      t_d_pg = filter (`notElem` mapped_ns_pg) (allNodes pg)
       pairs_d = [ (n, head t_d_pg) | n <- t_d_sg ]
   in if length pairs_out > 0
         then pairs_out
@@ -114,16 +114,51 @@ checkSemantics :: Graph          -- ^ The search graph.
 checkSemantics sg pg st (n, m) =
   (nodeType n) == (nodeType m) && (checkEdges sg pg st (n, m))
 
--- | TODO: write description
+-- | Checks that for nodes with ordered edges the edges match.
 
 checkEdges :: Graph          -- ^ The search graph.
               -> Graph       -- ^ The pattern graph.
               -> Match       -- ^ Current matching state.
               -> NodeMapping -- ^ Candidate mapping.
               -> Bool
-checkEdges sg pg st (n, m) =
-  -- TODO: implement
-  True
+checkEdges sg pg st pair =
+  (checkInEdges sg pg st pair) && (checkOutEdges sg pg st pair)
+
+-- | Checks that the already-mapped predecessors of the pattern node in the
+-- candidate mapping, for those which has ordered outbound edges, that the
+-- numbers are the same.
+
+checkOutEdges :: Graph          -- ^ The search graph.
+                 -> Graph       -- ^ The pattern graph.
+                 -> Match       -- ^ Current matching state.
+                 -> NodeMapping -- ^ Candidate mapping.
+                 -> Bool
+checkOutEdges sg pg st (n, m) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      mapped_preds_m = getMappedPredsOfMappedNode m mapped_ns_pg pg
+      pg_preds_to_check = filter (hasOrderedInEdges pg) mapped_preds_m
+      sg_preds_to_check = map (getMappedSNode st) pg_preds_to_check
+      pg_edges = concatMap (edges pg m) pg_preds_to_check
+      sg_edges = concatMap (edges sg n) sg_preds_to_check
+      edge_pairs = zip pg_edges sg_edges
+  in all (\(pg_e, sg_e) -> (outEdgeNr pg_e) == (outEdgeNr sg_e)) edge_pairs
+
+-- | Same as checkOutEdges but for predecessors and their inbound edges.
+
+checkInEdges :: Graph          -- ^ The search graph.
+                -> Graph       -- ^ The pattern graph.
+                -> Match       -- ^ Current matching state.
+                -> NodeMapping -- ^ Candidate mapping.
+                -> Bool
+checkInEdges sg pg st (n, m) =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+      mapped_succs_m = getMappedSuccsOfMappedNode m mapped_ns_pg pg
+      pg_succs_to_check = filter (hasOrderedOutEdges pg) mapped_succs_m
+      sg_succs_to_check = map (getMappedSNode st) pg_succs_to_check
+      pg_edges = concatMap (edges pg m) pg_succs_to_check
+      sg_edges = concatMap (edges sg n) sg_succs_to_check
+      edge_pairs = zip pg_edges sg_edges
+  in all (\(pg_e, sg_e) -> (inEdgeNr pg_e) == (inEdgeNr sg_e)) edge_pairs
 
 -- | Checks that the syntax of matched nodes are compatible (equation 2 in the
 -- paper).
@@ -151,8 +186,8 @@ checkSyntaxPred :: Graph          -- ^ The search graph.
                    -> Bool
 checkSyntaxPred sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
-      preds_sn = predecessors sn sg
-      preds_pn = predecessors pn pg
+      preds_sn = predecessors sg sn
+      preds_pn = predecessors pg pn
       preds_sn_in_st = preds_sn `intersect` mapped_ns_sg
       preds_pn_in_st = preds_pn `intersect` mapped_ns_pg
   in    all (\n -> any (\m -> (n, m) `elem` st) preds_pn) preds_sn_in_st
@@ -167,8 +202,8 @@ checkSyntaxSucc :: Graph          -- ^ The search graph.
                    -> Bool
 checkSyntaxSucc sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
-      succs_sn = successors sn sg
-      succs_pn = successors pn pg
+      succs_sn = successors sg sn
+      succs_pn = successors pg pn
       succs_sn_in_st = succs_sn `intersect` mapped_ns_sg
       succs_pn_in_st = succs_pn `intersect` mapped_ns_pg
   in    all (\n -> any (\m -> (n, m) `elem` st) succs_pn) succs_sn_in_st
@@ -184,10 +219,10 @@ checkSyntaxIn :: Graph          -- ^ The search graph.
                  -> Bool
 checkSyntaxIn sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
-      preds_sn = predecessors sn sg
-      preds_pn = predecessors pn pg
-      succs_sn = successors sn sg
-      succs_pn = successors pn pg
+      preds_sn = predecessors sg sn
+      preds_pn = predecessors pg pn
+      succs_sn = successors sg sn
+      succs_pn = successors pg pn
       t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
       t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
   in    length (succs_sn `intersect` t_in_sg)
@@ -204,10 +239,10 @@ checkSyntaxOut :: Graph          -- ^ The search graph.
                   -> Bool
 checkSyntaxOut sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
-      preds_sn = predecessors sn sg
-      preds_pn = predecessors pn pg
-      succs_sn = successors sn sg
-      succs_pn = successors pn pg
+      preds_sn = predecessors sg sn
+      preds_pn = predecessors pg pn
+      succs_sn = successors sg sn
+      succs_pn = successors pg pn
       t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
       t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
   in    length (succs_sn `intersect` t_out_sg)
@@ -225,10 +260,10 @@ checkSyntaxNew :: Graph          -- ^ The search graph.
                   -> Bool
 checkSyntaxNew sg pg st (sn, pn) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
-      preds_sn = predecessors sn sg
-      preds_pn = predecessors pn pg
-      succs_sn = successors sn sg
-      succs_pn = successors pn pg
+      preds_sn = predecessors sg sn
+      preds_pn = predecessors pg pn
+      succs_sn = successors sg sn
+      succs_pn = successors pg pn
       new_ns_sg = getNonMappedNonAdjNodes mapped_ns_sg sg
       new_ns_pg = getNonMappedNonAdjNodes mapped_ns_pg pg
   in    length (new_ns_sg `intersect` preds_sn)
@@ -252,14 +287,14 @@ getNonMappedSuccsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                            -- mapped nodes appear.
                                   -> [Node]
 getNonMappedSuccsOfMappedNodes ns g =
-  filter (`notElem` ns) (concatMap ((flip successors) g) ns)
+  filter (`notElem` ns) (concatMap (successors g) ns)
 
 getNonMappedPredsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                   -> Graph -- ^ Original graph in which the
                                            -- mapped nodes appear.
                                   -> [Node]
 getNonMappedPredsOfMappedNodes ns g =
-  filter (`notElem` ns) (concatMap ((flip predecessors) g) ns)
+  filter (`notElem` ns) (concatMap (predecessors g) ns)
 
 getNonMappedAdjsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                  -> Graph -- ^ Original graph in which the
@@ -274,4 +309,40 @@ getNonMappedNonAdjNodes :: [Node]   -- ^ The already-mapped nodes.
                                     -- nodes appear.
                            -> [Node]
 getNonMappedNonAdjNodes ns g =
-  ((nodes g) \\ ns) \\ (getNonMappedAdjsOfMappedNodes ns g)
+  ((allNodes g) \\ ns) \\ (getNonMappedAdjsOfMappedNodes ns g)
+
+getMappedSuccsOfMappedNode :: Node      -- ^ Mapped node to get the successors
+                                        -- from.
+                              -> [Node] -- ^ The already-mapped nodes.
+                              -> Graph  -- ^ Original graph in which the mapped
+                                        -- nodes appear.
+                              -> [Node]
+getMappedSuccsOfMappedNode n ns g =
+  filter (`elem` ns) (successors g n)
+
+getMappedPredsOfMappedNode :: Node        -- ^ Mapped node to get the
+                                          -- predecessors from.
+                              -> [Node]   -- ^ The already-mapped nodes.
+                              -> Graph    -- ^ Original graph in which the
+                                          -- mapped nodes appear.
+                              -> [Node]
+getMappedPredsOfMappedNode n ns g =
+  filter (`elem` ns) (predecessors g n)
+
+-- | Gets the corresponding search node from a mapped pattern graph node. It is
+-- assumed that such a mapping exists in the matching set.
+
+getMappedSNode :: Match   -- ^ Matching set.
+                  -> Node -- ^ Mapped node in the pattern graph.
+                  -> Node -- ^ Corresponding mapped node in the search graph.
+getMappedSNode st m =
+  fst $ head $ filter (\(n', m') -> m' == m) st
+
+-- | Gets the corresponding pattern node from a mapped search graph node. It is
+-- assumed that such a mapping exists in the matching set.
+
+getMappedPNode :: Match   -- ^ Matching set.
+                  -> Node -- ^ Mapped node in the search graph.
+                  -> Node -- ^ Corresponding mapped node in the pattern graph.
+getMappedPNode st n =
+  snd $ head $ filter (\(n', m') -> n' == n) st

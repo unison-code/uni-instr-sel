@@ -25,15 +25,22 @@ module Language.InstructionSelection.Graphs.Base (
 , NodeInfo (..)
 , NodeLabel (..)
 , NodeType (..)
+, allNodes
+, allEdges
 , addNewEdge
 , addNewNode
 , copyNodeLabel
+, edges
 , empty
+, hasOrderedInEdges
+, hasOrderedOutEdges
 , hasSameNodeId
 , hasSameNodeType
 , haveSameNodeIds
 , haveSameNodeTypes
-, inGraph
+, inEdgeNr
+, inEdges
+, isInGraph
 , isDataNodeType
 , lastAddedNode
 , mergeNodes
@@ -42,10 +49,11 @@ module Language.InstructionSelection.Graphs.Base (
 , nodeId
 , nodeInfo
 , nodeLabel
-, nodes
 , nodesByNodeId
 , nodeType
 , numNodes
+, outEdgeNr
+, outEdges
 , predecessors
 , replaceNodeInfo
 , replaceNodeLabel
@@ -56,6 +64,7 @@ import Language.InstructionSelection.DataTypes
 import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.Utils
 import qualified Data.Graph.Inductive as I
+import Data.List (sortBy)
 import Data.Maybe
 
 
@@ -229,17 +238,17 @@ haveSameNodeTypes n1 n2 = (nodeType n1) == (nodeType n2)
 -- | Gets the number of nodes.
 
 numNodes :: Graph -> Int
-numNodes g = length $ nodes g
+numNodes g = length $ allNodes g
 
--- | Gets the list of nodes.
+-- | Gets a list of all nodes.
 
-nodes :: Graph -> [Node]
-nodes (Graph g) = I.labNodes g
+allNodes :: Graph -> [Node]
+allNodes (Graph g) = I.labNodes g
 
 -- | Gets a list of nodes with the same node ID.
 
 nodesByNodeId :: NodeId -> Graph -> [Node]
-nodesByNodeId i g = filter (hasSameNodeId i) $ nodes g
+nodesByNodeId i g = filter (hasSameNodeId i) $ allNodes g
 
 -- | Replaces the node label of an already existing node.
 
@@ -353,16 +362,62 @@ fromNodeInt g int = maybe Nothing (\nl -> Just (int, nl)) (I.lab g int)
 -- | Gets the predecessors (if any) of a given node. A node A is a predecessor
 -- of another node B if there is a directed edge from B to A.
 
-predecessors :: Node -> Graph -> [Node]
-predecessors n (Graph g) = map (fromJust . fromNodeInt g) $ I.pre g (nodeInt n)
+predecessors :: Graph -> Node -> [Node]
+predecessors (Graph g) n = map (fromJust . fromNodeInt g) $ I.pre g (nodeInt n)
 
 -- | Gets the successors (if any) of a given node. A node A is a successor of
 -- another node B if there is a directed edge from A to B.
 
-successors :: Node -> Graph -> [Node]
-successors n (Graph g) = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
+successors :: Graph -> Node -> [Node]
+successors (Graph g) n = map (fromJust . fromNodeInt g) $ I.suc g (nodeInt n)
 
 -- | Checks if a given node is within the graph.
 
-inGraph :: Graph -> Node -> Bool
-inGraph (Graph g) n = isJust $ fromNodeInt g (nodeInt n)
+isInGraph :: Graph -> Node -> Bool
+isInGraph (Graph g) n = isJust $ fromNodeInt g (nodeInt n)
+
+-- | Gets a list of all edges.
+
+allEdges :: Graph -> [Edge]
+allEdges (Graph g) = I.labEdges g
+
+-- | Gets all inbound edges to a particular node.
+
+inEdges :: Graph -> Node -> [Edge]
+inEdges (Graph g) n = I.inn g (nodeInt n)
+
+-- | Gets all outbound edges from a particular node.
+
+outEdges :: Graph -> Node -> [Edge]
+outEdges (Graph g) n = I.out g (nodeInt n)
+
+-- | Gets a particular edge or edges between two nodes. If there are more than
+-- one edge, the list will be sorted in increasing order of out-edge numbers.
+
+edges :: Graph
+        -> Node -- ^ The 'from' node.
+        -> Node -- ^ The 'to' node.
+        -> [Edge]
+edges g from_n to_n =
+  let out_edges = outEdges g from_n
+      from_int = nodeInt from_n
+      to_int = nodeInt to_n
+      es = filter (\(n1, n2, _) -> from_int == n1 && to_int == n2) out_edges
+      sorted_es = sortBy
+                  (\n -> \m -> if inEdgeNr n < inEdgeNr m then LT else GT)
+                  es
+  in sorted_es
+
+-- | Checks if a node has ordered inbound edges.
+
+hasOrderedInEdges :: Graph -> Node -> Bool
+hasOrderedInEdges g n =
+  -- TODO: implement
+  True
+
+  -- | Checks if a node has ordered outbound edges.
+
+hasOrderedOutEdges :: Graph -> Node -> Bool
+hasOrderedOutEdges g n =
+  -- TODO: implement
+  True
