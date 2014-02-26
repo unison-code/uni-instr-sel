@@ -12,7 +12,9 @@
 -- (http://dx.doi.org/10.1109/TPAMI.2004.75). There are always two graphs
 -- involved: the search graph and the pattern graph. The search graph is the
 -- graph on which another graph will be matched. The graph to match is called
--- the pattern graph.
+-- the pattern graph. The implementation assumes that the pattern graph is a
+-- single connected graph. The search graph, on the other hand, can be
+-- arbitrarily shaped.
 --
 --------------------------------------------------------------------------------
 
@@ -79,10 +81,10 @@ getCandidates sg pg st =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
       t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
       t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
-      pairs_out = [ (n, m) | n <- t_out_sg, m <- t_out_pg ]
+      pairs_out = [ (n, head t_out_pg) | n <- t_out_sg ]
       t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
       t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
-      pairs_in = [ (n, m) | n <- t_in_sg, m <- t_in_pg ]
+      pairs_in = [ (n, head t_in_pg) | n <- t_in_sg ]
       t_d_sg = filter (`notElem` mapped_ns_sg) (nodes sg)
       t_d_pg = filter (`notElem` mapped_ns_pg) (nodes pg)
       pairs_d = [ (n, head t_d_pg) | n <- t_d_sg ]
