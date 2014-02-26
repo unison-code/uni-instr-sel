@@ -12,9 +12,7 @@
 -- (http://dx.doi.org/10.1109/TPAMI.2004.75). There are always two graphs
 -- involved: the search graph and the pattern graph. The search graph is the
 -- graph on which another graph will be matched. The graph to match is called
--- the pattern graph. The implementation assumes that the pattern graph is a
--- single connected graph. The search graph, on the other hand, can be
--- arbitrarily shaped.
+-- the pattern graph.
 --
 --------------------------------------------------------------------------------
 
