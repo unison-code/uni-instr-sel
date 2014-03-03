@@ -41,6 +41,7 @@ module Language.InstructionSelection.Graphs.Base (
 , delNode
 , edges
 , empty
+, fromNodeId
 , hasOrderedInEdges
 , hasOrderedOutEdges
 , inEdgeNr
@@ -512,3 +513,8 @@ sourceOfEdge (Graph g) (n, _, _) = fromJust $ fromNodeInt g n
 
 targetOfEdge :: Graph -> Edge -> Node
 targetOfEdge (Graph g) (_, n, _) = fromJust $ fromNodeInt g n
+
+-- | Gets the nodes that matches a given node ID.
+
+fromNodeId :: Graph -> NodeId -> [Node]
+fromNodeId g id = filter (\n -> nodeId n == id) (allNodes g)
