@@ -31,6 +31,7 @@ module Language.InstructionSelection.OperationStructures.Base (
 , resolveAliases
 , updateConstraints
 , updateGraph
+, updateNodeIdInConstraint
 ) where
 
 import qualified Language.InstructionSelection.Graphs as G
@@ -99,7 +100,7 @@ resolveAliases (OpStructure g cs) =
   in foldl resolveAliases' (OpStructure g all_cs_but_alias) aliases
 
 -- | Resolves an alias by merging all nodes in the tail of list with the first
--- ID of the list.
+-- ID of the list. Any loops caused by this will be removed.
 
 resolveAliases' :: OpStructure -> [G.NodeId] -> OpStructure
 resolveAliases' os [] = os
@@ -114,18 +115,26 @@ resolveAliases'' to_id from_id os =
   let g = graph os
       from_n = head $ G.fromNodeId g from_id
       to_n = head $ G.fromNodeId g to_id
-      new_g = G.mergeNodes to_n from_n g
-      new_cs = map (updateNodeInConstraint to_id from_id) (constraints os)
+      new_g = foldl (flip G.delEdge) (G.mergeNodes to_n from_n g)
+              (G.edges g to_n to_n)
+      new_cs = map (updateNodeIdInConstraint to_id from_id) (constraints os)
   in OpStructure new_g new_cs
 
-updateNodeInConstraint :: G.NodeId -> G.NodeId -> Constraint -> Constraint
-updateNodeInConstraint to_id from_id c@(AllocateInRegisterConstraint i regs)
-  | from_id == i = AllocateInRegisterConstraint to_id regs
+-- | Updates a node ID appearing within a constraint.
+
+updateNodeIdInConstraint :: G.NodeId    -- ^ New node Id.
+                            -> G.NodeId -- ^ Node Id to change.
+                            -> Constraint
+                            -> Constraint
+updateNodeIdInConstraint to_id from_id c@(AllocateInRegisterConstraint id regs)
+  | from_id == id = AllocateInRegisterConstraint to_id regs
   | otherwise = c
-updateNodeInConstraint to_id from_id c@(ConstantValueConstraint i ranges)
-  | from_id == i = ConstantValueConstraint to_id ranges
+updateNodeIdInConstraint to_id from_id c@(ConstantValueConstraint id ranges)
+  | from_id == id = ConstantValueConstraint to_id ranges
   | otherwise = c
-updateNodeInConstraint _ _ c = c
+updateNodeIdInConstraint to_id from_id (AliasConstraint ids) =
+  AliasConstraint (map (\id -> if id == from_id then to_id else id) ids)
+updateNodeIdInConstraint _ _ c = c
 
 -- | Normalizes the node IDs such that the use of IDs is contingent, starting
 -- from 0.
