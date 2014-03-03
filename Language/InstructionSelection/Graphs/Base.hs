@@ -312,11 +312,11 @@ updateNodeInfo new_info n (Graph g) =
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
 
-copyNodeLabel :: Node     -- ^ Node to copy label from.
-                 -> Node  -- ^ Node to copy label to.
+copyNodeLabel :: Node     -- ^ Node to copy label to.
+                 -> Node  -- ^ Node to copy label from.
                  -> Graph
                  -> Graph
-copyNodeLabel from_n to_n g
+copyNodeLabel to_n from_n g
   | (nodeInt from_n) == (nodeInt to_n) = g
   | otherwise = updateNodeLabel (nodeLabel from_n) to_n g
 
@@ -324,31 +324,31 @@ copyNodeLabel from_n to_n g
 -- removes the merged node. If the two nodes are actually the same node, nothing
 -- happens. Edges involving both nodes will result in loops.
 
-mergeNodes :: Node     -- ^ Node to merge with (will be discarded).
-              -> Node  -- ^ Node to merge with (will be kept).
+mergeNodes :: Node     -- ^ Node to merge with (will be kept).
+              -> Node  -- ^ Node to merge with (will be discarded).
               -> Graph
               -> Graph
-mergeNodes n_to_discard n_to_keep g
+mergeNodes n_to_keep n_to_discard g
   | (nodeInt n_to_keep) == (nodeInt n_to_discard) = g
   | otherwise = delNode n_to_discard
                 $ redirectEdges n_to_keep n_to_discard g
 
 -- | Redirects all edges involving one node to another node.
 
-redirectEdges :: Node        -- ^ Node to redirect edges from.
-                 -> Node     -- ^ Node to redirect edges to.
+redirectEdges :: Node        -- ^ Node to redirect edges to.
+                 -> Node     -- ^ Node to redirect edges from.
                  -> Graph
                  -> Graph
-redirectEdges from_n to_n g =
-  redirectInEdges from_n to_n $ redirectOutEdges from_n to_n g
+redirectEdges to_n from_n g =
+  redirectInEdges to_n from_n $ redirectOutEdges to_n from_n g
 
 -- | Redirects all inbound edges to one node to another node.
 
-redirectInEdges :: Node     -- ^ Node to redirect edges from.
-                   -> Node  -- ^ Node to redirect edges to.
+redirectInEdges :: Node     -- ^ Node to redirect edges to.
+                   -> Node  -- ^ Node to redirect edges from.
                    -> Graph
                    -> Graph
-redirectInEdges from_n to_n g =
+redirectInEdges to_n from_n g =
   foldr (updateEdgeTarget to_n) g (inEdges g from_n)
 
 -- | Updates the target of an edge.
@@ -366,11 +366,11 @@ updateEdgeTarget new_target e@(source, _, EdgeLabel out_nr _) (Graph g) =
 
 -- | Redirects the outbound edges from one node to another.
 
-redirectOutEdges :: Node     -- ^ Node to redirect edges from.
-                    -> Node  -- ^ Node to redirect edges to.
+redirectOutEdges :: Node     -- ^ Node to redirect edges to.
+                    -> Node  -- ^ Node to redirect edges from.
                     -> Graph
                     -> Graph
-redirectOutEdges from_n to_n g =
+redirectOutEdges to_n from_n g =
   foldr (updateEdgeSource to_n) g (outEdges g from_n)
 
 -- | Updates the source of an edge.
