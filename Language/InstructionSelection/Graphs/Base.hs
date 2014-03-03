@@ -69,6 +69,7 @@ module Language.InstructionSelection.Graphs.Base (
 , targetOfEdge
 , updateEdgeSource
 , updateEdgeTarget
+, updateNodeId
 , updateNodeInfo
 , updateNodeLabel
 ) where
@@ -309,6 +310,12 @@ updateNodeLabel new_label n (Graph g) =
 updateNodeInfo :: NodeInfo -> Node -> Graph -> Graph
 updateNodeInfo new_info n (Graph g) =
   Graph (I.insNode (nodeInt n, NodeLabel (nodeId n) new_info) g)
+
+-- | Updates the node ID of an already existing node.
+
+updateNodeId :: NodeId -> Node -> Graph -> Graph
+updateNodeId new_id n (Graph g) =
+  Graph (I.insNode (nodeInt n, NodeLabel new_id (nodeInfo n)) g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
