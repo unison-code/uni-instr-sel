@@ -43,7 +43,7 @@ module Language.InstructionSelection.Graphs.Base (
 , inEdgeNr
 , inEdges
 , isInGraph
-, isDataNodeType
+, isDataNode
 , lastAddedNode
 , mergeNodes
 , mkGraph
@@ -167,9 +167,54 @@ data EdgeLabel
 -- Functions
 -------------
 
+isComputationNode :: Node -> Bool
+isComputationNode n = isComputationNodeType $ nodeType n
+
+isControlNode :: Node -> Bool
+isControlNode n = isControlNodeType $ nodeType n
+
+isDataNode :: Node -> Bool
+isDataNode n = isDataNodeType $ nodeType n
+
+isLabelNode :: Node -> Bool
+isLabelNode n = isLabelNodeType $ nodeType n
+
+isPhiNode :: Node -> Bool
+isPhiNode n = isPhiNodeType $ nodeType n
+
+isStateNode :: Node -> Bool
+isStateNode n = isStateNodeType $ nodeType n
+
+isTransferNode :: Node -> Bool
+isTransferNode n = isTransferNodeType $ nodeType n
+
+isComputationNodeType :: NodeType -> Bool
+isComputationNodeType (ComputationNode _) = True
+isComputationNodeType _ = False
+
+isControlNodeType :: NodeType -> Bool
+isControlNodeType (ControlNode _) = True
+isControlNodeType _ = False
+
 isDataNodeType :: NodeType -> Bool
 isDataNodeType (DataNode _) = True
 isDataNodeType _ = False
+
+isLabelNodeType :: NodeType -> Bool
+isLabelNodeType (LabelNode _) = True
+isLabelNodeType _ = False
+
+isPhiNodeType :: NodeType -> Bool
+isPhiNodeType PhiNode = True
+isPhiNodeType _ = False
+
+isStateNodeType :: NodeType -> Bool
+isStateNodeType StateNode = True
+ipsStateNodeType _ = False
+
+isTransferNodeType :: NodeType -> Bool
+isTransferNodeType TransferNode = True
+isTransferNodeType _ = False
 
 -- | Creates an empty graph.
 
