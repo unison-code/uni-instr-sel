@@ -20,10 +20,12 @@ module Language.InstructionSelection.Graphs.Base (
 , Graph (..)
 , I.LNode
 , I.LEdge
+, Match
 , Node
 , NodeId
 , NodeInfo (..)
 , NodeLabel (..)
+, NodeMapping
 , NodeType (..)
 , allNodes
 , allEdges
@@ -79,6 +81,11 @@ type NodeId = Natural
 type Edge = I.LEdge EdgeLabel
 type EdgeNr = Natural
 type BBLabel = String
+type Match = [NodeMapping]
+type NodeMapping = ( Node -- ^ Node in search graph.
+                   , Node -- ^ Node in pattern graph.
+                   )
+
 
 -- | The outer-most data type which contains the graph itself.
 

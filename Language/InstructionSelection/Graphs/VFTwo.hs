@@ -27,16 +27,6 @@ import Data.List (intersect, union, (\\))
 
 
 
---------------
--- Data types
---------------
-
-type Match = [NodeMapping]
-type NodeMapping = ( Node -- ^ Node in search graph.
-                   , Node -- ^ Node in pattern graph.
-                   )
-
-
 -------------
 -- Functions
 -------------
