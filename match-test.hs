@@ -36,9 +36,10 @@ import qualified Language.InstructionSelection.OpTypes as O
 main :: IO ()
 main =
   do let search = mkGraph
-                  [ (0, NodeLabel 0 (NodeInfo (ComputationNode (O.UIntOp O.Sub))
+                  [ (0, NodeLabel 0 (NodeInfo (ComputationNode
+                                               (O.UIntOp O.Sub))
                                      ""))
-                  , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType)""))
+                  , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
                   , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
                   , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
                   ]
@@ -47,9 +48,10 @@ main =
                   , (0, 3, EdgeLabel 0 0)
                   ]
          pattern = mkGraph
-                  [ (4, NodeLabel 4 (NodeInfo (ComputationNode (O.UIntOp O.Sub))
+                  [ (4, NodeLabel 4 (NodeInfo (ComputationNode
+                                               (O.UIntOp O.Sub))
                                      ""))
-                  , (5, NodeLabel 5 (NodeInfo (DataNode D.UnknownType)""))
+                  , (5, NodeLabel 5 (NodeInfo (DataNode D.UnknownType) ""))
                   , (6, NodeLabel 6 (NodeInfo (DataNode D.UnknownType) ""))
                   , (7, NodeLabel 7 (NodeInfo (DataNode D.UnknownType) ""))
                   ]
