@@ -11,6 +11,13 @@
 -- Contains the data types and records for representing graphs which are
 -- specialized for representing program functions and patterns.
 --
+-- Every node has an internal ID, and an external ID. The users of the graph
+-- will only be exposed to the external ID, where nodes with the same external
+-- ID indicate that the nodes are the same. However, internally the nodes may
+-- still be different. Using the equality operator (@==@) checks if two nodes
+-- are the same node internally, and comparing the node IDs checks if two nodes
+-- are the same node externally.
+--
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.Base (
@@ -18,8 +25,6 @@ module Language.InstructionSelection.Graphs.Base (
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
-, I.LNode
-, I.LEdge
 , Match
 , Node
 , NodeId
@@ -32,14 +37,12 @@ module Language.InstructionSelection.Graphs.Base (
 , addNewEdge
 , addNewNode
 , copyNodeLabel
+, delEdge
+, delNode
 , edges
 , empty
 , hasOrderedInEdges
 , hasOrderedOutEdges
-, hasSameNodeId
-, hasSameNodeType
-, haveSameNodeIds
-, haveSameNodeTypes
 , inEdgeNr
 , inEdges
 , isInGraph
@@ -57,9 +60,16 @@ module Language.InstructionSelection.Graphs.Base (
 , outEdgeNr
 , outEdges
 , predecessors
-, replaceNodeInfo
-, replaceNodeLabel
+, redirectEdges
+, redirectInEdges
+, redirectOutEdges
+, sourceOfEdge
 , successors
+, targetOfEdge
+, updateEdgeSource
+, updateEdgeTarget
+, updateNodeInfo
+, updateNodeLabel
 ) where
 
 import Language.InstructionSelection.DataTypes
@@ -262,31 +272,6 @@ nodeType (_, NodeLabel _ (NodeInfo nt _)) = nt
 nodeInt :: Node -> I.Node
 nodeInt (int, _) = int
 
--- | Checks if an has a given node ID.
-
-hasSameNodeId :: NodeId -> Node -> Bool
-hasSameNodeId i n = i == (nodeId n)
-
--- | Checks if two nodes have the same node ID.
-
-haveSameNodeIds :: Node -> Node -> Bool
-haveSameNodeIds n1 n2 = (nodeId n1) == (nodeId n2)
-
--- | Checks if two nodes have the same internal node IDs.
-
-haveSameNodeInts :: Node -> Node -> Bool
-haveSameNodeInts n1 n2 = (nodeInt n1) == (nodeInt n2)
-
--- | Checks if an has a given node type
-
-hasSameNodeType :: NodeType -> Node -> Bool
-hasSameNodeType nt n = nt == (nodeType n)
-
--- | Checks if two nodes have the same node types
-
-haveSameNodeTypes :: Node -> Node -> Bool
-haveSameNodeTypes n1 n2 = (nodeType n1) == (nodeType n2)
-
 -- | Gets the number of nodes.
 
 numNodes :: Graph -> Int
@@ -297,22 +282,32 @@ numNodes g = length $ allNodes g
 allNodes :: Graph -> [Node]
 allNodes (Graph g) = I.labNodes g
 
+-- | Deletes a node from the graph.
+
+delNode :: Node -> Graph -> Graph
+delNode n (Graph g) = Graph (I.delNode (nodeInt n) g)
+
+-- | Deletes an edge from the graph.
+
+delEdge :: Edge -> Graph -> Graph
+delEdge e (Graph g) = Graph (I.delLEdge e g)
+
 -- | Gets a list of nodes with the same node ID.
 
-nodesByNodeId :: NodeId -> Graph -> [Node]
-nodesByNodeId i g = filter (hasSameNodeId i) $ allNodes g
+nodesByNodeId :: Graph -> NodeId -> [Node]
+nodesByNodeId g i = filter ((i ==) . nodeId) $ allNodes g
 
--- | Replaces the node label of an already existing node.
+-- | Updates the node label of an already existing node.
 
-replaceNodeLabel :: NodeLabel -> Node -> Graph -> Graph
-replaceNodeLabel nl (int, _) (Graph g) =
-  Graph $ I.insNode (int, nl) g
+updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
+updateNodeLabel new_label n (Graph g) =
+  Graph (I.insNode (nodeInt n, new_label) g)
 
--- | Replaces the node info of an already existing node.
+-- | Updates the node info of an already existing node.
 
-replaceNodeInfo :: NodeInfo -> Node -> Graph -> Graph
-replaceNodeInfo ni (int, NodeLabel i _) (Graph g) =
-  Graph $ I.insNode (int, NodeLabel i ni) g
+updateNodeInfo :: NodeInfo -> Node -> Graph -> Graph
+updateNodeInfo new_info n (Graph g) =
+  Graph (I.insNode (nodeInt n, NodeLabel (nodeId n) new_info) g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
@@ -322,46 +317,74 @@ copyNodeLabel :: Node     -- ^ Node to copy label from.
                  -> Graph
                  -> Graph
 copyNodeLabel from_n to_n g
-  | haveSameNodeInts from_n to_n = g
-  | otherwise = replaceNodeLabel (nodeLabel from_n) to_n g
+  | (nodeInt from_n) == (nodeInt to_n) = g
+  | otherwise = updateNodeLabel (nodeLabel from_n) to_n g
 
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
--- removes the merged node. Edges that goes between the two nodes are not
--- added. If the two nodes are actually the same node, nothing happens.
+-- removes the merged node. If the two nodes are actually the same node, nothing
+-- happens. Edges involving both nodes will result in loops.
 
-mergeNodes :: Node     -- ^ Node to merge to.
-              -> Node  -- ^ Node to merge.
+mergeNodes :: Node     -- ^ Node to merge with (will be discarded).
+              -> Node  -- ^ Node to merge with (will be kept).
               -> Graph
               -> Graph
-mergeNodes to_n from_n (Graph g)
-  | haveSameNodeInts from_n to_n = (Graph g)
-  | otherwise =  Graph $ I.delNode (nodeInt from_n)
-                 $ redirectEdges (nodeInt to_n) (nodeInt from_n) g
+mergeNodes n_to_discard n_to_keep g
+  | (nodeInt n_to_keep) == (nodeInt n_to_discard) = g
+  | otherwise = delNode n_to_discard
+                $ redirectEdges n_to_keep n_to_discard g
 
-redirectEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
-redirectEdges dst_int replace_int g =
-  redirectOutEdges dst_int replace_int $ redirectInEdges dst_int replace_int g
+-- | Redirects all edges involving one node to another node.
 
-redirectInEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
-redirectInEdges dst_int replace_int g =
-  let es_not_to_redirect = filter (\(int, _, _) -> int == dst_int)
-                           (I.inn g replace_int)
-      g' = foldr I.delLEdge g es_not_to_redirect
-  in foldr (redirectInEdge dst_int) g (I.inn g' replace_int)
+redirectEdges :: Node        -- ^ Node to redirect edges from.
+                 -> Node     -- ^ Node to redirect edges to.
+                 -> Graph
+                 -> Graph
+redirectEdges from_n to_n g =
+  redirectInEdges from_n to_n $ redirectOutEdges from_n to_n g
 
-redirectInEdge :: I.Node -> Edge -> IntGraph -> IntGraph
-redirectInEdge dst_int e@(out_int, _, EdgeLabel out_nr _) g =
-  let new_e = (out_int, dst_int, EdgeLabel out_nr (nextInEdgeNr g dst_int))
-  in I.insEdge new_e $ I.delLEdge e g
+-- | Redirects all inbound edges to one node to another node.
 
-redirectOutEdges :: I.Node -> I.Node -> IntGraph -> IntGraph
-redirectOutEdges dst_int replace_int g =
-  foldr (redirectOutEdge dst_int) g (I.out g replace_int)
+redirectInEdges :: Node     -- ^ Node to redirect edges from.
+                   -> Node  -- ^ Node to redirect edges to.
+                   -> Graph
+                   -> Graph
+redirectInEdges from_n to_n g =
+  foldr (updateEdgeTarget to_n) g (inEdges g from_n)
 
-redirectOutEdge :: I.Node -> Edge -> IntGraph -> IntGraph
-redirectOutEdge dst_int e@(_, in_int, EdgeLabel _ in_nr) g =
-  let new_e = (dst_int, in_int, EdgeLabel (nextOutEdgeNr g dst_int) in_nr)
-  in I.insEdge new_e $ I.delLEdge e g
+-- | Updates the target of an edge.
+
+updateEdgeTarget :: Node     -- ^ New target.
+                    -> Edge  -- ^ The edge to update.
+                    -> Graph
+                    -> Graph
+updateEdgeTarget new_target e@(source, _, EdgeLabel out_nr _) (Graph g) =
+  let new_target_int = nodeInt new_target
+      new_e = (source,
+               new_target_int,
+               EdgeLabel out_nr (nextInEdgeNr g new_target_int))
+  in Graph (I.insEdge new_e $ I.delLEdge e g)
+
+-- | Redirects the outbound edges from one node to another.
+
+redirectOutEdges :: Node     -- ^ Node to redirect edges from.
+                    -> Node  -- ^ Node to redirect edges to.
+                    -> Graph
+                    -> Graph
+redirectOutEdges from_n to_n g =
+  foldr (updateEdgeSource to_n) g (outEdges g from_n)
+
+-- | Updates the source of an edge.
+
+updateEdgeSource :: Node     -- ^ New source.
+                    -> Edge  -- ^ The edge to update.
+                    -> Graph
+                    -> Graph
+updateEdgeSource new_source e@(_, target, EdgeLabel _ in_nr) (Graph g) =
+  let new_source_int = nodeInt new_source
+      new_e = (new_source_int,
+               target,
+               EdgeLabel (nextOutEdgeNr g new_source_int) in_nr)
+  in Graph (I.insEdge new_e $ I.delLEdge e g)
 
 nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextInEdgeNr g int = 1 + (maximum $ [0] ++ (map inEdgeNr $ I.inn g int))
@@ -479,3 +502,13 @@ hasOrderedOutEdges n = hasOrderedOutEdges' (nodeType n)
 hasOrderedOutEdges' :: NodeType -> Bool
 hasOrderedOutEdges' (ControlNode O.CondBranch) = True
 hasOrderedOutEdges' _ = False
+
+-- | Gets the source node of an edge.
+
+sourceOfEdge :: Graph -> Edge -> Node
+sourceOfEdge (Graph g) (n, _, _) = fromJust $ fromNodeInt g n
+
+-- | Gets the target node of an edge.
+
+targetOfEdge :: Graph -> Edge -> Node
+targetOfEdge (Graph g) (_, n, _) = fromJust $ fromNodeInt g n
