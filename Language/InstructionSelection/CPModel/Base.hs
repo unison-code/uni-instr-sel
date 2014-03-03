@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.CPModel.ModelToSolveData
+-- Module      :  Language.InstructionSelection.CPModel.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -20,8 +20,8 @@ import Language.InstructionSelection.Graphs (NodeId, Match, NodeMapping)
 
 
 
-data CPModelData
-    = ModelToSolveData ProgramGraphData [PatternGraphData] MachineData
+data CPModelParams
+    = CPModelParams ProgramGraphData [PatternGraphData] MachineData
     deriving (Show)
 
 
