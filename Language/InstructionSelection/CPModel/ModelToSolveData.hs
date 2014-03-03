@@ -61,9 +61,13 @@ data PatternGraphData
 
           patNumUniqueNodes :: NodeId
 
-          -- | The IDs of the label nodes.
+          -- | The IDs of the use label nodes.
 
-        , patLabelNodes :: [NodeId]
+        , patUseLabelNodes :: [NodeId]
+
+          -- | The IDs of the def label nodes.
+
+        , patDefLabelNodes :: [NodeId]
 
           -- | The IDs of the use data nodes.
 
