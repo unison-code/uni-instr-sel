@@ -8,11 +8,11 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- Contains the data structures representing the data for the CP model to solve.
+-- Contains the data structures representing the data for the CP model.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.CPModel.ModelToSolveData where
+module Language.InstructionSelection.CPModel.Base where
 
 
 
@@ -20,7 +20,7 @@ import Language.InstructionSelection.Graphs (NodeId, Match, NodeMapping)
 
 
 
-data ModelToSolveData
+data CPModelData
     = ModelToSolveData ProgramGraphData [PatternGraphData] MachineData
     deriving (Show)
 
