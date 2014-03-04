@@ -13,13 +13,15 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.CPModel.ParamMaker (
---  mkParams
+  mkParams
 ) where
 
 
 
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs.Base
+import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.OpStructures
+import Language.InstructionSelection.Utils (Natural)
 
 
 
@@ -27,6 +29,11 @@ import Language.InstructionSelection.Graphs.Base
 -- Functions
 -------------
 
--- | TODO: implement
-
---mkParams :: 
+mkParams :: OpStructure                 -- ^ The program function.
+            -> [(OpStructure, Natural)] -- ^ The patterns.
+            -> CPModelParams
+mkParams func pats =
+  -- TODO: implement
+  CPModelParams (ProgramGraphData 0 [] [] [] [])
+                []
+                MachineData
