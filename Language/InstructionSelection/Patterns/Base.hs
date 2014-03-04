@@ -19,7 +19,7 @@ module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
 ) where
 
-import Language.InstructionSelection.OperationStructures
+import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
 
 
