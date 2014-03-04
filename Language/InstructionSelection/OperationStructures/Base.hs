@@ -37,6 +37,7 @@ module Language.InstructionSelection.OperationStructures.Base (
 import qualified Language.InstructionSelection.Graphs as G
 import Language.InstructionSelection.Utils (Range (..))
 import Data.List
+import Data.Maybe
 
 
 
@@ -140,6 +141,67 @@ updateNodeIdInConstraint _ _ c = c
 -- from 0.
 
 normalizeNodeIds :: OpStructure -> OpStructure
-normalizeNodeIds o =
-  -- TODO: implement
-  o
+normalizeNodeIds os =
+  let mappings = filter (\(n1, n2) -> n1 /= n2) (findNormalizationMapping os)
+  in foldl replaceNodeIds os mappings
+
+findNormalizationMapping :: OpStructure -> [( G.NodeId -- ^ 'From' node ID.
+                                            , G.NodeId -- ^ 'To' node ID.
+                                            )]
+findNormalizationMapping os =
+  let last_id_in_use = findLastNodeIdInUse os
+  in if isJust last_id_in_use
+        then findNormalizationMapping'
+             os
+             0
+             (findNextNodeIdInUse os 0 (fromJust last_id_in_use))
+             (fromJust last_id_in_use)
+        else []
+
+findNormalizationMapping' :: OpStructure
+                             -> G.NodeId       -- ^ Next in 'to' mapping.
+                             -> Maybe G.NodeId -- ^ Next in 'from' mapping.
+                             -> G.NodeId       -- ^ Last node ID to check.
+                             -> [( G.NodeId    -- ^ 'From' node ID.
+                                 , G.NodeId    -- ^ 'To' node ID.
+                                 )]
+findNormalizationMapping' _ _ Nothing _ = []
+findNormalizationMapping' os next_to (Just next_from) last_id =
+  (next_from, next_to):(findNormalizationMapping'
+                        os
+                        (next_to + 1)
+                        (findNextNodeIdInUse os (next_from + 1) last_id)
+                        last_id
+                       )
+
+findNextNodeIdInUse :: OpStructure
+                       -> G.NodeId -- ^ First number to check.
+                       -> G.NodeId -- ^ Last number to check.
+                       -> Maybe G.NodeId
+findNextNodeIdInUse os start_id stop_id
+  | start_id > stop_id = Nothing
+  | otherwise = let g = graph os
+                    all_node_ids = map G.nodeId (G.allNodes g)
+                in if start_id `elem` all_node_ids
+                      then Just start_id
+                      else findNextNodeIdInUse os (start_id + 1) stop_id
+
+findLastNodeIdInUse :: OpStructure -> Maybe G.NodeId
+findLastNodeIdInUse os =
+  let g = graph os
+      all_node_ids = map G.nodeId (G.allNodes g)
+  in if length all_node_ids > 0
+        then Just (maximum all_node_ids)
+        else Nothing
+
+replaceNodeIds :: OpStructure
+                  -> ( G.NodeId -- ^ 'From' node ID.
+                     , G.NodeId -- ^ 'To' node ID.
+                     )
+                  -> OpStructure
+replaceNodeIds os (from_id, to_id) =
+  let g = graph os
+      nodes_to_update = G.nodesByNodeId g from_id
+      new_g = foldl (flip (G.updateNodeId to_id)) g nodes_to_update
+      new_cs = map (updateNodeIdInConstraint to_id from_id) (constraints os)
+  in OpStructure new_g new_cs
