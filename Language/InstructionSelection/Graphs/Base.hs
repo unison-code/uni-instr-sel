@@ -44,6 +44,7 @@ module Language.InstructionSelection.Graphs.Base (
 , fromNodeId
 , hasOrderedInEdges
 , hasOrderedOutEdges
+, iDom
 , inEdgeNr
 , inEdges
 , isInGraph
@@ -530,3 +531,16 @@ targetOfEdge (Graph g) (_, n, _) = fromJust $ fromNodeInt g n
 
 fromNodeId :: Graph -> NodeId -> [Node]
 fromNodeId g id = filter (\n -> nodeId n == id) (allNodes g)
+
+-- | Gets a list of immediate-dominator mappings, given a root node.
+
+iDom :: Graph
+        -> Node -- ^ The root node.
+        -> [( Node -- ^ The dominator node.
+            , Node -- ^ The dominated node.
+            )]
+iDom (Graph g) n =
+  let idom_maps = I.iDom g (nodeInt n)
+  in map (\(n1, n2) -> (fromJust $ fromNodeInt g n1,
+                        fromJust $ fromNodeInt g n2))
+     idom_maps
