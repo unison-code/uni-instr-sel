@@ -39,6 +39,13 @@ data ProgramGraphData
 
         , progLabelNodes :: [NodeId]
 
+          -- | The immediate-dominator mappings for the basic blocks, which are
+          -- represented by the label nodes.
+
+        , progLabelIDomMappings :: [( NodeId -- ^ The dominator node.
+                                    , NodeId -- ^ The dominated node.
+                                    )]
+
           -- | The IDs of the data nodes.
 
         , progDataNodes :: [NodeId]
