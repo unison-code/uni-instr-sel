@@ -302,20 +302,25 @@ nodesByNodeId g i = filter ((i ==) . nodeId) $ allNodes g
 -- | Updates the node label of an already existing node.
 
 updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
-updateNodeLabel new_label n (Graph g) =
-  Graph (I.insNode (nodeInt n, new_label) g)
+updateNodeLabel new_label n g =
+  let all_nodes_but_n = filter (/= n) (allNodes g)
+  in mkGraph ((nodeInt n, new_label):all_nodes_but_n) (allEdges g)
 
 -- | Updates the node info of an already existing node.
 
 updateNodeInfo :: NodeInfo -> Node -> Graph -> Graph
-updateNodeInfo new_info n (Graph g) =
-  Graph (I.insNode (nodeInt n, NodeLabel (nodeId n) new_info) g)
+updateNodeInfo new_info n g =
+  let all_nodes_but_n = filter (/= n) (allNodes g)
+  in mkGraph ((nodeInt n, NodeLabel (nodeId n) new_info):all_nodes_but_n)
+     (allEdges g)
 
 -- | Updates the node ID of an already existing node.
 
 updateNodeId :: NodeId -> Node -> Graph -> Graph
-updateNodeId new_id n (Graph g) =
-  Graph (I.insNode (nodeInt n, NodeLabel new_id (nodeInfo n)) g)
+updateNodeId new_id n g =
+  let all_nodes_but_n = filter (/= n) (allNodes g)
+  in mkGraph ((nodeInt n, NodeLabel new_id (nodeInfo n)):all_nodes_but_n)
+     (allEdges g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
