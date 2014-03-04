@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.OperationStructures
+-- Module      :  Language.InstructionSelection.OpStructures
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.OperationStructures (
-  module Language.InstructionSelection.OperationStructures.Base
+module Language.InstructionSelection.OpStructures (
+  module Language.InstructionSelection.OpStructures.Base
 ) where
 
-import Language.InstructionSelection.OperationStructures.Base
+import Language.InstructionSelection.OpStructures.Base

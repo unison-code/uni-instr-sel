@@ -31,6 +31,7 @@ Tests the implementation of the VF2 algorithm.
 import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
+import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
 
 main :: IO ()
@@ -60,8 +61,13 @@ main =
                   , (4, 7, EdgeLabel 0 0)
                   ]
          matchset = match search pattern
-     putStrLn $ "Number of matches: " ++ show (length matchset)
-     putStrLn ""
-     mapM_ (\x -> do mapM_ print x
-                     putStrLn "")
-           matchset
+         os = OpStructure pattern []
+         normalized_os = normalizeNodeIds os
+     putStrLn $ show os
+     putStrLn $ show normalized_os
+
+--     putStrLn $ "Number of matches: " ++ show (length matchset)
+--     putStrLn ""
+--     mapM_ (\x -> do mapM_ print x
+--                     putStrLn "")
+--           matchset

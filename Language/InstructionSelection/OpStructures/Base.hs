@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.OperationStructures.Base
+-- Module      :  Language.InstructionSelection.OpStructures.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -18,7 +18,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.OperationStructures.Base (
+module Language.InstructionSelection.OpStructures.Base (
   Constant (..)
 , Constraint (..)
 , OpStructure (..)
