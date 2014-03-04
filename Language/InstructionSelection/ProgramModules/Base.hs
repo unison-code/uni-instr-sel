@@ -20,19 +20,19 @@ module Language.InstructionSelection.ProgramModules.Base (
 , Function (..)
 ) where
 
-import Language.InstructionSelection.OperationStructures
+import Language.InstructionSelection.OpStructures
 
 
 
 data Function
     = Function {
-          getFunctionName :: String
-        , getFunctionOS :: OpStructure
+          functionName :: String
+        , functionOS :: OpStructure
       }
     deriving (Show)
 
 data Module
     = Module {
-          getFunctions :: [Function]
+          functions :: [Function]
       }
     deriving (Show)
