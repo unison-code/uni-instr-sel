@@ -21,6 +21,7 @@ module Language.InstructionSelection.Patterns.Base (
 
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
+import Language.InstructionSelection.Utils (Natural)
 
 
 
@@ -32,9 +33,11 @@ data Instruction
           assemblyStr :: AssemblyString
 
           -- | Patterns which correspond to the instruction. There must be at
-          -- least one pattern.
+          -- least one pattern. Each pattern also has a corresponding ID which
+          -- must be globally unique across all instructions as well as be
+          -- continguous.
 
-        , patterns :: [OpStructure]
+        , patterns :: [(OpStructure, Natural)]
 
       }
 
