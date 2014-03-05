@@ -33,15 +33,15 @@ mkParams :: OpStructure                 -- ^ The program function.
             -> [(OpStructure, Natural)] -- ^ The patterns.
             -> CPModelParams
 mkParams func pats =
-  -- TODO: implement
   CPModelParams (ProgramGraphData
                  (countNumUniqueNodeIds func)
                  (getAllLabelNodeIds func)
                  (computeLabelIDomMappings func)
                  (getAllDataNodeIds func)
                  (getAllStateNodeIds func)
-                 [])
-                []
+                 (osConstraints func))
+                (map mkPatternGraphData pats)
+                -- TODO: fix building of machine data
                 MachineData
 
 countNumUniqueNodeIds :: OpStructure -> Natural
@@ -63,3 +63,8 @@ computeLabelIDomMappings :: OpStructure -> [( NodeId -- ^ The dominator node.
 computeLabelIDomMappings os =
   -- TODO: implement
   []
+
+mkPatternGraphData :: (OpStructure, Natural) -> PatternGraphData
+mkPatternGraphData (os, id) =
+  -- TODO: implement
+  PatternGraphData  0 [] [] [] [] [] [] [] []
