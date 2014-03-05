@@ -71,8 +71,8 @@ getNodesFromAliasConstraint s = error $ "Cannot be invoked on " ++ (show s)
 
 data OpStructure
     = OpStructure {
-          graph :: G.Graph
-          , constraints :: [Constraint]
+          osGraph :: G.Graph
+        , osConstraints :: [Constraint]
       }
     deriving (Show)
 
@@ -113,12 +113,12 @@ resolveAliases'' :: G.NodeId       -- ^ Node ID to resolve to.
                     -> OpStructure
                     -> OpStructure
 resolveAliases'' to_id from_id os =
-  let g = graph os
+  let g = osGraph os
       from_n = head $ G.fromNodeId g from_id
       to_n = head $ G.fromNodeId g to_id
       new_g = foldl (flip G.delEdge) (G.mergeNodes to_n from_n g)
               (G.edges g to_n to_n)
-      new_cs = map (updateNodeIdInConstraint to_id from_id) (constraints os)
+      new_cs = map (updateNodeIdInConstraint to_id from_id) (osConstraints os)
   in OpStructure new_g new_cs
 
 -- | Updates a node ID appearing within a constraint.
@@ -180,7 +180,7 @@ findNextNodeIdInUse :: OpStructure
                        -> Maybe G.NodeId
 findNextNodeIdInUse os start_id stop_id
   | start_id > stop_id = Nothing
-  | otherwise = let g = graph os
+  | otherwise = let g = osGraph os
                     all_node_ids = map G.nodeId (G.allNodes g)
                 in if start_id `elem` all_node_ids
                       then Just start_id
@@ -188,7 +188,7 @@ findNextNodeIdInUse os start_id stop_id
 
 findLastNodeIdInUse :: OpStructure -> Maybe G.NodeId
 findLastNodeIdInUse os =
-  let g = graph os
+  let g = osGraph os
       all_node_ids = map G.nodeId (G.allNodes g)
   in if length all_node_ids > 0
         then Just (maximum all_node_ids)
@@ -200,8 +200,8 @@ replaceNodeIds :: OpStructure
                      )
                   -> OpStructure
 replaceNodeIds os (from_id, to_id) =
-  let g = graph os
+  let g = osGraph os
       nodes_to_update = G.nodesByNodeId g from_id
       new_g = foldl (flip (G.updateNodeId to_id)) g nodes_to_update
-      new_cs = map (updateNodeIdInConstraint to_id from_id) (constraints os)
+      new_cs = map (updateNodeIdInConstraint to_id from_id) (osConstraints os)
   in OpStructure new_g new_cs
