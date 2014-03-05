@@ -66,7 +66,7 @@ data ProgramGraphData
 -- | Describes the necessary pattern graph data.
 
 data PatternGraphData
-    = PatterGraphData {
+    = PatternGraphData {
 
           -- | Number of unique nodes.
 
