@@ -8,7 +8,7 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- TODO
+-- TODO: write description
 --
 --------------------------------------------------------------------------------
 
