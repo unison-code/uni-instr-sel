@@ -31,13 +31,9 @@ data CPModelParams
 data ProgramGraphData
     = ProgramGraphData {
 
-          -- | Number of unique nodes.
+          -- | The nodes in the program graph.
 
-          progNumUniqueNodes :: Natural
-
-          -- | The IDs of the label nodes.
-
-        , progLabelNodes :: [NodeId]
+          progNodes :: NodePartition
 
           -- | The immediate-dominator mappings for the basic blocks, which are
           -- represented by the label nodes.
@@ -45,14 +41,6 @@ data ProgramGraphData
         , progLabelIDomMappings :: [( NodeId -- ^ The dominator node.
                                     , NodeId -- ^ The dominated node.
                                     )]
-
-          -- | The IDs of the data nodes.
-
-        , progDataNodes :: [NodeId]
-
-          -- | The IDs of the state nodes.
-
-        , progStateNodes :: [NodeId]
 
           -- | The program constraints, if any.
 
@@ -68,33 +56,21 @@ data ProgramGraphData
 data PatternGraphData
     = PatternGraphData {
 
-          -- | Number of unique nodes.
+          -- | The nodes in the pattern graph.
 
-          patNumUniqueNodes :: Natural
+          patNodes :: NodePartition
 
-          -- | The IDs of the use label nodes.
+          -- | The 'use' and 'def' nodes of type Data.
 
-        , patUseLabelNodes :: [NodeId]
+        , patDataUseDefs :: UseDefNodes
 
-          -- | The IDs of the def label nodes.
+          -- | The 'use' and 'def' nodes of type Label.
 
-        , patDefLabelNodes :: [NodeId]
+        , patLabelUseDefs :: UseDefNodes
 
-          -- | The IDs of the use data nodes.
+          -- | The 'use' and 'def' nodes of type State.
 
-        , patUseDataNodes :: [NodeId]
-
-          -- | The IDs of the def data nodes.
-
-        , patDefDataNodes :: [NodeId]
-
-          -- | The IDs of the use state nodes.
-
-        , patUseStateNodes :: [NodeId]
-
-          -- | The IDs of the def state nodes.
-
-        , patDefStateNodes :: [NodeId]
+        , patStateUseDefs :: UseDefNodes
 
           -- | The pattern constraints, if any.
 
@@ -108,6 +84,58 @@ data PatternGraphData
     deriving (Show)
 
 
+
+-- | Contains all node IDs within a graph, partitioned after node type.
+
+data NodePartition
+    = NodePartition {
+
+          -- | Unique IDs of the computation nodes.
+
+          computationNodes :: [NodeId]
+
+          -- | Unique IDs of the control nodes.
+
+        , controlNodes :: [NodeId]
+
+          -- | Unique IDs of the data nodes.
+
+        , dataNodes :: [NodeId]
+
+          -- | Unique IDs of the label nodes.
+
+        , labelNodes :: [NodeId]
+
+          -- | Unique IDs of the phi nodes.
+
+        , phiNodes :: [NodeId]
+
+          -- | Unique IDs of the state nodes.
+
+        , stateNodes :: [NodeId]
+
+          -- | Unique IDs of the transfer nodes.
+
+        , transferNodes :: [NodeId]
+
+      }
+    deriving (Show)
+
+-- | Contains the 'use' and 'def' nodes of a particular node type.
+
+data UseDefNodes
+    = UseDefNodes {
+
+          -- | Unique IDs of the 'use' nodes.
+
+          useNodes :: [NodeId]
+
+          -- | Unique IDs of the 'def' nodes.
+
+        , defNodes :: [NodeId]
+
+      }
+    deriving (Show)
 
 -- | Describes the necessary target machine data.
 
