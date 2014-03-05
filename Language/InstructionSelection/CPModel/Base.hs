@@ -33,7 +33,7 @@ data ProgramGraphData
 
           -- | Number of unique nodes.
 
-          progNumUniqueNodes :: NodeId
+          progNumUniqueNodes :: Natural
 
           -- | The IDs of the label nodes.
 
@@ -66,7 +66,7 @@ data PatternGraphData
 
           -- | Number of unique nodes.
 
-          patNumUniqueNodes :: NodeId
+          patNumUniqueNodes :: Natural
 
           -- | The IDs of the use label nodes.
 
