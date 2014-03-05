@@ -14,6 +14,11 @@
 
 module Language.InstructionSelection.Utils.Base where
 
+
+------------------------
+-- Class and data types
+------------------------
+
 -- | Record for representing a value range.
 
 data Range t
@@ -52,3 +57,18 @@ instance Num Natural where
     x * y       = toNatural (fromNatural x * fromNatural y)
     abs x       = x
     signum x    = toNatural $ signum $ fromNatural x
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Removes duplicates from a list.
+
+removeDuplicates :: Eq a => [a] -> [a]
+removeDuplicates = rd []
+  where rd seen [] = seen
+        rd seen (x:xs)
+           | x `elem` seen = rd seen xs
+           | otherwise = rd (x:seen) xs
