@@ -34,11 +34,18 @@ mkParams :: OpStructure                 -- ^ The program function.
             -> CPModelParams
 mkParams func pats =
   -- TODO: implement
-  CPModelParams (ProgramGraphData 0 [] [] [] [])
+  CPModelParams (ProgramGraphData (countNumUniqueNodeIds func) [] [] [] [] [])
                 []
                 MachineData
 
 countNumUniqueNodeIds :: OpStructure -> Natural
-countNumUniqueNodeIds os =
-  let num = length $ removeDuplicates $ allNodes $ graph os
-  in toNatural num
+countNumUniqueNodeIds = toNatural . length . removeDuplicates . allNodes . graph
+
+getAllLabelNodeIds :: OpStructure -> [NodeId]
+getAllLabelNodeIds = map (nodeId) . filter (isLabelNode) . allNodes . graph
+
+getAllDataNodeIds :: OpStructure -> [NodeId]
+getAllDataNodeIds = map (nodeId) . filter (isDataNode) . allNodes . graph
+
+getAllStateNodeIds :: OpStructure -> [NodeId]
+getAllStateNodeIds = map (nodeId) . filter (isStateNode) . allNodes . graph
