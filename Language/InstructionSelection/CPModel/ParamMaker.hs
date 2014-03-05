@@ -16,12 +16,12 @@ module Language.InstructionSelection.CPModel.ParamMaker (
   mkParams
 ) where
 
-
-
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Utils (Natural)
+import Language.InstructionSelection.Utils (Natural,
+                                            removeDuplicates,
+                                            toNatural)
 
 
 
@@ -37,3 +37,8 @@ mkParams func pats =
   CPModelParams (ProgramGraphData 0 [] [] [] [])
                 []
                 MachineData
+
+countNumUniqueNodeIds :: OpStructure -> Natural
+countNumUniqueNodeIds os =
+  let num = length $ removeDuplicates $ allNodes $ graph os
+  in toNatural num
