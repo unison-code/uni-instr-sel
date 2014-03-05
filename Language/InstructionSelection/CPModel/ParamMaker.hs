@@ -34,18 +34,32 @@ mkParams :: OpStructure                 -- ^ The program function.
             -> CPModelParams
 mkParams func pats =
   -- TODO: implement
-  CPModelParams (ProgramGraphData (countNumUniqueNodeIds func) [] [] [] [] [])
+  CPModelParams (ProgramGraphData
+                 (countNumUniqueNodeIds func)
+                 (getAllLabelNodeIds func)
+                 (computeLabelIDomMappings func)
+                 (getAllDataNodeIds func)
+                 (getAllStateNodeIds func)
+                 [])
                 []
                 MachineData
 
 countNumUniqueNodeIds :: OpStructure -> Natural
-countNumUniqueNodeIds = toNatural . length . removeDuplicates . allNodes . graph
+countNumUniqueNodeIds =
+  toNatural . length . removeDuplicates . allNodes . osGraph
 
 getAllLabelNodeIds :: OpStructure -> [NodeId]
-getAllLabelNodeIds = map (nodeId) . filter (isLabelNode) . allNodes . graph
+getAllLabelNodeIds = map (nodeId) . filter (isLabelNode) . allNodes . osGraph
 
 getAllDataNodeIds :: OpStructure -> [NodeId]
-getAllDataNodeIds = map (nodeId) . filter (isDataNode) . allNodes . graph
+getAllDataNodeIds = map (nodeId) . filter (isDataNode) . allNodes . osGraph
 
 getAllStateNodeIds :: OpStructure -> [NodeId]
-getAllStateNodeIds = map (nodeId) . filter (isStateNode) . allNodes . graph
+getAllStateNodeIds = map (nodeId) . filter (isStateNode) . allNodes . osGraph
+
+computeLabelIDomMappings :: OpStructure -> [( NodeId -- ^ The dominator node.
+                                            , NodeId -- ^ The dominated node.
+                                            )]
+computeLabelIDomMappings os =
+  -- TODO: implement
+  []
