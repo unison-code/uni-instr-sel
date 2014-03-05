@@ -14,9 +14,8 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
-
-
 import Language.InstructionSelection.Graphs (NodeId, Match, NodeMapping)
+import Language.InstructionSelection.Utils (Natural)
 
 
 
