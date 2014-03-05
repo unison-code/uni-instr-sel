@@ -35,7 +35,7 @@ mkParams :: OpStructure                 -- ^ The program function.
 mkParams func pats =
   CPModelParams (ProgramGraphData
                  (mkNodePartition func)
-                 (computeLabelIDomMappings func)
+                 (computeLabelIDoms func)
                  (osConstraints func))
                 (map mkPatternGraphData pats)
                 -- TODO: fix building of machine data
@@ -59,10 +59,10 @@ getUniqueNodeIdsByType g f =
 
 -- | TODO: write description
 
-computeLabelIDomMappings :: OpStructure -> [( NodeId -- ^ The dominator node.
-                                            , NodeId -- ^ The dominated node.
-                                            )]
-computeLabelIDomMappings os =
+computeLabelIDoms :: OpStructure -> [( NodeId -- ^ The dominator node.
+                                     , NodeId -- ^ The dominated node.
+                                     )]
+computeLabelIDoms os =
   -- TODO: implement
   []
 
