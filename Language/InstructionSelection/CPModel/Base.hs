@@ -15,6 +15,7 @@
 module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Graphs (NodeId, Match, NodeMapping)
+import Language.InstructionSelection.OpStructures (Constraint)
 import Language.InstructionSelection.Utils (Natural)
 
 
@@ -53,6 +54,10 @@ data ProgramGraphData
 
         , progStateNodes :: [NodeId]
 
+          -- | The program constraints, if any.
+
+        , progConstraints :: [Constraint]
+
       }
     deriving (Show)
 
@@ -90,6 +95,10 @@ data PatternGraphData
           -- | The IDs of the def state nodes.
 
         , patDefStateNodes :: [NodeId]
+
+          -- | The pattern constraints, if any.
+
+        , patConstraints :: [Constraint]
 
           -- | Matches found for this pattern.
 
