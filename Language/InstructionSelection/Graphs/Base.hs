@@ -237,7 +237,7 @@ isPhiNodeType _ = False
 
 isStateNodeType :: NodeType -> Bool
 isStateNodeType StateNode = True
-ipsStateNodeType _ = False
+isStateNodeType _ = False
 
 isTransferNodeType :: NodeType -> Bool
 isTransferNodeType TransferNode = True
