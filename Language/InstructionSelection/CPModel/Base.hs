@@ -14,8 +14,7 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
-import Language.InstructionSelection.Graphs ( BBLabel
-                                            , NodeId
+import Language.InstructionSelection.Graphs ( NodeId
                                             , Match
                                             , NodeMapping
                                             )
@@ -45,10 +44,6 @@ data ProgramGraphData
         , progLabelDoms :: [( NodeId   -- ^ The dominated node.
                             , [NodeId] -- ^ The dominator set.
                             )]
-
-          -- | The mappings of basic block names to label nodes.
-
-        , progBasicBlocks :: [(BBLabel, NodeId)]
 
           -- | The program constraints, if any.
 

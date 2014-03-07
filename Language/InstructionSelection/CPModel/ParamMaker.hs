@@ -75,7 +75,6 @@ mkProgramGraphData :: OpStructure -> ProgramGraphData
 mkProgramGraphData os =
   ProgramGraphData (mkNodePartition os)
                    (computeLabelDoms os)
-                   (mkBasicBlockMappings $ osGraph os)
                    (osConstraints os)
 
 mkPatternGraphData :: (OpStructure, [Match], Natural) -> PatternGraphData
@@ -107,8 +106,3 @@ delNodeKeepEdges g n =
   in if length preds > 0
         then mergeNodes (head preds) n g
         else delNode n g
-
-mkBasicBlockMappings :: Graph -> [(BBLabel , NodeId)]
-mkBasicBlockMappings g =
-  let label_nodes = filter isLabelNode $ allNodes g
-  in map (\n -> (bbLabel $ nodeType n, nodeId n)) label_nodes
