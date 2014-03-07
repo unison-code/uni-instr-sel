@@ -18,13 +18,13 @@ import Language.InstructionSelection.Graphs ( NodeId
                                             , NodeIdMatchset
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
+import Language.InstructionSelection.Patterns (PatternId)
 import Language.InstructionSelection.PrettyPrint
-import Language.InstructionSelection.Utils (Natural)
 
 
 
 data CPModelParams
-    = CPModelParams ProgramGraphData [PatternGraphData] MachineData
+    = CPModelParams ProgramGraphData [(PatternGraphData, PatternId)] MachineData
     deriving (Show)
 
 -- | Describes the necessary program graph data.
@@ -154,7 +154,8 @@ instance PrettyPrint CPModelParams where
   prettyShow (CPModelParams prog pats m) =
     "CPModelParams:\n\n"
     ++ prettyShow prog ++ "\n"
-    ++ concatMap (\p -> prettyShow p ++ "\n") pats ++ "\n"
+    ++ concatMap (\(p, id) -> "(" ++ show id ++ ") " ++ prettyShow p ++ "\n")
+                 pats ++ "\n"
     ++ prettyShow m
 
 instance PrettyPrint ProgramGraphData where
