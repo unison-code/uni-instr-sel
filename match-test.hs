@@ -33,6 +33,8 @@ import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
+import Language.InstructionSelection.CPModel
+import Language.InstructionSelection.CPModel.ParamMaker
 
 main :: IO ()
 main =
@@ -60,11 +62,11 @@ main =
                   , (6, 4, EdgeLabel 0 1)
                   , (4, 7, EdgeLabel 0 0)
                   ]
+         search_os = normalizeNodeIds $ OpStructure search []
+         pattern_os = normalizeNodeIds $ OpStructure pattern []
          matchset = match search pattern
-         os = OpStructure pattern []
-         normalized_os = normalizeNodeIds os
-     putStrLn $ show os
-     putStrLn $ show normalized_os
+         params = mkParams search_os [(pattern_os, matchset, 0)]
+     putStrLn $ show params
 
 --     putStrLn $ "Number of matches: " ++ show (length matchset)
 --     putStrLn ""
