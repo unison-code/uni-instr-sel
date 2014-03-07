@@ -35,12 +35,18 @@ data ProgramGraphData
 
           progNodes :: NodePartition
 
-          -- | The immediate-dominator mappings for the basic blocks, which are
-          -- represented by the label nodes.
+          -- | The dominator set for the basic blocks, which are represented by
+          -- the label nodes.
 
-        , progLabelIDomMappings :: [( NodeId -- ^ The dominator node.
-                                    , NodeId -- ^ The dominated node.
-                                    )]
+        , progLabelDoms :: [( NodeId   -- ^ The dominated node.
+                            , [NodeId] -- ^ The dominator set.
+                            )]
+
+          -- | The mappings of basic block names to label nodes.
+
+        , progBasicBlocks :: [( String -- ^ Name of basic block.
+                              , NodeId -- ^ ID of the corresponding label node.
+                              )]
 
           -- | The program constraints, if any.
 
