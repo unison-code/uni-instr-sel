@@ -81,7 +81,7 @@ data PatternGraphData
 
           -- | Matches found for this pattern.
 
-        , matches :: [NodeIdMatchset]
+        , patMatchsets :: [NodeIdMatchset]
 
       }
     deriving (Show)
@@ -176,7 +176,7 @@ instance PrettyPrint PatternGraphData where
     ++ "Label " ++ prettyShow (patLabelUseDefs p) ++ "\n"
     ++ "State " ++ prettyShow (patStateUseDefs p) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
-    ++ "Matchsets:\n" ++ concatMap (\m -> show m ++ "\n") (matches p)
+    ++ "Matchsets:\n" ++ concatMap (\m -> show m ++ "\n") (patMatchsets p)
 
 instance PrettyPrint NodePartition where
   prettyShow np =
