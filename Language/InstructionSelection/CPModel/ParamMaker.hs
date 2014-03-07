@@ -88,8 +88,10 @@ mkPatternGraphData (os, matches, id) =
 
 mkUseDefs :: Graph -> (Node -> Bool) -> UseDefNodes
 mkUseDefs g f =
-  -- TODO: implement
-  UseDefNodes [] []
+  let nodes = filter f (allNodes g)
+      use_nodes = filter (\n -> length (successors g n) > 0) nodes
+      def_nodes = filter (\n -> length (predecessors g n) > 0) nodes
+  in UseDefNodes (map nodeId use_nodes) (map nodeId def_nodes)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's
