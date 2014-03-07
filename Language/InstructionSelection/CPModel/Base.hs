@@ -24,7 +24,7 @@ import Language.InstructionSelection.PrettyPrint
 
 
 data CPModelParams
-    = CPModelParams ProgramGraphData [(PatternGraphData, PatternId)] MachineData
+    = CPModelParams ProgramGraphData [PatternGraphData] MachineData
     deriving (Show)
 
 -- | Describes the necessary program graph data.
@@ -55,9 +55,13 @@ data ProgramGraphData
 data PatternGraphData
     = PatternGraphData {
 
+          -- | The pattern ID.
+
+          patId :: PatternId
+
           -- | The nodes in the pattern graph.
 
-          patNodes :: NodePartition
+        , patNodes :: NodePartition
 
           -- | The 'use' and 'def' nodes of type Data.
 
@@ -154,8 +158,7 @@ instance PrettyPrint CPModelParams where
   prettyShow (CPModelParams prog pats m) =
     "CPModelParams:\n\n"
     ++ prettyShow prog ++ "\n"
-    ++ concatMap (\(p, id) -> "(" ++ show id ++ ") " ++ prettyShow p ++ "\n")
-                 pats ++ "\n"
+    ++ concatMap (\p -> prettyShow p ++ "\n") pats ++ "\n"
     ++ prettyShow m
 
 instance PrettyPrint ProgramGraphData where
@@ -167,7 +170,7 @@ instance PrettyPrint ProgramGraphData where
 
 instance PrettyPrint PatternGraphData where
   prettyShow p =
-    "PatternGraphData:\n"
+    "PatternGraphData (ID " ++ show (patId p) ++ "):\n"
     ++ prettyShow (patNodes p) ++ "\n"
     ++ "Data " ++ prettyShow (patDataUseDefs p) ++ "\n"
     ++ "Label " ++ prettyShow (patLabelUseDefs p) ++ "\n"
