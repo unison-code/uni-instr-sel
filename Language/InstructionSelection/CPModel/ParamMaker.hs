@@ -8,7 +8,9 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- TODO: write description
+-- Constructs the parameters which are used to create the CP model. These
+-- include the program input data, such as the IDs of the various nodes, and the
+-- pattern data, which also contain the match sets.
 --
 --------------------------------------------------------------------------------
 
