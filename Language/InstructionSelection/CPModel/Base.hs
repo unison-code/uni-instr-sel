@@ -12,8 +12,6 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Graphs ( NodeId
