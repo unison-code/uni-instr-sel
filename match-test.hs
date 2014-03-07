@@ -34,6 +34,7 @@ import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.CPModel
+import Language.InstructionSelection.CPModel.JsonDumper
 import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.PrettyPrint
 
@@ -67,10 +68,4 @@ main =
          pattern_os = normalizeNodeIds $ OpStructure pattern []
          matchset = match search pattern
          params = mkParams search_os [(pattern_os, matchset, 0)]
-     putStrLn $ prettyShow params
-
---     putStrLn $ "Number of matches: " ++ show (length matchset)
---     putStrLn ""
---     mapM_ (\x -> do mapM_ print x
---                     putStrLn "")
---           matchset
+     putStrLn $ toJson params
