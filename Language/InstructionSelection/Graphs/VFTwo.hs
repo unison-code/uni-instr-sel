@@ -17,7 +17,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.VFTwo (
-  Match
+  NodeMatchset
 , NodeMapping
 , match
 ) where
@@ -31,9 +31,9 @@ import Data.List (intersect, union, (\\))
 -- Functions
 -------------
 
-match :: Graph      -- ^ The search graph.
-         -> Graph   -- ^ The pattern graph.
-         -> [Match] -- ^ Found matches.
+match :: Graph            -- ^ The search graph.
+         -> Graph         -- ^ The pattern graph.
+         -> [NodeMatchset] -- ^ Found matches.
 match sg pg = match' sg pg []
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
@@ -41,10 +41,10 @@ match sg pg = match' sg pg []
 -- them. Each candidate that passes the test is added to the existing mapping
 -- state, and then the function is recursively called.
 
-match' :: Graph      -- ^ The search graph.
-          -> Graph   -- ^ The pattern graph.
-          -> Match   -- ^ The current matching state.
-          -> [Match] -- ^ Found matches.
+match' :: Graph             -- ^ The search graph.
+          -> Graph          -- ^ The pattern graph.
+          -> NodeMatchset   -- ^ The current matchset state.
+          -> [NodeMatchset] -- ^ Found matches.
 match' sg pg st =
   if length st == numNodes pg
      then [st]
@@ -55,18 +55,17 @@ match' sg pg st =
           in concatMap (match' sg pg) new_states
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
--- nodes which are successors to the nodes currently in the matching set. If
--- this resultant set is empty, then the set consists of the pairs of nodes
--- which are corresponding predecessors. If this set too is empty, then the
--- returned set consists of the pairs of nodes not contained in the matching
--- set.
+-- nodes which are successors to the nodes currently in the match set. If this
+-- resultant set is empty, then the set consists of the pairs of nodes which are
+-- corresponding predecessors. If this set too is empty, then the returned set
+-- consists of the pairs of nodes not contained in the match set.
 
-getCandidates :: Graph    -- ^ The search graph.
-                 -> Graph -- ^ The pattern graph.
-                 -> Match -- ^ The current matching state.
-                 -> Match -- ^ Potential candidates.
+getCandidates :: Graph           -- ^ The search graph.
+                 -> Graph        -- ^ The pattern graph.
+                 -> NodeMatchset -- ^ The current matchset state.
+                 -> NodeMatchset -- ^ Potential candidates.
 getCandidates sg pg st =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
       t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
       pairs_out = [ (n, head t_out_pg) | n <- t_out_sg ]
@@ -85,10 +84,10 @@ getCandidates sg pg st =
 -- | Checks that the node mapping is feasible by comparing their syntax and
 -- semantics.
 
-checkFeasibility :: Graph          -- ^ The search graph.
-                    -> Graph       -- ^ The pattern graph.
-                    -> Match       -- ^ Current matching state.
-                    -> NodeMapping -- ^ Candidate mapping.
+checkFeasibility :: Graph           -- ^ The search graph.
+                    -> Graph        -- ^ The pattern graph.
+                    -> NodeMatchset -- ^ Current matchset state.
+                    -> NodeMapping  -- ^ Candidate mapping.
                     -> Bool
 checkFeasibility sg pg st pair =
   (checkSemantics sg pg st pair) && (checkSyntax sg pg st pair)
@@ -96,20 +95,20 @@ checkFeasibility sg pg st pair =
 -- | Checks that the nodes are of the same type and that the edges are
 -- compatible.
 
-checkSemantics :: Graph          -- ^ The search graph.
-                  -> Graph       -- ^ The pattern graph.
-                  -> Match       -- ^ Current matching state.
-                  -> NodeMapping -- ^ Candidate mapping.
+checkSemantics :: Graph           -- ^ The search graph.
+                  -> Graph        -- ^ The pattern graph.
+                  -> NodeMatchset -- ^ Current matchset state.
+                  -> NodeMapping  -- ^ Candidate mapping.
                   -> Bool
 checkSemantics sg pg st (n, m) =
   (nodeType n) == (nodeType m) && (checkEdges sg pg st (n, m))
 
 -- | Checks that for nodes with ordered edges the edges match.
 
-checkEdges :: Graph          -- ^ The search graph.
-              -> Graph       -- ^ The pattern graph.
-              -> Match       -- ^ Current matching state.
-              -> NodeMapping -- ^ Candidate mapping.
+checkEdges :: Graph           -- ^ The search graph.
+              -> Graph        -- ^ The pattern graph.
+              -> NodeMatchset -- ^ Current matchset state.
+              -> NodeMapping  -- ^ Candidate mapping.
               -> Bool
 checkEdges sg pg st pair =
   (checkInEdges sg pg st pair) && (checkOutEdges sg pg st pair)
@@ -118,13 +117,13 @@ checkEdges sg pg st pair =
 -- candidate mapping, for those which has ordered outbound edges, that the
 -- numbers are the same.
 
-checkOutEdges :: Graph          -- ^ The search graph.
-                 -> Graph       -- ^ The pattern graph.
-                 -> Match       -- ^ Current matching state.
-                 -> NodeMapping -- ^ Candidate mapping.
+checkOutEdges :: Graph           -- ^ The search graph.
+                 -> Graph        -- ^ The pattern graph.
+                 -> NodeMatchset -- ^ Current matchset state.
+                 -> NodeMapping  -- ^ Candidate mapping.
                  -> Bool
 checkOutEdges sg pg st (n, m) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       mapped_preds_m = getMappedPredsOfMappedNode m mapped_ns_pg pg
       pg_preds_to_check = filter hasOrderedOutEdges mapped_preds_m
       sg_preds_to_check = map (getMappedSNode st) pg_preds_to_check
@@ -135,13 +134,13 @@ checkOutEdges sg pg st (n, m) =
 
 -- | Same as checkOutEdges but for predecessors and their inbound edges.
 
-checkInEdges :: Graph          -- ^ The search graph.
-                -> Graph       -- ^ The pattern graph.
-                -> Match       -- ^ Current matching state.
-                -> NodeMapping -- ^ Candidate mapping.
+checkInEdges :: Graph           -- ^ The search graph.
+                -> Graph        -- ^ The pattern graph.
+                -> NodeMatchset -- ^ Current matchset state.
+                -> NodeMapping  -- ^ Candidate mapping.
                 -> Bool
 checkInEdges sg pg st (n, m) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       mapped_succs_m = getMappedSuccsOfMappedNode m mapped_ns_pg pg
       pg_succs_to_check = filter hasOrderedInEdges mapped_succs_m
       sg_succs_to_check = map (getMappedSNode st) pg_succs_to_check
@@ -153,10 +152,10 @@ checkInEdges sg pg st (n, m) =
 -- | Checks that the syntax of matched nodes are compatible (equation 2 in the
 -- paper).
 
-checkSyntax :: Graph          -- ^ The search graph.
-               -> Graph       -- ^ The pattern graph.
-               -> Match       -- ^ Current matching state.
-               -> NodeMapping -- ^ Candidate mapping.
+checkSyntax :: Graph           -- ^ The search graph.
+               -> Graph        -- ^ The pattern graph.
+               -> NodeMatchset -- ^ Current matchset state.
+               -> NodeMapping  -- ^ Candidate mapping.
                -> Bool
 checkSyntax sg pg st pair =
      (checkSyntaxPred sg pg st pair)
@@ -166,16 +165,16 @@ checkSyntax sg pg st pair =
   && (checkSyntaxNew sg pg st pair)
 
 -- | Checks that for each predecessor A of the matched node that appears in the
--- current matching state, there also exists some node mapping for A (equation 3
+-- current matchset state, there also exists some node mapping for A (equation 3
 -- in the paper). This is a consistency check.
 
-checkSyntaxPred :: Graph          -- ^ The search graph.
-                   -> Graph       -- ^ The pattern graph.
-                   -> Match       -- ^ Current matching state.
-                   -> NodeMapping -- ^ Candidate mapping.
+checkSyntaxPred :: Graph           -- ^ The search graph.
+                   -> Graph        -- ^ The pattern graph.
+                   -> NodeMatchset -- ^ Current matchset state.
+                   -> NodeMapping  -- ^ Candidate mapping.
                    -> Bool
 checkSyntaxPred sg pg st (sn, pn) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       preds_sn = predecessors sg sn
       preds_pn = predecessors pg pn
       preds_sn_in_st = preds_sn `intersect` mapped_ns_sg
@@ -185,13 +184,13 @@ checkSyntaxPred sg pg st (sn, pn) =
 
 -- | Same as checkSyntaxPred but for the successors (equation 4 in the paper).
 
-checkSyntaxSucc :: Graph          -- ^ The search graph.
-                   -> Graph       -- ^ The pattern graph.
-                   -> Match       -- ^ Current matching state.
-                   -> NodeMapping -- ^ Candidate mapping.
+checkSyntaxSucc :: Graph           -- ^ The search graph.
+                   -> Graph        -- ^ The pattern graph.
+                   -> NodeMatchset -- ^ Current matchset state.
+                   -> NodeMapping  -- ^ Candidate mapping.
                    -> Bool
 checkSyntaxSucc sg pg st (sn, pn) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       succs_sn = successors sg sn
       succs_pn = successors pg pn
       succs_sn_in_st = succs_sn `intersect` mapped_ns_sg
@@ -202,13 +201,13 @@ checkSyntaxSucc sg pg st (sn, pn) =
 -- | Checks that there exists a sufficient number of predecessors to map in the
 -- search graph (equation 5 in the paper). This is a 1-look-ahead check.
 
-checkSyntaxIn :: Graph          -- ^ The search graph.
-                 -> Graph       -- ^ The pattern graph.
-                 -> Match       -- ^ Current matching state.
-                 -> NodeMapping -- ^ Candidate mapping.
+checkSyntaxIn :: Graph           -- ^ The search graph.
+                 -> Graph        -- ^ The pattern graph.
+                 -> NodeMatchset -- ^ Current matchset state.
+                 -> NodeMapping  -- ^ Candidate mapping.
                  -> Bool
 checkSyntaxIn sg pg st (sn, pn) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       preds_sn = predecessors sg sn
       preds_pn = predecessors pg pn
       succs_sn = successors sg sn
@@ -222,13 +221,13 @@ checkSyntaxIn sg pg st (sn, pn) =
 
 -- | Same as checkSyntaxIn but for successors (equation 6 in the paper).
 
-checkSyntaxOut :: Graph          -- ^ The search graph.
-                  -> Graph       -- ^ The pattern graph.
-                  -> Match       -- ^ Current matching state.
-                  -> NodeMapping -- ^ Candidate mapping.
+checkSyntaxOut :: Graph           -- ^ The search graph.
+                  -> Graph        -- ^ The pattern graph.
+                  -> NodeMatchset -- ^ Current matchset state.
+                  -> NodeMapping  -- ^ Candidate mapping.
                   -> Bool
 checkSyntaxOut sg pg st (sn, pn) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       preds_sn = predecessors sg sn
       preds_pn = predecessors pg pn
       succs_sn = successors sg sn
@@ -243,13 +242,13 @@ checkSyntaxOut sg pg st (sn, pn) =
 -- | Not really sure what the intuition behind this check is (equation 7 in the
 -- paper), other than that it is a 2-look-ahead check.
 
-checkSyntaxNew :: Graph          -- ^ The search graph.
-                  -> Graph       -- ^ The pattern graph.
-                  -> Match       -- ^ Current matching state.
-                  -> NodeMapping -- ^ Candidate mapping.
+checkSyntaxNew :: Graph           -- ^ The search graph.
+                  -> Graph        -- ^ The pattern graph.
+                  -> NodeMatchset -- ^ Current matchset state.
+                  -> NodeMapping  -- ^ Candidate mapping.
                   -> Bool
 checkSyntaxNew sg pg st (sn, pn) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatch st
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       preds_sn = predecessors sg sn
       preds_pn = predecessors pg pn
       succs_sn = successors sg sn
@@ -264,10 +263,12 @@ checkSyntaxNew sg pg st (sn, pn) =
 -- | Splits a match into two node sets: the ones contained in the search graph,
 -- and the ones contained in the pattern graph.
 
-splitMatch :: Match -> ( [Node] -- ^ Matched nodes in the search graph.
-                       , [Node] -- ^ Matched nodes in the pattern graph.
-                       )
-splitMatch m =
+splitMatchset :: NodeMatchset -> ( [Node] -- ^ Matched nodes in the search
+                                          -- graph.
+                                 , [Node] -- ^ Matched nodes in the pattern
+                                          -- graph.
+                                 )
+splitMatchset m =
   let nodes_sg = map fst m
       nodes_pg = map snd m
   in (nodes_sg, nodes_pg)
@@ -320,19 +321,21 @@ getMappedPredsOfMappedNode n ns g =
   filter (`elem` ns) (predecessors g n)
 
 -- | Gets the corresponding search node from a mapped pattern graph node. It is
--- assumed that such a mapping exists in the matching set.
+-- assumed that such a mapping exists in the matchset.
 
-getMappedSNode :: Match   -- ^ Matching set.
-                  -> Node -- ^ Mapped node in the pattern graph.
-                  -> Node -- ^ Corresponding mapped node in the search graph.
+getMappedSNode :: NodeMatchset -- ^ Matchset.
+                  -> Node      -- ^ Mapped node in the pattern graph.
+                  -> Node      -- ^ Corresponding mapped node in the search
+                               -- graph.
 getMappedSNode st m =
   fst $ head $ filter (\(n', m') -> m' == m) st
 
 -- | Gets the corresponding pattern node from a mapped search graph node. It is
--- assumed that such a mapping exists in the matching set.
+-- assumed that such a mapping exists in the matchset.
 
-getMappedPNode :: Match   -- ^ Matching set.
-                  -> Node -- ^ Mapped node in the search graph.
-                  -> Node -- ^ Corresponding mapped node in the pattern graph.
+getMappedPNode :: NodeMatchset -- ^ Matchset.
+                  -> Node      -- ^ Mapped node in the search graph.
+                  -> Node      -- ^ Corresponding mapped node in the pattern
+                               -- graph.
 getMappedPNode st n =
   snd $ head $ filter (\(n', m') -> n' == n) st

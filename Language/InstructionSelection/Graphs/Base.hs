@@ -26,7 +26,8 @@ module Language.InstructionSelection.Graphs.Base (
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
-, Match
+, NodeIdMatchset
+, NodeMatchset
 , Node
 , NodeId
 , NodeInfo (..)
@@ -70,6 +71,7 @@ module Language.InstructionSelection.Graphs.Base (
 , nodeId
 , nodeInfo
 , nodeLabel
+, convertMatchsetNToId
 , nodesByNodeId
 , nodeType
 , numNodes
@@ -108,11 +110,14 @@ type NodeId = Natural
 type Edge = I.LEdge EdgeLabel
 type EdgeNr = Natural
 type BBLabel = String
-type Match = [NodeMapping]
+type NodeIdMatchset = [NodeIdMapping]
+type NodeMatchset = [NodeMapping]
+type NodeIdMapping = ( NodeId -- ^ Node ID in search graph.
+                     , NodeId -- ^ Node ID in pattern graph.
+                     )
 type NodeMapping = ( Node -- ^ Node in search graph.
                    , Node -- ^ Node in pattern graph.
                    )
-
 
 -- | The outer-most data type which contains the graph itself.
 
@@ -561,3 +566,11 @@ iDom (Graph g) n =
   in map (\(n1, n2) -> (fromJust $ fromNodeInt g n1,
                         fromJust $ fromNodeInt g n2))
      idom_maps
+
+-- | Gets the node IDs of a node match set. Duplicated entries are removed.
+
+convertMatchsetNToId :: NodeMatchset -> NodeIdMatchset
+convertMatchsetNToId node_maps =
+  let id_maps = map (\(n1, n2) -> (nodeId n1, nodeId n2)) node_maps
+      unique_id_maps = removeDuplicates id_maps
+  in unique_id_maps

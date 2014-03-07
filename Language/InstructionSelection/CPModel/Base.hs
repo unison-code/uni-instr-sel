@@ -12,13 +12,15 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE TypeSynonymInstances #-}
+
 module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Graphs ( NodeId
-                                            , Match
-                                            , NodeMapping
+                                            , NodeIdMatchset
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
+import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils (Natural)
 
 
@@ -26,8 +28,6 @@ import Language.InstructionSelection.Utils (Natural)
 data CPModelParams
     = CPModelParams ProgramGraphData [PatternGraphData] MachineData
     deriving (Show)
-
-
 
 -- | Describes the necessary program graph data.
 
@@ -51,8 +51,6 @@ data ProgramGraphData
 
       }
     deriving (Show)
-
-
 
 -- | Describes the necessary pattern graph data.
 
@@ -81,12 +79,10 @@ data PatternGraphData
 
           -- | Matches found for this pattern.
 
-        , matches :: [Match]
+        , matches :: [NodeIdMatchset]
 
       }
     deriving (Show)
-
-
 
 -- | Contains all node IDs within a graph, partitioned after node type.
 
@@ -149,3 +145,52 @@ data MachineData
 
       }
     deriving (Show)
+
+
+
+------------------------
+-- Type class instances
+------------------------
+
+instance PrettyPrint CPModelParams where
+  prettyShow (CPModelParams prog pats m) =
+    "CPModelParams:\n\n"
+    ++ prettyShow prog ++ "\n"
+    ++ concatMap (\p -> prettyShow p ++ "\n") pats ++ "\n"
+    ++ prettyShow m
+
+instance PrettyPrint ProgramGraphData where
+  prettyShow p =
+    "ProgramGraphData:\n"
+    ++ prettyShow (progNodes p) ++ "\n"
+    ++ "Label DOMs: " ++ show (progLabelDoms p) ++ "\n"
+    ++ "TODO: pretty-print constraints" ++ "\n"
+
+instance PrettyPrint PatternGraphData where
+  prettyShow p =
+    "PatternGraphData:\n"
+    ++ prettyShow (patNodes p) ++ "\n"
+    ++ "Data " ++ prettyShow (patDataUseDefs p) ++ "\n"
+    ++ "Label " ++ prettyShow (patLabelUseDefs p) ++ "\n"
+    ++ "State " ++ prettyShow (patStateUseDefs p) ++ "\n"
+    ++ "TODO: pretty-print constraints\n"
+    ++ "Matchsets:\n" ++ concatMap (\m -> show m ++ "\n") (matches p)
+
+instance PrettyPrint NodePartition where
+  prettyShow np =
+    "Computation nodes: " ++ show (computationNodes np) ++ "\n"
+    ++ "Control nodes: " ++ show (controlNodes np) ++ "\n"
+    ++ "Data nodes: " ++ show (dataNodes np) ++ "\n"
+    ++ "Label nodes: " ++ show (labelNodes np) ++ "\n"
+    ++ "Phi nodes: " ++ show (phiNodes np) ++ "\n"
+    ++ "State nodes: " ++ show (stateNodes np) ++ "\n"
+    ++ "Transfer nodes: " ++ show (transferNodes np)
+
+instance PrettyPrint UseDefNodes where
+  prettyShow ns =
+    "Use-defs:\n"
+    ++ "Uses: " ++ show (useNodes ns) ++ "\n"
+    ++ "Defs: " ++ show (defNodes ns)
+
+instance PrettyPrint MachineData where
+  prettyShow m = "MachineData"

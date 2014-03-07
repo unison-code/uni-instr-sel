@@ -32,8 +32,8 @@ import Language.InstructionSelection.Utils ( Natural
 -- Functions
 -------------
 
-mkParams :: OpStructure                 -- ^ The program function.
-            -> [(OpStructure, [Match], Natural)] -- ^ The patterns.
+mkParams :: OpStructure -- ^ The program function.
+            -> [(OpStructure, [NodeMatchset], Natural)] -- ^ The patterns.
             -> CPModelParams
 mkParams func pats =
   CPModelParams (mkProgramGraphData func)
@@ -77,7 +77,7 @@ mkProgramGraphData os =
                    (computeLabelDoms os)
                    (osConstraints os)
 
-mkPatternGraphData :: (OpStructure, [Match], Natural) -> PatternGraphData
+mkPatternGraphData :: (OpStructure, [NodeMatchset], Natural) -> PatternGraphData
 mkPatternGraphData (os, matches, id) =
   let g = osGraph os
   in PatternGraphData (mkNodePartition os)
@@ -85,7 +85,7 @@ mkPatternGraphData (os, matches, id) =
                       (mkUseDefs g isLabelNode)
                       (mkUseDefs g isStateNode)
                       (osConstraints os)
-                      matches
+                      (map convertMatchsetNToId matches)
 
 mkUseDefs :: Graph -> (Node -> Bool) -> UseDefNodes
 mkUseDefs g f =
