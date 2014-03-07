@@ -26,7 +26,7 @@ import Language.InstructionSelection.Utils (Natural)
 
 
 
-type PatternId Natural
+type PatternId = Natural
 
 data Instruction
     = Instruction {
