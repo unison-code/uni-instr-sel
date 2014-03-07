@@ -298,7 +298,8 @@ numNodes g = length $ allNodes g
 allNodes :: Graph -> [Node]
 allNodes (Graph g) = I.labNodes g
 
--- | Deletes a node from the graph.
+-- | Deletes a node from the graph. Any edges involving the given node will be
+-- removed.
 
 delNode :: Node -> Graph -> Graph
 delNode n (Graph g) = Graph (I.delNode (nodeInt n) g)
@@ -349,7 +350,7 @@ copyNodeLabel to_n from_n g
 
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
 -- removes the merged node. If the two nodes are actually the same node, nothing
--- happens. Edges involving both nodes will result in loops.
+-- happens. Any edges already involving the two nodes will be removed.
 
 mergeNodes :: Node     -- ^ Node to merge with (will be kept).
               -> Node  -- ^ Node to merge with (will be discarded).
@@ -357,8 +358,10 @@ mergeNodes :: Node     -- ^ Node to merge with (will be kept).
               -> Graph
 mergeNodes n_to_keep n_to_discard g
   | (nodeInt n_to_keep) == (nodeInt n_to_discard) = g
-  | otherwise = delNode n_to_discard
-                $ redirectEdges n_to_keep n_to_discard g
+  | otherwise = let edges_to_ignore = edges g n_to_discard n_to_keep
+                in delNode n_to_discard
+                   $ redirectEdges n_to_keep n_to_discard
+                   $ foldl (flip delEdge) g edges_to_ignore
 
 -- | Redirects all edges involving one node to another node.
 
