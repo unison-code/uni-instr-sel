@@ -21,7 +21,8 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.Base (
-  Edge
+  BBLabel
+, Edge
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
@@ -116,7 +117,7 @@ type NodeMapping = ( Node -- ^ Node in search graph.
 -- | The outer-most data type which contains the graph itself.
 
 data Graph
-    = Graph { intGraph :: IntGraph }
+    = Graph IntGraph
     deriving (Show)
 
 -- | Node label, consisting of an ID that can be shared by multiple nodes (thus
@@ -161,8 +162,8 @@ data NodeType
       -- are all represented as data nodes. What distinguishes one from another
       -- are the constraints applied to it.
 
-    | DataNode DataType
-    | LabelNode BBLabel
+    | DataNode { dataType :: DataType }
+    | LabelNode { bbLabel :: BBLabel }
     | PhiNode
     | StateNode
     | TransferNode

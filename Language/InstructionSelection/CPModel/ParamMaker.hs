@@ -19,9 +19,10 @@ module Language.InstructionSelection.CPModel.ParamMaker (
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Utils (Natural,
-                                            removeDuplicates,
-                                            toNatural)
+import Language.InstructionSelection.Utils ( Natural
+                                           , removeDuplicates
+                                           , toNatural
+                                           )
 
 
 
@@ -103,7 +104,7 @@ delNodeKeepEdges g n =
         then mergeNodes (head preds) n g
         else delNode n g
 
-mkBasicBlockMappings :: Graph -> [( String , NodeId )]
+mkBasicBlockMappings :: Graph -> [(BBLabel , NodeId)]
 mkBasicBlockMappings g =
-  -- TODO: implement
-  []
+  let label_nodes = filter isLabelNode $ allNodes g
+  in map (\n -> (bbLabel $ nodeType n, nodeId n)) label_nodes

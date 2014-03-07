@@ -14,7 +14,11 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
-import Language.InstructionSelection.Graphs (NodeId, Match, NodeMapping)
+import Language.InstructionSelection.Graphs ( BBLabel
+                                            , NodeId
+                                            , Match
+                                            , NodeMapping
+                                            )
 import Language.InstructionSelection.OpStructures (Constraint)
 import Language.InstructionSelection.Utils (Natural)
 
@@ -44,9 +48,7 @@ data ProgramGraphData
 
           -- | The mappings of basic block names to label nodes.
 
-        , progBasicBlocks :: [( String -- ^ Name of basic block.
-                              , NodeId -- ^ ID of the corresponding label node.
-                              )]
+        , progBasicBlocks :: [(BBLabel, NodeId)]
 
           -- | The program constraints, if any.
 
