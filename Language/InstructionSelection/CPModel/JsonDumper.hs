@@ -57,11 +57,11 @@ instance ToJSON ProgramGraphData where
 
 instance ToJSON PatternGraphData where
   toJSON p =
-    object [ "id"             .= (patId p)
-           , "nodes"          .= (patNodes p)
-           , "data-use-defs"  .= (patDataUseDefs p)
-           , "label-use-defs" .= (patLabelUseDefs p)
-           , "state-use-defs" .= (patStateUseDefs p)
+    object [ "id"               .= (patId p)
+           , "nodes"            .= (patNodes p)
+           , "data-nodes-info"  .= (patDataUseDefs p)
+           , "label-nodes-info" .= (patLabelUseDefs p)
+           , "state-nodes-info" .= (patStateUseDefs p)
 -- TODO: enable
 --         , "constraints" .= (progConstraints p)
            , "matchsets" .= (patMatchsets p)
