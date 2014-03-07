@@ -35,6 +35,7 @@ import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.ParamMaker
+import Language.InstructionSelection.PrettyPrint
 
 main :: IO ()
 main =
@@ -66,7 +67,7 @@ main =
          pattern_os = normalizeNodeIds $ OpStructure pattern []
          matchset = match search pattern
          params = mkParams search_os [(pattern_os, matchset, 0)]
-     putStrLn $ show params
+     putStrLn $ prettyShow params
 
 --     putStrLn $ "Number of matches: " ++ show (length matchset)
 --     putStrLn ""
