@@ -17,6 +17,7 @@
 
 module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
+, PatternId
 ) where
 
 import Language.InstructionSelection.OpStructures
@@ -24,6 +25,8 @@ import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Utils (Natural)
 
 
+
+type PatternId Natural
 
 data Instruction
     = Instruction {
@@ -37,7 +40,7 @@ data Instruction
           -- must be globally unique across all instructions as well as be
           -- continguous.
 
-        , patterns :: [(OpStructure, Natural)]
+        , patterns :: [(OpStructure, PatternId)]
 
       }
 
