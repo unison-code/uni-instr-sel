@@ -21,10 +21,8 @@ module Language.InstructionSelection.CPModel.ParamMaker (
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Utils ( Natural
-                                           , removeDuplicates
-                                           , toNatural
-                                           )
+import Language.InstructionSelection.Patterns (PatternId)
+import Language.InstructionSelection.Utils (removeDuplicates)
 
 
 
@@ -33,7 +31,7 @@ import Language.InstructionSelection.Utils ( Natural
 -------------
 
 mkParams :: OpStructure -- ^ The program function.
-            -> [(OpStructure, [NodeMatchset], Natural)] -- ^ The patterns.
+            -> [(OpStructure, [NodeMatchset], PatternId)] -- ^ The patterns.
             -> CPModelParams
 mkParams func pats =
   CPModelParams (mkProgramGraphData func)
@@ -77,10 +75,12 @@ mkProgramGraphData os =
                    (computeLabelDoms os)
                    (osConstraints os)
 
-mkPatternGraphData :: (OpStructure, [NodeMatchset], Natural) -> PatternGraphData
+mkPatternGraphData :: (OpStructure, [NodeMatchset], PatternId)
+                      -> PatternGraphData
 mkPatternGraphData (os, matches, id) =
   let g = osGraph os
-  in PatternGraphData (mkNodePartition os)
+  in PatternGraphData id
+                      (mkNodePartition os)
                       (mkUseDefs g isDataNode)
                       (mkUseDefs g isLabelNode)
                       (mkUseDefs g isStateNode)
