@@ -68,7 +68,7 @@ instance ToJSON PatternGraphData where
 --         , "constraints" .= (progConstraints p)
            , "matchsets" .= map f (patMatchsets p)
            ]
-    where f (matchset, id) = object [ "match-id" .= id
+    where f (matchset, id) = object [ "id" .= id
                                     , "matchset" .= matchset
                                     ]
 
