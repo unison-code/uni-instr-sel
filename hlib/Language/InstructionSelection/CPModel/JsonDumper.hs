@@ -69,7 +69,7 @@ instance ToJSON PatternGraphData where
            , "matchsets" .= map f (patMatchsets p)
            ]
     where f (matchset, id) = object [ "id" .= id
-                                    , "matchset" .= matchset
+                                    , "mappings" .= matchset
                                     ]
 
 instance ToJSON MachineData where
