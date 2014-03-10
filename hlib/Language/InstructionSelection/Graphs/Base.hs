@@ -26,6 +26,7 @@ module Language.InstructionSelection.Graphs.Base (
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
+, MatchsetId
 , NodeIdMatchset
 , NodeMatchset
 , Node
@@ -110,6 +111,7 @@ type NodeId = Natural
 type Edge = I.LEdge EdgeLabel
 type EdgeNr = Natural
 type BBLabel = String
+type MatchsetId = Natural
 type NodeIdMatchset = [NodeIdMapping]
 type NodeMatchset = [NodeMapping]
 type NodeIdMapping = ( NodeId -- ^ Node ID in search graph.

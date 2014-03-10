@@ -14,7 +14,8 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
-import Language.InstructionSelection.Graphs ( NodeId
+import Language.InstructionSelection.Graphs ( MatchsetId
+                                            , NodeId
                                             , NodeIdMatchset
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
@@ -81,7 +82,7 @@ data PatternGraphData
 
           -- | Matches found for this pattern.
 
-        , patMatchsets :: [NodeIdMatchset]
+        , patMatchsets :: [(NodeIdMatchset, MatchsetId)]
 
       }
     deriving (Show)

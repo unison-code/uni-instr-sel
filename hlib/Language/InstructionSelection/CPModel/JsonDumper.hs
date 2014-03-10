@@ -19,7 +19,9 @@ module Language.InstructionSelection.CPModel.JsonDumper (
 ) where
 
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs (NodeId)
+import Language.InstructionSelection.Graphs ( MatchsetId
+                                            , NodeId
+                                            , NodeIdMatchset)
 import Language.InstructionSelection.Patterns (PatternId)
 import Language.InstructionSelection.Utils (Natural, fromNatural)
 import Data.Aeson
@@ -64,8 +66,11 @@ instance ToJSON PatternGraphData where
            , "state-nodes-info" .= (patStateUseDefs p)
 -- TODO: enable
 --         , "constraints" .= (progConstraints p)
-           , "matchsets" .= (patMatchsets p)
+           , "matchsets" .= map f (patMatchsets p)
            ]
+    where f (matchset, id) = object [ "match-id" .= id
+                                    , "matchset" .= matchset
+                                    ]
 
 instance ToJSON MachineData where
   toJSON m =

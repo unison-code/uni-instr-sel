@@ -66,6 +66,7 @@ main =
                   ]
          search_os = normalizeNodeIds $ OpStructure search []
          pattern_os = normalizeNodeIds $ OpStructure pattern []
-         matchset = match search pattern
-         params = mkParams search_os [(pattern_os, matchset, 0)]
+         matchsets = match search pattern
+         matchsets_with_ids = zip matchsets [0..]
+         params = mkParams search_os [(pattern_os, matchsets_with_ids, 0)]
      putStrLn $ toJson params
