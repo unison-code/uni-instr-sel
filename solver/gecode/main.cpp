@@ -28,7 +28,24 @@
  * policies, either expressed or implied, of the FreeBSD Project.
  */
 
+#include "json/json.h"
+#include <fstream>
+#include <iostream>
+
+using namespace std;
+
 int
 main(int argc, char** argv) {
+    Json::Value root;
+    Json::Reader reader;
+    ifstream file;
+    file.open(argv[1]);
+    if (!reader.parse(file, root)) {
+        cout << "ERROR: " << reader.getFormattedErrorMessages() << endl;
+        return 1;
+
+    }
+    cout << root << endl;
+
     return 0;
 }
