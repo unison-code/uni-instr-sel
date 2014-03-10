@@ -37,7 +37,7 @@ data Range t
 -- | Creates a new data type that allows numbers from 0 to positive infinity.
 
 newtype Natural = Natural Integer
-    deriving (Eq,Ord)
+    deriving (Eq, Ord)
 instance Show Natural where
   show (Natural i) = show i
 
@@ -57,6 +57,10 @@ instance Num Natural where
     x * y       = toNatural (fromNatural x * fromNatural y)
     abs x       = x
     signum x    = toNatural $ signum $ fromNatural x
+
+instance Enum Natural where
+  toEnum = toNatural . toInteger
+  fromEnum = fromInteger . fromNatural
 
 
 
