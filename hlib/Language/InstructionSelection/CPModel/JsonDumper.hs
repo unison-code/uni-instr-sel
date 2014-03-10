@@ -43,37 +43,37 @@ toJson = unpack . encode
 ------------------------
 
 instance ToJSON CPModelParams where
-  toJSON (CPModelParams prog pats m) =
-    object [ "program"  .= prog
+  toJSON (CPModelParams func pats m) =
+    object [ "function"  .= func
            , "patterns" .= pats
            , "machine"  .= m
            ]
 
-instance ToJSON ProgramGraphData where
-  toJSON p =
-    object [ "nodes"       .= (progNodes p)
-           , "label-doms"  .= (progLabelDoms p)
+instance ToJSON FunctionGraphData where
+  toJSON d =
+    object [ "nodes"          .= (funcNodes d)
+           , "label-doms"     .= (funcLabelDoms d)
 -- TODO: enable
---         , "constraints" .= (progConstraints p)
+--         , "constraints" .= (funcConstraints p)
            ]
 
 instance ToJSON PatternGraphData where
-  toJSON p =
-    object [ "id"               .= (patId p)
-           , "nodes"            .= (patNodes p)
-           , "data-nodes-info"  .= (patDataUseDefs p)
-           , "label-nodes-info" .= (patLabelUseDefs p)
-           , "state-nodes-info" .= (patStateUseDefs p)
+  toJSON d =
+    object [ "id"               .= (patId d)
+           , "nodes"            .= (patNodes d)
+           , "data-nodes-info"  .= (patDataUseDefs d)
+           , "label-nodes-info" .= (patLabelUseDefs d)
+           , "state-nodes-info" .= (patStateUseDefs d)
 -- TODO: enable
---         , "constraints" .= (progConstraints p)
-           , "matchsets" .= map f (patMatchsets p)
+--         , "constraints" .= (funcConstraints p)
+           , "matchsets" .= map f (patMatchsets d)
            ]
     where f (matchset, id) = object [ "id" .= id
                                     , "mappings" .= matchset
                                     ]
 
 instance ToJSON MachineData where
-  toJSON m =
+  toJSON d =
     object [ -- TODO: implement
            ]
 

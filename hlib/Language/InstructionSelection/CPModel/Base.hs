@@ -25,28 +25,28 @@ import Language.InstructionSelection.PrettyPrint
 
 
 data CPModelParams
-    = CPModelParams ProgramGraphData [PatternGraphData] MachineData
+    = CPModelParams FunctionGraphData [PatternGraphData] MachineData
     deriving (Show)
 
--- | Describes the necessary program graph data.
+-- | Describes the necessary function graph data.
 
-data ProgramGraphData
-    = ProgramGraphData {
+data FunctionGraphData
+    = FunctionGraphData {
 
-          -- | The nodes in the program graph.
+          -- | The nodes in the function graph.
 
-          progNodes :: NodePartition
+          funcNodes :: NodePartition
 
           -- | The dominator set for the basic blocks, which are represented by
           -- the label nodes.
 
-        , progLabelDoms :: [( NodeId   -- ^ The dominated node.
+        , funcLabelDoms :: [( NodeId   -- ^ The dominated node.
                             , [NodeId] -- ^ The dominator set.
                             )]
 
-          -- | The program constraints, if any.
+          -- | The function constraints, if any.
 
-        , progConstraints :: [Constraint]
+        , funcConstraints :: [Constraint]
 
       }
     deriving (Show)
@@ -156,17 +156,17 @@ data MachineData
 ------------------------
 
 instance PrettyPrint CPModelParams where
-  prettyShow (CPModelParams prog pats m) =
+  prettyShow (CPModelParams func pats m) =
     "CPModelParams:\n\n"
-    ++ prettyShow prog ++ "\n"
+    ++ prettyShow func ++ "\n"
     ++ concatMap (\p -> prettyShow p ++ "\n") pats ++ "\n"
     ++ prettyShow m
 
-instance PrettyPrint ProgramGraphData where
+instance PrettyPrint FunctionGraphData where
   prettyShow p =
-    "ProgramGraphData:\n"
-    ++ prettyShow (progNodes p) ++ "\n"
-    ++ "Label DOMs: " ++ show (progLabelDoms p) ++ "\n"
+    "FunctionGraphData:\n"
+    ++ prettyShow (funcNodes p) ++ "\n"
+    ++ "Label DOMs: " ++ show (funcLabelDoms p) ++ "\n"
     ++ "TODO: pretty-print constraints" ++ "\n"
 
 instance PrettyPrint PatternGraphData where

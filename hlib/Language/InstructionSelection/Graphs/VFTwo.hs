@@ -66,6 +66,7 @@ getCandidates :: Graph           -- ^ The search graph.
                  -> NodeMatchset -- ^ Potential candidates.
 getCandidates sg pg st =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
+      -- TODO: fix bug where 'head' argument can be empty list
       t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
       t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
       pairs_out = [ (n, head t_out_pg) | n <- t_out_sg ]
@@ -311,11 +312,11 @@ getMappedSuccsOfMappedNode :: Node      -- ^ Mapped node to get the successors
 getMappedSuccsOfMappedNode n ns g =
   filter (`elem` ns) (successors g n)
 
-getMappedPredsOfMappedNode :: Node        -- ^ Mapped node to get the
-                                          -- predecessors from.
-                              -> [Node]   -- ^ The already-mapped nodes.
-                              -> Graph    -- ^ Original graph in which the
-                                          -- mapped nodes appear.
+getMappedPredsOfMappedNode :: Node      -- ^ Mapped node to get the predecessors
+                                        -- from.
+                              -> [Node] -- ^ The already-mapped nodes.
+                              -> Graph  -- ^ Original graph in which the mapped
+                                        -- nodes appear.
                               -> [Node]
 getMappedPredsOfMappedNode n ns g =
   filter (`elem` ns) (predecessors g n)

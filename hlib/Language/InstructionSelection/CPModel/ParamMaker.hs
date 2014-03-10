@@ -9,8 +9,8 @@
 -- Portability :  portable
 --
 -- Constructs the parameters which are used to create the CP model. These
--- include the program input data, such as the IDs of the various nodes, and the
--- pattern data, which also contain the match sets.
+-- include the function data, such as the IDs of the various nodes, and the
+-- pattern data, which also contain the matchsets.
 --
 --------------------------------------------------------------------------------
 
@@ -30,53 +30,24 @@ import Language.InstructionSelection.Utils (removeDuplicates)
 -- Functions
 -------------
 
-mkParams :: OpStructure -- ^ The program function.
+mkParams :: OpStructure -- ^ The function function.
             -> [( OpStructure
                 , [(NodeMatchset, MatchsetId)]
                 , PatternId
                 )] -- ^ The patterns.
             -> CPModelParams
 mkParams func pats =
-  CPModelParams (mkProgramGraphData func)
+  CPModelParams (mkFunctionGraphData func)
                 (map mkPatternGraphData pats)
                 -- TODO: fix building of machine data
                MachineData
 
-mkNodePartition :: OpStructure -> NodePartition
-mkNodePartition os =
+mkFunctionGraphData :: OpStructure -> FunctionGraphData
+mkFunctionGraphData os =
   let g = osGraph os
-  in NodePartition (getUniqueNodeIdsByType g isComputationNode)
-                   (getUniqueNodeIdsByType g isControlNode)
-                   (getUniqueNodeIdsByType g isDataNode)
-                   (getUniqueNodeIdsByType g isLabelNode)
-                   (getUniqueNodeIdsByType g isPhiNode)
-                   (getUniqueNodeIdsByType g isStateNode)
-                   (getUniqueNodeIdsByType g isTransferNode)
-
-getUniqueNodeIdsByType :: Graph -> (Node -> Bool) -> [NodeId]
-getUniqueNodeIdsByType g f =
-  removeDuplicates $ map (nodeId) $ filter (f) $ allNodes g
-
--- | Computes the dominator relations between the label nodes after all other
--- nodes have been removed, which yields the dominator relations between the
--- basic blocks.
-
-computeLabelDoms :: OpStructure -> [( NodeId   -- ^ The dominated node.
-                                    , [NodeId] -- ^ The dominator set.
-                                    )]
-computeLabelDoms os =
-  let g = osGraph os
-      nodes_to_remove = filter (\n -> not (isLabelNode n || isControlNode n))
-                        $ allNodes g
-      cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
-      cfg = foldl delNodeKeepEdges g (filter isControlNode $ allNodes g)
-  in []
-
-mkProgramGraphData :: OpStructure -> ProgramGraphData
-mkProgramGraphData os =
-  ProgramGraphData (mkNodePartition os)
-                   (computeLabelDoms os)
-                   (osConstraints os)
+  in FunctionGraphData (mkNodePartition g)
+                       (computeLabelDoms g)
+                       (osConstraints os)
 
 mkPatternGraphData :: (OpStructure, [(NodeMatchset, MatchsetId)], PatternId)
                       -> PatternGraphData
@@ -85,7 +56,7 @@ mkPatternGraphData (os, matchsets, id) =
       (node_matchsets, matchset_ids) = unzip matchsets
       id_matchsets = map convertMatchsetNToId node_matchsets
   in PatternGraphData id
-                      (mkNodePartition os)
+                      (mkNodePartition g)
                       (mkUseDefs g isDataNode)
                       (mkUseDefs g isLabelNode)
                       (mkUseDefs g isStateNode)
@@ -111,3 +82,34 @@ delNodeKeepEdges g n =
   in if length preds > 0
         then mergeNodes (head preds) n g
         else delNode n g
+
+mkNodePartition :: Graph -> NodePartition
+mkNodePartition g =
+  NodePartition (getUniqueNodeIdsByType g isComputationNode)
+                (getUniqueNodeIdsByType g isControlNode)
+                (getUniqueNodeIdsByType g isDataNode)
+                (getUniqueNodeIdsByType g isLabelNode)
+                (getUniqueNodeIdsByType g isPhiNode)
+                (getUniqueNodeIdsByType g isStateNode)
+                (getUniqueNodeIdsByType g isTransferNode)
+
+getUniqueNodeIdsByType :: Graph -> (Node -> Bool) -> [NodeId]
+getUniqueNodeIdsByType g f =
+  removeDuplicates $ map (nodeId) $ filter (f) $ allNodes g
+
+-- | Computes the dominator sets concerning only the label nodes. It is assumed
+-- there exists a single label which acts as the root, which is the label node
+-- with no predecessors. It is also assumed that every other label node can be
+-- reached from the root.
+
+computeLabelDoms g =
+  let nodes_to_remove = filter (\n -> not (isLabelNode n || isControlNode n))
+                        $ allNodes g
+      cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
+      cfg = foldl delNodeKeepEdges
+                  cfg_with_ctrl_nodes
+                  (filter isControlNode $ allNodes cfg_with_ctrl_nodes)
+      root = head $ filter (\n -> length (predecessors g n) == 0) (allNodes cfg)
+      node_domsets = dom cfg root
+      node_id_domsets = map (\(n, ns) -> (nodeId n, map nodeId ns)) node_domsets
+  in node_id_domsets

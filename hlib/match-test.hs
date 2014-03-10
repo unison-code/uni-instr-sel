@@ -47,10 +47,14 @@ main =
                   , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
                   , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
                   , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
+                  , (4, NodeLabel 4 (NodeInfo (ControlNode O.Ret) ""))
+                  , (5, NodeLabel 5 (NodeInfo (LabelNode "start") ""))
                   ]
                   [ (1, 0, EdgeLabel 0 0)
                   , (2, 0, EdgeLabel 0 1)
                   , (0, 3, EdgeLabel 0 0)
+                  , (3, 4, EdgeLabel 0 0)
+                  , (5, 4, EdgeLabel 0 1)
                   ]
          pattern = mkGraph
                   [ (4, NodeLabel 4 (NodeInfo (ComputationNode
@@ -64,9 +68,10 @@ main =
                   , (6, 4, EdgeLabel 0 1)
                   , (4, 7, EdgeLabel 0 0)
                   ]
-         search_os = normalizeNodeIds $ OpStructure search []
-         pattern_os = normalizeNodeIds $ OpStructure pattern []
+         search_os = OpStructure search []
+         pattern_os = OpStructure pattern []
          matchsets = match search pattern
          matchsets_with_ids = zip matchsets [0..]
          params = mkParams search_os [(pattern_os, matchsets_with_ids, 0)]
-     putStrLn $ toJson params
+     putStrLn (show matchsets)
+--     putStrLn $ toJson params

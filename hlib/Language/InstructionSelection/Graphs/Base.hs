@@ -69,7 +69,6 @@ module Language.InstructionSelection.Graphs.Base (
 , lastAddedNode
 , mergeNodes
 , mkGraph
-, newNodeId
 , nodeId
 , nodeInfo
 , nodeLabel
@@ -261,16 +260,19 @@ empty = Graph I.empty
 mkGraph :: [Node] -> [Edge] -> Graph
 mkGraph ns es = Graph (I.mkGraph ns es)
 
--- | Gets the next internal node ID which does not currently appear in the
--- graph.
+-- | Gets the next internal node ID which does not already appear in the graph.
 
 nextNodeInt :: IntGraph -> I.Node
-nextNodeInt g = 1 + (maximum $ [0] ++ I.nodes g)
+nextNodeInt g =
+  let existing_nodes = I.nodes g
+  in if length existing_nodes > 0
+        then 1 + maximum existing_nodes
+        else 0
 
--- | Makes a unique node ID not already appearing in the graph.
+-- | Gets the next node ID which does not already appear in the graph.
 
-newNodeId :: Graph -> NodeId
-newNodeId (Graph g) = toNatural $ toInteger $ nextNodeInt g
+nextNodeId :: IntGraph -> NodeId
+nextNodeId g = toNatural $ toInteger $ nextNodeInt g
 
 -- | Gets the node ID from a node.
 
@@ -426,10 +428,18 @@ updateEdgeSource new_source e@(_, target, EdgeLabel _ in_nr) (Graph g) =
   in Graph (I.insEdge new_e $ I.delLEdge e g)
 
 nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
-nextInEdgeNr g int = 1 + (maximum $ [0] ++ (map inEdgeNr $ I.inn g int))
+nextInEdgeNr g int =
+  let existing_numbers = (map inEdgeNr $ I.inn g int)
+  in if length existing_numbers > 0
+        then 1 + maximum existing_numbers
+        else 0
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
-nextOutEdgeNr g int = 1 + (maximum $ [0] ++ (map outEdgeNr $ I.out g int))
+nextOutEdgeNr g int =
+  let existing_numbers = (map outEdgeNr $ I.inn g int)
+  in if length existing_numbers > 0
+        then 1 + maximum existing_numbers
+        else 0
 
 inEdgeNr :: Edge -> EdgeNr
 inEdgeNr (_, _, EdgeLabel _ nr) = nr
@@ -439,8 +449,13 @@ outEdgeNr (_, _, EdgeLabel nr _) = nr
 
 -- | Adds a new node to the graph.
 
-addNewNode :: NodeLabel -> Graph -> Graph
-addNewNode nl (Graph g) = Graph (I.insNode (nextNodeInt g, nl) g)
+addNewNode :: NodeInfo -> Graph -> ( Graph -- ^ The new graph.
+                                   , Node  -- ^ The newly added node.
+                                   )
+addNewNode ni (Graph g) =
+  let new_n = (nextNodeInt g, NodeLabel (nextNodeId g) ni)
+      new_g = Graph (I.insNode new_n g)
+  in (new_g, new_n)
 
 -- | Adds a new edge between to nodes to the graph. The edge numberings will be
 -- set accordingly.
@@ -449,14 +464,17 @@ addNewEdge :: ( Node -- ^ Source node (from).
               , Node -- ^ Destination node (to).
               )
               -> Graph
-              -> Graph
+              -> ( Graph -- ^ The new graph.
+                 , Edge  -- ^ The newly added edge.
+                 )
 addNewEdge (from_n, to_n) (Graph g) =
   let from_node_int = nodeInt from_n
       to_node_int = nodeInt to_n
       out_edge_nr = nextOutEdgeNr g from_node_int
       in_edge_nr = nextInEdgeNr g to_node_int
       new_e = (from_node_int, to_node_int, EdgeLabel out_edge_nr in_edge_nr)
-  in Graph (I.insEdge new_e g)
+      new_g = Graph (I.insEdge new_e g)
+  in (new_g, new_e)
 
 -- | Gets the node that was last added to the graph.
 
