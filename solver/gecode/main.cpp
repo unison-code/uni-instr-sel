@@ -32,6 +32,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 using std::cerr;
@@ -40,15 +41,16 @@ using std::endl;
 using std::exception;
 using std::ifstream;
 using std::string;
+using std::stringstream;
 
 int
 main(int argc, char** argv) {
     try {
         // Parse JSON file into an internal model parameters object
         ifstream file(argv[1]);
-        string json_content;
-        json_content.assign(std::istreambuf_iterator<char>(file),
-                            std::istreambuf_iterator<char>());
+        stringstream ss;
+        ss << file.rdbuf();
+        string json_content(ss.str());
         Model::Params params;
         Model::Params::parseJson(json_content, params);
 
