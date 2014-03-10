@@ -28,40 +28,35 @@
  * policies, either expressed or implied, of the FreeBSD Project.
  */
 
-#include "model/params.h"
-#include <exception>
-#include <fstream>
-#include <iostream>
+#ifndef SOLVER_GECODE_MODEL_MODEL__
+#define SOLVER_GECODE_MODEL_MODEL__
+
 #include <string>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::exception;
-using std::ifstream;
-using std::string;
+namespace Model {
 
-int
-main(int argc, char** argv) {
-    try {
-        // Parse JSON file into an internal model parameters object
-        ifstream file(argv[1]);
-        string json_content;
-        json_content.assign(std::istreambuf_iterator<char>(file),
-                            std::istreambuf_iterator<char>());
-        Model::Params params;
-        Model::Params::parseJson(json_content, params);
+/**
+ * @todo write description
+ */
+class Params {
+  public:
+    /**
+     * Parses a JSON string into an internal model parameters object.
+     *
+     * @param str
+     *        String containing the JSON data.
+     * @param params
+     *        The Params object to write to.
+     * @throws exception
+     *         When parsing fails.
+     */
+    static void
+    parseJson(const std::string& str, Params& params);
 
-        // TODO: create internal CP model
-        // TODO: add constraints
-        // TODO: add branchers
-        // TODO: do solving
-        // TODO: output solution as JSON
-    }
-    catch (exception& ex) {
-        cerr << "ERROR: " << ex.what() << endl;
-        return 1;
-    }
+  protected:
+    // TODO: add fields
+};
 
-    return 0;
 }
+
+#endif

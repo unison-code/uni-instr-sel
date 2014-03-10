@@ -26,90 +26,16 @@
 
 ################################################################################
 #
-# COMPILATION FLAGS
+# MODULE FILES
 
-CPPFLAGS += -Wall -std=c++11
-LDFLAGS  +=
-LDLIBS   +=
-CPP      := g++
+MODULE-NAME  := model
+MODULE-FILES := params.cpp
 
 
 
 ################################################################################
 #
-# APPLICATION-RELATED FILES
-
-# Contains the application modules
-MODULES := .     \
-           json  \
-           model
-TARGET-BINARY := solver
-TARBALL-FILENAME := gecode-solver-src
-
-
-
-################################################################################
-#
-# INTERNAL VARIALBES
+# INTERNALS
 # (do not edit!)
 
-# List of source files; will be appended to by each module (it is assumed that
-# it only contains .cpp files)
-source-files :=
-
-# List of object files to compile and link
-object-files = $(source-files:.cpp=.o)
-
-# List of dependencies for each source file
-dep-files = $(source-files:.cpp=.d)
-
-include $(patsubst %,%/module.mk,$(MODULES))
-
-
-
-################################################################################
-#
-# RULES
-
-all: $(TARGET-BINARY)
-
-$(TARGET-BINARY): $(object-files)
-	$(CPP) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(MAKECMDGOALS),distclean)
-ifneq ($(MAKECMDGOALS),docs)
--include $(dep-files)
-endif
-endif
-endif
-
-define make-depends
-$(CPP) $(CPPFLAGS) -M -MT "$(<:.cpp=.o) $@" $< > $@
-endef
-
-%.d: %.cpp
-	$(make-depends)
-
-.PHONY: clean
-clean:
-	-$(RM) -f $(object-files)
-
-.PHONY: clean-deps
-clean-deps:
-	-$(RM) -f $(dep-files)
-
-.PHONY: distclean
-distclean: clean clean-deps
-	-$(RM) -f $(TARGET-BINARY)
-
-.PHONY: docs
-docs:
-	doxygen dox
-
-.PHONY: tarball
-tarball: all
-	$(MAKE) clean clean-deps
-	$(MAKE) docs
-	tar -cvf $(TARBALL-FILENAME).tar ../$$(basename $$(pwd))
-	gzip $(TARBALL-FILENAME).tar
+source-files += $(patsubst %,$(MODULE-NAME)/%,$(MODULE-FILES))

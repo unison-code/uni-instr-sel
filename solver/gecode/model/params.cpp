@@ -28,40 +28,21 @@
  * policies, either expressed or implied, of the FreeBSD Project.
  */
 
-#include "model/params.h"
-#include <exception>
-#include <fstream>
-#include <iostream>
-#include <string>
+#include "params.h"
+#include "../json/json.h"
+#include <stdexcept>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::exception;
-using std::ifstream;
+using namespace Model;
+using std::runtime_error;
 using std::string;
 
-int
-main(int argc, char** argv) {
-    try {
-        // Parse JSON file into an internal model parameters object
-        ifstream file(argv[1]);
-        string json_content;
-        json_content.assign(std::istreambuf_iterator<char>(file),
-                            std::istreambuf_iterator<char>());
-        Model::Params params;
-        Model::Params::parseJson(json_content, params);
-
-        // TODO: create internal CP model
-        // TODO: add constraints
-        // TODO: add branchers
-        // TODO: do solving
-        // TODO: output solution as JSON
-    }
-    catch (exception& ex) {
-        cerr << "ERROR: " << ex.what() << endl;
-        return 1;
+void
+Params::parseJson(const string& str, Params& param) {
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(str, root)) {
+        throw runtime_error(reader.getFormattedErrorMessages().c_str());
     }
 
-    return 0;
+    // TODO: implement
 }
