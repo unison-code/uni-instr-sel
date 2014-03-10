@@ -29,6 +29,6 @@
  */
 
 int
-main(int argc, char** argc) {
+main(int argc, char** argv) {
     return 0;
 }
