@@ -42,6 +42,7 @@ module Language.InstructionSelection.Graphs.Base (
 , copyNodeLabel
 , delEdge
 , delNode
+, dom
 , edges
 , empty
 , fromNodeId
@@ -556,18 +557,31 @@ targetOfEdge (Graph g) (_, n, _) = fromJust $ fromNodeInt g n
 fromNodeId :: Graph -> NodeId -> [Node]
 fromNodeId g id = filter (\n -> nodeId n == id) (allNodes g)
 
+-- | Gets a list of dominator sets, given a root node.
+
+dom :: Graph
+       -> Node      -- ^ The root node.
+       -> [( Node   -- ^ The dominated node.
+           , [Node] -- ^ The dominator nodes.
+           )]
+dom (Graph g) n =
+  let dom_sets = I.dom g (nodeInt n)
+  in map (\(n1, ns2) -> (fromJust $ fromNodeInt g n1,
+                         map (fromJust . fromNodeInt g) ns2))
+         dom_sets
+
 -- | Gets a list of immediate-dominator mappings, given a root node.
 
 iDom :: Graph
-        -> Node -- ^ The root node.
-        -> [( Node -- ^ The dominator node.
-            , Node -- ^ The dominated node.
+        -> Node    -- ^ The root node.
+        -> [( Node -- ^ The dominated node.
+            , Node -- ^ The dominator node.
             )]
 iDom (Graph g) n =
   let idom_maps = I.iDom g (nodeInt n)
   in map (\(n1, n2) -> (fromJust $ fromNodeInt g n1,
                         fromJust $ fromNodeInt g n2))
-     idom_maps
+         idom_maps
 
 -- | Gets the node IDs of a node match set. Duplicated entries are removed.
 
