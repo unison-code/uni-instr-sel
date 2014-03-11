@@ -31,6 +31,7 @@ module Language.InstructionSelection.Graphs.Base (
 , NodeMatchset
 , Node
 , NodeId
+, NodeIdMapping
 , NodeInfo (..)
 , NodeLabel (..)
 , NodeMapping
@@ -39,6 +40,8 @@ module Language.InstructionSelection.Graphs.Base (
 , allEdges
 , addNewEdge
 , addNewNode
+, convertMatchsetNToId
+, convertMappingNToId
 , copyNodeLabel
 , delEdge
 , delNode
@@ -72,7 +75,6 @@ module Language.InstructionSelection.Graphs.Base (
 , nodeId
 , nodeInfo
 , nodeLabel
-, convertMatchsetNToId
 , nodesByNodeId
 , nodeType
 , numNodes
@@ -601,10 +603,15 @@ iDom (Graph g) n =
                         fromJust $ fromNodeInt g n2))
          idom_maps
 
--- | Gets the node IDs of a node match set. Duplicated entries are removed.
+-- | Gets the node IDs of a node matchset. Duplicated entries are removed.
 
 convertMatchsetNToId :: NodeMatchset -> NodeIdMatchset
 convertMatchsetNToId node_maps =
   let id_maps = map (\(n1, n2) -> (nodeId n1, nodeId n2)) node_maps
       unique_id_maps = removeDuplicates id_maps
   in unique_id_maps
+
+-- | Creates a node ID mapping from a node mapping.
+
+convertMappingNToId :: NodeMapping -> NodeIdMapping
+convertMappingNToId (n1, n2) = (nodeId n1, nodeId n2)
