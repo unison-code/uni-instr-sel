@@ -166,7 +166,7 @@ data ControlOp
 
     -- | Unconditional branch.
 
-    | UnCondBranch
+    | UncondBranch
 
     -- | Return.
 
@@ -236,7 +236,7 @@ instance PrettyPrint CompOpType where
 
 instance PrettyPrint ControlOp where
   prettyShow CondBranch = "bnz"
-  prettyShow UnCondBranch = "br"
+  prettyShow UncondBranch = "br"
   prettyShow Ret = "ret"
 
 instance SExpressionable CompOp where
@@ -273,5 +273,5 @@ instance SExpressionable CompOpType where
 
 instance SExpressionable ControlOp where
   prettySE CondBranch _ = "bnz"
-  prettySE UnCondBranch _ = "br"
+  prettySE UncondBranch _ = "br"
   prettySE Ret _ = "ret"
