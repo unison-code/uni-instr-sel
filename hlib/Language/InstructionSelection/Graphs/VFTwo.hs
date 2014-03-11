@@ -66,16 +66,21 @@ getCandidates :: Graph           -- ^ The search graph.
                  -> NodeMatchset -- ^ Potential candidates.
 getCandidates sg pg st =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
-      -- TODO: fix bug where 'head' argument can be empty list
       t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
       t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
-      pairs_out = [ (n, head t_out_pg) | n <- t_out_sg ]
+      pairs_out = if length t_out_pg > 0
+                     then [ (n, head t_out_pg) | n <- t_out_sg ]
+                     else []
       t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
       t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
-      pairs_in = [ (n, head t_in_pg) | n <- t_in_sg ]
+      pairs_in = if length t_in_pg > 0
+                    then [ (n, head t_in_pg) | n <- t_in_sg ]
+                    else []
       t_d_sg = filter (`notElem` mapped_ns_sg) (allNodes sg)
       t_d_pg = filter (`notElem` mapped_ns_pg) (allNodes pg)
-      pairs_d = [ (n, head t_d_pg) | n <- t_d_sg ]
+      pairs_d = if length t_d_pg > 0
+                   then [ (n, head t_d_pg) | n <- t_d_sg ]
+                   else []
   in if length pairs_out > 0
         then pairs_out
         else if length pairs_in > 0
