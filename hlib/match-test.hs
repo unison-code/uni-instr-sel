@@ -56,6 +56,8 @@ main =
                   , (0, 3, EdgeLabel 0 0)
                   , (3, 4, EdgeLabel 0 0)
                   , (5, 4, EdgeLabel 0 1)
+                  , (5, 1, EdgeLabel 1 0)
+                  , (5, 2, EdgeLabel 2 0)
                   ]
          pattern = mkGraph
                   [ (4, NodeLabel 4 (NodeInfo (ComputationNode
