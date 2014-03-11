@@ -1,4 +1,4 @@
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- |
 -- Module      :  Language.InstructionSelection.Graphs.VFTwo
 -- Copyright   :  (c) Gabriel Hjort Blindell 2014
@@ -65,16 +65,9 @@ getCandidates :: Graph           -- ^ The search graph.
                  -> NodeMatchset -- ^ The current matchset state.
                  -> NodeMatchset -- ^ Potential candidates.
 getCandidates sg pg st =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
-      t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
-      t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
-      pairs_out = [ (n, head t_out_pg) | n <- t_out_sg, not (null t_out_pg) ]
-      t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
-      t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
-      pairs_in = [ (n, head t_in_pg) | n <- t_in_sg, not (null t_in_pg) ]
-      t_d_sg = filter (`notElem` mapped_ns_sg) (allNodes sg)
-      t_d_pg = filter (`notElem` mapped_ns_pg) (allNodes pg)
-      pairs_d = [ (n, head t_d_pg) | n <- t_d_sg, not (null t_d_pg) ]
+  let pairs_out = computeCandidatesFromTOutSets sg pg st
+      pairs_in = computeCandidatesFromTInSets sg pg st
+      pairs_d = computeCandidatesForPdSet sg pg st
   in if length pairs_out > 0
         then pairs_out
         else if length pairs_in > 0
@@ -339,3 +332,44 @@ getMappedPNode :: NodeMatchset -- ^ Matchset.
                                -- graph.
 getMappedPNode st n =
   snd $ head $ filter (\(n', m') -> n' == n) st
+
+-- | Computes pair condidates from the T_out sets (see paper for more
+-- information).
+
+computeCandidatesFromTOutSets :: Graph         -- ^ The search graph.
+                                 -> Graph        -- ^ The pattern graph.
+                                 -> NodeMatchset -- ^ The current matchset
+                                                 -- state.
+                                 -> [NodeMapping]
+computeCandidatesFromTOutSets sg pg st =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
+      t_out_sg = getNonMappedSuccsOfMappedNodes mapped_ns_sg sg
+      t_out_pg = getNonMappedSuccsOfMappedNodes mapped_ns_pg pg
+  in [ (n, head t_out_pg) | n <- t_out_sg, not (null t_out_pg) ]
+
+-- | Computes pair condidates from the T_in sets (see paper for more
+-- information).
+
+computeCandidatesFromTInSets :: Graph         -- ^ The search graph.
+                                -> Graph        -- ^ The pattern graph.
+                                -> NodeMatchset -- ^ The current matchset state.
+                                -> [NodeMapping]
+computeCandidatesFromTInSets sg pg st =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
+      t_in_sg = getNonMappedPredsOfMappedNodes mapped_ns_sg sg
+      t_in_pg = getNonMappedPredsOfMappedNodes mapped_ns_pg pg
+  in [ (n, head t_in_pg) | n <- t_in_sg, not (null t_in_pg) ]
+
+-- | Computes pair condidates constituting the P^d set (see paper for more
+-- information).
+
+computeCandidatesForPdSet :: Graph         -- ^ The search graph.
+                             -> Graph        -- ^ The pattern graph.
+                             -> NodeMatchset -- ^ The current matchset state.
+                             -> [NodeMapping]
+computeCandidatesForPdSet sg pg st =
+  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
+      getNotMappedNodes g mapped_ns = filter (`notElem` mapped_ns) (allNodes g)
+      t_d_sg = getNotMappedNodes sg mapped_ns_sg
+      t_d_pg = getNotMappedNodes pg mapped_ns_pg
+  in [ (n, head t_d_pg) | n <- t_d_sg, not (null t_d_pg) ]
