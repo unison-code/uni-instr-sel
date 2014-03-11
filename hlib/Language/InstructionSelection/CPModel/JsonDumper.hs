@@ -60,6 +60,8 @@ instance ToJSON FunctionGraphData where
 instance ToJSON PatternGraphData where
   toJSON d =
     object [ "id"               .= (patId d)
+           , "code-size"        .= (patCodeSize d)
+           , "latency"          .= (patLatency d)
            , "nodes"            .= (patNodes d)
            , "data-nodes-info"  .= (patDataUseDefs d)
            , "label-nodes-info" .= (patLabelUseDefs d)

@@ -21,7 +21,9 @@ module Language.InstructionSelection.CPModel.ParamMaker (
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Patterns (PatternId)
+import Language.InstructionSelection.Patterns ( InstProperties (..)
+                                              , PatternId
+                                              )
 import Language.InstructionSelection.Utils (removeDuplicates)
 
 
@@ -33,6 +35,7 @@ import Language.InstructionSelection.Utils (removeDuplicates)
 mkParams :: OpStructure -- ^ The function function.
             -> [( OpStructure
                 , [(NodeMatchset, MatchsetId)]
+                , InstProperties
                 , PatternId
                 )] -- ^ The patterns.
             -> CPModelParams
@@ -49,13 +52,19 @@ mkFunctionGraphData os =
                        (computeLabelDoms g)
                        (osConstraints os)
 
-mkPatternGraphData :: (OpStructure, [(NodeMatchset, MatchsetId)], PatternId)
+mkPatternGraphData :: ( OpStructure
+                      , [(NodeMatchset, MatchsetId)]
+                      , InstProperties
+                      , PatternId
+                      )
                       -> PatternGraphData
-mkPatternGraphData (os, matchsets, id) =
+mkPatternGraphData (os, matchsets, props, id) =
   let g = osGraph os
       (node_matchsets, matchset_ids) = unzip matchsets
       id_matchsets = map convertMatchsetNToId node_matchsets
   in PatternGraphData id
+                      (codeSize props)
+                      (latency props)
                       (mkNodePartition g)
                       (mkUseDefs g isDataNode)
                       (mkUseDefs g isLabelNode)

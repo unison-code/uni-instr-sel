@@ -32,6 +32,7 @@ import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
+import Language.InstructionSelection.Patterns
 import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.JsonDumper
@@ -72,5 +73,9 @@ main =
          pattern_os = OpStructure pattern []
          matchsets = match search pattern
          matchsets_with_ids = zip matchsets [0..]
-         params = mkParams search_os [(pattern_os, matchsets_with_ids, 0)]
+         params = mkParams search_os
+                           [( pattern_os
+                            , matchsets_with_ids
+                            , (InstProperties 1 1)
+                            , 0)]
      putStrLn $ toJson params

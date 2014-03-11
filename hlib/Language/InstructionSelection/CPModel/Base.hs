@@ -60,6 +60,14 @@ data PatternGraphData
 
           patId :: PatternId
 
+          -- | Instruction code size (in bytes).
+
+        , patCodeSize :: Integer
+
+          -- | Instruction latency (in cycles).
+
+        , patLatency :: Integer
+
           -- | The nodes in the pattern graph.
 
         , patNodes :: NodePartition

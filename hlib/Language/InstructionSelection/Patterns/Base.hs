@@ -17,6 +17,7 @@
 
 module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
+, InstProperties (..)
 , PatternId
 ) where
 
@@ -35,6 +36,10 @@ data Instruction
 
           assemblyStr :: AssemblyString
 
+          -- | Instruction properties.
+
+        , instProps :: InstProperties
+
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern. Each pattern also has a corresponding ID which
           -- must be globally unique across all instructions as well as be
@@ -43,5 +48,18 @@ data Instruction
         , patterns :: [(OpStructure, PatternId)]
 
       }
+    deriving (Show)
 
+data InstProperties
+    = InstProperties {
+
+          -- | Instruction code size (in bytes).
+
+          codeSize :: Integer
+
+          -- | Instruction latency (in cycles).
+
+        , latency :: Integer
+
+      }
     deriving (Show)
