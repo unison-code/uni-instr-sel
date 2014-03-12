@@ -39,7 +39,8 @@ typedef unsigned int Id;
 typedef unsigned int ArrayIndex;
 
 /**
- * @todo write description
+ * Contains the parameters which will be used to create an instance of the CP
+ * model.
  */
 class Params {
   public:
