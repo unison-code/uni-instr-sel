@@ -47,13 +47,13 @@ Params::parseJson(const string& str, Params& param) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
 
-    // TODO: Find number of function action nodes
-    // TODO: Find number of function data nodes
-    // TODO: Find number of function label nodes
-    // TODO: Find number of function state nodes
+    // TODO: Count number of function action nodes
+    // TODO: Count number of function data nodes
+    // TODO: Count number of function label nodes
+    // TODO: Count number of function state nodes
     // TODO: Set function label dominator sets
 
-    // Find number of pattern instances and matchset ID-to-index mappings
+    // Count number of pattern instances and set matchset ID-to-index mappings
     size_t& num_instances(param.pat_num_instances_);
     num_instances = 0;
     size_t matchset_index = 0;
