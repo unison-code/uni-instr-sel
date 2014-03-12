@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "exceptions/exception.h"
 #include "model/params.h"
-#include <exception>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -34,7 +34,6 @@
 using std::cerr;
 using std::cout;
 using std::endl;
-using std::exception;
 using std::ifstream;
 using std::string;
 using std::stringstream;
@@ -56,8 +55,8 @@ main(int argc, char** argv) {
         // TODO: do solving
         // TODO: output solution as JSON
     }
-    catch (exception& ex) {
-        cerr << "ERROR: " << ex.what() << endl;
+    catch (Exception& ex) {
+        cerr << "ERROR: " << ex.getMessage() << endl;
         return 1;
     }
 
