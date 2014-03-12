@@ -42,8 +42,8 @@ data Instruction
 
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern. Each pattern also has a corresponding ID which
-          -- must be globally unique across all instructions as well as be
-          -- continguous.
+          -- must be globally unique across all instructions, but not
+          -- necessarily contiguous.
 
         , patterns :: [(OpStructure, PatternId)]
 

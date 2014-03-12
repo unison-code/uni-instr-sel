@@ -88,7 +88,8 @@ data PatternGraphData
 
         , patConstraints :: [Constraint]
 
-          -- | Matches found for this pattern.
+          -- | Matches found for this pattern. The matchset IDs must be globally
+          -- unique across all matchsets, but not necessarily contiguous.
 
         , patMatchsets :: [(NodeIdMatchset, MatchsetId)]
 
