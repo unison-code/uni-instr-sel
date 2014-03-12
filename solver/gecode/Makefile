@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Gabriel Hjort Blindell <ghb@kth.se>
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,9 @@ CPP      := g++
 # APPLICATION-RELATED FILES
 
 # Contains the application modules
-MODULES := .     \
-           json  \
+MODULES := .          \
+           exceptions \
+           json       \
            model
 TARGET-BINARY := solver
 TARBALL-FILENAME := gecode-solver-src

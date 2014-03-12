@@ -28,8 +28,8 @@
 #
 # MODULE FILES
 
-MODULE-NAME  := json
-MODULE-FILES := json.cpp
+MODULE-NAME  := exceptions
+MODULE-FILES := exception.cpp
 
 
 

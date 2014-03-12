@@ -22,15 +22,12 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * The views and conclusions contained in the software and documentation are
- * those of the authors and should not be interpreted as representing official
- * policies, either expressed or implied, of the FreeBSD Project.
  */
 
 #ifndef SOLVER_GECODE_MODEL_MODEL__
 #define SOLVER_GECODE_MODEL_MODEL__
 
+#include "../json/json.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -49,11 +46,39 @@ class Params {
      *        String containing the JSON data.
      * @param params
      *        The Params object to write to.
-     * @throws exception
+     * @throws Exception
      *         When parsing fails.
      */
     static void
     parseJson(const std::string& str, Params& params);
+
+  protected:
+    /**
+     * Adds an matchset ID-to-index mapping to a Params object.
+     *
+     * @param id
+     *        Matchset ID.
+     * @param index
+     *        Array index.
+     * @param param
+     *        Object to add the mapping to.
+     */
+    void
+    addMatchsetMapping(const size_t id, const size_t index, Params& param);
+
+    /**
+     * Gets a JSON value of certain name from another JSON value.
+     *
+     * @param value
+     *        JSON value to get the field from.
+     * @param name
+     *        Name of the field to retreive.
+     * @returns The value.
+     * @throws Exception
+     *         When no such field is found.
+     */
+    static Json::Value
+    getValue(const Json::Value& value, const std::string& name);
 
   protected:
     /**
@@ -105,6 +130,11 @@ class Params {
      * The number of pattern instances.
      */
     size_t pat_num_instances_;
+
+    /**
+     * Maps the matchset ID of a matchset to an index array.
+     */
+    std::map<size_t, size_t> pat_matchset_mappings_;
 };
 
 }

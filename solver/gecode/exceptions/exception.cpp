@@ -24,58 +24,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "params.h"
-#include "../json/json.h"
-#include "../exceptions/exception.h"
+#include "exception.h"
 
-// TODO: remove
-#include <iostream>
-using std::cout;
-using std::endl;
-
-using namespace Json;
-using namespace Model;
-using std::runtime_error;
 using std::string;
-using std::vector;
 
-void
-Params::parseJson(const string& str, Params& param) {
-    Value root;
-    Reader reader;
-    if (!reader.parse(str, root)) {
-        THROW(Exception, reader.getFormattedErrorMessages());
-    }
+Exception::Exception(const string& source_file, int source_line)
+    : exception(),
+      source_file_(source_file),
+      source_line_(source_line),
+      message_("")
+{}
 
-    // TODO: Find number of function action nodes
-    // TODO: Find number of function data nodes
-    // TODO: Find number of function label nodes
-    // TODO: Find number of function state nodes
-    // TODO: Set function label dominator sets
+Exception::Exception(const string& source_file,
+                     int source_line,
+                     const string& message)
+    : exception(),
+      source_file_(source_file),
+      source_line_(source_line),
+      message_(message)
+{}
 
-    // Find number of pattern instances and matchset ID-to-index mappings
-    Value patterns(getValue(root, "patterns"));
-    param.pat_num_instances_ = 0;
-    size_t matchset_index = 0;
-    for (Value& pattern : patterns) {
-        Value matchsets(getValue(pattern, "matchsets"));
-        // TODO: implement
-    }
+Exception::~Exception(void) throw() {}
 
-    // TODO: remove
-    cout << root << endl;
+string
+Exception::getSourceFile(void) const {
+    return source_file_;
 }
 
-Value
-Params::getValue(const Value& value, const string& name) {
-    Value sought_value = value[name];
-    if (sought_value.isNull()) {
-        THROW(Exception, string("No '") + name + "' field found");
-    }
-    return sought_value;
+int
+Exception::getSourceLine(void) const {
+    return source_line_;
 }
 
-void
-Params::addMatchsetMapping(const size_t id, const size_t index, Params& param) {
-    // TODO: implement
+string
+Exception::getMessage(void) const {
+    return message_;
+}
+
+string
+Exception::toString(void) const {
+    string str;
+    str += type();
+    str += " thrown in \"";
+    str += getSourceFile();
+    str += "\" at line ";
+    str += toString(getSourceLine());
+    str += ": ";
+    str += getMessage();
+    return str;
+}
+
+string
+Exception::type(void) const {
+    return "Exception";
 }
