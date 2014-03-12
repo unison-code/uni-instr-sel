@@ -56,7 +56,7 @@ main(int argc, char** argv) {
         // TODO: output solution as JSON
     }
     catch (Exception& ex) {
-        cerr << "ERROR: " << ex.getMessage() << endl;
+        cerr << "ERROR: " << ex.toString() << endl;
         return 1;
     }
 
