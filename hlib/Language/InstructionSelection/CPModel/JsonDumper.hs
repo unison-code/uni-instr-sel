@@ -59,7 +59,7 @@ instance ToJSON FunctionGraphData where
 
 instance ToJSON PatternGraphData where
   toJSON d =
-    object [ "id"               .= (patId d)
+    object [ "pattern-id"       .= (patId d)
            , "code-size"        .= (patCodeSize d)
            , "latency"          .= (patLatency d)
            , "nodes"            .= (patNodes d)
@@ -70,8 +70,8 @@ instance ToJSON PatternGraphData where
 --         , "constraints" .= (funcConstraints p)
            , "matchsets" .= map f (patMatchsets d)
            ]
-    where f (matchset, id) = object [ "id" .= id
-                                    , "mappings" .= matchset
+    where f (matchset, id) = object [ "matchset-id" .= id
+                                    , "mappings"    .= matchset
                                     ]
 
 instance ToJSON MachineData where
