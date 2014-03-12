@@ -32,6 +32,7 @@
 #define SOLVER_GECODE_MODEL_MODEL__
 
 #include <string>
+#include <vector>
 
 namespace Model {
 
@@ -54,7 +55,12 @@ class Params {
     parseJson(const std::string& str, Params& params);
 
   protected:
-    // TODO: add fields
+    size_t num_patterns_;
+    size_t num_action_nodes_;
+    size_t num_data_nodes_;
+    size_t num_label_nodes_;
+    size_t num_state_nodes_;
+    std::vector< std::vector<size_t> > label_domsets_;
 };
 
 }
