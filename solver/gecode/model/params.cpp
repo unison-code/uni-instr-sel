@@ -54,16 +54,22 @@ Params::parseJson(const string& str, Params& param) {
     // TODO: Set function label dominator sets
 
     // Find number of pattern instances and matchset ID-to-index mappings
-    Value patterns(getValue(root, "patterns"));
-    param.pat_num_instances_ = 0;
+    size_t& num_instances(param.pat_num_instances_);
+    num_instances = 0;
     size_t matchset_index = 0;
-    for (Value& pattern : patterns) {
-        Value matchsets(getValue(pattern, "matchsets"));
-        // TODO: implement
+    for (Value& pattern : getValue(root, "patterns")) {
+        for (Value& matchset : getValue(pattern, "matchsets")) {
+            num_instances++;
+            Value matchset_id(getValue(matchset, "matchset-id"));
+            if (!matchset_id.isUInt()) {
+                THROW(Exception, "Invalid data type");
+            }
+            addMatchsetMapping(matchset_id.asUInt(), matchset_index++, param);
+        }
     }
 
     // TODO: remove
-    cout << root << endl;
+    //cout << root << endl;
 }
 
 Value
@@ -76,6 +82,6 @@ Params::getValue(const Value& value, const string& name) {
 }
 
 void
-Params::addMatchsetMapping(const size_t id, const size_t index, Params& param) {
+Params::addMatchsetMapping(size_t id, size_t index, Params& param) {
     // TODO: implement
 }

@@ -63,8 +63,8 @@ class Params {
      * @param param
      *        Object to add the mapping to.
      */
-    void
-    addMatchsetMapping(const size_t id, const size_t index, Params& param);
+    static void
+    addMatchsetMapping(size_t id, size_t index, Params& param);
 
     /**
      * Gets a JSON value of certain name from another JSON value.
