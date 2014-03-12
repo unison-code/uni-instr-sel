@@ -31,6 +31,7 @@
 #ifndef SOLVER_GECODE_MODEL_MODEL__
 #define SOLVER_GECODE_MODEL_MODEL__
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -55,12 +56,55 @@ class Params {
     parseJson(const std::string& str, Params& params);
 
   protected:
-    size_t num_patterns_;
-    size_t num_action_nodes_;
-    size_t num_data_nodes_;
-    size_t num_label_nodes_;
-    size_t num_state_nodes_;
-    std::vector< std::vector<size_t> > label_domsets_;
+    /**
+     * The number of action nodes in the function.
+     */
+    size_t func_num_action_nodes_;
+
+    /**
+     * Same as #func_num_action_nodes_ but for data nodes.
+     */
+    size_t func_num_data_nodes_;
+
+    /**
+     * Same as #func_num_action_nodes_ but for label nodes.
+     */
+    size_t func_num_label_nodes_;
+
+    /**
+     * Same as #func_num_action_nodes_ but for state nodes.
+     */
+    size_t func_num_state_nodes_;
+
+    /**
+     * Maps the node ID of an action node to an array index.
+     */
+    std::map<size_t, size_t> func_action_node_mappings_;
+
+    /**
+     * Same as #func_action_node_mappings_ but for data nodes.
+     */
+    std::map<size_t, size_t> func_data_node_mappings_;
+
+    /**
+     * Same as #func_action_node_mappings_ but for label nodes.
+     */
+    std::map<size_t, size_t> func_label_node_mappings_;
+
+    /**
+     * Same as #func_action_node_mappings_ but for state nodes.
+     */
+    std::map<size_t, size_t> func_state_node_mappings_;
+
+    /**
+     * The dominator sets for each label node in the function.
+     */
+    std::vector< std::vector<size_t> > func_label_domsets_;
+
+    /**
+     * The number of pattern instances.
+     */
+    size_t pat_num_instances_;
 };
 
 }
