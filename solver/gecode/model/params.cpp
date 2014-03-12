@@ -32,9 +32,15 @@
 #include "../json/json.h"
 #include <stdexcept>
 
+// TODO: remove
+#include <iostream>
+using std::cout;
+using std::endl;
+
 using namespace Model;
 using std::runtime_error;
 using std::string;
+using std::vector;
 
 void
 Params::parseJson(const string& str, Params& param) {
@@ -45,4 +51,5 @@ Params::parseJson(const string& str, Params& param) {
     }
 
     // TODO: implement
+    cout << root << endl;
 }
