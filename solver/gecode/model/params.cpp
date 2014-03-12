@@ -50,6 +50,13 @@ Params::parseJson(const string& str, Params& param) {
         throw runtime_error(reader.getFormattedErrorMessages().c_str());
     }
 
-    // TODO: implement
+    // TODO: set num_patterns_
+    // TODO: set num_action_nodes_
+    // TODO: set num_data_nodes_
+    // TODO: set num_label_nodes_
+    // TODO: set num_state_nodes_
+    // TODO: set label_domsets_
+
+    // TODO: remove
     cout << root << endl;
 }
