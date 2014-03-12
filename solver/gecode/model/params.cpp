@@ -28,16 +28,11 @@
 #include "../json/json.h"
 #include "../exceptions/exception.h"
 
-// TODO: remove
-#include <iostream>
-using std::cout;
-using std::endl;
-
 using namespace Json;
 using namespace Model;
-using std::runtime_error;
+using std::list;
+using std::map;
 using std::string;
-using std::vector;
 
 void
 Params::parseJson(const string& str, Params& param) {
@@ -47,29 +42,12 @@ Params::parseJson(const string& str, Params& param) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
 
-    // TODO: Count number of function action nodes
-    // TODO: Count number of function data nodes
-    // TODO: Count number of function label nodes
-    // TODO: Count number of function state nodes
-    // TODO: Set function label dominator sets
-
-    // Count number of pattern instances and set matchset ID-to-index mappings
-    size_t& num_instances(param.pat_num_instances_);
-    num_instances = 0;
-    size_t matchset_index = 0;
-    for (Value& pattern : getValue(root, "patterns")) {
-        for (Value& matchset : getValue(pattern, "matchsets")) {
-            num_instances++;
-            Value matchset_id(getValue(matchset, "matchset-id"));
-            if (!matchset_id.isUInt()) {
-                THROW(Exception, "Invalid data type");
-            }
-            addMatchsetMapping(matchset_id.asUInt(), matchset_index++, param);
-        }
-    }
-
-    // TODO: remove
-    //cout << root << endl;
+    computeMappingsForFunctionActionNodes(root, param);
+    computeMappingsForFunctionDataNodes(root, param);
+    computeMappingsForFunctionLabelNodes(root, param);
+    computeMappingsForFunctionStateNodes(root, param);
+    computeDomsetsForFunctionLabelNodes(root, param);
+    computeMatchsetMappingsForPatternInstances(root, param);
 }
 
 Value
@@ -81,7 +59,118 @@ Params::getValue(const Value& value, const string& name) {
     return sought_value;
 }
 
+unsigned int
+Params::toId(const Value& value) {
+    if (!value.isUInt()) {
+        THROW(Exception, "Not a JSON unsigned integer");
+    }
+    return value.asUInt();
+}
+
 void
-Params::addMatchsetMapping(size_t id, size_t index, Params& param) {
-    // TODO: implement
+Params::computeMappingsForFunctionActionNodes(
+    const Value& root,
+    Params& param
+) {
+    Value function(getValue(root, "function"));
+    Value func_nodes(getValue(function, "nodes"));
+    ArrayIndex index = 0;
+    for (Value& node_id : getValue(func_nodes, "computation-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_action_node_mappings_);
+    }
+    for (Value& node_id : getValue(func_nodes, "control-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_action_node_mappings_);
+    }
+    for (Value& node_id : getValue(func_nodes, "phi-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_action_node_mappings_);
+    }
+    for (Value& node_id : getValue(func_nodes, "transfer-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_action_node_mappings_);
+    }
+}
+
+void
+Params::computeMappingsForFunctionDataNodes(
+    const Value& root,
+    Params& param
+) {
+    Value function(getValue(root, "function"));
+    Value func_nodes(getValue(function, "nodes"));
+    ArrayIndex index = 0;
+    for (Value& node_id : getValue(func_nodes, "data-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_data_node_mappings_);
+    }
+}
+
+void
+Params::computeMappingsForFunctionLabelNodes(
+    const Value& root,
+    Params& param
+) {
+    Value function(getValue(root, "function"));
+    Value func_nodes(getValue(function, "nodes"));
+    ArrayIndex index = 0;
+    for (Value& node_id : getValue(func_nodes, "label-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_label_node_mappings_);
+    }
+}
+
+void
+Params::computeMappingsForFunctionStateNodes(
+    const Value& root,
+    Params& param
+) {
+    Value function(getValue(root, "function"));
+    Value func_nodes(getValue(function, "nodes"));
+    ArrayIndex index = 0;
+    for (Value& node_id : getValue(func_nodes, "state-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_state_node_mappings_);
+    }
+}
+
+void
+Params::computeDomsetsForFunctionLabelNodes(
+    const Value& root,
+    Params& param
+) {
+    Value function(getValue(root, "function"));
+    for (Value& entry : getValue(function, "label-domsets")) {
+        Id dominated_id = toId(getValue(entry, "dominated-id"));
+        list<Id> domset;
+        for (Value& dominator_node : getValue(entry, "domset")) {
+            domset.push_back(toId(dominator_node));
+        }
+        addMapping(dominated_id,
+                   domset,
+                   param.func_label_domsets_);
+    }
+}
+
+void
+Params::computeMatchsetMappingsForPatternInstances(
+    const Value& root,
+    Params& param
+) {
+    ArrayIndex index = 0;
+    for (Value& pattern : getValue(root, "patterns")) {
+        for (Value& matchset : getValue(pattern, "matchsets")) {
+            addMapping(toId(getValue(matchset, "matchset-id")),
+                       index++,
+                       param.pat_matchset_mappings_);
+        }
+    }
 }

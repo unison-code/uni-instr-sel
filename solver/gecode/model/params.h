@@ -27,12 +27,16 @@
 #ifndef SOLVER_GECODE_MODEL_MODEL__
 #define SOLVER_GECODE_MODEL_MODEL__
 
+#include "../exceptions/exception.h"
 #include "../json/json.h"
+#include <list>
 #include <map>
 #include <string>
-#include <vector>
 
 namespace Model {
+
+typedef unsigned int Id;
+typedef unsigned int ArrayIndex;
 
 /**
  * @todo write description
@@ -54,17 +58,31 @@ class Params {
 
   protected:
     /**
-     * Adds an matchset ID-to-index mapping to a Params object.
+     * Adds a node ID-to-array index mapping to a mapset.
      *
+     * @tparam K
+     *         Type of key.
+     * @tparam V
+     *         Type of value.
      * @param id
-     *        Matchset ID.
+     *        Node ID.
      * @param index
      *        Array index.
-     * @param param
+     * @param mapset
      *        Object to add the mapping to.
      */
+    template <typename K, typename V>
     static void
-    addMatchsetMapping(size_t id, size_t index, Params& param);
+    addMapping(const K& id,
+               const V& index,
+               std::map<K, V>& mapset
+    ) {
+        std::pair< typename std::map<K, V>::iterator, bool > ret;
+        ret = mapset.insert(std::pair<K, V>(id, index));
+        if (!ret.second) {
+            THROW(Exception, "Such a mapping already exists");
+        }
+    }
 
     /**
      * Gets a JSON value of certain name from another JSON value.
@@ -80,61 +98,125 @@ class Params {
     static Json::Value
     getValue(const Json::Value& value, const std::string& name);
 
+    /**
+     * Gets a JSON value as an Id.
+     *
+     * @param value
+     *        JSON value.
+     * @returns The converted value.
+     * @throws Exception
+     *         When the value is not of expected type.
+     */
+    static unsigned int
+    toId(const Json::Value& value);
+
+    /**
+     * Computes the node ID-to-array index mappings for the action nodes of the
+     * function.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    computeMappingsForFunctionActionNodes(const Json::Value& root,
+                                          Params& param);
+
+    /**
+     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Params&) but for the data nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    computeMappingsForFunctionDataNodes(const Json::Value& root,
+                                        Params& param);
+
+    /**
+     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Params&) but for the label nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    computeMappingsForFunctionLabelNodes(const Json::Value& root,
+                                         Params& param);
+
+    /**
+     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Params&) but for the state nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    computeMappingsForFunctionStateNodes(const Json::Value& root,
+                                         Params& param);
+
+    /**
+     * Sets the dominator sets for the function's label nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the dominator sets to.
+     */
+    static void
+    computeDomsetsForFunctionLabelNodes(const Json::Value& root,
+                                        Params& param);
+
+    /**
+     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Params&) but for the pattern instance IDs.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    computeMatchsetMappingsForPatternInstances(const Json::Value& root,
+                                               Params& param);
+
   protected:
-    /**
-     * The number of action nodes in the function.
-     */
-    size_t func_num_action_nodes_;
-
-    /**
-     * Same as #func_num_action_nodes_ but for data nodes.
-     */
-    size_t func_num_data_nodes_;
-
-    /**
-     * Same as #func_num_action_nodes_ but for label nodes.
-     */
-    size_t func_num_label_nodes_;
-
-    /**
-     * Same as #func_num_action_nodes_ but for state nodes.
-     */
-    size_t func_num_state_nodes_;
-
     /**
      * Maps the node ID of an action node to an array index.
      */
-    std::map<size_t, size_t> func_action_node_mappings_;
+    std::map<Id, ArrayIndex> func_action_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for data nodes.
      */
-    std::map<size_t, size_t> func_data_node_mappings_;
+    std::map<Id, ArrayIndex> func_data_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for label nodes.
      */
-    std::map<size_t, size_t> func_label_node_mappings_;
+    std::map<Id, ArrayIndex> func_label_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for state nodes.
      */
-    std::map<size_t, size_t> func_state_node_mappings_;
+    std::map<Id, ArrayIndex> func_state_node_mappings_;
 
     /**
      * The dominator sets for each label node in the function.
      */
-    std::vector< std::vector<size_t> > func_label_domsets_;
+    std::map< Id, std::list<Id> > func_label_domsets_;
 
     /**
-     * The number of pattern instances.
+     * Maps the matchset ID of a matchset to an array index.
      */
-    size_t pat_num_instances_;
-
-    /**
-     * Maps the matchset ID of a matchset to an index array.
-     */
-    std::map<size_t, size_t> pat_matchset_mappings_;
+    std::map<Id, ArrayIndex> pat_matchset_mappings_;
 };
 
 }
