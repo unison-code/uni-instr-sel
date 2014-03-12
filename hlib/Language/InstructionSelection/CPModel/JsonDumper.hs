@@ -52,10 +52,13 @@ instance ToJSON CPModelParams where
 instance ToJSON FunctionGraphData where
   toJSON d =
     object [ "nodes"          .= (funcNodes d)
-           , "label-doms"     .= (funcLabelDoms d)
+           , "label-domsets"  .= map f (funcLabelDoms d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]
+    where f (id, domset) = object [ "dominated-id" .= id
+                                  , "domset"       .= domset
+                                  ]
 
 instance ToJSON PatternGraphData where
   toJSON d =
