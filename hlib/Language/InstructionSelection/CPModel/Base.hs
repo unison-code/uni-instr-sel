@@ -24,8 +24,15 @@ import Language.InstructionSelection.PrettyPrint
 
 
 
+-- | Wrapper for all model parameters.
+
 data CPModelParams
-    = CPModelParams FunctionGraphData [PatternGraphData] MachineData
+    = CPModelParams {
+          funcData :: FunctionGraphData
+        , patInstData :: [PatternInstanceData]
+        , instrData :: [InstructionData]
+        , machData :: MachineData
+      }
     deriving (Show)
 
 -- | Describes the necessary function graph data.
@@ -33,9 +40,17 @@ data CPModelParams
 data FunctionGraphData
     = FunctionGraphData {
 
-          -- | The nodes in the function graph.
+          -- | The action nodes in the function graph.
 
-          funcNodes :: NodePartition
+          funcActionNodes :: [NodeId]
+
+          -- | The entity nodes in the function graph.
+
+        , funcEntityNodes :: [NodeId]
+
+          -- | The label nodes in the function graph.
+
+        , funcLabelNodes :: [NodeId]
 
           -- | The dominator set for the basic blocks, which are represented by
           -- the label nodes.
@@ -51,104 +66,65 @@ data FunctionGraphData
       }
     deriving (Show)
 
--- | Describes the necessary pattern graph data.
+-- | Describes the necessary pattern instance data.
 
-data PatternGraphData
-    = PatternGraphData {
+data PatternInstanceData
+    = PatternInstanceData {
 
-          -- | The pattern ID.
+          -- | The matchset ID.
 
-          patId :: PatternId
+          patMatchsetId :: MatchsetId
 
-          -- | Instruction code size (in bytes).
+          -- | The action nodes in the function graph which are covered by this
+          -- pattern instance.
 
-        , patCodeSize :: Integer
+        , patCoveredActionNodes :: [NodeId]
 
-          -- | Instruction latency (in cycles).
+          -- | The entity nodes in the function graph which are defined by this
+          -- pattern instance.
 
-        , patLatency :: Integer
+        , patDefinedEntityNodes :: [NodeId]
 
-          -- | The nodes in the pattern graph.
+          -- | The entity nodes in the function graph which are used by this
+          -- pattern instance.
 
-        , patNodes :: NodePartition
+        , patUsedEntityNodes :: [NodeId]
 
-          -- | The 'use' and 'def' nodes of type Data.
+          -- | The label nodes in the function graph which are internalized by
+          -- this pattern instance.
 
-        , patDataUseDefs :: UseDefNodes
+        , patInternalizedLabelNodes :: [NodeId]
 
-          -- | The 'use' and 'def' nodes of type Label.
-
-        , patLabelUseDefs :: UseDefNodes
-
-          -- | The 'use' and 'def' nodes of type State.
-
-        , patStateUseDefs :: UseDefNodes
-
-          -- | The pattern constraints, if any.
+          -- | The pattern-specific constraints, if any. All node IDs used in
+          -- the patterns refer to nodes in the function graph (not the pattern
+          -- graph).
 
         , patConstraints :: [Constraint]
 
-          -- | Matches found for this pattern. The matchset IDs must be globally
-          -- unique across all matchsets, but not necessarily contiguous.
+      }
+    deriving (Show)
 
-        , patMatchsets :: [(NodeIdMatchset, MatchsetId)]
+-- | Contains all data related to an instruction.
+
+data InstructionData
+    = InstructionData {
+
+          -- | Code size (in bytes).
+
+          instrCodeSize :: Integer
+
+          -- | Latency (in cycles).
+
+        , instrLatency :: Integer
+
+          -- | The IDs of the matchsets which belong to this instruction.
+
+        , instrMatchsetIds :: [MatchsetId]
 
       }
     deriving (Show)
 
--- | Contains all node IDs within a graph, partitioned after node type.
-
-data NodePartition
-    = NodePartition {
-
-          -- | Unique IDs of the computation nodes.
-
-          computationNodes :: [NodeId]
-
-          -- | Unique IDs of the control nodes.
-
-        , controlNodes :: [NodeId]
-
-          -- | Unique IDs of the data nodes.
-
-        , dataNodes :: [NodeId]
-
-          -- | Unique IDs of the label nodes.
-
-        , labelNodes :: [NodeId]
-
-          -- | Unique IDs of the phi nodes.
-
-        , phiNodes :: [NodeId]
-
-          -- | Unique IDs of the state nodes.
-
-        , stateNodes :: [NodeId]
-
-          -- | Unique IDs of the transfer nodes.
-
-        , transferNodes :: [NodeId]
-
-      }
-    deriving (Show)
-
--- | Contains the 'use' and 'def' nodes of a particular node type.
-
-data UseDefNodes
-    = UseDefNodes {
-
-          -- | Unique IDs of the 'use' nodes.
-
-          useNodes :: [NodeId]
-
-          -- | Unique IDs of the 'def' nodes.
-
-        , defNodes :: [NodeId]
-
-      }
-    deriving (Show)
-
--- | Describes the necessary target machine data.
+-- | Contains the necessary target machine data.
 
 data MachineData
     = MachineData {
@@ -165,44 +141,38 @@ data MachineData
 ------------------------
 
 instance PrettyPrint CPModelParams where
-  prettyShow (CPModelParams func pats m) =
+  prettyShow p =
     "CPModelParams:\n\n"
-    ++ prettyShow func ++ "\n"
-    ++ concatMap (\p -> prettyShow p ++ "\n") pats ++ "\n"
-    ++ prettyShow m
+    ++ prettyShow (funcData p) ++ "\n"
+    ++ concatMap (\d -> prettyShow d ++ "\n") (patInstData p) ++ "\n"
+    ++ concatMap (\d -> prettyShow d ++ "\n") (instrData p) ++ "\n"
+    ++ prettyShow (machData p)
 
 instance PrettyPrint FunctionGraphData where
-  prettyShow p =
+  prettyShow d =
     "FunctionGraphData:\n"
-    ++ prettyShow (funcNodes p) ++ "\n"
-    ++ "Label DOMs: " ++ show (funcLabelDoms p) ++ "\n"
+    ++ "Action nodes: " ++ show (funcActionNodes d) ++ "\n"
+    ++ "Entity nodes: " ++ show (funcEntityNodes d) ++ "\n"
+    ++ "Label nodes: " ++ show (funcLabelNodes d) ++ "\n"
+    ++ "Label DOMs: " ++ show (funcLabelDoms d) ++ "\n"
     ++ "TODO: pretty-print constraints" ++ "\n"
 
-instance PrettyPrint PatternGraphData where
-  prettyShow p =
-    "PatternGraphData (ID " ++ show (patId p) ++ "):\n"
-    ++ prettyShow (patNodes p) ++ "\n"
-    ++ "Data " ++ prettyShow (patDataUseDefs p) ++ "\n"
-    ++ "Label " ++ prettyShow (patLabelUseDefs p) ++ "\n"
-    ++ "State " ++ prettyShow (patStateUseDefs p) ++ "\n"
+instance PrettyPrint PatternInstanceData where
+  prettyShow d =
+    "PatternInstanceData (Matchset ID: " ++ show (patMatchsetId d) ++ "):\n"
+    ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
+    ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
+    ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
+    ++ "Internalized label nodes: "
+    ++ show (patInternalizedLabelNodes d) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
-    ++ "Matchsets:\n" ++ concatMap (\m -> show m ++ "\n") (patMatchsets p)
 
-instance PrettyPrint NodePartition where
-  prettyShow np =
-    "Computation nodes: " ++ show (computationNodes np) ++ "\n"
-    ++ "Control nodes: " ++ show (controlNodes np) ++ "\n"
-    ++ "Data nodes: " ++ show (dataNodes np) ++ "\n"
-    ++ "Label nodes: " ++ show (labelNodes np) ++ "\n"
-    ++ "Phi nodes: " ++ show (phiNodes np) ++ "\n"
-    ++ "State nodes: " ++ show (stateNodes np) ++ "\n"
-    ++ "Transfer nodes: " ++ show (transferNodes np)
-
-instance PrettyPrint UseDefNodes where
-  prettyShow ns =
-    "Use-defs:\n"
-    ++ "Uses: " ++ show (useNodes ns) ++ "\n"
-    ++ "Defs: " ++ show (defNodes ns)
+instance PrettyPrint InstructionData where
+  prettyShow d =
+    "InstructionData:\n"
+    ++ "Code size: " ++ show (instrCodeSize d) ++ "\n"
+    ++ "Latency: " ++ show (instrLatency d) ++ "\n"
+    ++ "Matchset IDs: " ++ show (instrMatchsetIds d) ++ "\n"
 
 instance PrettyPrint MachineData where
-  prettyShow m = "MachineData"
+  prettyShow d = "MachineData"

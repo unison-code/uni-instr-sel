@@ -54,12 +54,14 @@ module Language.InstructionSelection.Graphs.Base (
 , iDom
 , inEdgeNr
 , inEdges
+, isActionNode
 , isComputationNode
 , isComputationNodeType
 , isControlNode
 , isControlNodeType
 , isDataNode
 , isDataNodeType
+, isEntityNode
 , isInGraph
 , isLabelNode
 , isLabelNodeType
@@ -202,6 +204,18 @@ data EdgeLabel
 -------------
 -- Functions
 -------------
+
+isActionNode :: Node -> Bool
+isActionNode n =
+     isComputationNode n
+  || isControlNode n
+  || isPhiNode n
+  || isTransferNode n
+
+isEntityNode :: Node -> Bool
+isEntityNode n =
+     isDataNode n
+  || isStateNode n
 
 isComputationNode :: Node -> Bool
 isComputationNode n = isComputationNodeType $ nodeType n

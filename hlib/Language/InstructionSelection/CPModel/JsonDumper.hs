@@ -43,16 +43,19 @@ toJson = unpack . encode
 ------------------------
 
 instance ToJSON CPModelParams where
-  toJSON (CPModelParams func pats m) =
-    object [ "function"  .= func
-           , "patterns" .= pats
-           , "machine"  .= m
+  toJSON p =
+    object [ "function-data"  .= (funcData p)
+           , "pattern-instance-data" .= (patInstData p)
+           , "instruction-data"  .= (instrData p)
+           , "machine-data"  .= (machData p)
            ]
 
 instance ToJSON FunctionGraphData where
   toJSON d =
-    object [ "nodes"          .= (funcNodes d)
-           , "label-domsets"  .= map f (funcLabelDoms d)
+    object [ "action-nodes"  .= (funcActionNodes d)
+           , "entity-nodes"  .= (funcEntityNodes d)
+           , "label-nodes"   .= (funcLabelNodes d)
+           , "label-domsets" .= map f (funcLabelDoms d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]
@@ -60,43 +63,27 @@ instance ToJSON FunctionGraphData where
                                   , "domset"       .= domset
                                   ]
 
-instance ToJSON PatternGraphData where
+instance ToJSON PatternInstanceData where
   toJSON d =
-    object [ "pattern-id"       .= (patId d)
-           , "code-size"        .= (patCodeSize d)
-           , "latency"          .= (patLatency d)
-           , "nodes"            .= (patNodes d)
-           , "data-nodes-info"  .= (patDataUseDefs d)
-           , "label-nodes-info" .= (patLabelUseDefs d)
-           , "state-nodes-info" .= (patStateUseDefs d)
+    object [ "matchset-id"              .= (patMatchsetId d)
+           , "action-nodes-covered"     .= (patCoveredActionNodes d)
+           , "entity-nodes-defined"     .= (patDefinedEntityNodes d)
+           , "entity-nodes-used"        .= (patUsedEntityNodes d)
+           , "label-nodes-internalized" .= (patInternalizedLabelNodes d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
-           , "matchsets" .= map f (patMatchsets d)
            ]
-    where f (matchset, id) = object [ "matchset-id" .= id
-                                    , "mappings"    .= matchset
-                                    ]
+
+instance ToJSON InstructionData where
+  toJSON d =
+    object [ "code-size" .= (instrCodeSize d)
+           , "latency"   .= (instrLatency d)
+           , "matchsets" .= (instrMatchsetIds d)
+           ]
 
 instance ToJSON MachineData where
   toJSON d =
     object [ -- TODO: implement
-           ]
-
-instance ToJSON UseDefNodes where
-  toJSON ns =
-    object [ "uses" .= (useNodes ns)
-           , "defs" .= (defNodes ns)
-           ]
-
-instance ToJSON NodePartition where
-  toJSON np =
-    object [ "computation-nodes" .= (computationNodes np)
-           , "control-nodes" .= (controlNodes np)
-           , "data-nodes" .= (dataNodes np)
-           , "label-nodes" .= (labelNodes np)
-           , "phi-nodes" .= (phiNodes np)
-           , "state-nodes" .= (stateNodes np)
-           , "transfer-nodes" .= (transferNodes np)
            ]
 
 instance ToJSON Natural where
