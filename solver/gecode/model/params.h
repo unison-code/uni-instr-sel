@@ -45,6 +45,48 @@ typedef unsigned int ArrayIndex;
 class Params {
   public:
     /**
+     * Creates an empty parameter object.
+     */
+    Params(void);
+
+    /**
+     * Destroys this object.
+     */
+    ~Params(void);
+
+    /**
+     * Gets the number of action nodes in the function.
+     *
+     * @returns Number of nodes.
+     */
+    size_t
+    getNumFunctionActionNodes(void) const;
+
+    /**
+     * Gets the number of entity nodes in the function.
+     *
+     * @returns Number of nodes.
+     */
+    size_t
+    getNumFunctionEntityNodes(void) const;
+
+    /**
+     * Gets the number of label nodes in the function.
+     *
+     * @returns Number of nodes.
+     */
+    size_t
+    getNumFunctionLabelNodes(void) const;
+
+    /**
+     * Gets the number of pattern instances.
+     *
+     * @returns Number of instances.
+     */
+    size_t
+    getNumPatternInstances(void) const;
+
+    /**
      * Parses a JSON string into an internal model parameters object.
      *
      * @param str
@@ -126,7 +168,7 @@ class Params {
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
-     * Params&) but for the data nodes.
+     * Params&) but for the entity nodes.
      *
      * @param root
      *        The JSON root value.
@@ -134,8 +176,8 @@ class Params {
      *        Object to add the mappings to.
      */
     static void
-    computeMappingsForFunctionDataNodes(const Json::Value& root,
-                                        Params& param);
+    computeMappingsForFunctionEntityNodes(const Json::Value& root,
+                                          Params& param);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
@@ -148,19 +190,6 @@ class Params {
      */
     static void
     computeMappingsForFunctionLabelNodes(const Json::Value& root,
-                                         Params& param);
-
-    /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
-     * Params&) but for the state nodes.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param param
-     *        Object to add the mappings to.
-     */
-    static void
-    computeMappingsForFunctionStateNodes(const Json::Value& root,
                                          Params& param);
 
     /**
@@ -195,19 +224,14 @@ class Params {
     std::map<Id, ArrayIndex> func_action_node_mappings_;
 
     /**
-     * Same as #func_action_node_mappings_ but for data nodes.
+     * Same as #func_action_node_mappings_ but for entity nodes.
      */
-    std::map<Id, ArrayIndex> func_data_node_mappings_;
+    std::map<Id, ArrayIndex> func_entity_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for label nodes.
      */
     std::map<Id, ArrayIndex> func_label_node_mappings_;
-
-    /**
-     * Same as #func_action_node_mappings_ but for state nodes.
-     */
-    std::map<Id, ArrayIndex> func_state_node_mappings_;
 
     /**
      * The dominator sets for each label node in the function.

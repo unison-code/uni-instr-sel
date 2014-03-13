@@ -34,6 +34,30 @@ using std::list;
 using std::map;
 using std::string;
 
+Params::Params(void) {}
+
+Params::~Params(void) {}
+
+size_t
+Params::getNumFunctionActionNodes(void) const {
+    return func_action_node_mappings_.size();
+}
+
+size_t
+Params::getNumFunctionEntityNodes(void) const {
+    return func_entity_node_mappings_.size();
+}
+
+size_t
+Params::getNumFunctionLabelNodes(void) const {
+    return func_label_node_mappings_.size();
+}
+
+size_t
+Params::getNumPatternInstances(void) const {
+    return pat_matchset_mappings_.size();
+}
+
 void
 Params::parseJson(const string& str, Params& param) {
     Value root;
@@ -43,9 +67,8 @@ Params::parseJson(const string& str, Params& param) {
     }
 
     computeMappingsForFunctionActionNodes(root, param);
-    computeMappingsForFunctionDataNodes(root, param);
+    computeMappingsForFunctionEntityNodes(root, param);
     computeMappingsForFunctionLabelNodes(root, param);
-    computeMappingsForFunctionStateNodes(root, param);
     computeDomsetsForFunctionLabelNodes(root, param);
     computeMatchsetMappingsForPatternInstances(root, param);
 }
@@ -98,7 +121,7 @@ Params::computeMappingsForFunctionActionNodes(
 }
 
 void
-Params::computeMappingsForFunctionDataNodes(
+Params::computeMappingsForFunctionEntityNodes(
     const Value& root,
     Params& param
 ) {
@@ -108,7 +131,12 @@ Params::computeMappingsForFunctionDataNodes(
     for (Value& node_id : getValue(func_nodes, "data-nodes")) {
         addMapping(toId(node_id),
                    index++,
-                   param.func_data_node_mappings_);
+                   param.func_entity_node_mappings_);
+    }
+    for (Value& node_id : getValue(func_nodes, "state-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   param.func_entity_node_mappings_);
     }
 }
 
@@ -124,21 +152,6 @@ Params::computeMappingsForFunctionLabelNodes(
         addMapping(toId(node_id),
                    index++,
                    param.func_label_node_mappings_);
-    }
-}
-
-void
-Params::computeMappingsForFunctionStateNodes(
-    const Value& root,
-    Params& param
-) {
-    Value function(getValue(root, "function"));
-    Value func_nodes(getValue(function, "nodes"));
-    ArrayIndex index = 0;
-    for (Value& node_id : getValue(func_nodes, "state-nodes")) {
-        addMapping(toId(node_id),
-                   index++,
-                   param.func_state_node_mappings_);
     }
 }
 
