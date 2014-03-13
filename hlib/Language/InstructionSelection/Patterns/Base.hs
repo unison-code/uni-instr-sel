@@ -18,6 +18,7 @@
 module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
 , InstProperties (..)
+, InstructionId
 , PatternId
 ) where
 
@@ -27,25 +28,31 @@ import Language.InstructionSelection.Utils (Natural)
 
 
 
+type InstructionId = Natural
 type PatternId = Natural
 
 data Instruction
     = Instruction {
 
-          -- | Assembly string to produce upon code emission.
+          -- | An ID which is globally unique across all instructions, but not
+          -- necessarily contiguous.
 
-          assemblyStr :: AssemblyString
+          instrId :: InstructionId
+
+          -- | Patterns which correspond to the instruction. There must be at
+          -- least one pattern. Each pattern also has a corresponding ID which
+          -- must be globally unique across all patterns and all instructions,
+          -- but not necessarily contiguous.
+
+        , patterns :: [(OpStructure, PatternId)]
 
           -- | Instruction properties.
 
         , instProps :: InstProperties
 
-          -- | Patterns which correspond to the instruction. There must be at
-          -- least one pattern. Each pattern also has a corresponding ID which
-          -- must be globally unique across all instructions, but not
-          -- necessarily contiguous.
+          -- | Assembly string to produce upon code emission.
 
-        , patterns :: [(OpStructure, PatternId)]
+        , assemblyStr :: AssemblyString
 
       }
     deriving (Show)
