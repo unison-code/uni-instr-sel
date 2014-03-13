@@ -24,18 +24,17 @@
 
 
 
-################################################################################
-#
-# MODULE FILES
+#=======================
+# MODULE PATH AND FILES
+#=======================
 
-MODULE-NAME  := model
-MODULE-FILES := params.cpp
+MODULE_PATH  := common/model
+MODULE_FILES := params.cpp
 
 
 
-################################################################################
-#
-# INTERNALS
-# (do not edit!)
+# ========================  BEGINNING OF GENERIC PART  =========================
+# ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
-source-files += $(patsubst %,$(MODULE-NAME)/%,$(MODULE-FILES))
+module-source-filepaths := $(patsubst %,$(MODULE_PATH)/%,$(MODULE_FILES))
+$(eval $(call module-template,$(MODULE_PATH),$(module-source-filepaths)))

@@ -49,11 +49,21 @@ main(int argc, char** argv) {
         Model::Params params;
         Model::Params::parseJson(json_content, params);
 
-        // TODO: create internal CP model
-        // TODO: add constraints
-        // TODO: add branchers
-        // TODO: do solving
-        // TODO: output solution as JSON
+        // Output Minizinc parameters
+        cout << "int: numFuncActionNodes = "
+             << params.getNumFunctionActionNodes()
+             << ";" << endl;
+        cout << "int: numFuncEntityNodes = "
+             << params.getNumFunctionEntityNodes()
+             << ";" << endl;
+        cout << "int: numFuncLabelNodes = "
+             << params.getNumFunctionLabelNodes()
+             << ";" << endl;
+        cout << "int: numPatternInstances = "
+             << params.getNumPatternInstances()
+             << ";" << endl;
+
+        // TODO: output more parameters
     }
     catch (Exception& ex) {
         cerr << "ERROR: " << ex.toString() << endl;

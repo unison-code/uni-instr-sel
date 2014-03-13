@@ -24,86 +24,129 @@
 
 
 
-################################################################################
-#
-# COMPILATION FLAGS
+#===================
+# PROGRAM VARIABLES
+#===================
 
-CPPFLAGS += -Wall -std=c++11
+# The programs (binaries) to build
+PROGRAMS := gecode-solver minizinc-solver
+
+# Contains the application modules, per program
+MODULES_gecode-solver   := common/exceptions \
+                           common/json       \
+                           common/model      \
+                           gecode
+MODULES_minizinc-solver := common/exceptions \
+                           common/json       \
+                           common/model      \
+                           minizinc
+
+# Name of the tarball
+TARBALL_FILENAME := solvers-src
+
+
+
+#===================
+# COMPILATION FLAGS
+#===================
+
+# Flags common to all program builds
+CXXFLAGS += -Wall -std=c++11
 LDFLAGS  +=
 LDLIBS   +=
-CPP      := g++
+
+# Flags specific to the Gecode solver
+CXXFLAGS_gecode-solver +=
+LDFLAGS_gecode-solver  +=
+LDLIBS_gecode-solver   +=
+
+# Flags specific to the Minizinc solver
+CXXFLAGS_minizinc-solver +=
+LDFLAGS_minizinc-solver  +=
+LDLIBS_minizinc-solver   +=
 
 
 
-################################################################################
+# ========================  BEGINNING OF GENERIC PART  =========================
+# ======================== DO NOT EDIT ANYTHING BELOW! =========================
+
+
+#==================================
+# INTERNAL VARIABLES AND FUNCTIONS
+#==================================
+
+all-unique-modules = $(sort $(foreach prog,$(PROGRAMS),$(MODULES_$(prog))))
+all-unique-source-files = $(sort $(all-source-files))
+all-unique-object-files = $(all-unique-source-files:.cpp=.o)
+all-unique-dep-files = $(all-unique-source-files:.cpp=.d)
+
+# Makes a module name by taking a module path, relative to the root, and
+# replaces all slashes (`/') with dashes (`-').
 #
-# APPLICATION-RELATED FILES
+# Arguments:
+#    1: Module path relative to the root.
+make-module-name = $(subst /,-,$(1))
 
-# Contains the application modules
-MODULES := .          \
-           exceptions \
-           json       \
-           model
-TARGET-BINARY := solver
-TARBALL-FILENAME := gecode-solver-src
-
-
-
-################################################################################
+# Creates a variable `<module-name>-object-files' which contains the filepaths
+# of the object files in the module, and appends the module source file to the
+# `all-source-files' variable.
 #
-# INTERNAL VARIALBES
-# (do not edit!)
+# Arguments:
+#    1: Module path.
+#    2: List of module source filepaths.
+define module-template
+  $(call make-module-name,$(1))-object-files := $(2:.cpp=.o)
+  all-source-files += $(2)
+endef
 
-# List of source files; will be appended to by each module (it is assumed that
-# it only contains .cpp files)
-source-files :=
-
-# List of object files to compile and link
-object-files = $(source-files:.cpp=.o)
-
-# List of dependencies for each source file
-dep-files = $(source-files:.cpp=.d)
-
-include $(patsubst %,%/module.mk,$(MODULES))
-
-
-
-################################################################################
+# Creates the prerequisite rules for a given program.
 #
+# Arguments:
+#    1: Program name.
+define program-template
+  $(1): $$(foreach mod,$$(MODULES_$(1)),$$(call $$(call make-module-name,$$(mod))-object-files))
+endef
+
+
+
+#=======
 # RULES
+#=======
 
-all: $(TARGET-BINARY)
+include $(patsubst %,%/module.mk,$(all-unique-modules))
 
-$(TARGET-BINARY): $(object-files)
-	$(CPP) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+.PHONY: all
+all: $(PROGRAMS)
+
+$(foreach prog,$(PROGRAMS),$(eval $(call program-template,$(prog))))
+
+$(PROGRAMS):
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),distclean)
 ifneq ($(MAKECMDGOALS),docs)
--include $(dep-files)
+-include $(all-unique-dep-files)
 endif
 endif
 endif
-
-define make-depends
-$(CPP) $(CPPFLAGS) -M -MT "$(<:.cpp=.o) $@" $< > $@
-endef
 
 %.d: %.cpp
-	$(make-depends)
+	$(CXX) $(CXXFLAGS) -M -MT "$(<:.cpp=.o) $@" $< > $@
 
 .PHONY: clean
 clean:
-	-$(RM) -f $(object-files)
+	-$(RM) $(all-unique-object-files)
 
 .PHONY: clean-deps
 clean-deps:
-	-$(RM) -f $(dep-files)
+	-$(RM) $(all-unique-dep-files)
 
 .PHONY: distclean
 distclean: clean clean-deps
-	-$(RM) -f $(TARGET-BINARY)
+	-$(RM) $(PROGRAMS)
 
+# TODO: fix
 .PHONY: docs
 docs:
 	doxygen dox
@@ -112,5 +155,5 @@ docs:
 tarball: all
 	$(MAKE) clean clean-deps
 	$(MAKE) docs
-	tar -cvf $(TARBALL-FILENAME).tar ../$$(basename $$(pwd))
-	gzip $(TARBALL-FILENAME).tar
+	tar -cvf $(TARBALL_FILENAME).tar ../$$(basename $$(pwd))
+	gzip $(TARBALL_FILENAME).tar

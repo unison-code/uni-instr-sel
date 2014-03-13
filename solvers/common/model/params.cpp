@@ -28,6 +28,11 @@
 #include "../json/json.h"
 #include "../exceptions/exception.h"
 
+// TODO: remove
+#include <iostream>
+using std::cout;
+using std::endl;
+
 using namespace Json;
 using namespace Model;
 using std::list;
@@ -71,6 +76,9 @@ Params::parseJson(const string& str, Params& param) {
     computeMappingsForFunctionLabelNodes(root, param);
     computeDomsetsForFunctionLabelNodes(root, param);
     computeMatchsetMappingsForPatternInstances(root, param);
+
+    // TODO: remove
+    cout << root << endl;
 }
 
 Value

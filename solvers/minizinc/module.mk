@@ -28,8 +28,8 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_PATH  := common/exceptions
-MODULE_FILES := exception.cpp
+MODULE_PATH  := minizinc
+MODULE_FILES := main.cpp
 
 
 

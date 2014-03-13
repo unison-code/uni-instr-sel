@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Gabriel Hjort Blindell <ghb@kth.se>
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,18 +24,17 @@
 
 
 
-################################################################################
-#
-# MODULE FILES
+#=======================
+# MODULE PATH AND FILES
+#=======================
 
-MODULE-NAME  := .
-MODULE-FILES := main.cpp
+MODULE_PATH  := gecode
+MODULE_FILES := main.cpp
 
 
 
-################################################################################
-#
-# INTERNALS
-# (do not edit!)
+# ========================  BEGINNING OF GENERIC PART  =========================
+# ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
-source-files += $(patsubst %,$(MODULE-NAME)/%,$(MODULE-FILES))
+module-source-filepaths := $(patsubst %,$(MODULE_PATH)/%,$(MODULE_FILES))
+$(eval $(call module-template,$(MODULE_PATH),$(module-source-filepaths)))
