@@ -32,52 +32,59 @@ import Language.InstructionSelection.Utils (removeDuplicates)
 -- Functions
 -------------
 
-mkParams :: OpStructure -- ^ The function function.
+mkParams :: OpStructure -- ^ Function data.
             -> [( OpStructure
                 , [(NodeMatchset, MatchsetId)]
-                , InstProperties
-                , PatternId
-                )] -- ^ The patterns.
+                )] -- ^ Pattern instance data.
+            -> [(InstProperties, [MatchsetId])] -- ^ Instruction data.
             -> CPModelParams
-mkParams func pats =
+mkParams func pats insts =
   CPModelParams (mkFunctionGraphData func)
-                (map mkPatternGraphData pats)
+                (concatMap mkPatternInstanceData pats)
+                (map mkInstructionData insts)
                 -- TODO: fix building of machine data
-               MachineData
+                MachineData
 
 mkFunctionGraphData :: OpStructure -> FunctionGraphData
 mkFunctionGraphData os =
   let g = osGraph os
-  in FunctionGraphData (mkNodePartition g)
+  in FunctionGraphData (getUniqueNodeIdsByType g isActionNode)
+                       (getUniqueNodeIdsByType g isEntityNode)
+                       (getUniqueNodeIdsByType g isLabelNode)
                        (computeLabelDoms g)
                        (osConstraints os)
 
-mkPatternGraphData :: ( OpStructure
-                      , [(NodeMatchset, MatchsetId)]
-                      , InstProperties
-                      , PatternId
-                      )
-                      -> PatternGraphData
-mkPatternGraphData (os, matchsets, props, id) =
+mkPatternInstanceData :: ( OpStructure
+                         , [(NodeMatchset, MatchsetId)]
+                         )
+                      -> [PatternInstanceData]
+mkPatternInstanceData (os, matchsets) =
   let g = osGraph os
+      action_ns = (getUniqueNodeIdsByType g isActionNode)
+      entity_ns = (getUniqueNodeIdsByType g isActionNode)
+
       (node_matchsets, matchset_ids) = unzip matchsets
       id_matchsets = map convertMatchsetNToId node_matchsets
-  in PatternGraphData id
-                      (codeSize props)
-                      (latency props)
-                      (mkNodePartition g)
-                      (mkUseDefs g isDataNode)
-                      (mkUseDefs g isLabelNode)
-                      (mkUseDefs g isStateNode)
-                      (osConstraints os)
-                      (zip id_matchsets matchset_ids)
+  -- TODO: implement
+  in [PatternInstanceData 0
+                          []
+                          []
+                          []
+                          []
+                          -- TODO: convert node IDs in constraints
+                          (osConstraints os)]
 
-mkUseDefs :: Graph -> (Node -> Bool) -> UseDefNodes
-mkUseDefs g f =
-  let nodes = filter f (allNodes g)
-      use_nodes = filter (\n -> length (successors g n) > 0) nodes
-      def_nodes = filter (\n -> length (predecessors g n) > 0) nodes
-  in UseDefNodes (map nodeId use_nodes) (map nodeId def_nodes)
+mkInstructionData :: (InstProperties, [MatchsetId]) -> InstructionData
+mkInstructionData (props, matchsets) =
+  -- TODO: implement
+  InstructionData 0 0 []
+
+-- TODO: remove
+--mkUseDefs g f =
+--  let nodes = filter f (allNodes g)
+--      use_nodes = filter (\n -> length (successors g n) > 0) nodes
+--      def_nodes = filter (\n -> length (predecessors g n) > 0) nodes
+--  in UseDefNodes (map nodeId use_nodes) (map nodeId def_nodes)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's
@@ -91,16 +98,6 @@ delNodeKeepEdges g n =
   in if length preds > 0
         then mergeNodes (head preds) n g
         else delNode n g
-
-mkNodePartition :: Graph -> NodePartition
-mkNodePartition g =
-  NodePartition (getUniqueNodeIdsByType g isComputationNode)
-                (getUniqueNodeIdsByType g isControlNode)
-                (getUniqueNodeIdsByType g isDataNode)
-                (getUniqueNodeIdsByType g isLabelNode)
-                (getUniqueNodeIdsByType g isPhiNode)
-                (getUniqueNodeIdsByType g isStateNode)
-                (getUniqueNodeIdsByType g isTransferNode)
 
 getUniqueNodeIdsByType :: Graph -> (Node -> Bool) -> [NodeId]
 getUniqueNodeIdsByType g f =
