@@ -51,17 +51,15 @@ TARBALL_FILENAME := solvers-src
 #===================
 
 # Flags common to all program builds
-CXXFLAGS += -std=c++11
+CXXFLAGS += -Wall -std=c++11
 LDFLAGS  +=
 LDLIBS   +=
 
-# Flags specific to the Gecode solver
-CXXFLAGS_gecode-solver += -Wall
+# Flags specific to building the Gecode solver
 LDFLAGS_gecode-solver  +=
 LDLIBS_gecode-solver   +=
 
-# Flags specific to the Minizinc solver
-CXXFLAGS_minizinc-solver +=
+# Flags specific to building the Minizinc solver
 LDFLAGS_minizinc-solver  +=
 LDLIBS_minizinc-solver   +=
 
@@ -102,12 +100,27 @@ define module-template
   all-source-files += $(2)
 endef
 
-# Creates the prerequisite rules for a given program.
+# Creates the prerequisite rules and target-specific variables for a given
+# program.
 #
 # Arguments:
 #    1: Program name.
 define program-template
-  $(1): $$(foreach mod,$$(MODULES_$(1)),$$(call $$(call make-module-name,$$(mod))-object-files))
+  $(1): $$(foreach mod,$$(MODULES_$(1)),\
+                   $$(call $$(call make-module-name,$$(mod))-object-files))
+  $(1): LDFLAGS += $(LDFLAGS_$(1))
+  $(1): LDLIBS += $(LDLIBS_$(1))
+endef
+
+# Executes doxygen if a `dox' file is found within the module.
+#
+# Arguments:
+#    1: Module path.
+define make-docs
+	if [ -f "$(1)/dox" ]; then \
+		cd $(1); \
+		doxygen dox; \
+	fi;
 endef
 
 
@@ -123,13 +136,6 @@ all: $(PROGRAMS)
 
 $(foreach prog,$(PROGRAMS),$(eval $(call program-template,$(prog))))
 
-# TODO: set these target-specific variables through a $(foreach ...) instead
-# since second expansion doesn't seem to work as intended in 3.81
-
-.SECONDEXPANSION:
-$(PROGRAMS): CXXFLAGS += $(CXXFLAGS_$$@)
-$(PROGRAMS): LDFLAGS += $(LDFLAGS_$@)
-$(PROGRAMS): LDLIBS += $(LDLIBS_$@)
 $(PROGRAMS):
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -156,10 +162,9 @@ clean-deps:
 distclean: clean clean-deps
 	-$(RM) $(PROGRAMS)
 
-# TODO: fix
 .PHONY: docs
 docs:
-	doxygen dox
+	$(foreach mod,$(all-unique-modules),$(call make-docs,$(mod)))
 
 .PHONY: tarball
 tarball: all
