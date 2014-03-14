@@ -75,7 +75,6 @@ main =
          pattern_os = OpStructure pattern []
          matchsets = match search pattern
          matchsets_with_ids = zip matchsets [0..]
-         -- TODO: fix call to use correct parameters
          params = mkParams search_os
                            [( pattern_os
                             , matchsets_with_ids
