@@ -75,9 +75,7 @@ mkPatternInstanceData (os, matchsets) =
                           (osConstraints os)]
 
 mkInstructionData :: (InstProperties, [MatchsetId]) -> InstructionData
-mkInstructionData (props, matchsets) =
-  -- TODO: implement
-  InstructionData 0 0 []
+mkInstructionData (props, matchsets) = InstructionData props matchsets
 
 -- TODO: remove
 --mkUseDefs g f =

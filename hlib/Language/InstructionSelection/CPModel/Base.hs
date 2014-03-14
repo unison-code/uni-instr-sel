@@ -19,7 +19,7 @@ import Language.InstructionSelection.Graphs ( MatchsetId
                                             , NodeIdMatchset
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
-import Language.InstructionSelection.Patterns (PatternId)
+import Language.InstructionSelection.Patterns (InstProperties (..))
 import Language.InstructionSelection.PrettyPrint
 
 
@@ -109,13 +109,7 @@ data PatternInstanceData
 data InstructionData
     = InstructionData {
 
-          -- | Code size (in bytes).
-
-          instrCodeSize :: Integer
-
-          -- | Latency (in cycles).
-
-        , instrLatency :: Integer
+          instrProps :: InstProperties
 
           -- | The IDs of the matchsets which belong to this instruction.
 
@@ -170,8 +164,8 @@ instance PrettyPrint PatternInstanceData where
 instance PrettyPrint InstructionData where
   prettyShow d =
     "InstructionData:\n"
-    ++ "Code size: " ++ show (instrCodeSize d) ++ "\n"
-    ++ "Latency: " ++ show (instrLatency d) ++ "\n"
+    ++ "Code size: " ++ show (codeSize $ instrProps d) ++ "\n"
+    ++ "Latency: " ++ show (latency $ instrProps d) ++ "\n"
     ++ "Matchset IDs: " ++ show (instrMatchsetIds d) ++ "\n"
 
 instance PrettyPrint MachineData where

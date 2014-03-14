@@ -22,7 +22,7 @@ import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs ( MatchsetId
                                             , NodeId
                                             , NodeIdMatchset)
-import Language.InstructionSelection.Patterns (PatternId)
+import Language.InstructionSelection.Patterns (InstProperties (..))
 import Language.InstructionSelection.Utils (Natural, fromNatural)
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (unpack)
@@ -76,8 +76,8 @@ instance ToJSON PatternInstanceData where
 
 instance ToJSON InstructionData where
   toJSON d =
-    object [ "code-size" .= (instrCodeSize d)
-           , "latency"   .= (instrLatency d)
+    object [ "code-size" .= (codeSize $ instrProps d)
+           , "latency"   .= (latency $ instrProps d)
            , "matchsets" .= (instrMatchsetIds d)
            ]
 
