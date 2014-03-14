@@ -72,9 +72,14 @@ module Language.InstructionSelection.Graphs.Base (
 , isTransferNode
 , isTransferNodeType
 , lastAddedNode
+, mapToPatternNodeIds
+, mapToPatternNodes
+, mapToSearchNodeIds
+, mapToSearchNodes
 , mergeNodes
 , mkGraph
 , nodeId
+, nodeIds
 , nodeInfo
 , nodeLabel
 , nodesByNodeId
@@ -98,7 +103,10 @@ module Language.InstructionSelection.Graphs.Base (
 
 import Language.InstructionSelection.DataTypes
 import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Utils
+import Language.InstructionSelection.Utils ( Natural
+                                           , removeDuplicates
+                                           , toNatural
+                                           )
 import qualified Data.Graph.Inductive as I
 import Data.List (sortBy)
 import Data.Maybe
@@ -629,3 +637,37 @@ convertMatchsetNToId node_maps =
 
 convertMappingNToId :: NodeMapping -> NodeIdMapping
 convertMappingNToId (n1, n2) = (nodeId n1, nodeId n2)
+
+-- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
+
+nodeIds :: [Node] -> [NodeId]
+nodeIds = removeDuplicates . map nodeId
+
+-- | For a list of nodes in the search graph and a node mapping, get the pattern
+-- nodes which has a corresponding mapping to a search node in the list.
+
+mapToPatternNodes :: [Node]          -- ^ List of search graph nodes.
+                     -> NodeMatchset -- ^ Search-to-pattern matchset.
+                     -> [Node]       -- ^ List of pattern graph nodes.
+mapToPatternNodes ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
+
+-- | Same as `mapToPatternNodes` but goes in the other direction.
+
+mapToSearchNodes :: [Node]          -- ^ List of pattern graph nodes.
+                    -> NodeMatchset -- ^ Search-to-pattern matchset.
+                    -> [Node]       -- ^ List of search graph nodes.
+mapToSearchNodes ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n2]
+
+-- | Same as `mapToPatternNodes` but operates on `NodeId`s instead of `Node`s.
+
+mapToPatternNodeIds :: [NodeId]          -- ^ List of search graph node IDs.
+                       -> NodeIdMatchset -- ^ Search-to-pattern matchset.
+                       -> [NodeId]       -- ^ List of pattern graph node IDs.
+mapToPatternNodeIds ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
+
+-- | Same as `mapToPatternNodeIds` but goes in the other direction.
+
+mapToSearchNodeIds :: [NodeId]          -- ^ List of pattern graph node IDs.
+                      -> NodeIdMatchset -- ^ Search-to-pattern matchset.
+                      -> [NodeId]       -- ^ List of search graph node IDs.
+mapToSearchNodeIds ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n2]

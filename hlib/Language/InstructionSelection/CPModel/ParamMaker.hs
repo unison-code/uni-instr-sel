@@ -24,7 +24,6 @@ import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns ( InstProperties (..)
                                               , PatternId
                                               )
-import Language.InstructionSelection.Utils (removeDuplicates)
 
 
 
@@ -48,9 +47,10 @@ mkParams func pats insts =
 mkFunctionGraphData :: OpStructure -> FunctionGraphData
 mkFunctionGraphData os =
   let g = osGraph os
-  in FunctionGraphData (getUniqueNodeIdsByType g isActionNode)
-                       (getUniqueNodeIdsByType g isEntityNode)
-                       (getUniqueNodeIdsByType g isLabelNode)
+      nodeIdsByType f = nodeIds $ filter f $ allNodes g
+  in FunctionGraphData (nodeIdsByType isActionNode)
+                       (nodeIdsByType isEntityNode)
+                       (nodeIdsByType isLabelNode)
                        (computeLabelDoms g)
                        (osConstraints os)
 
@@ -60,29 +60,46 @@ mkPatternInstanceData :: ( OpStructure
                       -> [PatternInstanceData]
 mkPatternInstanceData (os, matchsets) =
   let g = osGraph os
-      action_ns = (getUniqueNodeIdsByType g isActionNode)
-      entity_ns = (getUniqueNodeIdsByType g isActionNode)
+      a_ns = (nodeIds $ filter isActionNode $ allNodes g)
+      entityNodes p = nodeIds
+                      $ filter (\n -> length (p g n) > 0)
+                      $ filter isEntityNode
+                      $ allNodes g
+      e_def_ns = entityNodes successors
+      e_use_ns = entityNodes predecessors
+      l_int_ns = nodeIds
+                 $ filter (\n -> length (predecessors g n) > 0)
+                 $ filter (\n -> length (successors g n) > 0)
+                 $ filter isLabelNode
+                 $ allNodes g
+      f (m, id) = mkPatternInstanceData' a_ns
+                                         e_def_ns
+                                         e_use_ns
+                                         l_int_ns
+                                         (osConstraints os)
+                                         (convertMatchsetNToId m)
+                                         id
+  in map f matchsets
 
-      (node_matchsets, matchset_ids) = unzip matchsets
-      id_matchsets = map convertMatchsetNToId node_matchsets
-  -- TODO: implement
-  in [PatternInstanceData 0
-                          []
-                          []
-                          []
-                          []
-                          -- TODO: convert node IDs in constraints
-                          (osConstraints os)]
+mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
+                          -> [NodeId] -- ^ Defined entity nodes.
+                          -> [NodeId] -- ^ Used entity nodes.
+                          -> [NodeId] -- ^ Internalized label nodes.
+                          -> [Constraint]
+                          -> NodeIdMatchset
+                          -> MatchsetId
+                          -> PatternInstanceData
+mkPatternInstanceData' a_ns e_def_ns e_use_ns l_ns cs matchset id =
+  PatternInstanceData id
+                      (mapToPatternNodeIds a_ns matchset)
+                      (mapToPatternNodeIds e_def_ns matchset)
+                      (mapToPatternNodeIds e_use_ns matchset)
+                      (mapToPatternNodeIds l_ns matchset)
+                      -- TODO: convert node IDs in constraints
+                      cs
 
 mkInstructionData :: (InstProperties, [MatchsetId]) -> InstructionData
 mkInstructionData (props, matchsets) = InstructionData props matchsets
-
--- TODO: remove
---mkUseDefs g f =
---  let nodes = filter f (allNodes g)
---      use_nodes = filter (\n -> length (successors g n) > 0) nodes
---      def_nodes = filter (\n -> length (predecessors g n) > 0) nodes
---  in UseDefNodes (map nodeId use_nodes) (map nodeId def_nodes)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's
@@ -96,10 +113,6 @@ delNodeKeepEdges g n =
   in if length preds > 0
         then mergeNodes (head preds) n g
         else delNode n g
-
-getUniqueNodeIdsByType :: Graph -> (Node -> Bool) -> [NodeId]
-getUniqueNodeIdsByType g f =
-  removeDuplicates $ map (nodeId) $ filter (f) $ allNodes g
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
