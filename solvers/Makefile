@@ -51,12 +51,12 @@ TARBALL_FILENAME := solvers-src
 #===================
 
 # Flags common to all program builds
-CXXFLAGS += -Wall -std=c++11
+CXXFLAGS += -std=c++11
 LDFLAGS  +=
 LDLIBS   +=
 
 # Flags specific to the Gecode solver
-CXXFLAGS_gecode-solver +=
+CXXFLAGS_gecode-solver += -Wall
 LDFLAGS_gecode-solver  +=
 LDLIBS_gecode-solver   +=
 
@@ -86,6 +86,9 @@ all-unique-dep-files = $(all-unique-source-files:.cpp=.d)
 # Arguments:
 #    1: Module path relative to the root.
 make-module-name = $(subst /,-,$(1))
+
+# Gets the path of the currently loaded module makefile.
+get-this-module-path = $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 
 # Creates a variable `<module-name>-object-files' which contains the filepaths
 # of the object files in the module, and appends the module source file to the
@@ -120,6 +123,13 @@ all: $(PROGRAMS)
 
 $(foreach prog,$(PROGRAMS),$(eval $(call program-template,$(prog))))
 
+# TODO: set these target-specific variables through a $(foreach ...) instead
+# since second expansion doesn't seem to work as intended in 3.81
+
+.SECONDEXPANSION:
+$(PROGRAMS): CXXFLAGS += $(CXXFLAGS_$$@)
+$(PROGRAMS): LDFLAGS += $(LDFLAGS_$@)
+$(PROGRAMS): LDLIBS += $(LDLIBS_$@)
 $(PROGRAMS):
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -132,7 +142,7 @@ endif
 endif
 
 %.d: %.cpp
-	$(CXX) $(CXXFLAGS) -M -MT "$(<:.cpp=.o) $@" $< > $@
+	$(CXX) -M -MT "$(<:.cpp=.o) $@" $< > $@
 
 .PHONY: clean
 clean:

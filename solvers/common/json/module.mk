@@ -28,7 +28,6 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_PATH  := common/json
 MODULE_FILES := json.cpp
 
 
@@ -36,5 +35,6 @@ MODULE_FILES := json.cpp
 # ========================  BEGINNING OF GENERIC PART  =========================
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
-module-source-filepaths := $(patsubst %,$(MODULE_PATH)/%,$(MODULE_FILES))
-$(eval $(call module-template,$(MODULE_PATH),$(module-source-filepaths)))
+this-module-path = $(call get-this-module-path)
+module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(MODULE_FILES))
+$(eval $(call module-template,$(this-module-path),$(module-source-filepaths)))
