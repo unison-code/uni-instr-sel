@@ -156,7 +156,8 @@ data CompOpType
 
     deriving (Show, Eq)
 
--- | Control operations.
+-- | Control operations. This data type has a special implementation of the Eq
+-- class where `AnyControl' is equal to any other ControlOp.
 
 data ControlOp
 
@@ -172,7 +173,14 @@ data ControlOp
 
     | Ret
 
-    deriving (Show, Eq)
+      -- | An arbitrary control type. This is only to be used within the generic
+      -- phi patterns to provide access to the label nodes from which the data
+      -- originates without enforcing a covering of the control nodes
+      -- themselves.
+
+    | AnyControl
+
+    deriving (Show)
 
 
 
@@ -201,9 +209,17 @@ isOpTypeCommutative op =
 
 
 
--------------------------
--- Class implementations
--------------------------
+------------------------
+-- Type class instances
+------------------------
+
+instance Eq ControlOp where
+  CondBranch == CondBranch = True
+  UncondBranch == UncondBranch = True
+  Ret == Ret = True
+  AnyControl == _ = True
+  _ == AnyControl = True
+  _ == _ = False
 
 instance PrettyPrint CompOp where
   prettyShow = prettyShow . getCompOpType
