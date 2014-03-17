@@ -95,25 +95,9 @@ Params::computeMappingsForFunctionActionNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function"));
-    Value func_nodes(getValue(function, "nodes"));
+    Value function(getValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(func_nodes, "computation-nodes")) {
-        addMapping(toId(node_id),
-                   index++,
-                   param.func_action_node_mappings_);
-    }
-    for (Value& node_id : getValue(func_nodes, "control-nodes")) {
-        addMapping(toId(node_id),
-                   index++,
-                   param.func_action_node_mappings_);
-    }
-    for (Value& node_id : getValue(func_nodes, "phi-nodes")) {
-        addMapping(toId(node_id),
-                   index++,
-                   param.func_action_node_mappings_);
-    }
-    for (Value& node_id : getValue(func_nodes, "transfer-nodes")) {
+    for (Value& node_id : getValue(function, "action-nodes")) {
         addMapping(toId(node_id),
                    index++,
                    param.func_action_node_mappings_);
@@ -125,15 +109,9 @@ Params::computeMappingsForFunctionEntityNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function"));
-    Value func_nodes(getValue(function, "nodes"));
+    Value function(getValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(func_nodes, "data-nodes")) {
-        addMapping(toId(node_id),
-                   index++,
-                   param.func_entity_node_mappings_);
-    }
-    for (Value& node_id : getValue(func_nodes, "state-nodes")) {
+    for (Value& node_id : getValue(function, "entity-nodes")) {
         addMapping(toId(node_id),
                    index++,
                    param.func_entity_node_mappings_);
@@ -145,10 +123,9 @@ Params::computeMappingsForFunctionLabelNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function"));
-    Value func_nodes(getValue(function, "nodes"));
+    Value function(getValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(func_nodes, "label-nodes")) {
+    for (Value& node_id : getValue(function, "label-nodes")) {
         addMapping(toId(node_id),
                    index++,
                    param.func_label_node_mappings_);
@@ -160,7 +137,7 @@ Params::computeDomsetsForFunctionLabelNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function"));
+    Value function(getValue(root, "function-data"));
     for (Value& entry : getValue(function, "label-domsets")) {
         Id dominated_id = toId(getValue(entry, "dominated-id"));
         list<Id> domset;
@@ -179,11 +156,9 @@ Params::computeMatchsetMappingsForPatternInstances(
     Params& param
 ) {
     ArrayIndex index = 0;
-    for (Value& pattern : getValue(root, "patterns")) {
-        for (Value& matchset : getValue(pattern, "matchsets")) {
-            addMapping(toId(getValue(matchset, "matchset-id")),
-                       index++,
-                       param.pat_matchset_mappings_);
-        }
+    for (Value& pattern : getValue(root, "pattern-instance-data")) {
+        addMapping(toId(getValue(pattern, "matchset-id")),
+                   index++,
+                   param.pat_matchset_mappings_);
     }
 }
