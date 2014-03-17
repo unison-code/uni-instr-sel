@@ -91,10 +91,10 @@ mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> PatternInstanceData
 mkPatternInstanceData' a_ns e_def_ns e_use_ns l_ns cs matchset id =
   PatternInstanceData id
-                      (mapToPatternNodeIds a_ns matchset)
-                      (mapToPatternNodeIds e_def_ns matchset)
-                      (mapToPatternNodeIds e_use_ns matchset)
-                      (mapToPatternNodeIds l_ns matchset)
+                      (mapToSearchNodeIds a_ns matchset)
+                      (mapToSearchNodeIds e_def_ns matchset)
+                      (mapToSearchNodeIds e_use_ns matchset)
+                      (mapToSearchNodeIds l_ns matchset)
                       -- TODO: convert node IDs in constraints
                       cs
 

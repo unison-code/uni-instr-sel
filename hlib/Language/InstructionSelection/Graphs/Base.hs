@@ -656,7 +656,7 @@ mapToPatternNodes ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
 mapToSearchNodes :: [Node]          -- ^ List of pattern graph nodes.
                     -> NodeMatchset -- ^ Search-to-pattern matchset.
                     -> [Node]       -- ^ List of search graph nodes.
-mapToSearchNodes ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n2]
+mapToSearchNodes ns m = [ n1 | (n1, n2) <- m, n <- ns, n == n2]
 
 -- | Same as `mapToPatternNodes` but operates on `NodeId`s instead of `Node`s.
 
@@ -670,4 +670,4 @@ mapToPatternNodeIds ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
 mapToSearchNodeIds :: [NodeId]          -- ^ List of pattern graph node IDs.
                       -> NodeIdMatchset -- ^ Search-to-pattern matchset.
                       -> [NodeId]       -- ^ List of search graph node IDs.
-mapToSearchNodeIds ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n2]
+mapToSearchNodeIds ns m = [ n1 | (n1, n2) <- m, n <- ns, n == n2]
