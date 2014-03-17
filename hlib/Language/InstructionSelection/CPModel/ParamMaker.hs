@@ -68,8 +68,7 @@ mkPatternInstanceData (os, matchsets) =
       e_def_ns = entityNodes successors
       e_use_ns = entityNodes predecessors
       l_int_ns = nodeIds
-                 $ filter (\n -> length (predecessors g n) > 0)
-                 $ filter (\n -> length (successors g n) > 0)
+                 $ filter (\n -> any isRealControlNode (predecessors g n))
                  $ filter isLabelNode
                  $ allNodes g
       f (m, id) = mkPatternInstanceData' a_ns
