@@ -20,12 +20,15 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Language.InstructionSelection.Graphs.Base (
   BBLabel
 , Edge
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
+, Matchable (..)
 , MatchsetId
 , NodeIdMatchset
 , NodeMatchset
@@ -55,7 +58,6 @@ module Language.InstructionSelection.Graphs.Base (
 , inEdgeNr
 , inEdges
 , isActionNode
-, isAnyControlNodeType
 , isComputationNode
 , isComputationNodeType
 , isControlNode
@@ -63,13 +65,13 @@ module Language.InstructionSelection.Graphs.Base (
 , isDataNode
 , isDataNodeType
 , isEntityNode
-, isFakeControlNode
 , isInGraph
 , isLabelNode
 , isLabelNodeType
+, isNullNode
+, isNullNodeType
 , isPhiNode
 , isPhiNodeType
-, isRealControlNode
 , isStateNode
 , isStateNodeType
 , isTransferNode
@@ -113,6 +115,18 @@ import Language.InstructionSelection.Utils ( Natural
 import qualified Data.Graph.Inductive as I
 import Data.List (sortBy)
 import Data.Maybe
+
+
+
+----------------
+-- Type classes
+----------------
+
+class Matchable a where
+
+  -- | Checks if one type matches another.
+
+  matches :: a -> a -> Bool
 
 
 
@@ -176,8 +190,8 @@ data NodeInfo
     deriving (Show, Eq)
 
 data NodeType
-    = ComputationNode O.CompOp
-    | ControlNode O.ControlOp
+    = ComputationNode { compOpType :: O.CompOp }
+    | ControlNode { contOpType :: O.ControlOp }
 
       -- | Temporary and constant nodes (appearing in IR and pattern code), as
       -- well as register and immediate nodes (appearing only in pattern code),
@@ -189,6 +203,12 @@ data NodeType
     | PhiNode
     | StateNode
     | TransferNode
+
+      -- | A node which matches any other node, meaning that @n == m@ is always
+      -- @True@ if either @n@ or @m@ is of type `NullNode'. Only to be used
+      -- within patterns (like in the generic phi patterns).
+
+    | NullNode
 
     deriving (Show, Eq)
 
@@ -209,6 +229,27 @@ data EdgeLabel
           EdgeNr
 
     deriving (Show,Eq)
+
+
+
+------------------------
+-- Type class instances
+------------------------
+
+instance Matchable (I.LNode NodeLabel) where
+  n1 `matches` n2 = (nodeType n1) `matches` (nodeType n2)
+
+instance Matchable NodeType where
+  (ComputationNode op1) `matches` (ComputationNode op2) = op1 == op2
+  (ControlNode op1) `matches` (ControlNode op2) = op1 == op2
+  (DataNode d1) `matches` (DataNode d2) = d1 == d2
+  (LabelNode _) `matches` (LabelNode _) = True
+  PhiNode `matches` PhiNode = True
+  StateNode `matches` StateNode = True
+  TransferNode `matches` TransferNode = True
+  NullNode `matches` _ = True
+  _ `matches` NullNode = True
+  _ `matches` _ = False
 
 
 
@@ -234,21 +275,14 @@ isComputationNode n = isComputationNodeType $ nodeType n
 isControlNode :: Node -> Bool
 isControlNode n = isControlNodeType $ nodeType n
 
--- | Checks if a node is a control node not of type `AnyControl`.
-
-isRealControlNode :: Node -> Bool
-isRealControlNode n = isControlNode n && not (isAnyControlNodeType $ nodeType n)
-
--- | Checks if a node is a control node of type `AnyControl`.
-
-isFakeControlNode :: Node -> Bool
-isFakeControlNode n = isControlNode n && (isAnyControlNodeType $ nodeType n)
-
 isDataNode :: Node -> Bool
 isDataNode n = isDataNodeType $ nodeType n
 
 isLabelNode :: Node -> Bool
 isLabelNode n = isLabelNodeType $ nodeType n
+
+isNullNode :: Node -> Bool
+isNullNode n = isNullNodeType $ nodeType n
 
 isPhiNode :: Node -> Bool
 isPhiNode n = isPhiNodeType $ nodeType n
@@ -267,10 +301,6 @@ isControlNodeType :: NodeType -> Bool
 isControlNodeType (ControlNode _) = True
 isControlNodeType _ = False
 
-isAnyControlNodeType :: NodeType -> Bool
-isAnyControlNodeType (ControlNode O.AnyControl) = True
-isAnyControlNodeType _ = False
-
 isDataNodeType :: NodeType -> Bool
 isDataNodeType (DataNode _) = True
 isDataNodeType _ = False
@@ -278,6 +308,10 @@ isDataNodeType _ = False
 isLabelNodeType :: NodeType -> Bool
 isLabelNodeType (LabelNode _) = True
 isLabelNodeType _ = False
+
+isNullNodeType :: NodeType -> Bool
+isNullNodeType NullNode = True
+isNullNodeType _ = False
 
 isPhiNodeType :: NodeType -> Bool
 isPhiNodeType PhiNode = True

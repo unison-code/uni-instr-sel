@@ -94,7 +94,7 @@ checkSemantics :: Graph           -- ^ The search graph.
                   -> NodeMapping  -- ^ Candidate mapping.
                   -> Bool
 checkSemantics sg pg st (n, m) =
-  (nodeType n) == (nodeType m) && (checkEdges sg pg st (n, m))
+  (nodeType n) `matches` (nodeType m) && (checkEdges sg pg st (n, m))
 
 -- | Checks that for nodes with ordered edges the edges match.
 
