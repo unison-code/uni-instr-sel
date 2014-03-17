@@ -55,6 +55,7 @@ module Language.InstructionSelection.Graphs.Base (
 , inEdgeNr
 , inEdges
 , isActionNode
+, isAnyControlNodeType
 , isComputationNode
 , isComputationNodeType
 , isControlNode
@@ -62,11 +63,13 @@ module Language.InstructionSelection.Graphs.Base (
 , isDataNode
 , isDataNodeType
 , isEntityNode
+, isFakeControlNode
 , isInGraph
 , isLabelNode
 , isLabelNodeType
 , isPhiNode
 , isPhiNodeType
+, isRealControlNode
 , isStateNode
 , isStateNodeType
 , isTransferNode
@@ -231,6 +234,16 @@ isComputationNode n = isComputationNodeType $ nodeType n
 isControlNode :: Node -> Bool
 isControlNode n = isControlNodeType $ nodeType n
 
+-- | Checks if a node is a control node not of type `AnyControl`.
+
+isRealControlNode :: Node -> Bool
+isRealControlNode n = isControlNode n && not (isAnyControlNodeType $ nodeType n)
+
+-- | Checks if a node is a control node of type `AnyControl`.
+
+isFakeControlNode :: Node -> Bool
+isFakeControlNode n = isControlNode n && (isAnyControlNodeType $ nodeType n)
+
 isDataNode :: Node -> Bool
 isDataNode n = isDataNodeType $ nodeType n
 
@@ -253,6 +266,10 @@ isComputationNodeType _ = False
 isControlNodeType :: NodeType -> Bool
 isControlNodeType (ControlNode _) = True
 isControlNodeType _ = False
+
+isAnyControlNodeType :: NodeType -> Bool
+isAnyControlNodeType (ControlNode O.AnyControl) = True
+isAnyControlNodeType _ = False
 
 isDataNodeType :: NodeType -> Bool
 isDataNodeType (DataNode _) = True
