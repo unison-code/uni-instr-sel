@@ -67,14 +67,9 @@ mkPatternInstanceData (os, matchsets) =
                       $ allNodes g
       e_def_ns = entityNodes successors
       e_use_ns = entityNodes predecessors
-      l_int_ns = nodeIds
-                 $ filter (\n -> any isRealControlNode (predecessors g n))
-                 $ filter isLabelNode
-                 $ allNodes g
       f (m, id) = mkPatternInstanceData' a_ns
                                          e_def_ns
                                          e_use_ns
-                                         l_int_ns
                                          (osConstraints os)
                                          (convertMatchsetNToId m)
                                          id
@@ -83,17 +78,15 @@ mkPatternInstanceData (os, matchsets) =
 mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> [NodeId] -- ^ Defined entity nodes.
                           -> [NodeId] -- ^ Used entity nodes.
-                          -> [NodeId] -- ^ Internalized label nodes.
                           -> [Constraint]
                           -> NodeIdMatchset
                           -> MatchsetId
                           -> PatternInstanceData
-mkPatternInstanceData' a_ns e_def_ns e_use_ns l_ns cs matchset id =
+mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id =
   PatternInstanceData id
                       (mapToSearchNodeIds a_ns matchset)
                       (mapToSearchNodeIds e_def_ns matchset)
                       (mapToSearchNodeIds e_use_ns matchset)
-                      (mapToSearchNodeIds l_ns matchset)
                       -- TODO: convert node IDs in constraints
                       cs
 

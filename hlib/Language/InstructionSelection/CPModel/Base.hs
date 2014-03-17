@@ -90,11 +90,6 @@ data PatternInstanceData
 
         , patUsedEntityNodes :: [NodeId]
 
-          -- | The label nodes in the function graph which are internalized by
-          -- this pattern instance.
-
-        , patInternalizedLabelNodes :: [NodeId]
-
           -- | The pattern-specific constraints, if any. All node IDs used in
           -- the patterns refer to nodes in the function graph (not the pattern
           -- graph).
@@ -157,8 +152,6 @@ instance PrettyPrint PatternInstanceData where
     ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
     ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
-    ++ "Internalized label nodes: "
-    ++ show (patInternalizedLabelNodes d) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
 
 instance PrettyPrint InstructionData where

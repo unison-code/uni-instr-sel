@@ -69,7 +69,6 @@ instance ToJSON PatternInstanceData where
            , "action-nodes-covered"     .= (patCoveredActionNodes d)
            , "entity-nodes-defined"     .= (patDefinedEntityNodes d)
            , "entity-nodes-used"        .= (patUsedEntityNodes d)
-           , "label-nodes-internalized" .= (patInternalizedLabelNodes d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]
