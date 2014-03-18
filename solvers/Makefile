@@ -148,7 +148,7 @@ endif
 endif
 
 %.d: %.cpp
-	$(CXX) -M -MT "$(<:.cpp=.o) $@" $< > $@
+	$(CXX) $(CXXFLAGS) -M -MT "$(<:.cpp=.o) $@" $< > $@
 
 .PHONY: clean
 clean:
