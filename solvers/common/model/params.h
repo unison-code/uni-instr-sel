@@ -181,19 +181,7 @@ class Params {
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
-     * Params&) but for the label nodes.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param param
-     *        Object to add the mappings to.
-     */
-    static void
-    computeMappingsForFunctionLabelNodes(const Json::Value& root,
-                                         Params& param);
-
-    /**
-     * Sets the dominator sets for the function's label nodes.
+     * Params&) but for the label nodes, and also sets the dominator sets.
      *
      * @param root
      *        The JSON root value.
@@ -201,8 +189,8 @@ class Params {
      *        Object to add the dominator sets to.
      */
     static void
-    computeDomsetsForFunctionLabelNodes(const Json::Value& root,
-                                        Params& param);
+    computeMappingsAndDomsetsForFunctionLabelNodes(const Json::Value& root,
+                                                   Params& param);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,

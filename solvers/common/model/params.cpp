@@ -34,6 +34,11 @@ using std::list;
 using std::map;
 using std::string;
 
+// TODO: remove
+#include <iostream>
+using std::endl;
+using std::cout;
+
 Params::Params(void) {}
 
 Params::~Params(void) {}
@@ -66,10 +71,12 @@ Params::parseJson(const string& str, Params& param) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
 
+    // TODO: remove
+    cout << root << endl;
+
     computeMappingsForFunctionActionNodes(root, param);
     computeMappingsForFunctionEntityNodes(root, param);
-    computeMappingsForFunctionLabelNodes(root, param);
-    computeDomsetsForFunctionLabelNodes(root, param);
+    computeMappingsAndDomsetsForFunctionLabelNodes(root, param);
     computeMatchsetMappingsForPatternInstances(root, param);
 }
 
@@ -119,32 +126,22 @@ Params::computeMappingsForFunctionEntityNodes(
 }
 
 void
-Params::computeMappingsForFunctionLabelNodes(
+Params::computeMappingsAndDomsetsForFunctionLabelNodes(
     const Value& root,
     Params& param
 ) {
     Value function(getValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(function, "label-nodes")) {
-        addMapping(toId(node_id),
+    for (Value& entry : getValue(function, "label-nodes")) {
+        Id node_id = toId(getValue(entry, "node"));
+        addMapping(node_id,
                    index++,
                    param.func_label_node_mappings_);
-    }
-}
-
-void
-Params::computeDomsetsForFunctionLabelNodes(
-    const Value& root,
-    Params& param
-) {
-    Value function(getValue(root, "function-data"));
-    for (Value& entry : getValue(function, "label-domsets")) {
-        Id dominated_id = toId(getValue(entry, "dominated-id"));
         list<Id> domset;
         for (Value& dominator_node : getValue(entry, "domset")) {
             domset.push_back(toId(dominator_node));
         }
-        addMapping(dominated_id,
+        addMapping(node_id,
                    domset,
                    param.func_label_domsets_);
     }
