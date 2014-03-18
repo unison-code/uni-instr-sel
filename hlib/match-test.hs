@@ -78,8 +78,8 @@ main =
          params = mkParams search_os
                            [( pattern_os
                             , matchsets_with_ids
+                            , (InstProperties 1 1)
                             )]
-                           [(InstProperties 1 1, [0])]
      putStrLn $ toJson params
 --     let s = mkGraph
 --             [ (0, NodeLabel 0 (NodeInfo (ControlNode O.CondBranch) ""))

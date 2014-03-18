@@ -34,13 +34,12 @@ import Language.InstructionSelection.Patterns ( InstProperties (..)
 mkParams :: OpStructure -- ^ Function data.
             -> [( OpStructure
                 , [(NodeMatchset, MatchsetId)]
+                , InstProperties
                 )] -- ^ Pattern instance data.
-            -> [(InstProperties, [MatchsetId])] -- ^ Instruction data.
             -> CPModelParams
-mkParams func pats insts =
+mkParams func pats =
   CPModelParams (mkFunctionGraphData func)
                 (concatMap mkPatternInstanceData pats)
-                (map mkInstructionData insts)
                 -- TODO: fix building of machine data
                 MachineData
 
@@ -55,9 +54,10 @@ mkFunctionGraphData os =
 
 mkPatternInstanceData :: ( OpStructure
                          , [(NodeMatchset, MatchsetId)]
+                         , InstProperties
                          )
                       -> [PatternInstanceData]
-mkPatternInstanceData (os, matchsets) =
+mkPatternInstanceData (os, matchsets, props) =
   let g = osGraph os
       a_ns = (nodeIds $ filter isActionNode $ allNodes g)
       entityNodes p = nodeIds
@@ -72,6 +72,7 @@ mkPatternInstanceData (os, matchsets) =
                                          (osConstraints os)
                                          (convertMatchsetNToId m)
                                          id
+                                         props
   in map f matchsets
 
 mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
@@ -80,17 +81,17 @@ mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> [Constraint]
                           -> NodeIdMatchset
                           -> MatchsetId
+                          -> InstProperties
                           -> PatternInstanceData
-mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id =
+mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
   PatternInstanceData id
                       (mapToSearchNodeIds a_ns matchset)
                       (mapToSearchNodeIds e_def_ns matchset)
                       (mapToSearchNodeIds e_use_ns matchset)
                       -- TODO: convert node IDs in constraints
                       cs
-
-mkInstructionData :: (InstProperties, [MatchsetId]) -> InstructionData
-mkInstructionData (props, matchsets) = InstructionData props matchsets
+                      (latency props)
+                      (codeSize props)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's

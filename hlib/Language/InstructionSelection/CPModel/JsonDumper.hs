@@ -22,7 +22,6 @@ import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs ( MatchsetId
                                             , NodeId
                                             , NodeIdMatchset)
-import Language.InstructionSelection.Patterns (InstProperties (..))
 import Language.InstructionSelection.Utils (Natural, fromNatural)
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (unpack)
@@ -46,7 +45,6 @@ instance ToJSON CPModelParams where
   toJSON p =
     object [ "function-data"  .= (funcData p)
            , "pattern-instance-data" .= (patInstData p)
-           , "instruction-data"  .= (instrData p)
            , "machine-data"  .= (machData p)
            ]
 
@@ -64,19 +62,14 @@ instance ToJSON FunctionGraphData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object [ "matchset-id"              .= (patMatchsetId d)
-           , "action-nodes-covered"     .= (patCoveredActionNodes d)
-           , "entity-nodes-defined"     .= (patDefinedEntityNodes d)
-           , "entity-nodes-used"        .= (patUsedEntityNodes d)
+    object [ "matchset-id"          .= (patMatchsetId d)
+           , "action-nodes-covered" .= (patCoveredActionNodes d)
+           , "entity-nodes-defined" .= (patDefinedEntityNodes d)
+           , "entity-nodes-used"    .= (patUsedEntityNodes d)
+           , "code-size"            .= (patCodeSize d)
+           , "latency"              .= (patLatency d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
-           ]
-
-instance ToJSON InstructionData where
-  toJSON d =
-    object [ "code-size" .= (codeSize $ instrProps d)
-           , "latency"   .= (latency $ instrProps d)
-           , "matchsets" .= (instrMatchsetIds d)
            ]
 
 instance ToJSON MachineData where

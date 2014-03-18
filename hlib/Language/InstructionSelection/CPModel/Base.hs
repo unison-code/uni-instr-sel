@@ -19,7 +19,6 @@ import Language.InstructionSelection.Graphs ( MatchsetId
                                             , NodeIdMatchset
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
-import Language.InstructionSelection.Patterns (InstProperties (..))
 import Language.InstructionSelection.PrettyPrint
 
 
@@ -30,7 +29,6 @@ data CPModelParams
     = CPModelParams {
           funcData :: FunctionGraphData
         , patInstData :: [PatternInstanceData]
-        , instrData :: [InstructionData]
         , machData :: MachineData
       }
     deriving (Show)
@@ -92,19 +90,15 @@ data PatternInstanceData
 
         , patConstraints :: [Constraint]
 
-      }
-    deriving (Show)
+          -- | The latency of the instruction associated with this pattern
+          -- instance.
 
--- | Contains all data related to an instruction.
+        , patLatency :: Integer
 
-data InstructionData
-    = InstructionData {
+          -- | The code size of the instruction associated with this pattern
+          -- instance.
 
-          instrProps :: InstProperties
-
-          -- | The IDs of the matchsets which belong to this instruction.
-
-        , instrMatchsetIds :: [MatchsetId]
+        , patCodeSize :: Integer
 
       }
     deriving (Show)
@@ -130,7 +124,6 @@ instance PrettyPrint CPModelParams where
     "CPModelParams:\n\n"
     ++ prettyShow (funcData p) ++ "\n"
     ++ concatMap (\d -> prettyShow d ++ "\n") (patInstData p) ++ "\n"
-    ++ concatMap (\d -> prettyShow d ++ "\n") (instrData p) ++ "\n"
     ++ prettyShow (machData p)
 
 instance PrettyPrint FunctionGraphData where
@@ -147,14 +140,9 @@ instance PrettyPrint PatternInstanceData where
     ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
     ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
+    ++ "Code size: " ++ show (patCodeSize d) ++ "\n"
+    ++ "Latency: " ++ show (patLatency d) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
-
-instance PrettyPrint InstructionData where
-  prettyShow d =
-    "InstructionData:\n"
-    ++ "Code size: " ++ show (codeSize $ instrProps d) ++ "\n"
-    ++ "Latency: " ++ show (latency $ instrProps d) ++ "\n"
-    ++ "Matchset IDs: " ++ show (instrMatchsetIds d) ++ "\n"
 
 instance PrettyPrint MachineData where
   prettyShow d = "MachineData"
