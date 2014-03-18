@@ -99,6 +99,26 @@ class Params {
     getPatternInstanceCost(const Id& instance) const;
 
     /**
+     * Gets the array index of a given pattern instance ID.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns Corresponding array index.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    ArrayIndex
+    getIndexOfPatternInstance(const Id& instance) const;
+
+    /**
+     * Gets a list of all the pattern instance IDs.
+     *
+     * @returns List of IDs.
+     */
+    std::list<Id>
+    getPatternInstanceIds(void) const;
+
+    /**
      * Parses a JSON string into an internal model parameters object.
      *
      * @param str
@@ -297,7 +317,7 @@ class Params {
     /**
      * The cost of the instruction for each pattern instance.
      */
-    std::map<Id, int> pat_inst_costs_;
+    std::map<Id, int> pat_instance_costs_;
 
 };
 

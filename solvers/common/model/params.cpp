@@ -163,7 +163,7 @@ Params::computeMappingsForPatternInstances(
 
 int
 Params::getPatternInstanceCost(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_costs_);
+    return getMappedValue(instance, pat_instance_costs_);
 }
 
 void
@@ -173,6 +173,20 @@ Params::setPatternInstanceCosts(const Json::Value& root, Params& param) {
         int cost = toInt(getJsonValue(pattern, "cost"));
         addMapping(instance_id,
                    cost,
-                   param.pat_inst_costs_);
+                   param.pat_instance_costs_);
     }
+}
+
+list<Id>
+Params::getPatternInstanceIds(void) const {
+    list<Id> ids;
+    for (auto& kv : pat_instance_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
+}
+
+ArrayIndex
+Params::getIndexOfPatternInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_instance_mappings_);
 }
