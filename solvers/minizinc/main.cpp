@@ -43,6 +43,42 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
+// Forward declaration
+template <typename T>
+void
+printList(const T& l, const string&, const string&);
+
+template <typename T>
+void
+print(const vector<T>& v, const string& dl = "[", const string& dr = "]") {
+    printList(v, dl, dr);
+}
+
+template <typename T>
+void
+print(const list<T>& l, const string& dl = "[", const string& dr = "]") {
+    printList(l, dl, dr);
+}
+
+template <typename T>
+void
+print(const T& v, const string&, const string&) {
+    cout << v;
+}
+
+template <typename T>
+void
+printList(const T& l, const string& dl = "[", const string& dr = "]") {
+    cout << dl;
+    bool isFirst = true;
+    for (const auto& e : l) {
+        if (isFirst) isFirst = false;
+        else cout << ",";
+        print(e, "{", "}");
+    }
+    cout << dr;
+}
+
 int
 main(int argc, char** argv) {
     try {
@@ -67,90 +103,49 @@ main(int argc, char** argv) {
              << params.getNumPatternInstances()
              << ";" << endl;
 
-        cout << "patInstCosts = array1d(0..numPatternInstances-1, [";
+        cout << "patInstCosts = array1d(0..numPatternInstances-1, ";
         {
             vector<int> costs(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
                 costs[params.getIndexOfPattern(id)] =
                     params.getCostOfPattern(id);
             }
-            bool is_first = true;
-            for (auto& cost : costs) {
-                if (is_first) is_first = false;
-                else cout << ",";
-                cout << cost;
-            }
+            print(costs);
         }
-        cout << "]);" << endl;
+        cout << ");" << endl;
 
-        cout << "patInstActionsCovered = array1d(0..numPatternInstances-1, [";
+        cout << "patInstActionsCovered = array1d(0..numPatternInstances-1, ";
         {
             vector< list<Id> > node_lists(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
                 node_lists[params.getIndexOfPattern(id)] =
                     params.getActionNodesCoveredByPattern(id);
             }
-            bool is_first1 = true;
-            for (auto& nodes : node_lists) {
-                if (is_first1) is_first1 = false;
-                else cout << ",";
-                bool is_first2 = true;
-                cout << "{";
-                for (auto& id : nodes) {
-                    if (is_first2) is_first2 = false;
-                    else cout << ",";
-                    cout << id;
-                }
-                cout << "}";
-            }
+            print(node_lists);
         }
-        cout << "]);" << endl;
+        cout << ");" << endl;
 
-        cout << "patInstEntitiesDefined = array1d(0..numPatternInstances-1, [";
+        cout << "patInstEntitiesDefined = array1d(0..numPatternInstances-1, ";
         {
             vector< list<Id> > node_lists(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
                 node_lists[params.getIndexOfPattern(id)] =
                     params.getEntityNodesDefinedByPattern(id);
             }
-            bool is_first1 = true;
-            for (auto& nodes : node_lists) {
-                if (is_first1) is_first1 = false;
-                else cout << ",";
-                bool is_first2 = true;
-                cout << "{";
-                for (auto& id : nodes) {
-                    if (is_first2) is_first2 = false;
-                    else cout << ",";
-                    cout << id;
-                }
-                cout << "}";
-            }
+            print(node_lists);
         }
-        cout << "]);" << endl;
+        cout << ");" << endl;
 
-        cout << "patInstEntitiesUsed = array1d(0..numPatternInstances-1, [";
+        cout << "patInstEntitiesUsed = array1d(0..numPatternInstances-1, ";
         {
             vector< list<Id> > node_lists(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
                 node_lists[params.getIndexOfPattern(id)] =
                     params.getEntityNodesUsedByPattern(id);
             }
-            bool is_first1 = true;
-            for (auto& nodes : node_lists) {
-                if (is_first1) is_first1 = false;
-                else cout << ",";
-                bool is_first2 = true;
-                cout << "{";
-                for (auto& id : nodes) {
-                    if (is_first2) is_first2 = false;
-                    else cout << ",";
-                    cout << id;
-                }
-                cout << "}";
-            }
+            print(node_lists);
         }
-        cout << "]);" << endl;
+        cout << ");" << endl;
 
         // TODO: output more parameters
     }
