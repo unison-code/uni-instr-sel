@@ -307,3 +307,30 @@ Params::getAllLabelNodeIds(void) const {
     }
     return ids;
 }
+
+list<ArrayIndex>
+Params::getIndicesOfActionNodes(const list<Id>& ids) const {
+    list<Id> indices;
+    for (auto& id : ids) {
+        indices.push_back(getIndexOfActionNode(id));
+    }
+    return indices;
+}
+
+list<ArrayIndex>
+Params::getIndicesOfEntityNodes(const list<Id>& ids) const {
+    list<Id> indices;
+    for (auto& id : ids) {
+        indices.push_back(getIndexOfEntityNode(id));
+    }
+    return indices;
+}
+
+list<ArrayIndex>
+Params::getIndicesOfLabelNodes(const list<Id>& ids) const {
+    list<Id> indices;
+    for (auto& id : ids) {
+        indices.push_back(getIndexOfLabelNode(id));
+    }
+    return indices;
+}

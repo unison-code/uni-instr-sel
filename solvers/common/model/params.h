@@ -183,6 +183,42 @@ class Params {
     getIndexOfLabelNode(const Id& id) const;
 
     /**
+     * Gets a list of array indices of a given list of function action nodes.
+     *
+     * @param ids
+     *        List of node ID.
+     * @returns List of corresponding array indices.
+     * @throws Exception
+     *         If there is a node ID with no mapping.
+     */
+    std::list<ArrayIndex>
+    getIndicesOfActionNodes(const std::list<Id>& ids) const;
+
+    /**
+     * Gets a list of array indices of a given list of function entity nodes.
+     *
+     * @param ids
+     *        List of node ID.
+     * @returns List of corresponding array indices.
+     * @throws Exception
+     *         If there is a node ID with no mapping.
+     */
+    std::list<ArrayIndex>
+    getIndicesOfEntityNodes(const std::list<Id>& ids) const;
+
+    /**
+     * Gets a list of array indices of a given list of function label nodes.
+     *
+     * @param ids
+     *        List of node ID.
+     * @returns List of corresponding array indices.
+     * @throws Exception
+     *         If there is a node ID with no mapping.
+     */
+    std::list<ArrayIndex>
+    getIndicesOfLabelNodes(const std::list<Id>& ids) const;
+
+    /**
      * Gets a list of all the function action node IDs.
      *
      * @returns List of IDs.
