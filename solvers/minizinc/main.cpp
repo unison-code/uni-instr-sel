@@ -65,7 +65,7 @@ main(int argc, char** argv) {
         cout << "numPatternInstances = "
              << params.getNumPatternInstances()
              << ";" << endl;
-        cout << "patInstCosts = [";
+        cout << "patInstCosts = array1d(0..numPatternInstances-1, [";
         {
             vector<int> costs(params.getNumPatternInstances());
             for (const Model::Id& id : params.getPatternInstanceIds()) {
@@ -77,7 +77,7 @@ main(int argc, char** argv) {
                 cout << costs[i];
             }
         }
-        cout << "];" << endl;
+        cout << "]);" << endl;
 
         // TODO: output more parameters
     }
