@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 
+using namespace Model;
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -50,8 +51,8 @@ main(int argc, char** argv) {
         stringstream ss;
         ss << file.rdbuf();
         string json_content(ss.str());
-        Model::Params params;
-        Model::Params::parseJson(json_content, params);
+        Params params;
+        Params::parseJson(json_content, params);
 
         cout << "numFuncActionNodes = "
              << params.getNumFunctionActionNodes()
@@ -65,16 +66,88 @@ main(int argc, char** argv) {
         cout << "numPatternInstances = "
              << params.getNumPatternInstances()
              << ";" << endl;
+
         cout << "patInstCosts = array1d(0..numPatternInstances-1, [";
         {
             vector<int> costs(params.getNumPatternInstances());
-            for (const Model::Id& id : params.getPatternInstanceIds()) {
-                costs[params.getIndexOfPatternInstance(id)] =
-                    params.getPatternInstanceCost(id);
+            for (const Id& id : params.getAllPatternInstanceIds()) {
+                costs[params.getIndexOfPattern(id)] =
+                    params.getCostOfPattern(id);
             }
-            for (size_t i = 0; i < costs.size(); i++) {
-                if (i > 0) cout << ",";
-                cout << costs[i];
+            bool is_first = true;
+            for (auto& cost : costs) {
+                if (is_first) is_first = false;
+                else cout << ",";
+                cout << cost;
+            }
+        }
+        cout << "]);" << endl;
+
+        cout << "patInstActionsCovered = array1d(0..numPatternInstances-1, [";
+        {
+            vector< list<Id> > node_lists(params.getNumPatternInstances());
+            for (const Id& id : params.getAllPatternInstanceIds()) {
+                node_lists[params.getIndexOfPattern(id)] =
+                    params.getActionNodesCoveredByPattern(id);
+            }
+            bool is_first1 = true;
+            for (auto& nodes : node_lists) {
+                if (is_first1) is_first1 = false;
+                else cout << ",";
+                bool is_first2 = true;
+                cout << "{";
+                for (auto& id : nodes) {
+                    if (is_first2) is_first2 = false;
+                    else cout << ",";
+                    cout << id;
+                }
+                cout << "}";
+            }
+        }
+        cout << "]);" << endl;
+
+        cout << "patInstEntitiesDefined = array1d(0..numPatternInstances-1, [";
+        {
+            vector< list<Id> > node_lists(params.getNumPatternInstances());
+            for (const Id& id : params.getAllPatternInstanceIds()) {
+                node_lists[params.getIndexOfPattern(id)] =
+                    params.getEntityNodesDefinedByPattern(id);
+            }
+            bool is_first1 = true;
+            for (auto& nodes : node_lists) {
+                if (is_first1) is_first1 = false;
+                else cout << ",";
+                bool is_first2 = true;
+                cout << "{";
+                for (auto& id : nodes) {
+                    if (is_first2) is_first2 = false;
+                    else cout << ",";
+                    cout << id;
+                }
+                cout << "}";
+            }
+        }
+        cout << "]);" << endl;
+
+        cout << "patInstEntitiesUsed = array1d(0..numPatternInstances-1, [";
+        {
+            vector< list<Id> > node_lists(params.getNumPatternInstances());
+            for (const Id& id : params.getAllPatternInstanceIds()) {
+                node_lists[params.getIndexOfPattern(id)] =
+                    params.getEntityNodesUsedByPattern(id);
+            }
+            bool is_first1 = true;
+            for (auto& nodes : node_lists) {
+                if (is_first1) is_first1 = false;
+                else cout << ",";
+                bool is_first2 = true;
+                cout << "{";
+                for (auto& id : nodes) {
+                    if (is_first2) is_first2 = false;
+                    else cout << ",";
+                    cout << id;
+                }
+                cout << "}";
             }
         }
         cout << "]);" << endl;

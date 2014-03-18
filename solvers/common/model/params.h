@@ -96,7 +96,43 @@ class Params {
      *         If there is no instance with such an ID.
      */
     int
-    getPatternInstanceCost(const Id& instance) const;
+    getCostOfPattern(const Id& instance) const;
+
+    /**
+     * Gets the function action nodes covered by a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getActionNodesCoveredByPattern(const Id& instance) const;
+
+    /**
+     * Gets the function entity nodes defined by a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getEntityNodesDefinedByPattern(const Id& instance) const;
+
+    /**
+     * Gets the function entity nodes used by a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getEntityNodesUsedByPattern(const Id& instance) const;
 
     /**
      * Gets the array index of a given pattern instance ID.
@@ -108,7 +144,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     ArrayIndex
-    getIndexOfPatternInstance(const Id& instance) const;
+    getIndexOfPattern(const Id& instance) const;
 
     /**
      * Gets a list of all the pattern instance IDs.
@@ -116,7 +152,7 @@ class Params {
      * @returns List of IDs.
      */
     std::list<Id>
-    getPatternInstanceIds(void) const;
+    getAllPatternInstanceIds(void) const;
 
     /**
      * Parses a JSON string into an internal model parameters object.
@@ -232,7 +268,7 @@ class Params {
      * @param root
      *        The JSON root value.
      * @param param
-     *        Object to add the mappings to.
+     *        Object to add the data to.
      */
     static void
     computeMappingsForFunctionActionNodes(const Json::Value& root,
@@ -245,7 +281,7 @@ class Params {
      * @param root
      *        The JSON root value.
      * @param param
-     *        Object to add the mappings to.
+     *        Object to add the data to.
      */
     static void
     computeMappingsForFunctionEntityNodes(const Json::Value& root,
@@ -258,7 +294,7 @@ class Params {
      * @param root
      *        The JSON root value.
      * @param param
-     *        Object to add the dominator sets to.
+     *        Object to add the data to.
      */
     static void
     computeMappingsAndDomsetsForFunctionLabelNodes(const Json::Value& root,
@@ -271,11 +307,10 @@ class Params {
      * @param root
      *        The JSON root value.
      * @param param
-     *        Object to add the mappings to.
+     *        Object to add the data to.
      */
     static void
-    computeMappingsForPatternInstances(const Json::Value& root,
-                                       Params& param);
+    computeMappingsForPatterns(const Json::Value& root, Params& param);
 
     /**
      * Sets the cost values for the pattern instances.
@@ -283,10 +318,45 @@ class Params {
      * @param root
      *        The JSON root value.
      * @param param
-     *        Object to add the mappings to.
+     *        Object to add the data to.
      */
     static void
-    setPatternInstanceCosts(const Json::Value& root, Params& param);
+    setPatternCosts(const Json::Value& root, Params& param);
+
+    /**
+     * Sets the function action nodes covered by the respective pattern
+     * instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the data to.
+     */
+    static void
+    setActionNodesCoveredByPatterns(const Json::Value& root, Params& param);
+
+    /**
+     * Sets the function entity nodes defined by the respective pattern
+     * instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the data to.
+     */
+    static void
+    setEntityNodesDefinedByPatterns(const Json::Value& root, Params& param);
+
+    /**
+     * Sets the function entity nodes used by the respective pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the data to.
+     */
+    static void
+    setEntityNodesUsedByPatterns(const Json::Value& root, Params& param);
 
   protected:
     /**
@@ -312,13 +382,30 @@ class Params {
     /**
      * Maps the pattern instance ID to an array index.
      */
-    std::map<Id, ArrayIndex> pat_instance_mappings_;
+    std::map<Id, ArrayIndex> pat_inst_mappings_;
 
     /**
      * The cost of the instruction for each pattern instance.
      */
-    std::map<Id, int> pat_instance_costs_;
+    std::map<Id, int> pat_inst_costs_;
 
+    /**
+     * The action nodes in the function graphs which are covered for each
+     * pattern instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_actions_covered_;
+
+    /**
+     * The entity nodes in the function graphs which are defined for each
+     * pattern instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_entities_defined_;
+
+    /**
+     * The entity nodes in the function graphs which are used for each
+     * pattern instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_entities_used_;
 };
 
 }

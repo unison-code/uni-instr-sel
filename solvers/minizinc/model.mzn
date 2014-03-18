@@ -2,7 +2,10 @@ int: numFuncActionNodes;
 int: numFuncEntityNodes;
 int: numFuncLabelNodes;
 int: numPatternInstances;
-array[0..numPatternInstances-1] of var int: patInstCosts;
+array[0..numPatternInstances-1] of int: patInstCosts;
+array[0..numPatternInstances-1] of set of int: patInstActionsCovered;
+array[0..numPatternInstances-1] of set of int: patInstEntitiesDefined;
+array[0..numPatternInstances-1] of set of int: patInstEntitiesUsed;
 
 include "input.mzn";
 
