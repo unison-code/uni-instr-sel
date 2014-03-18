@@ -87,6 +87,18 @@ class Params {
     getNumPatternInstances(void) const;
 
     /**
+     * Gets the cost of selecting a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns The cost.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    int
+    getPatternInstanceCost(const Id& instance) const;
+
+    /**
      * Parses a JSON string into an internal model parameters object.
      *
      * @param str
@@ -107,24 +119,52 @@ class Params {
      *         Type of key.
      * @tparam V
      *         Type of value.
-     * @param id
-     *        Node ID.
-     * @param index
-     *        Array index.
+     * @param key
+     *        The key.
+     * @param value
+     *        The value.
      * @param mapset
      *        Object to add the mapping to.
      */
     template <typename K, typename V>
     static void
-    addMapping(const K& id,
-               const V& index,
+    addMapping(const K& key,
+               const V& value,
                std::map<K, V>& mapset
     ) {
         std::pair< typename std::map<K, V>::iterator, bool > ret;
-        ret = mapset.insert(std::pair<K, V>(id, index));
+        ret = mapset.insert(std::pair<K, V>(key, value));
         if (!ret.second) {
             THROW(Exception, "Such a mapping already exists");
         }
+    }
+
+    /**
+     * Gets a value from a map.
+     *
+     * @tparam K
+     *         Type of key.
+     * @tparam V
+     *         Type of value.
+     * @param key
+     *        The key.
+     * @param mapset
+     *        Object to add the mapping to.
+     * @returns The value.
+     * @throws Exception
+     *         If there exists no such mapping.
+     */
+    template <typename K, typename V>
+    static V
+    getMappedValue(const K& key,
+                   const std::map<K, V>& mapset
+    ) {
+        typename std::map<K, V>::const_iterator it;
+        it = mapset.find(key);
+        if (it == mapset.end()) {
+            THROW(Exception, "No mapping found");
+        }
+        return it->second;
     }
 
     /**
@@ -139,7 +179,7 @@ class Params {
      *         When no such field is found.
      */
     static Json::Value
-    getValue(const Json::Value& value, const std::string& name);
+    getJsonValue(const Json::Value& value, const std::string& name);
 
     /**
      * Gets a JSON value as an Id.
@@ -150,8 +190,20 @@ class Params {
      * @throws Exception
      *         When the value is not of expected type.
      */
-    static unsigned int
+    static Id
     toId(const Json::Value& value);
+
+    /**
+     * Gets a JSON value as an integer.
+     *
+     * @param value
+     *        JSON value.
+     * @returns The converted value.
+     * @throws Exception
+     *         When the value is not of expected type.
+     */
+    static int
+    toInt(const Json::Value& value);
 
     /**
      * Computes the node ID-to-array index mappings for the action nodes of the
@@ -202,8 +254,19 @@ class Params {
      *        Object to add the mappings to.
      */
     static void
-    computeMatchsetMappingsForPatternInstances(const Json::Value& root,
-                                               Params& param);
+    computeMappingsForPatternInstances(const Json::Value& root,
+                                       Params& param);
+
+    /**
+     * Sets the cost values for the pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the mappings to.
+     */
+    static void
+    setPatternInstanceCosts(const Json::Value& root, Params& param);
 
   protected:
     /**
@@ -227,9 +290,15 @@ class Params {
     std::map< Id, std::list<Id> > func_label_domsets_;
 
     /**
-     * Maps the matchset ID of a matchset to an array index.
+     * Maps the pattern instance ID to an array index.
      */
-    std::map<Id, ArrayIndex> pat_matchset_mappings_;
+    std::map<Id, ArrayIndex> pat_instance_mappings_;
+
+    /**
+     * The cost of the instruction for each pattern instance.
+     */
+    std::map<Id, int> pat_inst_costs_;
+
 };
 
 }

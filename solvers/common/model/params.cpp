@@ -55,7 +55,7 @@ Params::getNumFunctionLabelNodes(void) const {
 
 size_t
 Params::getNumPatternInstances(void) const {
-    return pat_matchset_mappings_.size();
+    return pat_instance_mappings_.size();
 }
 
 void
@@ -69,11 +69,12 @@ Params::parseJson(const string& str, Params& param) {
     computeMappingsForFunctionActionNodes(root, param);
     computeMappingsForFunctionEntityNodes(root, param);
     computeMappingsAndDomsetsForFunctionLabelNodes(root, param);
-    computeMatchsetMappingsForPatternInstances(root, param);
+    computeMappingsForPatternInstances(root, param);
+    setPatternInstanceCosts(root, param);
 }
 
 Value
-Params::getValue(const Value& value, const string& name) {
+Params::getJsonValue(const Value& value, const string& name) {
     Value sought_value = value[name];
     if (sought_value.isNull()) {
         THROW(Exception, string("No '") + name + "' field found");
@@ -81,7 +82,7 @@ Params::getValue(const Value& value, const string& name) {
     return sought_value;
 }
 
-unsigned int
+Id
 Params::toId(const Value& value) {
     if (!value.isUInt()) {
         THROW(Exception, "Not a JSON unsigned integer");
@@ -89,14 +90,22 @@ Params::toId(const Value& value) {
     return value.asUInt();
 }
 
+int
+Params::toInt(const Value& value) {
+    if (!value.isInt()) {
+        THROW(Exception, "Not a JSON integer");
+    }
+    return value.asInt();
+}
+
 void
 Params::computeMappingsForFunctionActionNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function-data"));
+    Value function(getJsonValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(function, "action-nodes")) {
+    for (Value& node_id : getJsonValue(function, "action-nodes")) {
         addMapping(toId(node_id),
                    index++,
                    param.func_action_node_mappings_);
@@ -108,9 +117,9 @@ Params::computeMappingsForFunctionEntityNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function-data"));
+    Value function(getJsonValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& node_id : getValue(function, "entity-nodes")) {
+    for (Value& node_id : getJsonValue(function, "entity-nodes")) {
         addMapping(toId(node_id),
                    index++,
                    param.func_entity_node_mappings_);
@@ -122,15 +131,15 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
     const Value& root,
     Params& param
 ) {
-    Value function(getValue(root, "function-data"));
+    Value function(getJsonValue(root, "function-data"));
     ArrayIndex index = 0;
-    for (Value& entry : getValue(function, "label-nodes")) {
-        Id node_id = toId(getValue(entry, "node"));
+    for (Value& entry : getJsonValue(function, "label-nodes")) {
+        Id node_id = toId(getJsonValue(entry, "node"));
         addMapping(node_id,
                    index++,
                    param.func_label_node_mappings_);
         list<Id> domset;
-        for (Value& dominator_node : getValue(entry, "domset")) {
+        for (Value& dominator_node : getJsonValue(entry, "domset")) {
             domset.push_back(toId(dominator_node));
         }
         addMapping(node_id,
@@ -140,14 +149,30 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
 }
 
 void
-Params::computeMatchsetMappingsForPatternInstances(
+Params::computeMappingsForPatternInstances(
     const Value& root,
     Params& param
 ) {
     ArrayIndex index = 0;
-    for (Value& pattern : getValue(root, "pattern-instance-data")) {
-        addMapping(toId(getValue(pattern, "matchset-id")),
+    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
+        addMapping(toId(getJsonValue(pattern, "instance-id")),
                    index++,
-                   param.pat_matchset_mappings_);
+                   param.pat_instance_mappings_);
+    }
+}
+
+int
+Params::getPatternInstanceCost(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_costs_);
+}
+
+void
+Params::setPatternInstanceCosts(const Json::Value& root, Params& param) {
+    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
+        Id instance_id = toId(getJsonValue(pattern, "instance-id"));
+        int cost = toInt(getJsonValue(pattern, "cost"));
+        addMapping(instance_id,
+                   cost,
+                   param.pat_inst_costs_);
     }
 }
