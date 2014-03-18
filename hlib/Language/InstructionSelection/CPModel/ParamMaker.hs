@@ -90,8 +90,8 @@ mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
                       (mapToSearchNodeIds e_use_ns matchset)
                       -- TODO: convert node IDs in constraints
                       cs
+                      -- TODO: change how the cost is chosen
                       (latency props)
-                      (codeSize props)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's

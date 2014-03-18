@@ -62,12 +62,11 @@ instance ToJSON FunctionGraphData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object [ "matchset-id"          .= (patMatchsetId d)
+    object [ "instance-id"          .= (patInstanceId d)
            , "action-nodes-covered" .= (patCoveredActionNodes d)
            , "entity-nodes-defined" .= (patDefinedEntityNodes d)
            , "entity-nodes-used"    .= (patUsedEntityNodes d)
-           , "code-size"            .= (patCodeSize d)
-           , "latency"              .= (patLatency d)
+           , "cost"                 .= (patCost d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]

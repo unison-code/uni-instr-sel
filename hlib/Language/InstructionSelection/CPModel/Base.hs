@@ -23,6 +23,12 @@ import Language.InstructionSelection.PrettyPrint
 
 
 
+--------------
+-- Data types
+--------------
+
+type InstanceId = MatchsetId
+
 -- | Wrapper for all model parameters.
 
 data CPModelParams
@@ -65,9 +71,9 @@ data FunctionGraphData
 data PatternInstanceData
     = PatternInstanceData {
 
-          -- | The matchset ID.
+          -- | The instance ID.
 
-          patMatchsetId :: MatchsetId
+          patInstanceId :: MatchsetId
 
           -- | The action nodes in the function graph which are covered by this
           -- pattern instance.
@@ -90,15 +96,10 @@ data PatternInstanceData
 
         , patConstraints :: [Constraint]
 
-          -- | The latency of the instruction associated with this pattern
+          -- | The cost of the instruction associated with this pattern
           -- instance.
 
-        , patLatency :: Integer
-
-          -- | The code size of the instruction associated with this pattern
-          -- instance.
-
-        , patCodeSize :: Integer
+        , patCost :: Integer
 
       }
     deriving (Show)
@@ -136,12 +137,11 @@ instance PrettyPrint FunctionGraphData where
 
 instance PrettyPrint PatternInstanceData where
   prettyShow d =
-    "PatternInstanceData (Matchset ID: " ++ show (patMatchsetId d) ++ "):\n"
+    "PatternInstanceData (Instance ID: " ++ show (patInstanceId d) ++ "):\n"
     ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
     ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
-    ++ "Code size: " ++ show (patCodeSize d) ++ "\n"
-    ++ "Latency: " ++ show (patLatency d) ++ "\n"
+    ++ "Cost: " ++ show (patCost d) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
 
 instance PrettyPrint MachineData where
