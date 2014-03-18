@@ -48,14 +48,10 @@ data FunctionGraphData
 
         , funcEntityNodes :: [NodeId]
 
-          -- | The label nodes in the function graph.
+          -- | The label nodes in the function graph, along with their dominator
+          -- sets.
 
-        , funcLabelNodes :: [NodeId]
-
-          -- | The dominator set for the basic blocks, which are represented by
-          -- the label nodes.
-
-        , funcLabelDoms :: [( NodeId   -- ^ The dominated node.
+        , funcLabelDoms :: [( NodeId   -- ^ The dominated label node.
                             , [NodeId] -- ^ The dominator set.
                             )]
 
@@ -142,8 +138,7 @@ instance PrettyPrint FunctionGraphData where
     "FunctionGraphData:\n"
     ++ "Action nodes: " ++ show (funcActionNodes d) ++ "\n"
     ++ "Entity nodes: " ++ show (funcEntityNodes d) ++ "\n"
-    ++ "Label nodes: " ++ show (funcLabelNodes d) ++ "\n"
-    ++ "Label DOMs: " ++ show (funcLabelDoms d) ++ "\n"
+    ++ "Label nodes: " ++ show (funcLabelDoms d) ++ "\n"
     ++ "TODO: pretty-print constraints" ++ "\n"
 
 instance PrettyPrint PatternInstanceData where

@@ -50,7 +50,6 @@ mkFunctionGraphData os =
       nodeIdsByType f = nodeIds $ filter f $ allNodes g
   in FunctionGraphData (nodeIdsByType isActionNode)
                        (nodeIdsByType isEntityNode)
-                       (nodeIdsByType isLabelNode)
                        (computeLabelDoms g)
                        (osConstraints os)
 

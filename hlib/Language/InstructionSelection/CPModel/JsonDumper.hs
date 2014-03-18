@@ -54,13 +54,12 @@ instance ToJSON FunctionGraphData where
   toJSON d =
     object [ "action-nodes"  .= (funcActionNodes d)
            , "entity-nodes"  .= (funcEntityNodes d)
-           , "label-nodes"   .= (funcLabelNodes d)
-           , "label-domsets" .= map f (funcLabelDoms d)
+           , "label-nodes" .= map f (funcLabelDoms d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]
-    where f (id, domset) = object [ "dominated-id" .= id
-                                  , "domset"       .= domset
+    where f (id, domset) = object [ "node"   .= id
+                                  , "domset" .= domset
                                   ]
 
 instance ToJSON PatternInstanceData where
