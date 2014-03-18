@@ -60,7 +60,7 @@ class Params {
      * @returns Number of nodes.
      */
     size_t
-    getNumFunctionActionNodes(void) const;
+    getNumActionNodes(void) const;
 
     /**
      * Gets the number of entity nodes in the function.
@@ -68,7 +68,7 @@ class Params {
      * @returns Number of nodes.
      */
     size_t
-    getNumFunctionEntityNodes(void) const;
+    getNumEntityNodes(void) const;
 
     /**
      * Gets the number of label nodes in the function.
@@ -76,7 +76,7 @@ class Params {
      * @returns Number of nodes.
      */
     size_t
-    getNumFunctionLabelNodes(void) const;
+    getNumLabelNodes(void) const;
 
     /**
      * Gets the number of pattern instances.
@@ -85,6 +85,18 @@ class Params {
      */
     size_t
     getNumPatternInstances(void) const;
+
+    /**
+     * Gets the list of dominators for a given label node in the function graph.
+     *
+     * @param id
+     *        Node ID.
+     * @returns List of dominators.
+     * @throws Exception
+     *         If there is no node with such an ID.
+     */
+    std::list<Id>
+    getDomsetOfLabel(const Id& id) const;
 
     /**
      * Gets the cost of selecting a particular pattern instance.
@@ -135,16 +147,76 @@ class Params {
     getEntityNodesUsedByPattern(const Id& instance) const;
 
     /**
-     * Gets the array index of a given pattern instance ID.
+     * Gets the array index of a given function action node.
      *
-     * @param instance
+     * @param id
+     *        Node ID.
+     * @returns Corresponding array index.
+     * @throws Exception
+     *         If there is no node with such an ID.
+     */
+    ArrayIndex
+    getIndexOfActionNode(const Id& id) const;
+
+    /**
+     * Gets the array index of a given function entity node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns Corresponding array index.
+     * @throws Exception
+     *         If there is no node with such an ID.
+     */
+    ArrayIndex
+    getIndexOfEntityNode(const Id& id) const;
+
+    /**
+     * Gets the array index of a given function label node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns Corresponding array index.
+     * @throws Exception
+     *         If there is no node with such an ID.
+     */
+    ArrayIndex
+    getIndexOfLabelNode(const Id& id) const;
+
+    /**
+     * Gets a list of all the function action node IDs.
+     *
+     * @returns List of IDs.
+     */
+    std::list<Id>
+    getAllActionNodeIds(void) const;
+
+    /**
+     * Gets a list of all the function entity node IDs.
+     *
+     * @returns List of IDs.
+     */
+    std::list<Id>
+    getAllEntityNodeIds(void) const;
+
+    /**
+     * Gets a list of all the function label node IDs.
+     *
+     * @returns List of IDs.
+     */
+    std::list<Id>
+    getAllLabelNodeIds(void) const;
+
+    /**
+     * Gets the array index of a given pattern instance.
+     *
+     * @param id
      *        Pattern instance ID.
      * @returns Corresponding array index.
      * @throws Exception
      *         If there is no instance with such an ID.
      */
     ArrayIndex
-    getIndexOfPattern(const Id& instance) const;
+    getIndexOfPattern(const Id& id) const;
 
     /**
      * Gets a list of all the pattern instance IDs.

@@ -39,17 +39,17 @@ Params::Params(void) {}
 Params::~Params(void) {}
 
 size_t
-Params::getNumFunctionActionNodes(void) const {
+Params::getNumActionNodes(void) const {
     return func_action_node_mappings_.size();
 }
 
 size_t
-Params::getNumFunctionEntityNodes(void) const {
+Params::getNumEntityNodes(void) const {
     return func_entity_node_mappings_.size();
 }
 
 size_t
-Params::getNumFunctionLabelNodes(void) const {
+Params::getNumLabelNodes(void) const {
     return func_label_node_mappings_.size();
 }
 
@@ -190,8 +190,8 @@ Params::getAllPatternInstanceIds(void) const {
 }
 
 ArrayIndex
-Params::getIndexOfPattern(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_mappings_);
+Params::getIndexOfPattern(const Id& id) const {
+    return getMappedValue(id, pat_inst_mappings_);
 }
 
 
@@ -259,4 +259,51 @@ Params::getEntityNodesDefinedByPattern(const Id& instance) const {
 list<Id>
 Params::getEntityNodesUsedByPattern(const Id& instance) const {
     return getMappedValue(instance, pat_inst_entities_used_);
+}
+
+list<Id>
+Params::getDomsetOfLabel(const Id& id) const {
+    return getMappedValue(id, func_label_domsets_);
+}
+
+ArrayIndex
+Params::getIndexOfActionNode(const Id& id) const {
+    return getMappedValue(id, func_action_node_mappings_);
+}
+
+ArrayIndex
+Params::getIndexOfEntityNode(const Id& id) const {
+    return getMappedValue(id, func_entity_node_mappings_);
+}
+
+ArrayIndex
+Params::getIndexOfLabelNode(const Id& id) const {
+    return getMappedValue(id, func_label_node_mappings_);
+}
+
+list<Id>
+Params::getAllActionNodeIds(void) const {
+    list<Id> ids;
+    for (auto& kv : func_action_node_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
+}
+
+list<Id>
+Params::getAllEntityNodeIds(void) const {
+    list<Id> ids;
+    for (auto& kv : func_entity_node_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
+}
+
+list<Id>
+Params::getAllLabelNodeIds(void) const {
+    list<Id> ids;
+    for (auto& kv : func_label_node_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
 }
