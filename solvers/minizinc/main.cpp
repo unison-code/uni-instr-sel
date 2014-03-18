@@ -28,15 +28,19 @@
 #include "../common/model/params.h"
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <string>
+#include <vector>
 
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::ifstream;
+using std::list;
 using std::string;
 using std::stringstream;
+using std::vector;
 
 int
 main(int argc, char** argv) {
@@ -49,7 +53,6 @@ main(int argc, char** argv) {
         Model::Params params;
         Model::Params::parseJson(json_content, params);
 
-        // Output Minizinc parameters
         cout << "int: numFuncActionNodes = "
              << params.getNumFunctionActionNodes()
              << ";" << endl;
@@ -62,6 +65,20 @@ main(int argc, char** argv) {
         cout << "int: numPatternInstances = "
              << params.getNumPatternInstances()
              << ";" << endl;
+
+        cout << "array[0..numPatternInstances] of int: patInstCosts = [";
+        {
+            vector<int> costs(params.getNumPatternInstances());
+            for (const Model::Id& id : params.getPatternInstanceIds()) {
+                costs[params.getIndexOfPatternInstance(id)] =
+                    params.getPatternInstanceCost(id);
+            }
+            for (int i = 0; i < costs.size(); i++) {
+                if (i > 0) cout << ",";
+                cout << costs[i];
+            }
+        }
+        cout << "];" << endl;
 
         // TODO: output more parameters
     }
