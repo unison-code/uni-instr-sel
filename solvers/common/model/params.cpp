@@ -34,11 +34,6 @@ using std::list;
 using std::map;
 using std::string;
 
-// TODO: remove
-#include <iostream>
-using std::endl;
-using std::cout;
-
 Params::Params(void) {}
 
 Params::~Params(void) {}
@@ -70,9 +65,6 @@ Params::parseJson(const string& str, Params& param) {
     if (!reader.parse(str, root)) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
-
-    // TODO: remove
-    cout << root << endl;
 
     computeMappingsForFunctionActionNodes(root, param);
     computeMappingsForFunctionEntityNodes(root, param);
