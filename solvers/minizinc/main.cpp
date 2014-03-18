@@ -53,27 +53,26 @@ main(int argc, char** argv) {
         Model::Params params;
         Model::Params::parseJson(json_content, params);
 
-        cout << "int: numFuncActionNodes = "
+        cout << "numFuncActionNodes = "
              << params.getNumFunctionActionNodes()
              << ";" << endl;
-        cout << "int: numFuncEntityNodes = "
+        cout << "numFuncEntityNodes = "
              << params.getNumFunctionEntityNodes()
              << ";" << endl;
-        cout << "int: numFuncLabelNodes = "
+        cout << "numFuncLabelNodes = "
              << params.getNumFunctionLabelNodes()
              << ";" << endl;
-        cout << "int: numPatternInstances = "
+        cout << "numPatternInstances = "
              << params.getNumPatternInstances()
              << ";" << endl;
-
-        cout << "array[0..numPatternInstances] of int: patInstCosts = [";
+        cout << "patInstCosts = [";
         {
             vector<int> costs(params.getNumPatternInstances());
             for (const Model::Id& id : params.getPatternInstanceIds()) {
                 costs[params.getIndexOfPatternInstance(id)] =
                     params.getPatternInstanceCost(id);
             }
-            for (int i = 0; i < costs.size(); i++) {
+            for (size_t i = 0; i < costs.size(); i++) {
                 if (i > 0) cout << ",";
                 cout << costs[i];
             }

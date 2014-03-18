@@ -1,3 +1,9 @@
+int: numFuncActionNodes;
+int: numFuncEntityNodes;
+int: numFuncLabelNodes;
+int: numPatternInstances;
+array[0..numPatternInstances-1] of var int: patInstCosts;
+
 include "input.mzn";
 
 var 0..1: pi_sel;
