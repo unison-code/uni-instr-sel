@@ -27,6 +27,7 @@ include "input.mzn";
 array[allPatternInstances] of var 0..1: pi_sel;
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 array[allFuncEntityNodes] of var allPatternInstances: en_def;
+var int: cost;
 
 % TODO: add missing variables
 
@@ -61,9 +62,23 @@ forall (p in allPatternInstances) (
     )
 );
 
+% Accumulate cost of selected patterns
+constraint
+cost = sum (p in allPatternInstances) (
+           patInstCosts[p] * pi_sel[p]
+       );
 
 % TODO: add missing constraints
 
 
 
-solve satisfy;
+%------------------
+% SOLVE AND OUTPUT
+%------------------
+
+solve minimize cost;
+
+output [
+    "pi_sel=", show(pi_sel), "\n",
+    "cost=", show(cost), "\n"
+];
