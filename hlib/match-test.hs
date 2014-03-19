@@ -38,48 +38,134 @@ import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.JsonDumper
 import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.PrettyPrint
+import Language.InstructionSelection.Utils (toNatural)
+import Data.List (mapAccumL)
 
 main :: IO ()
 main =
-  do let search = mkGraph
-                  [ (0, NodeLabel 0 (NodeInfo (ComputationNode
-                                               (O.UIntOp O.Sub))
+  do let func = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
+                , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
+                , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
+                , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
+                , (4, NodeLabel 4 (NodeInfo (DataNode D.UnknownType) ""))
+                , (5, NodeLabel 5 (NodeInfo (DataNode D.UnknownType) ""))
+                , (6, NodeLabel 6 (NodeInfo (DataNode D.UnknownType) ""))
+                , (7, NodeLabel 7 (NodeInfo (LabelNode "start") ""))
+                , (8, NodeLabel 8 (NodeInfo (LabelNode "middle") ""))
+                , (9, NodeLabel 9 (NodeInfo (LabelNode "end") ""))
+                , (10, NodeLabel 10 (NodeInfo (ControlNode O.CondBranch) ""))
+                , (11, NodeLabel 11 (NodeInfo (ControlNode O.Ret) ""))
+                , (12, NodeLabel 12 (NodeInfo (ComputationNode (O.UIntOp O.Add))
                                      ""))
-                  , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
-                  , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
-                  , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
-                  , (4, NodeLabel 4 (NodeInfo (ControlNode O.Ret) ""))
-                  , (5, NodeLabel 5 (NodeInfo (LabelNode "start") ""))
-                  ]
-                  [ (1, 0, EdgeLabel 0 0)
-                  , (2, 0, EdgeLabel 0 1)
-                  , (0, 3, EdgeLabel 0 0)
-                  , (3, 4, EdgeLabel 0 0)
-                  , (5, 4, EdgeLabel 0 1)
-                  , (5, 1, EdgeLabel 1 0)
-                  , (5, 2, EdgeLabel 2 0)
-                  ]
-         pattern = mkGraph
-                  [ (4, NodeLabel 4 (NodeInfo (ComputationNode
-                                               (O.UIntOp O.Sub))
+                , (13, NodeLabel 13 (NodeInfo (ComputationNode (O.UIntOp O.Add))
                                      ""))
-                  , (5, NodeLabel 5 (NodeInfo (DataNode D.UnknownType) ""))
-                  , (6, NodeLabel 6 (NodeInfo (DataNode D.UnknownType) ""))
-                  , (7, NodeLabel 7 (NodeInfo (DataNode D.UnknownType) ""))
-                  ]
-                  [ (5, 4, EdgeLabel 0 0)
-                  , (6, 4, EdgeLabel 0 1)
-                  , (4, 7, EdgeLabel 0 0)
-                  ]
-         search_os = OpStructure search []
-         pattern_os = OpStructure pattern []
-         matchsets = match search pattern
-         matchsets_with_ids = zip matchsets [0..]
-         params = mkParams search_os
-                           [( pattern_os
-                            , matchsets_with_ids
-                            , (InstProperties 1 1)
-                            )]
+                , (14, NodeLabel 14 (NodeInfo PhiNode ""))
+                , (15, NodeLabel 15 (NodeInfo (ControlNode O.UncondBranch)
+                                              ""))
+                ]
+                [ (0, 10, EdgeLabel 0 1)
+                , (1, 12, EdgeLabel 0 0)
+                , (2, 12, EdgeLabel 0 1)
+                , (3, 13, EdgeLabel 0 0)
+                , (4, 14, EdgeLabel 0 1)
+                , (4, 13, EdgeLabel 1 1)
+                , (5, 14, EdgeLabel 0 2)
+                , (6, 11, EdgeLabel 0 1)
+                , (7, 0, EdgeLabel 0 0)
+                , (7, 1, EdgeLabel 1 0)
+                , (7, 2, EdgeLabel 2 0)
+                , (7, 3, EdgeLabel 3 0)
+                , (7, 10, EdgeLabel 4 0)
+                , (8, 15, EdgeLabel 0 0)
+                , (9, 11, EdgeLabel 0 0)
+                , (9, 14, EdgeLabel 1 0)
+                , (10, 8, EdgeLabel 1 0)
+                , (10, 9, EdgeLabel 0 0)
+                , (12, 4, EdgeLabel 0 0)
+                , (13, 5, EdgeLabel 0 0)
+                , (14, 6, EdgeLabel 0 0)
+                , (15, 9, EdgeLabel 0 1)
+                ]
+         init_def_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (LabelNode "start") ""))
+                , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
+                ]
+                [ (0, 1, EdgeLabel 0 0)
+                ]
+         add_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (ComputationNode (O.UIntOp O.Add))
+                                            ""))
+                , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
+                , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
+                , (3, NodeLabel 3 (NodeInfo (DataNode D.UnknownType) ""))
+                ]
+                [ (1, 0, EdgeLabel 0 0)
+                , (2, 0, EdgeLabel 0 1)
+                , (0, 3, EdgeLabel 0 0)
+                ]
+         bnz_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
+                , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
+                , (2, NodeLabel 2 (NodeInfo (LabelNode "") ""))
+                , (3, NodeLabel 3 (NodeInfo (LabelNode "") ""))
+                , (4, NodeLabel 4 (NodeInfo (ControlNode O.CondBranch) ""))
+                ]
+                [ (0, 4, EdgeLabel 0 1)
+                , (1, 4, EdgeLabel 0 0)
+                , (4, 2, EdgeLabel 0 0)
+                , (4, 3, EdgeLabel 1 0)
+                ]
+         br_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (LabelNode "") ""))
+                , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
+                , (2, NodeLabel 2 (NodeInfo (ControlNode O.UncondBranch) ""))
+                ]
+                [ (0, 1, EdgeLabel 0 0)
+                , (1, 2, EdgeLabel 0 0)
+                ]
+         ret_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
+                , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
+                , (2, NodeLabel 2 (NodeInfo (ControlNode O.Ret) ""))
+                ]
+                [ (0, 2, EdgeLabel 0 1)
+                , (1, 2, EdgeLabel 0 0)
+                ]
+         phi_pattern = mkGraph
+                [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
+                , (1, NodeLabel 1 (NodeInfo (DataNode D.UnknownType) ""))
+                , (2, NodeLabel 2 (NodeInfo (DataNode D.UnknownType) ""))
+                , (3, NodeLabel 3 (NodeInfo (LabelNode "") ""))
+                , (4, NodeLabel 4 (NodeInfo (LabelNode "") ""))
+                , (5, NodeLabel 5 (NodeInfo (LabelNode "") ""))
+                , (6, NodeLabel 6 (NodeInfo NullNode ""))
+                , (7, NodeLabel 7 (NodeInfo NullNode ""))
+                , (8, NodeLabel 8 (NodeInfo PhiNode ""))
+                ]
+                [ (0, 8, EdgeLabel 0 1)
+                , (1, 8, EdgeLabel 0 2)
+                , (8, 3, EdgeLabel 0 0)
+                , (3, 6, EdgeLabel 0 0)
+                , (4, 7, EdgeLabel 0 0)
+                , (6, 5, EdgeLabel 0 0)
+                , (7, 5, EdgeLabel 0 1)
+                , (5, 8, EdgeLabel 0 0)
+                ]
+         patterns = [init_def_pattern, add_pattern, bnz_pattern, br_pattern,
+                     ret_pattern, phi_pattern]
+         list_of_matchsets = map (match func) patterns
+         (_, list_of_matchsets_with_ids) =
+           mapAccumL (\curr sets -> ( curr + toNatural (length sets)
+                                    , zip sets [curr..]
+                                    )
+                     )
+                     (toNatural 0)
+                     list_of_matchsets
+         pattern_data =
+           map (\(p, m) -> (OpStructure p [], m, InstProperties 1 1))
+               (zip patterns list_of_matchsets_with_ids)
+         params = mkParams (OpStructure func []) pattern_data
      putStrLn $ toJson params
 --     let s = mkGraph
 --             [ (0, NodeLabel 0 (NodeInfo (ControlNode O.CondBranch) ""))
