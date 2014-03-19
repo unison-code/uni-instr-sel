@@ -9,7 +9,9 @@ int: numPatternInstances;
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncEntityNodes = 0..numFuncEntityNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
+set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
+int: nullLabel = numFuncLabelNodes;
 array[allFuncLabelNodes] of set of int: funcLabelDomsets;
 array[allPatternInstances] of int: patInstCosts;
 array[allPatternInstances] of set of int: patInstActionsCovered;
@@ -27,7 +29,7 @@ include "input.mzn";
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 array[allFuncEntityNodes] of var allPatternInstances: en_def;
 array[allPatternInstances] of var bool: pi_sel;
-array[allPatternInstances] of var allFuncLabelNodes: pi_bb;
+array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
 var int: cost;
 
 % TODO: add missing variables
@@ -88,9 +90,14 @@ forall (p in allPatternInstances)
 constraint
 forall (p in allPatternInstances)
 (
-    forall (n in patInstEntitiesUsed[p])
+    (not pi_sel[p] -> pi_bb[p] = nullLabel)
+    /\
     (
-        pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
+        pi_sel[p] ->
+        forall (n in patInstEntitiesUsed[p])
+        (
+            pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
+        )
     )
 );
 
