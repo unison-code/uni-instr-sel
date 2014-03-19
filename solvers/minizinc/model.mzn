@@ -37,38 +37,59 @@ var int: cost;
 % CONSTRAINTS
 %-------------
 
-% Enforce selection of pattern if an action node is covered by that pattern
+% Prevent a pattern from covering action nodes or defining entity nodes outside
+% its range
 constraint
-forall (n in allFuncActionNodes, p in allPatternInstances) (
-    an_cov[n] == p -> pi_sel[p] = 1
+forall (p in allPatternInstances)
+(
+    forall (n in allFuncActionNodes where not (n in patInstActionsCovered[p]))
+    (
+        an_cov[n] != p
+    )
+    /\
+    forall (n in allFuncEntityNodes where not (n in patInstEntitiesDefined[p]))
+    (
+        en_def[n] != p
+    )
 );
 
-% Enforce selection of pattern if an entity node is defined by that pattern
+% Enforce selection of pattern if an action node is covered or an entity node is
+% defined by that pattern
 constraint
-forall (n in allFuncEntityNodes, p in allPatternInstances) (
+forall (n in allFuncActionNodes, p in allPatternInstances)
+(
+    an_cov[n] == p -> pi_sel[p] = 1
+)
+/\
+forall (n in allFuncEntityNodes, p in allPatternInstances)
+(
     en_def[n] == p -> pi_sel[p] = 1
 );
 
 % Enforce corresponding action node coverage and entity node definitions if a
 % pattern is selected
 constraint
-forall (p in allPatternInstances) (
-    forall (n in patInstActionsCovered[p]) (
+forall (p in allPatternInstances)
+(
+    forall (n in patInstActionsCovered[p])
+    (
         pi_sel[p] == 1 -> an_cov[n] = p
     )
     /\
-    forall (n in patInstEntitiesDefined[p]) (
+    forall (n in patInstEntitiesDefined[p])
+    (
         pi_sel[p] == 1 -> en_def[n] = p
     )
 );
 
+% TODO: add missing constraints
+
 % Accumulate cost of selected patterns
 constraint
-cost = sum (p in allPatternInstances) (
+cost = sum (p in allPatternInstances)
+       (
            patInstCosts[p] * pi_sel[p]
        );
-
-% TODO: add missing constraints
 
 
 
@@ -80,5 +101,7 @@ solve minimize cost;
 
 output [
     "pi_sel=", show(pi_sel), "\n",
+    "an_cov=", show(an_cov), "\n",
+    "en_def=", show(en_def), "\n",
     "cost=", show(cost), "\n"
 ];
