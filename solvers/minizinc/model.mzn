@@ -1,4 +1,6 @@
+%------------
 % PARAMETERS
+%------------
 
 int: numFuncActionNodes;
 int: numFuncEntityNodes;
@@ -18,7 +20,9 @@ include "input.mzn";
 
 
 
+%-----------
 % VARIABLES
+%-----------
 
 array[allPatternInstances] of var 0..1: pi_sel;
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
@@ -28,7 +32,9 @@ array[allFuncEntityNodes] of var allPatternInstances: en_def;
 
 
 
+%-------------
 % CONSTRAINTS
+%-------------
 
 % Enforce selection of pattern if an action node is covered by that pattern
 constraint
