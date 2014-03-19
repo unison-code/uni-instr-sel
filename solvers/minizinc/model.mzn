@@ -4,11 +4,15 @@ int: numFuncActionNodes;
 int: numFuncEntityNodes;
 int: numFuncLabelNodes;
 int: numPatternInstances;
-array[0..numFuncLabelNodes-1] of set of int: funcLabelDomsets;
-array[0..numPatternInstances-1] of int: patInstCosts;
-array[0..numPatternInstances-1] of set of int: patInstActionsCovered;
-array[0..numPatternInstances-1] of set of int: patInstEntitiesDefined;
-array[0..numPatternInstances-1] of set of int: patInstEntitiesUsed;
+set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
+set of int: allFuncEntityNodes = 0..numFuncEntityNodes-1;
+set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
+set of int: allPatternInstances = 0..numPatternInstances-1;
+array[allFuncLabelNodes] of set of int: funcLabelDomsets;
+array[allPatternInstances] of int: patInstCosts;
+array[allPatternInstances] of set of int: patInstActionsCovered;
+array[allPatternInstances] of set of int: patInstEntitiesDefined;
+array[allPatternInstances] of set of int: patInstEntitiesUsed;
 
 include "input.mzn";
 
@@ -16,15 +20,18 @@ include "input.mzn";
 
 % VARIABLES
 
-var 0..1: pi_sel;
-array[0..numFuncActionNodes-1] of var 0..numPatternInstances-1: an_cov;
-array[0..numFuncEntityNodes-1] of var 0..numPatternInstances-1: en_def;
+array[allPatternInstances] of var 0..1: pi_sel;
+array[allFuncActionNodes] of var allPatternInstances: an_cov;
+array[allFuncEntityNodes] of var allPatternInstances: en_def;
 
 % TODO: add missing variables
 
 
 
 % CONSTRAINTS
+
+% Enforce selection of pattern if an action node is covered by that pattern
+% TODO: add
 
 % TODO: add missing constraints
 

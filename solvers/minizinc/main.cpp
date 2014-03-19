@@ -103,7 +103,7 @@ main(int argc, char** argv) {
              << params.getNumPatternInstances()
              << ";" << endl;
 
-        cout << "funcLabelDomsets = array1d(0..numFuncLabelNodes-1, ";
+        cout << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
         {
             size_t num_nodes = params.getNumLabelNodes();
             vector< list<ArrayIndex> > node_lists(num_nodes);
@@ -115,7 +115,7 @@ main(int argc, char** argv) {
         }
         cout << ");" << endl;
 
-        cout << "patInstCosts = array1d(0..numPatternInstances-1, ";
+        cout << "patInstCosts = array1d(allPatternInstances, ";
         {
             vector<int> costs(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
@@ -126,7 +126,7 @@ main(int argc, char** argv) {
         }
         cout << ");" << endl;
 
-        cout << "patInstActionsCovered = array1d(0..numPatternInstances-1, ";
+        cout << "patInstActionsCovered = array1d(allPatternInstances, ";
         {
             size_t num_patterns = params.getNumPatternInstances();
             vector< list<ArrayIndex> > node_lists(num_patterns);
@@ -140,7 +140,7 @@ main(int argc, char** argv) {
         }
         cout << ");" << endl;
 
-        cout << "patInstEntitiesDefined = array1d(0..numPatternInstances-1, ";
+        cout << "patInstEntitiesDefined = array1d(allPatternInstances, ";
         {
             size_t num_patterns = params.getNumPatternInstances();
             vector< list<ArrayIndex> > node_lists(num_patterns);
@@ -154,7 +154,7 @@ main(int argc, char** argv) {
         }
         cout << ");" << endl;
 
-        cout << "patInstEntitiesUsed = array1d(0..numPatternInstances-1, ";
+        cout << "patInstEntitiesUsed = array1d(allPatternInstances, ";
         {
             size_t num_patterns = params.getNumPatternInstances();
             vector< list<ArrayIndex> > node_lists(num_patterns);
