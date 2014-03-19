@@ -24,9 +24,10 @@ include "input.mzn";
 % VARIABLES
 %-----------
 
-array[allPatternInstances] of var bool: pi_sel;
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 array[allFuncEntityNodes] of var allPatternInstances: en_def;
+array[allPatternInstances] of var bool: pi_sel;
+array[allPatternInstances] of var allFuncLabelNodes: pi_bb;
 var int: cost;
 
 % TODO: add missing variables
@@ -82,6 +83,17 @@ forall (p in allPatternInstances)
     )
 );
 
+% Enforce that all selected pattern instances must be allocated to a basic block
+% such that every used entity node is dominated by its entity definition
+constraint
+forall (p in allPatternInstances)
+(
+    forall (n in patInstEntitiesUsed[p])
+    (
+        pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
+    )
+);
+
 % TODO: add missing constraints
 
 % Accumulate cost of selected patterns
@@ -100,8 +112,9 @@ cost = sum (p in allPatternInstances)
 solve minimize cost;
 
 output [
-    "pi_sel=", show(pi_sel), "\n",
     "an_cov=", show(an_cov), "\n",
     "en_def=", show(en_def), "\n",
+    "pi_sel=", show(pi_sel), "\n",
+    "pi_bb=", show(pi_bb), "\n",
     "cost=", show(cost), "\n"
 ];
