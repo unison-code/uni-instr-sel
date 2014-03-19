@@ -615,7 +615,8 @@ edges g from_n to_n =
                   es
   in sorted_es
 
--- | Checks if a node has ordered inbound edges.
+-- | Checks if a node has ordered inbound edges. This also entails that the
+-- number of edges must be the same.
 
 hasOrderedInEdges :: Node -> Bool
 hasOrderedInEdges n = hasOrderedInEdges' (nodeType n)
@@ -626,7 +627,8 @@ hasOrderedInEdges' (LabelNode _) = True
 hasOrderedInEdges' PhiNode = True
 hasOrderedInEdges' _ = False
 
-  -- | Checks if a node has ordered outbound edges.
+  -- | Checks if a node has ordered outbound edges. This also entails that the
+-- number of edges must be the same.
 
 hasOrderedOutEdges :: Node -> Bool
 hasOrderedOutEdges n = hasOrderedOutEdges' (nodeType n)

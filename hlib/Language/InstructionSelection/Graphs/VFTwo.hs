@@ -93,10 +93,11 @@ checkSemantics :: Graph           -- ^ The search graph.
                   -> NodeMatchset -- ^ Current matchset state.
                   -> NodeMapping  -- ^ Candidate mapping.
                   -> Bool
-checkSemantics sg pg st (n, m) =
-  n `matches` m && (checkEdges sg pg st (n, m))
+checkSemantics sg pg st pair@(n, m) =
+  n `matches` m && (checkEdges sg pg st pair)
 
--- | Checks that for nodes with ordered edges the edges match.
+-- | Checks for nodes with ordered edges that the number of edges and edge
+-- numbers match.
 
 checkEdges :: Graph           -- ^ The search graph.
               -> Graph        -- ^ The pattern graph.
@@ -104,11 +105,13 @@ checkEdges :: Graph           -- ^ The search graph.
               -> NodeMapping  -- ^ Candidate mapping.
               -> Bool
 checkEdges sg pg st pair =
-  (checkInEdges sg pg st pair) && (checkOutEdges sg pg st pair)
+     (checkInEdges sg pg st pair)
+  && (checkOutEdges sg pg st pair)
+  && (checkPredInEdges sg pg st pair)
+  && (checkSuccOutEdges sg pg st pair)
 
--- | Checks that the already-mapped predecessors of the pattern node in the
--- candidate mapping, for those which has ordered outbound edges, that the
--- numbers are the same.
+-- | If the nodes has ordered outbound edges, check that the number of outbound
+-- edges are the same for both nodes.
 
 checkOutEdges :: Graph           -- ^ The search graph.
                  -> Graph        -- ^ The pattern graph.
@@ -116,6 +119,37 @@ checkOutEdges :: Graph           -- ^ The search graph.
                  -> NodeMapping  -- ^ Candidate mapping.
                  -> Bool
 checkOutEdges sg pg st (n, m) =
+  let num_sg_edges = length $ outEdges sg n
+      num_pg_edges = length $ outEdges pg m
+  in if hasOrderedOutEdges n
+        then num_sg_edges == num_pg_edges
+        else True
+
+-- | If the nodes has ordered inbound edges, check that the number of inbound
+-- edges are the same for both nodes.
+
+checkInEdges :: Graph           -- ^ The search graph.
+                -> Graph        -- ^ The pattern graph.
+                -> NodeMatchset -- ^ Current matchset state.
+                -> NodeMapping  -- ^ Candidate mapping.
+                -> Bool
+checkInEdges sg pg st (n, m) =
+  let num_sg_edges = length $ inEdges sg n
+      num_pg_edges = length $ inEdges pg m
+  in if hasOrderedInEdges n
+        then num_sg_edges == num_pg_edges
+        else True
+
+-- | Checks that the already-mapped predecessors of the pattern node in the
+-- candidate mapping, for those which has ordered outbound edges, that the
+-- edge numbers are the same.
+
+checkSuccOutEdges :: Graph           -- ^ The search graph.
+                     -> Graph        -- ^ The pattern graph.
+                     -> NodeMatchset -- ^ Current matchset state.
+                     -> NodeMapping  -- ^ Candidate mapping.
+                     -> Bool
+checkSuccOutEdges sg pg st (n, m) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       mapped_preds_m = getMappedPredsOfMappedNode m mapped_ns_pg pg
       pg_preds_to_check = filter hasOrderedOutEdges mapped_preds_m
@@ -125,14 +159,14 @@ checkOutEdges sg pg st (n, m) =
       edge_pairs = zip pg_edges sg_edges
   in all (\(pg_e, sg_e) -> (outEdgeNr pg_e) == (outEdgeNr sg_e)) edge_pairs
 
--- | Same as checkOutEdges but for predecessors and their inbound edges.
+-- | Same as checkSuccOutEdges but for predecessors and their inbound edges.
 
-checkInEdges :: Graph           -- ^ The search graph.
-                -> Graph        -- ^ The pattern graph.
-                -> NodeMatchset -- ^ Current matchset state.
-                -> NodeMapping  -- ^ Candidate mapping.
-                -> Bool
-checkInEdges sg pg st (n, m) =
+checkPredInEdges :: Graph           -- ^ The search graph.
+                    -> Graph        -- ^ The pattern graph.
+                    -> NodeMatchset -- ^ Current matchset state.
+                    -> NodeMapping  -- ^ Candidate mapping.
+                    -> Bool
+checkPredInEdges sg pg st (n, m) =
   let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
       mapped_succs_m = getMappedSuccsOfMappedNode m mapped_ns_pg pg
       pg_succs_to_check = filter hasOrderedInEdges mapped_succs_m
