@@ -24,7 +24,7 @@ include "input.mzn";
 % VARIABLES
 %-----------
 
-array[allPatternInstances] of var 0..1: pi_sel;
+array[allPatternInstances] of var bool: pi_sel;
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 array[allFuncEntityNodes] of var allPatternInstances: en_def;
 var int: cost;
@@ -58,12 +58,12 @@ forall (p in allPatternInstances)
 constraint
 forall (n in allFuncActionNodes, p in allPatternInstances)
 (
-    an_cov[n] == p -> pi_sel[p] = 1
+    an_cov[n] == p -> pi_sel[p]
 )
 /\
 forall (n in allFuncEntityNodes, p in allPatternInstances)
 (
-    en_def[n] == p -> pi_sel[p] = 1
+    en_def[n] == p -> pi_sel[p]
 );
 
 % Enforce corresponding action node coverage and entity node definitions if a
@@ -73,12 +73,12 @@ forall (p in allPatternInstances)
 (
     forall (n in patInstActionsCovered[p])
     (
-        pi_sel[p] == 1 -> an_cov[n] = p
+        pi_sel[p] -> an_cov[n] = p
     )
     /\
     forall (n in patInstEntitiesDefined[p])
     (
-        pi_sel[p] == 1 -> en_def[n] = p
+        pi_sel[p] -> en_def[n] = p
     )
 );
 
@@ -88,7 +88,7 @@ forall (p in allPatternInstances)
 constraint
 cost = sum (p in allPatternInstances)
        (
-           patInstCosts[p] * pi_sel[p]
+           patInstCosts[p] * bool2int(pi_sel[p])
        );
 
 
