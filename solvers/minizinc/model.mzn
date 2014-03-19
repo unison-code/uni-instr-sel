@@ -42,6 +42,20 @@ forall (n in allFuncEntityNodes, p in allPatternInstances) (
     en_def[n] == p -> pi_sel[p] = 1
 );
 
+% Enforce corresponding action node coverage and entity node definitions if a
+% pattern is selected
+constraint
+forall (p in allPatternInstances) (
+    forall (n in patInstActionsCovered[p]) (
+        pi_sel[p] == 1 -> an_cov[n] = p
+    )
+    /\
+    forall (n in patInstEntitiesDefined[p]) (
+        pi_sel[p] == 1 -> en_def[n] = p
+    )
+);
+
+
 % TODO: add missing constraints
 
 
