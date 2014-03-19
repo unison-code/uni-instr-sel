@@ -31,7 +31,16 @@ array[allFuncEntityNodes] of var allPatternInstances: en_def;
 % CONSTRAINTS
 
 % Enforce selection of pattern if an action node is covered by that pattern
-% TODO: add
+constraint
+forall (n in allFuncActionNodes, p in allPatternInstances) (
+    an_cov[n] == p -> pi_sel[p] = 1
+);
+
+% Enforce selection of pattern if an entity node is defined by that pattern
+constraint
+forall (n in allFuncEntityNodes, p in allPatternInstances) (
+    en_def[n] == p -> pi_sel[p] = 1
+);
 
 % TODO: add missing constraints
 
