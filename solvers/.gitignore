@@ -3,3 +3,4 @@
 *.json
 gecode-solver
 minizinc-solver
+pretty-json
