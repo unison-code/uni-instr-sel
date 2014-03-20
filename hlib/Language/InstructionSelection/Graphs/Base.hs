@@ -20,15 +20,12 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
-
 module Language.InstructionSelection.Graphs.Base (
   BBLabel
 , Edge
 , EdgeLabel (..)
 , EdgeNr
 , Graph (..)
-, Matchable (..)
 , MatchsetId
 , NodeIdMatchset
 , NodeMatchset
@@ -52,8 +49,6 @@ module Language.InstructionSelection.Graphs.Base (
 , edges
 , empty
 , fromNodeId
-, hasOrderedInEdges
-, hasOrderedOutEdges
 , iDom
 , inEdgeNr
 , inEdges
@@ -81,6 +76,7 @@ module Language.InstructionSelection.Graphs.Base (
 , mapToPatternNodes
 , mapToSearchNodeIds
 , mapToSearchNodes
+, matchingNodes
 , mergeNodes
 , mkGraph
 , nodeId
@@ -97,6 +93,7 @@ module Language.InstructionSelection.Graphs.Base (
 , redirectInEdges
 , redirectOutEdges
 , sourceOfEdge
+, splitMatchset
 , successors
 , targetOfEdge
 , updateEdgeSource
@@ -115,18 +112,6 @@ import Language.InstructionSelection.Utils ( Natural
 import qualified Data.Graph.Inductive as I
 import Data.List (sortBy)
 import Data.Maybe
-
-
-
-----------------
--- Type classes
-----------------
-
-class Matchable a where
-
-  -- | Checks if one type matches another.
-
-  matches :: a -> a -> Bool
 
 
 
@@ -229,27 +214,6 @@ data EdgeLabel
           EdgeNr
 
     deriving (Show,Eq)
-
-
-
-------------------------
--- Type class instances
-------------------------
-
-instance Matchable (I.LNode NodeLabel) where
-  n1 `matches` n2 = (nodeType n1) `matches` (nodeType n2)
-
-instance Matchable NodeType where
-  (ComputationNode op1) `matches` (ComputationNode op2) = op1 == op2
-  (ControlNode op1) `matches` (ControlNode op2) = op1 == op2
-  (DataNode d1) `matches` (DataNode d2) = d1 == d2
-  (LabelNode _) `matches` (LabelNode _) = True
-  PhiNode `matches` PhiNode = True
-  StateNode `matches` StateNode = True
-  TransferNode `matches` TransferNode = True
-  NullNode `matches` _ = True
-  _ `matches` NullNode = True
-  _ `matches` _ = False
 
 
 
@@ -615,28 +579,6 @@ edges g from_n to_n =
                   es
   in sorted_es
 
--- | Checks if a node has ordered inbound edges. This also entails that the
--- number of edges must be the same.
-
-hasOrderedInEdges :: Node -> Bool
-hasOrderedInEdges n = hasOrderedInEdges' (nodeType n)
-
-hasOrderedInEdges' :: NodeType -> Bool
-hasOrderedInEdges' (ComputationNode op) = not $ O.isOpCommutative op
-hasOrderedInEdges' (LabelNode _) = True
-hasOrderedInEdges' PhiNode = True
-hasOrderedInEdges' _ = False
-
-  -- | Checks if a node has ordered outbound edges. This also entails that the
--- number of edges must be the same.
-
-hasOrderedOutEdges :: Node -> Bool
-hasOrderedOutEdges n = hasOrderedOutEdges' (nodeType n)
-
-hasOrderedOutEdges' :: NodeType -> Bool
-hasOrderedOutEdges' (ControlNode O.CondBranch) = True
-hasOrderedOutEdges' _ = False
-
 -- | Gets the source node of an edge.
 
 sourceOfEdge :: Graph -> Edge -> Node
@@ -724,3 +666,128 @@ mapToSearchNodeIds :: [NodeId]          -- ^ List of pattern graph node IDs.
                       -> NodeIdMatchset -- ^ Search-to-pattern matchset.
                       -> [NodeId]       -- ^ List of search graph node IDs.
 mapToSearchNodeIds ns m = [ n1 | (n1, n2) <- m, n <- ns, n == n2]
+
+-- | Checks if a node matches another node.
+
+matchingNodes sg pg st pair@(n, m) =
+  matchingNodeTypes (nodeType n) (nodeType m) && matchingEdges sg pg st pair
+
+-- | Checks if two node types are matching-compatible.
+
+matchingNodeTypes :: NodeType -> NodeType -> Bool
+matchingNodeTypes (ComputationNode op1) (ComputationNode op2) = op1 == op2
+matchingNodeTypes (ControlNode op1) (ControlNode op2) = op1 == op2
+matchingNodeTypes (DataNode d1) (DataNode d2) = d1 == d2
+matchingNodeTypes (LabelNode _) (LabelNode _) = True
+matchingNodeTypes PhiNode PhiNode = True
+matchingNodeTypes StateNode StateNode = True
+matchingNodeTypes TransferNode TransferNode = True
+matchingNodeTypes NullNode _ = True
+matchingNodeTypes _ NullNode = True
+matchingNodeTypes _ _ = False
+
+-- | Checks, for cases where it matters, that the nodes have a matching number
+-- of edges, and that the already mapped predecessors and successors have a
+-- matching edge ordering. At this point it can be assumed that the nodes in the
+-- candidate mapping have matching node types (although one of the nodes can be
+-- a NullNode).
+
+matchingEdges :: Graph        -- ^ The search graph.
+              -> Graph        -- ^ The pattern graph.
+              -> NodeMatchset -- ^ Current matchset state.
+              -> NodeMapping  -- ^ Candidate mapping.
+              -> Bool
+matchingEdges sg pg st pair =
+     (matchingNumberOfInEdges sg pg pair)
+  && (matchingNumberOfOutEdges sg pg pair)
+  && (matchingOutEdgeOrderingOfPreds sg pg st pair)
+  && (matchingInEdgeOrderingOfSuccs sg pg st pair)
+
+matchingNumberOfInEdges :: Graph          -- ^ The search graph.
+                           -> Graph       -- ^ The pattern graph.
+                           -> NodeMapping -- ^ Candidate mapping.
+                           -> Bool
+matchingNumberOfInEdges sg pg (n, m) =
+  let num_sg_edges = length $ inEdges sg n
+      num_pg_edges = length $ inEdges pg m
+  in if checkNumberOfInEdges sg n && checkNumberOfInEdges pg m
+        then num_sg_edges == num_pg_edges
+        else True
+
+matchingNumberOfOutEdges :: Graph          -- ^ The search graph.
+                            -> Graph       -- ^ The pattern graph.
+                            -> NodeMapping -- ^ Candidate mapping.
+                            -> Bool
+matchingNumberOfOutEdges sg pg (n, m) =
+  let num_sg_edges = length $ outEdges sg n
+      num_pg_edges = length $ outEdges pg m
+  in if checkNumberOfOutEdges sg n && checkNumberOfOutEdges pg m
+        then num_sg_edges == num_pg_edges
+        else True
+
+checkNumberOfInEdges :: Graph -> Node -> Bool
+checkNumberOfInEdges _ n
+  | isActionNode n = True
+  | otherwise = False
+
+checkNumberOfOutEdges :: Graph -> Node -> Bool
+checkNumberOfOutEdges _ n
+  | isActionNode n = True
+  | otherwise = False
+
+checkOrderingOfInEdges :: Graph -> Node -> Bool
+checkOrderingOfInEdges g n
+  | isComputationNode n = not $ O.isOpCommutative $ compOpType $ nodeType n
+  | isLabelNode n = (length $ inEdges g n) > 0 && (length $ outEdges g n) > 0
+  | isPhiNode n = True
+  | otherwise = False
+
+checkOrderingOfOutEdges :: Graph -> Node -> Bool
+checkOrderingOfOutEdges _ n
+  | isControlNode n = f (nodeType n)
+  | otherwise = False
+  where f (ControlNode O.CondBranch) = True
+        f _ = False
+
+-- | Checks for the pattern node's predecessors which have already been mapped
+-- and require an ordering on the outbound edges that the ordering is the same
+-- as that in the search graph.
+
+matchingOutEdgeOrderingOfPreds :: Graph           -- ^ The search graph.
+                                  -> Graph        -- ^ The pattern graph.
+                                  -> NodeMatchset -- ^ Current matchset state.
+                                  -> NodeMapping  -- ^ Candidate mapping.
+                                  -> Bool
+matchingOutEdgeOrderingOfPreds sg pg st (n, m) =
+  let (ns, ms) = splitMatchset st
+      m_preds = filter (`elem` ms) (predecessors pg m)
+      m_ord_preds =  filter (checkOrderingOfOutEdges pg) m_preds
+      n_ord_preds = [ k | (k, l) <- st, l' <- m_ord_preds, l == l' ]
+      es = zip (concatMap (edges pg m) m_ord_preds)
+               (concatMap (edges sg n) n_ord_preds)
+  in all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
+
+-- | Same as matchingOutEdgeOrderingOfPreds but for successors and their inbound
+-- edges.
+
+matchingInEdgeOrderingOfSuccs :: Graph           -- ^ The search graph.
+                                 -> Graph        -- ^ The pattern graph.
+                                 -> NodeMatchset -- ^ Current matchset state.
+                                 -> NodeMapping  -- ^ Candidate mapping.
+                                 -> Bool
+matchingInEdgeOrderingOfSuccs sg pg st (n, m) =
+  let (ns, ms) = splitMatchset st
+      m_succs = filter (`elem` ms) (successors pg m)
+      m_ord_succs =  filter (checkOrderingOfInEdges pg) m_succs
+      n_ord_succs = [ k | (k, l) <- st, l' <- m_ord_succs, l == l' ]
+      es = zip (concatMap (edges pg m) m_ord_succs)
+               (concatMap (edges sg n) n_ord_succs)
+  in all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
+
+-- | Splits a matchset into two node sets: the set of nodes contained in the
+-- search graph, and the set of nodes contained in the pattern graph.
+
+splitMatchset :: [(n, n)] -> ( [n] -- ^ Matched nodes in the search graph.
+                             , [n] -- ^ Matched nodes in the pattern graph.
+                             )
+splitMatchset m = (map fst m, map snd m)

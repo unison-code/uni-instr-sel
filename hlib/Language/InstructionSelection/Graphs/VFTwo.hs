@@ -16,11 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Graphs.VFTwo (
-  NodeMatchset
-, NodeMapping
-, match
-) where
+module Language.InstructionSelection.Graphs.VFTwo (match) where
 
 import Language.InstructionSelection.Graphs.Base
 import Data.List (intersect, union, (\\))
@@ -31,8 +27,10 @@ import Data.List (intersect, union, (\\))
 -- Functions
 -------------
 
-match :: Graph            -- ^ The search graph.
-         -> Graph         -- ^ The pattern graph.
+-- | Finds all instances where a pattern graph matches within a search graph.
+
+match :: Graph             -- ^ The search graph.
+         -> Graph          -- ^ The pattern graph.
          -> [NodeMatchset] -- ^ Found matches.
 match sg pg = match' sg pg []
 
@@ -83,98 +81,7 @@ checkFeasibility :: Graph           -- ^ The search graph.
                     -> NodeMapping  -- ^ Candidate mapping.
                     -> Bool
 checkFeasibility sg pg st pair =
-  (checkSemantics sg pg st pair) && (checkSyntax sg pg st pair)
-
--- | Checks that the nodes are of the same type and that the edges are
--- compatible.
-
-checkSemantics :: Graph           -- ^ The search graph.
-                  -> Graph        -- ^ The pattern graph.
-                  -> NodeMatchset -- ^ Current matchset state.
-                  -> NodeMapping  -- ^ Candidate mapping.
-                  -> Bool
-checkSemantics sg pg st pair@(n, m) =
-  n `matches` m && (checkEdges sg pg st pair)
-
--- | Checks for nodes with ordered edges that the number of edges and edge
--- numbers match.
-
-checkEdges :: Graph           -- ^ The search graph.
-              -> Graph        -- ^ The pattern graph.
-              -> NodeMatchset -- ^ Current matchset state.
-              -> NodeMapping  -- ^ Candidate mapping.
-              -> Bool
-checkEdges sg pg st pair =
-     (checkInEdges sg pg st pair)
-  && (checkOutEdges sg pg st pair)
-  && (checkPredInEdges sg pg st pair)
-  && (checkSuccOutEdges sg pg st pair)
-
--- | If the nodes has ordered outbound edges, check that the number of outbound
--- edges are the same for both nodes.
-
-checkOutEdges :: Graph           -- ^ The search graph.
-                 -> Graph        -- ^ The pattern graph.
-                 -> NodeMatchset -- ^ Current matchset state.
-                 -> NodeMapping  -- ^ Candidate mapping.
-                 -> Bool
-checkOutEdges sg pg st (n, m) =
-  let num_sg_edges = length $ outEdges sg n
-      num_pg_edges = length $ outEdges pg m
-  in if hasOrderedOutEdges n
-        then num_sg_edges == num_pg_edges
-        else True
-
--- | If the nodes has ordered inbound edges, check that the number of inbound
--- edges are the same for both nodes.
-
-checkInEdges :: Graph           -- ^ The search graph.
-                -> Graph        -- ^ The pattern graph.
-                -> NodeMatchset -- ^ Current matchset state.
-                -> NodeMapping  -- ^ Candidate mapping.
-                -> Bool
-checkInEdges sg pg st (n, m) =
-  let num_sg_edges = length $ inEdges sg n
-      num_pg_edges = length $ inEdges pg m
-  in if hasOrderedInEdges n
-        then num_sg_edges == num_pg_edges
-        else True
-
--- | Checks that the already-mapped predecessors of the pattern node in the
--- candidate mapping, for those which has ordered outbound edges, that the
--- edge numbers are the same.
-
-checkSuccOutEdges :: Graph           -- ^ The search graph.
-                     -> Graph        -- ^ The pattern graph.
-                     -> NodeMatchset -- ^ Current matchset state.
-                     -> NodeMapping  -- ^ Candidate mapping.
-                     -> Bool
-checkSuccOutEdges sg pg st (n, m) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
-      mapped_preds_m = getMappedPredsOfMappedNode m mapped_ns_pg pg
-      pg_preds_to_check = filter hasOrderedOutEdges mapped_preds_m
-      sg_preds_to_check = map (getMappedSNode st) pg_preds_to_check
-      pg_edges = concatMap (edges pg m) pg_preds_to_check
-      sg_edges = concatMap (edges sg n) sg_preds_to_check
-      edge_pairs = zip pg_edges sg_edges
-  in all (\(pg_e, sg_e) -> (outEdgeNr pg_e) == (outEdgeNr sg_e)) edge_pairs
-
--- | Same as checkSuccOutEdges but for predecessors and their inbound edges.
-
-checkPredInEdges :: Graph           -- ^ The search graph.
-                    -> Graph        -- ^ The pattern graph.
-                    -> NodeMatchset -- ^ Current matchset state.
-                    -> NodeMapping  -- ^ Candidate mapping.
-                    -> Bool
-checkPredInEdges sg pg st (n, m) =
-  let (mapped_ns_sg, mapped_ns_pg) = splitMatchset st
-      mapped_succs_m = getMappedSuccsOfMappedNode m mapped_ns_pg pg
-      pg_succs_to_check = filter hasOrderedInEdges mapped_succs_m
-      sg_succs_to_check = map (getMappedSNode st) pg_succs_to_check
-      pg_edges = concatMap (edges pg m) pg_succs_to_check
-      sg_edges = concatMap (edges sg n) sg_succs_to_check
-      edge_pairs = zip pg_edges sg_edges
-  in all (\(pg_e, sg_e) -> (inEdgeNr pg_e) == (inEdgeNr sg_e)) edge_pairs
+  (matchingNodes sg pg st pair) && (checkSyntax sg pg st pair)
 
 -- | Checks that the syntax of matched nodes are compatible (equation 2 in the
 -- paper).
@@ -286,19 +193,6 @@ checkSyntaxNew sg pg st (sn, pn) =
         >= length (new_ns_pg `intersect` preds_pn)
      && length (new_ns_sg `intersect` succs_sn)
         >= length (new_ns_pg `intersect` succs_pn)
-
--- | Splits a match into two node sets: the ones contained in the search graph,
--- and the ones contained in the pattern graph.
-
-splitMatchset :: NodeMatchset -> ( [Node] -- ^ Matched nodes in the search
-                                          -- graph.
-                                 , [Node] -- ^ Matched nodes in the pattern
-                                          -- graph.
-                                 )
-splitMatchset m =
-  let nodes_sg = map fst m
-      nodes_pg = map snd m
-  in (nodes_sg, nodes_pg)
 
 getNonMappedSuccsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                   -> Graph -- ^ Original graph in which the
