@@ -72,10 +72,8 @@ module Language.InstructionSelection.Graphs.Base (
 , isTransferNode
 , isTransferNodeType
 , lastAddedNode
-, mapToPatternNodeIds
-, mapToPatternNodes
-, mapToSearchNodeIds
-, mapToSearchNodes
+, mappedNodesFToP
+, mappedNodesPToF
 , matchingNodes
 , mergeNodes
 , mkGraph
@@ -128,10 +126,10 @@ type BBLabel = String
 type MatchsetId = Natural
 type NodeIdMatchset = [NodeIdMapping]
 type NodeMatchset = [NodeMapping]
-type NodeIdMapping = ( NodeId -- ^ Node ID in search graph.
+type NodeIdMapping = ( NodeId -- ^ Node ID in function graph.
                      , NodeId -- ^ Node ID in pattern graph.
                      )
-type NodeMapping = ( Node -- ^ Node in search graph.
+type NodeMapping = ( Node -- ^ Node in function graph.
                    , Node -- ^ Node in pattern graph.
                    )
 
@@ -638,39 +636,10 @@ convertMappingNToId (n1, n2) = (nodeId n1, nodeId n2)
 nodeIds :: [Node] -> [NodeId]
 nodeIds = removeDuplicates . map nodeId
 
--- | For a list of nodes in the search graph and a node mapping, get the pattern
--- nodes which has a corresponding mapping to a search node in the list.
-
-mapToPatternNodes :: [Node]          -- ^ List of search graph nodes.
-                     -> NodeMatchset -- ^ Search-to-pattern matchset.
-                     -> [Node]       -- ^ List of pattern graph nodes.
-mapToPatternNodes ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
-
--- | Same as `mapToPatternNodes` but goes in the other direction.
-
-mapToSearchNodes :: [Node]          -- ^ List of pattern graph nodes.
-                    -> NodeMatchset -- ^ Search-to-pattern matchset.
-                    -> [Node]       -- ^ List of search graph nodes.
-mapToSearchNodes ns m = [ n1 | (n1, n2) <- m, n <- ns, n == n2]
-
--- | Same as `mapToPatternNodes` but operates on `NodeId`s instead of `Node`s.
-
-mapToPatternNodeIds :: [NodeId]          -- ^ List of search graph node IDs.
-                       -> NodeIdMatchset -- ^ Search-to-pattern matchset.
-                       -> [NodeId]       -- ^ List of pattern graph node IDs.
-mapToPatternNodeIds ns m = [ n2 | (n1, n2) <- m, n <- ns, n == n1]
-
--- | Same as `mapToPatternNodeIds` but goes in the other direction.
-
-mapToSearchNodeIds :: [NodeId]          -- ^ List of pattern graph node IDs.
-                      -> NodeIdMatchset -- ^ Search-to-pattern matchset.
-                      -> [NodeId]       -- ^ List of search graph node IDs.
-mapToSearchNodeIds ns m = [ n1 | (n1, n2) <- m, n <- ns, n == n2]
-
 -- | Checks if a node matches another node.
 
-matchingNodes sg pg st pair@(n, m) =
-  matchingNodeTypes (nodeType n) (nodeType m) && matchingEdges sg pg st pair
+matchingNodes fg pg st pair@(n, m) =
+  matchingNodeTypes (nodeType n) (nodeType m) && matchingEdges fg pg st pair
 
 -- | Checks if two node types are matching-compatible.
 
@@ -692,37 +661,41 @@ matchingNodeTypes _ _ = False
 -- candidate mapping have matching node types (although one of the nodes can be
 -- a NullNode).
 
-matchingEdges :: Graph        -- ^ The search graph.
+matchingEdges :: Graph        -- ^ The function graph.
               -> Graph        -- ^ The pattern graph.
               -> NodeMatchset -- ^ Current matchset state.
               -> NodeMapping  -- ^ Candidate mapping.
               -> Bool
-matchingEdges sg pg st pair =
-     (matchingNumberOfInEdges sg pg pair)
-  && (matchingNumberOfOutEdges sg pg pair)
-  && (matchingOutEdgeOrderingOfPreds sg pg st pair)
-  && (matchingInEdgeOrderingOfSuccs sg pg st pair)
+matchingEdges fg pg st pair =
+     (matchingNumberOfInEdges fg pg st pair)
+  && (matchingNumberOfOutEdges fg pg st pair)
+  && (matchingOrderingOfInEdges fg pg st pair)
+  && (matchingOrderingOfOutEdges fg pg st pair)
+  && (matchingOutEdgeOrderingOfPreds fg pg st pair)
+  && (matchingInEdgeOrderingOfSuccs fg pg st pair)
 
-matchingNumberOfInEdges :: Graph          -- ^ The search graph.
-                           -> Graph       -- ^ The pattern graph.
-                           -> NodeMapping -- ^ Candidate mapping.
+matchingNumberOfInEdges :: Graph           -- ^ The function graph.
+                           -> Graph        -- ^ The pattern graph.
+                           -> NodeMatchset -- ^ Current matchset state.
+                           -> NodeMapping  -- ^ Candidate mapping.
                            -> Bool
-matchingNumberOfInEdges sg pg (n, m) =
-  let num_sg_edges = length $ inEdges sg n
+matchingNumberOfInEdges fg pg _ (n, m) =
+  let num_fg_edges = length $ inEdges fg n
       num_pg_edges = length $ inEdges pg m
-  in if checkNumberOfInEdges sg n && checkNumberOfInEdges pg m
-        then num_sg_edges == num_pg_edges
+  in if checkNumberOfInEdges fg n && checkNumberOfInEdges pg m
+        then num_fg_edges == num_pg_edges
         else True
 
-matchingNumberOfOutEdges :: Graph          -- ^ The search graph.
-                            -> Graph       -- ^ The pattern graph.
-                            -> NodeMapping -- ^ Candidate mapping.
+matchingNumberOfOutEdges :: Graph           -- ^ The function graph.
+                            -> Graph        -- ^ The pattern graph.
+                            -> NodeMatchset -- ^ Current matchset state.
+                            -> NodeMapping  -- ^ Candidate mapping.
                             -> Bool
-matchingNumberOfOutEdges sg pg (n, m) =
-  let num_sg_edges = length $ outEdges sg n
+matchingNumberOfOutEdges fg pg _ (n, m) =
+  let num_fg_edges = length $ outEdges fg n
       num_pg_edges = length $ outEdges pg m
-  in if checkNumberOfOutEdges sg n && checkNumberOfOutEdges pg m
-        then num_sg_edges == num_pg_edges
+  in if checkNumberOfOutEdges fg n && checkNumberOfOutEdges pg m
+        then num_fg_edges == num_pg_edges
         else True
 
 checkNumberOfInEdges :: Graph -> Node -> Bool
@@ -749,45 +722,99 @@ checkOrderingOfOutEdges _ n
   where f (ControlNode O.CondBranch) = True
         f _ = False
 
+-- | If the pattern node requires an ordering on its inbound edges, check that
+-- it is the same as that of the mapped function node.
+
+matchingOrderingOfInEdges :: Graph           -- ^ The function graph.
+                             -> Graph        -- ^ The pattern graph.
+                             -> NodeMatchset -- ^ Current matchset state.
+                             -> NodeMapping  -- ^ Candidate mapping.
+                             -> Bool
+matchingOrderingOfInEdges fg pg st (n, m) =
+  let (ns, ms) = splitMatchset st
+      m_preds = filter (`elem` ms) (predecessors pg m)
+      n_preds = mappedNodesPToF st m_preds
+      es = zip (concatMap (flip (edges pg) m) m_preds)
+               (concatMap (flip (edges fg) n) n_preds)
+  in if checkOrderingOfInEdges pg m
+        then all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
+        else True
+
+-- | Same as matchingOrderingOfInEdges but for outbound edges.
+
+matchingOrderingOfOutEdges :: Graph           -- ^ The function graph.
+                              -> Graph        -- ^ The pattern graph.
+                              -> NodeMatchset -- ^ Current matchset state.
+                              -> NodeMapping  -- ^ Candidate mapping.
+                              -> Bool
+matchingOrderingOfOutEdges fg pg st (n, m) =
+  let (ns, ms) = splitMatchset st
+      m_succs = filter (`elem` ms) (successors pg m)
+      n_succs = mappedNodesPToF st m_succs
+      es = zip (concatMap (edges pg m) m_succs)
+               (concatMap (edges fg n) n_succs)
+  in if checkOrderingOfOutEdges pg m
+        then all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
+        else True
+
 -- | Checks for the pattern node's predecessors which have already been mapped
 -- and require an ordering on the outbound edges that the ordering is the same
--- as that in the search graph.
+-- as that in the function graph.
 
-matchingOutEdgeOrderingOfPreds :: Graph           -- ^ The search graph.
+matchingOutEdgeOrderingOfPreds :: Graph           -- ^ The function graph.
                                   -> Graph        -- ^ The pattern graph.
                                   -> NodeMatchset -- ^ Current matchset state.
                                   -> NodeMapping  -- ^ Candidate mapping.
                                   -> Bool
-matchingOutEdgeOrderingOfPreds sg pg st (n, m) =
+matchingOutEdgeOrderingOfPreds fg pg st (n, m) =
   let (ns, ms) = splitMatchset st
       m_preds = filter (`elem` ms) (predecessors pg m)
       m_ord_preds =  filter (checkOrderingOfOutEdges pg) m_preds
-      n_ord_preds = [ k | (k, l) <- st, l' <- m_ord_preds, l == l' ]
-      es = zip (concatMap (edges pg m) m_ord_preds)
-               (concatMap (edges sg n) n_ord_preds)
+      n_ord_preds = mappedNodesPToF st m_ord_preds
+      es = zip (concatMap (flip (edges pg) m) m_ord_preds)
+               (concatMap (flip (edges fg) n) n_ord_preds)
   in all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
 
 -- | Same as matchingOutEdgeOrderingOfPreds but for successors and their inbound
 -- edges.
 
-matchingInEdgeOrderingOfSuccs :: Graph           -- ^ The search graph.
+matchingInEdgeOrderingOfSuccs :: Graph           -- ^ The function graph.
                                  -> Graph        -- ^ The pattern graph.
                                  -> NodeMatchset -- ^ Current matchset state.
                                  -> NodeMapping  -- ^ Candidate mapping.
                                  -> Bool
-matchingInEdgeOrderingOfSuccs sg pg st (n, m) =
+matchingInEdgeOrderingOfSuccs fg pg st (n, m) =
   let (ns, ms) = splitMatchset st
       m_succs = filter (`elem` ms) (successors pg m)
       m_ord_succs =  filter (checkOrderingOfInEdges pg) m_succs
-      n_ord_succs = [ k | (k, l) <- st, l' <- m_ord_succs, l == l' ]
+      n_ord_succs = mappedNodesPToF st m_ord_succs
       es = zip (concatMap (edges pg m) m_ord_succs)
-               (concatMap (edges sg n) n_ord_succs)
+               (concatMap (edges fg n) n_ord_succs)
   in all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
 
 -- | Splits a matchset into two node sets: the set of nodes contained in the
--- search graph, and the set of nodes contained in the pattern graph.
+-- function graph, and the set of nodes contained in the pattern graph.
 
-splitMatchset :: [(n, n)] -> ( [n] -- ^ Matched nodes in the search graph.
-                             , [n] -- ^ Matched nodes in the pattern graph.
-                             )
+splitMatchset :: [(n, m)] -- ^ The matchset.
+                 -> ( [n] -- ^ Matched nodes in the function graph.
+                    , [m] -- ^ Matched nodes in the pattern graph.
+                    )
 splitMatchset m = (map fst m, map snd m)
+
+-- | From a matchset and a list of function nodes, get the list of corresponding
+-- pattern nodes for which there exists a mapping.
+
+mappedNodesFToP :: (Eq n, Eq m)
+                   => [(n, m)] -- ^ The matchset.
+                   -> [n]   -- ^ List of function nodes.
+                   -> [m]   -- ^ List of corresponding pattern nodes.
+mappedNodesFToP st ns = [ m | (n, m) <- st, n' <- ns, n == n' ]
+
+-- | From a matchset and a list of pattern nodes, get the list of corresponding
+-- function nodes for which there exists a mapping.
+
+mappedNodesPToF :: (Eq n, Eq m)
+                   => [(n, m)] -- ^ The matchset.
+                   -> [m]   -- ^ List of pattern nodes.
+                   -> [n]   -- ^ List of corresponding function nodes.
+mappedNodesPToF st ms = [ n | (n, m) <- st, m' <- ms, m == m' ]
