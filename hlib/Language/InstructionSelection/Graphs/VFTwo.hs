@@ -62,8 +62,8 @@ getCandidates :: Graph           -- ^ The search graph.
                  -> NodeMatchset -- ^ Potential candidates.
 getCandidates sg pg st =
   let pairs_out = computeCandidatesFromTOutSets sg pg st
-      pairs_in = computeCandidatesFromTInSets sg pg st
-      pairs_d = computeCandidatesForPdSet sg pg st
+      pairs_in  = computeCandidatesFromTInSets  sg pg st
+      pairs_d   = computeCandidatesForPdSet     sg pg st
   in if length pairs_out > 0
         then pairs_out
         else if length pairs_in > 0
