@@ -64,8 +64,8 @@ mkPatternInstanceData (os, matchsets, props) =
                       $ filter (\n -> length (p g n) > 0)
                       $ filter isEntityNode
                       $ allNodes g
-      e_def_ns = entityNodes successors
-      e_use_ns = entityNodes predecessors
+      e_def_ns = entityNodes predecessors
+      e_use_ns = entityNodes successors
       f (m, id) = mkPatternInstanceData' a_ns
                                          e_def_ns
                                          e_use_ns
