@@ -667,12 +667,12 @@ matchingEdges :: Graph        -- ^ The function graph.
               -> NodeMapping  -- ^ Candidate mapping.
               -> Bool
 matchingEdges fg pg st pair =
-     (matchingNumberOfInEdges fg pg st pair)
-  && (matchingNumberOfOutEdges fg pg st pair)
-  && (matchingOrderingOfInEdges fg pg st pair)
-  && (matchingOrderingOfOutEdges fg pg st pair)
-  && (matchingOutEdgeOrderingOfPreds fg pg st pair)
-  && (matchingInEdgeOrderingOfSuccs fg pg st pair)
+     matchingNumberOfInEdges fg pg st pair
+  && matchingNumberOfOutEdges fg pg st pair
+  && matchingOrderingOfInEdges fg pg st pair
+  && matchingOrderingOfOutEdges fg pg st pair
+  && matchingOutEdgeOrderingOfPreds fg pg st pair
+  && matchingInEdgeOrderingOfSuccs fg pg st pair
 
 matchingNumberOfInEdges :: Graph           -- ^ The function graph.
                            -> Graph        -- ^ The pattern graph.

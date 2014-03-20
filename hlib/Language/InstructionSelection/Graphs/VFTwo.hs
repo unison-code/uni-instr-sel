@@ -14,11 +14,18 @@
 -- graph on which another graph will be matched. The graph to match is called
 -- the pattern graph.
 --
+-- However, it seems that the paper has some bugs as it forbids matching of
+-- certain subgraph isomorphism. Basically, if there is an edge in the function
+-- graph between two nodes which does not appear in the pattern graph, then it
+-- will not match. But we're only interested in matching all edges in the
+-- pattern, not necessarily all edges in the function graph! I should contact
+-- the authors about this and see whether there's a mistake.
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.VFTwo (match) where
 
 import Language.InstructionSelection.Graphs.Base
+import Language.InstructionSelection.Utils (removeDuplicates)
 import Data.List (intersect, union, (\\))
 
 
@@ -43,12 +50,11 @@ match' :: Graph             -- ^ The search graph.
           -> Graph          -- ^ The pattern graph.
           -> NodeMatchset   -- ^ The current matchset state.
           -> [NodeMatchset] -- ^ Found matches.
-match' sg pg st =
-  if length st == numNodes pg
-     then [st]
-     else let cs = getCandidates sg pg st
-              good_cs = filter (checkFeasibility sg pg st) cs
-          in concatMap (match' sg pg) (map (:st) good_cs)
+match' sg pg st
+  | length st == numNodes pg = [st]
+  | otherwise = let cs = getCandidates sg pg st
+                    good_cs = filter (checkFeasibility sg pg st) cs
+                in concatMap (match' sg pg) (map (:st) good_cs)
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
@@ -79,10 +85,13 @@ checkFeasibility :: Graph           -- ^ The search graph.
                     -> NodeMapping  -- ^ Candidate mapping.
                     -> Bool
 checkFeasibility sg pg st pair =
-  (matchingNodes sg pg st pair) && (checkSyntax sg pg st pair)
+  matchingNodes sg pg st pair && checkSyntax sg pg st pair
 
--- | Checks that the syntax of matched nodes are compatible (equation 2 in the
--- paper).
+-- | Checks that the syntax of matched nodes are compatible (modified version of
+-- equation 2 in the paper).
+--
+-- The modification is that the last check is removed as it appear to forbid
+-- certain cases of subgraph isomorphism which we still want.
 
 checkSyntax :: Graph           -- ^ The search graph.
                -> Graph        -- ^ The pattern graph.
@@ -90,15 +99,19 @@ checkSyntax :: Graph           -- ^ The search graph.
                -> NodeMapping  -- ^ Candidate mapping.
                -> Bool
 checkSyntax sg pg st pair =
-     (checkSyntaxPred sg pg st pair)
-  && (checkSyntaxSucc sg pg st pair)
-  && (checkSyntaxIn   sg pg st pair)
-  && (checkSyntaxOut  sg pg st pair)
-  && (checkSyntaxNew  sg pg st pair)
+      checkSyntaxPred sg pg st pair
+   && checkSyntaxSucc sg pg st pair
+   && checkSyntaxIn   sg pg st pair
+   && checkSyntaxOut  sg pg st pair
+-- && checkSyntaxNew  sg pg st pair
 
--- | Checks that for each predecessor A of the matched node that appears in the
--- current matchset state, there also exists some node mapping for A (equation 3
--- in the paper). This is a consistency check.
+-- | Checks that for each predecessor of the matched pattern node that appears
+-- in the current matchset state, there exists a node mapping for the
+-- predecessor (modified version of equation 3 in the paper). This is a
+-- consistency check.
+--
+-- The modification is that in this implementation I have removed the equivalent
+-- check for the matched function node; I believe this to be a bug in the paper.
 
 checkSyntaxPred :: Graph           -- ^ The search graph.
                    -> Graph        -- ^ The pattern graph.
@@ -111,10 +124,10 @@ checkSyntaxPred sg pg st (sn, pn) =
       preds_pn = predecessors pg pn
       preds_sn_in_st = preds_sn `intersect` mapped_ns_sg
       preds_pn_in_st = preds_pn `intersect` mapped_ns_pg
-  in    all (\n -> any (\m -> (n, m) `elem` st) preds_pn) preds_sn_in_st
-     && all (\m -> any (\n -> (n, m) `elem` st) preds_sn) preds_pn_in_st
+  in all (\m -> any (\n -> (n, m) `elem` st) preds_sn) preds_pn_in_st
 
--- | Same as checkSyntaxPred but for the successors (equation 4 in the paper).
+-- | Same as checkSyntaxPred but for the successors (modified version of
+-- equation 4 in the paper).
 
 checkSyntaxSucc :: Graph           -- ^ The search graph.
                    -> Graph        -- ^ The pattern graph.
@@ -127,11 +140,11 @@ checkSyntaxSucc sg pg st (sn, pn) =
       succs_pn = successors pg pn
       succs_sn_in_st = succs_sn `intersect` mapped_ns_sg
       succs_pn_in_st = succs_pn `intersect` mapped_ns_pg
-  in    all (\n -> any (\m -> (n, m) `elem` st) succs_pn) succs_sn_in_st
-     && all (\m -> any (\n -> (n, m) `elem` st) succs_sn) succs_pn_in_st
+  in all (\m -> any (\n -> (n, m) `elem` st) succs_sn) succs_pn_in_st
 
--- | Checks that there exists a sufficient number of predecessors to map in the
--- search graph (equation 5 in the paper). This is a 1-look-ahead check.
+-- | Checks that there exists a sufficient number of unmapped predecessors left
+-- in the function graph to cover the unmapped predecessors left in the pattern
+-- graph (equation 5 in the paper). This is a 1-look-ahead check.
 
 checkSyntaxIn :: Graph           -- ^ The search graph.
                  -> Graph        -- ^ The pattern graph.
@@ -187,24 +200,29 @@ checkSyntaxNew sg pg st (sn, pn) =
       succs_pn = successors pg pn
       new_ns_sg = getNonMappedNonAdjNodes mapped_ns_sg sg
       new_ns_pg = getNonMappedNonAdjNodes mapped_ns_pg pg
-  in    length (new_ns_sg `intersect` preds_sn)
-        >= length (new_ns_pg `intersect` preds_pn)
-     && length (new_ns_sg `intersect` succs_sn)
-        >= length (new_ns_pg `intersect` succs_pn)
+      b1 = length (new_ns_sg `intersect` preds_sn)
+           >= length (new_ns_pg `intersect` preds_pn)
+      b2 = length (new_ns_sg `intersect` succs_sn)
+           >= length (new_ns_pg `intersect` succs_pn)
+  in -- trace (show (map nodeId new_ns_sg) ++ ", " ++ show (length new_ns_sg)) $
+     -- trace (show (map nodeId (new_ns_sg `intersect` preds_sn))) $
+     -- trace (show (map nodeId (new_ns_pg `intersect` preds_pn))) $
+     -- trace (show b1 ++ " " ++ show b2) $
+     b1 && b2
 
 getNonMappedSuccsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                   -> Graph -- ^ Original graph in which the
                                            -- mapped nodes appear.
                                   -> [Node]
 getNonMappedSuccsOfMappedNodes ns g =
-  filter (`notElem` ns) (concatMap (successors g) ns)
+  removeDuplicates $ filter (`notElem` ns) (concatMap (successors g) ns)
 
 getNonMappedPredsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                   -> Graph -- ^ Original graph in which the
                                            -- mapped nodes appear.
                                   -> [Node]
 getNonMappedPredsOfMappedNodes ns g =
-  filter (`notElem` ns) (concatMap (predecessors g) ns)
+  removeDuplicates $ filter (`notElem` ns) (concatMap (predecessors g) ns)
 
 getNonMappedAdjsOfMappedNodes :: [Node]   -- ^ The already-mapped nodes.
                                  -> Graph -- ^ Original graph in which the

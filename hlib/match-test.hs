@@ -121,8 +121,8 @@ main =
                 , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
                 , (2, NodeLabel 2 (NodeInfo (ControlNode O.UncondBranch) ""))
                 ]
-                [ (0, 1, EdgeLabel 0 0)
-                , (1, 2, EdgeLabel 0 0)
+                [ (0, 2, EdgeLabel 0 0)
+                , (2, 1, EdgeLabel 0 0)
                 ]
          ret_pattern = mkGraph
                 [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
@@ -145,7 +145,7 @@ main =
                 ]
                 [ (0, 8, EdgeLabel 0 1)
                 , (1, 8, EdgeLabel 0 2)
-                , (8, 3, EdgeLabel 0 0)
+                , (8, 2, EdgeLabel 0 0)
                 , (3, 6, EdgeLabel 0 0)
                 , (4, 7, EdgeLabel 0 0)
                 , (6, 5, EdgeLabel 0 0)
@@ -167,34 +167,5 @@ main =
                (zip patterns list_of_matchsets_with_ids)
          params = mkParams (OpStructure func []) pattern_data
      putStrLn $ toJson params
---     let s = mkGraph
---             [ (0, NodeLabel 0 (NodeInfo (ControlNode O.CondBranch) ""))
---             , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
---             , (2, NodeLabel 2 (NodeInfo (LabelNode "") ""))
---             , (3, NodeLabel 3 (NodeInfo (ControlNode O.UncondBranch) ""))
---             , (4, NodeLabel 4 (NodeInfo (ControlNode O.UncondBranch) ""))
---             , (5, NodeLabel 5 (NodeInfo (LabelNode "") ""))
---             ]
---             [ (0, 1, EdgeLabel 0 0)
---             , (0, 2, EdgeLabel 1 0)
---             , (1, 3, EdgeLabel 0 0)
---             , (2, 4, EdgeLabel 0 0)
---             , (3, 5, EdgeLabel 0 0)
---             , (4, 5, EdgeLabel 0 1)
---             ]
---         p = mkGraph
---             [ (0, NodeLabel 0 (NodeInfo (ControlNode O.CondBranch) ""))
---             , (1, NodeLabel 1 (NodeInfo (LabelNode "") ""))
---             , (2, NodeLabel 2 (NodeInfo (LabelNode "") ""))
---             , (3, NodeLabel 3 (NodeInfo (ControlNode O.UncondBranch) ""))
---             , (4, NodeLabel 4 (NodeInfo (ControlNode O.UncondBranch) ""))
---             , (5, NodeLabel 5 (NodeInfo (LabelNode "") ""))
---             ]
---             [ (0, 1, EdgeLabel 0 0)
---             , (0, 2, EdgeLabel 1 0)
---             , (1, 3, EdgeLabel 0 0)
---             , (2, 4, EdgeLabel 0 0)
---             , (3, 5, EdgeLabel 0 0)
---             , (4, 5, EdgeLabel 0 1)
---             ]
---     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn)) (match s p)
+--     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn))
+--           (match func phi_pattern)
