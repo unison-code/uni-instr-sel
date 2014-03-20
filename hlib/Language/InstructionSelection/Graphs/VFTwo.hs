@@ -221,44 +221,6 @@ getNonMappedNonAdjNodes :: [Node]   -- ^ The already-mapped nodes.
 getNonMappedNonAdjNodes ns g =
   ((allNodes g) \\ ns) \\ (getNonMappedAdjsOfMappedNodes ns g)
 
-getMappedSuccsOfMappedNode :: Node      -- ^ Mapped node to get the successors
-                                        -- from.
-                              -> [Node] -- ^ The already-mapped nodes.
-                              -> Graph  -- ^ Original graph in which the mapped
-                                        -- nodes appear.
-                              -> [Node]
-getMappedSuccsOfMappedNode n ns g =
-  filter (`elem` ns) (successors g n)
-
-getMappedPredsOfMappedNode :: Node      -- ^ Mapped node to get the predecessors
-                                        -- from.
-                              -> [Node] -- ^ The already-mapped nodes.
-                              -> Graph  -- ^ Original graph in which the mapped
-                                        -- nodes appear.
-                              -> [Node]
-getMappedPredsOfMappedNode n ns g =
-  filter (`elem` ns) (predecessors g n)
-
--- | Gets the corresponding search node from a mapped pattern graph node. It is
--- assumed that such a mapping exists in the matchset.
-
-getMappedSNode :: NodeMatchset -- ^ Matchset.
-                  -> Node      -- ^ Mapped node in the pattern graph.
-                  -> Node      -- ^ Corresponding mapped node in the search
-                               -- graph.
-getMappedSNode st m =
-  fst $ head $ filter (\(n', m') -> m' == m) st
-
--- | Gets the corresponding pattern node from a mapped search graph node. It is
--- assumed that such a mapping exists in the matchset.
-
-getMappedPNode :: NodeMatchset -- ^ Matchset.
-                  -> Node      -- ^ Mapped node in the search graph.
-                  -> Node      -- ^ Corresponding mapped node in the pattern
-                               -- graph.
-getMappedPNode st n =
-  snd $ head $ filter (\(n', m') -> n' == n) st
-
 -- | Computes pair condidates from the T_out sets (see paper for more
 -- information).
 
