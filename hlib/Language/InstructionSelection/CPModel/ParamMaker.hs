@@ -85,9 +85,9 @@ mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> PatternInstanceData
 mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
   PatternInstanceData id
-                      (mapToSearchNodeIds a_ns matchset)
-                      (mapToSearchNodeIds e_def_ns matchset)
-                      (mapToSearchNodeIds e_use_ns matchset)
+                      (mappedNodesPToF matchset a_ns)
+                      (mappedNodesPToF matchset e_def_ns)
+                      (mappedNodesPToF matchset e_use_ns)
                       -- TODO: convert node IDs in constraints
                       cs
                       -- TODO: change how the cost is chosen
