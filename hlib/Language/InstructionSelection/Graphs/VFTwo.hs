@@ -46,11 +46,9 @@ match' :: Graph             -- ^ The search graph.
 match' sg pg st =
   if length st == numNodes pg
      then [st]
-     else let candidates = getCandidates sg pg st
-              feasible_candidates = filter (checkFeasibility sg pg st)
-                                    candidates
-              new_states = map (:st) feasible_candidates
-          in concatMap (match' sg pg) new_states
+     else let cs = getCandidates sg pg st
+              good_cs = filter (checkFeasibility sg pg st) cs
+          in concatMap (match' sg pg) (map (:st) good_cs)
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
@@ -94,9 +92,9 @@ checkSyntax :: Graph           -- ^ The search graph.
 checkSyntax sg pg st pair =
      (checkSyntaxPred sg pg st pair)
   && (checkSyntaxSucc sg pg st pair)
-  && (checkSyntaxIn sg pg st pair)
-  && (checkSyntaxOut sg pg st pair)
-  && (checkSyntaxNew sg pg st pair)
+  && (checkSyntaxIn   sg pg st pair)
+  && (checkSyntaxOut  sg pg st pair)
+  && (checkSyntaxNew  sg pg st pair)
 
 -- | Checks that for each predecessor A of the matched node that appears in the
 -- current matchset state, there also exists some node mapping for A (equation 3
