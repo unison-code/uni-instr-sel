@@ -588,14 +588,14 @@ nextInEdgeNr g int =
   let existing_numbers = map inEdgeNr $ toEdges $ I.inn g int
   in if length existing_numbers > 0
         then maximum existing_numbers + 1
-        else EdgeNr 0
+        else 0
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int =
   let existing_numbers = map outEdgeNr $ toEdges $ I.inn g int
   in if length existing_numbers > 0
         then maximum existing_numbers + 1
-        else EdgeNr 0
+        else 0
 
 inEdgeNr :: Edge -> EdgeNr
 inEdgeNr (Edge (_, _, EdgeLabel _ nr)) = nr
