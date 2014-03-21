@@ -585,16 +585,16 @@ updateEdgeSource new_source (Edge e@(_, target, EdgeLabel _ in_nr)) (Graph g) =
 
 nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextInEdgeNr g int =
-  let existing_numbers = map (fromEdgeNr . inEdgeNr) $ toEdges $ I.inn g int
+  let existing_numbers = map inEdgeNr $ toEdges $ I.inn g int
   in if length existing_numbers > 0
-        then EdgeNr (1 + maximum existing_numbers)
+        then maximum existing_numbers + 1
         else EdgeNr 0
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int =
-  let existing_numbers = map (fromEdgeNr . outEdgeNr) $ toEdges $ I.inn g int
+  let existing_numbers = map outEdgeNr $ toEdges $ I.inn g int
   in if length existing_numbers > 0
-        then EdgeNr (1 + maximum existing_numbers)
+        then maximum existing_numbers + 1
         else EdgeNr 0
 
 inEdgeNr :: Edge -> EdgeNr
