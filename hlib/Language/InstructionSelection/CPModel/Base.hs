@@ -14,11 +14,11 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
-import Language.InstructionSelection.Graphs ( MatchsetId
-                                            , NodeId
-                                            , NodeIdMatchset
+import Language.InstructionSelection.Graphs ( NodeId (..)
+                                            , Matchset (..)
                                             )
 import Language.InstructionSelection.OpStructures (Constraint)
+import Language.InstructionSelection.Patterns (InstanceId)
 import Language.InstructionSelection.PrettyPrint
 
 
@@ -26,8 +26,6 @@ import Language.InstructionSelection.PrettyPrint
 --------------
 -- Data types
 --------------
-
-type InstanceId = MatchsetId
 
 -- | Wrapper for all model parameters.
 
@@ -71,9 +69,9 @@ data FunctionGraphData
 data PatternInstanceData
     = PatternInstanceData {
 
-          -- | The instance ID.
+          -- | The matchset ID of this pattern instance.
 
-          patInstanceId :: MatchsetId
+          patInstanceId :: InstanceId
 
           -- | The action nodes in the function graph which are covered by this
           -- pattern instance.
@@ -137,7 +135,7 @@ instance PrettyPrint FunctionGraphData where
 
 instance PrettyPrint PatternInstanceData where
   prettyShow d =
-    "PatternInstanceData (Instance ID: " ++ show (patInstanceId d) ++ "):\n"
+    "PatternInstanceData (ID: " ++ show (patInstanceId d) ++ "):\n"
     ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
     ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"

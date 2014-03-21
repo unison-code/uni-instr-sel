@@ -21,8 +21,8 @@ module Language.InstructionSelection.CPModel.ParamMaker (
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Patterns ( InstProperties (..)
-                                              , PatternId
+import Language.InstructionSelection.Patterns ( InstanceId
+                                              , InstProperties (..)
                                               )
 
 
@@ -31,15 +31,18 @@ import Language.InstructionSelection.Patterns ( InstProperties (..)
 -- Functions
 -------------
 
+-- | Takes a function and a list of pattern instance data and transforms it into
+-- a CP model parameters object.
+
 mkParams :: OpStructure -- ^ Function data.
             -> [( OpStructure
-                , [(NodeMatchset, MatchsetId)]
+                , [(Matchset Node, InstanceId)]
                 , InstProperties
                 )] -- ^ Pattern instance data.
             -> CPModelParams
-mkParams func pats =
-  CPModelParams (mkFunctionGraphData func)
-                (concatMap mkPatternInstanceData pats)
+mkParams f ps =
+  CPModelParams (mkFunctionGraphData f)
+                (concatMap mkPatternInstanceData ps)
                 -- TODO: fix building of machine data
                 MachineData
 
@@ -53,7 +56,7 @@ mkFunctionGraphData os =
                        (osConstraints os)
 
 mkPatternInstanceData :: ( OpStructure
-                         , [(NodeMatchset, MatchsetId)]
+                         , [(Matchset Node, InstanceId)]
                          , InstProperties
                          )
                       -> [PatternInstanceData]
@@ -79,8 +82,8 @@ mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> [NodeId] -- ^ Defined entity nodes.
                           -> [NodeId] -- ^ Used entity nodes.
                           -> [Constraint]
-                          -> NodeIdMatchset
-                          -> MatchsetId
+                          -> Matchset NodeId
+                          -> InstanceId
                           -> InstProperties
                           -> PatternInstanceData
 mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =

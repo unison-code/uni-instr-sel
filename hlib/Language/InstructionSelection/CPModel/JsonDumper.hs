@@ -19,10 +19,13 @@ module Language.InstructionSelection.CPModel.JsonDumper (
 ) where
 
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs ( MatchsetId
-                                            , NodeId
-                                            , NodeIdMatchset)
-import Language.InstructionSelection.Utils (Natural, fromNatural)
+import Language.InstructionSelection.Graphs ( NodeId (..)
+                                            , Matchset (..)
+                                            )
+import Language.InstructionSelection.Patterns (InstanceId (..))
+import Language.InstructionSelection.Utils ( Natural (..)
+                                           , fromNatural
+                                           )
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (unpack)
 
@@ -43,16 +46,16 @@ toJson = unpack . encode
 
 instance ToJSON CPModelParams where
   toJSON p =
-    object [ "function-data"  .= (funcData p)
+    object [ "function-data"         .= (funcData p)
            , "pattern-instance-data" .= (patInstData p)
-           , "machine-data"  .= (machData p)
+           , "machine-data"          .= (machData p)
            ]
 
 instance ToJSON FunctionGraphData where
   toJSON d =
-    object [ "action-nodes"  .= (funcActionNodes d)
-           , "entity-nodes"  .= (funcEntityNodes d)
-           , "label-nodes" .= map f (funcLabelDoms d)
+    object [ "action-nodes" .= (funcActionNodes d)
+           , "entity-nodes" .= (funcEntityNodes d)
+           , "label-nodes"  .= map f (funcLabelDoms d)
 -- TODO: enable
 --         , "constraints" .= (funcConstraints p)
            ]
@@ -75,6 +78,12 @@ instance ToJSON MachineData where
   toJSON d =
     object [ -- TODO: implement
            ]
+
+instance ToJSON NodeId where
+  toJSON (NodeId i) = toJSON i
+
+instance ToJSON InstanceId where
+  toJSON (InstanceId i) = toJSON i
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)

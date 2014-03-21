@@ -21,18 +21,19 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.Base (
-  BBLabel
-, Edge
+  BBLabel (..)
+, Edge (..)
 , EdgeLabel (..)
 , EdgeNr (..)
 , Graph
 , Mapping (..)
 , Matchset (..)
-, Node
+, Node (..)
 , NodeId (..)
 , NodeInfo (..)
 , NodeLabel (..)
 , NodeType (..)
+, addToMatchset
 , allNodes
 , allEdges
 , addNewEdge
@@ -47,6 +48,9 @@ module Language.InstructionSelection.Graphs.Base (
 , empty
 , fNode
 , fNodes
+, fromEdgeNr
+, fromMapping
+, fromMatchset
 , fromNodeId
 , iDom
 , inEdgeNr
@@ -60,6 +64,7 @@ module Language.InstructionSelection.Graphs.Base (
 , isDataNodeType
 , isEntityNode
 , isInGraph
+, isInMatchset
 , isLabelNode
 , isLabelNodeType
 , isNullNode
@@ -78,6 +83,7 @@ module Language.InstructionSelection.Graphs.Base (
 , mkGraph
 , nodeId
 , nodeIds
+, nodeId2Node
 , nodeInfo
 , nodeLabel
 , nodesByNodeId
@@ -94,6 +100,10 @@ module Language.InstructionSelection.Graphs.Base (
 , sourceOfEdge
 , successors
 , targetOfEdge
+, toEdgeNr
+, toMapping
+, toMatchset
+, toNodeId
 , updateEdgeSource
 , updateEdgeTarget
 , updateNodeId
@@ -166,8 +176,6 @@ instance Num NodeId where
 instance Enum NodeId where
   toEnum = NodeId . toEnum
   fromEnum (NodeId x) = fromEnum x
-
-
 
 -- | Node information. Most importantly this specifies the node type.
 
@@ -296,6 +304,12 @@ pNode (Mapping (_, n)) = n
 pNodes :: (Matchset n) -> [n]
 pNodes (Matchset m) = map pNode m
 
+fromNodeId :: NodeId -> Natural
+fromNodeId (NodeId i) = i
+
+toNodeId :: Natural -> NodeId
+toNodeId = NodeId
+
 toNode :: I.LNode NodeLabel -> Node
 toNode = Node
 
@@ -331,6 +345,12 @@ fromEdgeNr (EdgeNr n) = n
 
 fromEdgeNrs :: [EdgeNr] -> [Natural]
 fromEdgeNrs = map fromEdgeNr
+
+toMatchset :: [Mapping n] -> Matchset n
+toMatchset = Matchset
+
+fromMatchset :: Matchset n -> [Mapping n]
+fromMatchset (Matchset m) = m
 
 toMapping :: (n, n) -> Mapping n
 toMapping = Mapping
@@ -710,8 +730,8 @@ targetOfEdge (Graph g) (Edge (_, n, _)) = fromJust $ intNodeId2Node g n
 
 -- | Gets the nodes that matches a given node ID.
 
-fromNodeId :: Graph -> NodeId -> [Node]
-fromNodeId g id = filter (\n -> nodeId n == id) (allNodes g)
+nodeId2Node :: Graph -> NodeId -> [Node]
+nodeId2Node g id = filter (\n -> nodeId n == id) (allNodes g)
 
 -- | Gets a list of dominator sets, given a root node.
 
@@ -865,10 +885,10 @@ matchingOrderingOfInEdges :: Graph            -- ^ The function graph.
 matchingOrderingOfInEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
-      pn_preds = filter (`elem` (pNodes st)) (predecessors pg pn)
-      fn_preds = mappedNodesPToF st pn_preds
-      es = zip (concatMap (flip (edges pg) pn) pn_preds)
-               (concatMap (flip (edges fg) fn) fn_preds)
+      preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
+      preds_fn = mappedNodesPToF st preds_pn
+      es = zip (concatMap (flip (edges pg) pn) preds_pn)
+               (concatMap (flip (edges fg) fn) preds_fn)
   in if checkOrderingOfInEdges pg pn
         then all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
         else True
@@ -883,10 +903,10 @@ matchingOrderingOfOutEdges :: Graph            -- ^ The function graph.
 matchingOrderingOfOutEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
-      pn_succs = filter (`elem` (pNodes st)) (successors pg pn)
-      fn_succs = mappedNodesPToF st pn_succs
-      es = zip (concatMap (edges pg pn) pn_succs)
-               (concatMap (edges fg fn) fn_succs)
+      succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
+      succs_fn = mappedNodesPToF st succs_pn
+      es = zip (concatMap (edges pg pn) succs_pn)
+               (concatMap (edges fg fn) succs_fn)
   in if checkOrderingOfOutEdges pg pn
         then all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
         else True
@@ -903,8 +923,8 @@ matchingOutEdgeOrderingOfPreds :: Graph            -- ^ The function graph.
 matchingOutEdgeOrderingOfPreds fg pg st m =
   let fn = fNode m
       pn = pNode m
-      pn_preds = filter (`elem` (pNodes st)) (predecessors pg pn)
-      pn_ord_preds =  filter (checkOrderingOfOutEdges pg) pn_preds
+      preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
+      pn_ord_preds =  filter (checkOrderingOfOutEdges pg) preds_pn
       fn_ord_preds = mappedNodesPToF st pn_ord_preds
       es = zip (concatMap (flip (edges pg) pn) pn_ord_preds)
                (concatMap (flip (edges fg) fn) fn_ord_preds)
@@ -921,8 +941,8 @@ matchingInEdgeOrderingOfSuccs :: Graph            -- ^ The function graph.
 matchingInEdgeOrderingOfSuccs fg pg st m =
   let fn = fNode m
       pn = pNode m
-      pn_succs = filter (`elem` (pNodes st)) (successors pg pn)
-      pn_ord_succs =  filter (checkOrderingOfInEdges pg) pn_succs
+      succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
+      pn_ord_succs =  filter (checkOrderingOfInEdges pg) succs_pn
       fn_ord_succs = mappedNodesPToF st pn_ord_succs
       es = zip (concatMap (edges pg pn) pn_ord_succs)
                (concatMap (edges fg fn) fn_ord_succs)
@@ -947,3 +967,13 @@ mappedNodesPToF :: (Eq n)
                    -> [n]        -- ^ List of corresponding function nodes.
 mappedNodesPToF (Matchset m) pns =
   [ fn | (fn, pn) <- map fromMapping m, pn' <- pns, pn == pn' ]
+
+-- | Adds a mapping to an existing matchset.
+
+addToMatchset :: Matchset n -> Mapping n -> Matchset n
+addToMatchset (Matchset ms) m = Matchset (ms ++ [m])
+
+-- | Checks if a mapping exists in a given matchset.
+
+isInMatchset :: (Eq n) => Matchset n -> Mapping n -> Bool
+isInMatchset (Matchset ms) m = m `elem` ms

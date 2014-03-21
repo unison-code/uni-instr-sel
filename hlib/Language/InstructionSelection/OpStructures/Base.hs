@@ -59,7 +59,7 @@ data Constraint
     | AliasConstraint [G.NodeId]
     | RegFlagConstraint RegisterFlag [Range Constant]
     | AssignSameRegisterConstraint G.NodeId G.NodeId
-    deriving (Show,Eq)
+    deriving (Show, Eq)
 
 isAliasConstraint :: Constraint -> Bool
 isAliasConstraint (AliasConstraint _) = True
@@ -114,8 +114,8 @@ resolveAliases'' :: G.NodeId       -- ^ Node ID to resolve to.
                     -> OpStructure
 resolveAliases'' to_id from_id os =
   let g = osGraph os
-      from_n = head $ G.fromNodeId g from_id
-      to_n = head $ G.fromNodeId g to_id
+      from_n = head $ G.nodeId2Node g from_id
+      to_n = head $ G.nodeId2Node g to_id
       new_g = foldl (flip G.delEdge) (G.mergeNodes to_n from_n g)
               (G.edges g to_n to_n)
       new_cs = map (updateNodeIdInConstraint to_id from_id) (osConstraints os)
