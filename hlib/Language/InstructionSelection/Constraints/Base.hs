@@ -17,6 +17,7 @@ module Language.InstructionSelection.Constraints.Base (
 ) where
 
 import Language.InstructionSelection.Graphs (NodeId)
+import Language.InstructionSelection.Machine (RegisterId)
 import Language.InstructionSelection.Patterns ( InstanceId
                                               , InstructionId
                                               , PatternId
@@ -96,6 +97,14 @@ data NumExpr
 
     | PatternId2NumExpr PatternIdExpr
 
+      -- | Converts a label ID to a numerical expression.
+
+    | LabelId2NumExpr LabelIdExpr
+
+      -- | Converts a register ID to a numerical expression.
+
+    | RegisterId2NumExpr RegisterIdExpr
+
     deriving (Show)
 
 -- | Node ID expressions.
@@ -157,6 +166,35 @@ data PatternIdExpr
       -- | Gets the pattern ID to which a pattern instance is derived from.
 
     | PatternIdOfInstanceExpr InstanceIdExpr
+
+    -- TODO: add missing functions
+
+    deriving (Show)
+
+-- | Label ID expressions.
+
+data LabelIdExpr
+
+      -- | Gets the ID of the label to which a pattern instance has been
+      -- allocated.
+
+    = LabelAllocatedToInstanceExpr InstanceIdExpr
+
+    -- TODO: add missing functions
+
+    deriving (Show)
+
+-- | Register ID expressions.
+
+data RegisterIdExpr
+
+      -- | Introduces a register ID.
+
+    = RegisterIdExpr RegisterId
+
+      -- | Gets the ID of the register to which a data node has been allocated.
+
+    | RegisterAllocatedToData NodeId
 
     -- TODO: add missing functions
 
