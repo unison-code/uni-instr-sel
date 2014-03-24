@@ -39,7 +39,10 @@ import Language.InstructionSelection.Utils ( Natural
 -- | Represents an instruction ID.
 
 newtype InstructionId = InstructionId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show InstructionId where
+  show (InstructionId i) = show i
 
 -- | Represents a pattern ID. Pattern IDs are used to distinguish which
 -- instruction a pattern belongs to. Note, however, that an instance of a
@@ -47,13 +50,19 @@ newtype InstructionId = InstructionId Natural
 -- of nodes in a function graph - is not given pattern IDs but instance IDs.
 
 newtype PatternId = PatternId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show PatternId where
+  show (PatternId i) = show i
 
 -- | Represents a pattern instance ID. Instance IDs are used to distinguish
 -- between pattern an instance is based on.
 
 newtype InstanceId = InstanceId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show InstanceId where
+  show (InstanceId i) = show i
 
 
 

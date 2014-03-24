@@ -33,7 +33,10 @@ import Language.InstructionSelection.Utils ( Natural
 -- | Represents a register ID.
 
 newtype RegisterId = RegisterId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show RegisterId where
+  show (RegisterId i) = show i
 
 
 

@@ -165,7 +165,10 @@ data NodeLabel
 
 newtype NodeId
     = NodeId Natural
-    deriving (Show, Eq, Ord, Num, Enum)
+    deriving (Eq, Ord, Num, Enum)
+
+instance Show NodeId where
+  show (NodeId i) = show i
 
 -- | Node information. Most importantly this specifies the node type.
 
@@ -233,7 +236,10 @@ data EdgeLabel
 
 newtype EdgeNr
     = EdgeNr Natural
-    deriving (Show, Eq, Ord, Num, Enum)
+    deriving (Eq, Ord, Num, Enum)
+
+instance Show EdgeNr where
+  show (EdgeNr i) = show i
 
 -- | Represents a basic block label.
 
