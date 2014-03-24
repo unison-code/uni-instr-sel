@@ -26,6 +26,7 @@
 
 #include "../common/exceptions/exception.h"
 #include "../common/model/params.h"
+#include "../common/model/types.h"
 #include <fstream>
 #include <iostream>
 #include <list>
