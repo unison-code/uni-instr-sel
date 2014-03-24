@@ -138,13 +138,17 @@ data InstanceIdExpr
 
     = InstanceIdExpr InstanceId
 
+      -- | Gets the ID of this pattern instance ID.
+
+    | ThisInstanceIdExpr
+
       -- | Gets the pattern instance ID which covers a certain action node.
 
-    | CovererOfActionExpr NodeIdExpr
+    | CovererOfActionNodeExpr NodeIdExpr
 
       -- | Gets the pattern instance ID which defines a certain entity node.
 
-    | DefinerOfEntityExpr NodeIdExpr
+    | DefinerOfEntityNodeExpr NodeIdExpr
 
     -- TODO: add missing functions
 
@@ -191,6 +195,10 @@ data LabelIdExpr
 
     = LabelAllocatedToInstanceExpr InstanceIdExpr
 
+      -- | Gets the label ID associated with a label node.
+
+    | LabelIdOfLabelNodeExpr NodeIdExpr
+
     -- TODO: add missing functions
 
     deriving (Show)
@@ -205,7 +213,7 @@ data RegisterIdExpr
 
       -- | Gets the ID of the register to which a data node has been allocated.
 
-    | RegisterAllocatedToData NodeIdExpr
+    | RegisterAllocatedToDataNodeExpr NodeIdExpr
 
     -- TODO: add missing functions
 
