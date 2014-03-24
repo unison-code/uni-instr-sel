@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVER_GECODE_MODEL_MODEL__
-#define SOLVER_GECODE_MODEL_MODEL__
+#ifndef SOLVER_GECODE_MODEL_PARAMS__
+#define SOLVER_GECODE_MODEL_PARAMS__
 
 #include "../exceptions/exception.h"
 #include "../json/json.h"
