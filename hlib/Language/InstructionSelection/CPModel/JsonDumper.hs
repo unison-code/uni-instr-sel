@@ -139,10 +139,11 @@ nodeIdExpr2Str (NodeIdExpr i) = show i
 
 instanceIdExpr2Str :: InstanceIdExpr -> String
 instanceIdExpr2Str (InstanceIdExpr i) = show i
-instanceIdExpr2Str (CovererOfActionExpr e) =
+instanceIdExpr2Str (CovererOfActionNodeExpr e) =
   "(coverer-of-action-node " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str (DefinerOfEntityExpr e) =
+instanceIdExpr2Str (DefinerOfEntityNodeExpr e) =
   "(definer-of-entity-node " ++ nodeIdExpr2Str e ++ ")"
+instanceIdExpr2Str ThisInstanceIdExpr = "this"
 
 instructionIdExpr2Str :: InstructionIdExpr -> String
 instructionIdExpr2Str (InstructionIdExpr i) = show i
@@ -157,8 +158,10 @@ patternIdExpr2Str (PatternIdOfInstanceExpr e) =
 labelIdExpr2Str :: LabelIdExpr -> String
 labelIdExpr2Str (LabelAllocatedToInstanceExpr e) =
   "(label-allocated-to-instance " ++ instanceIdExpr2Str e ++ ")"
+labelIdExpr2Str (LabelIdOfLabelNodeExpr e) =
+  "(label-id-of-node " ++ nodeIdExpr2Str e ++ ")"
 
 registerIdExpr2Str :: RegisterIdExpr -> String
 registerIdExpr2Str (RegisterIdExpr i) = show i
-registerIdExpr2Str (RegisterAllocatedToData e) =
+registerIdExpr2Str (RegisterAllocatedToDataNodeExpr e) =
   "(register-allocated-to-data-node " ++ nodeIdExpr2Str e ++ ")"
