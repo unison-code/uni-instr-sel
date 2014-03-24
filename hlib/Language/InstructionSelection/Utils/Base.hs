@@ -38,6 +38,7 @@ data Range t
 
 newtype Natural = Natural Integer
     deriving (Eq, Ord)
+
 instance Show Natural where
   show (Natural i) = show i
 
