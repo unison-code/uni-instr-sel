@@ -33,7 +33,7 @@ import Language.InstructionSelection.Utils ( Natural
 -- Data types
 --------------
 
--- | TODO: write description
+-- | Defines a machine instruction.
 
 data Instruction
     = Instruction {
@@ -61,7 +61,8 @@ data Instruction
       }
     deriving (Show)
 
--- | TODO: write description
+-- | Contains the various properties of an instruction, such as code size and
+-- latency.
 
 data InstProperties
     = InstProperties {
