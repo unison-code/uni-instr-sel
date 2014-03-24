@@ -307,44 +307,26 @@ pNodes (Matchset m) = map pNode m
 fromNodeId :: NodeId -> Natural
 fromNodeId (NodeId i) = i
 
-toNodeId :: Natural -> NodeId
-toNodeId = NodeId
+toNodeId :: (Integral i) => i -> NodeId
+toNodeId = NodeId . toNatural
 
 toNode :: I.LNode NodeLabel -> Node
 toNode = Node
 
-toNodes :: [I.LNode NodeLabel] -> [Node]
-toNodes = map Node
-
 fromNode :: Node -> I.LNode NodeLabel
 fromNode (Node n) = n
-
-fromNodes :: [Node] -> [I.LNode NodeLabel]
-fromNodes = map fromNode
 
 toEdge :: I.LEdge EdgeLabel -> Edge
 toEdge = Edge
 
-toEdges :: [I.LEdge EdgeLabel] -> [Edge]
-toEdges = map Edge
-
 fromEdge :: Edge -> I.LEdge EdgeLabel
 fromEdge (Edge e) = e
 
-fromEdges :: [Edge] -> [I.LEdge EdgeLabel]
-fromEdges = map fromEdge
-
-toEdgeNr :: Natural -> EdgeNr
-toEdgeNr = EdgeNr
-
-toEdgeNrs :: [Natural] -> [EdgeNr]
-toEdgeNrs = map EdgeNr
+toEdgeNr :: (Integral i) => i -> EdgeNr
+toEdgeNr = EdgeNr . toNatural
 
 fromEdgeNr :: EdgeNr -> Natural
 fromEdgeNr (EdgeNr n) = n
-
-fromEdgeNrs :: [EdgeNr] -> [Natural]
-fromEdgeNrs = map fromEdgeNr
 
 toMatchset :: [Mapping n] -> Matchset n
 toMatchset = Matchset
@@ -434,7 +416,7 @@ empty = Graph I.empty
 -- | Makes a graph from a list of nodes and edges.
 
 mkGraph :: [Node] -> [Edge] -> Graph
-mkGraph ns es = Graph (I.mkGraph (fromNodes ns) (fromEdges es))
+mkGraph ns es = Graph (I.mkGraph (map fromNode ns) (map fromEdge es))
 
 -- | Gets the next internal node ID which does not already appear in the graph.
 
@@ -448,7 +430,7 @@ nextIntNodeId g =
 -- | Gets the next node ID which does not already appear in the graph.
 
 nextNodeId :: IntGraph -> NodeId
-nextNodeId g = NodeId $ toNatural $ toInteger $ nextIntNodeId g
+nextNodeId g = toNodeId $ toInteger $ nextIntNodeId g
 
 -- | Gets the node ID from a node.
 
@@ -605,14 +587,14 @@ updateEdgeSource new_source (Edge e@(_, target, EdgeLabel _ in_nr)) (Graph g) =
 
 nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextInEdgeNr g int =
-  let existing_numbers = map inEdgeNr $ toEdges $ I.inn g int
+  let existing_numbers = map inEdgeNr $ map toEdge $ I.inn g int
   in if length existing_numbers > 0
         then maximum existing_numbers + 1
         else 0
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int =
-  let existing_numbers = map outEdgeNr $ toEdges $ I.inn g int
+  let existing_numbers = map outEdgeNr $ map toEdge $ I.inn g int
   in if length existing_numbers > 0
         then maximum existing_numbers + 1
         else 0
@@ -688,17 +670,17 @@ isInGraph (Graph g) n = isJust $ intNodeId2Node g (intNodeId n)
 -- | Gets a list of all edges.
 
 allEdges :: Graph -> [Edge]
-allEdges (Graph g) = toEdges $ I.labEdges g
+allEdges (Graph g) = map toEdge $ I.labEdges g
 
 -- | Gets all inbound edges to a particular node.
 
 inEdges :: Graph -> Node -> [Edge]
-inEdges (Graph g) n = toEdges $ I.inn g (intNodeId n)
+inEdges (Graph g) n = map toEdge $ I.inn g (intNodeId n)
 
 -- | Gets all outbound edges from a particular node.
 
 outEdges :: Graph -> Node -> [Edge]
-outEdges (Graph g) n = toEdges $ I.out g (intNodeId n)
+outEdges (Graph g) n = map toEdge $ I.out g (intNodeId n)
 
 -- | Gets a particular edge or edges between two nodes. If there are more than
 -- one edge, the list will be sorted in increasing order of out-edge numbers.
@@ -708,10 +690,10 @@ edges :: Graph
         -> Node -- ^ The 'to' node.
         -> [Edge]
 edges g from_n to_n =
-  let out_edges = fromEdges $ outEdges g from_n
+  let out_edges = map fromEdge $ outEdges g from_n
       from_id = intNodeId from_n
       to_id = intNodeId to_n
-      es = toEdges
+      es = map toEdge
            $ filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges
       sorted_es = sortBy
                   (\n -> \m -> if inEdgeNr n < inEdgeNr m then LT else GT)

@@ -170,8 +170,7 @@ main =
                      ret_pattern, phi_pattern]
          list_of_matchsets = map (match func) patterns
          (_, list_of_matchsets_with_ids) =
-           mapAccumL (\curr sets -> ( curr + (InstanceId $ toNatural
-                                                         $ length sets)
+           mapAccumL (\curr sets -> ( curr + (toInstanceId $ length sets)
                                     , zip sets [curr..]
                                     )
                      )

@@ -21,6 +21,10 @@ module Language.InstructionSelection.Patterns.Base (
 , InstProperties (..)
 , InstructionId (..)
 , PatternId (..)
+, fromInstanceId
+, toInstanceId
+, fromInstructionId
+, toInstructionId
 ) where
 
 import Language.InstructionSelection.OpStructures
@@ -133,3 +137,22 @@ data InstProperties
 
       }
     deriving (Show)
+
+
+
+--------------
+-- Data types
+--------------
+
+fromInstanceId :: InstanceId -> Natural
+fromInstanceId (InstanceId i) = i
+
+
+toInstanceId :: (Integral i) => i -> InstanceId
+toInstanceId = InstanceId . toNatural
+
+fromInstructionId :: InstructionId -> Natural
+fromInstructionId (InstructionId i) = i
+
+toInstructionId :: (Integral i) => i -> InstructionId
+toInstructionId = InstructionId . toNatural
