@@ -221,6 +221,36 @@ main =
                              LabelAllocatedToInstanceExpr $
                              ThisInstanceIdExpr
                            )
+                         , Constraint $
+                           OrExpr
+                           (
+                             NeqExpr
+                             (
+                               LabelId2NumExpr $
+                               LabelAllocatedToInstanceExpr $
+                               DefinerOfEntityNodeExpr $
+                               NodeIdExpr 0
+                             )
+                             (
+                               LabelId2NumExpr $
+                               LabelIdOfLabelNodeExpr $
+                               NodeIdExpr 3
+                             )
+                           )
+                           (
+                             NeqExpr
+                             (
+                               LabelId2NumExpr $
+                               LabelAllocatedToInstanceExpr $
+                               DefinerOfEntityNodeExpr $
+                               NodeIdExpr 1
+                             )
+                             (
+                               LabelId2NumExpr $
+                               LabelIdOfLabelNodeExpr $
+                               NodeIdExpr 4
+                             )
+                           )
                          ]
                        ]
          inst_props = [ InstProperties 1 1
