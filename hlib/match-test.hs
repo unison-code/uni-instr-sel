@@ -219,7 +219,7 @@ main =
                            (
                              LabelId2NumExpr $
                              LabelAllocatedToInstanceExpr $
-                             ThisInstanceIdExpr
+                             ThisInstanceId
                            )
                          , Constraint $
                            OrExpr

@@ -143,7 +143,7 @@ instanceIdExpr2Str (CovererOfActionNodeExpr e) =
   "(coverer-of-action-node " ++ nodeIdExpr2Str e ++ ")"
 instanceIdExpr2Str (DefinerOfEntityNodeExpr e) =
   "(definer-of-entity-node " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str ThisInstanceIdExpr = "this"
+instanceIdExpr2Str ThisInstanceId = "this"
 
 instructionIdExpr2Str :: InstructionIdExpr -> String
 instructionIdExpr2Str (AnInstructionId i) = show i

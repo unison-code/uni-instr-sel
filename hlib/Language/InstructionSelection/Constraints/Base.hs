@@ -140,7 +140,7 @@ data InstanceIdExpr
 
       -- | Gets the ID of this pattern instance ID.
 
-    | ThisInstanceIdExpr
+    | ThisInstanceId
 
       -- | Gets the pattern instance ID which covers a certain action node.
 
