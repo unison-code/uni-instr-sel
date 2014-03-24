@@ -198,7 +198,7 @@ data NodeType
     | TransferNode
 
       -- | A node which matches any other node, meaning that @n == m@ is always
-      -- @True@ if either @n@ or @m@ is of type `NullNode'. Only to be used
+      -- @True@ if either @n@ or @m@ is of type 'NullNode'. Only to be used
       -- within patterns (like in the generic phi patterns).
 
     | NullNode
