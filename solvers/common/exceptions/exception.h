@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVER_GECODE_EXCEPTIONS_EXCEPTION__
-#define SOLVER_GECODE_EXCEPTIONS_EXCEPTION__
+#ifndef SOLVERS_COMMON_EXCEPTIONS_EXCEPTION__
+#define SOLVERS_COMMON_EXCEPTIONS_EXCEPTION__
 
 #include <exception>
 #include <sstream>
@@ -104,23 +104,6 @@ class Exception : private std::exception {
      */
     std::string
     toString(void) const;
-
-    /**
-     * Converts an element of any type (or at least most) into a string.
-     *
-     * @tparam T
-     *         Element type.
-     * @param e
-     *        Element to convert.
-     * @returns String representation.
-     */
-    template <typename T>
-    std::string
-    toString(const T& e) const {
-        std::stringstream ss;
-        ss << e;
-        return ss.str();
-    }
 
   protected:
     /**

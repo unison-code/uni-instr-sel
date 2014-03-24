@@ -24,58 +24,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "exception.h"
-#include "../utils/string.h"
+#ifndef SOLVERS_COMMON_UTILS_STRING__
+#define SOLVERS_COMMON_UTILS_STRING__
 
-using std::string;
+#include <sstream>
+#include <string>
 
-Exception::Exception(const string& source_file, int source_line)
-    : exception(),
-      source_file_(source_file),
-      source_line_(source_line),
-      message_("")
-{}
+namespace Utils {
 
-Exception::Exception(const string& source_file,
-                     int source_line,
-                     const string& message)
-    : exception(),
-      source_file_(source_file),
-      source_line_(source_line),
-      message_(message)
-{}
-
-Exception::~Exception(void) throw() {}
-
-string
-Exception::getSourceFile(void) const {
-    return source_file_;
+/**
+ * Converts an element of any type (or at least most) into a string.
+ *
+ * @tparam T
+ *         Element type.
+ * @param e
+ *        Element to convert.
+ * @returns String representation.
+ */
+template <typename T>
+std::string
+toString(const T& e) {
+    std::stringstream ss;
+    ss << e;
+    return ss.str();
 }
 
-int
-Exception::getSourceLine(void) const {
-    return source_line_;
 }
 
-string
-Exception::getMessage(void) const {
-    return message_;
-}
-
-string
-Exception::toString(void) const {
-    string str;
-    str += type();
-    str += " thrown in \"";
-    str += getSourceFile();
-    str += "\" at line ";
-    str += Utils::toString(getSourceLine());
-    str += ": ";
-    str += getMessage();
-    return str;
-}
-
-string
-Exception::type(void) const {
-    return "Exception";
-}
+#endif
