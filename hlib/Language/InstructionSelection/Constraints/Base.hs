@@ -22,6 +22,8 @@ module Language.InstructionSelection.Constraints.Base (
 , NumExpr (..)
 , PatternIdExpr (..)
 , RegisterIdExpr (..)
+, fromConstraint
+, toConstraint
 ) where
 
 import Language.InstructionSelection.Graphs (NodeId)
@@ -34,7 +36,7 @@ import Language.InstructionSelection.Patterns.Ids
 -- Data types
 --------------
 
-data Constraint
+newtype Constraint
     = Constraint BoolExpr
     deriving (Show)
 
@@ -138,11 +140,11 @@ data InstanceIdExpr
 
       -- | Gets the pattern instance ID which covers a certain action node.
 
-    | CovererOfActionExpr NodeId
+    | CovererOfActionExpr NodeIdExpr
 
       -- | Gets the pattern instance ID which defines a certain entity node.
 
-    | DefinerOfEntityExpr NodeId
+    | DefinerOfEntityExpr NodeIdExpr
 
     -- TODO: add missing functions
 
@@ -203,8 +205,20 @@ data RegisterIdExpr
 
       -- | Gets the ID of the register to which a data node has been allocated.
 
-    | RegisterAllocatedToData NodeId
+    | RegisterAllocatedToData NodeIdExpr
 
     -- TODO: add missing functions
 
     deriving (Show)
+
+
+
+-------------
+-- Functions
+-------------
+
+toConstraint :: BoolExpr -> Constraint
+toConstraint = Constraint
+
+fromConstraint :: Constraint -> BoolExpr
+fromConstraint (Constraint e) = e
