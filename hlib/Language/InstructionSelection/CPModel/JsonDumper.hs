@@ -28,7 +28,9 @@ import Language.InstructionSelection.Utils ( Natural (..)
                                            , fromNatural
                                            )
 import Data.Aeson
-import Data.ByteString.Lazy.Char8 (unpack)
+import Data.ByteString.Lazy.Char8 ( pack
+                                  , unpack
+                                  )
 
 
 
@@ -57,8 +59,7 @@ instance ToJSON FunctionGraphData where
     object [ "action-nodes" .= (funcActionNodes d)
            , "entity-nodes" .= (funcEntityNodes d)
            , "label-nodes"  .= map f (funcLabelDoms d)
--- TODO: enable
---         , "constraints" .= (funcConstraints p)
+           , "constraints"  .= (funcConstraints d)
            ]
     where f (id, domset) = object [ "node"   .= id
                                   , "domset" .= domset
@@ -71,14 +72,16 @@ instance ToJSON PatternInstanceData where
            , "entity-nodes-defined" .= (patDefinedEntityNodes d)
            , "entity-nodes-used"    .= (patUsedEntityNodes d)
            , "cost"                 .= (patCost d)
--- TODO: enable
---         , "constraints" .= (funcConstraints p)
+           , "constraints"          .= (patConstraints d)
            ]
 
 instance ToJSON MachineData where
   toJSON d =
-    object [ -- TODO: implement
+    object [ -- TODO: implement once MachineData has been implemented
            ]
+
+instance ToJSON Constraint where
+  toJSON (Constraint e) = toJSON $ boolExpr2Str e
 
 instance ToJSON NodeId where
   toJSON (NodeId i) = toJSON i
@@ -88,3 +91,74 @@ instance ToJSON InstanceId where
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
+
+
+
+-------------
+-- Functions
+-------------
+
+boolExpr2Str :: BoolExpr -> String
+boolExpr2Str (EqExpr  lhs rhs) =
+  "(== " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (NeqExpr lhs rhs) =
+  "(!= " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (GTExpr  lhs rhs) =
+  "(> " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (GEExpr  lhs rhs) =
+  "(>= " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (LTExpr  lhs rhs) =
+  "(< " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (LEExpr  lhs rhs) =
+  "(<= " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+boolExpr2Str (AndExpr lhs rhs) =
+  "(&& " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+boolExpr2Str (OrExpr  lhs rhs) =
+  "(|| " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+boolExpr2Str (ImpExpr lhs rhs) =
+  "(=> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+boolExpr2Str (EqvExpr lhs rhs) =
+  "(<=> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+boolExpr2Str (NotExpr e) = "(! " ++ boolExpr2Str e ++ ")"
+
+numExpr2Str :: NumExpr -> String
+numExpr2Str (PluxExpr  lhs rhs) =
+  "(+ " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+numExpr2Str (MinuxExpr lhs rhs) =
+  "(- " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
+numExpr2Str (IntExpr i) = show i
+numExpr2Str (NodeId2NumExpr e) = nodeIdExpr2Str e
+numExpr2Str (InstanceId2NumExpr e) = instanceIdExpr2Str e
+numExpr2Str (InstructionId2NumExpr e) = instructionIdExpr2Str e
+numExpr2Str (PatternId2NumExpr e) = patternIdExpr2Str e
+numExpr2Str (LabelId2NumExpr e) = labelIdExpr2Str e
+numExpr2Str (RegisterId2NumExpr e) = registerIdExpr2Str e
+
+nodeIdExpr2Str :: NodeIdExpr -> String
+nodeIdExpr2Str (NodeIdExpr i) = show i
+
+instanceIdExpr2Str :: InstanceIdExpr -> String
+instanceIdExpr2Str (InstanceIdExpr i) = show i
+instanceIdExpr2Str (CovererOfActionExpr e) =
+  "(coverer-of-action-node " ++ nodeIdExpr2Str e ++ ")"
+instanceIdExpr2Str (DefinerOfEntityExpr e) =
+  "(definer-of-entity-node " ++ nodeIdExpr2Str e ++ ")"
+
+instructionIdExpr2Str :: InstructionIdExpr -> String
+instructionIdExpr2Str (InstructionIdExpr i) = show i
+instructionIdExpr2Str (InstructionIdOfPatternExpr e) =
+  "(instruction-of-pattern " ++ patternIdExpr2Str e ++ ")"
+
+patternIdExpr2Str :: PatternIdExpr -> String
+patternIdExpr2Str (PatternIdExpr i) = show i
+patternIdExpr2Str (PatternIdOfInstanceExpr e) =
+  "(pattern-of-instance " ++ instanceIdExpr2Str e ++ ")"
+
+labelIdExpr2Str :: LabelIdExpr -> String
+labelIdExpr2Str (LabelAllocatedToInstanceExpr e) =
+  "(label-allocated-to-instance " ++ instanceIdExpr2Str e ++ ")"
+
+registerIdExpr2Str :: RegisterIdExpr -> String
+registerIdExpr2Str (RegisterIdExpr i) = show i
+registerIdExpr2Str (RegisterAllocatedToData e) =
+  "(register-allocated-to-data-node " ++ nodeIdExpr2Str e ++ ")"
