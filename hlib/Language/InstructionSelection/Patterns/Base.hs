@@ -115,7 +115,6 @@ data InstProperties
 fromInstanceId :: InstanceId -> Natural
 fromInstanceId (InstanceId i) = i
 
-
 toInstanceId :: (Integral i) => i -> InstanceId
 toInstanceId = InstanceId . toNatural
 
