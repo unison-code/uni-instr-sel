@@ -29,6 +29,7 @@ Tests the implementation of the VF2 algorithm.
 -}
 
 import qualified Language.InstructionSelection.DataTypes as D
+import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
@@ -39,7 +40,9 @@ import Language.InstructionSelection.CPModel.JsonDumper
 import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils (toNatural)
-import Data.List (mapAccumL)
+import Data.List ( mapAccumL
+                 , zip4
+                 )
 
 main :: IO ()
 main =
@@ -166,8 +169,67 @@ main =
                 , (7, 5, EdgeLabel 0 1)
                 , (5, 8, EdgeLabel 0 0)
                 ])
-         patterns = [init_def_pattern, add_pattern, bnz_pattern, br_pattern,
-                     ret_pattern, phi_pattern]
+         patterns = [ init_def_pattern
+                    , add_pattern
+                    , bnz_pattern
+                    , br_pattern
+                    , ret_pattern
+                    , phi_pattern
+                    ]
+         constraints = [ []
+                       , []
+                       , []
+                       , []
+                       , []
+                       , [ Constraint $
+                           AndExpr
+                           (
+                             EqExpr
+                             (
+                               RegisterId2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
+                               NodeIdExpr 0
+                             )
+                             (
+                               RegisterId2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
+                               NodeIdExpr 1
+                             )
+                           )
+                           (
+                             EqExpr
+                             (
+                               RegisterId2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
+                               NodeIdExpr 1
+                             )
+                             (
+                               RegisterId2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
+                               NodeIdExpr 2
+                             )
+                           )
+                         , Constraint $
+                           EqExpr
+                           (
+                             LabelId2NumExpr $
+                             LabelIdOfLabelNodeExpr $
+                             NodeIdExpr 5
+                           )
+                           (
+                             LabelId2NumExpr $
+                             LabelAllocatedToInstanceExpr $
+                             ThisInstanceIdExpr
+                           )
+                         ]
+                       ]
+         inst_props = [ InstProperties 1 1
+                      , InstProperties 1 1
+                      , InstProperties 1 1
+                      , InstProperties 1 1
+                      , InstProperties 1 1
+                      , InstProperties 1 1
+                      ]
          list_of_matchsets = map (match func) patterns
          (_, list_of_matchsets_with_ids) =
            mapAccumL (\curr sets -> ( curr + (toInstanceId $ length sets)
@@ -177,8 +239,8 @@ main =
                      0
                      list_of_matchsets
          pattern_data =
-           map (\(p, m) -> (OpStructure p [], m, InstProperties 1 1))
-               (zip patterns list_of_matchsets_with_ids)
+           map (\(pat, c, m, prop) -> (OpStructure pat c, m, prop))
+               (zip4 patterns constraints list_of_matchsets_with_ids inst_props)
          params = mkParams (OpStructure func []) pattern_data
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn))
