@@ -15,6 +15,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Language.InstructionSelection.Patterns.Base (
   InstanceId (..)
 , Instruction (..)
@@ -22,9 +24,11 @@ module Language.InstructionSelection.Patterns.Base (
 , InstructionId (..)
 , PatternId (..)
 , fromInstanceId
-, toInstanceId
 , fromInstructionId
+, fromPatternId
+, toInstanceId
 , toInstructionId
+, toPatternId
 ) where
 
 import Language.InstructionSelection.OpStructures
@@ -42,19 +46,7 @@ import Language.InstructionSelection.Utils ( Natural
 -- | Represents an instruction ID.
 
 newtype InstructionId = InstructionId Natural
-  deriving (Show, Eq)
-
-instance Num InstructionId where
-    fromInteger = InstructionId . toNatural
-    (InstructionId x) + (InstructionId y) = InstructionId (x + y)
-    (InstructionId x) - (InstructionId y) = InstructionId (x - y)
-    (InstructionId x) * (InstructionId y) = InstructionId (x * y)
-    abs (InstructionId x) = InstructionId (abs x)
-    signum (InstructionId x) = InstructionId (signum x)
-
-instance Enum InstructionId where
-  toEnum = InstructionId . toEnum
-  fromEnum (InstructionId x) = fromEnum x
+  deriving (Show, Eq, Ord, Num, Enum)
 
 -- | Represents a pattern ID. Pattern IDs are used to distinguish which
 -- instruction a pattern belongs to. Note, however, that an instance of a
@@ -62,37 +54,13 @@ instance Enum InstructionId where
 -- of nodes in a function graph - is not given pattern IDs but instance IDs.
 
 newtype PatternId = PatternId Natural
-  deriving (Show, Eq)
-
-instance Num PatternId where
-    fromInteger = PatternId . toNatural
-    (PatternId x) + (PatternId y) = PatternId (x + y)
-    (PatternId x) - (PatternId y) = PatternId (x - y)
-    (PatternId x) * (PatternId y) = PatternId (x * y)
-    abs (PatternId x) = PatternId (abs x)
-    signum (PatternId x) = PatternId (signum x)
-
-instance Enum PatternId where
-  toEnum = PatternId . toEnum
-  fromEnum (PatternId x) = fromEnum x
+  deriving (Show, Eq, Ord, Num, Enum)
 
 -- | Represents a pattern instance ID. Instance IDs are used to distinguish
 -- between pattern an instance is based on.
 
 newtype InstanceId = InstanceId Natural
-  deriving (Show, Eq)
-
-instance Num InstanceId where
-    fromInteger = InstanceId . toNatural
-    (InstanceId x) + (InstanceId y) = InstanceId (x + y)
-    (InstanceId x) - (InstanceId y) = InstanceId (x - y)
-    (InstanceId x) * (InstanceId y) = InstanceId (x * y)
-    abs (InstanceId x) = InstanceId (abs x)
-    signum (InstanceId x) = InstanceId (signum x)
-
-instance Enum InstanceId where
-  toEnum = InstanceId . toEnum
-  fromEnum (InstanceId x) = fromEnum x
+  deriving (Show, Eq, Ord, Num, Enum)
 
 -- | TODO: write description
 
@@ -156,3 +124,9 @@ fromInstructionId (InstructionId i) = i
 
 toInstructionId :: (Integral i) => i -> InstructionId
 toInstructionId = InstructionId . toNatural
+
+fromPatternId :: PatternId -> Natural
+fromPatternId (PatternId i) = i
+
+toPatternId :: (Integral i) => i -> PatternId
+toPatternId = PatternId . toNatural

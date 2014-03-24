@@ -20,6 +20,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Language.InstructionSelection.Graphs.Base (
   BBLabel (..)
 , Edge (..)
@@ -163,19 +165,7 @@ data NodeLabel
 
 newtype NodeId
     = NodeId Natural
-    deriving (Show, Eq, Ord)
-
-instance Num NodeId where
-    fromInteger = NodeId . toNatural
-    (NodeId x) + (NodeId y) = NodeId (x + y)
-    (NodeId x) - (NodeId y) = NodeId (x - y)
-    (NodeId x) * (NodeId y) = NodeId (x * y)
-    abs (NodeId x) = NodeId (abs x)
-    signum (NodeId x) = NodeId (signum x)
-
-instance Enum NodeId where
-  toEnum = NodeId . toEnum
-  fromEnum (NodeId x) = fromEnum x
+    deriving (Show, Eq, Ord, Num, Enum)
 
 -- | Node information. Most importantly this specifies the node type.
 
@@ -221,18 +211,6 @@ newtype Edge
     = Edge (I.LEdge EdgeLabel)
     deriving (Show, Eq)
 
-instance Num EdgeNr where
-    fromInteger = EdgeNr . toNatural
-    (EdgeNr x) + (EdgeNr y) = EdgeNr (x + y)
-    (EdgeNr x) - (EdgeNr y) = EdgeNr (x - y)
-    (EdgeNr x) * (EdgeNr y) = EdgeNr (x * y)
-    abs (EdgeNr x) = EdgeNr (abs x)
-    signum (EdgeNr x) = EdgeNr (signum x)
-
-instance Enum EdgeNr where
-  toEnum = EdgeNr . toEnum
-  fromEnum (EdgeNr x) = fromEnum x
-
 -- | Data type for describing how an edge relates to the two nodes. Since edges
 -- are ordered, there will be an edge number for each node - one for indicating
 -- which output edge it is of the source node, and another for indicating which
@@ -255,7 +233,7 @@ data EdgeLabel
 
 newtype EdgeNr
     = EdgeNr Natural
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Num, Enum)
 
 -- | Represents a basic block label.
 
