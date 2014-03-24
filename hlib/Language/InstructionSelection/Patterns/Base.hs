@@ -108,9 +108,9 @@ data InstProperties
 
 
 
---------------
--- Data types
---------------
+-------------
+-- Functions
+-------------
 
 fromInstanceId :: InstanceId -> Natural
 fromInstanceId (InstanceId i) = i
