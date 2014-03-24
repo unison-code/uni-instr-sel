@@ -27,6 +27,7 @@
 #ifndef SOLVER_GECODE_MODEL_PARAMS__
 #define SOLVER_GECODE_MODEL_PARAMS__
 
+#include "types.h"
 #include "../exceptions/exception.h"
 #include "../json/json.h"
 #include <list>
@@ -34,9 +35,6 @@
 #include <string>
 
 namespace Model {
-
-typedef unsigned int Id;
-typedef unsigned int ArrayIndex;
 
 /**
  * Contains the parameters which will be used to create an instance of the CP
