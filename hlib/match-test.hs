@@ -188,12 +188,12 @@ main =
                              (
                                RegisterId2NumExpr $
                                RegisterAllocatedToDataNodeExpr $
-                               ANodeId 0
+                               ANodeIdExpr 0
                              )
                              (
                                RegisterId2NumExpr $
                                RegisterAllocatedToDataNodeExpr $
-                               ANodeId 1
+                               ANodeIdExpr 1
                              )
                            )
                            (
@@ -201,12 +201,12 @@ main =
                              (
                                RegisterId2NumExpr $
                                RegisterAllocatedToDataNodeExpr $
-                               ANodeId 1
+                               ANodeIdExpr 1
                              )
                              (
                                RegisterId2NumExpr $
                                RegisterAllocatedToDataNodeExpr $
-                               ANodeId 2
+                               ANodeIdExpr 2
                              )
                            )
                          , Constraint $
@@ -214,12 +214,12 @@ main =
                            (
                              LabelId2NumExpr $
                              LabelIdOfLabelNodeExpr $
-                             ANodeId 5
+                             ANodeIdExpr 5
                            )
                            (
                              LabelId2NumExpr $
                              LabelAllocatedToInstanceExpr $
-                             ThisInstanceId
+                             ThisInstanceIdExpr
                            )
                          , Constraint $
                            OrExpr
@@ -229,12 +229,12 @@ main =
                                LabelId2NumExpr $
                                LabelAllocatedToInstanceExpr $
                                DefinerOfEntityNodeExpr $
-                               ANodeId 0
+                               ANodeIdExpr 0
                              )
                              (
                                LabelId2NumExpr $
                                LabelIdOfLabelNodeExpr $
-                               ANodeId 3
+                               ANodeIdExpr 3
                              )
                            )
                            (
@@ -243,12 +243,12 @@ main =
                                LabelId2NumExpr $
                                LabelAllocatedToInstanceExpr $
                                DefinerOfEntityNodeExpr $
-                               ANodeId 1
+                               ANodeIdExpr 1
                              )
                              (
                                LabelId2NumExpr $
                                LabelIdOfLabelNodeExpr $
-                               ANodeId 4
+                               ANodeIdExpr 4
                              )
                            )
                          ]

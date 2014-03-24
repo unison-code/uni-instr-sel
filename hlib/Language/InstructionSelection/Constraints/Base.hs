@@ -90,7 +90,7 @@ data NumExpr
 
       -- | Introduces an integer.
 
-    | AnInteger Integer
+    | AnIntegerExpr Integer
 
       -- | Converts a node ID to a numerical expression.
 
@@ -124,7 +124,7 @@ data NodeIdExpr
 
       -- | Introduces a node ID.
 
-    = ANodeId NodeId
+    = ANodeIdExpr NodeId
 
     -- TODO: add missing functions
 
@@ -136,11 +136,11 @@ data InstanceIdExpr
 
       -- | Introduces a pattern instance ID.
 
-    = AnInstanceId InstanceId
+    = AnInstanceIdExpr InstanceId
 
       -- | Gets the ID of this pattern instance ID.
 
-    | ThisInstanceId
+    | ThisInstanceIdExpr
 
       -- | Gets the pattern instance ID which covers a certain action node.
 
@@ -160,7 +160,7 @@ data InstructionIdExpr
 
       -- | Introduces an instruction ID.
 
-    = AnInstructionId InstructionId
+    = AnInstructionIdExpr InstructionId
 
       -- | Gets the instruction ID to which a pattern belongs.
 
@@ -176,7 +176,7 @@ data PatternIdExpr
 
      -- | Introduces a pattern ID.
 
-    = APatternId PatternId
+    = APatternIdExpr PatternId
 
       -- | Gets the pattern ID to which a pattern instance is derived from.
 
@@ -209,7 +209,7 @@ data RegisterIdExpr
 
       -- | Introduces a register ID.
 
-    = ARegisterId RegisterId
+    = ARegisterIdExpr RegisterId
 
       -- | Gets the ID of the register to which a data node has been allocated.
 
