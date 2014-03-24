@@ -126,7 +126,7 @@ numExpr2Str (PluxExpr  lhs rhs) =
   "(+ " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
 numExpr2Str (MinuxExpr lhs rhs) =
   "(- " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
-numExpr2Str (IntExpr i) = show i
+numExpr2Str (AnInteger i) = show i
 numExpr2Str (NodeId2NumExpr e) = nodeIdExpr2Str e
 numExpr2Str (InstanceId2NumExpr e) = instanceIdExpr2Str e
 numExpr2Str (InstructionId2NumExpr e) = instructionIdExpr2Str e
@@ -135,10 +135,10 @@ numExpr2Str (LabelId2NumExpr e) = labelIdExpr2Str e
 numExpr2Str (RegisterId2NumExpr e) = registerIdExpr2Str e
 
 nodeIdExpr2Str :: NodeIdExpr -> String
-nodeIdExpr2Str (NodeIdExpr i) = show i
+nodeIdExpr2Str (ANodeId i) = show i
 
 instanceIdExpr2Str :: InstanceIdExpr -> String
-instanceIdExpr2Str (InstanceIdExpr i) = show i
+instanceIdExpr2Str (AnInstanceId i) = show i
 instanceIdExpr2Str (CovererOfActionNodeExpr e) =
   "(coverer-of-action-node " ++ nodeIdExpr2Str e ++ ")"
 instanceIdExpr2Str (DefinerOfEntityNodeExpr e) =
@@ -146,12 +146,12 @@ instanceIdExpr2Str (DefinerOfEntityNodeExpr e) =
 instanceIdExpr2Str ThisInstanceIdExpr = "this"
 
 instructionIdExpr2Str :: InstructionIdExpr -> String
-instructionIdExpr2Str (InstructionIdExpr i) = show i
+instructionIdExpr2Str (AnInstructionId i) = show i
 instructionIdExpr2Str (InstructionIdOfPatternExpr e) =
   "(instruction-of-pattern " ++ patternIdExpr2Str e ++ ")"
 
 patternIdExpr2Str :: PatternIdExpr -> String
-patternIdExpr2Str (PatternIdExpr i) = show i
+patternIdExpr2Str (APatternId i) = show i
 patternIdExpr2Str (PatternIdOfInstanceExpr e) =
   "(pattern-of-instance " ++ instanceIdExpr2Str e ++ ")"
 
@@ -162,6 +162,6 @@ labelIdExpr2Str (LabelIdOfLabelNodeExpr e) =
   "(label-id-of-node " ++ nodeIdExpr2Str e ++ ")"
 
 registerIdExpr2Str :: RegisterIdExpr -> String
-registerIdExpr2Str (RegisterIdExpr i) = show i
+registerIdExpr2Str (ARegisterId i) = show i
 registerIdExpr2Str (RegisterAllocatedToDataNodeExpr e) =
   "(register-allocated-to-data-node " ++ nodeIdExpr2Str e ++ ")"
