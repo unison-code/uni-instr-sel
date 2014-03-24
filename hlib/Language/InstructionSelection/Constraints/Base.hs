@@ -8,26 +8,35 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- TODO: write description
+-- Contains the data types for representing instruction selection constraints.
 --
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Constraints.Base (
--- TODO: add export list
+  BoolExpr (..)
+, Constraint (..)
+, InstanceIdExpr (..)
+, InstructionIdExpr (..)
+, LabelIdExpr (..)
+, NodeIdExpr (..)
+, NumExpr (..)
+, PatternIdExpr (..)
+, RegisterIdExpr (..)
 ) where
 
 import Language.InstructionSelection.Graphs (NodeId)
 import Language.InstructionSelection.Machine (RegisterId)
-import Language.InstructionSelection.Patterns ( InstanceId
-                                              , InstructionId
-                                              , PatternId
-                                              )
+import Language.InstructionSelection.Patterns.Ids
 
 
 
 --------------
 -- Data types
 --------------
+
+data Constraint
+    = Constraint BoolExpr
+    deriving (Show)
 
 -- | Boolean expressions. For binary operations the first argument is always the
 -- left-hand side and the second argument is always the right-hand side.

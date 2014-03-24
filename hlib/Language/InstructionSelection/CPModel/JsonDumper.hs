@@ -18,6 +18,7 @@ module Language.InstructionSelection.CPModel.JsonDumper (
   toJson
 ) where
 
+import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs ( NodeId (..)
                                             , Matchset (..)

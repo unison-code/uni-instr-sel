@@ -12,6 +12,8 @@
 
 module Language.InstructionSelection.Patterns (
   module Language.InstructionSelection.Patterns.Base
+, module Language.InstructionSelection.Patterns.Ids
 ) where
 
 import Language.InstructionSelection.Patterns.Base
+import Language.InstructionSelection.Patterns.Ids

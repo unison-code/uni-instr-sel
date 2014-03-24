@@ -14,10 +14,10 @@
 
 module Language.InstructionSelection.CPModel.Base where
 
+import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs ( NodeId (..)
                                             , Matchset (..)
                                             )
-import Language.InstructionSelection.OpStructures (Constraint)
 import Language.InstructionSelection.Patterns (InstanceId)
 import Language.InstructionSelection.PrettyPrint
 

@@ -18,6 +18,7 @@ module Language.InstructionSelection.CPModel.ParamMaker (
   mkParams
 ) where
 
+import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures

@@ -15,24 +15,14 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Language.InstructionSelection.Patterns.Base (
-  InstanceId (..)
-, Instruction (..)
+  Instruction (..)
 , InstProperties (..)
-, InstructionId (..)
-, PatternId (..)
-, fromInstanceId
-, fromInstructionId
-, fromPatternId
-, toInstanceId
-, toInstructionId
-, toPatternId
 ) where
 
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
+import Language.InstructionSelection.Patterns.Ids
 import Language.InstructionSelection.Utils ( Natural
                                            , toNatural
                                            )
@@ -42,25 +32,6 @@ import Language.InstructionSelection.Utils ( Natural
 --------------
 -- Data types
 --------------
-
--- | Represents an instruction ID.
-
-newtype InstructionId = InstructionId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
-
--- | Represents a pattern ID. Pattern IDs are used to distinguish which
--- instruction a pattern belongs to. Note, however, that an instance of a
--- pattern - which is an occurrance where a pattern has been matched over a set
--- of nodes in a function graph - is not given pattern IDs but instance IDs.
-
-newtype PatternId = PatternId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
-
--- | Represents a pattern instance ID. Instance IDs are used to distinguish
--- between pattern an instance is based on.
-
-newtype InstanceId = InstanceId Natural
-  deriving (Show, Eq, Ord, Num, Enum)
 
 -- | TODO: write description
 
@@ -105,27 +76,3 @@ data InstProperties
 
       }
     deriving (Show)
-
-
-
--------------
--- Functions
--------------
-
-fromInstanceId :: InstanceId -> Natural
-fromInstanceId (InstanceId i) = i
-
-toInstanceId :: (Integral i) => i -> InstanceId
-toInstanceId = InstanceId . toNatural
-
-fromInstructionId :: InstructionId -> Natural
-fromInstructionId (InstructionId i) = i
-
-toInstructionId :: (Integral i) => i -> InstructionId
-toInstructionId = InstructionId . toNatural
-
-fromPatternId :: PatternId -> Natural
-fromPatternId (PatternId i) = i
-
-toPatternId :: (Integral i) => i -> PatternId
-toPatternId = PatternId . toNatural
