@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Language.InstructionSelection.ProgramModules.LLVM
--- Copyright   :  (c) Gabriel Hjort Blindell 2013
+-- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
 -- Maintainer  :  ghb@kth.se
