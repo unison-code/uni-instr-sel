@@ -858,19 +858,19 @@ class ConstraintVisitor {
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
     virtual void
-    beforeVisit(const LabelAllocatedToInstanceExpr& e);
+    beforeVisit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
     virtual void
-    visit(const LabelAllocatedToInstanceExpr& e);
+    visit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
     virtual void
-    afterVisit(const LabelAllocatedToInstanceExpr& e);
+    afterVisit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
@@ -894,19 +894,19 @@ class ConstraintVisitor {
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
     virtual void
-    beforeVisit(const RegisterAllocatedToDataNodeExpr& e);
+    beforeVisit(const RegisterIdAllocatedToDataNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
     virtual void
-    visit(const RegisterAllocatedToDataNodeExpr& e);
+    visit(const RegisterIdAllocatedToDataNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
     virtual void
-    afterVisit(const RegisterAllocatedToDataNodeExpr& e);
+    afterVisit(const RegisterIdAllocatedToDataNodeExpr& e);
 };
 
 }

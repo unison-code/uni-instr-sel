@@ -1184,7 +1184,7 @@ class PatternIdOfInstanceExpr : public PatternIdExpr {
  * Represents the ID of the label to which a pattern instance has been
  * allocated.
  */
-class LabelAllocatedToInstanceExpr : public LabelIdExpr {
+class LabelIdAllocatedToInstanceExpr : public LabelIdExpr {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1194,13 +1194,13 @@ class LabelAllocatedToInstanceExpr : public LabelIdExpr {
      * @throws Exception
      *         When \c e is \c NULL.
      */
-    LabelAllocatedToInstanceExpr(InstanceIdExpr* e);
+    LabelIdAllocatedToInstanceExpr(InstanceIdExpr* e);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelAllocatedToInstanceExpr(void);
+    ~LabelIdAllocatedToInstanceExpr(void);
 
     /**
      * \copydoc Expr::accept(ConstraintVisitor&)
@@ -1246,7 +1246,7 @@ class LabelIdOfLabelNodeExpr : public LabelIdExpr {
 /**
  * Represents the label ID associated with a label node.
  */
-class RegisterAllocatedToDataNodeExpr : public LabelIdExpr {
+class RegisterIdAllocatedToDataNodeExpr : public RegisterIdExpr {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1256,13 +1256,13 @@ class RegisterAllocatedToDataNodeExpr : public LabelIdExpr {
      * @throws Exception
      *         When \c e is \c NULL.
      */
-    RegisterAllocatedToDataNodeExpr(NodeIdExpr* e);
+    RegisterIdAllocatedToDataNodeExpr(NodeIdExpr* e);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterAllocatedToDataNodeExpr(void);
+    ~RegisterIdAllocatedToDataNodeExpr(void);
 
     /**
      * \copydoc Expr::accept(ConstraintVisitor&)

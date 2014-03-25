@@ -421,13 +421,13 @@ void
 ConstraintVisitor::afterVisit(const PatternIdOfInstanceExpr& e) {}
 
 void
-ConstraintVisitor::beforeVisit(const LabelAllocatedToInstanceExpr& e) {}
+ConstraintVisitor::beforeVisit(const LabelIdAllocatedToInstanceExpr& e) {}
 
 void
-ConstraintVisitor::visit(const LabelAllocatedToInstanceExpr& e) {}
+ConstraintVisitor::visit(const LabelIdAllocatedToInstanceExpr& e) {}
 
 void
-ConstraintVisitor::afterVisit(const LabelAllocatedToInstanceExpr& e) {}
+ConstraintVisitor::afterVisit(const LabelIdAllocatedToInstanceExpr& e) {}
 
 void
 ConstraintVisitor::beforeVisit(const LabelIdOfLabelNodeExpr& e) {}
@@ -439,10 +439,10 @@ void
 ConstraintVisitor::afterVisit(const LabelIdOfLabelNodeExpr& e) {}
 
 void
-ConstraintVisitor::beforeVisit(const RegisterAllocatedToDataNodeExpr& e) {}
+ConstraintVisitor::beforeVisit(const RegisterIdAllocatedToDataNodeExpr& e) {}
 
 void
-ConstraintVisitor::visit(const RegisterAllocatedToDataNodeExpr& e) {}
+ConstraintVisitor::visit(const RegisterIdAllocatedToDataNodeExpr& e) {}
 
 void
-ConstraintVisitor::afterVisit(const RegisterAllocatedToDataNodeExpr& e) {}
+ConstraintVisitor::afterVisit(const RegisterIdAllocatedToDataNodeExpr& e) {}

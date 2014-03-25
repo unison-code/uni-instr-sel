@@ -27,6 +27,7 @@
 #ifndef SOLVERS_COMMON_MODEL_PARAMS__
 #define SOLVERS_COMMON_MODEL_PARAMS__
 
+#include "constraints.h"
 #include "types.h"
 #include "../exceptions/exception.h"
 #include "../json/json.h"
@@ -380,6 +381,18 @@ class Params {
     toInt(const Json::Value& value);
 
     /**
+     * Gets a JSON value as a string.
+     *
+     * @param value
+     *        JSON value.
+     * @returns The converted value.
+     * @throws Exception
+     *         When the value is not of expected type.
+     */
+    static std::string
+    toString(const Json::Value& value);
+
+    /**
      * Computes the node ID-to-array index mappings for the action nodes of the
      * function.
      *
@@ -387,6 +400,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     computeMappingsForFunctionActionNodes(const Json::Value& root,
@@ -400,6 +415,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     computeMappingsForFunctionEntityNodes(const Json::Value& root,
@@ -413,6 +430,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     computeMappingsAndDomsetsForFunctionLabelNodes(const Json::Value& root,
@@ -426,6 +445,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     computeMappingsForPatterns(const Json::Value& root, Params& param);
@@ -437,6 +458,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     setPatternCodeSizes(const Json::Value& root, Params& param);
@@ -448,6 +471,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     setPatternLatencies(const Json::Value& root, Params& param);
@@ -460,6 +485,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     setActionNodesCoveredByPatterns(const Json::Value& root, Params& param);
@@ -472,6 +499,8 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     setEntityNodesDefinedByPatterns(const Json::Value& root, Params& param);
@@ -483,9 +512,155 @@ class Params {
      *        The JSON root value.
      * @param param
      *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
      */
     static void
     setEntityNodesUsedByPatterns(const Json::Value& root, Params& param);
+
+    /**
+     * Sets the pattern constraints.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setPatternConstraints(const Json::Value& root, Params& param);
+
+    /**
+     * Parses a constraint expression string.
+     *
+     * @param str
+     *        String to parse.
+     * @returns Parsed constraint as a newly allocated object.
+     * @throws Exception
+     *         When the parsing fails.
+     */
+    static Constraint*
+    parseConstraintExpression(const std::string& str);
+
+    /**
+     * Parses a Boolean expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static BoolExpr*
+    parseBoolExpr(std::string& str);
+
+    /**
+     * Parses a numerical expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static NumExpr*
+    parseNumExpr(std::string& str);
+
+    /**
+     * Parses a node ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static NodeIdExpr*
+    parseNodeIdExpr(std::string& str);
+
+    /**
+     * Parses a pattern instance ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static InstanceIdExpr*
+    parseInstanceIdExpr(std::string& str);
+
+    /**
+     * Parses an instruction ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static InstructionIdExpr*
+    parseInstructionIdExpr(std::string& str);
+
+    /**
+     * Parses a pattern ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static PatternIdExpr*
+    parsePatternIdExpr(std::string& str);
+
+    /**
+     * Parses a label ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static LabelIdExpr*
+    parseLabelIdExpr(std::string& str);
+
+    /**
+     * Parses a register ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static RegisterIdExpr*
+    parseRegisterIdExpr(std::string& str);
+
+    /**
+     * Removes initial whitespace from a string.
+     *
+     * @param str
+     *        String to modify.
+     */
+    static void
+    eatWhitespace(std::string& str);
+
+    /**
+     * Removes an initial part that matches another string.
+     *
+     * @param search
+     *        Initial part to match.
+     * @param str
+     *        String to search in and modify (but only if there is match).
+     * @returns \c true if there was a match.
+     */
+    static bool
+    eat(const std::string& search, std::string& str);
+
+    /**
+     * Removes an initial integer value from a string.
+     *
+     * @param str
+     *        String to modify.
+     * @returns An integer.
+     * @throws Exception
+     *         When the string does not begin with an integer.
+     */
+    static int
+    eatInt(std::string& str);
+
+    /**
+     * Destroys the pattern instance constraints contained by this object.
+     */
+    void
+    destroyConstraints(void);
 
   protected:
     /**
@@ -540,6 +715,12 @@ class Params {
      * pattern instance.
      */
     std::map< Id, std::list<Id> > pat_inst_entities_used_;
+
+    /**
+     * The constraints for each pattern instance. The constraints are destroyed
+     * when this object is deleted.
+     */
+    std::map< Id, std::list<Constraint*> > pat_inst_constraints_;
 };
 
 }
