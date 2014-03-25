@@ -117,9 +117,9 @@ boolExpr2Str (AndExpr lhs rhs) =
 boolExpr2Str (OrExpr  lhs rhs) =
   "(|| " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
 boolExpr2Str (ImpExpr lhs rhs) =
-  "(=> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+  "(-> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
 boolExpr2Str (EqvExpr lhs rhs) =
-  "(<=> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
+  "(<-> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
 boolExpr2Str (NotExpr e) = "(! " ++ boolExpr2Str e ++ ")"
 
 numExpr2Str :: NumExpr -> String
