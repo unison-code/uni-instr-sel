@@ -85,8 +85,8 @@ data BoolExpr
 -- the left-hand side and the second argument is always the right-hand side.
 
 data NumExpr
-    = PluxExpr  NumExpr NumExpr
-    | MinuxExpr NumExpr NumExpr
+    = PlusExpr  NumExpr NumExpr
+    | MinusExpr NumExpr NumExpr
 
       -- | Introduces an integer.
 

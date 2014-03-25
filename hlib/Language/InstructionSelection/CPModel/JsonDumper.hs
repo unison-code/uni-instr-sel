@@ -122,9 +122,9 @@ boolExpr2Str (EqvExpr lhs rhs) =
 boolExpr2Str (NotExpr e) = "(! " ++ boolExpr2Str e ++ ")"
 
 numExpr2Str :: NumExpr -> String
-numExpr2Str (PluxExpr  lhs rhs) =
+numExpr2Str (PlusExpr  lhs rhs) =
   "(+ " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
-numExpr2Str (MinuxExpr lhs rhs) =
+numExpr2Str (MinusExpr lhs rhs) =
   "(- " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
 numExpr2Str (AnIntegerExpr i) = show i
 numExpr2Str (NodeId2NumExpr e) =
