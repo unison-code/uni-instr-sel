@@ -25,6 +25,7 @@ import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns ( InstanceId
                                               , InstProperties (..)
                                               )
+import Data.Maybe
 
 
 
@@ -92,7 +93,7 @@ mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
                       (mappedNodesPToF matchset a_ns)
                       (mappedNodesPToF matchset e_def_ns)
                       (mappedNodesPToF matchset e_use_ns)
-                      (updateNodeIdsPToFInConstraints matchset cs)
+                      (replaceNodeIdsPToFInConstraints matchset cs)
                       -- TODO: change how the cost is chosen
                       (latency props)
 
@@ -126,9 +127,88 @@ computeLabelDoms g =
       node_id_domsets = map (\(n, ns) -> (nodeId n, map nodeId ns)) node_domsets
   in node_id_domsets
 
-updateNodeIdsPToFInConstraints :: Matchset NodeId
+-- | Replaces the node IDs used in the constraints from matched pattern node IDs
+-- to the corresponding function node IDs.
+
+replaceNodeIdsPToFInConstraints :: Matchset NodeId
                                   -> [Constraint]
                                   -> [Constraint]
-updateNodeIdsPToFInConstraints m cs =
-  -- TODO: implement
-  cs
+replaceNodeIdsPToFInConstraints m cs =
+  map (toConstraint . (replaceInBoolExpr m) . fromConstraint) cs
+
+replaceInBoolExpr :: Matchset NodeId -> BoolExpr -> BoolExpr
+replaceInBoolExpr m (EqExpr  lhs rhs) =
+  EqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (NeqExpr lhs rhs) =
+  NeqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (GTExpr  lhs rhs) =
+  GTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (GEExpr  lhs rhs) =
+  GEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (LTExpr  lhs rhs) =
+  LTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (LEExpr  lhs rhs) =
+  LEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInBoolExpr m (AndExpr lhs rhs) =
+  AndExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
+replaceInBoolExpr m (OrExpr  lhs rhs) =
+  OrExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
+replaceInBoolExpr m (ImpExpr lhs rhs) =
+  ImpExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
+replaceInBoolExpr m (EqvExpr lhs rhs) =
+  EqvExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
+replaceInBoolExpr m (NotExpr e) = NotExpr (replaceInBoolExpr m e)
+
+replaceInNumExpr :: Matchset NodeId -> NumExpr -> NumExpr
+replaceInNumExpr m (PlusExpr  lhs rhs) =
+  PlusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInNumExpr m (MinusExpr lhs rhs) =
+  MinusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
+replaceInNumExpr _ (AnIntegerExpr i) = AnIntegerExpr i
+replaceInNumExpr m (NodeId2NumExpr e) =
+  NodeId2NumExpr (replaceInNodeIdExpr m e)
+replaceInNumExpr m (InstanceId2NumExpr e) =
+  InstanceId2NumExpr (replaceInInstanceIdExpr m e)
+replaceInNumExpr m (InstructionId2NumExpr e) =
+  InstructionId2NumExpr (replaceInInstructionIdExpr m e)
+replaceInNumExpr m (PatternId2NumExpr e) =
+  PatternId2NumExpr (replaceInPatternIdExpr m e)
+replaceInNumExpr m (LabelId2NumExpr e) =
+  LabelId2NumExpr (replaceInLabelIdExpr m e)
+replaceInNumExpr m (RegisterId2NumExpr e) =
+  RegisterId2NumExpr (replaceInRegisterIdExpr m e)
+
+replaceInNodeIdExpr :: Matchset NodeId -> NodeIdExpr -> NodeIdExpr
+replaceInNodeIdExpr m (ANodeIdExpr i) =
+  ANodeIdExpr $ fromJust $ mappedNodePToF m i
+
+replaceInInstanceIdExpr :: Matchset NodeId -> InstanceIdExpr -> InstanceIdExpr
+replaceInInstanceIdExpr _ (AnInstanceIdExpr i) = AnInstanceIdExpr i
+replaceInInstanceIdExpr m (CovererOfActionNodeExpr e) =
+  CovererOfActionNodeExpr (replaceInNodeIdExpr m e)
+replaceInInstanceIdExpr m (DefinerOfEntityNodeExpr e) =
+  DefinerOfEntityNodeExpr (replaceInNodeIdExpr m e)
+replaceInInstanceIdExpr _ ThisInstanceIdExpr = ThisInstanceIdExpr
+
+replaceInInstructionIdExpr :: Matchset NodeId
+                              -> InstructionIdExpr
+                              -> InstructionIdExpr
+replaceInInstructionIdExpr _ (AnInstructionIdExpr i) = AnInstructionIdExpr i
+replaceInInstructionIdExpr m (InstructionIdOfPatternExpr e) =
+  InstructionIdOfPatternExpr (replaceInPatternIdExpr m e)
+
+replaceInPatternIdExpr :: Matchset NodeId -> PatternIdExpr -> PatternIdExpr
+replaceInPatternIdExpr _ (APatternIdExpr i) = APatternIdExpr i
+replaceInPatternIdExpr m (PatternIdOfInstanceExpr e) =
+  PatternIdOfInstanceExpr (replaceInInstanceIdExpr m e)
+
+replaceInLabelIdExpr :: Matchset NodeId -> LabelIdExpr -> LabelIdExpr
+replaceInLabelIdExpr m (LabelAllocatedToInstanceExpr e) =
+  LabelAllocatedToInstanceExpr (replaceInInstanceIdExpr m e)
+replaceInLabelIdExpr m (LabelIdOfLabelNodeExpr e) =
+  LabelIdOfLabelNodeExpr (replaceInNodeIdExpr m e)
+
+replaceInRegisterIdExpr :: Matchset NodeId -> RegisterIdExpr -> RegisterIdExpr
+replaceInRegisterIdExpr _ (ARegisterIdExpr i) = ARegisterIdExpr i
+replaceInRegisterIdExpr m (RegisterAllocatedToDataNodeExpr e) =
+  RegisterAllocatedToDataNodeExpr (replaceInNodeIdExpr m e)
