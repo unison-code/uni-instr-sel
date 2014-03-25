@@ -92,8 +92,7 @@ mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
                       (mappedNodesPToF matchset a_ns)
                       (mappedNodesPToF matchset e_def_ns)
                       (mappedNodesPToF matchset e_use_ns)
-                      -- TODO: convert node IDs in constraints
-                      cs
+                      (updateNodeIdsPToFInConstraints matchset cs)
                       -- TODO: change how the cost is chosen
                       (latency props)
 
@@ -126,3 +125,10 @@ computeLabelDoms g =
       node_domsets = dom cfg root
       node_id_domsets = map (\(n, ns) -> (nodeId n, map nodeId ns)) node_domsets
   in node_id_domsets
+
+updateNodeIdsPToFInConstraints :: Matchset NodeId
+                                  -> [Constraint]
+                                  -> [Constraint]
+updateNodeIdsPToFInConstraints m cs =
+  -- TODO: implement
+  cs
