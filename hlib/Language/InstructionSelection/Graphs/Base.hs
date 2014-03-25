@@ -78,6 +78,8 @@ module Language.InstructionSelection.Graphs.Base (
 , isTransferNode
 , isTransferNodeType
 , lastAddedNode
+, mappedNodeFToP
+, mappedNodePToF
 , mappedNodesFToP
 , mappedNodesPToF
 , matchingNodes
@@ -933,6 +935,32 @@ mappedNodesPToF :: (Eq n)
                    -> [n]        -- ^ List of corresponding function nodes.
 mappedNodesPToF (Matchset m) pns =
   [ fn | (fn, pn) <- map fromMapping m, pn' <- pns, pn == pn' ]
+
+-- | From a matchset and a function node, get the corresponding pattern node if
+-- there exists a such a mapping.
+
+mappedNodeFToP :: (Eq n)
+                   => Matchset n -- ^ The matchset.
+                   -> n          -- ^ Function node.
+                   -> Maybe n    -- ^ Corresponding pattern node.
+mappedNodeFToP (Matchset m) fn =
+  let found = [ pn | (fn', pn) <- map fromMapping m, fn' == fn ]
+  in if length found > 0
+        then Just $ head found
+        else Nothing
+
+-- | From a matchset and a pattern node, get the corresponding function node if
+-- there exists a such a mapping.
+
+mappedNodePToF :: (Eq n)
+                   => Matchset n -- ^ The matchset.
+                   -> n          -- ^ Pattern node.
+                   -> Maybe n    -- ^ Corresponding function node.
+mappedNodePToF (Matchset m) pn =
+  let found = [ fn | (fn, pn') <- map fromMapping m, pn' == pn ]
+  in if length found > 0
+        then Just $ head found
+        else Nothing
 
 -- | Adds a mapping to an existing matchset.
 
