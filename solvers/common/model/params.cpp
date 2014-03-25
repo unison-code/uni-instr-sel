@@ -559,9 +559,6 @@ Params::parseInstanceIdExpr(string& str) {
             auto e = parseNodeIdExpr(str);
             expr = new DefinerOfEntityNodeExpr(e);
         }
-        else if (eat("this", str)) {
-            expr = new ThisInstanceIdExpr;
-        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -573,8 +570,13 @@ Params::parseInstanceIdExpr(string& str) {
         }
     }
     else {
-        int num = eatInt(str);
-        expr = new AnInstanceIdExpr(num);
+        if (eat("this", str)) {
+            expr = new ThisInstanceIdExpr;
+        }
+        else {
+            int num = eatInt(str);
+            expr = new AnInstanceIdExpr(num);
+        }
     }
 
     return expr;
