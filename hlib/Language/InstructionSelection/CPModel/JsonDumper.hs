@@ -71,7 +71,8 @@ instance ToJSON PatternInstanceData where
            , "action-nodes-covered" .= (patCoveredActionNodes d)
            , "entity-nodes-defined" .= (patDefinedEntityNodes d)
            , "entity-nodes-used"    .= (patUsedEntityNodes d)
-           , "cost"                 .= (patCost d)
+           , "code-size"            .= (patCodeSize d)
+           , "latency"              .= (patLatency d)
            , "constraints"          .= (patConstraints d)
            ]
 

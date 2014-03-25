@@ -94,7 +94,7 @@ mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
                       (mappedNodesPToF matchset e_def_ns)
                       (mappedNodesPToF matchset e_use_ns)
                       (replaceNodeIdsPToFInConstraints matchset cs)
-                      -- TODO: change how the cost is chosen
+                      (codeSize props)
                       (latency props)
 
 -- | Deletes a node from the graph, and redirects any edges involving the given

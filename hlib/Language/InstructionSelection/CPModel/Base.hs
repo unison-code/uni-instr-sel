@@ -94,10 +94,15 @@ data PatternInstanceData
 
         , patConstraints :: [Constraint]
 
-          -- | The cost of the instruction associated with this pattern
+          -- | The size of the instruction associated with this pattern
           -- instance.
 
-        , patCost :: Integer
+        , patCodeSize :: Integer
+
+          -- | The latency of the instruction associated with this pattern
+          -- instance.
+
+        , patLatency :: Integer
 
       }
     deriving (Show)
@@ -139,7 +144,8 @@ instance PrettyPrint PatternInstanceData where
     ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
     ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
-    ++ "Cost: " ++ show (patCost d) ++ "\n"
+    ++ "Code size: " ++ show (patCodeSize d) ++ "\n"
+    ++ "Latency: " ++ show (patLatency d) ++ "\n"
     ++ "TODO: pretty-print constraints\n"
 
 instance PrettyPrint MachineData where
