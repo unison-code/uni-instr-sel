@@ -493,7 +493,9 @@ CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
+CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {
+    delete expr_;
+}
 
 void
 CovererOfActionNodeExpr::accept(ConstraintVisitor& v) const {
@@ -509,7 +511,9 @@ DefinerOfEntityNodeExpr::DefinerOfEntityNodeExpr(NodeIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {}
+DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {
+    delete expr_;
+}
 
 void
 DefinerOfEntityNodeExpr::accept(ConstraintVisitor& v) const {
@@ -525,7 +529,9 @@ InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {}
+InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {
+    delete expr_;
+}
 
 void
 InstructionIdOfPatternExpr::accept(ConstraintVisitor& v) const {
@@ -541,7 +547,9 @@ PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(InstanceIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {}
+PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {
+    delete expr_;
+}
 
 void
 PatternIdOfInstanceExpr::accept(ConstraintVisitor& v) const {
@@ -557,7 +565,9 @@ LabelAllocatedToInstanceExpr::LabelAllocatedToInstanceExpr(InstanceIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-LabelAllocatedToInstanceExpr::~LabelAllocatedToInstanceExpr(void) {}
+LabelAllocatedToInstanceExpr::~LabelAllocatedToInstanceExpr(void) {
+    delete expr_;
+}
 
 void
 LabelAllocatedToInstanceExpr::accept(ConstraintVisitor& v) const {
@@ -573,7 +583,9 @@ LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(NodeIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {}
+LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {
+    delete expr_;
+}
 
 void
 LabelIdOfLabelNodeExpr::accept(ConstraintVisitor& v) const {
@@ -589,7 +601,9 @@ RegisterAllocatedToDataNodeExpr::RegisterAllocatedToDataNodeExpr(NodeIdExpr* e)
     if (!expr_) THROW(Exception, "e cannot be NULL");
 }
 
-RegisterAllocatedToDataNodeExpr::~RegisterAllocatedToDataNodeExpr(void) {}
+RegisterAllocatedToDataNodeExpr::~RegisterAllocatedToDataNodeExpr(void) {
+    delete expr_;
+}
 
 void
 RegisterAllocatedToDataNodeExpr::accept(ConstraintVisitor& v) const {
