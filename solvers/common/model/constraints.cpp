@@ -99,7 +99,7 @@ BinaryBoolToBoolExpr::accept(ConstraintVisitor& v) const {
     v.beforeVisit(*this);
     v.visit(*this);
     lhs_->accept(v);
-    v.betweenChildren(*this);
+    v.betweenChildrenVisits(*this);
     rhs_->accept(v);
     v.afterVisit(*this);
 }
@@ -122,7 +122,7 @@ BinaryNumToBoolExpr::accept(ConstraintVisitor& v) const {
     v.beforeVisit(*this);
     v.visit(*this);
     lhs_->accept(v);
-    v.betweenChildren(*this);
+    v.betweenChildrenVisits(*this);
     rhs_->accept(v);
     v.afterVisit(*this);
 }
@@ -224,7 +224,7 @@ BinaryNumToNumExpr::accept(ConstraintVisitor& v) const {
     v.beforeVisit(*this);
     v.visit(*this);
     lhs_->accept(v);
-    v.betweenChildren(*this);
+    v.betweenChildrenVisits(*this);
     rhs_->accept(v);
     v.afterVisit(*this);
 }

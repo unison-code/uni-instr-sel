@@ -40,7 +40,7 @@ void
 ConstraintVisitor::visit(const Expr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const Expr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const Expr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const Expr& e) {}
@@ -52,7 +52,7 @@ void
 ConstraintVisitor::visit(const BoolExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const BoolExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const BoolExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const BoolExpr& e) {}
@@ -64,7 +64,7 @@ void
 ConstraintVisitor::visit(const NumExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const NumExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const NumExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const NumExpr& e) {}
@@ -76,7 +76,7 @@ void
 ConstraintVisitor::visit(const BinaryBoolToBoolExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const BinaryBoolToBoolExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const BinaryBoolToBoolExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const BinaryBoolToBoolExpr& e) {}
@@ -88,7 +88,7 @@ void
 ConstraintVisitor::visit(const BinaryNumToBoolExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const BinaryNumToBoolExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const BinaryNumToBoolExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const BinaryNumToBoolExpr& e) {}
@@ -100,7 +100,7 @@ void
 ConstraintVisitor::visit(const BinaryNumToNumExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const BinaryNumToNumExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const BinaryNumToNumExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const BinaryNumToNumExpr& e) {}
@@ -112,7 +112,7 @@ void
 ConstraintVisitor::visit(const EqExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const EqExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const EqExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const EqExpr& e) {}
@@ -124,7 +124,7 @@ void
 ConstraintVisitor::visit(const NeqExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const NeqExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const NeqExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const NeqExpr& e) {}
@@ -136,7 +136,7 @@ void
 ConstraintVisitor::visit(const GTExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const GTExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const GTExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const GTExpr& e) {}
@@ -148,7 +148,7 @@ void
 ConstraintVisitor::visit(const GEExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const GEExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const GEExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const GEExpr& e) {}
@@ -160,7 +160,7 @@ void
 ConstraintVisitor::visit(const LTExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const LTExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const LTExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const LTExpr& e) {}
@@ -172,7 +172,7 @@ void
 ConstraintVisitor::visit(const LEExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const LEExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const LEExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const LEExpr& e) {}
@@ -184,7 +184,7 @@ void
 ConstraintVisitor::visit(const EqvExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const EqvExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const EqvExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const EqvExpr& e) {}
@@ -196,7 +196,7 @@ void
 ConstraintVisitor::visit(const ImpExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const ImpExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const ImpExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const ImpExpr& e) {}
@@ -208,7 +208,7 @@ void
 ConstraintVisitor::visit(const AndExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const AndExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const AndExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const AndExpr& e) {}
@@ -220,7 +220,7 @@ void
 ConstraintVisitor::visit(const OrExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const OrExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const OrExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const OrExpr& e) {}
@@ -241,7 +241,7 @@ void
 ConstraintVisitor::visit(const PlusExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const PlusExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const PlusExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const PlusExpr& e) {}
@@ -253,7 +253,7 @@ void
 ConstraintVisitor::visit(const MinusExpr& e) {}
 
 void
-ConstraintVisitor::betweenChildren(const MinusExpr& e) {}
+ConstraintVisitor::betweenChildrenVisits(const MinusExpr& e) {}
 
 void
 ConstraintVisitor::afterVisit(const MinusExpr& e) {}
