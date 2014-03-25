@@ -277,3 +277,324 @@ NodeIdToNumExpr::accept(ConstraintVisitor& v) const {
     expr_->accept(v);
     v.afterVisit(*this);
 }
+
+InstanceIdToNumExpr::InstanceIdToNumExpr(InstanceIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+InstanceIdToNumExpr::~InstanceIdToNumExpr(void) {
+    delete expr_;
+}
+
+void
+InstanceIdToNumExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+InstructionIdToNumExpr::InstructionIdToNumExpr(InstructionIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+InstructionIdToNumExpr::~InstructionIdToNumExpr(void) {
+    delete expr_;
+}
+
+void
+InstructionIdToNumExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+PatternIdToNumExpr::PatternIdToNumExpr(PatternIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+PatternIdToNumExpr::~PatternIdToNumExpr(void) {
+    delete expr_;
+}
+
+void
+PatternIdToNumExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+LabelIdToNumExpr::LabelIdToNumExpr(LabelIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+LabelIdToNumExpr::~LabelIdToNumExpr(void) {
+    delete expr_;
+}
+
+void
+LabelIdToNumExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+RegisterIdToNumExpr::RegisterIdToNumExpr(RegisterIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+RegisterIdToNumExpr::~RegisterIdToNumExpr(void) {
+    delete expr_;
+}
+
+void
+RegisterIdToNumExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+ANodeIdExpr::ANodeIdExpr(const Id& id)
+    : id_(id)
+{}
+
+ANodeIdExpr::~ANodeIdExpr(void) {}
+
+void
+ANodeIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+ANodeIdExpr::getId(void) const {
+    return id_;
+}
+
+AnInstanceIdExpr::AnInstanceIdExpr(const Id& id)
+    : id_(id)
+{}
+
+AnInstanceIdExpr::~AnInstanceIdExpr(void) {}
+
+void
+AnInstanceIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+AnInstanceIdExpr::getId(void) const {
+    return id_;
+}
+
+AnInstructionIdExpr::AnInstructionIdExpr(const Id& id)
+    : id_(id)
+{}
+
+AnInstructionIdExpr::~AnInstructionIdExpr(void) {}
+
+void
+AnInstructionIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+AnInstructionIdExpr::getId(void) const {
+    return id_;
+}
+
+APatternIdExpr::APatternIdExpr(const Id& id)
+    : id_(id)
+{}
+
+APatternIdExpr::~APatternIdExpr(void) {}
+
+void
+APatternIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+APatternIdExpr::getId(void) const {
+    return id_;
+}
+
+ALabelIdExpr::ALabelIdExpr(const Id& id)
+    : id_(id)
+{}
+
+ALabelIdExpr::~ALabelIdExpr(void) {}
+
+void
+ALabelIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+ALabelIdExpr::getId(void) const {
+    return id_;
+}
+
+ARegisterIdExpr::ARegisterIdExpr(const Id& id)
+    : id_(id)
+{}
+
+ARegisterIdExpr::~ARegisterIdExpr(void) {}
+
+void
+ARegisterIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+Id
+ARegisterIdExpr::getId(void) const {
+    return id_;
+}
+
+ThisInstanceIdExpr::ThisInstanceIdExpr(void) {}
+
+ThisInstanceIdExpr::~ThisInstanceIdExpr(void) {}
+
+void
+ThisInstanceIdExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    v.afterVisit(*this);
+}
+
+CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
+
+void
+CovererOfActionNodeExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+DefinerOfEntityNodeExpr::DefinerOfEntityNodeExpr(NodeIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {}
+
+void
+DefinerOfEntityNodeExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {}
+
+void
+InstructionIdOfPatternExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(InstanceIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {}
+
+void
+PatternIdOfInstanceExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+LabelAllocatedToInstanceExpr::LabelAllocatedToInstanceExpr(InstanceIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+LabelAllocatedToInstanceExpr::~LabelAllocatedToInstanceExpr(void) {}
+
+void
+LabelAllocatedToInstanceExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(NodeIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {}
+
+void
+LabelIdOfLabelNodeExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}
+
+RegisterAllocatedToDataNodeExpr::RegisterAllocatedToDataNodeExpr(NodeIdExpr* e)
+    : expr_(e)
+{
+    if (!expr_) THROW(Exception, "e cannot be NULL");
+}
+
+RegisterAllocatedToDataNodeExpr::~RegisterAllocatedToDataNodeExpr(void) {}
+
+void
+RegisterAllocatedToDataNodeExpr::accept(ConstraintVisitor& v) const {
+    v.beforeVisit(*this);
+    v.visit(*this);
+    expr_->accept(v);
+    v.afterVisit(*this);
+}

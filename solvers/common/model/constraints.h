@@ -595,6 +595,8 @@ class AnIntegerExpr : public NumExpr {
      *
      * @param i
      *        The integer.
+     * @throws Exception
+     *         When \c e is \c NULL.
      */
     AnIntegerExpr(int i);
 
@@ -632,6 +634,8 @@ class NodeIdToNumExpr : public NumExpr {
      *
      * @param e
      *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
      */
     NodeIdToNumExpr(NodeIdExpr* e);
 
@@ -640,6 +644,625 @@ class NodeIdToNumExpr : public NumExpr {
      */
     virtual
     ~NodeIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    NodeIdExpr* expr_;
+};
+
+/**
+ * Converts a pattern instance ID expression to a numerical expression.
+ */
+class InstanceIdToNumExpr : public NumExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    InstanceIdToNumExpr(InstanceIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~InstanceIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    InstanceIdExpr* expr_;
+};
+
+/**
+ * Converts an instruction ID expression to a numerical expression.
+ */
+class InstructionIdToNumExpr : public NumExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+
+     */
+    InstructionIdToNumExpr(InstructionIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~InstructionIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    InstructionIdExpr* expr_;
+};
+
+/**
+ * Converts a pattern ID expression to a numerical expression.
+ */
+class PatternIdToNumExpr : public NumExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    PatternIdToNumExpr(PatternIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~PatternIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    PatternIdExpr* expr_;
+};
+
+/**
+ * Converts a label ID expression to a numerical expression.
+ */
+class LabelIdToNumExpr : public NumExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    LabelIdToNumExpr(LabelIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~LabelIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    LabelIdExpr* expr_;
+};
+
+/**
+ * Converts a register ID expression to a numerical expression.
+ */
+class RegisterIdToNumExpr : public NumExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    RegisterIdToNumExpr(RegisterIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~RegisterIdToNumExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    RegisterIdExpr* expr_;
+};
+
+/**
+ * Introduces a node ID to be part of an expression.
+ */
+class ANodeIdExpr : public NodeIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The node ID.
+     */
+    ANodeIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ANodeIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the node ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Introduces a pattern instance ID to be part of an expression.
+ */
+class AnInstanceIdExpr : public InstanceIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The instance ID.
+     */
+    AnInstanceIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~AnInstanceIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the instance ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Introduces an instruction ID to be part of an expression.
+ */
+class AnInstructionIdExpr : public InstructionIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The instruction ID.
+     */
+    AnInstructionIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~AnInstructionIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the instruction ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Introduces a label ID to be part of an expression.
+ */
+class APatternIdExpr : public PatternIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The pattern ID.
+     */
+    APatternIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~APatternIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the pattern ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Introduces a label ID to be part of an expression.
+ */
+class ALabelIdExpr : public LabelIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The label ID.
+     */
+    ALabelIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ALabelIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the label ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Introduces a register ID to be part of an expression.
+ */
+class ARegisterIdExpr : public RegisterIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The register ID.
+     */
+    ARegisterIdExpr(const Id& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ARegisterIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+    /**
+     * Gets the register ID.
+     *
+     * @returns The ID.
+     */
+    Id
+    getId(void) const;
+
+  private:
+    Id id_;
+};
+
+/**
+ * Represents the ID of the pattern instance where this is declared.
+ */
+class ThisInstanceIdExpr : public InstanceIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     */
+    ThisInstanceIdExpr(void);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ThisInstanceIdExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+};
+
+/**
+ * Represents the pattern instance ID which covers a certain action node.
+ */
+class CovererOfActionNodeExpr : public InstanceIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    CovererOfActionNodeExpr(NodeIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~CovererOfActionNodeExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    NodeIdExpr* expr_;
+};
+
+/**
+ * Represents the pattern instance ID which defines a certain entity node.
+ */
+class DefinerOfEntityNodeExpr : public InstanceIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    DefinerOfEntityNodeExpr(NodeIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DefinerOfEntityNodeExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    NodeIdExpr* expr_;
+};
+
+/**
+ * Represents the instruction ID to which a pattern belongs.
+ */
+class InstructionIdOfPatternExpr : public InstructionIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    InstructionIdOfPatternExpr(PatternIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~InstructionIdOfPatternExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    PatternIdExpr* expr_;
+};
+
+/**
+ * Represents the pattern ID to which a pattern instance is derived from.
+ */
+class PatternIdOfInstanceExpr : public PatternIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    PatternIdOfInstanceExpr(InstanceIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~PatternIdOfInstanceExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    InstanceIdExpr* expr_;
+};
+
+/**
+ * Represents the ID of the label to which a pattern instance has been
+ * allocated.
+ */
+class LabelAllocatedToInstanceExpr : public LabelIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    LabelAllocatedToInstanceExpr(InstanceIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~LabelAllocatedToInstanceExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    InstanceIdExpr* expr_;
+};
+
+/**
+ * Represents the label ID associated with a label node.
+ */
+class LabelIdOfLabelNodeExpr : public LabelIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    LabelIdOfLabelNodeExpr(NodeIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~LabelIdOfLabelNodeExpr(void);
+
+    /**
+     * \copydoc Expr::accept(ConstraintVisitor&)
+     */
+    virtual void
+    accept(ConstraintVisitor& v) const;
+
+  private:
+    NodeIdExpr* expr_;
+};
+
+/**
+ * Represents the label ID associated with a label node.
+ */
+class RegisterAllocatedToDataNodeExpr : public LabelIdExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    RegisterAllocatedToDataNodeExpr(NodeIdExpr* e);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~RegisterAllocatedToDataNodeExpr(void);
 
     /**
      * \copydoc Expr::accept(ConstraintVisitor&)
