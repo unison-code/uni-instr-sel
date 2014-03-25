@@ -26,6 +26,8 @@
 
 #include "string.h"
 
+using std::string;
+
 namespace Utils {
 
 bool
@@ -42,6 +44,21 @@ isWhitespace(char c) {
         default:
             return false;
     }
+}
+
+string
+searchReplace(
+    const string& str,
+    const string& search,
+    const string& replace
+) {
+    string new_str(str);
+    size_t pos = 0;
+    while ((pos = new_str.find(search, pos)) != string::npos) {
+        new_str.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+    return new_str;
 }
 
 }

@@ -59,6 +59,21 @@ toString(const T& e) {
 bool
 isWhitespace(char c);
 
+/**
+ * Search a string for a substring and replaces it with another substring.
+ *
+ * @param str
+ *        String to search in.
+ * @param search
+ *        String to search for.
+ * @param replace
+ *        String to replace with.
+ */
+std::string
+searchReplace(const std::string& str,
+              const std::string& search,
+              const std::string& replace);
+
 }
 
 #endif
