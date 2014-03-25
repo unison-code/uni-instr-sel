@@ -97,16 +97,28 @@ class Params {
     getDomsetOfLabel(const Id& id) const;
 
     /**
-     * Gets the cost of selecting a particular pattern instance.
+     * Gets the code size of selecting a particular pattern instance.
      *
      * @param instance
      *        Pattern instance ID.
-     * @returns The cost.
+     * @returns The code size (in bytes).
      * @throws Exception
      *         If there is no instance with such an ID.
      */
     int
-    getCostOfPattern(const Id& instance) const;
+    getCodeSizeOfPattern(const Id& instance) const;
+
+    /**
+     * Gets the latency of selecting a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns The latency (in cycles).
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    int
+    getLatencyOfPattern(const Id& instance) const;
 
     /**
      * Gets the function action nodes covered by a particular pattern instance.
@@ -419,7 +431,7 @@ class Params {
     computeMappingsForPatterns(const Json::Value& root, Params& param);
 
     /**
-     * Sets the cost values for the pattern instances.
+     * Sets the code size values for the pattern instances.
      *
      * @param root
      *        The JSON root value.
@@ -427,7 +439,18 @@ class Params {
      *        Object to add the data to.
      */
     static void
-    setPatternCosts(const Json::Value& root, Params& param);
+    setPatternCodeSizes(const Json::Value& root, Params& param);
+
+    /**
+     * Sets the latency values for the pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param param
+     *        Object to add the data to.
+     */
+    static void
+    setPatternLatencies(const Json::Value& root, Params& param);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -491,9 +514,14 @@ class Params {
     std::map<Id, ArrayIndex> pat_inst_mappings_;
 
     /**
-     * The cost of the instruction for each pattern instance.
+     * The code size (in bytes) of the instruction for each pattern instance.
      */
-    std::map<Id, int> pat_inst_costs_;
+    std::map<Id, int> pat_inst_code_sizes_;
+
+    /**
+     * The latency (in cycles) of the instruction for each pattern instance.
+     */
+    std::map<Id, int> pat_inst_latencies_;
 
     /**
      * The action nodes in the function graphs which are covered for each

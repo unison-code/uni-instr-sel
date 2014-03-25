@@ -13,7 +13,8 @@ set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
 int: nullLabel = numFuncLabelNodes;
 array[allFuncLabelNodes] of set of int: funcLabelDomsets;
-array[allPatternInstances] of int: patInstCosts;
+array[allPatternInstances] of int: patInstCodeSizes;
+array[allPatternInstances] of int: patInstLatencies;
 array[allPatternInstances] of set of int: patInstActionsCovered;
 array[allPatternInstances] of set of int: patInstEntitiesDefined;
 array[allPatternInstances] of set of int: patInstEntitiesUsed;
@@ -104,10 +105,11 @@ forall (p in allPatternInstances)
 % TODO: add missing constraints
 
 % Accumulate cost of selected patterns
+% TODO: make this part generic
 constraint
 cost = sum (p in allPatternInstances)
        (
-           patInstCosts[p] * bool2int(pi_sel[p])
+           patInstCodeSizes[p] * bool2int(pi_sel[p])
        );
 
 

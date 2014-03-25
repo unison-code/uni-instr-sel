@@ -116,14 +116,25 @@ main(int argc, char** argv) {
         }
         cout << ");" << endl;
 
-        cout << "patInstCosts = array1d(allPatternInstances, ";
+        cout << "patInstCodeSizes = array1d(allPatternInstances, ";
         {
-            vector<int> costs(params.getNumPatternInstances());
+            vector<int> code_sizes(params.getNumPatternInstances());
             for (const Id& id : params.getAllPatternInstanceIds()) {
-                costs[params.getIndexOfPattern(id)] =
-                    params.getCostOfPattern(id);
+                code_sizes[params.getIndexOfPattern(id)] =
+                    params.getCodeSizeOfPattern(id);
             }
-            print(costs);
+            print(code_sizes);
+        }
+        cout << ");" << endl;
+
+        cout << "patInstLatencies = array1d(allPatternInstances, ";
+        {
+            vector<int> latencies(params.getNumPatternInstances());
+            for (const Id& id : params.getAllPatternInstanceIds()) {
+                latencies[params.getIndexOfPattern(id)] =
+                    params.getLatencyOfPattern(id);
+            }
+            print(latencies);
         }
         cout << ");" << endl;
 

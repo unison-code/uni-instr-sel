@@ -70,7 +70,8 @@ Params::parseJson(const string& str, Params& param) {
     computeMappingsForFunctionEntityNodes(root, param);
     computeMappingsAndDomsetsForFunctionLabelNodes(root, param);
     computeMappingsForPatterns(root, param);
-    setPatternCosts(root, param);
+    setPatternCodeSizes(root, param);
+    setPatternLatencies(root, param);
     setActionNodesCoveredByPatterns(root, param);
     setEntityNodesDefinedByPatterns(root, param);
     setEntityNodesUsedByPatterns(root, param);
@@ -165,18 +166,34 @@ Params::computeMappingsForPatterns(
 }
 
 int
-Params::getCostOfPattern(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_costs_);
+Params::getCodeSizeOfPattern(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_code_sizes_);
+}
+
+int
+Params::getLatencyOfPattern(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_latencies_);
 }
 
 void
-Params::setPatternCosts(const Json::Value& root, Params& param) {
+Params::setPatternCodeSizes(const Json::Value& root, Params& param) {
     for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
-        int cost = toInt(getJsonValue(pattern, "cost"));
+        int code_size = toInt(getJsonValue(pattern, "code-size"));
         addMapping(instance_id,
-                   cost,
-                   param.pat_inst_costs_);
+                   code_size,
+                   param.pat_inst_code_sizes_);
+    }
+}
+
+void
+Params::setPatternLatencies(const Json::Value& root, Params& param) {
+    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
+        int latency = toInt(getJsonValue(pattern, "latency"));
+        addMapping(instance_id,
+                   latency,
+                   param.pat_inst_latencies_);
     }
 }
 
