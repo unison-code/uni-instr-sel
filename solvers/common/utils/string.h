@@ -53,11 +53,44 @@ toString(const T& e) {
  * Checks if a given character is a whitespace.
  *
  * @param c
- *        Character
+ *        Character.
  * @return \c true if whitespace.
  */
 bool
 isWhitespace(char c);
+
+/**
+ * Checks if a given character is a number.
+ *
+ * @param c
+ *        Character.
+ * @return \c true if numeric.
+ */
+bool
+isNumeric(char c);
+
+/**
+ * Checks if a given string is a number. Negative numbers are allowed. Empty
+ * strings return \c false.
+ *
+ * @param str
+ *        String.
+ * @return \c true if numeric.
+ */
+bool
+isNumeric(const std::string& str);
+
+/**
+ * Converts a string into an integer.
+ *
+ * @param str
+ *        String.
+ * @return The integer.
+ * @throws Exception
+ *         When the string is not an integer.
+ */
+int
+toInt(const std::string& str);
 
 /**
  * Search a string for a substring and replaces it with another substring.
