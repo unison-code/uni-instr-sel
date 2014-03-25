@@ -24,41 +24,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_COMMON_UTILS_STRING__
-#define SOLVERS_COMMON_UTILS_STRING__
-
-#include <sstream>
-#include <string>
+#include "string.h"
 
 namespace Utils {
 
-/**
- * Converts an element of any type (or at least most) into a string.
- *
- * @tparam T
- *         Element type.
- * @param e
- *        Element to convert.
- * @returns String representation.
- */
-template <typename T>
-std::string
-toString(const T& e) {
-    std::stringstream ss;
-    ss << e;
-    return ss.str();
-}
-
-/**
- * Checks if a given character is a whitespace.
- *
- * @param c
- *        Character
- * @return \c true if whitespace.
- */
 bool
-isWhitespace(char c);
+isWhitespace(char c) {
+    switch (c) {
+        case ' ':
+        case '\n':
+        case '\r':
+        case '\t':
+        case '\v':
+        case '\f':
+            return true;
 
+        default:
+            return false;
+    }
 }
 
-#endif
+}

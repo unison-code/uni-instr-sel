@@ -35,10 +35,12 @@ PROGRAMS := gecode-solver minizinc-solver
 MODULES_gecode-solver   := common/exceptions \
                            common/json       \
                            common/model      \
+                           common/utils      \
                            gecode
 MODULES_minizinc-solver := common/exceptions \
                            common/json       \
                            common/model      \
+                           common/utils      \
                            minizinc
 
 # Name of the tarball
