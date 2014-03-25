@@ -203,12 +203,12 @@ replaceInPatternIdExpr m (PatternIdOfInstanceExpr e) =
   PatternIdOfInstanceExpr (replaceInInstanceIdExpr m e)
 
 replaceInLabelIdExpr :: Matchset NodeId -> LabelIdExpr -> LabelIdExpr
-replaceInLabelIdExpr m (LabelAllocatedToInstanceExpr e) =
-  LabelAllocatedToInstanceExpr (replaceInInstanceIdExpr m e)
+replaceInLabelIdExpr m (LabelIdAllocatedToInstanceExpr e) =
+  LabelIdAllocatedToInstanceExpr (replaceInInstanceIdExpr m e)
 replaceInLabelIdExpr m (LabelIdOfLabelNodeExpr e) =
   LabelIdOfLabelNodeExpr (replaceInNodeIdExpr m e)
 
 replaceInRegisterIdExpr :: Matchset NodeId -> RegisterIdExpr -> RegisterIdExpr
 replaceInRegisterIdExpr _ (ARegisterIdExpr i) = ARegisterIdExpr i
-replaceInRegisterIdExpr m (RegisterAllocatedToDataNodeExpr e) =
-  RegisterAllocatedToDataNodeExpr (replaceInNodeIdExpr m e)
+replaceInRegisterIdExpr m (RegisterIdAllocatedToDataNodeExpr e) =
+  RegisterIdAllocatedToDataNodeExpr (replaceInNodeIdExpr m e)

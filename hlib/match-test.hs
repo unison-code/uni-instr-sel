@@ -187,12 +187,12 @@ main =
                              EqExpr
                              (
                                RegisterId2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
+                               RegisterIdAllocatedToDataNodeExpr $
                                ANodeIdExpr 0
                              )
                              (
                                RegisterId2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
+                               RegisterIdAllocatedToDataNodeExpr $
                                ANodeIdExpr 1
                              )
                            )
@@ -200,12 +200,12 @@ main =
                              EqExpr
                              (
                                RegisterId2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
+                               RegisterIdAllocatedToDataNodeExpr $
                                ANodeIdExpr 1
                              )
                              (
                                RegisterId2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
+                               RegisterIdAllocatedToDataNodeExpr $
                                ANodeIdExpr 2
                              )
                            )
@@ -218,7 +218,7 @@ main =
                            )
                            (
                              LabelId2NumExpr $
-                             LabelAllocatedToInstanceExpr $
+                             LabelIdAllocatedToInstanceExpr $
                              ThisInstanceIdExpr
                            )
                          , Constraint $
@@ -227,7 +227,7 @@ main =
                              EqExpr
                              (
                                LabelId2NumExpr $
-                               LabelAllocatedToInstanceExpr $
+                               LabelIdAllocatedToInstanceExpr $
                                DefinerOfEntityNodeExpr $
                                ANodeIdExpr 0
                              )
@@ -241,7 +241,7 @@ main =
                              EqExpr
                              (
                                LabelId2NumExpr $
-                               LabelAllocatedToInstanceExpr $
+                               LabelIdAllocatedToInstanceExpr $
                                DefinerOfEntityNodeExpr $
                                ANodeIdExpr 1
                              )

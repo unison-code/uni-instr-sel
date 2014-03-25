@@ -163,12 +163,12 @@ patternIdExpr2Str (PatternIdOfInstanceExpr e) =
   "(pat-of-insta " ++ instanceIdExpr2Str e ++ ")"
 
 labelIdExpr2Str :: LabelIdExpr -> String
-labelIdExpr2Str (LabelAllocatedToInstanceExpr e) =
+labelIdExpr2Str (LabelIdAllocatedToInstanceExpr e) =
   "(lab-alloc-to-insta " ++ instanceIdExpr2Str e ++ ")"
 labelIdExpr2Str (LabelIdOfLabelNodeExpr e) =
   "(lab-id-of-node " ++ nodeIdExpr2Str e ++ ")"
 
 registerIdExpr2Str :: RegisterIdExpr -> String
 registerIdExpr2Str (ARegisterIdExpr i) = show i
-registerIdExpr2Str (RegisterAllocatedToDataNodeExpr e) =
+registerIdExpr2Str (RegisterIdAllocatedToDataNodeExpr e) =
   "(reg-alloc-to-dnode " ++ nodeIdExpr2Str e ++ ")"

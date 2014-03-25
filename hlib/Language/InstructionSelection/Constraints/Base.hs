@@ -196,7 +196,7 @@ data LabelIdExpr
       -- | Represents the ID of the label to which a pattern instance has been
       -- allocated.
 
-    = LabelAllocatedToInstanceExpr InstanceIdExpr
+    = LabelIdAllocatedToInstanceExpr InstanceIdExpr
 
       -- | Represents the label ID associated with a label node.
 
@@ -217,7 +217,7 @@ data RegisterIdExpr
       -- | Represents the ID of the register to which a data node has been
       -- allocated.
 
-    | RegisterAllocatedToDataNodeExpr NodeIdExpr
+    | RegisterIdAllocatedToDataNodeExpr NodeIdExpr
 
     -- TODO: add missing functions
 
