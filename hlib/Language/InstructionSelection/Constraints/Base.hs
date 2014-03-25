@@ -138,15 +138,17 @@ data InstanceIdExpr
 
     = AnInstanceIdExpr InstanceId
 
-      -- | Gets the ID of this pattern instance ID.
+      -- | Represents the ID of this pattern instance ID.
 
     | ThisInstanceIdExpr
 
-      -- | Gets the pattern instance ID which covers a certain action node.
+      -- | Represents the pattern instance ID which covers a certain action
+      -- node.
 
     | CovererOfActionNodeExpr NodeIdExpr
 
-      -- | Gets the pattern instance ID which defines a certain entity node.
+      -- | Represents the pattern instance ID which defines a certain entity
+      -- node.
 
     | DefinerOfEntityNodeExpr NodeIdExpr
 
@@ -162,7 +164,7 @@ data InstructionIdExpr
 
     = AnInstructionIdExpr InstructionId
 
-      -- | Gets the instruction ID to which a pattern belongs.
+      -- | Represents the instruction ID to which a pattern belongs.
 
     | InstructionIdOfPatternExpr PatternIdExpr
 
@@ -178,7 +180,8 @@ data PatternIdExpr
 
     = APatternIdExpr PatternId
 
-      -- | Gets the pattern ID to which a pattern instance is derived from.
+      -- | Represents the pattern ID to which a pattern instance is derived
+      -- from.
 
     | PatternIdOfInstanceExpr InstanceIdExpr
 
@@ -190,12 +193,12 @@ data PatternIdExpr
 
 data LabelIdExpr
 
-      -- | Gets the ID of the label to which a pattern instance has been
+      -- | Represents the ID of the label to which a pattern instance has been
       -- allocated.
 
     = LabelAllocatedToInstanceExpr InstanceIdExpr
 
-      -- | Gets the label ID associated with a label node.
+      -- | Represents the label ID associated with a label node.
 
     | LabelIdOfLabelNodeExpr NodeIdExpr
 
@@ -211,7 +214,8 @@ data RegisterIdExpr
 
     = ARegisterIdExpr RegisterId
 
-      -- | Gets the ID of the register to which a data node has been allocated.
+      -- | Represents the ID of the register to which a data node has been
+      -- allocated.
 
     | RegisterAllocatedToDataNodeExpr NodeIdExpr
 
