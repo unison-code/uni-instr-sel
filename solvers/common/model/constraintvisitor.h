@@ -28,7 +28,6 @@
 #define SOLVERS_COMMON_MODEL_CONSTRAINTVISITOR__
 
 #include "constraints.h"
-#include "../exceptions/exception.h"
 
 namespace Model {
 
@@ -935,6 +934,666 @@ class ConstraintVisitor {
      */
     virtual void
     afterVisit(const AnIntegerExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const NodeIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const NodeIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const NodeIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const InstanceIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const InstanceIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const InstanceIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const InstructionIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const InstructionIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const InstructionIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const PatternIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const PatternIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const PatternIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const LabelIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const LabelIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const LabelIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const RegisterIdToNumExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const RegisterIdToNumExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const RegisterIdToNumExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const AnInstanceIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const AnInstanceIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const AnInstanceIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const AnInstructionIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const AnInstructionIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const AnInstructionIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const ANodeIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const ANodeIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const ANodeIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const ALabelIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const ALabelIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const ALabelIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const ARegisterIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const ARegisterIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const ARegisterIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const APatternIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const APatternIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const APatternIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const ThisInstanceIdExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const ThisInstanceIdExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const ThisInstanceIdExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const LabelAllocatedToInstanceExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const LabelAllocatedToInstanceExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const LabelAllocatedToInstanceExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    beforeVisit(const RegisterAllocatedToDataNodeExpr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    visit(const RegisterAllocatedToDataNodeExpr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    afterVisit(const RegisterAllocatedToDataNodeExpr& e);
 
 };
 

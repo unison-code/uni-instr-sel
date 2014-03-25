@@ -28,7 +28,8 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_FILES := constraints.cpp \
+MODULE_FILES := constraints.cpp       \
+                constraintvisitor.cpp \
                 params.cpp
 
 
