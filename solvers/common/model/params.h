@@ -83,7 +83,7 @@ class Params {
      * @returns Number of instances.
      */
     size_t
-    getNumPatternInstances(void) const;
+    getNumInstances(void) const;
 
     /**
      * Gets the list of dominators for a given label node in the function graph.
@@ -107,7 +107,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     int
-    getCodeSizeOfPattern(const Id& instance) const;
+    getCodeSizeOfInstance(const Id& instance) const;
 
     /**
      * Gets the latency of selecting a particular pattern instance.
@@ -119,7 +119,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     int
-    getLatencyOfPattern(const Id& instance) const;
+    getLatencyOfInstance(const Id& instance) const;
 
     /**
      * Gets the function action nodes covered by a particular pattern instance.
@@ -131,7 +131,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<Id>
-    getActionNodesCoveredByPattern(const Id& instance) const;
+    getActionNodesCoveredByInstance(const Id& instance) const;
 
     /**
      * Gets the function entity nodes defined by a particular pattern instance.
@@ -143,7 +143,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<Id>
-    getEntityNodesDefinedByPattern(const Id& instance) const;
+    getEntityNodesDefinedByInstance(const Id& instance) const;
 
     /**
      * Gets the function entity nodes used by a particular pattern instance.
@@ -155,7 +155,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<Id>
-    getEntityNodesUsedByPattern(const Id& instance) const;
+    getEntityNodesUsedByInstance(const Id& instance) const;
 
     /**
      * Gets the array index of a given function action node.
@@ -263,7 +263,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     ArrayIndex
-    getIndexOfPattern(const Id& id) const;
+    getIndexOfInstance(const Id& id) const;
 
     /**
      * Gets a list of all the pattern instance IDs.
@@ -271,7 +271,19 @@ class Params {
      * @returns List of IDs.
      */
     std::list<Id>
-    getAllPatternInstanceIds(void) const;
+    getAllInstanceIds(void) const;
+
+    /**
+     * Gets the constraints of a given pattern instance.
+     *
+     * @param id
+     *        Pattern instance ID.
+     * @returns Corresponding constraints.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<const Constraint*>
+    getConstraintsOfInstance(const Id& id) const;
 
     /**
      * Parses a JSON string into an internal model parameters object.
@@ -449,7 +461,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForPatterns(const Json::Value& root, Params& param);
+    computeMappingsForInstances(const Json::Value& root, Params& param);
 
     /**
      * Sets the code size values for the pattern instances.
@@ -462,7 +474,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternCodeSizes(const Json::Value& root, Params& param);
+    setInstanceCodeSizes(const Json::Value& root, Params& param);
 
     /**
      * Sets the latency values for the pattern instances.
@@ -475,7 +487,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternLatencies(const Json::Value& root, Params& param);
+    setInstanceLatencies(const Json::Value& root, Params& param);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -489,7 +501,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPatterns(const Json::Value& root, Params& param);
+    setActionNodesCoveredByInstances(const Json::Value& root, Params& param);
 
     /**
      * Sets the function entity nodes defined by the respective pattern
@@ -503,7 +515,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setEntityNodesDefinedByPatterns(const Json::Value& root, Params& param);
+    setEntityNodesDefinedByInstances(const Json::Value& root, Params& param);
 
     /**
      * Sets the function entity nodes used by the respective pattern instances.
@@ -516,7 +528,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setEntityNodesUsedByPatterns(const Json::Value& root, Params& param);
+    setEntityNodesUsedByInstances(const Json::Value& root, Params& param);
 
     /**
      * Sets the pattern constraints.
@@ -529,7 +541,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternConstraints(const Json::Value& root, Params& param);
+    setInstanceConstraints(const Json::Value& root, Params& param);
 
     /**
      * Parses a constraint expression string.
@@ -720,7 +732,7 @@ class Params {
      * The constraints for each pattern instance. The constraints are destroyed
      * when this object is deleted.
      */
-    std::map< Id, std::list<Constraint*> > pat_inst_constraints_;
+    std::map< Id, std::list<const Constraint*> > pat_inst_constraints_;
 };
 
 }

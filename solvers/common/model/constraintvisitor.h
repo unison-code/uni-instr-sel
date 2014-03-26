@@ -42,9 +42,14 @@ namespace Model {
  *        to step 3, otherwise proceed to step 5
  *     5. 'afterVisit(...)'
  *
- * If there are more than one callback method which could be matched during a
- * walk, the closest match (i.e. the most derived argument) will be invoked and
- * all other matches will not be called. By default all callbacks do nothing.
+ * For each callback a corresponding 'at...(...)' method will be called, and
+ * there is one such method for every expression class which will be invoked in
+ * descending order of the class hierarchy. The point of this is to allow
+ * derived visitor instances to respond with minimum implementation effort: for
+ * instance, if the same action is to be performed for every visited expression
+ * then it is enough to override the atVisit(const Expr&) method instead of
+ * overriding the 'visit(...)' callback for every expression subclass. By
+ * default the 'at...(...)' callbacks do nothing.
  */
 class ConstraintVisitor {
   public:
@@ -67,7 +72,7 @@ class ConstraintVisitor {
      * @throws Exception
      *         When something went wrong during the walk.
      */
-    virtual void
+    void
     beforeVisit(const Expr& e);
 
     /**
@@ -78,7 +83,7 @@ class ConstraintVisitor {
      * @throws Exception
      *         When something went wrong during the walk.
      */
-    virtual void
+    void
     visit(const Expr& e);
 
     /**
@@ -90,7 +95,7 @@ class ConstraintVisitor {
      * @throws Exception
      *         When something went wrong during the walk.
      */
-    virtual void
+    void
     betweenChildrenVisits(const Expr& e);
 
     /**
@@ -101,812 +106,1614 @@ class ConstraintVisitor {
      * @throws Exception
      *         When something went wrong during the walk.
      */
-    virtual void
+    void
     afterVisit(const Expr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const BoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const BoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const BoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const BoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const NumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const NumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const NumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const NumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
-    beforeVisit(const BinaryBoolToBoolExpr& e);
+    void
+    beforeVisit(const BinaryBoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
-    visit(const BinaryBoolToBoolExpr& e);
+    void
+    visit(const BinaryBoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
-    betweenChildrenVisits(const BinaryBoolToBoolExpr& e);
+    void
+    betweenChildrenVisits(const BinaryBoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
-    afterVisit(const BinaryBoolToBoolExpr& e);
+    void
+    afterVisit(const BinaryBoolExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
-    beforeVisit(const BinaryNumToBoolExpr& e);
+    void
+    beforeVisit(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
-    visit(const BinaryNumToBoolExpr& e);
+    void
+    visit(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
-    betweenChildrenVisits(const BinaryNumToBoolExpr& e);
+    void
+    betweenChildrenVisits(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
-    afterVisit(const BinaryNumToBoolExpr& e);
+    void
+    afterVisit(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
-    beforeVisit(const BinaryNumToNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::visit(const Expr&)
-     */
-    virtual void
-    visit(const BinaryNumToNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
-     */
-    virtual void
-    betweenChildrenVisits(const BinaryNumToNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::afterVisit(const Expr&)
-     */
-    virtual void
-    afterVisit(const BinaryNumToNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
-     */
-    virtual void
+    void
     beforeVisit(const EqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const EqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const EqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const EqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const NeqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const NeqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const NeqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const NeqExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const GTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const GTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const GTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const GTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const GEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const GEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const GEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const GEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const LTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const LTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const LTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const LTExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const LEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const LEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const LEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const LEExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const EqvExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const EqvExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const EqvExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const EqvExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const ImpExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const ImpExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const ImpExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const ImpExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const AndExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const AndExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const AndExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const AndExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const OrExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const OrExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const OrExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const OrExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const NotExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const NotExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const NotExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const PlusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const PlusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const PlusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const PlusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const MinusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const MinusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
      */
-    virtual void
+    void
     betweenChildrenVisits(const MinusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const MinusExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const AnIntegerExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const AnIntegerExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const AnIntegerExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const NodeIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const NodeIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const NodeIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const InstanceIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const InstanceIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const InstanceIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const InstructionIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const InstructionIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const InstructionIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const PatternIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const PatternIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const PatternIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const LabelIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const LabelIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const LabelIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const RegisterIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const RegisterIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const RegisterIdToNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const AnInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const AnInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const AnInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const AnInstructionIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const AnInstructionIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const AnInstructionIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const ANodeIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const ANodeIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const ANodeIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const ALabelIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const ALabelIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const ALabelIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const ARegisterIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const ARegisterIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const ARegisterIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const APatternIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const APatternIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const APatternIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const ThisInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const ThisInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const ThisInstanceIdExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const CovererOfActionNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const CovererOfActionNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const CovererOfActionNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const DefinerOfEntityNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const DefinerOfEntityNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const DefinerOfEntityNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const InstructionIdOfPatternExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const InstructionIdOfPatternExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const InstructionIdOfPatternExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const PatternIdOfInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const PatternIdOfInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const PatternIdOfInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const LabelIdAllocatedToInstanceExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const LabelIdOfLabelNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const LabelIdOfLabelNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const LabelIdOfLabelNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
      */
-    virtual void
+    void
     beforeVisit(const RegisterIdAllocatedToDataNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::visit(const Expr&)
      */
-    virtual void
+    void
     visit(const RegisterIdAllocatedToDataNodeExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::afterVisit(const Expr&)
      */
-    virtual void
+    void
     afterVisit(const RegisterIdAllocatedToDataNodeExpr& e);
+
+  protected:
+    /**
+     * Called just before visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    atBeforeVisit(const Expr& e);
+
+    /**
+     * Called when visiting the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    atVisit(const Expr& e);
+
+    /**
+     * Called between having visited the children. Only called for expressions
+     * which has more than one argument.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    atBetweenChildrenVisits(const Expr& e);
+
+    /**
+     * Called just after having visited the expression.
+     *
+     * @param e
+     *        The expression to visit.
+     * @throws Exception
+     *         When something went wrong during the walk.
+     */
+    virtual void
+    atAfterVisit(const Expr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const BoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const BoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const BoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const BoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const NumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const NumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const NumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const NumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const BinaryBoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const BinaryBoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const BinaryBoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const BinaryBoolExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const BinaryNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const BinaryNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const BinaryNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const BinaryNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const EqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const EqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const EqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const EqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const NeqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const NeqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const NeqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const NeqExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const GTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const GTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const GTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const GTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const GEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const GEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const GEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const GEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const LTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const LTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const LTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const LTExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const LEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const LEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const LEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const LEExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const EqvExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const EqvExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const EqvExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const EqvExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const ImpExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const ImpExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const ImpExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const ImpExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const AndExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const AndExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const AndExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const AndExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const OrExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const OrExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const OrExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const OrExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const NotExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const NotExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const NotExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const PlusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const PlusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const PlusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const PlusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const MinusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const MinusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
+     */
+    virtual void
+    atBetweenChildrenVisits(const MinusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const MinusExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const AnIntegerExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const AnIntegerExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const AnIntegerExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const NodeIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const NodeIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const NodeIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const InstanceIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const InstanceIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const InstanceIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const InstructionIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const InstructionIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const InstructionIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const PatternIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const PatternIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const PatternIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const LabelIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const LabelIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const LabelIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const RegisterIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const RegisterIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const RegisterIdToNumExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const AnInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const AnInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const AnInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const AnInstructionIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const AnInstructionIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const AnInstructionIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const ANodeIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const ANodeIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const ANodeIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const ALabelIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const ALabelIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const ALabelIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const ARegisterIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const ARegisterIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const ARegisterIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const APatternIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const APatternIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const APatternIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const ThisInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const ThisInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const ThisInstanceIdExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const CovererOfActionNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const DefinerOfEntityNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const InstructionIdOfPatternExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const PatternIdOfInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const LabelIdAllocatedToInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const LabelIdAllocatedToInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const LabelIdAllocatedToInstanceExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const LabelIdOfLabelNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
+     */
+    virtual void
+    atBeforeVisit(const RegisterIdAllocatedToDataNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::visit(const Expr&)
+     */
+    virtual void
+    atVisit(const RegisterIdAllocatedToDataNodeExpr& e);
+
+    /**
+     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
+     */
+    virtual void
+    atAfterVisit(const RegisterIdAllocatedToDataNodeExpr& e);
 };
 
 }

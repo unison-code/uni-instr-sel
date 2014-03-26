@@ -57,7 +57,7 @@ Params::getNumLabelNodes(void) const {
 }
 
 size_t
-Params::getNumPatternInstances(void) const {
+Params::getNumInstances(void) const {
     return pat_inst_mappings_.size();
 }
 
@@ -72,13 +72,13 @@ Params::parseJson(const string& str, Params& param) {
     computeMappingsForFunctionActionNodes(root, param);
     computeMappingsForFunctionEntityNodes(root, param);
     computeMappingsAndDomsetsForFunctionLabelNodes(root, param);
-    computeMappingsForPatterns(root, param);
-    setPatternCodeSizes(root, param);
-    setPatternLatencies(root, param);
-    setPatternConstraints(root, param);
-    setActionNodesCoveredByPatterns(root, param);
-    setEntityNodesDefinedByPatterns(root, param);
-    setEntityNodesUsedByPatterns(root, param);
+    computeMappingsForInstances(root, param);
+    setInstanceCodeSizes(root, param);
+    setInstanceLatencies(root, param);
+    setInstanceConstraints(root, param);
+    setActionNodesCoveredByInstances(root, param);
+    setEntityNodesDefinedByInstances(root, param);
+    setEntityNodesUsedByInstances(root, param);
 }
 
 Value
@@ -165,33 +165,33 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
 }
 
 void
-Params::computeMappingsForPatterns(
+Params::computeMappingsForInstances(
     const Value& root,
     Params& param
 ) {
     ArrayIndex index = 0;
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        addMapping(toId(getJsonValue(pattern, "instance-id")),
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        addMapping(toId(getJsonValue(instance, "instance-id")),
                    index++,
                    param.pat_inst_mappings_);
     }
 }
 
 int
-Params::getCodeSizeOfPattern(const Id& instance) const {
+Params::getCodeSizeOfInstance(const Id& instance) const {
     return getMappedValue(instance, pat_inst_code_sizes_);
 }
 
 int
-Params::getLatencyOfPattern(const Id& instance) const {
+Params::getLatencyOfInstance(const Id& instance) const {
     return getMappedValue(instance, pat_inst_latencies_);
 }
 
 void
-Params::setPatternCodeSizes(const Json::Value& root, Params& param) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
-        int code_size = toInt(getJsonValue(pattern, "code-size"));
+Params::setInstanceCodeSizes(const Json::Value& root, Params& param) {
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        int code_size = toInt(getJsonValue(instance, "code-size"));
         addMapping(instance_id,
                    code_size,
                    param.pat_inst_code_sizes_);
@@ -199,10 +199,10 @@ Params::setPatternCodeSizes(const Json::Value& root, Params& param) {
 }
 
 void
-Params::setPatternLatencies(const Json::Value& root, Params& param) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
-        int latency = toInt(getJsonValue(pattern, "latency"));
+Params::setInstanceLatencies(const Json::Value& root, Params& param) {
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        int latency = toInt(getJsonValue(instance, "latency"));
         addMapping(instance_id,
                    latency,
                    param.pat_inst_latencies_);
@@ -210,7 +210,7 @@ Params::setPatternLatencies(const Json::Value& root, Params& param) {
 }
 
 list<Id>
-Params::getAllPatternInstanceIds(void) const {
+Params::getAllInstanceIds(void) const {
     list<Id> ids;
     for (auto& kv : pat_inst_mappings_) {
         ids.push_back(kv.first);
@@ -219,20 +219,24 @@ Params::getAllPatternInstanceIds(void) const {
 }
 
 ArrayIndex
-Params::getIndexOfPattern(const Id& id) const {
+Params::getIndexOfInstance(const Id& id) const {
     return getMappedValue(id, pat_inst_mappings_);
 }
 
+list<const Constraint*>
+Params::getConstraintsOfInstance(const Id& id) const {
+    return getMappedValue(id, pat_inst_constraints_);
+}
 
 void
-Params::setActionNodesCoveredByPatterns(
+Params::setActionNodesCoveredByInstances(
     const Json::Value& root,
     Params& param
 ) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(pattern, "action-nodes-covered")) {
+        for (Value& node_id : getJsonValue(instance, "action-nodes-covered")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
@@ -242,14 +246,14 @@ Params::setActionNodesCoveredByPatterns(
 }
 
 void
-Params::setEntityNodesDefinedByPatterns(
+Params::setEntityNodesDefinedByInstances(
     const Json::Value& root,
     Params& param
 ) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(pattern, "entity-nodes-defined")) {
+        for (Value& node_id : getJsonValue(instance, "entity-nodes-defined")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
@@ -259,14 +263,14 @@ Params::setEntityNodesDefinedByPatterns(
 }
 
 void
-Params::setEntityNodesUsedByPatterns(
+Params::setEntityNodesUsedByInstances(
     const Json::Value& root,
     Params& param
 ) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(pattern, "entity-nodes-used")) {
+        for (Value& node_id : getJsonValue(instance, "entity-nodes-used")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
@@ -276,17 +280,17 @@ Params::setEntityNodesUsedByPatterns(
 }
 
 list<Id>
-Params::getActionNodesCoveredByPattern(const Id& instance) const {
+Params::getActionNodesCoveredByInstance(const Id& instance) const {
     return getMappedValue(instance, pat_inst_actions_covered_);
 }
 
 list<Id>
-Params::getEntityNodesDefinedByPattern(const Id& instance) const {
+Params::getEntityNodesDefinedByInstance(const Id& instance) const {
     return getMappedValue(instance, pat_inst_entities_defined_);
 }
 
 list<Id>
-Params::getEntityNodesUsedByPattern(const Id& instance) const {
+Params::getEntityNodesUsedByInstance(const Id& instance) const {
     return getMappedValue(instance, pat_inst_entities_used_);
 }
 
@@ -374,11 +378,11 @@ Params::destroyConstraints(void) {
 }
 
 void
-Params::setPatternConstraints(const Value& root, Params& param) {
-    for (Value& pattern : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(pattern, "instance-id"));
-        list<Constraint*> constraints;
-        for (Value& expr : getJsonValue(pattern, "constraints")) {
+Params::setInstanceConstraints(const Value& root, Params& param) {
+    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        list<const Constraint*> constraints;
+        for (Value& expr : getJsonValue(instance, "constraints")) {
             Constraint* c = parseConstraintExpression(toString(expr));
             constraints.push_back(c);
         }

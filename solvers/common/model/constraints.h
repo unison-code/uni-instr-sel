@@ -246,10 +246,9 @@ class RegisterIdExpr : public Expr {
 };
 
 /**
- * Base class for a binary Boolean expression which takes two Boolean
- * expressions as arguments.
+ * Base class for a binary Boolean expression.
  */
-class BinaryBoolToBoolExpr : public BoolExpr {
+class BinaryBoolExpr : public BoolExpr {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -261,13 +260,13 @@ class BinaryBoolToBoolExpr : public BoolExpr {
      * @throws Exception
      *         When either \c lhs or \c rhs is \c NULL.
      */
-    BinaryBoolToBoolExpr(BoolExpr* lhs, BoolExpr* rhs);
+    BinaryBoolExpr(Expr* lhs, Expr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BinaryBoolToBoolExpr(void);
+    ~BinaryBoolExpr(void);
 
     /**
      * \copydoc Expr::accept(ConstraintVisitor&)
@@ -275,16 +274,61 @@ class BinaryBoolToBoolExpr : public BoolExpr {
     virtual void
     accept(ConstraintVisitor& v) const;
 
+  protected:
+    /**
+     * Calls the `beforeVisit(...)` function at the visitor. Needed to get
+     * polymorphism to work as intended.
+     *
+     * @param v
+     *        The visitor.
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * Calls the `visit(...)` function at the visitor. Needed to get
+     * polymorphism to work as intended.
+     *
+     * @param v
+     *        The visitor.
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * Calls the `betweenChildrenVisits(...)` function at the visitor. Needed to
+     * get polymorphism to work as intended.
+     *
+     * @param v
+     *        The visitor.
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * Calls the `afterVisit(...)` function at the visitor. Needed to get
+     * polymorphism to work as intended.
+     *
+     * @param v
+     *        The visitor.
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const
+    =0;
+
   private:
-    BoolExpr* lhs_;
-    BoolExpr* rhs_;
+    Expr* lhs_;
+    Expr* rhs_;
 };
 
 /**
- * Base class for a binary Boolean expression which takes two numerical
+ * Base class for a binary numerical expression which takes two numerical
  * expressions as arguments.
  */
-class BinaryNumToBoolExpr : public BoolExpr {
+class BinaryNumExpr : public NumExpr {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -296,13 +340,13 @@ class BinaryNumToBoolExpr : public BoolExpr {
      * @throws Exception
      *         When either \c lhs or \c rhs is \c NULL.
      */
-    BinaryNumToBoolExpr(NumExpr* lhs, NumExpr* rhs);
+    BinaryNumExpr(Expr* lhs, Expr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BinaryNumToBoolExpr(void);
+    ~BinaryNumExpr(void);
 
     /**
      * \copydoc Expr::accept(ConstraintVisitor&)
@@ -310,18 +354,47 @@ class BinaryNumToBoolExpr : public BoolExpr {
     virtual void
     accept(ConstraintVisitor& v) const;
 
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const
+    =0;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const
+    =0;
+
   private:
-    NumExpr* lhs_;
-    NumExpr* rhs_;
+    Expr* lhs_;
+    Expr* rhs_;
 };
 
 /**
  * Equality expression.
  */
-class EqExpr : public BinaryNumToBoolExpr {
+class EqExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     EqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -330,15 +403,40 @@ class EqExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~EqExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Disequality expression.
  */
-class NeqExpr : public BinaryNumToBoolExpr {
+class NeqExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     NeqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -347,15 +445,40 @@ class NeqExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~NeqExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Greater-than expression.
  */
-class GTExpr : public BinaryNumToBoolExpr {
+class GTExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     GTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -364,15 +487,39 @@ class GTExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~GTExpr(void);
-};
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;};
 
 /**
  * Greater-than-or-equals-to expression.
  */
-class GEExpr : public BinaryNumToBoolExpr {
+class GEExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     GEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -381,15 +528,40 @@ class GEExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~GEExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Less-than expression.
  */
-class LTExpr : public BinaryNumToBoolExpr {
+class LTExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     LTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -398,15 +570,40 @@ class LTExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~LTExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Less-than-or-equals-to expression.
  */
-class LEExpr : public BinaryNumToBoolExpr {
+class LEExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryNumToBoolExpr::BinaryNumToBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
      */
     LEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -415,15 +612,40 @@ class LEExpr : public BinaryNumToBoolExpr {
      */
     virtual
     ~LEExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Equivalence expression.
  */
-class EqvExpr : public BinaryBoolToBoolExpr {
+class EqvExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryBoolToBoolExpr::BinaryBoolToBoolExpr(BoolExpr*, BoolExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
      */
     EqvExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -432,15 +654,40 @@ class EqvExpr : public BinaryBoolToBoolExpr {
      */
     virtual
     ~EqvExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Implication expression.
  */
-class ImpExpr : public BinaryBoolToBoolExpr {
+class ImpExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryBoolToBoolExpr::BinaryBoolToBoolExpr(BoolExpr*, BoolExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
      */
     ImpExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -449,15 +696,40 @@ class ImpExpr : public BinaryBoolToBoolExpr {
      */
     virtual
     ~ImpExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * And expression.
  */
-class AndExpr : public BinaryBoolToBoolExpr {
+class AndExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryBoolToBoolExpr::BinaryBoolToBoolExpr(BoolExpr*, BoolExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
      */
     AndExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -466,15 +738,40 @@ class AndExpr : public BinaryBoolToBoolExpr {
      */
     virtual
     ~AndExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Or expression.
  */
-class OrExpr : public BinaryBoolToBoolExpr {
+class OrExpr : public BinaryBoolExpr {
   public:
     /**
-     * \copydoc BinaryBoolToBoolExpr::BinaryBoolToBoolExpr(BoolExpr*, BoolExpr*)
+     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
      */
     OrExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -483,6 +780,31 @@ class OrExpr : public BinaryBoolToBoolExpr {
      */
     virtual
     ~OrExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryBoolExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
@@ -517,47 +839,12 @@ class NotExpr : public BoolExpr {
 };
 
 /**
- * Base class for a binary numerical expression which takes two numerical
- * expressions as arguments.
- */
-class BinaryNumToNumExpr : public NumExpr {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param lhs
-     *        The left-hand side expression.
-     * @param rhs
-     *        The right-hand side expression.
-     * @throws Exception
-     *         When either \c lhs or \c rhs is \c NULL.
-     */
-    BinaryNumToNumExpr(NumExpr* lhs, NumExpr* rhs);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~BinaryNumToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    NumExpr* lhs_;
-    NumExpr* rhs_;
-};
-
-/**
  * Plus expression.
  */
-class PlusExpr : public BinaryNumToNumExpr {
+class PlusExpr : public BinaryNumExpr {
   public:
     /**
-     * \copydoc BinaryNumToNumExpr::BinaryNumToNumExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryNumExpr::BinaryNumExpr(Expr*, Expr*)
      */
     PlusExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -566,15 +853,40 @@ class PlusExpr : public BinaryNumToNumExpr {
      */
     virtual
     ~PlusExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryNumExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
  * Minus expression.
  */
-class MinusExpr : public BinaryNumToNumExpr {
+class MinusExpr : public BinaryNumExpr {
   public:
     /**
-     * \copydoc BinaryNumToNumExpr::BinaryNumToNumExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryNumExpr::BinaryNumExpr(Expr*, Expr*)
      */
     MinusExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -583,6 +895,31 @@ class MinusExpr : public BinaryNumToNumExpr {
      */
     virtual
     ~MinusExpr(void);
+
+  protected:
+    /**
+     * \copydoc BinaryNumExpr::dispatchBeforeVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBeforeVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchVisit(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchBetweenChildrenVisits(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchBetweenChildrenVisits(ConstraintVisitor& v) const;
+
+    /**
+     * \copydoc BinaryNumExpr::dispatchAfterVisit(ConstraintVisitor&)
+     */
+    virtual void
+    dispatchAfterVisit(ConstraintVisitor& v) const;
 };
 
 /**
