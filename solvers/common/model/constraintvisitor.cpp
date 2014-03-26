@@ -24,6 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "constraints.h"
 #include "constraintvisitor.h"
 #include "../exceptions/exception.h"
 
@@ -98,54 +99,6 @@ ConstraintVisitor::betweenChildrenVisits(const NumExpr& e) {
 void
 ConstraintVisitor::afterVisit(const NumExpr& e) {
     afterVisit(static_cast<const Expr&>(e));
-    atAfterVisit(e);
-}
-
-void
-ConstraintVisitor::beforeVisit(const BinaryBoolExpr& e) {
-    beforeVisit(static_cast<const BoolExpr&>(e));
-    atBeforeVisit(e);
-}
-
-void
-ConstraintVisitor::visit(const BinaryBoolExpr& e) {
-    visit(static_cast<const BoolExpr&>(e));
-    atVisit(e);
-}
-
-void
-ConstraintVisitor::betweenChildrenVisits(const BinaryBoolExpr& e) {
-    betweenChildrenVisits(static_cast<const BoolExpr&>(e));
-    atBetweenChildrenVisits(e);
-}
-
-void
-ConstraintVisitor::afterVisit(const BinaryBoolExpr& e) {
-    afterVisit(static_cast<const BoolExpr&>(e));
-    atAfterVisit(e);
-}
-
-void
-ConstraintVisitor::beforeVisit(const BinaryNumExpr& e) {
-    beforeVisit(static_cast<const NumExpr&>(e));
-    atBeforeVisit(e);
-}
-
-void
-ConstraintVisitor::visit(const BinaryNumExpr& e) {
-    visit(static_cast<const NumExpr&>(e));
-    atVisit(e);
-}
-
-void
-ConstraintVisitor::betweenChildrenVisits(const BinaryNumExpr& e) {
-    betweenChildrenVisits(static_cast<const NumExpr&>(e));
-    atBetweenChildrenVisits(e);
-}
-
-void
-ConstraintVisitor::afterVisit(const BinaryNumExpr& e) {
-    afterVisit(static_cast<const NumExpr&>(e));
     atAfterVisit(e);
 }
 
@@ -868,30 +821,6 @@ ConstraintVisitor::atBetweenChildrenVisits(const NumExpr& e) {}
 
 void
 ConstraintVisitor::atAfterVisit(const NumExpr& e) {}
-
-void
-ConstraintVisitor::atBeforeVisit(const BinaryBoolExpr& e) {}
-
-void
-ConstraintVisitor::atVisit(const BinaryBoolExpr& e) {}
-
-void
-ConstraintVisitor::atBetweenChildrenVisits(const BinaryBoolExpr& e) {}
-
-void
-ConstraintVisitor::atAfterVisit(const BinaryBoolExpr& e) {}
-
-void
-ConstraintVisitor::atBeforeVisit(const BinaryNumExpr& e) {}
-
-void
-ConstraintVisitor::atVisit(const BinaryNumExpr& e) {}
-
-void
-ConstraintVisitor::atBetweenChildrenVisits(const BinaryNumExpr& e) {}
-
-void
-ConstraintVisitor::atAfterVisit(const BinaryNumExpr& e) {}
 
 void
 ConstraintVisitor::atBeforeVisit(const EqExpr& e) {}

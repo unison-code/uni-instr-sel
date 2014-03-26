@@ -81,54 +81,11 @@ RegisterIdExpr::RegisterIdExpr(void) {}
 
 RegisterIdExpr::~RegisterIdExpr(void) {}
 
-BinaryBoolExpr::BinaryBoolExpr(Expr* lhs, Expr* rhs)
-    : lhs_(lhs),
-      rhs_(rhs)
-{
-    if (!lhs_) THROW(Exception, "lhs cannot be NULL");
-    if (!rhs_) THROW(Exception, "rhs cannot be NULL");
-}
-
-BinaryBoolExpr::~BinaryBoolExpr(void) {
-    delete lhs_;
-    delete rhs_;
-}
-
-void
-BinaryBoolExpr::accept(ConstraintVisitor& v) const {
-    dispatchBeforeVisit(v);
-    dispatchVisit(v);
-    lhs_->accept(v);
-    dispatchBetweenChildrenVisits(v);
-    rhs_->accept(v);
-    dispatchAfterVisit(v);
-}
-
 EqExpr::EqExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 EqExpr::~EqExpr(void) {}
-
-void
-EqExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-EqExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-EqExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-EqExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 NeqExpr::NeqExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
@@ -136,51 +93,11 @@ NeqExpr::NeqExpr(NumExpr* lhs, NumExpr* rhs)
 
 NeqExpr::~NeqExpr(void) {}
 
-void
-NeqExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-NeqExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-NeqExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-NeqExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 GTExpr::GTExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 GTExpr::~GTExpr(void) {}
-
-void
-GTExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-GTExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-GTExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-GTExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 GEExpr::GEExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
@@ -188,51 +105,11 @@ GEExpr::GEExpr(NumExpr* lhs, NumExpr* rhs)
 
 GEExpr::~GEExpr(void) {}
 
-void
-GEExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-GEExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-GEExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-GEExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 LTExpr::LTExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 LTExpr::~LTExpr(void) {}
-
-void
-LTExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-LTExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-LTExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-LTExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 LEExpr::LEExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
@@ -240,51 +117,11 @@ LEExpr::LEExpr(NumExpr* lhs, NumExpr* rhs)
 
 LEExpr::~LEExpr(void) {}
 
-void
-LEExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-LEExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-LEExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-LEExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 EqvExpr::EqvExpr(BoolExpr* lhs, BoolExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 EqvExpr::~EqvExpr(void) {}
-
-void
-EqvExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-EqvExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-EqvExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-EqvExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 ImpExpr::ImpExpr(BoolExpr* lhs, BoolExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
@@ -292,77 +129,17 @@ ImpExpr::ImpExpr(BoolExpr* lhs, BoolExpr* rhs)
 
 ImpExpr::~ImpExpr(void) {}
 
-void
-ImpExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-ImpExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-ImpExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-ImpExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 AndExpr::AndExpr(BoolExpr* lhs, BoolExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 AndExpr::~AndExpr(void) {}
 
-void
-AndExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-AndExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-AndExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-AndExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 OrExpr::OrExpr(BoolExpr* lhs, BoolExpr* rhs)
     : BinaryBoolExpr(lhs, rhs)
 {}
 
 OrExpr::~OrExpr(void) {}
-
-void
-OrExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-OrExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-OrExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-OrExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 NotExpr::NotExpr(BoolExpr* e)
     : expr_(e)
@@ -382,80 +159,17 @@ NotExpr::accept(ConstraintVisitor& v) const {
     v.afterVisit(*this);
 }
 
-BinaryNumExpr::BinaryNumExpr(Expr* lhs, Expr* rhs)
-    : lhs_(lhs),
-      rhs_(rhs)
-{
-    if (!lhs_) THROW(Exception, "lhs cannot be NULL");
-    if (!rhs_) THROW(Exception, "rhs cannot be NULL");
-}
-
-BinaryNumExpr::~BinaryNumExpr(void) {
-    delete lhs_;
-    delete rhs_;
-}
-
-void
-BinaryNumExpr::accept(ConstraintVisitor& v) const {
-    dispatchBeforeVisit(v);
-    dispatchVisit(v);
-    lhs_->accept(v);
-    dispatchBetweenChildrenVisits(v);
-    rhs_->accept(v);
-    dispatchAfterVisit(v);
-}
-
 PlusExpr::PlusExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryNumExpr(lhs, rhs)
 {}
 
 PlusExpr::~PlusExpr(void) {}
 
-void
-PlusExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-PlusExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-PlusExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-PlusExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
-
 MinusExpr::MinusExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryNumExpr(lhs, rhs)
 {}
 
 MinusExpr::~MinusExpr(void) {}
-
-void
-MinusExpr::dispatchBeforeVisit(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-}
-
-void
-MinusExpr::dispatchVisit(ConstraintVisitor& v) const {
-    v.visit(*this);
-}
-
-void
-MinusExpr::dispatchBetweenChildrenVisits(ConstraintVisitor& v) const {
-    v.betweenChildrenVisits(*this);
-}
-
-void
-MinusExpr::dispatchAfterVisit(ConstraintVisitor& v) const {
-    v.afterVisit(*this);
-}
 
 AnIntegerExpr::AnIntegerExpr(int i)
     : i_(i)

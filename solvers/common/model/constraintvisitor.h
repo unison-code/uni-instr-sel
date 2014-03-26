@@ -27,9 +27,55 @@
 #ifndef SOLVERS_COMMON_MODEL_CONSTRAINTVISITOR__
 #define SOLVERS_COMMON_MODEL_CONSTRAINTVISITOR__
 
-#include "constraints.h"
-
 namespace Model {
+
+/**
+ * Forward declarations
+ */
+class AndExpr;
+class ALabelIdExpr;
+class AnIntegerExpr;
+class AnInstanceIdExpr;
+class AnInstructionIdExpr;
+class ANodeIdExpr;
+class APatternIdExpr;
+class ARegisterIdExpr;
+class BoolExpr;
+class CovererOfActionNodeExpr;
+class DefinerOfEntityNodeExpr;
+class EqExpr;
+class EqvExpr;
+class Expr;
+class GEExpr;
+class GTExpr;
+class ImpExpr;
+class InstructionIdOfPatternExpr;
+class LabelIdAllocatedToInstanceExpr;
+class LabelIdExpr;
+class LabelIdOfLabelNodeExpr;
+class LabelIdToNumExpr;
+class LEExpr;
+class LTExpr;
+class MinusExpr;
+class NeqExpr;
+class NodeIdExpr;
+class NodeIdToNumExpr;
+class NotExpr;
+class NumExpr;
+class InstanceIdExpr;
+class InstanceIdToNumExpr;
+class InstructionIdExpr;
+class InstructionIdToNumExpr;
+class NodeIdExpr;
+class OrExpr;
+class PatternIdExpr;
+class PatternIdOfInstanceExpr;
+class PatternIdToNumExpr;
+class PlusExpr;
+class RegisterIdAllocatedToDataNodeExpr;
+class RegisterIdExpr;
+class RegisterIdToNumExpr;
+class ThisInstanceIdExpr;
 
 /**
  * Defines a base class for the constraint visitor.
@@ -156,54 +202,6 @@ class ConstraintVisitor {
      */
     void
     afterVisit(const NumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
-     */
-    void
-    beforeVisit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::visit(const Expr&)
-     */
-    void
-    visit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
-     */
-    void
-    betweenChildrenVisits(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::afterVisit(const Expr&)
-     */
-    void
-    afterVisit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
-     */
-    void
-    beforeVisit(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::visit(const Expr&)
-     */
-    void
-    visit(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::betweenChildrenVisits(const Expr&)
-     */
-    void
-    betweenChildrenVisits(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::afterVisit(const Expr&)
-     */
-    void
-    afterVisit(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::beforeVisit(const Expr&)
@@ -982,54 +980,6 @@ class ConstraintVisitor {
      */
     virtual void
     atAfterVisit(const NumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
-     */
-    virtual void
-    atBeforeVisit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::visit(const Expr&)
-     */
-    virtual void
-    atVisit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
-     */
-    virtual void
-    atBetweenChildrenVisits(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
-     */
-    virtual void
-    atAfterVisit(const BinaryBoolExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
-     */
-    virtual void
-    atBeforeVisit(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::visit(const Expr&)
-     */
-    virtual void
-    atVisit(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atBetweenChildrenVisits(const Expr&)
-     */
-    virtual void
-    atBetweenChildrenVisits(const BinaryNumExpr& e);
-
-    /**
-     * \copydoc ConstraintVisitor::atAfterVisit(const Expr&)
-     */
-    virtual void
-    atAfterVisit(const BinaryNumExpr& e);
 
     /**
      * \copydoc ConstraintVisitor::atBeforeVisit(const Expr&)
