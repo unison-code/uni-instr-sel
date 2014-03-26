@@ -576,7 +576,7 @@ class NotExpr : public BoolExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    BoolExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -680,7 +680,7 @@ class NodeIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    NodeIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -711,7 +711,7 @@ class InstanceIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    InstanceIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -743,7 +743,7 @@ class InstructionIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    InstructionIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -774,7 +774,7 @@ class PatternIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    PatternIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -805,7 +805,7 @@ class LabelIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    LabelIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -836,7 +836,7 @@ class RegisterIdToNumExpr : public NumExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    RegisterIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1112,7 +1112,7 @@ class CovererOfActionNodeExpr : public InstanceIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    NodeIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1143,7 +1143,7 @@ class DefinerOfEntityNodeExpr : public InstanceIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    NodeIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1174,7 +1174,7 @@ class InstructionIdOfPatternExpr : public InstructionIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    PatternIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1205,7 +1205,7 @@ class PatternIdOfInstanceExpr : public PatternIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    InstanceIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1237,7 +1237,7 @@ class LabelIdAllocatedToInstanceExpr : public LabelIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    InstanceIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1268,7 +1268,7 @@ class LabelIdOfLabelNodeExpr : public LabelIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    NodeIdExpr* expr_;
+    Expr* expr_;
 };
 
 /**
@@ -1299,7 +1299,7 @@ class RegisterIdAllocatedToDataNodeExpr : public RegisterIdExpr {
     accept(ConstraintVisitor& v) const;
 
   private:
-    NodeIdExpr* expr_;
+    Expr* expr_;
 };
 
 }
