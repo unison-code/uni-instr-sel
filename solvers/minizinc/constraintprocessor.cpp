@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "constraintwriter.h"
+#include "constraintprocessor.h"
 
 using namespace Model;
 using std::string;
@@ -34,17 +34,14 @@ using std::string;
 using std::cout;
 using std::endl;
 
-ConstraintWriter::ConstraintWriter(const Model::Params& p)
+ConstraintProcessor::ConstraintProcessor(const Model::Params& p)
     : p_(p)
 {}
 
-ConstraintWriter::~ConstraintWriter(void) {}
+ConstraintProcessor::~ConstraintProcessor(void) {}
 
 string
-ConstraintWriter::toString(const Constraint* c) {
-    output_.clear();
-    c->walk(*this);
-    return string("constraint\n") + output_ + ";";
+ConstraintProcessor::toString(const Constraint* c) {
+    // TODO: implement
+    return "";
 }
-
-// TODO: override visitor methods

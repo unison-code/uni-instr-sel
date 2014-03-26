@@ -25,24 +25,23 @@
  */
 
 #include "constraints.h"
-#include "constraintvisitor.h"
 #include "../exceptions/exception.h"
 
 using namespace Model;
 
-Constraint::Constraint(BoolExpr* e)
-    : expr_(e)
+Constraint::Constraint(BoolExpr* expr)
+    : expr_(expr)
 {
-    if (!expr_) THROW(Exception, "e cannot be NULL");
+    if (!expr_) THROW(Exception, "expr cannot be NULL");
 }
 
 Constraint::~Constraint(void) {
     delete expr_;
 }
 
-void
-Constraint::walk(ConstraintVisitor& v) const {
-    expr_->accept(v);
+BoolExpr*
+Constraint::getExpr(void) const {
+    return expr_;
 }
 
 Expr::Expr(void) {}
@@ -82,91 +81,79 @@ RegisterIdExpr::RegisterIdExpr(void) {}
 RegisterIdExpr::~RegisterIdExpr(void) {}
 
 EqExpr::EqExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 EqExpr::~EqExpr(void) {}
 
 NeqExpr::NeqExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 NeqExpr::~NeqExpr(void) {}
 
 GTExpr::GTExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 GTExpr::~GTExpr(void) {}
 
 GEExpr::GEExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 GEExpr::~GEExpr(void) {}
 
 LTExpr::LTExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 LTExpr::~LTExpr(void) {}
 
 LEExpr::LEExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 LEExpr::~LEExpr(void) {}
 
 EqvExpr::EqvExpr(BoolExpr* lhs, BoolExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 EqvExpr::~EqvExpr(void) {}
 
 ImpExpr::ImpExpr(BoolExpr* lhs, BoolExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 ImpExpr::~ImpExpr(void) {}
 
 AndExpr::AndExpr(BoolExpr* lhs, BoolExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 AndExpr::~AndExpr(void) {}
 
 OrExpr::OrExpr(BoolExpr* lhs, BoolExpr* rhs)
-    : BinaryBoolExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 OrExpr::~OrExpr(void) {}
 
-NotExpr::NotExpr(BoolExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+NotExpr::NotExpr(BoolExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-NotExpr::~NotExpr(void) {
-    delete expr_;
-}
-
-void
-NotExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+NotExpr::~NotExpr(void) {}
 
 PlusExpr::PlusExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryNumExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 PlusExpr::~PlusExpr(void) {}
 
 MinusExpr::MinusExpr(NumExpr* lhs, NumExpr* rhs)
-    : BinaryNumExpr(lhs, rhs)
+    : BinaryExpr(lhs, rhs)
 {}
 
 MinusExpr::~MinusExpr(void) {}
@@ -177,139 +164,52 @@ AnIntegerExpr::AnIntegerExpr(int i)
 
 AnIntegerExpr::~AnIntegerExpr(void) {}
 
-void
-AnIntegerExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
-
 int
 AnIntegerExpr::getValue(void) const {
     return i_;
 }
 
-NodeIdToNumExpr::NodeIdToNumExpr(NodeIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+NodeIdToNumExpr::NodeIdToNumExpr(NodeIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-NodeIdToNumExpr::~NodeIdToNumExpr(void) {
-    delete expr_;
-}
+NodeIdToNumExpr::~NodeIdToNumExpr(void) {}
 
-void
-NodeIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+InstanceIdToNumExpr::InstanceIdToNumExpr(InstanceIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-InstanceIdToNumExpr::InstanceIdToNumExpr(InstanceIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+InstanceIdToNumExpr::~InstanceIdToNumExpr(void) {}
 
-InstanceIdToNumExpr::~InstanceIdToNumExpr(void) {
-    delete expr_;
-}
+InstructionIdToNumExpr::InstructionIdToNumExpr(InstructionIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-void
-InstanceIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+InstructionIdToNumExpr::~InstructionIdToNumExpr(void) {}
 
-InstructionIdToNumExpr::InstructionIdToNumExpr(InstructionIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+PatternIdToNumExpr::PatternIdToNumExpr(PatternIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-InstructionIdToNumExpr::~InstructionIdToNumExpr(void) {
-    delete expr_;
-}
+PatternIdToNumExpr::~PatternIdToNumExpr(void) {}
 
-void
-InstructionIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+LabelIdToNumExpr::LabelIdToNumExpr(LabelIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-PatternIdToNumExpr::PatternIdToNumExpr(PatternIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+LabelIdToNumExpr::~LabelIdToNumExpr(void) {}
 
-PatternIdToNumExpr::~PatternIdToNumExpr(void) {
-    delete expr_;
-}
+RegisterIdToNumExpr::RegisterIdToNumExpr(RegisterIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-void
-PatternIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
-
-LabelIdToNumExpr::LabelIdToNumExpr(LabelIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
-
-LabelIdToNumExpr::~LabelIdToNumExpr(void) {
-    delete expr_;
-}
-
-void
-LabelIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
-
-RegisterIdToNumExpr::RegisterIdToNumExpr(RegisterIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
-
-RegisterIdToNumExpr::~RegisterIdToNumExpr(void) {
-    delete expr_;
-}
-
-void
-RegisterIdToNumExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+RegisterIdToNumExpr::~RegisterIdToNumExpr(void) {}
 
 ANodeIdExpr::ANodeIdExpr(const Id& id)
     : id_(id)
 {}
 
 ANodeIdExpr::~ANodeIdExpr(void) {}
-
-void
-ANodeIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
 
 Id
 ANodeIdExpr::getId(void) const {
@@ -322,13 +222,6 @@ AnInstanceIdExpr::AnInstanceIdExpr(const Id& id)
 
 AnInstanceIdExpr::~AnInstanceIdExpr(void) {}
 
-void
-AnInstanceIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
-
 Id
 AnInstanceIdExpr::getId(void) const {
     return id_;
@@ -339,13 +232,6 @@ AnInstructionIdExpr::AnInstructionIdExpr(const Id& id)
 {}
 
 AnInstructionIdExpr::~AnInstructionIdExpr(void) {}
-
-void
-AnInstructionIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
 
 Id
 AnInstructionIdExpr::getId(void) const {
@@ -358,13 +244,6 @@ APatternIdExpr::APatternIdExpr(const Id& id)
 
 APatternIdExpr::~APatternIdExpr(void) {}
 
-void
-APatternIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
-
 Id
 APatternIdExpr::getId(void) const {
     return id_;
@@ -375,13 +254,6 @@ ALabelIdExpr::ALabelIdExpr(const Id& id)
 {}
 
 ALabelIdExpr::~ALabelIdExpr(void) {}
-
-void
-ALabelIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
 
 Id
 ALabelIdExpr::getId(void) const {
@@ -394,13 +266,6 @@ ARegisterIdExpr::ARegisterIdExpr(const Id& id)
 
 ARegisterIdExpr::~ARegisterIdExpr(void) {}
 
-void
-ARegisterIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
-
 Id
 ARegisterIdExpr::getId(void) const {
     return id_;
@@ -410,139 +275,48 @@ ThisInstanceIdExpr::ThisInstanceIdExpr(void) {}
 
 ThisInstanceIdExpr::~ThisInstanceIdExpr(void) {}
 
-void
-ThisInstanceIdExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    v.afterVisit(*this);
-}
+CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
 
-CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {
-    delete expr_;
-}
+DefinerOfEntityNodeExpr::DefinerOfEntityNodeExpr(NodeIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-void
-CovererOfActionNodeExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {}
 
-DefinerOfEntityNodeExpr::DefinerOfEntityNodeExpr(NodeIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {
-    delete expr_;
-}
+InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {}
 
-void
-DefinerOfEntityNodeExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(InstanceIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
-
-InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {
-    delete expr_;
-}
-
-void
-InstructionIdOfPatternExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
-
-PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(InstanceIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
-
-PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {
-    delete expr_;
-}
-
-void
-PatternIdOfInstanceExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {}
 
 LabelIdAllocatedToInstanceExpr::LabelIdAllocatedToInstanceExpr(
-    InstanceIdExpr* e
+    InstanceIdExpr* expr
 )
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+    : UnaryExpr(expr)
+{}
 
-LabelIdAllocatedToInstanceExpr::~LabelIdAllocatedToInstanceExpr(void) {
-    delete expr_;
-}
+LabelIdAllocatedToInstanceExpr::~LabelIdAllocatedToInstanceExpr(void) {}
 
-void
-LabelIdAllocatedToInstanceExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(NodeIdExpr* expr)
+    : UnaryExpr(expr)
+{}
 
-LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(NodeIdExpr* e)
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
-
-LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {
-    delete expr_;
-}
-
-void
-LabelIdOfLabelNodeExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {}
 
 RegisterIdAllocatedToDataNodeExpr::RegisterIdAllocatedToDataNodeExpr(
-    NodeIdExpr* e
+    NodeIdExpr* expr
 )
-    : expr_(e)
-{
-    if (!expr_) THROW(Exception, "e cannot be NULL");
-}
+    : UnaryExpr(expr)
+{}
 
-RegisterIdAllocatedToDataNodeExpr::~RegisterIdAllocatedToDataNodeExpr(void) {
-    delete expr_;
-}
-
-void
-RegisterIdAllocatedToDataNodeExpr::accept(ConstraintVisitor& v) const {
-    v.beforeVisit(*this);
-    v.visit(*this);
-    expr_->accept(v);
-    v.afterVisit(*this);
-}
+RegisterIdAllocatedToDataNodeExpr::~RegisterIdAllocatedToDataNodeExpr(void) {}

@@ -28,7 +28,7 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_FILES := constraintwriter.cpp \
+MODULE_FILES := constraintprocessor.cpp \
                 main.cpp
 
 

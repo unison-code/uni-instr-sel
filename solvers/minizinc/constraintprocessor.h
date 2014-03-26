@@ -24,31 +24,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_MINIZINC_CONSTRAINTWRITER__
-#define SOLVERS_MINIZINC_CONSTRAINTWRITER__
+#ifndef SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
+#define SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
 
-#include "../common/model/constraintvisitor.h"
+#include "../common/model/constraints.h"
 #include "../common/model/params.h"
 #include <string>
 
 /**
  * Walks a constraint and outputs the Minizinc version of it.
  */
-class ConstraintWriter : public Model::ConstraintVisitor {
+class ConstraintProcessor {
   public:
     /**
-     * Creates a constraint writer.
+     * Creates a constraint processor.
      *
      * @param p
      *        The parameter object wherein the constraints belong.
      */
-    ConstraintWriter(const Model::Params& p);
+    ConstraintProcessor(const Model::Params& p);
 
     /**
-     * Destroys this writer.
+     * Destroys this processor.
      */
     virtual
-    ~ConstraintWriter(void);
+    ~ConstraintProcessor(void);
 
     /**
      * Converts a constraint to a Minizinc equivalent.
@@ -63,20 +63,10 @@ class ConstraintWriter : public Model::ConstraintVisitor {
     toString(const Model::Constraint* c);
 
   protected:
-    // TODO: override visitor functions
-
-  protected:
     /**
      * The params object.
      */
     const Model::Params& p_;
-
-    /**
-     * The string to which the output will be accumulated as the constraints is
-     * being traversed.
-     */
-    std::string output_;
-
 };
 
 #endif

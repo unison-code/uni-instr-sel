@@ -27,7 +27,6 @@
 #ifndef SOLVERS_COMMON_MODEL_CONSTRAINTS__
 #define SOLVERS_COMMON_MODEL_CONSTRAINTS__
 
-#include "constraintvisitor.h"
 #include "types.h"
 #include "../exceptions/exception.h"
 
@@ -58,7 +57,7 @@ class Constraint {
      * @throws Exception
      *         When \c e is \c NULL.
      */
-    Constraint(BoolExpr* e);
+    Constraint(BoolExpr* expr);
 
     /**
      * Destroys this object.
@@ -66,16 +65,12 @@ class Constraint {
     ~Constraint(void);
 
     /**
-     * Performs a walk through the expression tree which constitute this
-     * constraint. The walk is implemented using the \c Visitor design pattern.
+     * Gets the expression.
      *
-     * @param v
-     *        The visitor.
-     * @throws Exception
-     *         When something went wrong during the walk.
+     * @return The expression.
      */
-    void
-    walk(ConstraintVisitor& v) const;
+    BoolExpr*
+    getExpr(void) const;
 
   protected:
     BoolExpr* expr_;
@@ -95,18 +90,7 @@ class Expr {
      * Destroys this expression.
      */
     virtual
-    ~Expr(void);
-
-    /**
-     * Accepts a constraint visitor.
-     *
-     * @param v
-     *        The visitor.
-     * @throws Exception
-     *         When something went wrong during the walk.
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const
+    ~Expr(void)
     =0;
 };
 
@@ -124,7 +108,8 @@ class BoolExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BoolExpr(void);
+    ~BoolExpr(void)
+    =0;
 };
 
 /**
@@ -141,7 +126,8 @@ class NumExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~NumExpr(void);
+    ~NumExpr(void)
+    =0;
 };
 
 /**
@@ -158,7 +144,8 @@ class NodeIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~NodeIdExpr(void);
+    ~NodeIdExpr(void)
+    =0;
 };
 
 /**
@@ -175,7 +162,8 @@ class InstanceIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstanceIdExpr(void);
+    ~InstanceIdExpr(void)
+    =0;
 };
 
 /**
@@ -192,7 +180,8 @@ class InstructionIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstructionIdExpr(void);
+    ~InstructionIdExpr(void)
+    =0;
 };
 
 /**
@@ -209,7 +198,8 @@ class PatternIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternIdExpr(void);
+    ~PatternIdExpr(void)
+    =0;
 };
 
 /**
@@ -226,7 +216,8 @@ class LabelIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIdExpr(void);
+    ~LabelIdExpr(void)
+    =0;
 };
 
 /**
@@ -243,29 +234,80 @@ class RegisterIdExpr : public Expr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterIdExpr(void);
+    ~RegisterIdExpr(void)
+    =0;
 };
 
 /**
- * Base class for a binary Boolean expression.
+ * Base class for expressions which take one expression as argument.
  *
- * @tparam Derived
- *         The derived expression class.
+ * @tparam Base
+ *         Expression base class.
+ * @tparam Arg
+ *         Type of operand.
  */
-template <typename Derived>
-class BinaryBoolExpr : public BoolExpr {
+template <typename Base, typename Arg>
+class UnaryExpr : public Base {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param expr
+     *        The expression argument.
+     * @throws Exception
+     *         When \c expr is \c NULL.
+     */
+    UnaryExpr(Arg* expr)
+        : expr_(expr)
+    {
+        if (!expr_) THROW(Exception, "expr cannot be NULL");
+    }
+
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~UnaryExpr(void) {
+        delete expr_;
+    }
+
+    /**
+     * Gets the expression argument.
+     *
+     * @returns The expression.
+     */
+    Arg*
+    getExpr(void) const {
+        return expr_;
+    }
+
+  private:
+    Arg* expr_;
+};
+
+/**
+ * Base class for expressions which take two expressions as arguments.
+ *
+ * @tparam Base
+ *         Expression base class.
+ * @tparam Arg
+ *         Type of operand.
+ */
+template <typename Base, typename Arg>
+class BinaryExpr : public Base {
   public:
     /**
      * \copydoc Expr::Expr()
      *
      * @param lhs
-     *        The left-hand side expression.
+     *        The left-hand side expression argument.
      * @param rhs
-     *        The right-hand side expression.
+     *        The right-hand side expression argument.
      * @throws Exception
      *         When either \c lhs or \c rhs is \c NULL.
      */
-    BinaryBoolExpr(Expr* lhs, Expr* rhs)
+    BinaryExpr(Arg* lhs, Arg* rhs)
         : lhs_(lhs),
           rhs_(rhs)
     {
@@ -278,113 +320,43 @@ class BinaryBoolExpr : public BoolExpr {
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BinaryBoolExpr(void) {
+    ~BinaryExpr(void) {
         delete lhs_;
         delete rhs_;
     }
 
     /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const {
-        v.beforeVisit(getDerived());
-        v.visit(getDerived());
-        lhs_->accept(v);
-        v.betweenChildrenVisits(getDerived());
-        rhs_->accept(v);
-        v.afterVisit(getDerived());
-    }
-
-  private:
-    /**
-     * Gets the derived object.
+     * Gets the left-hand side expression argument.
      *
-     * @return Derived object.
+     * @returns The expression.
      */
-    const Derived&
-    getDerived(void) const {
-        return *static_cast<const Derived*>(this);
+    Arg*
+    getLhs(void) const {
+        return lhs_;
     }
 
-  private:
-    Expr* lhs_;
-    Expr* rhs_;
-};
-
-/**
- * Base class for a binary numerical expression.
- *
- * @tparam Derived
- *         The derived expression class.
- */
-template <typename Derived>
-class BinaryNumExpr : public NumExpr {
-  public:
     /**
-     * \copydoc Expr::Expr()
+     * Gets the right-hand side expression argument.
      *
-     * @param lhs
-     *        The left-hand side expression.
-     * @param rhs
-     *        The right-hand side expression.
-     * @throws Exception
-     *         When either \c lhs or \c rhs is \c NULL.
+     * @returns The expression.
      */
-    BinaryNumExpr(Expr* lhs, Expr* rhs)
-        : lhs_(lhs),
-          rhs_(rhs)
-    {
-        if (!lhs_) THROW(Exception, "lhs cannot be NULL");
-        if (!rhs_) THROW(Exception, "rhs cannot be NULL");
-    }
-
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~BinaryNumExpr(void) {
-        delete lhs_;
-        delete rhs_;
-    }
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const {
-        v.beforeVisit(getDerived());
-        v.visit(getDerived());
-        lhs_->accept(v);
-        v.betweenChildrenVisits(getDerived());
-        rhs_->accept(v);
-        v.afterVisit(getDerived());
+    Arg*
+    getRhs(void) const {
+        return rhs_;
     }
 
   private:
-    /**
-     * Gets the derived object.
-     *
-     * @return Derived object.
-     */
-    const Derived&
-    getDerived(void) const {
-        return *static_cast<const Derived*>(this);
-    }
-
-  private:
-    Expr* lhs_;
-    Expr* rhs_;
+    Arg* lhs_;
+    Arg* rhs_;
 };
 
 /**
  * Equality expression.
  */
-class EqExpr : public BinaryBoolExpr<EqExpr> {
+class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     EqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -398,10 +370,10 @@ class EqExpr : public BinaryBoolExpr<EqExpr> {
 /**
  * Disequality expression.
  */
-class NeqExpr : public BinaryBoolExpr<NeqExpr> {
+class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     NeqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -415,10 +387,10 @@ class NeqExpr : public BinaryBoolExpr<NeqExpr> {
 /**
  * Greater-than expression.
  */
-class GTExpr : public BinaryBoolExpr<GTExpr> {
+class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     GTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -432,10 +404,10 @@ class GTExpr : public BinaryBoolExpr<GTExpr> {
 /**
  * Greater-than-or-equals-to expression.
  */
-class GEExpr : public BinaryBoolExpr<GEExpr> {
+class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     GEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -449,10 +421,10 @@ class GEExpr : public BinaryBoolExpr<GEExpr> {
 /**
  * Less-than expression.
  */
-class LTExpr : public BinaryBoolExpr<LTExpr> {
+class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     LTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -466,10 +438,10 @@ class LTExpr : public BinaryBoolExpr<LTExpr> {
 /**
  * Less-than-or-equals-to expression.
  */
-class LEExpr : public BinaryBoolExpr<LEExpr> {
+class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(NumExpr*, NumExpr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     LEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -483,10 +455,10 @@ class LEExpr : public BinaryBoolExpr<LEExpr> {
 /**
  * Equivalence expression.
  */
-class EqvExpr : public BinaryBoolExpr<EqvExpr> {
+class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     EqvExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -500,10 +472,10 @@ class EqvExpr : public BinaryBoolExpr<EqvExpr> {
 /**
  * Implication expression.
  */
-class ImpExpr : public BinaryBoolExpr<ImpExpr> {
+class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     ImpExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -517,10 +489,10 @@ class ImpExpr : public BinaryBoolExpr<ImpExpr> {
 /**
  * And expression.
  */
-class AndExpr : public BinaryBoolExpr<AndExpr> {
+class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     AndExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -534,10 +506,10 @@ class AndExpr : public BinaryBoolExpr<AndExpr> {
 /**
  * Or expression.
  */
-class OrExpr : public BinaryBoolExpr<OrExpr> {
+class OrExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryBoolExpr::BinaryBoolExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
      */
     OrExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -551,7 +523,7 @@ class OrExpr : public BinaryBoolExpr<OrExpr> {
 /**
  * Not expression.
  */
-class NotExpr : public BoolExpr {
+class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -561,31 +533,22 @@ class NotExpr : public BoolExpr {
      * @throws Exception
      *         When \c e is \c NULL.
      */
-    NotExpr(BoolExpr* e);
+    NotExpr(BoolExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~NotExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Plus expression.
  */
-class PlusExpr : public BinaryNumExpr<PlusExpr> {
+class PlusExpr : public BinaryExpr<NumExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryNumExpr::BinaryNumExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
      */
     PlusExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -599,10 +562,10 @@ class PlusExpr : public BinaryNumExpr<PlusExpr> {
 /**
  * Minus expression.
  */
-class MinusExpr : public BinaryNumExpr<MinusExpr> {
+class MinusExpr : public BinaryExpr<NumExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryNumExpr::BinaryNumExpr(Expr*, Expr*)
+     * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
      */
     MinusExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -623,8 +586,6 @@ class AnIntegerExpr : public NumExpr {
      *
      * @param i
      *        The integer.
-     * @throws Exception
-     *         When \c e is \c NULL.
      */
     AnIntegerExpr(int i);
 
@@ -633,12 +594,6 @@ class AnIntegerExpr : public NumExpr {
      */
     virtual
     ~AnIntegerExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the integer value.
@@ -655,188 +610,103 @@ class AnIntegerExpr : public NumExpr {
 /**
  * Converts a node ID expression to a numerical expression.
  */
-class NodeIdToNumExpr : public NumExpr {
+class NodeIdToNumExpr : public UnaryExpr<NumExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    NodeIdToNumExpr(NodeIdExpr* e);
+    NodeIdToNumExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~NodeIdToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Converts a pattern instance ID expression to a numerical expression.
  */
-class InstanceIdToNumExpr : public NumExpr {
+class PatternIdToNumExpr : public UnaryExpr<NumExpr, PatternIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    InstanceIdToNumExpr(InstanceIdExpr* e);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~InstanceIdToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
-};
-
-/**
- * Converts an instruction ID expression to a numerical expression.
- */
-class InstructionIdToNumExpr : public NumExpr {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
-
-     */
-    InstructionIdToNumExpr(InstructionIdExpr* e);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~InstructionIdToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
-};
-
-/**
- * Converts a pattern ID expression to a numerical expression.
- */
-class PatternIdToNumExpr : public NumExpr {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
-     */
-    PatternIdToNumExpr(PatternIdExpr* e);
+    PatternIdToNumExpr(PatternIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~PatternIdToNumExpr(void);
+};
+
+/**
+ * Converts a instance ID expression to a numerical expression.
+ */
+class InstanceIdToNumExpr : public UnaryExpr<NumExpr, InstanceIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    InstanceIdToNumExpr(InstanceIdExpr* expr);
 
     /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
+     * \copydoc ~Expr::Expr()
      */
-    virtual void
-    accept(ConstraintVisitor& v) const;
+    virtual
+    ~InstanceIdToNumExpr(void);
+};
 
-  private:
-    Expr* expr_;
+/**
+ * Converts a instruction ID expression to a numerical expression.
+ */
+class InstructionIdToNumExpr : public UnaryExpr<NumExpr, InstructionIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    InstructionIdToNumExpr(InstructionIdExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~InstructionIdToNumExpr(void);
 };
 
 /**
  * Converts a label ID expression to a numerical expression.
  */
-class LabelIdToNumExpr : public NumExpr {
+class LabelIdToNumExpr : public UnaryExpr<NumExpr, LabelIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    LabelIdToNumExpr(LabelIdExpr* e);
+    LabelIdToNumExpr(LabelIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~LabelIdToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Converts a register ID expression to a numerical expression.
  */
-class RegisterIdToNumExpr : public NumExpr {
+class RegisterIdToNumExpr : public UnaryExpr<NumExpr, RegisterIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    RegisterIdToNumExpr(RegisterIdExpr* e);
+    RegisterIdToNumExpr(RegisterIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~RegisterIdToNumExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
@@ -847,22 +717,16 @@ class ANodeIdExpr : public NodeIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The node ID.
      */
-    ANodeIdExpr(const Id& i);
+    ANodeIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~ANodeIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the node ID.
@@ -884,22 +748,16 @@ class AnInstanceIdExpr : public InstanceIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The instance ID.
      */
-    AnInstanceIdExpr(const Id& i);
+    AnInstanceIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~AnInstanceIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the instance ID.
@@ -921,22 +779,16 @@ class AnInstructionIdExpr : public InstructionIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The instruction ID.
      */
-    AnInstructionIdExpr(const Id& i);
+    AnInstructionIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~AnInstructionIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the instruction ID.
@@ -958,22 +810,16 @@ class APatternIdExpr : public PatternIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The pattern ID.
      */
-    APatternIdExpr(const Id& i);
+    APatternIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~APatternIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the pattern ID.
@@ -995,22 +841,16 @@ class ALabelIdExpr : public LabelIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The label ID.
      */
-    ALabelIdExpr(const Id& i);
+    ALabelIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~ALabelIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the label ID.
@@ -1032,22 +872,16 @@ class ARegisterIdExpr : public RegisterIdExpr {
     /**
      * \copydoc Expr::Expr()
      *
-     * @param i
+     * @param id
      *        The register ID.
      */
-    ARegisterIdExpr(const Id& i);
+    ARegisterIdExpr(const Id& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~ARegisterIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 
     /**
      * Gets the register ID.
@@ -1076,230 +910,133 @@ class ThisInstanceIdExpr : public InstanceIdExpr {
      */
     virtual
     ~ThisInstanceIdExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
 };
 
 /**
  * Represents the pattern instance ID which covers a certain action node.
  */
-class CovererOfActionNodeExpr : public InstanceIdExpr {
+class CovererOfActionNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    CovererOfActionNodeExpr(NodeIdExpr* e);
+    CovererOfActionNodeExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~CovererOfActionNodeExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the pattern instance ID which defines a certain entity node.
  */
-class DefinerOfEntityNodeExpr : public InstanceIdExpr {
+class DefinerOfEntityNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    DefinerOfEntityNodeExpr(NodeIdExpr* e);
+    DefinerOfEntityNodeExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~DefinerOfEntityNodeExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the instruction ID to which a pattern belongs.
  */
-class InstructionIdOfPatternExpr : public InstructionIdExpr {
+class InstructionIdOfPatternExpr : public UnaryExpr<InstructionIdExpr,
+                                                    PatternIdExpr>
+{
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    InstructionIdOfPatternExpr(PatternIdExpr* e);
+    InstructionIdOfPatternExpr(PatternIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~InstructionIdOfPatternExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the pattern ID to which a pattern instance is derived from.
  */
-class PatternIdOfInstanceExpr : public PatternIdExpr {
+class PatternIdOfInstanceExpr : public UnaryExpr<PatternIdExpr, InstanceIdExpr>
+{
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    PatternIdOfInstanceExpr(InstanceIdExpr* e);
+    PatternIdOfInstanceExpr(InstanceIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~PatternIdOfInstanceExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the ID of the label to which a pattern instance has been
  * allocated.
  */
-class LabelIdAllocatedToInstanceExpr : public LabelIdExpr {
+class LabelIdAllocatedToInstanceExpr : public UnaryExpr<LabelIdExpr,
+                                                        InstanceIdExpr>
+{
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    LabelIdAllocatedToInstanceExpr(InstanceIdExpr* e);
+    LabelIdAllocatedToInstanceExpr(InstanceIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~LabelIdAllocatedToInstanceExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the label ID associated with a label node.
  */
-class LabelIdOfLabelNodeExpr : public LabelIdExpr {
+class LabelIdOfLabelNodeExpr : public UnaryExpr<LabelIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    LabelIdOfLabelNodeExpr(NodeIdExpr* e);
+    LabelIdOfLabelNodeExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~LabelIdOfLabelNodeExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 /**
  * Represents the label ID associated with a label node.
  */
-class RegisterIdAllocatedToDataNodeExpr : public RegisterIdExpr {
+class RegisterIdAllocatedToDataNodeExpr : public UnaryExpr<RegisterIdExpr,
+                                                           NodeIdExpr>
+{
   public:
     /**
-     * \copydoc Expr::Expr()
-     *
-     * @param e
-     *        The expression.
-     * @throws Exception
-     *         When \c e is \c NULL.
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    RegisterIdAllocatedToDataNodeExpr(NodeIdExpr* e);
+    RegisterIdAllocatedToDataNodeExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~RegisterIdAllocatedToDataNodeExpr(void);
-
-    /**
-     * \copydoc Expr::accept(ConstraintVisitor&)
-     */
-    virtual void
-    accept(ConstraintVisitor& v) const;
-
-  private:
-    Expr* expr_;
 };
 
 }

@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "constraintwriter.h"
+#include "constraintprocessor.h"
 #include "../common/exceptions/exception.h"
 #include "../common/model/params.h"
 #include "../common/model/types.h"
@@ -192,14 +192,14 @@ outputParameters(const Params& params) {
 
 void
 outputConstraints(const Params& params) {
-    ConstraintWriter cwriter(params);
+    ConstraintProcessor cprocessor(params);
     for (const Id& id : params.getAllInstanceIds()) {
         const list<const Constraint*>& cs = params.getConstraintsOfInstance(id);
         if (cs.size() > 0) {
             cout << "% ID " << id << endl;
         }
         for (const Constraint* c : cs) {
-            cout << cwriter.toString(c) << endl;
+            cout << cprocessor.toString(c) << endl;
         }
     }
 }
