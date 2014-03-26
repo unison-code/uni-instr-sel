@@ -38,8 +38,8 @@ namespace Model {
  *     1. 'beforeVisit(...)' (just before visiting a node)
  *     2. 'visit(...)' (right after 'preVisit(...)')
  *     3. visit next child
- *     4. if there are more children, 'betweenChildrenVisits(...)' and go back to step
- *        3, otherwise proceed to step 5
+ *     4. if there are more children, 'betweenChildrenVisits(...)' and go back
+ *        to step 3, otherwise proceed to step 5
  *     5. 'afterVisit(...)'
  *
  * If there are more than one callback method which could be matched during a
