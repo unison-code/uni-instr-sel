@@ -783,9 +783,6 @@ ConstraintVisitor::afterVisit(const RegisterIdAllocatedToDataNodeExpr& e) {
     atAfterVisit(e);
 }
 
-// TODO: remove comment
-//...
-
 void
 ConstraintVisitor::atBeforeVisit(const Expr& e) {}
 
