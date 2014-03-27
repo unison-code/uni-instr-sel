@@ -64,6 +64,103 @@ class ConstraintProcessor {
 
   protected:
     /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::BoolExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::NumExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::NodeIdExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::InstanceIdExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::InstructionIdExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::PatternIdExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::LabelIdExpr* e);
+
+    /**
+     * Converts an expression into a string to be used in a Minizinc constraint.
+     *
+     * @param e
+     *        Expression
+     * @returns The corresponding string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    process(const Model::RegisterIdExpr* e);
+
+  protected:
+    /**
      * The params object.
      */
     const Model::Params& p_;

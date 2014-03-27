@@ -42,6 +42,53 @@ ConstraintProcessor::~ConstraintProcessor(void) {}
 
 string
 ConstraintProcessor::toString(const Constraint* c) {
+    return string("constraint\n") + process(c->getExpr()) + ";";
+}
+
+string
+ConstraintProcessor::process(const BoolExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const NumExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const NodeIdExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const InstanceIdExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const InstructionIdExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const PatternIdExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const LabelIdExpr* e) {
+    // TODO: implement
+    return "";
+}
+
+string
+ConstraintProcessor::process(const RegisterIdExpr* e) {
     // TODO: implement
     return "";
 }

@@ -196,7 +196,8 @@ outputConstraints(const Params& params) {
     for (const Id& id : params.getAllInstanceIds()) {
         const list<const Constraint*>& cs = params.getConstraintsOfInstance(id);
         if (cs.size() > 0) {
-            cout << "% ID " << id << endl;
+            cout << endl
+                 << "% ID " << id << endl;
         }
         for (const Constraint* c : cs) {
             cout << cprocessor.toString(c) << endl;
