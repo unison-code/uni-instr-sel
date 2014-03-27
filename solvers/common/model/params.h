@@ -286,6 +286,36 @@ class Params {
     getConstraintsOfInstance(const Id& id) const;
 
     /**
+     * Checks if a node ID represents an action node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns \c true if action node.
+     */
+    bool
+    isActionNode(const Id& id) const;
+
+    /**
+     * Checks if a node ID represents an entity node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns \c true if entity node.
+     */
+    bool
+    isEntityNode(const Id& id) const;
+
+    /**
+     * Checks if a node ID represents an label node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns \c true if label node.
+     */
+    bool
+    isLabelNode(const Id& id) const;
+
+    /**
      * Parses a JSON string into an internal model parameters object.
      *
      * @param str

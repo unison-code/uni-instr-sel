@@ -739,3 +739,27 @@ Params::eatInt(string& str) {
     }
     return Utils::toInt(int_str);
 }
+
+bool
+Params::isActionNode(const Id& id) const {
+    for (const Id& c_id : getAllActionNodeIds()) {
+        if (c_id == id) return true;
+    }
+    return false;
+}
+
+bool
+Params::isEntityNode(const Id& id) const {
+    for (const Id& c_id : getAllEntityNodeIds()) {
+        if (c_id == id) return true;
+    }
+    return false;
+}
+
+bool
+Params::isLabelNode(const Id& id) const  {
+    for (const Id& c_id : getAllLabelNodeIds()) {
+        if (c_id == id) return true;
+    }
+    return false;
+}
