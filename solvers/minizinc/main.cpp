@@ -85,22 +85,22 @@ void
 outputDebugInfo(const Params& params) {
     cout << "% Action node mappings" << endl;
     for (const Id& id : params.getAllActionNodeIds()) {
-        cout << "ID " << id << " -> index " << params.getIndexOfActionNode(id)
+        cout << "% ID " << id << " -> index " << params.getIndexOfActionNode(id)
              << endl;
     }
     cout << "% Entity node mappings" << endl;
     for (const Id& id : params.getAllEntityNodeIds()) {
-        cout << "ID " << id << " -> index " << params.getIndexOfEntityNode(id)
+        cout << "% ID " << id << " -> index " << params.getIndexOfEntityNode(id)
              << endl;
     }
     cout << "% Label node mappings" << endl;
     for (const Id& id : params.getAllLabelNodeIds()) {
-        cout << "ID " << id << " -> index " << params.getIndexOfLabelNode(id)
+        cout << "% ID " << id << " -> index " << params.getIndexOfLabelNode(id)
              << endl;
     }
     cout << "% Pattern instance mappings" << endl;
     for (const Id& id : params.getAllInstanceIds()) {
-        cout << "ID " << id << " -> index "
+        cout << "% ID " << id << " -> index "
              << params.getIndexOfInstance(id) << endl;
     }
 }
@@ -200,7 +200,7 @@ outputConstraints(const Params& params) {
                  << "% ID " << id << endl;
         }
         for (const Constraint* c : cs) {
-            cout << cprocessor.toString(c) << endl;
+            cout << cprocessor.process(id, c) << endl;
         }
     }
 }

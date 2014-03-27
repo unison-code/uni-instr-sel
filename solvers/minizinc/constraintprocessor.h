@@ -29,6 +29,7 @@
 
 #include "../common/model/constraints.h"
 #include "../common/model/params.h"
+#include "../common/model/types.h"
 #include <string>
 
 /**
@@ -53,6 +54,8 @@ class ConstraintProcessor {
     /**
      * Converts a constraint to a Minizinc equivalent.
      *
+     * @param id
+     *        ID of the pattern instance to which the constraint belongs.
      * @param c
      *        The constraint.
      * @returns Minizinc constraint as a string.
@@ -60,9 +63,34 @@ class ConstraintProcessor {
      *         When something went wrong.
      */
     std::string
-    toString(const Model::Constraint* c);
+    process(const Model::Id& id, const Model::Constraint* c);
 
   protected:
+    /**
+     * Gets the variable array for the action node coverers.
+     *
+     * @returns Array name.
+     */
+    std::string
+    getActionCovererArrayString(void) const;
+
+    /**
+     * Gets the variable array for the entity node definers.
+     *
+     * @returns Array name.
+     */
+    std::string
+    getEntityDefinerArrayString(void) const;
+
+    /**
+     * Gets the variable array for the pattern instance-to-basic block
+     * allocations.
+     *
+     * @returns Array name.
+     */
+    std::string
+    getBBAllocationArrayString(void) const;
+
     /**
      * Converts an expression into a string to be used in a Minizinc constraint.
      *
@@ -164,6 +192,12 @@ class ConstraintProcessor {
      * The params object.
      */
     const Model::Params& p_;
+
+    /**
+     * ID of the pattern instance to which the constraint which is currently
+     * being processed belongs to.
+     */
+    Model::Id instance_id_;
 };
 
 #endif
