@@ -277,7 +277,7 @@ class UnaryExpr : public Base {
      *
      * @returns The expression.
      */
-    Arg*
+    const Arg*
     getExpr(void) const {
         return expr_;
     }
@@ -291,10 +291,12 @@ class UnaryExpr : public Base {
  *
  * @tparam Base
  *         Expression base class.
- * @tparam Arg
- *         Type of operand.
+ * @tparam Arg1
+ *         Type of first operand.
+ * @tparam Arg2
+ *         Type of second operand.
  */
-template <typename Base, typename Arg>
+template <typename Base, typename Arg1, typename Arg2 = Arg1>
 class BinaryExpr : public Base {
   public:
     /**
@@ -307,7 +309,7 @@ class BinaryExpr : public Base {
      * @throws Exception
      *         When either \c lhs or \c rhs is \c NULL.
      */
-    BinaryExpr(Arg* lhs, Arg* rhs)
+    BinaryExpr(Arg1* lhs, Arg2* rhs)
         : lhs_(lhs),
           rhs_(rhs)
     {
@@ -330,7 +332,7 @@ class BinaryExpr : public Base {
      *
      * @returns The expression.
      */
-    Arg*
+    const Arg1*
     getLhs(void) const {
         return lhs_;
     }
@@ -340,14 +342,14 @@ class BinaryExpr : public Base {
      *
      * @returns The expression.
      */
-    Arg*
+    const Arg2*
     getRhs(void) const {
         return rhs_;
     }
 
   private:
-    Arg* lhs_;
-    Arg* rhs_;
+    Arg1* lhs_;
+    Arg2* rhs_;
 };
 
 /**
@@ -356,7 +358,7 @@ class BinaryExpr : public Base {
 class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     EqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -373,7 +375,7 @@ class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     NeqExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -390,7 +392,7 @@ class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     GTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -407,7 +409,7 @@ class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     GEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -424,7 +426,7 @@ class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     LTExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -441,7 +443,7 @@ class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     LEExpr(NumExpr* lhs, NumExpr* rhs);
 
@@ -458,7 +460,7 @@ class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     EqvExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -475,7 +477,7 @@ class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     ImpExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -492,7 +494,7 @@ class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     AndExpr(BoolExpr* lhs, BoolExpr* rhs);
 
@@ -509,7 +511,7 @@ class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class OrExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg*, Arg*)
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
      */
     OrExpr(BoolExpr* lhs, BoolExpr* rhs);
 
