@@ -222,6 +222,36 @@ main =
                              ThisInstanceIdExpr
                            )
                          , Constraint $
+                           AndExpr
+                           (
+                             InSetExpr
+                             (
+                               LabelId2SetElemExpr $
+                               LabelIdAllocatedToInstanceExpr $
+                               DefinerOfEntityNodeExpr $
+                               ANodeIdExpr 0
+                             )
+                             (
+                               DomSetOfLabelIdExpr $
+                               LabelIdOfLabelNodeExpr $
+                               ANodeIdExpr 3
+                             )
+                           )
+                           (
+                             InSetExpr
+                             (
+                               LabelId2SetElemExpr $
+                               LabelIdAllocatedToInstanceExpr $
+                               DefinerOfEntityNodeExpr $
+                               ANodeIdExpr 1
+                             )
+                             (
+                               DomSetOfLabelIdExpr $
+                               LabelIdOfLabelNodeExpr $
+                               ANodeIdExpr 4
+                             )
+                           )
+                         , Constraint $
                            NotExpr $
                            (
                              AndExpr
