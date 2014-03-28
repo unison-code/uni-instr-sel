@@ -190,7 +190,7 @@ setExpr2Str :: SetExpr -> String
 setExpr2Str (UnionSetExpr lhs rhs) =
   "(union " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
 setExpr2Str (IntersectSetExpr lhs rhs) =
-  "(inter " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
+  "(intersect " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
 setExpr2Str (DiffSetExpr lhs rhs) =
   "(diff " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
 setExpr2Str (DomSetOfLabelIdExpr e) =

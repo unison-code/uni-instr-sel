@@ -753,7 +753,7 @@ Params::parseSetExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new UnionSetExpr(lhs, rhs);
         }
-        else if (eat("inter ", str)) {
+        else if (eat("intersect ", str)) {
             auto lhs = parseSetExpr(str);
             auto rhs = parseSetExpr(str);
             expr = new IntersectSetExpr(lhs, rhs);
