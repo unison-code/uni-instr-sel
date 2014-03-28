@@ -177,8 +177,8 @@ main =
                     , ret_pattern
                     , phi_pattern
                     ]
-         constraints = [ []
-                       , []
+         constraints = [ mkBBAllocConstraints init_def_pattern
+                       , mkBBAllocConstraints add_pattern
                        , mkBBAllocConstraints bnz_pattern
                        , mkBBAllocConstraints br_pattern
                        , mkBBAllocConstraints ret_pattern
@@ -229,7 +229,7 @@ main =
                              (
                                LabelId2SetElemExpr $
                                LabelIdAllocatedToInstanceExpr $
-                               DefinerOfEntityNodeExpr $
+                               DefinerOfDataNodeExpr $
                                ANodeIdExpr 0
                              )
                              (
@@ -243,7 +243,7 @@ main =
                              (
                                LabelId2SetElemExpr $
                                LabelIdAllocatedToInstanceExpr $
-                               DefinerOfEntityNodeExpr $
+                               DefinerOfDataNodeExpr $
                                ANodeIdExpr 1
                              )
                              (
@@ -261,7 +261,7 @@ main =
                                (
                                  LabelId2SetElemExpr $
                                  LabelIdAllocatedToInstanceExpr $
-                                 DefinerOfEntityNodeExpr $
+                                 DefinerOfDataNodeExpr $
                                  ANodeIdExpr 0
                                )
                                (
@@ -283,7 +283,7 @@ main =
                                (
                                  LabelId2SetElemExpr $
                                  LabelIdAllocatedToInstanceExpr $
-                                 DefinerOfEntityNodeExpr $
+                                 DefinerOfDataNodeExpr $
                                  ANodeIdExpr 1
                                )
                                (

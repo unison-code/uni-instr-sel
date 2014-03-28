@@ -46,9 +46,13 @@ data FunctionGraphData
 
           funcActionNodes :: [NodeId]
 
-          -- | The entity nodes in the function graph.
+          -- | The data nodes in the function graph.
 
-        , funcEntityNodes :: [NodeId]
+        , funcDataNodes :: [NodeId]
+
+          -- | The state nodes in the function graph.
+
+        , funcStateNodes :: [NodeId]
 
           -- | The label nodes in the function graph, along with their dominator
           -- sets.
@@ -76,17 +80,27 @@ data PatternInstanceData
           -- | The action nodes in the function graph which are covered by this
           -- pattern instance.
 
-        , patCoveredActionNodes :: [NodeId]
+        , patActionNodesCovered :: [NodeId]
 
-          -- | The entity nodes in the function graph which are defined by this
+          -- | The data nodes in the function graph which are defined by this
           -- pattern instance.
 
-        , patDefinedEntityNodes :: [NodeId]
+        , patDataNodesDefined :: [NodeId]
 
-          -- | The entity nodes in the function graph which are used by this
+          -- | The data nodes in the function graph which are used by this
           -- pattern instance.
 
-        , patUsedEntityNodes :: [NodeId]
+        , patDataNodesUsed :: [NodeId]
+
+          -- | The state nodes in the function graph which are defined by this
+          -- pattern instance.
+
+        , patStateNodesDefined :: [NodeId]
+
+          -- | The state nodes in the function graph which are used by this
+          -- pattern instance.
+
+        , patStateNodesUsed :: [NodeId]
 
           -- | The pattern-specific constraints, if any. All node IDs used in
           -- the patterns refer to nodes in the function graph (not the pattern
@@ -121,38 +135,3 @@ data MachineData
 
       }
     deriving (Show)
-
-
-
-------------------------
--- Type class instances
-------------------------
-
-instance PrettyPrint CPModelParams where
-  prettyShow p =
-    "CPModelParams:\n\n"
-    ++ prettyShow (funcData p) ++ "\n"
-    ++ concatMap (\d -> prettyShow d ++ "\n") (patInstData p) ++ "\n"
-    ++ prettyShow (machData p)
-
-instance PrettyPrint FunctionGraphData where
-  prettyShow d =
-    "FunctionGraphData:\n"
-    ++ "Action nodes: " ++ show (funcActionNodes d) ++ "\n"
-    ++ "Entity nodes: " ++ show (funcEntityNodes d) ++ "\n"
-    ++ "Label nodes: " ++ show (funcLabelDoms d) ++ "\n"
-    ++ "TODO: pretty-print constraints" ++ "\n"
-
-instance PrettyPrint PatternInstanceData where
-  prettyShow d =
-    "PatternInstanceData (ID: " ++ show (patInstanceId d) ++ "):\n"
-    ++ "Covered action nodes: " ++ show (patCoveredActionNodes d) ++ "\n"
-    ++ "Defined entity nodes: " ++ show (patDefinedEntityNodes d) ++ "\n"
-    ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
-    ++ "Code size: " ++ show (patCodeSize d) ++ "\n"
-    ++ "Latency: " ++ show (patLatency d) ++ "\n"
-    ++ "No use-def constraints: " ++ show (patNoUseDefConstraints d)
-    ++ "TODO: pretty-print constraints\n"
-
-instance PrettyPrint MachineData where
-  prettyShow d = "MachineData"

@@ -151,10 +151,15 @@ data InstanceIdExpr
 
     | CovererOfActionNodeExpr NodeIdExpr
 
-      -- | Represents the pattern instance ID which defines a certain entity
+      -- | Represents the pattern instance ID which defines a certain data
       -- node.
 
-    | DefinerOfEntityNodeExpr NodeIdExpr
+    | DefinerOfDataNodeExpr NodeIdExpr
+
+      -- | Represents the pattern instance ID which defines a certain state
+      -- node.
+
+    | DefinerOfStateNodeExpr NodeIdExpr
 
     -- TODO: add missing functions
 

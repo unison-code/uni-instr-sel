@@ -63,7 +63,8 @@ mkFunctionGraphData os =
   let g = osGraph os
       nodeIdsByType f = nodeIds $ filter f $ allNodes g
   in FunctionGraphData (nodeIdsByType isActionNode)
-                       (nodeIdsByType isEntityNode)
+                       (nodeIdsByType isDataNode)
+                       (nodeIdsByType isStateNode)
                        (computeLabelDoms g)
                        (osConstraints os)
 
@@ -76,15 +77,19 @@ mkPatternInstanceData :: ( OpStructure
 mkPatternInstanceData (os, matchsets, props, b_usedef) =
   let g = osGraph os
       a_ns = (nodeIds $ filter isActionNode $ allNodes g)
-      entityNodes p = nodeIds
-                      $ filter (\n -> length (p g n) > 0)
-                      $ filter isEntityNode
-                      $ allNodes g
-      e_def_ns = entityNodes predecessors
-      e_use_ns = entityNodes successors
+      getNodes t k = nodeIds
+                     $ filter (\n -> length (k g n) > 0)
+                     $ filter t
+                     $ allNodes g
+      d_def_ns = getNodes isDataNode predecessors
+      d_use_ns = getNodes isDataNode successors
+      s_def_ns = getNodes isStateNode predecessors
+      s_use_ns = getNodes isStateNode successors
       f (m, id) = mkPatternInstanceData' a_ns
-                                         e_def_ns
-                                         e_use_ns
+                                         d_def_ns
+                                         d_use_ns
+                                         s_def_ns
+                                         s_use_ns
                                          (osConstraints os)
                                          b_usedef
                                          (convertMatchsetNToId m)
@@ -92,20 +97,33 @@ mkPatternInstanceData (os, matchsets, props, b_usedef) =
                                          props
   in map f matchsets
 
-mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
-                          -> [NodeId] -- ^ Defined entity nodes.
-                          -> [NodeId] -- ^ Used entity nodes.
+mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes covered by the pattern.
+                          -> [NodeId] -- ^ Data nodes defined by the pattern.
+                          -> [NodeId] -- ^ Data nodes used by the pattern.
+                          -> [NodeId] -- ^ State nodes defined by the pattern.
+                          -> [NodeId] -- ^ State nodes used by the pattern.
                           -> [Constraint]
                           -> NoUseDefDomConstraintSetting
                           -> Matchset NodeId
                           -> InstanceId
                           -> InstProperties
                           -> PatternInstanceData
-mkPatternInstanceData' a_ns e_def_ns e_use_ns cs b_usedef matchset id props =
+mkPatternInstanceData' a_ns
+                       d_def_ns
+                       d_use_ns
+                       s_def_ns
+                       s_use_ns
+                       cs
+                       b_usedef
+                       matchset
+                       id
+                       props =
   PatternInstanceData id
                       (mappedNodesPToF matchset a_ns)
-                      (mappedNodesPToF matchset e_def_ns)
-                      (mappedNodesPToF matchset e_use_ns)
+                      (mappedNodesPToF matchset d_def_ns)
+                      (mappedNodesPToF matchset d_use_ns)
+                      (mappedNodesPToF matchset s_def_ns)
+                      (mappedNodesPToF matchset s_use_ns)
                       (replaceNodeIdsPToFInConstraints matchset cs)
                       b_usedef
                       (codeSize props)
@@ -184,8 +202,10 @@ replaceInInstanceIdExpr :: Matchset NodeId -> InstanceIdExpr -> InstanceIdExpr
 replaceInInstanceIdExpr _ (AnInstanceIdExpr i) = AnInstanceIdExpr i
 replaceInInstanceIdExpr m (CovererOfActionNodeExpr e) =
   CovererOfActionNodeExpr (replaceInNodeIdExpr m e)
-replaceInInstanceIdExpr m (DefinerOfEntityNodeExpr e) =
-  DefinerOfEntityNodeExpr (replaceInNodeIdExpr m e)
+replaceInInstanceIdExpr m (DefinerOfDataNodeExpr e) =
+  DefinerOfDataNodeExpr (replaceInNodeIdExpr m e)
+replaceInInstanceIdExpr m (DefinerOfStateNodeExpr e) =
+  DefinerOfStateNodeExpr (replaceInNodeIdExpr m e)
 replaceInInstanceIdExpr _ ThisInstanceIdExpr = ThisInstanceIdExpr
 
 replaceInInstructionIdExpr :: Matchset NodeId

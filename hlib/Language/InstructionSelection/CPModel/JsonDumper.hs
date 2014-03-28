@@ -58,7 +58,7 @@ instance ToJSON CPModelParams where
 instance ToJSON FunctionGraphData where
   toJSON d =
     object [ "action-nodes" .= (funcActionNodes d)
-           , "entity-nodes" .= (funcEntityNodes d)
+           , "data-nodes"   .= (funcDataNodes d)
            , "label-nodes"  .= map f (funcLabelDoms d)
            , "constraints"  .= (funcConstraints d)
            ]
@@ -69,9 +69,11 @@ instance ToJSON FunctionGraphData where
 instance ToJSON PatternInstanceData where
   toJSON d =
     object ([ "instance-id"          .= (patInstanceId d)
-            , "action-nodes-covered" .= (patCoveredActionNodes d)
-            , "entity-nodes-defined" .= (patDefinedEntityNodes d)
-            , "entity-nodes-used"    .= (patUsedEntityNodes d)
+            , "action-nodes-covered" .= (patActionNodesCovered d)
+            , "data-nodes-defined"   .= (patDataNodesDefined d)
+            , "data-nodes-used"      .= (patDataNodesUsed d)
+            , "state-nodes-defined"  .= (patStateNodesDefined d)
+            , "state-nodes-used"     .= (patStateNodesUsed d)
             , "code-size"            .= (patCodeSize d)
             , "latency"              .= (patLatency d)
             , "constraints"          .= (patConstraints d)
@@ -155,8 +157,10 @@ instanceIdExpr2Str :: InstanceIdExpr -> String
 instanceIdExpr2Str (AnInstanceIdExpr i) = show i
 instanceIdExpr2Str (CovererOfActionNodeExpr e) =
   "(cov-of-anode " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str (DefinerOfEntityNodeExpr e) =
-  "(def-of-enode " ++ nodeIdExpr2Str e ++ ")"
+instanceIdExpr2Str (DefinerOfDataNodeExpr e) =
+  "(def-of-dnode " ++ nodeIdExpr2Str e ++ ")"
+instanceIdExpr2Str (DefinerOfStateNodeExpr e) =
+  "(def-of-snode " ++ nodeIdExpr2Str e ++ ")"
 instanceIdExpr2Str ThisInstanceIdExpr = "this"
 
 instructionIdExpr2Str :: InstructionIdExpr -> String
