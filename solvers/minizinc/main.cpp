@@ -94,21 +94,25 @@ outputDebugInfo(const Params& params) {
         cout << "% ID " << id << " -> index " << params.getIndexOfActionNode(id)
              << endl;
     }
+    cout << endl;
     cout << "% Data node mappings" << endl;
     for (const Id& id : params.getAllDataNodeIds()) {
         cout << "% ID " << id << " -> index " << params.getIndexOfDataNode(id)
              << endl;
     }
+    cout << endl;
     cout << "% State node mappings" << endl;
     for (const Id& id : params.getAllStateNodeIds()) {
         cout << "% ID " << id << " -> index " << params.getIndexOfStateNode(id)
              << endl;
     }
+    cout << endl;
     cout << "% Label node mappings" << endl;
     for (const Id& id : params.getAllLabelNodeIds()) {
         cout << "% ID " << id << " -> index " << params.getIndexOfLabelNode(id)
              << endl;
     }
+    cout << endl;
     cout << "% Pattern instance mappings" << endl;
     for (const Id& id : params.getAllInstanceIds()) {
         cout << "% ID " << id << " -> index "
