@@ -95,7 +95,8 @@ forall (p in allPatternInstances)
 );
 
 % Enforce that all selected pattern instances must be allocated to a basic block
-% such that every used entity node is dominated by its entity definition.
+% such that every used entity node is dominated by its entity definition. These
+% constraints should not be applied to the generic phi patterns.
 constraint
 forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 (
