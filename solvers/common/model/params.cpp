@@ -62,26 +62,32 @@ Params::getNumInstances(void) const {
 }
 
 void
-Params::parseJson(const string& str, Params& param) {
+Params::parseJson(const string& str, Params& p) {
     Value root;
     Reader reader;
     if (!reader.parse(str, root)) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
 
-    computeMappingsForFunctionActionNodes(root, param);
-    computeMappingsForFunctionEntityNodes(root, param);
-    computeMappingsAndDomsetsForFunctionLabelNodes(root, param);
-    computeMappingsForInstances(root, param);
-    setInstanceCodeSizes(root, param);
-    setInstanceLatencies(root, param);
-    setInstanceConstraints(root, param);
-    setActionNodesCoveredByInstances(root, param);
-    setEntityNodesDefinedByInstances(root, param);
-    setEntityNodesUsedByInstances(root, param);
+    computeMappingsForFunctionActionNodes(root, p);
+    computeMappingsForFunctionEntityNodes(root, p);
+    computeMappingsAndDomsetsForFunctionLabelNodes(root, p);
+    computeMappingsForInstances(root, p);
+    setInstanceCodeSizes(root, p);
+    setInstanceLatencies(root, p);
+    setInstanceConstraints(root, p);
+    setInstanceNoUseDefDomConstraintsSettings(root, p);
+    setActionNodesCoveredByInstances(root, p);
+    setEntityNodesDefinedByInstances(root, p);
+    setEntityNodesUsedByInstances(root, p);
 }
 
-Value
+bool
+Params::hasJsonValue(const Value& value, const string& name) {
+    return !value[name].isNull();
+}
+
+const Value&
 Params::getJsonValue(const Value& value, const string& name) {
     const Value& sought_value = value[name];
     if (sought_value.isNull()) {
@@ -106,6 +112,14 @@ Params::toInt(const Value& value) {
     return value.asInt();
 }
 
+bool
+Params::toBool(const Value& value) {
+    if (!value.isBool()) {
+        THROW(Exception, "Not a JSON Boolean");
+    }
+    return value.asBool();
+}
+
 string
 Params::toString(const Value& value) {
     if (!value.isString()) {
@@ -117,63 +131,63 @@ Params::toString(const Value& value) {
 void
 Params::computeMappingsForFunctionActionNodes(
     const Value& root,
-    Params& param
+    Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
-    for (Value& node_id : getJsonValue(function, "action-nodes")) {
+    for (auto node_id : getJsonValue(function, "action-nodes")) {
         addMapping(toId(node_id),
                    index++,
-                   param.func_action_node_mappings_);
+                   p.func_action_node_mappings_);
     }
 }
 
 void
 Params::computeMappingsForFunctionEntityNodes(
     const Value& root,
-    Params& param
+    Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
-    for (Value& node_id : getJsonValue(function, "entity-nodes")) {
+    for (auto node_id : getJsonValue(function, "entity-nodes")) {
         addMapping(toId(node_id),
                    index++,
-                   param.func_entity_node_mappings_);
+                   p.func_entity_node_mappings_);
     }
 }
 
 void
 Params::computeMappingsAndDomsetsForFunctionLabelNodes(
     const Value& root,
-    Params& param
+    Params& p
 ) {
     const Value& function =getJsonValue(root, "function-data");
     ArrayIndex index = 0;
-    for (Value& entry : getJsonValue(function, "label-nodes")) {
+    for (auto entry : getJsonValue(function, "label-nodes")) {
         const Id& node_id = toId(getJsonValue(entry, "node"));
         addMapping(node_id,
                    index++,
-                   param.func_label_node_mappings_);
+                   p.func_label_node_mappings_);
         list<Id> domset;
-        for (Value& dominator_node : getJsonValue(entry, "domset")) {
+        for (auto dominator_node : getJsonValue(entry, "domset")) {
             domset.push_back(toId(dominator_node));
         }
         addMapping(node_id,
                    domset,
-                   param.func_label_domsets_);
+                   p.func_label_domsets_);
     }
 }
 
 void
 Params::computeMappingsForInstances(
     const Value& root,
-    Params& param
+    Params& p
 ) {
     ArrayIndex index = 0;
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         addMapping(toId(getJsonValue(instance, "instance-id")),
                    index++,
-                   param.pat_inst_mappings_);
+                   p.pat_inst_mappings_);
     }
 }
 
@@ -188,24 +202,24 @@ Params::getLatencyOfInstance(const Id& instance) const {
 }
 
 void
-Params::setInstanceCodeSizes(const Json::Value& root, Params& param) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+Params::setInstanceCodeSizes(const Json::Value& root, Params& p) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         int code_size = toInt(getJsonValue(instance, "code-size"));
         addMapping(instance_id,
                    code_size,
-                   param.pat_inst_code_sizes_);
+                   p.pat_inst_code_sizes_);
     }
 }
 
 void
-Params::setInstanceLatencies(const Json::Value& root, Params& param) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+Params::setInstanceLatencies(const Json::Value& root, Params& p) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         int latency = toInt(getJsonValue(instance, "latency"));
         addMapping(instance_id,
                    latency,
-                   param.pat_inst_latencies_);
+                   p.pat_inst_latencies_);
     }
 }
 
@@ -231,51 +245,51 @@ Params::getConstraintsOfInstance(const Id& id) const {
 void
 Params::setActionNodesCoveredByInstances(
     const Json::Value& root,
-    Params& param
+    Params& p
 ) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(instance, "action-nodes-covered")) {
+        for (auto node_id : getJsonValue(instance, "action-nodes-covered")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
                    covers,
-                   param.pat_inst_actions_covered_);
+                   p.pat_inst_actions_covered_);
     }
 }
 
 void
 Params::setEntityNodesDefinedByInstances(
     const Json::Value& root,
-    Params& param
+    Params& p
 ) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(instance, "entity-nodes-defined")) {
+        for (auto node_id : getJsonValue(instance, "entity-nodes-defined")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
                    covers,
-                   param.pat_inst_entities_defined_);
+                   p.pat_inst_entities_defined_);
     }
 }
 
 void
 Params::setEntityNodesUsedByInstances(
     const Json::Value& root,
-    Params& param
+    Params& p
 ) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (Value& node_id : getJsonValue(instance, "entity-nodes-used")) {
+        for (auto node_id : getJsonValue(instance, "entity-nodes-used")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
                    covers,
-                   param.pat_inst_entities_used_);
+                   p.pat_inst_entities_used_);
     }
 }
 
@@ -378,17 +392,17 @@ Params::destroyConstraints(void) {
 }
 
 void
-Params::setInstanceConstraints(const Value& root, Params& param) {
-    for (Value& instance : getJsonValue(root, "pattern-instance-data")) {
+Params::setInstanceConstraints(const Value& root, Params& p) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<const Constraint*> constraints;
-        for (Value& expr : getJsonValue(instance, "constraints")) {
+        for (auto expr : getJsonValue(instance, "constraints")) {
             Constraint* c = parseConstraintExpression(toString(expr));
             constraints.push_back(c);
         }
         addMapping(instance_id,
                    constraints,
-                   param.pat_inst_constraints_);
+                   p.pat_inst_constraints_);
     }
 }
 
@@ -863,4 +877,26 @@ Params::isLabelNode(const Id& id) const  {
         if (c_id == id) return true;
     }
     return false;
+}
+
+bool
+Params::getNoUseDefDomConstraintsSettingForInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_no_use_def_dom_constraints_);
+}
+
+void
+Params::setInstanceNoUseDefDomConstraintsSettings(
+    const Json::Value& root,
+    Params& p
+) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        const string field_name("no-use-def-dom-constraints");
+        bool setting = hasJsonValue(instance, field_name)
+                       ? toBool(getJsonValue(instance, field_name))
+                       : false;
+        addMapping(instance_id,
+                   setting,
+                   p.pat_inst_no_use_def_dom_constraints_);
+    }
 }

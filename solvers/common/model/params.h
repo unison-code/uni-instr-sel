@@ -158,6 +158,19 @@ class Params {
     getEntityNodesUsedByInstance(const Id& instance) const;
 
     /**
+     * Checks if use-def-dom constraints should be removed for a particular
+     * pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns Boolean.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    bool
+    getNoUseDefDomConstraintsSettingForInstance(const Id& instance) const;
+
+    /**
      * Gets the array index of a given function action node.
      *
      * @param id
@@ -320,13 +333,13 @@ class Params {
      *
      * @param str
      *        String containing the JSON data.
-     * @param params
+     * @param p
      *        The Params object to write to.
      * @throws Exception
      *         When parsing fails.
      */
     static void
-    parseJson(const std::string& str, Params& params);
+    parseJson(const std::string& str, Params& p);
 
   protected:
     /**
@@ -385,7 +398,20 @@ class Params {
     }
 
     /**
-     * Gets a JSON value of certain name from another JSON value.
+     * Checks if a JSON field with certain name exists within another JSON
+     * value.
+     *
+     * @param value
+     *        JSON value to get the field from.
+     * @param name
+     *        Name of the field to retreive.
+     * @returns \c true if it exists.
+     */
+    static bool
+    hasJsonValue(const Json::Value& value, const std::string& name);
+
+    /**
+     * Gets a JSON field with certain name from another JSON value.
      *
      * @param value
      *        JSON value to get the field from.
@@ -395,7 +421,7 @@ class Params {
      * @throws Exception
      *         When no such field is found.
      */
-    static Json::Value
+    static const Json::Value&
     getJsonValue(const Json::Value& value, const std::string& name);
 
     /**
@@ -423,6 +449,18 @@ class Params {
     toInt(const Json::Value& value);
 
     /**
+     * Gets a JSON value as an Boolean.
+     *
+     * @param value
+     *        JSON value.
+     * @returns The converted value.
+     * @throws Exception
+     *         When the value is not of expected type.
+     */
+    static bool
+    toBool(const Json::Value& value);
+
+    /**
      * Gets a JSON value as a string.
      *
      * @param value
@@ -440,14 +478,13 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionActionNodes(const Json::Value& root,
-                                          Params& param);
+    computeMappingsForFunctionActionNodes(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
@@ -455,14 +492,13 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionEntityNodes(const Json::Value& root,
-                                          Params& param);
+    computeMappingsForFunctionEntityNodes(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
@@ -470,14 +506,14 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
     computeMappingsAndDomsetsForFunctionLabelNodes(const Json::Value& root,
-                                                   Params& param);
+                                                   Params& p);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
@@ -485,39 +521,53 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    computeMappingsForInstances(const Json::Value& root, Params& param);
+    computeMappingsForInstances(const Json::Value& root, Params& p);
 
     /**
      * Sets the code size values for the pattern instances.
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setInstanceCodeSizes(const Json::Value& root, Params& param);
+    setInstanceCodeSizes(const Json::Value& root, Params& p);
 
     /**
      * Sets the latency values for the pattern instances.
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setInstanceLatencies(const Json::Value& root, Params& param);
+    setInstanceLatencies(const Json::Value& root, Params& p);
+
+    /**
+     * Sets the no-use-def-dom-constraints settings for the pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setInstanceNoUseDefDomConstraintsSettings(const Json::Value& root,
+                                              Params& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -525,13 +575,13 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByInstances(const Json::Value& root, Params& param);
+    setActionNodesCoveredByInstances(const Json::Value& root, Params& p);
 
     /**
      * Sets the function entity nodes defined by the respective pattern
@@ -539,39 +589,39 @@ class Params {
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setEntityNodesDefinedByInstances(const Json::Value& root, Params& param);
+    setEntityNodesDefinedByInstances(const Json::Value& root, Params& p);
 
     /**
      * Sets the function entity nodes used by the respective pattern instances.
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setEntityNodesUsedByInstances(const Json::Value& root, Params& param);
+    setEntityNodesUsedByInstances(const Json::Value& root, Params& p);
 
     /**
      * Sets the pattern constraints.
      *
      * @param root
      *        The JSON root value.
-     * @param param
+     * @param p
      *        Object to add the data to.
      * @throws Exception
      *         When an error occurs.
      */
     static void
-    setInstanceConstraints(const Json::Value& root, Params& param);
+    setInstanceConstraints(const Json::Value& root, Params& p);
 
     /**
      * Parses a constraint expression string.
@@ -793,6 +843,13 @@ class Params {
      * when this object is deleted.
      */
     std::map< Id, std::list<const Constraint*> > pat_inst_constraints_;
+
+    /**
+     * Whether use-def-dom constraints should be applied on a particular pattern
+     * instance. The ability to turn these off are required by the generic phi
+     * patterns.
+     */
+    std::map<Id, bool> pat_inst_no_use_def_dom_constraints_;
 };
 
 }

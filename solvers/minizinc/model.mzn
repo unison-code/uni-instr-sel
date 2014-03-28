@@ -13,6 +13,7 @@ set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
 int: nullLabel = numFuncLabelNodes;
 array[allFuncLabelNodes] of set of int: funcLabelDomsets;
+array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
 array[allPatternInstances] of int: patInstCodeSizes;
 array[allPatternInstances] of int: patInstLatencies;
 array[allPatternInstances] of set of int: patInstActionsCovered;
@@ -42,7 +43,7 @@ var int: cost;
 %-------------
 
 % Prevent a pattern from covering action nodes or defining entity nodes outside
-% its range
+% its range.
 constraint
 forall (p in allPatternInstances)
 (
@@ -58,7 +59,7 @@ forall (p in allPatternInstances)
 );
 
 % Enforce selection of pattern if an action node is covered or an entity node is
-% defined by that pattern
+% defined by that pattern.
 constraint
 forall (n in allFuncActionNodes, p in allPatternInstances)
 (
@@ -71,7 +72,7 @@ forall (n in allFuncEntityNodes, p in allPatternInstances)
 );
 
 % Enforce corresponding action node coverage and entity node definitions if a
-% pattern is selected
+% pattern is selected.
 constraint
 forall (p in allPatternInstances)
 (
@@ -86,25 +87,26 @@ forall (p in allPatternInstances)
     )
 );
 
-% Enforce that all selected pattern instances must be allocated to a basic block
-% such that every used entity node is dominated by its entity definition
+% Allocate all non-selected pattern instances to a null label.
 constraint
 forall (p in allPatternInstances)
 (
-    (not pi_sel[p] -> pi_bb[p] = nullLabel)
-    /\
+    not pi_sel[p] -> pi_bb[p] = nullLabel
+);
+
+% Enforce that all selected pattern instances must be allocated to a basic block
+% such that every used entity node is dominated by its entity definition.
+constraint
+forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
+(
+    pi_sel[p] ->
+    forall (n in patInstEntitiesUsed[p])
     (
-        pi_sel[p] ->
-        forall (n in patInstEntitiesUsed[p])
-        (
-            pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
-        )
+        pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
     )
 );
 
-% TODO: add missing constraints
-
-% Accumulate cost of selected patterns
+% Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
 cost = sum (p in allPatternInstances)
@@ -122,7 +124,7 @@ solve minimize cost;
 
 output [
     "an_cov=", show(an_cov), "\n",
-    "en_def=", show(en_def), "\n",
+    "en_def=", show(bool2int(en_def)), "\n",
     "pi_sel=", show(pi_sel), "\n",
     "pi_bb=", show(pi_bb), "\n",
     "cost=", show(cost), "\n"

@@ -68,6 +68,12 @@ print(const T& v, const string&, const string&) {
     cout << v;
 }
 
+template <>
+void
+print(const bool& v, const string&, const string&) {
+    cout << (v ? "true" : "false");
+}
+
 template <typename T>
 void
 printList(const T& l, const string& dl = "[", const string& dr = "]") {
@@ -186,6 +192,17 @@ outputParameters(const Params& params) {
                 params.getIndicesOfEntityNodes(nodes);
         }
         print(node_lists);
+    }
+    cout << ");" << endl;
+
+    cout << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
+    {
+        vector<bool> settings(params.getNumInstances());
+        for (const Id& id : params.getAllInstanceIds()) {
+            settings[params.getIndexOfInstance(id)] =
+                params.getNoUseDefDomConstraintsSettingForInstance(id);
+        }
+        print(settings);
     }
     cout << ");" << endl;
 }

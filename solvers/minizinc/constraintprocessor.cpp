@@ -44,7 +44,10 @@ ConstraintProcessor::~ConstraintProcessor(void) {}
 string
 ConstraintProcessor::process(const Id& id, const Constraint* c) {
     instance_id_ = id;
-    return string("constraint\n") + process(c->getExpr()) + ";";
+    return string("constraint\n")
+        + getInstanceSelectedArrayString() + "["
+        + Utils::toString(p_.getIndexOfInstance(instance_id_))
+        + "] -> " + process(c->getExpr()) + ";";
 }
 
 string
@@ -177,7 +180,7 @@ ConstraintProcessor::process(const InstanceIdExpr* e) {
         return Utils::toString(de->getId());
     }
     else if (dynamic_cast<const ThisInstanceIdExpr*>(e)) {
-        return Utils::toString(instance_id_);
+        return Utils::toString(p_.getIndexOfInstance(instance_id_));
     }
     else if (const CovererOfActionNodeExpr* de =
              dynamic_cast<const CovererOfActionNodeExpr*>(e))
@@ -321,4 +324,9 @@ ConstraintProcessor::getBBAllocationArrayString(void) const {
 string
 ConstraintProcessor::getDomSetString(void) const {
     return "funcLabelDomsets";
+}
+
+string
+ConstraintProcessor::getInstanceSelectedArrayString(void) const {
+    return "pi_sel";
 }

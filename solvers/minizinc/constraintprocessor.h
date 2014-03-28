@@ -34,6 +34,9 @@
 
 /**
  * Walks a constraint and outputs the Minizinc version of it.
+ *
+ * An object of this class should not be used by multiple threads as its methods
+ * are not thread-safe.
  */
 class ConstraintProcessor {
   public:
@@ -90,6 +93,14 @@ class ConstraintProcessor {
      */
     std::string
     getBBAllocationArrayString(void) const;
+
+    /**
+     * Gets the variable for the pattern instance selection array.
+     *
+     * @returns variable name.
+     */
+    std::string
+    getInstanceSelectedArrayString(void) const;
 
     /**
      * Gets the parameter for the dominator sets.
