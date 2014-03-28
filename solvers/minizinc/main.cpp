@@ -94,9 +94,14 @@ outputDebugInfo(const Params& params) {
         cout << "% ID " << id << " -> index " << params.getIndexOfActionNode(id)
              << endl;
     }
-    cout << "% Entity node mappings" << endl;
-    for (const Id& id : params.getAllEntityNodeIds()) {
-        cout << "% ID " << id << " -> index " << params.getIndexOfEntityNode(id)
+    cout << "% Data node mappings" << endl;
+    for (const Id& id : params.getAllDataNodeIds()) {
+        cout << "% ID " << id << " -> index " << params.getIndexOfDataNode(id)
+             << endl;
+    }
+    cout << "% State node mappings" << endl;
+    for (const Id& id : params.getAllStateNodeIds()) {
+        cout << "% ID " << id << " -> index " << params.getIndexOfStateNode(id)
              << endl;
     }
     cout << "% Label node mappings" << endl;
@@ -115,7 +120,9 @@ void
 outputParameters(const Params& params) {
     cout << "numFuncActionNodes = " << params.getNumActionNodes() << ";"
          << endl;
-    cout << "numFuncEntityNodes = " << params.getNumEntityNodes() << ";"
+    cout << "numFuncDataNodes = " << params.getNumDataNodes() << ";"
+         << endl;
+    cout << "numFuncStateNodes = " << params.getNumStateNodes() << ";"
          << endl;
     cout << "numFuncLabelNodes = " << params.getNumLabelNodes() << ";"
          << endl;
@@ -169,27 +176,53 @@ outputParameters(const Params& params) {
     }
     cout << ");" << endl;
 
-    cout << "patInstEntitiesDefined = array1d(allPatternInstances, ";
+    cout << "patInstDataDefined = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
         for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getEntityNodesDefinedByInstance(id);
+            const list<Id>& nodes = params.getDataNodesDefinedByInstance(id);
             node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfEntityNodes(nodes);
+                params.getIndicesOfDataNodes(nodes);
         }
         print(node_lists);
     }
     cout << ");" << endl;
 
-    cout << "patInstEntitiesUsed = array1d(allPatternInstances, ";
+    cout << "patInstStateDefined = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
         for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getEntityNodesUsedByInstance(id);
+            const list<Id>& nodes = params.getStateNodesDefinedByInstance(id);
             node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfEntityNodes(nodes);
+                params.getIndicesOfStateNodes(nodes);
+        }
+        print(node_lists);
+    }
+    cout << ");" << endl;
+
+    cout << "patInstDataUsed = array1d(allPatternInstances, ";
+    {
+        size_t num_instances = params.getNumInstances();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const Id& id : params.getAllInstanceIds()) {
+            const list<Id>& nodes = params.getDataNodesUsedByInstance(id);
+            node_lists[params.getIndexOfInstance(id)] =
+                params.getIndicesOfDataNodes(nodes);
+        }
+        print(node_lists);
+    }
+    cout << ");" << endl;
+
+    cout << "patInstStateUsed = array1d(allPatternInstances, ";
+    {
+        size_t num_instances = params.getNumInstances();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const Id& id : params.getAllInstanceIds()) {
+            const list<Id>& nodes = params.getStateNodesUsedByInstance(id);
+            node_lists[params.getIndexOfInstance(id)] =
+                params.getIndicesOfStateNodes(nodes);
         }
         print(node_lists);
     }

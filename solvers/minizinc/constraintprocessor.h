@@ -78,12 +78,20 @@ class ConstraintProcessor {
     getActionCovererArrayString(void) const;
 
     /**
-     * Gets the variable for the entity node definer array.
+     * Gets the variable for the data node definer array.
      *
      * @returns variable name.
      */
     std::string
-    getEntityDefinerArrayString(void) const;
+    getDataDefinerArrayString(void) const;
+
+    /**
+     * Gets the variable for the state node definer array.
+     *
+     * @returns variable name.
+     */
+    std::string
+    getStateDefinerArrayString(void) const;
 
     /**
      * Gets the variable for the pattern instance-to-basic block allocation

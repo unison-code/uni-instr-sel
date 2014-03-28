@@ -3,22 +3,28 @@
 %------------
 
 int: numFuncActionNodes;
-int: numFuncEntityNodes;
+int: numFuncDataNodes;
+int: numFuncStateNodes;
 int: numFuncLabelNodes;
 int: numPatternInstances;
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
-set of int: allFuncEntityNodes = 0..numFuncEntityNodes-1;
+set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
+set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
+% TODO: activate
+%set of int: allRegisters = 0..numRegisters-1;
 int: nullLabel = numFuncLabelNodes;
 array[allFuncLabelNodes] of set of int: funcLabelDomsets;
 array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
 array[allPatternInstances] of int: patInstCodeSizes;
 array[allPatternInstances] of int: patInstLatencies;
 array[allPatternInstances] of set of int: patInstActionsCovered;
-array[allPatternInstances] of set of int: patInstEntitiesDefined;
-array[allPatternInstances] of set of int: patInstEntitiesUsed;
+array[allPatternInstances] of set of int: patInstDataDefined;
+array[allPatternInstances] of set of int: patInstDataUsed;
+array[allPatternInstances] of set of int: patInstStateDefined;
+array[allPatternInstances] of set of int: patInstStateUsed;
 
 include "input.mzn";
 
@@ -29,12 +35,13 @@ include "input.mzn";
 %-----------
 
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
-array[allFuncEntityNodes] of var allPatternInstances: en_def;
+array[allFuncDataNodes] of var allPatternInstances: dn_def;
+% TODO: activate
+%array[allFuncDataNodes] of var allRegisters: dn_reg;
+array[allFuncStateNodes] of var allPatternInstances: sn_def;
 array[allPatternInstances] of var bool: pi_sel;
 array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
 var int: cost;
-
-% TODO: add missing variables
 
 
 
@@ -42,8 +49,8 @@ var int: cost;
 % CONSTRAINTS
 %-------------
 
-% Prevent a pattern from covering action nodes or defining entity nodes outside
-% its range.
+% Prevent a pattern from covering action nodes or defining data or state nodes
+% outside its range.
 constraint
 forall (p in allPatternInstances)
 (
@@ -52,27 +59,37 @@ forall (p in allPatternInstances)
         an_cov[n] != p
     )
     /\
-    forall (n in allFuncEntityNodes where not (n in patInstEntitiesDefined[p]))
+    forall (n in allFuncDataNodes where not (n in patInstDataDefined[p]))
     (
-        en_def[n] != p
+        dn_def[n] != p
+    )
+    /\
+    forall (n in allFuncStateNodes where not (n in patInstStateDefined[p]))
+    (
+        sn_def[n] != p
     )
 );
 
-% Enforce selection of pattern if an action node is covered or an entity node is
-% defined by that pattern.
+% Enforce selection of pattern if an action node is covered or a data or state
+% node is defined by that pattern.
 constraint
 forall (n in allFuncActionNodes, p in allPatternInstances)
 (
     an_cov[n] == p -> pi_sel[p]
-)
-/\
-forall (n in allFuncEntityNodes, p in allPatternInstances)
+);
+constraint
+forall (n in allFuncDataNodes, p in allPatternInstances)
 (
-    en_def[n] == p -> pi_sel[p]
+    dn_def[n] == p -> pi_sel[p]
+);
+constraint
+forall (n in allFuncStateNodes, p in allPatternInstances)
+(
+    sn_def[n] == p -> pi_sel[p]
 );
 
-% Enforce corresponding action node coverage and entity node definitions if a
-% pattern is selected.
+% Enforce corresponding action node coverage and data and state node definitions
+% if a pattern is selected.
 constraint
 forall (p in allPatternInstances)
 (
@@ -81,9 +98,14 @@ forall (p in allPatternInstances)
         pi_sel[p] -> an_cov[n] = p
     )
     /\
-    forall (n in patInstEntitiesDefined[p])
+    forall (n in patInstDataDefined[p])
     (
-        pi_sel[p] -> en_def[n] = p
+        pi_sel[p] -> dn_def[n] = p
+    )
+    /\
+    forall (n in patInstStateDefined[p])
+    (
+        pi_sel[p] -> sn_def[n] = p
     )
 );
 
@@ -95,15 +117,23 @@ forall (p in allPatternInstances)
 );
 
 % Enforce that all selected pattern instances must be allocated to a basic block
-% such that every used entity node is dominated by its entity definition. These
-% constraints should not be applied to the generic phi patterns.
+% such that every used data node is dominated by its data definition. Likewise
+% for the state nodes. These constraints should not be applied to the generic
+% phi patterns.
 constraint
 forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 (
     pi_sel[p] ->
-    forall (n in patInstEntitiesUsed[p])
     (
-        pi_bb[en_def[n]] in funcLabelDomsets[pi_bb[p]]
+        forall (n in patInstDataUsed[p])
+        (
+            pi_bb[dn_def[n]] in funcLabelDomsets[pi_bb[p]]
+        )
+        /\
+        forall (n in patInstStateUsed[p])
+        (
+            pi_bb[sn_def[n]] in funcLabelDomsets[pi_bb[p]]
+        )
     )
 );
 
@@ -125,7 +155,8 @@ solve minimize cost;
 
 output [
     "an_cov=", show(an_cov), "\n",
-    "en_def=", show(en_def), "\n",
+    "dn_def=", show(dn_def), "\n",
+    "sn_def=", show(sn_def), "\n",
     "pi_sel=", show(pi_sel), "\n",
     "pi_bb=", show(pi_bb), "\n",
     "cost=", show(cost), "\n"

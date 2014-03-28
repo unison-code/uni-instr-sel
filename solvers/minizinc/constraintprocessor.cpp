@@ -159,8 +159,11 @@ ConstraintProcessor::process(const NodeIdExpr* e) {
         if (p_.isActionNode(id)) {
             return Utils::toString(p_.getIndexOfActionNode(id));
         }
-        else if (p_.isEntityNode(id)) {
-            return Utils::toString(p_.getIndexOfEntityNode(id));
+        else if (p_.isDataNode(id)) {
+            return Utils::toString(p_.getIndexOfDataNode(id));
+        }
+        else if (p_.isStateNode(id)) {
+            return Utils::toString(p_.getIndexOfStateNode(id));
         }
         else if (p_.isLabelNode(id)) {
             return Utils::toString(p_.getIndexOfLabelNode(id));
@@ -188,10 +191,16 @@ ConstraintProcessor::process(const InstanceIdExpr* e) {
         return getActionCovererArrayString()
             + "[" + process(de->getExpr()) + "]";
     }
-    else if (const DefinerOfEntityNodeExpr* de =
-             dynamic_cast<const DefinerOfEntityNodeExpr*>(e))
+    else if (const DefinerOfDataNodeExpr* de =
+             dynamic_cast<const DefinerOfDataNodeExpr*>(e))
     {
-        return getEntityDefinerArrayString()
+        return getDataDefinerArrayString()
+            + "[" + process(de->getExpr()) + "]";
+    }
+    else if (const DefinerOfStateNodeExpr* de =
+             dynamic_cast<const DefinerOfStateNodeExpr*>(e))
+    {
+        return getStateDefinerArrayString()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
@@ -312,8 +321,13 @@ ConstraintProcessor::getActionCovererArrayString(void) const {
 }
 
 string
-ConstraintProcessor::getEntityDefinerArrayString(void) const {
-    return "en_def";
+ConstraintProcessor::getDataDefinerArrayString(void) const {
+    return "dn_def";
+}
+
+string
+ConstraintProcessor::getStateDefinerArrayString(void) const {
+    return "sn_def";
 }
 
 string

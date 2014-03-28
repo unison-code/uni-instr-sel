@@ -988,20 +988,37 @@ class CovererOfActionNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
 };
 
 /**
- * Represents the pattern instance ID which defines a certain entity node.
+ * Represents the pattern instance ID which defines a certain data node.
  */
-class DefinerOfEntityNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
+class DefinerOfDataNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    DefinerOfEntityNodeExpr(NodeIdExpr* expr);
+    DefinerOfDataNodeExpr(NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~DefinerOfEntityNodeExpr(void);
+    ~DefinerOfDataNodeExpr(void);
+};
+
+/**
+ * Represents the pattern instance ID which defines a certain state node.
+ */
+class DefinerOfStateNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    DefinerOfStateNodeExpr(NodeIdExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DefinerOfStateNodeExpr(void);
 };
 
 /**

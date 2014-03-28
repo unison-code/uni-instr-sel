@@ -296,11 +296,17 @@ CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* expr)
 
 CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
 
-DefinerOfEntityNodeExpr::DefinerOfEntityNodeExpr(NodeIdExpr* expr)
+DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
-DefinerOfEntityNodeExpr::~DefinerOfEntityNodeExpr(void) {}
+DefinerOfDataNodeExpr::~DefinerOfDataNodeExpr(void) {}
+
+DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(NodeIdExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+DefinerOfStateNodeExpr::~DefinerOfStateNodeExpr(void) {}
 
 InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* expr)
     : UnaryExpr(expr)

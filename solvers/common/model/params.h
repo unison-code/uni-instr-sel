@@ -62,12 +62,20 @@ class Params {
     getNumActionNodes(void) const;
 
     /**
-     * Gets the number of entity nodes in the function.
+     * Gets the number of data nodes in the function.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumEntityNodes(void) const;
+    getNumDataNodes(void) const;
+
+    /**
+     * Gets the number of state nodes in the function.
+     *
+     * @returns Number of nodes.
+     */
+    size_t
+    getNumStateNodes(void) const;
 
     /**
      * Gets the number of label nodes in the function.
@@ -134,7 +142,7 @@ class Params {
     getActionNodesCoveredByInstance(const Id& instance) const;
 
     /**
-     * Gets the function entity nodes defined by a particular pattern instance.
+     * Gets the function data nodes defined by a particular pattern instance.
      *
      * @param instance
      *        Pattern instance ID.
@@ -143,10 +151,10 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<Id>
-    getEntityNodesDefinedByInstance(const Id& instance) const;
+    getDataNodesDefinedByInstance(const Id& instance) const;
 
     /**
-     * Gets the function entity nodes used by a particular pattern instance.
+     * Gets the function state nodes defined by a particular pattern instance.
      *
      * @param instance
      *        Pattern instance ID.
@@ -155,7 +163,31 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<Id>
-    getEntityNodesUsedByInstance(const Id& instance) const;
+    getStateNodesDefinedByInstance(const Id& instance) const;
+
+    /**
+     * Gets the function data nodes used by a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getDataNodesUsedByInstance(const Id& instance) const;
+
+    /**
+     * Gets the function state nodes used by a particular pattern instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getStateNodesUsedByInstance(const Id& instance) const;
 
     /**
      * Checks if use-def-dom constraints should be removed for a particular
@@ -183,7 +215,7 @@ class Params {
     getIndexOfActionNode(const Id& id) const;
 
     /**
-     * Gets the array index of a given function entity node.
+     * Gets the array index of a given function data node.
      *
      * @param id
      *        Node ID.
@@ -192,7 +224,19 @@ class Params {
      *         If there is no node with such an ID.
      */
     ArrayIndex
-    getIndexOfEntityNode(const Id& id) const;
+    getIndexOfDataNode(const Id& id) const;
+
+    /**
+     * Gets the array index of a given function state node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns Corresponding array index.
+     * @throws Exception
+     *         If there is no node with such an ID.
+     */
+    ArrayIndex
+    getIndexOfStateNode(const Id& id) const;
 
     /**
      * Gets the array index of a given function label node.
@@ -219,7 +263,7 @@ class Params {
     getIndicesOfActionNodes(const std::list<Id>& ids) const;
 
     /**
-     * Gets a list of array indices of a given list of function entity nodes.
+     * Gets a list of array indices of a given list of function data nodes.
      *
      * @param ids
      *        List of node ID.
@@ -228,7 +272,19 @@ class Params {
      *         If there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfEntityNodes(const std::list<Id>& ids) const;
+    getIndicesOfDataNodes(const std::list<Id>& ids) const;
+
+    /**
+     * Gets a list of array indices of a given list of function state nodes.
+     *
+     * @param ids
+     *        List of node ID.
+     * @returns List of corresponding array indices.
+     * @throws Exception
+     *         If there is a node ID with no mapping.
+     */
+    std::list<ArrayIndex>
+    getIndicesOfStateNodes(const std::list<Id>& ids) const;
 
     /**
      * Gets a list of array indices of a given list of function label nodes.
@@ -251,12 +307,20 @@ class Params {
     getAllActionNodeIds(void) const;
 
     /**
-     * Gets a list of all the function entity node IDs.
+     * Gets a list of all the function data node IDs.
      *
      * @returns List of IDs.
      */
     std::list<Id>
-    getAllEntityNodeIds(void) const;
+    getAllDataNodeIds(void) const;
+
+    /**
+     * Gets a list of all the function state node IDs.
+     *
+     * @returns List of IDs.
+     */
+    std::list<Id>
+    getAllStateNodeIds(void) const;
 
     /**
      * Gets a list of all the function label node IDs.
@@ -309,14 +373,24 @@ class Params {
     isActionNode(const Id& id) const;
 
     /**
-     * Checks if a node ID represents an entity node.
+     * Checks if a node ID represents an data node.
      *
      * @param id
      *        Node ID.
-     * @returns \c true if entity node.
+     * @returns \c true if data node.
      */
     bool
-    isEntityNode(const Id& id) const;
+    isDataNode(const Id& id) const;
+
+    /**
+     * Checks if a node ID represents an state node.
+     *
+     * @param id
+     *        Node ID.
+     * @returns \c true if state node.
+     */
+    bool
+    isStateNode(const Id& id) const;
 
     /**
      * Checks if a node ID represents an label node.
@@ -488,7 +562,7 @@ class Params {
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
-     * Params&) but for the entity nodes.
+     * Params&) but for the data nodes.
      *
      * @param root
      *        The JSON root value.
@@ -498,7 +572,21 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionEntityNodes(const Json::Value& root, Params& p);
+    computeMappingsForFunctionDataNodes(const Json::Value& root, Params& p);
+
+    /**
+     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Params&) but for the state nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    computeMappingsForFunctionStateNodes(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
@@ -584,7 +672,7 @@ class Params {
     setActionNodesCoveredByInstances(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function entity nodes defined by the respective pattern
+     * Sets the function data nodes defined by the respective pattern
      * instances.
      *
      * @param root
@@ -595,10 +683,11 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setEntityNodesDefinedByInstances(const Json::Value& root, Params& p);
+    setDataNodesDefinedByInstances(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function entity nodes used by the respective pattern instances.
+     * Sets the function state nodes defined by the respective pattern
+     * instances.
      *
      * @param root
      *        The JSON root value.
@@ -608,7 +697,33 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setEntityNodesUsedByInstances(const Json::Value& root, Params& p);
+    setStateNodesDefinedByInstances(const Json::Value& root, Params& p);
+
+    /**
+     * Sets the function data nodes used by the respective pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setDataNodesUsedByInstances(const Json::Value& root, Params& p);
+
+    /**
+     * Sets the function state nodes used by the respective pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setStateNodesUsedByInstances(const Json::Value& root, Params& p);
 
     /**
      * Sets the pattern constraints.
@@ -791,9 +906,14 @@ class Params {
     std::map<Id, ArrayIndex> func_action_node_mappings_;
 
     /**
-     * Same as #func_action_node_mappings_ but for entity nodes.
+     * Same as #func_action_node_mappings_ but for data nodes.
      */
-    std::map<Id, ArrayIndex> func_entity_node_mappings_;
+    std::map<Id, ArrayIndex> func_data_node_mappings_;
+
+    /**
+     * Same as #func_action_node_mappings_ but for state nodes.
+     */
+    std::map<Id, ArrayIndex> func_state_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for label nodes.
@@ -827,16 +947,28 @@ class Params {
     std::map< Id, std::list<Id> > pat_inst_actions_covered_;
 
     /**
-     * The entity nodes in the function graphs which are defined for each
+     * The data nodes in the function graphs which are defined for each
      * pattern instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_entities_defined_;
+    std::map< Id, std::list<Id> > pat_inst_data_defined_;
 
     /**
-     * The entity nodes in the function graphs which are used for each
+     * The data nodes in the function graphs which are used for each pattern
+     * instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_data_used_;
+
+    /**
+     * The state nodes in the function graphs which are defined for each
      * pattern instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_entities_used_;
+    std::map< Id, std::list<Id> > pat_inst_state_defined_;
+
+    /**
+     * The state nodes in the function graphs which are used for each pattern
+     * instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_state_used_;
 
     /**
      * The constraints for each pattern instance. The constraints are destroyed

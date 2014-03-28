@@ -47,8 +47,13 @@ Params::getNumActionNodes(void) const {
 }
 
 size_t
-Params::getNumEntityNodes(void) const {
-    return func_entity_node_mappings_.size();
+Params::getNumDataNodes(void) const {
+    return func_data_node_mappings_.size();
+}
+
+size_t
+Params::getNumStateNodes(void) const {
+    return func_state_node_mappings_.size();
 }
 
 size_t
@@ -70,7 +75,8 @@ Params::parseJson(const string& str, Params& p) {
     }
 
     computeMappingsForFunctionActionNodes(root, p);
-    computeMappingsForFunctionEntityNodes(root, p);
+    computeMappingsForFunctionDataNodes(root, p);
+    computeMappingsForFunctionStateNodes(root, p);
     computeMappingsAndDomsetsForFunctionLabelNodes(root, p);
     computeMappingsForInstances(root, p);
     setInstanceCodeSizes(root, p);
@@ -78,8 +84,10 @@ Params::parseJson(const string& str, Params& p) {
     setInstanceConstraints(root, p);
     setInstanceNoUseDefDomConstraintsSettings(root, p);
     setActionNodesCoveredByInstances(root, p);
-    setEntityNodesDefinedByInstances(root, p);
-    setEntityNodesUsedByInstances(root, p);
+    setDataNodesDefinedByInstances(root, p);
+    setDataNodesUsedByInstances(root, p);
+    setStateNodesDefinedByInstances(root, p);
+    setStateNodesUsedByInstances(root, p);
 }
 
 bool
@@ -143,16 +151,30 @@ Params::computeMappingsForFunctionActionNodes(
 }
 
 void
-Params::computeMappingsForFunctionEntityNodes(
+Params::computeMappingsForFunctionDataNodes(
     const Value& root,
     Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
-    for (auto node_id : getJsonValue(function, "entity-nodes")) {
+    for (auto node_id : getJsonValue(function, "data-nodes")) {
         addMapping(toId(node_id),
                    index++,
-                   p.func_entity_node_mappings_);
+                   p.func_data_node_mappings_);
+    }
+}
+
+void
+Params::computeMappingsForFunctionStateNodes(
+    const Value& root,
+    Params& p
+) {
+    const Value& function = getJsonValue(root, "function-data");
+    ArrayIndex index = 0;
+    for (auto node_id : getJsonValue(function, "state-nodes")) {
+        addMapping(toId(node_id),
+                   index++,
+                   p.func_state_node_mappings_);
     }
 }
 
@@ -260,36 +282,70 @@ Params::setActionNodesCoveredByInstances(
 }
 
 void
-Params::setEntityNodesDefinedByInstances(
+Params::setDataNodesDefinedByInstances(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (auto node_id : getJsonValue(instance, "entity-nodes-defined")) {
+        for (auto node_id : getJsonValue(instance, "data-nodes-defined")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
                    covers,
-                   p.pat_inst_entities_defined_);
+                   p.pat_inst_data_defined_);
     }
 }
 
 void
-Params::setEntityNodesUsedByInstances(
+Params::setStateNodesDefinedByInstances(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<Id> covers;
-        for (auto node_id : getJsonValue(instance, "entity-nodes-used")) {
+        for (auto node_id : getJsonValue(instance, "state-nodes-defined")) {
             covers.push_back(toId(node_id));
         }
         addMapping(instance_id,
                    covers,
-                   p.pat_inst_entities_used_);
+                   p.pat_inst_state_defined_);
+    }
+}
+
+void
+Params::setDataNodesUsedByInstances(
+    const Json::Value& root,
+    Params& p
+) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        list<Id> covers;
+        for (auto node_id : getJsonValue(instance, "data-nodes-used")) {
+            covers.push_back(toId(node_id));
+        }
+        addMapping(instance_id,
+                   covers,
+                   p.pat_inst_data_used_);
+    }
+}
+
+void
+Params::setStateNodesUsedByInstances(
+    const Json::Value& root,
+    Params& p
+) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        list<Id> covers;
+        for (auto node_id : getJsonValue(instance, "state-nodes-used")) {
+            covers.push_back(toId(node_id));
+        }
+        addMapping(instance_id,
+                   covers,
+                   p.pat_inst_state_used_);
     }
 }
 
@@ -299,13 +355,23 @@ Params::getActionNodesCoveredByInstance(const Id& instance) const {
 }
 
 list<Id>
-Params::getEntityNodesDefinedByInstance(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_entities_defined_);
+Params::getDataNodesDefinedByInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_data_defined_);
 }
 
 list<Id>
-Params::getEntityNodesUsedByInstance(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_entities_used_);
+Params::getStateNodesDefinedByInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_state_defined_);
+}
+
+list<Id>
+Params::getDataNodesUsedByInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_data_used_);
+}
+
+list<Id>
+Params::getStateNodesUsedByInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_state_used_);
 }
 
 list<Id>
@@ -319,8 +385,13 @@ Params::getIndexOfActionNode(const Id& id) const {
 }
 
 ArrayIndex
-Params::getIndexOfEntityNode(const Id& id) const {
-    return getMappedValue(id, func_entity_node_mappings_);
+Params::getIndexOfDataNode(const Id& id) const {
+    return getMappedValue(id, func_data_node_mappings_);
+}
+
+ArrayIndex
+Params::getIndexOfStateNode(const Id& id) const {
+    return getMappedValue(id, func_state_node_mappings_);
 }
 
 ArrayIndex
@@ -338,9 +409,18 @@ Params::getAllActionNodeIds(void) const {
 }
 
 list<Id>
-Params::getAllEntityNodeIds(void) const {
+Params::getAllDataNodeIds(void) const {
     list<Id> ids;
-    for (auto& kv : func_entity_node_mappings_) {
+    for (auto& kv : func_data_node_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
+}
+
+list<Id>
+Params::getAllStateNodeIds(void) const {
+    list<Id> ids;
+    for (auto& kv : func_state_node_mappings_) {
         ids.push_back(kv.first);
     }
     return ids;
@@ -365,10 +445,19 @@ Params::getIndicesOfActionNodes(const list<Id>& ids) const {
 }
 
 list<ArrayIndex>
-Params::getIndicesOfEntityNodes(const list<Id>& ids) const {
+Params::getIndicesOfDataNodes(const list<Id>& ids) const {
     list<Id> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfEntityNode(id));
+        indices.push_back(getIndexOfDataNode(id));
+    }
+    return indices;
+}
+
+list<ArrayIndex>
+Params::getIndicesOfStateNodes(const list<Id>& ids) const {
+    list<Id> indices;
+    for (auto& id : ids) {
+        indices.push_back(getIndexOfStateNode(id));
     }
     return indices;
 }
@@ -578,9 +667,13 @@ Params::parseInstanceIdExpr(string& str) {
             auto e = parseNodeIdExpr(str);
             expr = new CovererOfActionNodeExpr(e);
         }
-        else if (eat("def-of-enode ", str)) {
+        else if (eat("def-of-dnode ", str)) {
             auto e = parseNodeIdExpr(str);
-            expr = new DefinerOfEntityNodeExpr(e);
+            expr = new DefinerOfDataNodeExpr(e);
+        }
+        else if (eat("def-of-snode ", str)) {
+            auto e = parseNodeIdExpr(str);
+            expr = new DefinerOfStateNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -864,8 +957,16 @@ Params::isActionNode(const Id& id) const {
 }
 
 bool
-Params::isEntityNode(const Id& id) const {
-    for (const Id& c_id : getAllEntityNodeIds()) {
+Params::isDataNode(const Id& id) const {
+    for (const Id& c_id : getAllDataNodeIds()) {
+        if (c_id == id) return true;
+    }
+    return false;
+}
+
+bool
+Params::isStateNode(const Id& id) const {
+    for (const Id& c_id : getAllStateNodeIds()) {
         if (c_id == id) return true;
     }
     return false;
