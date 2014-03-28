@@ -223,11 +223,11 @@ replaceInSetElemExpr m (RegisterId2SetElemExpr e) =
 
 replaceInSetExpr :: Matchset NodeId -> SetExpr -> SetExpr
 replaceInSetExpr m (UnionSetExpr lhs rhs) =
-  UnionSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+  UnionSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
 replaceInSetExpr m (IntersectSetExpr lhs rhs) =
-  IntersectSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+  IntersectSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
 replaceInSetExpr m (DiffSetExpr lhs rhs) =
-  DiffSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+  DiffSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
 replaceInSetExpr m (DomSetOfLabelIdExpr e) =
   DomSetOfLabelIdExpr (replaceInLabelIdExpr m e)
 replaceInSetExpr m (RegisterClassExpr es) =
