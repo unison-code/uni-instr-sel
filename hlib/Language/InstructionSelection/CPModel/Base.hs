@@ -18,7 +18,7 @@ import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs ( NodeId (..)
                                             , Matchset (..)
                                             )
-import Language.InstructionSelection.Patterns (InstanceId)
+import Language.InstructionSelection.Patterns.Ids (InstanceId)
 import Language.InstructionSelection.PrettyPrint
 
 

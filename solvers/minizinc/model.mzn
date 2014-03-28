@@ -125,7 +125,7 @@ solve minimize cost;
 
 output [
     "an_cov=", show(an_cov), "\n",
-    "en_def=", show(bool2int(en_def)), "\n",
+    "en_def=", show(en_def), "\n",
     "pi_sel=", show(pi_sel), "\n",
     "pi_bb=", show(pi_bb), "\n",
     "cost=", show(cost), "\n"
