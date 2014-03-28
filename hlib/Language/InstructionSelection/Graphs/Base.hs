@@ -45,16 +45,18 @@ module Language.InstructionSelection.Graphs.Base (
 , copyNodeLabel
 , delEdge
 , delNode
-, dom
+, delNodeKeepEdges
 , edges
 , empty
+, extractCFG
+, extractDomSet
+, extractIDomSet
 , fNode
 , fNodes
 , fromEdgeNr
 , fromMapping
 , fromMatchset
 , fromNodeId
-, iDom
 , inEdgeNr
 , inEdges
 , isActionNode
@@ -101,6 +103,7 @@ module Language.InstructionSelection.Graphs.Base (
 , redirectEdges
 , redirectInEdges
 , redirectOutEdges
+, rootInCFG
 , sourceOfEdge
 , successors
 , targetOfEdge
@@ -513,7 +516,8 @@ mergeNodes :: Node     -- ^ Node to merge with (will be kept).
               -> Graph
 mergeNodes n_to_keep n_to_discard g
   | (intNodeId n_to_keep) == (intNodeId n_to_discard) = g
-  | otherwise = let edges_to_ignore = edges g n_to_discard n_to_keep
+  | otherwise = let edges_to_ignore = edges g n_to_discard n_to_keep ++
+                                      edges g n_to_keep n_to_discard
                 in delNode n_to_discard
                    $ redirectEdges n_to_keep n_to_discard
                    $ foldl (flip delEdge) g edges_to_ignore
@@ -700,32 +704,6 @@ targetOfEdge (Graph g) (Edge (_, n, _)) = fromJust $ intNodeId2Node g n
 
 nodeId2Node :: Graph -> NodeId -> [Node]
 nodeId2Node g id = filter (\n -> nodeId n == id) (allNodes g)
-
--- | Gets a list of dominator sets, given a root node.
-
-dom :: Graph
-       -> Node      -- ^ The root node.
-       -> [( Node   -- ^ The dominated node.
-           , [Node] -- ^ The dominator nodes.
-           )]
-dom (Graph g) n =
-  let dom_sets = I.dom g (intNodeId n)
-  in map (\(n1, ns2) -> (fromJust $ intNodeId2Node g n1,
-                         map (fromJust . intNodeId2Node g) ns2))
-         dom_sets
-
--- | Gets a list of immediate-dominator mappings, given a root node.
-
-iDom :: Graph
-        -> Node    -- ^ The root node.
-        -> [( Node -- ^ The dominated node.
-            , Node -- ^ The dominator node.
-            )]
-iDom (Graph g) n =
-  let idom_maps = I.iDom g (intNodeId n)
-  in map (\(n1, n2) -> (fromJust $ intNodeId2Node g n1,
-                        fromJust $ intNodeId2Node g n2))
-         idom_maps
 
 -- | Converts matchset of nodes into a matchset of node IDs. Duplicated entries
 -- are removed.
@@ -971,3 +949,67 @@ addToMatchset (Matchset ms) m = Matchset (ms ++ [m])
 
 isInMatchset :: (Eq n) => Matchset n -> Mapping n -> Bool
 isInMatchset (Matchset ms) m = m `elem` ms
+
+-- | Gets a list of dominator sets, given a root node.
+
+extractDomSet :: Graph
+                 -> Node      -- ^ The root node.
+                 -> [( Node   -- ^ The dominated node.
+                     , [Node] -- ^ The dominator nodes.
+                     )]
+extractDomSet (Graph g) n =
+  let dom_sets = I.dom g (intNodeId n)
+  in map (\(n1, ns2) -> (fromJust $ intNodeId2Node g n1,
+                         map (fromJust . intNodeId2Node g) ns2))
+         dom_sets
+
+-- | Gets a list of immediate-dominator mappings, given a root node.
+
+extractIDomSet :: Graph
+                  -> Node    -- ^ The root node.
+                  -> [( Node -- ^ The dominated node.
+                      , Node -- ^ The dominator node.
+                      )]
+extractIDomSet (Graph g) n =
+  let idom_maps = I.iDom g (intNodeId n)
+  in map (\(n1, n2) -> (fromJust $ intNodeId2Node g n1,
+                        fromJust $ intNodeId2Node g n2))
+         idom_maps
+
+
+
+-- | Extracts the control-flow graph from a graph. If there is no label node in
+-- the graph, an empty graph is returned.
+
+extractCFG :: Graph -> Graph
+extractCFG g =
+  let nodes_to_remove = filter (\n -> not (isLabelNode n || isControlNode n))
+                        $ allNodes g
+      cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
+      cfg = foldl delNodeKeepEdges
+                  cfg_with_ctrl_nodes
+                  (filter isControlNode $ allNodes cfg_with_ctrl_nodes)
+  in cfg
+
+-- | Deletes a node from the graph, and redirects any edges involving the given
+-- node such that all outbound edges will become outbound edges of the node's
+-- parent. It is assumed the graph has at most one predecessor of the node to
+-- remove (if there are more than one predecessor then the edges will be
+-- redirected to one of them, but it is undefined which).
+
+delNodeKeepEdges :: Graph -> Node -> Graph
+delNodeKeepEdges g n =
+  let preds = predecessors g n
+  in if length preds > 0
+        then mergeNodes (head preds) n g
+        else delNode n g
+
+-- | Gets the root from a control-flow graph. If there are more than one root,
+-- one of them is returned (it is undefined which).
+
+rootInCFG :: Graph -> Maybe Node
+rootInCFG g =
+  let roots = filter (\n -> length (predecessors g n) == 0) (allNodes g)
+  in if length roots > 0
+        then Just (head roots)
+        else Nothing

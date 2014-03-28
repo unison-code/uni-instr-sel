@@ -111,33 +111,15 @@ mkPatternInstanceData' a_ns e_def_ns e_use_ns cs b_usedef matchset id props =
                       (codeSize props)
                       (latency props)
 
--- | Deletes a node from the graph, and redirects any edges involving the given
--- node such that all outbound edges will become outbound edges of the node's
--- parent. It is assumed the graph has at most one predecessor of the node to
--- remove (if there are more than one predecessor then the edges will be
--- redirected to one of them, but it is undefined which).
-
-delNodeKeepEdges :: Graph -> Node -> Graph
-delNodeKeepEdges g n =
-  let preds = predecessors g n
-  in if length preds > 0
-        then mergeNodes (head preds) n g
-        else delNode n g
-
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
 
 computeLabelDoms g =
-  let nodes_to_remove = filter (\n -> not (isLabelNode n || isControlNode n))
-                        $ allNodes g
-      cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
-      cfg = foldl delNodeKeepEdges
-                  cfg_with_ctrl_nodes
-                  (filter isControlNode $ allNodes cfg_with_ctrl_nodes)
-      root = head $ filter (\n -> length (predecessors g n) == 0) (allNodes cfg)
-      node_domsets = dom cfg root
+  let cfg = extractCFG g
+      root = fromJust $ rootInCFG cfg
+      node_domsets = extractDomSet cfg root
       node_id_domsets = map (\(n, ns) -> (nodeId n, map nodeId ns)) node_domsets
   in node_id_domsets
 
