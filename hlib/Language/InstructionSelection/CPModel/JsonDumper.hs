@@ -59,6 +59,7 @@ instance ToJSON FunctionGraphData where
   toJSON d =
     object [ "action-nodes" .= (funcActionNodes d)
            , "data-nodes"   .= (funcDataNodes d)
+           , "state-nodes"  .= (funcStateNodes d)
            , "label-nodes"  .= map f (funcLabelDoms d)
            , "constraints"  .= (funcConstraints d)
            ]
