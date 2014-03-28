@@ -22,6 +22,8 @@ module Language.InstructionSelection.Constraints.Base (
 , NumExpr (..)
 , PatternIdExpr (..)
 , RegisterIdExpr (..)
+, SetElemExpr (..)
+, SetExpr (..)
 , fromConstraint
 , toConstraint
 ) where
@@ -79,6 +81,8 @@ data BoolExpr
 
     | EqvExpr BoolExpr BoolExpr
     | NotExpr BoolExpr
+    | InSetExpr SetElemExpr SetExpr
+
     deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
@@ -220,6 +224,52 @@ data RegisterIdExpr
     | RegisterIdAllocatedToDataNodeExpr NodeIdExpr
 
     -- TODO: add missing functions
+
+    deriving (Show)
+
+-- | Set construction expressions.
+
+data SetExpr
+
+    = UnionSetExpr SetExpr SetExpr
+    | IntersectSetExpr SetExpr SetExpr
+
+      -- | @A@ `diff` @B@
+
+    | DiffSetExpr
+
+          -- | Set @A@.
+
+          SetExpr
+
+          -- | Set @B@.
+
+          SetExpr
+
+      -- | Represents the dominator set of a label ID.
+
+    | DomSetOfLabelIdExpr LabelIdExpr
+
+      -- | Represents a register class (which is expressed as a set of
+      -- individual registers belonging to that class).
+
+    | RegisterClassExpr [RegisterIdExpr]
+
+    deriving (Show)
+
+
+
+-- | Set element expressions.
+
+data SetElemExpr
+
+      -- | Converts a label ID to a set element expression.
+
+    = LabelId2SetElemExpr LabelIdExpr
+
+      -- | Converts a register ID to a set element expression.
+
+    | RegisterId2SetElemExpr RegisterIdExpr
 
     deriving (Show)
 

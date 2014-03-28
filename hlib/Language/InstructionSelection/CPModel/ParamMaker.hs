@@ -158,6 +158,8 @@ replaceInBoolExpr m (ImpExpr lhs rhs) =
 replaceInBoolExpr m (EqvExpr lhs rhs) =
   EqvExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
 replaceInBoolExpr m (NotExpr e) = NotExpr (replaceInBoolExpr m e)
+replaceInBoolExpr m (InSetExpr lhs rhs) =
+  InSetExpr (replaceInSetElemExpr m lhs) (replaceInSetExpr m rhs)
 
 replaceInNumExpr :: Matchset NodeId -> NumExpr -> NumExpr
 replaceInNumExpr m (PlusExpr  lhs rhs) =
@@ -212,3 +214,21 @@ replaceInRegisterIdExpr :: Matchset NodeId -> RegisterIdExpr -> RegisterIdExpr
 replaceInRegisterIdExpr _ (ARegisterIdExpr i) = ARegisterIdExpr i
 replaceInRegisterIdExpr m (RegisterIdAllocatedToDataNodeExpr e) =
   RegisterIdAllocatedToDataNodeExpr (replaceInNodeIdExpr m e)
+
+replaceInSetElemExpr :: Matchset NodeId -> SetElemExpr -> SetElemExpr
+replaceInSetElemExpr m (LabelId2SetElemExpr e) =
+  LabelId2SetElemExpr (replaceInLabelIdExpr m e)
+replaceInSetElemExpr m (RegisterId2SetElemExpr e) =
+  RegisterId2SetElemExpr (replaceInRegisterIdExpr m e)
+
+replaceInSetExpr :: Matchset NodeId -> SetExpr -> SetExpr
+replaceInSetExpr m (UnionSetExpr lhs rhs) =
+  UnionSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+replaceInSetExpr m (IntersectSetExpr lhs rhs) =
+  IntersectSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+replaceInSetExpr m (DiffSetExpr lhs rhs) =
+  DiffSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m lhs)
+replaceInSetExpr m (DomSetOfLabelIdExpr e) =
+  DomSetOfLabelIdExpr (replaceInLabelIdExpr m e)
+replaceInSetExpr m (RegisterClassExpr es) =
+  RegisterClassExpr (map (replaceInRegisterIdExpr m) es)

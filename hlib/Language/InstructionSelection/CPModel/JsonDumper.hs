@@ -31,6 +31,7 @@ import Data.Aeson
 import Data.ByteString.Lazy.Char8 ( pack
                                   , unpack
                                   )
+import Data.List (intercalate)
 
 
 
@@ -121,6 +122,8 @@ boolExpr2Str (ImpExpr lhs rhs) =
 boolExpr2Str (EqvExpr lhs rhs) =
   "(<-> " ++ boolExpr2Str lhs ++ " " ++ boolExpr2Str rhs ++ ")"
 boolExpr2Str (NotExpr e) = "(! " ++ boolExpr2Str e ++ ")"
+boolExpr2Str (InSetExpr e set) =
+  "(in-set " ++ setElemExpr2Str e ++ " " ++ setExpr2Str set ++ ")"
 
 numExpr2Str :: NumExpr -> String
 numExpr2Str (PlusExpr  lhs rhs) =
@@ -172,3 +175,21 @@ registerIdExpr2Str :: RegisterIdExpr -> String
 registerIdExpr2Str (ARegisterIdExpr i) = show i
 registerIdExpr2Str (RegisterIdAllocatedToDataNodeExpr e) =
   "(reg-alloc-to-dnode " ++ nodeIdExpr2Str e ++ ")"
+
+setElemExpr2Str :: SetElemExpr -> String
+setElemExpr2Str (LabelId2SetElemExpr e) =
+  "(lab-id-to-set-elem " ++ labelIdExpr2Str e ++ ")"
+setElemExpr2Str (RegisterId2SetElemExpr e) =
+  "(reg-id-to-set-elem " ++ registerIdExpr2Str e ++ ")"
+
+setExpr2Str :: SetExpr -> String
+setExpr2Str (UnionSetExpr lhs rhs) =
+  "(union " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
+setExpr2Str (IntersectSetExpr lhs rhs) =
+  "(inter " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
+setExpr2Str (DiffSetExpr lhs rhs) =
+  "(diff " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
+setExpr2Str (DomSetOfLabelIdExpr e) =
+  "(domset-of " ++ labelIdExpr2Str e ++ ")"
+setExpr2Str (RegisterClassExpr es) =
+  "(reg-class (" ++ intercalate " " (map registerIdExpr2Str es) ++ "))"

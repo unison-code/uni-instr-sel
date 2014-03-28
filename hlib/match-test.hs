@@ -222,33 +222,52 @@ main =
                              ThisInstanceIdExpr
                            )
                          , Constraint $
-                           OrExpr
+                           NotExpr $
                            (
-                             EqExpr
+                             AndExpr
                              (
-                               LabelId2NumExpr $
-                               LabelIdAllocatedToInstanceExpr $
-                               DefinerOfEntityNodeExpr $
-                               ANodeIdExpr 0
+                               InSetExpr
+                               (
+                                 LabelId2SetElemExpr $
+                                 LabelIdAllocatedToInstanceExpr $
+                                 DefinerOfEntityNodeExpr $
+                                 ANodeIdExpr 0
+                               )
+                               (
+                                 IntersectSetExpr
+                                 (
+                                   DomSetOfLabelIdExpr $
+                                   LabelIdOfLabelNodeExpr $
+                                   ANodeIdExpr 3
+                                 )
+                                 (
+                                   DomSetOfLabelIdExpr $
+                                   LabelIdOfLabelNodeExpr $
+                                   ANodeIdExpr 4
+                                 )
+                               )
                              )
                              (
-                               LabelId2NumExpr $
-                               LabelIdOfLabelNodeExpr $
-                               ANodeIdExpr 3
-                             )
-                           )
-                           (
-                             EqExpr
-                             (
-                               LabelId2NumExpr $
-                               LabelIdAllocatedToInstanceExpr $
-                               DefinerOfEntityNodeExpr $
-                               ANodeIdExpr 1
-                             )
-                             (
-                               LabelId2NumExpr $
-                               LabelIdOfLabelNodeExpr $
-                               ANodeIdExpr 4
+                               InSetExpr
+                               (
+                                 LabelId2SetElemExpr $
+                                 LabelIdAllocatedToInstanceExpr $
+                                 DefinerOfEntityNodeExpr $
+                                 ANodeIdExpr 1
+                               )
+                               (
+                                 IntersectSetExpr
+                                 (
+                                   DomSetOfLabelIdExpr $
+                                   LabelIdOfLabelNodeExpr $
+                                   ANodeIdExpr 3
+                                 )
+                                 (
+                                   DomSetOfLabelIdExpr $
+                                   LabelIdOfLabelNodeExpr $
+                                   ANodeIdExpr 4
+                                 )
+                               )
                              )
                            )
                          ]
