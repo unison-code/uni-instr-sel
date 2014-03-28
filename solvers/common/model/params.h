@@ -666,6 +666,36 @@ class Params {
     parseRegisterIdExpr(std::string& str);
 
     /**
+     * Parses a list of register ID expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed list of expression.
+     */
+    static std::list<const RegisterIdExpr*>
+    parseListOfRegisterIdExpr(std::string& str);
+
+    /**
+     * Parses a set expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static SetExpr*
+    parseSetExpr(std::string& str);
+
+    /**
+     * Parses a set element expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static SetElemExpr*
+    parseSetElemExpr(std::string& str);
+
+    /**
      * Removes initial whitespace from a string.
      *
      * @param str

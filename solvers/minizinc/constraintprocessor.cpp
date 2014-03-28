@@ -50,47 +50,51 @@ ConstraintProcessor::process(const Id& id, const Constraint* c) {
 string
 ConstraintProcessor::process(const BoolExpr* e) {
     if (const EqExpr* de = dynamic_cast<const EqExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") == "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " == "
+            + process(de->getRhs()) + ")";
     }
     else if (const NeqExpr* de = dynamic_cast<const NeqExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") != "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " != "
+            + process(de->getRhs()) + ")";
     }
     else if (const GTExpr* de = dynamic_cast<const GTExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") > "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " > "
+            + process(de->getRhs()) + ")";
     }
     else if (const GEExpr* de = dynamic_cast<const GEExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") >= "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " >= "
+            + process(de->getRhs()) + ")";
     }
     else if (const LTExpr* de = dynamic_cast<const LTExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") < "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " < "
+            + process(de->getRhs()) + ")";
     }
     else if (const LEExpr* de = dynamic_cast<const LEExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") <= "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " <= "
+            + process(de->getRhs()) + ")";
     }
     else if (const AndExpr* de = dynamic_cast<const AndExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") /\\ "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " /\\ "
+            + process(de->getRhs()) + ")";
     }
     else if (const OrExpr* de = dynamic_cast<const OrExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") \\/ "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " \\/ "
+            + process(de->getRhs()) + ")";
     }
     else if (const ImpExpr* de = dynamic_cast<const ImpExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") -> "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " -> "
+            + process(de->getRhs()) + ")";
     }
     else if (const EqvExpr* de = dynamic_cast<const EqvExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") <-> "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " <-> "
+            + process(de->getRhs()) + ")";
     }
     else if (const NotExpr* de = dynamic_cast<const NotExpr*>(e)) {
-        return string("not (") + process(de->getExpr()) + ")";
+        return string("not ") + process(de->getExpr());
+    }
+    else if (const InSetExpr* de = dynamic_cast<const InSetExpr*>(e)) {
+        return string("(") + process(de->getLhs()) + " in "
+            + process(de->getRhs()) + ")";
     }
     else {
         THROW(Exception, "BoolExpr of unknown derived class");
@@ -100,12 +104,12 @@ ConstraintProcessor::process(const BoolExpr* e) {
 string
 ConstraintProcessor::process(const NumExpr* e) {
     if (const PlusExpr* de = dynamic_cast<const PlusExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") + "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " + "
+            + process(de->getRhs()) + ")";
     }
     else if (const MinusExpr* de = dynamic_cast<const MinusExpr*>(e)) {
-        return string("(") + process(de->getLhs()) + ") - "
-            + "(" + process(de->getRhs()) + ")";
+        return string("(") + process(de->getLhs()) + " - "
+            + process(de->getRhs()) + ")";
     }
     else if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
         return Utils::toString(de->getValue());
@@ -256,6 +260,50 @@ ConstraintProcessor::process(const RegisterIdExpr* e) {
 }
 
 string
+ConstraintProcessor::process(const SetExpr* e) {
+    if (const UnionSetExpr* de = dynamic_cast<const UnionSetExpr*>(e)) {
+        return string("(") + process(de->getLhs()) + " union "
+            + process(de->getRhs()) + ")";
+    }
+    else if (const IntersectSetExpr* de =
+             dynamic_cast<const IntersectSetExpr*>(e))
+    {
+        return string("(") + process(de->getLhs()) + " intersect "
+            + process(de->getRhs()) + ")";
+    }
+    else if (const DiffSetExpr* de = dynamic_cast<const DiffSetExpr*>(e)) {
+        return string("(") + process(de->getLhs()) + " diff "
+            + process(de->getRhs()) + ")";
+    }
+    else if (const DomSetOfLabelIdExpr* de =
+             dynamic_cast<const DomSetOfLabelIdExpr*>(e))
+    {
+        return getDomSetString()
+            + "[" + process(de->getExpr()) + "]";
+    }
+    else {
+        THROW(Exception, "PatternIdExpr of unknown derived class");
+    }
+}
+
+string
+ConstraintProcessor::process(const SetElemExpr* e) {
+    if (const LabelIdToSetElemExpr* de =
+        dynamic_cast<const LabelIdToSetElemExpr*>(e))
+    {
+        return process(de->getExpr());
+    }
+    else if (const RegisterIdToSetElemExpr* de =
+        dynamic_cast<const RegisterIdToSetElemExpr*>(e))
+    {
+        return process(de->getExpr());
+    }
+    else {
+        THROW(Exception, "PatternIdExpr of unknown derived class");
+    }
+}
+
+string
 ConstraintProcessor::getActionCovererArrayString(void) const {
     return "an_cov";
 }
@@ -268,4 +316,9 @@ ConstraintProcessor::getEntityDefinerArrayString(void) const {
 string
 ConstraintProcessor::getBBAllocationArrayString(void) const {
     return "pi_bb";
+}
+
+string
+ConstraintProcessor::getDomSetString(void) const {
+    return "funcLabelDomsets";
 }

@@ -466,6 +466,11 @@ Params::parseBoolExpr(string& str) {
             auto e = parseBoolExpr(str);
             expr = new NotExpr(e);
         }
+        else if (eat("in-set ", str)) {
+            auto lhs = parseSetElemExpr(str);
+            auto rhs = parseSetExpr(str);
+            expr = new InSetExpr(lhs, rhs);
+        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -700,6 +705,102 @@ Params::parseRegisterIdExpr(string& str) {
     else {
         int num = eatInt(str);
         expr = new ARegisterIdExpr(num);
+    }
+
+    return expr;
+}
+
+list<const RegisterIdExpr*>
+Params::parseListOfRegisterIdExpr(string& str) {
+    list<const RegisterIdExpr*> expr;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        while (true) {
+            eatWhitespace(str);
+            expr.push_back(parseRegisterIdExpr(str));
+            if (eat(" ", str)) continue;
+            if (eat(")", str)) break;
+        }
+    }
+
+    return expr;
+}
+
+SetExpr*
+Params::parseSetExpr(string& str) {
+    SetExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eat("union ", str)) {
+            auto lhs = parseSetExpr(str);
+            auto rhs = parseSetExpr(str);
+            expr = new UnionSetExpr(lhs, rhs);
+        }
+        else if (eat("inter ", str)) {
+            auto lhs = parseSetExpr(str);
+            auto rhs = parseSetExpr(str);
+            expr = new IntersectSetExpr(lhs, rhs);
+        }
+        else if (eat("diff ", str)) {
+            auto lhs = parseSetExpr(str);
+            auto rhs = parseSetExpr(str);
+            expr = new DiffSetExpr(lhs, rhs);
+        }
+        else if (eat("domset-of ", str)) {
+            auto e = parseLabelIdExpr(str);
+            expr = new DomSetOfLabelIdExpr(e);
+        }
+        else if (eat("reg-class ", str)) {
+            auto es = parseListOfRegisterIdExpr(str);
+            expr = new RegisterClassExpr(es);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+    }
+
+    return expr;
+}
+
+SetElemExpr*
+Params::parseSetElemExpr(string& str) {
+    SetElemExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eat("lab-id-to-set-elem ", str)) {
+            auto e = parseLabelIdExpr(str);
+            expr = new LabelIdToSetElemExpr(e);
+        }
+        else if (eat("reg-id-to-set-elem ", str)) {
+            auto e = parseRegisterIdExpr(str);
+            expr = new RegisterIdToSetElemExpr(e);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
     }
 
     return expr;

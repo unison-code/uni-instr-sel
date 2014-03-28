@@ -354,11 +354,11 @@ DiffSetExpr::DiffSetExpr(SetExpr* lhs, SetExpr* rhs)
 
 DiffSetExpr::~DiffSetExpr(void) {}
 
-DomsetOfLabelIdExpr::DomsetOfLabelIdExpr(LabelIdExpr* expr)
+DomSetOfLabelIdExpr::DomSetOfLabelIdExpr(LabelIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
-DomsetOfLabelIdExpr::~DomsetOfLabelIdExpr(void) {}
+DomSetOfLabelIdExpr::~DomSetOfLabelIdExpr(void) {}
 
 RegisterClassExpr::RegisterClassExpr(std::list<const RegisterIdExpr*> expr)
     : expr_(expr)

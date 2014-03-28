@@ -67,29 +67,37 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * Gets the variable array for the action node coverers.
+     * Gets the variable for the action node coverer array.
      *
-     * @returns Array name.
+     * @returns Variable name.
      */
     std::string
     getActionCovererArrayString(void) const;
 
     /**
-     * Gets the variable array for the entity node definers.
+     * Gets the variable for the entity node definer array.
      *
-     * @returns Array name.
+     * @returns variable name.
      */
     std::string
     getEntityDefinerArrayString(void) const;
 
     /**
-     * Gets the variable array for the pattern instance-to-basic block
-     * allocations.
+     * Gets the variable for the pattern instance-to-basic block allocation
+     * array.
      *
-     * @returns Array name.
+     * @returns variable name.
      */
     std::string
     getBBAllocationArrayString(void) const;
+
+    /**
+     * Gets the parameter for the dominator sets.
+     *
+     * @returns Parameter name.
+     */
+    std::string
+    getDomSetString(void) const;
 
     /**
      * Converts an expression into a string to be used in a Minizinc constraint.
@@ -104,88 +112,58 @@ class ConstraintProcessor {
     process(const Model::BoolExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::NumExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::NodeIdExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::InstanceIdExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::InstructionIdExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::PatternIdExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::LabelIdExpr* e);
 
     /**
-     * Converts an expression into a string to be used in a Minizinc constraint.
-     *
-     * @param e
-     *        Expression
-     * @returns The corresponding string.
-     * @throws Exception
-     *         When something went wrong.
+     * \copydoc process(const Model::BoolExpr*)
      */
     std::string
     process(const Model::RegisterIdExpr* e);
+
+    /**
+     * \copydoc process(const Model::BoolExpr*)
+     */
+    std::string
+    process(const Model::SetExpr* e);
+
+    /**
+     * \copydoc process(const Model::BoolExpr*)
+     */
+    std::string
+    process(const Model::SetElemExpr* e);
 
   protected:
     /**

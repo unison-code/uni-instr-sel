@@ -1149,20 +1149,20 @@ class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
 };
 
 /**
- * Label domset expression.
+ * Label dominator set expression.
  */
-class DomsetOfLabelIdExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
+class DomSetOfLabelIdExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(Arg*)
      */
-    DomsetOfLabelIdExpr(LabelIdExpr* expr);
+    DomSetOfLabelIdExpr(LabelIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~DomsetOfLabelIdExpr(void);
+    ~DomSetOfLabelIdExpr(void);
 };
 
 /**
@@ -1199,7 +1199,7 @@ class RegisterClassExpr : public SetExpr {
 /**
  * Converts a label ID to a set element expression.
  */
-class LabelIdToSetElemExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
+class LabelIdToSetElemExpr : public UnaryExpr<SetElemExpr, LabelIdExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(Arg*)
@@ -1216,7 +1216,7 @@ class LabelIdToSetElemExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
 /**
  * Converts a register ID to a set element expression.
  */
-class RegisterIdToSetElemExpr : public UnaryExpr<SetExpr, RegisterIdExpr> {
+class RegisterIdToSetElemExpr : public UnaryExpr<SetElemExpr, RegisterIdExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(Arg*)
