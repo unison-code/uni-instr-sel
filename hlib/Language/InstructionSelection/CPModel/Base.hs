@@ -94,6 +94,11 @@ data PatternInstanceData
 
         , patConstraints :: [Constraint]
 
+          -- | Whether the use-def constraints should be removed from this
+          -- pattern instance. This only applies to the generic phi patterns.
+
+        , patNoUseDefConstraints :: Bool
+
           -- | The size of the instruction associated with this pattern
           -- instance.
 
@@ -146,6 +151,7 @@ instance PrettyPrint PatternInstanceData where
     ++ "Used entity nodes: " ++ show (patUsedEntityNodes d) ++ "\n"
     ++ "Code size: " ++ show (patCodeSize d) ++ "\n"
     ++ "Latency: " ++ show (patLatency d) ++ "\n"
+    ++ "No use-def constraints: " ++ show (patNoUseDefConstraints d)
     ++ "TODO: pretty-print constraints\n"
 
 instance PrettyPrint MachineData where

@@ -15,7 +15,8 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.CPModel.ParamMaker (
-  mkParams
+  NoUseDefDomConstraintSetting
+, mkParams
 ) where
 
 import Language.InstructionSelection.Constraints
@@ -30,6 +31,14 @@ import Data.Maybe
 
 
 -------------
+-- Type defs
+-------------
+
+type NoUseDefDomConstraintSetting = Bool
+
+
+
+-------------
 -- Functions
 -------------
 
@@ -40,6 +49,7 @@ mkParams :: OpStructure -- ^ Function data.
             -> [( OpStructure
                 , [(Matchset Node, InstanceId)]
                 , InstProperties
+                , NoUseDefDomConstraintSetting
                 )] -- ^ Pattern instance data.
             -> CPModelParams
 mkParams f ps =
@@ -60,9 +70,10 @@ mkFunctionGraphData os =
 mkPatternInstanceData :: ( OpStructure
                          , [(Matchset Node, InstanceId)]
                          , InstProperties
+                         , NoUseDefDomConstraintSetting
                          )
                       -> [PatternInstanceData]
-mkPatternInstanceData (os, matchsets, props) =
+mkPatternInstanceData (os, matchsets, props, b_usedef) =
   let g = osGraph os
       a_ns = (nodeIds $ filter isActionNode $ allNodes g)
       entityNodes p = nodeIds
@@ -75,6 +86,7 @@ mkPatternInstanceData (os, matchsets, props) =
                                          e_def_ns
                                          e_use_ns
                                          (osConstraints os)
+                                         b_usedef
                                          (convertMatchsetNToId m)
                                          id
                                          props
@@ -84,16 +96,18 @@ mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes in the pattern.
                           -> [NodeId] -- ^ Defined entity nodes.
                           -> [NodeId] -- ^ Used entity nodes.
                           -> [Constraint]
+                          -> NoUseDefDomConstraintSetting
                           -> Matchset NodeId
                           -> InstanceId
                           -> InstProperties
                           -> PatternInstanceData
-mkPatternInstanceData' a_ns e_def_ns e_use_ns cs matchset id props =
+mkPatternInstanceData' a_ns e_def_ns e_use_ns cs b_usedef matchset id props =
   PatternInstanceData id
                       (mappedNodesPToF matchset a_ns)
                       (mappedNodesPToF matchset e_def_ns)
                       (mappedNodesPToF matchset e_use_ns)
                       (replaceNodeIdsPToFInConstraints matchset cs)
+                      b_usedef
                       (codeSize props)
                       (latency props)
 

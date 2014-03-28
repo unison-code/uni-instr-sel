@@ -68,14 +68,18 @@ instance ToJSON FunctionGraphData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object [ "instance-id"          .= (patInstanceId d)
-           , "action-nodes-covered" .= (patCoveredActionNodes d)
-           , "entity-nodes-defined" .= (patDefinedEntityNodes d)
-           , "entity-nodes-used"    .= (patUsedEntityNodes d)
-           , "code-size"            .= (patCodeSize d)
-           , "latency"              .= (patLatency d)
-           , "constraints"          .= (patConstraints d)
-           ]
+    object ([ "instance-id"          .= (patInstanceId d)
+            , "action-nodes-covered" .= (patCoveredActionNodes d)
+            , "entity-nodes-defined" .= (patDefinedEntityNodes d)
+            , "entity-nodes-used"    .= (patUsedEntityNodes d)
+            , "code-size"            .= (patCodeSize d)
+            , "latency"              .= (patLatency d)
+            , "constraints"          .= (patConstraints d)
+            ]
+            ++ if patNoUseDefConstraints d
+                  then ["no-use-def-dom-constraints" .= True]
+                  else []
+           )
 
 instance ToJSON MachineData where
   toJSON d =

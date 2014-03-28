@@ -41,7 +41,7 @@ import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils (toNatural)
 import Data.List ( mapAccumL
-                 , zip4
+                 , zip5
                  )
 
 main :: IO ()
@@ -302,6 +302,13 @@ main =
                            )
                          ]
                        ]
+         no_use_def_cs = [ False
+                         , False
+                         , False
+                         , False
+                         , False
+                         , True
+                         ]
          inst_props = [ InstProperties 1 1
                       , InstProperties 1 1
                       , InstProperties 1 1
@@ -318,8 +325,12 @@ main =
                      0
                      list_of_matchsets
          pattern_data =
-           map (\(pat, c, m, prop) -> (OpStructure pat c, m, prop))
-               (zip4 patterns constraints list_of_matchsets_with_ids inst_props)
+           map (\(pat, c, m, prop, b) -> (OpStructure pat c, m, prop, b))
+               (zip5 patterns
+                     constraints
+                     list_of_matchsets_with_ids
+                     inst_props
+                     no_use_def_cs)
          params = mkParams (OpStructure func []) pattern_data
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn))
