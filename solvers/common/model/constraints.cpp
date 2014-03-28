@@ -28,6 +28,7 @@
 #include "../exceptions/exception.h"
 
 using namespace Model;
+using std::list;
 
 Constraint::Constraint(BoolExpr* expr)
     : expr_(expr)
@@ -39,7 +40,7 @@ Constraint::~Constraint(void) {
     delete expr_;
 }
 
-BoolExpr*
+const BoolExpr*
 Constraint::getExpr(void) const {
     return expr_;
 }
@@ -79,6 +80,14 @@ LabelIdExpr::~LabelIdExpr(void) {}
 RegisterIdExpr::RegisterIdExpr(void) {}
 
 RegisterIdExpr::~RegisterIdExpr(void) {}
+
+SetElemExpr::SetElemExpr(void) {}
+
+SetElemExpr::~SetElemExpr(void) {}
+
+SetExpr::SetExpr(void) {}
+
+SetExpr::~SetExpr(void) {}
 
 EqExpr::EqExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
@@ -149,6 +158,12 @@ NotExpr::~NotExpr(void) {}
 PlusExpr::PlusExpr(NumExpr* lhs, NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
+
+InSetExpr::InSetExpr(SetElemExpr* lhs, SetExpr* rhs)
+    : BinaryExpr(lhs, rhs)
+{}
+
+InSetExpr::~InSetExpr(void) {}
 
 PlusExpr::~PlusExpr(void) {}
 
@@ -320,3 +335,54 @@ RegisterIdAllocatedToDataNodeExpr::RegisterIdAllocatedToDataNodeExpr(
 {}
 
 RegisterIdAllocatedToDataNodeExpr::~RegisterIdAllocatedToDataNodeExpr(void) {}
+
+UnionSetExpr::UnionSetExpr(SetExpr* lhs, SetExpr* rhs)
+    : BinaryExpr(lhs, rhs)
+{}
+
+UnionSetExpr::~UnionSetExpr(void) {}
+
+IntersectSetExpr::IntersectSetExpr(SetExpr* lhs, SetExpr* rhs)
+    : BinaryExpr(lhs, rhs)
+{}
+
+IntersectSetExpr::~IntersectSetExpr(void) {}
+
+DiffSetExpr::DiffSetExpr(SetExpr* lhs, SetExpr* rhs)
+    : BinaryExpr(lhs, rhs)
+{}
+
+DiffSetExpr::~DiffSetExpr(void) {}
+
+DomsetOfLabelIdExpr::DomsetOfLabelIdExpr(LabelIdExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+DomsetOfLabelIdExpr::~DomsetOfLabelIdExpr(void) {}
+
+RegisterClassExpr::RegisterClassExpr(std::list<const RegisterIdExpr*> expr)
+    : expr_(expr)
+{}
+
+RegisterClassExpr::~RegisterClassExpr(void) {
+    for (auto e : expr_) {
+        delete e;
+    }
+}
+
+const list<const RegisterIdExpr*>&
+RegisterClassExpr::getExprList(void) const {
+    return expr_;
+}
+
+LabelIdToSetElemExpr::LabelIdToSetElemExpr(LabelIdExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+LabelIdToSetElemExpr::~LabelIdToSetElemExpr(void) {}
+
+RegisterIdToSetElemExpr::RegisterIdToSetElemExpr(RegisterIdExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+RegisterIdToSetElemExpr::~RegisterIdToSetElemExpr(void) {}

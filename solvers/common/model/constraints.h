@@ -29,6 +29,7 @@
 
 #include "types.h"
 #include "../exceptions/exception.h"
+#include <list>
 
 namespace Model {
 
@@ -42,6 +43,8 @@ class InstanceIdExpr;
 class InstructionIdExpr;
 class NodeIdExpr;
 class PatternIdExpr;
+class SetElemExpr;
+class SetExpr;
 
 /**
  * Defines a class for representing a constraint.
@@ -69,11 +72,11 @@ class Constraint {
      *
      * @return The expression.
      */
-    BoolExpr*
+    const BoolExpr*
     getExpr(void) const;
 
   protected:
-    BoolExpr* expr_;
+    const BoolExpr* expr_;
 };
 
 /**
@@ -239,6 +242,42 @@ class RegisterIdExpr : public Expr {
 };
 
 /**
+ * Base class for a set element expression.
+ */
+class SetElemExpr : public Expr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     */
+    SetElemExpr(void);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~SetElemExpr(void)
+    =0;
+};
+
+/**
+ * Base class for a set expression.
+ */
+class SetExpr : public Expr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     */
+    SetExpr(void);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~SetExpr(void)
+    =0;
+};
+
+/**
  * Base class for expressions which take one expression as argument.
  *
  * @tparam Base
@@ -283,7 +322,7 @@ class UnaryExpr : public Base {
     }
 
   private:
-    Arg* expr_;
+    const Arg* expr_;
 };
 
 /**
@@ -348,8 +387,8 @@ class BinaryExpr : public Base {
     }
 
   private:
-    Arg1* lhs_;
-    Arg2* rhs_;
+    const Arg1* lhs_;
+    const Arg2* rhs_;
 };
 
 /**
@@ -542,6 +581,23 @@ class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~NotExpr(void);
+};
+
+/**
+ * Exists-in-set expression.
+ */
+class InSetExpr : public BinaryExpr<BoolExpr, SetElemExpr, SetExpr> {
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     */
+    InSetExpr(SetElemExpr* lhs, SetExpr* rhs);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~InSetExpr(void);
 };
 
 /**
@@ -1039,6 +1095,139 @@ class RegisterIdAllocatedToDataNodeExpr : public UnaryExpr<RegisterIdExpr,
      */
     virtual
     ~RegisterIdAllocatedToDataNodeExpr(void);
+};
+
+/**
+ * Union set expression.
+ */
+class UnionSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     */
+    UnionSetExpr(SetExpr* lhs, SetExpr* rhs);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~UnionSetExpr(void);
+};
+
+/**
+ * Intersect set expression.
+ */
+class IntersectSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     */
+    IntersectSetExpr(SetExpr* lhs, SetExpr* rhs);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~IntersectSetExpr(void);
+};
+
+/**
+ * Difference set expression.
+ */
+class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     */
+    DiffSetExpr(SetExpr* lhs, SetExpr* rhs);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DiffSetExpr(void);
+};
+
+/**
+ * Label domset expression.
+ */
+class DomsetOfLabelIdExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    DomsetOfLabelIdExpr(LabelIdExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DomsetOfLabelIdExpr(void);
+};
+
+/**
+ * Register class expression.
+ */
+class RegisterClassExpr : public SetExpr {
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param expr
+     *        The list of expressions.
+     */
+    RegisterClassExpr(std::list<const RegisterIdExpr*> expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~RegisterClassExpr(void);
+
+    /**
+     * Gets the list of expressions.
+     *
+     * @return The list of expressions.
+     */
+    const std::list<const RegisterIdExpr*>&
+    getExprList(void) const;
+
+  private:
+    std::list<const RegisterIdExpr*> expr_;
+};
+
+/**
+ * Converts a label ID to a set element expression.
+ */
+class LabelIdToSetElemExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    LabelIdToSetElemExpr(LabelIdExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~LabelIdToSetElemExpr(void);
+};
+
+/**
+ * Converts a register ID to a set element expression.
+ */
+class RegisterIdToSetElemExpr : public UnaryExpr<SetExpr, RegisterIdExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     */
+    RegisterIdToSetElemExpr(RegisterIdExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~RegisterIdToSetElemExpr(void);
 };
 
 }
