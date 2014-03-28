@@ -30,6 +30,7 @@ Tests the implementation of the VF2 algorithm.
 
 import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Constraints
+import Language.InstructionSelection.Constraints.PCBuilder
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
@@ -178,9 +179,9 @@ main =
                     ]
          constraints = [ []
                        , []
-                       , []
-                       , []
-                       , []
+                       , mkBBAllocConstraints bnz_pattern
+                       , mkBBAllocConstraints br_pattern
+                       , mkBBAllocConstraints ret_pattern
                        , [ Constraint $
                            AndExpr
                            (
