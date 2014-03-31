@@ -80,15 +80,23 @@ class ConstraintProcessor {
     /**
      * Gets the variable for the data node definer array.
      *
-     * @returns variable name.
+     * @returns Variable name.
      */
     std::string
     getDataDefinerArrayString(void) const;
 
     /**
+     * Gets the variable for the data node register array.
+     *
+     * @returns Variable name.
+     */
+    std::string
+    getDataRegisterArrayString(void) const;
+
+    /**
      * Gets the variable for the state node definer array.
      *
-     * @returns variable name.
+     * @returns Variable name.
      */
     std::string
     getStateDefinerArrayString(void) const;
@@ -97,7 +105,7 @@ class ConstraintProcessor {
      * Gets the variable for the pattern instance-to-basic block allocation
      * array.
      *
-     * @returns variable name.
+     * @returns Variable name.
      */
     std::string
     getBBAllocationArrayString(void) const;
@@ -105,7 +113,7 @@ class ConstraintProcessor {
     /**
      * Gets the variable for the pattern instance selection array.
      *
-     * @returns variable name.
+     * @returns Variable name.
      */
     std::string
     getInstanceSelectedArrayString(void) const;

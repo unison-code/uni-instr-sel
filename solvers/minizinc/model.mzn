@@ -13,8 +13,7 @@ set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
-% TODO: activate
-%set of int: allRegisters = 0..numRegisters-1;
+set of int: allRegisters = 0..numRegisters-1;
 int: nullLabel = numFuncLabelNodes;
 array[allFuncLabelNodes] of set of int: funcLabelDomsets;
 array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
@@ -36,8 +35,7 @@ include "input.mzn";
 
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 array[allFuncDataNodes] of var allPatternInstances: dn_def;
-% TODO: activate
-%array[allFuncDataNodes] of var allRegisters: dn_reg;
+array[allFuncDataNodes] of var allRegisters: dn_reg;
 array[allFuncStateNodes] of var allPatternInstances: sn_def;
 array[allPatternInstances] of var bool: pi_sel;
 array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
@@ -143,6 +141,7 @@ solve minimize cost;
 output [
     "an_cov=", show(an_cov), "\n",
     "dn_def=", show(dn_def), "\n",
+    "dn_reg=", show(dn_reg), "\n",
     "sn_def=", show(sn_def), "\n",
     "pi_sel=", show(pi_sel), "\n",
     "pi_bb=", show(pi_bb), "\n",

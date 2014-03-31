@@ -180,7 +180,7 @@ ConstraintProcessor::process(const NodeIdExpr* e) {
 string
 ConstraintProcessor::process(const InstanceIdExpr* e) {
     if (const AnInstanceIdExpr* de = dynamic_cast<const AnInstanceIdExpr*>(e)) {
-        return Utils::toString(de->getId());
+        return Utils::toString(p_.getIndexOfInstance(de->getId()));
     }
     else if (dynamic_cast<const ThisInstanceIdExpr*>(e)) {
         return Utils::toString(p_.getIndexOfInstance(instance_id_));
@@ -258,13 +258,14 @@ ConstraintProcessor::process(const LabelIdExpr* e) {
 
 string
 ConstraintProcessor::process(const RegisterIdExpr* e) {
-    if (dynamic_cast<const ARegisterIdExpr*>(e)) {
-        // TODO: fix implementation
-        return "?";
+    if (const ARegisterIdExpr* de = dynamic_cast<const ARegisterIdExpr*>(e)) {
+        return Utils::toString(de->getId());
     }
-    else if (dynamic_cast<const RegisterIdAllocatedToDataNodeExpr*>(e)) {
-        // TODO: fix implementation
-        return "?";
+    else if (const RegisterIdAllocatedToDataNodeExpr* de =
+             dynamic_cast<const RegisterIdAllocatedToDataNodeExpr*>(e))
+    {
+        return getDataRegisterArrayString()
+            + "[" + process(de->getExpr()) + "]";
     }
     else {
         THROW(Exception, "PatternIdExpr of unknown derived class");
@@ -323,6 +324,11 @@ ConstraintProcessor::getActionCovererArrayString(void) const {
 string
 ConstraintProcessor::getDataDefinerArrayString(void) const {
     return "dn_def";
+}
+
+string
+ConstraintProcessor::getDataRegisterArrayString(void) const {
+    return "dn_reg";
 }
 
 string
