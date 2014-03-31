@@ -70,42 +70,28 @@ forall (p in allPatternInstances)
     )
 );
 
-% Enforce selection of pattern if an action node is covered or a data or state
-% node is defined by that pattern.
-constraint
-forall (n in allFuncActionNodes, p in allPatternInstances)
-(
-    an_cov[n] == p -> pi_sel[p]
-);
-constraint
-forall (n in allFuncDataNodes, p in allPatternInstances)
-(
-    dn_def[n] == p -> pi_sel[p]
-);
-constraint
-forall (n in allFuncStateNodes, p in allPatternInstances)
-(
-    sn_def[n] == p -> pi_sel[p]
-);
-
-% Enforce corresponding action node coverage and data and state node definitions
-% if a pattern is selected.
+% Enforce selection of pattern if and only if an action node is covered or a
+% data or state node is defined by that pattern.
 constraint
 forall (p in allPatternInstances)
 (
-    forall (n in patInstActionsCovered[p])
+    pi_sel[p]
+    <->
     (
-        pi_sel[p] -> an_cov[n] = p
-    )
-    /\
-    forall (n in patInstDataDefined[p])
-    (
-        pi_sel[p] -> dn_def[n] = p
-    )
-    /\
-    forall (n in patInstStateDefined[p])
-    (
-        pi_sel[p] -> sn_def[n] = p
+        forall (n in patInstActionsCovered[p])
+        (
+            an_cov[n] == p
+        )
+        /\
+        forall (n in patInstDataDefined[p])
+        (
+            dn_def[n] == p
+        )
+        /\
+        forall (n in patInstStateDefined[p])
+        (
+            sn_def[n] == p
+        )
     )
 );
 
