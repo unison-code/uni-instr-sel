@@ -132,6 +132,8 @@ outputParameters(const Params& params) {
          << endl;
     cout << "numPatternInstances = " << params.getNumInstances() << ";"
          << endl;
+    cout << "numRegisters = " << params.getNumRegisters() << ";"
+         << endl;
 
     cout << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
     {

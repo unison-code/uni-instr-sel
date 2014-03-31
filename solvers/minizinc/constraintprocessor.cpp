@@ -259,7 +259,7 @@ ConstraintProcessor::process(const LabelIdExpr* e) {
 string
 ConstraintProcessor::process(const RegisterIdExpr* e) {
     if (const ARegisterIdExpr* de = dynamic_cast<const ARegisterIdExpr*>(e)) {
-        return Utils::toString(de->getId());
+        return Utils::toString(p_.getIndexOfRegister(de->getId()));
     }
     else if (const RegisterIdAllocatedToDataNodeExpr* de =
              dynamic_cast<const RegisterIdAllocatedToDataNodeExpr*>(e))

@@ -66,6 +66,11 @@ Params::getNumInstances(void) const {
     return pat_inst_mappings_.size();
 }
 
+size_t
+Params::getNumRegisters(void) const {
+    return mach_reg_mappings_.size();
+}
+
 void
 Params::parseJson(const string& str, Params& p) {
     Value root;
@@ -78,16 +83,17 @@ Params::parseJson(const string& str, Params& p) {
     computeMappingsForFunctionDataNodes(root, p);
     computeMappingsForFunctionStateNodes(root, p);
     computeMappingsAndDomsetsForFunctionLabelNodes(root, p);
-    computeMappingsForInstances(root, p);
-    setInstanceCodeSizes(root, p);
-    setInstanceLatencies(root, p);
-    setInstanceConstraints(root, p);
-    setInstanceNoUseDefDomConstraintsSettings(root, p);
-    setActionNodesCoveredByInstances(root, p);
-    setDataNodesDefinedByInstances(root, p);
-    setDataNodesUsedByInstances(root, p);
-    setStateNodesDefinedByInstances(root, p);
-    setStateNodesUsedByInstances(root, p);
+    computeMappingsForPatternInstances(root, p);
+    computeMappingsForMachineRegisters(root, p);
+    setPatternInstanceCodeSizes(root, p);
+    setPatternInstanceLatencies(root, p);
+    setPatternInstanceConstraints(root, p);
+    setPatternInstanceNoUseDefDomConstraintsSettings(root, p);
+    setActionNodesCoveredByPatternInstances(root, p);
+    setDataNodesDefinedByPatternInstances(root, p);
+    setDataNodesUsedByPatternInstances(root, p);
+    setStateNodesDefinedByPatternInstances(root, p);
+    setStateNodesUsedByPatternInstances(root, p);
 }
 
 bool
@@ -183,7 +189,7 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
     const Value& root,
     Params& p
 ) {
-    const Value& function =getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "label-nodes")) {
         const Id& node_id = toId(getJsonValue(entry, "node"));
@@ -201,7 +207,21 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
 }
 
 void
-Params::computeMappingsForInstances(
+Params::computeMappingsForMachineRegisters(
+    const Value& root,
+    Params& p
+) {
+    const Value& machine = getJsonValue(root, "machine-data");
+    ArrayIndex index = 0;
+    for (auto register_id : getJsonValue(machine, "registers")) {
+        addMapping(toId(register_id),
+                   index++,
+                   p.mach_reg_mappings_);
+    }
+}
+
+void
+Params::computeMappingsForPatternInstances(
     const Value& root,
     Params& p
 ) {
@@ -224,7 +244,7 @@ Params::getLatencyOfInstance(const Id& instance) const {
 }
 
 void
-Params::setInstanceCodeSizes(const Json::Value& root, Params& p) {
+Params::setPatternInstanceCodeSizes(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         int code_size = toInt(getJsonValue(instance, "code-size"));
@@ -235,7 +255,7 @@ Params::setInstanceCodeSizes(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setInstanceLatencies(const Json::Value& root, Params& p) {
+Params::setPatternInstanceLatencies(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         int latency = toInt(getJsonValue(instance, "latency"));
@@ -243,6 +263,29 @@ Params::setInstanceLatencies(const Json::Value& root, Params& p) {
                    latency,
                    p.pat_inst_latencies_);
     }
+}
+
+ArrayIndex
+Params::getIndexOfRegister(const Id& id) const {
+    return getMappedValue(id, mach_reg_mappings_);
+}
+
+list<ArrayIndex>
+Params::getIndicesOfRegisters(const list<Id>& ids) const {
+    list<Id> indices;
+    for (auto& id : ids) {
+        indices.push_back(getIndexOfRegister(id));
+    }
+    return indices;
+}
+
+list<Id>
+Params::getAllRegisterIds(void) const {
+    list<Id> ids;
+    for (auto& kv : mach_reg_mappings_) {
+        ids.push_back(kv.first);
+    }
+    return ids;
 }
 
 list<Id>
@@ -265,7 +308,7 @@ Params::getConstraintsOfInstance(const Id& id) const {
 }
 
 void
-Params::setActionNodesCoveredByInstances(
+Params::setActionNodesCoveredByPatternInstances(
     const Json::Value& root,
     Params& p
 ) {
@@ -282,7 +325,7 @@ Params::setActionNodesCoveredByInstances(
 }
 
 void
-Params::setDataNodesDefinedByInstances(
+Params::setDataNodesDefinedByPatternInstances(
     const Json::Value& root,
     Params& p
 ) {
@@ -299,7 +342,7 @@ Params::setDataNodesDefinedByInstances(
 }
 
 void
-Params::setStateNodesDefinedByInstances(
+Params::setStateNodesDefinedByPatternInstances(
     const Json::Value& root,
     Params& p
 ) {
@@ -316,7 +359,7 @@ Params::setStateNodesDefinedByInstances(
 }
 
 void
-Params::setDataNodesUsedByInstances(
+Params::setDataNodesUsedByPatternInstances(
     const Json::Value& root,
     Params& p
 ) {
@@ -333,7 +376,7 @@ Params::setDataNodesUsedByInstances(
 }
 
 void
-Params::setStateNodesUsedByInstances(
+Params::setStateNodesUsedByPatternInstances(
     const Json::Value& root,
     Params& p
 ) {
@@ -481,7 +524,7 @@ Params::destroyConstraints(void) {
 }
 
 void
-Params::setInstanceConstraints(const Value& root, Params& p) {
+Params::setPatternInstanceConstraints(const Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
         list<const Constraint*> constraints;
@@ -986,7 +1029,7 @@ Params::getNoUseDefDomConstraintsSettingForInstance(const Id& instance) const {
 }
 
 void
-Params::setInstanceNoUseDefDomConstraintsSettings(
+Params::setPatternInstanceNoUseDefDomConstraintsSettings(
     const Json::Value& root,
     Params& p
 ) {

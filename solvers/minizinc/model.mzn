@@ -7,6 +7,7 @@ int: numFuncDataNodes;
 int: numFuncStateNodes;
 int: numFuncLabelNodes;
 int: numPatternInstances;
+int: numRegisters;
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
