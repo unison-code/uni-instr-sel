@@ -109,7 +109,8 @@ forall (p in allPatternInstances)
 constraint
 forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 (
-    pi_sel[p] ->
+    pi_sel[p]
+    ->
     (
         forall (n in patInstDataUsed[p])
         (
