@@ -85,6 +85,7 @@ Params::parseJson(const string& str, Params& p) {
     computeMappingsAndDomsetsForFunctionLabelNodes(root, p);
     computeMappingsForPatternInstances(root, p);
     computeMappingsForMachineRegisters(root, p);
+    setFunctionRootLabel(root, p);
     setPatternInstanceCodeSizes(root, p);
     setPatternInstanceLatencies(root, p);
     setPatternInstanceConstraints(root, p);
@@ -1043,4 +1044,15 @@ Params::setPatternInstanceNoUseDefDomConstraintsSettings(
                    setting,
                    p.pat_inst_no_use_def_dom_constraints_);
     }
+}
+
+void
+Params::setFunctionRootLabel(const Json::Value& root, Params& p) {
+    const Value& function = getJsonValue(root, "function-data");
+    p.func_root_label_ = toId(getJsonValue(function, "root-label"));
+}
+
+Id
+Params::getRootLabel(void) const {
+    return func_root_label_;
 }

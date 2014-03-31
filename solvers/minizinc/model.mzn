@@ -8,6 +8,7 @@ int: numFuncStateNodes;
 int: numFuncLabelNodes;
 int: numPatternInstances;
 int: numRegisters;
+int: rootLabel;
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
@@ -34,13 +35,35 @@ include "input.mzn";
 % VARIABLES
 %-----------
 
+% Action node coverage
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
+
+% Data node definitions and register allocation
 array[allFuncDataNodes] of var allPatternInstances: dn_def;
 array[allFuncDataNodes] of var allRegisters: dn_reg;
+
+% State node definitions
 array[allFuncStateNodes] of var allPatternInstances: sn_def;
+
+% Pattern instance selection
 array[allPatternInstances] of var bool: pi_sel;
+
+% Basic block allocation of pattern instances
 array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
+
+% Basic block ordering
+array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order;
+
+% Cost
 var int: cost;
+
+
+
+%--------------------
+% Global constraints
+%--------------------
+
+include "alldifferent.mzn";
 
 
 
@@ -48,7 +71,7 @@ var int: cost;
 % CONSTRAINTS
 %-------------
 
-% Prevent a pattern from covering action nodes or defining data or state nodes
+% Prevent a pattern from covering action nodes and defining data or state nodes
 % outside its range.
 constraint
 forall (p in allPatternInstances)
@@ -122,6 +145,10 @@ forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
         )
     )
 );
+
+% Enforce that all basic blocks are serialized in some order
+constraint
+alldifferent(bb_order);
 
 % Accumulate cost of selected patterns.
 % TODO: make this part generic

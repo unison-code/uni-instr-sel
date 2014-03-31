@@ -134,6 +134,9 @@ outputParameters(const Params& params) {
          << endl;
     cout << "numRegisters = " << params.getNumRegisters() << ";"
          << endl;
+    cout << "rootLabel = " << params.getIndexOfLabelNode(params.getRootLabel())
+         << ";"
+         << endl;
 
     cout << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
     {

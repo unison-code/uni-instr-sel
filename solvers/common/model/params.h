@@ -114,6 +114,14 @@ class Params {
     getDomsetOfLabel(const Id& id) const;
 
     /**
+     * Gets the root label of the function graph.
+     *
+     * @returns Node ID.
+     */
+    Id
+    getRootLabel(void) const;
+
+    /**
      * Gets the code size of selecting a particular pattern instance.
      *
      * @param instance
@@ -672,6 +680,19 @@ class Params {
     computeMappingsForPatternInstances(const Json::Value& root, Params& p);
 
     /**
+     * Sets the root label for the function.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setFunctionRootLabel(const Json::Value& root, Params& p);
+
+    /**
      * Sets the code size values for the pattern instances.
      *
      * @param root
@@ -978,6 +999,11 @@ class Params {
      * The dominator sets for each label node in the function.
      */
     std::map< Id, std::list<Id> > func_label_domsets_;
+
+    /**
+     * The root label which indicates the entry point in the function.
+     */
+    Id func_root_label_;
 
     /**
      * Same as #func_action_node_mappings_ but for machine registers.
