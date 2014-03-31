@@ -67,6 +67,7 @@ instance ToJSON FunctionGraphData where
            , "data-nodes"   .= (funcDataNodes d)
            , "state-nodes"  .= (funcStateNodes d)
            , "label-nodes"  .= map f (funcLabelDoms d)
+           , "root-label"   .= (funcRootLabel d)
            , "constraints"  .= (funcConstraints d)
            ]
     where f (id, domset) = object [ "node"   .= id

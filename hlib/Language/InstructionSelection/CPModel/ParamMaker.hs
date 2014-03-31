@@ -64,10 +64,12 @@ mkFunctionGraphData :: OpStructure -> FunctionGraphData
 mkFunctionGraphData os =
   let g = osGraph os
       nodeIdsByType f = nodeIds $ filter f $ allNodes g
+      cfg = extractCFG g
   in FunctionGraphData (nodeIdsByType isActionNode)
                        (nodeIdsByType isDataNode)
                        (nodeIdsByType isStateNode)
-                       (computeLabelDoms g)
+                       (computeLabelDoms cfg)
+                       (nodeId $ fromJust $ rootInCFG cfg)
                        (osConstraints os)
 
 mkMachineData :: TargetMachine
@@ -141,9 +143,10 @@ mkPatternInstanceData' a_ns
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
 
-computeLabelDoms g =
-  let cfg = extractCFG g
-      root = fromJust $ rootInCFG cfg
+computeLabelDoms :: Graph                   -- ^ The CFG.
+                    -> [(NodeId, [NodeId])] -- ^ Dominator sets.
+computeLabelDoms cfg =
+  let root = fromJust $ rootInCFG cfg
       node_domsets = extractDomSet cfg root
       node_id_domsets = map (\(n, ns) -> (nodeId n, map nodeId ns)) node_domsets
   in node_id_domsets

@@ -62,6 +62,10 @@ data FunctionGraphData
                             , [NodeId] -- ^ The dominator set.
                             )]
 
+          -- | The root label, or entry point into the function.
+
+        , funcRootLabel :: NodeId
+
           -- | The function constraints, if any.
 
         , funcConstraints :: [Constraint]

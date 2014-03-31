@@ -1004,12 +1004,14 @@ delNodeKeepEdges g n =
         then mergeNodes (head preds) n g
         else delNode n g
 
--- | Gets the root from a control-flow graph. If there are more than one root,
--- one of them is returned (it is undefined which).
+-- | Gets the root from a control-flow graph. If there is no root, @Nothing@ is
+-- returned. If there is more than one root, an error is produced.
 
 rootInCFG :: Graph -> Maybe Node
 rootInCFG g =
   let roots = filter (\n -> length (predecessors g n) == 0) (allNodes g)
   in if length roots > 0
-        then Just (head roots)
+        then if length roots == 1
+                then Just $ head roots
+                else error "More than one root in CFG"
         else Nothing
