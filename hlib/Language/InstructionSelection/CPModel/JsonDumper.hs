@@ -20,10 +20,16 @@ module Language.InstructionSelection.CPModel.JsonDumper (
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs ( NodeId (..)
+import Language.InstructionSelection.Graphs ( NodeId
                                             , Matchset (..)
+                                            , fromNodeId
                                             )
-import Language.InstructionSelection.Patterns (InstanceId (..))
+import Language.InstructionSelection.Patterns ( InstanceId
+                                              , fromInstanceId
+                                              )
+import Language.InstructionSelection.TargetMachine ( RegisterId
+                                                   , fromRegisterId
+                                                   )
 import Language.InstructionSelection.Utils ( Natural (..)
                                            , fromNatural
                                            )
@@ -86,17 +92,20 @@ instance ToJSON PatternInstanceData where
 
 instance ToJSON MachineData where
   toJSON d =
-    object [ -- TODO: implement once MachineData has been implemented
+    object [ "registers" .= (machRegisters d)
            ]
 
 instance ToJSON Constraint where
   toJSON (Constraint e) = toJSON $ boolExpr2Str e
 
 instance ToJSON NodeId where
-  toJSON (NodeId i) = toJSON i
+  toJSON i = toJSON (fromNodeId i)
 
 instance ToJSON InstanceId where
-  toJSON (InstanceId i) = toJSON i
+  toJSON i = toJSON (fromInstanceId i)
+
+instance ToJSON RegisterId where
+  toJSON i = toJSON (fromRegisterId i)
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)

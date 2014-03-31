@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Machine
+-- Module      :  Language.InstructionSelection.TargetMachine
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Machine (
-  module Language.InstructionSelection.Machine.Base
+module Language.InstructionSelection.TargetMachine (
+  module Language.InstructionSelection.TargetMachine.Base
 ) where
 
-import Language.InstructionSelection.Machine.Base
+import Language.InstructionSelection.TargetMachine.Base

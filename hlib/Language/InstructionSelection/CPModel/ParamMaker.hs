@@ -26,6 +26,7 @@ import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns ( InstanceId
                                               , InstProperties (..)
                                               )
+import Language.InstructionSelection.TargetMachine
 import Data.Maybe
 
 
@@ -45,18 +46,19 @@ type NoUseDefDomConstraintSetting = Bool
 -- | Takes a function and a list of pattern instance data and transforms it into
 -- a CP model parameters object.
 
-mkParams :: OpStructure -- ^ Function data.
+mkParams :: OpStructure      -- ^ Function data.
+            -> TargetMachine -- ^ Machine data.
             -> [( OpStructure
                 , [(Matchset Node, InstanceId)]
                 , InstProperties
                 , NoUseDefDomConstraintSetting
                 )] -- ^ Pattern instance data.
             -> CPModelParams
-mkParams f ps =
+mkParams f m ps =
   CPModelParams (mkFunctionGraphData f)
                 (concatMap mkPatternInstanceData ps)
                 -- TODO: fix building of machine data
-                MachineData
+                (mkMachineData m)
 
 mkFunctionGraphData :: OpStructure -> FunctionGraphData
 mkFunctionGraphData os =
@@ -67,6 +69,11 @@ mkFunctionGraphData os =
                        (nodeIdsByType isStateNode)
                        (computeLabelDoms g)
                        (osConstraints os)
+
+mkMachineData :: TargetMachine
+                 -> MachineData
+mkMachineData m =
+  MachineData (map snd (tmRegisters m))
 
 mkPatternInstanceData :: ( OpStructure
                          , [(Matchset Node, InstanceId)]

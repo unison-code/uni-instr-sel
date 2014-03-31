@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Machine.Base
+-- Module      :  Language.InstructionSelection.TargetMachine.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -14,8 +14,9 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.Machine.Base (
+module Language.InstructionSelection.TargetMachine.Base (
   RegisterId (..)
+, TargetMachine (..)
 , fromRegisterId
 , toRegisterId
 ) where
@@ -37,6 +38,22 @@ newtype RegisterId = RegisterId Natural
 
 instance Show RegisterId where
   show (RegisterId i) = show i
+
+-- | Represents a target machine.
+
+data TargetMachine
+    = TargetMachine {
+
+          -- | The machine registers. Each must be given a unique ID, but not
+          -- necessarily in a contiguous order.
+
+          tmRegisters :: [( String     -- ^ Register name (needed during code
+                                       -- emission).
+                          , RegisterId -- ^ Register ID (only used internally).
+                          )]
+
+      }
+    deriving (Show)
 
 
 

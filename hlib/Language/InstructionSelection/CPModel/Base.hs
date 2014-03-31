@@ -20,6 +20,7 @@ import Language.InstructionSelection.Graphs ( NodeId (..)
                                             )
 import Language.InstructionSelection.Patterns.Ids (InstanceId)
 import Language.InstructionSelection.PrettyPrint
+import Language.InstructionSelection.TargetMachine (RegisterId)
 
 
 
@@ -131,7 +132,9 @@ data PatternInstanceData
 data MachineData
     = MachineData {
 
-          -- TODO: implement
+          -- | The registers in the target machine.
+
+          machRegisters :: [RegisterId]
 
       }
     deriving (Show)

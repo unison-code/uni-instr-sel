@@ -31,14 +31,15 @@ Tests the implementation of the VF2 algorithm.
 import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.PCBuilder
-import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.Graphs.VFTwo
-import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Patterns
-import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.JsonDumper
 import Language.InstructionSelection.CPModel.ParamMaker
+import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.Graphs.VFTwo
+import Language.InstructionSelection.TargetMachine
+import Language.InstructionSelection.OpStructures
+import qualified Language.InstructionSelection.OpTypes as O
+import Language.InstructionSelection.Patterns
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils (toNatural)
 import Data.List ( mapAccumL
@@ -332,7 +333,12 @@ main =
                      list_of_matchsets_with_ids
                      inst_props
                      no_use_def_cs)
-         params = mkParams (OpStructure func []) pattern_data
+         params = mkParams (OpStructure func [])
+                           (TargetMachine [ ("r0", 0)
+                                          , ("r1", 1)
+                                          , ("r2", 2)
+                                          ])
+                           pattern_data
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn))
 --           (match func phi_pattern)

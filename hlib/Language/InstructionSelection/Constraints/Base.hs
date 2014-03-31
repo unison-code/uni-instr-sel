@@ -29,8 +29,8 @@ module Language.InstructionSelection.Constraints.Base (
 ) where
 
 import Language.InstructionSelection.Graphs (NodeId)
-import Language.InstructionSelection.Machine (RegisterId)
 import Language.InstructionSelection.Patterns.Ids
+import Language.InstructionSelection.TargetMachine (RegisterId)
 
 
 
