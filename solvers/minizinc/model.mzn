@@ -150,6 +150,13 @@ forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 constraint
 alldifferent(bb_order);
 
+% Enforce that the root label (i.e. function entry point) is set as the first
+% block, and that the null label is set as the last block.
+constraint
+bb_order[rootLabel] == 0;
+constraint
+bb_order[nullLabel] == nullLabel;
+
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
@@ -173,5 +180,6 @@ output [
     "sn_def=", show(sn_def), "\n",
     "pi_sel=", show(pi_sel), "\n",
     "pi_bb=", show(pi_bb), "\n",
+    "bb_order=", show(bb_order), "\n",
     "cost=", show(cost), "\n"
 ];
