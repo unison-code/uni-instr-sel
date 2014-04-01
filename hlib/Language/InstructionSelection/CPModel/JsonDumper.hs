@@ -162,7 +162,7 @@ numExpr2Str (LabelId2NumExpr e) =
 numExpr2Str (RegisterId2NumExpr e) =
   "(reg-id-to-num " ++ registerIdExpr2Str e ++ ")"
 numExpr2Str (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
-  "(dist-pat-to-label " ++ instanceIdExpr2Str pat_e ++
+  "(dist-pat-to-lab " ++ instanceIdExpr2Str pat_e ++
   " " ++ labelIdExpr2Str lab_e ++ ")"
 
 nodeIdExpr2Str :: NodeIdExpr -> String
