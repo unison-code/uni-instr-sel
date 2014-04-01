@@ -139,6 +139,7 @@ main =
                 [ (0, 2, EdgeLabel 0 0)
                 , (2, 1, EdgeLabel 0 0)
                 ])
+         br_fallthrough_pattern = br_pattern
          ret_pattern = mkGraph
                 (map Node
                 [ (0, NodeLabel 0 (NodeInfo (DataNode D.UnknownType) ""))
@@ -175,6 +176,7 @@ main =
                     , add_pattern
                     , bnz_pattern
                     , br_pattern
+                    , br_fallthrough_pattern
                     , ret_pattern
                     , phi_pattern
                     ]
@@ -182,6 +184,24 @@ main =
                        , mkBBAllocConstraints add_pattern
                        , mkBBAllocConstraints bnz_pattern
                        , mkBBAllocConstraints br_pattern
+                       , mkBBAllocConstraints br_fallthrough_pattern
+                         ++
+                         [ Constraint $
+                           EqExpr
+                           (
+                             DistanceBetweenInstanceAndLabelExpr
+                             (
+                               ThisInstanceIdExpr
+                             )
+                             (
+                               LabelIdOfLabelNodeExpr $
+                               ANodeIdExpr 1
+                             )
+                           )
+                           (
+                             AnIntegerExpr 0
+                           )
+                         ]
                        , mkBBAllocConstraints ret_pattern
                        , [ Constraint $
                            AndExpr

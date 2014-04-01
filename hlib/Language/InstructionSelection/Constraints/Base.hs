@@ -120,6 +120,14 @@ data NumExpr
 
     | RegisterId2NumExpr RegisterIdExpr
 
+      -- | Represents the distance between a pattern instance and a label. The
+      -- distance starts from the end of the instruction represented by the
+      -- pattern and stops at the beginning of the first instruction within the
+      -- basic block represented by the label. The distance is negative if the
+      -- label appears before the pattern.
+
+    | DistanceBetweenInstanceAndLabelExpr InstanceIdExpr LabelIdExpr
+
     deriving (Show)
 
 -- | Node ID expressions.

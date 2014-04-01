@@ -208,6 +208,9 @@ replaceInNumExpr m (LabelId2NumExpr e) =
   LabelId2NumExpr (replaceInLabelIdExpr m e)
 replaceInNumExpr m (RegisterId2NumExpr e) =
   RegisterId2NumExpr (replaceInRegisterIdExpr m e)
+replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
+  DistanceBetweenInstanceAndLabelExpr (replaceInInstanceIdExpr m pat_e)
+                                      (replaceInLabelIdExpr m lab_e)
 
 replaceInNodeIdExpr :: Matchset NodeId -> NodeIdExpr -> NodeIdExpr
 replaceInNodeIdExpr m (ANodeIdExpr i) =
