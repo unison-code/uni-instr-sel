@@ -35,6 +35,14 @@ include "input.mzn";
 % INTERNAL PARAMETERS
 %---------------------
 
+% Number of indices in the pattern instance-to-label node mappings (a negative
+% value indicates absence of a valid index)
+int: numIndicesInPatInstLabelMappings =
+     max([ i | i in patInstAndLabelMappings ]) + 1;
+
+% Reference to the null label
+int: nullLabel = numFuncLabelNodes;
+
 % Sets to be used as array ranges
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
@@ -43,8 +51,8 @@ set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
 set of int: allRegisters = 0..numRegisters-1;
-
-int: nullLabel = numFuncLabelNodes;
+set of int: allIndicesInPatInstLabelMappings =
+    0..numIndicesInPatInstLabelMappings-1;
 
 
 
@@ -70,6 +78,9 @@ array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
 
 % Basic block ordering
 array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order;
+
+% Branch-to-label distances
+array[allIndicesInPatInstLabelMappings] of var int: br_bb_dists;
 
 % Cost
 var int: cost;
@@ -190,13 +201,13 @@ cost = sum (p in allPatternInstances)
 
 solve minimize cost;
 
-output [
-    "an_cov=", show(an_cov), "\n",
-    "dn_def=", show(dn_def), "\n",
-    "dn_reg=", show(dn_reg), "\n",
-    "sn_def=", show(sn_def), "\n",
-    "pi_sel=", show(pi_sel), "\n",
-    "pi_bb=", show(pi_bb), "\n",
-    "bb_order=", show(bb_order), "\n",
-    "cost=", show(cost), "\n"
-];
+output [ "an_cov=", show(an_cov), "\n"
+       , "dn_def=", show(dn_def), "\n"
+       , "dn_reg=", show(dn_reg), "\n"
+       , "sn_def=", show(sn_def), "\n"
+       , "pi_sel=", show(pi_sel), "\n"
+       , "pi_bb=", show(pi_bb), "\n"
+       , "bb_order=", show(bb_order), "\n"
+       , "br_bb_dists=", show(br_bb_dists), "\n"
+       , "cost=", show(cost), "\n"
+       ];

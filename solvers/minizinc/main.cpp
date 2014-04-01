@@ -148,8 +148,6 @@ outputFunctionParameters(const Params& params) {
         print(node_lists);
     }
     cout << ");" << endl;
-
-    cout << endl;
 }
 
 void
@@ -158,8 +156,6 @@ outputTargetMachineParameters(const Params& params) {
 
     cout << "numRegisters = " << params.getNumRegisters() << ";"
          << endl;
-
-    cout << endl;
 }
 
 void
@@ -286,14 +282,14 @@ outputPatternInstanceParameters(const Params& params) {
         print(settings);
     }
     cout << ");" << endl;
-
-    cout << endl;
 }
 
 void
 outputParameters(const Params& params) {
     outputFunctionParameters(params);
+    cout << endl;
     outputTargetMachineParameters(params);
+    cout << endl;
     outputPatternInstanceParameters(params);
 }
 
@@ -330,13 +326,17 @@ main(int argc, char** argv) {
         cout << "%------------" << endl;
         cout << endl;
         outputDebugInfo(params);
-        cout << endl;
+        cout << endl
+             << endl
+             << endl;
         cout << "%------------" << endl;
         cout << "% PARAMETERS" << endl;
         cout << "%------------" << endl;
         cout << endl;
         outputParameters(params);
-        cout << endl;
+        cout << endl
+             << endl
+             << endl;
         cout << "%------------------------------" << endl;
         cout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
         cout << "%------------------------------" << endl;
