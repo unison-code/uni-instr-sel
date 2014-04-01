@@ -121,7 +121,9 @@ outputDebugInfo(const Params& params) {
 }
 
 void
-outputParameters(const Params& params) {
+outputFunctionParameters(const Params& params) {
+    cout << "% Function data" << endl;
+
     cout << "numFuncActionNodes = " << params.getNumActionNodes() << ";"
          << endl;
     cout << "numFuncDataNodes = " << params.getNumDataNodes() << ";"
@@ -130,10 +132,7 @@ outputParameters(const Params& params) {
          << endl;
     cout << "numFuncLabelNodes = " << params.getNumLabelNodes() << ";"
          << endl;
-    cout << "numPatternInstances = " << params.getNumInstances() << ";"
-         << endl;
-    cout << "numRegisters = " << params.getNumRegisters() << ";"
-         << endl;
+
     cout << "rootLabel = " << params.getIndexOfLabelNode(params.getRootLabel())
          << ";"
          << endl;
@@ -150,27 +149,25 @@ outputParameters(const Params& params) {
     }
     cout << ");" << endl;
 
-    cout << "patInstCodeSizes = array1d(allPatternInstances, ";
-    {
-        vector<int> code_sizes(params.getNumInstances());
-        for (const Id& id : params.getAllInstanceIds()) {
-            code_sizes[params.getIndexOfInstance(id)] =
-                params.getCodeSizeOfInstance(id);
-        }
-        print(code_sizes);
-    }
-    cout << ");" << endl;
+    cout << endl;
+}
 
-    cout << "patInstLatencies = array1d(allPatternInstances, ";
-    {
-        vector<int> latencies(params.getNumInstances());
-        for (const Id& id : params.getAllInstanceIds()) {
-            latencies[params.getIndexOfInstance(id)] =
-                params.getLatencyOfInstance(id);
-        }
-        print(latencies);
-    }
-    cout << ");" << endl;
+void
+outputTargetMachineParameters(const Params& params) {
+    cout << "% Target machine data" << endl;
+
+    cout << "numRegisters = " << params.getNumRegisters() << ";"
+         << endl;
+
+    cout << endl;
+}
+
+void
+outputPatternInstanceParameters(const Params& params) {
+    cout << "% Pattern instance data" << endl;
+
+    cout << "numPatternInstances = " << params.getNumInstances() << ";"
+         << endl;
 
     cout << "patInstActionsCovered = array1d(allPatternInstances, ";
     {
@@ -237,6 +234,48 @@ outputParameters(const Params& params) {
     }
     cout << ");" << endl;
 
+    cout << "patInstAndLabelMappings = "
+         << "array2d(allPatternInstances, allFuncLabelNodes, ";
+    {
+        size_t num_instances = params.getNumInstances();
+        size_t num_labels = params.getNumLabelNodes();
+        vector<int> mappings(num_instances * num_labels, -1);
+        int index = 0;
+        for (const Id& pat_id : params.getAllInstanceIds()) {
+            for (const Id& node_id
+                 : params.getLabelNodesReferredByInstance(pat_id))
+            {
+                ArrayIndex pat_index = params.getIndexOfInstance(pat_id);
+                ArrayIndex node_index = params.getIndexOfLabelNode(node_id);
+                mappings[pat_index * num_labels + node_index] = index++;
+            }
+        }
+        print(mappings);
+    }
+    cout << ");" << endl;
+
+    cout << "patInstCodeSizes = array1d(allPatternInstances, ";
+    {
+        vector<int> code_sizes(params.getNumInstances());
+        for (const Id& id : params.getAllInstanceIds()) {
+            code_sizes[params.getIndexOfInstance(id)] =
+                params.getCodeSizeOfInstance(id);
+        }
+        print(code_sizes);
+    }
+    cout << ");" << endl;
+
+    cout << "patInstLatencies = array1d(allPatternInstances, ";
+    {
+        vector<int> latencies(params.getNumInstances());
+        for (const Id& id : params.getAllInstanceIds()) {
+            latencies[params.getIndexOfInstance(id)] =
+                params.getLatencyOfInstance(id);
+        }
+        print(latencies);
+    }
+    cout << ");" << endl;
+
     cout << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
     {
         vector<bool> settings(params.getNumInstances());
@@ -247,6 +286,15 @@ outputParameters(const Params& params) {
         print(settings);
     }
     cout << ");" << endl;
+
+    cout << endl;
+}
+
+void
+outputParameters(const Params& params) {
+    outputFunctionParameters(params);
+    outputTargetMachineParameters(params);
+    outputPatternInstanceParameters(params);
 }
 
 void
@@ -255,11 +303,11 @@ outputConstraints(const Params& params) {
     for (const Id& id : params.getAllInstanceIds()) {
         const list<const Constraint*>& cs = params.getConstraintsOfInstance(id);
         if (cs.size() > 0) {
-            cout << endl
-                 << "% ID " << id << endl;
-        }
-        for (const Constraint* c : cs) {
-            cout << cprocessor.process(id, c) << endl;
+            cout << "% ID " << id << endl;
+            for (const Constraint* c : cs) {
+                cout << cprocessor.process(id, c) << endl;
+            }
+            cout << endl;
         }
     }
 }
@@ -280,16 +328,19 @@ main(int argc, char** argv) {
         cout << "%------------" << endl;
         cout << "% DEBUG INFO" << endl;
         cout << "%------------" << endl;
+        cout << endl;
         outputDebugInfo(params);
         cout << endl;
         cout << "%------------" << endl;
         cout << "% PARAMETERS" << endl;
         cout << "%------------" << endl;
+        cout << endl;
         outputParameters(params);
         cout << endl;
         cout << "%------------------------------" << endl;
         cout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
         cout << "%------------------------------" << endl;
+        cout << endl;
         outputConstraints(params);
     }
     catch (Exception& ex) {

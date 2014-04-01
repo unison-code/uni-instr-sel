@@ -94,11 +94,13 @@ mkPatternInstanceData (os, matchsets, props, b_usedef) =
       d_use_ns = getNodes isDataNode successors
       s_def_ns = getNodes isStateNode predecessors
       s_use_ns = getNodes isStateNode successors
+      l_ref_ns = getNodes isLabelNode predecessors
       f (m, id) = mkPatternInstanceData' a_ns
                                          d_def_ns
                                          d_use_ns
                                          s_def_ns
                                          s_use_ns
+                                         l_ref_ns
                                          (osConstraints os)
                                          b_usedef
                                          (convertMatchsetNToId m)
@@ -107,10 +109,11 @@ mkPatternInstanceData (os, matchsets, props, b_usedef) =
   in map f matchsets
 
 mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes covered by the pattern.
-                          -> [NodeId] -- ^ Data nodes defined by the pattern.
-                          -> [NodeId] -- ^ Data nodes used by the pattern.
-                          -> [NodeId] -- ^ State nodes defined by the pattern.
-                          -> [NodeId] -- ^ State nodes used by the pattern.
+                          -> [NodeId] -- ^ Data nodes defined.
+                          -> [NodeId] -- ^ Data nodes used.
+                          -> [NodeId] -- ^ State nodes defined.
+                          -> [NodeId] -- ^ State nodes used.
+                          -> [NodeId] -- ^ Label nodes referred to.
                           -> [Constraint]
                           -> NoUseDefDomConstraintSetting
                           -> Matchset NodeId
@@ -122,6 +125,7 @@ mkPatternInstanceData' a_ns
                        d_use_ns
                        s_def_ns
                        s_use_ns
+                       l_ref_ns
                        cs
                        b_usedef
                        matchset
@@ -133,6 +137,7 @@ mkPatternInstanceData' a_ns
                       (mappedNodesPToF matchset d_use_ns)
                       (mappedNodesPToF matchset s_def_ns)
                       (mappedNodesPToF matchset s_use_ns)
+                      (mappedNodesPToF matchset l_ref_ns)
                       (replaceNodeIdsPToFInConstraints matchset cs)
                       b_usedef
                       (codeSize props)

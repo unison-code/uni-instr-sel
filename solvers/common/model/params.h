@@ -206,6 +206,19 @@ class Params {
     getStateNodesUsedByInstance(const Id& instance) const;
 
     /**
+     * Gets the function label nodes referred to by a particular pattern
+     * instance.
+     *
+     * @param instance
+     *        Pattern instance ID.
+     * @returns List of node IDs.
+     * @throws Exception
+     *         If there is no instance with such an ID.
+     */
+    std::list<Id>
+    getLabelNodesReferredByInstance(const Id& instance) const;
+
+    /**
      * Checks if use-def-dom constraints should be removed for a particular
      * pattern instance.
      *
@@ -801,6 +814,20 @@ class Params {
     setStateNodesUsedByPatternInstances(const Json::Value& root, Params& p);
 
     /**
+     * Sets the function label nodes referred to by the respective pattern
+     * instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setLabelNodesReferredByPatternInstances(const Json::Value& root, Params& p);
+
+    /**
      * Sets the pattern constraints.
      *
      * @param root
@@ -1026,34 +1053,40 @@ class Params {
     std::map<Id, int> pat_inst_latencies_;
 
     /**
-     * The action nodes in the function graphs which are covered for each
-     * pattern instance.
+     * The action nodes in the function graphs which are covered by each pattern
+     * instance.
      */
     std::map< Id, std::list<Id> > pat_inst_actions_covered_;
 
     /**
-     * The data nodes in the function graphs which are defined for each
-     * pattern instance.
+     * The data nodes in the function graphs which are defined by each pattern
+     * instance.
      */
     std::map< Id, std::list<Id> > pat_inst_data_defined_;
 
     /**
-     * The data nodes in the function graphs which are used for each pattern
+     * The data nodes in the function graphs which are used by each pattern
      * instance.
      */
     std::map< Id, std::list<Id> > pat_inst_data_used_;
 
     /**
-     * The state nodes in the function graphs which are defined for each
-     * pattern instance.
-     */
-    std::map< Id, std::list<Id> > pat_inst_state_defined_;
-
-    /**
-     * The state nodes in the function graphs which are used for each pattern
+     * The state nodes in the function graphs which are defined by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_state_used_;
+    std::map< Id, std::list<Id> > pat_inst_states_defined_;
+
+    /**
+     * The state nodes in the function graphs which are used by each pattern
+     * instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_states_used_;
+
+    /**
+     * The label nodes in the function graphs which are referred to by each
+     * pattern instance.
+     */
+    std::map< Id, std::list<Id> > pat_inst_labels_referred_;
 
     /**
      * The constraints for each pattern instance. The constraints are destroyed

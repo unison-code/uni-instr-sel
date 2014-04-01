@@ -107,6 +107,11 @@ data PatternInstanceData
 
         , patStateNodesUsed :: [NodeId]
 
+          -- | The label nodes in the function graph which are referred to by
+          -- this pattern instance.
+
+        , patLabelNodesReferred :: [NodeId]
+
           -- | The pattern-specific constraints, if any. All node IDs used in
           -- the patterns refer to nodes in the function graph (not the pattern
           -- graph).

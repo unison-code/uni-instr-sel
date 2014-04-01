@@ -95,6 +95,7 @@ Params::parseJson(const string& str, Params& p) {
     setDataNodesUsedByPatternInstances(root, p);
     setStateNodesDefinedByPatternInstances(root, p);
     setStateNodesUsedByPatternInstances(root, p);
+    setLabelNodesReferredByPatternInstances(root, p);
 }
 
 bool
@@ -355,7 +356,7 @@ Params::setStateNodesDefinedByPatternInstances(
         }
         addMapping(instance_id,
                    covers,
-                   p.pat_inst_state_defined_);
+                   p.pat_inst_states_defined_);
     }
 }
 
@@ -389,7 +390,24 @@ Params::setStateNodesUsedByPatternInstances(
         }
         addMapping(instance_id,
                    covers,
-                   p.pat_inst_state_used_);
+                   p.pat_inst_states_used_);
+    }
+}
+
+void
+Params::setLabelNodesReferredByPatternInstances(
+    const Json::Value& root,
+    Params& p
+) {
+    for (auto instance : getJsonValue(root, "pattern-instance-data")) {
+        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        list<Id> refs;
+        for (auto node_id : getJsonValue(instance, "label-nodes-referred")) {
+            refs.push_back(toId(node_id));
+        }
+        addMapping(instance_id,
+                   refs,
+                   p.pat_inst_labels_referred_);
     }
 }
 
@@ -405,7 +423,7 @@ Params::getDataNodesDefinedByInstance(const Id& instance) const {
 
 list<Id>
 Params::getStateNodesDefinedByInstance(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_state_defined_);
+    return getMappedValue(instance, pat_inst_states_defined_);
 }
 
 list<Id>
@@ -415,7 +433,12 @@ Params::getDataNodesUsedByInstance(const Id& instance) const {
 
 list<Id>
 Params::getStateNodesUsedByInstance(const Id& instance) const {
-    return getMappedValue(instance, pat_inst_state_used_);
+    return getMappedValue(instance, pat_inst_states_used_);
+}
+
+list<Id>
+Params::getLabelNodesReferredByInstance(const Id& instance) const {
+    return getMappedValue(instance, pat_inst_labels_referred_);
 }
 
 list<Id>

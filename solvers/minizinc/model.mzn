@@ -1,14 +1,41 @@
-%------------
-% PARAMETERS
-%------------
+%---------------------
+% EXTERNAL PARAMETERS
+%---------------------
 
+% Function data
 int: numFuncActionNodes;
 int: numFuncDataNodes;
 int: numFuncStateNodes;
 int: numFuncLabelNodes;
-int: numPatternInstances;
-int: numRegisters;
 int: rootLabel;
+array[allFuncLabelNodes] of set of int: funcLabelDomsets;
+
+% Target machine data
+int: numRegisters;
+
+% Pattern instance data
+int: numPatternInstances;
+array[allPatternInstances] of set of int: patInstActionsCovered;
+array[allPatternInstances] of set of int: patInstDataDefined;
+array[allPatternInstances] of set of int: patInstDataUsed;
+array[allPatternInstances] of set of int: patInstStateDefined;
+array[allPatternInstances] of set of int: patInstStateUsed;
+array[allPatternInstances, allFuncLabelNodes] of int: patInstAndLabelMappings;
+array[allPatternInstances] of int: patInstCodeSizes;
+array[allPatternInstances] of int: patInstLatencies;
+array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
+
+
+
+include "input.mzn";
+
+
+
+%---------------------
+% INTERNAL PARAMETERS
+%---------------------
+
+% Sets to be used as array ranges
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
@@ -16,18 +43,8 @@ set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
 set of int: allRegisters = 0..numRegisters-1;
-int: nullLabel = numFuncLabelNodes;
-array[allFuncLabelNodes] of set of int: funcLabelDomsets;
-array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
-array[allPatternInstances] of int: patInstCodeSizes;
-array[allPatternInstances] of int: patInstLatencies;
-array[allPatternInstances] of set of int: patInstActionsCovered;
-array[allPatternInstances] of set of int: patInstDataDefined;
-array[allPatternInstances] of set of int: patInstDataUsed;
-array[allPatternInstances] of set of int: patInstStateDefined;
-array[allPatternInstances] of set of int: patInstStateUsed;
 
-include "input.mzn";
+int: nullLabel = numFuncLabelNodes;
 
 
 

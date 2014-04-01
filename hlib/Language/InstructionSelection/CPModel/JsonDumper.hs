@@ -82,6 +82,7 @@ instance ToJSON PatternInstanceData where
             , "data-nodes-used"      .= (patDataNodesUsed d)
             , "state-nodes-defined"  .= (patStateNodesDefined d)
             , "state-nodes-used"     .= (patStateNodesUsed d)
+            , "label-nodes-referred" .= (patLabelNodesReferred d)
             , "code-size"            .= (patCodeSize d)
             , "latency"              .= (patLatency d)
             , "constraints"          .= (patConstraints d)
