@@ -329,12 +329,14 @@ main =
                          , False
                          , False
                          , False
+                         , False
                          , True
                          ]
          inst_props = [ InstProperties 1 1
                       , InstProperties 1 1
                       , InstProperties 1 1
                       , InstProperties 1 1
+                      , InstProperties 0 0
                       , InstProperties 1 1
                       , InstProperties 1 1
                       ]
