@@ -41,6 +41,7 @@ using std::cout;
 using std::endl;
 using std::ifstream;
 using std::list;
+using std::ostream;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -48,96 +49,118 @@ using std::vector;
 // Forward declaration
 template <typename T>
 void
-printList(const T& l, const string&, const string&);
+printList(ostream&, const T&, const string&, const string&);
 
 template <typename T>
 void
-print(const vector<T>& v, const string& dl = "[", const string& dr = "]") {
-    printList(v, dl, dr);
+print(
+    ostream& out,
+    const vector<T>& v,
+    const string& dl = "[",
+    const string& dr = "]"
+) {
+    printList(out, v, dl, dr);
 }
 
 template <typename T>
 void
-print(const list<T>& l, const string& dl = "[", const string& dr = "]") {
-    printList(l, dl, dr);
+print(
+    ostream& out,
+    const list<T>& l,
+    const string& dl = "[",
+    const string& dr = "]"
+) {
+    printList(out, l, dl, dr);
 }
 
 template <typename T>
 void
-print(const T& v, const string&, const string&) {
-    cout << v;
+print(
+    ostream& out,
+    const T& v,
+    const string&,
+    const string&
+) {
+    out << v;
 }
 
 template <>
 void
-print(const bool& v, const string&, const string&) {
-    cout << (v ? "true" : "false");
+print(
+    ostream& out,
+    const bool& v,
+    const string&,
+    const string&
+) {
+    out << (v ? "true" : "false");
 }
 
 template <typename T>
 void
-printList(const T& l, const string& dl = "[", const string& dr = "]") {
-    cout << dl;
+printList(
+    ostream& out,
+    const T& l,
+    const string& dl = "[",
+    const string& dr = "]"
+) {
+    out << dl;
     bool isFirst = true;
     for (const auto& e : l) {
         if (isFirst) isFirst = false;
-        else cout << ",";
-        print(e, "{", "}");
+        else out << ",";
+        print(out, e, "{", "}");
     }
-    cout << dr;
+    out << dr;
 }
 
 void
-outputDebugInfo(const Params& params) {
-    cout << "% Action node mappings" << endl;
+outputFunctionParameters(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
+    debug << "% Action node mappings" << endl;
     for (const Id& id : params.getAllActionNodeIds()) {
-        cout << "% ID " << id << " -> index " << params.getIndexOfActionNode(id)
-             << endl;
+        debug << "% ID " << id << " -> index "
+              << params.getIndexOfActionNode(id)
+              << endl;
     }
-    cout << endl;
-    cout << "% Data node mappings" << endl;
+    debug << endl;
+    debug << "% Data node mappings" << endl;
     for (const Id& id : params.getAllDataNodeIds()) {
-        cout << "% ID " << id << " -> index " << params.getIndexOfDataNode(id)
-             << endl;
+        debug << "% ID " << id << " -> index " << params.getIndexOfDataNode(id)
+              << endl;
     }
-    cout << endl;
-    cout << "% State node mappings" << endl;
+    debug << endl;
+    debug << "% State node mappings" << endl;
     for (const Id& id : params.getAllStateNodeIds()) {
-        cout << "% ID " << id << " -> index " << params.getIndexOfStateNode(id)
-             << endl;
+        debug << "% ID " << id << " -> index " << params.getIndexOfStateNode(id)
+              << endl;
     }
-    cout << endl;
-    cout << "% Label node mappings" << endl;
+    debug << endl;
+    debug << "% Label node mappings" << endl;
     for (const Id& id : params.getAllLabelNodeIds()) {
-        cout << "% ID " << id << " -> index " << params.getIndexOfLabelNode(id)
-             << endl;
+        debug << "% ID " << id << " -> index " << params.getIndexOfLabelNode(id)
+              << endl;
     }
-    cout << endl;
-    cout << "% Pattern instance mappings" << endl;
-    for (const Id& id : params.getAllInstanceIds()) {
-        cout << "% ID " << id << " -> index "
-             << params.getIndexOfInstance(id) << endl;
-    }
-}
+    debug << endl;
 
-void
-outputFunctionParameters(const Params& params) {
-    cout << "% Function data" << endl;
+    out << "% Function data" << endl;
 
-    cout << "numFuncActionNodes = " << params.getNumActionNodes() << ";"
+    out << "numFuncActionNodes = " << params.getNumActionNodes() << ";"
          << endl;
-    cout << "numFuncDataNodes = " << params.getNumDataNodes() << ";"
+    out << "numFuncDataNodes = " << params.getNumDataNodes() << ";"
          << endl;
-    cout << "numFuncStateNodes = " << params.getNumStateNodes() << ";"
+    out << "numFuncStateNodes = " << params.getNumStateNodes() << ";"
          << endl;
-    cout << "numFuncLabelNodes = " << params.getNumLabelNodes() << ";"
+    out << "numFuncLabelNodes = " << params.getNumLabelNodes() << ";"
          << endl;
 
-    cout << "rootLabel = " << params.getIndexOfLabelNode(params.getRootLabel())
+    out << "rootLabel = " << params.getIndexOfLabelNode(params.getRootLabel())
          << ";"
          << endl;
 
-    cout << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
+    out << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
     {
         size_t num_nodes = params.getNumLabelNodes();
         vector< list<ArrayIndex> > node_lists(num_nodes);
@@ -145,27 +168,42 @@ outputFunctionParameters(const Params& params) {
             node_lists[params.getIndexOfLabelNode(id)] =
                 params.getIndicesOfLabelNodes(params.getDomsetOfLabel(id));
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 }
 
 void
-outputTargetMachineParameters(const Params& params) {
-    cout << "% Target machine data" << endl;
+outputTargetMachineParameters(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
+    out << "% Target machine data" << endl;
 
-    cout << "numRegisters = " << params.getNumRegisters() << ";"
+    out << "numRegisters = " << params.getNumRegisters() << ";"
          << endl;
 }
 
 void
-outputPatternInstanceParameters(const Params& params) {
-    cout << "% Pattern instance data" << endl;
+outputPatternInstanceParameters(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
+    debug << "% Pattern instance mappings" << endl;
+    for (const Id& id : params.getAllInstanceIds()) {
+        debug << "% ID " << id << " -> index "
+              << params.getIndexOfInstance(id) << endl;
+    }
+    debug << endl;
 
-    cout << "numPatternInstances = " << params.getNumInstances() << ";"
+    out << "% Pattern instance data" << endl;
+
+    out << "numPatternInstances = " << params.getNumInstances() << ";"
          << endl;
 
-    cout << "patInstActionsCovered = array1d(allPatternInstances, ";
+    out << "patInstActionsCovered = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
@@ -174,11 +212,11 @@ outputPatternInstanceParameters(const Params& params) {
             node_lists[params.getIndexOfInstance(id)] =
                 params.getIndicesOfActionNodes(nodes);
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstDataDefined = array1d(allPatternInstances, ";
+    out << "patInstDataDefined = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
@@ -187,11 +225,11 @@ outputPatternInstanceParameters(const Params& params) {
             node_lists[params.getIndexOfInstance(id)] =
                 params.getIndicesOfDataNodes(nodes);
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstStateDefined = array1d(allPatternInstances, ";
+    out << "patInstStateDefined = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
@@ -200,11 +238,11 @@ outputPatternInstanceParameters(const Params& params) {
             node_lists[params.getIndexOfInstance(id)] =
                 params.getIndicesOfStateNodes(nodes);
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstDataUsed = array1d(allPatternInstances, ";
+    out << "patInstDataUsed = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
@@ -213,11 +251,11 @@ outputPatternInstanceParameters(const Params& params) {
             node_lists[params.getIndexOfInstance(id)] =
                 params.getIndicesOfDataNodes(nodes);
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstStateUsed = array1d(allPatternInstances, ";
+    out << "patInstStateUsed = array1d(allPatternInstances, ";
     {
         size_t num_instances = params.getNumInstances();
         vector< list<ArrayIndex> > node_lists(num_instances);
@@ -226,11 +264,12 @@ outputPatternInstanceParameters(const Params& params) {
             node_lists[params.getIndexOfInstance(id)] =
                 params.getIndicesOfStateNodes(nodes);
         }
-        print(node_lists);
+        print(out, node_lists);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstAndLabelMappings = "
+    debug << "% Pattern instance-label mappings" << endl;
+    out << "patInstAndLabelMappings = "
          << "array2d(allPatternInstances, allFuncLabelNodes, ";
     {
         size_t num_instances = params.getNumInstances();
@@ -241,69 +280,81 @@ outputPatternInstanceParameters(const Params& params) {
             for (const Id& node_id
                  : params.getLabelNodesReferredByInstance(pat_id))
             {
+                debug << "% Instance ID " << pat_id << " + "
+                      << "label ID " << node_id << " -> index "
+                      << index << endl;
                 ArrayIndex pat_index = params.getIndexOfInstance(pat_id);
                 ArrayIndex node_index = params.getIndexOfLabelNode(node_id);
                 mappings[pat_index * num_labels + node_index] = index++;
             }
         }
-        print(mappings);
+        print(out, mappings);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
+    debug << endl;
 
-    cout << "patInstCodeSizes = array1d(allPatternInstances, ";
+    out << "patInstCodeSizes = array1d(allPatternInstances, ";
     {
         vector<int> code_sizes(params.getNumInstances());
         for (const Id& id : params.getAllInstanceIds()) {
             code_sizes[params.getIndexOfInstance(id)] =
                 params.getCodeSizeOfInstance(id);
         }
-        print(code_sizes);
+        print(out, code_sizes);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstLatencies = array1d(allPatternInstances, ";
+    out << "patInstLatencies = array1d(allPatternInstances, ";
     {
         vector<int> latencies(params.getNumInstances());
         for (const Id& id : params.getAllInstanceIds()) {
             latencies[params.getIndexOfInstance(id)] =
                 params.getLatencyOfInstance(id);
         }
-        print(latencies);
+        print(out, latencies);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 
-    cout << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
+    out << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
     {
         vector<bool> settings(params.getNumInstances());
         for (const Id& id : params.getAllInstanceIds()) {
             settings[params.getIndexOfInstance(id)] =
                 params.getNoUseDefDomConstraintsSettingForInstance(id);
         }
-        print(settings);
+        print(out, settings);
     }
-    cout << ");" << endl;
+    out << ");" << endl;
 }
 
 void
-outputParameters(const Params& params) {
-    outputFunctionParameters(params);
-    cout << endl;
-    outputTargetMachineParameters(params);
-    cout << endl;
-    outputPatternInstanceParameters(params);
+outputParameters(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
+    outputFunctionParameters(params, out, debug);
+    out << endl;
+    outputTargetMachineParameters(params, out, debug);
+    out << endl;
+    outputPatternInstanceParameters(params, out, debug);
 }
 
 void
-outputConstraints(const Params& params) {
+outputConstraints(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
     ConstraintProcessor cprocessor(params);
     for (const Id& id : params.getAllInstanceIds()) {
         const list<const Constraint*>& cs = params.getConstraintsOfInstance(id);
         if (cs.size() > 0) {
-            cout << "% ID " << id << endl;
+            out << "% ID " << id << endl;
             for (const Constraint* c : cs) {
-                cout << cprocessor.process(id, c) << endl;
+                out << cprocessor.process(id, c) << endl;
             }
-            cout << endl;
+            out << endl;
         }
     }
 }
@@ -319,29 +370,33 @@ main(int argc, char** argv) {
         Params params;
         Params::parseJson(json_content, params);
 
+        stringstream sout;
+        stringstream sdebug;
+        sdebug << "%------------" << endl;
+        sdebug << "% DEBUG INFO" << endl;
+        sdebug << "%------------" << endl;
+        sdebug << endl;
+
+        sout << "%------------" << endl;
+        sout << "% PARAMETERS" << endl;
+        sout << "%------------" << endl;
+        sout << endl;
+        outputParameters(params, sout, sdebug);
+        sout << endl
+             << endl
+             << endl;
+        sout << "%------------------------------" << endl;
+        sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
+        sout << "%------------------------------" << endl;
+        sout << endl;
+        outputConstraints(params, sout, sdebug);
+
         cout << "% AUTO-GENERATED" << endl;
         cout << endl;
-        cout << "%------------" << endl;
-        cout << "% DEBUG INFO" << endl;
-        cout << "%------------" << endl;
-        cout << endl;
-        outputDebugInfo(params);
+        cout << sdebug.str();
         cout << endl
-             << endl
              << endl;
-        cout << "%------------" << endl;
-        cout << "% PARAMETERS" << endl;
-        cout << "%------------" << endl;
-        cout << endl;
-        outputParameters(params);
-        cout << endl
-             << endl
-             << endl;
-        cout << "%------------------------------" << endl;
-        cout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
-        cout << "%------------------------------" << endl;
-        cout << endl;
-        outputConstraints(params);
+        cout << sout.str();
     }
     catch (Exception& ex) {
         cerr << "ERROR: " << ex.toString() << endl;

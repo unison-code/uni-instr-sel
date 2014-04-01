@@ -76,8 +76,12 @@ array[allPatternInstances] of var bool: pi_sel;
 % Basic block allocation of pattern instances
 array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
 
-% Basic block ordering
+% Basic block ordering. In the first variable (bb_order) each index represents a
+% position (and the value the label put at that position), and the second
+% variable (bb_order_inv) is the inverse of the first variable (that is, each
+% index represents a label, and a value its position).
 array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order;
+array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order_inv;
 
 % Branch-to-label distances
 array[allIndicesInPatInstLabelMappings] of var int: br_bb_dists;
@@ -92,6 +96,7 @@ var int: cost;
 %--------------------
 
 include "alldifferent.mzn";
+include "inverse.mzn";
 
 
 
@@ -174,9 +179,13 @@ forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
     )
 );
 
-% Enforce that all basic blocks are serialized in some order
+% Enforce that all basic blocks are serialized in some order.
 constraint
 alldifferent(bb_order);
+
+% Enforce the channel constraint between bb_order and bb_order_inv
+constraint
+inverse(bb_order, bb_order_inv);
 
 % Enforce that the root label (i.e. function entry point) is set as the first
 % block, and that the null label is set as the last block.
@@ -185,12 +194,42 @@ bb_order[rootLabel] == 0;
 constraint
 bb_order[nullLabel] == nullLabel;
 
+% Calculate distances between pattern instances (where appropriate) and labels
+constraint
+forall (p in allPatternInstances, l in allFuncLabelNodes
+        where patInstAndLabelMappings[p, l] >= 0)
+(
+    br_bb_dists[patInstAndLabelMappings[p, l]] =
+        % Distance between basic blocks
+        sum (i in allFuncLabelNodes)
+        (
+            sum (pp in allPatternInstances)
+            (
+                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
+            ) * bool2int(bb_order_inv[pi_bb[p]] + 1 <= bb_order_inv[i]
+                         /\
+                         bb_order_inv[i] < bb_order_inv[l])
+        )
+        -
+        sum (i in allFuncLabelNodes)
+        (
+            sum (pp in allPatternInstances)
+            (
+                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
+            ) * bool2int(bb_order_inv[l] <= bb_order_inv[i]
+                         /\
+                         bb_order_inv[i] < bb_order_inv[pi_bb[p]])
+        )
+        % Distance within the same block
+        % TODO: implement
+);
+
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
 cost = sum (p in allPatternInstances)
        (
-           patInstCodeSizes[p] * bool2int(pi_sel[p])
+           patInstLatencies[p] * bool2int(pi_sel[p])
        );
 
 
