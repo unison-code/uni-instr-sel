@@ -70,61 +70,78 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * Gets the variable for the action node coverer array.
+     * Gets the variable array for the action node coverage.
      *
      * @returns Variable name.
      */
     std::string
-    getActionCovererArrayString(void) const;
+    getActionCovererVariableArrayName(void) const;
 
     /**
-     * Gets the variable for the data node definer array.
+     * Gets the variable array for the data node definitions.
      *
      * @returns Variable name.
      */
     std::string
-    getDataDefinerArrayString(void) const;
+    getDataDefinerVariableArrayName(void) const;
 
     /**
-     * Gets the variable for the data node register array.
+     * Gets the variable array for the data node register allocation.
      *
      * @returns Variable name.
      */
     std::string
-    getDataRegisterArrayString(void) const;
+    getDataRegisterVariableArrayName(void) const;
 
     /**
-     * Gets the variable for the state node definer array.
+     * Gets the variable array for the state node definitions.
      *
      * @returns Variable name.
      */
     std::string
-    getStateDefinerArrayString(void) const;
+    getStateDefinerVariableArrayName(void) const;
 
     /**
-     * Gets the variable for the pattern instance-to-basic block allocation
-     * array.
+     * Gets the variable array for the pattern instance-to-basic block
+     * allocation.
      *
      * @returns Variable name.
      */
     std::string
-    getBBAllocationArrayString(void) const;
+    getBBAllocationVariableArrayName(void) const;
 
     /**
-     * Gets the variable for the pattern instance selection array.
+     * Gets the variable array for the pattern instance selection.
      *
      * @returns Variable name.
      */
     std::string
-    getInstanceSelectedArrayString(void) const;
+    getInstanceSelectedVariableArrayName(void) const;
 
     /**
-     * Gets the parameter for the dominator sets.
+     * Gets the parameter array for the dominator sets.
      *
      * @returns Parameter name.
      */
     std::string
-    getDomSetString(void) const;
+    getDomSetParameterArrayName(void) const;
+
+    /**
+     * Gets the variable array for the distances between certain pattern
+     * instances and basic block labels.
+     *
+     * @returns Variable name.
+     */
+    std::string
+    getInstanceLabelDistsVariableArrayName(void) const;
+
+    /**
+     * Gets the parameter matrix for the pattern instance and label mappings.
+     *
+     * @returns Parameter name.
+     */
+    std::string
+    getInstanceAndLabelMappingsMatrixName(void) const;
 
     /**
      * Converts an expression into a string to be used in a Minizinc constraint.

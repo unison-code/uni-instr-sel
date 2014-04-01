@@ -45,7 +45,7 @@ string
 ConstraintProcessor::process(const Id& id, const Constraint* c) {
     instance_id_ = id;
     return string("constraint\n")
-        + getInstanceSelectedArrayString() + "["
+        + getInstanceSelectedVariableArrayName() + "["
         + Utils::toString(p_.getIndexOfInstance(instance_id_))
         + "] -> " + process(c->getExpr()) + ";";
 }
@@ -147,6 +147,13 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
+    else if (const DistanceBetweenInstanceAndLabelExpr* de =
+             dynamic_cast<const DistanceBetweenInstanceAndLabelExpr*>(e))
+    {
+        return getInstanceLabelDistsVariableArrayName()
+            + "[" + getInstanceAndLabelMappingsMatrixName() + "["
+            + process(de->getLhs()) + "," + process(de->getRhs()) + "]]";
+    }
     else {
         THROW(Exception, "NumExpr of unknown derived class");
     }
@@ -188,19 +195,19 @@ ConstraintProcessor::process(const InstanceIdExpr* e) {
     else if (const CovererOfActionNodeExpr* de =
              dynamic_cast<const CovererOfActionNodeExpr*>(e))
     {
-        return getActionCovererArrayString()
+        return getActionCovererVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else if (const DefinerOfDataNodeExpr* de =
              dynamic_cast<const DefinerOfDataNodeExpr*>(e))
     {
-        return getDataDefinerArrayString()
+        return getDataDefinerVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else if (const DefinerOfStateNodeExpr* de =
              dynamic_cast<const DefinerOfStateNodeExpr*>(e))
     {
-        return getStateDefinerArrayString()
+        return getStateDefinerVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
@@ -243,7 +250,7 @@ ConstraintProcessor::process(const LabelIdExpr* e) {
     if (const LabelIdAllocatedToInstanceExpr* de =
         dynamic_cast<const LabelIdAllocatedToInstanceExpr*>(e))
     {
-        return getBBAllocationArrayString()
+        return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else if (const LabelIdOfLabelNodeExpr* de =
@@ -264,7 +271,7 @@ ConstraintProcessor::process(const RegisterIdExpr* e) {
     else if (const RegisterIdAllocatedToDataNodeExpr* de =
              dynamic_cast<const RegisterIdAllocatedToDataNodeExpr*>(e))
     {
-        return getDataRegisterArrayString()
+        return getDataRegisterVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
@@ -291,7 +298,7 @@ ConstraintProcessor::process(const SetExpr* e) {
     else if (const DomSetOfLabelIdExpr* de =
              dynamic_cast<const DomSetOfLabelIdExpr*>(e))
     {
-        return getDomSetString()
+        return getDomSetParameterArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
@@ -317,36 +324,46 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 }
 
 string
-ConstraintProcessor::getActionCovererArrayString(void) const {
+ConstraintProcessor::getActionCovererVariableArrayName(void) const {
     return "an_cov";
 }
 
 string
-ConstraintProcessor::getDataDefinerArrayString(void) const {
+ConstraintProcessor::getDataDefinerVariableArrayName(void) const {
     return "dn_def";
 }
 
 string
-ConstraintProcessor::getDataRegisterArrayString(void) const {
+ConstraintProcessor::getDataRegisterVariableArrayName(void) const {
     return "dn_reg";
 }
 
 string
-ConstraintProcessor::getStateDefinerArrayString(void) const {
+ConstraintProcessor::getStateDefinerVariableArrayName(void) const {
     return "sn_def";
 }
 
 string
-ConstraintProcessor::getBBAllocationArrayString(void) const {
+ConstraintProcessor::getBBAllocationVariableArrayName(void) const {
     return "pi_bb";
 }
 
 string
-ConstraintProcessor::getDomSetString(void) const {
+ConstraintProcessor::getDomSetParameterArrayName(void) const {
     return "funcLabelDomsets";
 }
 
 string
-ConstraintProcessor::getInstanceSelectedArrayString(void) const {
+ConstraintProcessor::getInstanceSelectedVariableArrayName(void) const {
     return "pi_sel";
+}
+
+string
+ConstraintProcessor::getInstanceLabelDistsVariableArrayName(void) const {
+    return "br_bb_dists";
+}
+
+string
+ConstraintProcessor::getInstanceAndLabelMappingsMatrixName(void) const {
+    return "patInstAndLabelMappings";
 }

@@ -296,12 +296,11 @@ class UnaryExpr : public Base {
      * @throws Exception
      *         When \c expr is \c NULL.
      */
-    UnaryExpr(Arg* expr)
+    UnaryExpr(const Arg* expr)
         : expr_(expr)
     {
         if (!expr_) THROW(Exception, "expr cannot be NULL");
     }
-
 
     /**
      * \copydoc ~Expr::Expr()
@@ -348,7 +347,7 @@ class BinaryExpr : public Base {
      * @throws Exception
      *         When either \c lhs or \c rhs is \c NULL.
      */
-    BinaryExpr(Arg1* lhs, Arg2* rhs)
+    BinaryExpr(const Arg1* lhs, const Arg2* rhs)
         : lhs_(lhs),
           rhs_(rhs)
     {
@@ -397,9 +396,9 @@ class BinaryExpr : public Base {
 class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    EqExpr(NumExpr* lhs, NumExpr* rhs);
+    EqExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -414,9 +413,9 @@ class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    NeqExpr(NumExpr* lhs, NumExpr* rhs);
+    NeqExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -431,9 +430,9 @@ class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    GTExpr(NumExpr* lhs, NumExpr* rhs);
+    GTExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -448,9 +447,9 @@ class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    GEExpr(NumExpr* lhs, NumExpr* rhs);
+    GEExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -465,9 +464,9 @@ class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    LTExpr(NumExpr* lhs, NumExpr* rhs);
+    LTExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -482,9 +481,9 @@ class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    LEExpr(NumExpr* lhs, NumExpr* rhs);
+    LEExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -499,9 +498,9 @@ class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
 class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    EqvExpr(BoolExpr* lhs, BoolExpr* rhs);
+    EqvExpr(const BoolExpr* lhs, const BoolExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -516,9 +515,9 @@ class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    ImpExpr(BoolExpr* lhs, BoolExpr* rhs);
+    ImpExpr(const BoolExpr* lhs, const BoolExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -533,9 +532,9 @@ class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    AndExpr(BoolExpr* lhs, BoolExpr* rhs);
+    AndExpr(const BoolExpr* lhs, const BoolExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -550,9 +549,9 @@ class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
 class OrExpr : public BinaryExpr<BoolExpr, BoolExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    OrExpr(BoolExpr* lhs, BoolExpr* rhs);
+    OrExpr(const BoolExpr* lhs, const BoolExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -574,7 +573,7 @@ class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
      * @throws Exception
      *         When \c e is \c NULL.
      */
-    NotExpr(BoolExpr* expr);
+    NotExpr(const BoolExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -589,9 +588,9 @@ class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
 class InSetExpr : public BinaryExpr<BoolExpr, SetElemExpr, SetExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    InSetExpr(SetElemExpr* lhs, SetExpr* rhs);
+    InSetExpr(const SetElemExpr* lhs, const SetExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -608,7 +607,7 @@ class PlusExpr : public BinaryExpr<NumExpr, NumExpr> {
     /**
      * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
      */
-    PlusExpr(NumExpr* lhs, NumExpr* rhs);
+    PlusExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -625,7 +624,7 @@ class MinusExpr : public BinaryExpr<NumExpr, NumExpr> {
     /**
      * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
      */
-    MinusExpr(NumExpr* lhs, NumExpr* rhs);
+    MinusExpr(const NumExpr* lhs, const NumExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -671,9 +670,9 @@ class AnIntegerExpr : public NumExpr {
 class NodeIdToNumExpr : public UnaryExpr<NumExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    NodeIdToNumExpr(NodeIdExpr* expr);
+    NodeIdToNumExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -688,9 +687,9 @@ class NodeIdToNumExpr : public UnaryExpr<NumExpr, NodeIdExpr> {
 class PatternIdToNumExpr : public UnaryExpr<NumExpr, PatternIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternIdToNumExpr(PatternIdExpr* expr);
+    PatternIdToNumExpr(const PatternIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -705,9 +704,9 @@ class PatternIdToNumExpr : public UnaryExpr<NumExpr, PatternIdExpr> {
 class InstanceIdToNumExpr : public UnaryExpr<NumExpr, InstanceIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstanceIdToNumExpr(InstanceIdExpr* expr);
+    InstanceIdToNumExpr(const InstanceIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -722,9 +721,9 @@ class InstanceIdToNumExpr : public UnaryExpr<NumExpr, InstanceIdExpr> {
 class InstructionIdToNumExpr : public UnaryExpr<NumExpr, InstructionIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstructionIdToNumExpr(InstructionIdExpr* expr);
+    InstructionIdToNumExpr(const InstructionIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -739,9 +738,9 @@ class InstructionIdToNumExpr : public UnaryExpr<NumExpr, InstructionIdExpr> {
 class LabelIdToNumExpr : public UnaryExpr<NumExpr, LabelIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIdToNumExpr(LabelIdExpr* expr);
+    LabelIdToNumExpr(const LabelIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -756,15 +755,40 @@ class LabelIdToNumExpr : public UnaryExpr<NumExpr, LabelIdExpr> {
 class RegisterIdToNumExpr : public UnaryExpr<NumExpr, RegisterIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIdToNumExpr(RegisterIdExpr* expr);
+    RegisterIdToNumExpr(const RegisterIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
     ~RegisterIdToNumExpr(void);
+};
+
+/**
+ * Represents the distance between a pattern instance and a label. The distance
+ * starts from the end of the instruction represented by the pattern and stops
+ * at the beginning of the first instruction within the basic block represented
+ * by the label. The distance is negative if the label appears before the
+ * pattern.
+ */
+class DistanceBetweenInstanceAndLabelExpr
+    : public BinaryExpr<NumExpr, InstanceIdExpr, LabelIdExpr>
+{
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
+     */
+    DistanceBetweenInstanceAndLabelExpr(const InstanceIdExpr* lhs,
+                                        const LabelIdExpr* rhs);
+
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DistanceBetweenInstanceAndLabelExpr(void);
 };
 
 /**
@@ -976,9 +1000,9 @@ class ThisInstanceIdExpr : public InstanceIdExpr {
 class CovererOfActionNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    CovererOfActionNodeExpr(NodeIdExpr* expr);
+    CovererOfActionNodeExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -993,9 +1017,9 @@ class CovererOfActionNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
 class DefinerOfDataNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DefinerOfDataNodeExpr(NodeIdExpr* expr);
+    DefinerOfDataNodeExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1010,9 +1034,9 @@ class DefinerOfDataNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
 class DefinerOfStateNodeExpr : public UnaryExpr<InstanceIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DefinerOfStateNodeExpr(NodeIdExpr* expr);
+    DefinerOfStateNodeExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1029,9 +1053,9 @@ class InstructionIdOfPatternExpr : public UnaryExpr<InstructionIdExpr,
 {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstructionIdOfPatternExpr(PatternIdExpr* expr);
+    InstructionIdOfPatternExpr(const PatternIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1047,9 +1071,9 @@ class PatternIdOfInstanceExpr : public UnaryExpr<PatternIdExpr, InstanceIdExpr>
 {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternIdOfInstanceExpr(InstanceIdExpr* expr);
+    PatternIdOfInstanceExpr(const InstanceIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1067,9 +1091,9 @@ class LabelIdAllocatedToInstanceExpr : public UnaryExpr<LabelIdExpr,
 {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIdAllocatedToInstanceExpr(InstanceIdExpr* expr);
+    LabelIdAllocatedToInstanceExpr(const InstanceIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1084,9 +1108,9 @@ class LabelIdAllocatedToInstanceExpr : public UnaryExpr<LabelIdExpr,
 class LabelIdOfLabelNodeExpr : public UnaryExpr<LabelIdExpr, NodeIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIdOfLabelNodeExpr(NodeIdExpr* expr);
+    LabelIdOfLabelNodeExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1103,9 +1127,9 @@ class RegisterIdAllocatedToDataNodeExpr : public UnaryExpr<RegisterIdExpr,
 {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIdAllocatedToDataNodeExpr(NodeIdExpr* expr);
+    RegisterIdAllocatedToDataNodeExpr(const NodeIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1120,9 +1144,9 @@ class RegisterIdAllocatedToDataNodeExpr : public UnaryExpr<RegisterIdExpr,
 class UnionSetExpr : public BinaryExpr<SetExpr, SetExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    UnionSetExpr(SetExpr* lhs, SetExpr* rhs);
+    UnionSetExpr(const SetExpr* lhs, const SetExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1137,9 +1161,9 @@ class UnionSetExpr : public BinaryExpr<SetExpr, SetExpr> {
 class IntersectSetExpr : public BinaryExpr<SetExpr, SetExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    IntersectSetExpr(SetExpr* lhs, SetExpr* rhs);
+    IntersectSetExpr(const SetExpr* lhs, const SetExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1154,9 +1178,9 @@ class IntersectSetExpr : public BinaryExpr<SetExpr, SetExpr> {
 class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(Arg1*, Arg2*)
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    DiffSetExpr(SetExpr* lhs, SetExpr* rhs);
+    DiffSetExpr(const SetExpr* lhs, const SetExpr* rhs);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1171,9 +1195,9 @@ class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
 class DomSetOfLabelIdExpr : public UnaryExpr<SetExpr, LabelIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DomSetOfLabelIdExpr(LabelIdExpr* expr);
+    DomSetOfLabelIdExpr(const LabelIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1193,7 +1217,7 @@ class RegisterClassExpr : public SetExpr {
      * @param expr
      *        The list of expressions.
      */
-    RegisterClassExpr(std::list<const RegisterIdExpr*> expr);
+    RegisterClassExpr(const std::list<const RegisterIdExpr*>& expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1219,9 +1243,9 @@ class RegisterClassExpr : public SetExpr {
 class LabelIdToSetElemExpr : public UnaryExpr<SetElemExpr, LabelIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIdToSetElemExpr(LabelIdExpr* expr);
+    LabelIdToSetElemExpr(const LabelIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1236,9 +1260,9 @@ class LabelIdToSetElemExpr : public UnaryExpr<SetElemExpr, LabelIdExpr> {
 class RegisterIdToSetElemExpr : public UnaryExpr<SetElemExpr, RegisterIdExpr> {
   public:
     /**
-     * \copydoc UnaryExpr::UnaryExpr(Arg*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIdToSetElemExpr(RegisterIdExpr* expr);
+    RegisterIdToSetElemExpr(const RegisterIdExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()

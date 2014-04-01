@@ -699,6 +699,11 @@ Params::parseNumExpr(string& str) {
             auto e = parseRegisterIdExpr(str);
             expr = new RegisterIdToNumExpr(e);
         }
+        else if (eat("dist-pat-to-lab ", str)) {
+            auto lhs = parseInstanceIdExpr(str);
+            auto rhs = parseLabelIdExpr(str);
+            expr = new DistanceBetweenInstanceAndLabelExpr(lhs, rhs);
+        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -710,7 +715,8 @@ Params::parseNumExpr(string& str) {
         }
     }
     else {
-        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+        int num = eatInt(str);
+        expr = new AnIntegerExpr(num);
     }
 
     return expr;

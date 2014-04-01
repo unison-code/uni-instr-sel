@@ -89,77 +89,77 @@ SetExpr::SetExpr(void) {}
 
 SetExpr::~SetExpr(void) {}
 
-EqExpr::EqExpr(NumExpr* lhs, NumExpr* rhs)
+EqExpr::EqExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 EqExpr::~EqExpr(void) {}
 
-NeqExpr::NeqExpr(NumExpr* lhs, NumExpr* rhs)
+NeqExpr::NeqExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 NeqExpr::~NeqExpr(void) {}
 
-GTExpr::GTExpr(NumExpr* lhs, NumExpr* rhs)
+GTExpr::GTExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 GTExpr::~GTExpr(void) {}
 
-GEExpr::GEExpr(NumExpr* lhs, NumExpr* rhs)
+GEExpr::GEExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 GEExpr::~GEExpr(void) {}
 
-LTExpr::LTExpr(NumExpr* lhs, NumExpr* rhs)
+LTExpr::LTExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 LTExpr::~LTExpr(void) {}
 
-LEExpr::LEExpr(NumExpr* lhs, NumExpr* rhs)
+LEExpr::LEExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 LEExpr::~LEExpr(void) {}
 
-EqvExpr::EqvExpr(BoolExpr* lhs, BoolExpr* rhs)
+EqvExpr::EqvExpr(const BoolExpr* lhs, const BoolExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 EqvExpr::~EqvExpr(void) {}
 
-ImpExpr::ImpExpr(BoolExpr* lhs, BoolExpr* rhs)
+ImpExpr::ImpExpr(const BoolExpr* lhs, const BoolExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 ImpExpr::~ImpExpr(void) {}
 
-AndExpr::AndExpr(BoolExpr* lhs, BoolExpr* rhs)
+AndExpr::AndExpr(const BoolExpr* lhs, const BoolExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 AndExpr::~AndExpr(void) {}
 
-OrExpr::OrExpr(BoolExpr* lhs, BoolExpr* rhs)
+OrExpr::OrExpr(const BoolExpr* lhs, const BoolExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 OrExpr::~OrExpr(void) {}
 
-NotExpr::NotExpr(BoolExpr* expr)
+NotExpr::NotExpr(const BoolExpr* expr)
     : UnaryExpr(expr)
 {}
 
 NotExpr::~NotExpr(void) {}
 
-PlusExpr::PlusExpr(NumExpr* lhs, NumExpr* rhs)
+PlusExpr::PlusExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
-InSetExpr::InSetExpr(SetElemExpr* lhs, SetExpr* rhs)
+InSetExpr::InSetExpr(const SetElemExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
@@ -167,7 +167,7 @@ InSetExpr::~InSetExpr(void) {}
 
 PlusExpr::~PlusExpr(void) {}
 
-MinusExpr::MinusExpr(NumExpr* lhs, NumExpr* rhs)
+MinusExpr::MinusExpr(const NumExpr* lhs, const NumExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
@@ -184,37 +184,37 @@ AnIntegerExpr::getValue(void) const {
     return i_;
 }
 
-NodeIdToNumExpr::NodeIdToNumExpr(NodeIdExpr* expr)
+NodeIdToNumExpr::NodeIdToNumExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 NodeIdToNumExpr::~NodeIdToNumExpr(void) {}
 
-InstanceIdToNumExpr::InstanceIdToNumExpr(InstanceIdExpr* expr)
+InstanceIdToNumExpr::InstanceIdToNumExpr(const InstanceIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 InstanceIdToNumExpr::~InstanceIdToNumExpr(void) {}
 
-InstructionIdToNumExpr::InstructionIdToNumExpr(InstructionIdExpr* expr)
+InstructionIdToNumExpr::InstructionIdToNumExpr(const InstructionIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 InstructionIdToNumExpr::~InstructionIdToNumExpr(void) {}
 
-PatternIdToNumExpr::PatternIdToNumExpr(PatternIdExpr* expr)
+PatternIdToNumExpr::PatternIdToNumExpr(const PatternIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 PatternIdToNumExpr::~PatternIdToNumExpr(void) {}
 
-LabelIdToNumExpr::LabelIdToNumExpr(LabelIdExpr* expr)
+LabelIdToNumExpr::LabelIdToNumExpr(const LabelIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 LabelIdToNumExpr::~LabelIdToNumExpr(void) {}
 
-RegisterIdToNumExpr::RegisterIdToNumExpr(RegisterIdExpr* expr)
+RegisterIdToNumExpr::RegisterIdToNumExpr(const RegisterIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
@@ -290,84 +290,84 @@ ThisInstanceIdExpr::ThisInstanceIdExpr(void) {}
 
 ThisInstanceIdExpr::~ThisInstanceIdExpr(void) {}
 
-CovererOfActionNodeExpr::CovererOfActionNodeExpr(NodeIdExpr* expr)
+CovererOfActionNodeExpr::CovererOfActionNodeExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
 
-DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(NodeIdExpr* expr)
+DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 DefinerOfDataNodeExpr::~DefinerOfDataNodeExpr(void) {}
 
-DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(NodeIdExpr* expr)
+DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 DefinerOfStateNodeExpr::~DefinerOfStateNodeExpr(void) {}
 
-InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(PatternIdExpr* expr)
-    : UnaryExpr(expr)
+InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(
+    const PatternIdExpr* expr
+) : UnaryExpr(expr)
 {}
 
 InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {}
 
-PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(InstanceIdExpr* expr)
+PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(const InstanceIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {}
 
 LabelIdAllocatedToInstanceExpr::LabelIdAllocatedToInstanceExpr(
-    InstanceIdExpr* expr
-)
-    : UnaryExpr(expr)
+    const InstanceIdExpr* expr
+) : UnaryExpr(expr)
 {}
 
 LabelIdAllocatedToInstanceExpr::~LabelIdAllocatedToInstanceExpr(void) {}
 
-LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(NodeIdExpr* expr)
+LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {}
 
 RegisterIdAllocatedToDataNodeExpr::RegisterIdAllocatedToDataNodeExpr(
-    NodeIdExpr* expr
-)
-    : UnaryExpr(expr)
+    const NodeIdExpr* expr
+) : UnaryExpr(expr)
 {}
 
 RegisterIdAllocatedToDataNodeExpr::~RegisterIdAllocatedToDataNodeExpr(void) {}
 
-UnionSetExpr::UnionSetExpr(SetExpr* lhs, SetExpr* rhs)
+UnionSetExpr::UnionSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 UnionSetExpr::~UnionSetExpr(void) {}
 
-IntersectSetExpr::IntersectSetExpr(SetExpr* lhs, SetExpr* rhs)
+IntersectSetExpr::IntersectSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 IntersectSetExpr::~IntersectSetExpr(void) {}
 
-DiffSetExpr::DiffSetExpr(SetExpr* lhs, SetExpr* rhs)
+DiffSetExpr::DiffSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
 
 DiffSetExpr::~DiffSetExpr(void) {}
 
-DomSetOfLabelIdExpr::DomSetOfLabelIdExpr(LabelIdExpr* expr)
+DomSetOfLabelIdExpr::DomSetOfLabelIdExpr(const LabelIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 DomSetOfLabelIdExpr::~DomSetOfLabelIdExpr(void) {}
 
-RegisterClassExpr::RegisterClassExpr(std::list<const RegisterIdExpr*> expr)
-    : expr_(expr)
+RegisterClassExpr::RegisterClassExpr(
+    const std::list<const RegisterIdExpr*>& expr
+) : expr_(expr)
 {}
 
 RegisterClassExpr::~RegisterClassExpr(void) {
@@ -381,14 +381,23 @@ RegisterClassExpr::getExprList(void) const {
     return expr_;
 }
 
-LabelIdToSetElemExpr::LabelIdToSetElemExpr(LabelIdExpr* expr)
+LabelIdToSetElemExpr::LabelIdToSetElemExpr(const LabelIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 LabelIdToSetElemExpr::~LabelIdToSetElemExpr(void) {}
 
-RegisterIdToSetElemExpr::RegisterIdToSetElemExpr(RegisterIdExpr* expr)
+RegisterIdToSetElemExpr::RegisterIdToSetElemExpr(const RegisterIdExpr* expr)
     : UnaryExpr(expr)
 {}
 
 RegisterIdToSetElemExpr::~RegisterIdToSetElemExpr(void) {}
+
+DistanceBetweenInstanceAndLabelExpr::DistanceBetweenInstanceAndLabelExpr(
+    const InstanceIdExpr* lhs,
+    const LabelIdExpr* rhs
+) : BinaryExpr(lhs, rhs)
+{}
+
+DistanceBetweenInstanceAndLabelExpr::~DistanceBetweenInstanceAndLabelExpr(void)
+{}
