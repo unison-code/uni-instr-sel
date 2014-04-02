@@ -201,13 +201,11 @@ forall (p in allPatternInstances, l in allFuncLabelNodes
 (
     br_bb_dists[patInstAndLabelMappings[p, l]] =
         % When the label appears after the branch
-        bool2int(bb_order_inv[pi_bb[p]] < bb_order_inv[l])
-        *
         sum (i in allFuncLabelNodes)
         (
             % Assuming the branch always appears as the last instruction within
             % the block, which means that we only need to consider the size of
-            % the blocks between the source and the target label
+            % the blocks between the source and the target label.
             sum (pp in allPatternInstances)
             (
                 patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
@@ -217,23 +215,18 @@ forall (p in allPatternInstances, l in allFuncLabelNodes
         )
         -
         % When the label appears before the branch
-        bool2int(bb_order_inv[l] < bb_order_inv[pi_bb[p]])
-        *
+        sum (i in allFuncLabelNodes)
         (
+            % Assuming the branch always appears as the last instruction within
+            % the block, which means that we consider all instructions in the
+            % block wherein the branch appears as well as the size of the blocks
+            % between the source and the target label.
             sum (pp in allPatternInstances)
             (
-                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == l)
-            )
-            +
-            sum (i in allFuncLabelNodes)
-            (
-                sum (pp in allPatternInstances)
-                (
-                    patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
-                ) * bool2int(bb_order_inv[l] <= bb_order_inv[i]
-                             /\
-                             bb_order_inv[i] < bb_order_inv[pi_bb[p]])
-            )
+                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
+            ) * bool2int(bb_order_inv[l] <= bb_order_inv[i]
+                         /\
+                         bb_order_inv[i] <= bb_order_inv[pi_bb[p]])
         )
 );
 
