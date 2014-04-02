@@ -28,20 +28,21 @@
 # PROGRAM VARIABLES
 #===================
 
-# The programs (binaries) to build
-PROGRAMS := gecode-solver minizinc-solver
+# The paths (including file) to the program binaries to build
+PROGRAMS := gecode/solver minizinc/input-gen
 
-# Contains the application modules, per program
+# Contains the application modules, per program (remember to replace slashes
+# in the program path with dashes)
 MODULES_gecode-solver   := common/exceptions \
                            common/json       \
                            common/model      \
                            common/utils      \
                            gecode
-MODULES_minizinc-solver := common/exceptions \
-                           common/json       \
-                           common/model      \
-                           common/utils      \
-                           minizinc
+MODULES_minizinc-input-gen := common/exceptions \
+                              common/json       \
+                              common/model      \
+                              common/utils      \
+                              minizinc
 
 # Name of the tarball
 TARBALL_FILENAME := solvers-src
@@ -57,13 +58,15 @@ CXXFLAGS += -Wall -std=c++11
 LDFLAGS  +=
 LDLIBS   +=
 
-# Flags specific to building the Gecode solver
+# Flags specific to building the Gecode solver (remember to replace slashes in
+# the program path with dashes)
 LDFLAGS_gecode-solver  +=
 LDLIBS_gecode-solver   +=
 
-# Flags specific to building the Minizinc solver
-LDFLAGS_minizinc-solver  +=
-LDLIBS_minizinc-solver   +=
+# Flags specific to building the Minizinc input generator (remember to replace
+# slashes in the program path with dashes)
+LDFLAGS_minizinc-input-gen  +=
+LDLIBS_minizinc-input-gen   +=
 
 
 
@@ -71,20 +74,22 @@ LDLIBS_minizinc-solver   +=
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
 
-#==================================
-# INTERNAL VARIABLES AND FUNCTIONS
-#==================================
+#====================
+# INTERNAL FUNCTIONS
+#====================
 
-all-unique-modules = $(sort $(foreach prog,$(PROGRAMS),$(MODULES_$(prog))))
-all-unique-source-files = $(sort $(all-source-files))
-all-unique-object-files = $(all-unique-source-files:.cpp=.o)
-all-unique-dep-files = $(all-unique-source-files:.cpp=.d)
+# Makes a program name by taking a program path, relative to the root, and
+# replaces all slashes (`/') with dashes (`-').
+#
+# Arguments:
+#    1: Path relative to the root.
+make-program-name = $(subst /,-,$(1))
 
 # Makes a module name by taking a module path, relative to the root, and
 # replaces all slashes (`/') with dashes (`-').
 #
 # Arguments:
-#    1: Module path relative to the root.
+#    1: Path relative to the root.
 make-module-name = $(subst /,-,$(1))
 
 # Gets the path of the currently loaded module makefile.
@@ -106,12 +111,12 @@ endef
 # program.
 #
 # Arguments:
-#    1: Program name.
+#    1: Program path.
 define program-template
-  $(1): $$(foreach mod,$$(MODULES_$(1)),\
+  $(1): $$(foreach mod,$$(MODULES_$(call make-program-name,$(1))),\
                    $$(call $$(call make-module-name,$$(mod))-object-files))
-  $(1): LDFLAGS += $(LDFLAGS_$(1))
-  $(1): LDLIBS += $(LDLIBS_$(1))
+  $(1): LDFLAGS += $(LDFLAGS_$(call make-program-name,$(1)))
+  $(1): LDLIBS += $(LDLIBS_$(call make-program-name,$(1)))
 endef
 
 # Executes doxygen if a `dox' file is found within the module.
@@ -124,6 +129,17 @@ define make-docs
 		doxygen dox; \
 	fi;
 endef
+
+#====================
+# INTERNAL VARIABLES
+#====================
+
+all-unique-modules = \
+    $(sort $(foreach prog,$(PROGRAMS),\
+                     $(MODULES_$(call make-program-name,$(prog)))))
+all-unique-source-files = $(sort $(all-source-files))
+all-unique-object-files = $(all-unique-source-files:.cpp=.o)
+all-unique-dep-files = $(all-unique-source-files:.cpp=.d)
 
 
 
