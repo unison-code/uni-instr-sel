@@ -363,7 +363,13 @@ int
 main(int argc, char** argv) {
     try {
         // Parse JSON file into an internal model parameters object
-        ifstream file(argv[1]);
+        string json_file(argv[1]);
+        ifstream file(json_file);
+        if (!file.good()) {
+            cerr << "ERROR: " << json_file << " does not exist or is unreadable"
+                 << endl;
+            return 1;
+        }
         stringstream ss;
         ss << file.rdbuf();
         string json_content(ss.str());

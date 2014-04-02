@@ -1,3 +1,4 @@
 input-gen
 input.mzn
 *.fzn
+*.out
