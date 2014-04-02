@@ -184,6 +184,12 @@ AnIntegerExpr::getValue(void) const {
     return i_;
 }
 
+BoolToNumExpr::BoolToNumExpr(const BoolExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+BoolToNumExpr::~BoolToNumExpr(void) {}
+
 NodeIdToNumExpr::NodeIdToNumExpr(const NodeIdExpr* expr)
     : UnaryExpr(expr)
 {}

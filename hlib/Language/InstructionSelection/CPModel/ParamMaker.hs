@@ -196,6 +196,8 @@ replaceInNumExpr m (PlusExpr  lhs rhs) =
 replaceInNumExpr m (MinusExpr lhs rhs) =
   MinusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
 replaceInNumExpr _ (AnIntegerExpr i) = AnIntegerExpr i
+replaceInNumExpr m (Bool2NumExpr e) =
+  Bool2NumExpr (replaceInBoolExpr m e)
 replaceInNumExpr m (NodeId2NumExpr e) =
   NodeId2NumExpr (replaceInNodeIdExpr m e)
 replaceInNumExpr m (InstanceId2NumExpr e) =

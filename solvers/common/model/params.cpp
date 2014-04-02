@@ -675,6 +675,10 @@ Params::parseNumExpr(string& str) {
             auto rhs = parseNumExpr(str);
             expr = new MinusExpr(lhs, rhs);
         }
+        else if (eat("bool-to-num ", str)) {
+            auto e = parseBoolExpr(str);
+            expr = new BoolToNumExpr(e);
+        }
         else if (eat("node-id-to-num ", str)) {
             auto e = parseNodeIdExpr(str);
             expr = new NodeIdToNumExpr(e);

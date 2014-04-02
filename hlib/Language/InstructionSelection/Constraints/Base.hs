@@ -96,6 +96,10 @@ data NumExpr
 
     | AnIntegerExpr Integer
 
+      -- | Converts a Boolean to a numerical expression.
+
+    | Bool2NumExpr BoolExpr
+
       -- | Converts a node ID to a numerical expression.
 
     | NodeId2NumExpr NodeIdExpr

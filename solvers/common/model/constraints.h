@@ -665,7 +665,24 @@ class AnIntegerExpr : public NumExpr {
 };
 
 /**
- * Converts a node ID expression to a numerical expression.
+ * Converts a Boolean to a numerical expression.
+ */
+class BoolToNumExpr : public UnaryExpr<NumExpr, BoolExpr> {
+  public:
+    /**
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
+     */
+    BoolToNumExpr(const BoolExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~BoolToNumExpr(void);
+};
+
+/**
+ * Converts a node ID to a numerical expression.
  */
 class NodeIdToNumExpr : public UnaryExpr<NumExpr, NodeIdExpr> {
   public:
@@ -682,7 +699,7 @@ class NodeIdToNumExpr : public UnaryExpr<NumExpr, NodeIdExpr> {
 };
 
 /**
- * Converts a pattern instance ID expression to a numerical expression.
+ * Converts a pattern instance ID to a numerical expression.
  */
 class PatternIdToNumExpr : public UnaryExpr<NumExpr, PatternIdExpr> {
   public:
@@ -699,7 +716,7 @@ class PatternIdToNumExpr : public UnaryExpr<NumExpr, PatternIdExpr> {
 };
 
 /**
- * Converts a instance ID expression to a numerical expression.
+ * Converts a instance ID to a numerical expression.
  */
 class InstanceIdToNumExpr : public UnaryExpr<NumExpr, InstanceIdExpr> {
   public:
@@ -716,7 +733,7 @@ class InstanceIdToNumExpr : public UnaryExpr<NumExpr, InstanceIdExpr> {
 };
 
 /**
- * Converts a instruction ID expression to a numerical expression.
+ * Converts a instruction ID to a numerical expression.
  */
 class InstructionIdToNumExpr : public UnaryExpr<NumExpr, InstructionIdExpr> {
   public:
@@ -733,7 +750,7 @@ class InstructionIdToNumExpr : public UnaryExpr<NumExpr, InstructionIdExpr> {
 };
 
 /**
- * Converts a label ID expression to a numerical expression.
+ * Converts a label ID to a numerical expression.
  */
 class LabelIdToNumExpr : public UnaryExpr<NumExpr, LabelIdExpr> {
   public:
@@ -750,7 +767,7 @@ class LabelIdToNumExpr : public UnaryExpr<NumExpr, LabelIdExpr> {
 };
 
 /**
- * Converts a register ID expression to a numerical expression.
+ * Converts a register ID to a numerical expression.
  */
 class RegisterIdToNumExpr : public UnaryExpr<NumExpr, RegisterIdExpr> {
   public:

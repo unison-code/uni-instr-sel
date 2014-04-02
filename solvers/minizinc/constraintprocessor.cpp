@@ -117,6 +117,9 @@ ConstraintProcessor::process(const NumExpr* e) {
     else if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
         return Utils::toString(de->getValue());
     }
+    else if (const BoolToNumExpr* de = dynamic_cast<const BoolToNumExpr*>(e)) {
+        return string("bool2int(") + process(de->getExpr()) + ")";
+    }
     else if (const NodeIdToNumExpr* de =
              dynamic_cast<const NodeIdToNumExpr*>(e))
     {
