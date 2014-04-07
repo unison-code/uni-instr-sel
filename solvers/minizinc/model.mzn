@@ -255,4 +255,5 @@ output [ "an_cov=", show(an_cov), "\n"
        , "bb_order=", show(bb_order), "\n"
        , "br_bb_dists=", show(br_bb_dists), "\n"
        , "cost=", show(cost), "\n"
+       , "null_label=", show(nullLabel), "\n"
        ];
