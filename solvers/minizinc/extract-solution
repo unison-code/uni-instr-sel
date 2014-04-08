@@ -1,0 +1,139 @@
+#!/usr/bin/python
+
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+def extractData(line):
+    pos = line.find("=")
+    if pos < 0:
+        raise SyntaxError("Expected '=' not found")
+    name = line[:pos].strip()
+    data = line[pos + 1:].strip()
+    if len(data) == 0:
+        raise SyntaxError("No value")
+    return name, data
+
+def consistsOnlyOf(s, ch):
+    for c in s:
+        if c != ch:
+            return False
+    return True
+
+def getDataByName(data, name):
+    for d in data:
+        if d[0] == name:
+            return d[1]
+
+def toJson(data):
+    name = data[0]
+    data_str = data[1].strip()
+    if len(s) == 0:
+        raise SyntaxError("No value")
+    if data_str[0] == '[':
+        if not data_str[-1] == ']':
+            raise SyntaxError("Expected ']' not found")
+        ss = data_str[1:-1].split(',')
+        values = []
+        for s in ss:
+            s = s.strip()
+            if s == "true":
+                values.append(True)
+            elif s == "false":
+                values.append(False)
+            elif s.isdigit()
+                values.append(int(s))
+            else:
+                values.append(s)
+    else:
+        return {name: s}
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check solution file
+if len(sys.argv) < 2:
+    sys.stderr.write("No solution file\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    sys.stderr.write("Too many arguments\n")
+    sys.exit(1)
+solution_file = sys.argv[1]
+if not os.path.isfile(solution_file):
+    error("Solution file '" + solution_file +"' not found")
+
+# Read solution file
+content = []
+with open(solution_file, 'r') as file:
+    content = file.readlines()
+
+# Extract data
+all_data = []
+for i in range(len(content)):
+    linenr = str(i + 1)
+    line = content[i].strip()
+    if len(line) == 0 or consistsOnlyOf(line, '-') or consistsOnlyOf(line, '='):
+        continue
+    try:
+        name, data = extractData(line)
+    except SyntaxError as e:
+        error("Line " + linenr + ": " + e.strerror)
+    if getDataByName(all_data, name) != None:
+        error("Line " + linenr + ": Duplicate entries with name '" + name + "'")
+    all_data.append([name, data])
+
+# Turn desirable data into JSON
+keep = set(["pi_sel"])
+json = {}
+for d in data:
+    name = d[0]
+    if name in keep:
+        keep.remove(name)
+        #json[?]
+
+# TODO: implement
+
+# Print JSON
+# TODO: implement
