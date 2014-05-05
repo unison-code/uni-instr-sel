@@ -81,7 +81,7 @@ def toJson(data):
                 values.append(True)
             elif s == "false":
                 values.append(False)
-            elif s.isdigit()
+            elif s.isdigit():
                 values.append(int(s))
             else:
                 values.append(s)
@@ -125,15 +125,15 @@ for i in range(len(content)):
     all_data.append([name, data])
 
 # Turn desirable data into JSON
-keep = set(["pi_sel"])
-json = {}
-for d in data:
+keep = set(["pi_sel", "pi_bb", "bb_order"])
+json_data = {}
+for d in all_data:
     name = d[0]
     if name in keep:
+        json_data[name] = d[1]
         keep.remove(name)
-        #json[?]
-
-# TODO: implement
+if len(keep) > 0:
+    error("Required data '" + keep.pop() + "' not found")
 
 # Print JSON
-# TODO: implement
+print json.dumps(json_data)
