@@ -37,6 +37,7 @@ function checkStatus {
 
 MINIZINC_INPUT_FILE="input.mzn"
 MINIZINC_SOLUTION_FILE="solution.out"
+JSON_SOLUTION_FILE="json.out"
 
 
 
@@ -61,6 +62,6 @@ minizinc model.mzn > $MINIZINC_SOLUTION_FILE
 checkStatus
 
 # Convert solution into JSON format
-# TODO: implement
-
-echo "Done"
+echo "Converting Minizinc solution to JSON format..."
+./mzn-solution-to-json $MINIZINC_SOLUTION_FILE > $JSON_SOLUTION_FILE
+checkStatus
