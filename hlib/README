@@ -1,0 +1,33 @@
+Written by Gabriel Hjort Blindell <ghb@kth.se>
+
+
+
+=================
+= HOW TO INSTALL
+=================
+
+The Haskell code relies on the following packages:
+
+ - llvm-general (3.4.*.*)
+
+The 'llvm-general' package requires LLVM 3.4 to be installed. LLVM *must* be
+installed such that it can be invoked from any location or else the package will
+fail to be installed. (I've tried to keep LLVM in the home directory, but no
+matter which flags I set to Cabal the package will just refuse to recognize that
+the correct version of LLVM is installed.)
+
+To install LLVM 3.4, run the following commands:
+
+   svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_34/final llvm
+   cd llvm/tools
+   svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_34/final clang
+   cd ../..
+   mkdir build
+   cd build
+   ../llvm/configure --enable-shared
+   make
+   sudo make install
+
+To install 'llvm-general', run the following commands:
+
+   sudo cabal install llvm-general
