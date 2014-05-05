@@ -36,8 +36,8 @@ function checkStatus {
 }
 
 MINIZINC_INPUT_FILE="input.mzn"
-MINIZINC_SOLUTION_FILE="solution.out"
-JSON_SOLUTION_FILE="json.out"
+MINIZINC_SOLUTION_FILE="solution.mznout"
+JSON_SOLUTION_FILE="solution.json"
 
 
 
