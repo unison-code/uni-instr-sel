@@ -1,5 +1,5 @@
 input-gen
 input.mzn
 *.fzn
-*.mznout
+*.sol.*
 *.json

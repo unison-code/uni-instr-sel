@@ -36,8 +36,9 @@ function checkStatus {
 }
 
 MINIZINC_INPUT_FILE="input.mzn"
-MINIZINC_SOLUTION_FILE="solution.mznout"
-JSON_SOLUTION_FILE="solution.json"
+MINIZINC_SOLUTION_FILE="input.sol.mzn"
+JSON_SOLUTION_FILE_SUFFIX="sol.json"
+JSON_SOLUTION_FILE=""   # Will be set after parsing command-line arguments
 
 
 
@@ -50,6 +51,8 @@ if [ -z "$1" ]; then
     echo "No JSON file provided"
     exit 1
 fi
+
+JSON_SOLUTION_FILE="${1%.*}.$JSON_SOLUTION_FILE_SUFFIX"
 
 # Generate input to Minizinc model
 echo "Generating Minizinc input..."
