@@ -125,15 +125,24 @@ for i in range(len(content)):
     all_data.append([name, data])
 
 # Turn desirable data into JSON
-keep = set(["pi_sel", "pi_bb", "bb_order"])
+data_table = [ ["pi_sel",     "pi-selection"]
+             , ["pi_bb",      "pi-to-bb-allocation"]
+             , ["bb_order",   "bb-order"]
+             , ["null_label", "null-bb"]
+             ]
+keep_table = [ d[0] for d in data_table ]
+replace_table = [ d[1] for d in data_table ]
 json_data = {}
 for d in all_data:
     name = d[0]
-    if name in keep:
-        json_data[name] = d[1]
-        keep.remove(name)
-if len(keep) > 0:
-    error("Required data '" + keep.pop() + "' not found")
+    for i in range(len(keep_table)):
+        if name == keep_table[i]:
+            json_data[replace_table[i]] = d[1]
+            del keep_table[i]
+            del replace_table[i]
+            break
+if len(keep_table) > 0:
+    error("Required data '" + keep_table[0] + "' not found")
 
 # Print JSON
 print json.dumps(json_data)
