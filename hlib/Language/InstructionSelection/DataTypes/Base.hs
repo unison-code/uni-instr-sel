@@ -19,6 +19,10 @@ import Language.InstructionSelection.PrettyPrint
 
 
 
+--------------
+-- Data types
+--------------
+
 data DataType
 
       -- | An integer data type, of a certain number of bits.
@@ -27,14 +31,17 @@ data DataType
 
       -- TODO: add missing data types
 
-      -- | When the data type is not known.
+      -- | When the data type is unknown and does not matter.
 
-    | UnknownType
+    | AnyType
 
     deriving (Show, Eq)
 
-instance PrettyPrint DataType where
-  prettyShow (IntType w) = "i" ++ show w
+
+
+-------------
+-- Functions
+-------------
 
 -- | Gets the data type of a corresponding integer of a certain number of bits.
 
@@ -49,3 +56,20 @@ fromIValue i =
   let log2value = logBase 2 $ (fromIntegral $ abs i) :: Float
       numbits = (ceiling log2value) :: Integer
   in IntType $ toNatural numbits
+
+-- | Checks if two data types are compatible, meaning that they are semantically
+-- equivalent.
+
+areDataTypesCompatible :: DataType -> DataType -> Bool
+areDataTypesCompatible AnyType _ = True
+areDataTypesCompatible _ AnyType = True
+areDataTypesCompatible d1 d2 = d1 == d2
+
+
+
+------------------------
+-- Type class instances
+------------------------
+
+instance PrettyPrint DataType where
+  prettyShow (IntType w) = "i" ++ show w

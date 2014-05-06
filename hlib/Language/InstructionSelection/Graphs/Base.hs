@@ -118,7 +118,7 @@ module Language.InstructionSelection.Graphs.Base (
 , updateNodeLabel
 ) where
 
-import Language.InstructionSelection.DataTypes
+import qualified Language.InstructionSelection.DataTypes as D
 import qualified Language.InstructionSelection.OpTypes as O
 import Language.InstructionSelection.Utils ( Natural
                                            , removeDuplicates
@@ -199,7 +199,7 @@ data NodeType
       -- are all represented as data nodes. What distinguishes one from another
       -- are the constraints applied to it.
 
-    | DataNode { dataType :: DataType }
+    | DataNode { dataType :: D.DataType }
     | LabelNode { bbLabel :: BBLabel }
     | PhiNode
     | StateNode
@@ -735,12 +735,15 @@ matchingNodes fg pg st m =
      matchingNodeTypes (nodeType $ fNode m) (nodeType $ pNode m)
   && matchingEdges fg pg st m
 
--- | Checks if two node types are matching-compatible.
+-- | Checks if two node types are matching-compatible, meaning that they will
+-- yield assembly code which is semantically equivalent.
 
 matchingNodeTypes :: NodeType -> NodeType -> Bool
-matchingNodeTypes (ComputationNode op1) (ComputationNode op2) = op1 == op2
+matchingNodeTypes (ComputationNode op1) (ComputationNode op2) =
+  O.areComputationsCompatible op1 op2
 matchingNodeTypes (ControlNode op1) (ControlNode op2) = op1 == op2
-matchingNodeTypes (DataNode d1) (DataNode d2) = d1 == d2
+matchingNodeTypes (DataNode d1) (DataNode d2) =
+  D.areDataTypesCompatible d1 d2
 matchingNodeTypes (LabelNode _) (LabelNode _) = True
 matchingNodeTypes PhiNode PhiNode = True
 matchingNodeTypes StateNode StateNode = True

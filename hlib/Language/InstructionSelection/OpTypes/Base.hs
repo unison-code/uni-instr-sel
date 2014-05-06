@@ -215,6 +215,17 @@ numOperandsForOpType op
   | op `elem` [ Not, Sqrt ] = 1
   | otherwise = 2
 
+-- | Checks if two computations are compatible, meaning that they are
+-- semantically equivalent.
+
+areComputationsCompatible :: CompOp -> CompOp -> Bool
+areComputationsCompatible (IntOp op1) (IntOp op2) = op1 == op2
+areComputationsCompatible (IntOp op1) (UIntOp op2) = op1 == op2
+areComputationsCompatible (IntOp op1) (SIntOp op2) = op1 == op2
+areComputationsCompatible (UIntOp op1) (IntOp op2) = op1 == op2
+areComputationsCompatible (SIntOp op1) (IntOp op2) = op1 == op2
+areComputationsCompatible op1 op2 = op1 == op2
+
 
 
 ------------------------
