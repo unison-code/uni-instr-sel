@@ -45,9 +45,17 @@ data CompOp
 
     | FixpointOp CompOpType
 
-    -- | A floating-point operation.
+    -- | A floating-point operation where the ordering does not matter.
 
     | FloatOp CompOpType
+
+      -- | An ordered floating-point operation.
+
+    | OFloatOp CompOpType
+
+      -- | An unordered floating-point operation.
+
+    | UFloatOp CompOpType
 
     deriving (Show, Eq)
 
@@ -186,11 +194,13 @@ data ControlOp
 -- | Gets the operation type from a computational operation.
 
 getCompOpType :: CompOp -> CompOpType
-getCompOpType (IntOp op) = op
-getCompOpType (UIntOp op) = op
-getCompOpType (SIntOp op) = op
+getCompOpType  (IntOp op)     = op
+getCompOpType (UIntOp op)     = op
+getCompOpType (SIntOp op)     = op
 getCompOpType (FixpointOp op) = op
-getCompOpType (FloatOp op) = op
+getCompOpType  (FloatOp op)   = op
+getCompOpType (OFloatOp op)   = op
+getCompOpType (UFloatOp op)   = op
 
 -- | Checks if an operation is commutative.
 
@@ -219,12 +229,17 @@ numOperandsForOpType op
 -- semantically equivalent.
 
 areComputationsCompatible :: CompOp -> CompOp -> Bool
-areComputationsCompatible (IntOp op1) (IntOp op2) = op1 == op2
-areComputationsCompatible (IntOp op1) (UIntOp op2) = op1 == op2
-areComputationsCompatible (IntOp op1) (SIntOp op2) = op1 == op2
-areComputationsCompatible (UIntOp op1) (IntOp op2) = op1 == op2
-areComputationsCompatible (SIntOp op1) (IntOp op2) = op1 == op2
-areComputationsCompatible op1 op2 = op1 == op2
+areComputationsCompatible   (IntOp op1)     (IntOp op2) = op1 == op2
+areComputationsCompatible   (IntOp op1)    (UIntOp op2) = op1 == op2
+areComputationsCompatible   (IntOp op1)    (SIntOp op2) = op1 == op2
+areComputationsCompatible  (UIntOp op1)     (IntOp op2) = op1 == op2
+areComputationsCompatible  (SIntOp op1)     (IntOp op2) = op1 == op2
+areComputationsCompatible  (FloatOp op1)  (FloatOp op2) = op1 == op2
+areComputationsCompatible  (FloatOp op1) (OFloatOp op2) = op1 == op2
+areComputationsCompatible  (FloatOp op1) (UFloatOp op2) = op1 == op2
+areComputationsCompatible (UFloatOp op1)  (FloatOp op2) = op1 == op2
+areComputationsCompatible (OFloatOp op1)  (FloatOp op2) = op1 == op2
+areComputationsCompatible op1 op2                       = op1 == op2
 
 
 
@@ -272,6 +287,8 @@ instance SExpressionable CompOp where
   prettySE (SIntOp o) i     = "s" ++ (prettySE o i)
   prettySE (FixpointOp o) i = "fixp" ++ (prettySE o i)
   prettySE (FloatOp o) i    = "f" ++ (prettySE o i)
+  prettySE (OFloatOp o) i   = "of" ++ (prettySE o i)
+  prettySE (UFloatOp o) i   = "uf" ++ (prettySE o i)
 
 instance SExpressionable CompOpType where
   prettySE Add    _ = "add"
