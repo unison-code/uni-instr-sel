@@ -191,8 +191,8 @@ data NodeInfo
     deriving (Show, Eq)
 
 data NodeType
-    = ComputationNode { compOpType :: O.CompOp }
-    | ControlNode { contOpType :: O.ControlOp }
+    = ComputationNode { compOp :: O.CompOp }
+    | ControlNode { contOp :: O.ControlOp }
 
       -- | Temporary and constant nodes (appearing in IR and pattern code), as
       -- well as register and immediate nodes (appearing only in pattern code),
@@ -250,7 +250,10 @@ instance Show EdgeNr where
 
 newtype BBLabel
     = BBLabel String
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show BBLabel where
+  show (BBLabel str) = show str
 
 -- | Represents a matchset, which is a list of mappings.
 
@@ -811,7 +814,7 @@ checkNumberOfOutEdges _ n
 
 checkOrderingOfInEdges :: Graph -> Node -> Bool
 checkOrderingOfInEdges g n
-  | isComputationNode n = not $ O.isOpCommutative $ compOpType $ nodeType n
+  | isComputationNode n = not $ O.isOpCommutative $ compOp $ nodeType n
   | isLabelNode n = (length $ inEdges g n) > 0 && (length $ outEdges g n) > 0
   | isPhiNode n = True
   | otherwise = False

@@ -14,6 +14,9 @@
 -- programs forms, such as those based on LLVM, will be converted into this
 -- format).
 --
+-- Since only the function name is retained, the names of overloaded functions
+-- must have been resolved such that each is given a unique name.
+--
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.Base (
@@ -34,17 +37,6 @@ data Function
           -- | The function name.
 
           functionName :: String
-
-          -- | If the function returns some data, the return type is specified
-          -- through the node in the operation structure that represents the
-          -- return data.
-
-        , functionRetType :: Maybe NodeId
-
-          -- | The nodes in the operation structure which represent the input
-          -- arguments to the function.
-
-        , functionArgs :: [NodeId]
 
           -- | The semantics of the function.
 

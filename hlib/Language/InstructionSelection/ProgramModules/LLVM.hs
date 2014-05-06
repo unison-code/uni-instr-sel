@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM (
-  module Language.InstructionSelection.ProgramModules.LLVM.PMMaker
+  module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker
 ) where
 
-import Language.InstructionSelection.ProgramModules.LLVM.PMMaker
+import Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker

@@ -117,7 +117,7 @@ data CompOpType
 
       -- | Bitwise XOR (@^@). Commutative.
 
-    | Xor
+    | XOr
 
       -- | Bit-wise NOT (@|@).
 
@@ -272,7 +272,7 @@ instance PrettyPrint CompOpType where
   prettyShow AShr      = ">>"
   prettyShow And       = "&&"
   prettyShow Or        = "||"
-  prettyShow Xor       = "^"
+  prettyShow XOr       = "^"
   prettyShow Not       = "!"
   prettyShow Eq        = "=="
   prettyShow NEq       = "!="
@@ -314,7 +314,7 @@ instance SExpressionable CompOpType where
   prettySE AShr      _ = "ashr"
   prettySE And       _ = "and"
   prettySE Or        _ = "or"
-  prettySE Xor       _ = "xor"
+  prettySE XOr       _ = "xor"
   prettySE Not       _ = "not"
   prettySE Eq        _ = "eq"
   prettySE NEq       _ = "neq"

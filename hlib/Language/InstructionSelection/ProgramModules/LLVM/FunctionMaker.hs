@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.ProgramModules.LLVM.PMMaker
+-- Module      :  Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -8,104 +8,189 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- Converts and LLVM IR module into the internal program format.
+-- Converts and LLVM IR module into the internal function format.
+--
+-- Since only the function name is retained, the names of overloaded functions
+-- must have been resolved such that each is given a unique name.
 --
 -- TODO: add data type information to data nodes
+-- TODO: fix edge order for phi nodes
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.ProgramModules.LLVM.PMMaker (
-  mkProgramModule
+module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
+  mkFunctionsFromLlvmModule
+, mkFunction
 ) where
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
+import qualified Language.InstructionSelection.Constraints as C
 import qualified Language.InstructionSelection.Graphs as G
-import qualified Language.InstructionSelection.OperationStructures as OS
+import qualified Language.InstructionSelection.OpStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.ProgramModules.Base as PM
-import Language.InstructionSelection.DataTypes
+import Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.Utils
 import Data.Maybe
 
 
 
-mkProgramModule :: LLVM.Module -> PM.Module
-mkProgramModule m =
-  let funcs = concatMap mkFunction $ LLVM.moduleDefinitions m
-  in PM.Module funcs
+---------
+-- Types
+---------
 
-mkFunction :: LLVM.Definition -> [PM.Function]
-mkFunction (LLVM.GlobalDefinition g) = fromGlobalDef g
-mkFunction _ = []
+-- | Represents a mapping from a symbol to a node ID currently in the operation
+-- structure.
 
-fromGlobalDef :: LLVM.Global -> [PM.Function]
-fromGlobalDef (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
-  let (os, _, _) = (extend (OS.empty, G.BBLabel "", []) bbs)
-  in [PM.Function name os]
-fromGlobalDef _ = []
+type Mapping = (G.NodeId, Symbol)
+
+-- | A tuple containing the intermediate data as the function is built.
+
+type State = ( OS.OpStructure -- ^ The corresponding operation structure.
+             , Maybe G.Node   -- ^ The last node (if any) that was touched. This
+                              -- is used to simplifying edge insertion.
+             , Maybe G.Node   -- ^ The label node which represents the basic
+                              -- block currently being processed.
+             , [Mapping]      -- ^ List of node-to-symbol mappings. If
+                              -- there are more than one mapping using the
+                              -- same symbol, then the last one occuring
+                              -- in the list should be picked.
+             )
+
+
+
+--------------
+-- Data types
+--------------
+
+-- | Data type for retaining various symbol names.
 
 data Symbol
     = LocalStringSymbol String
     | GlobalStringSymbol String
     | TemporarySymbol Integer
     deriving (Eq)
+
 instance Show Symbol where
   show (LocalStringSymbol str) = "%" ++ str
   show (GlobalStringSymbol str) = "@" ++ str
   show (TemporarySymbol int) = "t" ++ show int
 
+
+
+-----------
+-- Classes
+-----------
+
+-- | Class for converting an entity into a symbol.
+
 class SymbolFormable a where
   toSymbol :: a -> Symbol
+
 instance SymbolFormable LLVM.Name where
   toSymbol (LLVM.Name str) = LocalStringSymbol str
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
-type Mapping = (G.NodeId, Symbol)
-type State = ( OS.OpStructure       -- ^ The corresponding operation structure.
-             , G.BBLabel            -- ^ Current label that the process is in.
-             , [Mapping]            -- ^ List of node-to-symbol mappings. If
-                                    -- there are more than one mapping using the
-                                    -- same symbol, then the last one occuring
-                                    -- in the list should be picked.
-             )
+
+
+-- | Class for processing an LLVM AST element.
 
 class LlvmToOS a where
 
   -- | Extends a given 'OpStructure' with the information given by an LLVM data
-  -- type. The first is given via a tuple which contains other auxiliary
-  -- information needed for this process.
+  -- type, and by doing so the function is built. The first is given via a tuple
+  -- which contains other auxiliary information needed for this process. This is
+  -- called the 'state'.
   --
   -- NOTE: Each declaration node and use node will be kept separate to be merged
   -- as a post-step.
 
-  extend :: State    -- ^ Current state.
-            -> a     -- ^ The LLVM data type to process.
-            -> State -- ^The new, extended state.
+  make :: State    -- ^ Current state.
+          -> a     -- ^ The LLVM data type to process.
+          -> State -- ^ The new, extended state.
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Builds a list of functions from an LLVM module. If the module does not
+-- contain any globally defined functions, an empty list is returned.
+
+mkFunctionsFromLlvmModule :: LLVM.Module -> [PM.Function]
+mkFunctionsFromLlvmModule m =
+  mapMaybe mkFunctionFromGlobalDef (LLVM.moduleDefinitions m)
+
+-- | Builds a function from an LLVM AST definition. If the definition is not
+-- global, `Nothing` is returned.
+
+mkFunctionFromGlobalDef :: LLVM.Definition -> Maybe PM.Function
+mkFunctionFromGlobalDef (LLVM.GlobalDefinition g) = mkFunction g
+mkFunctionFromGlobalDef _ = Nothing
+
+-- | Builds a function from a global LLVM AST definition. If the definition is
+-- not a function, `Nothing` is returned.
+
+mkFunction :: LLVM.Global -> Maybe PM.Function
+mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
+  let (os, _, _) = (make (OS.mkEmpty, G.BBLabel "", []) bbs)
+  in Just $ PM.Function name os
+mkFunction _ = Nothing
+
+-- | Gets the operation structure from the state tuple.
 
 currentOS :: State -> OS.OpStructure
-currentOS (os, _, _) = os
+currentOS (os, _, _, _) = os
+
+-- | Updates the state with a new operation structure.
+
 updateOS :: State -> OS.OpStructure -> State
-updateOS (_, l, ms) os = (os, l, ms)
+updateOS (_, n, l, ms) os = (os, n, l, ms)
+
+-- | Gets the graph contained by the operation structure in a given state.
+
 currentGraph :: State -> G.Graph
-currentGraph = OS.graph . currentOS
+currentGraph = OS.osGraph . currentOS
+
+-- | Updates the graph contained by the operation structure in a given state.
+
 updateGraph :: State -> G.Graph -> State
 updateGraph t g = updateOS t $ OS.updateGraph (currentOS t) g
-newNodeId :: State -> G.NodeId
-newNodeId = G.newNodeId . currentGraph
-addNewNodeWithNL :: State -> G.NodeLabel -> State
-addNewNodeWithNL t nl = updateGraph t $ G.addNewNode nl (currentGraph t)
-addNewNodeWithNI :: State -> G.NodeInfo -> State
-addNewNodeWithNI t ni = addNewNodeWithNL t (G.NodeLabel (newNodeId t) ni)
-lastAddedNode :: State -> Maybe G.Node
-lastAddedNode = G.lastAddedNode . currentGraph
+
+-- | Adds a new node into a given state.
+
+addNewNode :: State -> G.NodeInfo -> State
+addNewNode t ni =
+  let new_g = G.addNewNode ni (currentGraph t)
+      t1 = updateGraph t new_g
+      t2 = updateLastTouchedNode t1 (G.lastAddedNode . new_g)
+  in t2
+
+-- | Gets the last touched node in a given state. If the graph contained by the
+-- operation structure in the state is empty, `Nothing` is returned.
+
+lastTouchedNode :: State -> Maybe G.Node
+lastTouchedNode (_, n, _, _) = n
+
+-- | Updates the last touched node of a given state.
+
+updateLastTouchedNode :: State -> G.Node -> State
+updateLastTouchedNode (os, _, l, ms) n = (os, Just n, l, ms)
+
+-- | Adds a new edge into a given state.
+
 addNewEdge :: State
               -> G.Node -- ^ Source node.
               -> G.Node -- ^ Destination node.
               -> State
 addNewEdge t src dst = updateGraph t $ G.addNewEdge (src, dst) (currentGraph t)
+
+-- | Adds many new edges into a given state.
+
 addNewEdgesManySources :: State
                           -> [G.Node] -- ^ Source nodes.
                           -> G.Node   -- ^ Destination node.
@@ -113,16 +198,43 @@ addNewEdgesManySources :: State
 addNewEdgesManySources t srcs dst =
   let es = zip srcs (repeat dst)
   in updateGraph t $ foldl (flip G.addNewEdge) (currentGraph t) es
-addConstraint :: State -> OS.Constraint -> State
+
+-- | Adds many new edges into a given state.
+
+addNewEdgesManyDests :: State
+                        -> G.Node   -- ^ Source node.
+                        -> [G.Node] -- ^ Destination nodes.
+                        -> State
+addNewEdgesManyDests t src dsts =
+  let es = zip (repeat src) dsts
+  in updateGraph t $ foldl (flip G.addNewEdge) (currentGraph t) es
+
+-- | Adds a new constraint into a given state.
+
+addConstraint :: State -> C.Constraint -> State
 addConstraint t c = updateOS t $ OS.addConstraint (currentOS t) c
-currentLabel :: State -> G.BBLabel
-currentLabel (_, l, _) = l
-updateLabel :: State -> G.BBLabel -> State
-updateLabel (os, _, ms) l = (os, l, ms)
+
+-- | Gets the label node of a given state.
+
+currentLabel :: State -> Maybe G.Node
+currentLabel (_, _, l, _) = l
+
+-- | Updates the label node of a given state.
+
+updateLabel :: State -> G.Node -> State
+updateLabel (os, n, _, ms) l = (os, n, Just l, ms)
+
+-- | Gets the list of mappings of a given state.
+
 currentMappings :: State -> [Mapping]
-currentMappings (_, _, ms) = ms
+currentMappings (_, _, _, ms) = ms
+
+-- | Adds a new mapping to a given state.
+
 addMapping :: State -> Mapping -> State
-addMapping (os, l, ms) m = (os, l, ms ++ [m])
+addMapping (os, n, l, ms) m = (os, n, l, ms ++ [m])
+
+-- | Gets the node ID (if any) to which a symbol is mapped to.
 
 nodeIdFromSym :: [Mapping] -> Symbol -> Maybe G.NodeId
 nodeIdFromSym ms sym =
@@ -131,207 +243,228 @@ nodeIdFromSym ms sym =
         then Just $ fst $ last ns
         else Nothing
 
-instance (LlvmToOS a) => LlvmToOS [a] where
-  extend = foldl extend
+-- | Processes a symbol. If a node mapping for that symbol already exists, then
+-- the last touched node is updated to reflect that node. If a mapping does not
+-- exist, then a new data node is added.
 
-instance (LlvmToOS n) => LlvmToOS (LLVM.Named n) where
-  extend t (name LLVM.:= expr) =
-    let t1 = extend t name
-        dst_node = fromJust $ lastAddedNode t1
-        t2 = extend t1 expr
-        expr_node = fromJust $ lastAddedNode t2
-        t3 = addNewEdge t2 expr_node dst_node
-    in t3
-  extend t (LLVM.Do expr) = extend t expr
+processSym :: State     -- ^ The current state.
+              -> Symbol -- ^ The symbol
+              -> State  -- ^ The new state.
+processSym t sym =
+    let node_id_of_sym = nodeIdFromSym (currentMappings t) sym
+    in if isJust node_id_of_sym
+       then let n_of_sym = head $ G.nodeId2Node (currentGraph t) node_id_of_sym
+            in updateLastTouchedNode t (Just n_of_sym)
+       else addNewNode t (G.NodeInfo (G.DataNode D.AnyType) (show sym))
 
-instance LlvmToOS LLVM.BasicBlock where
-  extend t (LLVM.BasicBlock (LLVM.Name l) insts term_inst) =
-    let t1 = updateLabel t (G.BBLabel l)
-        t2 = foldl extend t1 insts
-        t3 = extend t2 term_inst
-    in t3
+-- | Inserts a new node representing a computational operation, and adds edges
+-- to that node from the given operands (which will also be processed).
 
-instance LlvmToOS LLVM.Name where
-  extend t name@(LLVM.Name str) =
-    let sym = toSymbol name
-        existing_nid = nodeIdFromSym (currentMappings t) sym
-        nid = maybe (newNodeId t) id existing_nid
-        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo (G.NTData Nothing)
-                                                  (currentLabel t)
-                                                  (show sym)))
-        t2 = maybe (addMapping t1 (nid, sym)) (\_ -> t1) existing_nid
-    in t2
+processCompOp :: (LlvmToOS operand)
+                 => State     -- ^ The current state.
+                 -> Op.CompOp -- ^ The computational operation.
+                 -> [operand] -- ^ The operands.
+                 -> State     -- ^ The new state.
+processCompOp t op operands =
+  let ts = scanl make t operands
+      t1 = last ts
+      t2 = addNewNode t1 (G.NodeInfo (G.ComputationNode op) (prettyShow op))
+      op_node = fromJust . lastTouchedNode t2
+      operand_ns = map (fromJust . lastTouchedNode) (tail ts)
+      t3 = addNewEdgesManySources t2 operand_ns op_node
+  in t3
 
-  extend t name@(LLVM.UnName int) =
-    let sym = toSymbol name
-        existing_nid = nodeIdFromSym (currentMappings t) sym
-        nid = maybe (newNodeId t) id existing_nid
-        t1 = addNewNodeWithNL t (G.NodeLabel nid (G.NodeInfo (G.NTData Nothing)
-                                                  (currentLabel t)
-                                                  (show sym)))
-        t2 = maybe (addMapping t1 (nid, sym)) (\_ -> t1) existing_nid
-    in t2
+-- | Inserts a new node representing a control operation, and adds edges to that
+-- node from the current label node and operands (which will also be processed).
 
-insertBinaryOp :: (LlvmToOS op) => State -> Op.BinaryOp -> op -> op -> State
-insertBinaryOp t op lhs rhs =
-  let t1 = extend t lhs
-      lhs_node = fromJust $ lastAddedNode t1
-      t2 = extend t1 rhs
-      rhs_node = fromJust $ lastAddedNode t2
-      t3 = addNewNodeWithNI t2 (G.NodeInfo (G.NTBinaryOp op)
-                                (currentLabel t2) (prettyShow op))
-      op_node = fromJust $ lastAddedNode t3
-      t4 = addNewEdgesManySources t3 [lhs_node, rhs_node] op_node
+processControlOp :: (LlvmToOS operand)
+                    => State        -- ^ The current state.
+                    -> Op.ControlOp -- ^ The control operation.
+                    -> [operand]    -- ^ The operands.
+                    -> State        -- ^ The new state.
+processControlOp t op operands =
+  let ts = scanl make t operands
+      t1 = last ts
+      t2 = addNewNode t1 (G.NodeInfo (G.ControlNode op) (prettyShow op))
+      op_node = fromJust . lastTouchedNode t2
+      t3 = addNewEdge t2 (fromJust . currentLabel t2) op_node
+      operand_ns = map (fromJust . lastTouchedNode) (tail ts)
+      t4 = addNewEdgesManySources t3 operand_ns op_node
   in t4
 
-instance LlvmToOS LLVM.Instruction where
-  extend t (LLVM.Add nsw nuw op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.IAdd) op1 op2
-  extend t (LLVM.FAdd op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.FAdd) op1 op2
-  extend t (LLVM.Sub nsw nuw op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.ISub) op1 op2
-  extend t (LLVM.FSub op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.FSub) op1 op2
-  extend t (LLVM.Mul nsw nuw op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.IMul) op1 op2
-  extend t (LLVM.FMul op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.FMul) op1 op2
-  extend t (LLVM.UDiv exact op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.IUDiv) op1 op2
-  extend t (LLVM.SDiv exact op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.ISDiv) op1 op2
-  extend t (LLVM.FDiv op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.FDiv) op1 op2
-  extend t (LLVM.URem op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.IURem) op1 op2
-  extend t (LLVM.SRem op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.ISRem) op1 op2
-  extend t (LLVM.FRem op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.FRem) op1 op2
-  extend t (LLVM.Shl nsw nuw op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.Shl) op1 op2
-  extend t (LLVM.LShr exact op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.LShr) op1 op2
-  extend t (LLVM.AShr exact op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.AShr) op1 op2
-  extend t (LLVM.And op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.And) op1 op2
-  extend t (LLVM.Or op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.Or) op1 op2
-  extend t (LLVM.Xor op1 op2 _) =
-    insertBinaryOp t (Op.BinArithmeticOp Op.Xor) op1 op2
-  extend t l@(LLVM.Load vol addr atom align _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Store vol addr val atom align _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.ICmp iPred op1 op2 _) =
-    insertBinaryOp t (Op.BinCompareOp $ toICmp iPred) op1 op2
-  extend t (LLVM.FCmp fPred op1 op2 _) =
-    insertBinaryOp t (Op.BinCompareOp $ toFCmp fPred) op1 op2
-  extend t (LLVM.Phi typ ins _) =
-    let f (ns, local_t) e =
-          let local_t1 = processPhiElem local_t e
-              n = fromJust $ lastAddedNode local_t1
-          in (ns ++ [n], local_t1)
-        (data_nodes, t1) = foldl f ([], t) ins
-        t2 = addNewNodeWithNI t1 (G.NodeInfo G.NTPhi (currentLabel t1) "phi")
-        phi_node = fromJust $ lastAddedNode t2
-        t3 = addNewEdgesManySources t2 data_nodes phi_node
-        t4 = insertAndConnectDataNode t3
-    in t4
-  extend t l@(LLVM.Call isTail cc retAttr funOp args funAttrs _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Select cond trueV falseV _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l = error $ "'extend' not implemented for " ++ show l
-
-processPhiElem :: State -> (LLVM.Operand, LLVM.Name) -> State
-processPhiElem t (op, _) = extend t op
-  -- TODO: what to do with label on the element?
+-- | Inserts a new data node and adds an edge to it from the node which was last
+-- added into the state.
 
 insertAndConnectDataNode :: State -> State
 insertAndConnectDataNode t =
-  let op_node = fromJust $ lastAddedNode t
-      t1 = addNewNodeWithNI t (G.NodeInfo (G.NTData Nothing) (currentLabel t)
-                               "")
-      d_node = fromJust $ lastAddedNode t1
+  let op_node = fromJust $ lastTouchedNode t
+      t1 = addNewNode t (G.NodeInfo (G.DataNode D.AnyType) "")
+      d_node = fromJust $ lastTouchedNode t1
       t2 = addNewEdge t1 op_node d_node
   in t2
 
-toICmp :: LLVMI.IntegerPredicate -> Op.CompareOp
-toICmp LLVMI.EQ = Op.ICmpEq
-toICmp LLVMI.NE = Op.ICmpNEq
-toICmp LLVMI.UGT = Op.IUCmpGT
-toICmp LLVMI.ULT = Op.IUCmpLT
-toICmp LLVMI.UGE = Op.IUCmpGE
-toICmp LLVMI.ULE = Op.IUCmpLE
-toICmp LLVMI.SGT = Op.ISCmpGT
-toICmp LLVMI.SLT = Op.ISCmpLT
-toICmp LLVMI.SGE = Op.ISCmpGE
-toICmp LLVMI.SLE = Op.ISCmpLE
+-- | Converts an LLVM integer comparison op into an equivalent op of our own
+-- data type.
 
-toFCmp :: LLVMF.FloatingPointPredicate -> Op.CompareOp
-toFCmp LLVMF.False = Op.FFalse
-toFCmp LLVMF.OEQ = Op.FOCmpEq
-toFCmp LLVMF.OGT = Op.FOCmpGT
-toFCmp LLVMF.OGE = Op.FOCmpGE
-toFCmp LLVMF.OLT = Op.FOCmpLT
-toFCmp LLVMF.OLE = Op.FOCmpLE
-toFCmp LLVMF.ONE = Op.FOCmpNEq
-toFCmp LLVMF.ORD = Op.FCmpOrd
-toFCmp LLVMF.UNO = Op.FCmpUn
-toFCmp LLVMF.UEQ = Op.FUCmpEq
-toFCmp LLVMF.UGT = Op.FUCmpGT
-toFCmp LLVMF.UGE = Op.FUCmpGE
-toFCmp LLVMF.ULT = Op.FUCmpLT
-toFCmp LLVMF.ULE = Op.FUCmpLE
-toFCmp LLVMF.UNE = Op.FUCmpNEq
-toFCmp LLVMF.True = Op.FTrue
+fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
+fromLlvmIPred LLVMI.EQ  = Op.IntOp Op.Eq
+fromLlvmIPred LLVMI.NE  = Op.IntOp Op.NEq
+fromLlvmIPred LLVMI.UGT = Op.UIntOp Op.GT
+fromLlvmIPred LLVMI.ULT = Op.UIntOp Op.LT
+fromLlvmIPred LLVMI.UGE = Op.UIntOp Op.GE
+fromLlvmIPred LLVMI.ULE = Op.UIntOp Op.LE
+fromLlvmIPred LLVMI.SGT = Op.SIntOp Op.GT
+fromLlvmIPred LLVMI.SLT = Op.SIntOp Op.LT
+fromLlvmIPred LLVMI.SGE = Op.SIntOp Op.GE
+fromLlvmIPred LLVMI.SLE = Op.SIntOp Op.LE
+fromLlvmIPred op = error $ "'fromLlvmIPred' not implemented for " ++ show op
+
+-- | Converts an LLVM floating point comparison op into an equivalent op of our
+-- own data type.
+
+fromLlvmFPred :: LLVMF.FloatingPointPredicate -> Op.CompOp
+fromLlvmFPred LLVMF.OEQ   = Op.OFloatOp Op.Eq
+fromLlvmFPred LLVMF.ONE   = Op.OFloatOp Op.NEq
+fromLlvmFPred LLVMF.OGT   = Op.OFloatOp Op.GT
+fromLlvmFPred LLVMF.OGE   = Op.OFloatOp Op.GE
+fromLlvmFPred LLVMF.OLT   = Op.OFloatOp Op.LT
+fromLlvmFPred LLVMF.OLE   = Op.OFloatOp Op.LE
+fromLlvmFPred LLVMF.ORD   =  Op.FloatOp Op.Ordered
+fromLlvmFPred LLVMF.UNO   =  Op.FloatOp Op.Unordered
+fromLlvmFPred LLVMF.UEQ   = Op.UFloatOp Op.Eq
+fromLlvmFPred LLVMF.UGT   = Op.UFloatOp Op.GT
+fromLlvmFPred LLVMF.UGE   = Op.UFloatOp Op.GE
+fromLlvmFPred LLVMF.ULT   = Op.UFloatOp Op.LT
+fromLlvmFPred LLVMF.ULE   = Op.UFloatOp Op.LE
+fromLlvmFPred LLVMF.UNE   = Op.UFloatOp Op.NEq
+fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
+
+-- | Checks that a label node with a particular name exists in the graph of the
+-- given state. If it does then the last touched node is updated to reflect the
+-- label node in question. If not then a new label node is added.
+
+ensureLabelNodeExists :: State -> G.BBLabel -> State
+ensureLabelNodeExists t l =
+  let label_nodes = filter G.isLabelNode $ G.allNodes $ currentGraph t
+      nodes_with_matching_labels = filter (\n -> G.bbLabel n == l) label_nodes
+  in if length nodes_with_matching_labels > 0
+     then updateLastTouchedNode t (head nodes_with_matching_labels)
+     else addNewNode t (G.NodeInfo (G.LabelNode l) (show l))
+
+
+
+------------------------
+-- 'LlvmToOS' instances
+------------------------
+
+instance (LlvmToOS a) => LlvmToOS [a] where
+  make = foldl make
+
+instance (LlvmToOS n) => LlvmToOS (LLVM.Named n) where
+  make t (name LLVM.:= expr) =
+    let t1 = make t name
+        dst_node = fromJust $ lastTouchedNode t1
+        t2 = make t1 expr
+        expr_node = fromJust $ lastTouchedNode t2
+        t3 = addNewEdge t2 expr_node dst_node
+    in t3
+  make t (LLVM.Do expr) = make t expr
+
+instance LlvmToOS LLVM.BasicBlock where
+  make t (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
+    let t1 = ensureLabelNodeExists t1 (G.BBLabel str)
+        t2 = updateLabel t1 (lastTouchedNode t1)
+        t3 = foldl make t2 insts
+        t4 = make t3 term_inst
+    in t4
+
+instance LlvmToOS LLVM.Name where
+  make t name@(LLVM.Name _) = processSym t (toSymbol name)
+  make t name@(LLVM.UnName _) = processSym t (toSymbol name)
+
+instance LlvmToOS LLVM.Instruction where
+  make t (LLVM.Add  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.Add) [op1, op2]
+  make t (LLVM.FAdd _ _ op1 op2 _) =
+    processCompOp t (Op.FloatOp Op.Add) [op1, op2]
+  make t (LLVM.Sub  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.Sub) [op1, op2]
+  make t (LLVM.FSub _ _ op1 op2 _) =
+    processCompOp t (Op.FloatOp Op.Sub) [op1, op2]
+  make t (LLVM.Mul  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.Mul) [op1, op2]
+  make t (LLVM.FMul _ _ op1 op2 _) =
+    processCompOp t (Op.FloatOp Op.Mul) [op1, op2]
+  make t (LLVM.UDiv _ _ op1 op2 _) =
+    processCompOp t (Op.UIntOp  Op.Div) [op1, op2]
+  make t (LLVM.SDiv _ _ op1 op2 _) =
+    processCompOp t (Op.SIntOp  Op.Div) [op1, op2]
+  make t (LLVM.FDiv _ _ op1 op2 _) =
+    processCompOp t (Op.FloatOp Op.Div) [op1, op2]
+  make t (LLVM.URem _ _ op1 op2 _) =
+    processCompOp t (Op.UIntOp  Op.Rem) [op1, op2]
+  make t (LLVM.SRem _ _ op1 op2 _) =
+    processCompOp t (Op.SIntOp  Op.Rem) [op1, op2]
+  make t (LLVM.FRem _ _ op1 op2 _) =
+    processCompOp t (Op.FloatOp Op.Rem) [op1, op2]
+  make t (LLVM.Shl  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.Shl) [op1, op2]
+  make t (LLVM.LShr _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp  Op.LShr) [op1, op2]
+  make t (LLVM.AShr _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp  Op.AShr) [op1, op2]
+  make t (LLVM.And  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.And) [op1, op2]
+  make t (LLVM.Or   _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp    Op.Or) [op1, op2]
+  make t (LLVM.Xor  _ _ op1 op2 _) =
+    processCompOp t (Op.IntOp   Op.XOr) [op1, op2]
+  make t (LLVM.ICmp p op1 op2 _) = processCompOp t (fromLlvmIPred p) [op1, op2]
+  make t (LLVM.FCmp p op1 op2 _) = processCompOp t (fromLlvmFPred p) [op1, op2]
+  make t (LLVM.Phi _ operands _) =
+    let processPhiElem t' (op, _) = make t' op
+        ts = scanl processPhiElem t operands
+        t1 = last ts
+        t2 = addNewNode t1 (G.NodeInfo G.PhiNode "phi")
+        op_node = fromJust . lastTouchedNode t2
+        operand_ns = map (fromJust . lastTouchedNode) (tail ts)
+        -- Here we simply ignore the edge order, and then run a second pass to
+        -- fix it afterwards after all edges from the branches have been added
+        t3 = addNewEdgesManySources t2 operand_ns op_node
+        t4 = insertAndConnectDataNode t3
+    in t4
+  make _ l = error $ "'make' not implemented for " ++ show l
 
 instance LlvmToOS LLVM.Terminator where
-  extend t (LLVM.Ret op _) =
-    let t1 = addNewNodeWithNI t (G.NodeInfo G.NTRet (currentLabel t) "ret")
-        ret_node = fromJust $ lastAddedNode t1
-        t2 = if isJust op
-                then let t3 = extend t1 $ fromJust op
-                         op_node = fromJust $ lastAddedNode t3
-                     in addNewEdge t3 op_node ret_node
-                else t1
-    in t2
-  extend t l@(LLVM.Br dst _) = error $ "'extend' not implemented for " ++ show l
-  extend t (LLVM.CondBr op (LLVM.Name trueDst) (LLVM.Name falseDst) _) =
-    let t1 = extend t op
-        op_node = fromJust $ lastAddedNode t1
-        t2 = addNewNodeWithNI t1 (G.NodeInfo (G.NTCondBranch (G.BBLabel trueDst)
-                                              (G.BBLabel falseDst))
-                                  (currentLabel t1) "br")
-        br_node = fromJust $ lastAddedNode t2
-        t3 = addNewEdge t2 op_node br_node
+  make t (LLVM.Ret op _) = processControlOp t Op.Ret (maybeToList op)
+  make t (LLVM.Br (LLVM.Name dst) _) =
+    let t1 = processControlOp t Op.UncondBranch []
+        br_node = fromJust $ lastTouchedNode t1
+        t2 = ensureLabelNodeExists t1 (G.BBLabel dst)
+        dst_node = fromJust $ lastTouchedNode t2
+        t3 = addNewEdge t2 br_node dst_node
     in t3
-  extend t l@(LLVM.IndirectBr op dsts _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Switch op defDst dsts _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Invoke cc retAttr funOp args funAttr retDst expDst _) =
-    error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Resume op _) = error $ "'extend' not implemented for " ++ show l
-  extend t l@(LLVM.Unreachable _) = error $ "'extend' not implemented for " ++ show l
-  extend t l = error $ "'extend' not implemented for " ++ show l
-  -- TODO: implement these functions
+  make t (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
+    let t1 = processControlOp t Op.CondBranch [op]
+        br_node = fromJust $ lastTouchedNode t1
+        t2 = ensureLabelNodeExists t1 (G.BBLabel t_dst)
+        t_dst_node = fromJust $ lastTouchedNode t2
+        t3 = ensureLabelNodeExists t2 (G.BBLabel f_dst)
+        f_dst_node = fromJust $ lastTouchedNode t3
+        t4 = addNewEdgesManyDests t3 br_node [t_dst_node, f_dst_node]
+    in t4
+  make _ l = error $ "'make' not implemented for " ++ show l
 
 instance LlvmToOS LLVM.Operand where
-  extend t (LLVM.LocalReference name) = extend t name
-  extend t (LLVM.ConstantOperand c) = extend t c
+  make t (LLVM.LocalReference name) = make t name
+  make t (LLVM.ConstantOperand c) = make t c
 
 instance LlvmToOS LLVMC.Constant where
-  extend t (LLVMC.Int b v) =
-    let t1 = addNewNodeWithNI t (G.NodeInfo
-                                 (G.NTData $ Just $ fromIWidth b)
-                                 (currentLabel t) (show v))
-        n = fromJust $ lastAddedNode t1
-        t2 = addConstraint t1 (OS.ConstantValueConstraint (G.nodeId n)
-                                [Range (OS.IntConstant v) (OS.IntConstant v)])
+  make t (LLVMC.Int b v) =
+    let t1 = addNewNode t (G.NodeInfo (G.DataNode $ fromIWidth b) (show v))
+        n = fromJust $ lastTouchedNode t1
+        -- TODO: add constant constraint
+        -- t2 = addConstraint t1 (C.EqExpr (C.AnIntegerExpr v) ())
+        t2 = t1
     in t2
-
-  extend t l = error $ "'extend' not implemented for " ++ show l
+  make _ l = error $ "'make' not implemented for " ++ show l
