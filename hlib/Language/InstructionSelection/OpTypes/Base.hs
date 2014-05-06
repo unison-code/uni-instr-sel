@@ -29,9 +29,13 @@ import Prelude hiding (GT, LT)
 
 data CompOp
 
+    -- | An integer operation where the sign does not matter.
+
+    = IntOp CompOpType
+
     -- | An unsigned integer operation.
 
-    = UIntOp CompOpType
+    | UIntOp CompOpType
 
     -- | A signed integer operation.
 
@@ -182,6 +186,7 @@ data ControlOp
 -- | Gets the operation type from a computational operation.
 
 getCompOpType :: CompOp -> CompOpType
+getCompOpType (IntOp op) = op
 getCompOpType (UIntOp op) = op
 getCompOpType (SIntOp op) = op
 getCompOpType (FixpointOp op) = op
@@ -246,11 +251,12 @@ instance PrettyPrint CompOpType where
   prettyShow Sqrt   = "sqrt"
 
 instance PrettyPrint ControlOp where
-  prettyShow CondBranch = "bnz"
+  prettyShow CondBranch   = "bnz"
   prettyShow UncondBranch = "br"
-  prettyShow Ret = "ret"
+  prettyShow Ret          = "ret"
 
 instance SExpressionable CompOp where
+  prettySE (IntOp o) i      = prettySE o i
   prettySE (UIntOp o) i     = "u" ++ (prettySE o i)
   prettySE (SIntOp o) i     = "s" ++ (prettySE o i)
   prettySE (FixpointOp o) i = "fixp" ++ (prettySE o i)
@@ -283,6 +289,6 @@ instance SExpressionable CompOpType where
   prettySE Sqrt   _ = "sqrt"
 
 instance SExpressionable ControlOp where
-  prettySE CondBranch _ = "bnz"
+  prettySE CondBranch _   = "bnz"
   prettySE UncondBranch _ = "br"
-  prettySE Ret _ = "ret"
+  prettySE Ret _          = "ret"
