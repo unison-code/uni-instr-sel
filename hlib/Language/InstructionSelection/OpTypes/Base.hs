@@ -16,6 +16,7 @@ module Language.InstructionSelection.OpTypes.Base where
 
 import Language.InstructionSelection.PrettyPrint
 import Language.InstructionSelection.SExpressions
+import Language.InstructionSelection.Utils (Natural)
 import Prelude hiding (GT, LT)
 
 
@@ -181,10 +182,10 @@ data ControlOp
 -- | Gets the operation type from a computational operation.
 
 getCompOpType :: CompOp -> CompOpType
-getCompOpType (UIntOp o) = o
-getCompOpType (SIntOp o) = o
-getCompOpType (FixpointOp o) = o
-getCompOpType (FloatOp o) = o
+getCompOpType (UIntOp op) = op
+getCompOpType (SIntOp op) = op
+getCompOpType (FixpointOp op) = op
+getCompOpType (FloatOp op) = op
 
 -- | Checks if an operation is commutative.
 
@@ -197,27 +198,17 @@ isOpTypeCommutative :: CompOpType -> Bool
 isOpTypeCommutative op =
   op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
 
--- | Checks if an operation is unary.
+-- | Gets the number of operands required by a given operation.
 
-isOpUnary :: CompOp -> Bool
-isOpUnary = isOpTypeUnary . getCompOpType
+numOperandsForOp :: CompOp -> Natural
+numOperandsForOp = numOperandsForOpType . getCompOpType
 
--- | Checks if an operation type is unary.
+-- | Gets the number of operands required by a given operation type.
 
-isOpTypeUnary :: CompOpType -> Bool
-isOpTypeUnary op =
-  op `elem` [ Not, Sqrt ]
-
--- | Checks if an operation is binary.
-
-isOpBinary :: CompOp -> Bool
-isOpBinary = isOpTypeBinary . getCompOpType
-
--- | Checks if an operation type is binary.
-
-isOpTypeBinary :: CompOpType -> Bool
-isOpTypeBinary op =
-  op `notElem` [ Not, Sqrt ]
+numOperandsForOpType :: CompOpType -> Natural
+numOperandsForOpType op
+  | op `elem` [ Not, Sqrt ] = 1
+  | otherwise = 2
 
 
 
