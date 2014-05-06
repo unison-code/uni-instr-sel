@@ -167,6 +167,14 @@ data CompOpType
 
     | Sqrt
 
+      -- | Checks if both floating point values are ordered.
+
+    | Ordered
+
+      -- | Checks if either floating point value is unordered.
+
+    | Unordered
+
     deriving (Show, Eq)
 
 data ControlOp
@@ -207,7 +215,8 @@ getCompOpType (UFloatOp op)   = op
 isOpCommutative :: CompOp -> Bool
 isOpCommutative = isOpTypeCommutative . getCompOpType
 
--- | Checks if an operation type is commutative.
+-- | Checks if an operation type is commutative. Unary operations are always
+-- considered to be commutative.
 
 isOpTypeCommutative :: CompOpType -> Bool
 isOpTypeCommutative op =
@@ -251,30 +260,32 @@ instance PrettyPrint CompOp where
   prettyShow = prettyShow . getCompOpType
 
 instance PrettyPrint CompOpType where
-  prettyShow Add    = "+"
-  prettyShow SatAdd = "+"
-  prettyShow Sub    = "-"
-  prettyShow SatSub = "-"
-  prettyShow Mul    = "*"
-  prettyShow Div    = "/"
-  prettyShow Rem    = "%"
-  prettyShow Shl    = "<<"
-  prettyShow LShr   = ">>"
-  prettyShow AShr   = ">>"
-  prettyShow And    = "&&"
-  prettyShow Or     = "||"
-  prettyShow Xor    = "^"
-  prettyShow Not    = "!"
-  prettyShow Eq     = "=="
-  prettyShow NEq    = "!="
-  prettyShow GT     = ">"
-  prettyShow GE     = ">="
-  prettyShow LT     = "<"
-  prettyShow LE     = "<="
-  prettyShow ZExt   = "zext"
-  prettyShow SExt   = "sext"
-  prettyShow Trunc  = "trunc"
-  prettyShow Sqrt   = "sqrt"
+  prettyShow Add       = "+"
+  prettyShow SatAdd    = "+"
+  prettyShow Sub       = "-"
+  prettyShow SatSub    = "-"
+  prettyShow Mul       = "*"
+  prettyShow Div       = "/"
+  prettyShow Rem       = "%"
+  prettyShow Shl       = "<<"
+  prettyShow LShr      = ">>"
+  prettyShow AShr      = ">>"
+  prettyShow And       = "&&"
+  prettyShow Or        = "||"
+  prettyShow Xor       = "^"
+  prettyShow Not       = "!"
+  prettyShow Eq        = "=="
+  prettyShow NEq       = "!="
+  prettyShow GT        = ">"
+  prettyShow GE        = ">="
+  prettyShow LT        = "<"
+  prettyShow LE        = "<="
+  prettyShow ZExt      = "zext"
+  prettyShow SExt      = "sext"
+  prettyShow Trunc     = "trunc"
+  prettyShow Sqrt      = "sqrt"
+  prettyShow Ordered   = "ord"
+  prettyShow Unordered = "uno"
 
 instance PrettyPrint ControlOp where
   prettyShow CondBranch   = "bnz"
@@ -291,30 +302,32 @@ instance SExpressionable CompOp where
   prettySE (UFloatOp o) i   = "uf" ++ (prettySE o i)
 
 instance SExpressionable CompOpType where
-  prettySE Add    _ = "add"
-  prettySE SatAdd _ = "satadd"
-  prettySE Sub    _ = "sub"
-  prettySE SatSub _ = "satsub"
-  prettySE Mul    _ = "mul"
-  prettySE Div    _ = "div"
-  prettySE Rem    _ = "rem"
-  prettySE Shl    _ = "shl"
-  prettySE LShr   _ = "lshr"
-  prettySE AShr   _ = "ashr"
-  prettySE And    _ = "and"
-  prettySE Or     _ = "or"
-  prettySE Xor    _ = "xor"
-  prettySE Not    _ = "not"
-  prettySE Eq     _ = "eq"
-  prettySE NEq    _ = "neq"
-  prettySE GT     _ = "gt"
-  prettySE GE     _ = "ge"
-  prettySE LT     _ = "lt"
-  prettySE LE     _ = "le"
-  prettySE ZExt   _ = "zext"
-  prettySE SExt   _ = "sext"
-  prettySE Trunc  _ = "trunc"
-  prettySE Sqrt   _ = "sqrt"
+  prettySE Add       _ = "add"
+  prettySE SatAdd    _ = "satadd"
+  prettySE Sub       _ = "sub"
+  prettySE SatSub    _ = "satsub"
+  prettySE Mul       _ = "mul"
+  prettySE Div       _ = "div"
+  prettySE Rem       _ = "rem"
+  prettySE Shl       _ = "shl"
+  prettySE LShr      _ = "lshr"
+  prettySE AShr      _ = "ashr"
+  prettySE And       _ = "and"
+  prettySE Or        _ = "or"
+  prettySE Xor       _ = "xor"
+  prettySE Not       _ = "not"
+  prettySE Eq        _ = "eq"
+  prettySE NEq       _ = "neq"
+  prettySE GT        _ = "gt"
+  prettySE GE        _ = "ge"
+  prettySE LT        _ = "lt"
+  prettySE LE        _ = "le"
+  prettySE ZExt      _ = "zext"
+  prettySE SExt      _ = "sext"
+  prettySE Trunc     _ = "trunc"
+  prettySE Sqrt      _ = "sqrt"
+  prettySE Ordered   _ = "ord"
+  prettySE Unordered _ = "uno"
 
 instance SExpressionable ControlOp where
   prettySE CondBranch _   = "bnz"
