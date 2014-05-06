@@ -189,13 +189,35 @@ getCompOpType (FloatOp o) = o
 -- | Checks if an operation is commutative.
 
 isOpCommutative :: CompOp -> Bool
-isOpCommutative op = isOpTypeCommutative $ getCompOpType op
+isOpCommutative = isOpTypeCommutative . getCompOpType
 
 -- | Checks if an operation type is commutative.
 
 isOpTypeCommutative :: CompOpType -> Bool
 isOpTypeCommutative op =
   op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
+
+-- | Checks if an operation is unary.
+
+isOpUnary :: CompOp -> Bool
+isOpUnary = isOpTypeUnary . getCompOpType
+
+-- | Checks if an operation type is unary.
+
+isOpTypeUnary :: CompOpType -> Bool
+isOpTypeUnary op =
+  op `elem` [ Not, Sqrt ]
+
+-- | Checks if an operation is binary.
+
+isOpBinary :: CompOp -> Bool
+isOpBinary = isOpTypeBinary . getCompOpType
+
+-- | Checks if an operation type is binary.
+
+isOpTypeBinary :: CompOpType -> Bool
+isOpTypeBinary op =
+  op `notElem` [ Not, Sqrt ]
 
 
 
