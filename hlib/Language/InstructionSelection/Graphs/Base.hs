@@ -33,7 +33,6 @@ module Language.InstructionSelection.Graphs.Base (
 , Matchset (..)
 , Node (..)
 , NodeId (..)
-, NodeInfo (..)
 , NodeLabel (..)
 , NodeType (..)
 , addToMatchset
@@ -91,7 +90,6 @@ module Language.InstructionSelection.Graphs.Base (
 , nodeId
 , nodeIds
 , nodeId2Node
-, nodeInfo
 , nodeLabel
 , nodesByNodeId
 , nodeType
@@ -115,7 +113,6 @@ module Language.InstructionSelection.Graphs.Base (
 , updateEdgeSource
 , updateEdgeTarget
 , updateNodeId
-, updateNodeInfo
 , updateNodeLabel
 ) where
 
@@ -161,9 +158,9 @@ data NodeLabel
 
           NodeId
 
-          -- | Additional data to describe the node.
+          -- | Type of node.
 
-          NodeInfo
+          NodeType
 
     deriving (Show, Eq)
 
@@ -176,20 +173,7 @@ newtype NodeId
 instance Show NodeId where
   show (NodeId i) = show i
 
--- | Node information. Most importantly this specifies the node type.
-
-data NodeInfo
-    = NodeInfo
-
-          -- | Type of node.
-
-          NodeType
-
-          -- | A field to put arbitrary text in (used when printing the graph).
-
-          String
-
-    deriving (Show, Eq)
+-- | The node type information.
 
 data NodeType
     = ComputationNode { compOp :: O.CompOp }
@@ -200,7 +184,19 @@ data NodeType
       -- are all represented as data nodes. What distinguishes one from another
       -- are the constraints applied to it.
 
-    | DataNode { dataType :: D.DataType }
+    | DataNode {
+
+          dataType :: D.DataType
+
+          -- | If the data node represents a particular temporary or variable
+          -- which is specified in the source code, then the name of that entity
+          -- can be given here as a string. This will only be used for debugging
+          -- and pretty-printing purposes.
+
+        , dataOrigin :: Maybe String
+
+      }
+
     | LabelNode { bbLabel :: BBLabel }
     | PhiNode
     | StateNode
@@ -378,7 +374,7 @@ isControlNodeType (ControlNode _) = True
 isControlNodeType _ = False
 
 isDataNodeType :: NodeType -> Bool
-isDataNodeType (DataNode _) = True
+isDataNodeType (DataNode _ _) = True
 isDataNodeType _ = False
 
 isLabelNodeType :: NodeType -> Bool
@@ -435,15 +431,10 @@ nodeId (Node (_, NodeLabel i _)) = i
 nodeLabel :: Node -> NodeLabel
 nodeLabel (Node (_, nl)) = nl
 
--- | Gets the node info from a node.
-
-nodeInfo :: Node -> NodeInfo
-nodeInfo (Node (_, NodeLabel _ ni)) = ni
-
 -- | Gets the node type from a node.
 
 nodeType :: Node -> NodeType
-nodeType (Node (_, NodeLabel _ (NodeInfo nt _))) = nt
+nodeType (Node (_, NodeLabel _ nt)) = nt
 
 -- | Gets the internal node ID from a node.
 
@@ -483,20 +474,12 @@ updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (allNodes g)
   in mkGraph (Node (intNodeId n, new_label):all_nodes_but_n) (allEdges g)
 
--- | Updates the node info of an already existing node.
-
-updateNodeInfo :: NodeInfo -> Node -> Graph -> Graph
-updateNodeInfo new_info n g =
-  let all_nodes_but_n = filter (/= n) (allNodes g)
-  in mkGraph (Node (intNodeId n, NodeLabel (nodeId n) new_info):all_nodes_but_n)
-             (allEdges g)
-
 -- | Updates the node ID of an already existing node.
 
 updateNodeId :: NodeId -> Node -> Graph -> Graph
 updateNodeId new_id n g =
   let all_nodes_but_n = filter (/= n) (allNodes g)
-  in mkGraph (Node (intNodeId n, NodeLabel new_id (nodeInfo n)):all_nodes_but_n)
+  in mkGraph (Node (intNodeId n, NodeLabel new_id (nodeType n)):all_nodes_but_n)
              (allEdges g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
@@ -601,11 +584,11 @@ outEdgeNr (Edge (_, _, EdgeLabel nr _)) = nr
 
 -- | Adds a new node to the graph.
 
-addNewNode :: NodeInfo -> Graph -> ( Graph -- ^ The new graph.
+addNewNode :: NodeType -> Graph -> ( Graph -- ^ The new graph.
                                    , Node  -- ^ The newly added node.
                                    )
-addNewNode ni (Graph g) =
-  let new_n = (nextIntNodeId g, NodeLabel (nextNodeId g) ni)
+addNewNode nt (Graph g) =
+  let new_n = (nextIntNodeId g, NodeLabel (nextNodeId g) nt)
       new_g = Graph (I.insNode new_n g)
   in (new_g, Node new_n)
 
@@ -746,7 +729,7 @@ matchingNodeTypes :: NodeType -> NodeType -> Bool
 matchingNodeTypes (ComputationNode op1) (ComputationNode op2) =
   O.areComputationsCompatible op1 op2
 matchingNodeTypes (ControlNode op1) (ControlNode op2) = op1 == op2
-matchingNodeTypes (DataNode d1) (DataNode d2) =
+matchingNodeTypes (DataNode d1 _) (DataNode d2 _) =
   D.areDataTypesCompatible d1 d2
 matchingNodeTypes (LabelNode _) (LabelNode _) = True
 matchingNodeTypes PhiNode PhiNode = True
