@@ -12,8 +12,6 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
---
--- TODO: add data type information to data nodes
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
