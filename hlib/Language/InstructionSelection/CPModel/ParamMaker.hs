@@ -95,17 +95,17 @@ mkPatternInstanceData (os, matchsets, props, b_usedef) =
       s_def_ns = getNodes isStateNode predecessors
       s_use_ns = getNodes isStateNode successors
       l_ref_ns = getNodes isLabelNode predecessors
-      f (m, id) = mkPatternInstanceData' a_ns
-                                         d_def_ns
-                                         d_use_ns
-                                         s_def_ns
-                                         s_use_ns
-                                         l_ref_ns
-                                         (osConstraints os)
-                                         b_usedef
-                                         (convertMatchsetNToId m)
-                                         id
-                                         props
+      f (m, pid) = mkPatternInstanceData' a_ns
+                                          d_def_ns
+                                          d_use_ns
+                                          s_def_ns
+                                          s_use_ns
+                                          l_ref_ns
+                                          (osConstraints os)
+                                          b_usedef
+                                          (convertMatchsetNToId m)
+                                          pid
+                                          props
   in map f matchsets
 
 mkPatternInstanceData' :: [NodeId]    -- ^ Action nodes covered by the pattern.
@@ -129,9 +129,9 @@ mkPatternInstanceData' a_ns
                        cs
                        b_usedef
                        matchset
-                       id
+                       pid
                        props =
-  PatternInstanceData id
+  PatternInstanceData pid
                       (mappedNodesPToF matchset a_ns)
                       (mappedNodesPToF matchset d_def_ns)
                       (mappedNodesPToF matchset d_use_ns)
@@ -140,8 +140,8 @@ mkPatternInstanceData' a_ns
                       (mappedNodesPToF matchset l_ref_ns)
                       (replaceNodeIdsPToFInConstraints matchset cs)
                       b_usedef
-                      (codeSize props)
-                      (latency props)
+                      (instCodeSize props)
+                      (instLatency props)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
