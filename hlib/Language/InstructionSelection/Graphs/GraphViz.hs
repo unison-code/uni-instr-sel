@@ -10,6 +10,7 @@
 --
 -- Converts a graph into a GraphViz graph of DotGraph format.
 --
+-- TODO: enforce edge ordering
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.GraphViz (
