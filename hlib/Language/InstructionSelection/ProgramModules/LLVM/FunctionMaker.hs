@@ -137,7 +137,7 @@ mkFunctionFromGlobalDef _ = Nothing
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
-  let (os, _, _) = (make (OS.mkEmpty, G.BBLabel "", []) bbs)
+  let (os, _, _, _) = (make (OS.mkEmpty, Nothing, Nothing, []) bbs)
   in Just $ PM.Function name os
 mkFunction _ = Nothing
 
@@ -165,9 +165,9 @@ updateGraph t g = updateOS t $ OS.updateGraph (currentOS t) g
 
 addNewNode :: State -> G.NodeInfo -> State
 addNewNode t ni =
-  let new_g = G.addNewNode ni (currentGraph t)
+  let (new_g, new_n) = G.addNewNode ni (currentGraph t)
       t1 = updateGraph t new_g
-      t2 = updateLastTouchedNode t1 (G.lastAddedNode . new_g)
+      t2 = updateLastTouchedNode t1 new_n
   in t2
 
 -- | Gets the last touched node in a given state. If the graph contained by the
@@ -187,7 +187,9 @@ addNewEdge :: State
               -> G.Node -- ^ Source node.
               -> G.Node -- ^ Destination node.
               -> State
-addNewEdge t src dst = updateGraph t $ G.addNewEdge (src, dst) (currentGraph t)
+addNewEdge t src dst =
+  let (new_g, _) = G.addNewEdge (src, dst) (currentGraph t)
+  in updateGraph t new_g
 
 -- | Adds many new edges into a given state.
 
@@ -197,7 +199,8 @@ addNewEdgesManySources :: State
                           -> State
 addNewEdgesManySources t srcs dst =
   let es = zip srcs (repeat dst)
-  in updateGraph t $ foldl (flip G.addNewEdge) (currentGraph t) es
+      f g e = fst $ G.addNewEdge e g
+  in updateGraph t $ foldl f (currentGraph t) es
 
 -- | Adds many new edges into a given state.
 
@@ -207,7 +210,8 @@ addNewEdgesManyDests :: State
                         -> State
 addNewEdgesManyDests t src dsts =
   let es = zip (repeat src) dsts
-  in updateGraph t $ foldl (flip G.addNewEdge) (currentGraph t) es
+      f g e = fst $ G.addNewEdge e g
+  in updateGraph t $ foldl f (currentGraph t) es
 
 -- | Adds a new constraint into a given state.
 
@@ -253,23 +257,24 @@ processSym :: State     -- ^ The current state.
 processSym t sym =
     let node_id_of_sym = nodeIdFromSym (currentMappings t) sym
     in if isJust node_id_of_sym
-       then let n_of_sym = head $ G.nodeId2Node (currentGraph t) node_id_of_sym
-            in updateLastTouchedNode t (Just n_of_sym)
+       then let n_of_sym = head $ G.nodeId2Node (currentGraph t)
+                                                (fromJust node_id_of_sym)
+            in updateLastTouchedNode t n_of_sym
        else addNewNode t (G.NodeInfo (G.DataNode D.AnyType) (show sym))
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
 
-processCompOp :: (LlvmToOS operand)
+processCompOp :: (LlvmToOS o)
                  => State     -- ^ The current state.
                  -> Op.CompOp -- ^ The computational operation.
-                 -> [operand] -- ^ The operands.
+                 -> [o]       -- ^ The operands.
                  -> State     -- ^ The new state.
 processCompOp t op operands =
   let ts = scanl make t operands
       t1 = last ts
       t2 = addNewNode t1 (G.NodeInfo (G.ComputationNode op) (prettyShow op))
-      op_node = fromJust . lastTouchedNode t2
+      op_node = fromJust $ lastTouchedNode t2
       operand_ns = map (fromJust . lastTouchedNode) (tail ts)
       t3 = addNewEdgesManySources t2 operand_ns op_node
   in t3
@@ -277,17 +282,17 @@ processCompOp t op operands =
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
 
-processControlOp :: (LlvmToOS operand)
+processControlOp :: (LlvmToOS o)
                     => State        -- ^ The current state.
                     -> Op.ControlOp -- ^ The control operation.
-                    -> [operand]    -- ^ The operands.
+                    -> [o]          -- ^ The operands.
                     -> State        -- ^ The new state.
 processControlOp t op operands =
   let ts = scanl make t operands
       t1 = last ts
       t2 = addNewNode t1 (G.NodeInfo (G.ControlNode op) (prettyShow op))
-      op_node = fromJust . lastTouchedNode t2
-      t3 = addNewEdge t2 (fromJust . currentLabel t2) op_node
+      op_node = fromJust $ lastTouchedNode t2
+      t3 = addNewEdge t2 (fromJust $ currentLabel t2) op_node
       operand_ns = map (fromJust . lastTouchedNode) (tail ts)
       t4 = addNewEdgesManySources t3 operand_ns op_node
   in t4
@@ -307,8 +312,8 @@ insertAndConnectDataNode t =
 -- data type.
 
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
-fromLlvmIPred LLVMI.EQ  = Op.IntOp Op.Eq
-fromLlvmIPred LLVMI.NE  = Op.IntOp Op.NEq
+fromLlvmIPred LLVMI.EQ  =  Op.IntOp Op.Eq
+fromLlvmIPred LLVMI.NE  =  Op.IntOp Op.NEq
 fromLlvmIPred LLVMI.UGT = Op.UIntOp Op.GT
 fromLlvmIPred LLVMI.ULT = Op.UIntOp Op.LT
 fromLlvmIPred LLVMI.UGE = Op.UIntOp Op.GE
@@ -317,26 +322,25 @@ fromLlvmIPred LLVMI.SGT = Op.SIntOp Op.GT
 fromLlvmIPred LLVMI.SLT = Op.SIntOp Op.LT
 fromLlvmIPred LLVMI.SGE = Op.SIntOp Op.GE
 fromLlvmIPred LLVMI.SLE = Op.SIntOp Op.LE
-fromLlvmIPred op = error $ "'fromLlvmIPred' not implemented for " ++ show op
 
 -- | Converts an LLVM floating point comparison op into an equivalent op of our
 -- own data type.
 
 fromLlvmFPred :: LLVMF.FloatingPointPredicate -> Op.CompOp
-fromLlvmFPred LLVMF.OEQ   = Op.OFloatOp Op.Eq
-fromLlvmFPred LLVMF.ONE   = Op.OFloatOp Op.NEq
-fromLlvmFPred LLVMF.OGT   = Op.OFloatOp Op.GT
-fromLlvmFPred LLVMF.OGE   = Op.OFloatOp Op.GE
-fromLlvmFPred LLVMF.OLT   = Op.OFloatOp Op.LT
-fromLlvmFPred LLVMF.OLE   = Op.OFloatOp Op.LE
-fromLlvmFPred LLVMF.ORD   =  Op.FloatOp Op.Ordered
-fromLlvmFPred LLVMF.UNO   =  Op.FloatOp Op.Unordered
-fromLlvmFPred LLVMF.UEQ   = Op.UFloatOp Op.Eq
-fromLlvmFPred LLVMF.UGT   = Op.UFloatOp Op.GT
-fromLlvmFPred LLVMF.UGE   = Op.UFloatOp Op.GE
-fromLlvmFPred LLVMF.ULT   = Op.UFloatOp Op.LT
-fromLlvmFPred LLVMF.ULE   = Op.UFloatOp Op.LE
-fromLlvmFPred LLVMF.UNE   = Op.UFloatOp Op.NEq
+fromLlvmFPred LLVMF.OEQ = Op.OFloatOp Op.Eq
+fromLlvmFPred LLVMF.ONE = Op.OFloatOp Op.NEq
+fromLlvmFPred LLVMF.OGT = Op.OFloatOp Op.GT
+fromLlvmFPred LLVMF.OGE = Op.OFloatOp Op.GE
+fromLlvmFPred LLVMF.OLT = Op.OFloatOp Op.LT
+fromLlvmFPred LLVMF.OLE = Op.OFloatOp Op.LE
+fromLlvmFPred LLVMF.ORD =  Op.FloatOp Op.Ordered
+fromLlvmFPred LLVMF.UNO =  Op.FloatOp Op.Unordered
+fromLlvmFPred LLVMF.UEQ = Op.UFloatOp Op.Eq
+fromLlvmFPred LLVMF.UGT = Op.UFloatOp Op.GT
+fromLlvmFPred LLVMF.UGE = Op.UFloatOp Op.GE
+fromLlvmFPred LLVMF.ULT = Op.UFloatOp Op.LT
+fromLlvmFPred LLVMF.ULE = Op.UFloatOp Op.LE
+fromLlvmFPred LLVMF.UNE = Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Checks that a label node with a particular name exists in the graph of the
@@ -346,9 +350,10 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 ensureLabelNodeExists :: State -> G.BBLabel -> State
 ensureLabelNodeExists t l =
   let label_nodes = filter G.isLabelNode $ G.allNodes $ currentGraph t
-      nodes_with_matching_labels = filter (\n -> G.bbLabel n == l) label_nodes
-  in if length nodes_with_matching_labels > 0
-     then updateLastTouchedNode t (head nodes_with_matching_labels)
+      nodes_w_matching_labels = filter (\n -> (G.bbLabel $ G.nodeType n) == l)
+                                          label_nodes
+  in if length nodes_w_matching_labels > 0
+     then updateLastTouchedNode t (head nodes_w_matching_labels)
      else addNewNode t (G.NodeInfo (G.LabelNode l) (show l))
 
 
@@ -373,7 +378,7 @@ instance (LlvmToOS n) => LlvmToOS (LLVM.Named n) where
 instance LlvmToOS LLVM.BasicBlock where
   make t (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
     let t1 = ensureLabelNodeExists t1 (G.BBLabel str)
-        t2 = updateLabel t1 (lastTouchedNode t1)
+        t2 = updateLabel t1 (fromJust $ lastTouchedNode t1)
         t3 = foldl make t2 insts
         t4 = make t3 term_inst
     in t4
@@ -385,39 +390,39 @@ instance LlvmToOS LLVM.Name where
 instance LlvmToOS LLVM.Instruction where
   make t (LLVM.Add  _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Add) [op1, op2]
-  make t (LLVM.FAdd _ _ op1 op2 _) =
+  make t (LLVM.FAdd op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Add) [op1, op2]
   make t (LLVM.Sub  _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Sub) [op1, op2]
-  make t (LLVM.FSub _ _ op1 op2 _) =
+  make t (LLVM.FSub op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Sub) [op1, op2]
-  make t (LLVM.Mul  _ _ op1 op2 _) =
+  make t (LLVM.Mul _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Mul) [op1, op2]
-  make t (LLVM.FMul _ _ op1 op2 _) =
+  make t (LLVM.FMul op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Mul) [op1, op2]
-  make t (LLVM.UDiv _ _ op1 op2 _) =
+  make t (LLVM.UDiv _ op1 op2 _) =
     processCompOp t (Op.UIntOp  Op.Div) [op1, op2]
-  make t (LLVM.SDiv _ _ op1 op2 _) =
+  make t (LLVM.SDiv _ op1 op2 _) =
     processCompOp t (Op.SIntOp  Op.Div) [op1, op2]
-  make t (LLVM.FDiv _ _ op1 op2 _) =
+  make t (LLVM.FDiv op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Div) [op1, op2]
-  make t (LLVM.URem _ _ op1 op2 _) =
+  make t (LLVM.URem op1 op2 _) =
     processCompOp t (Op.UIntOp  Op.Rem) [op1, op2]
-  make t (LLVM.SRem _ _ op1 op2 _) =
+  make t (LLVM.SRem op1 op2 _) =
     processCompOp t (Op.SIntOp  Op.Rem) [op1, op2]
-  make t (LLVM.FRem _ _ op1 op2 _) =
+  make t (LLVM.FRem op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Rem) [op1, op2]
-  make t (LLVM.Shl  _ _ op1 op2 _) =
+  make t (LLVM.Shl _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Shl) [op1, op2]
-  make t (LLVM.LShr _ _ op1 op2 _) =
+  make t (LLVM.LShr _ op1 op2 _) =
     processCompOp t (Op.IntOp  Op.LShr) [op1, op2]
-  make t (LLVM.AShr _ _ op1 op2 _) =
+  make t (LLVM.AShr _ op1 op2 _) =
     processCompOp t (Op.IntOp  Op.AShr) [op1, op2]
-  make t (LLVM.And  _ _ op1 op2 _) =
+  make t (LLVM.And op1 op2 _) =
     processCompOp t (Op.IntOp   Op.And) [op1, op2]
-  make t (LLVM.Or   _ _ op1 op2 _) =
+  make t (LLVM.Or op1 op2 _) =
     processCompOp t (Op.IntOp    Op.Or) [op1, op2]
-  make t (LLVM.Xor  _ _ op1 op2 _) =
+  make t (LLVM.Xor op1 op2 _) =
     processCompOp t (Op.IntOp   Op.XOr) [op1, op2]
   make t (LLVM.ICmp p op1 op2 _) = processCompOp t (fromLlvmIPred p) [op1, op2]
   make t (LLVM.FCmp p op1 op2 _) = processCompOp t (fromLlvmFPred p) [op1, op2]
@@ -426,7 +431,7 @@ instance LlvmToOS LLVM.Instruction where
         ts = scanl processPhiElem t operands
         t1 = last ts
         t2 = addNewNode t1 (G.NodeInfo G.PhiNode "phi")
-        op_node = fromJust . lastTouchedNode t2
+        op_node = fromJust $ lastTouchedNode t2
         operand_ns = map (fromJust . lastTouchedNode) (tail ts)
         -- Here we simply ignore the edge order, and then run a second pass to
         -- fix it afterwards after all edges from the branches have been added
@@ -438,7 +443,8 @@ instance LlvmToOS LLVM.Instruction where
 instance LlvmToOS LLVM.Terminator where
   make t (LLVM.Ret op _) = processControlOp t Op.Ret (maybeToList op)
   make t (LLVM.Br (LLVM.Name dst) _) =
-    let t1 = processControlOp t Op.UncondBranch []
+    let t1 = processControlOp t Op.UncondBranch
+             ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
         br_node = fromJust $ lastTouchedNode t1
         t2 = ensureLabelNodeExists t1 (G.BBLabel dst)
         dst_node = fromJust $ lastTouchedNode t2
