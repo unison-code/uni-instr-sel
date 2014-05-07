@@ -27,7 +27,8 @@ module Language.InstructionSelection.Graphs.Base (
 , Edge (..)
 , EdgeLabel (..)
 , EdgeNr (..)
-, Graph
+, Graph (..)
+, IntGraph (..)
 , Mapping (..)
 , Matchset (..)
 , Node (..)
@@ -139,7 +140,7 @@ type IntGraph = I.Gr NodeLabel EdgeLabel
 -- | The outer-most data type which contains the graph itself.
 
 newtype Graph
-    = Graph IntGraph
+    = Graph { intGraph :: IntGraph }
     deriving (Show)
 
 -- | Represents a distinct node.
