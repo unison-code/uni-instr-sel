@@ -6,3 +6,4 @@ parser
 test.*
 *.pdf
 match-test
+test-llvm
