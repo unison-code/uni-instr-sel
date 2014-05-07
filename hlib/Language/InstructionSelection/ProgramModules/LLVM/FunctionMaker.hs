@@ -98,7 +98,7 @@ instance SymbolFormable LLVM.Name where
 
 -- | Class for processing an LLVM AST element.
 
-class LlvmToOS a where
+class Processable a where
 
   -- | Extends a given 'OpStructure' with the information given by an LLVM data
   -- type, and by doing so the function is built. The first is given via a tuple
@@ -108,9 +108,9 @@ class LlvmToOS a where
   -- NOTE: Each declaration node and use node will be kept separate to be merged
   -- as a post-step.
 
-  make :: State    -- ^ Current state.
-          -> a     -- ^ The LLVM data type to process.
-          -> State -- ^ The new, extended state.
+  process :: State    -- ^ Current state.
+             -> a     -- ^ The LLVM data type to process.
+             -> State -- ^ The new, extended state.
 
 
 
@@ -137,7 +137,7 @@ mkFunctionFromGlobalDef _ = Nothing
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
-  let (os, _, _, _) = (make (OS.mkEmpty, Nothing, Nothing, []) bbs)
+  let (os, _, _, _) = (process (OS.mkEmpty, Nothing, Nothing, []) bbs)
   in Just $ PM.Function name os
 mkFunction _ = Nothing
 
@@ -265,13 +265,13 @@ processSym t sym =
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
 
-processCompOp :: (LlvmToOS o)
+processCompOp :: (Processable o)
                  => State     -- ^ The current state.
                  -> Op.CompOp -- ^ The computational operation.
                  -> [o]       -- ^ The operands.
                  -> State     -- ^ The new state.
 processCompOp t op operands =
-  let ts = scanl make t operands
+  let ts = scanl process t operands
       t1 = last ts
       t2 = addNewNode t1 (G.NodeInfo (G.ComputationNode op) (prettyShow op))
       op_node = fromJust $ lastTouchedNode t2
@@ -282,13 +282,13 @@ processCompOp t op operands =
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
 
-processControlOp :: (LlvmToOS o)
+processControlOp :: (Processable o)
                     => State        -- ^ The current state.
                     -> Op.ControlOp -- ^ The control operation.
                     -> [o]          -- ^ The operands.
                     -> State        -- ^ The new state.
 processControlOp t op operands =
-  let ts = scanl make t operands
+  let ts = scanl process t operands
       t1 = last ts
       t2 = addNewNode t1 (G.NodeInfo (G.ControlNode op) (prettyShow op))
       op_node = fromJust $ lastTouchedNode t2
@@ -359,75 +359,77 @@ ensureLabelNodeExists t l =
 
 
 ------------------------
--- 'LlvmToOS' instances
+-- 'Processable' instances
 ------------------------
 
-instance (LlvmToOS a) => LlvmToOS [a] where
-  make = foldl make
+instance (Processable a) => Processable [a] where
+  process = foldl process
 
-instance (LlvmToOS n) => LlvmToOS (LLVM.Named n) where
-  make t (name LLVM.:= expr) =
-    let t1 = make t name
+instance (Processable n) => Processable (LLVM.Named n) where
+  process t (name LLVM.:= expr) =
+    let t1 = process t name
         dst_node = fromJust $ lastTouchedNode t1
-        t2 = make t1 expr
+        t2 = process t1 expr
         expr_node = fromJust $ lastTouchedNode t2
         t3 = addNewEdge t2 expr_node dst_node
     in t3
-  make t (LLVM.Do expr) = make t expr
+  process t (LLVM.Do expr) = process t expr
 
-instance LlvmToOS LLVM.BasicBlock where
-  make t (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
+instance Processable LLVM.BasicBlock where
+  process t (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
     let t1 = ensureLabelNodeExists t1 (G.BBLabel str)
         t2 = updateLabel t1 (fromJust $ lastTouchedNode t1)
-        t3 = foldl make t2 insts
-        t4 = make t3 term_inst
+        t3 = foldl process t2 insts
+        t4 = process t3 term_inst
     in t4
 
-instance LlvmToOS LLVM.Name where
-  make t name@(LLVM.Name _) = processSym t (toSymbol name)
-  make t name@(LLVM.UnName _) = processSym t (toSymbol name)
+instance Processable LLVM.Name where
+  process t name@(LLVM.Name _) = processSym t (toSymbol name)
+  process t name@(LLVM.UnName _) = processSym t (toSymbol name)
 
-instance LlvmToOS LLVM.Instruction where
-  make t (LLVM.Add  _ _ op1 op2 _) =
+instance Processable LLVM.Instruction where
+  process t (LLVM.Add  _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Add) [op1, op2]
-  make t (LLVM.FAdd op1 op2 _) =
+  process t (LLVM.FAdd op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Add) [op1, op2]
-  make t (LLVM.Sub  _ _ op1 op2 _) =
+  process t (LLVM.Sub  _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Sub) [op1, op2]
-  make t (LLVM.FSub op1 op2 _) =
+  process t (LLVM.FSub op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Sub) [op1, op2]
-  make t (LLVM.Mul _ _ op1 op2 _) =
+  process t (LLVM.Mul _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Mul) [op1, op2]
-  make t (LLVM.FMul op1 op2 _) =
+  process t (LLVM.FMul op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Mul) [op1, op2]
-  make t (LLVM.UDiv _ op1 op2 _) =
+  process t (LLVM.UDiv _ op1 op2 _) =
     processCompOp t (Op.UIntOp  Op.Div) [op1, op2]
-  make t (LLVM.SDiv _ op1 op2 _) =
+  process t (LLVM.SDiv _ op1 op2 _) =
     processCompOp t (Op.SIntOp  Op.Div) [op1, op2]
-  make t (LLVM.FDiv op1 op2 _) =
+  process t (LLVM.FDiv op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Div) [op1, op2]
-  make t (LLVM.URem op1 op2 _) =
+  process t (LLVM.URem op1 op2 _) =
     processCompOp t (Op.UIntOp  Op.Rem) [op1, op2]
-  make t (LLVM.SRem op1 op2 _) =
+  process t (LLVM.SRem op1 op2 _) =
     processCompOp t (Op.SIntOp  Op.Rem) [op1, op2]
-  make t (LLVM.FRem op1 op2 _) =
+  process t (LLVM.FRem op1 op2 _) =
     processCompOp t (Op.FloatOp Op.Rem) [op1, op2]
-  make t (LLVM.Shl _ _ op1 op2 _) =
+  process t (LLVM.Shl _ _ op1 op2 _) =
     processCompOp t (Op.IntOp   Op.Shl) [op1, op2]
-  make t (LLVM.LShr _ op1 op2 _) =
+  process t (LLVM.LShr _ op1 op2 _) =
     processCompOp t (Op.IntOp  Op.LShr) [op1, op2]
-  make t (LLVM.AShr _ op1 op2 _) =
+  process t (LLVM.AShr _ op1 op2 _) =
     processCompOp t (Op.IntOp  Op.AShr) [op1, op2]
-  make t (LLVM.And op1 op2 _) =
+  process t (LLVM.And op1 op2 _) =
     processCompOp t (Op.IntOp   Op.And) [op1, op2]
-  make t (LLVM.Or op1 op2 _) =
+  process t (LLVM.Or op1 op2 _) =
     processCompOp t (Op.IntOp    Op.Or) [op1, op2]
-  make t (LLVM.Xor op1 op2 _) =
+  process t (LLVM.Xor op1 op2 _) =
     processCompOp t (Op.IntOp   Op.XOr) [op1, op2]
-  make t (LLVM.ICmp p op1 op2 _) = processCompOp t (fromLlvmIPred p) [op1, op2]
-  make t (LLVM.FCmp p op1 op2 _) = processCompOp t (fromLlvmFPred p) [op1, op2]
-  make t (LLVM.Phi _ operands _) =
-    let processPhiElem t' (op, _) = make t' op
+  process t (LLVM.ICmp p op1 op2 _) =
+    processCompOp t (fromLlvmIPred p) [op1, op2]
+  process t (LLVM.FCmp p op1 op2 _) =
+    processCompOp t (fromLlvmFPred p) [op1, op2]
+  process t (LLVM.Phi _ operands _) =
+    let processPhiElem t' (op, _) = process t' op
         ts = scanl processPhiElem t operands
         t1 = last ts
         t2 = addNewNode t1 (G.NodeInfo G.PhiNode "phi")
@@ -438,11 +440,11 @@ instance LlvmToOS LLVM.Instruction where
         t3 = addNewEdgesManySources t2 operand_ns op_node
         t4 = insertAndConnectDataNode t3
     in t4
-  make _ l = error $ "'make' not implemented for " ++ show l
+  process _ l = error $ "'process' not implemented for " ++ show l
 
-instance LlvmToOS LLVM.Terminator where
-  make t (LLVM.Ret op _) = processControlOp t Op.Ret (maybeToList op)
-  make t (LLVM.Br (LLVM.Name dst) _) =
+instance Processable LLVM.Terminator where
+  process t (LLVM.Ret op _) = processControlOp t Op.Ret (maybeToList op)
+  process t (LLVM.Br (LLVM.Name dst) _) =
     let t1 = processControlOp t Op.UncondBranch
              ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
         br_node = fromJust $ lastTouchedNode t1
@@ -450,7 +452,7 @@ instance LlvmToOS LLVM.Terminator where
         dst_node = fromJust $ lastTouchedNode t2
         t3 = addNewEdge t2 br_node dst_node
     in t3
-  make t (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
+  process t (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
     let t1 = processControlOp t Op.CondBranch [op]
         br_node = fromJust $ lastTouchedNode t1
         t2 = ensureLabelNodeExists t1 (G.BBLabel t_dst)
@@ -459,18 +461,18 @@ instance LlvmToOS LLVM.Terminator where
         f_dst_node = fromJust $ lastTouchedNode t3
         t4 = addNewEdgesManyDests t3 br_node [t_dst_node, f_dst_node]
     in t4
-  make _ l = error $ "'make' not implemented for " ++ show l
+  process _ l = error $ "'process' not implemented for " ++ show l
 
-instance LlvmToOS LLVM.Operand where
-  make t (LLVM.LocalReference name) = make t name
-  make t (LLVM.ConstantOperand c) = make t c
+instance Processable LLVM.Operand where
+  process t (LLVM.LocalReference name) = process t name
+  process t (LLVM.ConstantOperand c) = process t c
 
-instance LlvmToOS LLVMC.Constant where
-  make t (LLVMC.Int b v) =
+instance Processable LLVMC.Constant where
+  process t (LLVMC.Int b v) =
     let t1 = addNewNode t (G.NodeInfo (G.DataNode $ fromIWidth b) (show v))
         n = fromJust $ lastTouchedNode t1
         -- TODO: add constant constraint
         -- t2 = addConstraint t1 (C.EqExpr (C.AnIntegerExpr v) ())
         t2 = t1
     in t2
-  make _ l = error $ "'make' not implemented for " ++ show l
+  process _ l = error $ "'process' not implemented for " ++ show l
