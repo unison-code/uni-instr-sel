@@ -42,10 +42,10 @@ import Data.Maybe
 -- Types
 ---------
 
--- | Represents a mapping from a symbol to a node ID currently in the operation
+-- | Represents a mapping from a symbol to a node currently in the operation
 -- structure.
 
-type Mapping = (G.NodeId, Symbol)
+type SymToNodeMapping = (G.Node, Symbol)
 
 -- | A tuple containing the intermediate data as the function is built.
 
@@ -54,7 +54,7 @@ type State = ( OS.OpStructure -- ^ The corresponding operation structure.
                               -- is used to simplifying edge insertion.
              , Maybe G.Node   -- ^ The label node which represents the basic
                               -- block currently being processed.
-             , [Mapping]      -- ^ List of node-to-symbol mappings. If
+             , [SymToNodeMapping]      -- ^ List of node-to-symbol mappings. If
                               -- there are more than one mapping using the
                               -- same symbol, then the last one occuring
                               -- in the list should be picked.
@@ -230,18 +230,18 @@ updateLabel (os, n, _, ms) l = (os, n, Just l, ms)
 
 -- | Gets the list of mappings of a given state.
 
-currentMappings :: State -> [Mapping]
+currentMappings :: State -> [SymToNodeMapping]
 currentMappings (_, _, _, ms) = ms
 
 -- | Adds a new mapping to a given state.
 
-addMapping :: State -> Mapping -> State
+addMapping :: State -> SymToNodeMapping -> State
 addMapping (os, n, l, ms) m = (os, n, l, ms ++ [m])
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
 
-nodeIdFromSym :: [Mapping] -> Symbol -> Maybe G.NodeId
-nodeIdFromSym ms sym =
+mappedNodeFromSym :: [SymToNodeMapping] -> Symbol -> Maybe G.Node
+mappedNodeFromSym ms sym =
   let ns = filter (\t -> snd t == sym) ms
   in if not $ null ns
         then Just $ fst $ last ns
@@ -255,11 +255,9 @@ processSym :: State     -- ^ The current state.
               -> Symbol -- ^ The symbol
               -> State  -- ^ The new state.
 processSym t sym =
-    let node_id_of_sym = nodeIdFromSym (currentMappings t) sym
-    in if isJust node_id_of_sym
-       then let n_of_sym = head $ G.nodeId2Node (currentGraph t)
-                                                (fromJust node_id_of_sym)
-            in updateLastTouchedNode t n_of_sym
+    let node_for_sym = mappedNodeFromSym (currentMappings t) sym
+    in if isJust node_for_sym
+       then updateLastTouchedNode t (fromJust node_for_sym)
        else addNewNode t (G.NodeInfo (G.DataNode D.AnyType) (show sym))
 
 -- | Inserts a new node representing a computational operation, and adds edges
