@@ -17,8 +17,10 @@ module Language.InstructionSelection.Graphs.GraphViz (
 ) where
 
 import Language.InstructionSelection.Graphs.Base
+import Language.InstructionSelection.PrettyPrint
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
+import Data.Maybe
 
 
 
@@ -38,16 +40,23 @@ mkParams = GV.nonClusteredParams { GV.fmtNode = mkNodeAttr }
 -- | Constructs the appropriate node attributes, depending on the node type.
 
 mkNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
-mkNodeAttr (_, NodeLabel _ (NodeInfo nt _)) = mkNodeAppearanceAttr nt
+mkNodeAttr (_, NodeLabel _ nt) = mkNodeTypeAttr nt
 
--- | Constructs the node appearance attributes.
+-- | Constructs the node attributes based on its node type.
 
-mkNodeAppearanceAttr :: NodeType -> GV.Attributes
-mkNodeAppearanceAttr (ComputationNode _) = [GV.shape GV.Circle]
-mkNodeAppearanceAttr (ControlNode _) = [GV.shape GV.InvHouse]
-mkNodeAppearanceAttr (DataNode _) = [GV.shape GV.BoxShape]
-mkNodeAppearanceAttr (LabelNode _) = [GV.shape GV.BoxShape]
-mkNodeAppearanceAttr PhiNode = [GV.shape GV.Circle]
-mkNodeAppearanceAttr StateNode = [GV.shape GV.BoxShape]
-mkNodeAppearanceAttr TransferNode = [GV.shape GV.DiamondShape]
-mkNodeAppearanceAttr NullNode = [GV.shape GV.Pentagon]
+mkNodeTypeAttr :: NodeType -> GV.Attributes
+mkNodeTypeAttr (ComputationNode op) =
+  [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
+mkNodeTypeAttr (ControlNode op) =
+  [GV.shape GV.InvHouse, GV.toLabel (prettyShow op)]
+mkNodeTypeAttr (DataNode _ src) =
+  let shape_attr = GV.shape GV.BoxShape
+  in if isJust src
+        then [shape_attr, GV.toLabel $ fromJust src]
+        else [shape_attr]
+mkNodeTypeAttr (LabelNode (BBLabel l)) =
+  [GV.shape GV.BoxShape, GV.toLabel l]
+mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
+mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape]
+mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape]
+mkNodeTypeAttr NullNode = [GV.shape GV.Circle, GV.style GV.dashed]
