@@ -49,15 +49,16 @@ type SymToNodeMapping = (G.Node, Symbol)
 
 -- | A tuple containing the intermediate data as the function is built.
 
-type State = ( OS.OpStructure -- ^ The corresponding operation structure.
-             , Maybe G.Node   -- ^ The last node (if any) that was touched. This
-                              -- is used to simplifying edge insertion.
-             , Maybe G.Node   -- ^ The label node which represents the basic
-                              -- block currently being processed.
-             , [SymToNodeMapping]      -- ^ List of node-to-symbol mappings. If
-                              -- there are more than one mapping using the
-                              -- same symbol, then the last one occuring
-                              -- in the list should be picked.
+type State = ( OS.OpStructure     -- ^ The corresponding operation structure.
+             , Maybe G.Node       -- ^ The last node (if any) that was
+                                  -- touched. This is used to simplifying edge
+                                  -- insertion.
+             , Maybe G.Node       -- ^ The label node which represents the basic
+                                  -- block currently being processed.
+             , [SymToNodeMapping] -- ^ List of node-to-symbol mappings. If
+                                  -- there are more than one mapping using the
+                                  -- same symbol, then the last one occuring
+                                  -- in the list should be picked.
              )
 
 
