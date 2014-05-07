@@ -1,3 +1,9 @@
+.PHONY: test-frontend
+test-frontend:
+	ghc -Wall test-llvm.hs
+	./test-llvm test.ll
+	dot -Tpdf test.dot -o test.pdf
+
 parser:
 	ghc -Wall parser.hs
 
