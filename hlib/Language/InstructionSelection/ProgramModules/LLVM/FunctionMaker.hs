@@ -264,11 +264,14 @@ mappedNodeFromSym ms sym =
 processSym :: ProcessState    -- ^ The current state.
               -> Symbol       -- ^ The symbol.
               -> ProcessState -- ^ The new state.
-processSym st sym =
-    let node_for_sym = mappedNodeFromSym (currentMappings st) sym
+processSym st0 sym =
+    let node_for_sym = mappedNodeFromSym (currentMappings st0) sym
     in if isJust node_for_sym
-       then updateLastTouchedNode st (fromJust node_for_sym)
-       else addNewNode st (G.DataNode D.AnyType (Just $ show sym))
+       then updateLastTouchedNode st0 (fromJust node_for_sym)
+       else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
+                d_node = fromJust $ lastTouchedNode st1
+                st2 = addMapping st1 (d_node, sym)
+            in st2
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
@@ -374,10 +377,10 @@ instance (Processable a) => Processable [a] where
 
 instance (Processable n) => Processable (LLVM.Named n) where
   process st0 (name LLVM.:= expr) =
-    let st1 = process st0 name
-        dst_node = fromJust $ lastTouchedNode st1
-        st2 = process st1 expr
-        expr_node = fromJust $ lastTouchedNode st2
+    let st1 = process st0 expr
+        expr_node = fromJust $ lastTouchedNode st1
+        st2 = process st1 name
+        dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 expr_node dst_node
     in st3
   process st (LLVM.Do expr) = process st expr
