@@ -48,7 +48,7 @@ data Instruction
           -- must be globally unique across all patterns and all instructions,
           -- but not necessarily contiguous.
 
-        , patterns :: [(OpStructure, PatternId)]
+        , instrPatterns :: [(OpStructure, PatternId)]
 
           -- | Instruction properties.
 
@@ -56,7 +56,7 @@ data Instruction
 
           -- | Assembly string to produce upon code emission.
 
-        , assemblyStr :: AssemblyString
+        , instrAssemblyStr :: AssemblyString
 
       }
     deriving (Show)
@@ -69,11 +69,11 @@ data InstProperties
 
           -- | Instruction code size (in bytes).
 
-          codeSize :: Integer
+          instCodeSize :: Integer
 
           -- | Instruction latency (in cycles).
 
-        , latency :: Integer
+        , instLatency :: Integer
 
       }
     deriving (Show)
