@@ -173,9 +173,9 @@ updateGraph st g = updateOS st $ OS.updateGraph (currentOS st) g
 
 -- | Adds a new node into a given state.
 
-addNewNode :: ProcessState -> G.NodeInfo -> ProcessState
-addNewNode st0 ni =
-  let (new_g, new_n) = G.addNewNode ni (currentGraph st0)
+addNewNode :: ProcessState -> G.NodeType -> ProcessState
+addNewNode st0 nt =
+  let (new_g, new_n) = G.addNewNode nt (currentGraph st0)
       st1 = updateGraph st0 new_g
       st2 = updateLastTouchedNode st1 new_n
   in st2
@@ -268,7 +268,7 @@ processSym st sym =
     let node_for_sym = mappedNodeFromSym (currentMappings st) sym
     in if isJust node_for_sym
        then updateLastTouchedNode st (fromJust node_for_sym)
-       else addNewNode st (G.NodeInfo (G.DataNode D.AnyType) (show sym))
+       else addNewNode st (G.DataNode D.AnyType (Just $ show sym))
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
@@ -282,7 +282,7 @@ processCompOp st0 op operands =
   let sts = scanl process st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
-      st2 = addNewNode st1 (G.NodeInfo (G.ComputationNode op) (prettyShow op))
+      st2 = addNewNode st1 (G.ComputationNode op)
       op_node = fromJust $ lastTouchedNode st2
       st3 = addNewEdgesManySources st2 operand_ns op_node
   in st3
@@ -299,7 +299,7 @@ processControlOp st0 op operands =
   let sts = scanl process st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
-      st2 = addNewNode st1 (G.NodeInfo (G.ControlNode op) (prettyShow op))
+      st2 = addNewNode st1 (G.ControlNode op)
       op_node = fromJust $ lastTouchedNode st2
       st3 = addNewEdge st2 (fromJust $ currentLabelNode st2) op_node
       st4 = addNewEdgesManySources st3 operand_ns op_node
@@ -361,7 +361,7 @@ ensureLabelNodeExists st l =
   let label_node = getLabelNode st l
   in if isJust label_node
         then updateLastTouchedNode st (fromJust label_node)
-        else addNewNode st (G.NodeInfo (G.LabelNode l) (show l))
+        else addNewNode st (G.LabelNode l)
 
 
 
@@ -440,17 +440,14 @@ instance Processable LLVM.Instruction where
         sts = scanl processPhiElem st0 operands
         operand_ns = map (fromJust . lastTouchedNode) (tail sts)
         st1 = last sts
-        st2 = addNewNode st1 (G.NodeInfo G.PhiNode "phi")
+        st2 = addNewNode st1 G.PhiNode
         op_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 (fromJust $ currentLabelNode st1) op_node
         -- Here we simply ignore the edge order, and then run a second pass to
         -- correct the order afterwards after all edges from the branches have
         -- been added
         st4 = addNewEdgesManySources st3 operand_ns op_node
-        st5 = addNewNode st4 (G.NodeInfo (G.DataNode D.AnyType) "")
-        d_node = fromJust $ lastTouchedNode st5
-        st6 = addNewEdge st5 op_node d_node
-    in st6
+    in st4
   process _ l = error $ "'process' not implemented for " ++ show l
 
 instance Processable LLVM.Terminator where
@@ -480,7 +477,7 @@ instance Processable LLVM.Operand where
 
 instance Processable LLVMC.Constant where
   process st0 (LLVMC.Int b v) =
-    let st1 = addNewNode st0 (G.NodeInfo (G.DataNode $ fromIWidth b) (show v))
+    let st1 = addNewNode st0 (G.DataNode (fromIWidth b) (Just $ show v))
         n = fromJust $ lastTouchedNode st1
         -- TODO: add constant constraint
         -- st2 = addConstraint st1 (C.EqExpr (C.AnIntegerExpr v) ())
