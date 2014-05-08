@@ -47,7 +47,7 @@ module Language.InstructionSelection.Graphs.Base (
 , delNode
 , delNodeKeepEdges
 , edges
-, empty
+, mkEmpty
 , extractCFG
 , extractDomSet
 , extractIDomSet
@@ -128,6 +128,9 @@ import Language.InstructionSelection.Utils ( Natural
 import qualified Data.Graph.Inductive as I
 import Data.List (sortBy)
 import Data.Maybe
+
+-- TODO: remove
+import Debug.Trace
 
 
 
@@ -399,8 +402,8 @@ isTransferNodeType _ = False
 
 -- | Creates an empty graph.
 
-empty :: Graph
-empty = Graph I.empty
+mkEmpty :: Graph
+mkEmpty = Graph I.empty
 
 -- | Makes a graph from a list of nodes and edges.
 
@@ -572,7 +575,7 @@ nextInEdgeNr g int =
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int =
-  let existing_numbers = map outEdgeNr $ map toEdge $ I.inn g int
+  let existing_numbers = map outEdgeNr $ map toEdge $ I.out g int
   in if length existing_numbers > 0
         then maximum existing_numbers + 1
         else 0
