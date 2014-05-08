@@ -1,12 +1,12 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Graphs.VFTwo
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.Graphs.VFTwo
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Contains an implementation of the VF2 subgraph isomorphism algorithm
 -- (http://dx.doi.org/10.1109/TPAMI.2004.75). There are always two graphs

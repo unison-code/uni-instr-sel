@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.CPModel.ParamMaker
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.CPModel.ParamMaker
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Constructs the parameters which are used to create the CP model. These
 -- include the function data, such as the IDs of the various nodes, and the

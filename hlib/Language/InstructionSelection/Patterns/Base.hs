@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.Base
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.Patterns.Base
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Contains the data types and records for representing patterns. This is the
 -- format on which subsequent preparation for instruction selection will build

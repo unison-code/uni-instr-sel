@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.LLVM.InstructionMaker
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.Patterns.LLVM.InstructionMaker
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Converts an LLVM pattern into the internal instruction format.
 --

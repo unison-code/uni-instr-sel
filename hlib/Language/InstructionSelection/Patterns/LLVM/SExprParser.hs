@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Patterns.LLVM.SExprParser
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.Patterns.LLVM.SExprParser
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Parses a file of instruction patterns formatted as S-expressions. The
 -- instruction patterns consists of a set of constraints and one or more
