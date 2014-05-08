@@ -493,11 +493,12 @@ getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabel]
 getPredLabelsOfLabelNode g l_node =
   -- The in-edges to the label node are always from control nodes, and for these
   -- their first in-edge is always from the label node to which they belong
-  let preds = G.predecessors g l_node
-      l_preds_of_l_node =
+  let in_edges = G.sortEdgesByInNumbers $ G.inEdges g l_node
+      preds = map (G.sourceOfEdge g) in_edges
+      sought_l_nodes =
         map (G.sourceOfEdge g . head . G.sortEdgesByInNumbers . G.inEdges g)
             preds
-  in map (G.bbLabel . G.nodeType) l_preds_of_l_node
+  in map (G.bbLabel . G.nodeType) sought_l_nodes
 
 
 
