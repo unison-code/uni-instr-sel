@@ -501,7 +501,7 @@ getPredLabelsOfLabelNode g l_node =
             preds
   in map (G.bbLabel . G.nodeType) sought_l_nodes
 
--- | Adds an edge from the 'entry' label node to all data edges which currently
+-- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
 -- arguments).
 
