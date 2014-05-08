@@ -12,6 +12,9 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
+--
+-- TODO: add edges from entry label node to all data nodes which have no
+-- in-bound edges whatsoever (these are either constants or input arguments)
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
