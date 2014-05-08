@@ -28,8 +28,6 @@ module Language.InstructionSelection.OpStructures.Base (
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs
-import Data.List
-import Data.Maybe
 
 
 

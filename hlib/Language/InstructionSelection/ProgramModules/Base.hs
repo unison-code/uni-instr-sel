@@ -24,7 +24,6 @@ module Language.InstructionSelection.ProgramModules.Base (
 ) where
 
 import Language.InstructionSelection.OpStructures
-import Data.Maybe
 
 
 
