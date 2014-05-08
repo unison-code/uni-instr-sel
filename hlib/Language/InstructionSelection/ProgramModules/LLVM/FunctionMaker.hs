@@ -29,8 +29,6 @@ import qualified Language.InstructionSelection.OpStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.ProgramModules.Base as PM
 import Language.InstructionSelection.DataTypes as D
-import Language.InstructionSelection.PrettyPrint
-import Language.InstructionSelection.Utils
 import Data.Maybe
 
 
@@ -390,6 +388,8 @@ instance Processable LLVM.BasicBlock where
         st3 = foldl process st2 insts
         st4 = process st3 term_inst
     in st4
+  process _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+    error $ "'process' not supported for un-named basic blocks"
 
 instance Processable LLVM.Name where
   process st name@(LLVM.Name _) = processSym st (toSymbol name)
@@ -475,11 +475,12 @@ instance Processable LLVM.Terminator where
 instance Processable LLVM.Operand where
   process st (LLVM.LocalReference name) = process st name
   process st (LLVM.ConstantOperand c) = process st c
+  process _ o = error $ "'process' not supported for " ++ show o
 
 instance Processable LLVMC.Constant where
   process st0 (LLVMC.Int b v) =
     let st1 = addNewNode st0 (G.DataNode (fromIWidth b) (Just $ show v))
-        n = fromJust $ lastTouchedNode st1
+        -- n = fromJust $ lastTouchedNode st1
         -- TODO: add constant constraint
         -- st2 = addConstraint st1 (C.EqExpr (C.AnIntegerExpr v) ())
         st2 = st1
@@ -504,6 +505,8 @@ instance PostProcessable LLVM.BasicBlock where
     let st1 = updateLabelNode st0 (fromJust $ getLabelNode st0 (G.BBLabel str))
         st2 = foldl postProcess st1 insts
     in st2
+  postProcess _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+    error $ "'postProcess' not supported for un-named basic blocks"
 
 instance PostProcessable LLVM.Instruction where
   postProcess st0 (LLVM.Phi _ operands _) =

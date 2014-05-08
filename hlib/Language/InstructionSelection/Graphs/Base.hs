@@ -28,7 +28,7 @@ module Language.InstructionSelection.Graphs.Base (
 , EdgeLabel (..)
 , EdgeNr (..)
 , Graph (..)
-, IntGraph (..)
+, IntGraph
 , Mapping (..)
 , Matchset (..)
 , Node (..)
@@ -299,9 +299,6 @@ fromNodeId (NodeId i) = i
 toNodeId :: (Integral i) => i -> NodeId
 toNodeId = NodeId . toNatural
 
-toNode :: I.LNode NodeLabel -> Node
-toNode = Node
-
 fromNode :: Node -> I.LNode NodeLabel
 fromNode (Node n) = n
 
@@ -439,7 +436,7 @@ nodeType (Node (_, NodeLabel _ nt)) = nt
 -- | Gets the internal node ID from a node.
 
 intNodeId :: Node -> I.Node
-intNodeId (Node (id, _)) = id
+intNodeId (Node (nid, _)) = nid
 
 -- | Gets the number of nodes.
 
@@ -624,7 +621,7 @@ lastAddedNode (Graph g) =
 -- | Gets the corresponding node from an internal node ID.
 
 intNodeId2Node :: IntGraph -> I.Node -> Maybe Node
-intNodeId2Node g id = maybe Nothing (\l -> Just (Node (id, l))) (I.lab g id)
+intNodeId2Node g nid = maybe Nothing (\l -> Just (Node (nid, l))) (I.lab g nid)
 
 -- | Gets the predecessors (if any) of a given node. A node A is a predecessor
 -- of another node B if there is a directed edge from B to A.
@@ -690,7 +687,7 @@ targetOfEdge (Graph g) (Edge (_, n, _)) = fromJust $ intNodeId2Node g n
 -- | Gets the nodes that matches a given node ID.
 
 nodeId2Node :: Graph -> NodeId -> [Node]
-nodeId2Node g id = filter (\n -> nodeId n == id) (allNodes g)
+nodeId2Node g nid = filter (\n -> nodeId n == nid) (allNodes g)
 
 -- | Converts matchset of nodes into a matchset of node IDs. Duplicated entries
 -- are removed.

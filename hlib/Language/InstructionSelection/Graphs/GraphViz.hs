@@ -36,6 +36,7 @@ toDotGraph g = GV.graphToDot mkParams (intGraph g)
 
 -- | Constructs the appropriate parameters.
 
+mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
 mkParams = GV.nonClusteredParams { GV.fmtNode = mkNodeAttr }
 
 -- | Constructs the appropriate node attributes, depending on the node type.
@@ -56,7 +57,7 @@ mkNodeTypeAttr (DataNode _ src) =
         then [shape_attr, GV.toLabel $ fromJust src]
         else [shape_attr]
 mkNodeTypeAttr (LabelNode (BBLabel l)) =
-  [GV.shape GV.BoxShape, GV.toLabel l]
+  [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel l]
 mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
 mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape]
 mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape]

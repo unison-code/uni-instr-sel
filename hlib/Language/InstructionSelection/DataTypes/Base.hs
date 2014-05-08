@@ -73,3 +73,4 @@ areDataTypesCompatible d1 d2 = d1 == d2
 
 instance PrettyPrint DataType where
   prettyShow (IntType w) = "i" ++ show w
+  prettyShow AnyType = ""
