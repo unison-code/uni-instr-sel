@@ -12,9 +12,6 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
---
--- TODO: add edges from entry label node to all data nodes which have no
--- in-bound edges whatsoever (these are either constants or input arguments)
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
@@ -184,7 +181,8 @@ mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
   let st1 = process (OS.mkEmpty, Nothing, Nothing, [], [], []) bbs
       st2 = fixAllPhiNodeEdgeOrderings st1
-      os = currentOS st2
+      st3 = addEdgesToConstantsAndInputDataNodes st2
+      os = currentOS st3
   in Just (PM.Function name os)
 mkFunction _ = Nothing
 
@@ -502,6 +500,21 @@ getPredLabelsOfLabelNode g l_node =
         map (G.sourceOfEdge g . head . G.sortEdgesByInNumbers . G.inEdges g)
             preds
   in map (G.bbLabel . G.nodeType) sought_l_nodes
+
+-- | Adds an edge from the 'entry' label node to all data edges which currently
+-- have no in-bound edges (such data nodes represent either constants or input
+-- arguments).
+
+addEdgesToConstantsAndInputDataNodes :: ProcessState -> ProcessState
+addEdgesToConstantsAndInputDataNodes st =
+  let g = currentGraph st
+      all_d_nodes = filter G.isDataNode (G.allNodes g)
+      d_nodes_with_no_in_edges =
+        filter (\n -> (length $ G.inEdges g n) == 0) all_d_nodes
+      root_l_node = fromJust $ G.rootInCFG $ G.extractCFG g
+  in foldl (\st' -> \n -> addNewEdge st' root_l_node n)
+           st
+           d_nodes_with_no_in_edges
 
 
 
