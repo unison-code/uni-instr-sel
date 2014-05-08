@@ -29,6 +29,7 @@ import qualified Language.InstructionSelection.OpStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.ProgramModules.Base as PM
 import Language.InstructionSelection.DataTypes as D
+import Language.InstructionSelection.Utils (toNatural)
 import Data.Maybe
 
 
@@ -42,19 +43,39 @@ import Data.Maybe
 
 type SymToNodeMapping = (G.Node, Symbol)
 
+-- | Represents a mapping from constant symbol to a node currently in the
+-- operation structure.
+
+type ConstToNodeMapping = (G.Node, Constant)
+
+-- | Represents auxiliary phi node data which will be needed in order to correct
+-- the edge ordering. This is because the ordering is difficult to achieve as
+-- the operation structure is being built, which is why it is fixed as a
+-- post-step. The adjoining list of labels represents the labels of the basic
+-- blocks from which the data values originate, and the order of the list is
+-- exactly that of the edge ordering for the phi node just after it has been
+-- built.
+
+type AuxPhiNodeData = (G.Node, [G.BBLabel])
+
 -- | A tuple containing the intermediate data as the function is being
--- processed. This is also used during post-processing.
+-- processed.
 
 type ProcessState =
-  ( OS.OpStructure     -- ^ The operation structure.
-  , Maybe G.Node       -- ^ The last node (if any) that was touched. This is
-                       -- used to simplifying edge insertion. This value is
-                       -- ignored during post-processing.
-  , Maybe G.Node       -- ^ The label node which represents the basic block
-                       -- currently being processed.
-  , [SymToNodeMapping] -- ^ List of node-to-symbol mappings. If there are more
-                       -- than one mapping using the same symbol, then the last
-                       -- one occuring in the list should be picked.
+  ( OS.OpStructure       -- ^ The operation structure.
+  , Maybe G.Node         -- ^ The last node (if any) that was touched. This is
+                         -- used to simplifying edge insertion. This value is
+                         -- ignored during post-processing.
+  , Maybe G.Node         -- ^ The label node which represents the basic block
+                         -- currently being processed.
+  , [SymToNodeMapping]   -- ^ List of symbol-to-node mappings. If there are more
+                         -- than one mapping using the same symbol, then the
+                         -- last one occuring in the list should be picked.
+  , [ConstToNodeMapping] -- ^ List of constant-to-node mappings. If there are
+                         -- more than one mapping using the same symbol, then
+                         -- the last one occuring in the list should be picked.
+  , [AuxPhiNodeData]     -- ^ Auxiliary phi node data (see description of the
+                         -- type for more information).
   )
 
 
@@ -76,13 +97,24 @@ instance Show Symbol where
   show (GlobalStringSymbol str) = "@" ++ str
   show (TemporarySymbol int) = "t" ++ show int
 
+-- | Data type for retaining various constant values.
+
+data Constant
+    = IntConstant { bitWidth :: Integer, intValue :: Integer }
+    | FloatConstant Float
+    deriving (Eq)
+
+instance Show Constant where
+  show (IntConstant _ v) = show v
+  show (FloatConstant f) = show f
+
 
 
 -----------
 -- Classes
 -----------
 
--- | Class for converting an entity into a symbol.
+-- | Class for converting an LLVM symbol entity into a `Symbol`.
 
 class SymbolFormable a where
   toSymbol :: a -> Symbol
@@ -91,7 +123,14 @@ instance SymbolFormable LLVM.Name where
   toSymbol (LLVM.Name str) = LocalStringSymbol str
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
+-- | Class for converting an LLVM constant entity into a `Constant`.
 
+class ConstantFormable a where
+  toConstant :: a -> Constant
+
+instance ConstantFormable LLVMC.Constant where
+  toConstant (LLVMC.Int b v) = IntConstant (fromIntegral b) v
+  toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
 -- | Class for processing an LLVM AST element.
 
@@ -103,18 +142,6 @@ class Processable a where
   process :: ProcessState    -- ^ The current state.
              -> a            -- ^ The LLVM element to process.
              -> ProcessState -- ^ The new state.
-
--- | Class for post-processing an LLVM AST element.
-
-class PostProcessable a where
-
-  -- | Post-processes an LLVM element. This is done to correct the edge ordering
-  -- of the phi nodes, which is difficult to get right when the function is
-  -- processed the first time.
-
-  postProcess :: ProcessState    -- ^ The current state.
-                 -> a            -- ^ The LLVM element to post-process.
-                 -> ProcessState -- ^ The new state.
 
 
 
@@ -141,8 +168,8 @@ mkFunctionFromGlobalDef _ = Nothing
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
-  let st1 = process (OS.mkEmpty, Nothing, Nothing, []) bbs
-      st2 = postProcess st1 bbs
+  let st1 = process (OS.mkEmpty, Nothing, Nothing, [], [], []) bbs
+      st2 = fixPhiNodeEdgeOrdering st1
       os = currentOS st2
   in Just (PM.Function name os)
 mkFunction _ = Nothing
@@ -150,12 +177,12 @@ mkFunction _ = Nothing
 -- | Gets the operation structure from the state tuple.
 
 currentOS :: ProcessState -> OS.OpStructure
-currentOS (os, _, _, _) = os
+currentOS (os, _, _, _, _, _) = os
 
 -- | Updates the state with a new operation structure.
 
 updateOS :: ProcessState -> OS.OpStructure -> ProcessState
-updateOS (_, n, l, ms) os = (os, n, l, ms)
+updateOS (_, n, l, sms, cms, ads) os = (os, n, l, sms, cms, ads)
 
 -- | Gets the graph contained by the operation structure in a given state.
 
@@ -180,12 +207,13 @@ addNewNode st0 nt =
 -- operation structure in the state is empty, `Nothing` is returned.
 
 lastTouchedNode :: ProcessState -> Maybe G.Node
-lastTouchedNode (_, n, _, _) = n
+lastTouchedNode (_, n, _, _, _, _) = n
 
 -- | Updates the last touched node of a given state.
 
 updateLastTouchedNode :: ProcessState -> G.Node -> ProcessState
-updateLastTouchedNode (os, _, l, ms) n = (os, Just n, l, ms)
+updateLastTouchedNode (os, _, l, sms, cms, ads) n =
+  (os, Just n, l, sms, cms, ads)
 
 -- | Adds a new edge into a given state.
 
@@ -227,28 +255,58 @@ addConstraint st c = updateOS st $ OS.addConstraint (currentOS st) c
 -- | Gets the label node of a given state.
 
 currentLabelNode :: ProcessState -> Maybe G.Node
-currentLabelNode (_, _, l, _) = l
+currentLabelNode (_, _, l, _, _, _) = l
 
 -- | Updates the label node of a given state.
 
 updateLabelNode :: ProcessState -> G.Node -> ProcessState
-updateLabelNode (os, n, _, ms) l = (os, n, Just l, ms)
+updateLabelNode (os, n, _, sms, cms, ads) l = (os, n, Just l, sms, cms, ads)
 
--- | Gets the list of mappings of a given state.
+-- | Gets the list of symbol-to-node mappings of a given state.
 
-currentMappings :: ProcessState -> [SymToNodeMapping]
-currentMappings (_, _, _, ms) = ms
+currentSymMaps :: ProcessState -> [SymToNodeMapping]
+currentSymMaps (_, _, _, sms, _, _) = sms
 
--- | Adds a new mapping to a given state.
+-- | Adds a new symbol-to-node mapping to a given state.
 
-addMapping :: ProcessState -> SymToNodeMapping -> ProcessState
-addMapping (os, n, l, ms) m = (os, n, l, ms ++ [m])
+addSymMap :: ProcessState -> SymToNodeMapping -> ProcessState
+addSymMap (os, n, l, sms, cms, ads) sm = (os, n, l, sms ++ [sm], cms, ads)
+
+-- | Gets the list of constant-to-node mappings of a given state.
+
+currentConstMaps :: ProcessState -> [ConstToNodeMapping]
+currentConstMaps (_, _, _, _, cms, _) = cms
+
+-- | Adds a new constant-to-node mapping to a given state.
+
+addConstMap :: ProcessState -> ConstToNodeMapping -> ProcessState
+addConstMap (os, n, l, sms, cms, ads) cm = (os, n, l, sms, cms ++ [cm], ads)
+
+-- | Gets the list of auxiliary phi node data of a given state.
+
+currentAuxPhiNodeData :: ProcessState -> [AuxPhiNodeData]
+currentAuxPhiNodeData (_, _, _, _, _, as) = as
+
+-- | Adds additional auxiliary phi node data to a given state.
+
+addAuxPhiNodeData :: ProcessState -> AuxPhiNodeData -> ProcessState
+addAuxPhiNodeData (os, n, l, sms, cms, ads) ad =
+  (os, n, l, sms, cms, ads ++ [ad])
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
 
 mappedNodeFromSym :: [SymToNodeMapping] -> Symbol -> Maybe G.Node
 mappedNodeFromSym ms sym =
   let ns = filter (\m -> snd m == sym) ms
+  in if not $ null ns
+        then Just $ fst $ last ns
+        else Nothing
+
+-- | Gets the node ID (if any) to which a constant is mapped to.
+
+mappedNodeFromConst :: [ConstToNodeMapping] -> Constant -> Maybe G.Node
+mappedNodeFromConst ms c =
+  let ns = filter (\m -> snd m == c) ms
   in if not $ null ns
         then Just $ fst $ last ns
         else Nothing
@@ -261,12 +319,30 @@ processSym :: ProcessState    -- ^ The current state.
               -> Symbol       -- ^ The symbol.
               -> ProcessState -- ^ The new state.
 processSym st0 sym =
-    let node_for_sym = mappedNodeFromSym (currentMappings st0) sym
+    let node_for_sym = mappedNodeFromSym (currentSymMaps st0) sym
     in if isJust node_for_sym
        then updateLastTouchedNode st0 (fromJust node_for_sym)
        else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
                 d_node = fromJust $ lastTouchedNode st1
-                st2 = addMapping st1 (d_node, sym)
+                st2 = addSymMap st1 (d_node, sym)
+            in st2
+
+-- | Processes a constant. If a node mapping for that constant already exists,
+-- then the last touched node is updated to reflect that node. If a mapping does
+-- not exist, then a new data node is added.
+
+processConst :: ProcessState    -- ^ The current state.
+                -> Constant     -- ^ The constant.
+                -> ProcessState -- ^ The new state.
+processConst st0 c =
+    let node_for_c = mappedNodeFromConst (currentConstMaps st0) c
+    in if isJust node_for_c
+       then updateLastTouchedNode st0 (fromJust node_for_c)
+       else let st1 = addNewNode st0 (G.DataNode (toDataType c)
+                                                 (Just $ show c))
+                d_node = fromJust $ lastTouchedNode st1
+                st2 = addConstMap st1 (d_node, c)
+                -- TODO: add constant constraint
             in st2
 
 -- | Inserts a new node representing a computational operation, and adds edges
@@ -339,6 +415,12 @@ fromLlvmFPred LLVMF.ULE = Op.UFloatOp Op.LE
 fromLlvmFPred LLVMF.UNE = Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
+-- | Gets the corresponding DataType for a constant value.
+
+toDataType :: Constant -> D.DataType
+toDataType (IntConstant b _) = D.IntType (toNatural b)
+toDataType c = error $ "'toDataType' not implemented for " ++ show c
+
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
 
@@ -361,6 +443,14 @@ ensureLabelNodeExists st l =
   in if isJust label_node
         then updateLastTouchedNode st (fromJust label_node)
         else addNewNode st (G.LabelNode l)
+
+
+-- | Corrects the edge ordering of the phi nodes.
+
+fixPhiNodeEdgeOrdering :: ProcessState -> ProcessState
+fixPhiNodeEdgeOrdering st =
+  -- TODO: implement
+  st
 
 
 
@@ -437,8 +527,8 @@ instance Processable LLVM.Instruction where
   process st (LLVM.FCmp p op1 op2 _) =
     processCompOp st (fromLlvmFPred p) [op1, op2]
   process st0 (LLVM.Phi _ operands _) =
-    let processPhiElem st' (op, _) = process st' op
-        sts = scanl processPhiElem st0 operands
+    let (ops, l_names) = unzip operands
+        sts = scanl process st0 ops
         operand_ns = map (fromJust . lastTouchedNode) (tail sts)
         st1 = last sts
         st2 = addNewNode st1 G.PhiNode
@@ -448,7 +538,10 @@ instance Processable LLVM.Instruction where
         -- correct the order afterwards after all edges from the branches have
         -- been added
         st4 = addNewEdgesManySources st3 operand_ns op_node
-    in st4
+        l_strs = map (\(LLVM.Name str) -> str) l_names
+        labels = map G.BBLabel l_strs
+        st5 = addAuxPhiNodeData st4 (op_node, labels)
+    in st5
   process _ l = error $ "'process' not implemented for " ++ show l
 
 instance Processable LLVM.Terminator where
@@ -474,42 +567,5 @@ instance Processable LLVM.Terminator where
 
 instance Processable LLVM.Operand where
   process st (LLVM.LocalReference name) = process st name
-  process st (LLVM.ConstantOperand c) = process st c
+  process st (LLVM.ConstantOperand c) = processConst st (toConstant c)
   process _ o = error $ "'process' not supported for " ++ show o
-
-instance Processable LLVMC.Constant where
-  process st0 (LLVMC.Int b v) =
-    let st1 = addNewNode st0 (G.DataNode (fromIWidth b) (Just $ show v))
-        -- n = fromJust $ lastTouchedNode st1
-        -- TODO: add constant constraint
-        -- st2 = addConstraint st1 (C.EqExpr (C.AnIntegerExpr v) ())
-        st2 = st1
-    in st2
-  process _ l = error $ "'process' not implemented for " ++ show l
-
-
-
--------------------------------------
--- 'PostProcessable' class instances
--------------------------------------
-
-instance (PostProcessable a) => PostProcessable [a] where
-  postProcess = foldl postProcess
-
-instance (PostProcessable n) => PostProcessable (LLVM.Named n) where
-  postProcess st (_ LLVM.:= expr) = postProcess st expr
-  postProcess st (LLVM.Do expr) = postProcess st expr
-
-instance PostProcessable LLVM.BasicBlock where
-  postProcess st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let st1 = updateLabelNode st0 (fromJust $ getLabelNode st0 (G.BBLabel str))
-        st2 = foldl postProcess st1 insts
-    in st2
-  postProcess _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'postProcess' not supported for un-named basic blocks"
-
-instance PostProcessable LLVM.Instruction where
-  postProcess st0 (LLVM.Phi _ operands _) =
-    -- TODO: implement
-    st0
-  postProcess st _ = st
