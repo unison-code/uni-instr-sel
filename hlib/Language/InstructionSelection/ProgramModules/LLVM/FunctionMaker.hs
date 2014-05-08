@@ -29,7 +29,9 @@ import qualified Language.InstructionSelection.OpStructures as OS
 import qualified Language.InstructionSelection.OpTypes as Op
 import qualified Language.InstructionSelection.ProgramModules.Base as PM
 import Language.InstructionSelection.DataTypes as D
-import Language.InstructionSelection.Utils (toNatural)
+import Language.InstructionSelection.Utils ( computePosMapsOfPerm
+                                           , toNatural
+                                           )
 import Data.Maybe
 
 
@@ -100,7 +102,16 @@ instance Show Symbol where
 -- | Data type for retaining various constant values.
 
 data Constant
-    = IntConstant { bitWidth :: Integer, intValue :: Integer }
+    = IntConstant
+
+          -- | Bit width.
+
+          Integer
+
+          -- | Integer value.
+
+          Integer
+
     | FloatConstant Float
     deriving (Eq)
 
@@ -169,7 +180,7 @@ mkFunctionFromGlobalDef _ = Nothing
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
   let st1 = process (OS.mkEmpty, Nothing, Nothing, [], [], []) bbs
-      st2 = fixPhiNodeEdgeOrdering st1
+      st2 = fixAllPhiNodeEdgeOrderings st1
       os = currentOS st2
   in Just (PM.Function name os)
 mkFunction _ = Nothing
@@ -447,10 +458,46 @@ ensureLabelNodeExists st l =
 
 -- | Corrects the edge ordering of the phi nodes.
 
-fixPhiNodeEdgeOrdering :: ProcessState -> ProcessState
-fixPhiNodeEdgeOrdering st =
-  -- TODO: implement
-  st
+fixAllPhiNodeEdgeOrderings :: ProcessState -> ProcessState
+fixAllPhiNodeEdgeOrderings st =
+  foldl fixPhiNodeEdgeOrdering st (currentAuxPhiNodeData st)
+
+-- | Corrects the edge ordering for a single phi node.
+
+fixPhiNodeEdgeOrdering :: ProcessState -> AuxPhiNodeData -> ProcessState
+fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
+  let g = currentGraph st
+      in_edges_of_phi_node = G.sortEdgesByInNumbers $ G.inEdges g phi_node
+      -- The in-edge from the label node to the phi node is always first
+      pred_l_node_of_phi = G.sourceOfEdge g (head in_edges_of_phi_node)
+      pred_labels = getPredLabelsOfLabelNode g pred_l_node_of_phi
+      pos_maps = computePosMapsOfPerm phi_labels pred_labels
+      edge_nr_maps = zip (tail in_edges_of_phi_node)
+                         (map (+1) pos_maps)
+  in foldl (\st'
+            -> \(e, new_in_nr)
+            -> let g' = currentGraph st'
+                   new_e_label = G.EdgeLabel (G.outEdgeNr e)
+                                             (G.toEdgeNr new_in_nr)
+                   new_g = G.updateEdgeLabel new_e_label e g'
+               in updateGraph st' new_g
+           )
+           st
+           edge_nr_maps
+
+-- | Gets a list of labels of the label nodes which are the predecessors of
+-- another label node. The list is in the same order as the ordering of the
+-- in-edges.
+
+getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabel]
+getPredLabelsOfLabelNode g l_node =
+  -- The in-edges to the label node are always from control nodes, and for these
+  -- their first in-edge is always from the label node to which they belong
+  let preds = G.predecessors g l_node
+      l_preds_of_l_node =
+        map (G.sourceOfEdge g . head . G.sortEdgesByInNumbers . G.inEdges g)
+            preds
+  in map (G.bbLabel . G.nodeType) l_preds_of_l_node
 
 
 

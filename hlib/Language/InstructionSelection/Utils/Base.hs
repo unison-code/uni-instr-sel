@@ -1,18 +1,28 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstructionSelection.Misc.Utils
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
--- License     :  BSD-style (see the LICENSE file)
+-- Module      : Language.InstructionSelection.Misc.Utils
+-- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
+-- License     : BSD-style (see the LICENSE file)
 --
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
+-- Maintainer  : ghb@kth.se
+-- Stability   : experimental
+-- Portability : portable
 --
 -- Contains generic data types and functions.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Utils.Base where
+module Language.InstructionSelection.Utils.Base (
+  Natural (..)
+, Range (..)
+, computePosMapsOfPerm
+, fromNatural
+, removeDuplicates
+, toNatural
+) where
+
+import Data.Maybe
+
 
 
 ------------------------
@@ -86,3 +96,27 @@ removeDuplicates = rd []
         rd seen (x:xs)
            | x `elem` seen = rd seen xs
            | otherwise = rd (x:seen) xs
+
+-- | Takes two lists, where one list is a permutation of the another list, and
+-- returns a list of position mappings such that one list can be transformed
+-- into the other list just by rearranging the positions. If one list is not a
+-- permutation of the other, an error will occur.
+
+computePosMapsOfPerm :: Eq a
+                        => [a]       -- ^ A list.
+                        -> [a]       -- ^ A permutation of the first list.
+                        -> [Natural] -- ^ A list of position mappings.
+computePosMapsOfPerm ol pl =
+  let addPosMap e (index_in_ol, ms) =
+        let checkIndex i = i `notElem` ms && (pl !! i == e)
+            index_in_pl = until (\i -> maybe True checkIndex i)
+                                (\(Just i) -> let next_i = i + 1
+                                              in if next_i < length pl
+                                                 then Just next_i
+                                                 else Nothing)
+                                (Just 0)
+        in if isJust index_in_pl
+              then (index_in_ol - 1, (fromJust index_in_pl):ms)
+              else error "computePosMapsOfPerm: the lists are not the same"
+      (_, ms) = foldr addPosMap (length ol - 1, []) ol
+  in map toNatural ms
