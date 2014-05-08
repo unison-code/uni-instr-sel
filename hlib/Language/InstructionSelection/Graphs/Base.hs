@@ -112,6 +112,7 @@ module Language.InstructionSelection.Graphs.Base (
 , toMapping
 , toMatchset
 , toNodeId
+, updateEdgeLabel
 , updateEdgeSource
 , updateEdgeTarget
 , updateNodeId
@@ -471,7 +472,8 @@ nodesByNodeId g i = filter ((i ==) . nodeId) $ allNodes g
 updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
 updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (allNodes g)
-  in mkGraph (Node (intNodeId n, new_label):all_nodes_but_n) (allEdges g)
+      new_n = Node (intNodeId n, new_label)
+  in mkGraph (new_n:all_nodes_but_n) (allEdges g)
 
 -- | Updates the node ID of an already existing node.
 
@@ -609,6 +611,14 @@ addNewEdge (from_n, to_n) (Graph g) =
       new_e = (from_node_id, to_node_id, EdgeLabel out_edge_nr in_edge_nr)
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
+
+-- | Updates the edge label of an already existing edge.
+
+updateEdgeLabel ::  EdgeLabel -> Edge -> Graph -> Graph
+updateEdgeLabel new_label e@(Edge (src, dst, _)) g =
+  let all_edges_but_e = filter (/= e) (allEdges g)
+      new_e = Edge (src, dst, new_label)
+  in mkGraph (allNodes g) (new_e:all_edges_but_e)
 
 -- | Gets the node that was last added to the graph, which is the node with the
 -- highest internal node ID.
