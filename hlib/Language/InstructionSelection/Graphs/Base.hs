@@ -103,6 +103,8 @@ module Language.InstructionSelection.Graphs.Base (
 , redirectInEdges
 , redirectOutEdges
 , rootInCFG
+, sortEdgesByInNumbers
+, sortEdgesByOutNumbers
 , sourceOfEdge
 , successors
 , targetOfEdge
@@ -656,8 +658,7 @@ inEdges (Graph g) n = map toEdge $ I.inn g (intNodeId n)
 outEdges :: Graph -> Node -> [Edge]
 outEdges (Graph g) n = map toEdge $ I.out g (intNodeId n)
 
--- | Gets a particular edge or edges between two nodes. If there are more than
--- one edge, the list will be sorted in increasing order of out-edge numbers.
+-- | Gets a particular edge or edges between two nodes.
 
 edges :: Graph
         -> Node -- ^ The 'from' node.
@@ -669,10 +670,21 @@ edges g from_n to_n =
       to_id = intNodeId to_n
       es = map toEdge
            $ filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges
-      sorted_es = sortBy
-                  (\n -> \m -> if inEdgeNr n < inEdgeNr m then LT else GT)
-                  es
-  in sorted_es
+  in es
+
+-- | Sorts a list of edges according to their in-edge numbers (in increasing
+-- order).
+
+sortEdgesByInNumbers :: [Edge] -> [Edge]
+sortEdgesByInNumbers =
+  sortBy (\n -> \m -> if inEdgeNr n < inEdgeNr m then LT else GT)
+
+-- | Sorts a list of edges according to their out-edge numbers (in increasing
+-- order).
+
+sortEdgesByOutNumbers :: [Edge] -> [Edge]
+sortEdgesByOutNumbers =
+  sortBy (\n -> \m -> if outEdgeNr n < outEdgeNr m then LT else GT)
 
 -- | Gets the source node of an edge.
 
@@ -820,8 +832,8 @@ matchingOrderingOfInEdges fg pg st m =
       pn = pNode m
       preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
       preds_fn = mappedNodesPToF st preds_pn
-      es = zip (concatMap (flip (edges pg) pn) preds_pn)
-               (concatMap (flip (edges fg) fn) preds_fn)
+      es = zip (sortEdgesByInNumbers (concatMap (flip (edges pg) pn) preds_pn))
+               (sortEdgesByInNumbers (concatMap (flip (edges fg) fn) preds_fn))
   in if checkOrderingOfInEdges pg pn
         then all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
         else True
@@ -838,8 +850,8 @@ matchingOrderingOfOutEdges fg pg st m =
       pn = pNode m
       succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
       succs_fn = mappedNodesPToF st succs_pn
-      es = zip (concatMap (edges pg pn) succs_pn)
-               (concatMap (edges fg fn) succs_fn)
+      es = zip (sortEdgesByOutNumbers (concatMap (edges pg pn) succs_pn))
+               (sortEdgesByOutNumbers (concatMap (edges fg fn) succs_fn))
   in if checkOrderingOfOutEdges pg pn
         then all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
         else True
@@ -859,8 +871,10 @@ matchingOutEdgeOrderingOfPreds fg pg st m =
       preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
       pn_ord_preds =  filter (checkOrderingOfOutEdges pg) preds_pn
       fn_ord_preds = mappedNodesPToF st pn_ord_preds
-      es = zip (concatMap (flip (edges pg) pn) pn_ord_preds)
-               (concatMap (flip (edges fg) fn) fn_ord_preds)
+      es = zip (sortEdgesByOutNumbers
+                 (concatMap (flip (edges pg) pn) pn_ord_preds))
+               (sortEdgesByOutNumbers
+                 (concatMap (flip (edges fg) fn) fn_ord_preds))
   in all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
 
 -- | Same as matchingOutEdgeOrderingOfPreds but for successors and their inbound
@@ -877,8 +891,8 @@ matchingInEdgeOrderingOfSuccs fg pg st m =
       succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
       pn_ord_succs =  filter (checkOrderingOfInEdges pg) succs_pn
       fn_ord_succs = mappedNodesPToF st pn_ord_succs
-      es = zip (concatMap (edges pg pn) pn_ord_succs)
-               (concatMap (edges fg fn) fn_ord_succs)
+      es = zip (sortEdgesByInNumbers (concatMap (edges pg pn) pn_ord_succs))
+               (sortEdgesByInNumbers (concatMap (edges fg fn) fn_ord_succs))
   in all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
 
 -- | From a matchset and a list of function nodes, get the list of corresponding
