@@ -37,7 +37,9 @@ toDotGraph g = GV.graphToDot mkParams (intGraph g)
 -- | Constructs the appropriate parameters.
 
 mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
-mkParams = GV.nonClusteredParams { GV.fmtNode = mkNodeAttr }
+mkParams = GV.nonClusteredParams { GV.fmtNode = mkNodeAttr
+                                 , GV.fmtEdge = mkEdgeAttr
+                                 }
 
 -- | Constructs the appropriate node attributes, depending on the node type.
 
@@ -62,3 +64,9 @@ mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
 mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape]
 mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape]
 mkNodeTypeAttr NullNode = [GV.shape GV.Circle, GV.style GV.dashed]
+
+-- | Constructs the appropriate edge attributes.
+
+mkEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
+mkEdgeAttr (_, _, EdgeLabel out_nr in_nr) =
+  [GV.toLabel $ show out_nr ++ ":" ++ show in_nr]
