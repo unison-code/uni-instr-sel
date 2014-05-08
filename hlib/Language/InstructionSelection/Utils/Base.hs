@@ -52,9 +52,9 @@ fromNatural (Natural i) = i
 instance Num Natural where
     fromInteger = toNatural
     x + y       = toNatural (fromNatural x + fromNatural y)
-    x - y       = let r = fromNatural x - fromNatural y in
-                      if r < 0 then error "Subtraction yielded a negative value"
-                               else toNatural r
+    x - y       = let r = fromNatural x - fromNatural y
+                  in if r < 0 then error "Subtraction yielded a negative value"
+                              else toNatural r
     x * y       = toNatural (fromNatural x * fromNatural y)
     abs x       = x
     signum x    = toNatural $ signum $ fromNatural x
@@ -62,6 +62,15 @@ instance Num Natural where
 instance Enum Natural where
   toEnum = toNatural . toInteger
   fromEnum = fromInteger . fromNatural
+
+instance Real Natural where
+  toRational (Natural i) = toRational i
+
+instance Integral Natural where
+  quotRem (Natural x) (Natural y) = ( toNatural $ quot x y
+                                    , toNatural $ rem x y
+                                    )
+  toInteger (Natural i) = i
 
 
 
