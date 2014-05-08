@@ -180,10 +180,11 @@ mkFunctionFromGlobalDef _ = Nothing
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
   let st1 = process (OS.mkEmpty, Nothing, Nothing, [], [], []) bbs
-      st2 = fixAllPhiNodeEdgeOrderings st1
-      st3 = addEdgesToConstantsAndInputDataNodes st2
-      os = currentOS st3
-  in Just (PM.Function name os)
+      st2 = fixPhiNodeEdgeOrderings st1
+      os1 = currentOS st2
+      os2 = addMissingInEdgesToDataNodes os1
+      os3 = insertTransferNodes os2
+  in Just (PM.Function name os3)
 mkFunction _ = Nothing
 
 -- | Gets the operation structure from the state tuple.
@@ -459,8 +460,8 @@ ensureLabelNodeExists st l =
 
 -- | Corrects the edge ordering of the phi nodes.
 
-fixAllPhiNodeEdgeOrderings :: ProcessState -> ProcessState
-fixAllPhiNodeEdgeOrderings st =
+fixPhiNodeEdgeOrderings :: ProcessState -> ProcessState
+fixPhiNodeEdgeOrderings st =
   foldl fixPhiNodeEdgeOrdering st (currentAuxPhiNodeData st)
 
 -- | Corrects the edge ordering for a single phi node.
@@ -475,8 +476,7 @@ fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
       pos_maps = computePosMapsOfPerm phi_labels pred_labels
       edge_nr_maps = zip (tail in_edges_of_phi_node)
                          (map (+1) pos_maps)
-  in foldl (\st'
-            -> \(e, new_in_nr)
+  in foldl (\st' (e, new_in_nr)
             -> let g' = currentGraph st'
                    new_e_label = G.EdgeLabel (G.outEdgeNr e)
                                              (G.toEdgeNr new_in_nr)
@@ -505,16 +505,24 @@ getPredLabelsOfLabelNode g l_node =
 -- have no in-bound edges (such data nodes represent either constants or input
 -- arguments).
 
-addEdgesToConstantsAndInputDataNodes :: ProcessState -> ProcessState
-addEdgesToConstantsAndInputDataNodes st =
-  let g = currentGraph st
+addMissingInEdgesToDataNodes :: OS.OpStructure -> OS.OpStructure
+addMissingInEdgesToDataNodes os =
+  let g = OS.osGraph os
       all_d_nodes = filter G.isDataNode (G.allNodes g)
       d_nodes_with_no_in_edges =
         filter (\n -> (length $ G.inEdges g n) == 0) all_d_nodes
       root_l_node = fromJust $ G.rootInCFG $ G.extractCFG g
-  in foldl (\st' -> \n -> addNewEdge st' root_l_node n)
-           st
-           d_nodes_with_no_in_edges
+      new_g = foldl (\g' e -> fst $ G.addNewEdge e g')
+                    g
+                    (zip (repeat root_l_node) d_nodes_with_no_in_edges)
+  in OS.updateGraph os new_g
+
+-- | Inserts a transfer node between between each use of a data node.
+
+insertTransferNodes :: OS.OpStructure -> OS.OpStructure
+insertTransferNodes g =
+  -- | TODO: implement
+  g
 
 
 
