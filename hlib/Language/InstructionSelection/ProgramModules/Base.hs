@@ -23,7 +23,6 @@ module Language.InstructionSelection.ProgramModules.Base (
   Function (..)
 ) where
 
-import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
 import Data.Maybe
 
