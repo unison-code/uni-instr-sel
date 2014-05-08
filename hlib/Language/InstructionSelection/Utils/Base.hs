@@ -117,6 +117,9 @@ computePosMapsOfPerm ol pl =
                                 (Just 0)
         in if isJust index_in_pl
               then (index_in_ol - 1, (fromJust index_in_pl):ms)
-              else error "computePosMapsOfPerm: the lists are not the same"
+              else error ("computePosMapsOfPerm: the lists do not contain the "
+                          ++ "same elements")
       (_, ms) = foldr addPosMap (length ol - 1, []) ol
-  in map toNatural ms
+  in if length ol == length pl
+     then map toNatural ms
+     else error "computePosMapsOfPerm: the lists are not of equal lengths"
