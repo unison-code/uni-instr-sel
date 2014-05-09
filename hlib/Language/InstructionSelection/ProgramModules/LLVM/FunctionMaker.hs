@@ -522,9 +522,21 @@ addMissingInEdgesToDataNodes os =
 -- | Inserts a transfer node between between each use of a data node.
 
 insertTransferNodes :: OS.OpStructure -> OS.OpStructure
-insertTransferNodes g =
-  -- | TODO: implement
-  g
+insertTransferNodes os =
+  let g = OS.osGraph os
+      all_d_nodes = filter G.isDataNode (G.allNodes g)
+      all_out_edges_from_d_nodes = concatMap (G.outEdges g) all_d_nodes
+      new_g = foldl insertTransfer g all_out_edges_from_d_nodes
+  in OS.updateGraph os new_g
+
+-- | Inserts a transfer and data node along a given edge.
+
+insertTransfer :: G.Graph -> G.Edge -> G.Graph
+insertTransfer g0 e =
+  let (g1, new_n) = G.insertNewNodeAlongEdge G.TransferNode e g0
+      new_e = head $ G.outEdges g1 new_n
+      (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
+  in g2
 
 
 
