@@ -59,6 +59,7 @@ module Language.InstructionSelection.Graphs.Base (
 , fromNodeId
 , inEdgeNr
 , inEdges
+, insertNewNodeAlongEdge
 , isActionNode
 , isComputationNode
 , isComputationNodeType
@@ -128,9 +129,6 @@ import Language.InstructionSelection.Utils ( Natural
 import qualified Data.Graph.Inductive as I
 import Data.List (sortBy)
 import Data.Maybe
-
--- TODO: remove
-import Debug.Trace
 
 
 
@@ -596,7 +594,7 @@ addNewNode nt (Graph g) =
       new_g = Graph (I.insNode new_n g)
   in (new_g, Node new_n)
 
--- | Adds a new edge between to nodes to the graph. The edge numberings will be
+-- | Adds a new edge between two nodes to the graph. The edge numberings will be
 -- set accordingly.
 
 addNewEdge :: ( Node -- ^ Source node (from).
@@ -614,6 +612,27 @@ addNewEdge (from_n, to_n) (Graph g) =
       new_e = (from_node_id, to_node_id, EdgeLabel out_edge_nr in_edge_nr)
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
+
+-- | Inserts a new node along an existing edge in the graph. The existing edge
+-- will be split into two edges which will be connected to the new node. The
+-- edge numbers will be retained as appropriate.
+
+insertNewNodeAlongEdge :: NodeType
+                          -> Edge
+                          -> Graph
+                          -> ( Graph -- ^ The new graph.
+                             , Node  -- ^ The new node.
+                             )
+insertNewNodeAlongEdge nt
+                       e@(Edge (from_nid, to_nid, EdgeLabel out_e_nr in_e_nr))
+                       (Graph g0) =
+  let ((Graph g1), new_n) = addNewNode nt (Graph g0)
+      (Graph g2) = delEdge e (Graph g1)
+      new_e1 = (from_nid, intNodeId new_n, EdgeLabel out_e_nr 0)
+      new_e2 = (intNodeId new_n, to_nid, EdgeLabel 0 in_e_nr)
+      g3 = I.insEdge new_e1 g2
+      g4 = I.insEdge new_e2 g3
+  in (Graph g4, new_n)
 
 -- | Updates the edge label of an already existing edge.
 
