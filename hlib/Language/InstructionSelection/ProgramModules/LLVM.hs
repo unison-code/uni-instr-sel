@@ -12,6 +12,8 @@
 
 module Language.InstructionSelection.ProgramModules.LLVM (
   module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker
+, module Language.InstructionSelection.ProgramModules.LLVM.Lowerer
 ) where
 
 import Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker
+import Language.InstructionSelection.ProgramModules.LLVM.Lowerer

@@ -46,6 +46,7 @@ lowerGlobalDef (Function l v cc ps t n tup fs ms1 w ms2 bbs) =
       (_, bbs_list) = mapAccumL lowerBB acc bbs
       new_bbs  = concat bbs_list
   in Function l v cc ps t n tup fs ms1 w ms2 new_bbs
+lowerGlobalDef d = d
 
 getBBLabel :: BasicBlock -> Name
 getBBLabel (BasicBlock l _ _) = l
