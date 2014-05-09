@@ -9,8 +9,6 @@
 -- Portability : portable
 --
 -- Converts a graph into a GraphViz graph of DotGraph format.
---
--- TODO: enforce edge ordering
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Graphs.GraphViz (
@@ -57,13 +55,14 @@ mkNodeTypeAttr (DataNode _ src) =
   let shape_attr = GV.shape GV.BoxShape
   in if isJust src
         then [shape_attr, GV.toLabel $ fromJust src]
-        else [shape_attr]
+        else [shape_attr, GV.toLabel ""]
 mkNodeTypeAttr (LabelNode (BBLabel l)) =
   [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel l]
 mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
-mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape]
-mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape]
-mkNodeTypeAttr NullNode = [GV.shape GV.Circle, GV.style GV.dashed]
+mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape, GV.toLabel ""]
+mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape, GV.toLabel ""]
+mkNodeTypeAttr NullNode =
+  [ GV.shape GV.Circle, GV.style GV.dashed, GV.toLabel ""]
 
 -- | Constructs the appropriate edge attributes.
 
