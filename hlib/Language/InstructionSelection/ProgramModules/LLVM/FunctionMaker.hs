@@ -12,6 +12,8 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
+--
+-- TODO: enforce calling conventions
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
