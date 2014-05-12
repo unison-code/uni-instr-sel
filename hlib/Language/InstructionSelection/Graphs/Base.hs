@@ -192,10 +192,10 @@ data NodeType
 
           dataType :: D.DataType
 
-          -- | If the data node represents a particular temporary or variable
-          -- which is specified in the source code, then the name of that entity
-          -- can be given here as a string. This will only be used for debugging
-          -- and pretty-printing purposes.
+          -- | If the data node represents a particular temporary, variable or
+          -- constant which is specified in the source code, then the name of
+          -- that entity can be given here as a string. This will only be used
+          -- for debugging and pretty-printing purposes.
 
         , dataOrigin :: Maybe String
 
