@@ -79,6 +79,7 @@ module Language.InstructionSelection.Graphs.Base (
 , isOfPhiNodeType
 , isOfStateNodeType
 , isPhiNode
+, isRetControlNode
 , isStateNode
 , lastAddedNode
 , mappedNodeFToP
@@ -347,6 +348,9 @@ isComputationNode n = isOfComputationNodeType $ nodeType n
 
 isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ nodeType n
+
+isRetControlNode :: Node -> Bool
+isRetControlNode n = isControlNode n && (contOp $ nodeType n) == O.Ret
 
 isDataNode :: Node -> Bool
 isDataNode n = isOfDataNodeType $ nodeType n
