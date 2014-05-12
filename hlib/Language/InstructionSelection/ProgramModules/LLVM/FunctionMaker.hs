@@ -228,13 +228,12 @@ mkFunction (LLVM.Function _ _ cc _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs)
       st3 = process st2 bbs
       st4 = fixPhiNodeEdgeOrderings st3
       st5 = setCallingConventions st4 cc
-      os1 = theOS st5
-      os2 = addMissingInEdgesToDataNodes os1
-      os3 = insertCopyNodes os2
+      st6 = addMissingInEdgesToDataNodes st5
+      st7 = insertCopyNodes st6
   in Just (PM.Function { PM.functionName = fname
-                       , PM.functionOS = os3
-                       , PM.functionInputs = theFuncInputs st5
-                       , PM.functionReturns = theFuncRets st5
+                       , PM.functionOS = theOS st7
+                       , PM.functionInputs = theFuncInputs st7
+                       , PM.functionReturns = theFuncRets st7
                        })
 mkFunction _ = Nothing
 
@@ -321,12 +320,12 @@ addConstMap st cm = st { theConstMaps = theConstMaps st ++ [cm] }
 addAuxPhiNodeData :: ProcessState -> AuxPhiNodeData -> ProcessState
 addAuxPhiNodeData st ad = st { thePhiData = thePhiData st ++ [ad] }
 
--- | Adds a function argument node to a given state.
+-- | Adds a data node representing a function argument to a given state.
 
 addFuncInput :: ProcessState -> G.Node -> ProcessState
 addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeId n] }
 
--- | Adds a function return node to a given state.
+-- | Adds a data node representing a return value to a given state.
 
 addFuncRet :: ProcessState -> G.Node -> ProcessState
 addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeId n] }
@@ -543,11 +542,11 @@ getPredLabelsOfLabelNode g l_node =
 
 -- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
--- arguments). No existing node IDs will be changed!
+-- arguments).
 
-addMissingInEdgesToDataNodes :: OS.OpStructure -> OS.OpStructure
-addMissingInEdgesToDataNodes os =
-  let g = OS.osGraph os
+addMissingInEdgesToDataNodes :: ProcessState -> ProcessState
+addMissingInEdgesToDataNodes st =
+  let g = theOSGraph st
       all_d_nodes = filter G.isDataNode (G.allNodes g)
       d_nodes_with_no_in_edges =
         filter (\n -> (length $ G.inEdges g n) == 0) all_d_nodes
@@ -555,27 +554,38 @@ addMissingInEdgesToDataNodes os =
       new_g = foldl (\g' e -> fst $ G.addNewEdge e g')
                     g
                     (zip (repeat root_l_node) d_nodes_with_no_in_edges)
-  in os { OS.osGraph = new_g }
+  in updateOSGraph st new_g
 
--- | Inserts a copy node between between each use of a data node. No existing
--- node IDs will be changed!
+-- | Inserts a copy node between between each use of a data node.
 
-insertCopyNodes :: OS.OpStructure -> OS.OpStructure
-insertCopyNodes os =
-  let g = OS.osGraph os
+insertCopyNodes :: ProcessState -> ProcessState
+insertCopyNodes st =
+  let g = theOSGraph st
       all_d_nodes = filter G.isDataNode (G.allNodes g)
       all_out_edges_from_d_nodes = concatMap (G.outEdges g) all_d_nodes
-      new_g = foldl insertCopy g all_out_edges_from_d_nodes
-  in os { OS.osGraph = new_g }
+      new_st = foldl insertCopy st all_out_edges_from_d_nodes
+  in new_st
 
 -- | Inserts a copy and data node along a given edge.
 
-insertCopy :: G.Graph -> G.Edge -> G.Graph
-insertCopy g0 e =
-  let (g1, new_n) = G.insertNewNodeAlongEdge G.CopyNode e g0
-      new_e = head $ G.outEdges g1 new_n
+insertCopy :: ProcessState -> G.Edge -> ProcessState
+insertCopy st0 e =
+  let g0 = theOSGraph st0
+      orig_src_n = G.sourceOfEdge g0 e
+      orig_dst_n = G.targetOfEdge g0 e
+      -- Modify graph
+      (g1, new_d_node) = G.insertNewNodeAlongEdge G.CopyNode e g0
+      new_e = head $ G.outEdges g1 new_d_node
       (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
-  in g2
+      st1 = updateOSGraph st0 g2
+  in if G.isRetControlNode orig_dst_n
+        then let rets = [ nid | nid <- theFuncRets st1
+                              , nid /= G.nodeId orig_src_n ]
+             in st1 { theFuncRets = (G.nodeId new_d_node):rets }
+        else st1
+
+-- | Adds the appropriate constraints on the data nodes to enforce a particular
+-- calling convention.
 
 setCallingConventions :: ProcessState
                          -> LLVMCC.CallingConvention
@@ -679,9 +689,16 @@ instance Processable LLVM.Instruction where
 instance Processable LLVM.Terminator where
   process st0 (LLVM.Ret op _) =
     let st1 = processControlOp st0 Op.Ret (maybeToList op)
-        n = fromJust $ lastTouchedNode st1
-        st2 = addFuncRet st1 n
-    in st2
+    in if isJust op
+       then let ret_n = fromJust $ lastTouchedNode st1
+                g = theOSGraph st1
+                preds = map (G.sourceOfEdge g)
+                            (G.sortEdgesByInNumbers $ G.inEdges g ret_n)
+                -- For return nodes, the edge from the value node always
+                -- appears last when ordered by in-edge numbers
+                d_node = last preds
+            in addFuncRet st1 d_node
+       else st1
   process st0 (LLVM.Br (LLVM.Name dst) _) =
     let st1 = processControlOp st0 Op.UncondBranch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC

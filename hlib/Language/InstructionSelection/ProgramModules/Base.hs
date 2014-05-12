@@ -41,15 +41,15 @@ data Function
 
         , functionOS :: OpStructure
 
-          -- | The IDs of the nodes in the operation structure which represent
-          -- the function input arguments. The order of the list is the same as
-          -- the order specified in the original code from which the semantics
-          -- have been derived.
+          -- | The IDs of the data nodes in the operation structure which
+          -- represent the function input arguments. The order of the list is
+          -- the same as the order specified in the original code from which the
+          -- semantics have been derived.
 
         , functionInputs :: [NodeId]
 
-          -- | The IDs of the nodes in the operation structure which represent
-          -- the function return statements. The order is undefined.
+          -- | The IDs of the data nodes in the operation structure which
+          -- represent the function return values. The order is undefined.
 
         , functionReturns :: [NodeId]
 
