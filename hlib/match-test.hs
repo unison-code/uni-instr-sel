@@ -193,6 +193,7 @@ main =
                              )
                            )
                            (
+                             Int2NumExpr $
                              AnIntegerExpr 0
                            )
                          ]

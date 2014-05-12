@@ -163,10 +163,10 @@ replaceNodeIdsPToFInConstraints :: Matchset NodeId
                                   -> [Constraint]
                                   -> [Constraint]
 replaceNodeIdsPToFInConstraints m cs =
-  map (BoolExprConstraint . (replaceInBoolExpr m) . boolExpr) cs
-  where replaceFunc (BoolExprConstraint e) m = BoolExprConstraint $
+  map (replaceFunc m) cs
+  where replaceFunc m (BoolExprConstraint e) = BoolExprConstraint $
                                                replaceInBoolExpr m e
-        replaceFunc c _ = c
+        replaceFunc _ c = c
 
 replaceInBoolExpr :: Matchset NodeId -> BoolExpr -> BoolExpr
 replaceInBoolExpr m (EqExpr  lhs rhs) =
@@ -198,7 +198,8 @@ replaceInNumExpr m (PlusExpr  lhs rhs) =
   PlusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
 replaceInNumExpr m (MinusExpr lhs rhs) =
   MinusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInNumExpr _ (AnIntegerExpr i) = AnIntegerExpr i
+replaceInNumExpr m (Int2NumExpr e) =
+  Int2NumExpr (replaceInIntExpr m e)
 replaceInNumExpr m (Bool2NumExpr e) =
   Bool2NumExpr (replaceInBoolExpr m e)
 replaceInNumExpr m (NodeId2NumExpr e) =
@@ -216,6 +217,11 @@ replaceInNumExpr m (RegisterId2NumExpr e) =
 replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
   DistanceBetweenInstanceAndLabelExpr (replaceInInstanceIdExpr m pat_e)
                                       (replaceInLabelIdExpr m lab_e)
+
+replaceInIntExpr :: Matchset NodeId -> IntExpr -> IntExpr
+replaceInIntExpr _ (AnIntegerExpr i) = AnIntegerExpr i
+replaceInIntExpr m (IntConstValueOfDataNodeExpr e) =
+  IntConstValueOfDataNodeExpr $ replaceInNodeIdExpr m e
 
 replaceInNodeIdExpr :: Matchset NodeId -> NodeIdExpr -> NodeIdExpr
 replaceInNodeIdExpr m (ANodeIdExpr i) =

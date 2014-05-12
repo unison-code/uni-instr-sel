@@ -13,6 +13,7 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Language.InstructionSelection.CPModel.JsonDumper (
   toJson
@@ -21,7 +22,6 @@ module Language.InstructionSelection.CPModel.JsonDumper (
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs ( NodeId
-                                            , Matchset (..)
                                             , fromNodeId
                                             )
 import Language.InstructionSelection.Patterns ( InstanceId
@@ -34,8 +34,7 @@ import Language.InstructionSelection.Utils ( Natural (..)
                                            , fromNatural
                                            )
 import Data.Aeson
-import Data.ByteString.Lazy.Char8 ( pack
-                                  , unpack
+import Data.ByteString.Lazy.Char8 ( unpack
                                   )
 import Data.List (intercalate)
 
@@ -70,9 +69,9 @@ instance ToJSON FunctionGraphData where
            , "root-label"   .= (funcRootLabel d)
            , "constraints"  .= (funcConstraints d)
            ]
-    where f (id, domset) = object [ "node"   .= id
-                                  , "domset" .= domset
-                                  ]
+    where f (nid, domset) = object [ "node"   .= nid
+                                   , "domset" .= domset
+                                   ]
 
 instance ToJSON PatternInstanceData where
   toJSON d =
@@ -99,15 +98,17 @@ instance ToJSON MachineData where
 
 instance ToJSON Constraint where
   toJSON (BoolExprConstraint e) = toJSON $ boolExpr2Str e
+  toJSON (IsIntConstantConstraint nid) =
+    toJSON $ "(is-int-const " ++ show (fromNodeId nid) ++ ")"
 
 instance ToJSON NodeId where
-  toJSON i = toJSON (fromNodeId i)
+  toJSON nid = toJSON (fromNodeId nid)
 
 instance ToJSON InstanceId where
-  toJSON i = toJSON (fromInstanceId i)
+  toJSON iid = toJSON (fromInstanceId iid)
 
 instance ToJSON RegisterId where
-  toJSON i = toJSON (fromRegisterId i)
+  toJSON rid = toJSON (fromRegisterId rid)
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
@@ -148,7 +149,7 @@ numExpr2Str (PlusExpr  lhs rhs) =
   "(+ " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
 numExpr2Str (MinusExpr lhs rhs) =
   "(- " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
-numExpr2Str (AnIntegerExpr i) = show i
+numExpr2Str (Int2NumExpr e) = intExpr2Str e
 numExpr2Str (Bool2NumExpr e) =
   "(bool-to-num " ++ boolExpr2Str e ++ ")"
 numExpr2Str (NodeId2NumExpr e) =
@@ -167,11 +168,16 @@ numExpr2Str (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
   "(dist-pat-to-lab " ++ instanceIdExpr2Str pat_e ++
   " " ++ labelIdExpr2Str lab_e ++ ")"
 
+intExpr2Str :: IntExpr -> String
+intExpr2Str (AnIntegerExpr i) = show i
+intExpr2Str (IntConstValueOfDataNodeExpr e) =
+  "(int-const-val-of-dnode " ++ nodeIdExpr2Str e ++ ")"
+
 nodeIdExpr2Str :: NodeIdExpr -> String
-nodeIdExpr2Str (ANodeIdExpr i) = show i
+nodeIdExpr2Str (ANodeIdExpr nid) = show nid
 
 instanceIdExpr2Str :: InstanceIdExpr -> String
-instanceIdExpr2Str (AnInstanceIdExpr i) = show i
+instanceIdExpr2Str (AnInstanceIdExpr iid) = show iid
 instanceIdExpr2Str (CovererOfActionNodeExpr e) =
   "(cov-of-anode " ++ nodeIdExpr2Str e ++ ")"
 instanceIdExpr2Str (DefinerOfDataNodeExpr e) =
@@ -181,12 +187,12 @@ instanceIdExpr2Str (DefinerOfStateNodeExpr e) =
 instanceIdExpr2Str ThisInstanceIdExpr = "this"
 
 instructionIdExpr2Str :: InstructionIdExpr -> String
-instructionIdExpr2Str (AnInstructionIdExpr i) = show i
+instructionIdExpr2Str (AnInstructionIdExpr iid) = show iid
 instructionIdExpr2Str (InstructionIdOfPatternExpr e) =
   "(instr-of-pat " ++ patternIdExpr2Str e ++ ")"
 
 patternIdExpr2Str :: PatternIdExpr -> String
-patternIdExpr2Str (APatternIdExpr i) = show i
+patternIdExpr2Str (APatternIdExpr nid) = show nid
 patternIdExpr2Str (PatternIdOfInstanceExpr e) =
   "(pat-of-insta " ++ instanceIdExpr2Str e ++ ")"
 
@@ -197,7 +203,7 @@ labelIdExpr2Str (LabelIdOfLabelNodeExpr e) =
   "(lab-id-of-node " ++ nodeIdExpr2Str e ++ ")"
 
 registerIdExpr2Str :: RegisterIdExpr -> String
-registerIdExpr2Str (ARegisterIdExpr i) = show i
+registerIdExpr2Str (ARegisterIdExpr rid) = show rid
 registerIdExpr2Str (RegisterIdAllocatedToDataNodeExpr e) =
   "(reg-alloc-to-dnode " ++ nodeIdExpr2Str e ++ ")"
 
