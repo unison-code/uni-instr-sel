@@ -47,7 +47,7 @@ data Constraint
       -- integer value. Constraints on the value itself are provided via the
       -- 'BoolExprConstraint'.
 
-    | IsIntConstantConstraint { constantNode :: NodeId }
+    | IsIntConstantConstraint { intConstNode :: NodeId }
 
     deriving (Show)
 
