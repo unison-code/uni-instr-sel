@@ -36,8 +36,18 @@ import Language.InstructionSelection.TargetMachine (RegisterId)
 -- Data types
 --------------
 
-newtype Constraint
+data Constraint
+
+      -- | A constraint represented as a Boolean expression.
+
     = BoolExprConstraint { boolExpr :: BoolExpr }
+
+      -- | A constraint indicating that a particular node represents a constant
+      -- integer value. Constraints on the value itself are provided via the
+      -- 'BoolExprConstraint'.
+
+    | IsIntConstantConstraint { constantNode :: NodeId }
+
     deriving (Show)
 
 -- | Boolean expressions. For binary operations the first argument is always the
@@ -90,11 +100,11 @@ data NumExpr
     = PlusExpr  NumExpr NumExpr
     | MinusExpr NumExpr NumExpr
 
-      -- | Introduces an integer.
+      -- | Converts an integer value to a numerical expression.
 
-    | AnIntegerExpr Integer
+    | Int2NumExpr IntExpr
 
-      -- | Converts a Boolean to a numerical expression.
+      -- | Converts a Boolean value to a numerical expression.
 
     | Bool2NumExpr BoolExpr
 
@@ -132,6 +142,22 @@ data NumExpr
 
     deriving (Show)
 
+-- | Integer value expressions.
+
+data IntExpr
+
+      -- | Introduces an integer value.
+
+    = AnIntegerExpr Integer
+
+      -- | Retrieves the value of a data node which represents an integer
+      -- constant. This expression *must* be used together with
+      -- 'IsIntConstantConstraint'!
+
+    | IntConstValueOfDataNodeExpr NodeIdExpr
+
+    deriving (Show)
+
 -- | Node ID expressions.
 
 data NodeIdExpr
@@ -152,22 +178,19 @@ data InstanceIdExpr
 
     = AnInstanceIdExpr InstanceId
 
-      -- | Represents the ID of this pattern instance ID.
+      -- | Retrieves the ID of this pattern instance ID.
 
     | ThisInstanceIdExpr
 
-      -- | Represents the pattern instance ID which covers a certain action
-      -- node.
+      -- | Retrieves the pattern instance ID which covers a certain action node.
 
     | CovererOfActionNodeExpr NodeIdExpr
 
-      -- | Represents the pattern instance ID which defines a certain data
-      -- node.
+      -- | Retrieves the pattern instance ID which defines a certain data node.
 
     | DefinerOfDataNodeExpr NodeIdExpr
 
-      -- | Represents the pattern instance ID which defines a certain state
-      -- node.
+      -- | Retrieves the pattern instance ID which defines a certain state node.
 
     | DefinerOfStateNodeExpr NodeIdExpr
 
@@ -183,7 +206,7 @@ data InstructionIdExpr
 
     = AnInstructionIdExpr InstructionId
 
-      -- | Represents the instruction ID to which a pattern belongs.
+      -- | Retrieves the instruction ID to which a pattern belongs.
 
     | InstructionIdOfPatternExpr PatternIdExpr
 
@@ -199,8 +222,7 @@ data PatternIdExpr
 
     = APatternIdExpr PatternId
 
-      -- | Represents the pattern ID to which a pattern instance is derived
-      -- from.
+      -- | Retrieves the pattern ID to which a pattern instance is derived from.
 
     | PatternIdOfInstanceExpr InstanceIdExpr
 
@@ -212,12 +234,12 @@ data PatternIdExpr
 
 data LabelIdExpr
 
-      -- | Represents the ID of the label to which a pattern instance has been
+      -- | Retrieves the ID of the label to which a pattern instance has been
       -- allocated.
 
     = LabelIdAllocatedToInstanceExpr InstanceIdExpr
 
-      -- | Represents the label ID associated with a label node.
+      -- | Retrieves the label ID associated with a label node.
 
     | LabelIdOfLabelNodeExpr NodeIdExpr
 
@@ -233,7 +255,7 @@ data RegisterIdExpr
 
     = ARegisterIdExpr RegisterId
 
-      -- | Represents the ID of the register to which a data node has been
+      -- | Retrieves the ID of the register to which a data node has been
       -- allocated.
 
     | RegisterIdAllocatedToDataNodeExpr NodeIdExpr
@@ -261,12 +283,12 @@ data SetExpr
 
           SetExpr
 
-      -- | Represents the dominator set of a label ID.
+      -- | Retrieves the dominator set of a label ID.
 
     | DomSetOfLabelIdExpr LabelIdExpr
 
-      -- | Represents a register class (which is expressed as a set of
-      -- individual registers belonging to that class).
+      -- | Retrieves a register class (which is expressed as a set of individual
+      -- registers belonging to that class).
 
     | RegisterClassExpr [RegisterIdExpr]
 
