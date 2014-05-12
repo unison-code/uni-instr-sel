@@ -62,24 +62,24 @@ module Language.InstructionSelection.Graphs.Base (
 , insertNewNodeAlongEdge
 , isActionNode
 , isComputationNode
-, isComputationNodeType
 , isControlNode
-, isControlNodeType
+, isCopyNode
 , isDataNode
-, isDataNodeType
 , isEntityNode
 , isInGraph
 , isInMatchset
 , isLabelNode
-, isLabelNodeType
 , isNullNode
-, isNullNodeType
+, isOfComputationNodeType
+, isOfControlNodeType
+, isOfCopyNodeType
+, isOfDataNodeType
+, isOfLabelNodeType
+, isOfNullNodeType
+, isOfPhiNodeType
+, isOfStateNodeType
 , isPhiNode
-, isPhiNodeType
 , isStateNode
-, isStateNodeType
-, isCopyNode
-, isCopyNodeType
 , lastAddedNode
 , mappedNodeFToP
 , mappedNodePToF
@@ -343,60 +343,60 @@ isEntityNode n =
   || isStateNode n
 
 isComputationNode :: Node -> Bool
-isComputationNode n = isComputationNodeType $ nodeType n
+isComputationNode n = isOfComputationNodeType $ nodeType n
 
 isControlNode :: Node -> Bool
-isControlNode n = isControlNodeType $ nodeType n
+isControlNode n = isOfControlNodeType $ nodeType n
 
 isDataNode :: Node -> Bool
-isDataNode n = isDataNodeType $ nodeType n
+isDataNode n = isOfDataNodeType $ nodeType n
 
 isLabelNode :: Node -> Bool
-isLabelNode n = isLabelNodeType $ nodeType n
+isLabelNode n = isOfLabelNodeType $ nodeType n
 
 isNullNode :: Node -> Bool
-isNullNode n = isNullNodeType $ nodeType n
+isNullNode n = isOfNullNodeType $ nodeType n
 
 isPhiNode :: Node -> Bool
-isPhiNode n = isPhiNodeType $ nodeType n
+isPhiNode n = isOfPhiNodeType $ nodeType n
 
 isStateNode :: Node -> Bool
-isStateNode n = isStateNodeType $ nodeType n
+isStateNode n = isOfStateNodeType $ nodeType n
 
 isCopyNode :: Node -> Bool
-isCopyNode n = isCopyNodeType $ nodeType n
+isCopyNode n = isOfCopyNodeType $ nodeType n
 
-isComputationNodeType :: NodeType -> Bool
-isComputationNodeType (ComputationNode _) = True
-isComputationNodeType _ = False
+isOfComputationNodeType :: NodeType -> Bool
+isOfComputationNodeType (ComputationNode _) = True
+isOfComputationNodeType _ = False
 
-isControlNodeType :: NodeType -> Bool
-isControlNodeType (ControlNode _) = True
-isControlNodeType _ = False
+isOfControlNodeType :: NodeType -> Bool
+isOfControlNodeType (ControlNode _) = True
+isOfControlNodeType _ = False
 
-isDataNodeType :: NodeType -> Bool
-isDataNodeType (DataNode _ _) = True
-isDataNodeType _ = False
+isOfDataNodeType :: NodeType -> Bool
+isOfDataNodeType (DataNode _ _) = True
+isOfDataNodeType _ = False
 
-isLabelNodeType :: NodeType -> Bool
-isLabelNodeType (LabelNode _) = True
-isLabelNodeType _ = False
+isOfLabelNodeType :: NodeType -> Bool
+isOfLabelNodeType (LabelNode _) = True
+isOfLabelNodeType _ = False
 
-isNullNodeType :: NodeType -> Bool
-isNullNodeType NullNode = True
-isNullNodeType _ = False
+isOfNullNodeType :: NodeType -> Bool
+isOfNullNodeType NullNode = True
+isOfNullNodeType _ = False
 
-isPhiNodeType :: NodeType -> Bool
-isPhiNodeType PhiNode = True
-isPhiNodeType _ = False
+isOfPhiNodeType :: NodeType -> Bool
+isOfPhiNodeType PhiNode = True
+isOfPhiNodeType _ = False
 
-isStateNodeType :: NodeType -> Bool
-isStateNodeType StateNode = True
-isStateNodeType _ = False
+isOfStateNodeType :: NodeType -> Bool
+isOfStateNodeType StateNode = True
+isOfStateNodeType _ = False
 
-isCopyNodeType :: NodeType -> Bool
-isCopyNodeType CopyNode = True
-isCopyNodeType _ = False
+isOfCopyNodeType :: NodeType -> Bool
+isOfCopyNodeType CopyNode = True
+isOfCopyNodeType _ = False
 
 -- | Creates an empty graph.
 
