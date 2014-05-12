@@ -185,7 +185,7 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
       st2 = fixPhiNodeEdgeOrderings st1
       os1 = currentOS st2
       os2 = addMissingInEdgesToDataNodes os1
-      os3 = insertTransferNodes os2
+      os3 = insertCopyNodes os2
   in Just (PM.Function name os3)
 mkFunction _ = Nothing
 
@@ -519,21 +519,21 @@ addMissingInEdgesToDataNodes os =
                     (zip (repeat root_l_node) d_nodes_with_no_in_edges)
   in OS.updateGraph os new_g
 
--- | Inserts a transfer node between between each use of a data node.
+-- | Inserts a copy node between between each use of a data node.
 
-insertTransferNodes :: OS.OpStructure -> OS.OpStructure
-insertTransferNodes os =
+insertCopyNodes :: OS.OpStructure -> OS.OpStructure
+insertCopyNodes os =
   let g = OS.osGraph os
       all_d_nodes = filter G.isDataNode (G.allNodes g)
       all_out_edges_from_d_nodes = concatMap (G.outEdges g) all_d_nodes
-      new_g = foldl insertTransfer g all_out_edges_from_d_nodes
+      new_g = foldl insertCopy g all_out_edges_from_d_nodes
   in OS.updateGraph os new_g
 
--- | Inserts a transfer and data node along a given edge.
+-- | Inserts a copy and data node along a given edge.
 
-insertTransfer :: G.Graph -> G.Edge -> G.Graph
-insertTransfer g0 e =
-  let (g1, new_n) = G.insertNewNodeAlongEdge G.TransferNode e g0
+insertCopy :: G.Graph -> G.Edge -> G.Graph
+insertCopy g0 e =
+  let (g1, new_n) = G.insertNewNodeAlongEdge G.CopyNode e g0
       new_e = head $ G.outEdges g1 new_n
       (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
   in g2

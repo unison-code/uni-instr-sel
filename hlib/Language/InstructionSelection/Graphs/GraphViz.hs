@@ -19,7 +19,9 @@ import Language.InstructionSelection.Graphs.Base
 import Language.InstructionSelection.PrettyPrint
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
+import qualified Data.GraphViz.Attributes.Complete as GVA
 import Data.Maybe
+import Data.Text.Lazy
 
 
 
@@ -60,12 +62,15 @@ mkNodeTypeAttr (LabelNode (BBLabel l)) =
   [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel l]
 mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
 mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape, GV.toLabel ""]
-mkNodeTypeAttr TransferNode = [GV.shape GV.DiamondShape, GV.toLabel ""]
+mkNodeTypeAttr CopyNode = [GV.shape GV.DiamondShape, GV.toLabel ""]
 mkNodeTypeAttr NullNode =
-  [ GV.shape GV.Circle, GV.style GV.dashed, GV.toLabel ""]
+  [GV.shape GV.Circle, GV.style GV.dashed, GV.toLabel ""]
 
 -- | Constructs the appropriate edge attributes.
 
 mkEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
 mkEdgeAttr (_, _, EdgeLabel out_nr in_nr) =
-  [GV.toLabel $ show out_nr ++ ":" ++ show in_nr]
+  [ GVA.TailLabel (GV.toLabelValue $ show out_nr)
+  , GVA.HeadLabel (GV.toLabelValue $ show in_nr)
+  , GVA.LabelDistance 2.0
+  ]

@@ -78,8 +78,8 @@ module Language.InstructionSelection.Graphs.Base (
 , isPhiNodeType
 , isStateNode
 , isStateNodeType
-, isTransferNode
-, isTransferNodeType
+, isCopyNode
+, isCopyNodeType
 , lastAddedNode
 , mappedNodeFToP
 , mappedNodePToF
@@ -204,7 +204,7 @@ data NodeType
     | LabelNode { bbLabel :: BBLabel }
     | PhiNode
     | StateNode
-    | TransferNode
+    | CopyNode
 
       -- | A node which matches any other node, meaning that @n == m@ is always
       -- @True@ if either @n@ or @m@ is of type 'NullNode'. Only to be used
@@ -335,7 +335,7 @@ isActionNode n =
      isComputationNode n
   || isControlNode n
   || isPhiNode n
-  || isTransferNode n
+  || isCopyNode n
 
 isEntityNode :: Node -> Bool
 isEntityNode n =
@@ -363,8 +363,8 @@ isPhiNode n = isPhiNodeType $ nodeType n
 isStateNode :: Node -> Bool
 isStateNode n = isStateNodeType $ nodeType n
 
-isTransferNode :: Node -> Bool
-isTransferNode n = isTransferNodeType $ nodeType n
+isCopyNode :: Node -> Bool
+isCopyNode n = isCopyNodeType $ nodeType n
 
 isComputationNodeType :: NodeType -> Bool
 isComputationNodeType (ComputationNode _) = True
@@ -394,9 +394,9 @@ isStateNodeType :: NodeType -> Bool
 isStateNodeType StateNode = True
 isStateNodeType _ = False
 
-isTransferNodeType :: NodeType -> Bool
-isTransferNodeType TransferNode = True
-isTransferNodeType _ = False
+isCopyNodeType :: NodeType -> Bool
+isCopyNodeType CopyNode = True
+isCopyNodeType _ = False
 
 -- | Creates an empty graph.
 
@@ -775,7 +775,7 @@ matchingNodeTypes (DataNode d1 _) (DataNode d2 _) =
 matchingNodeTypes (LabelNode _) (LabelNode _) = True
 matchingNodeTypes PhiNode PhiNode = True
 matchingNodeTypes StateNode StateNode = True
-matchingNodeTypes TransferNode TransferNode = True
+matchingNodeTypes CopyNode CopyNode = True
 matchingNodeTypes NullNode _ = True
 matchingNodeTypes _ NullNode = True
 matchingNodeTypes _ _ = False
