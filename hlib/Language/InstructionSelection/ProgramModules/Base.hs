@@ -23,6 +23,7 @@ module Language.InstructionSelection.ProgramModules.Base (
   Function (..)
 ) where
 
+import Language.InstructionSelection.Graphs (NodeId)
 import Language.InstructionSelection.OpStructures
 
 
@@ -39,6 +40,18 @@ data Function
           -- | The semantics of the function.
 
         , functionOS :: OpStructure
+
+          -- | The IDs of the nodes in the operation structure which represent
+          -- the function input arguments. The order of the list is the same as
+          -- the order specified in the original code from which the semantics
+          -- have been derived.
+
+        , functionInputs :: [NodeId]
+
+          -- | The IDs of the nodes in the operation structure which represent
+          -- the function return statements. The order is undefined.
+
+        , functionReturns :: [NodeId]
 
       }
     deriving (Show)

@@ -22,8 +22,6 @@ module Language.InstructionSelection.OpStructures.Base (
   OpStructure (..)
 , addConstraint
 , mkEmpty
-, updateConstraints
-, updateGraph
 ) where
 
 import Language.InstructionSelection.Constraints
@@ -38,7 +36,7 @@ import qualified Language.InstructionSelection.Graphs as G
 data OpStructure
     = OpStructure {
           osGraph :: G.Graph
-        , osConstraints :: [Constraint]
+        , osConstrs :: [Constraint]
       }
     deriving (Show)
 
@@ -53,11 +51,5 @@ data OpStructure
 mkEmpty :: OpStructure
 mkEmpty = OpStructure G.mkEmpty []
 
-updateGraph :: OpStructure -> G.Graph -> OpStructure
-updateGraph (OpStructure _ cs) g = OpStructure g cs
-
 addConstraint :: OpStructure -> Constraint -> OpStructure
-addConstraint (OpStructure g cs) c = OpStructure g (cs ++ [c])
-
-updateConstraints :: OpStructure -> [Constraint] -> OpStructure
-updateConstraints (OpStructure g _) cs = OpStructure g cs
+addConstraint os c = os { osConstrs = osConstrs os ++ [c] }
