@@ -301,6 +301,11 @@ addNewEdgesManyDests st src dsts =
 addOSConstraint :: ProcessState -> C.Constraint -> ProcessState
 addOSConstraint st c = st { theOS = OS.addConstraint (theOS st) c }
 
+-- | Adds a list of new constraints into a given state.
+
+addOSConstraints :: ProcessState -> [C.Constraint] -> ProcessState
+addOSConstraints st cs = foldl addOSConstraint st cs
+
 -- | Adds a new symbol-to-node mapping to a given state.
 
 addSymMap :: ProcessState -> SymToNodeMapping -> ProcessState
@@ -375,8 +380,24 @@ processConst st0 c =
                                                  (Just $ show c))
                 d_node = fromJust $ lastTouchedNode st1
                 st2 = addConstMap st1 (d_node, c)
-                -- TODO: add constant constraint
-            in st2
+                st3 = addOSConstraints st2 (mkConstConstraints c d_node)
+            in st3
+
+mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
+mkConstConstraints (IntConstant _ v) n =
+  [ C.IsIntConstantConstraint $ G.nodeId n
+  , C.BoolExprConstraint $
+    C.EqExpr
+    (
+      C.Int2NumExpr $
+      C.IntConstValueOfDataNodeExpr $
+      C.ANodeIdExpr $ G.nodeId n
+    )
+    (
+      C.Int2NumExpr $
+      C.AnIntegerExpr v
+    )
+  ]
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
