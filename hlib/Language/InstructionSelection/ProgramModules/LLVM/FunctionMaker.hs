@@ -220,16 +220,18 @@ mkFunctionFromGlobalDef _ = Nothing
 -- not a function, `Nothing` is returned.
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name name) _ _ _ _ _ bbs) =
-  let st1 = process initialState bbs
-      st2 = fixPhiNodeEdgeOrderings st1
-      os1 = theOS st2
+mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
+  let st1 = initialState
+      st2 = process st1 params
+      st3 = process st2 bbs
+      st4 = fixPhiNodeEdgeOrderings st3
+      os1 = theOS st4
       os2 = addMissingInEdgesToDataNodes os1
       os3 = insertCopyNodes os2
-  in Just (PM.Function { PM.functionName = name
+  in Just (PM.Function { PM.functionName = fname
                        , PM.functionOS = os3
-                       , PM.functionInputs = theFuncInputs st2
-                       , PM.functionReturns = theFuncRets st2
+                       , PM.functionInputs = theFuncInputs st4
+                       , PM.functionReturns = theFuncRets st4
                        })
 mkFunction _ = Nothing
 
@@ -310,6 +312,16 @@ addConstMap st cm = st { theConstMaps = theConstMaps st ++ [cm] }
 
 addAuxPhiNodeData :: ProcessState -> AuxPhiNodeData -> ProcessState
 addAuxPhiNodeData st ad = st { thePhiData = thePhiData st ++ [ad] }
+
+-- | Adds a function argument node to a given state.
+
+addFuncInput :: ProcessState -> G.Node -> ProcessState
+addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeId n] }
+
+-- | Adds a function return node to a given state.
+
+addFuncRet :: ProcessState -> G.Node -> ProcessState
+addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeId n] }
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
 
@@ -634,7 +646,11 @@ instance Processable LLVM.Instruction where
   process _ l = error $ "'process' not implemented for " ++ show l
 
 instance Processable LLVM.Terminator where
-  process st (LLVM.Ret op _) = processControlOp st Op.Ret (maybeToList op)
+  process st0 (LLVM.Ret op _) =
+    let st1 = processControlOp st0 Op.Ret (maybeToList op)
+        n = fromJust $ lastTouchedNode st1
+        st2 = addFuncRet st1 n
+    in st2
   process st0 (LLVM.Br (LLVM.Name dst) _) =
     let st1 = processControlOp st0 Op.UncondBranch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
@@ -658,3 +674,10 @@ instance Processable LLVM.Operand where
   process st (LLVM.LocalReference name) = process st name
   process st (LLVM.ConstantOperand c) = processConst st (toConstant c)
   process _ o = error $ "'process' not supported for " ++ show o
+
+instance Processable LLVM.Parameter where
+  process st0 (LLVM.Parameter _ pname _) =
+    let st1 = process st0 pname
+        n = fromJust $ lastTouchedNode st1
+        st2 = addFuncInput st1 n
+    in st2
