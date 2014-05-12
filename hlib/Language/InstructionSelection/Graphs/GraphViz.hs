@@ -21,7 +21,6 @@ import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Attributes.Complete as GVA
 import Data.Maybe
-import Data.Text.Lazy
 
 
 
