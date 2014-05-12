@@ -17,6 +17,7 @@ module Language.InstructionSelection.Constraints.Base (
 , Constraint (..)
 , InstanceIdExpr (..)
 , InstructionIdExpr (..)
+, IntExpr (..)
 , LabelIdExpr (..)
 , NodeIdExpr (..)
 , NumExpr (..)
