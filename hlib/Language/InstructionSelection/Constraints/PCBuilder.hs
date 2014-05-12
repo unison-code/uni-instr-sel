@@ -35,7 +35,7 @@ mkBBAllocConstraints :: Graph -> [Constraint]
 mkBBAllocConstraints g =
   let root_label = rootInCFG $ extractCFG g
   in if isJust root_label
-        then [ Constraint $
+        then [ BoolExprConstraint $
                EqExpr
                (
                  LabelId2NumExpr $

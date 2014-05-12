@@ -98,7 +98,7 @@ instance ToJSON MachineData where
            ]
 
 instance ToJSON Constraint where
-  toJSON (Constraint e) = toJSON $ boolExpr2Str e
+  toJSON (BoolExprConstraint e) = toJSON $ boolExpr2Str e
 
 instance ToJSON NodeId where
   toJSON i = toJSON (fromNodeId i)

@@ -180,7 +180,7 @@ main =
                        , mkBBAllocConstraints br_pattern
                        , mkBBAllocConstraints br_fallthrough_pattern
                          ++
-                         [ Constraint $
+                         [ BoolExprConstraint $
                            EqExpr
                            (
                              DistanceBetweenInstanceAndLabelExpr
@@ -197,7 +197,7 @@ main =
                            )
                          ]
                        , mkBBAllocConstraints ret_pattern
-                       , [ Constraint $
+                       , [ BoolExprConstraint $
                            AndExpr
                            (
                              EqExpr
@@ -225,7 +225,7 @@ main =
                                ANodeIdExpr 2
                              )
                            )
-                         , Constraint $
+                         , BoolExprConstraint $
                            EqExpr
                            (
                              LabelId2NumExpr $
@@ -237,7 +237,7 @@ main =
                              LabelIdAllocatedToInstanceExpr $
                              ThisInstanceIdExpr
                            )
-                         , Constraint $
+                         , BoolExprConstraint $
                            AndExpr
                            (
                              InSetExpr
@@ -267,7 +267,7 @@ main =
                                ANodeIdExpr 4
                              )
                            )
-                         , Constraint $
+                         , BoolExprConstraint $
                            NotExpr $
                            (
                              AndExpr

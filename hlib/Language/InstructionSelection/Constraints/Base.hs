@@ -24,8 +24,6 @@ module Language.InstructionSelection.Constraints.Base (
 , RegisterIdExpr (..)
 , SetElemExpr (..)
 , SetExpr (..)
-, fromConstraint
-, toConstraint
 ) where
 
 import Language.InstructionSelection.Graphs (NodeId)
@@ -39,7 +37,7 @@ import Language.InstructionSelection.TargetMachine (RegisterId)
 --------------
 
 newtype Constraint
-    = Constraint BoolExpr
+    = BoolExprConstraint { boolExpr :: BoolExpr }
     deriving (Show)
 
 -- | Boolean expressions. For binary operations the first argument is always the
@@ -289,15 +287,3 @@ data SetElemExpr
     | RegisterId2SetElemExpr RegisterIdExpr
 
     deriving (Show)
-
-
-
--------------
--- Functions
--------------
-
-toConstraint :: BoolExpr -> Constraint
-toConstraint = Constraint
-
-fromConstraint :: Constraint -> BoolExpr
-fromConstraint (Constraint e) = e

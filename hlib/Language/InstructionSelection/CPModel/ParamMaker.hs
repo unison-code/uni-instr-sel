@@ -163,7 +163,10 @@ replaceNodeIdsPToFInConstraints :: Matchset NodeId
                                   -> [Constraint]
                                   -> [Constraint]
 replaceNodeIdsPToFInConstraints m cs =
-  map (toConstraint . (replaceInBoolExpr m) . fromConstraint) cs
+  map (BoolExprConstraint . (replaceInBoolExpr m) . boolExpr) cs
+  where replaceFunc (BoolExprConstraint e) m = BoolExprConstraint $
+                                               replaceInBoolExpr m e
+        replaceFunc c _ = c
 
 replaceInBoolExpr :: Matchset NodeId -> BoolExpr -> BoolExpr
 replaceInBoolExpr m (EqExpr  lhs rhs) =
