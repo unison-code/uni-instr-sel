@@ -36,7 +36,7 @@ import qualified Language.InstructionSelection.Graphs as G
 data OpStructure
     = OpStructure {
           osGraph :: G.Graph
-        , osConstrs :: [Constraint]
+        , osConstraints :: [Constraint]
       }
     deriving (Show)
 
@@ -52,4 +52,4 @@ mkEmpty :: OpStructure
 mkEmpty = OpStructure G.mkEmpty []
 
 addConstraint :: OpStructure -> Constraint -> OpStructure
-addConstraint os c = os { osConstrs = osConstrs os ++ [c] }
+addConstraint os c = os { osConstraints = osConstraints os ++ [c] }
