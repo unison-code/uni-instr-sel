@@ -20,6 +20,7 @@ module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
 ) where
 
 import qualified LLVM.General.AST as LLVM
+import qualified LLVM.General.AST.CallingConvention as LLVMCC
 import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
@@ -220,18 +221,20 @@ mkFunctionFromGlobalDef _ = Nothing
 -- not a function, `Nothing` is returned.
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
+mkFunction (LLVM.Function _ _ cc _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs)
+  =
   let st1 = initialState
       st2 = process st1 params
       st3 = process st2 bbs
       st4 = fixPhiNodeEdgeOrderings st3
-      os1 = theOS st4
+      st5 = setCallingConventions st4 cc
+      os1 = theOS st5
       os2 = addMissingInEdgesToDataNodes os1
       os3 = insertCopyNodes os2
   in Just (PM.Function { PM.functionName = fname
                        , PM.functionOS = os3
-                       , PM.functionInputs = theFuncInputs st4
-                       , PM.functionReturns = theFuncRets st4
+                       , PM.functionInputs = theFuncInputs st5
+                       , PM.functionReturns = theFuncRets st5
                        })
 mkFunction _ = Nothing
 
@@ -552,6 +555,13 @@ insertCopy g0 e =
       new_e = head $ G.outEdges g1 new_n
       (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
   in g2
+
+setCallingConventions :: ProcessState
+                         -> LLVMCC.CallingConvention
+                         -> ProcessState
+setCallingConventions st0 cc =
+  -- TODO: implement
+  st0
 
 
 
