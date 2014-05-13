@@ -45,7 +45,7 @@ import Data.List ( mapAccumL
 
 main :: IO ()
 main =
-  do let func = mkGraph
+  do let func_g = mkGraph
                 (map Node
                 [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
                 , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
@@ -88,6 +88,19 @@ main =
                 , (14, 6, EdgeLabel 0 0)
                 , (15, 9, EdgeLabel 0 1)
                 ])
+         func_cs = [ IsIntConstantConstraint 0
+                   , BoolExprConstraint $
+                     EqExpr
+                     (
+                       Int2NumExpr $
+                       IntConstValueOfDataNodeExpr $
+                       ANodeIDExpr 0
+                     )
+                     (
+                       Int2NumExpr $
+                       AnIntegerExpr 0
+                     )
+                   ]
          init_def_pattern = mkGraph
                 (map Node
                 [ (0, NodeLabel 0 (LabelNode $ BBLabel "start"))
@@ -185,11 +198,11 @@ main =
                            (
                              DistanceBetweenInstanceAndLabelExpr
                              (
-                               ThisInstanceIdExpr
+                               ThisPatternInstanceIDExpr
                              )
                              (
-                               LabelIdOfLabelNodeExpr $
-                               ANodeIdExpr 1
+                               LabelIDOfLabelNodeExpr $
+                               ANodeIDExpr 1
                              )
                            )
                            (
@@ -203,69 +216,69 @@ main =
                            (
                              EqExpr
                              (
-                               RegisterId2NumExpr $
-                               RegisterIdAllocatedToDataNodeExpr $
-                               ANodeIdExpr 0
+                               RegisterID2NumExpr $
+                               RegisterIDAllocatedToDataNodeExpr $
+                               ANodeIDExpr 0
                              )
                              (
-                               RegisterId2NumExpr $
-                               RegisterIdAllocatedToDataNodeExpr $
-                               ANodeIdExpr 1
+                               RegisterID2NumExpr $
+                               RegisterIDAllocatedToDataNodeExpr $
+                               ANodeIDExpr 1
                              )
                            )
                            (
                              EqExpr
                              (
-                               RegisterId2NumExpr $
-                               RegisterIdAllocatedToDataNodeExpr $
-                               ANodeIdExpr 1
+                               RegisterID2NumExpr $
+                               RegisterIDAllocatedToDataNodeExpr $
+                               ANodeIDExpr 1
                              )
                              (
-                               RegisterId2NumExpr $
-                               RegisterIdAllocatedToDataNodeExpr $
-                               ANodeIdExpr 2
+                               RegisterID2NumExpr $
+                               RegisterIDAllocatedToDataNodeExpr $
+                               ANodeIDExpr 2
                              )
                            )
                          , BoolExprConstraint $
                            EqExpr
                            (
-                             LabelId2NumExpr $
-                             LabelIdOfLabelNodeExpr $
-                             ANodeIdExpr 5
+                             LabelID2NumExpr $
+                             LabelIDOfLabelNodeExpr $
+                             ANodeIDExpr 5
                            )
                            (
-                             LabelId2NumExpr $
-                             LabelIdAllocatedToInstanceExpr $
-                             ThisInstanceIdExpr
+                             LabelID2NumExpr $
+                             LabelIDAllocatedToInstanceExpr $
+                             ThisPatternInstanceIDExpr
                            )
                          , BoolExprConstraint $
                            AndExpr
                            (
                              InSetExpr
                              (
-                               LabelId2SetElemExpr $
-                               LabelIdAllocatedToInstanceExpr $
+                               LabelID2SetElemExpr $
+                               LabelIDAllocatedToInstanceExpr $
                                DefinerOfDataNodeExpr $
-                               ANodeIdExpr 0
+                               ANodeIDExpr 0
                              )
                              (
-                               DomSetOfLabelIdExpr $
-                               LabelIdOfLabelNodeExpr $
-                               ANodeIdExpr 3
+                               DomSetOfLabelIDExpr $
+                               LabelIDOfLabelNodeExpr $
+                               ANodeIDExpr 3
                              )
                            )
                            (
                              InSetExpr
                              (
-                               LabelId2SetElemExpr $
-                               LabelIdAllocatedToInstanceExpr $
+                               LabelID2SetElemExpr $
+                               LabelIDAllocatedToInstanceExpr $
                                DefinerOfDataNodeExpr $
-                               ANodeIdExpr 1
+                               ANodeIDExpr 1
                              )
                              (
-                               DomSetOfLabelIdExpr $
-                               LabelIdOfLabelNodeExpr $
-                               ANodeIdExpr 4
+                               DomSetOfLabelIDExpr $
+                               LabelIDOfLabelNodeExpr $
+                               ANodeIDExpr 4
                              )
                            )
                          , BoolExprConstraint $
@@ -275,44 +288,44 @@ main =
                              (
                                InSetExpr
                                (
-                                 LabelId2SetElemExpr $
-                                 LabelIdAllocatedToInstanceExpr $
+                                 LabelID2SetElemExpr $
+                                 LabelIDAllocatedToInstanceExpr $
                                  DefinerOfDataNodeExpr $
-                                 ANodeIdExpr 0
+                                 ANodeIDExpr 0
                                )
                                (
                                  IntersectSetExpr
                                  (
-                                   DomSetOfLabelIdExpr $
-                                   LabelIdOfLabelNodeExpr $
-                                   ANodeIdExpr 3
+                                   DomSetOfLabelIDExpr $
+                                   LabelIDOfLabelNodeExpr $
+                                   ANodeIDExpr 3
                                  )
                                  (
-                                   DomSetOfLabelIdExpr $
-                                   LabelIdOfLabelNodeExpr $
-                                   ANodeIdExpr 4
+                                   DomSetOfLabelIDExpr $
+                                   LabelIDOfLabelNodeExpr $
+                                   ANodeIDExpr 4
                                  )
                                )
                              )
                              (
                                InSetExpr
                                (
-                                 LabelId2SetElemExpr $
-                                 LabelIdAllocatedToInstanceExpr $
+                                 LabelID2SetElemExpr $
+                                 LabelIDAllocatedToInstanceExpr $
                                  DefinerOfDataNodeExpr $
-                                 ANodeIdExpr 1
+                                 ANodeIDExpr 1
                                )
                                (
                                  IntersectSetExpr
                                  (
-                                   DomSetOfLabelIdExpr $
-                                   LabelIdOfLabelNodeExpr $
-                                   ANodeIdExpr 3
+                                   DomSetOfLabelIDExpr $
+                                   LabelIDOfLabelNodeExpr $
+                                   ANodeIDExpr 3
                                  )
                                  (
-                                   DomSetOfLabelIdExpr $
-                                   LabelIdOfLabelNodeExpr $
-                                   ANodeIdExpr 4
+                                   DomSetOfLabelIDExpr $
+                                   LabelIDOfLabelNodeExpr $
+                                   ANodeIDExpr 4
                                  )
                                )
                              )
@@ -335,9 +348,9 @@ main =
                       , InstProperties 1 1
                       , InstProperties 1 1
                       ]
-         list_of_matchsets = map (match func) patterns
+         list_of_matchsets = map (match func_g) patterns
          (_, list_of_matchsets_with_ids) =
-           mapAccumL (\curr sets -> ( curr + (toInstanceId $ length sets)
+           mapAccumL (\curr sets -> ( curr + (toPatternInstanceID $ length sets)
                                     , zip sets [curr..]
                                     )
                      )
@@ -350,12 +363,12 @@ main =
                      list_of_matchsets_with_ids
                      inst_props
                      no_use_def_cs)
-         params = mkParams (OpStructure func [])
+         params = mkParams (OpStructure func_g func_cs)
                            (TargetMachine [ ("r0", 0)
                                           , ("r1", 1)
                                           , ("r2", 2)
                                           ])
                            pattern_data
      putStrLn $ toJson params
---     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToId nn))
+--     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))
 --           (match func phi_pattern)

@@ -77,7 +77,8 @@ main =
      putStrLn "Module AST:"
      putStrLn (showPretty ast)
      putStrLn ""
-     let fs = LLVMPro.mkFunctionsFromLlvmModule ast
+     let fs = LLVMPro.mkFunctionsFromLlvmModule (LLVMPro.lowerModule ast)
          f = head fs
+     putStrLn (show f)
      writeDotFile "test.dot" (toDotGraph $ osGraph $ PM.functionOS f)
      return ()

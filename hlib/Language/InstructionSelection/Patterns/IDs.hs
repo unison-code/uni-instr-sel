@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstructionSelection.Patterns.Ids
+-- Module      : Language.InstructionSelection.Patterns.IDs
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,16 +14,16 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.Patterns.Ids (
-  InstanceId (..)
-, InstructionId (..)
-, PatternId (..)
-, fromInstanceId
-, fromInstructionId
-, fromPatternId
-, toInstanceId
-, toInstructionId
-, toPatternId
+module Language.InstructionSelection.Patterns.IDs (
+  InstructionID (..)
+, PatternID (..)
+, PatternInstanceID (..)
+, fromPatternInstanceID
+, fromInstructionID
+, fromPatternID
+, toPatternInstanceID
+, toInstructionID
+, toPatternID
 ) where
 
 import Language.InstructionSelection.Utils ( Natural
@@ -38,31 +38,31 @@ import Language.InstructionSelection.Utils ( Natural
 
 -- | Represents an instruction ID.
 
-newtype InstructionId = InstructionId Natural
+newtype InstructionID = InstructionID Natural
   deriving (Eq, Ord, Num, Enum)
 
-instance Show InstructionId where
-  show (InstructionId i) = show i
+instance Show InstructionID where
+  show (InstructionID i) = show i
 
 -- | Represents a pattern ID. Pattern IDs are used to distinguish which
 -- instruction a pattern belongs to. Note, however, that an instance of a
 -- pattern - which is an occurrance where a pattern has been matched over a set
 -- of nodes in a function graph - is not given pattern IDs but instance IDs.
 
-newtype PatternId = PatternId Natural
+newtype PatternID = PatternID Natural
   deriving (Eq, Ord, Num, Enum)
 
-instance Show PatternId where
-  show (PatternId i) = show i
+instance Show PatternID where
+  show (PatternID i) = show i
 
 -- | Represents a pattern instance ID. Instance IDs are used to distinguish
 -- between pattern an instance is based on.
 
-newtype InstanceId = InstanceId Natural
+newtype PatternInstanceID = PatternInstanceID Natural
   deriving (Eq, Ord, Num, Enum)
 
-instance Show InstanceId where
-  show (InstanceId i) = show i
+instance Show PatternInstanceID where
+  show (PatternInstanceID i) = show i
 
 
 
@@ -70,20 +70,20 @@ instance Show InstanceId where
 -- Functions
 -------------
 
-fromInstanceId :: InstanceId -> Natural
-fromInstanceId (InstanceId i) = i
+fromPatternInstanceID :: PatternInstanceID -> Natural
+fromPatternInstanceID (PatternInstanceID i) = i
 
-toInstanceId :: (Integral i) => i -> InstanceId
-toInstanceId = InstanceId . toNatural
+toPatternInstanceID :: (Integral i) => i -> PatternInstanceID
+toPatternInstanceID = PatternInstanceID . toNatural
 
-fromInstructionId :: InstructionId -> Natural
-fromInstructionId (InstructionId i) = i
+fromInstructionID :: InstructionID -> Natural
+fromInstructionID (InstructionID i) = i
 
-toInstructionId :: (Integral i) => i -> InstructionId
-toInstructionId = InstructionId . toNatural
+toInstructionID :: (Integral i) => i -> InstructionID
+toInstructionID = InstructionID . toNatural
 
-fromPatternId :: PatternId -> Natural
-fromPatternId (PatternId i) = i
+fromPatternID :: PatternID -> Natural
+fromPatternID (PatternID i) = i
 
-toPatternId :: (Integral i) => i -> PatternId
-toPatternId = PatternId . toNatural
+toPatternID :: (Integral i) => i -> PatternID
+toPatternID = PatternID . toNatural

@@ -15,12 +15,9 @@
 module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Constraints
-import Language.InstructionSelection.Graphs ( NodeId (..)
-                                            , Matchset (..)
-                                            )
-import Language.InstructionSelection.Patterns.Ids (InstanceId)
-import Language.InstructionSelection.PrettyPrint
-import Language.InstructionSelection.TargetMachine (RegisterId)
+import Language.InstructionSelection.Graphs (NodeID (..))
+import Language.InstructionSelection.Patterns.IDs (PatternInstanceID)
+import Language.InstructionSelection.TargetMachine (RegisterID)
 
 
 
@@ -45,26 +42,26 @@ data FunctionGraphData
 
           -- | The action nodes in the function graph.
 
-          funcActionNodes :: [NodeId]
+          funcActionNodes :: [NodeID]
 
           -- | The data nodes in the function graph.
 
-        , funcDataNodes :: [NodeId]
+        , funcDataNodes :: [NodeID]
 
           -- | The state nodes in the function graph.
 
-        , funcStateNodes :: [NodeId]
+        , funcStateNodes :: [NodeID]
 
           -- | The label nodes in the function graph, along with their dominator
           -- sets.
 
-        , funcLabelDoms :: [( NodeId   -- ^ The dominated label node.
-                            , [NodeId] -- ^ The dominator set.
+        , funcLabelDoms :: [( NodeID   -- ^ The dominated label node.
+                            , [NodeID] -- ^ The dominator set.
                             )]
 
           -- | The root label, or entry point into the function.
 
-        , funcRootLabel :: NodeId
+        , funcRootLabel :: NodeID
 
           -- | The function constraints, if any.
 
@@ -80,37 +77,37 @@ data PatternInstanceData
 
           -- | The matchset ID of this pattern instance.
 
-          patInstanceId :: InstanceId
+          patInstanceID :: PatternInstanceID
 
           -- | The action nodes in the function graph which are covered by this
           -- pattern instance.
 
-        , patActionNodesCovered :: [NodeId]
+        , patActionNodesCovered :: [NodeID]
 
           -- | The data nodes in the function graph which are defined by this
           -- pattern instance.
 
-        , patDataNodesDefined :: [NodeId]
+        , patDataNodesDefined :: [NodeID]
 
           -- | The data nodes in the function graph which are used by this
           -- pattern instance.
 
-        , patDataNodesUsed :: [NodeId]
+        , patDataNodesUsed :: [NodeID]
 
           -- | The state nodes in the function graph which are defined by this
           -- pattern instance.
 
-        , patStateNodesDefined :: [NodeId]
+        , patStateNodesDefined :: [NodeID]
 
           -- | The state nodes in the function graph which are used by this
           -- pattern instance.
 
-        , patStateNodesUsed :: [NodeId]
+        , patStateNodesUsed :: [NodeID]
 
           -- | The label nodes in the function graph which are referred to by
           -- this pattern instance.
 
-        , patLabelNodesReferred :: [NodeId]
+        , patLabelNodesReferred :: [NodeID]
 
           -- | The pattern-specific constraints, if any. All node IDs used in
           -- the patterns refer to nodes in the function graph (not the pattern
@@ -143,7 +140,7 @@ data MachineData
 
           -- | The registers in the target machine.
 
-          machRegisters :: [RegisterId]
+          machRegisters :: [RegisterID]
 
       }
     deriving (Show)

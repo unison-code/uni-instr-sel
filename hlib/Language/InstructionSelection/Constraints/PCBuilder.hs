@@ -18,7 +18,6 @@ module Language.InstructionSelection.Constraints.PCBuilder (
 
 import Language.InstructionSelection.Constraints.Base
 import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.Patterns.Ids
 import Data.Maybe
 
 
@@ -38,14 +37,14 @@ mkBBAllocConstraints g =
         then [ BoolExprConstraint $
                EqExpr
                (
-                 LabelId2NumExpr $
-                 LabelIdOfLabelNodeExpr $
-                 ANodeIdExpr (nodeId $ fromJust root_label)
+                 LabelID2NumExpr $
+                 LabelIDOfLabelNodeExpr $
+                 ANodeIDExpr (nodeID $ fromJust root_label)
                )
                (
-                 LabelId2NumExpr $
-                 LabelIdAllocatedToInstanceExpr $
-                 ThisInstanceIdExpr
+                 LabelID2NumExpr $
+                 LabelIDAllocatedToInstanceExpr $
+                 ThisPatternInstanceIDExpr
                )
              ]
         else []

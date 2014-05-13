@@ -15,10 +15,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstructionSelection.TargetMachine.Base (
-  RegisterId (..)
+  RegisterID (..)
 , TargetMachine (..)
-, fromRegisterId
-, toRegisterId
+, fromRegisterID
+, toRegisterID
 ) where
 
 import Language.InstructionSelection.Utils ( Natural
@@ -33,11 +33,11 @@ import Language.InstructionSelection.Utils ( Natural
 
 -- | Represents a register ID.
 
-newtype RegisterId = RegisterId Natural
+newtype RegisterID = RegisterID Natural
   deriving (Eq, Ord, Num, Enum)
 
-instance Show RegisterId where
-  show (RegisterId i) = show i
+instance Show RegisterID where
+  show (RegisterID i) = show i
 
 -- | Represents a target machine.
 
@@ -49,7 +49,7 @@ data TargetMachine
 
           tmRegisters :: [( String     -- ^ Register name (needed during code
                                        -- emission).
-                          , RegisterId -- ^ Register ID (only used internally).
+                          , RegisterID -- ^ Register ID (only used internally).
                           )]
 
       }
@@ -61,8 +61,8 @@ data TargetMachine
 -- Functions
 -------------
 
-fromRegisterId :: RegisterId -> Natural
-fromRegisterId (RegisterId i) = i
+fromRegisterID :: RegisterID -> Natural
+fromRegisterID (RegisterID i) = i
 
-toRegisterId :: (Integral i) => i -> RegisterId
-toRegisterId = RegisterId . toNatural
+toRegisterID :: (Integral i) => i -> RegisterID
+toRegisterID = RegisterID . toNatural

@@ -15,21 +15,21 @@
 module Language.InstructionSelection.Constraints.Base (
   BoolExpr (..)
 , Constraint (..)
-, InstanceIdExpr (..)
-, InstructionIdExpr (..)
+, PatternInstanceIDExpr (..)
+, InstructionIDExpr (..)
 , IntExpr (..)
-, LabelIdExpr (..)
-, NodeIdExpr (..)
+, LabelIDExpr (..)
+, NodeIDExpr (..)
 , NumExpr (..)
-, PatternIdExpr (..)
-, RegisterIdExpr (..)
+, PatternIDExpr (..)
+, RegisterIDExpr (..)
 , SetElemExpr (..)
 , SetExpr (..)
 ) where
 
-import Language.InstructionSelection.Graphs (NodeId)
-import Language.InstructionSelection.Patterns.Ids
-import Language.InstructionSelection.TargetMachine (RegisterId)
+import Language.InstructionSelection.Graphs (NodeID)
+import Language.InstructionSelection.Patterns.IDs
+import Language.InstructionSelection.TargetMachine (RegisterID)
 
 
 
@@ -47,7 +47,7 @@ data Constraint
       -- integer value. Constraints on the value itself are provided via the
       -- 'BoolExprConstraint'.
 
-    | IsIntConstantConstraint { intConstNode :: NodeId }
+    | IsIntConstantConstraint { intConstNode :: NodeID }
 
     deriving (Show)
 
@@ -111,27 +111,27 @@ data NumExpr
 
       -- | Converts a node ID to a numerical expression.
 
-    | NodeId2NumExpr NodeIdExpr
+    | NodeID2NumExpr NodeIDExpr
 
       -- | Converts a pattern instance ID to a numerical expression.
 
-    | InstanceId2NumExpr InstanceIdExpr
+    | PatternInstanceID2NumExpr PatternInstanceIDExpr
 
       -- | Converts an instruction ID to a numerical expression.
 
-    | InstructionId2NumExpr InstructionIdExpr
+    | InstructionID2NumExpr InstructionIDExpr
 
       -- | Converts a pattern ID to a numerical expression.
 
-    | PatternId2NumExpr PatternIdExpr
+    | PatternID2NumExpr PatternIDExpr
 
       -- | Converts a label ID to a numerical expression.
 
-    | LabelId2NumExpr LabelIdExpr
+    | LabelID2NumExpr LabelIDExpr
 
       -- | Converts a register ID to a numerical expression.
 
-    | RegisterId2NumExpr RegisterIdExpr
+    | RegisterID2NumExpr RegisterIDExpr
 
       -- | Represents the distance between a pattern instance and a label. The
       -- distance starts from the end of the instruction represented by the
@@ -139,7 +139,7 @@ data NumExpr
       -- basic block represented by the label. The distance is negative if the
       -- label appears before the pattern.
 
-    | DistanceBetweenInstanceAndLabelExpr InstanceIdExpr LabelIdExpr
+    | DistanceBetweenInstanceAndLabelExpr PatternInstanceIDExpr LabelIDExpr
 
     deriving (Show)
 
@@ -155,17 +155,17 @@ data IntExpr
       -- constant. This expression *must* be used together with
       -- 'IsIntConstantConstraint'!
 
-    | IntConstValueOfDataNodeExpr NodeIdExpr
+    | IntConstValueOfDataNodeExpr NodeIDExpr
 
     deriving (Show)
 
 -- | Node ID expressions.
 
-data NodeIdExpr
+data NodeIDExpr
 
       -- | Introduces a node ID.
 
-    = ANodeIdExpr NodeId
+    = ANodeIDExpr NodeID
 
     -- TODO: add missing functions
 
@@ -173,27 +173,27 @@ data NodeIdExpr
 
 -- | Instance ID expressions.
 
-data InstanceIdExpr
+data PatternInstanceIDExpr
 
       -- | Introduces a pattern instance ID.
 
-    = AnInstanceIdExpr InstanceId
+    = APatternInstanceIDExpr PatternInstanceID
 
       -- | Retrieves the ID of this pattern instance ID.
 
-    | ThisInstanceIdExpr
+    | ThisPatternInstanceIDExpr
 
       -- | Retrieves the pattern instance ID which covers a certain action node.
 
-    | CovererOfActionNodeExpr NodeIdExpr
+    | CovererOfActionNodeExpr NodeIDExpr
 
       -- | Retrieves the pattern instance ID which defines a certain data node.
 
-    | DefinerOfDataNodeExpr NodeIdExpr
+    | DefinerOfDataNodeExpr NodeIDExpr
 
       -- | Retrieves the pattern instance ID which defines a certain state node.
 
-    | DefinerOfStateNodeExpr NodeIdExpr
+    | DefinerOfStateNodeExpr NodeIDExpr
 
     -- TODO: add missing functions
 
@@ -201,15 +201,15 @@ data InstanceIdExpr
 
 -- | Instruction ID expressions.
 
-data InstructionIdExpr
+data InstructionIDExpr
 
       -- | Introduces an instruction ID.
 
-    = AnInstructionIdExpr InstructionId
+    = AnInstructionIDExpr InstructionID
 
       -- | Retrieves the instruction ID to which a pattern belongs.
 
-    | InstructionIdOfPatternExpr PatternIdExpr
+    | InstructionIDOfPatternExpr PatternIDExpr
 
     -- TODO: add missing functions
 
@@ -217,15 +217,15 @@ data InstructionIdExpr
 
 -- | Pattern ID expressions.
 
-data PatternIdExpr
+data PatternIDExpr
 
      -- | Introduces a pattern ID.
 
-    = APatternIdExpr PatternId
+    = APatternIDExpr PatternID
 
       -- | Retrieves the pattern ID to which a pattern instance is derived from.
 
-    | PatternIdOfInstanceExpr InstanceIdExpr
+    | PatternIDOfInstanceExpr PatternInstanceIDExpr
 
     -- TODO: add missing functions
 
@@ -233,16 +233,16 @@ data PatternIdExpr
 
 -- | Label ID expressions.
 
-data LabelIdExpr
+data LabelIDExpr
 
       -- | Retrieves the ID of the label to which a pattern instance has been
       -- allocated.
 
-    = LabelIdAllocatedToInstanceExpr InstanceIdExpr
+    = LabelIDAllocatedToInstanceExpr PatternInstanceIDExpr
 
       -- | Retrieves the label ID associated with a label node.
 
-    | LabelIdOfLabelNodeExpr NodeIdExpr
+    | LabelIDOfLabelNodeExpr NodeIDExpr
 
     -- TODO: add missing functions
 
@@ -250,16 +250,16 @@ data LabelIdExpr
 
 -- | Register ID expressions.
 
-data RegisterIdExpr
+data RegisterIDExpr
 
       -- | Introduces a register ID.
 
-    = ARegisterIdExpr RegisterId
+    = ARegisterIDExpr RegisterID
 
       -- | Retrieves the ID of the register to which a data node has been
       -- allocated.
 
-    | RegisterIdAllocatedToDataNodeExpr NodeIdExpr
+    | RegisterIDAllocatedToDataNodeExpr NodeIDExpr
 
     -- TODO: add missing functions
 
@@ -286,12 +286,12 @@ data SetExpr
 
       -- | Retrieves the dominator set of a label ID.
 
-    | DomSetOfLabelIdExpr LabelIdExpr
+    | DomSetOfLabelIDExpr LabelIDExpr
 
       -- | Retrieves a register class (which is expressed as a set of individual
       -- registers belonging to that class).
 
-    | RegisterClassExpr [RegisterIdExpr]
+    | RegisterClassExpr [RegisterIDExpr]
 
     deriving (Show)
 
@@ -303,10 +303,10 @@ data SetElemExpr
 
       -- | Converts a label ID to a set element expression.
 
-    = LabelId2SetElemExpr LabelIdExpr
+    = LabelID2SetElemExpr LabelIDExpr
 
       -- | Converts a register ID to a set element expression.
 
-    | RegisterId2SetElemExpr RegisterIdExpr
+    | RegisterID2SetElemExpr RegisterIDExpr
 
     deriving (Show)

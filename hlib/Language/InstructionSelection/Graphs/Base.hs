@@ -32,7 +32,7 @@ module Language.InstructionSelection.Graphs.Base (
 , Mapping (..)
 , Matchset (..)
 , Node (..)
-, NodeId (..)
+, NodeID (..)
 , NodeLabel (..)
 , NodeType (..)
 , addToMatchset
@@ -40,8 +40,8 @@ module Language.InstructionSelection.Graphs.Base (
 , allEdges
 , addNewEdge
 , addNewNode
-, convertMatchsetNToId
-, convertMappingNToId
+, convertMatchsetNToID
+, convertMappingNToID
 , copyNodeLabel
 , delEdge
 , delNode
@@ -56,7 +56,7 @@ module Language.InstructionSelection.Graphs.Base (
 , fromEdgeNr
 , fromMapping
 , fromMatchset
-, fromNodeId
+, fromNodeID
 , inEdgeNr
 , inEdges
 , insertNewNodeAlongEdge
@@ -89,11 +89,11 @@ module Language.InstructionSelection.Graphs.Base (
 , matchingNodes
 , mergeNodes
 , mkGraph
-, nodeId
-, nodeIds
-, nodeId2Node
+, nodeID
+, nodeIDs
+, nodeID2Node
 , nodeLabel
-, nodesByNodeId
+, nodesByNodeID
 , nodeType
 , numNodes
 , outEdgeNr
@@ -113,11 +113,11 @@ module Language.InstructionSelection.Graphs.Base (
 , toEdgeNr
 , toMapping
 , toMatchset
-, toNodeId
+, toNodeID
 , updateEdgeLabel
 , updateEdgeSource
 , updateEdgeTarget
-, updateNodeId
+, updateNodeID
 , updateNodeLabel
 ) where
 
@@ -161,7 +161,7 @@ data NodeLabel
           -- | Node identifier. Most often this is equal to the 'Node'
           -- identifier used by FGL, but it does not need to be.
 
-          NodeId
+          NodeID
 
           -- | Type of node.
 
@@ -171,12 +171,12 @@ data NodeLabel
 
 -- | Node ID data type.
 
-newtype NodeId
-    = NodeId Natural
+newtype NodeID
+    = NodeID Natural
     deriving (Eq, Ord, Num, Enum)
 
-instance Show NodeId where
-  show (NodeId i) = show i
+instance Show NodeID where
+  show (NodeID i) = show i
 
 -- | The node type information.
 
@@ -263,7 +263,7 @@ newtype Matchset n
     = Matchset [Mapping n]
     deriving (Show)
 
--- | Represents a mapping between two entities (typically @Node@s or @NodeId@s).
+-- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
 -- The first value is the entity in the function, and the second value is the
 -- entity in the pattern.
 
@@ -298,11 +298,11 @@ pNode (Mapping (_, n)) = n
 pNodes :: (Matchset n) -> [n]
 pNodes (Matchset m) = map pNode m
 
-fromNodeId :: NodeId -> Natural
-fromNodeId (NodeId i) = i
+fromNodeID :: NodeID -> Natural
+fromNodeID (NodeID i) = i
 
-toNodeId :: (Integral i) => i -> NodeId
-toNodeId = NodeId . toNatural
+toNodeID :: (Integral i) => i -> NodeID
+toNodeID = NodeID . toNatural
 
 fromNode :: Node -> I.LNode NodeLabel
 fromNode (Node n) = n
@@ -414,8 +414,8 @@ mkGraph ns es = Graph (I.mkGraph (map fromNode ns) (map fromEdge es))
 
 -- | Gets the next internal node ID which does not already appear in the graph.
 
-nextIntNodeId :: IntGraph -> I.Node
-nextIntNodeId g =
+nextIntNodeID :: IntGraph -> I.Node
+nextIntNodeID g =
   let existing_nodes = I.nodes g
   in if length existing_nodes > 0
         then 1 + maximum existing_nodes
@@ -423,13 +423,13 @@ nextIntNodeId g =
 
 -- | Gets the next node ID which does not already appear in the graph.
 
-nextNodeId :: IntGraph -> NodeId
-nextNodeId g = toNodeId $ toInteger $ nextIntNodeId g
+nextNodeID :: IntGraph -> NodeID
+nextNodeID g = toNodeID $ toInteger $ nextIntNodeID g
 
 -- | Gets the node ID from a node.
 
-nodeId :: Node -> NodeId
-nodeId (Node (_, NodeLabel i _)) = i
+nodeID :: Node -> NodeID
+nodeID (Node (_, NodeLabel i _)) = i
 
 -- | Gets the node label from a node.
 
@@ -443,8 +443,8 @@ nodeType (Node (_, NodeLabel _ nt)) = nt
 
 -- | Gets the internal node ID from a node.
 
-intNodeId :: Node -> I.Node
-intNodeId (Node (nid, _)) = nid
+intNodeID :: Node -> I.Node
+intNodeID (Node (nid, _)) = nid
 
 -- | Gets the number of nodes.
 
@@ -460,7 +460,7 @@ allNodes (Graph g) = map Node (I.labNodes g)
 -- removed.
 
 delNode :: Node -> Graph -> Graph
-delNode n (Graph g) = Graph (I.delNode (intNodeId n) g)
+delNode n (Graph g) = Graph (I.delNode (intNodeID n) g)
 
 -- | Deletes an edge from the graph.
 
@@ -469,23 +469,23 @@ delEdge (Edge e) (Graph g) = Graph (I.delLEdge e g)
 
 -- | Gets a list of nodes with the same node ID.
 
-nodesByNodeId :: Graph -> NodeId -> [Node]
-nodesByNodeId g i = filter ((i ==) . nodeId) $ allNodes g
+nodesByNodeID :: Graph -> NodeID -> [Node]
+nodesByNodeID g i = filter ((i ==) . nodeID) $ allNodes g
 
 -- | Updates the node label of an already existing node.
 
 updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
 updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (allNodes g)
-      new_n = Node (intNodeId n, new_label)
+      new_n = Node (intNodeID n, new_label)
   in mkGraph (new_n:all_nodes_but_n) (allEdges g)
 
 -- | Updates the node ID of an already existing node.
 
-updateNodeId :: NodeId -> Node -> Graph -> Graph
-updateNodeId new_id n g =
+updateNodeID :: NodeID -> Node -> Graph -> Graph
+updateNodeID new_id n g =
   let all_nodes_but_n = filter (/= n) (allNodes g)
-  in mkGraph (Node (intNodeId n, NodeLabel new_id (nodeType n)):all_nodes_but_n)
+  in mkGraph (Node (intNodeID n, NodeLabel new_id (nodeType n)):all_nodes_but_n)
              (allEdges g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
@@ -496,7 +496,7 @@ copyNodeLabel :: Node     -- ^ Node to copy label to.
                  -> Graph
                  -> Graph
 copyNodeLabel to_n from_n g
-  | (intNodeId from_n) == (intNodeId to_n) = g
+  | (intNodeID from_n) == (intNodeID to_n) = g
   | otherwise = updateNodeLabel (nodeLabel from_n) to_n g
 
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
@@ -508,7 +508,7 @@ mergeNodes :: Node     -- ^ Node to merge with (will be kept).
               -> Graph
               -> Graph
 mergeNodes n_to_keep n_to_discard g
-  | (intNodeId n_to_keep) == (intNodeId n_to_discard) = g
+  | (intNodeID n_to_keep) == (intNodeID n_to_discard) = g
   | otherwise = let edges_to_ignore = edges g n_to_discard n_to_keep ++
                                       edges g n_to_keep n_to_discard
                 in delNode n_to_discard
@@ -540,7 +540,7 @@ updateEdgeTarget :: Node     -- ^ New target.
                     -> Graph
                     -> Graph
 updateEdgeTarget new_target (Edge e@(source, _, EdgeLabel out_nr _)) (Graph g) =
-  let new_target_id = intNodeId new_target
+  let new_target_id = intNodeID new_target
       new_e = (source,
                new_target_id,
                EdgeLabel out_nr (nextInEdgeNr g new_target_id))
@@ -562,7 +562,7 @@ updateEdgeSource :: Node     -- ^ New source.
                     -> Graph
                     -> Graph
 updateEdgeSource new_source (Edge e@(_, target, EdgeLabel _ in_nr)) (Graph g) =
-  let new_source_id = intNodeId new_source
+  let new_source_id = intNodeID new_source
       new_e = (new_source_id,
                target,
                EdgeLabel (nextOutEdgeNr g new_source_id) in_nr)
@@ -594,7 +594,7 @@ addNewNode :: NodeType -> Graph -> ( Graph -- ^ The new graph.
                                    , Node  -- ^ The newly added node.
                                    )
 addNewNode nt (Graph g) =
-  let new_n = (nextIntNodeId g, NodeLabel (nextNodeId g) nt)
+  let new_n = (nextIntNodeID g, NodeLabel (nextNodeID g) nt)
       new_g = Graph (I.insNode new_n g)
   in (new_g, Node new_n)
 
@@ -609,8 +609,8 @@ addNewEdge :: ( Node -- ^ Source node (from).
                  , Edge  -- ^ The newly added edge.
                  )
 addNewEdge (from_n, to_n) (Graph g) =
-  let from_node_id = intNodeId from_n
-      to_node_id = intNodeId to_n
+  let from_node_id = intNodeID from_n
+      to_node_id = intNodeID to_n
       out_edge_nr = nextOutEdgeNr g from_node_id
       in_edge_nr = nextInEdgeNr g to_node_id
       new_e = (from_node_id, to_node_id, EdgeLabel out_edge_nr in_edge_nr)
@@ -632,8 +632,8 @@ insertNewNodeAlongEdge nt
                        (Graph g0) =
   let ((Graph g1), new_n) = addNewNode nt (Graph g0)
       (Graph g2) = delEdge e (Graph g1)
-      new_e1 = (from_nid, intNodeId new_n, EdgeLabel out_e_nr 0)
-      new_e2 = (intNodeId new_n, to_nid, EdgeLabel 0 in_e_nr)
+      new_e1 = (from_nid, intNodeID new_n, EdgeLabel out_e_nr 0)
+      new_e2 = (intNodeID new_n, to_nid, EdgeLabel 0 in_e_nr)
       g3 = I.insEdge new_e1 g2
       g4 = I.insEdge new_e2 g3
   in (Graph g4, new_n)
@@ -653,31 +653,31 @@ lastAddedNode :: Graph -> Maybe Node
 lastAddedNode (Graph g) =
   let ns = I.nodes g
   in if not $ null ns
-        then intNodeId2Node g (maximum ns)
+        then intNodeID2Node g (maximum ns)
         else Nothing
 
 -- | Gets the corresponding node from an internal node ID.
 
-intNodeId2Node :: IntGraph -> I.Node -> Maybe Node
-intNodeId2Node g nid = maybe Nothing (\l -> Just (Node (nid, l))) (I.lab g nid)
+intNodeID2Node :: IntGraph -> I.Node -> Maybe Node
+intNodeID2Node g nid = maybe Nothing (\l -> Just (Node (nid, l))) (I.lab g nid)
 
 -- | Gets the predecessors (if any) of a given node. A node A is a predecessor
 -- of another node B if there is a directed edge from B to A.
 
 predecessors :: Graph -> Node -> [Node]
-predecessors (Graph g) n = map (fromJust . intNodeId2Node g)
-                               (I.pre g (intNodeId n))
+predecessors (Graph g) n = map (fromJust . intNodeID2Node g)
+                               (I.pre g (intNodeID n))
 
 -- | Gets the successors (if any) of a given node. A node A is a successor of
 -- another node B if there is a directed edge from A to B.
 
 successors :: Graph -> Node -> [Node]
-successors (Graph g) n = map (fromJust . intNodeId2Node g) (I.suc g (intNodeId n))
+successors (Graph g) n = map (fromJust . intNodeID2Node g) (I.suc g (intNodeID n))
 
 -- | Checks if a given node is within the graph.
 
 isInGraph :: Graph -> Node -> Bool
-isInGraph (Graph g) n = isJust $ intNodeId2Node g (intNodeId n)
+isInGraph (Graph g) n = isJust $ intNodeID2Node g (intNodeID n)
 
 -- | Gets a list of all edges.
 
@@ -687,12 +687,12 @@ allEdges (Graph g) = map toEdge $ I.labEdges g
 -- | Gets all inbound edges to a particular node.
 
 inEdges :: Graph -> Node -> [Edge]
-inEdges (Graph g) n = map toEdge $ I.inn g (intNodeId n)
+inEdges (Graph g) n = map toEdge $ I.inn g (intNodeID n)
 
 -- | Gets all outbound edges from a particular node.
 
 outEdges :: Graph -> Node -> [Edge]
-outEdges (Graph g) n = map toEdge $ I.out g (intNodeId n)
+outEdges (Graph g) n = map toEdge $ I.out g (intNodeID n)
 
 -- | Gets a particular edge or edges between two nodes.
 
@@ -702,8 +702,8 @@ edges :: Graph
         -> [Edge]
 edges g from_n to_n =
   let out_edges = map fromEdge $ outEdges g from_n
-      from_id = intNodeId from_n
-      to_id = intNodeId to_n
+      from_id = intNodeID from_n
+      to_id = intNodeID to_n
       es = map toEdge
            $ filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges
   in es
@@ -725,36 +725,36 @@ sortEdgesByOutNumbers =
 -- | Gets the source node of an edge.
 
 sourceOfEdge :: Graph -> Edge -> Node
-sourceOfEdge (Graph g) (Edge (n, _, _)) = fromJust $ intNodeId2Node g n
+sourceOfEdge (Graph g) (Edge (n, _, _)) = fromJust $ intNodeID2Node g n
 
 -- | Gets the target node of an edge.
 
 targetOfEdge :: Graph -> Edge -> Node
-targetOfEdge (Graph g) (Edge (_, n, _)) = fromJust $ intNodeId2Node g n
+targetOfEdge (Graph g) (Edge (_, n, _)) = fromJust $ intNodeID2Node g n
 
 -- | Gets the nodes that matches a given node ID.
 
-nodeId2Node :: Graph -> NodeId -> [Node]
-nodeId2Node g nid = filter (\n -> nodeId n == nid) (allNodes g)
+nodeID2Node :: Graph -> NodeID -> [Node]
+nodeID2Node g nid = filter (\n -> nodeID n == nid) (allNodes g)
 
 -- | Converts matchset of nodes into a matchset of node IDs. Duplicated entries
 -- are removed.
 
-convertMatchsetNToId :: Matchset Node -> (Matchset NodeId)
-convertMatchsetNToId (Matchset m_nodes) =
-  let m_ids = map convertMappingNToId m_nodes
+convertMatchsetNToID :: Matchset Node -> (Matchset NodeID)
+convertMatchsetNToID (Matchset m_nodes) =
+  let m_ids = map convertMappingNToID m_nodes
       m_unique_ids = removeDuplicates m_ids
   in Matchset m_unique_ids
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 
-convertMappingNToId :: Mapping Node -> (Mapping NodeId)
-convertMappingNToId m = (Mapping (nodeId $ fNode m, nodeId $ pNode m))
+convertMappingNToID :: Mapping Node -> (Mapping NodeID)
+convertMappingNToID m = (Mapping (nodeID $ fNode m, nodeID $ pNode m))
 
 -- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
 
-nodeIds :: [Node] -> [NodeId]
-nodeIds = removeDuplicates . map nodeId
+nodeIDs :: [Node] -> [NodeID]
+nodeIDs = removeDuplicates . map nodeID
 
 -- | Checks if a node matches another node.
 
@@ -995,9 +995,9 @@ extractDomSet :: Graph
                      , [Node] -- ^ The dominator nodes.
                      )]
 extractDomSet (Graph g) n =
-  let dom_sets = I.dom g (intNodeId n)
-  in map (\(n1, ns2) -> (fromJust $ intNodeId2Node g n1,
-                         map (fromJust . intNodeId2Node g) ns2))
+  let dom_sets = I.dom g (intNodeID n)
+  in map (\(n1, ns2) -> (fromJust $ intNodeID2Node g n1,
+                         map (fromJust . intNodeID2Node g) ns2))
          dom_sets
 
 -- | Gets a list of immediate-dominator mappings, given a root node.
@@ -1008,9 +1008,9 @@ extractIDomSet :: Graph
                       , Node -- ^ The dominator node.
                       )]
 extractIDomSet (Graph g) n =
-  let idom_maps = I.iDom g (intNodeId n)
-  in map (\(n1, n2) -> (fromJust $ intNodeId2Node g n1,
-                        fromJust $ intNodeId2Node g n2))
+  let idom_maps = I.iDom g (intNodeID n)
+  in map (\(n1, n2) -> (fromJust $ intNodeID2Node g n1,
+                        fromJust $ intNodeID2Node g n2))
          idom_maps
 
 

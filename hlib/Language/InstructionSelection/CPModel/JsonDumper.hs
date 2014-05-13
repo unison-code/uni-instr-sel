@@ -21,14 +21,14 @@ module Language.InstructionSelection.CPModel.JsonDumper (
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs ( NodeId
-                                            , fromNodeId
+import Language.InstructionSelection.Graphs ( NodeID
+                                            , fromNodeID
                                             )
-import Language.InstructionSelection.Patterns ( InstanceId
-                                              , fromInstanceId
+import Language.InstructionSelection.Patterns ( PatternInstanceID
+                                              , fromPatternInstanceID
                                               )
-import Language.InstructionSelection.TargetMachine ( RegisterId
-                                                   , fromRegisterId
+import Language.InstructionSelection.TargetMachine ( RegisterID
+                                                   , fromRegisterID
                                                    )
 import Language.InstructionSelection.Utils ( Natural (..)
                                            , fromNatural
@@ -75,7 +75,7 @@ instance ToJSON FunctionGraphData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object ([ "instance-id"          .= (patInstanceId d)
+    object ([ "instance-id"          .= (patInstanceID d)
             , "action-nodes-covered" .= (patActionNodesCovered d)
             , "data-nodes-defined"   .= (patDataNodesDefined d)
             , "data-nodes-used"      .= (patDataNodesUsed d)
@@ -99,16 +99,16 @@ instance ToJSON MachineData where
 instance ToJSON Constraint where
   toJSON (BoolExprConstraint e) = toJSON $ boolExpr2Str e
   toJSON (IsIntConstantConstraint nid) =
-    toJSON $ "(is-int-const " ++ show (fromNodeId nid) ++ ")"
+    toJSON $ "(is-int-const " ++ show (fromNodeID nid) ++ ")"
 
-instance ToJSON NodeId where
-  toJSON nid = toJSON (fromNodeId nid)
+instance ToJSON NodeID where
+  toJSON nid = toJSON (fromNodeID nid)
 
-instance ToJSON InstanceId where
-  toJSON iid = toJSON (fromInstanceId iid)
+instance ToJSON PatternInstanceID where
+  toJSON iid = toJSON (fromPatternInstanceID iid)
 
-instance ToJSON RegisterId where
-  toJSON rid = toJSON (fromRegisterId rid)
+instance ToJSON RegisterID where
+  toJSON rid = toJSON (fromRegisterID rid)
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
@@ -152,66 +152,66 @@ numExpr2Str (MinusExpr lhs rhs) =
 numExpr2Str (Int2NumExpr e) = intExpr2Str e
 numExpr2Str (Bool2NumExpr e) =
   "(bool-to-num " ++ boolExpr2Str e ++ ")"
-numExpr2Str (NodeId2NumExpr e) =
-  "(node-id-to-num " ++ nodeIdExpr2Str e ++ ")"
-numExpr2Str (InstanceId2NumExpr e) =
-  "(insta-id-to-num " ++ instanceIdExpr2Str e ++ ")"
-numExpr2Str (InstructionId2NumExpr e) =
-  "(instr-id-to-num " ++ instructionIdExpr2Str e ++ ")"
-numExpr2Str (PatternId2NumExpr e) =
-  "(pat-id-to-num " ++ patternIdExpr2Str e ++ ")"
-numExpr2Str (LabelId2NumExpr e) =
-  "(lab-id-to-num " ++ labelIdExpr2Str e ++ ")"
-numExpr2Str (RegisterId2NumExpr e) =
-  "(reg-id-to-num " ++ registerIdExpr2Str e ++ ")"
+numExpr2Str (NodeID2NumExpr e) =
+  "(node-id-to-num " ++ nodeIDExpr2Str e ++ ")"
+numExpr2Str (PatternInstanceID2NumExpr e) =
+  "(insta-id-to-num " ++ instanceIDExpr2Str e ++ ")"
+numExpr2Str (InstructionID2NumExpr e) =
+  "(instr-id-to-num " ++ instructionIDExpr2Str e ++ ")"
+numExpr2Str (PatternID2NumExpr e) =
+  "(pat-id-to-num " ++ patternIDExpr2Str e ++ ")"
+numExpr2Str (LabelID2NumExpr e) =
+  "(lab-id-to-num " ++ labelIDExpr2Str e ++ ")"
+numExpr2Str (RegisterID2NumExpr e) =
+  "(reg-id-to-num " ++ registerIDExpr2Str e ++ ")"
 numExpr2Str (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
-  "(dist-pat-to-lab " ++ instanceIdExpr2Str pat_e ++
-  " " ++ labelIdExpr2Str lab_e ++ ")"
+  "(dist-pat-to-lab " ++ instanceIDExpr2Str pat_e ++
+  " " ++ labelIDExpr2Str lab_e ++ ")"
 
 intExpr2Str :: IntExpr -> String
 intExpr2Str (AnIntegerExpr i) = show i
 intExpr2Str (IntConstValueOfDataNodeExpr e) =
-  "(int-const-val-of-dnode " ++ nodeIdExpr2Str e ++ ")"
+  "(int-const-val-of-dnode " ++ nodeIDExpr2Str e ++ ")"
 
-nodeIdExpr2Str :: NodeIdExpr -> String
-nodeIdExpr2Str (ANodeIdExpr nid) = show nid
+nodeIDExpr2Str :: NodeIDExpr -> String
+nodeIDExpr2Str (ANodeIDExpr nid) = show nid
 
-instanceIdExpr2Str :: InstanceIdExpr -> String
-instanceIdExpr2Str (AnInstanceIdExpr iid) = show iid
-instanceIdExpr2Str (CovererOfActionNodeExpr e) =
-  "(cov-of-anode " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str (DefinerOfDataNodeExpr e) =
-  "(def-of-dnode " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str (DefinerOfStateNodeExpr e) =
-  "(def-of-snode " ++ nodeIdExpr2Str e ++ ")"
-instanceIdExpr2Str ThisInstanceIdExpr = "this"
+instanceIDExpr2Str :: PatternInstanceIDExpr -> String
+instanceIDExpr2Str (APatternInstanceIDExpr pid) = show pid
+instanceIDExpr2Str (CovererOfActionNodeExpr e) =
+  "(cov-of-anode " ++ nodeIDExpr2Str e ++ ")"
+instanceIDExpr2Str (DefinerOfDataNodeExpr e) =
+  "(def-of-dnode " ++ nodeIDExpr2Str e ++ ")"
+instanceIDExpr2Str (DefinerOfStateNodeExpr e) =
+  "(def-of-snode " ++ nodeIDExpr2Str e ++ ")"
+instanceIDExpr2Str ThisPatternInstanceIDExpr = "this"
 
-instructionIdExpr2Str :: InstructionIdExpr -> String
-instructionIdExpr2Str (AnInstructionIdExpr iid) = show iid
-instructionIdExpr2Str (InstructionIdOfPatternExpr e) =
-  "(instr-of-pat " ++ patternIdExpr2Str e ++ ")"
+instructionIDExpr2Str :: InstructionIDExpr -> String
+instructionIDExpr2Str (AnInstructionIDExpr iid) = show iid
+instructionIDExpr2Str (InstructionIDOfPatternExpr e) =
+  "(instr-of-pat " ++ patternIDExpr2Str e ++ ")"
 
-patternIdExpr2Str :: PatternIdExpr -> String
-patternIdExpr2Str (APatternIdExpr nid) = show nid
-patternIdExpr2Str (PatternIdOfInstanceExpr e) =
-  "(pat-of-insta " ++ instanceIdExpr2Str e ++ ")"
+patternIDExpr2Str :: PatternIDExpr -> String
+patternIDExpr2Str (APatternIDExpr nid) = show nid
+patternIDExpr2Str (PatternIDOfInstanceExpr e) =
+  "(pat-of-insta " ++ instanceIDExpr2Str e ++ ")"
 
-labelIdExpr2Str :: LabelIdExpr -> String
-labelIdExpr2Str (LabelIdAllocatedToInstanceExpr e) =
-  "(lab-alloc-to-insta " ++ instanceIdExpr2Str e ++ ")"
-labelIdExpr2Str (LabelIdOfLabelNodeExpr e) =
-  "(lab-id-of-node " ++ nodeIdExpr2Str e ++ ")"
+labelIDExpr2Str :: LabelIDExpr -> String
+labelIDExpr2Str (LabelIDAllocatedToInstanceExpr e) =
+  "(lab-alloc-to-insta " ++ instanceIDExpr2Str e ++ ")"
+labelIDExpr2Str (LabelIDOfLabelNodeExpr e) =
+  "(lab-id-of-node " ++ nodeIDExpr2Str e ++ ")"
 
-registerIdExpr2Str :: RegisterIdExpr -> String
-registerIdExpr2Str (ARegisterIdExpr rid) = show rid
-registerIdExpr2Str (RegisterIdAllocatedToDataNodeExpr e) =
-  "(reg-alloc-to-dnode " ++ nodeIdExpr2Str e ++ ")"
+registerIDExpr2Str :: RegisterIDExpr -> String
+registerIDExpr2Str (ARegisterIDExpr rid) = show rid
+registerIDExpr2Str (RegisterIDAllocatedToDataNodeExpr e) =
+  "(reg-alloc-to-dnode " ++ nodeIDExpr2Str e ++ ")"
 
 setElemExpr2Str :: SetElemExpr -> String
-setElemExpr2Str (LabelId2SetElemExpr e) =
-  "(lab-id-to-set-elem " ++ labelIdExpr2Str e ++ ")"
-setElemExpr2Str (RegisterId2SetElemExpr e) =
-  "(reg-id-to-set-elem " ++ registerIdExpr2Str e ++ ")"
+setElemExpr2Str (LabelID2SetElemExpr e) =
+  "(lab-id-to-set-elem " ++ labelIDExpr2Str e ++ ")"
+setElemExpr2Str (RegisterID2SetElemExpr e) =
+  "(reg-id-to-set-elem " ++ registerIDExpr2Str e ++ ")"
 
 setExpr2Str :: SetExpr -> String
 setExpr2Str (UnionSetExpr lhs rhs) =
@@ -220,7 +220,7 @@ setExpr2Str (IntersectSetExpr lhs rhs) =
   "(intersect " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
 setExpr2Str (DiffSetExpr lhs rhs) =
   "(diff " ++ setExpr2Str lhs ++ " " ++ setExpr2Str rhs ++ ")"
-setExpr2Str (DomSetOfLabelIdExpr e) =
-  "(domset-of " ++ labelIdExpr2Str e ++ ")"
+setExpr2Str (DomSetOfLabelIDExpr e) =
+  "(domset-of " ++ labelIDExpr2Str e ++ ")"
 setExpr2Str (RegisterClassExpr es) =
-  "(reg-class (" ++ intercalate " " (map registerIdExpr2Str es) ++ "))"
+  "(reg-class (" ++ intercalate " " (map registerIDExpr2Str es) ++ "))"

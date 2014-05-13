@@ -22,10 +22,7 @@ module Language.InstructionSelection.Patterns.Base (
 
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
-import Language.InstructionSelection.Patterns.Ids
-import Language.InstructionSelection.Utils ( Natural
-                                           , toNatural
-                                           )
+import Language.InstructionSelection.Patterns.IDs
 
 
 
@@ -41,14 +38,14 @@ data Instruction
           -- | An ID which is globally unique across all instructions, but not
           -- necessarily contiguous.
 
-          instrId :: InstructionId
+          instrID :: InstructionID
 
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern. Each pattern also has a corresponding ID which
           -- must be globally unique across all patterns and all instructions,
           -- but not necessarily contiguous.
 
-        , instrPatterns :: [(OpStructure, PatternId)]
+        , instrPatterns :: [(OpStructure, PatternID)]
 
           -- | Instruction properties.
 
