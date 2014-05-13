@@ -221,19 +221,17 @@ mkFunctionFromGlobalDef _ = Nothing
 -- not a function, `Nothing` is returned.
 
 mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction (LLVM.Function _ _ cc _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs)
-  =
+mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = initialState
       st2 = process st1 params
       st3 = process st2 bbs
       st4 = fixPhiNodeEdgeOrderings st3
-      st5 = setCallingConventions st4 cc
-      st6 = addMissingInEdgesToDataNodes st5
-      st7 = insertCopyNodes st6
+      st5 = addMissingInEdgesToDataNodes st4
+      st6 = insertCopyNodes st5
   in Just (PM.Function { PM.functionName = fname
-                       , PM.functionOS = theOS st7
-                       , PM.functionInputs = theFuncInputs st7
-                       , PM.functionReturns = theFuncRets st7
+                       , PM.functionOS = theOS st6
+                       , PM.functionInputs = theFuncInputs st6
+                       , PM.functionReturns = theFuncRets st6
                        })
 mkFunction _ = Nothing
 
@@ -584,16 +582,6 @@ insertCopy st0 e =
                               , nid /= G.nodeId orig_src_n ]
              in st1 { theFuncRets = (G.nodeId new_d_node):rets }
         else st1
-
--- | Adds the appropriate constraints on the data nodes to enforce a particular
--- calling convention.
-
-setCallingConventions :: ProcessState
-                         -> LLVMCC.CallingConvention
-                         -> ProcessState
-setCallingConventions st0 cc =
-  -- TODO: implement
-  st0
 
 
 
