@@ -573,12 +573,13 @@ insertCopy st0 e =
   let g0 = theOSGraph st0
       orig_src_n = G.sourceOfEdge g0 e
       orig_dst_n = G.targetOfEdge g0 e
-      -- Modify graph
+      -- Modify OS graph
       (g1, new_d_node) = G.insertNewNodeAlongEdge G.CopyNode e g0
       new_e = head $ G.outEdges g1 new_d_node
       (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
       st1 = updateOSGraph st0 g2
   in if G.isRetControlNode orig_dst_n
+        -- Correct function return data node entries
         then let rets = [ nid | nid <- theFuncRets st1
                               , nid /= G.nodeId orig_src_n ]
              in st1 { theFuncRets = (G.nodeId new_d_node):rets }
