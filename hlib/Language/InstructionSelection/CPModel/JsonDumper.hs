@@ -98,8 +98,8 @@ instance ToJSON MachineData where
 
 instance ToJSON Constraint where
   toJSON (BoolExprConstraint e) = toJSON $ boolExpr2Str e
-  toJSON (IsIntConstantConstraint nid) =
-    toJSON $ "(is-int-const " ++ show (fromNodeID nid) ++ ")"
+  toJSON (DataNodeIsIntConstantConstraint nid) =
+    toJSON $ "(dnode-is-int-const " ++ show (fromNodeID nid) ++ ")"
 
 instance ToJSON NodeID where
   toJSON nid = toJSON (fromNodeID nid)

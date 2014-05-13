@@ -88,7 +88,7 @@ main =
                 , (14, 6, EdgeLabel 0 0)
                 , (15, 9, EdgeLabel 0 1)
                 ])
-         func_cs = [ IsIntConstantConstraint 0
+         func_cs = [ DataNodeIsIntConstantConstraint 0
                    , BoolExprConstraint $
                      EqExpr
                      (

@@ -43,11 +43,11 @@ data Constraint
 
     = BoolExprConstraint { boolExpr :: BoolExpr }
 
-      -- | A constraint indicating that a particular node represents a constant
-      -- integer value. Constraints on the value itself are provided via the
-      -- 'BoolExprConstraint'.
+      -- | A constraint indicating that a particular data node represents a
+      -- constant integer value. Constraints on the value itself are provided
+      -- via the 'BoolExprConstraint'.
 
-    | IsIntConstantConstraint { intConstNode :: NodeID }
+    | DataNodeIsIntConstantConstraint { intConstDataNode :: NodeID }
 
     deriving (Show)
 

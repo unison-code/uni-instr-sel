@@ -20,7 +20,6 @@ module Language.InstructionSelection.ProgramModules.LLVM.FunctionMaker (
 ) where
 
 import qualified LLVM.General.AST as LLVM
-import qualified LLVM.General.AST.CallingConvention as LLVMCC
 import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
@@ -101,11 +100,11 @@ data ProcessState
 
           -- ^ The IDs of the nodes representing the function input arguments.
 
-        , theFuncInputs :: [G.NodeId]
+        , theFuncInputs :: [G.NodeID]
 
           -- ^ The IDs of the nodes representing the function return statements.
 
-        , theFuncRets :: [G.NodeId]
+        , theFuncRets :: [G.NodeID]
 
       }
     deriving (Show)
@@ -321,12 +320,12 @@ addAuxPhiNodeData st ad = st { thePhiData = thePhiData st ++ [ad] }
 -- | Adds a data node representing a function argument to a given state.
 
 addFuncInput :: ProcessState -> G.Node -> ProcessState
-addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeId n] }
+addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeID n] }
 
 -- | Adds a data node representing a return value to a given state.
 
 addFuncRet :: ProcessState -> G.Node -> ProcessState
-addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeId n] }
+addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeID n] }
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
 
@@ -382,13 +381,13 @@ processConst st0 c =
 
 mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
 mkConstConstraints (IntConstant _ v) n =
-  [ C.IsIntConstantConstraint $ G.nodeId n
+  [ C.DataNodeIsIntConstantConstraint $ G.nodeID n
   , C.BoolExprConstraint $
     C.EqExpr
     (
       C.Int2NumExpr $
       C.IntConstValueOfDataNodeExpr $
-      C.ANodeIdExpr $ G.nodeId n
+      C.ANodeIDExpr $ G.nodeID n
     )
     (
       C.Int2NumExpr $
@@ -579,8 +578,8 @@ insertCopy st0 e =
   in if G.isRetControlNode orig_dst_n
         -- Correct function return data node entries
         then let rets = [ nid | nid <- theFuncRets st1
-                              , nid /= G.nodeId orig_src_n ]
-             in st1 { theFuncRets = (G.nodeId new_d_node):rets }
+                              , nid /= G.nodeID orig_src_n ]
+             in st1 { theFuncRets = (G.nodeID new_d_node):rets }
         else st1
 
 
