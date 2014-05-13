@@ -153,7 +153,7 @@ data IntExpr
 
       -- | Retrieves the value of a data node which represents an integer
       -- constant. This expression *must* be used together with
-      -- 'IsIntConstantConstraint'!
+      -- 'DataNodeIsIntConstantConstraint'!
 
     | IntConstValueOfDataNodeExpr NodeIDExpr
 
