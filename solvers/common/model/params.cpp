@@ -38,36 +38,37 @@ using std::string;
 Params::Params(void) {}
 
 Params::~Params(void) {
-    destroyConstraints();
+    destroyConstraintsForF();
+    destroyConstraintsForPIs();
 }
 
 size_t
-Params::getNumActionNodes(void) const {
+Params::getNumActionNodesInF(void) const {
     return func_action_node_mappings_.size();
 }
 
 size_t
-Params::getNumDataNodes(void) const {
+Params::getNumDataNodesInF(void) const {
     return func_data_node_mappings_.size();
 }
 
 size_t
-Params::getNumStateNodes(void) const {
+Params::getNumStateNodesInF(void) const {
     return func_state_node_mappings_.size();
 }
 
 size_t
-Params::getNumLabelNodes(void) const {
+Params::getNumLabelNodesInF(void) const {
     return func_label_node_mappings_.size();
 }
 
 size_t
-Params::getNumInstances(void) const {
+Params::getNumPIs(void) const {
     return pat_inst_mappings_.size();
 }
 
 size_t
-Params::getNumRegisters(void) const {
+Params::getNumRegistersInM(void) const {
     return mach_reg_mappings_.size();
 }
 
@@ -79,23 +80,24 @@ Params::parseJson(const string& str, Params& p) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
 
-    computeMappingsForFunctionActionNodes(root, p);
-    computeMappingsForFunctionDataNodes(root, p);
-    computeMappingsForFunctionStateNodes(root, p);
-    computeMappingsAndDomsetsForFunctionLabelNodes(root, p);
-    computeMappingsForPatternInstances(root, p);
-    computeMappingsForMachineRegisters(root, p);
-    setFunctionRootLabel(root, p);
-    setPatternInstanceCodeSizes(root, p);
-    setPatternInstanceLatencies(root, p);
-    setPatternInstanceConstraints(root, p);
-    setPatternInstanceNoUseDefDomConstraintsSettings(root, p);
-    setActionNodesCoveredByPatternInstances(root, p);
-    setDataNodesDefinedByPatternInstances(root, p);
-    setDataNodesUsedByPatternInstances(root, p);
-    setStateNodesDefinedByPatternInstances(root, p);
-    setStateNodesUsedByPatternInstances(root, p);
-    setLabelNodesReferredByPatternInstances(root, p);
+    computeMappingsForActionNodesInF(root, p);
+    computeMappingsForDataNodesInF(root, p);
+    computeMappingsForStateNodesInF(root, p);
+    computeMappingsAndDomsetsForLabelNodesInF(root, p);
+    computeMappingsForPIs(root, p);
+    computeMappingsForRegistersInM(root, p);
+    setRootLabelInF(root, p);
+    setConstraintsForF(root, p);
+    setCodeSizesForPIs(root, p);
+    setLatenciesForPIs(root, p);
+    setConstraintsForPIs(root, p);
+    setNoUseDefDomConstraintsSettingsForPIs(root, p);
+    setActionNodesCoveredByPIs(root, p);
+    setDataNodesDefinedByPIs(root, p);
+    setDataNodesUsedByPIs(root, p);
+    setStateNodesDefinedByPIs(root, p);
+    setStateNodesUsedByPIs(root, p);
+    setLabelNodesReferredByPIs(root, p);
 }
 
 bool
@@ -112,8 +114,8 @@ Params::getJsonValue(const Value& value, const string& name) {
     return sought_value;
 }
 
-Id
-Params::toId(const Value& value) {
+ID
+Params::toID(const Value& value) {
     if (!value.isUInt()) {
         THROW(Exception, "Not a JSON unsigned integer");
     }
@@ -145,62 +147,62 @@ Params::toString(const Value& value) {
 }
 
 void
-Params::computeMappingsForFunctionActionNodes(
+Params::computeMappingsForActionNodesInF(
     const Value& root,
     Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "action-nodes")) {
-        addMapping(toId(node_id),
+        addMapping(toID(node_id),
                    index++,
                    p.func_action_node_mappings_);
     }
 }
 
 void
-Params::computeMappingsForFunctionDataNodes(
+Params::computeMappingsForDataNodesInF(
     const Value& root,
     Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "data-nodes")) {
-        addMapping(toId(node_id),
+        addMapping(toID(node_id),
                    index++,
                    p.func_data_node_mappings_);
     }
 }
 
 void
-Params::computeMappingsForFunctionStateNodes(
+Params::computeMappingsForStateNodesInF(
     const Value& root,
     Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "state-nodes")) {
-        addMapping(toId(node_id),
+        addMapping(toID(node_id),
                    index++,
                    p.func_state_node_mappings_);
     }
 }
 
 void
-Params::computeMappingsAndDomsetsForFunctionLabelNodes(
+Params::computeMappingsAndDomsetsForLabelNodesInF(
     const Value& root,
     Params& p
 ) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "label-nodes")) {
-        const Id& node_id = toId(getJsonValue(entry, "node"));
+        const ID& node_id = toID(getJsonValue(entry, "node"));
         addMapping(node_id,
                    index++,
                    p.func_label_node_mappings_);
-        list<Id> domset;
+        list<ID> domset;
         for (auto dominator_node : getJsonValue(entry, "domset")) {
-            domset.push_back(toId(dominator_node));
+            domset.push_back(toID(dominator_node));
         }
         addMapping(node_id,
                    domset,
@@ -209,46 +211,46 @@ Params::computeMappingsAndDomsetsForFunctionLabelNodes(
 }
 
 void
-Params::computeMappingsForMachineRegisters(
+Params::computeMappingsForRegistersInM(
     const Value& root,
     Params& p
 ) {
     const Value& machine = getJsonValue(root, "machine-data");
     ArrayIndex index = 0;
     for (auto register_id : getJsonValue(machine, "registers")) {
-        addMapping(toId(register_id),
+        addMapping(toID(register_id),
                    index++,
                    p.mach_reg_mappings_);
     }
 }
 
 void
-Params::computeMappingsForPatternInstances(
+Params::computeMappingsForPIs(
     const Value& root,
     Params& p
 ) {
     ArrayIndex index = 0;
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        addMapping(toId(getJsonValue(instance, "instance-id")),
+        addMapping(toID(getJsonValue(instance, "instance-id")),
                    index++,
                    p.pat_inst_mappings_);
     }
 }
 
 int
-Params::getCodeSizeOfInstance(const Id& instance) const {
+Params::getCodeSizeForPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_code_sizes_);
 }
 
 int
-Params::getLatencyOfInstance(const Id& instance) const {
+Params::getLatencyForPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_latencies_);
 }
 
 void
-Params::setPatternInstanceCodeSizes(const Json::Value& root, Params& p) {
+Params::setCodeSizesForPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         int code_size = toInt(getJsonValue(instance, "code-size"));
         addMapping(instance_id,
                    code_size,
@@ -257,9 +259,9 @@ Params::setPatternInstanceCodeSizes(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setPatternInstanceLatencies(const Json::Value& root, Params& p) {
+Params::setLatenciesForPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         int latency = toInt(getJsonValue(instance, "latency"));
         addMapping(instance_id,
                    latency,
@@ -268,31 +270,31 @@ Params::setPatternInstanceLatencies(const Json::Value& root, Params& p) {
 }
 
 ArrayIndex
-Params::getIndexOfRegister(const Id& id) const {
+Params::getIndexForRegisterInM(const ID& id) const {
     return getMappedValue(id, mach_reg_mappings_);
 }
 
 list<ArrayIndex>
-Params::getIndicesOfRegisters(const list<Id>& ids) const {
-    list<Id> indices;
+Params::getIndicesForRegistersInM(const list<ID>& ids) const {
+    list<ID> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfRegister(id));
+        indices.push_back(getIndexForRegisterInM(id));
     }
     return indices;
 }
 
-list<Id>
-Params::getAllRegisterIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllRegisterInM(void) const {
+    list<ID> ids;
     for (auto& kv : mach_reg_mappings_) {
         ids.push_back(kv.first);
     }
     return ids;
 }
 
-list<Id>
-Params::getAllInstanceIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllPIs(void) const {
+    list<ID> ids;
     for (auto& kv : pat_inst_mappings_) {
         ids.push_back(kv.first);
     }
@@ -300,25 +302,30 @@ Params::getAllInstanceIds(void) const {
 }
 
 ArrayIndex
-Params::getIndexOfInstance(const Id& id) const {
+Params::getIndexForPI(const ID& id) const {
     return getMappedValue(id, pat_inst_mappings_);
 }
 
 list<const Constraint*>
-Params::getConstraintsOfInstance(const Id& id) const {
+Params::getConstraintsForF(void) const {
+    return func_constraints_;
+}
+
+list<const Constraint*>
+Params::getConstraintsForPI(const ID& id) const {
     return getMappedValue(id, pat_inst_constraints_);
 }
 
 void
-Params::setActionNodesCoveredByPatternInstances(
+Params::setActionNodesCoveredByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> covers;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> covers;
         for (auto node_id : getJsonValue(instance, "action-nodes-covered")) {
-            covers.push_back(toId(node_id));
+            covers.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    covers,
@@ -327,15 +334,15 @@ Params::setActionNodesCoveredByPatternInstances(
 }
 
 void
-Params::setDataNodesDefinedByPatternInstances(
+Params::setDataNodesDefinedByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> covers;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> covers;
         for (auto node_id : getJsonValue(instance, "data-nodes-defined")) {
-            covers.push_back(toId(node_id));
+            covers.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    covers,
@@ -344,15 +351,15 @@ Params::setDataNodesDefinedByPatternInstances(
 }
 
 void
-Params::setStateNodesDefinedByPatternInstances(
+Params::setStateNodesDefinedByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> covers;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> covers;
         for (auto node_id : getJsonValue(instance, "state-nodes-defined")) {
-            covers.push_back(toId(node_id));
+            covers.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    covers,
@@ -361,15 +368,15 @@ Params::setStateNodesDefinedByPatternInstances(
 }
 
 void
-Params::setDataNodesUsedByPatternInstances(
+Params::setDataNodesUsedByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> covers;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> covers;
         for (auto node_id : getJsonValue(instance, "data-nodes-used")) {
-            covers.push_back(toId(node_id));
+            covers.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    covers,
@@ -378,15 +385,15 @@ Params::setDataNodesUsedByPatternInstances(
 }
 
 void
-Params::setStateNodesUsedByPatternInstances(
+Params::setStateNodesUsedByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> covers;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> covers;
         for (auto node_id : getJsonValue(instance, "state-nodes-used")) {
-            covers.push_back(toId(node_id));
+            covers.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    covers,
@@ -395,15 +402,15 @@ Params::setStateNodesUsedByPatternInstances(
 }
 
 void
-Params::setLabelNodesReferredByPatternInstances(
+Params::setLabelNodesReferredByPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
-        list<Id> refs;
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
+        list<ID> refs;
         for (auto node_id : getJsonValue(instance, "label-nodes-referred")) {
-            refs.push_back(toId(node_id));
+            refs.push_back(toID(node_id));
         }
         addMapping(instance_id,
                    refs,
@@ -411,91 +418,91 @@ Params::setLabelNodesReferredByPatternInstances(
     }
 }
 
-list<Id>
-Params::getActionNodesCoveredByInstance(const Id& instance) const {
+list<ID>
+Params::getActionNodesCoveredByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_actions_covered_);
 }
 
-list<Id>
-Params::getDataNodesDefinedByInstance(const Id& instance) const {
+list<ID>
+Params::getDataNodesDefinedByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_data_defined_);
 }
 
-list<Id>
-Params::getStateNodesDefinedByInstance(const Id& instance) const {
+list<ID>
+Params::getStateNodesDefinedByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_states_defined_);
 }
 
-list<Id>
-Params::getDataNodesUsedByInstance(const Id& instance) const {
+list<ID>
+Params::getDataNodesUsedByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_data_used_);
 }
 
-list<Id>
-Params::getStateNodesUsedByInstance(const Id& instance) const {
+list<ID>
+Params::getStateNodesUsedByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_states_used_);
 }
 
-list<Id>
-Params::getLabelNodesReferredByInstance(const Id& instance) const {
+list<ID>
+Params::getLabelNodesReferredByPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_labels_referred_);
 }
 
-list<Id>
-Params::getDomsetOfLabel(const Id& id) const {
+list<ID>
+Params::getDomsetForLabelNodeInF(const ID& id) const {
     return getMappedValue(id, func_label_domsets_);
 }
 
 ArrayIndex
-Params::getIndexOfActionNode(const Id& id) const {
+Params::getIndexForActionNodeInF(const ID& id) const {
     return getMappedValue(id, func_action_node_mappings_);
 }
 
 ArrayIndex
-Params::getIndexOfDataNode(const Id& id) const {
+Params::getIndexForDataNodeInF(const ID& id) const {
     return getMappedValue(id, func_data_node_mappings_);
 }
 
 ArrayIndex
-Params::getIndexOfStateNode(const Id& id) const {
+Params::getIndexForStateNodeInF(const ID& id) const {
     return getMappedValue(id, func_state_node_mappings_);
 }
 
 ArrayIndex
-Params::getIndexOfLabelNode(const Id& id) const {
+Params::getIndexForLabelNodeInF(const ID& id) const {
     return getMappedValue(id, func_label_node_mappings_);
 }
 
-list<Id>
-Params::getAllActionNodeIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllActionNodesInF(void) const {
+    list<ID> ids;
     for (auto& kv : func_action_node_mappings_) {
         ids.push_back(kv.first);
     }
     return ids;
 }
 
-list<Id>
-Params::getAllDataNodeIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllDataNodesInF(void) const {
+    list<ID> ids;
     for (auto& kv : func_data_node_mappings_) {
         ids.push_back(kv.first);
     }
     return ids;
 }
 
-list<Id>
-Params::getAllStateNodeIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllStateNodesInF(void) const {
+    list<ID> ids;
     for (auto& kv : func_state_node_mappings_) {
         ids.push_back(kv.first);
     }
     return ids;
 }
 
-list<Id>
-Params::getAllLabelNodeIds(void) const {
-    list<Id> ids;
+list<ID>
+Params::getIDsForAllLabelNodesInF(void) const {
+    list<ID> ids;
     for (auto& kv : func_label_node_mappings_) {
         ids.push_back(kv.first);
     }
@@ -503,43 +510,50 @@ Params::getAllLabelNodeIds(void) const {
 }
 
 list<ArrayIndex>
-Params::getIndicesOfActionNodes(const list<Id>& ids) const {
-    list<Id> indices;
+Params::getIndicesForActionNodesInF(const list<ID>& ids) const {
+    list<ID> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfActionNode(id));
+        indices.push_back(getIndexForActionNodeInF(id));
     }
     return indices;
 }
 
 list<ArrayIndex>
-Params::getIndicesOfDataNodes(const list<Id>& ids) const {
-    list<Id> indices;
+Params::getIndicesForDataNodesInF(const list<ID>& ids) const {
+    list<ID> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfDataNode(id));
+        indices.push_back(getIndexForDataNodeInF(id));
     }
     return indices;
 }
 
 list<ArrayIndex>
-Params::getIndicesOfStateNodes(const list<Id>& ids) const {
-    list<Id> indices;
+Params::getIndicesForStateNodesInF(const list<ID>& ids) const {
+    list<ID> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfStateNode(id));
+        indices.push_back(getIndexForStateNodeInF(id));
     }
     return indices;
 }
 
 list<ArrayIndex>
-Params::getIndicesOfLabelNodes(const list<Id>& ids) const {
-    list<Id> indices;
+Params::getIndicesForLabelNodesInF(const list<ID>& ids) const {
+    list<ID> indices;
     for (auto& id : ids) {
-        indices.push_back(getIndexOfLabelNode(id));
+        indices.push_back(getIndexForLabelNodeInF(id));
     }
     return indices;
 }
 
 void
-Params::destroyConstraints(void) {
+Params::destroyConstraintsForF(void) {
+    for (auto& c : func_constraints_) {
+        delete c;
+    }
+}
+
+void
+Params::destroyConstraintsForPIs(void) {
     for (auto& kv : pat_inst_constraints_) {
         for (auto c : kv.second) {
             delete c;
@@ -548,12 +562,21 @@ Params::destroyConstraints(void) {
 }
 
 void
-Params::setPatternInstanceConstraints(const Value& root, Params& p) {
+Params::setConstraintsForF(const Value& root, Params& p) {
+    const Value& function = getJsonValue(root, "function-data");
+    for (auto expr : getJsonValue(function, "constraints")) {
+        Constraint* c = parseConstraint(toString(expr));
+        p.func_constraints_.push_back(c);
+    }
+}
+
+void
+Params::setConstraintsForPIs(const Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<const Constraint*> constraints;
         for (auto expr : getJsonValue(instance, "constraints")) {
-            Constraint* c = parseConstraintExpression(toString(expr));
+            Constraint* c = parseConstraint(toString(expr));
             constraints.push_back(c);
         }
         addMapping(instance_id,
@@ -563,14 +586,37 @@ Params::setPatternInstanceConstraints(const Value& root, Params& p) {
 }
 
 Constraint*
-Params::parseConstraintExpression(const string& str) {
-    string str_copy(Utils::searchReplace(str, "\n", " "));
-    str_copy = Utils::searchReplace(str_copy, "\r", " ");
-    str_copy = Utils::searchReplace(str_copy, "\t", " ");
-    Constraint* c = new Constraint(parseBoolExpr(str_copy));
-    eatWhitespace(str_copy);
-    if (str_copy.length() != 0) {
-        THROW(Exception, "Invalid constraint expression (trailing part)");
+Params::parseConstraint(const string& str) {
+    // Turn string into a single-line string
+    string sl_str(Utils::searchReplace(str, "\n", " "));
+    sl_str = Utils::searchReplace(sl_str, "\r", " ");
+    sl_str = Utils::searchReplace(sl_str, "\t", " ");
+
+    Constraint* c;
+    string sl_str_copy(sl_str);
+    // Check if it's an 'Data-Node-Is-Integer-Constant' constraint
+    bool was_parse_successful = false;
+    if (eat("(", sl_str_copy)) {
+        eatWhitespace(sl_str_copy);
+        if (eat("dnode-is-int-const ", sl_str_copy)) {
+            c = new DataNodeIsIntConstantConstraint(parseNodeID(sl_str_copy));
+            if (!eat(")", sl_str_copy)) {
+                THROW(Exception,
+                      "Invalid constraint expression (missing ')' char)");
+            }
+            sl_str = sl_str_copy;
+            was_parse_successful = true;
+        }
+    }
+    if (!was_parse_successful) {
+        // Assume it's a Boolean expression constraint
+        c = new BoolExprConstraint(parseBoolExpr(sl_str));
+    }
+
+    eatWhitespace(sl_str);
+    if (sl_str.length() != 0) {
+        delete c;
+        THROW(Exception, "Invalid constraint expression (has trailing part)");
     }
     return c;
 }
@@ -675,38 +721,70 @@ Params::parseNumExpr(string& str) {
             auto rhs = parseNumExpr(str);
             expr = new MinusExpr(lhs, rhs);
         }
+        else if (eat("int-to-num ", str)) {
+            auto e = parseIntExpr(str);
+            expr = new IntToNumExpr(e);
+        }
         else if (eat("bool-to-num ", str)) {
             auto e = parseBoolExpr(str);
             expr = new BoolToNumExpr(e);
         }
         else if (eat("node-id-to-num ", str)) {
-            auto e = parseNodeIdExpr(str);
-            expr = new NodeIdToNumExpr(e);
+            auto e = parseNodeIDExpr(str);
+            expr = new NodeIDToNumExpr(e);
         }
         else if (eat("insta-id-to-num ", str)) {
-            auto e = parseInstanceIdExpr(str);
-            expr = new InstanceIdToNumExpr(e);
+            auto e = parsePatternInstanceIDExpr(str);
+            expr = new PatternInstanceIDToNumExpr(e);
         }
         else if (eat("instr-id-to-num ", str)) {
-            auto e = parseInstructionIdExpr(str);
-            expr = new InstructionIdToNumExpr(e);
+            auto e = parseInstructionIDExpr(str);
+            expr = new InstructionIDToNumExpr(e);
         }
         else if (eat("pat-id-to-num ", str)) {
-            auto e = parsePatternIdExpr(str);
-            expr = new PatternIdToNumExpr(e);
+            auto e = parsePatternIDExpr(str);
+            expr = new PatternIDToNumExpr(e);
         }
         else if (eat("lab-id-to-num ", str)) {
-            auto e = parseLabelIdExpr(str);
-            expr = new LabelIdToNumExpr(e);
+            auto e = parseLabelIDExpr(str);
+            expr = new LabelIDToNumExpr(e);
         }
         else if (eat("reg-id-to-num ", str)) {
-            auto e = parseRegisterIdExpr(str);
-            expr = new RegisterIdToNumExpr(e);
+            auto e = parseRegisterIDExpr(str);
+            expr = new RegisterIDToNumExpr(e);
         }
         else if (eat("dist-pat-to-lab ", str)) {
-            auto lhs = parseInstanceIdExpr(str);
-            auto rhs = parseLabelIdExpr(str);
+            auto lhs = parsePatternInstanceIDExpr(str);
+            auto rhs = parseLabelIDExpr(str);
             expr = new DistanceBetweenInstanceAndLabelExpr(lhs, rhs);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+    }
+
+    return expr;
+}
+
+IntExpr*
+Params::parseIntExpr(string& str) {
+    IntExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eat("int-const-val-of-dnode ", str)) {
+            auto e = parseNodeIDExpr(str);
+            expr = new IntConstValueOfDataNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -726,30 +804,30 @@ Params::parseNumExpr(string& str) {
     return expr;
 }
 
-NodeIdExpr*
-Params::parseNodeIdExpr(string& str) {
+NodeIDExpr*
+Params::parseNodeIDExpr(string& str) {
     eatWhitespace(str);
     int num = eatInt(str);
-    return new ANodeIdExpr(num);
+    return new ANodeIDExpr(num);
 }
 
-InstanceIdExpr*
-Params::parseInstanceIdExpr(string& str) {
-    InstanceIdExpr* expr = NULL;
+PatternInstanceIDExpr*
+Params::parsePatternInstanceIDExpr(string& str) {
+    PatternInstanceIDExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("cov-of-anode ", str)) {
-            auto e = parseNodeIdExpr(str);
+            auto e = parseNodeIDExpr(str);
             expr = new CovererOfActionNodeExpr(e);
         }
         else if (eat("def-of-dnode ", str)) {
-            auto e = parseNodeIdExpr(str);
+            auto e = parseNodeIDExpr(str);
             expr = new DefinerOfDataNodeExpr(e);
         }
         else if (eat("def-of-snode ", str)) {
-            auto e = parseNodeIdExpr(str);
+            auto e = parseNodeIDExpr(str);
             expr = new DefinerOfStateNodeExpr(e);
         }
         else {
@@ -764,27 +842,27 @@ Params::parseInstanceIdExpr(string& str) {
     }
     else {
         if (eat("this", str)) {
-            expr = new ThisInstanceIdExpr;
+            expr = new ThisPatternInstanceIDExpr;
         }
         else {
             int num = eatInt(str);
-            expr = new AnInstanceIdExpr(num);
+            expr = new APatternInstanceIDExpr(num);
         }
     }
 
     return expr;
 }
 
-InstructionIdExpr*
-Params::parseInstructionIdExpr(string& str) {
-    InstructionIdExpr* expr = NULL;
+InstructionIDExpr*
+Params::parseInstructionIDExpr(string& str) {
+    InstructionIDExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("instr-of-pat ", str)) {
-            auto e = parsePatternIdExpr(str);
-            expr = new InstructionIdOfPatternExpr(e);
+            auto e = parsePatternIDExpr(str);
+            expr = new InstructionIDOfPatternExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -798,22 +876,22 @@ Params::parseInstructionIdExpr(string& str) {
     }
     else {
         int num = eatInt(str);
-        expr = new AnInstructionIdExpr(num);
+        expr = new AnInstructionIDExpr(num);
     }
 
     return expr;
 }
 
-PatternIdExpr*
-Params::parsePatternIdExpr(string& str) {
-    PatternIdExpr* expr = NULL;
+PatternIDExpr*
+Params::parsePatternIDExpr(string& str) {
+    PatternIDExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("pat-of-insta ", str)) {
-            auto e = parseInstanceIdExpr(str);
-            expr = new PatternIdOfInstanceExpr(e);
+            auto e = parsePatternInstanceIDExpr(str);
+            expr = new PatternIDOfInstanceExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -827,26 +905,26 @@ Params::parsePatternIdExpr(string& str) {
     }
     else {
         int num = eatInt(str);
-        expr = new APatternIdExpr(num);
+        expr = new APatternIDExpr(num);
     }
 
     return expr;
 }
 
-LabelIdExpr*
-Params::parseLabelIdExpr(string& str) {
-    LabelIdExpr* expr = NULL;
+LabelIDExpr*
+Params::parseLabelIDExpr(string& str) {
+    LabelIDExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("lab-alloc-to-insta ", str)) {
-            auto e = parseInstanceIdExpr(str);
-            expr = new LabelIdAllocatedToInstanceExpr(e);
+            auto e = parsePatternInstanceIDExpr(str);
+            expr = new LabelIDAllocatedToInstanceExpr(e);
         }
         else if (eat("lab-id-of-node ", str)) {
-            auto e = parseNodeIdExpr(str);
-            expr = new LabelIdOfLabelNodeExpr(e);
+            auto e = parseNodeIDExpr(str);
+            expr = new LabelIDOfLabelNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -865,16 +943,16 @@ Params::parseLabelIdExpr(string& str) {
     return expr;
 }
 
-RegisterIdExpr*
-Params::parseRegisterIdExpr(string& str) {
-    RegisterIdExpr* expr = NULL;
+RegisterIDExpr*
+Params::parseRegisterIDExpr(string& str) {
+    RegisterIDExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("reg-alloc-to-dnode ", str)) {
-            auto e = parseNodeIdExpr(str);
-            expr = new RegisterIdAllocatedToDataNodeExpr(e);
+            auto e = parseNodeIDExpr(str);
+            expr = new RegisterIDAllocatedToDataNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -888,21 +966,21 @@ Params::parseRegisterIdExpr(string& str) {
     }
     else {
         int num = eatInt(str);
-        expr = new ARegisterIdExpr(num);
+        expr = new ARegisterIDExpr(num);
     }
 
     return expr;
 }
 
-list<const RegisterIdExpr*>
-Params::parseListOfRegisterIdExpr(string& str) {
-    list<const RegisterIdExpr*> expr;
+list<const RegisterIDExpr*>
+Params::parseListOfRegisterIDExpr(string& str) {
+    list<const RegisterIDExpr*> expr;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         while (true) {
             eatWhitespace(str);
-            expr.push_back(parseRegisterIdExpr(str));
+            expr.push_back(parseRegisterIDExpr(str));
             if (eat(" ", str)) continue;
             if (eat(")", str)) break;
         }
@@ -934,11 +1012,11 @@ Params::parseSetExpr(string& str) {
             expr = new DiffSetExpr(lhs, rhs);
         }
         else if (eat("domset-of ", str)) {
-            auto e = parseLabelIdExpr(str);
-            expr = new DomSetOfLabelIdExpr(e);
+            auto e = parseLabelIDExpr(str);
+            expr = new DomSetOfLabelIDExpr(e);
         }
         else if (eat("reg-class ", str)) {
-            auto es = parseListOfRegisterIdExpr(str);
+            auto es = parseListOfRegisterIDExpr(str);
             expr = new RegisterClassExpr(es);
         }
         else {
@@ -966,12 +1044,12 @@ Params::parseSetElemExpr(string& str) {
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eat("lab-id-to-set-elem ", str)) {
-            auto e = parseLabelIdExpr(str);
-            expr = new LabelIdToSetElemExpr(e);
+            auto e = parseLabelIDExpr(str);
+            expr = new LabelIDToSetElemExpr(e);
         }
         else if (eat("reg-id-to-set-elem ", str)) {
-            auto e = parseRegisterIdExpr(str);
-            expr = new RegisterIdToSetElemExpr(e);
+            auto e = parseRegisterIDExpr(str);
+            expr = new RegisterIDToSetElemExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -988,6 +1066,12 @@ Params::parseSetElemExpr(string& str) {
     }
 
     return expr;
+}
+
+ID
+Params::parseNodeID(string& str) {
+    eatWhitespace(str);
+    return eatInt(str);
 }
 
 void
@@ -1026,49 +1110,49 @@ Params::eatInt(string& str) {
 }
 
 bool
-Params::isActionNode(const Id& id) const {
-    for (const Id& c_id : getAllActionNodeIds()) {
+Params::isActionNodeInF(const ID& id) const {
+    for (const ID& c_id : getIDsForAllActionNodesInF()) {
         if (c_id == id) return true;
     }
     return false;
 }
 
 bool
-Params::isDataNode(const Id& id) const {
-    for (const Id& c_id : getAllDataNodeIds()) {
+Params::isDataNodeInF(const ID& id) const {
+    for (const ID& c_id : getIDsForAllDataNodesInF()) {
         if (c_id == id) return true;
     }
     return false;
 }
 
 bool
-Params::isStateNode(const Id& id) const {
-    for (const Id& c_id : getAllStateNodeIds()) {
+Params::isStateNodeInF(const ID& id) const {
+    for (const ID& c_id : getIDsForAllStateNodesInF()) {
         if (c_id == id) return true;
     }
     return false;
 }
 
 bool
-Params::isLabelNode(const Id& id) const  {
-    for (const Id& c_id : getAllLabelNodeIds()) {
+Params::isLabelNodeInF(const ID& id) const  {
+    for (const ID& c_id : getIDsForAllLabelNodesInF()) {
         if (c_id == id) return true;
     }
     return false;
 }
 
 bool
-Params::getNoUseDefDomConstraintsSettingForInstance(const Id& instance) const {
+Params::getNoUseDefDomConstraintsSettingForPI(const ID& instance) const {
     return getMappedValue(instance, pat_inst_no_use_def_dom_constraints_);
 }
 
 void
-Params::setPatternInstanceNoUseDefDomConstraintsSettings(
+Params::setNoUseDefDomConstraintsSettingsForPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
-        const Id& instance_id = toId(getJsonValue(instance, "instance-id"));
+        const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         const string field_name("no-use-def-dom-constraints");
         bool setting = hasJsonValue(instance, field_name)
                        ? toBool(getJsonValue(instance, field_name))
@@ -1080,12 +1164,12 @@ Params::setPatternInstanceNoUseDefDomConstraintsSettings(
 }
 
 void
-Params::setFunctionRootLabel(const Json::Value& root, Params& p) {
+Params::setRootLabelInF(const Json::Value& root, Params& p) {
     const Value& function = getJsonValue(root, "function-data");
-    p.func_root_label_ = toId(getJsonValue(function, "root-label"));
+    p.func_root_label_ = toID(getJsonValue(function, "root-label"));
 }
 
-Id
-Params::getRootLabel(void) const {
+ID
+Params::getRootLabelInF(void) const {
     return func_root_label_;
 }

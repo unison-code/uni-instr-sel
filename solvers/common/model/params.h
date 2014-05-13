@@ -54,44 +54,44 @@ class Params {
     ~Params(void);
 
     /**
-     * Gets the number of action nodes in the function.
+     * Gets the number of action nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumActionNodes(void) const;
+    getNumActionNodesInF(void) const;
 
     /**
-     * Gets the number of data nodes in the function.
+     * Gets the number of data nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumDataNodes(void) const;
+    getNumDataNodesInF(void) const;
 
     /**
-     * Gets the number of state nodes in the function.
+     * Gets the number of state nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumStateNodes(void) const;
+    getNumStateNodesInF(void) const;
 
     /**
-     * Gets the number of label nodes in the function.
+     * Gets the number of label nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumLabelNodes(void) const;
+    getNumLabelNodesInF(void) const;
 
     /**
-     * Gets the number of machine registers.
+     * Gets the number of registers in the target machine.
      *
      * @returns Number of registers.
      */
     size_t
-    getNumRegisters(void) const;
+    getNumRegistersInM(void) const;
 
     /**
      * Gets the number of pattern instances.
@@ -99,7 +99,7 @@ class Params {
      * @returns Number of instances.
      */
     size_t
-    getNumInstances(void) const;
+    getNumPIs(void) const;
 
     /**
      * Gets the list of dominators for a given label node in the function graph.
@@ -110,16 +110,16 @@ class Params {
      * @throws Exception
      *         If there is no node with such an ID.
      */
-    std::list<Id>
-    getDomsetOfLabel(const Id& id) const;
+    std::list<ID>
+    getDomsetForLabelNodeInF(const ID& id) const;
 
     /**
-     * Gets the root label of the function graph.
+     * Gets the root label in the function graph.
      *
      * @returns Node ID.
      */
-    Id
-    getRootLabel(void) const;
+    ID
+    getRootLabelInF(void) const;
 
     /**
      * Gets the code size of selecting a particular pattern instance.
@@ -131,7 +131,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     int
-    getCodeSizeOfInstance(const Id& instance) const;
+    getCodeSizeForPI(const ID& instance) const;
 
     /**
      * Gets the latency of selecting a particular pattern instance.
@@ -143,7 +143,7 @@ class Params {
      *         If there is no instance with such an ID.
      */
     int
-    getLatencyOfInstance(const Id& instance) const;
+    getLatencyForPI(const ID& instance) const;
 
     /**
      * Gets the function action nodes covered by a particular pattern instance.
@@ -154,8 +154,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getActionNodesCoveredByInstance(const Id& instance) const;
+    std::list<ID>
+    getActionNodesCoveredByPI(const ID& instance) const;
 
     /**
      * Gets the function data nodes defined by a particular pattern instance.
@@ -166,8 +166,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getDataNodesDefinedByInstance(const Id& instance) const;
+    std::list<ID>
+    getDataNodesDefinedByPI(const ID& instance) const;
 
     /**
      * Gets the function state nodes defined by a particular pattern instance.
@@ -178,8 +178,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getStateNodesDefinedByInstance(const Id& instance) const;
+    std::list<ID>
+    getStateNodesDefinedByPI(const ID& instance) const;
 
     /**
      * Gets the function data nodes used by a particular pattern instance.
@@ -190,8 +190,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getDataNodesUsedByInstance(const Id& instance) const;
+    std::list<ID>
+    getDataNodesUsedByPI(const ID& instance) const;
 
     /**
      * Gets the function state nodes used by a particular pattern instance.
@@ -202,8 +202,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getStateNodesUsedByInstance(const Id& instance) const;
+    std::list<ID>
+    getStateNodesUsedByPI(const ID& instance) const;
 
     /**
      * Gets the function label nodes referred to by a particular pattern
@@ -215,8 +215,8 @@ class Params {
      * @throws Exception
      *         If there is no instance with such an ID.
      */
-    std::list<Id>
-    getLabelNodesReferredByInstance(const Id& instance) const;
+    std::list<ID>
+    getLabelNodesReferredByPI(const ID& instance) const;
 
     /**
      * Checks if use-def-dom constraints should be removed for a particular
@@ -229,10 +229,10 @@ class Params {
      *         If there is no instance with such an ID.
      */
     bool
-    getNoUseDefDomConstraintsSettingForInstance(const Id& instance) const;
+    getNoUseDefDomConstraintsSettingForPI(const ID& instance) const;
 
     /**
-     * Gets the array index of a given function action node.
+     * Gets the array index for a given action node in the function graph.
      *
      * @param id
      *        Node ID.
@@ -241,10 +241,10 @@ class Params {
      *         If there is no node with such an ID.
      */
     ArrayIndex
-    getIndexOfActionNode(const Id& id) const;
+    getIndexForActionNodeInF(const ID& id) const;
 
     /**
-     * Gets the array index of a given function data node.
+     * Gets the array index for a given data node in the function graph.
      *
      * @param id
      *        Node ID.
@@ -253,10 +253,10 @@ class Params {
      *         If there is no node with such an ID.
      */
     ArrayIndex
-    getIndexOfDataNode(const Id& id) const;
+    getIndexForDataNodeInF(const ID& id) const;
 
     /**
-     * Gets the array index of a given function state node.
+     * Gets the array index for a given state node in the function graph.
      *
      * @param id
      *        Node ID.
@@ -265,10 +265,10 @@ class Params {
      *         If there is no node with such an ID.
      */
     ArrayIndex
-    getIndexOfStateNode(const Id& id) const;
+    getIndexForStateNodeInF(const ID& id) const;
 
     /**
-     * Gets the array index of a given function label node.
+     * Gets the array index for a given label node in the function graph.
      *
      * @param id
      *        Node ID.
@@ -277,10 +277,10 @@ class Params {
      *         If there is no node with such an ID.
      */
     ArrayIndex
-    getIndexOfLabelNode(const Id& id) const;
+    getIndexForLabelNodeInF(const ID& id) const;
 
     /**
-     * Gets the array index of a given machine register.
+     * Gets the array index for a given register in the target machine.
      *
      * @param id
      *        Register ID.
@@ -289,10 +289,10 @@ class Params {
      *         If there is no register with such an ID.
      */
     ArrayIndex
-    getIndexOfRegister(const Id& id) const;
+    getIndexForRegisterInM(const ID& id) const;
 
     /**
-     * Gets the array index of a given pattern instance.
+     * Gets the array index for a given pattern instance.
      *
      * @param id
      *        Pattern instance ID.
@@ -301,10 +301,11 @@ class Params {
      *         If there is no instance with such an ID.
      */
     ArrayIndex
-    getIndexOfInstance(const Id& id) const;
+    getIndexForPI(const ID& id) const;
 
     /**
-     * Gets a list of array indices of a given list of function action nodes.
+     * Gets a list of array indices for a given list of action nodes in the
+     * function graph.
      *
      * @param ids
      *        List of node ID.
@@ -313,10 +314,11 @@ class Params {
      *         If there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfActionNodes(const std::list<Id>& ids) const;
+    getIndicesForActionNodesInF(const std::list<ID>& ids) const;
 
     /**
-     * Gets a list of array indices of a given list of function data nodes.
+     * Gets a list of array indices for a given list of data nodes in the
+     * function graph.
      *
      * @param ids
      *        List of node ID.
@@ -325,10 +327,11 @@ class Params {
      *         If there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfDataNodes(const std::list<Id>& ids) const;
+    getIndicesForDataNodesInF(const std::list<ID>& ids) const;
 
     /**
-     * Gets a list of array indices of a given list of function state nodes.
+     * Gets a list of array indices for a given list of state nodes in the
+     * function graph.
      *
      * @param ids
      *        List of node ID.
@@ -337,10 +340,11 @@ class Params {
      *         If there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfStateNodes(const std::list<Id>& ids) const;
+    getIndicesForStateNodesInF(const std::list<ID>& ids) const;
 
     /**
-     * Gets a list of array indices of a given list of function label nodes.
+     * Gets a list of array indices for a given list of label nodes in the
+     * function graph.
      *
      * @param ids
      *        List of node ID.
@@ -349,10 +353,10 @@ class Params {
      *         If there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfLabelNodes(const std::list<Id>& ids) const;
+    getIndicesForLabelNodesInF(const std::list<ID>& ids) const;
 
     /**
-     * Gets a list of array indices of a given list of machine registers.
+     * Gets a list of array indices for a given list of machine registers.
      *
      * @param ids
      *        List of register ID.
@@ -361,58 +365,66 @@ class Params {
      *         If there is a register ID with no mapping.
      */
     std::list<ArrayIndex>
-    getIndicesOfRegisters(const std::list<Id>& ids) const;
+    getIndicesForRegistersInM(const std::list<ID>& ids) const;
 
     /**
-     * Gets a list of all the function action node IDs.
+     * Gets a list of IDs for all action nodes in the function graph.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllActionNodeIds(void) const;
+    std::list<ID>
+    getIDsForAllActionNodesInF(void) const;
 
     /**
-     * Gets a list of all the function data node IDs.
+     * Gets a list of IDs for all data nodes in the function graph.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllDataNodeIds(void) const;
+    std::list<ID>
+    getIDsForAllDataNodesInF(void) const;
 
     /**
-     * Gets a list of all the function state node IDs.
+     * Gets a list of IDs for all state nodes in the function graph.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllStateNodeIds(void) const;
+    std::list<ID>
+    getIDsForAllStateNodesInF(void) const;
 
     /**
-     * Gets a list of all the function label node IDs.
+     * Gets a list of IDs for all label nodes in the function graph.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllLabelNodeIds(void) const;
+    std::list<ID>
+    getIDsForAllLabelNodesInF(void) const;
 
     /**
-     * Gets a list of all the machine register IDs.
+     * Gets a list of IDs for all registers in the target machine.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllRegisterIds(void) const;
+    std::list<ID>
+    getIDsForAllRegisterInM(void) const;
 
     /**
-     * Gets a list of all the pattern instance IDs.
+     * Gets a list of IDs for all pattern instances.
      *
      * @returns List of IDs.
      */
-    std::list<Id>
-    getAllInstanceIds(void) const;
+    std::list<ID>
+    getIDsForAllPIs(void) const;
 
     /**
-     * Gets the constraints of a given pattern instance.
+     * Gets the constraints for the function graph.
+     *
+     * @returns Corresponding constraints.
+     */
+    std::list<const Constraint*>
+    getConstraintsForF(void) const;
+
+    /**
+     * Gets the constraints for a given pattern instance.
      *
      * @param id
      *        Pattern instance ID.
@@ -421,47 +433,47 @@ class Params {
      *         If there is no instance with such an ID.
      */
     std::list<const Constraint*>
-    getConstraintsOfInstance(const Id& id) const;
+    getConstraintsForPI(const ID& id) const;
 
     /**
-     * Checks if a node ID represents an action node.
+     * Checks if a node ID represents an action node in the function graph.
      *
      * @param id
      *        Node ID.
      * @returns \c true if action node.
      */
     bool
-    isActionNode(const Id& id) const;
+    isActionNodeInF(const ID& id) const;
 
     /**
-     * Checks if a node ID represents an data node.
+     * Checks if a node ID represents an data node in the function graph.
      *
      * @param id
      *        Node ID.
      * @returns \c true if data node.
      */
     bool
-    isDataNode(const Id& id) const;
+    isDataNodeInF(const ID& id) const;
 
     /**
-     * Checks if a node ID represents an state node.
+     * Checks if a node ID represents an state node in the function graph.
      *
      * @param id
      *        Node ID.
      * @returns \c true if state node.
      */
     bool
-    isStateNode(const Id& id) const;
+    isStateNodeInF(const ID& id) const;
 
     /**
-     * Checks if a node ID represents an label node.
+     * Checks if a node ID represents an label node in the function graph.
      *
      * @param id
      *        Node ID.
      * @returns \c true if label node.
      */
     bool
-    isLabelNode(const Id& id) const;
+    isLabelNodeInF(const ID& id) const;
 
     /**
      * Parses a JSON string into an internal model parameters object.
@@ -560,7 +572,7 @@ class Params {
     getJsonValue(const Json::Value& value, const std::string& name);
 
     /**
-     * Gets a JSON value as an Id.
+     * Gets a JSON value as an ID.
      *
      * @param value
      *        JSON value.
@@ -568,8 +580,8 @@ class Params {
      * @throws Exception
      *         When the value is not of expected type.
      */
-    static Id
-    toId(const Json::Value& value);
+    static ID
+    toID(const Json::Value& value);
 
     /**
      * Gets a JSON value as an integer.
@@ -609,7 +621,7 @@ class Params {
 
     /**
      * Computes the node ID-to-array index mappings for the action nodes of the
-     * function.
+     * function graph.
      *
      * @param root
      *        The JSON root value.
@@ -619,10 +631,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionActionNodes(const Json::Value& root, Params& p);
+    computeMappingsForActionNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Same as computeMappingsForFActionNodes(const Json::Value&,
      * Params&) but for the data nodes.
      *
      * @param root
@@ -633,10 +645,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionDataNodes(const Json::Value& root, Params& p);
+    computeMappingsForDataNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Same as computeMappingsForFActionNodes(const Json::Value&,
      * Params&) but for the state nodes.
      *
      * @param root
@@ -647,10 +659,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForFunctionStateNodes(const Json::Value& root, Params& p);
+    computeMappingsForStateNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Same as computeMappingsForFActionNodes(const Json::Value&,
      * Params&) but for the label nodes, and also sets the dominator sets.
      *
      * @param root
@@ -661,12 +673,12 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsAndDomsetsForFunctionLabelNodes(const Json::Value& root,
-                                                   Params& p);
+    computeMappingsAndDomsetsForLabelNodesInF(const Json::Value& root,
+                                              Params& p);
 
     /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
-     * Params&) but for the machine register IDs.
+     * Same as computeMappingsForFActionNodes(const Json::Value&, Params&) but
+     * for the register in the target machine.
      *
      * @param root
      *        The JSON root value.
@@ -676,10 +688,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForMachineRegisters(const Json::Value& root, Params& p);
+    computeMappingsForRegistersInM(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFunctionActionNodes(const Json::Value&,
+     * Same as computeMappingsForFActionNodes(const Json::Value&,
      * Params&) but for the pattern instance IDs.
      *
      * @param root
@@ -690,10 +702,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForPatternInstances(const Json::Value& root, Params& p);
+    computeMappingsForPIs(const Json::Value& root, Params& p);
 
     /**
-     * Sets the root label for the function.
+     * Sets the root label for the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -703,10 +715,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setFunctionRootLabel(const Json::Value& root, Params& p);
+    setRootLabelInF(const Json::Value& root, Params& p);
 
     /**
-     * Sets the code size values for the pattern instances.
+     * Sets the constraints of the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -716,10 +728,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternInstanceCodeSizes(const Json::Value& root, Params& p);
+    setConstraintsForF(const Json::Value& root, Params& p);
 
     /**
-     * Sets the latency values for the pattern instances.
+     * Sets the code size values of the pattern instances.
      *
      * @param root
      *        The JSON root value.
@@ -729,7 +741,20 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternInstanceLatencies(const Json::Value& root, Params& p);
+    setCodeSizesForPIs(const Json::Value& root, Params& p);
+
+    /**
+     * Sets the latency values of the pattern instances.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setLatenciesForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the no-use-def-dom-constraints settings for the pattern instances.
@@ -742,8 +767,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternInstanceNoUseDefDomConstraintsSettings(const Json::Value& root,
-                                              Params& p);
+    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -757,7 +781,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPatternInstances(const Json::Value& root, Params& p);
+    setActionNodesCoveredByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function data nodes defined by the respective pattern
@@ -771,7 +795,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByPatternInstances(const Json::Value& root, Params& p);
+    setDataNodesDefinedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function state nodes defined by the respective pattern
@@ -785,7 +809,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByPatternInstances(const Json::Value& root, Params& p);
+    setStateNodesDefinedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function data nodes used by the respective pattern instances.
@@ -798,7 +822,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesUsedByPatternInstances(const Json::Value& root, Params& p);
+    setDataNodesUsedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function state nodes used by the respective pattern instances.
@@ -811,7 +835,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesUsedByPatternInstances(const Json::Value& root, Params& p);
+    setStateNodesUsedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function label nodes referred to by the respective pattern
@@ -825,7 +849,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByPatternInstances(const Json::Value& root, Params& p);
+    setLabelNodesReferredByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the pattern constraints.
@@ -838,10 +862,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setPatternInstanceConstraints(const Json::Value& root, Params& p);
+    setConstraintsForPIs(const Json::Value& root, Params& p);
 
     /**
-     * Parses a constraint expression string.
+     * Parses a constraint string.
      *
      * @param str
      *        String to parse.
@@ -850,7 +874,7 @@ class Params {
      *         When the parsing fails.
      */
     static Constraint*
-    parseConstraintExpression(const std::string& str);
+    parseConstraint(const std::string& str);
 
     /**
      * Parses a Boolean expression.
@@ -873,14 +897,24 @@ class Params {
     parseNumExpr(std::string& str);
 
     /**
+     * Parses an integer expression.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static IntExpr*
+    parseIntExpr(std::string& str);
+
+    /**
      * Parses a node ID expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static NodeIdExpr*
-    parseNodeIdExpr(std::string& str);
+    static NodeIDExpr*
+    parseNodeIDExpr(std::string& str);
 
     /**
      * Parses a pattern instance ID expression.
@@ -889,8 +923,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static InstanceIdExpr*
-    parseInstanceIdExpr(std::string& str);
+    static PatternInstanceIDExpr*
+    parsePatternInstanceIDExpr(std::string& str);
 
     /**
      * Parses an instruction ID expression.
@@ -899,8 +933,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static InstructionIdExpr*
-    parseInstructionIdExpr(std::string& str);
+    static InstructionIDExpr*
+    parseInstructionIDExpr(std::string& str);
 
     /**
      * Parses a pattern ID expression.
@@ -909,8 +943,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static PatternIdExpr*
-    parsePatternIdExpr(std::string& str);
+    static PatternIDExpr*
+    parsePatternIDExpr(std::string& str);
 
     /**
      * Parses a label ID expression.
@@ -919,8 +953,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static LabelIdExpr*
-    parseLabelIdExpr(std::string& str);
+    static LabelIDExpr*
+    parseLabelIDExpr(std::string& str);
 
     /**
      * Parses a register ID expression.
@@ -929,8 +963,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    static RegisterIdExpr*
-    parseRegisterIdExpr(std::string& str);
+    static RegisterIDExpr*
+    parseRegisterIDExpr(std::string& str);
 
     /**
      * Parses a list of register ID expression.
@@ -939,8 +973,8 @@ class Params {
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed list of expression.
      */
-    static std::list<const RegisterIdExpr*>
-    parseListOfRegisterIdExpr(std::string& str);
+    static std::list<const RegisterIDExpr*>
+    parseListOfRegisterIDExpr(std::string& str);
 
     /**
      * Parses a set expression.
@@ -961,6 +995,16 @@ class Params {
      */
     static SetElemExpr*
     parseSetElemExpr(std::string& str);
+
+    /**
+     * Parses a node ID.
+     *
+     * @param str
+     *        String to parse. This will be modified as part of parsing.
+     * @returns Parsed expression.
+     */
+    static ID
+    parseNodeID(std::string& str);
 
     /**
      * Removes initial whitespace from a string.
@@ -996,110 +1040,122 @@ class Params {
     eatInt(std::string& str);
 
     /**
+     * Destroys the function constraints contained by this object.
+     */
+    void
+    destroyConstraintsForF(void);
+
+    /**
      * Destroys the pattern instance constraints contained by this object.
      */
     void
-    destroyConstraints(void);
+    destroyConstraintsForPIs(void);
 
   protected:
     /**
      * Maps the node ID of an action node to an array index.
      */
-    std::map<Id, ArrayIndex> func_action_node_mappings_;
+    std::map<ID, ArrayIndex> func_action_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for data nodes.
      */
-    std::map<Id, ArrayIndex> func_data_node_mappings_;
+    std::map<ID, ArrayIndex> func_data_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for state nodes.
      */
-    std::map<Id, ArrayIndex> func_state_node_mappings_;
+    std::map<ID, ArrayIndex> func_state_node_mappings_;
 
     /**
      * Same as #func_action_node_mappings_ but for label nodes.
      */
-    std::map<Id, ArrayIndex> func_label_node_mappings_;
+    std::map<ID, ArrayIndex> func_label_node_mappings_;
 
     /**
-     * The dominator sets for each label node in the function.
+     * The dominator sets for each label node in the function graph.
      */
-    std::map< Id, std::list<Id> > func_label_domsets_;
+    std::map< ID, std::list<ID> > func_label_domsets_;
 
     /**
-     * The root label which indicates the entry point in the function.
+     * The root label which indicates the entry point in the function graph.
      */
-    Id func_root_label_;
+    ID func_root_label_;
+
+    /**
+     * The constraints for the function graph. The constraints are destroyed
+     * when this object is deleted.
+     */
+    std::list<const Constraint*> func_constraints_;
 
     /**
      * Same as #func_action_node_mappings_ but for machine registers.
      */
-    std::map<Id, ArrayIndex> mach_reg_mappings_;
+    std::map<ID, ArrayIndex> mach_reg_mappings_;
 
     /**
      * Maps the pattern instance ID to an array index.
      */
-    std::map<Id, ArrayIndex> pat_inst_mappings_;
+    std::map<ID, ArrayIndex> pat_inst_mappings_;
 
     /**
      * The code size (in bytes) of the instruction for each pattern instance.
      */
-    std::map<Id, int> pat_inst_code_sizes_;
+    std::map<ID, int> pat_inst_code_sizes_;
 
     /**
      * The latency (in cycles) of the instruction for each pattern instance.
      */
-    std::map<Id, int> pat_inst_latencies_;
+    std::map<ID, int> pat_inst_latencies_;
 
     /**
-     * The action nodes in the function graphs which are covered by each pattern
+     * The action nodes in the function graph which are covered by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_actions_covered_;
+    std::map< ID, std::list<ID> > pat_inst_actions_covered_;
 
     /**
-     * The data nodes in the function graphs which are defined by each pattern
+     * The data nodes in the function graph which are defined by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_data_defined_;
+    std::map< ID, std::list<ID> > pat_inst_data_defined_;
 
     /**
-     * The data nodes in the function graphs which are used by each pattern
+     * The data nodes in the function graph which are used by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_data_used_;
+    std::map< ID, std::list<ID> > pat_inst_data_used_;
 
     /**
-     * The state nodes in the function graphs which are defined by each pattern
+     * The state nodes in the function graph which are defined by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_states_defined_;
+    std::map< ID, std::list<ID> > pat_inst_states_defined_;
 
     /**
-     * The state nodes in the function graphs which are used by each pattern
+     * The state nodes in the function graph which are used by each pattern
      * instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_states_used_;
+    std::map< ID, std::list<ID> > pat_inst_states_used_;
 
     /**
-     * The label nodes in the function graphs which are referred to by each
+     * The label nodes in the function graph which are referred to by each
      * pattern instance.
      */
-    std::map< Id, std::list<Id> > pat_inst_labels_referred_;
+    std::map< ID, std::list<ID> > pat_inst_labels_referred_;
 
     /**
      * The constraints for each pattern instance. The constraints are destroyed
      * when this object is deleted.
      */
-    std::map< Id, std::list<const Constraint*> > pat_inst_constraints_;
+    std::map< ID, std::list<const Constraint*> > pat_inst_constraints_;
 
     /**
      * Whether use-def-dom constraints should be applied on a particular pattern
      * instance. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::map<Id, bool> pat_inst_no_use_def_dom_constraints_;
+    std::map<ID, bool> pat_inst_no_use_def_dom_constraints_;
 };
 
 }

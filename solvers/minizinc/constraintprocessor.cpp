@@ -30,24 +30,46 @@
 using namespace Model;
 using std::string;
 
-// TODO: remove
-#include <iostream>
-using std::cout;
-using std::endl;
-
 ConstraintProcessor::ConstraintProcessor(const Model::Params& p)
-    : p_(p)
+    : p_(p),
+      is_processing_pi_constraint_(false)
 {}
 
 ConstraintProcessor::~ConstraintProcessor(void) {}
 
 string
-ConstraintProcessor::process(const Id& id, const Constraint* c) {
-    instance_id_ = id;
-    return string("constraint\n")
+ConstraintProcessor::processConstraintForPI(const Constraint* c, const ID& id) {
+    is_processing_pi_constraint_ = true;
+    piid_ = id;
+    string constraint_str =
+        string("constraint\n")
         + getInstanceSelectedVariableArrayName() + "["
-        + Utils::toString(p_.getIndexOfInstance(instance_id_))
-        + "] -> " + process(c->getExpr()) + ";";
+        + Utils::toString(p_.getIndexForPI(piid_))
+        + "] -> " + process(c) + ";";
+    is_processing_pi_constraint_ = false;
+    return constraint_str;
+}
+
+string
+ConstraintProcessor::processConstraintForF(const Constraint* c) {
+    return string("constraint\n") + process(c) + ";";
+}
+
+string
+ConstraintProcessor::process(const Constraint* c) {
+    if (const BoolExprConstraint* dc =
+        dynamic_cast<const BoolExprConstraint*>(c))
+    {
+        return process(dc->getExpr());
+    }
+    else if (dynamic_cast<const DataNodeIsIntConstantConstraint*>(c))
+    {
+        // TODO: fix implementation
+        return "?";
+    }
+    else {
+        THROW(Exception, "Constraint is of unknown derived class");
+    }
 }
 
 string
@@ -100,7 +122,7 @@ ConstraintProcessor::process(const BoolExpr* e) {
             + process(de->getRhs()) + ")";
     }
     else {
-        THROW(Exception, "BoolExpr of unknown derived class");
+        THROW(Exception, "BoolExpr is of unknown derived class");
     }
 }
 
@@ -114,39 +136,39 @@ ConstraintProcessor::process(const NumExpr* e) {
         return string("(") + process(de->getLhs()) + " - "
             + process(de->getRhs()) + ")";
     }
-    else if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
-        return Utils::toString(de->getValue());
+    else if (const IntToNumExpr* de = dynamic_cast<const IntToNumExpr*>(e)) {
+        return process(de->getExpr());
     }
     else if (const BoolToNumExpr* de = dynamic_cast<const BoolToNumExpr*>(e)) {
         return string("bool2int(") + process(de->getExpr()) + ")";
     }
-    else if (const NodeIdToNumExpr* de =
-             dynamic_cast<const NodeIdToNumExpr*>(e))
+    else if (const NodeIDToNumExpr* de =
+             dynamic_cast<const NodeIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const InstanceIdToNumExpr* de =
-             dynamic_cast<const InstanceIdToNumExpr*>(e))
+    else if (const PatternInstanceIDToNumExpr* de =
+             dynamic_cast<const PatternInstanceIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const InstructionIdToNumExpr* de =
-             dynamic_cast<const InstructionIdToNumExpr*>(e))
+    else if (const InstructionIDToNumExpr* de =
+             dynamic_cast<const InstructionIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const PatternIdToNumExpr* de =
-             dynamic_cast<const PatternIdToNumExpr*>(e))
+    else if (const PatternIDToNumExpr* de =
+             dynamic_cast<const PatternIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const LabelIdToNumExpr* de =
-             dynamic_cast<const LabelIdToNumExpr*>(e))
+    else if (const LabelIDToNumExpr* de =
+             dynamic_cast<const LabelIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const RegisterIdToNumExpr* de =
-             dynamic_cast<const RegisterIdToNumExpr*>(e))
+    else if (const RegisterIDToNumExpr* de =
+             dynamic_cast<const RegisterIDToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -158,42 +180,62 @@ ConstraintProcessor::process(const NumExpr* e) {
             + process(de->getLhs()) + "," + process(de->getRhs()) + "]]";
     }
     else {
-        THROW(Exception, "NumExpr of unknown derived class");
+        THROW(Exception, "NumExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const NodeIdExpr* e) {
-    if (const ANodeIdExpr* de = dynamic_cast<const ANodeIdExpr*>(e)) {
-        const Id& id = de->getId();
-        if (p_.isActionNode(id)) {
-            return Utils::toString(p_.getIndexOfActionNode(id));
+ConstraintProcessor::process(const NodeIDExpr* e) {
+    if (const ANodeIDExpr* de = dynamic_cast<const ANodeIDExpr*>(e)) {
+        const ID& id = de->getID();
+        if (p_.isActionNodeInF(id)) {
+            return Utils::toString(p_.getIndexForActionNodeInF(id));
         }
-        else if (p_.isDataNode(id)) {
-            return Utils::toString(p_.getIndexOfDataNode(id));
+        else if (p_.isDataNodeInF(id)) {
+            return Utils::toString(p_.getIndexForDataNodeInF(id));
         }
-        else if (p_.isStateNode(id)) {
-            return Utils::toString(p_.getIndexOfStateNode(id));
+        else if (p_.isStateNodeInF(id)) {
+            return Utils::toString(p_.getIndexForStateNodeInF(id));
         }
-        else if (p_.isLabelNode(id)) {
-            return Utils::toString(p_.getIndexOfLabelNode(id));
+        else if (p_.isLabelNodeInF(id)) {
+            return Utils::toString(p_.getIndexForLabelNodeInF(id));
         }
         else {
             THROW(Exception, "Node ID not found");
         }
     }
     else {
-        THROW(Exception, "NodeIdExpr of unknown derived class");
+        THROW(Exception, "NodeIDExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const InstanceIdExpr* e) {
-    if (const AnInstanceIdExpr* de = dynamic_cast<const AnInstanceIdExpr*>(e)) {
-        return Utils::toString(p_.getIndexOfInstance(de->getId()));
+ConstraintProcessor::process(const IntExpr* e) {
+    if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
+        return Utils::toString(de->getValue());
     }
-    else if (dynamic_cast<const ThisInstanceIdExpr*>(e)) {
-        return Utils::toString(p_.getIndexOfInstance(instance_id_));
+    else if (dynamic_cast<const IntConstValueOfDataNodeExpr*>(e)) {
+        // TODO: fix implementation
+        return "?";
+    }
+    else {
+        THROW(Exception, "NodeIDExpr is of unknown derived class");
+    }
+}
+
+string
+ConstraintProcessor::process(const PatternInstanceIDExpr* e) {
+    if (const APatternInstanceIDExpr* de =
+        dynamic_cast<const APatternInstanceIDExpr*>(e))
+    {
+        return Utils::toString(p_.getIndexForPI(de->getID()));
+    }
+    else if (dynamic_cast<const ThisPatternInstanceIDExpr*>(e)) {
+        if (!is_processing_pi_constraint_) {
+            THROW(Exception, "ThisPatternInstanceIDExpr is only allowed to be "
+                             "used within pattern instance constraints");
+        }
+        return Utils::toString(p_.getIndexForPI(piid_));
     }
     else if (const CovererOfActionNodeExpr* de =
              dynamic_cast<const CovererOfActionNodeExpr*>(e))
@@ -214,71 +256,71 @@ ConstraintProcessor::process(const InstanceIdExpr* e) {
             + "[" + process(de->getExpr()) + "]";
     }
     else {
-        THROW(Exception, "InstanceIdExpr of unknown derived class");
+        THROW(Exception, "PatternInstanceIDExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const InstructionIdExpr* e) {
-    if (dynamic_cast<const AnInstructionIdExpr*>(e)) {
+ConstraintProcessor::process(const InstructionIDExpr* e) {
+    if (dynamic_cast<const AnInstructionIDExpr*>(e)) {
         // TODO: fix implementation
         return "?";
     }
-    else if (dynamic_cast<const InstructionIdOfPatternExpr*>(e)) {
+    else if (dynamic_cast<const InstructionIDOfPatternExpr*>(e)) {
         // TODO: fix implementation
         return "?";
     }
     else {
-        THROW(Exception, "InstructionIdExpr of unknown derived class");
+        THROW(Exception, "InstructionIDExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const PatternIdExpr* e) {
-    if (dynamic_cast<const APatternIdExpr*>(e)) {
+ConstraintProcessor::process(const PatternIDExpr* e) {
+    if (dynamic_cast<const APatternIDExpr*>(e)) {
         // TODO: fix implementation
         return "?";
     }
-    else if (dynamic_cast<const PatternIdOfInstanceExpr*>(e)) {
+    else if (dynamic_cast<const PatternIDOfInstanceExpr*>(e)) {
         // TODO: fix implementation
         return "?";
     }
     else {
-        THROW(Exception, "PatternIdExpr of unknown derived class");
+        THROW(Exception, "PatternIDExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const LabelIdExpr* e) {
-    if (const LabelIdAllocatedToInstanceExpr* de =
-        dynamic_cast<const LabelIdAllocatedToInstanceExpr*>(e))
+ConstraintProcessor::process(const LabelIDExpr* e) {
+    if (const LabelIDAllocatedToInstanceExpr* de =
+        dynamic_cast<const LabelIDAllocatedToInstanceExpr*>(e))
     {
         return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
-    else if (const LabelIdOfLabelNodeExpr* de =
-             dynamic_cast<const LabelIdOfLabelNodeExpr*>(e))
+    else if (const LabelIDOfLabelNodeExpr* de =
+             dynamic_cast<const LabelIDOfLabelNodeExpr*>(e))
     {
         return process(de->getExpr());
     }
     else {
-        THROW(Exception, "LabelIdExpr of unknown derived class");
+        THROW(Exception, "LabelIDExpr is of unknown derived class");
     }
 }
 
 string
-ConstraintProcessor::process(const RegisterIdExpr* e) {
-    if (const ARegisterIdExpr* de = dynamic_cast<const ARegisterIdExpr*>(e)) {
-        return Utils::toString(p_.getIndexOfRegister(de->getId()));
+ConstraintProcessor::process(const RegisterIDExpr* e) {
+    if (const ARegisterIDExpr* de = dynamic_cast<const ARegisterIDExpr*>(e)) {
+        return Utils::toString(p_.getIndexForRegisterInM(de->getID()));
     }
-    else if (const RegisterIdAllocatedToDataNodeExpr* de =
-             dynamic_cast<const RegisterIdAllocatedToDataNodeExpr*>(e))
+    else if (const RegisterIDAllocatedToDataNodeExpr* de =
+             dynamic_cast<const RegisterIDAllocatedToDataNodeExpr*>(e))
     {
         return getDataRegisterVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
-        THROW(Exception, "PatternIdExpr of unknown derived class");
+        THROW(Exception, "PatternIDExpr is of unknown derived class");
     }
 }
 
@@ -298,31 +340,31 @@ ConstraintProcessor::process(const SetExpr* e) {
         return string("(") + process(de->getLhs()) + " diff "
             + process(de->getRhs()) + ")";
     }
-    else if (const DomSetOfLabelIdExpr* de =
-             dynamic_cast<const DomSetOfLabelIdExpr*>(e))
+    else if (const DomSetOfLabelIDExpr* de =
+             dynamic_cast<const DomSetOfLabelIDExpr*>(e))
     {
         return getDomSetParameterArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
-        THROW(Exception, "PatternIdExpr of unknown derived class");
+        THROW(Exception, "PatternIDExpr is of unknown derived class");
     }
 }
 
 string
 ConstraintProcessor::process(const SetElemExpr* e) {
-    if (const LabelIdToSetElemExpr* de =
-        dynamic_cast<const LabelIdToSetElemExpr*>(e))
+    if (const LabelIDToSetElemExpr* de =
+        dynamic_cast<const LabelIDToSetElemExpr*>(e))
     {
         return process(de->getExpr());
     }
-    else if (const RegisterIdToSetElemExpr* de =
-        dynamic_cast<const RegisterIdToSetElemExpr*>(e))
+    else if (const RegisterIDToSetElemExpr* de =
+        dynamic_cast<const RegisterIDToSetElemExpr*>(e))
     {
         return process(de->getExpr());
     }
     else {
-        THROW(Exception, "PatternIdExpr of unknown derived class");
+        THROW(Exception, "PatternIDExpr is of unknown derived class");
     }
 }
 

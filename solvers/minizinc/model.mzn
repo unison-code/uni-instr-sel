@@ -24,9 +24,9 @@
 
 
 
-%---------------------
+%=====================
 % EXTERNAL PARAMETERS
-%---------------------
+%=====================
 
 % Function data
 int: numFuncActionNodes;
@@ -57,9 +57,9 @@ include "input.mzn";
 
 
 
-%---------------------
+%=====================
 % INTERNAL PARAMETERS
-%---------------------
+%=====================
 
 % Number of indices in the pattern instance-to-label node mappings (a negative
 % value indicates absence of a valid index)
@@ -82,9 +82,9 @@ set of int: allIndicesInPatInstLabelMappings =
 
 
 
-%-----------
+%===========
 % VARIABLES
-%-----------
+%===========
 
 % Action node coverage
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
@@ -117,18 +117,18 @@ var int: cost;
 
 
 
-%--------------------
+%====================
 % Global constraints
-%--------------------
+%====================
 
 include "alldifferent.mzn";
 include "inverse.mzn";
 
 
 
-%-------------
+%============
 % CONSTRAINTS
-%-------------
+%============
 
 % Prevent a pattern from covering action nodes and defining data or state nodes
 % outside its range.
@@ -266,9 +266,9 @@ cost = sum (p in allPatternInstances)
 
 
 
-%------------------
+%==================
 % SOLVE AND OUTPUT
-%------------------
+%==================
 
 solve minimize cost;
 

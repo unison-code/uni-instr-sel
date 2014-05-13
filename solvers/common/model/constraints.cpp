@@ -30,24 +30,41 @@
 using namespace Model;
 using std::list;
 
-Constraint::Constraint(BoolExpr* expr)
+Constraint::~Constraint(void) {}
+
+DataNodeIsIntConstantConstraint::DataNodeIsIntConstantConstraint(const ID& id)
+    : id_(id)
+{}
+
+DataNodeIsIntConstantConstraint::~DataNodeIsIntConstantConstraint(void) {}
+
+ID
+DataNodeIsIntConstantConstraint::getNodeID(void) const {
+    return id_;
+}
+
+BoolExprConstraint::BoolExprConstraint(BoolExpr* expr)
     : expr_(expr)
 {
     if (!expr_) THROW(Exception, "expr cannot be NULL");
 }
 
-Constraint::~Constraint(void) {
+BoolExprConstraint::~BoolExprConstraint(void) {
     delete expr_;
 }
 
 const BoolExpr*
-Constraint::getExpr(void) const {
+BoolExprConstraint::getExpr(void) const {
     return expr_;
 }
 
 Expr::Expr(void) {}
 
 Expr::~Expr(void) {}
+
+IntExpr::IntExpr(void) {}
+
+IntExpr::~IntExpr(void) {}
 
 BoolExpr::BoolExpr(void) {}
 
@@ -57,29 +74,29 @@ NumExpr::NumExpr(void) {}
 
 NumExpr::~NumExpr(void) {}
 
-NodeIdExpr::NodeIdExpr(void) {}
+NodeIDExpr::NodeIDExpr(void) {}
 
-NodeIdExpr::~NodeIdExpr(void) {}
+NodeIDExpr::~NodeIDExpr(void) {}
 
-InstanceIdExpr::InstanceIdExpr(void) {}
+PatternInstanceIDExpr::PatternInstanceIDExpr(void) {}
 
-InstanceIdExpr::~InstanceIdExpr(void) {}
+PatternInstanceIDExpr::~PatternInstanceIDExpr(void) {}
 
-InstructionIdExpr::InstructionIdExpr(void) {}
+InstructionIDExpr::InstructionIDExpr(void) {}
 
-InstructionIdExpr::~InstructionIdExpr(void) {}
+InstructionIDExpr::~InstructionIDExpr(void) {}
 
-PatternIdExpr::PatternIdExpr(void) {}
+PatternIDExpr::PatternIDExpr(void) {}
 
-PatternIdExpr::~PatternIdExpr(void) {}
+PatternIDExpr::~PatternIDExpr(void) {}
 
-LabelIdExpr::LabelIdExpr(void) {}
+LabelIDExpr::LabelIDExpr(void) {}
 
-LabelIdExpr::~LabelIdExpr(void) {}
+LabelIDExpr::~LabelIDExpr(void) {}
 
-RegisterIdExpr::RegisterIdExpr(void) {}
+RegisterIDExpr::RegisterIDExpr(void) {}
 
-RegisterIdExpr::~RegisterIdExpr(void) {}
+RegisterIDExpr::~RegisterIDExpr(void) {}
 
 SetElemExpr::SetElemExpr(void) {}
 
@@ -184,168 +201,183 @@ AnIntegerExpr::getValue(void) const {
     return i_;
 }
 
+IntConstValueOfDataNodeExpr::IntConstValueOfDataNodeExpr(
+    const NodeIDExpr* expr
+) : UnaryExpr(expr)
+{}
+
+IntConstValueOfDataNodeExpr::~IntConstValueOfDataNodeExpr(void) {}
+
+IntToNumExpr::IntToNumExpr(const IntExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+IntToNumExpr::~IntToNumExpr(void) {}
+
 BoolToNumExpr::BoolToNumExpr(const BoolExpr* expr)
     : UnaryExpr(expr)
 {}
 
 BoolToNumExpr::~BoolToNumExpr(void) {}
 
-NodeIdToNumExpr::NodeIdToNumExpr(const NodeIdExpr* expr)
+NodeIDToNumExpr::NodeIDToNumExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-NodeIdToNumExpr::~NodeIdToNumExpr(void) {}
+NodeIDToNumExpr::~NodeIDToNumExpr(void) {}
 
-InstanceIdToNumExpr::InstanceIdToNumExpr(const InstanceIdExpr* expr)
+PatternInstanceIDToNumExpr::PatternInstanceIDToNumExpr(
+    const PatternInstanceIDExpr* expr
+) : UnaryExpr(expr)
+{}
+
+PatternInstanceIDToNumExpr::~PatternInstanceIDToNumExpr(void) {}
+
+InstructionIDToNumExpr::InstructionIDToNumExpr(const InstructionIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-InstanceIdToNumExpr::~InstanceIdToNumExpr(void) {}
+InstructionIDToNumExpr::~InstructionIDToNumExpr(void) {}
 
-InstructionIdToNumExpr::InstructionIdToNumExpr(const InstructionIdExpr* expr)
+PatternIDToNumExpr::PatternIDToNumExpr(const PatternIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-InstructionIdToNumExpr::~InstructionIdToNumExpr(void) {}
+PatternIDToNumExpr::~PatternIDToNumExpr(void) {}
 
-PatternIdToNumExpr::PatternIdToNumExpr(const PatternIdExpr* expr)
+LabelIDToNumExpr::LabelIDToNumExpr(const LabelIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-PatternIdToNumExpr::~PatternIdToNumExpr(void) {}
+LabelIDToNumExpr::~LabelIDToNumExpr(void) {}
 
-LabelIdToNumExpr::LabelIdToNumExpr(const LabelIdExpr* expr)
+RegisterIDToNumExpr::RegisterIDToNumExpr(const RegisterIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-LabelIdToNumExpr::~LabelIdToNumExpr(void) {}
+RegisterIDToNumExpr::~RegisterIDToNumExpr(void) {}
 
-RegisterIdToNumExpr::RegisterIdToNumExpr(const RegisterIdExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-RegisterIdToNumExpr::~RegisterIdToNumExpr(void) {}
-
-ANodeIdExpr::ANodeIdExpr(const Id& id)
+ANodeIDExpr::ANodeIDExpr(const ID& id)
     : id_(id)
 {}
 
-ANodeIdExpr::~ANodeIdExpr(void) {}
+ANodeIDExpr::~ANodeIDExpr(void) {}
 
-Id
-ANodeIdExpr::getId(void) const {
+ID
+ANodeIDExpr::getID(void) const {
     return id_;
 }
 
-AnInstanceIdExpr::AnInstanceIdExpr(const Id& id)
+APatternInstanceIDExpr::APatternInstanceIDExpr(const ID& id)
     : id_(id)
 {}
 
-AnInstanceIdExpr::~AnInstanceIdExpr(void) {}
+APatternInstanceIDExpr::~APatternInstanceIDExpr(void) {}
 
-Id
-AnInstanceIdExpr::getId(void) const {
+ID
+APatternInstanceIDExpr::getID(void) const {
     return id_;
 }
 
-AnInstructionIdExpr::AnInstructionIdExpr(const Id& id)
+AnInstructionIDExpr::AnInstructionIDExpr(const ID& id)
     : id_(id)
 {}
 
-AnInstructionIdExpr::~AnInstructionIdExpr(void) {}
+AnInstructionIDExpr::~AnInstructionIDExpr(void) {}
 
-Id
-AnInstructionIdExpr::getId(void) const {
+ID
+AnInstructionIDExpr::getID(void) const {
     return id_;
 }
 
-APatternIdExpr::APatternIdExpr(const Id& id)
+APatternIDExpr::APatternIDExpr(const ID& id)
     : id_(id)
 {}
 
-APatternIdExpr::~APatternIdExpr(void) {}
+APatternIDExpr::~APatternIDExpr(void) {}
 
-Id
-APatternIdExpr::getId(void) const {
+ID
+APatternIDExpr::getID(void) const {
     return id_;
 }
 
-ALabelIdExpr::ALabelIdExpr(const Id& id)
+ALabelIDExpr::ALabelIDExpr(const ID& id)
     : id_(id)
 {}
 
-ALabelIdExpr::~ALabelIdExpr(void) {}
+ALabelIDExpr::~ALabelIDExpr(void) {}
 
-Id
-ALabelIdExpr::getId(void) const {
+ID
+ALabelIDExpr::getID(void) const {
     return id_;
 }
 
-ARegisterIdExpr::ARegisterIdExpr(const Id& id)
+ARegisterIDExpr::ARegisterIDExpr(const ID& id)
     : id_(id)
 {}
 
-ARegisterIdExpr::~ARegisterIdExpr(void) {}
+ARegisterIDExpr::~ARegisterIDExpr(void) {}
 
-Id
-ARegisterIdExpr::getId(void) const {
+ID
+ARegisterIDExpr::getID(void) const {
     return id_;
 }
 
-ThisInstanceIdExpr::ThisInstanceIdExpr(void) {}
+ThisPatternInstanceIDExpr::ThisPatternInstanceIDExpr(void) {}
 
-ThisInstanceIdExpr::~ThisInstanceIdExpr(void) {}
+ThisPatternInstanceIDExpr::~ThisPatternInstanceIDExpr(void) {}
 
-CovererOfActionNodeExpr::CovererOfActionNodeExpr(const NodeIdExpr* expr)
+CovererOfActionNodeExpr::CovererOfActionNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
 CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
 
-DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(const NodeIdExpr* expr)
+DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
 DefinerOfDataNodeExpr::~DefinerOfDataNodeExpr(void) {}
 
-DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(const NodeIdExpr* expr)
+DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
 DefinerOfStateNodeExpr::~DefinerOfStateNodeExpr(void) {}
 
-InstructionIdOfPatternExpr::InstructionIdOfPatternExpr(
-    const PatternIdExpr* expr
+InstructionIDOfPatternExpr::InstructionIDOfPatternExpr(
+    const PatternIDExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-InstructionIdOfPatternExpr::~InstructionIdOfPatternExpr(void) {}
+InstructionIDOfPatternExpr::~InstructionIDOfPatternExpr(void) {}
 
-PatternIdOfInstanceExpr::PatternIdOfInstanceExpr(const InstanceIdExpr* expr)
+PatternIDOfInstanceExpr::PatternIDOfInstanceExpr(
+    const PatternInstanceIDExpr* expr
+) : UnaryExpr(expr)
+{}
+
+PatternIDOfInstanceExpr::~PatternIDOfInstanceExpr(void) {}
+
+LabelIDAllocatedToInstanceExpr::LabelIDAllocatedToInstanceExpr(
+    const PatternInstanceIDExpr* expr
+) : UnaryExpr(expr)
+{}
+
+LabelIDAllocatedToInstanceExpr::~LabelIDAllocatedToInstanceExpr(void) {}
+
+LabelIDOfLabelNodeExpr::LabelIDOfLabelNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-PatternIdOfInstanceExpr::~PatternIdOfInstanceExpr(void) {}
+LabelIDOfLabelNodeExpr::~LabelIDOfLabelNodeExpr(void) {}
 
-LabelIdAllocatedToInstanceExpr::LabelIdAllocatedToInstanceExpr(
-    const InstanceIdExpr* expr
+RegisterIDAllocatedToDataNodeExpr::RegisterIDAllocatedToDataNodeExpr(
+    const NodeIDExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-LabelIdAllocatedToInstanceExpr::~LabelIdAllocatedToInstanceExpr(void) {}
-
-LabelIdOfLabelNodeExpr::LabelIdOfLabelNodeExpr(const NodeIdExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-LabelIdOfLabelNodeExpr::~LabelIdOfLabelNodeExpr(void) {}
-
-RegisterIdAllocatedToDataNodeExpr::RegisterIdAllocatedToDataNodeExpr(
-    const NodeIdExpr* expr
-) : UnaryExpr(expr)
-{}
-
-RegisterIdAllocatedToDataNodeExpr::~RegisterIdAllocatedToDataNodeExpr(void) {}
+RegisterIDAllocatedToDataNodeExpr::~RegisterIDAllocatedToDataNodeExpr(void) {}
 
 UnionSetExpr::UnionSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
@@ -365,14 +397,14 @@ DiffSetExpr::DiffSetExpr(const SetExpr* lhs, const SetExpr* rhs)
 
 DiffSetExpr::~DiffSetExpr(void) {}
 
-DomSetOfLabelIdExpr::DomSetOfLabelIdExpr(const LabelIdExpr* expr)
+DomSetOfLabelIDExpr::DomSetOfLabelIDExpr(const LabelIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-DomSetOfLabelIdExpr::~DomSetOfLabelIdExpr(void) {}
+DomSetOfLabelIDExpr::~DomSetOfLabelIDExpr(void) {}
 
 RegisterClassExpr::RegisterClassExpr(
-    const std::list<const RegisterIdExpr*>& expr
+    const std::list<const RegisterIDExpr*>& expr
 ) : expr_(expr)
 {}
 
@@ -382,26 +414,26 @@ RegisterClassExpr::~RegisterClassExpr(void) {
     }
 }
 
-const list<const RegisterIdExpr*>&
+const list<const RegisterIDExpr*>&
 RegisterClassExpr::getExprList(void) const {
     return expr_;
 }
 
-LabelIdToSetElemExpr::LabelIdToSetElemExpr(const LabelIdExpr* expr)
+LabelIDToSetElemExpr::LabelIDToSetElemExpr(const LabelIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-LabelIdToSetElemExpr::~LabelIdToSetElemExpr(void) {}
+LabelIDToSetElemExpr::~LabelIDToSetElemExpr(void) {}
 
-RegisterIdToSetElemExpr::RegisterIdToSetElemExpr(const RegisterIdExpr* expr)
+RegisterIDToSetElemExpr::RegisterIDToSetElemExpr(const RegisterIDExpr* expr)
     : UnaryExpr(expr)
 {}
 
-RegisterIdToSetElemExpr::~RegisterIdToSetElemExpr(void) {}
+RegisterIDToSetElemExpr::~RegisterIDToSetElemExpr(void) {}
 
 DistanceBetweenInstanceAndLabelExpr::DistanceBetweenInstanceAndLabelExpr(
-    const InstanceIdExpr* lhs,
-    const LabelIdExpr* rhs
+    const PatternInstanceIDExpr* lhs,
+    const LabelIDExpr* rhs
 ) : BinaryExpr(lhs, rhs)
 {}
 

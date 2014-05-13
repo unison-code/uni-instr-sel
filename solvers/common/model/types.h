@@ -29,7 +29,7 @@
 
 namespace Model {
 
-typedef unsigned int Id;
+typedef unsigned int ID;
 typedef unsigned int ArrayIndex;
 
 }

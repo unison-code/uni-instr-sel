@@ -120,53 +120,58 @@ outputFunctionParameters(
     ostream& debug
 ) {
     debug << "% Action node mappings" << endl;
-    for (const Id& id : params.getAllActionNodeIds()) {
+    for (const ID& id : params.getIDsForAllActionNodesInF()) {
         debug << "% ID " << id << " -> index "
-              << params.getIndexOfActionNode(id)
+              << params.getIndexForActionNodeInF(id)
               << endl;
     }
     debug << endl;
     debug << "% Data node mappings" << endl;
-    for (const Id& id : params.getAllDataNodeIds()) {
-        debug << "% ID " << id << " -> index " << params.getIndexOfDataNode(id)
+    for (const ID& id : params.getIDsForAllDataNodesInF()) {
+        debug << "% ID " << id << " -> index "
+              << params.getIndexForDataNodeInF(id)
               << endl;
     }
     debug << endl;
     debug << "% State node mappings" << endl;
-    for (const Id& id : params.getAllStateNodeIds()) {
-        debug << "% ID " << id << " -> index " << params.getIndexOfStateNode(id)
+    for (const ID& id : params.getIDsForAllStateNodesInF()) {
+        debug << "% ID " << id << " -> index "
+              << params.getIndexForStateNodeInF(id)
               << endl;
     }
     debug << endl;
     debug << "% Label node mappings" << endl;
-    for (const Id& id : params.getAllLabelNodeIds()) {
-        debug << "% ID " << id << " -> index " << params.getIndexOfLabelNode(id)
+    for (const ID& id : params.getIDsForAllLabelNodesInF()) {
+        debug << "% ID " << id << " -> index "
+              << params.getIndexForLabelNodeInF(id)
               << endl;
     }
     debug << endl;
 
     out << "% Function data" << endl;
 
-    out << "numFuncActionNodes = " << params.getNumActionNodes() << ";"
+    out << "numFuncActionNodes = " << params.getNumActionNodesInF() << ";"
          << endl;
-    out << "numFuncDataNodes = " << params.getNumDataNodes() << ";"
+    out << "numFuncDataNodes = " << params.getNumDataNodesInF() << ";"
          << endl;
-    out << "numFuncStateNodes = " << params.getNumStateNodes() << ";"
+    out << "numFuncStateNodes = " << params.getNumStateNodesInF() << ";"
          << endl;
-    out << "numFuncLabelNodes = " << params.getNumLabelNodes() << ";"
+    out << "numFuncLabelNodes = " << params.getNumLabelNodesInF() << ";"
          << endl;
 
-    out << "rootLabel = " << params.getIndexOfLabelNode(params.getRootLabel())
+    out << "rootLabel = "
+        << params.getIndexForLabelNodeInF(params.getRootLabelInF())
          << ";"
          << endl;
 
     out << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
     {
-        size_t num_nodes = params.getNumLabelNodes();
+        size_t num_nodes = params.getNumLabelNodesInF();
         vector< list<ArrayIndex> > node_lists(num_nodes);
-        for (const Id& id : params.getAllLabelNodeIds()) {
-            node_lists[params.getIndexOfLabelNode(id)] =
-                params.getIndicesOfLabelNodes(params.getDomsetOfLabel(id));
+        for (const ID& id : params.getIDsForAllLabelNodesInF()) {
+            const auto& domset = params.getDomsetForLabelNodeInF(id);
+            node_lists[params.getIndexForLabelNodeInF(id)] =
+                params.getIndicesForLabelNodesInF(domset);
         }
         print(out, node_lists);
     }
@@ -181,7 +186,7 @@ outputTargetMachineParameters(
 ) {
     out << "% Target machine data" << endl;
 
-    out << "numRegisters = " << params.getNumRegisters() << ";"
+    out << "numRegisters = " << params.getNumRegistersInM() << ";"
          << endl;
 }
 
@@ -192,25 +197,25 @@ outputPatternInstanceParameters(
     ostream& debug
 ) {
     debug << "% Pattern instance mappings" << endl;
-    for (const Id& id : params.getAllInstanceIds()) {
+    for (const ID& id : params.getIDsForAllPIs()) {
         debug << "% ID " << id << " -> index "
-              << params.getIndexOfInstance(id) << endl;
+              << params.getIndexForPI(id) << endl;
     }
     debug << endl;
 
     out << "% Pattern instance data" << endl;
 
-    out << "numPatternInstances = " << params.getNumInstances() << ";"
+    out << "numPatternInstances = " << params.getNumPIs() << ";"
          << endl;
 
     out << "patInstActionsCovered = array1d(allPatternInstances, ";
     {
-        size_t num_instances = params.getNumInstances();
+        size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getActionNodesCoveredByInstance(id);
-            node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfActionNodes(nodes);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getActionNodesCoveredByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForActionNodesInF(nodes);
         }
         print(out, node_lists);
     }
@@ -218,12 +223,12 @@ outputPatternInstanceParameters(
 
     out << "patInstDataDefined = array1d(allPatternInstances, ";
     {
-        size_t num_instances = params.getNumInstances();
+        size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getDataNodesDefinedByInstance(id);
-            node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfDataNodes(nodes);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getDataNodesDefinedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForDataNodesInF(nodes);
         }
         print(out, node_lists);
     }
@@ -231,12 +236,12 @@ outputPatternInstanceParameters(
 
     out << "patInstStateDefined = array1d(allPatternInstances, ";
     {
-        size_t num_instances = params.getNumInstances();
+        size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getStateNodesDefinedByInstance(id);
-            node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfStateNodes(nodes);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getStateNodesDefinedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForStateNodesInF(nodes);
         }
         print(out, node_lists);
     }
@@ -244,12 +249,12 @@ outputPatternInstanceParameters(
 
     out << "patInstDataUsed = array1d(allPatternInstances, ";
     {
-        size_t num_instances = params.getNumInstances();
+        size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getDataNodesUsedByInstance(id);
-            node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfDataNodes(nodes);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getDataNodesUsedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForDataNodesInF(nodes);
         }
         print(out, node_lists);
     }
@@ -257,12 +262,12 @@ outputPatternInstanceParameters(
 
     out << "patInstStateUsed = array1d(allPatternInstances, ";
     {
-        size_t num_instances = params.getNumInstances();
+        size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const Id& id : params.getAllInstanceIds()) {
-            const list<Id>& nodes = params.getStateNodesUsedByInstance(id);
-            node_lists[params.getIndexOfInstance(id)] =
-                params.getIndicesOfStateNodes(nodes);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getStateNodesUsedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForStateNodesInF(nodes);
         }
         print(out, node_lists);
     }
@@ -272,19 +277,17 @@ outputPatternInstanceParameters(
     out << "patInstAndLabelMappings = "
          << "array2d(allPatternInstances, allFuncLabelNodes, ";
     {
-        size_t num_instances = params.getNumInstances();
-        size_t num_labels = params.getNumLabelNodes();
+        size_t num_instances = params.getNumPIs();
+        size_t num_labels = params.getNumLabelNodesInF();
         vector<int> mappings(num_instances * num_labels, -1);
         int index = 0;
-        for (const Id& pat_id : params.getAllInstanceIds()) {
-            for (const Id& node_id
-                 : params.getLabelNodesReferredByInstance(pat_id))
-            {
-                debug << "% Instance ID " << pat_id << " + "
+        for (const ID& pat_id : params.getIDsForAllPIs()) {
+            for (const ID& node_id : params.getLabelNodesReferredByPI(pat_id)) {
+                debug << "% Pattern instance ID " << pat_id << " + "
                       << "label ID " << node_id << " -> index "
                       << index << endl;
-                ArrayIndex pat_index = params.getIndexOfInstance(pat_id);
-                ArrayIndex node_index = params.getIndexOfLabelNode(node_id);
+                ArrayIndex pat_index = params.getIndexForPI(pat_id);
+                ArrayIndex node_index = params.getIndexForLabelNodeInF(node_id);
                 mappings[pat_index * num_labels + node_index] = index++;
             }
         }
@@ -295,10 +298,9 @@ outputPatternInstanceParameters(
 
     out << "patInstCodeSizes = array1d(allPatternInstances, ";
     {
-        vector<int> code_sizes(params.getNumInstances());
-        for (const Id& id : params.getAllInstanceIds()) {
-            code_sizes[params.getIndexOfInstance(id)] =
-                params.getCodeSizeOfInstance(id);
+        vector<int> code_sizes(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
         }
         print(out, code_sizes);
     }
@@ -306,10 +308,9 @@ outputPatternInstanceParameters(
 
     out << "patInstLatencies = array1d(allPatternInstances, ";
     {
-        vector<int> latencies(params.getNumInstances());
-        for (const Id& id : params.getAllInstanceIds()) {
-            latencies[params.getIndexOfInstance(id)] =
-                params.getLatencyOfInstance(id);
+        vector<int> latencies(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
         }
         print(out, latencies);
     }
@@ -317,10 +318,10 @@ outputPatternInstanceParameters(
 
     out << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
     {
-        vector<bool> settings(params.getNumInstances());
-        for (const Id& id : params.getAllInstanceIds()) {
-            settings[params.getIndexOfInstance(id)] =
-                params.getNoUseDefDomConstraintsSettingForInstance(id);
+        vector<bool> settings(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            settings[params.getIndexForPI(id)] =
+                params.getNoUseDefDomConstraintsSettingForPI(id);
         }
         print(out, settings);
     }
@@ -341,18 +342,33 @@ outputParameters(
 }
 
 void
-outputConstraints(
+outputConstraintsForF(
     const Params& params,
     ostream& out,
     ostream& debug
 ) {
     ConstraintProcessor cprocessor(params);
-    for (const Id& id : params.getAllInstanceIds()) {
-        const list<const Constraint*>& cs = params.getConstraintsOfInstance(id);
+    const list<const Constraint*>& cs = params.getConstraintsForF();
+    if (cs.size() > 0) {
+        for (const Constraint* c : cs) {
+            out << cprocessor.processConstraintForF(c) << endl;
+        }
+    }
+}
+
+void
+outputConstraintsForPIs(
+    const Params& params,
+    ostream& out,
+    ostream& debug
+) {
+    ConstraintProcessor cprocessor(params);
+    for (const ID& id : params.getIDsForAllPIs()) {
+        const list<const Constraint*>& cs = params.getConstraintsForPI(id);
         if (cs.size() > 0) {
             out << "% ID " << id << endl;
             for (const Constraint* c : cs) {
-                out << cprocessor.process(id, c) << endl;
+                out << cprocessor.processConstraintForPI(c, id) << endl;
             }
             out << endl;
         }
@@ -390,24 +406,34 @@ main(int argc, char** argv) {
 
         stringstream sout;
         stringstream sdebug;
-        sdebug << "%------------" << endl;
+        sdebug << "%============" << endl;
         sdebug << "% DEBUG INFO" << endl;
-        sdebug << "%------------" << endl;
+        sdebug << "%============" << endl;
         sdebug << endl;
 
-        sout << "%------------" << endl;
+        sout << "%============" << endl;
         sout << "% PARAMETERS" << endl;
-        sout << "%------------" << endl;
+        sout << "%============" << endl;
         sout << endl;
         outputParameters(params, sout, sdebug);
         sout << endl
              << endl
              << endl;
-        sout << "%------------------------------" << endl;
-        sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
-        sout << "%------------------------------" << endl;
+
+        sout << "%============================" << endl;
+        sout << "% FUNCTION GRAPH CONSTRAINTS" << endl;
+        sout << "%============================" << endl;
         sout << endl;
-        outputConstraints(params, sout, sdebug);
+        outputConstraintsForF(params, sout, sdebug);
+        sout << endl
+             << endl
+             << endl;
+
+        sout << "%==============================" << endl;
+        sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
+        sout << "%==============================" << endl;
+        sout << endl;
+        outputConstraintsForPIs(params, sout, sdebug);
 
         cout << "% AUTO-GENERATED" << endl;
         cout << endl;
