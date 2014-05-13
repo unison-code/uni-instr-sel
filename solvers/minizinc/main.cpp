@@ -361,6 +361,18 @@ outputConstraints(
 
 int
 main(int argc, char** argv) {
+    // Check input arguments
+    if (argc < 2) {
+        cerr << "ERROR: no JSON input file"
+             << endl;
+        return 1;
+    }
+    else if (argc > 2) {
+        cerr << "ERROR: too many input arguments"
+             << endl;
+        return 1;
+    }
+
     try {
         // Parse JSON file into an internal model parameters object
         string json_file(argv[1]);
