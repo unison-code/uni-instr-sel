@@ -149,7 +149,8 @@ numExpr2Str (PlusExpr  lhs rhs) =
   "(+ " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
 numExpr2Str (MinusExpr lhs rhs) =
   "(- " ++ numExpr2Str lhs ++ " " ++ numExpr2Str rhs ++ ")"
-numExpr2Str (Int2NumExpr e) = intExpr2Str e
+numExpr2Str (Int2NumExpr e) =
+  "(int-to-num " ++ intExpr2Str e ++ ")"
 numExpr2Str (Bool2NumExpr e) =
   "(bool-to-num " ++ boolExpr2Str e ++ ")"
 numExpr2Str (NodeID2NumExpr e) =
