@@ -273,7 +273,7 @@ outputPatternInstanceParameters(
     }
     out << ");" << endl;
 
-    debug << "% Pattern instance-label mappings" << endl;
+    debug << "% Pattern instance-destination label mappings" << endl;
     out << "patInstAndLabelMappings = "
          << "array2d(allPatternInstances, allFuncLabelNodes, ";
     {
