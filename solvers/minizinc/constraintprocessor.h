@@ -106,6 +106,14 @@ class ConstraintProcessor {
     getDataRegisterVariableArrayName(void) const;
 
     /**
+     * Gets the variable array for the data node immediate values.
+     *
+     * @returns Variable name.
+     */
+    std::string
+    getDataImmediateValuesVariableArrayName(void) const;
+
+    /**
      * Gets the variable array for the state node definitions.
      *
      * @returns Variable name.
@@ -128,7 +136,7 @@ class ConstraintProcessor {
      * @returns Variable name.
      */
     std::string
-    getInstanceSelectedVariableArrayName(void) const;
+    getPatInstSelectedVariableArrayName(void) const;
 
     /**
      * Gets the parameter array for the dominator sets.
@@ -145,7 +153,7 @@ class ConstraintProcessor {
      * @returns Variable name.
      */
     std::string
-    getInstanceLabelDistsVariableArrayName(void) const;
+    getPatInstLabelDistsVariableArrayName(void) const;
 
     /**
      * Gets the parameter matrix for the pattern instance and label mappings.
@@ -153,7 +161,7 @@ class ConstraintProcessor {
      * @returns Parameter name.
      */
     std::string
-    getInstanceAndLabelMappingsMatrixName(void) const;
+    getPatInstAndLabelMappingsMatrixName(void) const;
 
     /**
      * Gets the register value used for indicating that a data node represents

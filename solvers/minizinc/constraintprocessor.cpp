@@ -43,7 +43,7 @@ ConstraintProcessor::processConstraintForPI(const Constraint* c, const ID& id) {
     piid_ = id;
     string constraint_str =
         string("constraint\n")
-        + getInstanceSelectedVariableArrayName() + "["
+        + getPatInstSelectedVariableArrayName() + "["
         + Utils::toString(p_.getIndexForPI(piid_))
         + "] -> " + process(c) + ";";
     is_processing_pi_constraint_ = false;
@@ -177,8 +177,8 @@ ConstraintProcessor::process(const NumExpr* e) {
     else if (const DistanceBetweenInstanceAndLabelExpr* de =
              dynamic_cast<const DistanceBetweenInstanceAndLabelExpr*>(e))
     {
-        return getInstanceLabelDistsVariableArrayName()
-            + "[" + getInstanceAndLabelMappingsMatrixName() + "["
+        return getPatInstLabelDistsVariableArrayName()
+            + "[" + getPatInstAndLabelMappingsMatrixName() + "["
             + process(de->getLhs()) + "," + process(de->getRhs()) + "]]";
     }
     else {
@@ -216,9 +216,11 @@ ConstraintProcessor::process(const IntExpr* e) {
     if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
         return Utils::toString(de->getValue());
     }
-    else if (dynamic_cast<const IntConstValueOfDataNodeExpr*>(e)) {
-        // TODO: fix implementation
-        return "?";
+    else if (const IntConstValueOfDataNodeExpr* de =
+             dynamic_cast<const IntConstValueOfDataNodeExpr*>(e))
+    {
+        return getDataImmediateValuesVariableArrayName() + "["
+            + process(de->getExpr()) + "]";
     }
     else {
         THROW(Exception, "NodeIDExpr is of unknown derived class");
@@ -386,6 +388,11 @@ ConstraintProcessor::getDataRegisterVariableArrayName(void) const {
 }
 
 string
+ConstraintProcessor::getDataImmediateValuesVariableArrayName(void) const {
+    return "dn_imm";
+}
+
+string
 ConstraintProcessor::getStateDefinerVariableArrayName(void) const {
     return "sn_def";
 }
@@ -401,17 +408,17 @@ ConstraintProcessor::getDomSetParameterArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getInstanceSelectedVariableArrayName(void) const {
+ConstraintProcessor::getPatInstSelectedVariableArrayName(void) const {
     return "pi_sel";
 }
 
 string
-ConstraintProcessor::getInstanceLabelDistsVariableArrayName(void) const {
+ConstraintProcessor::getPatInstLabelDistsVariableArrayName(void) const {
     return "br_bb_dists";
 }
 
 string
-ConstraintProcessor::getInstanceAndLabelMappingsMatrixName(void) const {
+ConstraintProcessor::getPatInstAndLabelMappingsMatrixName(void) const {
     return "patInstAndLabelMappings";
 }
 
