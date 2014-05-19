@@ -61,13 +61,16 @@ include "input.mzn";
 % INTERNAL PARAMETERS
 %=====================
 
-% Number of indices in the pattern instance-to-label node mappings (a negative
-% value indicates absence of a valid index)
+% Number of indices in the pattern instance-to-destination label node mappings
+% (a negative value indicates absence of a valid index)
 int: numIndicesInPatInstLabelMappings =
      max([ i | i in patInstAndLabelMappings ]) + 1;
 
 % Reference to the null label
 int: nullLabel = numFuncLabelNodes;
+
+% Register reference to use when a data node represents an immediate value
+int: regForImmValues = numRegisters;
 
 % Sets to be used as array ranges
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
@@ -89,9 +92,10 @@ set of int: allIndicesInPatInstLabelMappings =
 % Action node coverage
 array[allFuncActionNodes] of var allPatternInstances: an_cov;
 
-% Data node definitions and register allocation
+% Data node definitions, register allocation, and immediate values
 array[allFuncDataNodes] of var allPatternInstances: dn_def;
 array[allFuncDataNodes] of var allRegisters: dn_reg;
+array[allFuncDataNodes] of var int: dn_imm;
 
 % State node definitions
 array[allFuncStateNodes] of var allPatternInstances: sn_def;
@@ -254,6 +258,14 @@ forall (p in allPatternInstances, l in allFuncLabelNodes
                          /\
                          bb_order_inv[i] <= bb_order_inv[pi_bb[p]])
         )
+);
+
+% Force setting of the immediate value for all data nodes which do not represent
+% immediate values
+constraint
+forall (n in allFuncDataNodes)
+(
+  dn_reg[n] == regForImmValues -> dn_imm[n] == 0
 );
 
 % Accumulate cost of selected patterns.

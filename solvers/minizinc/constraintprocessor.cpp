@@ -62,10 +62,12 @@ ConstraintProcessor::process(const Constraint* c) {
     {
         return process(dc->getExpr());
     }
-    else if (dynamic_cast<const DataNodeIsIntConstantConstraint*>(c))
+    else if (const DataNodeIsIntConstantConstraint* dc =
+             dynamic_cast<const DataNodeIsIntConstantConstraint*>(c))
     {
-        // TODO: fix implementation
-        return "?";
+        return getDataRegisterVariableArrayName() + "["
+            + Utils::toString(p_.getIndexForDataNodeInF(dc->getNodeID()))
+            + "] == " + getRegForImmValuesName();
     }
     else {
         THROW(Exception, "Constraint is of unknown derived class");
@@ -411,4 +413,9 @@ ConstraintProcessor::getInstanceLabelDistsVariableArrayName(void) const {
 string
 ConstraintProcessor::getInstanceAndLabelMappingsMatrixName(void) const {
     return "patInstAndLabelMappings";
+}
+
+string
+ConstraintProcessor::getRegForImmValuesName(void) const {
+    return "regForImmValues";
 }

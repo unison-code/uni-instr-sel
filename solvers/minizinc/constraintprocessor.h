@@ -156,6 +156,15 @@ class ConstraintProcessor {
     getInstanceAndLabelMappingsMatrixName(void) const;
 
     /**
+     * Gets the register value used for indicating that a data node represents
+     * an immediate value.
+     *
+     * @returns Value name.
+     */
+    std::string
+    getRegForImmValuesName(void) const;
+
+    /**
      * Converts a constraint into a Minizinc equivalent.
      *
      * @param c
