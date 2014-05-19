@@ -79,7 +79,7 @@ set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
 set of int: allPatternInstances = 0..numPatternInstances-1;
-set of int: allRegisters = 0..numRegisters-1;
+set of int: allRegisters = 0..numRegisters;
 set of int: allIndicesInPatInstLabelMappings =
     0..numIndicesInPatInstLabelMappings-1;
 
@@ -265,7 +265,7 @@ forall (p in allPatternInstances, l in allFuncLabelNodes
 constraint
 forall (n in allFuncDataNodes)
 (
-  dn_reg[n] == regForImmValues -> dn_imm[n] == 0
+  dn_reg[n] != regForImmValues -> dn_imm[n] == 0
 );
 
 % Accumulate cost of selected patterns.
@@ -287,6 +287,7 @@ solve minimize cost;
 output [ "an_cov=", show(an_cov), "\n"
        , "dn_def=", show(dn_def), "\n"
        , "dn_reg=", show(dn_reg), "\n"
+       , "dn_imm=", show(dn_imm), "\n"
        , "sn_def=", show(sn_def), "\n"
        , "pi_sel=", show(pi_sel), "\n"
        , "pi_bb=", show(pi_bb), "\n"
