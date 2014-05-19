@@ -294,5 +294,6 @@ output [ "an_cov=", show(an_cov), "\n"
        , "bb_order=", show(bb_order), "\n"
        , "br_bb_dists=", show(br_bb_dists), "\n"
        , "null_label=", show(nullLabel), "\n"
+       , "reg_for_imm_values=", show(regForImmValues), "\n"
        , "cost=", show(cost), "\n"
        ];

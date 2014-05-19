@@ -125,10 +125,13 @@ for i in range(len(content)):
     all_data.append([name, data])
 
 # Turn desirable data into JSON
-data_table = [ ["pi_sel",     "pi-selection"]
-             , ["pi_bb",      "pi-to-bb-allocation"]
-             , ["bb_order",   "bb-order"]
-             , ["null_label", "null-bb"]
+data_table = [ ["dn_reg",             "dnode-reg-selection"]
+             , ["dn_imm",             "dnode-imm-values"]
+             , ["pi_sel",             "pi-selection"]
+             , ["pi_bb",              "pi-to-bb-allocation"]
+             , ["bb_order",           "bb-order"]
+             , ["null_label",         "null-bb"]
+             , ["reg_for_imm_values", "reg-for-imm-values"]
              ]
 keep_table = [ d[0] for d in data_table ]
 replace_table = [ d[1] for d in data_table ]
