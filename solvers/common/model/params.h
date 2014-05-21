@@ -565,7 +565,7 @@ class Params {
     }
 
     /**
-     * Gets a list of keys from a map.
+     * Gets a list of all keys present in a mapset.
      *
      * @tparam K
      *         Type of key.
@@ -577,7 +577,7 @@ class Params {
      */
     template <typename K, typename V>
     static std::list<K>
-    getMappedKeys(const std::map<K, V>& mapset) {
+    getAllKeys(const std::map<K, V>& mapset) {
         std::list<K> keys;
         for (auto& kv : mapset) {
             keys.push_back(kv.first);

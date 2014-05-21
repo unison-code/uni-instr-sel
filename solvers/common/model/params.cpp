@@ -250,12 +250,12 @@ Params::getIndicesForRegistersInM(const list<ID>& ids) const {
 
 list<ID>
 Params::getIDsForAllRegisterInM(void) const {
-    return getMappedKeys(mach_reg_mappings_);
+    return getAllKeys(mach_reg_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllPIs(void) const {
-    return getMappedKeys(pat_inst_mappings_);
+    return getAllKeys(pat_inst_mappings_);
 }
 
 ArrayIndex
@@ -412,22 +412,22 @@ Params::getIndexForLabelNodeInF(const ID& id) const {
 
 list<ID>
 Params::getIDsForAllActionNodesInF(void) const {
-    return getMappedKeys(func_action_node_mappings_);
+    return getAllKeys(func_action_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllDataNodesInF(void) const {
-    return getMappedKeys(func_data_node_mappings_);
+    return getAllKeys(func_data_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllStateNodesInF(void) const {
-    return getMappedKeys(func_state_node_mappings_);
+    return getAllKeys(func_state_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllLabelNodesInF(void) const {
-    return getMappedKeys(func_label_node_mappings_);
+    return getAllKeys(func_label_node_mappings_);
 }
 
 list<ArrayIndex>
