@@ -56,33 +56,33 @@ using std::vector;
 
 template <typename T>
 void
-printList(ostream&, const T&, const string&, const string&);
+printMinizincList(ostream&, const T&, const string&, const string&);
 
 template <typename T>
 void
-print(
-    ostream& out,
-    const vector<T>& v,
-    const string& dl = "[",
-    const string& dr = "]"
-) {
-    printList(out, v, dl, dr);
-}
-
-template <typename T>
-void
-print(
+printMinizincValue(
     ostream& out,
     const list<T>& l,
     const string& dl = "[",
     const string& dr = "]"
 ) {
-    printList(out, l, dl, dr);
+    printMinizincList(out, l, dl, dr);
 }
 
 template <typename T>
 void
-print(
+printMinizincValue(
+    ostream& out,
+    const vector<T>& v,
+    const string& dl = "[",
+    const string& dr = "]"
+) {
+    printMinizincList(out, v, dl, dr);
+}
+
+template <typename T>
+void
+printMinizincValue(
     ostream& out,
     const T& v,
     const string&,
@@ -93,7 +93,7 @@ print(
 
 template <>
 void
-print(
+printMinizincValue(
     ostream& out,
     const bool& v,
     const string&,
@@ -104,7 +104,7 @@ print(
 
 template <typename T>
 void
-printList(
+printMinizincList(
     ostream& out,
     const T& l,
     const string& dl = "[",
@@ -115,9 +115,50 @@ printList(
     for (const auto& e : l) {
         if (isFirst) isFirst = false;
         else out << ",";
-        print(out, e, "{", "}");
+        printMinizincValue(out, e, "{", "}");
     }
     out << dr;
+}
+
+template <typename T>
+void
+printJsonList(ostream&, const T&);
+
+template <typename T>
+void
+printJsonValue(ostream& out, const list<T>& l) {
+    printJsonList(out, l);
+}
+
+template <typename T>
+void
+printJsonValue(ostream& out, const vector<T>& v) {
+    printJsonList(out, v);
+}
+
+template <typename T>
+void
+printJsonValue(ostream& out, const T& v) {
+    out << v;
+}
+
+template <>
+void
+printJsonValue(ostream& out, const bool& v) {
+    out << (v ? "true" : "false");
+}
+
+template <typename T>
+void
+printJsonList(ostream& out, const T& l) {
+    out << "[";
+    bool isFirst = true;
+    for (const auto& e : l) {
+        if (isFirst) isFirst = false;
+        else out << ",";
+        printJsonValue(out, e);
+    }
+    out << "]";
 }
 
 void
@@ -180,7 +221,7 @@ generateModelFunctionParameters(
             node_lists[params.getIndexForLabelNodeInF(id)] =
                 params.getIndicesForLabelNodesInF(domset);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 }
@@ -224,7 +265,7 @@ generateModelPatternInstanceParameters(
             node_lists[params.getIndexForPI(id)] =
                 params.getIndicesForActionNodesInF(nodes);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 
@@ -237,7 +278,7 @@ generateModelPatternInstanceParameters(
             node_lists[params.getIndexForPI(id)] =
                 params.getIndicesForDataNodesInF(nodes);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 
@@ -250,7 +291,7 @@ generateModelPatternInstanceParameters(
             node_lists[params.getIndexForPI(id)] =
                 params.getIndicesForStateNodesInF(nodes);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 
@@ -263,7 +304,7 @@ generateModelPatternInstanceParameters(
             node_lists[params.getIndexForPI(id)] =
                 params.getIndicesForDataNodesInF(nodes);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 
@@ -276,7 +317,7 @@ generateModelPatternInstanceParameters(
             node_lists[params.getIndexForPI(id)] =
                 params.getIndicesForStateNodesInF(nodes);
         }
-        print(out, node_lists);
+        printMinizincValue(out, node_lists);
     }
     out << ");" << endl;
 
@@ -298,7 +339,7 @@ generateModelPatternInstanceParameters(
                 mappings[pat_index * num_labels + node_index] = index++;
             }
         }
-        print(out, mappings);
+        printMinizincValue(out, mappings);
     }
     out << ");" << endl;
     debug << endl;
@@ -309,7 +350,7 @@ generateModelPatternInstanceParameters(
         for (const ID& id : params.getIDsForAllPIs()) {
             code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
         }
-        print(out, code_sizes);
+        printMinizincValue(out, code_sizes);
     }
     out << ");" << endl;
 
@@ -319,7 +360,7 @@ generateModelPatternInstanceParameters(
         for (const ID& id : params.getIDsForAllPIs()) {
             latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
         }
-        print(out, latencies);
+        printMinizincValue(out, latencies);
     }
     out << ");" << endl;
 
@@ -330,7 +371,7 @@ generateModelPatternInstanceParameters(
             settings[params.getIndexForPI(id)] =
                 params.getNoUseDefDomConstraintsSettingForPI(id);
         }
-        print(out, settings);
+        printMinizincValue(out, settings);
     }
     out << ");" << endl;
 }
@@ -430,7 +471,11 @@ void outputPostprocessingParams(
     const Params& params,
     ostream& out
 ) {
+    out << "{" << endl;
+
     // TODO: implement
+
+    out << "}" << endl;
 }
 
 
