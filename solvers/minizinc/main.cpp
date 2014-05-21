@@ -433,7 +433,7 @@ const option::Descriptor usage[] =
         "  --postprocessing-params-file=FILE" \
         "\tWhere the post-processing parameters will be output."
     },
-    // Termination sentitel
+    // Termination sentinel
     { 0, 0, 0, 0, 0, 0 }
 };
 
