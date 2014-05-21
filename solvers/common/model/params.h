@@ -505,9 +505,10 @@ class Params {
      */
     template <typename K, typename V>
     static void
-    addMapping(const K& key,
-               const V& value,
-               std::map<K, V>& mapset
+    addMapping(
+        const K& key,
+        const V& value,
+        std::map<K, V>& mapset
     ) {
         std::pair< typename std::map<K, V>::iterator, bool > ret;
         ret = mapset.insert(std::pair<K, V>(key, value));
@@ -533,8 +534,9 @@ class Params {
      */
     template <typename K, typename V>
     static V
-    getMappedValue(const K& key,
-                   const std::map<K, V>& mapset
+    getMappedValue(
+        const K& key,
+        const std::map<K, V>& mapset
     ) {
         typename std::map<K, V>::const_iterator it;
         it = mapset.find(key);
@@ -673,8 +675,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsAndDomsetsForLabelNodesInF(const Json::Value& root,
-                                              Params& p);
+    computeMappingsAndDomsetsForLabelNodesInF(
+        const Json::Value& root,
+        Params& p
+    );
 
     /**
      * Same as computeMappingsForFActionNodes(const Json::Value&, Params&) but
