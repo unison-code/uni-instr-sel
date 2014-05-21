@@ -108,7 +108,7 @@ class Params {
      *        Node ID.
      * @returns List of dominators.
      * @throws Exception
-     *         If there is no node with such an ID.
+     *         When there is no node with such an ID.
      */
     std::list<ID>
     getDomsetForLabelNodeInF(const ID& id) const;
@@ -128,7 +128,7 @@ class Params {
      *        Pattern instance ID.
      * @returns The code size (in bytes).
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     int
     getCodeSizeForPI(const ID& instance) const;
@@ -140,7 +140,7 @@ class Params {
      *        Pattern instance ID.
      * @returns The latency (in cycles).
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     int
     getLatencyForPI(const ID& instance) const;
@@ -152,7 +152,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getActionNodesCoveredByPI(const ID& instance) const;
@@ -164,7 +164,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getDataNodesDefinedByPI(const ID& instance) const;
@@ -176,7 +176,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getStateNodesDefinedByPI(const ID& instance) const;
@@ -188,7 +188,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getDataNodesUsedByPI(const ID& instance) const;
@@ -200,7 +200,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getStateNodesUsedByPI(const ID& instance) const;
@@ -213,7 +213,7 @@ class Params {
      *        Pattern instance ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<ID>
     getLabelNodesReferredByPI(const ID& instance) const;
@@ -226,7 +226,7 @@ class Params {
      *        Pattern instance ID.
      * @returns Boolean.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     bool
     getNoUseDefDomConstraintsSettingForPI(const ID& instance) const;
@@ -238,7 +238,7 @@ class Params {
      *        Node ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no node with such an ID.
+     *         When there is no node with such an ID.
      */
     ArrayIndex
     getIndexForActionNodeInF(const ID& id) const;
@@ -250,7 +250,7 @@ class Params {
      *        Node ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no node with such an ID.
+     *         When there is no node with such an ID.
      */
     ArrayIndex
     getIndexForDataNodeInF(const ID& id) const;
@@ -262,7 +262,7 @@ class Params {
      *        Node ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no node with such an ID.
+     *         When there is no node with such an ID.
      */
     ArrayIndex
     getIndexForStateNodeInF(const ID& id) const;
@@ -274,10 +274,62 @@ class Params {
      *        Node ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no node with such an ID.
+     *         When there is no node with such an ID.
      */
     ArrayIndex
     getIndexForLabelNodeInF(const ID& id) const;
+
+    /**
+     * Gets the ID of a given array index for an action node in the function
+     * graph.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding node ID.
+     * @throws Exception
+     *         When there is no node with such an array index.
+     */
+    ID
+    getIDOfActionNodeInF(const ArrayIndex& i) const;
+
+    /**
+     * Gets the ID for a given array index of an data node in the function
+     * graph.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding node ID.
+     * @throws Exception
+     *         When there is no node with such an array index.
+     */
+    ID
+    getIDOfDataNodeInF(const ArrayIndex& i) const;
+
+    /**
+     * Gets the ID for a given array index of an state node in the function
+     * graph.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding node ID.
+     * @throws Exception
+     *         When there is no node with such an array index.
+     */
+    ID
+    getIDOfStateNodeInF(const ArrayIndex& i) const;
+
+    /**
+     * Gets the ID for a given array index of an label node in the function
+     * graph.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding node ID.
+     * @throws Exception
+     *         When there is no node with such an array index.
+     */
+    ID
+    getIDOfLabelNodeInF(const ArrayIndex& i) const;
 
     /**
      * Gets the array index for a given register in the target machine.
@@ -286,10 +338,22 @@ class Params {
      *        Register ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no register with such an ID.
+     *         When there is no register with such an ID.
      */
     ArrayIndex
     getIndexForRegisterInM(const ID& id) const;
+
+    /**
+     * Gets the ID of a given array index for a register in the target machine.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding register ID.
+     * @throws Exception
+     *         When there is no register with such an array index.
+     */
+    ID
+    getIDOfRegisterInM(const ArrayIndex& i) const;
 
     /**
      * Gets the array index for a given pattern instance.
@@ -298,10 +362,22 @@ class Params {
      *        Pattern instance ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     ArrayIndex
     getIndexForPI(const ID& id) const;
+
+    /**
+     * Gets the ID of a given array index for a pattern instance.
+     *
+     * @param i
+     *        Array index.
+     * @returns Corresponding pattern instance ID.
+     * @throws Exception
+     *         When there is no instance with such an array index.
+     */
+    ID
+    getIDOfPI(const ArrayIndex& i) const;
 
     /**
      * Gets a list of array indices for a given list of action nodes in the
@@ -311,7 +387,7 @@ class Params {
      *        List of node ID.
      * @returns List of corresponding array indices.
      * @throws Exception
-     *         If there is a node ID with no mapping.
+     *         When there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
     getIndicesForActionNodesInF(const std::list<ID>& ids) const;
@@ -324,7 +400,7 @@ class Params {
      *        List of node ID.
      * @returns List of corresponding array indices.
      * @throws Exception
-     *         If there is a node ID with no mapping.
+     *         When there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
     getIndicesForDataNodesInF(const std::list<ID>& ids) const;
@@ -337,7 +413,7 @@ class Params {
      *        List of node ID.
      * @returns List of corresponding array indices.
      * @throws Exception
-     *         If there is a node ID with no mapping.
+     *         When there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
     getIndicesForStateNodesInF(const std::list<ID>& ids) const;
@@ -350,7 +426,7 @@ class Params {
      *        List of node ID.
      * @returns List of corresponding array indices.
      * @throws Exception
-     *         If there is a node ID with no mapping.
+     *         When there is a node ID with no mapping.
      */
     std::list<ArrayIndex>
     getIndicesForLabelNodesInF(const std::list<ID>& ids) const;
@@ -362,10 +438,88 @@ class Params {
      *        List of register ID.
      * @returns List of corresponding array indices.
      * @throws Exception
-     *         If there is a register ID with no mapping.
+     *         When there is a register ID with no mapping.
      */
     std::list<ArrayIndex>
     getIndicesForRegistersInM(const std::list<ID>& ids) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for action nodes in
+     * the function graph.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding node IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfActionNodesInF(const std::list<ArrayIndex>& is) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for data nodes in
+     * the function graph.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding node IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfDataNodesInF(const std::list<ArrayIndex>& is) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for state nodes in
+     * the function graph.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding node IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfStateNodesInF(const std::list<ArrayIndex>& is) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for label nodes in
+     * the function graph.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding node IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfLabelNodesInF(const std::list<ArrayIndex>& is) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for registers in the
+     * target machine.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding register IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfRegistersInM(const std::list<ArrayIndex>& is) const;
+
+    /**
+     * Gets a list of IDs of a given list of array indices for pattern
+     * instances.
+     *
+     * @param is
+     *        List of array indices.
+     * @returns List of corresponding pattern instance IDs.
+     * @throws Exception
+     *         When there is an array index with no mapping.
+     */
+    std::list<ID>
+    getIDsOfPIs(const std::list<ArrayIndex>& is) const;
 
     /**
      * Gets a list of IDs for all action nodes in the function graph.
@@ -430,7 +584,7 @@ class Params {
      *        Pattern instance ID.
      * @returns Corresponding constraints.
      * @throws Exception
-     *         If there is no instance with such an ID.
+     *         When there is no instance with such an ID.
      */
     std::list<const Constraint*>
     getConstraintsForPI(const ID& id) const;
@@ -526,7 +680,7 @@ class Params {
      *        Object to get the mapping from.
      * @returns The value.
      * @throws Exception
-     *         If there exists no such mapping.
+     *         When there exists no such mapping.
      */
     template <typename K, typename V>
     static V
@@ -552,7 +706,7 @@ class Params {
      *        Object to get the mappings from.
      * @returns The values.
      * @throws Exception
-     *         If there exists no such mapping.
+     *         When there exists no such mapping.
      */
     template <typename K, typename V>
     static std::list<V>
@@ -1096,24 +1250,44 @@ class Params {
 
   protected:
     /**
-     * Maps the node ID of an action node to an array index.
+     * Maps the ID of an action node in the function graph to an array index.
      */
-    std::map<ID, ArrayIndex> func_action_node_mappings_;
+    std::map<ID, ArrayIndex> func_action_node_kv_mappings_;
 
     /**
-     * Same as #func_action_node_mappings_ but for data nodes.
+     * Maps an array index to the ID of an action node in the function graph.
      */
-    std::map<ID, ArrayIndex> func_data_node_mappings_;
+    std::map<ArrayIndex, ID> func_action_node_vk_mappings_;
 
     /**
-     * Same as #func_action_node_mappings_ but for state nodes.
+     * Same as #func_action_node_kv_mappings_ but for data nodes.
      */
-    std::map<ID, ArrayIndex> func_state_node_mappings_;
+    std::map<ID, ArrayIndex> func_data_node_kv_mappings_;
 
     /**
-     * Same as #func_action_node_mappings_ but for label nodes.
+     * Same as #func_action_node_vk_mappings_ but for data nodes.
      */
-    std::map<ID, ArrayIndex> func_label_node_mappings_;
+    std::map<ArrayIndex, ID> func_data_node_vk_mappings_;
+
+    /**
+     * Same as #func_action_node_kv_mappings_ but for state nodes.
+     */
+    std::map<ID, ArrayIndex> func_state_node_kv_mappings_;
+
+    /**
+     * Same as #func_action_node_vk_mappings_ but for state nodes.
+     */
+    std::map<ArrayIndex, ID> func_state_node_vk_mappings_;
+
+    /**
+     * Same as #func_action_node_kv_mappings_ but for label nodes.
+     */
+    std::map<ID, ArrayIndex> func_label_node_kv_mappings_;
+
+    /**
+     * Same as #func_action_node_vk_mappings_ but for label nodes.
+     */
+    std::map<ArrayIndex, ID> func_label_node_vk_mappings_;
 
     /**
      * The dominator sets for each label node in the function graph.
@@ -1132,14 +1306,24 @@ class Params {
     std::list<const Constraint*> func_constraints_;
 
     /**
-     * Same as #func_action_node_mappings_ but for machine registers.
+     * Maps the ID of a register in the target machine to an array index.
      */
-    std::map<ID, ArrayIndex> mach_reg_mappings_;
+    std::map<ID, ArrayIndex> mach_reg_kv_mappings_;
 
     /**
-     * Maps the pattern instance ID to an array index.
+     * Maps an array index to the ID of a register in the target machine.
      */
-    std::map<ID, ArrayIndex> pat_inst_mappings_;
+    std::map<ArrayIndex, ID> mach_reg_vk_mappings_;
+
+    /**
+     * Maps the ID of a pattern instance to an array index.
+     */
+    std::map<ID, ArrayIndex> pat_inst_kv_mappings_;
+
+    /**
+     * Maps an array index to the ID of a pattern instance.
+     */
+    std::map<ArrayIndex, ID> pat_inst_vk_mappings_;
 
     /**
      * The code size (in bytes) of the instruction for each pattern instance.
