@@ -62,7 +62,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-JSON_SOLUTION_FILE="${1%.*}.$JSON_SOLUTION_FILE_SUFFIX"
+JSON_SOLUTION_FILE="$THIS_DIR/$(basename ${1%.*}.$JSON_SOLUTION_FILE_SUFFIX)"
 
 # Generate input to Minizinc model
 echo "Generating Minizinc input..."
