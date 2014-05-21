@@ -121,7 +121,7 @@ printList(
 }
 
 void
-outputModelFunctionParameters(
+generateModelFunctionParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -186,7 +186,7 @@ outputModelFunctionParameters(
 }
 
 void
-outputModelTargetMachineParameters(
+generateModelTargetMachineParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -198,7 +198,7 @@ outputModelTargetMachineParameters(
 }
 
 void
-outputModelPatternInstanceParameters(
+generateModelPatternInstanceParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -336,20 +336,20 @@ outputModelPatternInstanceParameters(
 }
 
 void
-outputModelParameters(
+generateModelParameters(
     const Params& params,
     ostream& out,
     ostream& debug
 ) {
-    outputModelFunctionParameters(params, out, debug);
+    generateModelFunctionParameters(params, out, debug);
     out << endl;
-    outputModelTargetMachineParameters(params, out, debug);
+    generateModelTargetMachineParameters(params, out, debug);
     out << endl;
-    outputModelPatternInstanceParameters(params, out, debug);
+    generateModelPatternInstanceParameters(params, out, debug);
 }
 
 void
-outputModelConstraintsForF(
+generateModelConstraintsForF(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -364,7 +364,7 @@ outputModelConstraintsForF(
 }
 
 void
-outputModelConstraintsForPIs(
+generateModelConstraintsForPIs(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -380,6 +380,57 @@ outputModelConstraintsForPIs(
             out << endl;
         }
     }
+}
+
+void outputModelParams(
+    const Params& params,
+    ostream& out
+) {
+    stringstream sout;
+    stringstream sdebug;
+
+    sdebug << "%============" << endl;
+    sdebug << "% DEBUG INFO" << endl;
+    sdebug << "%============" << endl;
+    sdebug << endl;
+
+    sout << "%============" << endl;
+    sout << "% PARAMETERS" << endl;
+    sout << "%============" << endl;
+    sout << endl;
+    generateModelParameters(params, sout, sdebug);
+    sout << endl
+         << endl
+         << endl;
+
+    sout << "%============================" << endl;
+    sout << "% FUNCTION GRAPH CONSTRAINTS" << endl;
+    sout << "%============================" << endl;
+    sout << endl;
+    generateModelConstraintsForF(params, sout, sdebug);
+    sout << endl
+         << endl
+         << endl;
+
+    sout << "%==============================" << endl;
+    sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
+    sout << "%==============================" << endl;
+    sout << endl;
+    generateModelConstraintsForPIs(params, sout, sdebug);
+
+    out << "% AUTO-GENERATED" << endl;
+    out << endl;
+    out << sdebug.str();
+    out << endl
+        << endl;
+    out << sout.str();
+}
+
+void outputPostprocessingParams(
+    const Params& params,
+    ostream& out
+) {
+    // TODO: implement
 }
 
 
@@ -473,65 +524,35 @@ main(int argc, char** argv) {
         string json_file(cmdparser.nonOption(0));
         ifstream file(json_file);
         if (!file.good()) {
-            cerr << "ERROR: " << json_file << " does not exist or is unreadable"
-                 << endl;
+            cerr << "ERROR: '" << json_file << "' does not exist or is "
+                 << "unreadable" << endl;
             return 1;
         }
         stringstream ss;
         ss << file.rdbuf();
-        string json_content(ss.str());
+        const string json_content(ss.str());
         Params params;
         Params::parseJson(json_content, params);
 
-        // Produce model params output
-        stringstream sout;
-        stringstream sdebug;
-        sdebug << "%============" << endl;
-        sdebug << "% DEBUG INFO" << endl;
-        sdebug << "%============" << endl;
-        sdebug << endl;
-
-        sout << "%============" << endl;
-        sout << "% PARAMETERS" << endl;
-        sout << "%============" << endl;
-        sout << endl;
-        outputModelParameters(params, sout, sdebug);
-        sout << endl
-             << endl
-             << endl;
-
-        sout << "%============================" << endl;
-        sout << "% FUNCTION GRAPH CONSTRAINTS" << endl;
-        sout << "%============================" << endl;
-        sout << endl;
-        outputModelConstraintsForF(params, sout, sdebug);
-        sout << endl
-             << endl
-             << endl;
-
-        sout << "%==============================" << endl;
-        sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
-        sout << "%==============================" << endl;
-        sout << endl;
-        outputModelConstraintsForPIs(params, sout, sdebug);
-
-        // Write to model params file
+        // Output model params
         ofstream mfile;
-        string mfile_str(options[MODEL_PARAMS_FILE].arg);
+        const string mfile_str(options[MODEL_PARAMS_FILE].arg);
         mfile.open(mfile_str);
         if (!mfile.is_open()) {
             THROW(Exception, string("Failed to open file '") + mfile_str + "'");
         }
-        mfile << "% AUTO-GENERATED" << endl;
-        mfile << endl;
-        mfile << sdebug.str();
-        mfile << endl
-              << endl;
-        mfile << sout.str();
+        outputModelParams(params, mfile);
         mfile.close();
 
-        // Write to postprocessing params file
-        // TODO: implement
+        // Output postprocessing params
+        ofstream pfile;
+        const string pfile_str(options[POSTPROCESSING_PARAMS_FILE].arg);
+        pfile.open(pfile_str);
+        if (!pfile.is_open()) {
+            THROW(Exception, string("Failed to open file '") + pfile_str + "'");
+        }
+        outputPostprocessingParams(params, pfile);
+        pfile.close();
 
         return 0;
     }
