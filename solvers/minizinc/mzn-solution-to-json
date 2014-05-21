@@ -154,6 +154,8 @@ all_data.append(["has_dnode_imm", has_dnode_imm_data])
 data_table = [ ["dn_reg",             "reg-selected-for-dnode"]
              , ["dn_imm",             "imm-value-of-dnode"]
              , ["has_dnode_imm",      "has-dnode-imm-value"]
+             , ["dn_def",             "dnode-defined-by-pi"]
+             , ["sn_def",             "snode-defined-by-pi"]
              , ["pi_sel",             "is-pi-selected"]
              , ["pi_bb",              "bb-allocated-for-pi"]
              , ["bb_order",           "order-of-bbs"]
