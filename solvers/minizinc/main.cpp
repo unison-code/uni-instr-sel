@@ -28,6 +28,7 @@
 #include "../common/exceptions/exception.h"
 #include "../common/model/params.h"
 #include "../common/model/types.h"
+#include "../common/optionparser/optionparser.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -41,12 +42,18 @@ using std::cout;
 using std::endl;
 using std::ifstream;
 using std::list;
+using std::ofstream;
 using std::ostream;
 using std::string;
 using std::stringstream;
 using std::vector;
 
-// Forward declaration
+
+
+//================
+// HELP FUNCTIONS
+//================
+
 template <typename T>
 void
 printList(ostream&, const T&, const string&, const string&);
@@ -114,7 +121,7 @@ printList(
 }
 
 void
-outputFunctionParameters(
+outputModelFunctionParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -179,7 +186,7 @@ outputFunctionParameters(
 }
 
 void
-outputTargetMachineParameters(
+outputModelTargetMachineParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -191,7 +198,7 @@ outputTargetMachineParameters(
 }
 
 void
-outputPatternInstanceParameters(
+outputModelPatternInstanceParameters(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -329,20 +336,20 @@ outputPatternInstanceParameters(
 }
 
 void
-outputParameters(
+outputModelParameters(
     const Params& params,
     ostream& out,
     ostream& debug
 ) {
-    outputFunctionParameters(params, out, debug);
+    outputModelFunctionParameters(params, out, debug);
     out << endl;
-    outputTargetMachineParameters(params, out, debug);
+    outputModelTargetMachineParameters(params, out, debug);
     out << endl;
-    outputPatternInstanceParameters(params, out, debug);
+    outputModelPatternInstanceParameters(params, out, debug);
 }
 
 void
-outputConstraintsForF(
+outputModelConstraintsForF(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -357,7 +364,7 @@ outputConstraintsForF(
 }
 
 void
-outputConstraintsForPIs(
+outputModelConstraintsForPIs(
     const Params& params,
     ostream& out,
     ostream& debug
@@ -375,23 +382,95 @@ outputConstraintsForPIs(
     }
 }
 
+
+
+//======================
+// COMMAND-LINE OPTIONS
+//======================
+
+enum optionIndex {
+    PRE,
+    HELP,
+    MODEL_PARAMS_FILE,
+    POSTPROCESSING_PARAMS_FILE
+};
+
+const option::Descriptor usage[] =
+{
+    {
+        PRE,
+        0,
+        "",
+        "",
+        option::Arg::None,
+        "USAGE: input-gen [OPTIONS] JSON_FILE\n" \
+        "Options:"
+    },
+    {
+        HELP,
+        0,
+        "h",
+        "help",
+        option::Arg::None,
+        "  -h, --help" \
+        "\tPrints this menu."
+    },
+    {
+        MODEL_PARAMS_FILE,
+        0,
+        "",
+        "model-params-file",
+        option::Arg::Required,
+        "  --model-params-file=FILE" \
+        "\tWhere the model parameters will be output."
+    },
+    {
+        POSTPROCESSING_PARAMS_FILE,
+        0,
+        "",
+        "postprocessing-params-file",
+        option::Arg::Required,
+        "  --postprocessing-params-file=FILE" \
+        "\tWhere the post-processing parameters will be output."
+    },
+    // Termination sentitel
+    { 0, 0, 0, 0, 0, 0 }
+};
+
 int
 main(int argc, char** argv) {
-    // Check input arguments
-    if (argc < 2) {
-        cerr << "ERROR: no JSON input file"
-             << endl;
+    // Parse command-line arguments
+    argc -= (argc > 0); argv += (argc > 0); // Skip program name if present
+    option::Stats stats(usage, argc, argv);
+    option::Option options[stats.options_max], buffer[stats.buffer_max];
+    option::Parser cmdparser(usage, argc, argv, options, buffer);
+    if (cmdparser.error()) {
         return 1;
     }
-    else if (argc > 2) {
-        cerr << "ERROR: too many input arguments"
-             << endl;
+    if (options[HELP] || argc == 0) {
+        option::printUsage(cout, usage);
+        return 0;
+    }
+    if (!options[MODEL_PARAMS_FILE]) {
+        cerr << "No model params file" << endl;
+        return 1;
+    }
+    if (!options[POSTPROCESSING_PARAMS_FILE]) {
+        cerr << "No post-processing params file" << endl;
+        return 1;
+    }
+    if (cmdparser.nonOptionsCount() > 1) {
+        cerr << "Unknown option '" << cmdparser.nonOption(0) << "'" << endl;
+        return 1;
+    }
+    if (cmdparser.nonOptionsCount() == 0) {
+        cerr << "No JSON input file" << endl;
         return 1;
     }
 
     try {
         // Parse JSON file into an internal model parameters object
-        string json_file(argv[1]);
+        string json_file(cmdparser.nonOption(0));
         ifstream file(json_file);
         if (!file.good()) {
             cerr << "ERROR: " << json_file << " does not exist or is unreadable"
@@ -404,6 +483,7 @@ main(int argc, char** argv) {
         Params params;
         Params::parseJson(json_content, params);
 
+        // Produce model params output
         stringstream sout;
         stringstream sdebug;
         sdebug << "%============" << endl;
@@ -415,7 +495,7 @@ main(int argc, char** argv) {
         sout << "% PARAMETERS" << endl;
         sout << "%============" << endl;
         sout << endl;
-        outputParameters(params, sout, sdebug);
+        outputModelParameters(params, sout, sdebug);
         sout << endl
              << endl
              << endl;
@@ -424,7 +504,7 @@ main(int argc, char** argv) {
         sout << "% FUNCTION GRAPH CONSTRAINTS" << endl;
         sout << "%============================" << endl;
         sout << endl;
-        outputConstraintsForF(params, sout, sdebug);
+        outputModelConstraintsForF(params, sout, sdebug);
         sout << endl
              << endl
              << endl;
@@ -433,19 +513,30 @@ main(int argc, char** argv) {
         sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
         sout << "%==============================" << endl;
         sout << endl;
-        outputConstraintsForPIs(params, sout, sdebug);
+        outputModelConstraintsForPIs(params, sout, sdebug);
 
-        cout << "% AUTO-GENERATED" << endl;
-        cout << endl;
-        cout << sdebug.str();
-        cout << endl
-             << endl;
-        cout << sout.str();
+        // Write to model params file
+        ofstream mfile;
+        string mfile_str(options[MODEL_PARAMS_FILE].arg);
+        mfile.open(mfile_str);
+        if (!mfile.is_open()) {
+            THROW(Exception, string("Failed to open file '") + mfile_str + "'");
+        }
+        mfile << "% AUTO-GENERATED" << endl;
+        mfile << endl;
+        mfile << sdebug.str();
+        mfile << endl
+              << endl;
+        mfile << sout.str();
+        mfile.close();
+
+        // Write to postprocessing params file
+        // TODO: implement
+
+        return 0;
     }
     catch (Exception& ex) {
         cerr << "ERROR: " << ex.toString() << endl;
         return 1;
     }
-
-    return 0;
 }
