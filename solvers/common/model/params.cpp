@@ -29,6 +29,11 @@
 #include "../exceptions/exception.h"
 #include "../utils/string.h"
 
+// TODO: remove
+#include <iostream>
+using std::cout;
+using std::endl;
+
 using namespace Json;
 using namespace Model;
 using std::list;
@@ -209,7 +214,7 @@ Params::computeMappingsForRegistersInM(const Value& root, Params& p) {
     for (auto entry : getJsonValue(machine, "registers")) {
         const ID& reg_id = toID(entry);
         addMapping(reg_id, index, p.mach_reg_kv_mappings_);
-        addMapping(index, reg_id, p.mach_reg_kv_mappings_);
+        addMapping(index, reg_id, p.mach_reg_vk_mappings_);
         index++;
     }
 }
@@ -308,9 +313,7 @@ Params::setDataNodesDefinedByPIs(const Json::Value& root, Params& p) {
         for (auto node_id : getJsonValue(instance, "data-nodes-defined")) {
             covers.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   covers,
-                   p.pat_inst_data_defined_);
+        addMapping(instance_id, covers, p.pat_inst_data_defined_);
     }
 }
 
@@ -322,9 +325,7 @@ Params::setStateNodesDefinedByPIs(const Json::Value& root, Params& p) {
         for (auto node_id : getJsonValue(instance, "state-nodes-defined")) {
             covers.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   covers,
-                   p.pat_inst_states_defined_);
+        addMapping(instance_id, covers, p.pat_inst_states_defined_);
     }
 }
 
@@ -336,9 +337,7 @@ Params::setDataNodesUsedByPIs(const Json::Value& root, Params& p) {
         for (auto node_id : getJsonValue(instance, "data-nodes-used")) {
             covers.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   covers,
-                   p.pat_inst_data_used_);
+        addMapping(instance_id, covers, p.pat_inst_data_used_);
     }
 }
 
@@ -350,9 +349,7 @@ Params::setStateNodesUsedByPIs(const Json::Value& root, Params& p) {
         for (auto node_id : getJsonValue(instance, "state-nodes-used")) {
             covers.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   covers,
-                   p.pat_inst_states_used_);
+        addMapping(instance_id, covers, p.pat_inst_states_used_);
     }
 }
 
@@ -364,9 +361,7 @@ Params::setLabelNodesReferredByPIs(const Json::Value& root, Params& p) {
         for (auto node_id : getJsonValue(instance, "label-nodes-referred")) {
             refs.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   refs,
-                   p.pat_inst_labels_referred_);
+        addMapping(instance_id, refs, p.pat_inst_labels_referred_);
     }
 }
 
