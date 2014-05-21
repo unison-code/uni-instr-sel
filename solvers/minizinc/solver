@@ -38,7 +38,8 @@ function checkStatus {
 THIS_DIR=$(dirname $0)
 JSON_INPUT_FILE=$1
 MINIZINC_INPUT_FILE="$THIS_DIR/input.mzn"
-MINIZINC_SOLUTION_FILE="$THIS_DIR/input.sol.mzn"
+MINIZINC_OUTPUT_FILE="$THIS_DIR/input.sol.mzn"
+MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
 JSON_SOLUTION_FILE_SUFFIX="sol.json"
 JSON_SOLUTION_FILE=""   # Will be set after parsing command-line arguments
 POSTPROCESSING_INFO_FILE="$THIS_DIR/ppinfo.json"
@@ -59,17 +60,24 @@ JSON_SOLUTION_FILE="${1%.*}.$JSON_SOLUTION_FILE_SUFFIX"
 
 # Generate input to Minizinc model
 echo "Generating Minizinc input..."
-$THIS_DIR/input-gen --model-params-file="$MINIZINC_INPUT_FILE" \
-                    --postprocessing-params-file="$POSTPROCESSING_INFO_FILE" \
-                    $JSON_INPUT_FILE
+$THIS_DIR/input-gen \
+    --model-params-file="$MINIZINC_INPUT_FILE" \
+    --postprocessing-params-file="$POSTPROCESSING_INFO_FILE" \
+    $JSON_INPUT_FILE
 checkStatus
 
 # Run Minizinc solver
 echo "Running Minizinc solver..."
-minizinc model.mzn > $MINIZINC_SOLUTION_FILE
-checkStatus
+CURRENT_DIR=`pwd`
+cd $THIS_DIR
+minizinc $(basename $MINIZINC_MODEL_FILE) > $(basename $MINIZINC_OUTPUT_FILE)
+STATUS=$?
+cd $CURRENT_DIR
+if [ $STATUS -ne 0 ]; then
+    exit 1
+fi
 
 # Convert solution into JSON format
 echo "Converting Minizinc solution to JSON format..."
-$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILE > $JSON_SOLUTION_FILE
+$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $JSON_SOLUTION_FILE
 checkStatus
