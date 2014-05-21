@@ -49,10 +49,31 @@ def extractData(line):
     if pos < 0:
         raise SyntaxError("Expected '=' not found")
     name = line[:pos].strip()
-    data = line[pos + 1:].strip()
-    if len(data) == 0:
-        raise SyntaxError("No value")
+    data = toValue(line[pos + 1:].strip())
     return name, data
+
+def toValue(s):
+    s = s.strip()
+    if len(s) == 0:
+        raise SyntaxError("No data")
+    if s[0] == '[':
+        if not s[-1] == ']':
+            raise SyntaxError("Expected ']' not found")
+        values = []
+        for t in s[1:-1].split(','):
+            if len(t) == 0:
+                continue
+            values.append(toValue(t))
+        return values
+    else:
+        if s == "true":
+            return True
+        elif s == "false":
+            return False
+        elif s.isdigit():
+            return int(s)
+        else:
+            return s
 
 def consistsOnlyOf(s, ch):
     for c in s:
@@ -65,28 +86,12 @@ def getDataByName(data, name):
         if d[0] == name:
             return d[1]
 
-def toJson(data):
-    name = data[0]
-    data_str = data[1].strip()
-    if len(s) == 0:
-        raise SyntaxError("No value")
-    if data_str[0] == '[':
-        if not data_str[-1] == ']':
-            raise SyntaxError("Expected ']' not found")
-        ss = data_str[1:-1].split(',')
-        values = []
-        for s in ss:
-            s = s.strip()
-            if s == "true":
-                values.append(True)
-            elif s == "false":
-                values.append(False)
-            elif s.isdigit():
-                values.append(int(s))
-            else:
-                values.append(s)
-    else:
-        return {name: s}
+def getRequiredDataByName(data, name):
+    d = getDataByName(data, name)
+    if d == None:
+        error("Required data '" + name + "' not found")
+    return d
+
 
 
 #=============
@@ -119,15 +124,36 @@ for i in range(len(content)):
     try:
         name, data = extractData(line)
     except SyntaxError as e:
-        error("Line " + linenr + ": " + e.strerror)
+        error("Line " + linenr + ": " + str(e))
     if getDataByName(all_data, name) != None:
         error("Line " + linenr + ": Duplicate entries with name '" + name + "'")
     all_data.append([name, data])
 
+# Add, modify, or remove certain data in order to facilitate postprocessing
+
+# Remove the null label from bb-order
+bb_order_data = getRequiredDataByName(all_data, "bb_order")
+null_label = getRequiredDataByName(all_data, "null_label")
+try:
+    null_label = int(null_label)
+except ValueError:
+    error("Value of 'null_label' is not an int")
+if null_label < 0 or null_label >= len(bb_order_data):
+    error("Value of 'null_label' is out of bounds")
+del bb_order_data[null_label]
+
+# Add 'has_dnode_imm' array to data
+dn_reg_data = getRequiredDataByName(all_data, "dn_reg")
+reg_for_imm_values = getRequiredDataByName(all_data, "reg_for_imm_values")
+has_dnode_imm_data = []
+for reg in dn_reg_data:
+    has_dnode_imm_data.append(reg == has_dnode_imm_data)
+all_data.append(["has_dnode_imm", has_dnode_imm_data])
+
 # Turn desirable data into JSON
 data_table = [ ["dn_reg",             "reg-selected-for-dnode"]
              , ["dn_imm",             "imm-value-of-dnode"]
-             , ["dn_has_imm",         "has-dnode-imm-value"]
+             , ["has_dnode_imm",      "has-dnode-imm-value"]
              , ["pi_sel",             "is-pi-selected"]
              , ["pi_bb",              "bb-allocated-for-pi"]
              , ["bb_order",           "order-of-bbs"]

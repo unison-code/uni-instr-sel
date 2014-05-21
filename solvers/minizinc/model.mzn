@@ -288,14 +288,12 @@ output [ "an_cov=", show(an_cov), "\n"
        , "dn_def=", show(dn_def), "\n"
        , "dn_reg=", show(dn_reg), "\n"
        , "dn_imm=", show(dn_imm), "\n"
-       , "dn_has_imm=", show([ if fix(r) == regForImmValues
-                               then true
-                               else false
-                               endif | r in dn_reg ]), "\n"
        , "sn_def=", show(sn_def), "\n"
        , "pi_sel=", show(pi_sel), "\n"
        , "pi_bb=", show(pi_bb), "\n"
        , "bb_order=", show(bb_order), "\n"
        , "br_bb_dists=", show(br_bb_dists), "\n"
+       , "null_label=", show(nullLabel), "\n"
+       , "reg_for_imm_values=", show(regForImmValues), "\n"
        , "cost=", show(cost), "\n"
        ];
