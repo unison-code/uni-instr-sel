@@ -505,11 +505,7 @@ class Params {
      */
     template <typename K, typename V>
     static void
-    addMapping(
-        const K& key,
-        const V& value,
-        std::map<K, V>& mapset
-    ) {
+    addMapping(const K& key, const V& value, std::map<K, V>& mapset) {
         std::pair< typename std::map<K, V>::iterator, bool > ret;
         ret = mapset.insert(std::pair<K, V>(key, value));
         if (!ret.second) {
@@ -527,23 +523,66 @@ class Params {
      * @param key
      *        The key.
      * @param mapset
-     *        Object to add the mapping to.
+     *        Object to get the mapping from.
      * @returns The value.
      * @throws Exception
      *         If there exists no such mapping.
      */
     template <typename K, typename V>
     static V
-    getMappedValue(
-        const K& key,
-        const std::map<K, V>& mapset
-    ) {
+    getMappedValue(const K& key, const std::map<K, V>& mapset) {
         typename std::map<K, V>::const_iterator it;
         it = mapset.find(key);
         if (it == mapset.end()) {
             THROW(Exception, "No mapping found");
         }
         return it->second;
+    }
+
+    /**
+     * Gets a list of values from a map.
+     *
+     * @tparam K
+     *         Type of key.
+     * @tparam V
+     *         Type of value.
+     * @param keys
+     *        The keys.
+     * @param mapset
+     *        Object to get the mappings from.
+     * @returns The values.
+     * @throws Exception
+     *         If there exists no such mapping.
+     */
+    template <typename K, typename V>
+    static std::list<V>
+    getMappedValues(const std::list<K>& keys, const std::map<K, V>& mapset) {
+        std::list<V> values;
+        for (auto& key : keys) {
+            values.push_back(getMappedValue(key, mapset));
+        }
+        return values;
+    }
+
+    /**
+     * Gets a list of keys from a map.
+     *
+     * @tparam K
+     *         Type of key.
+     * @tparam V
+     *         Type of value.
+     * @param mapset
+     *        Object to get the keys from.
+     * @returns The keys.
+     */
+    template <typename K, typename V>
+    static std::list<K>
+    getMappedKeys(const std::map<K, V>& mapset) {
+        std::list<K> keys;
+        for (auto& kv : mapset) {
+            keys.push_back(kv.first);
+        }
+        return keys;
     }
 
     /**

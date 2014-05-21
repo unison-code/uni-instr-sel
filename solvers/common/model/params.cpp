@@ -147,44 +147,29 @@ Params::toString(const Value& value) {
 }
 
 void
-Params::computeMappingsForActionNodesInF(
-    const Value& root,
-    Params& p
-) {
+Params::computeMappingsForActionNodesInF(const Value& root, Params& p) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "action-nodes")) {
-        addMapping(toID(node_id),
-                   index++,
-                   p.func_action_node_mappings_);
+        addMapping(toID(node_id), index++, p.func_action_node_mappings_);
     }
 }
 
 void
-Params::computeMappingsForDataNodesInF(
-    const Value& root,
-    Params& p
-) {
+Params::computeMappingsForDataNodesInF(const Value& root, Params& p) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "data-nodes")) {
-        addMapping(toID(node_id),
-                   index++,
-                   p.func_data_node_mappings_);
+        addMapping(toID(node_id), index++, p.func_data_node_mappings_);
     }
 }
 
 void
-Params::computeMappingsForStateNodesInF(
-    const Value& root,
-    Params& p
-) {
+Params::computeMappingsForStateNodesInF(const Value& root, Params& p) {
     const Value& function = getJsonValue(root, "function-data");
     ArrayIndex index = 0;
     for (auto node_id : getJsonValue(function, "state-nodes")) {
-        addMapping(toID(node_id),
-                   index++,
-                   p.func_state_node_mappings_);
+        addMapping(toID(node_id), index++, p.func_state_node_mappings_);
     }
 }
 
@@ -197,38 +182,26 @@ Params::computeMappingsAndDomsetsForLabelNodesInF(
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "label-nodes")) {
         const ID& node_id = toID(getJsonValue(entry, "node"));
-        addMapping(node_id,
-                   index++,
-                   p.func_label_node_mappings_);
+        addMapping(node_id, index++, p.func_label_node_mappings_);
         list<ID> domset;
         for (auto dominator_node : getJsonValue(entry, "domset")) {
             domset.push_back(toID(dominator_node));
         }
-        addMapping(node_id,
-                   domset,
-                   p.func_label_domsets_);
+        addMapping(node_id, domset, p.func_label_domsets_);
     }
 }
 
 void
-Params::computeMappingsForRegistersInM(
-    const Value& root,
-    Params& p
-) {
+Params::computeMappingsForRegistersInM(const Value& root, Params& p) {
     const Value& machine = getJsonValue(root, "machine-data");
     ArrayIndex index = 0;
     for (auto register_id : getJsonValue(machine, "registers")) {
-        addMapping(toID(register_id),
-                   index++,
-                   p.mach_reg_mappings_);
+        addMapping(toID(register_id), index++, p.mach_reg_mappings_);
     }
 }
 
 void
-Params::computeMappingsForPIs(
-    const Value& root,
-    Params& p
-) {
+Params::computeMappingsForPIs(const Value& root, Params& p) {
     ArrayIndex index = 0;
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         addMapping(toID(getJsonValue(instance, "instance-id")),
@@ -252,9 +225,7 @@ Params::setCodeSizesForPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         int code_size = toInt(getJsonValue(instance, "code-size"));
-        addMapping(instance_id,
-                   code_size,
-                   p.pat_inst_code_sizes_);
+        addMapping(instance_id, code_size, p.pat_inst_code_sizes_);
     }
 }
 
@@ -263,9 +234,7 @@ Params::setLatenciesForPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         int latency = toInt(getJsonValue(instance, "latency"));
-        addMapping(instance_id,
-                   latency,
-                   p.pat_inst_latencies_);
+        addMapping(instance_id, latency, p.pat_inst_latencies_);
     }
 }
 
@@ -276,29 +245,17 @@ Params::getIndexForRegisterInM(const ID& id) const {
 
 list<ArrayIndex>
 Params::getIndicesForRegistersInM(const list<ID>& ids) const {
-    list<ID> indices;
-    for (auto& id : ids) {
-        indices.push_back(getIndexForRegisterInM(id));
-    }
-    return indices;
+    return getMappedValues(ids, mach_reg_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllRegisterInM(void) const {
-    list<ID> ids;
-    for (auto& kv : mach_reg_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(mach_reg_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllPIs(void) const {
-    list<ID> ids;
-    for (auto& kv : pat_inst_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(pat_inst_mappings_);
 }
 
 ArrayIndex
@@ -317,27 +274,19 @@ Params::getConstraintsForPI(const ID& id) const {
 }
 
 void
-Params::setActionNodesCoveredByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setActionNodesCoveredByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(instance, "action-nodes-covered")) {
             covers.push_back(toID(node_id));
         }
-        addMapping(instance_id,
-                   covers,
-                   p.pat_inst_actions_covered_);
+        addMapping(instance_id, covers, p.pat_inst_actions_covered_);
     }
 }
 
 void
-Params::setDataNodesDefinedByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setDataNodesDefinedByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> covers;
@@ -351,10 +300,7 @@ Params::setDataNodesDefinedByPIs(
 }
 
 void
-Params::setStateNodesDefinedByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setStateNodesDefinedByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> covers;
@@ -368,10 +314,7 @@ Params::setStateNodesDefinedByPIs(
 }
 
 void
-Params::setDataNodesUsedByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setDataNodesUsedByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> covers;
@@ -385,10 +328,7 @@ Params::setDataNodesUsedByPIs(
 }
 
 void
-Params::setStateNodesUsedByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setStateNodesUsedByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> covers;
@@ -402,10 +342,7 @@ Params::setStateNodesUsedByPIs(
 }
 
 void
-Params::setLabelNodesReferredByPIs(
-    const Json::Value& root,
-    Params& p
-) {
+Params::setLabelNodesReferredByPIs(const Json::Value& root, Params& p) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance, "instance-id"));
         list<ID> refs;
@@ -475,74 +412,42 @@ Params::getIndexForLabelNodeInF(const ID& id) const {
 
 list<ID>
 Params::getIDsForAllActionNodesInF(void) const {
-    list<ID> ids;
-    for (auto& kv : func_action_node_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(func_action_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllDataNodesInF(void) const {
-    list<ID> ids;
-    for (auto& kv : func_data_node_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(func_data_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllStateNodesInF(void) const {
-    list<ID> ids;
-    for (auto& kv : func_state_node_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(func_state_node_mappings_);
 }
 
 list<ID>
 Params::getIDsForAllLabelNodesInF(void) const {
-    list<ID> ids;
-    for (auto& kv : func_label_node_mappings_) {
-        ids.push_back(kv.first);
-    }
-    return ids;
+    return getMappedKeys(func_label_node_mappings_);
 }
 
 list<ArrayIndex>
 Params::getIndicesForActionNodesInF(const list<ID>& ids) const {
-    list<ID> indices;
-    for (auto& id : ids) {
-        indices.push_back(getIndexForActionNodeInF(id));
-    }
-    return indices;
+    return getMappedValues(ids, func_action_node_mappings_);
 }
 
 list<ArrayIndex>
 Params::getIndicesForDataNodesInF(const list<ID>& ids) const {
-    list<ID> indices;
-    for (auto& id : ids) {
-        indices.push_back(getIndexForDataNodeInF(id));
-    }
-    return indices;
+    return getMappedValues(ids, func_data_node_mappings_);
 }
 
 list<ArrayIndex>
 Params::getIndicesForStateNodesInF(const list<ID>& ids) const {
-    list<ID> indices;
-    for (auto& id : ids) {
-        indices.push_back(getIndexForStateNodeInF(id));
-    }
-    return indices;
+    return getMappedValues(ids, func_state_node_mappings_);
 }
 
 list<ArrayIndex>
 Params::getIndicesForLabelNodesInF(const list<ID>& ids) const {
-    list<ID> indices;
-    for (auto& id : ids) {
-        indices.push_back(getIndexForLabelNodeInF(id));
-    }
-    return indices;
+    return getMappedValues(ids, func_label_node_mappings_);
 }
 
 void
@@ -579,9 +484,7 @@ Params::setConstraintsForPIs(const Value& root, Params& p) {
             Constraint* c = parseConstraint(toString(expr));
             constraints.push_back(c);
         }
-        addMapping(instance_id,
-                   constraints,
-                   p.pat_inst_constraints_);
+        addMapping(instance_id, constraints, p.pat_inst_constraints_);
     }
 }
 
@@ -1134,7 +1037,7 @@ Params::isStateNodeInF(const ID& id) const {
 }
 
 bool
-Params::isLabelNodeInF(const ID& id) const  {
+Params::isLabelNodeInF(const ID& id) const {
     for (const ID& c_id : getIDsForAllLabelNodesInF()) {
         if (c_id == id) return true;
     }
