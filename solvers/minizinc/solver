@@ -25,15 +25,9 @@
 
 
 
-#================
-# HELP FUNCTIONS
-#================
-
-function checkStatus {
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
-}
+#==========
+# SETTINGS
+#==========
 
 THIS_DIR=$(dirname $0)
 JSON_INPUT_FILE=$1
@@ -43,6 +37,18 @@ MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
 JSON_SOLUTION_FILE_SUFFIX="sol.json"
 JSON_SOLUTION_FILE=""   # Will be set after parsing command-line arguments
 POSTPROCESSING_INFO_FILE="$THIS_DIR/ppinfo.json"
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+function checkStatus {
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
 
 
 
