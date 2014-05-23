@@ -29,11 +29,6 @@
 #include "../exceptions/exception.h"
 #include "../utils/string.h"
 
-// TODO: remove
-#include <iostream>
-using std::cout;
-using std::endl;
-
 using namespace Json;
 using namespace Model;
 using std::list;
