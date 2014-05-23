@@ -24,29 +24,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_COMMON_MODEL_TYPES__
-#define SOLVERS_COMMON_MODEL_TYPES__
+#include "types.h"
 
-#include <list>
+using std::list;
 
 namespace Model {
 
-typedef unsigned int ID;
-typedef unsigned int ArrayIndex;
+list<ArrayIndex>
+createArrayIndices(const ArrayIndex& start, const ArrayIndex& end) {
+    list<ArrayIndex> indices;
+    for (ArrayIndex i = start; i < end; i++) {
+        indices.push_back(i);
+    }
 
-/**
- * Creates a list of continuous array indices.
- *
- * @param start
- *        First array index in the list.
- * @param end
- *        Last array index (which will *not* be included in the list).
- * @throws Exception
- *         When \c start is less than \c end.
- */
-std::list<ArrayIndex>
-createArrayIndices(const ArrayIndex& start, const ArrayIndex& end);
-
+    return indices;
 }
 
-#endif
+}

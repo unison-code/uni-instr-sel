@@ -29,7 +29,8 @@
 #=======================
 
 MODULE_FILES := constraints.cpp \
-                params.cpp
+                params.cpp      \
+                types.cpp
 
 
 
