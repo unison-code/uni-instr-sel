@@ -29,7 +29,7 @@
 #=======================
 
 MODULE_FILES := constraintprocessor.cpp \
-                main.cpp
+                mzn-input-gen.cpp
 
 
 
