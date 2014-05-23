@@ -36,7 +36,7 @@ MINIZINC_OUTPUT_FILE="$THIS_DIR/input.sol.mzn"
 MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
 JSON_SOLUTION_FILE_SUFFIX="sol.json"
 JSON_SOLUTION_FILE=""   # Will be set after parsing command-line arguments
-POSTPROCESSING_INFO_FILE="$THIS_DIR/ppinfo.json"
+POSTPROCESSING_INFO_FILE="$THIS_DIR/post-params.json"
 
 
 
