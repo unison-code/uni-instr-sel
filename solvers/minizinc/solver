@@ -30,12 +30,12 @@
 #==========
 
 THIS_DIR=$(dirname $0)
-JSON_INPUT_FILE=$1
-MINIZINC_INPUT_FILE="$THIS_DIR/input.mzn"
-MINIZINC_OUTPUT_FILE="$THIS_DIR/input.sol.mzn"
+PARAMS_FILE=$1
+MINIZINC_PARAMS_FILE="$THIS_DIR/params.mzn"
+MINIZINC_OUTPUT_FILE="$THIS_DIR/params.sol.mzn"
 MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
-JSON_SOLUTION_FILE_SUFFIX="sol.json"
-JSON_SOLUTION_FILE=""   # Will be set after parsing command-line arguments
+SOLUTION_FILE_SUFFIX="sol.json"
+SOLUTION_FILE=""   # Will be set after parsing command-line arguments
 POSTPROCESSING_INFO_FILE="$THIS_DIR/post-params.json"
 
 
@@ -58,18 +58,18 @@ function checkStatus {
 
 # Check arguments
 if [ -z "$1" ]; then
-    echo "No JSON file provided"
+    echo "No params file provided"
     exit 1
 fi
 
-JSON_SOLUTION_FILE="$THIS_DIR/$(basename ${1%.*}.$JSON_SOLUTION_FILE_SUFFIX)"
+SOLUTION_FILE="$THIS_DIR/$(basename ${1%.*}.$SOLUTION_FILE_SUFFIX)"
 
-# Generate input to Minizinc model
-echo "Generating Minizinc input..."
-$THIS_DIR/mzn-input-gen \
-    --model-params-file="$MINIZINC_INPUT_FILE" \
+# Generate params to Minizinc model
+echo "Generating Minizinc params..."
+$THIS_DIR/mzn-params-gen \
+    --model-params-file="$MINIZINC_PARAMS_FILE" \
     --postprocessing-params-file="$POSTPROCESSING_INFO_FILE" \
-    $JSON_INPUT_FILE
+    $PARAMS_FILE
 checkStatus
 
 # Run Minizinc solver
@@ -85,5 +85,5 @@ fi
 
 # Convert solution into JSON format
 echo "Converting Minizinc solution to JSON format..."
-$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $JSON_SOLUTION_FILE
+$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $SOLUTION_FILE
 checkStatus

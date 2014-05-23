@@ -53,7 +53,7 @@ array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
 
 
 
-include "input.mzn";
+include "params.mzn";
 
 
 
