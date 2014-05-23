@@ -156,7 +156,7 @@ numExpr2Str (Bool2NumExpr e) =
 numExpr2Str (NodeID2NumExpr e) =
   "(node-id-to-num " ++ nodeIDExpr2Str e ++ ")"
 numExpr2Str (PatternInstanceID2NumExpr e) =
-  "(insta-id-to-num " ++ instanceIDExpr2Str e ++ ")"
+  "(pat-inst-id-to-num " ++ instanceIDExpr2Str e ++ ")"
 numExpr2Str (InstructionID2NumExpr e) =
   "(instr-id-to-num " ++ instructionIDExpr2Str e ++ ")"
 numExpr2Str (PatternID2NumExpr e) =
@@ -194,14 +194,14 @@ instructionIDExpr2Str (InstructionIDOfPatternExpr e) =
 
 patternIDExpr2Str :: PatternIDExpr -> String
 patternIDExpr2Str (APatternIDExpr nid) = show nid
-patternIDExpr2Str (PatternIDOfInstanceExpr e) =
-  "(pat-of-insta " ++ instanceIDExpr2Str e ++ ")"
+patternIDExpr2Str (PatternIDOfPatternInstanceExpr e) =
+  "(pat-of-pat-inst " ++ instanceIDExpr2Str e ++ ")"
 
 labelIDExpr2Str :: LabelIDExpr -> String
-labelIDExpr2Str (LabelIDAllocatedToInstanceExpr e) =
-  "(lab-alloc-to-insta " ++ instanceIDExpr2Str e ++ ")"
+labelIDExpr2Str (LabelIDAllocatedToPatternInstanceExpr e) =
+  "(lab-alloc-to-pat-inst " ++ instanceIDExpr2Str e ++ ")"
 labelIDExpr2Str (LabelIDOfLabelNodeExpr e) =
-  "(lab-id-of-node " ++ nodeIDExpr2Str e ++ ")"
+  "(lab-id-of-lnode " ++ nodeIDExpr2Str e ++ ")"
 
 registerIDExpr2Str :: RegisterIDExpr -> String
 registerIDExpr2Str (ARegisterIDExpr rid) = show rid

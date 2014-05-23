@@ -43,7 +43,7 @@ mkBBAllocConstraints g =
                )
                (
                  LabelID2NumExpr $
-                 LabelIDAllocatedToInstanceExpr $
+                 LabelIDAllocatedToPatternInstanceExpr $
                  ThisPatternInstanceIDExpr
                )
              ]

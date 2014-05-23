@@ -248,7 +248,7 @@ main =
                            )
                            (
                              LabelID2NumExpr $
-                             LabelIDAllocatedToInstanceExpr $
+                             LabelIDAllocatedToPatternInstanceExpr $
                              ThisPatternInstanceIDExpr
                            )
                          , BoolExprConstraint $
@@ -257,7 +257,7 @@ main =
                              InSetExpr
                              (
                                LabelID2SetElemExpr $
-                               LabelIDAllocatedToInstanceExpr $
+                               LabelIDAllocatedToPatternInstanceExpr $
                                DefinerOfDataNodeExpr $
                                ANodeIDExpr 0
                              )
@@ -271,7 +271,7 @@ main =
                              InSetExpr
                              (
                                LabelID2SetElemExpr $
-                               LabelIDAllocatedToInstanceExpr $
+                               LabelIDAllocatedToPatternInstanceExpr $
                                DefinerOfDataNodeExpr $
                                ANodeIDExpr 1
                              )
@@ -289,7 +289,7 @@ main =
                                InSetExpr
                                (
                                  LabelID2SetElemExpr $
-                                 LabelIDAllocatedToInstanceExpr $
+                                 LabelIDAllocatedToPatternInstanceExpr $
                                  DefinerOfDataNodeExpr $
                                  ANodeIDExpr 0
                                )
@@ -311,7 +311,7 @@ main =
                                InSetExpr
                                (
                                  LabelID2SetElemExpr $
-                                 LabelIDAllocatedToInstanceExpr $
+                                 LabelIDAllocatedToPatternInstanceExpr $
                                  DefinerOfDataNodeExpr $
                                  ANodeIDExpr 1
                                )

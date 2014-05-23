@@ -247,12 +247,12 @@ replaceInInstructionIDExpr m (InstructionIDOfPatternExpr e) =
 
 replaceInPatternIDExpr :: Matchset NodeID -> PatternIDExpr -> PatternIDExpr
 replaceInPatternIDExpr _ (APatternIDExpr i) = APatternIDExpr i
-replaceInPatternIDExpr m (PatternIDOfInstanceExpr e) =
-  PatternIDOfInstanceExpr (replaceInPatternInstanceIDExpr m e)
+replaceInPatternIDExpr m (PatternIDOfPatternInstanceExpr e) =
+  PatternIDOfPatternInstanceExpr (replaceInPatternInstanceIDExpr m e)
 
 replaceInLabelIDExpr :: Matchset NodeID -> LabelIDExpr -> LabelIDExpr
-replaceInLabelIDExpr m (LabelIDAllocatedToInstanceExpr e) =
-  LabelIDAllocatedToInstanceExpr (replaceInPatternInstanceIDExpr m e)
+replaceInLabelIDExpr m (LabelIDAllocatedToPatternInstanceExpr e) =
+  LabelIDAllocatedToPatternInstanceExpr (replaceInPatternInstanceIDExpr m e)
 replaceInLabelIDExpr m (LabelIDOfLabelNodeExpr e) =
   LabelIDOfLabelNodeExpr (replaceInNodeIDExpr m e)
 

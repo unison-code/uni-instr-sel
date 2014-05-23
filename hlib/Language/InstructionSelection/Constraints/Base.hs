@@ -225,7 +225,7 @@ data PatternIDExpr
 
       -- | Retrieves the pattern ID to which a pattern instance is derived from.
 
-    | PatternIDOfInstanceExpr PatternInstanceIDExpr
+    | PatternIDOfPatternInstanceExpr PatternInstanceIDExpr
 
     -- TODO: add missing functions
 
@@ -238,7 +238,7 @@ data LabelIDExpr
       -- | Retrieves the ID of the label to which a pattern instance has been
       -- allocated.
 
-    = LabelIDAllocatedToInstanceExpr PatternInstanceIDExpr
+    = LabelIDAllocatedToPatternInstanceExpr PatternInstanceIDExpr
 
       -- | Retrieves the label ID associated with a label node.
 
