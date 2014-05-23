@@ -30,7 +30,6 @@
 
 MODULE_FILES := constraintparser.cpp \
                 constraints.cpp      \
-                params.cpp           \
                 types.cpp
 
 
