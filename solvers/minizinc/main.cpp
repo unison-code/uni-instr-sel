@@ -473,7 +473,59 @@ void outputPostprocessingParams(
 ) {
     out << "{" << endl;
 
-    // TODO: implement
+    out << "\"array-indices-to-func-action-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfActionNodesInF(
+            createArrayIndices(0, params.getNumActionNodesInF())
+        )
+    );
+    out << endl;
+
+    out << "\"array-indices-to-func-data-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfDataNodesInF(
+            createArrayIndices(0, params.getNumDataNodesInF())
+        )
+    );
+    out << endl;
+
+    out << "\"array-indices-to-func-state-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfStateNodesInF(
+            createArrayIndices(0, params.getNumStateNodesInF())
+        )
+    );
+    out << endl;
+
+    out << "\"array-indices-to-func-label-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfLabelNodesInF(
+            createArrayIndices(0, params.getNumLabelNodesInF())
+        )
+    );
+    out << endl;
+
+    out << "\"array-indices-to-machine-register-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfRegistersInM(
+            createArrayIndices(0, params.getNumRegistersInM())
+        )
+    );
+    out << endl;
+
+    out << "\"array-indices-to-pattern-instance-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfPIs(
+            createArrayIndices(0, params.getNumPIs())
+        )
+    );
+    out << endl;
 
     out << "}" << endl;
 }
