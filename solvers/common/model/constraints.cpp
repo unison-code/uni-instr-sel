@@ -29,6 +29,7 @@
 
 using namespace Model;
 using std::list;
+using std::string;
 
 Constraint::~Constraint(void) {}
 
@@ -58,51 +59,27 @@ BoolExprConstraint::getExpr(void) const {
     return expr_;
 }
 
-Expr::Expr(void) {}
-
 Expr::~Expr(void) {}
-
-IntExpr::IntExpr(void) {}
 
 IntExpr::~IntExpr(void) {}
 
-BoolExpr::BoolExpr(void) {}
-
 BoolExpr::~BoolExpr(void) {}
-
-NumExpr::NumExpr(void) {}
 
 NumExpr::~NumExpr(void) {}
 
-NodeIDExpr::NodeIDExpr(void) {}
-
 NodeIDExpr::~NodeIDExpr(void) {}
-
-PatternInstanceIDExpr::PatternInstanceIDExpr(void) {}
 
 PatternInstanceIDExpr::~PatternInstanceIDExpr(void) {}
 
-InstructionIDExpr::InstructionIDExpr(void) {}
-
 InstructionIDExpr::~InstructionIDExpr(void) {}
-
-PatternIDExpr::PatternIDExpr(void) {}
 
 PatternIDExpr::~PatternIDExpr(void) {}
 
-LabelIDExpr::LabelIDExpr(void) {}
-
 LabelIDExpr::~LabelIDExpr(void) {}
-
-RegisterIDExpr::RegisterIDExpr(void) {}
 
 RegisterIDExpr::~RegisterIDExpr(void) {}
 
-SetElemExpr::SetElemExpr(void) {}
-
 SetElemExpr::~SetElemExpr(void) {}
-
-SetExpr::SetExpr(void) {}
 
 SetExpr::~SetExpr(void) {}
 

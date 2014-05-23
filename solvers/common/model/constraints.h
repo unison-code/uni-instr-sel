@@ -48,6 +48,31 @@ class SetElemExpr;
 class SetExpr;
 
 /**
+ * Extends a base class with an additional static method getStrName(), which is
+ * done using the the curiously recurring template pattern (see
+ * http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern).
+ *
+ * @tparam Base
+ *         The base class.
+ * @tparam Derived
+ *         The class deriving the base class.
+ */
+template <typename Base, typename Derived>
+class WithStrName : public Base {
+  public:
+    /**
+     * Gets the string name of this class. It is expected that a public static
+     * variable #STRNAME is provided by the deriving class.
+     *
+     * @return String name.
+     */
+    static std::string
+    getStrName(void) {
+        return Derived::STRNAME;
+    }
+};
+
+/**
  * Defines a base class for representing a constraint.
  */
 class Constraint {
@@ -58,12 +83,21 @@ class Constraint {
     virtual
     ~Constraint(void)
     =0;
+
+    /**
+     * Converts this constraint into a the lispian string.
+     *
+     * @return Lisp string.
+     */
+    virtual std::string
+    toLisp(void) const
+    =0;
 };
 
 /**
  * Defines a class for representing a Boolean expression constraint.
  */
-class BoolExprConstraint : public Constraint {
+class BoolExprConstraint : public WithStrName<Constraint, BoolExprConstraint> {
   public:
     /**
      * Creates a constraint from a Boolean expression. The new object assumes
@@ -89,6 +123,18 @@ class BoolExprConstraint : public Constraint {
     const BoolExpr*
     getExpr(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   protected:
     const BoolExpr* expr_;
 };
@@ -97,7 +143,9 @@ class BoolExprConstraint : public Constraint {
  * Defines a class for representing a constraint that a data node is an integer
  * constant.
  */
-class DataNodeIsIntConstantConstraint : public Constraint {
+class DataNodeIsIntConstantConstraint
+    : public WithStrName<Constraint, DataNodeIsIntConstantConstraint>
+{
   public:
     /**
      * Creates a new constraint.
@@ -122,6 +170,18 @@ class DataNodeIsIntConstantConstraint : public Constraint {
     ID
     getNodeID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   protected:
     const ID id_;
 };
@@ -132,15 +192,19 @@ class DataNodeIsIntConstantConstraint : public Constraint {
 class Expr {
   public:
     /**
-     * Creates an expression.
-     */
-    Expr(void);
-
-    /**
      * Destroys this expression.
      */
     virtual
     ~Expr(void)
+    =0;
+
+    /**
+     * Converts this constraint into a the lispian string.
+     *
+     * @return Lisp string.
+     */
+    virtual std::string
+    toLisp(void) const
     =0;
 };
 
@@ -149,11 +213,6 @@ class Expr {
  */
 class BoolExpr : public Expr {
   public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    BoolExpr(void);
-
     /**
      * \copydoc ~Expr::Expr()
      */
@@ -168,11 +227,6 @@ class BoolExpr : public Expr {
 class NumExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    NumExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -185,11 +239,6 @@ class NumExpr : public Expr {
  */
 class IntExpr : public Expr {
   public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    IntExpr(void);
-
     /**
      * \copydoc ~Expr::Expr()
      */
@@ -204,11 +253,6 @@ class IntExpr : public Expr {
 class NodeIDExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    NodeIDExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -221,11 +265,6 @@ class NodeIDExpr : public Expr {
  */
 class PatternInstanceIDExpr : public Expr {
   public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    PatternInstanceIDExpr(void);
-
     /**
      * \copydoc ~Expr::Expr()
      */
@@ -240,11 +279,6 @@ class PatternInstanceIDExpr : public Expr {
 class InstructionIDExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    InstructionIDExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -257,11 +291,6 @@ class InstructionIDExpr : public Expr {
  */
 class PatternIDExpr : public Expr {
   public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    PatternIDExpr(void);
-
     /**
      * \copydoc ~Expr::Expr()
      */
@@ -276,11 +305,6 @@ class PatternIDExpr : public Expr {
 class LabelIDExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    LabelIDExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -293,11 +317,6 @@ class LabelIDExpr : public Expr {
  */
 class RegisterIDExpr : public Expr {
   public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    RegisterIDExpr(void);
-
     /**
      * \copydoc ~Expr::Expr()
      */
@@ -312,11 +331,6 @@ class RegisterIDExpr : public Expr {
 class SetElemExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    SetElemExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -330,11 +344,6 @@ class SetElemExpr : public Expr {
 class SetExpr : public Expr {
   public:
     /**
-     * \copydoc Expr::Expr()
-     */
-    SetExpr(void);
-
-    /**
      * \copydoc ~Expr::Expr()
      */
     virtual
@@ -347,11 +356,13 @@ class SetExpr : public Expr {
  *
  * @tparam Base
  *         Expression base class.
+ * @tparam Derived
+ *         The deriving class.
  * @tparam Arg
  *         Type of operand.
  */
-template <typename Base, typename Arg>
-class UnaryExpr : public Base {
+template <typename Base, typename Derived, typename Arg>
+class UnaryExpr : public WithStrName<Base, Derived> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -385,6 +396,16 @@ class UnaryExpr : public Base {
         return expr_;
     }
 
+    /**
+     * \copydoc Expr::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const {
+        return std::string("(") + Derived::getStrName()
+            + " " + expr_->toLisp()
+            + ")";
+    }
+
   private:
     const Arg* expr_;
 };
@@ -394,13 +415,15 @@ class UnaryExpr : public Base {
  *
  * @tparam Base
  *         Expression base class.
+ * @tparam Derived
+ *         The deriving class.
  * @tparam Arg1
  *         Type of first operand.
  * @tparam Arg2
  *         Type of second operand.
  */
-template <typename Base, typename Arg1, typename Arg2 = Arg1>
-class BinaryExpr : public Base {
+template <typename Base, typename Derived, typename Arg1, typename Arg2 = Arg1>
+class BinaryExpr : public WithStrName<Base, Derived> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -450,6 +473,17 @@ class BinaryExpr : public Base {
         return rhs_;
     }
 
+    /**
+     * \copydoc Expr::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const {
+        return std::string("(") + Derived::getStrName()
+            + " " + lhs_->toLisp()
+            + " " + rhs_->toLisp()
+            + ")";
+    }
+
   private:
     const Arg1* lhs_;
     const Arg2* rhs_;
@@ -458,7 +492,7 @@ class BinaryExpr : public Base {
 /**
  * Equality expression.
  */
-class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class EqExpr : public BinaryExpr<BoolExpr, EqExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -470,12 +504,18 @@ class EqExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~EqExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Disequality expression.
  */
-class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class NeqExpr : public BinaryExpr<BoolExpr, NeqExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -487,12 +527,18 @@ class NeqExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~NeqExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Greater-than expression.
  */
-class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class GTExpr : public BinaryExpr<BoolExpr, GTExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -504,12 +550,18 @@ class GTExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~GTExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Greater-than-or-equals-to expression.
  */
-class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class GEExpr : public BinaryExpr<BoolExpr, GEExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -521,12 +573,18 @@ class GEExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~GEExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Less-than expression.
  */
-class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class LTExpr : public BinaryExpr<BoolExpr, LTExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -538,12 +596,18 @@ class LTExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~LTExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Less-than-or-equals-to expression.
  */
-class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
+class LEExpr : public BinaryExpr<BoolExpr, LEExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -555,12 +619,18 @@ class LEExpr : public BinaryExpr<BoolExpr, NumExpr> {
      */
     virtual
     ~LEExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Equivalence expression.
  */
-class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
+class EqvExpr : public BinaryExpr<BoolExpr, EqvExpr, BoolExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -572,12 +642,18 @@ class EqvExpr : public BinaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~EqvExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Implication expression.
  */
-class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
+class ImpExpr : public BinaryExpr<BoolExpr, ImpExpr, BoolExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -589,12 +665,18 @@ class ImpExpr : public BinaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~ImpExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * And expression.
  */
-class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
+class AndExpr : public BinaryExpr<BoolExpr, AndExpr, BoolExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -606,12 +688,18 @@ class AndExpr : public BinaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~AndExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Or expression.
  */
-class OrExpr : public BinaryExpr<BoolExpr, BoolExpr> {
+class OrExpr : public BinaryExpr<BoolExpr, OrExpr, BoolExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -623,12 +711,18 @@ class OrExpr : public BinaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~OrExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Not expression.
  */
-class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
+class NotExpr : public UnaryExpr<BoolExpr, NotExpr, BoolExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -645,12 +739,18 @@ class NotExpr : public UnaryExpr<BoolExpr, BoolExpr> {
      */
     virtual
     ~NotExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Exists-in-set expression.
  */
-class InSetExpr : public BinaryExpr<BoolExpr, SetElemExpr, SetExpr> {
+class InSetExpr : public BinaryExpr<BoolExpr, InSetExpr, SetElemExpr, SetExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -662,12 +762,18 @@ class InSetExpr : public BinaryExpr<BoolExpr, SetElemExpr, SetExpr> {
      */
     virtual
     ~InSetExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Plus expression.
  */
-class PlusExpr : public BinaryExpr<NumExpr, NumExpr> {
+class PlusExpr : public BinaryExpr<NumExpr, PlusExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
@@ -679,12 +785,18 @@ class PlusExpr : public BinaryExpr<NumExpr, NumExpr> {
      */
     virtual
     ~PlusExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Minus expression.
  */
-class MinusExpr : public BinaryExpr<NumExpr, NumExpr> {
+class MinusExpr : public BinaryExpr<NumExpr, MinusExpr, NumExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(Expr*, Expr*)
@@ -696,12 +808,18 @@ class MinusExpr : public BinaryExpr<NumExpr, NumExpr> {
      */
     virtual
     ~MinusExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts an integer into a numerical expression.
  */
-class IntToNumExpr : public UnaryExpr<NumExpr, IntExpr> {
+class IntToNumExpr : public UnaryExpr<NumExpr, IntToNumExpr, IntExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -713,6 +831,12 @@ class IntToNumExpr : public UnaryExpr<NumExpr, IntExpr> {
      */
     virtual
     ~IntToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
@@ -742,6 +866,12 @@ class AnIntegerExpr : public IntExpr {
     int
     getValue(void) const;
 
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   private:
     int i_;
 };
@@ -750,7 +880,9 @@ class AnIntegerExpr : public IntExpr {
  * Retrieves the value of a data node which represents an integer constant. This
  * expression *must* be used together with #DataNodeIsIntConstantConstraint!
  */
-class IntConstValueOfDataNodeExpr : public UnaryExpr<IntExpr, NodeIDExpr> {
+class IntConstValueOfDataNodeExpr
+    : public UnaryExpr<IntExpr, IntConstValueOfDataNodeExpr, NodeIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -762,12 +894,18 @@ class IntConstValueOfDataNodeExpr : public UnaryExpr<IntExpr, NodeIDExpr> {
      */
     virtual
     ~IntConstValueOfDataNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a Boolean into a numerical expression.
  */
-class BoolToNumExpr : public UnaryExpr<NumExpr, BoolExpr> {
+class BoolToNumExpr : public UnaryExpr<NumExpr, BoolToNumExpr, BoolExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -779,12 +917,18 @@ class BoolToNumExpr : public UnaryExpr<NumExpr, BoolExpr> {
      */
     virtual
     ~BoolToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a node ID into a numerical expression.
  */
-class NodeIDToNumExpr : public UnaryExpr<NumExpr, NodeIDExpr> {
+class NodeIDToNumExpr : public UnaryExpr<NumExpr, NodeIDToNumExpr, NodeIDExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -796,12 +940,20 @@ class NodeIDToNumExpr : public UnaryExpr<NumExpr, NodeIDExpr> {
      */
     virtual
     ~NodeIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a pattern instance ID into a numerical expression.
  */
-class PatternIDToNumExpr : public UnaryExpr<NumExpr, PatternIDExpr> {
+class PatternIDToNumExpr
+    : public UnaryExpr<NumExpr, PatternIDToNumExpr, PatternIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -813,12 +965,22 @@ class PatternIDToNumExpr : public UnaryExpr<NumExpr, PatternIDExpr> {
      */
     virtual
     ~PatternIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a instance ID into a numerical expression.
  */
-class PatternInstanceIDToNumExpr : public UnaryExpr<NumExpr, PatternInstanceIDExpr> {
+class PatternInstanceIDToNumExpr
+    : public UnaryExpr<NumExpr,
+                       PatternInstanceIDToNumExpr,
+                       PatternInstanceIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -830,12 +992,22 @@ class PatternInstanceIDToNumExpr : public UnaryExpr<NumExpr, PatternInstanceIDEx
      */
     virtual
     ~PatternInstanceIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a instruction ID into a numerical expression.
  */
-class InstructionIDToNumExpr : public UnaryExpr<NumExpr, InstructionIDExpr> {
+class InstructionIDToNumExpr
+    : public UnaryExpr<NumExpr,
+                       InstructionIDToNumExpr,
+                       InstructionIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -847,12 +1019,20 @@ class InstructionIDToNumExpr : public UnaryExpr<NumExpr, InstructionIDExpr> {
      */
     virtual
     ~InstructionIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a label ID into a numerical expression.
  */
-class LabelIDToNumExpr : public UnaryExpr<NumExpr, LabelIDExpr> {
+class LabelIDToNumExpr
+    : public UnaryExpr<NumExpr, LabelIDToNumExpr, LabelIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -864,12 +1044,20 @@ class LabelIDToNumExpr : public UnaryExpr<NumExpr, LabelIDExpr> {
      */
     virtual
     ~LabelIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a register ID into a numerical expression.
  */
-class RegisterIDToNumExpr : public UnaryExpr<NumExpr, RegisterIDExpr> {
+class RegisterIDToNumExpr
+    : public UnaryExpr<NumExpr, RegisterIDToNumExpr, RegisterIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -881,6 +1069,12 @@ class RegisterIDToNumExpr : public UnaryExpr<NumExpr, RegisterIDExpr> {
      */
     virtual
     ~RegisterIDToNumExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
@@ -891,7 +1085,10 @@ class RegisterIDToNumExpr : public UnaryExpr<NumExpr, RegisterIDExpr> {
  * pattern.
  */
 class DistanceBetweenInstanceAndLabelExpr
-    : public BinaryExpr<NumExpr, PatternInstanceIDExpr, LabelIDExpr>
+    : public BinaryExpr<NumExpr,
+                        DistanceBetweenInstanceAndLabelExpr,
+                        PatternInstanceIDExpr,
+                        LabelIDExpr>
 {
   public:
     /**
@@ -906,6 +1103,12 @@ class DistanceBetweenInstanceAndLabelExpr
      */
     virtual
     ~DistanceBetweenInstanceAndLabelExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
@@ -934,6 +1137,12 @@ class ANodeIDExpr : public NodeIDExpr {
      */
     ID
     getID(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 
   private:
     ID id_;
@@ -966,6 +1175,12 @@ class APatternInstanceIDExpr : public PatternInstanceIDExpr {
     ID
     getID(void) const;
 
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   private:
     ID id_;
 };
@@ -996,6 +1211,12 @@ class AnInstructionIDExpr : public InstructionIDExpr {
      */
     ID
     getID(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 
   private:
     ID id_;
@@ -1028,6 +1249,12 @@ class APatternIDExpr : public PatternIDExpr {
     ID
     getID(void) const;
 
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   private:
     ID id_;
 };
@@ -1058,6 +1285,12 @@ class ALabelIDExpr : public LabelIDExpr {
      */
     ID
     getID(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 
   private:
     ID id_;
@@ -1090,6 +1323,12 @@ class ARegisterIDExpr : public RegisterIDExpr {
     ID
     getID(void) const;
 
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
   private:
     ID id_;
 };
@@ -1109,13 +1348,22 @@ class ThisPatternInstanceIDExpr : public PatternInstanceIDExpr {
      */
     virtual
     ~ThisPatternInstanceIDExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the pattern instance ID which covers a certain action node.
  */
-class CovererOfActionNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
-                                                 NodeIDExpr> {
+class CovererOfActionNodeExpr
+    : public UnaryExpr<PatternInstanceIDExpr,
+                       CovererOfActionNodeExpr,
+                       NodeIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1127,13 +1375,22 @@ class CovererOfActionNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
      */
     virtual
     ~CovererOfActionNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the pattern instance ID which defines a certain data node.
  */
-class DefinerOfDataNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
-                                               NodeIDExpr> {
+class DefinerOfDataNodeExpr
+    : public UnaryExpr<PatternInstanceIDExpr,
+                       DefinerOfDataNodeExpr,
+                       NodeIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1145,13 +1402,22 @@ class DefinerOfDataNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
      */
     virtual
     ~DefinerOfDataNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the pattern instance ID which defines a certain state node.
  */
-class DefinerOfStateNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
-                                                NodeIDExpr> {
+class DefinerOfStateNodeExpr
+    : public UnaryExpr<PatternInstanceIDExpr,
+                       DefinerOfStateNodeExpr,
+                       NodeIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1163,13 +1429,21 @@ class DefinerOfStateNodeExpr : public UnaryExpr<PatternInstanceIDExpr,
      */
     virtual
     ~DefinerOfStateNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the instruction ID to which a pattern belongs.
  */
-class InstructionIDOfPatternExpr : public UnaryExpr<InstructionIDExpr,
-                                                    PatternIDExpr>
+class InstructionIDOfPatternExpr
+    : public UnaryExpr<InstructionIDExpr,
+                       InstructionIDOfPatternExpr,
+                       PatternIDExpr>
 {
   public:
     /**
@@ -1182,13 +1456,21 @@ class InstructionIDOfPatternExpr : public UnaryExpr<InstructionIDExpr,
      */
     virtual
     ~InstructionIDOfPatternExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the pattern ID to which a pattern instance is derived from.
  */
-class PatternIDOfInstanceExpr : public UnaryExpr<PatternIDExpr,
-                                                 PatternInstanceIDExpr>
+class PatternIDOfInstanceExpr
+    : public UnaryExpr<PatternIDExpr,
+                       PatternIDOfInstanceExpr,
+                       PatternInstanceIDExpr>
 {
   public:
     /**
@@ -1201,14 +1483,22 @@ class PatternIDOfInstanceExpr : public UnaryExpr<PatternIDExpr,
      */
     virtual
     ~PatternIDOfInstanceExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the ID of the label to which a pattern instance has been
  * allocated.
  */
-class LabelIDAllocatedToInstanceExpr : public UnaryExpr<LabelIDExpr,
-                                                        PatternInstanceIDExpr>
+class LabelIDAllocatedToInstanceExpr
+    : public UnaryExpr<LabelIDExpr,
+                       LabelIDAllocatedToInstanceExpr,
+                       PatternInstanceIDExpr>
 {
   public:
     /**
@@ -1221,12 +1511,20 @@ class LabelIDAllocatedToInstanceExpr : public UnaryExpr<LabelIDExpr,
      */
     virtual
     ~LabelIDAllocatedToInstanceExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the label ID associated with a label node.
  */
-class LabelIDOfLabelNodeExpr : public UnaryExpr<LabelIDExpr, NodeIDExpr> {
+class LabelIDOfLabelNodeExpr
+    : public UnaryExpr<LabelIDExpr, LabelIDOfLabelNodeExpr, NodeIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1238,13 +1536,21 @@ class LabelIDOfLabelNodeExpr : public UnaryExpr<LabelIDExpr, NodeIDExpr> {
      */
     virtual
     ~LabelIDOfLabelNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Represents the label ID associated with a label node.
  */
-class RegisterIDAllocatedToDataNodeExpr : public UnaryExpr<RegisterIDExpr,
-                                                           NodeIDExpr>
+class RegisterIDAllocatedToDataNodeExpr
+    : public UnaryExpr<RegisterIDExpr,
+                       RegisterIDAllocatedToDataNodeExpr,
+                       NodeIDExpr>
 {
   public:
     /**
@@ -1257,12 +1563,18 @@ class RegisterIDAllocatedToDataNodeExpr : public UnaryExpr<RegisterIDExpr,
      */
     virtual
     ~RegisterIDAllocatedToDataNodeExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Union set expression.
  */
-class UnionSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+class UnionSetExpr : public BinaryExpr<SetExpr, UnionSetExpr, SetExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -1274,12 +1586,18 @@ class UnionSetExpr : public BinaryExpr<SetExpr, SetExpr> {
      */
     virtual
     ~UnionSetExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Intersect set expression.
  */
-class IntersectSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+class IntersectSetExpr : public BinaryExpr<SetExpr, IntersectSetExpr, SetExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -1291,12 +1609,18 @@ class IntersectSetExpr : public BinaryExpr<SetExpr, SetExpr> {
      */
     virtual
     ~IntersectSetExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Difference set expression.
  */
-class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
+class DiffSetExpr : public BinaryExpr<SetExpr, DiffSetExpr, SetExpr> {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
@@ -1308,12 +1632,20 @@ class DiffSetExpr : public BinaryExpr<SetExpr, SetExpr> {
      */
     virtual
     ~DiffSetExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Label dominator set expression.
  */
-class DomSetOfLabelIDExpr : public UnaryExpr<SetExpr, LabelIDExpr> {
+class DomSetOfLabelIDExpr
+    : public UnaryExpr<SetExpr, DomSetOfLabelIDExpr, LabelIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1325,6 +1657,12 @@ class DomSetOfLabelIDExpr : public UnaryExpr<SetExpr, LabelIDExpr> {
      */
     virtual
     ~DomSetOfLabelIDExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
@@ -1356,12 +1694,20 @@ class RegisterClassExpr : public SetExpr {
 
   private:
     std::list<const RegisterIDExpr*> expr_;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a label ID into a set element expression.
  */
-class LabelIDToSetElemExpr : public UnaryExpr<SetElemExpr, LabelIDExpr> {
+class LabelIDToSetElemExpr
+    : public UnaryExpr<SetElemExpr, LabelIDToSetElemExpr, LabelIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1373,12 +1719,20 @@ class LabelIDToSetElemExpr : public UnaryExpr<SetElemExpr, LabelIDExpr> {
      */
     virtual
     ~LabelIDToSetElemExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 /**
  * Converts a register ID into a set element expression.
  */
-class RegisterIDToSetElemExpr : public UnaryExpr<SetElemExpr, RegisterIDExpr> {
+class RegisterIDToSetElemExpr
+    : public UnaryExpr<SetElemExpr, RegisterIDToSetElemExpr, RegisterIDExpr>
+{
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
@@ -1390,6 +1744,12 @@ class RegisterIDToSetElemExpr : public UnaryExpr<SetElemExpr, RegisterIDExpr> {
      */
     virtual
     ~RegisterIDToSetElemExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
 };
 
 }
