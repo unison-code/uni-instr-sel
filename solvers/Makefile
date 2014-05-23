@@ -29,7 +29,7 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver minizinc/input-gen
+PROGRAMS := gecode/solver minizinc/input-gen tools/pretty-json
 
 # Contains the application modules, per program (remember to replace slashes
 # in the program path with dashes)
@@ -43,6 +43,8 @@ MODULES_minizinc-input-gen := common/exceptions \
                               common/model      \
                               common/utils      \
                               minizinc
+MODULES_tools-pretty-json := common/json \
+                             tools
 
 # Name of the tarball
 TARBALL_FILENAME := solvers-src
@@ -67,6 +69,11 @@ LDLIBS_gecode-solver   +=
 # slashes in the program path with dashes)
 LDFLAGS_minizinc-input-gen  +=
 LDLIBS_minizinc-input-gen   +=
+
+# Flags specific to building the pretty-json tool (remember to replace slashes
+# in the program path with dashes)
+LDFLAGS_tools-pretty-json  +=
+LDLIBS_tools-pretty-json   +=
 
 
 

@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "common/json/json.h"
+#include "../common/json/json.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
