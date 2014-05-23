@@ -29,7 +29,7 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver minizinc/mzn-input-gen tools/pretty-json
+PROGRAMS := gecode/solver minizinc/mzn-params-gen tools/pretty-json
 
 # Contains the application modules, per program (remember to replace slashes
 # in the program path with dashes)
@@ -38,11 +38,11 @@ MODULES_gecode-solver   := common/exceptions \
                            common/model      \
                            common/utils      \
                            gecode
-MODULES_minizinc-mzn-input-gen := common/exceptions \
-                                  common/json       \
-                                  common/model      \
-                                  common/utils      \
-                                  minizinc
+MODULES_minizinc-mzn-params-gen := common/exceptions \
+                                   common/json       \
+                                   common/model      \
+                                   common/utils      \
+                                   minizinc
 MODULES_tools-pretty-json := common/json \
                              tools
 
@@ -65,10 +65,10 @@ LDLIBS   +=
 LDFLAGS_gecode-solver  +=
 LDLIBS_gecode-solver   +=
 
-# Flags specific to building the Minizinc input generator (remember to replace
+# Flags specific to building the Minizinc params generator (remember to replace
 # slashes in the program path with dashes)
-LDFLAGS_minizinc-mzn-input-gen  +=
-LDLIBS_minizinc-mzn-input-gen   +=
+LDFLAGS_minizinc-mzn-params-gen  +=
+LDLIBS_minizinc-mzn-params-gen   +=
 
 # Flags specific to building the pretty-json tool (remember to replace slashes
 # in the program path with dashes)
