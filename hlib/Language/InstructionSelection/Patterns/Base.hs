@@ -20,6 +20,7 @@ module Language.InstructionSelection.Patterns.Base (
 , InstProperties (..)
 ) where
 
+import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Patterns.IDs
@@ -38,14 +39,14 @@ data Instruction
           -- | An ID which is globally unique across all instructions, but not
           -- necessarily contiguous.
 
-          instrID :: InstructionID
+          instID :: InstructionID
 
           -- | Patterns which correspond to the instruction. There must be at
           -- least one pattern. Each pattern also has a corresponding ID which
           -- must be globally unique across all patterns and all instructions,
           -- but not necessarily contiguous.
 
-        , instrPatterns :: [(OpStructure, PatternID)]
+        , instPatterns :: [InstPattern]
 
           -- | Instruction properties.
 
@@ -53,7 +54,7 @@ data Instruction
 
           -- | Assembly string to produce upon code emission.
 
-        , instrAssemblyStr :: AssemblyString
+        , instAssemblyStr :: AssemblyString
 
       }
     deriving (Show)
@@ -71,6 +72,23 @@ data InstProperties
           -- | Instruction latency (in cycles).
 
         , instLatency :: Integer
+
+      }
+    deriving (Show)
+
+-- | Defines a pattern for a machine instruction.
+
+data InstPattern
+    = InstPattern {
+
+          -- | The operation structure of the pattern.
+
+          patOS :: OpStructure
+
+          -- | ID of this pattern. The ID must be globally unique across all
+          -- patterns and all instructions, but not necessarily contiguous.
+
+        , patID :: PatternID
 
       }
     deriving (Show)
