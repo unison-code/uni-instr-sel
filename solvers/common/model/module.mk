@@ -28,8 +28,9 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_FILES := constraints.cpp \
-                params.cpp      \
+MODULE_FILES := constraintparser.cpp \
+                constraints.cpp      \
+                params.cpp           \
                 types.cpp
 
 

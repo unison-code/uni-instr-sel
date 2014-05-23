@@ -842,7 +842,7 @@ class IntToNumExpr : public UnaryExpr<NumExpr, IntToNumExpr, IntExpr> {
 /**
  * Introduces an integer to be part of an expression.
  */
-class AnIntegerExpr : public IntExpr {
+class AnIntegerExpr : public WithStrName<IntExpr, AnIntegerExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -865,6 +865,12 @@ class AnIntegerExpr : public IntExpr {
      */
     int
     getValue(void) const;
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
 
   public:
     /**
@@ -1114,7 +1120,7 @@ class DistanceBetweenInstanceAndLabelExpr
 /**
  * Introduces a node ID to be part of an expression.
  */
-class ANodeIDExpr : public NodeIDExpr {
+class ANodeIDExpr : public WithStrName<NodeIDExpr, ANodeIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1138,6 +1144,12 @@ class ANodeIDExpr : public NodeIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1151,7 +1163,9 @@ class ANodeIDExpr : public NodeIDExpr {
 /**
  * Introduces a pattern instance ID to be part of an expression.
  */
-class APatternInstanceIDExpr : public PatternInstanceIDExpr {
+class APatternInstanceIDExpr
+    : public WithStrName<PatternInstanceIDExpr, APatternInstanceIDExpr>
+{
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1175,6 +1189,12 @@ class APatternInstanceIDExpr : public PatternInstanceIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1188,7 +1208,9 @@ class APatternInstanceIDExpr : public PatternInstanceIDExpr {
 /**
  * Introduces an instruction ID to be part of an expression.
  */
-class AnInstructionIDExpr : public InstructionIDExpr {
+class AnInstructionIDExpr
+    : public WithStrName<InstructionIDExpr, AnInstructionIDExpr>
+{
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1212,6 +1234,12 @@ class AnInstructionIDExpr : public InstructionIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1225,7 +1253,7 @@ class AnInstructionIDExpr : public InstructionIDExpr {
 /**
  * Introduces a label ID to be part of an expression.
  */
-class APatternIDExpr : public PatternIDExpr {
+class APatternIDExpr : public WithStrName<PatternIDExpr, APatternIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1249,6 +1277,12 @@ class APatternIDExpr : public PatternIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1262,7 +1296,7 @@ class APatternIDExpr : public PatternIDExpr {
 /**
  * Introduces a label ID to be part of an expression.
  */
-class ALabelIDExpr : public LabelIDExpr {
+class ALabelIDExpr : public WithStrName<LabelIDExpr, ALabelIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1286,6 +1320,12 @@ class ALabelIDExpr : public LabelIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1299,7 +1339,7 @@ class ALabelIDExpr : public LabelIDExpr {
 /**
  * Introduces a register ID to be part of an expression.
  */
-class ARegisterIDExpr : public RegisterIDExpr {
+class ARegisterIDExpr : public WithStrName<RegisterIDExpr, ARegisterIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1323,6 +1363,12 @@ class ARegisterIDExpr : public RegisterIDExpr {
     ID
     getID(void) const;
 
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
   public:
     /**
      * @see WithStrName::getStrName() const
@@ -1336,7 +1382,9 @@ class ARegisterIDExpr : public RegisterIDExpr {
 /**
  * Represents the ID of the pattern instance where this is declared.
  */
-class ThisPatternInstanceIDExpr : public PatternInstanceIDExpr {
+class ThisPatternInstanceIDExpr
+    : public WithStrName<PatternInstanceIDExpr, ThisPatternInstanceIDExpr>
+{
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1348,6 +1396,12 @@ class ThisPatternInstanceIDExpr : public PatternInstanceIDExpr {
      */
     virtual
     ~ThisPatternInstanceIDExpr(void);
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
 
   public:
     /**
@@ -1467,22 +1521,22 @@ class InstructionIDOfPatternExpr
 /**
  * Represents the pattern ID to which a pattern instance is derived from.
  */
-class PatternIDOfInstanceExpr
+class PatternIDOfPatternInstanceExpr
     : public UnaryExpr<PatternIDExpr,
-                       PatternIDOfInstanceExpr,
+                       PatternIDOfPatternInstanceExpr,
                        PatternInstanceIDExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternIDOfInstanceExpr(const PatternInstanceIDExpr* expr);
+    PatternIDOfPatternInstanceExpr(const PatternInstanceIDExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternIDOfInstanceExpr(void);
+    ~PatternIDOfPatternInstanceExpr(void);
 
   public:
     /**
@@ -1495,22 +1549,22 @@ class PatternIDOfInstanceExpr
  * Represents the ID of the label to which a pattern instance has been
  * allocated.
  */
-class LabelIDAllocatedToInstanceExpr
+class LabelIDAllocatedToPatternInstanceExpr
     : public UnaryExpr<LabelIDExpr,
-                       LabelIDAllocatedToInstanceExpr,
+                       LabelIDAllocatedToPatternInstanceExpr,
                        PatternInstanceIDExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIDAllocatedToInstanceExpr(const PatternInstanceIDExpr* expr);
+    LabelIDAllocatedToPatternInstanceExpr(const PatternInstanceIDExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDAllocatedToInstanceExpr(void);
+    ~LabelIDAllocatedToPatternInstanceExpr(void);
 
   public:
     /**
@@ -1668,7 +1722,7 @@ class DomSetOfLabelIDExpr
 /**
  * Register class expression.
  */
-class RegisterClassExpr : public SetExpr {
+class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1691,6 +1745,12 @@ class RegisterClassExpr : public SetExpr {
      */
     const std::list<const RegisterIDExpr*>&
     getExprList(void) const;
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
 
   private:
     std::list<const RegisterIDExpr*> expr_;

@@ -26,6 +26,7 @@
 
 #include "constraints.h"
 #include "../exceptions/exception.h"
+#include "../utils/string.h"
 
 using namespace Model;
 using std::list;
@@ -44,6 +45,11 @@ DataNodeIsIntConstantConstraint::getNodeID(void) const {
     return id_;
 }
 
+string
+DataNodeIsIntConstantConstraint::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+}
+
 BoolExprConstraint::BoolExprConstraint(BoolExpr* expr)
     : expr_(expr)
 {
@@ -57,6 +63,11 @@ BoolExprConstraint::~BoolExprConstraint(void) {
 const BoolExpr*
 BoolExprConstraint::getExpr(void) const {
     return expr_;
+}
+
+string
+BoolExprConstraint::toLisp(void) const {
+    return expr_->toLisp();
 }
 
 Expr::~Expr(void) {}
@@ -178,6 +189,11 @@ AnIntegerExpr::getValue(void) const {
     return i_;
 }
 
+string
+AnIntegerExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
+}
+
 IntConstValueOfDataNodeExpr::IntConstValueOfDataNodeExpr(
     const NodeIDExpr* expr
 ) : UnaryExpr(expr)
@@ -245,6 +261,11 @@ ANodeIDExpr::getID(void) const {
     return id_;
 }
 
+string
+ANodeIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+}
+
 APatternInstanceIDExpr::APatternInstanceIDExpr(const ID& id)
     : id_(id)
 {}
@@ -254,6 +275,11 @@ APatternInstanceIDExpr::~APatternInstanceIDExpr(void) {}
 ID
 APatternInstanceIDExpr::getID(void) const {
     return id_;
+}
+
+string
+APatternInstanceIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
 }
 
 AnInstructionIDExpr::AnInstructionIDExpr(const ID& id)
@@ -267,6 +293,11 @@ AnInstructionIDExpr::getID(void) const {
     return id_;
 }
 
+string
+AnInstructionIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+}
+
 APatternIDExpr::APatternIDExpr(const ID& id)
     : id_(id)
 {}
@@ -276,6 +307,11 @@ APatternIDExpr::~APatternIDExpr(void) {}
 ID
 APatternIDExpr::getID(void) const {
     return id_;
+}
+
+string
+APatternIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
 }
 
 ALabelIDExpr::ALabelIDExpr(const ID& id)
@@ -289,6 +325,11 @@ ALabelIDExpr::getID(void) const {
     return id_;
 }
 
+string
+ALabelIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+}
+
 ARegisterIDExpr::ARegisterIDExpr(const ID& id)
     : id_(id)
 {}
@@ -300,9 +341,19 @@ ARegisterIDExpr::getID(void) const {
     return id_;
 }
 
+string
+ARegisterIDExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+}
+
 ThisPatternInstanceIDExpr::ThisPatternInstanceIDExpr(void) {}
 
 ThisPatternInstanceIDExpr::~ThisPatternInstanceIDExpr(void) {}
+
+string
+ThisPatternInstanceIDExpr::toLisp(void) const {
+    return getStrName();
+}
 
 CovererOfActionNodeExpr::CovererOfActionNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
@@ -329,19 +380,20 @@ InstructionIDOfPatternExpr::InstructionIDOfPatternExpr(
 
 InstructionIDOfPatternExpr::~InstructionIDOfPatternExpr(void) {}
 
-PatternIDOfInstanceExpr::PatternIDOfInstanceExpr(
+PatternIDOfPatternInstanceExpr::PatternIDOfPatternInstanceExpr(
     const PatternInstanceIDExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-PatternIDOfInstanceExpr::~PatternIDOfInstanceExpr(void) {}
+PatternIDOfPatternInstanceExpr::~PatternIDOfPatternInstanceExpr(void) {}
 
-LabelIDAllocatedToInstanceExpr::LabelIDAllocatedToInstanceExpr(
+LabelIDAllocatedToPatternInstanceExpr::LabelIDAllocatedToPatternInstanceExpr(
     const PatternInstanceIDExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-LabelIDAllocatedToInstanceExpr::~LabelIDAllocatedToInstanceExpr(void) {}
+LabelIDAllocatedToPatternInstanceExpr
+::~LabelIDAllocatedToPatternInstanceExpr(void) {}
 
 LabelIDOfLabelNodeExpr::LabelIDOfLabelNodeExpr(const NodeIDExpr* expr)
     : UnaryExpr(expr)
@@ -396,6 +448,17 @@ RegisterClassExpr::getExprList(void) const {
     return expr_;
 }
 
+string
+RegisterClassExpr::toLisp(void) const {
+    string str;
+    str += "(" + getStrName();
+    for (auto& expr : getExprList()) {
+        str += " " + expr->toLisp();
+    }
+    str += ")";
+    return str;
+}
+
 LabelIDToSetElemExpr::LabelIDToSetElemExpr(const LabelIDExpr* expr)
     : UnaryExpr(expr)
 {}
@@ -416,3 +479,54 @@ DistanceBetweenInstanceAndLabelExpr::DistanceBetweenInstanceAndLabelExpr(
 
 DistanceBetweenInstanceAndLabelExpr::~DistanceBetweenInstanceAndLabelExpr(void)
 {}
+
+const string BoolExprConstraint::STRNAME = "";
+const string DataNodeIsIntConstantConstraint::STRNAME = "dnode-is-int-const";
+const string EqExpr::STRNAME = "==";
+const string NeqExpr::STRNAME = "!=";
+const string GTExpr::STRNAME = ">";
+const string GEExpr::STRNAME = ">=";
+const string LTExpr::STRNAME = "<";
+const string LEExpr::STRNAME = "<=";
+const string EqvExpr::STRNAME = "<->";
+const string ImpExpr::STRNAME = "->";
+const string AndExpr::STRNAME = "&&";
+const string OrExpr::STRNAME = "||";
+const string NotExpr::STRNAME = "!";
+const string InSetExpr::STRNAME = "in-set";
+const string PlusExpr::STRNAME = "+";
+const string MinusExpr::STRNAME = "-";
+const string IntToNumExpr::STRNAME = "int-to-num";
+const string AnIntegerExpr::STRNAME = "";
+const string IntConstValueOfDataNodeExpr::STRNAME = "int-const-val-of-dnode";
+const string BoolToNumExpr::STRNAME = "bool-to-num";
+const string NodeIDToNumExpr::STRNAME = "node-id-to-num";
+const string PatternIDToNumExpr::STRNAME = "pat-id-to-num";
+const string PatternInstanceIDToNumExpr::STRNAME = "pat-inst-id-to-num";
+const string InstructionIDToNumExpr::STRNAME = "instr-id-to-num";
+const string LabelIDToNumExpr::STRNAME = "label-id-to-num";
+const string RegisterIDToNumExpr::STRNAME = "reg-id-to-num";
+const string DistanceBetweenInstanceAndLabelExpr::STRNAME = "dist-pat-to-lab";
+const string ANodeIDExpr::STRNAME = "";
+const string APatternInstanceIDExpr::STRNAME = "";
+const string AnInstructionIDExpr::STRNAME = "";
+const string APatternIDExpr::STRNAME = "";
+const string ALabelIDExpr::STRNAME = "";
+const string ThisPatternInstanceIDExpr::STRNAME = "this";
+const string CovererOfActionNodeExpr::STRNAME = "cov-of-anode";
+const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
+const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
+const string InstructionIDOfPatternExpr::STRNAME = "instr-of-pat";
+const string PatternIDOfPatternInstanceExpr::STRNAME = "pat-of-pat-inst";
+const string LabelIDAllocatedToPatternInstanceExpr::STRNAME =
+    "lab-alloc-to-pat-inst";
+const string LabelIDOfLabelNodeExpr::STRNAME = "lab-of-lnode";
+const string ARegisterIDExpr::STRNAME = "";
+const string RegisterIDAllocatedToDataNodeExpr::STRNAME = "reg-alloc-to-dnode";
+const string UnionSetExpr::STRNAME = "union";
+const string IntersectSetExpr::STRNAME = "intersect";
+const string DiffSetExpr::STRNAME = "diff";
+const string DomSetOfLabelIDExpr::STRNAME = "domset-of";
+const string RegisterClassExpr::STRNAME = "reg-class";
+const string LabelIDToSetElemExpr::STRNAME = "lab-id-to-set-elem";
+const string RegisterIDToSetElemExpr::STRNAME = "reg-id-to-set-elem";
