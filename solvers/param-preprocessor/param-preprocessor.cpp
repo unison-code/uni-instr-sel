@@ -278,9 +278,8 @@ void outputModelParams(
     out << "," << endl
         << "\"pat-inst-constraints\" : ";
     {
-        list< list<string> > all_cs_str;
+        list< string > cs_str;
         for (const ID& id : params.getIDsForAllPIs()) {
-            list<string> cs_str;
             const list<const Constraint*>& cs = params.getConstraintsForPI(id);
             for (const Constraint* c : cs) {
                 string str;
@@ -290,9 +289,8 @@ void outputModelParams(
                 cs_str.push_back(str);
                 delete new_c;
             }
-            all_cs_str.push_back(cs_str);
         }
-        printJsonValue(out, all_cs_str);
+        printJsonValue(out, cs_str);
     }
 
     out << endl
