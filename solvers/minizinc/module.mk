@@ -29,8 +29,7 @@
 #=======================
 
 MODULE_FILES := constraintprocessor.cpp \
-                mzn-params-gen.cpp      \
-                params.cpp
+                mzn-params-gen.cpp
 
 
 
