@@ -17,10 +17,10 @@
 
 module Language.InstructionSelection.Patterns.Base (
   Instruction (..)
+, InstPattern (..)
 , InstProperties (..)
 ) where
 
-import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Patterns.IDs

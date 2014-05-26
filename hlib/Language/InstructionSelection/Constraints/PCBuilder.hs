@@ -37,14 +37,14 @@ mkBBAllocConstraints g =
         then [ BoolExprConstraint $
                EqExpr
                (
-                 LabelID2NumExpr $
-                 LabelIDOfLabelNodeExpr $
+                 Label2NumExpr $
+                 LabelOfLabelNodeExpr $
                  ANodeIDExpr (nodeID $ fromJust root_label)
                )
                (
-                 LabelID2NumExpr $
-                 LabelIDAllocatedToPatternInstanceExpr $
-                 ThisPatternInstanceIDExpr
+                 Label2NumExpr $
+                 LabelAllocatedToPatternInstanceExpr $
+                 ThisPatternInstanceExpr
                )
              ]
         else []

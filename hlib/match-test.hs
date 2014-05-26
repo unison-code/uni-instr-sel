@@ -88,7 +88,9 @@ main =
                 , (14, 6, EdgeLabel 0 0)
                 , (15, 9, EdgeLabel 0 1)
                 ])
-         func_cs = [ DataNodeIsIntConstantConstraint 0
+         func_cs = [ BoolExprConstraint $
+                     DataNodeIsAnIntConstantExpr $
+                     ANodeIDExpr 0
                    , BoolExprConstraint $
                      EqExpr
                      (
@@ -198,10 +200,10 @@ main =
                            (
                              DistanceBetweenInstanceAndLabelExpr
                              (
-                               ThisPatternInstanceIDExpr
+                               ThisPatternInstanceExpr
                              )
                              (
-                               LabelIDOfLabelNodeExpr $
+                               LabelOfLabelNodeExpr $
                                ANodeIDExpr 1
                              )
                            )
@@ -216,68 +218,68 @@ main =
                            (
                              EqExpr
                              (
-                               RegisterID2NumExpr $
-                               RegisterIDAllocatedToDataNodeExpr $
+                               Register2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
                                ANodeIDExpr 0
                              )
                              (
-                               RegisterID2NumExpr $
-                               RegisterIDAllocatedToDataNodeExpr $
+                               Register2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
                                ANodeIDExpr 1
                              )
                            )
                            (
                              EqExpr
                              (
-                               RegisterID2NumExpr $
-                               RegisterIDAllocatedToDataNodeExpr $
+                               Register2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
                                ANodeIDExpr 1
                              )
                              (
-                               RegisterID2NumExpr $
-                               RegisterIDAllocatedToDataNodeExpr $
+                               Register2NumExpr $
+                               RegisterAllocatedToDataNodeExpr $
                                ANodeIDExpr 2
                              )
                            )
                          , BoolExprConstraint $
                            EqExpr
                            (
-                             LabelID2NumExpr $
-                             LabelIDOfLabelNodeExpr $
+                             Label2NumExpr $
+                             LabelOfLabelNodeExpr $
                              ANodeIDExpr 5
                            )
                            (
-                             LabelID2NumExpr $
-                             LabelIDAllocatedToPatternInstanceExpr $
-                             ThisPatternInstanceIDExpr
+                             Label2NumExpr $
+                             LabelAllocatedToPatternInstanceExpr $
+                             ThisPatternInstanceExpr
                            )
                          , BoolExprConstraint $
                            AndExpr
                            (
                              InSetExpr
                              (
-                               LabelID2SetElemExpr $
-                               LabelIDAllocatedToPatternInstanceExpr $
+                               Label2SetElemExpr $
+                               LabelAllocatedToPatternInstanceExpr $
                                DefinerOfDataNodeExpr $
                                ANodeIDExpr 0
                              )
                              (
-                               DomSetOfLabelIDExpr $
-                               LabelIDOfLabelNodeExpr $
+                               DomSetOfLabelExpr $
+                               LabelOfLabelNodeExpr $
                                ANodeIDExpr 3
                              )
                            )
                            (
                              InSetExpr
                              (
-                               LabelID2SetElemExpr $
-                               LabelIDAllocatedToPatternInstanceExpr $
+                               Label2SetElemExpr $
+                               LabelAllocatedToPatternInstanceExpr $
                                DefinerOfDataNodeExpr $
                                ANodeIDExpr 1
                              )
                              (
-                               DomSetOfLabelIDExpr $
-                               LabelIDOfLabelNodeExpr $
+                               DomSetOfLabelExpr $
+                               LabelOfLabelNodeExpr $
                                ANodeIDExpr 4
                              )
                            )
@@ -288,21 +290,21 @@ main =
                              (
                                InSetExpr
                                (
-                                 LabelID2SetElemExpr $
-                                 LabelIDAllocatedToPatternInstanceExpr $
+                                 Label2SetElemExpr $
+                                 LabelAllocatedToPatternInstanceExpr $
                                  DefinerOfDataNodeExpr $
                                  ANodeIDExpr 0
                                )
                                (
                                  IntersectSetExpr
                                  (
-                                   DomSetOfLabelIDExpr $
-                                   LabelIDOfLabelNodeExpr $
+                                   DomSetOfLabelExpr $
+                                   LabelOfLabelNodeExpr $
                                    ANodeIDExpr 3
                                  )
                                  (
-                                   DomSetOfLabelIDExpr $
-                                   LabelIDOfLabelNodeExpr $
+                                   DomSetOfLabelExpr $
+                                   LabelOfLabelNodeExpr $
                                    ANodeIDExpr 4
                                  )
                                )
@@ -310,21 +312,21 @@ main =
                              (
                                InSetExpr
                                (
-                                 LabelID2SetElemExpr $
-                                 LabelIDAllocatedToPatternInstanceExpr $
+                                 Label2SetElemExpr $
+                                 LabelAllocatedToPatternInstanceExpr $
                                  DefinerOfDataNodeExpr $
                                  ANodeIDExpr 1
                                )
                                (
                                  IntersectSetExpr
                                  (
-                                   DomSetOfLabelIDExpr $
-                                   LabelIDOfLabelNodeExpr $
+                                   DomSetOfLabelExpr $
+                                   LabelOfLabelNodeExpr $
                                    ANodeIDExpr 3
                                  )
                                  (
-                                   DomSetOfLabelIDExpr $
-                                   LabelIDOfLabelNodeExpr $
+                                   DomSetOfLabelExpr $
+                                   LabelOfLabelNodeExpr $
                                    ANodeIDExpr 4
                                  )
                                )
