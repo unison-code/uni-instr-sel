@@ -288,6 +288,10 @@ ConstraintParser::parsePatternInstanceExpr(string& str) {
             ID id = eatID(str);
             expr = new APatternInstanceIDExpr(id);
         }
+        else if (eatType<APatternInstanceArrayIndexExpr>(str)) {
+            ArrayIndex i = eatArrayIndex(str);
+            expr = new APatternInstanceArrayIndexExpr(i);
+        }
         else if (eatType<CovererOfActionNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
             expr = new CovererOfActionNodeExpr(e);

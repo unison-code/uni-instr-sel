@@ -205,7 +205,7 @@ AnIntegerExpr::getValue(void) const {
 
 string
 AnIntegerExpr::toLisp(void) const {
-    return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
+    return Utils::toString(i_);
 }
 
 IntConstValueOfDataNodeExpr::IntConstValueOfDataNodeExpr(const NodeExpr* expr)
