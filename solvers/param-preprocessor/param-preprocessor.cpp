@@ -275,7 +275,6 @@ void outputModelParams(
         }
         printJsonValue(out, settings);
     }
-    out << ");" << endl;
 
     out << "," << endl
         << "\"pat-inst-constraints\" : ";
