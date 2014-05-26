@@ -43,12 +43,7 @@ ConstraintProcessor::processConstraintForPI(const Constraint* c, const ID& id) {
     if (const BoolExprConstraint* dc =
         dynamic_cast<const BoolExprConstraint*>(c))
     {
-        BoolExpr* old_expr = processBoolExpr(dc->getExpr());
-        BoolExpr* is_sel_expr =
-            new PatternInstanceIsSelectedExpr(
-                new APatternInstanceArrayIndexExpr(p_.getIndexForPI(piid_)));
-        BoolExpr* imp_expr = new ImpExpr(is_sel_expr, old_expr);
-        return new BoolExprConstraint(imp_expr);
+        return new BoolExprConstraint(processBoolExpr(dc->getExpr()));
     }
     else {
         THROW(Exception, "Constraint is of unknown derived class");
