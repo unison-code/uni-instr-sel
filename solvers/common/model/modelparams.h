@@ -308,6 +308,19 @@ class ModelParams {
     setRootLabelInF(const Json::Value& root, ModelParams& p);
 
     /**
+     * Sets the domsets for the label nodes in the function graph.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setDomsetsForLabelNodesInF(const Json::Value& root, ModelParams& p);
+
+    /**
      * Sets the constraints of the function graph.
      *
      * @param root

@@ -88,6 +88,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
 
     setNumValues(root, p);
     setRootLabelInF(root, p);
+    setDomsetsForLabelNodesInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForPIs(root, p);
     setLatenciesForPIs(root, p);
@@ -357,4 +358,15 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_label_nodes_ = toInt(getJsonValue(root, "num-func-lnodes"));
     p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
     p.num_pis_ = toInt(getJsonValue(root, "num-pattern-instances"));
+}
+
+void
+ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "func-label-domsets")) {
+        list<ArrayIndex> domset;
+        for (auto entry : jsonlist) {
+            domset.push_back(toArrayIndex(entry));
+        }
+        p.func_label_domsets_.push_back(domset);
+    }
 }
