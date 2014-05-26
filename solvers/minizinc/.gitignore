@@ -1,4 +1,4 @@
-mzn-input-gen
+mzn-params-gen
 params.mzn
 *.fzn
 *.sol.*
