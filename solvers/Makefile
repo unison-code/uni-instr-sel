@@ -29,22 +29,34 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver minizinc/mzn-params-gen tools/pretty-json
+PROGRAMS := gecode/solver                         \
+            minizinc/mzn-params-gen               \
+            param-preprocessor/param-preprocessor \
+            tools/pretty-json
 
 # Contains the application modules, per program (remember to replace slashes
 # in the program path with dashes)
-MODULES_gecode-solver   := common/exceptions \
-                           common/json       \
-                           common/model      \
-                           common/utils      \
-                           gecode
-MODULES_minizinc-mzn-params-gen := common/exceptions \
-                                   common/json       \
-                                   common/model      \
-                                   common/utils      \
-                                   minizinc
-MODULES_tools-pretty-json := common/json \
-                             tools
+MODULES_gecode-solver := \
+    common/exceptions \
+    common/json       \
+    common/model      \
+    common/utils      \
+    gecode
+MODULES_minizinc-mzn-params-gen := \
+    common/exceptions \
+    common/json       \
+    common/model      \
+    common/utils      \
+    minizinc
+MODULES_param-preprocessor-param-preprocessor := \
+    common/exceptions  \
+    common/json        \
+    common/model       \
+    common/utils       \
+    param-preprocessor
+MODULES_tools-pretty-json := \
+    common/json \
+    tools
 
 # Name of the tarball
 TARBALL_FILENAME := solvers-src
@@ -56,19 +68,24 @@ TARBALL_FILENAME := solvers-src
 #===================
 
 # Flags common to all program builds
-CXXFLAGS += -Wall -std=c++11
+CXXFLAGS += -Wall -std=c++11 -g
 LDFLAGS  +=
 LDLIBS   +=
 
 # Flags specific to building the Gecode solver (remember to replace slashes in
 # the program path with dashes)
-LDFLAGS_gecode-solver  +=
-LDLIBS_gecode-solver   +=
+LDFLAGS_gecode-solver +=
+LDLIBS_gecode-solver  +=
 
 # Flags specific to building the Minizinc params generator (remember to replace
 # slashes in the program path with dashes)
-LDFLAGS_minizinc-mzn-params-gen  +=
-LDLIBS_minizinc-mzn-params-gen   +=
+LDFLAGS_minizinc-mzn-params-gen +=
+LDLIBS_minizinc-mzn-params-gen  +=
+
+# Flags specific to building the param preprocessor (remember to replace slashes
+# in the program path with dashes)
+LDFLAGS_param-preprocessor-param-preprocessor +=
+LDLIBS_param-preprocessor-param-preprocessor  +=
 
 # Flags specific to building the pretty-json tool (remember to replace slashes
 # in the program path with dashes)

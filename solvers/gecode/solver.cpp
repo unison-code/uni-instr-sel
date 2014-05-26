@@ -25,7 +25,7 @@
  */
 
 #include "../common/exceptions/exception.h"
-#include "../common/model/params.h"
+#include "../common/model/modelparams.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -46,8 +46,8 @@ main(int argc, char** argv) {
         stringstream ss;
         ss << file.rdbuf();
         string json_content(ss.str());
-        Model::Params params;
-        Model::Params::parseJson(json_content, params);
+        Model::ModelParams params;
+        Model::ModelParams::parseJson(json_content, params);
 
         // TODO: create internal CP model
         // TODO: add constraints
