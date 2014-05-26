@@ -245,7 +245,7 @@ ConstraintProcessor::processPatternInstanceExpr(const PatternInstanceExpr* e) {
             THROW(Exception, "ThisPatternInstanceExpr is only allowed to be "
                              "used within pattern instance constraints");
         }
-        return new ThisPatternInstanceExpr;
+        return new APatternInstanceArrayIndexExpr(p_.getIndexForPI(piid_));
     }
     else if (const CovererOfActionNodeExpr* de =
              dynamic_cast<const CovererOfActionNodeExpr*>(e))

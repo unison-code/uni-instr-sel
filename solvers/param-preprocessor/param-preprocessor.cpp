@@ -138,17 +138,16 @@ void outputModelParams(
     out << "," << endl
         << "\"func-constraints\" : ";
     {
-        list<Constraint*> new_cs;
+        list<string> cs_str;
         const list<const Constraint*>& cs = params.getConstraintsForF();
         for (const Constraint* c : cs) {
-            new_cs.push_back(cprocessor.processConstraintForF(c));
+            string str;
+            const Constraint* new_c = cprocessor.processConstraintForF(c);
+            str += "\"" + new_c->toLisp() + "\"";
+            cs_str.push_back(str);
+            delete new_c;
         }
-        printJsonValue(out, new_cs);
-
-        // Clean up
-        for (const Constraint* c : new_cs) {
-            delete c;
-        }
+        printJsonValue(out, cs_str);
     }
 
     // Target machine data
@@ -279,23 +278,21 @@ void outputModelParams(
     out << "," << endl
         << "\"pat-inst-constraints\" : ";
     {
-        list< list<Constraint*> > all_cs;
+        list< list<string> > all_cs_str;
         for (const ID& id : params.getIDsForAllPIs()) {
-            list<Constraint*> new_cs;
+            list<string> cs_str;
             const list<const Constraint*>& cs = params.getConstraintsForPI(id);
             for (const Constraint* c : cs) {
-                new_cs.push_back(cprocessor.processConstraintForPI(c, id));
+                string str;
+                const Constraint* new_c =
+                    cprocessor.processConstraintForPI(c, id);
+                str += "\"" + new_c->toLisp() + "\"";
+                cs_str.push_back(str);
+                delete new_c;
             }
-            all_cs.push_back(new_cs);
+            all_cs_str.push_back(cs_str);
         }
-        printJsonValue(out, all_cs);
-
-        // Clean up
-        for (const list<Constraint*> c_list : all_cs) {
-            for (const Constraint* c : c_list) {
-                delete c;
-            }
-        }
+        printJsonValue(out, all_cs_str);
     }
 
     out << endl
