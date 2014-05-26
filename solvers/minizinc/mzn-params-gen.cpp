@@ -25,8 +25,8 @@
  */
 
 #include "constraintprocessor.h"
+#include "params.h"
 #include "../common/exceptions/exception.h"
-#include "../common/model/params.h"
 #include "../common/model/types.h"
 #include "../common/optionparser/optionparser.h"
 #include <fstream>
@@ -164,38 +164,8 @@ printJsonList(ostream& out, const T& l) {
 void
 generateModelFunctionParameters(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
-    debug << "% Action node mappings" << endl;
-    for (const ID& id : params.getIDsForAllActionNodesInF()) {
-        debug << "% ID " << id << " -> index "
-              << params.getIndexForActionNodeInF(id)
-              << endl;
-    }
-    debug << endl;
-    debug << "% Data node mappings" << endl;
-    for (const ID& id : params.getIDsForAllDataNodesInF()) {
-        debug << "% ID " << id << " -> index "
-              << params.getIndexForDataNodeInF(id)
-              << endl;
-    }
-    debug << endl;
-    debug << "% State node mappings" << endl;
-    for (const ID& id : params.getIDsForAllStateNodesInF()) {
-        debug << "% ID " << id << " -> index "
-              << params.getIndexForStateNodeInF(id)
-              << endl;
-    }
-    debug << endl;
-    debug << "% Label node mappings" << endl;
-    for (const ID& id : params.getIDsForAllLabelNodesInF()) {
-        debug << "% ID " << id << " -> index "
-              << params.getIndexForLabelNodeInF(id)
-              << endl;
-    }
-    debug << endl;
-
     out << "% Function data" << endl;
 
     out << "numFuncActionNodes = " << params.getNumActionNodesInF() << ";"
@@ -207,30 +177,18 @@ generateModelFunctionParameters(
     out << "numFuncLabelNodes = " << params.getNumLabelNodesInF() << ";"
          << endl;
 
-    out << "rootLabel = "
-        << params.getIndexForLabelNodeInF(params.getRootLabelInF())
-         << ";"
+    out << "rootLabel = " << params.getRootLabelInF() << ";"
          << endl;
 
     out << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
-    {
-        size_t num_nodes = params.getNumLabelNodesInF();
-        vector< list<ArrayIndex> > node_lists(num_nodes);
-        for (const ID& id : params.getIDsForAllLabelNodesInF()) {
-            const auto& domset = params.getDomsetForLabelNodeInF(id);
-            node_lists[params.getIndexForLabelNodeInF(id)] =
-                params.getIndicesForLabelNodesInF(domset);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getDomsetForAllLabelNodesInF());
     out << ");" << endl;
 }
 
 void
 generateModelTargetMachineParameters(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
     out << "% Target machine data" << endl;
 
@@ -241,87 +199,33 @@ generateModelTargetMachineParameters(
 void
 generateModelPatternInstanceParameters(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
-    debug << "% Pattern instance mappings" << endl;
-    for (const ID& id : params.getIDsForAllPIs()) {
-        debug << "% ID " << id << " -> index "
-              << params.getIndexForPI(id) << endl;
-    }
-    debug << endl;
-
     out << "% Pattern instance data" << endl;
 
     out << "numPatternInstances = " << params.getNumPIs() << ";"
          << endl;
 
     out << "patInstActionsCovered = array1d(allPatternInstances, ";
-    {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getActionNodesCoveredByPI(id);
-            node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForActionNodesInF(nodes);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getActionNodesCoveredByAllPIs());
     out << ");" << endl;
 
     out << "patInstDataDefined = array1d(allPatternInstances, ";
-    {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getDataNodesDefinedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForDataNodesInF(nodes);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getDataNodesDefinedByAllPIs());
     out << ");" << endl;
 
     out << "patInstStateDefined = array1d(allPatternInstances, ";
-    {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getStateNodesDefinedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForStateNodesInF(nodes);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getStateNodesDefinedByAllPIs());
     out << ");" << endl;
 
     out << "patInstDataUsed = array1d(allPatternInstances, ";
-    {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getDataNodesUsedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForDataNodesInF(nodes);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getDataNodesUsedByAllPIs());
     out << ");" << endl;
 
     out << "patInstStateUsed = array1d(allPatternInstances, ";
-    {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getStateNodesUsedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForStateNodesInF(nodes);
-        }
-        printMinizincValue(out, node_lists);
-    }
+    printMinizincValue(out, params.getStateNodesUsedByAllPIs());
     out << ");" << endl;
 
-    debug << "% Pattern instance-destination label mappings" << endl;
     out << "patInstAndLabelMappings = "
          << "array2d(allPatternInstances, allFuncLabelNodes, ";
     {
@@ -329,97 +233,69 @@ generateModelPatternInstanceParameters(
         size_t num_labels = params.getNumLabelNodesInF();
         vector<int> mappings(num_instances * num_labels, -1);
         int index = 0;
-        for (const ID& pat_id : params.getIDsForAllPIs()) {
-            for (const ID& node_id : params.getLabelNodesReferredByPI(pat_id)) {
-                debug << "% Pattern instance ID " << pat_id << " + "
-                      << "label ID " << node_id << " -> index "
-                      << index << endl;
-                ArrayIndex pat_index = params.getIndexForPI(pat_id);
-                ArrayIndex node_index = params.getIndexForLabelNodeInF(node_id);
+        ArrayIndex pat_index = 0;
+        for (const auto& entries : params.getLabelNodesReferredByAllPIs()) {
+            for (const ArrayIndex& node_index : entries) {
                 mappings[pat_index * num_labels + node_index] = index++;
             }
+            pat_index++;
         }
         printMinizincValue(out, mappings);
     }
     out << ");" << endl;
-    debug << endl;
 
     out << "patInstCodeSizes = array1d(allPatternInstances, ";
-    {
-        vector<int> code_sizes(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
-        }
-        printMinizincValue(out, code_sizes);
-    }
+    printMinizincValue(out, params.getCodeSizesForAllPIs());
     out << ");" << endl;
 
     out << "patInstLatencies = array1d(allPatternInstances, ";
-    {
-        vector<int> latencies(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
-        }
-        printMinizincValue(out, latencies);
-    }
+    printMinizincValue(out, params.getLatenciesForAllPIs());
     out << ");" << endl;
 
     out << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
-    {
-        vector<bool> settings(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            settings[params.getIndexForPI(id)] =
-                params.getNoUseDefDomConstraintsSettingForPI(id);
-        }
-        printMinizincValue(out, settings);
-    }
+    printMinizincValue(out, params.getNoUseDefDomConstraintsSettingForAllPIs());
     out << ");" << endl;
 }
 
 void
 generateModelParameters(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
-    generateModelFunctionParameters(params, out, debug);
+    generateModelFunctionParameters(params, out);
     out << endl;
-    generateModelTargetMachineParameters(params, out, debug);
+    generateModelTargetMachineParameters(params, out);
     out << endl;
-    generateModelPatternInstanceParameters(params, out, debug);
+    generateModelPatternInstanceParameters(params, out);
 }
 
 void
 generateModelConstraintsForF(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
-    ConstraintProcessor cprocessor(params);
+    ConstraintProcessor cprocessor;
     const list<const Constraint*>& cs = params.getConstraintsForF();
-    if (cs.size() > 0) {
-        for (const Constraint* c : cs) {
-            out << cprocessor.processConstraintForF(c) << endl;
-        }
+    for (const Constraint* c : cs) {
+        out << cprocessor.processConstraintForF(c) << endl;
     }
 }
 
 void
 generateModelConstraintsForPIs(
     const Params& params,
-    ostream& out,
-    ostream& debug
+    ostream& out
 ) {
-    ConstraintProcessor cprocessor(params);
-    for (const ID& id : params.getIDsForAllPIs()) {
-        const list<const Constraint*>& cs = params.getConstraintsForPI(id);
+    ConstraintProcessor cprocessor;
+    ArrayIndex pi = 0;
+    for (const auto& cs : params.getConstraintsForAllPIs()) {
         if (cs.size() > 0) {
-            out << "% ID " << id << endl;
             for (const Constraint* c : cs) {
-                out << cprocessor.processConstraintForPI(c, id) << endl;
+                out << cprocessor.processConstraintForPI(c, pi) << endl;
             }
             out << endl;
         }
+        pi++;
     }
 }
 
@@ -428,18 +304,12 @@ void outputModelParams(
     ostream& out
 ) {
     stringstream sout;
-    stringstream sdebug;
-
-    sdebug << "%============" << endl;
-    sdebug << "% DEBUG INFO" << endl;
-    sdebug << "%============" << endl;
-    sdebug << endl;
 
     sout << "%============" << endl;
     sout << "% PARAMETERS" << endl;
     sout << "%============" << endl;
     sout << endl;
-    generateModelParameters(params, sout, sdebug);
+    generateModelParameters(params, sout);
     sout << endl
          << endl
          << endl;
@@ -448,7 +318,7 @@ void outputModelParams(
     sout << "% FUNCTION GRAPH CONSTRAINTS" << endl;
     sout << "%============================" << endl;
     sout << endl;
-    generateModelConstraintsForF(params, sout, sdebug);
+    generateModelConstraintsForF(params, sout);
     sout << endl
          << endl
          << endl;
@@ -457,168 +327,29 @@ void outputModelParams(
     sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
     sout << "%==============================" << endl;
     sout << endl;
-    generateModelConstraintsForPIs(params, sout, sdebug);
+    generateModelConstraintsForPIs(params, sout);
 
     out << "% AUTO-GENERATED" << endl;
     out << endl;
-    out << sdebug.str();
-    out << endl
-        << endl;
     out << sout.str();
 }
 
-void outputPostprocessingParams(
-    const Params& params,
-    ostream& out
-) {
-    out << "{" << endl;
 
-    out << "\"array-indices-to-func-action-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfActionNodesInF(
-            createArrayIndices(0, params.getNumActionNodesInF())
-        )
-    );
-    out << endl;
-
-    out << "\"array-indices-to-func-data-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfDataNodesInF(
-            createArrayIndices(0, params.getNumDataNodesInF())
-        )
-    );
-    out << endl;
-
-    out << "\"array-indices-to-func-state-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfStateNodesInF(
-            createArrayIndices(0, params.getNumStateNodesInF())
-        )
-    );
-    out << endl;
-
-    out << "\"array-indices-to-func-label-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfLabelNodesInF(
-            createArrayIndices(0, params.getNumLabelNodesInF())
-        )
-    );
-    out << endl;
-
-    out << "\"array-indices-to-machine-register-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfRegistersInM(
-            createArrayIndices(0, params.getNumRegistersInM())
-        )
-    );
-    out << endl;
-
-    out << "\"array-indices-to-pattern-instance-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfPIs(
-            createArrayIndices(0, params.getNumPIs())
-        )
-    );
-    out << endl;
-
-    out << "}" << endl;
-}
-
-
-
-//======================
-// COMMAND-LINE OPTIONS
-//======================
-
-enum optionIndex {
-    PRE,
-    HELP,
-    MODEL_PARAMS_FILE,
-    POSTPROCESSING_PARAMS_FILE
-};
-
-const option::Descriptor usage[] =
-{
-    {
-        PRE,
-        0,
-        "",
-        "",
-        option::Arg::None,
-        "USAGE: input-gen [OPTIONS] JSON_FILE\n" \
-        "Options:"
-    },
-    {
-        HELP,
-        0,
-        "h",
-        "help",
-        option::Arg::None,
-        "  -h, --help" \
-        "\tPrints this menu."
-    },
-    {
-        MODEL_PARAMS_FILE,
-        0,
-        "",
-        "model-params-file",
-        option::Arg::Required,
-        "  --model-params-file=FILE" \
-        "\tWhere the model parameters will be output."
-    },
-    {
-        POSTPROCESSING_PARAMS_FILE,
-        0,
-        "",
-        "postprocessing-params-file",
-        option::Arg::Required,
-        "  --postprocessing-params-file=FILE" \
-        "\tWhere the post-processing parameters will be output."
-    },
-    // Termination sentinel
-    { 0, 0, 0, 0, 0, 0 }
-};
 
 int
 main(int argc, char** argv) {
-    // Parse command-line arguments
-    argc -= (argc > 0); argv += (argc > 0); // Skip program name if present
-    option::Stats stats(usage, argc, argv);
-    option::Option options[stats.options_max], buffer[stats.buffer_max];
-    option::Parser cmdparser(usage, argc, argv, options, buffer);
-    if (cmdparser.error()) {
+    if (argc < 2) {
+        cerr << "No JSON file." << endl;
         return 1;
     }
-    if (options[HELP] || argc == 0) {
-        option::printUsage(cout, usage);
-        return 0;
-    }
-    if (!options[MODEL_PARAMS_FILE]) {
-        cerr << "No model params file" << endl;
-        return 1;
-    }
-    if (!options[POSTPROCESSING_PARAMS_FILE]) {
-        cerr << "No post-processing params file" << endl;
-        return 1;
-    }
-    if (cmdparser.nonOptionsCount() > 1) {
-        cerr << "Unknown option '" << cmdparser.nonOption(0) << "'" << endl;
-        return 1;
-    }
-    if (cmdparser.nonOptionsCount() == 0) {
-        cerr << "No JSON input file" << endl;
+    else if (argc > 2) {
+        cerr << "Too many arguments." << endl;
         return 1;
     }
 
     try {
         // Parse JSON file into an internal model parameters object
-        string json_file(cmdparser.nonOption(0));
+        string json_file(argv[1]);
         ifstream file(json_file);
         if (!file.good()) {
             cerr << "ERROR: '" << json_file << "' does not exist or is "
@@ -632,24 +363,7 @@ main(int argc, char** argv) {
         Params::parseJson(json_content, params);
 
         // Output model params
-        ofstream mfile;
-        const string mfile_str(options[MODEL_PARAMS_FILE].arg);
-        mfile.open(mfile_str);
-        if (!mfile.is_open()) {
-            THROW(Exception, string("Failed to open file '") + mfile_str + "'");
-        }
-        outputModelParams(params, mfile);
-        mfile.close();
-
-        // Output postprocessing params
-        ofstream pfile;
-        const string pfile_str(options[POSTPROCESSING_PARAMS_FILE].arg);
-        pfile.open(pfile_str);
-        if (!pfile.is_open()) {
-            THROW(Exception, string("Failed to open file '") + pfile_str + "'");
-        }
-        outputPostprocessingParams(params, pfile);
-        pfile.close();
+        outputModelParams(params, cout);
 
         return 0;
     }

@@ -118,7 +118,7 @@ void outputModelParams(
     printJsonValue(out, params.getNumLabelNodesInF());
 
     out << "," << endl
-        << "\"root-label\" : ";
+        << "\"func-root-label\" : ";
     printJsonValue(out,
                    params.getIndexForLabelNodeInF(params.getRootLabelInF()));
 

@@ -27,13 +27,13 @@
 #ifndef SOLVERS_COMMON_MODEL_PARAMS__
 #define SOLVERS_COMMON_MODEL_PARAMS__
 
-#include "constraints.h"
-#include "types.h"
-#include "../exceptions/exception.h"
-#include "../json/json.h"
+#include "../common/exceptions/exception.h"
+#include "../common/json/json.h"
+#include "../common/model/constraints.h"
+#include "../common/model/types.h"
 #include <list>
-#include <map>
 #include <string>
+#include <vector>
 
 namespace Model {
 
@@ -102,472 +102,92 @@ class Params {
     getNumPIs(void) const;
 
     /**
-     * Gets the list of dominators for a given label node in the function graph.
+     * Gets the list of dominators per given label node in the function graph.
      *
-     * @param id
-     *        Node ID.
      * @returns List of dominators.
-     * @throws Exception
-     *         When there is no node with such an ID.
      */
-    std::list<ID>
-    getDomsetForLabelNodeInF(const ID& id) const;
+    std::vector< std::list<ArrayIndex> >
+    getDomsetForAllLabelNodesInF(void) const;
 
     /**
      * Gets the root label in the function graph.
      *
-     * @returns Node ID.
+     * @returns Array index for a label node.
      */
-    ID
+    ArrayIndex
     getRootLabelInF(void) const;
 
     /**
-     * Gets the code size of selecting a particular pattern instance.
+     * Gets code sizes per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
-     * @returns The code size (in bytes).
-     * @throws Exception
-     *         When there is no instance with such an ID.
+     * @returns The code sizes (in bytes).
      */
-    int
-    getCodeSizeForPI(const ID& instance) const;
+    std::vector<int>
+    getCodeSizesForAllPIs(void) const;
 
     /**
-     * Gets the latency of selecting a particular pattern instance.
+     * Gets latencies per pattern instances.
      *
-     * @param instance
-     *        Pattern instance ID.
-     * @returns The latency (in cycles).
-     * @throws Exception
-     *         When there is no instance with such an ID.
+     * @returns The latencies (in bytes).
      */
-    int
-    getLatencyForPI(const ID& instance) const;
+    std::vector<int>
+    getLatenciesForAllPIs(void) const;
 
     /**
-     * Gets the function action nodes covered by a particular pattern instance.
+     * Gets the function action nodes covered per pattern instances.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getActionNodesCoveredByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getActionNodesCoveredByAllPIs(void) const;
 
     /**
-     * Gets the function data nodes defined by a particular pattern instance.
+     * Gets the function data nodes defined per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getDataNodesDefinedByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getDataNodesDefinedByAllPIs(void) const;
 
     /**
-     * Gets the function state nodes defined by a particular pattern instance.
+     * Gets the function state nodes defined per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getStateNodesDefinedByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getStateNodesDefinedByAllPIs(void) const;
 
     /**
-     * Gets the function data nodes used by a particular pattern instance.
+     * Gets the function data nodes used per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getDataNodesUsedByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getDataNodesUsedByAllPIs(void) const;
 
     /**
-     * Gets the function state nodes used by a particular pattern instance.
+     * Gets the function state nodes used per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getStateNodesUsedByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getStateNodesUsedByAllPIs(void) const;
 
     /**
-     * Gets the function label nodes referred to by a particular pattern
-     * instance.
+     * Gets the function label nodes referred per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns List of node IDs.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<ID>
-    getLabelNodesReferredByPI(const ID& instance) const;
+    std::vector< std::list<ID> >
+    getLabelNodesReferredByAllPIs(void) const;
 
     /**
-     * Checks if use-def-dom constraints should be removed for a particular
-     * pattern instance.
+     * Gets the use-def-dom constraint settings per pattern instance.
      *
-     * @param instance
-     *        Pattern instance ID.
      * @returns Boolean.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    bool
-    getNoUseDefDomConstraintsSettingForPI(const ID& instance) const;
-
-    /**
-     * Gets the array index for a given action node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no node with such an ID.
-     */
-    ArrayIndex
-    getIndexForActionNodeInF(const ID& id) const;
-
-    /**
-     * Gets the array index for a given data node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no node with such an ID.
-     */
-    ArrayIndex
-    getIndexForDataNodeInF(const ID& id) const;
-
-    /**
-     * Gets the array index for a given state node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no node with such an ID.
-     */
-    ArrayIndex
-    getIndexForStateNodeInF(const ID& id) const;
-
-    /**
-     * Gets the array index for a given label node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no node with such an ID.
-     */
-    ArrayIndex
-    getIndexForLabelNodeInF(const ID& id) const;
-
-    /**
-     * Gets the ID of a given array index for an action node in the function
-     * graph.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding node ID.
-     * @throws Exception
-     *         When there is no node with such an array index.
-     */
-    ID
-    getIDOfActionNodeInF(const ArrayIndex& i) const;
-
-    /**
-     * Gets the ID for a given array index of an data node in the function
-     * graph.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding node ID.
-     * @throws Exception
-     *         When there is no node with such an array index.
-     */
-    ID
-    getIDOfDataNodeInF(const ArrayIndex& i) const;
-
-    /**
-     * Gets the ID for a given array index of an state node in the function
-     * graph.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding node ID.
-     * @throws Exception
-     *         When there is no node with such an array index.
-     */
-    ID
-    getIDOfStateNodeInF(const ArrayIndex& i) const;
-
-    /**
-     * Gets the ID for a given array index of an label node in the function
-     * graph.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding node ID.
-     * @throws Exception
-     *         When there is no node with such an array index.
-     */
-    ID
-    getIDOfLabelNodeInF(const ArrayIndex& i) const;
-
-    /**
-     * Gets the array index for a given register in the target machine.
-     *
-     * @param id
-     *        Register ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no register with such an ID.
-     */
-    ArrayIndex
-    getIndexForRegisterInM(const ID& id) const;
-
-    /**
-     * Gets the ID of a given array index for a register in the target machine.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding register ID.
-     * @throws Exception
-     *         When there is no register with such an array index.
-     */
-    ID
-    getIDOfRegisterInM(const ArrayIndex& i) const;
-
-    /**
-     * Gets the array index for a given pattern instance.
-     *
-     * @param id
-     *        Pattern instance ID.
-     * @returns Corresponding array index.
-     * @throws Exception
-     *         When there is no instance with such an ID.
-     */
-    ArrayIndex
-    getIndexForPI(const ID& id) const;
-
-    /**
-     * Gets the ID of a given array index for a pattern instance.
-     *
-     * @param i
-     *        Array index.
-     * @returns Corresponding pattern instance ID.
-     * @throws Exception
-     *         When there is no instance with such an array index.
-     */
-    ID
-    getIDOfPI(const ArrayIndex& i) const;
-
-    /**
-     * Gets a list of array indices for a given list of action nodes in the
-     * function graph.
-     *
-     * @param ids
-     *        List of node ID.
-     * @returns List of corresponding array indices.
-     * @throws Exception
-     *         When there is a node ID with no mapping.
-     */
-    std::list<ArrayIndex>
-    getIndicesForActionNodesInF(const std::list<ID>& ids) const;
-
-    /**
-     * Gets a list of array indices for a given list of data nodes in the
-     * function graph.
-     *
-     * @param ids
-     *        List of node ID.
-     * @returns List of corresponding array indices.
-     * @throws Exception
-     *         When there is a node ID with no mapping.
-     */
-    std::list<ArrayIndex>
-    getIndicesForDataNodesInF(const std::list<ID>& ids) const;
-
-    /**
-     * Gets a list of array indices for a given list of state nodes in the
-     * function graph.
-     *
-     * @param ids
-     *        List of node ID.
-     * @returns List of corresponding array indices.
-     * @throws Exception
-     *         When there is a node ID with no mapping.
-     */
-    std::list<ArrayIndex>
-    getIndicesForStateNodesInF(const std::list<ID>& ids) const;
-
-    /**
-     * Gets a list of array indices for a given list of label nodes in the
-     * function graph.
-     *
-     * @param ids
-     *        List of node ID.
-     * @returns List of corresponding array indices.
-     * @throws Exception
-     *         When there is a node ID with no mapping.
-     */
-    std::list<ArrayIndex>
-    getIndicesForLabelNodesInF(const std::list<ID>& ids) const;
-
-    /**
-     * Gets a list of array indices for a given list of machine registers.
-     *
-     * @param ids
-     *        List of register ID.
-     * @returns List of corresponding array indices.
-     * @throws Exception
-     *         When there is a register ID with no mapping.
-     */
-    std::list<ArrayIndex>
-    getIndicesForRegistersInM(const std::list<ID>& ids) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for action nodes in
-     * the function graph.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding node IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfActionNodesInF(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for data nodes in
-     * the function graph.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding node IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfDataNodesInF(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for state nodes in
-     * the function graph.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding node IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfStateNodesInF(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for label nodes in
-     * the function graph.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding node IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfLabelNodesInF(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for registers in the
-     * target machine.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding register IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfRegistersInM(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs of a given list of array indices for pattern
-     * instances.
-     *
-     * @param is
-     *        List of array indices.
-     * @returns List of corresponding pattern instance IDs.
-     * @throws Exception
-     *         When there is an array index with no mapping.
-     */
-    std::list<ID>
-    getIDsOfPIs(const std::list<ArrayIndex>& is) const;
-
-    /**
-     * Gets a list of IDs for all action nodes in the function graph.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllActionNodesInF(void) const;
-
-    /**
-     * Gets a list of IDs for all data nodes in the function graph.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllDataNodesInF(void) const;
-
-    /**
-     * Gets a list of IDs for all state nodes in the function graph.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllStateNodesInF(void) const;
-
-    /**
-     * Gets a list of IDs for all label nodes in the function graph.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllLabelNodesInF(void) const;
-
-    /**
-     * Gets a list of IDs for all registers in the target machine.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllRegisterInM(void) const;
-
-    /**
-     * Gets a list of IDs for all pattern instances.
-     *
-     * @returns List of IDs.
-     */
-    std::list<ID>
-    getIDsForAllPIs(void) const;
+    std::vector<bool>
+    getNoUseDefDomConstraintsSettingForAllPIs(void) const;
 
     /**
      * Gets the constraints for the function graph.
@@ -578,56 +198,12 @@ class Params {
     getConstraintsForF(void) const;
 
     /**
-     * Gets the constraints for a given pattern instance.
+     * Gets the constraints per pattern instance.
      *
-     * @param id
-     *        Pattern instance ID.
      * @returns Corresponding constraints.
-     * @throws Exception
-     *         When there is no instance with such an ID.
      */
-    std::list<const Constraint*>
-    getConstraintsForPI(const ID& id) const;
-
-    /**
-     * Checks if a node ID represents an action node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns \c true if action node.
-     */
-    bool
-    isActionNodeInF(const ID& id) const;
-
-    /**
-     * Checks if a node ID represents an data node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns \c true if data node.
-     */
-    bool
-    isDataNodeInF(const ID& id) const;
-
-    /**
-     * Checks if a node ID represents an state node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns \c true if state node.
-     */
-    bool
-    isStateNodeInF(const ID& id) const;
-
-    /**
-     * Checks if a node ID represents an label node in the function graph.
-     *
-     * @param id
-     *        Node ID.
-     * @returns \c true if label node.
-     */
-    bool
-    isLabelNodeInF(const ID& id) const;
+    std::vector< std::list<const Constraint*> >
+    getConstraintsForAllPIs(void) const;
 
     /**
      * Parses a JSON string into an internal model parameters object.
@@ -643,102 +219,6 @@ class Params {
     parseJson(const std::string& str, Params& p);
 
   protected:
-    /**
-     * Adds a node ID-to-array index mapping to a mapset.
-     *
-     * @tparam K
-     *         Type of key.
-     * @tparam V
-     *         Type of value.
-     * @param key
-     *        The key.
-     * @param value
-     *        The value.
-     * @param mapset
-     *        Object to add the mapping to.
-     */
-    template <typename K, typename V>
-    static void
-    addMapping(const K& key, const V& value, std::map<K, V>& mapset) {
-        std::pair< typename std::map<K, V>::iterator, bool > ret;
-        ret = mapset.insert(std::pair<K, V>(key, value));
-        if (!ret.second) {
-            THROW(Exception, "Such a mapping already exists");
-        }
-    }
-
-    /**
-     * Gets a value from a map.
-     *
-     * @tparam K
-     *         Type of key.
-     * @tparam V
-     *         Type of value.
-     * @param key
-     *        The key.
-     * @param mapset
-     *        Object to get the mapping from.
-     * @returns The value.
-     * @throws Exception
-     *         When there exists no such mapping.
-     */
-    template <typename K, typename V>
-    static V
-    getMappedValue(const K& key, const std::map<K, V>& mapset) {
-        typename std::map<K, V>::const_iterator it;
-        it = mapset.find(key);
-        if (it == mapset.end()) {
-            THROW(Exception, "No mapping found");
-        }
-        return it->second;
-    }
-
-    /**
-     * Gets a list of values from a map.
-     *
-     * @tparam K
-     *         Type of key.
-     * @tparam V
-     *         Type of value.
-     * @param keys
-     *        The keys.
-     * @param mapset
-     *        Object to get the mappings from.
-     * @returns The values.
-     * @throws Exception
-     *         When there exists no such mapping.
-     */
-    template <typename K, typename V>
-    static std::list<V>
-    getMappedValues(const std::list<K>& keys, const std::map<K, V>& mapset) {
-        std::list<V> values;
-        for (auto& key : keys) {
-            values.push_back(getMappedValue(key, mapset));
-        }
-        return values;
-    }
-
-    /**
-     * Gets a list of all keys present in a mapset.
-     *
-     * @tparam K
-     *         Type of key.
-     * @tparam V
-     *         Type of value.
-     * @param mapset
-     *        Object to get the keys from.
-     * @returns The keys.
-     */
-    template <typename K, typename V>
-    static std::list<K>
-    getAllKeys(const std::map<K, V>& mapset) {
-        std::list<K> keys;
-        for (auto& kv : mapset) {
-            keys.push_back(kv.first);
-        }
-        return keys;
-    }
-
     /**
      * Checks if a JSON field with certain name exists within another JSON
      * value.
@@ -767,7 +247,7 @@ class Params {
     getJsonValue(const Json::Value& value, const std::string& name);
 
     /**
-     * Gets a JSON value as an ID.
+     * Gets a JSON value as an array index.
      *
      * @param value
      *        JSON value.
@@ -775,8 +255,8 @@ class Params {
      * @throws Exception
      *         When the value is not of expected type.
      */
-    static ID
-    toID(const Json::Value& value);
+    static ArrayIndex
+    toArrayIndex(const Json::Value& value);
 
     /**
      * Gets a JSON value as an integer.
@@ -813,93 +293,6 @@ class Params {
      */
     static std::string
     toString(const Json::Value& value);
-
-    /**
-     * Computes the node ID-to-array index mappings for the action nodes of the
-     * function graph.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsForActionNodesInF(const Json::Value& root, Params& p);
-
-    /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Params&) but for the data nodes.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsForDataNodesInF(const Json::Value& root, Params& p);
-
-    /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Params&) but for the state nodes.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsForStateNodesInF(const Json::Value& root, Params& p);
-
-    /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Params&) but for the label nodes, and also sets the dominator sets.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsAndDomsetsForLabelNodesInF(
-        const Json::Value& root,
-        Params& p
-    );
-
-    /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&, Params&) but
-     * for the register in the target machine.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsForRegistersInM(const Json::Value& root, Params& p);
-
-    /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Params&) but for the pattern instance IDs.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    computeMappingsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the root label for the function graph.
@@ -1062,179 +455,17 @@ class Params {
     setConstraintsForPIs(const Json::Value& root, Params& p);
 
     /**
-     * Parses a constraint string.
+     * Sets the "number of ..." values.
      *
-     * @param str
-     *        String to parse.
-     * @returns Parsed constraint as a newly allocated object.
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
      * @throws Exception
-     *         When the parsing fails.
-     */
-    static Constraint*
-    parseConstraint(const std::string& str);
-
-    /**
-     * Parses a Boolean expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static BoolExpr*
-    parseBoolExpr(std::string& str);
-
-    /**
-     * Parses a numerical expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static NumExpr*
-    parseNumExpr(std::string& str);
-
-    /**
-     * Parses an integer expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static IntExpr*
-    parseIntExpr(std::string& str);
-
-    /**
-     * Parses a node ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static NodeIDExpr*
-    parseNodeIDExpr(std::string& str);
-
-    /**
-     * Parses a pattern instance ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static PatternInstanceIDExpr*
-    parsePatternInstanceIDExpr(std::string& str);
-
-    /**
-     * Parses an instruction ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static InstructionIDExpr*
-    parseInstructionIDExpr(std::string& str);
-
-    /**
-     * Parses a pattern ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static PatternIDExpr*
-    parsePatternIDExpr(std::string& str);
-
-    /**
-     * Parses a label ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static LabelIDExpr*
-    parseLabelIDExpr(std::string& str);
-
-    /**
-     * Parses a register ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static RegisterIDExpr*
-    parseRegisterIDExpr(std::string& str);
-
-    /**
-     * Parses a list of register ID expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed list of expression.
-     */
-    static std::list<const RegisterIDExpr*>
-    parseListOfRegisterIDExpr(std::string& str);
-
-    /**
-     * Parses a set expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static SetExpr*
-    parseSetExpr(std::string& str);
-
-    /**
-     * Parses a set element expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static SetElemExpr*
-    parseSetElemExpr(std::string& str);
-
-    /**
-     * Parses a node ID.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    static ID
-    parseNodeID(std::string& str);
-
-    /**
-     * Removes initial whitespace from a string.
-     *
-     * @param str
-     *        String to modify.
+     *         When an error occurs.
      */
     static void
-    eatWhitespace(std::string& str);
-
-    /**
-     * Removes an initial part that matches another string.
-     *
-     * @param search
-     *        Initial part to match.
-     * @param str
-     *        String to search in and modify (but only if there is match).
-     * @returns \c true if there was a match.
-     */
-    static bool
-    eat(const std::string& search, std::string& str);
-
-    /**
-     * Removes an initial integer value from a string.
-     *
-     * @param str
-     *        String to modify.
-     * @returns An integer.
-     * @throws Exception
-     *         When the string does not begin with an integer.
-     */
-    static int
-    eatInt(std::string& str);
+    setNumValues(const Json::Value& root, Params& p);
 
     /**
      * Destroys the function constraints contained by this object.
@@ -1249,55 +480,46 @@ class Params {
     destroyConstraintsForPIs(void);
 
   protected:
-    /**
-     * Maps the ID of an action node in the function graph to an array index.
-     */
-    std::map<ID, ArrayIndex> func_action_node_kv_mappings_;
 
     /**
-     * Maps an array index to the ID of an action node in the function graph.
+     * Numbers of action nodes in the function.
      */
-    std::map<ArrayIndex, ID> func_action_node_vk_mappings_;
+    size_t num_func_action_nodes_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for data nodes.
+     * Numbers of data nodes in the function.
      */
-    std::map<ID, ArrayIndex> func_data_node_kv_mappings_;
+    size_t num_func_data_nodes_;
 
     /**
-     * Same as #func_action_node_vk_mappings_ but for data nodes.
+     * Numbers of state nodes in the function.
      */
-    std::map<ArrayIndex, ID> func_data_node_vk_mappings_;
+    size_t num_func_state_nodes_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for state nodes.
+     * Numbers of label nodes in the function.
      */
-    std::map<ID, ArrayIndex> func_state_node_kv_mappings_;
+    size_t num_func_label_nodes_;
 
     /**
-     * Same as #func_action_node_vk_mappings_ but for state nodes.
+     * Numbers of registers in the target machine.
      */
-    std::map<ArrayIndex, ID> func_state_node_vk_mappings_;
+    size_t num_regs_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for label nodes.
+     * Numbers of pattern instances.
      */
-    std::map<ID, ArrayIndex> func_label_node_kv_mappings_;
-
-    /**
-     * Same as #func_action_node_vk_mappings_ but for label nodes.
-     */
-    std::map<ArrayIndex, ID> func_label_node_vk_mappings_;
+    size_t num_pis_;
 
     /**
      * The dominator sets for each label node in the function graph.
      */
-    std::map< ID, std::list<ID> > func_label_domsets_;
+    std::vector< std::list<ArrayIndex> > func_label_domsets_;
 
     /**
      * The root label which indicates the entry point in the function graph.
      */
-    ID func_root_label_;
+    ArrayIndex func_root_label_;
 
     /**
      * The constraints for the function graph. The constraints are destroyed
@@ -1306,83 +528,63 @@ class Params {
     std::list<const Constraint*> func_constraints_;
 
     /**
-     * Maps the ID of a register in the target machine to an array index.
-     */
-    std::map<ID, ArrayIndex> mach_reg_kv_mappings_;
-
-    /**
-     * Maps an array index to the ID of a register in the target machine.
-     */
-    std::map<ArrayIndex, ID> mach_reg_vk_mappings_;
-
-    /**
-     * Maps the ID of a pattern instance to an array index.
-     */
-    std::map<ID, ArrayIndex> pat_inst_kv_mappings_;
-
-    /**
-     * Maps an array index to the ID of a pattern instance.
-     */
-    std::map<ArrayIndex, ID> pat_inst_vk_mappings_;
-
-    /**
      * The code size (in bytes) of the instruction for each pattern instance.
      */
-    std::map<ID, int> pat_inst_code_sizes_;
+    std::vector<int> pat_inst_code_sizes_;
 
     /**
      * The latency (in cycles) of the instruction for each pattern instance.
      */
-    std::map<ID, int> pat_inst_latencies_;
+    std::vector<int> pat_inst_latencies_;
 
     /**
      * The action nodes in the function graph which are covered by each pattern
      * instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_actions_covered_;
+    std::vector< std::list<ArrayIndex> > pat_inst_actions_covered_;
 
     /**
      * The data nodes in the function graph which are defined by each pattern
      * instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_data_defined_;
+    std::vector< std::list<ArrayIndex> > pat_inst_data_defined_;
 
     /**
      * The data nodes in the function graph which are used by each pattern
      * instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_data_used_;
+    std::vector< std::list<ArrayIndex> > pat_inst_data_used_;
 
     /**
      * The state nodes in the function graph which are defined by each pattern
      * instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_states_defined_;
+    std::vector< std::list<ArrayIndex> > pat_inst_states_defined_;
 
     /**
      * The state nodes in the function graph which are used by each pattern
      * instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_states_used_;
+    std::vector< std::list<ArrayIndex> > pat_inst_states_used_;
 
     /**
      * The label nodes in the function graph which are referred to by each
      * pattern instance.
      */
-    std::map< ID, std::list<ID> > pat_inst_labels_referred_;
+    std::vector< std::list<ArrayIndex> > pat_inst_labels_referred_;
 
     /**
      * The constraints for each pattern instance. The constraints are destroyed
      * when this object is deleted.
      */
-    std::map< ID, std::list<const Constraint*> > pat_inst_constraints_;
+    std::vector< std::list<const Constraint*> > pat_inst_constraints_;
 
     /**
      * Whether use-def-dom constraints should be applied on a particular pattern
      * instance. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::map<ID, bool> pat_inst_no_use_def_dom_constraints_;
+    std::vector<bool> pat_inst_no_use_def_dom_constraints_;
 };
 
 }

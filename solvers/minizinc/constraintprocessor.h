@@ -27,8 +27,8 @@
 #ifndef SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
 #define SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
 
+#include "params.h"
 #include "../common/model/constraints.h"
-#include "../common/model/params.h"
 #include "../common/model/types.h"
 #include <string>
 
@@ -42,31 +42,14 @@ class ConstraintProcessor {
   public:
     /**
      * Creates a constraint processor.
-     *
-     * @param p
-     *        The parameter object wherein the constraints belong.
      */
-    ConstraintProcessor(const Model::Params& p);
+    ConstraintProcessor(void);
 
     /**
      * Destroys this processor.
      */
     virtual
     ~ConstraintProcessor(void);
-
-    /**
-     * Converts a constraint for a pattern instance into a Minizinc equivalent.
-     *
-     * @param c
-     *        The constraint.
-     * @param id
-     *        ID of the pattern instance to which the constraint belongs.
-     * @returns Minizinc constraint as a string.
-     * @throws Exception
-     *         When something went wrong.
-     */
-    std::string
-    processConstraintForPI(const Model::Constraint* c, const Model::ID& id);
 
     /**
      * Converts a constraint for the function graph into a Minizinc equivalent.
@@ -79,6 +62,21 @@ class ConstraintProcessor {
      */
     std::string
     processConstraintForF(const Model::Constraint* c);
+
+    /**
+     * Converts a constraint for a pattern instance into a Minizinc equivalent.
+     *
+     * @param c
+     *        The constraint.
+     * @param i
+     *        The array index for the pattern instance.
+     * @returns Minizinc constraint as a string.
+     * @throws Exception
+     *         When something went wrong.
+     */
+    std::string
+    processConstraintForPI(const Model::Constraint* c,
+                           const Model::ArrayIndex& i);
 
   protected:
     /**
@@ -212,37 +210,37 @@ class ConstraintProcessor {
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::NodeIDExpr* e);
+    process(const Model::NodeExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::PatternInstanceIDExpr* e);
+    process(const Model::PatternInstanceExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::InstructionIDExpr* e);
+    process(const Model::InstructionExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::PatternIDExpr* e);
+    process(const Model::PatternExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::LabelIDExpr* e);
+    process(const Model::LabelExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::RegisterIDExpr* e);
+    process(const Model::RegisterExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
@@ -255,24 +253,6 @@ class ConstraintProcessor {
      */
     std::string
     process(const Model::SetElemExpr* e);
-
-  protected:
-    /**
-     * The params object.
-     */
-    const Model::Params& p_;
-
-    /**
-     * Determines whether a constraint for a pattern instance is currently being
-     * processed.
-     */
-    bool is_processing_pi_constraint_;
-
-    /**
-     * ID of the pattern instance to which the constraint which is currently
-     * being processed belongs to.
-     */
-    Model::ID piid_;
 };
 
 #endif
