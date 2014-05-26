@@ -24,13 +24,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_COMMON_MODEL_PARAMS__
-#define SOLVERS_COMMON_MODEL_PARAMS__
+#ifndef SOLVERS_COMMON_MODEL_MODEL_PARAMS__
+#define SOLVERS_COMMON_MODEL_MODEL_PARAMS__
 
-#include "../common/exceptions/exception.h"
-#include "../common/json/json.h"
-#include "../common/model/constraints.h"
-#include "../common/model/types.h"
+#include "constraints.h"
+#include "types.h"
+#include "../exceptions/exception.h"
+#include "../json/json.h"
 #include <list>
 #include <string>
 #include <vector>
@@ -41,17 +41,17 @@ namespace Model {
  * Contains the parameters which will be used to create an instance of the CP
  * model.
  */
-class Params {
+class ModelParams {
   public:
     /**
      * Creates an empty parameter object.
      */
-    Params(void);
+    ModelParams(void);
 
     /**
      * Destroys this object.
      */
-    ~Params(void);
+    ~ModelParams(void);
 
     /**
      * Gets the number of action nodes in the function graph.
@@ -216,7 +216,7 @@ class Params {
      *         When parsing fails.
      */
     static void
-    parseJson(const std::string& str, Params& p);
+    parseJson(const std::string& str, ModelParams& p);
 
   protected:
     /**
@@ -305,7 +305,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setRootLabelInF(const Json::Value& root, Params& p);
+    setRootLabelInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the constraints of the function graph.
@@ -318,7 +318,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setConstraintsForF(const Json::Value& root, Params& p);
+    setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the code size values of the pattern instances.
@@ -331,7 +331,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setCodeSizesForPIs(const Json::Value& root, Params& p);
+    setCodeSizesForPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the latency values of the pattern instances.
@@ -344,7 +344,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLatenciesForPIs(const Json::Value& root, Params& p);
+    setLatenciesForPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the no-use-def-dom-constraints settings for the pattern instances.
@@ -357,7 +357,8 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root, Params& p);
+    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root,
+                                            ModelParams& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -371,7 +372,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPIs(const Json::Value& root, Params& p);
+    setActionNodesCoveredByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function data nodes defined by the respective pattern
@@ -385,7 +386,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByPIs(const Json::Value& root, Params& p);
+    setDataNodesDefinedByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function state nodes defined by the respective pattern
@@ -399,7 +400,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByPIs(const Json::Value& root, Params& p);
+    setStateNodesDefinedByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function data nodes used by the respective pattern instances.
@@ -412,7 +413,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesUsedByPIs(const Json::Value& root, Params& p);
+    setDataNodesUsedByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function state nodes used by the respective pattern instances.
@@ -425,7 +426,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesUsedByPIs(const Json::Value& root, Params& p);
+    setStateNodesUsedByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function label nodes referred to by the respective pattern
@@ -439,7 +440,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByPIs(const Json::Value& root, Params& p);
+    setLabelNodesReferredByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -452,7 +453,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setConstraintsForPIs(const Json::Value& root, Params& p);
+    setConstraintsForPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the "number of ..." values.
@@ -465,7 +466,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setNumValues(const Json::Value& root, Params& p);
+    setNumValues(const Json::Value& root, ModelParams& p);
 
     /**
      * Destroys the function constraints contained by this object.

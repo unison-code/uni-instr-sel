@@ -24,11 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "params.h"
-#include "../common/exceptions/exception.h"
-#include "../common/json/json.h"
-#include "../common/model/constraintparser.h"
-#include "../common/utils/string.h"
+#include "modelparams.h"
+#include "constraintparser.h"
+#include "../exceptions/exception.h"
+#include "../json/json.h"
+#include "../utils/string.h"
 
 using namespace Json;
 using namespace Model;
@@ -36,50 +36,50 @@ using std::list;
 using std::string;
 using std::vector;
 
-Params::Params(void) {}
+ModelParams::ModelParams(void) {}
 
-Params::~Params(void) {
+ModelParams::~ModelParams(void) {
     destroyConstraintsForF();
     destroyConstraintsForPIs();
 }
 
 size_t
-Params::getNumActionNodesInF(void) const {
+ModelParams::getNumActionNodesInF(void) const {
     return num_func_action_nodes_;
 }
 
 size_t
-Params::getNumDataNodesInF(void) const {
+ModelParams::getNumDataNodesInF(void) const {
     return num_func_data_nodes_;
 }
 
 size_t
-Params::getNumStateNodesInF(void) const {
+ModelParams::getNumStateNodesInF(void) const {
     return num_func_state_nodes_;
 }
 
 size_t
-Params::getNumLabelNodesInF(void) const {
+ModelParams::getNumLabelNodesInF(void) const {
     return num_func_label_nodes_;
 }
 
 size_t
-Params::getNumPIs(void) const {
+ModelParams::getNumPIs(void) const {
     return num_pis_;
 }
 
 size_t
-Params::getNumRegistersInM(void) const {
+ModelParams::getNumRegistersInM(void) const {
     return num_regs_;
 }
 
 ID
-Params::getRootLabelInF(void) const {
+ModelParams::getRootLabelInF(void) const {
     return func_root_label_;
 }
 
 void
-Params::parseJson(const string& str, Params& p) {
+ModelParams::parseJson(const string& str, ModelParams& p) {
     Value root;
     Reader reader;
     if (!reader.parse(str, root)) {
@@ -102,12 +102,12 @@ Params::parseJson(const string& str, Params& p) {
 }
 
 bool
-Params::hasJsonValue(const Value& value, const string& name) {
+ModelParams::hasJsonValue(const Value& value, const string& name) {
     return !value[name].isNull();
 }
 
 const Value&
-Params::getJsonValue(const Value& value, const string& name) {
+ModelParams::getJsonValue(const Value& value, const string& name) {
     const Value& sought_value = value[name];
     if (sought_value.isNull()) {
         THROW(Exception, string("No '") + name + "' field found");
@@ -116,7 +116,7 @@ Params::getJsonValue(const Value& value, const string& name) {
 }
 
 ArrayIndex
-Params::toArrayIndex(const Value& value) {
+ModelParams::toArrayIndex(const Value& value) {
     if (!value.isUInt()) {
         THROW(Exception, "Not a JSON unsigned integer");
     }
@@ -124,7 +124,7 @@ Params::toArrayIndex(const Value& value) {
 }
 
 int
-Params::toInt(const Value& value) {
+ModelParams::toInt(const Value& value) {
     if (!value.isInt()) {
         THROW(Exception, "Not a JSON integer");
     }
@@ -132,7 +132,7 @@ Params::toInt(const Value& value) {
 }
 
 bool
-Params::toBool(const Value& value) {
+ModelParams::toBool(const Value& value) {
     if (!value.isBool()) {
         THROW(Exception, "Not a JSON Boolean");
     }
@@ -140,7 +140,7 @@ Params::toBool(const Value& value) {
 }
 
 string
-Params::toString(const Value& value) {
+ModelParams::toString(const Value& value) {
     if (!value.isString()) {
         THROW(Exception, "Not a JSON string");
     }
@@ -148,41 +148,44 @@ Params::toString(const Value& value) {
 }
 
 vector<int>
-Params::getCodeSizesForAllPIs(void) const {
+ModelParams::getCodeSizesForAllPIs(void) const {
     return pat_inst_code_sizes_;
 }
 
 vector<int>
-Params::getLatenciesForAllPIs(void) const {
+ModelParams::getLatenciesForAllPIs(void) const {
     return pat_inst_latencies_;
 }
 
 void
-Params::setCodeSizesForPIs(const Json::Value& root, Params& p) {
+ModelParams::setCodeSizesForPIs(const Json::Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "pat-inst-code-sizes")) {
         p.pat_inst_code_sizes_.push_back(toInt(entry));
     }
 }
 
 void
-Params::setLatenciesForPIs(const Json::Value& root, Params& p) {
+ModelParams::setLatenciesForPIs(const Json::Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "pat-inst-latencies")) {
         p.pat_inst_latencies_.push_back(toInt(entry));
     }
 }
 
 list<const Constraint*>
-Params::getConstraintsForF(void) const {
+ModelParams::getConstraintsForF(void) const {
     return func_constraints_;
 }
 
 vector< list<const Constraint*> >
-Params::getConstraintsForAllPIs(void) const {
+ModelParams::getConstraintsForAllPIs(void) const {
     return pat_inst_constraints_;
 }
 
 void
-Params::setActionNodesCoveredByPIs(const Json::Value& root, Params& p) {
+ModelParams::setActionNodesCoveredByPIs(
+    const Json::Value& root,
+    ModelParams& p
+) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-anodes-covered")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -193,7 +196,7 @@ Params::setActionNodesCoveredByPIs(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setDataNodesDefinedByPIs(const Json::Value& root, Params& p) {
+ModelParams::setDataNodesDefinedByPIs(const Json::Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-dnodes-defined")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -204,7 +207,10 @@ Params::setDataNodesDefinedByPIs(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setStateNodesDefinedByPIs(const Json::Value& root, Params& p) {
+ModelParams::setStateNodesDefinedByPIs(
+    const Json::Value& root,
+    ModelParams& p
+) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-snodes-defined")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -215,7 +221,7 @@ Params::setStateNodesDefinedByPIs(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setDataNodesUsedByPIs(const Json::Value& root, Params& p) {
+ModelParams::setDataNodesUsedByPIs(const Json::Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-dnodes-used")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -226,7 +232,7 @@ Params::setDataNodesUsedByPIs(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setStateNodesUsedByPIs(const Json::Value& root, Params& p) {
+ModelParams::setStateNodesUsedByPIs(const Json::Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-snodes-used")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -237,7 +243,7 @@ Params::setStateNodesUsedByPIs(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setLabelNodesReferredByPIs(const Json::Value& root, Params& p) {
+ModelParams::setLabelNodesReferredByPIs(const Json::Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-lnodes-referred")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
@@ -248,49 +254,49 @@ Params::setLabelNodesReferredByPIs(const Json::Value& root, Params& p) {
 }
 
 vector< list<ID> >
-Params::getActionNodesCoveredByAllPIs(void) const {
+ModelParams::getActionNodesCoveredByAllPIs(void) const {
     return pat_inst_actions_covered_;
 }
 
 vector< list<ID> >
-Params::getDataNodesDefinedByAllPIs(void) const {
+ModelParams::getDataNodesDefinedByAllPIs(void) const {
     return pat_inst_data_defined_;
 }
 
 vector< list<ID> >
-Params::getStateNodesDefinedByAllPIs(void) const {
+ModelParams::getStateNodesDefinedByAllPIs(void) const {
     return pat_inst_states_defined_;
 }
 
 vector< list<ID> >
-Params::getDataNodesUsedByAllPIs(void) const {
+ModelParams::getDataNodesUsedByAllPIs(void) const {
     return pat_inst_data_used_;
 }
 
 vector< list<ID> >
-Params::getStateNodesUsedByAllPIs(void) const {
+ModelParams::getStateNodesUsedByAllPIs(void) const {
     return pat_inst_states_used_;
 }
 
 vector< list<ID> >
-Params::getLabelNodesReferredByAllPIs(void) const {
+ModelParams::getLabelNodesReferredByAllPIs(void) const {
     return pat_inst_labels_referred_;
 }
 
 vector< list<ID> >
-Params::getDomsetForAllLabelNodesInF(void) const {
+ModelParams::getDomsetForAllLabelNodesInF(void) const {
     return func_label_domsets_;
 }
 
 void
-Params::destroyConstraintsForF(void) {
+ModelParams::destroyConstraintsForF(void) {
     for (auto& c : func_constraints_) {
         delete c;
     }
 }
 
 void
-Params::destroyConstraintsForPIs(void) {
+ModelParams::destroyConstraintsForPIs(void) {
     for (auto& cs : pat_inst_constraints_) {
         for (auto c : cs) {
             delete c;
@@ -299,7 +305,7 @@ Params::destroyConstraintsForPIs(void) {
 }
 
 void
-Params::setConstraintsForF(const Value& root, Params& p) {
+ModelParams::setConstraintsForF(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "func-constraints")) {
         ConstraintParser parser;
         Constraint* c = parser.parseConstraint(toString(entry));
@@ -308,7 +314,7 @@ Params::setConstraintsForF(const Value& root, Params& p) {
 }
 
 void
-Params::setConstraintsForPIs(const Value& root, Params& p) {
+ModelParams::setConstraintsForPIs(const Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "pat-inst-constraints")) {
         list<const Constraint*> cs;
         ConstraintParser parser;
@@ -321,14 +327,14 @@ Params::setConstraintsForPIs(const Value& root, Params& p) {
 }
 
 vector<bool>
-Params::getNoUseDefDomConstraintsSettingForAllPIs(void) const {
+ModelParams::getNoUseDefDomConstraintsSettingForAllPIs(void) const {
     return pat_inst_no_use_def_dom_constraints_;
 }
 
 void
-Params::setNoUseDefDomConstraintsSettingsForPIs(
+ModelParams::setNoUseDefDomConstraintsSettingsForPIs(
     const Json::Value& root,
-    Params& p
+    ModelParams& p
 ) {
     for (auto entry
              : getJsonValue(root, "pat-inst-no-use-def-dom-constraints"))
@@ -339,12 +345,12 @@ Params::setNoUseDefDomConstraintsSettingsForPIs(
 }
 
 void
-Params::setRootLabelInF(const Json::Value& root, Params& p) {
+ModelParams::setRootLabelInF(const Json::Value& root, ModelParams& p) {
     p.func_root_label_ = toArrayIndex(getJsonValue(root, "func-root-label"));
 }
 
 void
-Params::setNumValues(const Json::Value& root, Params& p) {
+ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_action_nodes_ = toInt(getJsonValue(root, "num-func-anodes"));
     p.num_func_data_nodes_ = toInt(getJsonValue(root, "num-func-dnodes"));
     p.num_func_state_nodes_ = toInt(getJsonValue(root, "num-func-snodes"));

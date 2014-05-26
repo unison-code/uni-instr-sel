@@ -25,8 +25,8 @@
  */
 
 #include "constraintprocessor.h"
-#include "params.h"
 #include "../common/exceptions/exception.h"
+#include "../common/model/modelparams.h"
 #include "../common/model/types.h"
 #include "../common/optionparser/optionparser.h"
 #include <fstream>
@@ -163,7 +163,7 @@ printJsonList(ostream& out, const T& l) {
 
 void
 generateModelFunctionParameters(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     out << "% Function data" << endl;
@@ -187,7 +187,7 @@ generateModelFunctionParameters(
 
 void
 generateModelTargetMachineParameters(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     out << "% Target machine data" << endl;
@@ -198,7 +198,7 @@ generateModelTargetMachineParameters(
 
 void
 generateModelPatternInstanceParameters(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     out << "% Pattern instance data" << endl;
@@ -259,7 +259,7 @@ generateModelPatternInstanceParameters(
 
 void
 generateModelParameters(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     generateModelFunctionParameters(params, out);
@@ -271,7 +271,7 @@ generateModelParameters(
 
 void
 generateModelConstraintsForF(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     ConstraintProcessor cprocessor;
@@ -283,7 +283,7 @@ generateModelConstraintsForF(
 
 void
 generateModelConstraintsForPIs(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     ConstraintProcessor cprocessor;
@@ -300,7 +300,7 @@ generateModelConstraintsForPIs(
 }
 
 void outputModelParams(
-    const Params& params,
+    const ModelParams& params,
     ostream& out
 ) {
     stringstream sout;
@@ -359,8 +359,8 @@ main(int argc, char** argv) {
         stringstream ss;
         ss << file.rdbuf();
         const string json_content(ss.str());
-        Params params;
-        Params::parseJson(json_content, params);
+        ModelParams params;
+        ModelParams::parseJson(json_content, params);
 
         // Output model params
         outputModelParams(params, cout);

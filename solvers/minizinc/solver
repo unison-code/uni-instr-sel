@@ -30,13 +30,12 @@
 #==========
 
 THIS_DIR=$(dirname $0)
-PARAMS_FILE=$1
+MODEL_PARAMS_FILE=$1
 MINIZINC_PARAMS_FILE="$THIS_DIR/params.mzn"
 MINIZINC_OUTPUT_FILE="$THIS_DIR/params.sol.mzn"
 MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
 SOLUTION_FILE_SUFFIX="sol.json"
 SOLUTION_FILE=""   # Will be set after parsing command-line arguments
-POSTPROCESSING_INFO_FILE="$THIS_DIR/post-params.json"
 
 
 
@@ -58,7 +57,7 @@ function checkStatus {
 
 # Check arguments
 if [ -z "$1" ]; then
-    echo "No params file provided"
+    echo "No model params file provided"
     exit 1
 fi
 
@@ -66,10 +65,7 @@ SOLUTION_FILE="$THIS_DIR/$(basename ${1%.*}.$SOLUTION_FILE_SUFFIX)"
 
 # Generate params to Minizinc model
 echo "Generating Minizinc params..."
-$THIS_DIR/mzn-params-gen \
-    --model-params-file="$MINIZINC_PARAMS_FILE" \
-    --postprocessing-params-file="$POSTPROCESSING_INFO_FILE" \
-    $PARAMS_FILE
+$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILE > $MINIZINC_PARAMS_FILE
 checkStatus
 
 # Run Minizinc solver
