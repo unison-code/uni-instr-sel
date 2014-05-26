@@ -256,6 +256,10 @@ ConstraintParser::parseNodeExpr(string& str) {
             ID id = eatID(str);
             expr = new ANodeIDExpr(id);
         }
+        else if (eatType<ANodeArrayIndexExpr>(str)) {
+            ArrayIndex i = eatArrayIndex(str);
+            expr = new ANodeArrayIndexExpr(i);
+        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
