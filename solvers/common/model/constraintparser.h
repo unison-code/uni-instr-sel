@@ -94,74 +94,74 @@ class ConstraintParser {
     parseIntExpr(std::string& str);
 
     /**
-     * Parses a node ID expression.
+     * Parses a node expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    NodeIDExpr*
-    parseNodeIDExpr(std::string& str);
+    NodeExpr*
+    parseNodeExpr(std::string& str);
 
     /**
-     * Parses a pattern instance ID expression.
+     * Parses a pattern instance expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    PatternInstanceIDExpr*
-    parsePatternInstanceIDExpr(std::string& str);
+    PatternInstanceExpr*
+    parsePatternInstanceExpr(std::string& str);
 
     /**
-     * Parses an instruction ID expression.
+     * Parses an instruction expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    InstructionIDExpr*
-    parseInstructionIDExpr(std::string& str);
+    InstructionExpr*
+    parseInstructionExpr(std::string& str);
 
     /**
-     * Parses a pattern ID expression.
+     * Parses a pattern expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    PatternIDExpr*
-    parsePatternIDExpr(std::string& str);
+    PatternExpr*
+    parsePatternExpr(std::string& str);
 
     /**
-     * Parses a label ID expression.
+     * Parses a label expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    LabelIDExpr*
-    parseLabelIDExpr(std::string& str);
+    LabelExpr*
+    parseLabelExpr(std::string& str);
 
     /**
-     * Parses a register ID expression.
+     * Parses a register expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    RegisterIDExpr*
-    parseRegisterIDExpr(std::string& str);
+    RegisterExpr*
+    parseRegisterExpr(std::string& str);
 
     /**
-     * Parses a list of register ID expression.
+     * Parses a list of register expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed list of expression.
      */
-    std::list<const RegisterIDExpr*>
-    parseListOfRegisterIDExpr(std::string& str);
+    std::list<const RegisterExpr*>
+    parseListOfRegisterExpr(std::string& str);
 
     /**
      * Parses a set expression.
@@ -184,16 +184,6 @@ class ConstraintParser {
     parseSetElemExpr(std::string& str);
 
     /**
-     * Parses a node ID.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    ID
-    parseNodeID(std::string& str);
-
-    /**
      * Checks if the current part of the string matches the string name of a
      * given class. If it is, that part of the string is eaten.
      *
@@ -206,7 +196,16 @@ class ConstraintParser {
     template <typename Class>
     bool
     eatType(std::string& str) {
-        return eat(Class::getStrName() + " ", str);
+        if (eat(Class::getStrName() + " ", str)) {
+            return true;
+        }
+        else if (eat(Class::getStrName() + ")", str)) {
+            // The ')' is expected to be eaten again afterwards, so we put it
+            // back before returning
+            str = ")" + str;
+            return true;
+        }
+        return false;
     }
 
 
@@ -230,6 +229,30 @@ class ConstraintParser {
      */
     bool
     eat(const std::string& search, std::string& str);
+
+    /**
+     * Removes an ID value from a string.
+     *
+     * @param str
+     *        String to modify.
+     * @returns An ID.
+     * @throws Exception
+     *         When the string does not begin with an integer.
+     */
+    ID
+    eatID(std::string& str);
+
+    /**
+     * Removes an array index value from a string.
+     *
+     * @param str
+     *        String to modify.
+     * @returns An array index.
+     * @throws Exception
+     *         When the string does not begin with an integer.
+     */
+    ArrayIndex
+    eatArrayIndex(std::string& str);
 
     /**
      * Removes an initial integer value from a string.

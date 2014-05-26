@@ -43,27 +43,9 @@ ConstraintParser::parseConstraint(const string& str) {
     sl_str = Utils::searchReplace(sl_str, "\r", " ");
     sl_str = Utils::searchReplace(sl_str, "\t", " ");
 
-    Constraint* c;
-    string sl_str_copy(sl_str);
-    // Check if it's an 'Data-Node-Is-Integer-Constant' constraint
-    bool was_parse_successful = false;
-    if (eat("(", sl_str_copy)) {
-        eatWhitespace(sl_str_copy);
-        if (eatType<DataNodeIsIntConstantConstraint>(sl_str_copy)) {
-            c = new DataNodeIsIntConstantConstraint(parseNodeID(sl_str_copy));
-            if (!eat(")", sl_str_copy)) {
-                THROW(Exception,
-                      "Invalid constraint expression (missing ')' char)");
-            }
-            sl_str = sl_str_copy;
-            was_parse_successful = true;
-        }
-    }
-    if (!was_parse_successful) {
-        // Assume it's a Boolean expression constraint
-        c = new BoolExprConstraint(parseBoolExpr(sl_str));
-    }
+    Constraint* c = new BoolExprConstraint(parseBoolExpr(sl_str));
 
+    // Check trailing part
     eatWhitespace(sl_str);
     if (sl_str.length() != 0) {
         delete c;
@@ -138,6 +120,14 @@ ConstraintParser::parseBoolExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new InSetExpr(lhs, rhs);
         }
+        else if (eatType<DataNodeIsAnIntConstantExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new DataNodeIsAnIntConstantExpr(e);
+        }
+        else if (eatType<PatternInstanceIsSelectedExpr>(str)) {
+            auto e = parsePatternInstanceExpr(str);
+            expr = new PatternInstanceIsSelectedExpr(e);
+        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -180,34 +170,34 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseBoolExpr(str);
             expr = new BoolToNumExpr(e);
         }
-        else if (eatType<NodeIDToNumExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new NodeIDToNumExpr(e);
+        else if (eatType<NodeToNumExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new NodeToNumExpr(e);
         }
-        else if (eatType<PatternInstanceIDToNumExpr>(str)) {
-            auto e = parsePatternInstanceIDExpr(str);
-            expr = new PatternInstanceIDToNumExpr(e);
+        else if (eatType<PatternInstanceToNumExpr>(str)) {
+            auto e = parsePatternInstanceExpr(str);
+            expr = new PatternInstanceToNumExpr(e);
         }
-        else if (eatType<InstructionIDToNumExpr>(str)) {
-            auto e = parseInstructionIDExpr(str);
-            expr = new InstructionIDToNumExpr(e);
+        else if (eatType<InstructionToNumExpr>(str)) {
+            auto e = parseInstructionExpr(str);
+            expr = new InstructionToNumExpr(e);
         }
-        else if (eatType<PatternIDToNumExpr>(str)) {
-            auto e = parsePatternIDExpr(str);
-            expr = new PatternIDToNumExpr(e);
+        else if (eatType<PatternToNumExpr>(str)) {
+            auto e = parsePatternExpr(str);
+            expr = new PatternToNumExpr(e);
         }
-        else if (eatType<LabelIDToNumExpr>(str)) {
-            auto e = parseLabelIDExpr(str);
-            expr = new LabelIDToNumExpr(e);
+        else if (eatType<LabelToNumExpr>(str)) {
+            auto e = parseLabelExpr(str);
+            expr = new LabelToNumExpr(e);
         }
-        else if (eatType<RegisterIDToNumExpr>(str)) {
-            auto e = parseRegisterIDExpr(str);
-            expr = new RegisterIDToNumExpr(e);
+        else if (eatType<RegisterToNumExpr>(str)) {
+            auto e = parseRegisterExpr(str);
+            expr = new RegisterToNumExpr(e);
         }
-        else if (eatType<DistanceBetweenInstanceAndLabelExpr>(str)) {
-            auto lhs = parsePatternInstanceIDExpr(str);
-            auto rhs = parseLabelIDExpr(str);
-            expr = new DistanceBetweenInstanceAndLabelExpr(lhs, rhs);
+        else if (eatType<DistanceBetweenPatternInstanceAndLabelExpr>(str)) {
+            auto lhs = parsePatternInstanceExpr(str);
+            auto rhs = parseLabelExpr(str);
+            expr = new DistanceBetweenPatternInstanceAndLabelExpr(lhs, rhs);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -234,7 +224,7 @@ ConstraintParser::parseIntExpr(string& str) {
     if (eat("(", str)) {
         eatWhitespace(str);
         if (eatType<IntConstValueOfDataNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
+            auto e = parseNodeExpr(str);
             expr = new IntConstValueOfDataNodeExpr(e);
         }
         else {
@@ -255,127 +245,16 @@ ConstraintParser::parseIntExpr(string& str) {
     return expr;
 }
 
-NodeIDExpr*
-ConstraintParser::parseNodeIDExpr(string& str) {
-    eatWhitespace(str);
-    int num = eatInt(str);
-    return new ANodeIDExpr(num);
-}
-
-PatternInstanceIDExpr*
-ConstraintParser::parsePatternInstanceIDExpr(string& str) {
-    PatternInstanceIDExpr* expr = NULL;
+NodeExpr*
+ConstraintParser::parseNodeExpr(string& str) {
+    NodeExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<CovererOfActionNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new CovererOfActionNodeExpr(e);
-        }
-        else if (eatType<DefinerOfDataNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new DefinerOfDataNodeExpr(e);
-        }
-        else if (eatType<DefinerOfStateNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new DefinerOfStateNodeExpr(e);
-        }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
-        }
-
-        eatWhitespace(str);
-        if (!eat(")", str)) {
-            THROW(Exception,
-                  "Invalid constraint expression (missing ')' char)");
-        }
-    }
-    else {
-        if (eatType<ThisPatternInstanceIDExpr>(str)) {
-            expr = new ThisPatternInstanceIDExpr;
-        }
-        else {
-            int num = eatInt(str);
-            expr = new APatternInstanceIDExpr(num);
-        }
-    }
-
-    return expr;
-}
-
-InstructionIDExpr*
-ConstraintParser::parseInstructionIDExpr(string& str) {
-    InstructionIDExpr* expr = NULL;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        eatWhitespace(str);
-        if (eatType<InstructionIDOfPatternExpr>(str)) {
-            auto e = parsePatternIDExpr(str);
-            expr = new InstructionIDOfPatternExpr(e);
-        }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
-        }
-
-        eatWhitespace(str);
-        if (!eat(")", str)) {
-            THROW(Exception,
-                  "Invalid constraint expression (missing ')' char)");
-        }
-    }
-    else {
-        int num = eatInt(str);
-        expr = new AnInstructionIDExpr(num);
-    }
-
-    return expr;
-}
-
-PatternIDExpr*
-ConstraintParser::parsePatternIDExpr(string& str) {
-    PatternIDExpr* expr = NULL;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        eatWhitespace(str);
-        if (eatType<PatternIDOfPatternInstanceExpr>(str)) {
-            auto e = parsePatternInstanceIDExpr(str);
-            expr = new PatternIDOfPatternInstanceExpr(e);
-        }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
-        }
-
-        eatWhitespace(str);
-        if (!eat(")", str)) {
-            THROW(Exception,
-                  "Invalid constraint expression (missing ')' char)");
-        }
-    }
-    else {
-        int num = eatInt(str);
-        expr = new APatternIDExpr(num);
-    }
-
-    return expr;
-}
-
-LabelIDExpr*
-ConstraintParser::parseLabelIDExpr(string& str) {
-    LabelIDExpr* expr = NULL;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        eatWhitespace(str);
-        if (eatType<LabelIDAllocatedToPatternInstanceExpr>(str)) {
-            auto e = parsePatternInstanceIDExpr(str);
-            expr = new LabelIDAllocatedToPatternInstanceExpr(e);
-        }
-        else if (eatType<LabelIDOfLabelNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new LabelIDOfLabelNodeExpr(e);
+        if (eatType<ANodeIDExpr>(str)) {
+            ID id = eatID(str);
+            expr = new ANodeIDExpr(id);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -394,16 +273,28 @@ ConstraintParser::parseLabelIDExpr(string& str) {
     return expr;
 }
 
-RegisterIDExpr*
-ConstraintParser::parseRegisterIDExpr(string& str) {
-    RegisterIDExpr* expr = NULL;
+PatternInstanceExpr*
+ConstraintParser::parsePatternInstanceExpr(string& str) {
+    PatternInstanceExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<RegisterIDAllocatedToDataNodeExpr>(str)) {
-            auto e = parseNodeIDExpr(str);
-            expr = new RegisterIDAllocatedToDataNodeExpr(e);
+        if (eatType<APatternInstanceIDExpr>(str)) {
+            ID id = eatID(str);
+            expr = new APatternInstanceIDExpr(id);
+        }
+        else if (eatType<CovererOfActionNodeExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new CovererOfActionNodeExpr(e);
+        }
+        else if (eatType<DefinerOfDataNodeExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new DefinerOfDataNodeExpr(e);
+        }
+        else if (eatType<DefinerOfStateNodeExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new DefinerOfStateNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -416,22 +307,151 @@ ConstraintParser::parseRegisterIDExpr(string& str) {
         }
     }
     else {
-        int num = eatInt(str);
-        expr = new ARegisterIDExpr(num);
+        if (eatType<ThisPatternInstanceExpr>(str)) {
+            expr = new ThisPatternInstanceExpr;
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
     }
 
     return expr;
 }
 
-list<const RegisterIDExpr*>
-ConstraintParser::parseListOfRegisterIDExpr(string& str) {
-    list<const RegisterIDExpr*> expr;
+InstructionExpr*
+ConstraintParser::parseInstructionExpr(string& str) {
+    InstructionExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eatType<InstructionOfPatternExpr>(str)) {
+            auto e = parsePatternExpr(str);
+            expr = new InstructionOfPatternExpr(e);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        ID id = eatID(str);
+        expr = new AnInstructionIDExpr(id);
+    }
+
+    return expr;
+}
+
+PatternExpr*
+ConstraintParser::parsePatternExpr(string& str) {
+    PatternExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eatType<APatternIDExpr>(str)) {
+            ID e = eatID(str);
+            expr = new APatternIDExpr(e);
+        }
+        else if (eatType<PatternOfPatternInstanceExpr>(str)) {
+            auto e = parsePatternInstanceExpr(str);
+            expr = new PatternOfPatternInstanceExpr(e);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+    }
+
+    return expr;
+}
+
+LabelExpr*
+ConstraintParser::parseLabelExpr(string& str) {
+    LabelExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eatType<LabelAllocatedToPatternInstanceExpr>(str)) {
+            auto e = parsePatternInstanceExpr(str);
+            expr = new LabelAllocatedToPatternInstanceExpr(e);
+        }
+        else if (eatType<LabelOfLabelNodeExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new LabelOfLabelNodeExpr(e);
+        }
+        else {
+            THROW(Exception, str + " Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+    }
+
+    return expr;
+}
+
+RegisterExpr*
+ConstraintParser::parseRegisterExpr(string& str) {
+    RegisterExpr* expr = NULL;
+
+    eatWhitespace(str);
+    if (eat("(", str)) {
+        eatWhitespace(str);
+        if (eatType<ARegisterIDExpr>(str)) {
+            ID id = eatID(str);
+            expr = new ARegisterIDExpr(id);
+        }
+        else if (eatType<RegisterAllocatedToDataNodeExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new RegisterAllocatedToDataNodeExpr(e);
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
+
+        eatWhitespace(str);
+        if (!eat(")", str)) {
+            THROW(Exception,
+                  "Invalid constraint expression (missing ')' char)");
+        }
+    }
+    else {
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+    }
+
+    return expr;
+}
+
+list<const RegisterExpr*>
+ConstraintParser::parseListOfRegisterExpr(string& str) {
+    list<const RegisterExpr*> expr;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         while (true) {
             eatWhitespace(str);
-            expr.push_back(parseRegisterIDExpr(str));
+            expr.push_back(parseRegisterExpr(str));
             if (eat(" ", str)) continue;
             if (eat(")", str)) break;
         }
@@ -462,12 +482,12 @@ ConstraintParser::parseSetExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new DiffSetExpr(lhs, rhs);
         }
-        else if (eatType<DomSetOfLabelIDExpr>(str)) {
-            auto e = parseLabelIDExpr(str);
-            expr = new DomSetOfLabelIDExpr(e);
+        else if (eatType<DomSetOfLabelExpr>(str)) {
+            auto e = parseLabelExpr(str);
+            expr = new DomSetOfLabelExpr(e);
         }
         else if (eatType<RegisterClassExpr>(str)) {
-            auto es = parseListOfRegisterIDExpr(str);
+            auto es = parseListOfRegisterExpr(str);
             expr = new RegisterClassExpr(es);
         }
         else {
@@ -494,13 +514,13 @@ ConstraintParser::parseSetElemExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<LabelIDToSetElemExpr>(str)) {
-            auto e = parseLabelIDExpr(str);
-            expr = new LabelIDToSetElemExpr(e);
+        if (eatType<LabelToSetElemExpr>(str)) {
+            auto e = parseLabelExpr(str);
+            expr = new LabelToSetElemExpr(e);
         }
-        else if (eatType<RegisterIDToSetElemExpr>(str)) {
-            auto e = parseRegisterIDExpr(str);
-            expr = new RegisterIDToSetElemExpr(e);
+        else if (eatType<RegisterToSetElemExpr>(str)) {
+            auto e = parseRegisterExpr(str);
+            expr = new RegisterToSetElemExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -517,12 +537,6 @@ ConstraintParser::parseSetElemExpr(string& str) {
     }
 
     return expr;
-}
-
-ID
-ConstraintParser::parseNodeID(string& str) {
-    eatWhitespace(str);
-    return eatInt(str);
 }
 
 void
@@ -558,4 +572,14 @@ ConstraintParser::eatInt(string& str) {
         THROW(Exception, "Invalid constraint expression (not an integer)");
     }
     return Utils::toInt(int_str);
+}
+
+ID
+ConstraintParser::eatID(std::string& str) {
+    return eatInt(str);
+}
+
+ArrayIndex
+ConstraintParser::eatArrayIndex(std::string& str) {
+    return eatInt(str);
 }

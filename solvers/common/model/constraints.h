@@ -39,11 +39,11 @@ namespace Model {
 class BoolExpr;
 class ConstraintVisitor;
 class NumExpr;
-class PatternInstanceIDExpr;
-class InstructionIDExpr;
+class PatternInstanceExpr;
+class InstructionExpr;
 class IntExpr;
-class NodeIDExpr;
-class PatternIDExpr;
+class NodeExpr;
+class PatternExpr;
 class SetElemExpr;
 class SetExpr;
 
@@ -140,53 +140,6 @@ class BoolExprConstraint : public WithStrName<Constraint, BoolExprConstraint> {
 };
 
 /**
- * Defines a class for representing a constraint that a data node is an integer
- * constant.
- */
-class DataNodeIsIntConstantConstraint
-    : public WithStrName<Constraint, DataNodeIsIntConstantConstraint>
-{
-  public:
-    /**
-     * Creates a new constraint.
-     *
-     * @param id
-     *        The ID of the data node.
-     * @throws Exception
-     *         When \c e is \c NULL.
-     */
-    DataNodeIsIntConstantConstraint(const ID& id);
-
-    /**
-     * Destroys this object.
-     */
-    ~DataNodeIsIntConstantConstraint(void);
-
-    /**
-     * Gets the node ID of the data node.
-     *
-     * @return The node ID.
-     */
-    ID
-    getNodeID(void) const;
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-
-  protected:
-    const ID id_;
-};
-
-/**
  * Base class for all expressions.
  */
 class Expr {
@@ -248,80 +201,80 @@ class IntExpr : public Expr {
 };
 
 /**
- * Base class for a node ID expression.
+ * Base class for a node expression.
  */
-class NodeIDExpr : public Expr {
+class NodeExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~NodeIDExpr(void)
+    ~NodeExpr(void)
     =0;
 };
 
 /**
- * Base class for a pattern instance ID expression.
+ * Base class for a pattern instance expression.
  */
-class PatternInstanceIDExpr : public Expr {
+class PatternInstanceExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternInstanceIDExpr(void)
+    ~PatternInstanceExpr(void)
     =0;
 };
 
 /**
- * Base class for a instruction ID expression.
+ * Base class for a instruction expression.
  */
-class InstructionIDExpr : public Expr {
+class InstructionExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstructionIDExpr(void)
+    ~InstructionExpr(void)
     =0;
 };
 
 /**
- * Base class for a pattern ID expression.
+ * Base class for a pattern expression.
  */
-class PatternIDExpr : public Expr {
+class PatternExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternIDExpr(void)
+    ~PatternExpr(void)
     =0;
 };
 
 /**
- * Base class for a label ID expression.
+ * Base class for a label expression.
  */
-class LabelIDExpr : public Expr {
+class LabelExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDExpr(void)
+    ~LabelExpr(void)
     =0;
 };
 
 /**
- * Base class for a register ID expression.
+ * Base class for a register expression.
  */
-class RegisterIDExpr : public Expr {
+class RegisterExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterIDExpr(void)
+    ~RegisterExpr(void)
     =0;
 };
 
@@ -771,6 +724,68 @@ class InSetExpr : public BinaryExpr<BoolExpr, InSetExpr, SetElemExpr, SetExpr> {
 };
 
 /**
+ * Expression so that a data node is an integer constant.
+ */
+class DataNodeIsAnIntConstantExpr
+    : public UnaryExpr<BoolExpr, DataNodeIsAnIntConstantExpr, NodeExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    DataNodeIsAnIntConstantExpr(const NodeExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DataNodeIsAnIntConstantExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+};
+
+/**
+ * Expression to say that a particular pattern instance is selected.
+ */
+class PatternInstanceIsSelectedExpr
+    : public UnaryExpr<BoolExpr,
+                       PatternInstanceIsSelectedExpr,
+                       PatternInstanceExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    PatternInstanceIsSelectedExpr(const PatternInstanceExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~PatternInstanceIsSelectedExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+};
+
+/**
  * Plus expression.
  */
 class PlusExpr : public BinaryExpr<NumExpr, PlusExpr, NumExpr> {
@@ -887,13 +902,13 @@ class AnIntegerExpr : public WithStrName<IntExpr, AnIntegerExpr> {
  * expression *must* be used together with #DataNodeIsIntConstantConstraint!
  */
 class IntConstValueOfDataNodeExpr
-    : public UnaryExpr<IntExpr, IntConstValueOfDataNodeExpr, NodeIDExpr>
+    : public UnaryExpr<IntExpr, IntConstValueOfDataNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    IntConstValueOfDataNodeExpr(const NodeIDExpr* expr);
+    IntConstValueOfDataNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -932,20 +947,20 @@ class BoolToNumExpr : public UnaryExpr<NumExpr, BoolToNumExpr, BoolExpr> {
 };
 
 /**
- * Converts a node ID into a numerical expression.
+ * Converts a node into a numerical expression.
  */
-class NodeIDToNumExpr : public UnaryExpr<NumExpr, NodeIDToNumExpr, NodeIDExpr> {
+class NodeToNumExpr : public UnaryExpr<NumExpr, NodeToNumExpr, NodeExpr> {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    NodeIDToNumExpr(const NodeIDExpr* expr);
+    NodeToNumExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~NodeIDToNumExpr(void);
+    ~NodeToNumExpr(void);
 
   public:
     /**
@@ -955,22 +970,22 @@ class NodeIDToNumExpr : public UnaryExpr<NumExpr, NodeIDToNumExpr, NodeIDExpr> {
 };
 
 /**
- * Converts a pattern instance ID into a numerical expression.
+ * Converts a pattern instance into a numerical expression.
  */
-class PatternIDToNumExpr
-    : public UnaryExpr<NumExpr, PatternIDToNumExpr, PatternIDExpr>
+class PatternToNumExpr
+    : public UnaryExpr<NumExpr, PatternToNumExpr, PatternExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternIDToNumExpr(const PatternIDExpr* expr);
+    PatternToNumExpr(const PatternExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternIDToNumExpr(void);
+    ~PatternToNumExpr(void);
 
   public:
     /**
@@ -980,24 +995,22 @@ class PatternIDToNumExpr
 };
 
 /**
- * Converts a instance ID into a numerical expression.
+ * Converts a instance into a numerical expression.
  */
-class PatternInstanceIDToNumExpr
-    : public UnaryExpr<NumExpr,
-                       PatternInstanceIDToNumExpr,
-                       PatternInstanceIDExpr>
+class PatternInstanceToNumExpr
+    : public UnaryExpr<NumExpr, PatternInstanceToNumExpr, PatternInstanceExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternInstanceIDToNumExpr(const PatternInstanceIDExpr* expr);
+    PatternInstanceToNumExpr(const PatternInstanceExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternInstanceIDToNumExpr(void);
+    ~PatternInstanceToNumExpr(void);
 
   public:
     /**
@@ -1007,24 +1020,22 @@ class PatternInstanceIDToNumExpr
 };
 
 /**
- * Converts a instruction ID into a numerical expression.
+ * Converts a instruction into a numerical expression.
  */
-class InstructionIDToNumExpr
-    : public UnaryExpr<NumExpr,
-                       InstructionIDToNumExpr,
-                       InstructionIDExpr>
+class InstructionToNumExpr
+    : public UnaryExpr<NumExpr, InstructionToNumExpr, InstructionExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstructionIDToNumExpr(const InstructionIDExpr* expr);
+    InstructionToNumExpr(const InstructionExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstructionIDToNumExpr(void);
+    ~InstructionToNumExpr(void);
 
   public:
     /**
@@ -1034,22 +1045,22 @@ class InstructionIDToNumExpr
 };
 
 /**
- * Converts a label ID into a numerical expression.
+ * Converts a label into a numerical expression.
  */
-class LabelIDToNumExpr
-    : public UnaryExpr<NumExpr, LabelIDToNumExpr, LabelIDExpr>
+class LabelToNumExpr
+    : public UnaryExpr<NumExpr, LabelToNumExpr, LabelExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIDToNumExpr(const LabelIDExpr* expr);
+    LabelToNumExpr(const LabelExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDToNumExpr(void);
+    ~LabelToNumExpr(void);
 
   public:
     /**
@@ -1059,22 +1070,22 @@ class LabelIDToNumExpr
 };
 
 /**
- * Converts a register ID into a numerical expression.
+ * Converts a register into a numerical expression.
  */
-class RegisterIDToNumExpr
-    : public UnaryExpr<NumExpr, RegisterIDToNumExpr, RegisterIDExpr>
+class RegisterToNumExpr
+    : public UnaryExpr<NumExpr, RegisterToNumExpr, RegisterExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIDToNumExpr(const RegisterIDExpr* expr);
+    RegisterToNumExpr(const RegisterExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterIDToNumExpr(void);
+    ~RegisterToNumExpr(void);
 
   public:
     /**
@@ -1090,25 +1101,25 @@ class RegisterIDToNumExpr
  * by the label. The distance is negative if the label appears before the
  * pattern.
  */
-class DistanceBetweenInstanceAndLabelExpr
+class DistanceBetweenPatternInstanceAndLabelExpr
     : public BinaryExpr<NumExpr,
-                        DistanceBetweenInstanceAndLabelExpr,
-                        PatternInstanceIDExpr,
-                        LabelIDExpr>
+                        DistanceBetweenPatternInstanceAndLabelExpr,
+                        PatternInstanceExpr,
+                        LabelExpr>
 {
   public:
     /**
      * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
      */
-    DistanceBetweenInstanceAndLabelExpr(const PatternInstanceIDExpr* lhs,
-                                        const LabelIDExpr* rhs);
+    DistanceBetweenPatternInstanceAndLabelExpr(const PatternInstanceExpr* lhs,
+                                               const LabelExpr* rhs);
 
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~DistanceBetweenInstanceAndLabelExpr(void);
+    ~DistanceBetweenPatternInstanceAndLabelExpr(void);
 
   public:
     /**
@@ -1120,7 +1131,7 @@ class DistanceBetweenInstanceAndLabelExpr
 /**
  * Introduces a node ID to be part of an expression.
  */
-class ANodeIDExpr : public WithStrName<NodeIDExpr, ANodeIDExpr> {
+class ANodeIDExpr : public WithStrName<NodeExpr, ANodeIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1161,10 +1172,55 @@ class ANodeIDExpr : public WithStrName<NodeIDExpr, ANodeIDExpr> {
 };
 
 /**
+ * Introduces a node array index to be part of an expression.
+ */
+class ANodeArrayIndexExpr
+    : public WithStrName<NodeExpr, ANodeArrayIndexExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The node array index.
+     */
+    ANodeArrayIndexExpr(const ArrayIndex& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ANodeArrayIndexExpr(void);
+
+    /**
+     * Gets the node array index.
+     *
+     * @returns The array index.
+     */
+    ArrayIndex
+    getArrayIndex(void) const;
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
+  private:
+    ArrayIndex i_;
+};
+
+/**
  * Introduces a pattern instance ID to be part of an expression.
  */
 class APatternInstanceIDExpr
-    : public WithStrName<PatternInstanceIDExpr, APatternInstanceIDExpr>
+    : public WithStrName<PatternInstanceExpr, APatternInstanceIDExpr>
 {
   public:
     /**
@@ -1206,10 +1262,55 @@ class APatternInstanceIDExpr
 };
 
 /**
+ * Introduces a node array index to be part of an expression.
+ */
+class APatternInstanceArrayIndexExpr
+    : public WithStrName<PatternInstanceExpr, APatternInstanceArrayIndexExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The node array index.
+     */
+    APatternInstanceArrayIndexExpr(const ArrayIndex& i);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~APatternInstanceArrayIndexExpr(void);
+
+    /**
+     * Gets the node array index.
+     *
+     * @returns The array index.
+     */
+    ArrayIndex
+    getArrayIndex(void) const;
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
+  private:
+    ArrayIndex i_;
+};
+
+/**
  * Introduces an instruction ID to be part of an expression.
  */
 class AnInstructionIDExpr
-    : public WithStrName<InstructionIDExpr, AnInstructionIDExpr>
+    : public WithStrName<InstructionExpr, AnInstructionIDExpr>
 {
   public:
     /**
@@ -1253,7 +1354,7 @@ class AnInstructionIDExpr
 /**
  * Introduces a label ID to be part of an expression.
  */
-class APatternIDExpr : public WithStrName<PatternIDExpr, APatternIDExpr> {
+class APatternIDExpr : public WithStrName<PatternExpr, APatternIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1296,7 +1397,7 @@ class APatternIDExpr : public WithStrName<PatternIDExpr, APatternIDExpr> {
 /**
  * Introduces a label ID to be part of an expression.
  */
-class ALabelIDExpr : public WithStrName<LabelIDExpr, ALabelIDExpr> {
+class ALabelIDExpr : public WithStrName<LabelExpr, ALabelIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1339,7 +1440,7 @@ class ALabelIDExpr : public WithStrName<LabelIDExpr, ALabelIDExpr> {
 /**
  * Introduces a register ID to be part of an expression.
  */
-class ARegisterIDExpr : public WithStrName<RegisterIDExpr, ARegisterIDExpr> {
+class ARegisterIDExpr : public WithStrName<RegisterExpr, ARegisterIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1380,22 +1481,67 @@ class ARegisterIDExpr : public WithStrName<RegisterIDExpr, ARegisterIDExpr> {
 };
 
 /**
- * Represents the ID of the pattern instance where this is declared.
+ * Introduces a register array index to be part of an expression.
  */
-class ThisPatternInstanceIDExpr
-    : public WithStrName<PatternInstanceIDExpr, ThisPatternInstanceIDExpr>
+class ARegisterArrayIndexExpr
+    : public WithStrName<RegisterExpr, ARegisterArrayIndexExpr>
 {
   public:
     /**
      * \copydoc Expr::Expr()
+     *
+     * @param i
+     *        The register array index.
      */
-    ThisPatternInstanceIDExpr(void);
+    ARegisterArrayIndexExpr(const ArrayIndex& i);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~ThisPatternInstanceIDExpr(void);
+    ~ARegisterArrayIndexExpr(void);
+
+    /**
+     * Gets the register array index.
+     *
+     * @returns The array index.
+     */
+    ArrayIndex
+    getArrayIndex(void) const;
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+
+  private:
+    ArrayIndex i_;
+};
+
+/**
+ * Represents the pattern instance where this is declared.
+ */
+class ThisPatternInstanceExpr
+    : public WithStrName<PatternInstanceExpr, ThisPatternInstanceExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     */
+    ThisPatternInstanceExpr(void);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~ThisPatternInstanceExpr(void);
 
     /**
      * \copydoc Constraint::toLisp() const
@@ -1411,18 +1557,16 @@ class ThisPatternInstanceIDExpr
 };
 
 /**
- * Represents the pattern instance ID which covers a certain action node.
+ * Represents the pattern instance which covers a certain action node.
  */
 class CovererOfActionNodeExpr
-    : public UnaryExpr<PatternInstanceIDExpr,
-                       CovererOfActionNodeExpr,
-                       NodeIDExpr>
+    : public UnaryExpr<PatternInstanceExpr, CovererOfActionNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    CovererOfActionNodeExpr(const NodeIDExpr* expr);
+    CovererOfActionNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1438,18 +1582,16 @@ class CovererOfActionNodeExpr
 };
 
 /**
- * Represents the pattern instance ID which defines a certain data node.
+ * Represents the pattern instance which defines a certain data node.
  */
 class DefinerOfDataNodeExpr
-    : public UnaryExpr<PatternInstanceIDExpr,
-                       DefinerOfDataNodeExpr,
-                       NodeIDExpr>
+    : public UnaryExpr<PatternInstanceExpr, DefinerOfDataNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DefinerOfDataNodeExpr(const NodeIDExpr* expr);
+    DefinerOfDataNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1465,18 +1607,16 @@ class DefinerOfDataNodeExpr
 };
 
 /**
- * Represents the pattern instance ID which defines a certain state node.
+ * Represents the pattern instance which defines a certain state node.
  */
 class DefinerOfStateNodeExpr
-    : public UnaryExpr<PatternInstanceIDExpr,
-                       DefinerOfStateNodeExpr,
-                       NodeIDExpr>
+    : public UnaryExpr<PatternInstanceExpr, DefinerOfStateNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DefinerOfStateNodeExpr(const NodeIDExpr* expr);
+    DefinerOfStateNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1492,24 +1632,22 @@ class DefinerOfStateNodeExpr
 };
 
 /**
- * Represents the instruction ID to which a pattern belongs.
+ * Represents the instruction to which a pattern belongs.
  */
-class InstructionIDOfPatternExpr
-    : public UnaryExpr<InstructionIDExpr,
-                       InstructionIDOfPatternExpr,
-                       PatternIDExpr>
+class InstructionOfPatternExpr
+    : public UnaryExpr<InstructionExpr, InstructionOfPatternExpr, PatternExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstructionIDOfPatternExpr(const PatternIDExpr* expr);
+    InstructionOfPatternExpr(const PatternExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstructionIDOfPatternExpr(void);
+    ~InstructionOfPatternExpr(void);
 
   public:
     /**
@@ -1519,24 +1657,24 @@ class InstructionIDOfPatternExpr
 };
 
 /**
- * Represents the pattern ID to which a pattern instance is derived from.
+ * Represents the pattern to which a pattern instance is derived from.
  */
-class PatternIDOfPatternInstanceExpr
-    : public UnaryExpr<PatternIDExpr,
-                       PatternIDOfPatternInstanceExpr,
-                       PatternInstanceIDExpr>
+class PatternOfPatternInstanceExpr
+    : public UnaryExpr<PatternExpr,
+                       PatternOfPatternInstanceExpr,
+                       PatternInstanceExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PatternIDOfPatternInstanceExpr(const PatternInstanceIDExpr* expr);
+    PatternOfPatternInstanceExpr(const PatternInstanceExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PatternIDOfPatternInstanceExpr(void);
+    ~PatternOfPatternInstanceExpr(void);
 
   public:
     /**
@@ -1546,25 +1684,24 @@ class PatternIDOfPatternInstanceExpr
 };
 
 /**
- * Represents the ID of the label to which a pattern instance has been
- * allocated.
+ * Represents the label to which a pattern instance has been allocated.
  */
-class LabelIDAllocatedToPatternInstanceExpr
-    : public UnaryExpr<LabelIDExpr,
-                       LabelIDAllocatedToPatternInstanceExpr,
-                       PatternInstanceIDExpr>
+class LabelAllocatedToPatternInstanceExpr
+    : public UnaryExpr<LabelExpr,
+                       LabelAllocatedToPatternInstanceExpr,
+                       PatternInstanceExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIDAllocatedToPatternInstanceExpr(const PatternInstanceIDExpr* expr);
+    LabelAllocatedToPatternInstanceExpr(const PatternInstanceExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDAllocatedToPatternInstanceExpr(void);
+    ~LabelAllocatedToPatternInstanceExpr(void);
 
   public:
     /**
@@ -1574,22 +1711,22 @@ class LabelIDAllocatedToPatternInstanceExpr
 };
 
 /**
- * Represents the label ID associated with a label node.
+ * Represents the label associated with a label node.
  */
-class LabelIDOfLabelNodeExpr
-    : public UnaryExpr<LabelIDExpr, LabelIDOfLabelNodeExpr, NodeIDExpr>
+class LabelOfLabelNodeExpr
+    : public UnaryExpr<LabelExpr, LabelOfLabelNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIDOfLabelNodeExpr(const NodeIDExpr* expr);
+    LabelOfLabelNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDOfLabelNodeExpr(void);
+    ~LabelOfLabelNodeExpr(void);
 
   public:
     /**
@@ -1599,24 +1736,24 @@ class LabelIDOfLabelNodeExpr
 };
 
 /**
- * Represents the label ID associated with a label node.
+ * Represents the register to which a data node has been allocated.
  */
-class RegisterIDAllocatedToDataNodeExpr
-    : public UnaryExpr<RegisterIDExpr,
-                       RegisterIDAllocatedToDataNodeExpr,
-                       NodeIDExpr>
+class RegisterAllocatedToDataNodeExpr
+    : public UnaryExpr<RegisterExpr,
+                       RegisterAllocatedToDataNodeExpr,
+                       NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIDAllocatedToDataNodeExpr(const NodeIDExpr* expr);
+    RegisterAllocatedToDataNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterIDAllocatedToDataNodeExpr(void);
+    ~RegisterAllocatedToDataNodeExpr(void);
 
   public:
     /**
@@ -1697,20 +1834,20 @@ class DiffSetExpr : public BinaryExpr<SetExpr, DiffSetExpr, SetExpr> {
 /**
  * Label dominator set expression.
  */
-class DomSetOfLabelIDExpr
-    : public UnaryExpr<SetExpr, DomSetOfLabelIDExpr, LabelIDExpr>
+class DomSetOfLabelExpr
+    : public UnaryExpr<SetExpr, DomSetOfLabelExpr, LabelExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DomSetOfLabelIDExpr(const LabelIDExpr* expr);
+    DomSetOfLabelExpr(const LabelExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~DomSetOfLabelIDExpr(void);
+    ~DomSetOfLabelExpr(void);
 
   public:
     /**
@@ -1730,7 +1867,7 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
      * @param expr
      *        The list of expressions.
      */
-    RegisterClassExpr(const std::list<const RegisterIDExpr*>& expr);
+    RegisterClassExpr(const std::list<const RegisterExpr*>& expr);
 
     /**
      * \copydoc ~Expr::Expr()
@@ -1743,7 +1880,7 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
      *
      * @return The list of expressions.
      */
-    const std::list<const RegisterIDExpr*>&
+    const std::list<const RegisterExpr*>&
     getExprList(void) const;
 
     /**
@@ -1753,7 +1890,7 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
     toLisp(void) const;
 
   private:
-    std::list<const RegisterIDExpr*> expr_;
+    std::list<const RegisterExpr*> expr_;
 
   public:
     /**
@@ -1763,22 +1900,22 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
 };
 
 /**
- * Converts a label ID into a set element expression.
+ * Converts a label into a set element expression.
  */
-class LabelIDToSetElemExpr
-    : public UnaryExpr<SetElemExpr, LabelIDToSetElemExpr, LabelIDExpr>
+class LabelToSetElemExpr
+    : public UnaryExpr<SetElemExpr, LabelToSetElemExpr, LabelExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelIDToSetElemExpr(const LabelIDExpr* expr);
+    LabelToSetElemExpr(const LabelExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelIDToSetElemExpr(void);
+    ~LabelToSetElemExpr(void);
 
   public:
     /**
@@ -1788,22 +1925,22 @@ class LabelIDToSetElemExpr
 };
 
 /**
- * Converts a register ID into a set element expression.
+ * Converts a register into a set element expression.
  */
-class RegisterIDToSetElemExpr
-    : public UnaryExpr<SetElemExpr, RegisterIDToSetElemExpr, RegisterIDExpr>
+class RegisterToSetElemExpr
+    : public UnaryExpr<SetElemExpr, RegisterToSetElemExpr, RegisterExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterIDToSetElemExpr(const RegisterIDExpr* expr);
+    RegisterToSetElemExpr(const RegisterExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterIDToSetElemExpr(void);
+    ~RegisterToSetElemExpr(void);
 
   public:
     /**
