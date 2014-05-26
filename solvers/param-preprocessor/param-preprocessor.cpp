@@ -228,20 +228,16 @@ void outputModelParams(
     }
 
     out << "," << endl
-        << "\"pat-inst-and-lab-maps\" : ";
+        << "\"pat-inst-lnodes-referred\" : ";
     {
         size_t num_instances = params.getNumPIs();
-        size_t num_labels = params.getNumLabelNodesInF();
-        vector<int> mappings(num_instances * num_labels, -1);
-        int index = 0;
-        for (const ID& pat_id : params.getIDsForAllPIs()) {
-            for (const ID& node_id : params.getLabelNodesReferredByPI(pat_id)) {
-                ArrayIndex pat_index = params.getIndexForPI(pat_id);
-                ArrayIndex node_index = params.getIndexForLabelNodeInF(node_id);
-                mappings[pat_index * num_labels + node_index] = index++;
-            }
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getLabelNodesReferredByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForLabelNodesInF(nodes);
         }
-        printJsonValue(out, mappings);
+        printJsonValue(out, node_lists);
     }
 
     out << "," << endl
