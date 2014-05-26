@@ -30,9 +30,26 @@
 
 using namespace Model;
 using std::list;
+using std::ostream;
 using std::string;
 
 Constraint::~Constraint(void) {}
+
+namespace Model {
+
+ostream&
+operator<<(ostream& os, const Constraint& c) {
+    os << c.toLisp();
+    return os;
+}
+
+ostream&
+operator<<(ostream& os, const Constraint* c) {
+    os << *c;
+    return os;
+}
+
+}
 
 BoolExprConstraint::BoolExprConstraint(BoolExpr* expr)
     : expr_(expr)

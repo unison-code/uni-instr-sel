@@ -99,223 +99,208 @@ void outputModelParams(
     const Params& params,
     ostream& out
 ) {
+    ConstraintProcessor cprocessor(params);
+
     out << "{" << endl;
 
-//    debug << "% Action node mappings" << endl;
-//    for (const ID& id : params.getIDsForAllActionNodesInF()) {
-//        debug << "% ID " << id << " -> index "
-//              << params.getIndexForActionNodeInF(id)
-//              << endl;
-//    }
-//    debug << endl;
-//    debug << "% Data node mappings" << endl;
-//    for (const ID& id : params.getIDsForAllDataNodesInF()) {
-//        debug << "% ID " << id << " -> index "
-//              << params.getIndexForDataNodeInF(id)
-//              << endl;
-//    }
-//    debug << endl;
-//    debug << "% State node mappings" << endl;
-//    for (const ID& id : params.getIDsForAllStateNodesInF()) {
-//        debug << "% ID " << id << " -> index "
-//              << params.getIndexForStateNodeInF(id)
-//              << endl;
-//    }
-//    debug << endl;
-//    debug << "% Label node mappings" << endl;
-//    for (const ID& id : params.getIDsForAllLabelNodesInF()) {
-//        debug << "% ID " << id << " -> index "
-//              << params.getIndexForLabelNodeInF(id)
-//              << endl;
-//    }
-//    debug << endl;
-//
-//    out << "% Function data" << endl;
-//
-//    out << "numFuncActionNodes = " << params.getNumActionNodesInF() << ";"
-//         << endl;
-//    out << "numFuncDataNodes = " << params.getNumDataNodesInF() << ";"
-//         << endl;
-//    out << "numFuncStateNodes = " << params.getNumStateNodesInF() << ";"
-//         << endl;
-//    out << "numFuncLabelNodes = " << params.getNumLabelNodesInF() << ";"
-//         << endl;
-//
-//    out << "rootLabel = "
-//        << params.getIndexForLabelNodeInF(params.getRootLabelInF())
-//         << ";"
-//         << endl;
-//
-//    out << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
-//    {
-//        size_t num_nodes = params.getNumLabelNodesInF();
-//        vector< list<ArrayIndex> > node_lists(num_nodes);
-//        for (const ID& id : params.getIDsForAllLabelNodesInF()) {
-//            const auto& domset = params.getDomsetForLabelNodeInF(id);
-//            node_lists[params.getIndexForLabelNodeInF(id)] =
-//                params.getIndicesForLabelNodesInF(domset);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    out << "% Target machine data" << endl;
-//
-//    out << "numRegisters = " << params.getNumRegistersInM() << ";"
-//         << endl;
-//
-//    debug << "% Pattern instance mappings" << endl;
-//    for (const ID& id : params.getIDsForAllPIs()) {
-//        debug << "% ID " << id << " -> index "
-//              << params.getIndexForPI(id) << endl;
-//    }
-//    debug << endl;
-//
-//    out << "% Pattern instance data" << endl;
-//
-//    out << "numPatternInstances = " << params.getNumPIs() << ";"
-//         << endl;
-//
-//    out << "patInstActionsCovered = array1d(allPatternInstances, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        vector< list<ArrayIndex> > node_lists(num_instances);
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            const list<ID>& nodes = params.getActionNodesCoveredByPI(id);
-//            node_lists[params.getIndexForPI(id)] =
-//                params.getIndicesForActionNodesInF(nodes);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstDataDefined = array1d(allPatternInstances, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        vector< list<ArrayIndex> > node_lists(num_instances);
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            const list<ID>& nodes = params.getDataNodesDefinedByPI(id);
-//            node_lists[params.getIndexForPI(id)] =
-//                params.getIndicesForDataNodesInF(nodes);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstStateDefined = array1d(allPatternInstances, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        vector< list<ArrayIndex> > node_lists(num_instances);
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            const list<ID>& nodes = params.getStateNodesDefinedByPI(id);
-//            node_lists[params.getIndexForPI(id)] =
-//                params.getIndicesForStateNodesInF(nodes);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstDataUsed = array1d(allPatternInstances, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        vector< list<ArrayIndex> > node_lists(num_instances);
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            const list<ID>& nodes = params.getDataNodesUsedByPI(id);
-//            node_lists[params.getIndexForPI(id)] =
-//                params.getIndicesForDataNodesInF(nodes);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstStateUsed = array1d(allPatternInstances, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        vector< list<ArrayIndex> > node_lists(num_instances);
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            const list<ID>& nodes = params.getStateNodesUsedByPI(id);
-//            node_lists[params.getIndexForPI(id)] =
-//                params.getIndicesForStateNodesInF(nodes);
-//        }
-//        printMinizincValue(out, node_lists);
-//    }
-//    out << ");" << endl;
-//
-//    debug << "% Pattern instance-destination label mappings" << endl;
-//    out << "patInstAndLabelMappings = "
-//         << "array2d(allPatternInstances, allFuncLabelNodes, ";
-//    {
-//        size_t num_instances = params.getNumPIs();
-//        size_t num_labels = params.getNumLabelNodesInF();
-//        vector<int> mappings(num_instances * num_labels, -1);
-//        int index = 0;
-//        for (const ID& pat_id : params.getIDsForAllPIs()) {
-//            for (const ID& node_id : params.getLabelNodesReferredByPI(pat_id)) {
-//                debug << "% Pattern instance ID " << pat_id << " + "
-//                      << "label ID " << node_id << " -> index "
-//                      << index << endl;
-//                ArrayIndex pat_index = params.getIndexForPI(pat_id);
-//                ArrayIndex node_index = params.getIndexForLabelNodeInF(node_id);
-//                mappings[pat_index * num_labels + node_index] = index++;
-//            }
-//        }
-//        printMinizincValue(out, mappings);
-//    }
-//    out << ");" << endl;
-//    debug << endl;
-//
-//    out << "patInstCodeSizes = array1d(allPatternInstances, ";
-//    {
-//        vector<int> code_sizes(params.getNumPIs());
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
-//        }
-//        printMinizincValue(out, code_sizes);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstLatencies = array1d(allPatternInstances, ";
-//    {
-//        vector<int> latencies(params.getNumPIs());
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
-//        }
-//        printMinizincValue(out, latencies);
-//    }
-//    out << ");" << endl;
-//
-//    out << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
-//    {
-//        vector<bool> settings(params.getNumPIs());
-//        for (const ID& id : params.getIDsForAllPIs()) {
-//            settings[params.getIndexForPI(id)] =
-//                params.getNoUseDefDomConstraintsSettingForPI(id);
-//        }
-//        printMinizincValue(out, settings);
-//    }
-//    out << ");" << endl;
-//
-//    ConstraintProcessor cprocessor(params);
-//    const list<const Constraint*>& cs = params.getConstraintsForF();
-//    if (cs.size() > 0) {
-//        for (const Constraint* c : cs) {
-//            out << cprocessor.processConstraintForF(c) << endl;
-//        }
-//    }
-//
-//    ConstraintProcessor cprocessor(params);
-//    for (const ID& id : params.getIDsForAllPIs()) {
-//        const list<const Constraint*>& cs = params.getConstraintsForPI(id);
-//        if (cs.size() > 0) {
-//            out << "% ID " << id << endl;
-//            for (const Constraint* c : cs) {
-//                out << cprocessor.processConstraintForPI(c, id) << endl;
-//            }
-//            out << endl;
-//        }
-//    }
+    // Function graph data
 
-    out << "}" << endl;
+    out << "\"num-func-anodes\" : ";
+    printJsonValue(out, params.getNumActionNodesInF());
+    out << "," << endl
+        << "\"num-func-dnodes\" : ";
+    printJsonValue(out, params.getNumDataNodesInF());
+    out << "," << endl
+        << "\"num-func-snodes\" : ";
+    printJsonValue(out, params.getNumStateNodesInF());
+    out << "," << endl
+        << "\"num-func-lnodes\" : ";
+    printJsonValue(out, params.getNumLabelNodesInF());
+
+    out << "," << endl
+        << "\"root-label\" : ";
+    printJsonValue(out,
+                   params.getIndexForLabelNodeInF(params.getRootLabelInF()));
+
+    out << "," << endl
+        << "\"func-label-domsets\" : ";
+    {
+        size_t num_nodes = params.getNumLabelNodesInF();
+        vector< list<ArrayIndex> > node_lists(num_nodes);
+        for (const ID& id : params.getIDsForAllLabelNodesInF()) {
+            const auto& domset = params.getDomsetForLabelNodeInF(id);
+            node_lists[params.getIndexForLabelNodeInF(id)] =
+                params.getIndicesForLabelNodesInF(domset);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"func-constraints\" : ";
+    {
+        list<Constraint*> new_cs;
+        const list<const Constraint*>& cs = params.getConstraintsForF();
+        for (const Constraint* c : cs) {
+            new_cs.push_back(cprocessor.processConstraintForF(c));
+        }
+        printJsonValue(out, new_cs);
+
+        // Clean up
+        for (const Constraint* c : new_cs) {
+            delete c;
+        }
+    }
+
+    // Target machine data
+
+    out << "," << endl
+        << "\"num-registers\" : ";
+    printJsonValue(out, params.getNumRegistersInM());
+
+    // Pattern instance data
+
+    out << "," << endl
+        << "\"num-pattern-instances\" : ";
+    printJsonValue(out, params.getNumPIs());
+
+    out << "," << endl
+        << "\"pat-inst-anodes-covered\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getActionNodesCoveredByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForActionNodesInF(nodes);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-dnodes-defined\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getDataNodesDefinedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForDataNodesInF(nodes);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-snodes-defined\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getStateNodesDefinedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForStateNodesInF(nodes);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-dnodes-used\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getDataNodesUsedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForDataNodesInF(nodes);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-snodes-used\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        vector< list<ArrayIndex> > node_lists(num_instances);
+        for (const ID& id : params.getIDsForAllPIs()) {
+            const list<ID>& nodes = params.getStateNodesUsedByPI(id);
+            node_lists[params.getIndexForPI(id)] =
+                params.getIndicesForStateNodesInF(nodes);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-and-lab-maps\" : ";
+    {
+        size_t num_instances = params.getNumPIs();
+        size_t num_labels = params.getNumLabelNodesInF();
+        vector<int> mappings(num_instances * num_labels, -1);
+        int index = 0;
+        for (const ID& pat_id : params.getIDsForAllPIs()) {
+            for (const ID& node_id : params.getLabelNodesReferredByPI(pat_id)) {
+                ArrayIndex pat_index = params.getIndexForPI(pat_id);
+                ArrayIndex node_index = params.getIndexForLabelNodeInF(node_id);
+                mappings[pat_index * num_labels + node_index] = index++;
+            }
+        }
+        printJsonValue(out, mappings);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-code-sizes\" : ";
+    {
+        vector<int> code_sizes(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
+        }
+        printJsonValue(out, code_sizes);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-latencies\" : ";
+    {
+        vector<int> latencies(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
+        }
+        printJsonValue(out, latencies);
+    }
+
+    out << "," << endl
+        << "\"pat-inst-no-use-def-dom-constraints\" : ";
+    {
+        vector<bool> settings(params.getNumPIs());
+        for (const ID& id : params.getIDsForAllPIs()) {
+            settings[params.getIndexForPI(id)] =
+                params.getNoUseDefDomConstraintsSettingForPI(id);
+        }
+        printJsonValue(out, settings);
+    }
+    out << ");" << endl;
+
+    out << "," << endl
+        << "\"pat-inst-constraints\" : ";
+    {
+        list< list<Constraint*> > all_cs;
+        for (const ID& id : params.getIDsForAllPIs()) {
+            list<Constraint*> new_cs;
+            const list<const Constraint*>& cs = params.getConstraintsForPI(id);
+            for (const Constraint* c : cs) {
+                new_cs.push_back(cprocessor.processConstraintForPI(c, id));
+            }
+            all_cs.push_back(new_cs);
+        }
+        printJsonValue(out, all_cs);
+
+        // Clean up
+        for (const list<Constraint*> c_list : all_cs) {
+            for (const Constraint* c : c_list) {
+                delete c;
+            }
+        }
+    }
+
+    out << endl
+        << "}" << endl;
 }
 
 void

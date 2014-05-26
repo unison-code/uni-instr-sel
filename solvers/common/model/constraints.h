@@ -30,6 +30,7 @@
 #include "types.h"
 #include "../exceptions/exception.h"
 #include <list>
+#include <ostream>
 
 namespace Model {
 
@@ -92,6 +93,24 @@ class Constraint {
     virtual std::string
     toLisp(void) const
     =0;
+
+    /**
+     * Prints this constraint as a the lispian string.
+     *
+     * @param os
+     *        The stream.
+     * @param c
+     *        The constraint.
+     * @returns The stream.
+     */
+    friend std::ostream&
+    operator<<(std::ostream& os, const Constraint& c);
+
+    /**
+     * \copydef operator<<(std::ostream&, const Constraint&)
+     */
+    friend std::ostream&
+    operator<<(std::ostream& os, const Constraint* c);
 };
 
 /**

@@ -116,6 +116,15 @@ ConstraintProcessor::processBoolExpr(const BoolExpr* e) {
         return new InSetExpr(processSetElemExpr(de->getLhs()),
                              processSetExpr(de->getRhs()));
     }
+    else if (const DataNodeIsAnIntConstantExpr* de =
+             dynamic_cast<const DataNodeIsAnIntConstantExpr*>(e)) {
+        return new DataNodeIsAnIntConstantExpr(processNodeExpr(de->getExpr()));
+    }
+    else if (const PatternInstanceIsSelectedExpr* de =
+             dynamic_cast<const PatternInstanceIsSelectedExpr*>(e)) {
+        return new PatternInstanceIsSelectedExpr(
+            processPatternInstanceExpr(de->getExpr()));
+    }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
     }
