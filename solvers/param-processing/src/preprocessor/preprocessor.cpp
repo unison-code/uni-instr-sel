@@ -410,9 +410,9 @@ main(int argc, char** argv) {
         string json_file(cmdparser.nonOption(0));
         ifstream file(json_file);
         if (!file.good()) {
-            cerr << "ERROR: '" << json_file << "' does not exist or is "
-                 << "unreadable" << endl;
-            return 1;
+            THROW(Exception,
+                  string("'") + json_file + "' does not exist or is "
+                  + "unreadable");
         }
         stringstream ss;
         ss << file.rdbuf();
