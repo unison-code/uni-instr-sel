@@ -25,7 +25,7 @@
  */
 
 #include "constraintprocessor.h"
-#include "../common/utils/string.h"
+#include "common/utils/string.h"
 
 using namespace Model;
 using std::string;

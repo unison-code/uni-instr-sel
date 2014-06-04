@@ -63,22 +63,15 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver           \
-            minizinc/mzn-params-gen
+PROGRAMS := param-splitter
 
-# Defines the application modules for the Gecode solver
-MODULES!gecode/solver := \
+# Defines the application modules for the prettify-json program
+MODULES!param-splitter := \
     ../clib/common/exceptions \
     ../clib/common/json       \
     ../clib/common/model      \
     ../clib/common/utils      \
-    gecode
-MODULES!minizinc/mzn-params-gen := \
-    ../clib/common/exceptions \
-    ../clib/common/json       \
-    ../clib/common/model      \
-    ../clib/common/utils      \
-    minizinc
+    .
 
 
 
@@ -90,15 +83,6 @@ MODULES!minizinc/mzn-params-gen := \
 CXXFLAGS += -Wall -std=c++11 -g -I../clib
 LDFLAGS  +=
 LDLIBS   +=
-
-
-
-#=================
-# OTHER VARIABLES
-#=================
-
-# Name of the tarball
-TARBALL_FILENAME := solvers-src
 
 
 
@@ -223,10 +207,3 @@ distclean: clean clean-deps
 .PHONY: docs
 docs:
 	$(foreach mod,$(all-unique-modules),$(call make-docs,$(mod)))
-
-.PHONY: tarball
-tarball: all
-	$(MAKE) clean clean-deps
-	$(MAKE) docs
-	tar -cvf $(TARBALL_FILENAME).tar ../$$(basename $$(pwd))
-	gzip $(TARBALL_FILENAME).tar

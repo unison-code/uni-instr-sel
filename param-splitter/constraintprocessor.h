@@ -28,7 +28,7 @@
 #define SOLVERS_PARAM_PREPROCESSOR_CONSTRAINTPROCESSOR__
 
 #include "params.h"
-#include "../common/model/constraints.h"
+#include "common/model/constraints.h"
 
 /**
  * Walks a constraint and replaces all occurrences of IDs with array indices.

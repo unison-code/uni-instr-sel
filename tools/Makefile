@@ -63,22 +63,12 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver           \
-            minizinc/mzn-params-gen
+PROGRAMS := prettify-json
 
-# Defines the application modules for the Gecode solver
-MODULES!gecode/solver := \
-    ../clib/common/exceptions \
-    ../clib/common/json       \
-    ../clib/common/model      \
-    ../clib/common/utils      \
-    gecode
-MODULES!minizinc/mzn-params-gen := \
-    ../clib/common/exceptions \
-    ../clib/common/json       \
-    ../clib/common/model      \
-    ../clib/common/utils      \
-    minizinc
+# Defines the application modules for the prettify-json program
+MODULES!prettify-json := \
+    ../clib/common/json \
+    src/prettify-json
 
 
 
@@ -98,7 +88,7 @@ LDLIBS   +=
 #=================
 
 # Name of the tarball
-TARBALL_FILENAME := solvers-src
+TARBALL_FILENAME := tools-src
 
 
 

@@ -27,8 +27,8 @@
 #ifndef SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
 #define SOLVERS_MINIZINC_CONSTRAINTPROCESSOR__
 
-#include "../common/model/constraints.h"
-#include "../common/model/types.h"
+#include "common/model/constraints.h"
+#include "common/model/types.h"
 #include <string>
 
 /**

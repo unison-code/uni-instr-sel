@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../common/exceptions/exception.h"
-#include "../common/model/modelparams.h"
+#include "common/exceptions/exception.h"
+#include "common/model/modelparams.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>

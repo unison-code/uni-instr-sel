@@ -25,10 +25,10 @@
  */
 
 #include "constraintprocessor.h"
-#include "../common/exceptions/exception.h"
-#include "../common/model/modelparams.h"
-#include "../common/model/types.h"
-#include "../common/optionparser/optionparser.h"
+#include "common/exceptions/exception.h"
+#include "common/model/modelparams.h"
+#include "common/model/types.h"
+#include "common/optionparser/optionparser.h"
 #include <fstream>
 #include <iostream>
 #include <list>

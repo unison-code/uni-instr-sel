@@ -25,9 +25,9 @@
  */
 
 #include "params.h"
-#include "../common/exceptions/exception.h"
-#include "../common/model/constraintparser.h"
-#include "../common/utils/string.h"
+#include "common/exceptions/exception.h"
+#include "common/model/constraintparser.h"
+#include "common/utils/string.h"
 
 using namespace Json;
 using namespace Model;

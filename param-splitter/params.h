@@ -27,10 +27,10 @@
 #ifndef SOLVERS_PARAM_PREPROCESSOR_PARAMS__
 #define SOLVERS_PARAM_PREPROCESSOR_PARAMS__
 
-#include "../common/exceptions/exception.h"
-#include "../common/json/json.h"
-#include "../common/model/constraints.h"
-#include "../common/model/types.h"
+#include "common/exceptions/exception.h"
+#include "common/json/json.h"
+#include "common/model/constraints.h"
+#include "common/model/types.h"
 #include <list>
 #include <map>
 #include <string>

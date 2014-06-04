@@ -28,7 +28,7 @@
 # MODULE PATH AND FILES
 #=======================
 
-CPP_FILES := pretty-json.cpp
+CPP_FILES := prettify-json.cpp
 
 
 
