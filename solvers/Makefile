@@ -29,9 +29,9 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver                         \
-            minizinc/mzn-params-gen               \
-            param-preprocessor/param-preprocessor \
+PROGRAMS := gecode/solver                 \
+            minizinc/mzn-params-gen       \
+            param-splitter/param-splitter \
             tools/pretty-json
 
 # Contains the application modules, per program (remember to replace slashes
@@ -48,12 +48,12 @@ MODULES_minizinc-mzn-params-gen := \
     common/model      \
     common/utils      \
     minizinc
-MODULES_param-preprocessor-param-preprocessor := \
-    common/exceptions  \
-    common/json        \
-    common/model       \
-    common/utils       \
-    param-preprocessor
+MODULES_param-splitter-param-splitter := \
+    common/exceptions \
+    common/json       \
+    common/model      \
+    common/utils      \
+    param-splitter
 MODULES_tools-pretty-json := \
     common/json \
     tools
@@ -82,10 +82,10 @@ LDLIBS_gecode-solver  +=
 LDFLAGS_minizinc-mzn-params-gen +=
 LDLIBS_minizinc-mzn-params-gen  +=
 
-# Flags specific to building the param preprocessor (remember to replace slashes
-# in the program path with dashes)
-LDFLAGS_param-preprocessor-param-preprocessor +=
-LDLIBS_param-preprocessor-param-preprocessor  +=
+# Flags specific to building the param splitter (remember to replace slashes in
+# the program path with dashes)
+LDFLAGS_param-splitter-param-splitter +=
+LDLIBS_param-splitter-param-splitter  +=
 
 # Flags specific to building the pretty-json tool (remember to replace slashes
 # in the program path with dashes)

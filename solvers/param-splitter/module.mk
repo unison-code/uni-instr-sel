@@ -29,7 +29,7 @@
 #=======================
 
 CPP_FILES := constraintprocessor.cpp \
-             param-preprocessor.cpp  \
+             param-splitter.cpp      \
              params.cpp
 
 
