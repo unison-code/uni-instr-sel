@@ -640,6 +640,19 @@ class Preparams {
     static void
     parseJson(const std::string& str, Preparams& p);
 
+    /**
+     * Parses a JSON object into an internal model parameters object.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        The Preparams object to write to.
+     * @throws Exception
+     *         When parsing fails.
+     */
+    static void
+    parseJson(const Json::Value& root, Preparams& p);
+
   protected:
     /**
      * Adds a node ID-to-array index mapping to a mapset.

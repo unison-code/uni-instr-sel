@@ -79,7 +79,11 @@ Preparams::parseJson(const string& str, Preparams& p) {
     if (!reader.parse(str, root)) {
         THROW(Exception, reader.getFormattedErrorMessages());
     }
+    parseJson(root, p);
+}
 
+void
+Preparams::parseJson(const Value& root, Preparams& p) {
     computeMappingsForActionNodesInF(root, p);
     computeMappingsForDataNodesInF(root, p);
     computeMappingsForStateNodesInF(root, p);
