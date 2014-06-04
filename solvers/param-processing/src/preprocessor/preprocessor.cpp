@@ -298,54 +298,16 @@ void outputModelParams(
 void
 outputPostprocessingParams(
     const Preparams& params,
+    const string& json_content,
     ostream& out
 ) {
     out << "{" << endl;
 
-    out << "\"array-indices-to-func-action-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfActionNodesInF(
-            createArrayIndices(0, params.getNumActionNodesInF())
-        )
-    );
+    // Output all the original preparameters as a separate field
+    out << "\"preparams\": "
+        << json_content;
 
-    out << "," << endl
-        << "\"array-indices-to-func-data-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfDataNodesInF(
-            createArrayIndices(0, params.getNumDataNodesInF())
-        )
-    );
-
-    out << "," << endl
-        << "\"array-indices-to-func-state-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfStateNodesInF(
-            createArrayIndices(0, params.getNumStateNodesInF())
-        )
-    );
-
-    out << "," << endl
-        << "\"array-indices-to-func-label-node-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfLabelNodesInF(
-            createArrayIndices(0, params.getNumLabelNodesInF())
-        )
-    );
-
-    out << "," << endl
-        << "\"array-indices-to-machine-register-id-maps\": ";
-    printJsonValue(
-        out,
-        params.getIDsOfRegistersInM(
-            createArrayIndices(0, params.getNumRegistersInM())
-        )
-    );
-
+    // Output the array index-to-ID mappings for the pattern instances
     out << "," << endl
         << "\"array-indices-to-pattern-instance-id-maps\": ";
     printJsonValue(
@@ -475,7 +437,7 @@ main(int argc, char** argv) {
         if (!pfile.is_open()) {
             THROW(Exception, string("Failed to open file '") + pfile_str + "'");
         }
-        outputPostprocessingParams(params, pfile);
+        outputPostprocessingParams(params, json_content, pfile);
         pfile.close();
 
         return 0;
