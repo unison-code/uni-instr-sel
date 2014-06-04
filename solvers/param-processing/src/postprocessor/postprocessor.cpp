@@ -134,7 +134,7 @@ const option::Descriptor usage[] =
         "",
         "sf",
         option::Arg::Required,
-        "  --spf=FILE\n" \
+        "  --sf=FILE\n" \
         "\tJSON file containing the solution."
     },
     {
@@ -178,19 +178,33 @@ main(int argc, char** argv) {
     }
 
     try {
-        // Parse JSON file into an internal model parameters object
-        string sol_json_file(options[SF].arg);
-        ifstream sfile(sol_json_file);
-        if (!sfile.good()) {
-            cerr << "ERROR: '" << sol_json_file << "' does not exist or is "
-                 << "unreadable" << endl;
-            return 1;
+        // Parse the solution JSON file
+        // TODO: implement
+
+        // Parse the post-processing JSON file into internal parameters objects
+        Preparams preparams;
+        {
+            string json_file(options[PPF].arg);
+            ifstream sfile(json_file);
+            if (!sfile.good()) {
+                THROW(Exception,
+                      string("'") + json_file + "' does not exist or is "
+                      + "unreadable");
+            }
+            stringstream ss;
+            ss << sfile.rdbuf();
+            const string json_content(ss.str());
+            Json::Value json_root;
+            Json::Reader reader;
+            if (!reader.parse(json_content, json_root)) {
+                THROW(Exception, reader.getFormattedErrorMessages());
+            }
+            const Json::Value& preparams_root = json_root["preparams"];
+            if (preparams_root.isNull()) {
+                THROW(Exception, "No 'preparams' field found");
+            }
+            Preparams::parseJson(preparams_root, preparams);
         }
-        stringstream ss;
-        ss << sfile.rdbuf();
-        const string sol_json_content(ss.str());
-        Preparams params;
-        Preparams::parseJson(sol_json_content, params);
 
         // Output final solution
         // TODO: implement
