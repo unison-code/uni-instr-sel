@@ -29,10 +29,9 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver                  \
-            minizinc/mzn-params-gen        \
-            param-processing/preprocessor  \
-            param-processing/postprocessor \
+PROGRAMS := gecode/solver                         \
+            minizinc/mzn-params-gen               \
+            param-preprocessor/param-preprocessor \
             tools/pretty-json
 
 # Contains the application modules, per program (remember to replace slashes
@@ -49,20 +48,12 @@ MODULES_minizinc-mzn-params-gen := \
     common/model      \
     common/utils      \
     minizinc
-MODULES_param-processing-preprocessor := \
-    common/exceptions                 \
-    common/json                       \
-    common/model                      \
-    common/utils                      \
-    param-processing/src/common       \
-    param-processing/src/preprocessor
-MODULES_param-processing-postprocessor := \
-    common/exceptions                  \
-    common/json                        \
-    common/model                       \
-    common/utils                       \
-    param-processing/src/common        \
-    param-processing/src/postprocessor
+MODULES_param-preprocessor-param-preprocessor := \
+    common/exceptions  \
+    common/json        \
+    common/model       \
+    common/utils       \
+    param-preprocessor
 MODULES_tools-pretty-json := \
     common/json \
     tools
@@ -93,13 +84,8 @@ LDLIBS_minizinc-mzn-params-gen  +=
 
 # Flags specific to building the param preprocessor (remember to replace slashes
 # in the program path with dashes)
-LDFLAGS_param-processing-preprocessor +=
-LDLIBS_param-processing-preprocessor  +=
-
-# Flags specific to building the param postprocessor (remember to replace
-# slashes in the program path with dashes)
-LDFLAGS_param-processing-postprocessor +=
-LDLIBS_param-processing-postprocessor  +=
+LDFLAGS_param-preprocessor-param-preprocessor +=
+LDLIBS_param-preprocessor-param-preprocessor  +=
 
 # Flags specific to building the pretty-json tool (remember to replace slashes
 # in the program path with dashes)

@@ -24,13 +24,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_PARAM_PROCESSING_COMMON_PREPARAMS__
-#define SOLVERS_PARAM_PROCESSING_COMMON_PREPARAMS__
+#ifndef SOLVERS_PARAM_PREPROCESSOR_PARAMS__
+#define SOLVERS_PARAM_PREPROCESSOR_PARAMS__
 
-#include "../../../common/exceptions/exception.h"
-#include "../../../common/json/json.h"
-#include "../../../common/model/constraints.h"
-#include "../../../common/model/types.h"
+#include "../common/exceptions/exception.h"
+#include "../common/json/json.h"
+#include "../common/model/constraints.h"
+#include "../common/model/types.h"
 #include <list>
 #include <map>
 #include <string>
@@ -39,17 +39,17 @@
  * Contains the parameters which will be used to create an instance of the CP
  * model.
  */
-class Preparams {
+class Params {
   public:
     /**
      * Creates an empty parameter object.
      */
-    Preparams(void);
+    Params(void);
 
     /**
      * Destroys this object.
      */
-    ~Preparams(void);
+    ~Params(void);
 
     /**
      * Gets the number of action nodes in the function graph.
@@ -633,25 +633,12 @@ class Preparams {
      * @param str
      *        String containing the JSON data.
      * @param p
-     *        The Preparams object to write to.
+     *        The Params object to write to.
      * @throws Exception
      *         When parsing fails.
      */
     static void
-    parseJson(const std::string& str, Preparams& p);
-
-    /**
-     * Parses a JSON object into an internal model parameters object.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        The Preparams object to write to.
-     * @throws Exception
-     *         When parsing fails.
-     */
-    static void
-    parseJson(const Json::Value& root, Preparams& p);
+    parseJson(const std::string& str, Params& p);
 
   protected:
     /**
@@ -837,11 +824,11 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    computeMappingsForActionNodesInF(const Json::Value& root, Preparams& p);
+    computeMappingsForActionNodesInF(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Preparams&) but for the data nodes.
+     * Params&) but for the data nodes.
      *
      * @param root
      *        The JSON root value.
@@ -851,11 +838,11 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    computeMappingsForDataNodesInF(const Json::Value& root, Preparams& p);
+    computeMappingsForDataNodesInF(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Preparams&) but for the state nodes.
+     * Params&) but for the state nodes.
      *
      * @param root
      *        The JSON root value.
@@ -865,11 +852,11 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    computeMappingsForStateNodesInF(const Json::Value& root, Preparams& p);
+    computeMappingsForStateNodesInF(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Preparams&) but for the label nodes, and also sets the dominator sets.
+     * Params&) but for the label nodes, and also sets the dominator sets.
      *
      * @param root
      *        The JSON root value.
@@ -881,12 +868,12 @@ class Preparams {
     static void
     computeMappingsAndDomsetsForLabelNodesInF(
         const Json::Value& root,
-        Preparams& p
+        Params& p
     );
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&, Preparams&)
-     * but for the register in the target machine.
+     * Same as computeMappingsForFActionNodes(const Json::Value&, Params&) but
+     * for the register in the target machine.
      *
      * @param root
      *        The JSON root value.
@@ -896,11 +883,11 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    computeMappingsForRegistersInM(const Json::Value& root, Preparams& p);
+    computeMappingsForRegistersInM(const Json::Value& root, Params& p);
 
     /**
      * Same as computeMappingsForFActionNodes(const Json::Value&,
-     * Preparams&) but for the pattern instance IDs.
+     * Params&) but for the pattern instance IDs.
      *
      * @param root
      *        The JSON root value.
@@ -910,7 +897,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    computeMappingsForPIs(const Json::Value& root, Preparams& p);
+    computeMappingsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the root label for the function graph.
@@ -923,7 +910,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setRootLabelInF(const Json::Value& root, Preparams& p);
+    setRootLabelInF(const Json::Value& root, Params& p);
 
     /**
      * Sets the constraints of the function graph.
@@ -936,7 +923,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setConstraintsForF(const Json::Value& root, Preparams& p);
+    setConstraintsForF(const Json::Value& root, Params& p);
 
     /**
      * Sets the code size values of the pattern instances.
@@ -949,7 +936,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setCodeSizesForPIs(const Json::Value& root, Preparams& p);
+    setCodeSizesForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the latency values of the pattern instances.
@@ -962,7 +949,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setLatenciesForPIs(const Json::Value& root, Preparams& p);
+    setLatenciesForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the no-use-def-dom-constraints settings for the pattern instances.
@@ -975,8 +962,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root,
-                                            Preparams& p);
+    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -990,7 +976,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPIs(const Json::Value& root, Preparams& p);
+    setActionNodesCoveredByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function data nodes defined by the respective pattern
@@ -1004,7 +990,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByPIs(const Json::Value& root, Preparams& p);
+    setDataNodesDefinedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function state nodes defined by the respective pattern
@@ -1018,7 +1004,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByPIs(const Json::Value& root, Preparams& p);
+    setStateNodesDefinedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function data nodes used by the respective pattern instances.
@@ -1031,7 +1017,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setDataNodesUsedByPIs(const Json::Value& root, Preparams& p);
+    setDataNodesUsedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function state nodes used by the respective pattern instances.
@@ -1044,7 +1030,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setStateNodesUsedByPIs(const Json::Value& root, Preparams& p);
+    setStateNodesUsedByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function label nodes referred to by the respective pattern
@@ -1058,7 +1044,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByPIs(const Json::Value& root, Preparams& p);
+    setLabelNodesReferredByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the pattern constraints.
@@ -1071,7 +1057,7 @@ class Preparams {
      *         When an error occurs.
      */
     static void
-    setConstraintsForPIs(const Json::Value& root, Preparams& p);
+    setConstraintsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Destroys the function constraints contained by this object.

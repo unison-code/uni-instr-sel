@@ -28,7 +28,7 @@
 # MODULE PATH AND FILES
 #=======================
 
-CPP_FILES := json.cpp
+MODULE_FILES := json.cpp
 
 
 
@@ -36,5 +36,5 @@ CPP_FILES := json.cpp
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
 this-module-path = $(call get-this-module-path)
-module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(CPP_FILES))
+module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(MODULE_FILES))
 $(eval $(call module-template,$(this-module-path),$(module-source-filepaths)))

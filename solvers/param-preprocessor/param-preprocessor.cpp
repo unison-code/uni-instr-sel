@@ -24,12 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../common/constraintprocessor.h"
-#include "../common/jsonprinting.h"
-#include "../common/preparams.h"
-#include "../../../common/exceptions/exception.h"
-#include "../../../common/model/types.h"
-#include "../../../common/optionparser/optionparser.h"
+#include "constraintprocessor.h"
+#include "params.h"
+#include "../common/exceptions/exception.h"
+#include "../common/model/types.h"
+#include "../common/optionparser/optionparser.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -55,8 +54,49 @@ using std::vector;
 // HELP FUNCTIONS
 //================
 
+template <typename T>
+void
+printJsonList(ostream&, const T&);
+
+template <typename T>
+void
+printJsonValue(ostream& out, const list<T>& l) {
+    printJsonList(out, l);
+}
+
+template <typename T>
+void
+printJsonValue(ostream& out, const vector<T>& v) {
+    printJsonList(out, v);
+}
+
+template <typename T>
+void
+printJsonValue(ostream& out, const T& v) {
+    out << v;
+}
+
+template <>
+void
+printJsonValue(ostream& out, const bool& v) {
+    out << (v ? "true" : "false");
+}
+
+template <typename T>
+void
+printJsonList(ostream& out, const T& l) {
+    out << "[";
+    bool isFirst = true;
+    for (const auto& e : l) {
+        if (isFirst) isFirst = false;
+        else out << ",";
+        printJsonValue(out, e);
+    }
+    out << "]";
+}
+
 void outputModelParams(
-    const Preparams& params,
+    const Params& params,
     ostream& out
 ) {
     ConstraintProcessor cprocessor(params);
@@ -257,17 +297,55 @@ void outputModelParams(
 
 void
 outputPostprocessingParams(
-    const Preparams& params,
-    const string& json_content,
+    const Params& params,
     ostream& out
 ) {
     out << "{" << endl;
 
-    // Output all the original preparameters as a separate field
-    out << "\"preparams\": "
-        << json_content;
+    out << "\"array-indices-to-func-action-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfActionNodesInF(
+            createArrayIndices(0, params.getNumActionNodesInF())
+        )
+    );
 
-    // Output the array index-to-ID mappings for the pattern instances
+    out << "," << endl
+        << "\"array-indices-to-func-data-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfDataNodesInF(
+            createArrayIndices(0, params.getNumDataNodesInF())
+        )
+    );
+
+    out << "," << endl
+        << "\"array-indices-to-func-state-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfStateNodesInF(
+            createArrayIndices(0, params.getNumStateNodesInF())
+        )
+    );
+
+    out << "," << endl
+        << "\"array-indices-to-func-label-node-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfLabelNodesInF(
+            createArrayIndices(0, params.getNumLabelNodesInF())
+        )
+    );
+
+    out << "," << endl
+        << "\"array-indices-to-machine-register-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfRegistersInM(
+            createArrayIndices(0, params.getNumRegistersInM())
+        )
+    );
+
     out << "," << endl
         << "\"array-indices-to-pattern-instance-id-maps\": ";
     printJsonValue(
@@ -370,15 +448,15 @@ main(int argc, char** argv) {
         string json_file(cmdparser.nonOption(0));
         ifstream file(json_file);
         if (!file.good()) {
-            THROW(Exception,
-                  string("'") + json_file + "' does not exist or is not "
-                  + "readable");
+            cerr << "ERROR: '" << json_file << "' does not exist or is "
+                 << "unreadable" << endl;
+            return 1;
         }
         stringstream ss;
         ss << file.rdbuf();
         const string json_content(ss.str());
-        Preparams params;
-        Preparams::parseJson(json_content, params);
+        Params params;
+        Params::parseJson(json_content, params);
 
         // Output model params
         ofstream mfile;
@@ -397,7 +475,7 @@ main(int argc, char** argv) {
         if (!pfile.is_open()) {
             THROW(Exception, string("Failed to open file '") + pfile_str + "'");
         }
-        outputPostprocessingParams(params, json_content, pfile);
+        outputPostprocessingParams(params, pfile);
         pfile.close();
 
         return 0;

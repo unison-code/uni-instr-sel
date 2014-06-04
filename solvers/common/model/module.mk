@@ -28,10 +28,10 @@
 # MODULE PATH AND FILES
 #=======================
 
-CPP_FILES := constraintparser.cpp \
-             constraints.cpp      \
-             modelparams.cpp      \
-             types.cpp
+MODULE_FILES := constraintparser.cpp \
+                constraints.cpp      \
+                modelparams.cpp      \
+                types.cpp
 
 
 
@@ -39,5 +39,5 @@ CPP_FILES := constraintparser.cpp \
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
 this-module-path = $(call get-this-module-path)
-module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(CPP_FILES))
+module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(MODULE_FILES))
 $(eval $(call module-template,$(this-module-path),$(module-source-filepaths)))
