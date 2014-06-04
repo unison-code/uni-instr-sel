@@ -129,8 +129,6 @@ for i in range(len(content)):
         error("Line " + linenr + ": Duplicate entries with name '" + name + "'")
     all_data.append([name, data])
 
-# Add, modify, or remove certain data in order to facilitate postprocessing
-
 # Remove the null label from bb-order
 bb_order_data = getRequiredDataByName(all_data, "bb_order")
 null_label = getRequiredDataByName(all_data, "null_label")
@@ -142,23 +140,10 @@ if null_label < 0 or null_label >= len(bb_order_data):
     error("Value of 'null_label' is out of bounds")
 del bb_order_data[null_label]
 
-# Add 'has_dnode_imm' array to data
-dn_reg_data = getRequiredDataByName(all_data, "dn_reg")
-reg_for_imm_values = getRequiredDataByName(all_data, "reg_for_imm_values")
-has_dnode_imm_data = []
-for reg in dn_reg_data:
-    has_dnode_imm_data.append(reg == reg_for_imm_values)
-all_data.append(["has_dnode_imm", has_dnode_imm_data])
-
 # Turn desirable data into JSON
-data_table = [ ["dn_reg",             "reg-selected-for-dnode"]
-             , ["dn_imm",             "imm-value-of-dnode"]
-             , ["has_dnode_imm",      "has-dnode-imm-value"]
-             , ["dn_def",             "dnode-defined-by-pi"]
-             , ["sn_def",             "snode-defined-by-pi"]
-             , ["pi_sel",             "is-pi-selected"]
-             , ["pi_bb",              "bb-allocated-for-pi"]
-             , ["bb_order",           "order-of-bbs"]
+data_table = [ ["pi_sel",   "is-pi-selected"]
+             , ["pi_bb",    "bb-allocated-for-pi"]
+             , ["bb_order", "order-of-bbs"]
              ]
 keep_table = [ d[0] for d in data_table ]
 replace_table = [ d[1] for d in data_table ]
