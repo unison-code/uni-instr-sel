@@ -25,6 +25,7 @@
  */
 
 #include "../common/constraintprocessor.h"
+#include "../common/jsonprinting.h"
 #include "../common/preparams.h"
 #include "../../../common/exceptions/exception.h"
 #include "../../../common/model/types.h"
@@ -53,47 +54,6 @@ using std::vector;
 //================
 // HELP FUNCTIONS
 //================
-
-template <typename T>
-void
-printJsonList(ostream&, const T&);
-
-template <typename T>
-void
-printJsonValue(ostream& out, const list<T>& l) {
-    printJsonList(out, l);
-}
-
-template <typename T>
-void
-printJsonValue(ostream& out, const vector<T>& v) {
-    printJsonList(out, v);
-}
-
-template <typename T>
-void
-printJsonValue(ostream& out, const T& v) {
-    out << v;
-}
-
-template <>
-void
-printJsonValue(ostream& out, const bool& v) {
-    out << (v ? "true" : "false");
-}
-
-template <typename T>
-void
-printJsonList(ostream& out, const T& l) {
-    out << "[";
-    bool isFirst = true;
-    for (const auto& e : l) {
-        if (isFirst) isFirst = false;
-        else out << ",";
-        printJsonValue(out, e);
-    }
-    out << "]";
-}
 
 void outputModelParams(
     const Preparams& params,
