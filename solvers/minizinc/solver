@@ -30,18 +30,23 @@
 #==========
 
 THIS_DIR=$(dirname $0)
-MODEL_PARAMS_FILE=$1
 MINIZINC_PARAMS_FILE="$THIS_DIR/params.mzn"
-MINIZINC_OUTPUT_FILE="$THIS_DIR/params.sol.mzn"
+MINIZINC_OUTPUT_FILE="$THIS_DIR/model.sol.mzn"
 MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
-SOLUTION_FILE_SUFFIX="sol.json"
-SOLUTION_FILE=""   # Will be set after parsing command-line arguments
+
+# These will be set after parsing command-line arguments
+MODEL_PARAMS_FILE=""
+OUTPUT_FILE=""
 
 
 
 #================
 # HELP FUNCTIONS
 #================
+
+function echoerr {
+    echo "$@" 1>&2
+}
 
 function checkStatus {
     if [ $? -ne 0 ]; then
@@ -56,12 +61,21 @@ function checkStatus {
 #=============
 
 # Check arguments
-if [ -z "$1" ]; then
-    echo "No model params file provided"
+if [ "$1" == "-o" ]; then
+    if [ -z "$2" ]; then
+        echoerr "'-o' requires an argument"
+        exit 1
+    fi
+    OUTPUT_FILE=$2
+    if [ -z "$3" ]; then
+        echoerr "No model params file provided"
+        exit 1
+    fi
+    MODEL_PARAMS_FILE=$3
+else
+    echoerr "No '-o' option provided"
     exit 1
 fi
-
-SOLUTION_FILE="$THIS_DIR/$(basename ${1%.*}.$SOLUTION_FILE_SUFFIX)"
 
 # Generate params to Minizinc model
 echo "Generating Minizinc params..."
@@ -81,5 +95,5 @@ fi
 
 # Convert solution into JSON format
 echo "Converting Minizinc solution to JSON format..."
-$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $SOLUTION_FILE
+$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $OUTPUT_FILE
 checkStatus
