@@ -24,11 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOLVERS_PARAM_PREPROCESSOR_CONSTRAINTPROCESSOR__
-#define SOLVERS_PARAM_PREPROCESSOR_CONSTRAINTPROCESSOR__
+#ifndef SOLVERS_PARAM_PROCESSING_COMMON_CONSTRAINTPROCESSOR__
+#define SOLVERS_PARAM_PROCESSING_COMMON_CONSTRAINTPROCESSOR__
 
-#include "params.h"
-#include "../common/model/constraints.h"
+#include "preparams.h"
+#include "../../../common/model/constraints.h"
 
 /**
  * Walks a constraint and replaces all occurrences of IDs with array indices.
@@ -46,7 +46,7 @@ class ConstraintProcessor {
      * @param p
      *        The parameter object wherein the constraints belong.
      */
-    ConstraintProcessor(const Params& p);
+    ConstraintProcessor(const Preparams& p);
 
     /**
      * Destroys this processor.
@@ -159,9 +159,9 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * The params object.
+     * The preparams object.
      */
-    const Params& p_;
+    const Preparams& p_;
 
     /**
      * Determines whether a constraint for a pattern instance is currently being

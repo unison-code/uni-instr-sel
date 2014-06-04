@@ -24,11 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "constraintprocessor.h"
-#include "params.h"
-#include "../common/exceptions/exception.h"
-#include "../common/model/types.h"
-#include "../common/optionparser/optionparser.h"
+#include "../common/constraintprocessor.h"
+#include "../common/preparams.h"
+#include "../../../common/exceptions/exception.h"
+#include "../../../common/model/types.h"
+#include "../../../common/optionparser/optionparser.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -96,7 +96,7 @@ printJsonList(ostream& out, const T& l) {
 }
 
 void outputModelParams(
-    const Params& params,
+    const Preparams& params,
     ostream& out
 ) {
     ConstraintProcessor cprocessor(params);
@@ -297,7 +297,7 @@ void outputModelParams(
 
 void
 outputPostprocessingParams(
-    const Params& params,
+    const Preparams& params,
     ostream& out
 ) {
     out << "{" << endl;
@@ -455,8 +455,8 @@ main(int argc, char** argv) {
         stringstream ss;
         ss << file.rdbuf();
         const string json_content(ss.str());
-        Params params;
-        Params::parseJson(json_content, params);
+        Preparams params;
+        Preparams::parseJson(json_content, params);
 
         // Output model params
         ofstream mfile;

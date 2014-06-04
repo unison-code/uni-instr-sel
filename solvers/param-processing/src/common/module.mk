@@ -29,8 +29,7 @@
 #=======================
 
 MODULE_FILES := constraintprocessor.cpp \
-                param-preprocessor.cpp  \
-                params.cpp
+                preparams.cpp
 
 
 

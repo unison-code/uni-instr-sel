@@ -28,7 +28,7 @@
 
 using namespace Model;
 
-ConstraintProcessor::ConstraintProcessor(const Params& p)
+ConstraintProcessor::ConstraintProcessor(const Preparams& p)
     : p_(p),
       is_processing_pi_constraint_(false)
 {}
