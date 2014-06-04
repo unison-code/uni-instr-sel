@@ -1,0 +1,133 @@
+#!/usr/bin/python
+
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import argparse
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+def extractData(line):
+    pos = line.find("=")
+    if pos < 0:
+        raise SyntaxError("Expected '=' not found")
+    name = line[:pos].strip()
+    data = toValue(line[pos + 1:].strip())
+    return name, data
+
+def toValue(s):
+    s = s.strip()
+    if len(s) == 0:
+        raise SyntaxError("No data")
+    if s[0] == '[':
+        if not s[-1] == ']':
+            raise SyntaxError("Expected ']' not found")
+        values = []
+        for t in s[1:-1].split(','):
+            if len(t) == 0:
+                continue
+            values.append(toValue(t))
+        return values
+    else:
+        if s == "true":
+            return True
+        elif s == "false":
+            return False
+        elif s.isdigit():
+            return int(s)
+        else:
+            return s
+
+def consistsOnlyOf(s, ch):
+    for c in s:
+        if c != ch:
+            return False
+    return True
+
+def getDataByName(data, name):
+    for d in data:
+        if d[0] == name:
+            return d[1]
+
+def getRequiredDataByName(data, name):
+    d = getDataByName(data, name)
+    if d == None:
+        error("Required data '" + name + "' not found")
+    return d
+
+def createArgParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-spf", "--solution-params-file",
+                        help="The JSON file containing the solution",
+                        nargs=1,
+                        required=True,
+                        dest="SP_FILE")
+    parser.add_argument("-ppf", "--post-params-file",
+                        help="The JSON file containing the postprocessing " \
+                            "parameters",
+                        nargs=1,
+                        required=True,
+                        dest="PP_FILE")
+    return parser
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Parse and check command-line arguments
+parser = createArgParser()
+args = parser.parse_args()
+solution_file = args.SP_FILE[0]
+if not os.path.isfile(solution_file):
+    error("Solution file '" + solution_file +"' not found")
+postparams_file = args.PP_FILE[0]
+if not os.path.isfile(postparams_file):
+    error("Postprocessing parameter file '" + postparams_file +"' not found")
+
+# Parse JSON content
+with open(solution_file, 'r') as fh:
+    sol_data = json.load(fh)
+with open(postparams_file, 'r') as fh:
+    pp_data = json.load(fh)
+
+# TODO: implement the rest
