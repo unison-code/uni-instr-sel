@@ -147,7 +147,7 @@ dn_reg_data = getRequiredDataByName(all_data, "dn_reg")
 reg_for_imm_values = getRequiredDataByName(all_data, "reg_for_imm_values")
 has_dnode_imm_data = []
 for reg in dn_reg_data:
-    has_dnode_imm_data.append(reg == has_dnode_imm_data)
+    has_dnode_imm_data.append(reg == reg_for_imm_values)
 all_data.append(["has_dnode_imm", has_dnode_imm_data])
 
 # Turn desirable data into JSON
