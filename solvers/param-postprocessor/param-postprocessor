@@ -45,54 +45,6 @@ def error(msg):
     sys.stderr.write("ERROR: " + msg + "\n")
     sys.exit(1)
 
-def extractData(line):
-    pos = line.find("=")
-    if pos < 0:
-        raise SyntaxError("Expected '=' not found")
-    name = line[:pos].strip()
-    data = toValue(line[pos + 1:].strip())
-    return name, data
-
-def toValue(s):
-    s = s.strip()
-    if len(s) == 0:
-        raise SyntaxError("No data")
-    if s[0] == '[':
-        if not s[-1] == ']':
-            raise SyntaxError("Expected ']' not found")
-        values = []
-        for t in s[1:-1].split(','):
-            if len(t) == 0:
-                continue
-            values.append(toValue(t))
-        return values
-    else:
-        if s == "true":
-            return True
-        elif s == "false":
-            return False
-        elif s.isdigit():
-            return int(s)
-        else:
-            return s
-
-def consistsOnlyOf(s, ch):
-    for c in s:
-        if c != ch:
-            return False
-    return True
-
-def getDataByName(data, name):
-    for d in data:
-        if d[0] == name:
-            return d[1]
-
-def getRequiredDataByName(data, name):
-    d = getDataByName(data, name)
-    if d == None:
-        error("Required data '" + name + "' not found")
-    return d
-
 def createArgParser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-spf", "--solution-params-file",
