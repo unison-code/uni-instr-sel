@@ -142,8 +142,8 @@ main(int argc, char** argv) {
             ifstream sfile(json_file);
             if (!sfile.good()) {
                 THROW(Exception,
-                      string("'") + json_file + "' does not exist or is "
-                      + "unreadable");
+                      string("'") + json_file + "' does not exist or is not "
+                      + "readable");
             }
             stringstream ss;
             ss << sfile.rdbuf();
