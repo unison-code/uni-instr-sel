@@ -93,15 +93,6 @@ LDLIBS   +=
 
 
 
-#=================
-# OTHER VARIABLES
-#=================
-
-# Name of the tarball
-TARBALL_FILENAME := solvers-src
-
-
-
 # ========================  BEGINNING OF GENERIC PART  =========================
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
@@ -223,10 +214,3 @@ distclean: clean clean-deps
 .PHONY: docs
 docs:
 	$(foreach mod,$(all-unique-modules),$(call make-docs,$(mod)))
-
-.PHONY: tarball
-tarball: all
-	$(MAKE) clean clean-deps
-	$(MAKE) docs
-	tar -cvf $(TARBALL_FILENAME).tar ../$$(basename $$(pwd))
-	gzip $(TARBALL_FILENAME).tar
