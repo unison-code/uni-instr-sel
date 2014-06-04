@@ -28,7 +28,7 @@
 # MODULE PATH AND FILES
 #=======================
 
-MODULE_FILES := string.cpp
+CPP_FILES := string.cpp
 
 
 
@@ -36,5 +36,5 @@ MODULE_FILES := string.cpp
 # ======================== DO NOT EDIT ANYTHING BELOW! =========================
 
 this-module-path = $(call get-this-module-path)
-module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(MODULE_FILES))
+module-source-filepaths := $(patsubst %,$(this-module-path)/%,$(CPP_FILES))
 $(eval $(call module-template,$(this-module-path),$(module-source-filepaths)))
