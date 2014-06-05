@@ -13,6 +13,7 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Language.InstructionSelection.Constraints.SExpressions (
   fromLispExpr
