@@ -22,9 +22,9 @@ import Data.List (intercalate)
 
 
 
---------------------------------------------------
+----------------
 -- Type classes
---------------------------------------------------
+----------------
 
 -- | A class for pretty-printing something as an S-expression.
 
@@ -68,9 +68,9 @@ showSEList a = prettySEList a 0
 
 
 
---------------------------------------------------
--- Basic instances
---------------------------------------------------
+------------------------
+-- Type class instances
+------------------------
 
 instance SExpressionable Integer where
   prettySE int _ = show int
