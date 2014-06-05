@@ -307,12 +307,20 @@ outputPostprocessingParams(
     out << "\"preparams\": "
         << json_content;
 
-    // Output the array index-to-ID mappings for the pattern instances
     out << "," << endl
-        << "\"array-indices-to-pattern-instance-id-maps\": ";
+        << "\"array-index-to-pattern-instance-id-maps\": ";
     printJsonValue(
         out,
         params.getIDsOfPIs(createArrayIndices(0, params.getNumPIs()))
+    );
+
+    out << "," << endl
+        << "\"array-index-to-label-id-maps\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfLabelNodesInF(
+            createArrayIndices(0, params.getNumLabelNodesInF())
+        )
     );
 
     out << endl
