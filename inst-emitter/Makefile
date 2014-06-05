@@ -51,8 +51,8 @@ GHCFLAGS += -Wall -I$(HLIBPATH)
 # Arguments:
 #    1: Path to folder.
 define ghc-clean
-  find $(1) -name "*.hi" -exec rm {};
-  find $(1) -name "*.o" -exec rm {};
+  find $(1) -name "*.hi" -exec rm {} \;
+  find $(1) -name "*.o" -exec rm {} \;
 endef
 
 
@@ -70,8 +70,8 @@ $(BINARY):
 
 .PHONY: clean
 clean:
-	ghc-clean $(HLIBPATH)
-	ghc-clean .
+	$(call ghc-clean,$(HLIBPATH))
+	$(call ghc-clean,.)
 
 .PHONY: distclean
 distclean: clean
