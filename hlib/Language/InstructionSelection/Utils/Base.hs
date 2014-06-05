@@ -16,7 +16,11 @@ module Language.InstructionSelection.Utils.Base (
   Natural (..)
 , Range (..)
 , computePosMapsOfPerm
+, fromLeft
 , fromNatural
+, fromRight
+, isLeft
+, isRight
 , removeDuplicates
 , toNatural
 ) where
@@ -123,3 +127,25 @@ computePosMapsOfPerm ol pl =
   in if length ol == length pl
      then map toNatural ms
      else error "computePosMapsOfPerm: the lists are not of equal lengths"
+
+-- | Checks if an 'Either' is of type 'Left'.
+
+isLeft :: Either l r -> Bool
+isLeft (Left _) = True
+isLeft _ = False
+
+-- | Checks if an 'Either' is of type 'Right'.
+
+isRight :: Either l r -> Bool
+isRight (Right _) = True
+isRight _ = False
+
+-- | Gets the data contained by a 'Left'.
+
+fromLeft :: Either l r -> l
+fromLeft (Left l) = l
+
+-- | Gets the data contained by a 'Right'.
+
+fromRight :: Either l r -> r
+fromRight (Right r) = r
