@@ -69,11 +69,11 @@ parseArgs =
 main :: IO ()
 main =
   do Options {..} <- cmdArgs parseArgs
-     when (isNothing sFile)
-       $ do putStrLn "No solution file provided."
-            exitFailure
-     when (isNothing ppFile)
-       $ do putStrLn "No post-processing parameter file provided."
-            exitFailure
+     when (isNothing sFile) $
+       do putStrLn "No solution file provided."
+          exitFailure
+     when (isNothing ppFile) $
+       do putStrLn "No post-processing parameter file provided."
+          exitFailure
      putStrLn $ show sFile
      putStrLn $ show ppFile
