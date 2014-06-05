@@ -29,12 +29,18 @@ Takes the solution JSON file and the post-processing parameters JSON file and
 outputs (on stdout) the corresponding assembly instructions for that solution.
 -}
 
-{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
-import Control.Monad
-import Data.Maybe (isNothing)
+import Language.InstructionSelection.SolutionData
+import Control.Monad (when)
+import qualified Data.ByteString.Lazy as BS
+import Data.Aeson (decode)
+import Data.Maybe
+  ( fromJust
+  , isNothing
+  )
 import System.Console.CmdArgs
-import System.Exit
+import System.Exit (exitFailure)
 
 
 
@@ -60,6 +66,9 @@ parseArgs =
         &= help "The JSON file containing the post-processing parameters."
   }
 
+getJSON :: FilePath -> IO BS.ByteString
+getJSON = BS.readFile
+
 
 
 ----------------
@@ -75,5 +84,8 @@ main =
      when (isNothing ppFile) $
        do putStrLn "No post-processing parameter file provided."
           exitFailure
-     putStrLn $ show sFile
-     putStrLn $ show ppFile
+     s_json <- getJSON $ fromJust sFile
+     let s_data = decode (getJSON $ fromJust sFile) :: Maybe SolutionData
+     let pp_data = decode (getJSON $ fromJust ppFile) :: Maybe PostParamData
+     putStrLn $ show s_data
+     putStrLn $ show pp_data
