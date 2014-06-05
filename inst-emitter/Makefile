@@ -38,7 +38,7 @@ HLIBPATH := ../hlib
 #===================
 
 GHC      := ghc
-GHCFLAGS += -Wall -I$(HLIBPATH)
+GHCFLAGS += -Wall -i$(HLIBPATH)
 
 
 
