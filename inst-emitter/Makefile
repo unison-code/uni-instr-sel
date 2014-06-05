@@ -66,7 +66,7 @@ all: $(BINARY)
 
 .PHONY: $(BINARY)
 $(BINARY):
-	$(GHC) $(GHCFLAGS) $@
+	$(GHC) $(GHCFLAGS) -o $@ InstEmitter.hs
 
 .PHONY: clean
 clean:

@@ -29,21 +29,6 @@ Takes the solution JSON file and the post-processing parameters JSON file and
 outputs (on stdout) the corresponding assembly instructions for that solution.
 -}
 
-import qualified Language.InstructionSelection.DataTypes as D
-import Language.InstructionSelection.Constraints
-import Language.InstructionSelection.Constraints.PCBuilder
-import Language.InstructionSelection.CPModel.JsonDumper
-import Language.InstructionSelection.CPModel.ParamMaker
-import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.Graphs.VFTwo
-import Language.InstructionSelection.TargetMachine
-import Language.InstructionSelection.OpStructures
-import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Patterns
-import Data.List ( mapAccumL
-                 , zip5
-                 )
-
 main :: IO ()
 main =
   do putStrLn "hello"
