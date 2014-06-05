@@ -29,6 +29,51 @@ Takes the solution JSON file and the post-processing parameters JSON file and
 outputs (on stdout) the corresponding assembly instructions for that solution.
 -}
 
+{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
+
+import Control.Monad
+import Data.Maybe (isNothing)
+import System.Console.CmdArgs
+import System.Exit
+
+
+
+---------------------------------
+-- Help functions and data types
+---------------------------------
+
+data Options
+    = Options {
+          sFile :: Maybe String
+        , ppFile :: Maybe String
+      }
+    deriving (Data, Typeable)
+
+parseArgs :: Options
+parseArgs =
+  Options {
+    sFile = Nothing
+        &= typFile
+        &= help "The JSON file containing the solution."
+  , ppFile = Nothing
+        &= typFile
+        &= help "The JSON file containing the post-processing parameters."
+  }
+
+
+
+----------------
+-- Main program
+----------------
+
 main :: IO ()
 main =
-  do putStrLn "hello"
+  do Options {..} <- cmdArgs parseArgs
+     when (isNothing sFile)
+       $ do putStrLn "No solution file provided."
+            exitFailure
+     when (isNothing ppFile)
+       $ do putStrLn "No post-processing parameter file provided."
+            exitFailure
+     putStrLn $ show sFile
+     putStrLn $ show ppFile
