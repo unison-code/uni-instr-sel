@@ -144,3 +144,27 @@ data MachineData
 
       }
     deriving (Show)
+
+-- | Contains the data for a solution to the CP model.
+
+data CPSolution
+    = CPSolution {
+
+          -- | The basic block (given as array indices) to which a particular
+          -- pattern instance was allocated. An index into the list denotes an
+          -- array index for a pattern instance.
+
+          bbAllocsForPIs :: [Integer]
+
+          -- | Indicates whether a particular pattern instance was selected. An
+          -- index into the list denotes an array index for a pattern instance.
+
+        , selectionOfPIs :: [Bool]
+
+          -- | The order of basic blocks. An index into the list denotes an
+          -- array index for a particular label node in the function graph.
+
+        , orderOfBBs :: [Integer]
+
+      }
+    deriving (Show)
