@@ -31,7 +31,7 @@ Tests the implementation of the VF2 algorithm.
 import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.PCBuilder
-import Language.InstructionSelection.CPModel.JsonDumper
+import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
