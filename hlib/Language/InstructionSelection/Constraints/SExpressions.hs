@@ -21,9 +21,15 @@ module Language.InstructionSelection.Constraints.SExpressions (
 ) where
 
 import Language.InstructionSelection.Constraints.Base
-import Language.InstructionSelection.Graphs (NodeID (..))
+import Language.InstructionSelection.Graphs
+  ( NodeID (..)
+  , toNodeID
+  )
 import Language.InstructionSelection.Patterns.IDs
-import Language.InstructionSelection.TargetMachine (RegisterID (..))
+import Language.InstructionSelection.TargetMachine
+  ( RegisterID (..)
+  , toRegisterID
+  )
 import Language.InstructionSelection.Utils
   ( fromLeft
   , fromNatural
@@ -210,35 +216,35 @@ instance ToLisp SetElemExpr where
   toLisp (Register2SetElemExpr e) = mkStruct "reg-to-set-elem" [toLisp e]
 
 instance FromLisp NodeID where
-  parseLisp (Number (I n)) = pure $ NodeID (toNatural n)
+  parseLisp (Number (I n)) = pure $ toNodeID n
   parseLisp _ = mzero
 
 instance ToLisp NodeID where
   toLisp (NodeID nid) = Number (I (fromNatural nid))
 
 instance FromLisp InstructionID where
-  parseLisp (Number (I n)) = pure $ InstructionID (toNatural n)
+  parseLisp (Number (I n)) = pure $ toInstructionID n
   parseLisp _ = mzero
 
 instance ToLisp InstructionID where
   toLisp (InstructionID nid) = Number (I (fromNatural nid))
 
 instance FromLisp PatternInstanceID where
-  parseLisp (Number (I n)) = pure $ PatternInstanceID (toNatural n)
+  parseLisp (Number (I n)) = pure $ toPatternInstanceID n
   parseLisp _ = mzero
 
 instance ToLisp PatternInstanceID where
   toLisp (PatternInstanceID nid) = Number (I (fromNatural nid))
 
 instance FromLisp PatternID where
-  parseLisp (Number (I n)) = pure $ PatternID (toNatural n)
+  parseLisp (Number (I n)) = pure $ toPatternID n
   parseLisp _ = mzero
 
 instance ToLisp PatternID where
   toLisp (PatternID nid) = Number (I (fromNatural nid))
 
 instance FromLisp RegisterID where
-  parseLisp (Number (I n)) = pure $ RegisterID (toNatural n)
+  parseLisp (Number (I n)) = pure $ toRegisterID n
   parseLisp _ = mzero
 
 instance ToLisp RegisterID where
