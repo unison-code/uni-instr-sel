@@ -129,11 +129,9 @@ checkSyntaxPred :: Graph            -- ^ The function graph.
                    -> Mapping Node  -- ^ Candidate mapping.
                    -> Bool
 checkSyntaxPred fg pg st c =
-  let m_fg = fNodes st
-      m_pg = pNodes st
+  let m_pg = pNodes st
       preds_fn = predecessors fg (fNode c)
       preds_pn = predecessors pg (pNode c)
-      preds_fn_in_m = preds_fn `intersect` m_fg
       preds_pn_in_m = preds_pn `intersect` m_pg
   in all (\pn -> any (\fn -> isInMatchset st (Mapping (fn, pn))) preds_fn)
          preds_pn_in_m
@@ -147,11 +145,9 @@ checkSyntaxSucc :: Graph            -- ^ The function graph.
                    -> Mapping Node  -- ^ Candidate mapping.
                    -> Bool
 checkSyntaxSucc fg pg st c =
-  let m_fg = fNodes st
-      m_pg = pNodes st
+  let m_pg = pNodes st
       succs_fn = successors fg (fNode c)
       succs_pn = successors pg (pNode c)
-      succs_fn_in_m = succs_fn `intersect` m_fg
       succs_pn_in_m = succs_pn `intersect` m_pg
   in all (\pn -> any (\fn -> isInMatchset st (Mapping (fn, pn))) succs_fn)
      succs_pn_in_m
