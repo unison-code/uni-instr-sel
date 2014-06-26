@@ -28,7 +28,7 @@ module Language.InstructionSelection.Graphs.VFTwo (
 
 import Language.InstructionSelection.Graphs.Base
 import Language.InstructionSelection.Utils (removeDuplicates)
-import Data.List (intersect, union, (\\))
+import Data.List (intersect)
 
 
 
@@ -113,7 +113,6 @@ checkSyntax fg pg st c =
    && checkSyntaxSucc fg pg st c
    && checkSyntaxIn   fg pg st c
    && checkSyntaxOut  fg pg st c
--- && checkSyntaxNew  fg pg st c
 
 -- | Checks that for each predecessor of the matched pattern node that appears
 -- in the current matchset state, there exists a node mapping for the
@@ -199,30 +198,6 @@ checkSyntaxOut fg pg st c =
         >= length (succs_pn `intersect` t_out_pg)
      && length (preds_fn `intersect` t_out_fg)
         >= length (preds_pn `intersect` t_out_pg)
-
--- | Not really sure what the intuition behind this check is (equation 7 in the
--- paper), other than that it is a 2-look-ahead check.
-
-checkSyntaxNew :: Graph            -- ^ The function graph.
-                  -> Graph         -- ^ The pattern graph.
-                  -> Matchset Node -- ^ Current matchset state.
-                  -> Mapping Node  -- ^ Candidate mapping.
-                  -> Bool
-checkSyntaxNew fg pg st c =
-  let m_fg = fNodes st
-      m_pg = pNodes st
-      fn = fNode c
-      pn = pNode c
-      preds_fn = predecessors fg fn
-      preds_pn = predecessors pg pn
-      succs_fn = successors fg fn
-      succs_pn = successors pg pn
-      getNSet g ns = ((allNodes g) \\ ns)
-                     \\ ((getTOutSet g ns) `union` (getTInSet g ns))
-      n_fg = getNSet fg m_fg
-      n_pg = getNSet pg m_pg
-  in    length (n_fg `intersect` preds_fn) >= length (n_pg `intersect` preds_pn)
-     && length (n_fg `intersect` succs_fn) >= length (n_pg `intersect` succs_pn)
 
 getTOutSet :: Graph     -- ^ Graph in which the nodes of M belong.
               -> [Node] -- ^ The M set.
