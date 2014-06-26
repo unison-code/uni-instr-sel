@@ -269,4 +269,4 @@ fromLispExpr s =
 -- | Converts a 'Constraint' into a lispian expression.
 
 toLispExpr :: Constraint -> String
-toLispExpr = show . encode . toLisp
+toLispExpr = show . toLisp
