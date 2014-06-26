@@ -136,7 +136,7 @@ instance FromLisp PatternInstanceExpr where
 
 instance ToLisp PatternInstanceExpr where
   toLisp (APatternInstanceIDExpr piid) = mkStruct "id" [toLisp piid]
-  toLisp ThisPatternInstanceExpr = "this"
+  toLisp ThisPatternInstanceExpr = Symbol "this"
   toLisp (CovererOfActionNodeExpr e) = mkStruct "cov-of-anode" [toLisp e]
   toLisp (DefinerOfDataNodeExpr e)   = mkStruct "def-of-dnode" [toLisp e]
   toLisp (DefinerOfStateNodeExpr e)  = mkStruct "def-of-snode" [toLisp e]
