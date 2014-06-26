@@ -27,21 +27,45 @@ import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
   ( NodeID
   , fromNodeID
+  , toNodeID
   )
 import Language.InstructionSelection.Patterns
   ( PatternInstanceID
   , fromPatternInstanceID
+  , toPatternInstanceID
   )
 import Language.InstructionSelection.TargetMachine
   ( RegisterID
   , fromRegisterID
+  , toRegisterID
   )
 import Language.InstructionSelection.Utils
   ( Natural (..)
+  , fromLeft
   , fromNatural
+  , fromRight
+  , isLeft
+  , toNatural
+  )
+import Control.Applicative
+  ( (<$>)
+  , (<*>)
+  )
+import Control.Monad
+  ( mzero
+  , when
   )
 import Data.Aeson
-import Data.ByteString.Lazy.Char8 (unpack)
+import Data.Attoparsec.ByteString (parseOnly)
+import Data.Attoparsec.Number (Number (..))
+import qualified Data.ByteString.Lazy.Char8 as BS
+  ( pack
+  , unpack
+  )
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
 
 
 
@@ -49,12 +73,31 @@ import Data.ByteString.Lazy.Char8 (unpack)
 -- Type class instances
 ------------------------
 
+instance FromJSON CPModelParams where
+  parseJSON (Object v) =
+    CPModelParams
+    <$> v .: "function-data"
+    <*> v .: "pattern-instance-data"
+    <*> v .: "machine-data"
+  parseJSON _ = mzero
+
 instance ToJSON CPModelParams where
   toJSON p =
     object [ "function-data"         .= (funcData p)
            , "pattern-instance-data" .= (patInstData p)
            , "machine-data"          .= (machData p)
            ]
+
+instance FromJSON FunctionGraphData where
+  parseJSON (Object v) =
+    FunctionGraphData
+    <$> v .: "action-nodes"
+    <*> v .: "data-nodes"
+    <*> v .: "state-nodes"
+    <*> v .: "label-nodes"
+    <*> v .: "root-label"
+    <*> v .: "constraints"
+  parseJSON _ = mzero
 
 instance ToJSON FunctionGraphData where
   toJSON d =
@@ -68,6 +111,22 @@ instance ToJSON FunctionGraphData where
     where f (nid, domset) = object [ "node"   .= nid
                                    , "domset" .= domset
                                    ]
+
+instance FromJSON PatternInstanceData where
+  parseJSON (Object v) =
+    PatternInstanceData
+    <$> v .:  "pattern-instance-id"
+    <*> v .:  "action-nodes-covered"
+    <*> v .:  "data-nodes-defined"
+    <*> v .:  "data-nodes-used"
+    <*> v .:  "state-nodes-defined"
+    <*> v .:  "state-nodes-used"
+    <*> v .:  "label-nodes-referred"
+    <*> v .:  "constraints"
+    <*> v .:? "no-use-def-dom-constraints" .!= False
+    <*> v .:  "code-size"
+    <*> v .:  "latency"
+  parseJSON _ = mzero
 
 instance ToJSON PatternInstanceData where
   toJSON d =
@@ -87,22 +146,59 @@ instance ToJSON PatternInstanceData where
                   else []
            )
 
+instance FromJSON MachineData where
+  parseJSON (Object v) =
+    MachineData
+    <$> v .: "registers"
+  parseJSON _ = mzero
+
 instance ToJSON MachineData where
   toJSON d =
     object [ "registers" .= (machRegisters d)
            ]
 
+instance FromJSON Constraint where
+  parseJSON (String s) =
+    do let res = fromLispExpr $ show s
+       when (isLeft res) $ fail $ fromLeft res
+       return (fromRight res)
+  parseJSON _ = mzero
+
 instance ToJSON Constraint where
   toJSON = toJSON . toLispExpr
+
+instance FromJSON NodeID where
+  parseJSON (Number n) =
+    do when (n <= 0) $ fail "number is not a node ID"
+       return (toNodeID n)
+  parseJSON _ = mzero
 
 instance ToJSON NodeID where
   toJSON nid = toJSON (fromNodeID nid)
 
+instance FromJSON PatternInstanceID where
+  parseJSON (Number i) =
+    do when (i <= 0) $ fail "number is not a pattern instance ID"
+       return (toPatternInstanceID i)
+  parseJSON _ = mzero
+
 instance ToJSON PatternInstanceID where
   toJSON iid = toJSON (fromPatternInstanceID iid)
 
+instance FromJSON RegisterID where
+  parseJSON (Number i) =
+    do when (i <= 0) $ fail "number is not a register ID"
+       return (toRegisterID i)
+  parseJSON _ = mzero
+
 instance ToJSON RegisterID where
   toJSON rid = toJSON (fromRegisterID rid)
+
+instance FromJSON Natural where
+  parseJSON (Number (I i)) =
+    do when (i <= 0) $ fail "number is not a natural"
+       return (toNatural i)
+  parseJSON _ = mzero
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
@@ -115,11 +211,18 @@ instance ToJSON Natural where
 
 -- | Parses a JSON string into a 'CPModelParams'.
 
-fromJson :: CPModelParams -> String
-fromJson _ = "not implemented"
--- TODO: implement
+fromJSON :: String
+            -> Either String        -- ^ Contains the error message, if the
+                                    -- parsing failed.
+                      CPModelParams -- ^ Contains the parameters, if the
+                                    -- parsing was successful.
+fromJSON s =
+  let result = decode (BS.pack s)
+  in if isJust result
+        then Left ("failed to parse JSON")
+        else Right (fromJust result)
 
 -- | Converts a 'CPModelParams' into a JSON string.
 
 toJson :: CPModelParams -> String
-toJson = unpack . encode
+toJson = BS.unpack . encode
