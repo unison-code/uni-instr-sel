@@ -123,9 +123,9 @@ computePosMapsOfPerm ol pl =
               then (index_in_ol - 1, (fromJust index_in_pl):ms)
               else error ("computePosMapsOfPerm: the lists do not contain the "
                           ++ "same elements")
-      (_, ms) = foldr addPosMap (length ol - 1, []) ol
+      (_, maps) = foldr addPosMap (length ol - 1, []) ol
   in if length ol == length pl
-     then map toNatural ms
+     then map toNatural maps
      else error "computePosMapsOfPerm: the lists are not of equal lengths"
 
 -- | Checks if an 'Either' is of type 'Left'.
@@ -144,8 +144,10 @@ isRight _ = False
 
 fromLeft :: Either l r -> l
 fromLeft (Left l) = l
+fromLeft _ = error "Either is not Left"
 
 -- | Gets the data contained by a 'Right'.
 
 fromRight :: Either l r -> r
 fromRight (Right r) = r
+fromRight _ = error "Either is not Right"
