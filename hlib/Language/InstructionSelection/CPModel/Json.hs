@@ -119,8 +119,6 @@ fromJson :: CPModelParams -> String
 fromJson _ = "not implemented"
 -- TODO: implement
 
-
-
 -- | Converts a 'CPModelParams' into a JSON string.
 
 toJson :: CPModelParams -> String
