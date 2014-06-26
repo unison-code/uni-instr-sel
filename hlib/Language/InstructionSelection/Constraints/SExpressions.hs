@@ -52,14 +52,14 @@ instance ToLisp Constraint where
 
 instance FromLisp BoolExpr where
   parseLisp e =
-        struct "=="  EqExpr e
+        struct "=="  EqExpr  e
     <|> struct "!="  NeqExpr e
-    <|> struct ">"   GTExpr e
-    <|> struct ">="  GEExpr e
-    <|> struct "<"   LTExpr e
-    <|> struct "<="  LEExpr e
+    <|> struct ">"   GTExpr  e
+    <|> struct ">="  GEExpr  e
+    <|> struct "<"   LTExpr  e
+    <|> struct "<="  LEExpr  e
     <|> struct "&&"  AndExpr e
-    <|> struct "||"  OrExpr e
+    <|> struct "||"  OrExpr  e
     <|> struct "->"  ImpExpr e
     <|> struct "<->" EqvExpr e
     <|> struct "!"   NotExpr e
@@ -113,7 +113,7 @@ instance ToLisp NumExpr where
 instance FromLisp IntExpr where
   parseLisp e =
         struct "int" AnIntegerExpr e
-    <|> struct "int-const-val-of-node" IntConstValueOfDataNodeExpr e
+    <|> struct "int-const-val-of-dnode" IntConstValueOfDataNodeExpr e
 
 instance ToLisp IntExpr where
   toLisp (AnIntegerExpr i) = mkStruct "int" [toLisp i]
