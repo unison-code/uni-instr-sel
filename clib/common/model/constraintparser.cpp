@@ -223,7 +223,11 @@ ConstraintParser::parseIntExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<IntConstValueOfDataNodeExpr>(str)) {
+        if (eatType<AnIntegerExpr>(str)) {
+            int num = eatInt(str);
+            expr = new AnIntegerExpr(num);
+        }
+        else if (eatType<IntConstValueOfDataNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
             expr = new IntConstValueOfDataNodeExpr(e);
         }
@@ -238,8 +242,7 @@ ConstraintParser::parseIntExpr(string& str) {
         }
     }
     else {
-        int num = eatInt(str);
-        expr = new AnIntegerExpr(num);
+        THROW(Exception, "Invalid constraint expression (missing '(' char)");
     }
 
     return expr;
