@@ -97,5 +97,6 @@ main =
           exitFailure
      let s_data = fromRight s_res :: CPSolution
          pp_data = fromRight pp_res :: PostParams
+     -- TODO: implement the rest of the program
      putStrLn $ show s_data
      putStrLn $ show pp_data
