@@ -68,9 +68,6 @@ import Data.Maybe
 import Data.Scientific (Scientific)
 import qualified Data.Text as T (unpack)
 
--- TODO: remove
-import Debug.Trace
-
 
 
 ------------------------
@@ -81,7 +78,7 @@ instance FromJSON CPModelParams where
   parseJSON (Object v) =
     CPModelParams
     <$> v .: "function-data"
-    <*> (trace "here!" $ v .: "pattern-instance-data")
+    <*> v .: "pattern-instance-data"
     <*> v .: "machine-data"
   parseJSON _ = mzero
 
@@ -175,7 +172,7 @@ instance FromJSON Constraint where
   parseJSON (String vs) =
     do let s = T.unpack vs
            res = fromLispExpr s
-       trace (show vs ++ " : " ++ show res) $ when (isLeft res) $ fail $ fromLeft res
+       when (isLeft res) $ fail $ fromLeft res
        return (fromRight res)
   parseJSON _ = mzero
 
