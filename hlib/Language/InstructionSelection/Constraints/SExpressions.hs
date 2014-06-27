@@ -123,7 +123,7 @@ instance FromLisp IntExpr where
 instance ToLisp IntExpr where
   toLisp (AnIntegerExpr i) = mkStruct "int" [toLisp i]
   toLisp (IntConstValueOfDataNodeExpr e) =
-    mkStruct "int-const-val-of-node" [toLisp e]
+    mkStruct "int-const-val-of-dnode" [toLisp e]
 
 instance FromLisp NodeExpr where
   parseLisp e = struct "id" ANodeIDExpr e
