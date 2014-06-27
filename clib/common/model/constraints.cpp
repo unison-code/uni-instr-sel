@@ -205,7 +205,7 @@ AnIntegerExpr::getValue(void) const {
 
 string
 AnIntegerExpr::toLisp(void) const {
-    return Utils::toString(i_);
+    return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
 IntConstValueOfDataNodeExpr::IntConstValueOfDataNodeExpr(const NodeExpr* expr)
@@ -562,7 +562,7 @@ const string PatternInstanceIsSelectedExpr::STRNAME = "pat-inst-is-selected";
 const string PlusExpr::STRNAME = "+";
 const string MinusExpr::STRNAME = "-";
 const string IntToNumExpr::STRNAME = "int-to-num";
-const string AnIntegerExpr::STRNAME = "";
+const string AnIntegerExpr::STRNAME = "int";
 const string IntConstValueOfDataNodeExpr::STRNAME = "int-const-val-of-dnode";
 const string BoolToNumExpr::STRNAME = "bool-to-num";
 const string NodeToNumExpr::STRNAME = "node-to-num";
