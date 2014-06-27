@@ -35,7 +35,6 @@ import Language.InstructionSelection.Utils
   , fromNatural
   , fromRight
   , isLeft
-  , toNatural
   )
 import Control.Applicative
   ( (<|>)
