@@ -215,26 +215,13 @@ instance FromJSON CPSolution where
     <*> v .: "order-of-bbs"
   parseJSON _ = mzero
 
-instance ToJSON CPSolution where
-  toJSON s =
-    object [ "bb-allocated-for-pi" .= (bbAllocsForPIs s)
-           , "is-pi-selected"      .= (selectionOfPIs s)
-           , "order-of-bbs"        .= (orderOfBBs s)
-           ]
-
 instance FromJSON PostParams where
   parseJSON (Object v) =
     PostParams
     <$> v .: "model-params"
-    <*> v .: "array-indices-to-pattern-instance-id-maps"
+    <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
+    <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
   parseJSON _ = mzero
-
-instance ToJSON PostParams where
-  toJSON p =
-    object [ "model-params" .= (modelParams p)
-           , "array-indices-to-pattern-instance-id-maps"
-             .= (arrInd2PattInstIDs p)
-           ]
 
 
 
@@ -243,7 +230,7 @@ instance ToJSON PostParams where
 -------------
 
 -- | Converts a scientific number to a natural number. If the number is not an
--- non-negative, non-zero integer, an error occurs.
+-- non-negative then an error occurs.
 
 sn2nat :: Scientific -> Natural
 sn2nat sn =

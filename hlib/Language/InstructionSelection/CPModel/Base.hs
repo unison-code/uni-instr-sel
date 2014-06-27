@@ -21,6 +21,7 @@ import Language.InstructionSelection.Graphs
   )
 import Language.InstructionSelection.Patterns.IDs (PatternInstanceID)
 import Language.InstructionSelection.TargetMachine (RegisterID)
+import Language.InstructionSelection.Utils (Natural)
 
 
 
@@ -182,7 +183,11 @@ data PostParams
 
           -- | The array indices-to-pattern instance id mappings.
 
-        , arrInd2PattInstIDs :: [Integer]
+        , arrInd2PattInstIDs :: [Natural]
+
+          -- | The array indices-to-label node ID mappings.
+
+        , arrInd2LabNodeIDs :: [Natural]
 
       }
     deriving (Show)
