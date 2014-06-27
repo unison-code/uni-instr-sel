@@ -56,8 +56,6 @@ import Control.Monad
   , when
   )
 import Data.Aeson
-import Data.Attoparsec.ByteString (parseOnly)
-import Data.Attoparsec.Number (Number (..))
 import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
   , unpack
@@ -66,6 +64,7 @@ import Data.Maybe
   ( fromJust
   , isJust
   )
+import Data.Scientific (Scientific)
 
 
 
@@ -168,36 +167,28 @@ instance ToJSON Constraint where
   toJSON = toJSON . toLispExpr
 
 instance FromJSON NodeID where
-  parseJSON (Number n) =
-    do when (n <= 0) $ fail "number is not a node ID"
-       return (toNodeID n)
+  parseJSON (Number sn) = return $ toNodeID $ sn2nat sn
   parseJSON _ = mzero
 
 instance ToJSON NodeID where
   toJSON nid = toJSON (fromNodeID nid)
 
 instance FromJSON PatternInstanceID where
-  parseJSON (Number i) =
-    do when (i <= 0) $ fail "number is not a pattern instance ID"
-       return (toPatternInstanceID i)
+  parseJSON (Number sn) = return $ toPatternInstanceID $ sn2nat sn
   parseJSON _ = mzero
 
 instance ToJSON PatternInstanceID where
   toJSON iid = toJSON (fromPatternInstanceID iid)
 
 instance FromJSON RegisterID where
-  parseJSON (Number i) =
-    do when (i <= 0) $ fail "number is not a register ID"
-       return (toRegisterID i)
+  parseJSON (Number sn) = return $ toRegisterID $ sn2nat sn
   parseJSON _ = mzero
 
 instance ToJSON RegisterID where
   toJSON rid = toJSON (fromRegisterID rid)
 
 instance FromJSON Natural where
-  parseJSON (Number (I i)) =
-    do when (i <= 0) $ fail "number is not a natural"
-       return (toNatural i)
+  parseJSON (Number sn) = return $ sn2nat sn
   parseJSON _ = mzero
 
 instance ToJSON Natural where
@@ -209,14 +200,24 @@ instance ToJSON Natural where
 -- Functions
 -------------
 
+-- | Converts a scientific number to a natural number. If the number is not an
+-- non-negative, non-zero integer, an error occurs.
+
+sn2nat :: Scientific -> Natural
+sn2nat sn =
+  let int_value = round sn
+  in if fromInteger int_value /= sn
+     then error "not an integer"
+     else toNatural int_value
+
 -- | Parses a JSON string into a 'CPModelParams'.
 
-fromJSON :: String
+fromJson :: String
             -> Either String        -- ^ Contains the error message, if the
                                     -- parsing failed.
                       CPModelParams -- ^ Contains the parameters, if the
                                     -- parsing was successful.
-fromJSON s =
+fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
         then Left ("failed to parse JSON")
