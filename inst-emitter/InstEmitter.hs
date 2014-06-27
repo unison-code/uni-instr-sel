@@ -31,10 +31,14 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
-import Language.InstructionSelection.SolutionData
+import Language.InstructionSelection.CPModel
+import Language.InstructionSelection.CPModel.Json
+import Language.InstructionSelection.Utils
+  ( fromLeft
+  , fromRight
+  , isLeft
+  )
 import Control.Monad (when)
-import qualified Data.ByteString.Lazy as BS
-import Data.Aeson (decode)
 import Data.Maybe
   ( fromJust
   , isNothing
@@ -66,9 +70,6 @@ parseArgs =
         &= help "The JSON file containing the post-processing parameters."
   }
 
-getJSON :: FilePath -> IO BS.ByteString
-getJSON = BS.readFile
-
 
 
 ----------------
@@ -84,8 +85,17 @@ main =
      when (isNothing ppFile) $
        do putStrLn "No post-processing parameter file provided."
           exitFailure
-     s_json <- getJSON $ fromJust sFile
-     let s_data = decode (getJSON $ fromJust sFile) :: Maybe SolutionData
-     let pp_data = decode (getJSON $ fromJust ppFile) :: Maybe PostParamData
+     s_json <- readFile $ fromJust sFile
+     pp_json <- readFile $ fromJust ppFile
+     let s_res = fromJson s_json
+         pp_res = fromJson pp_json
+     when (isLeft s_res) $
+       do putStrLn $ fromLeft s_res
+          exitFailure
+     when (isLeft pp_res) $
+       do putStrLn $ fromLeft pp_res
+          exitFailure
+     let s_data = fromRight s_res :: CPSolution
+         pp_data = fromRight pp_res :: PostParams
      putStrLn $ show s_data
      putStrLn $ show pp_data

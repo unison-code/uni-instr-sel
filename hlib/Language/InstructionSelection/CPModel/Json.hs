@@ -207,6 +207,35 @@ instance FromJSON Natural where
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
 
+instance FromJSON CPSolution where
+  parseJSON (Object v) =
+    CPSolution
+    <$> v .: "bb-allocated-for-pi"
+    <*> v .: "is-pi-selected"
+    <*> v .: "order-of-bbs"
+  parseJSON _ = mzero
+
+instance ToJSON CPSolution where
+  toJSON s =
+    object [ "bb-allocated-for-pi" .= (bbAllocsForPIs s)
+           , "is-pi-selected"      .= (selectionOfPIs s)
+           , "order-of-bbs"        .= (orderOfBBs s)
+           ]
+
+instance FromJSON PostParams where
+  parseJSON (Object v) =
+    PostParams
+    <$> v .: "model-params"
+    <*> v .: "array-indices-to-pattern-instance-id-maps"
+  parseJSON _ = mzero
+
+instance ToJSON PostParams where
+  toJSON p =
+    object [ "model-params" .= (modelParams p)
+           , "array-indices-to-pattern-instance-id-maps"
+             .= (arrInd2PattInstIDs p)
+           ]
+
 
 
 -------------

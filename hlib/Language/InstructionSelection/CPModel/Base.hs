@@ -152,20 +152,37 @@ data CPSolution
     = CPSolution {
 
           -- | The basic block (given as array indices) to which a particular
-          -- pattern instance was allocated. An index into the list denotes an
-          -- array index for a pattern instance.
+          -- pattern instance was allocated. An array index for a pattern
+          -- instance corresponds to an index into the list.
 
           bbAllocsForPIs :: [Integer]
 
           -- | Indicates whether a particular pattern instance was selected. An
-          -- index into the list denotes an array index for a pattern instance.
+          -- array index for a pattern instance corresponds to an index into the
+          -- list.
 
         , selectionOfPIs :: [Bool]
 
-          -- | The order of basic blocks. An index into the list denotes an
-          -- array index for a particular label node in the function graph.
+          -- | The order of basic blocks. An array index for a label node in the
+          -- function graph corresponds to an index into the list.
 
         , orderOfBBs :: [Integer]
+
+      }
+    deriving (Show)
+
+-- | Contains the post-processing parameters.
+
+data PostParams
+    = PostParams {
+
+          -- | The CP model parameters.
+
+          modelParams :: CPModelParams
+
+          -- | The array indices-to-pattern instance id mappings.
+
+        , arrInd2PattInstIDs :: [Integer]
 
       }
     deriving (Show)
