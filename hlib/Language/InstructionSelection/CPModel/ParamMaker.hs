@@ -148,12 +148,14 @@ mkPatternInstanceData' a_ns
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
 
-computeLabelDoms :: Graph                   -- ^ The CFG.
-                    -> [(NodeID, [NodeID])] -- ^ Dominator sets.
+computeLabelDoms :: Graph              -- ^ The CFG.
+                    -> [Domset NodeID] -- ^ Dominator sets.
 computeLabelDoms cfg =
   let root = fromJust $ rootInCFG cfg
       node_domsets = extractDomSet cfg root
-      node_id_domsets = map (\(n, ns) -> (nodeID n, map nodeID ns)) node_domsets
+      node_id_domsets = map (\d -> Domset (nodeID $ domNode d)
+                                          (map nodeID $ domSet d))
+                            node_domsets
   in node_id_domsets
 
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs

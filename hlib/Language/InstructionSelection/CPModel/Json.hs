@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Language.InstructionSelection.CPModel.Json
@@ -25,7 +25,8 @@ import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.SExpressions
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
-  ( NodeID
+  ( Domset (..)
+  , NodeID
   , fromNodeID
   , toNodeID
   )
@@ -65,6 +66,10 @@ import Data.Maybe
   , isJust
   )
 import Data.Scientific (Scientific)
+import qualified Data.Text as T (unpack)
+
+-- TODO: remove
+import Debug.Trace
 
 
 
@@ -76,7 +81,7 @@ instance FromJSON CPModelParams where
   parseJSON (Object v) =
     CPModelParams
     <$> v .: "function-data"
-    <*> v .: "pattern-instance-data"
+    <*> (trace "here!" $ v .: "pattern-instance-data")
     <*> v .: "machine-data"
   parseJSON _ = mzero
 
@@ -103,13 +108,23 @@ instance ToJSON FunctionGraphData where
     object [ "action-nodes" .= (funcActionNodes d)
            , "data-nodes"   .= (funcDataNodes d)
            , "state-nodes"  .= (funcStateNodes d)
-           , "label-nodes"  .= map f (funcLabelDoms d)
+           , "label-nodes"  .= (funcLabelDoms d)
            , "root-label"   .= (funcRootLabel d)
            , "constraints"  .= (funcConstraints d)
            ]
-    where f (nid, domset) = object [ "node"   .= nid
-                                   , "domset" .= domset
-                                   ]
+
+instance FromJSON (Domset NodeID) where
+  parseJSON (Object v) =
+    Domset
+    <$> v .: "node"
+    <*> v .: "domset"
+  parseJSON _ = mzero
+
+instance ToJSON (Domset NodeID) where
+  toJSON d =
+    object [ "node"   .= (domNode d)
+           , "domset" .= (domSet d)
+           ]
 
 instance FromJSON PatternInstanceData where
   parseJSON (Object v) =
@@ -157,9 +172,10 @@ instance ToJSON MachineData where
            ]
 
 instance FromJSON Constraint where
-  parseJSON (String s) =
-    do let res = fromLispExpr $ show s
-       when (isLeft res) $ fail $ fromLeft res
+  parseJSON (String vs) =
+    do let s = T.unpack vs
+           res = fromLispExpr s
+       trace (show vs ++ " : " ++ show res) $ when (isLeft res) $ fail $ fromLeft res
        return (fromRight res)
   parseJSON _ = mzero
 

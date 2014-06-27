@@ -24,6 +24,7 @@
 
 module Language.InstructionSelection.Graphs.Base (
   BBLabel (..)
+, Domset (..)
 , Edge (..)
 , EdgeLabel (..)
 , EdgeNr (..)
@@ -270,6 +271,25 @@ newtype Matchset n
 newtype Mapping n
     = Mapping (n, n)
     deriving (Show, Eq)
+
+-- | Represents a dominator set. If the set represents an immediate-dominator
+-- set, then only one node will appear in the set of dominated entities.
+
+data Domset t
+    = Domset {
+
+          -- | The dominator entity.
+
+          domNode :: t
+
+          -- | The dominated entities.
+
+        , domSet :: [t]
+
+      }
+    deriving (Show)
+
+
 
 
 
@@ -991,29 +1011,23 @@ isInMatchset (Matchset ms) m = m `elem` ms
 
 extractDomSet :: Graph
                  -> Node      -- ^ The root node.
-                 -> [( Node   -- ^ The dominated node.
-                     , [Node] -- ^ The dominator nodes.
-                     )]
+                 -> [Domset Node]
 extractDomSet (Graph g) n =
   let dom_sets = I.dom g (intNodeID n)
-  in map (\(n1, ns2) -> (fromJust $ intNodeID2Node g n1,
-                         map (fromJust . intNodeID2Node g) ns2))
-         dom_sets
+      f (n1, ns2) = Domset (fromJust $ intNodeID2Node g n1)
+                           (map (fromJust . intNodeID2Node g) ns2)
+  in map f dom_sets
 
 -- | Gets a list of immediate-dominator mappings, given a root node.
 
 extractIDomSet :: Graph
                   -> Node    -- ^ The root node.
-                  -> [( Node -- ^ The dominated node.
-                      , Node -- ^ The dominator node.
-                      )]
+                  -> [Domset Node]
 extractIDomSet (Graph g) n =
   let idom_maps = I.iDom g (intNodeID n)
-  in map (\(n1, n2) -> (fromJust $ intNodeID2Node g n1,
-                        fromJust $ intNodeID2Node g n2))
-         idom_maps
-
-
+      f (n1, n2) = Domset (fromJust $ intNodeID2Node g n1)
+                          [(fromJust $ intNodeID2Node g n2)]
+  in map f idom_maps
 
 -- | Extracts the control-flow graph from a graph. If there is no label node in
 -- the graph, an empty graph is returned.

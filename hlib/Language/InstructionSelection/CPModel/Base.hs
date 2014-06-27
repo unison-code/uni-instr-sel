@@ -15,7 +15,10 @@
 module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Constraints
-import Language.InstructionSelection.Graphs (NodeID (..))
+import Language.InstructionSelection.Graphs
+  ( Domset (..)
+  , NodeID (..)
+  )
 import Language.InstructionSelection.Patterns.IDs (PatternInstanceID)
 import Language.InstructionSelection.TargetMachine (RegisterID)
 
@@ -55,9 +58,7 @@ data FunctionGraphData
           -- | The label nodes in the function graph, along with their dominator
           -- sets.
 
-        , funcLabelDoms :: [( NodeID   -- ^ The dominated label node.
-                            , [NodeID] -- ^ The dominator set.
-                            )]
+        , funcLabelDoms :: [Domset NodeID]
 
           -- | The root label, or entry point into the function.
 
