@@ -2,9 +2,3 @@
 .\#*
 *.o
 *.hi
-parser
-test.*
-test
-*.pdf
-match-test
-test-llvm
