@@ -307,6 +307,7 @@ outputPostprocessingParams(
     out << "\"model-params\": "
         << json_content;
 
+    out << "," << endl;
     out << "\"array-index-to-id-maps\": {" << endl;
 
     out << "\"pattern-instances\": ";
