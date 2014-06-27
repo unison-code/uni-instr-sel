@@ -220,8 +220,8 @@ fromJson :: String
 fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
-        then Left ("failed to parse JSON")
-        else Right (fromJust result)
+        then Right (fromJust result)
+        else Left ("failed to parse JSON")
 
 -- | Converts a 'CPModelParams' into a JSON string.
 
