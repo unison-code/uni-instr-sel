@@ -190,7 +190,7 @@ instance FromLisp SetExpr where
         struct "union" UnionSetExpr e
     <|> struct "intersect" IntersectSetExpr e
     <|> struct "diff" DiffSetExpr e
-    <|> struct "domset-of" DomSetOfLabelExpr e
+    <|> struct "domset-of-lab" DomSetOfLabelExpr e
     <|> struct "reg-class" RegisterClassExpr e
 
 instance ToLisp SetExpr where
