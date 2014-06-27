@@ -223,20 +223,19 @@ sn2nat sn =
      then error "not an integer"
      else toNatural int_value
 
--- | Parses a JSON string into a 'CPModelParams'.
+-- | Parses a JSON string into an entity.
 
-fromJson :: String
-            -> Either String        -- ^ Contains the error message, if the
-                                    -- parsing failed.
-                      CPModelParams -- ^ Contains the parameters, if the
-                                    -- parsing was successful.
+fromJson :: FromJSON a =>
+            String
+            -> Either String -- ^ The error message, if the parsing failed.
+                      a      -- ^ The entity, if the parsing was successful.
 fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
         then Right (fromJust result)
         else Left ("failed to parse JSON")
 
--- | Converts a 'CPModelParams' into a JSON string.
+-- | Converts an entity into a JSON string.
 
-toJson :: CPModelParams -> String
+toJson :: ToJSON a => a -> String
 toJson = BS.unpack . encode
