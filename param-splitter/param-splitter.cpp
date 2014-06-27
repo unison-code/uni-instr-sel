@@ -303,8 +303,8 @@ outputPostprocessingParams(
 ) {
     out << "{" << endl;
 
-    // Output all the original preparameters as a separate field
-    out << "\"preparams\": "
+    // Output all the original CP model parameters as a separate field
+    out << "\"model-params\": "
         << json_content;
 
     out << "\"array-index-to-id-maps\": {" << endl;
