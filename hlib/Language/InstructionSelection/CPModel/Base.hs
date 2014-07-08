@@ -149,8 +149,8 @@ data MachineData
 
 -- | Contains the data for a solution to the CP model.
 
-data CPSolution
-    = CPSolution {
+data CPSolutionData
+    = CPSolutionData {
 
           -- | The basic block (given as array indices) to which a particular
           -- pattern instance was allocated. An array index for a pattern

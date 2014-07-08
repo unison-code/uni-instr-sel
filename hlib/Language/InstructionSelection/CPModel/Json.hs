@@ -207,9 +207,9 @@ instance FromJSON Natural where
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
 
-instance FromJSON CPSolution where
+instance FromJSON CPSolutionData where
   parseJSON (Object v) =
-    CPSolution
+    CPSolutionData
     <$> v .: "bb-allocated-for-pi"
     <*> v .: "is-pi-selected"
     <*> v .: "order-of-bbs"
