@@ -25,7 +25,8 @@ import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.SExpressions
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
-  ( Domset (..)
+  ( BBLabel (..)
+  , Domset (..)
   , NodeID
   , fromNodeID
   , toNodeID
@@ -97,6 +98,7 @@ instance FromJSON FunctionGraphData where
     <*> v .: "state-nodes"
     <*> v .: "label-nodes"
     <*> v .: "root-label"
+    <*> v .: "bb-labels"
     <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -107,6 +109,7 @@ instance ToJSON FunctionGraphData where
            , "state-nodes"  .= (funcStateNodes d)
            , "label-nodes"  .= (funcLabelDoms d)
            , "root-label"   .= (funcRootLabel d)
+           , "bb-labels"    .= (funcBBLabels d)
            , "constraints"  .= (funcConstraints d)
            ]
 
@@ -121,6 +124,19 @@ instance ToJSON (Domset NodeID) where
   toJSON d =
     object [ "node"   .= (domNode d)
            , "domset" .= (domSet d)
+           ]
+
+instance FromJSON BBLabelData where
+  parseJSON (Object v) =
+    BBLabelData
+    <$> v .: "node"
+    <*> v .: "label"
+  parseJSON _ = mzero
+
+instance ToJSON BBLabelData where
+  toJSON d =
+    object [ "node" .= (labNode d)
+           , "label" .= (labBB d)
            ]
 
 instance FromJSON PatternInstanceData where
@@ -206,6 +222,13 @@ instance FromJSON Natural where
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
+
+instance FromJSON BBLabel where
+  parseJSON (String s) = return $ (BBLabel $ T.unpack s)
+  parseJSON _ = mzero
+
+instance ToJSON BBLabel where
+  toJSON (BBLabel s) = toJSON s
 
 instance FromJSON CPSolutionData where
   parseJSON (Object v) =

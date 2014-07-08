@@ -16,7 +16,8 @@ module Language.InstructionSelection.CPModel.Base where
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs
-  ( Domset (..)
+  ( BBLabel (..)
+  , Domset (..)
   , NodeID (..)
   )
 import Language.InstructionSelection.Patterns.IDs (PatternInstanceID)
@@ -65,9 +66,29 @@ data FunctionGraphData
 
         , funcRootLabel :: NodeID
 
+          -- | The basic block labels of the label nodes.
+
+        , funcBBLabels :: [BBLabelData]
+
           -- | The function constraints, if any.
 
         , funcConstraints :: [Constraint]
+
+      }
+    deriving (Show)
+
+-- | Associates a basic block label with a label node.
+
+data BBLabelData
+    = BBLabelData {
+
+          -- | The node ID of the label node.
+
+          labNode :: NodeID
+
+          -- | The basic block label of the label node.
+
+        , labBB :: BBLabel
 
       }
     deriving (Show)
