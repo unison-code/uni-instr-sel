@@ -14,8 +14,8 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.CPModel.PostProcessor
-  ( DataDepDAG
-  , mkDataDepDAG
+  ( DataDepGraph
+  , mkDataDepGraph
   )
 where
 
@@ -29,11 +29,11 @@ import qualified Data.Graph.Inductive as I
 -- Data types
 --------------
 
--- | A data type representing a DAG where the nodes represent pattern instances,
--- and the directed edges represent data dependencies between the pattern
--- instances.
+-- | A data type representing a graph where the nodes represent pattern
+-- instances, and the directed edges represent data dependencies between the
+-- pattern instances.
 
-type DataDepDAG = I.Gr PatternInstanceID ()
+type DataDepGraph = I.Gr PatternInstanceID ()
 
 
 
@@ -42,15 +42,13 @@ type DataDepDAG = I.Gr PatternInstanceID ()
 -------------
 
 -- | Takes a list of pattern instance data and pattern instance IDs, and
--- produces a data dependency DAG such that every pattern instance ID is
+-- produces a data dependency graph such that every pattern instance ID is
 -- represented by a node, and there is a directed edge between two nodes if the
 -- pattern instance indicated by the target node uses data produced by the
--- pattern instance indicated by the source node. Potential cyclic dependencies
--- caused by Phi patterns will be broken such that the Phi patterns appear as
--- the originator of the data.
+-- pattern instance indicated by the source node.
 
-mkDataDepDAG :: [PatternInstanceData]
-                -> [PatternInstanceID]
-                -> DataDepDAG
+mkDataDepGraph :: [PatternInstanceData]
+                  -> [PatternInstanceID]
+                  -> DataDepGraph
 -- TODO: implement
-mkDataDepDAG _ _ = I.empty
+mkDataDepGraph _ _ = I.empty
