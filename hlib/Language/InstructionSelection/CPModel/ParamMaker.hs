@@ -70,8 +70,9 @@ mkFunctionGraphData os =
                        (nodeIDsByType isStateNode)
                        (computeLabelDoms cfg)
                        (nodeID $ fromJust $ rootInCFG cfg)
-                       (map (\n -> BBLabelData (nodeID n) (bbLabel n)) $
-                        filter isLabelNode $ allNodes g
+                       (map (\n -> BBLabelData (nodeID n)
+                                   (bbLabel $ nodeType n))
+                        $ filter isLabelNode $ allNodes g
                        )
                        (osConstraints os)
 
