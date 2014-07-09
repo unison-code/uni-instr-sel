@@ -93,7 +93,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setCodeSizesForPIs(root, p);
     setLatenciesForPIs(root, p);
     setConstraintsForPIs(root, p);
-    setNoUseDefDomConstraintsSettingsForPIs(root, p);
+    setAUDDCSettingsForPIs(root, p);
     setActionNodesCoveredByPIs(root, p);
     setDataNodesDefinedByPIs(root, p);
     setDataNodesUsedByPIs(root, p);
@@ -328,20 +328,19 @@ ModelParams::setConstraintsForPIs(const Value& root, ModelParams& p) {
 }
 
 vector<bool>
-ModelParams::getNoUseDefDomConstraintsSettingForAllPIs(void) const {
-    return pat_inst_no_use_def_dom_constraints_;
+ModelParams::getAUDDCSettingForAllPIs(void) const {
+    return pat_inst_use_def_dom_constraints_;
 }
 
 void
-ModelParams::setNoUseDefDomConstraintsSettingsForPIs(
+ModelParams::setAUDDCSettingsForPIs(
     const Json::Value& root,
     ModelParams& p
 ) {
     for (auto entry
-             : getJsonValue(root, "pat-inst-no-use-def-dom-constraints"))
+             : getJsonValue(root, "pat-inst-apply-use-def-dom-constraints"))
     {
-        p.pat_inst_no_use_def_dom_constraints_.push_back(
-            toBool(entry));
+        p.pat_inst_use_def_dom_constraints_.push_back(toBool(entry));
     }
 }
 

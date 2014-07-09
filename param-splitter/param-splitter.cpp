@@ -261,12 +261,12 @@ void outputModelParams(
     }
 
     out << "," << endl
-        << "\"pat-inst-no-use-def-dom-constraints\" : ";
+        << "\"pat-inst-apply-use-def-dom-constraints\" : ";
     {
         vector<bool> settings(params.getNumPIs());
         for (const ID& id : params.getIDsForAllPIs()) {
             settings[params.getIndexForPI(id)] =
-                params.getNoUseDefDomConstraintsSettingForPI(id);
+                params.getAUDDCSettingForPI(id);
         }
         printJsonValue(out, settings);
     }
@@ -274,7 +274,7 @@ void outputModelParams(
     out << "," << endl
         << "\"pat-inst-constraints\" : ";
     {
-        list< list<string> > all_cs_str;
+        vector< list<string> > all_cs_str(params.getNumPIs());
         for (const ID& id : params.getIDsForAllPIs()) {
             list<string> cs_str;
             const list<const Constraint*>& cs = params.getConstraintsForPI(id);
@@ -286,7 +286,7 @@ void outputModelParams(
                 cs_str.push_back(str);
                 delete new_c;
             }
-            all_cs_str.push_back(cs_str);
+            all_cs_str[params.getIndexForPI(id)] = cs_str;
         }
         printJsonValue(out, all_cs_str);
     }

@@ -91,7 +91,7 @@ Params::parseJson(const string& str, Params& p) {
     setCodeSizesForPIs(root, p);
     setLatenciesForPIs(root, p);
     setConstraintsForPIs(root, p);
-    setNoUseDefDomConstraintsSettingsForPIs(root, p);
+    setAUDDCSettingsForPIs(root, p);
     setActionNodesCoveredByPIs(root, p);
     setDataNodesDefinedByPIs(root, p);
     setDataNodesUsedByPIs(root, p);
@@ -537,25 +537,22 @@ Params::isLabelNodeInF(const ID& id) const {
 }
 
 bool
-Params::getNoUseDefDomConstraintsSettingForPI(const ID& instance) const {
-    return getMappedValue(instance, pat_inst_no_use_def_dom_constraints_);
+Params::getAUDDCSettingForPI(const ID& instance) const {
+    return getMappedValue(instance, pat_inst_use_def_dom_constraints_);
 }
 
 void
-Params::setNoUseDefDomConstraintsSettingsForPIs(
+Params::setAUDDCSettingsForPIs(
     const Json::Value& root,
     Params& p
 ) {
     for (auto instance : getJsonValue(root, "pattern-instance-data")) {
         const ID& instance_id = toID(getJsonValue(instance,
                                                   "pattern-instance-id"));
-        const string field_name("no-use-def-dom-constraints");
-        bool setting = hasJsonValue(instance, field_name)
-                       ? toBool(getJsonValue(instance, field_name))
-                       : false;
+        const string field_name("apply-use-def-dom-constraints");
         addMapping(instance_id,
-                   setting,
-                   p.pat_inst_no_use_def_dom_constraints_);
+                   toBool(getJsonValue(instance, field_name)),
+                   p.pat_inst_use_def_dom_constraints_);
     }
 }
 

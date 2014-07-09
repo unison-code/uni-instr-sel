@@ -187,7 +187,7 @@ class ModelParams {
      * @returns Boolean.
      */
     std::vector<bool>
-    getNoUseDefDomConstraintsSettingForAllPIs(void) const;
+    getAUDDCSettingForAllPIs(void) const;
 
     /**
      * Gets the constraints for the function graph.
@@ -360,7 +360,8 @@ class ModelParams {
     setLatenciesForPIs(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the no-use-def-dom-constraints settings for the pattern instances.
+     * Sets the apply-use-def-dom-constraints settings for the pattern
+     * instances.
      *
      * @param root
      *        The JSON root value.
@@ -370,8 +371,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root,
-                                            ModelParams& p);
+    setAUDDCSettingsForPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -598,7 +598,7 @@ class ModelParams {
      * instance. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::vector<bool> pat_inst_no_use_def_dom_constraints_;
+    std::vector<bool> pat_inst_use_def_dom_constraints_;
 };
 
 }

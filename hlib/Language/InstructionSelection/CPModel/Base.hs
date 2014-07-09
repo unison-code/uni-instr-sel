@@ -20,7 +20,11 @@ import Language.InstructionSelection.Graphs
   , Domset (..)
   , NodeID (..)
   )
-import Language.InstructionSelection.Patterns.IDs (PatternInstanceID)
+import Language.InstructionSelection.Patterns.IDs
+  ( InstructionID
+  , PatternID
+  , PatternInstanceID
+  )
 import Language.InstructionSelection.TargetMachine (RegisterID)
 import Language.InstructionSelection.Utils (Natural)
 
@@ -98,9 +102,17 @@ data BBLabelData
 data PatternInstanceData
     = PatternInstanceData {
 
+          -- | The instruction ID of this pattern instance.
+
+          patInstructionID :: InstructionID
+
+          -- | The pattern ID of this pattern instance.
+
+        , patPatternID :: PatternID
+
           -- | The matchset ID of this pattern instance.
 
-          patInstanceID :: PatternInstanceID
+        , patInstanceID :: PatternInstanceID
 
           -- | The action nodes in the function graph which are covered by this
           -- pattern instance.
@@ -147,10 +159,11 @@ data PatternInstanceData
 
         , patConstraints :: [Constraint]
 
-          -- | Whether the use-def constraints should be removed from this
-          -- pattern instance. This only applies to the generic phi patterns.
+          -- | Whether the use-def-dom constraints apply to this pattern
+          -- instance. This will typically always be set to 'True' for all
+          -- patterns instances except those of the generic phi patterns.
 
-        , patNoUseDefConstraints :: Bool
+        , patAUDDC :: Bool
 
           -- | The size of the instruction associated with this pattern
           -- instance.

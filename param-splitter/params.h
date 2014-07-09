@@ -227,7 +227,7 @@ class Params {
      *         When there is no instance with such an ID.
      */
     bool
-    getNoUseDefDomConstraintsSettingForPI(const Model::ID& instance) const;
+    getAUDDCSettingForPI(const Model::ID& instance) const;
 
     /**
      * Gets the array index for a given action node in the function graph.
@@ -952,7 +952,8 @@ class Params {
     setLatenciesForPIs(const Json::Value& root, Params& p);
 
     /**
-     * Sets the no-use-def-dom-constraints settings for the pattern instances.
+     * Sets the apply-use-def-dom-constraints settings for the pattern
+     * instances.
      *
      * @param root
      *        The JSON root value.
@@ -962,7 +963,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setNoUseDefDomConstraintsSettingsForPIs(const Json::Value& root, Params& p);
+    setAUDDCSettingsForPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function action nodes covered by the respective pattern
@@ -1206,7 +1207,7 @@ class Params {
      * instance. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::map<Model::ID, bool> pat_inst_no_use_def_dom_constraints_;
+    std::map<Model::ID, bool> pat_inst_use_def_dom_constraints_;
 };
 
 #endif

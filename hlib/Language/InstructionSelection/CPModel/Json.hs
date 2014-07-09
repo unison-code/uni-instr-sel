@@ -31,11 +31,7 @@ import Language.InstructionSelection.Graphs
   , fromNodeID
   , toNodeID
   )
-import Language.InstructionSelection.Patterns
-  ( PatternInstanceID
-  , fromPatternInstanceID
-  , toPatternInstanceID
-  )
+import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine
   ( RegisterID
   , fromRegisterID
@@ -142,38 +138,39 @@ instance ToJSON BBLabelData where
 instance FromJSON PatternInstanceData where
   parseJSON (Object v) =
     PatternInstanceData
-    <$> v .:  "pattern-instance-id"
-    <*> v .:  "action-nodes-covered"
-    <*> v .:  "data-nodes-defined"
-    <*> v .:  "data-nodes-used"
-    <*> v .:  "data-nodes-used-by-phis"
-    <*> v .:  "state-nodes-defined"
-    <*> v .:  "state-nodes-used"
-    <*> v .:  "label-nodes-referred"
-    <*> v .:  "constraints"
-    <*> v .:? "no-use-def-dom-constraints" .!= False
-    <*> v .:  "code-size"
-    <*> v .:  "latency"
+    <$> v .: "instruction-id"
+    <*> v .: "pattern-id"
+    <*> v .: "pattern-instance-id"
+    <*> v .: "action-nodes-covered"
+    <*> v .: "data-nodes-defined"
+    <*> v .: "data-nodes-used"
+    <*> v .: "data-nodes-used-by-phis"
+    <*> v .: "state-nodes-defined"
+    <*> v .: "state-nodes-used"
+    <*> v .: "label-nodes-referred"
+    <*> v .: "constraints"
+    <*> v .: "apply-use-def-dom-constraints"
+    <*> v .: "code-size"
+    <*> v .: "latency"
   parseJSON _ = mzero
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object ([ "pattern-instance-id"     .= (patInstanceID d)
-            , "action-nodes-covered"    .= (patActionNodesCovered d)
-            , "data-nodes-defined"      .= (patDataNodesDefined d)
-            , "data-nodes-used"         .= (patDataNodesUsed d)
-            , "data-nodes-used-by-phis" .= (patDataNodesUsedByPhis d)
-            , "state-nodes-defined"     .= (patStateNodesDefined d)
-            , "state-nodes-used"        .= (patStateNodesUsed d)
-            , "label-nodes-referred"    .= (patLabelNodesReferred d)
-            , "code-size"               .= (patCodeSize d)
-            , "latency"                 .= (patLatency d)
-            , "constraints"             .= (patConstraints d)
-            ]
-            ++ if patNoUseDefConstraints d
-                  then ["no-use-def-dom-constraints" .= True]
-                  else []
-           )
+    object ([ "instruction-id"                .= (patInstructionID d)
+            , "pattern-id"                    .= (patPatternID d)
+            , "pattern-instance-id"           .= (patInstanceID d)
+            , "action-nodes-covered"          .= (patActionNodesCovered d)
+            , "data-nodes-defined"            .= (patDataNodesDefined d)
+            , "data-nodes-used"               .= (patDataNodesUsed d)
+            , "data-nodes-used-by-phis"       .= (patDataNodesUsedByPhis d)
+            , "state-nodes-defined"           .= (patStateNodesDefined d)
+            , "state-nodes-used"              .= (patStateNodesUsed d)
+            , "label-nodes-referred"          .= (patLabelNodesReferred d)
+            , "constraints"                   .= (patConstraints d)
+            , "apply-use-def-dom-constraints" .= (patAUDDC d)
+            , "code-size"                     .= (patCodeSize d)
+            , "latency"                       .= (patLatency d)
+            ])
 
 instance FromJSON MachineData where
   parseJSON (Object v) =
@@ -203,6 +200,20 @@ instance FromJSON NodeID where
 
 instance ToJSON NodeID where
   toJSON nid = toJSON (fromNodeID nid)
+
+instance FromJSON InstructionID where
+  parseJSON (Number sn) = return $ toInstructionID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON InstructionID where
+  toJSON iid = toJSON (fromInstructionID iid)
+
+instance FromJSON PatternID where
+  parseJSON (Number sn) = return $ toPatternID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON PatternID where
+  toJSON iid = toJSON (fromPatternID iid)
 
 instance FromJSON PatternInstanceID where
   parseJSON (Number sn) = return $ toPatternInstanceID $ sn2nat sn

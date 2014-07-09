@@ -14,28 +14,22 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.CPModel.ParamMaker (
-  NoUseDefDomConstraintSetting
-, mkParams
-) where
+module Language.InstructionSelection.CPModel.ParamMaker
+  (mkParams)
+where
 
 import Language.InstructionSelection.Constraints
-import Language.InstructionSelection.CPModel.Base
+import Language.InstructionSelection.CPModel
+  hiding (patAUDDC)
 import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
-import Language.InstructionSelection.Patterns ( PatternInstanceID
-                                              , InstProperties (..)
-                                              )
+import Language.InstructionSelection.Patterns
+import Language.InstructionSelection.ProgramModules
+  (Function (..))
 import Language.InstructionSelection.TargetMachine
 import Data.Maybe
-
-
-
--------------
--- Type defs
--------------
-
-type NoUseDefDomConstraintSetting = Bool
+  (fromJust)
 
 
 
@@ -43,27 +37,23 @@ type NoUseDefDomConstraintSetting = Bool
 -- Functions
 -------------
 
--- | Takes a function and a list of pattern instance data and transforms it into
--- a CP model parameters object.
+-- | Takes a function, a list of instructions, and machine data, to generate the
+-- corresponding parameters to the constraint model. This will also perform
+-- pattern matching of all patterns over the function graph.
 
-mkParams :: OpStructure      -- ^ Function data.
-            -> TargetMachine -- ^ Machine data.
-            -> [( OpStructure
-                , [(Matchset Node, PatternInstanceID)]
-                , InstProperties
-                , NoUseDefDomConstraintSetting
-                )] -- ^ Pattern instance data.
+mkParams :: Function
+            -> [Instruction]
+            -> TargetMachine
             -> CPModelParams
-mkParams f m ps =
+mkParams f is m =
   CPModelParams (mkFunctionGraphData f)
-                (concatMap mkPatternInstanceData ps)
-                -- TODO: fix building of machine data
+                (mkPatternInstanceData f is)
                 (mkMachineData m)
 
-mkFunctionGraphData :: OpStructure -> FunctionGraphData
-mkFunctionGraphData os =
-  let g = osGraph os
-      nodeIDsByType f = nodeIDs $ filter f $ allNodes g
+mkFunctionGraphData :: Function -> FunctionGraphData
+mkFunctionGraphData f =
+  let g = osGraph $ functionOS f
+      nodeIDsByType f' = nodeIDs $ filter f' $ allNodes g
       cfg = extractCFG g
   in FunctionGraphData (nodeIDsByType isActionNode)
                        (nodeIDsByType isDataNode)
@@ -74,83 +64,71 @@ mkFunctionGraphData os =
                                    (bbLabel $ nodeType n))
                         $ filter isLabelNode $ allNodes g
                        )
-                       (osConstraints os)
+                       (osConstraints $ functionOS f)
 
-mkMachineData :: TargetMachine
-                 -> MachineData
+mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
   MachineData (map snd (tmRegisters m))
 
-mkPatternInstanceData :: ( OpStructure
-                         , [(Matchset Node, PatternInstanceID)]
-                         , InstProperties
-                         , NoUseDefDomConstraintSetting
-                         )
-                      -> [PatternInstanceData]
-mkPatternInstanceData (os, matchsets, props, b_usedef) =
-  let g = osGraph os
-      a_ns = (nodeIDs $ filter isActionNode $ allNodes g)
-      getNodes t k = filter (\n -> length (k g n) > 0)
-                     $ filter t
-                     $ allNodes g
-      getNodeIDs t k = nodeIDs $ getNodes t k
+mkPatternInstanceData :: Function
+                         -> [Instruction]
+                         -> [PatternInstanceData]
+mkPatternInstanceData f is =
+  fst $ foldr (processInstruction f) ([], 0) is
+
+processInstruction :: Function
+                      -> Instruction
+                      -> ([PatternInstanceData], PatternInstanceID)
+                      -> ([PatternInstanceData], PatternInstanceID)
+processInstruction f i t =
+  foldr (processInstPattern f i) t $ instPatterns i
+
+processInstPattern :: Function
+                      -> Instruction
+                      -> InstPattern
+                      -> ([PatternInstanceData], PatternInstanceID)
+                      -> ([PatternInstanceData], PatternInstanceID)
+processInstPattern f i p t =
+  let fg = osGraph $ functionOS f
+      pg = osGraph $ patOS p
+      ms = map convertMatchsetN2ID $ match fg pg
+  in foldr (processMatchset i p) t ms
+
+processMatchset :: Instruction
+                   -> InstPattern
+                   -> Matchset NodeID
+                   -> ([PatternInstanceData], PatternInstanceID)
+                   -> ([PatternInstanceData], PatternInstanceID)
+processMatchset i p m (pids, next_piid) =
+  let g = osGraph $ patOS p
+      getNodes f1 f2 = filter (\n -> length (f2 g n) > 0)
+                       $ filter f1
+                       $ allNodes g
+      getNodeIDs f1 f2 = nodeIDs $ getNodes f1 f2
+      a_ns = nodeIDs $ filter isActionNode $ allNodes g
       d_def_ns = getNodeIDs isDataNode predecessors
       d_use_ns = getNodes isDataNode successors
       d_use_by_phi_ns = filter (\n -> any isPhiNode $ successors g n) d_use_ns
       s_def_ns = getNodeIDs isStateNode predecessors
       s_use_ns = getNodeIDs isStateNode successors
       l_ref_ns = getNodeIDs isLabelNode predecessors
-      f (m, pid) = mkPatternInstanceData' a_ns
-                                          d_def_ns
-                                          (nodeIDs d_use_ns)
-                                          (nodeIDs d_use_by_phi_ns)
-                                          s_def_ns
-                                          s_use_ns
-                                          l_ref_ns
-                                          (osConstraints os)
-                                          b_usedef
-                                          (convertMatchsetNToID m)
-                                          pid
-                                          props
-  in map f matchsets
-
-mkPatternInstanceData' :: [NodeID]    -- ^ Action nodes covered by the pattern.
-                          -> [NodeID] -- ^ Data nodes defined.
-                          -> [NodeID] -- ^ Data nodes used.
-                          -> [NodeID] -- ^ Data nodes used by phi nodes.
-                          -> [NodeID] -- ^ State nodes defined.
-                          -> [NodeID] -- ^ State nodes used.
-                          -> [NodeID] -- ^ Label nodes referred to.
-                          -> [Constraint]
-                          -> NoUseDefDomConstraintSetting
-                          -> Matchset NodeID
-                          -> PatternInstanceID
-                          -> InstProperties
-                          -> PatternInstanceData
-mkPatternInstanceData' a_ns
-                       d_def_ns
-                       d_use_ns
-                       d_use_by_phi_ns
-                       s_def_ns
-                       s_use_ns
-                       l_ref_ns
-                       cs
-                       b_usedef
-                       matchset
-                       pid
-                       props =
-  PatternInstanceData pid
-                      (mappedNodesPToF matchset a_ns)
-                      (mappedNodesPToF matchset d_def_ns)
-                      (mappedNodesPToF matchset d_use_ns)
-                      (mappedNodesPToF matchset d_use_by_phi_ns)
-                      (mappedNodesPToF matchset s_def_ns)
-                      (mappedNodesPToF matchset s_use_ns)
-                      (mappedNodesPToF matchset l_ref_ns)
-                      (replaceNodeIDsPToFInConstraints matchset cs)
-                      b_usedef
-                      (instCodeSize props)
-                      (instLatency props)
+      inst_props = instProps i
+      new_pid = PatternInstanceData
+                (instID i)
+                (patID p)
+                next_piid
+                (mapPs2Fs m a_ns)
+                (mapPs2Fs m d_def_ns)
+                (mapPs2Fs m $ nodeIDs d_use_ns)
+                (mapPs2Fs m $ nodeIDs d_use_by_phi_ns)
+                (mapPs2Fs m s_def_ns)
+                (mapPs2Fs m s_use_ns)
+                (mapPs2Fs m l_ref_ns)
+                (mapPs2FsInConstraints m (osConstraints $ patOS p))
+                (patAUDDC p)
+                (instCodeSize inst_props)
+                (instLatency inst_props)
+  in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
@@ -170,10 +148,10 @@ computeLabelDoms cfg =
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
 -- to the corresponding function node IDs.
 
-replaceNodeIDsPToFInConstraints :: Matchset NodeID
-                                  -> [Constraint]
-                                  -> [Constraint]
-replaceNodeIDsPToFInConstraints m cs =
+mapPs2FsInConstraints :: Matchset NodeID
+                         -> [Constraint]
+                         -> [Constraint]
+mapPs2FsInConstraints m cs =
   map (replaceFunc m) cs
   where replaceFunc m' (BoolExprConstraint e) = BoolExprConstraint $
                                                 replaceInBoolExpr m' e
@@ -204,6 +182,8 @@ replaceInBoolExpr m (InSetExpr lhs rhs) =
   InSetExpr (replaceInSetElemExpr m lhs) (replaceInSetExpr m rhs)
 replaceInBoolExpr m (DataNodeIsAnIntConstantExpr e) =
   DataNodeIsAnIntConstantExpr (replaceInNodeExpr m e)
+replaceInBoolExpr m (DataNodeIsIntermediateExpr e) =
+  DataNodeIsIntermediateExpr (replaceInNodeExpr m e)
 
 replaceInNumExpr :: Matchset NodeID -> NumExpr -> NumExpr
 replaceInNumExpr m (PlusExpr  lhs rhs) =
@@ -237,7 +217,7 @@ replaceInIntExpr m (IntConstValueOfDataNodeExpr e) =
 
 replaceInNodeExpr :: Matchset NodeID -> NodeExpr -> NodeExpr
 replaceInNodeExpr m (ANodeIDExpr i) =
-  ANodeIDExpr $ fromJust $ mappedNodePToF m i
+  ANodeIDExpr $ fromJust $ mapP2F m i
 
 replaceInPatternInstanceExpr :: Matchset NodeID
                                 -> PatternInstanceExpr

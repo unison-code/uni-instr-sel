@@ -49,7 +49,7 @@ array[allPatternInstances] of set of int: patInstStateUsed;
 array[allPatternInstances, allFuncLabelNodes] of int: patInstAndLabelMappings;
 array[allPatternInstances] of int: patInstCodeSizes;
 array[allPatternInstances] of int: patInstLatencies;
-array[allPatternInstances] of bool: patInstNoUseDefDomConstraints;
+array[allPatternInstances] of bool: patInstApplyUseDefDomConstraints;
 
 
 
@@ -200,7 +200,7 @@ forall (p in allPatternInstances) (
 % for the state nodes. These constraints should not be applied to the generic
 % phi patterns.
 constraint
-forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p]) (
+forall (p in allPatternInstances where patInstApplyUseDefDomConstraints[p]) (
     pi_sel[p]
     ->
     (

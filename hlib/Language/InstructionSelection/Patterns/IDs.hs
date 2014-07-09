@@ -15,12 +15,15 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstructionSelection.Patterns.IDs (
-  InstructionID (..)
+  AssemblyID (..)
+, InstructionID (..)
 , PatternID (..)
 , PatternInstanceID (..)
+, fromAssemblyID
 , fromPatternInstanceID
 , fromInstructionID
 , fromPatternID
+, toAssemblyID
 , toPatternInstanceID
 , toInstructionID
 , toPatternID
@@ -64,6 +67,14 @@ newtype PatternInstanceID = PatternInstanceID Natural
 instance Show PatternInstanceID where
   show (PatternInstanceID i) = show i
 
+-- | Represents an ID to be used as place-holders inside an assembly string.
+
+newtype AssemblyID = AssemblyID Natural
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show AssemblyID where
+  show (AssemblyID i) = show i
+
 
 
 -------------
@@ -87,3 +98,9 @@ fromPatternID (PatternID i) = i
 
 toPatternID :: (Integral i) => i -> PatternID
 toPatternID = PatternID . toNatural
+
+fromAssemblyID :: AssemblyID -> Natural
+fromAssemblyID (AssemblyID i) = i
+
+toAssemblyID :: (Integral i) => i -> AssemblyID
+toAssemblyID = AssemblyID . toNatural

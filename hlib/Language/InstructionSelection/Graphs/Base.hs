@@ -41,8 +41,8 @@ module Language.InstructionSelection.Graphs.Base (
 , allEdges
 , addNewEdge
 , addNewNode
-, convertMatchsetNToID
-, convertMappingNToID
+, convertMatchsetN2ID
+, convertMappingN2ID
 , copyNodeLabel
 , delEdge
 , delNode
@@ -83,10 +83,10 @@ module Language.InstructionSelection.Graphs.Base (
 , isRetControlNode
 , isStateNode
 , lastAddedNode
-, mappedNodeFToP
-, mappedNodePToF
-, mappedNodesFToP
-, mappedNodesPToF
+, mapF2P
+, mapP2F
+, mapFs2Ps
+, mapPs2Fs
 , matchingNodes
 , mergeNodes
 , mkGraph
@@ -761,16 +761,16 @@ nodeID2Node g nid = filter (\n -> nodeID n == nid) (allNodes g)
 -- | Converts matchset of nodes into a matchset of node IDs. Duplicated entries
 -- are removed.
 
-convertMatchsetNToID :: Matchset Node -> (Matchset NodeID)
-convertMatchsetNToID (Matchset m_nodes) =
-  let m_ids = map convertMappingNToID m_nodes
+convertMatchsetN2ID :: Matchset Node -> (Matchset NodeID)
+convertMatchsetN2ID (Matchset m_nodes) =
+  let m_ids = map convertMappingN2ID m_nodes
       m_unique_ids = removeDuplicates m_ids
   in Matchset m_unique_ids
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 
-convertMappingNToID :: Mapping Node -> (Mapping NodeID)
-convertMappingNToID m = (Mapping (nodeID $ fNode m, nodeID $ pNode m))
+convertMappingN2ID :: Mapping Node -> (Mapping NodeID)
+convertMappingN2ID m = (Mapping (nodeID $ fNode m, nodeID $ pNode m))
 
 -- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
 
@@ -888,7 +888,7 @@ matchingOrderingOfInEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
       preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
-      preds_fn = mappedNodesPToF st preds_pn
+      preds_fn = mapPs2Fs st preds_pn
       es = zip (sortEdgesByInNumbers (concatMap (flip (edges pg) pn) preds_pn))
                (sortEdgesByInNumbers (concatMap (flip (edges fg) fn) preds_fn))
   in if checkOrderingOfInEdges pg pn
@@ -906,7 +906,7 @@ matchingOrderingOfOutEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
       succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
-      succs_fn = mappedNodesPToF st succs_pn
+      succs_fn = mapPs2Fs st succs_pn
       es = zip (sortEdgesByOutNumbers (concatMap (edges pg pn) succs_pn))
                (sortEdgesByOutNumbers (concatMap (edges fg fn) succs_fn))
   in if checkOrderingOfOutEdges pg pn
@@ -927,7 +927,7 @@ matchingOutEdgeOrderingOfPreds fg pg st m =
       pn = pNode m
       preds_pn = filter (`elem` (pNodes st)) (predecessors pg pn)
       pn_ord_preds =  filter (checkOrderingOfOutEdges pg) preds_pn
-      fn_ord_preds = mappedNodesPToF st pn_ord_preds
+      fn_ord_preds = mapPs2Fs st pn_ord_preds
       es = zip (sortEdgesByOutNumbers
                  (concatMap (flip (edges pg) pn) pn_ord_preds))
                (sortEdgesByOutNumbers
@@ -947,7 +947,7 @@ matchingInEdgeOrderingOfSuccs fg pg st m =
       pn = pNode m
       succs_pn = filter (`elem` (pNodes st)) (successors pg pn)
       pn_ord_succs =  filter (checkOrderingOfInEdges pg) succs_pn
-      fn_ord_succs = mappedNodesPToF st pn_ord_succs
+      fn_ord_succs = mapPs2Fs st pn_ord_succs
       es = zip (sortEdgesByInNumbers (concatMap (edges pg pn) pn_ord_succs))
                (sortEdgesByInNumbers (concatMap (edges fg fn) fn_ord_succs))
   in all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
@@ -955,31 +955,31 @@ matchingInEdgeOrderingOfSuccs fg pg st m =
 -- | From a matchset and a list of function nodes, get the list of corresponding
 -- pattern nodes for which there exists a mapping.
 
-mappedNodesFToP :: (Eq n)
-                   => Matchset n -- ^ The matchset.
-                   -> [n]        -- ^ List of function nodes.
-                   -> [n]        -- ^ List of corresponding pattern nodes.
-mappedNodesFToP (Matchset m) fns =
+mapFs2Ps :: (Eq n)
+            => Matchset n -- ^ The matchset.
+            -> [n]        -- ^ List of function nodes.
+            -> [n]        -- ^ List of corresponding pattern nodes.
+mapFs2Ps (Matchset m) fns =
   [ pn | (fn, pn) <- map fromMapping m, fn' <- fns, fn == fn' ]
 
 -- | From a matchset and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping.
 
-mappedNodesPToF :: (Eq n)
-                   => Matchset n -- ^ The matchset.
-                   -> [n]        -- ^ List of pattern nodes.
-                   -> [n]        -- ^ List of corresponding function nodes.
-mappedNodesPToF (Matchset m) pns =
+mapPs2Fs :: (Eq n)
+            => Matchset n -- ^ The matchset.
+            -> [n]        -- ^ List of pattern nodes.
+            -> [n]        -- ^ List of corresponding function nodes.
+mapPs2Fs (Matchset m) pns =
   [ fn | (fn, pn) <- map fromMapping m, pn' <- pns, pn == pn' ]
 
 -- | From a matchset and a function node, get the corresponding pattern node if
 -- there exists a such a mapping.
 
-mappedNodeFToP :: (Eq n)
-                   => Matchset n -- ^ The matchset.
-                   -> n          -- ^ Function node.
-                   -> Maybe n    -- ^ Corresponding pattern node.
-mappedNodeFToP (Matchset m) fn =
+mapF2P :: (Eq n)
+          => Matchset n -- ^ The matchset.
+          -> n          -- ^ Function node.
+          -> Maybe n    -- ^ Corresponding pattern node.
+mapF2P (Matchset m) fn =
   let found = [ pn | (fn', pn) <- map fromMapping m, fn' == fn ]
   in if length found > 0
         then Just $ head found
@@ -988,11 +988,11 @@ mappedNodeFToP (Matchset m) fn =
 -- | From a matchset and a pattern node, get the corresponding function node if
 -- there exists a such a mapping.
 
-mappedNodePToF :: (Eq n)
-                   => Matchset n -- ^ The matchset.
-                   -> n          -- ^ Pattern node.
-                   -> Maybe n    -- ^ Corresponding function node.
-mappedNodePToF (Matchset m) pn =
+mapP2F :: (Eq n)
+          => Matchset n -- ^ The matchset.
+          -> n          -- ^ Pattern node.
+          -> Maybe n    -- ^ Corresponding function node.
+mapP2F (Matchset m) pn =
   let found = [ fn | (fn, pn') <- map fromMapping m, pn' == pn ]
   in if length found > 0
         then Just $ head found

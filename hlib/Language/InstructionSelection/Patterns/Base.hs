@@ -15,12 +15,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Patterns.Base (
-  Instruction (..)
-, InstPattern (..)
-, InstProperties (..)
-) where
+module Language.InstructionSelection.Patterns.Base
+  ( Instruction (..)
+  , InstPattern (..)
+  , InstProperties (..)
+  )
+where
 
+import Language.InstructionSelection.Graphs (NodeID)
 import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Patterns.IDs
@@ -36,8 +38,8 @@ import Language.InstructionSelection.Patterns.IDs
 data Instruction
     = Instruction {
 
-          -- | An ID which is globally unique across all instructions, but not
-          -- necessarily contiguous.
+          -- | The ID of this instruction. The ID must be globally unique across
+          -- all instructions, but not necessarily contiguous.
 
           instID :: InstructionID
 
@@ -81,14 +83,28 @@ data InstProperties
 data InstPattern
     = InstPattern {
 
+          -- | The ID of this pattern. The ID must be unique within the same
+          -- instruction, but not necessarily contiguous.
+
+          patID :: PatternID
+
           -- | The operation structure of the pattern.
 
-          patOS :: OpStructure
+        , patOS :: OpStructure
 
-          -- | ID of this pattern. The ID must be globally unique across all
-          -- patterns and all instructions, but not necessarily contiguous.
+          -- | Indicates whether the use-def-dom constraints apply to this
+          -- pattern. This will typically always be set to 'True' for all
+          -- patterns except the generic phi patterns.
 
-        , patID :: PatternID
+        , patAUDDC :: Bool
+
+          -- | Maps an 'AssemblyID', which is denoted as the index into the
+          -- list, that appear in the 'AssemblyString' of the instruction, to a
+          -- particular data node in the graph of the pattern's operation
+          -- structure. Because of this, all 'AssemblyID's used within the same
+          -- 'AssemblyString' *must* be unique and contiguous!
+
+        , patAssIDMaps :: [NodeID]
 
       }
     deriving (Show)

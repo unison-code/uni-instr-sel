@@ -252,8 +252,8 @@ generateModelPatternInstanceParameters(
     printMinizincValue(out, params.getLatenciesForAllPIs());
     out << ");" << endl;
 
-    out << "patInstNoUseDefDomConstraints = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getNoUseDefDomConstraintsSettingForAllPIs());
+    out << "patInstApplyUseDefDomConstraints = array1d(allPatternInstances, ";
+    printMinizincValue(out, params.getAUDDCSettingForAllPIs());
     out << ");" << endl;
 }
 

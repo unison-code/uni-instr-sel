@@ -34,14 +34,12 @@ import Language.InstructionSelection.Constraints.PCBuilder
 import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.ParamMaker
 import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.Graphs.VFTwo
-import Language.InstructionSelection.TargetMachine
+import Language.InstructionSelection.Patterns
+import Language.InstructionSelection.Patterns.AssemblyString
+import Language.InstructionSelection.ProgramModules
 import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Patterns
-import Data.List ( mapAccumL
-                 , zip5
-                 )
+import Language.InstructionSelection.TargetMachine
 
 main :: IO ()
 main =
@@ -103,6 +101,12 @@ main =
                        AnIntegerExpr 0
                      )
                    ]
+         func = Function
+                "test"
+                (OpStructure func_g func_cs)
+                []
+                []
+
          init_def_pattern = mkGraph
                 (map Node
                 [ (0, NodeLabel 0 (LabelNode $ BBLabel "start"))
@@ -181,196 +185,240 @@ main =
                 , (7, 5, EdgeLabel 0 1)
                 , (5, 8, EdgeLabel 0 0)
                 ])
-         patterns = [ init_def_pattern
-                    , add_pattern
-                    , bnz_pattern
-                    , br_pattern
-                    , br_fallthrough_pattern
-                    , ret_pattern
-                    , phi_pattern
-                    ]
-         constraints = [ mkBBAllocConstraints init_def_pattern
-                       , mkBBAllocConstraints add_pattern
-                       , mkBBAllocConstraints bnz_pattern
-                       , mkBBAllocConstraints br_pattern
-                       , mkBBAllocConstraints br_fallthrough_pattern
-                         ++
-                         [ BoolExprConstraint $
-                           EqExpr
-                           (
-                             DistanceBetweenInstanceAndLabelExpr
-                             (
-                               ThisPatternInstanceExpr
-                             )
-                             (
-                               LabelOfLabelNodeExpr $
-                               ANodeIDExpr 1
-                             )
-                           )
-                           (
-                             Int2NumExpr $
-                             AnIntegerExpr 0
-                           )
-                         ]
-                       , mkBBAllocConstraints ret_pattern
-                       , [ BoolExprConstraint $
-                           AndExpr
-                           (
-                             EqExpr
-                             (
-                               Register2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
-                               ANodeIDExpr 0
-                             )
-                             (
-                               Register2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
-                               ANodeIDExpr 1
-                             )
-                           )
-                           (
-                             EqExpr
-                             (
-                               Register2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
-                               ANodeIDExpr 1
-                             )
-                             (
-                               Register2NumExpr $
-                               RegisterAllocatedToDataNodeExpr $
-                               ANodeIDExpr 2
-                             )
-                           )
-                         , BoolExprConstraint $
-                           EqExpr
-                           (
-                             Label2NumExpr $
-                             LabelOfLabelNodeExpr $
-                             ANodeIDExpr 5
-                           )
-                           (
-                             Label2NumExpr $
-                             LabelAllocatedToPatternInstanceExpr $
-                             ThisPatternInstanceExpr
-                           )
-                         , BoolExprConstraint $
-                           AndExpr
-                           (
-                             InSetExpr
-                             (
-                               Label2SetElemExpr $
-                               LabelAllocatedToPatternInstanceExpr $
-                               DefinerOfDataNodeExpr $
-                               ANodeIDExpr 0
-                             )
-                             (
-                               DomSetOfLabelExpr $
-                               LabelOfLabelNodeExpr $
-                               ANodeIDExpr 3
-                             )
-                           )
-                           (
-                             InSetExpr
-                             (
-                               Label2SetElemExpr $
-                               LabelAllocatedToPatternInstanceExpr $
-                               DefinerOfDataNodeExpr $
-                               ANodeIDExpr 1
-                             )
-                             (
-                               DomSetOfLabelExpr $
-                               LabelOfLabelNodeExpr $
-                               ANodeIDExpr 4
-                             )
-                           )
-                         , BoolExprConstraint $
-                           NotExpr $
-                           (
-                             AndExpr
-                             (
-                               InSetExpr
-                               (
-                                 Label2SetElemExpr $
-                                 LabelAllocatedToPatternInstanceExpr $
-                                 DefinerOfDataNodeExpr $
-                                 ANodeIDExpr 0
-                               )
-                               (
-                                 IntersectSetExpr
-                                 (
-                                   DomSetOfLabelExpr $
-                                   LabelOfLabelNodeExpr $
-                                   ANodeIDExpr 3
-                                 )
-                                 (
-                                   DomSetOfLabelExpr $
-                                   LabelOfLabelNodeExpr $
-                                   ANodeIDExpr 4
-                                 )
-                               )
-                             )
-                             (
-                               InSetExpr
-                               (
-                                 Label2SetElemExpr $
-                                 LabelAllocatedToPatternInstanceExpr $
-                                 DefinerOfDataNodeExpr $
-                                 ANodeIDExpr 1
-                               )
-                               (
-                                 IntersectSetExpr
-                                 (
-                                   DomSetOfLabelExpr $
-                                   LabelOfLabelNodeExpr $
-                                   ANodeIDExpr 3
-                                 )
-                                 (
-                                   DomSetOfLabelExpr $
-                                   LabelOfLabelNodeExpr $
-                                   ANodeIDExpr 4
-                                 )
-                               )
-                             )
-                           )
-                         ]
-                       ]
-         no_use_def_cs = [ False
-                         , False
-                         , False
-                         , False
-                         , False
-                         , False
-                         , True
-                         ]
-         inst_props = [ InstProperties 1 1
-                      , InstProperties 1 1
-                      , InstProperties 1 1
-                      , InstProperties 1 1
-                      , InstProperties 0 0
-                      , InstProperties 1 1
-                      , InstProperties 1 1
-                      ]
-         list_of_matchsets = map (match func_g) patterns
-         (_, list_of_matchsets_with_ids) =
-           mapAccumL (\curr sets -> ( curr + (toPatternInstanceID $ length sets)
-                                    , zip sets [curr..]
-                                    )
-                     )
+         init_def_pattern_cs = mkBBAllocConstraints init_def_pattern
+         add_pattern_cs = mkBBAllocConstraints add_pattern
+         bnz_pattern_cs = mkBBAllocConstraints bnz_pattern
+         br_pattern_cs = mkBBAllocConstraints br_pattern
+         br_fallthrough_pattern_cs =
+           mkBBAllocConstraints br_fallthrough_pattern
+           ++
+           [ BoolExprConstraint $
+             EqExpr
+             (
+               DistanceBetweenInstanceAndLabelExpr
+               (
+                 ThisPatternInstanceExpr
+               )
+               (
+                 LabelOfLabelNodeExpr $
+                 ANodeIDExpr 1
+               )
+             )
+             (
+               Int2NumExpr $
+               AnIntegerExpr 0
+             )
+           ]
+         ret_pattern_cs =  mkBBAllocConstraints ret_pattern
+         phi_pattern_cs =
+           [ BoolExprConstraint $
+             AndExpr
+             (
+               EqExpr
+               (
+                 Register2NumExpr $
+                 RegisterAllocatedToDataNodeExpr $
+                 ANodeIDExpr 0
+               )
+               (
+                 Register2NumExpr $
+                 RegisterAllocatedToDataNodeExpr $
+                 ANodeIDExpr 1
+               )
+             )
+             (
+               EqExpr
+               (
+                 Register2NumExpr $
+                 RegisterAllocatedToDataNodeExpr $
+                 ANodeIDExpr 1
+               )
+               (
+                 Register2NumExpr $
+                 RegisterAllocatedToDataNodeExpr $
+                 ANodeIDExpr 2
+               )
+             )
+           , BoolExprConstraint $
+             EqExpr
+             (
+               Label2NumExpr $
+               LabelOfLabelNodeExpr $
+               ANodeIDExpr 5
+             )
+             (
+               Label2NumExpr $
+               LabelAllocatedToPatternInstanceExpr $
+               ThisPatternInstanceExpr
+             )
+           , BoolExprConstraint $
+             AndExpr
+             (
+               InSetExpr
+               (
+                 Label2SetElemExpr $
+                 LabelAllocatedToPatternInstanceExpr $
+                 DefinerOfDataNodeExpr $
+                 ANodeIDExpr 0
+               )
+               (
+                 DomSetOfLabelExpr $
+                 LabelOfLabelNodeExpr $
+                 ANodeIDExpr 3
+               )
+             )
+             (
+               InSetExpr
+               (
+                 Label2SetElemExpr $
+                 LabelAllocatedToPatternInstanceExpr $
+                 DefinerOfDataNodeExpr $
+                 ANodeIDExpr 1
+               )
+               (
+                 DomSetOfLabelExpr $
+                 LabelOfLabelNodeExpr $
+                 ANodeIDExpr 4
+               )
+             )
+           , BoolExprConstraint $
+             NotExpr $
+             (
+               AndExpr
+               (
+                 InSetExpr
+                 (
+                   Label2SetElemExpr $
+                   LabelAllocatedToPatternInstanceExpr $
+                   DefinerOfDataNodeExpr $
+                   ANodeIDExpr 0
+                 )
+                 (
+                   IntersectSetExpr
+                   (
+                     DomSetOfLabelExpr $
+                     LabelOfLabelNodeExpr $
+                     ANodeIDExpr 3
+                   )
+                   (
+                     DomSetOfLabelExpr $
+                     LabelOfLabelNodeExpr $
+                     ANodeIDExpr 4
+                   )
+                 )
+               )
+               (
+                 InSetExpr
+                 (
+                   Label2SetElemExpr $
+                   LabelAllocatedToPatternInstanceExpr $
+                   DefinerOfDataNodeExpr $
+                   ANodeIDExpr 1
+                 )
+                 (
+                   IntersectSetExpr
+                   (
+                     DomSetOfLabelExpr $
+                     LabelOfLabelNodeExpr $
+                     ANodeIDExpr 3
+                   )
+                   (
+                     DomSetOfLabelExpr $
+                     LabelOfLabelNodeExpr $
+                     ANodeIDExpr 4
+                   )
+                 )
+               )
+             )
+           ]
+         insts = [ Instruction
+                   0
+                   [ InstPattern
                      0
-                     list_of_matchsets
-         pattern_data =
-           map (\(pat, c, m, prop, b) -> (OpStructure pat c, m, prop, b))
-               (zip5 patterns
-                     constraints
-                     list_of_matchsets_with_ids
-                     inst_props
-                     no_use_def_cs)
-         params = mkParams (OpStructure func_g func_cs)
-                           (TargetMachine [ ("r0", 0)
-                                          , ("r1", 1)
-                                          , ("r2", 2)
-                                          ])
-                           pattern_data
+                     (OpStructure init_def_pattern init_def_pattern_cs)
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   1
+                   [ InstPattern
+                     0
+                     (OpStructure add_pattern add_pattern_cs)
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   2
+                   [ InstPattern
+                     0
+                     (OpStructure bnz_pattern bnz_pattern_cs)
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   1
+                   [ InstPattern
+                     0
+                     (OpStructure br_pattern br_pattern_cs)
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   1
+                   [ InstPattern
+                     0
+                     ( OpStructure
+                       br_fallthrough_pattern
+                       br_fallthrough_pattern_cs
+                     )
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   1
+                   [ InstPattern
+                     0
+                     (OpStructure ret_pattern ret_pattern_cs)
+                     True
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 , Instruction
+                   1
+                   [ InstPattern
+                     0
+                     (OpStructure phi_pattern phi_pattern_cs)
+                     False
+                     []
+                   ]
+                   (InstProperties 1 1)
+                   (AssemblyString [])
+
+                 ]
+         target = TargetMachine [ ("r0", 0)
+                                , ("r1", 1)
+                                , ("r2", 2)
+                                ]
+         params = mkParams func
+                           insts
+                           target
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))
 --           (match func phi_pattern)

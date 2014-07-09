@@ -15,17 +15,35 @@
 
 module Language.InstructionSelection.Patterns.AssemblyString.Base where
 
-import Language.InstructionSelection.SExpressions
+import Language.InstructionSelection.Patterns.IDs (AssemblyID)
 
 
+
+--------------
+-- Data types
+--------------
+
+-- | Represents parts of the assembly string. All 'AssemblyID's used within the
+-- same 'AssemblyString' *must* be unique and contiguous!
+
+data AssemblyPart
+
+      -- | Denotes string which is meant to be output verbatim.
+
+    = AssemblyVerbatim String
+
+      -- | Denotes an immediate value.
+
+    | AssemblyImmValue AssemblyID
+
+      -- | Denotes a register.
+
+    | AssemblyRegister AssemblyID
+
+    deriving (Show)
 
 -- | Record for containing the assembly string to produce during code emission.
 
 data AssemblyString
-    = AssemblyString
-          -- | TODO: refactor into something that is easier to process.
-          String
+    = AssemblyString [AssemblyPart]
     deriving (Show)
-
-instance SExpressionable AssemblyString where
-  prettySE (AssemblyString str) _ = str
