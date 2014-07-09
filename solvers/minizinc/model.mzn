@@ -216,7 +216,7 @@ bb_order[rootLabel] == 0;
 constraint
 bb_order[nullLabel] == nullLabel;
 
-% Calculate distances between pattern instances (where appropriate) and labels
+% Calculate distances between pattern instances (where appropriate) and labels.
 constraint
 forall (
     p in allPatternInstances,
@@ -258,8 +258,8 @@ forall (
         )
 );
 
-% Force setting of the immediate value for all data nodes which do not represent
-% immediate values
+% Enforce setting of the immediate value for all data nodes which do not
+% represent immediate values.
 constraint
 forall (n in allFuncDataNodes) (
   dn_reg[n] != regForImmValues -> dn_imm[n] == 0
