@@ -170,6 +170,16 @@ class ConstraintProcessor {
     getRegForImmValuesName(void) const;
 
     /**
+     * Gets the register value used for indicating that a data node represents
+     * an intermediate data value, which cannot be reused by other pattern
+     * instances.
+     *
+     * @returns Value name.
+     */
+    std::string
+    getRegForIntermediateValuesName(void) const;
+
+    /**
      * Converts a constraint into a Minizinc equivalent.
      *
      * @param c

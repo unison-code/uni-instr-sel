@@ -91,6 +91,12 @@ data BoolExpr
 
     | DataNodeIsAnIntConstantExpr NodeExpr
 
+      -- | An expression indicating that a particular data node represents an
+      -- intermediate data value, meaning that its value cannot be reused by
+      -- another pattern instance.
+
+    | DataNodeIsIntermediateExpr NodeExpr
+
     deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always

@@ -66,20 +66,33 @@ include "params.mzn";
 int: numIndicesInPatInstLabelMappings =
      max([ i | i in patInstAndLabelMappings ]) + 1;
 
-% Reference to the null label
-int: nullLabel = numFuncLabelNodes;
+% Total number of registers values (additional values will be needed for
+% representing certain settings, such as whether the value is an intermediate
+% data value or an immediate).
+int: numRegValues = numRegisters + 2;
 
-% Register reference to use when a data node represents an immediate value
-int: regForImmValues = numRegisters;
+% Total number of labels values (an additional value will be needed for
+% representing the null label, to which non-selected pattern instances will be
+% allocated).
+int: numLabValues = numFuncLabelNodes + 1;
+
+% Reference to the null label
+int: nullLabel = numLabValues - 1;
+
+% Registers
+% Reference to use when a data node represents an intermediate value
+int: regForIntermediateValues = numRegValues - 2;
+% Reference to use when a data node represents an immediate value
+int: regForImmValues = numRegValues - 1;
 
 % Sets to be used as array ranges
 set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
-set of int: allFuncLabelNodesPlusNull = 0..numFuncLabelNodes;
+set of int: allFuncLabelNodesPlusNull = 0..numLabValues-1;
 set of int: allPatternInstances = 0..numPatternInstances-1;
-set of int: allRegisters = 0..numRegisters;
+set of int: allRegValues = 0..numRegValues-1;
 set of int: allIndicesInPatInstLabelMappings =
     0..numIndicesInPatInstLabelMappings-1;
 
@@ -94,7 +107,7 @@ array[allFuncActionNodes] of var allPatternInstances: an_cov;
 
 % Data node definitions, register allocation, and immediate values
 array[allFuncDataNodes] of var allPatternInstances: dn_def;
-array[allFuncDataNodes] of var allRegisters: dn_reg;
+array[allFuncDataNodes] of var allRegValues: dn_reg;
 array[allFuncDataNodes] of var int: dn_imm;
 
 % State node definitions
@@ -290,6 +303,7 @@ output [ "an_cov=", show(an_cov), "\n"
        , "bb_order=", show(bb_order), "\n"
        , "br_bb_dists=", show(br_bb_dists), "\n"
        , "null_label=", show(nullLabel), "\n"
+       , "reg_for_intermediate_values=", show(regForIntermediateValues), "\n"
        , "reg_for_imm_values=", show(regForImmValues), "\n"
        , "cost=", show(cost), "\n"
        ];

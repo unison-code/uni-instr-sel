@@ -124,6 +124,10 @@ ConstraintParser::parseBoolExpr(string& str) {
             auto e = parseNodeExpr(str);
             expr = new DataNodeIsAnIntConstantExpr(e);
         }
+        else if (eatType<DataNodeIsIntermediateExpr>(str)) {
+            auto e = parseNodeExpr(str);
+            expr = new DataNodeIsIntermediateExpr(e);
+        }
         else if (eatType<PatternInstanceIsSelectedExpr>(str)) {
             auto e = parsePatternInstanceExpr(str);
             expr = new PatternInstanceIsSelectedExpr(e);

@@ -115,6 +115,12 @@ ConstraintProcessor::process(const BoolExpr* e) {
         return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
             + "] == " + getRegForImmValuesName();
     }
+    else if (const DataNodeIsIntermediateExpr* de =
+             dynamic_cast<const DataNodeIsIntermediateExpr*>(e))
+    {
+        return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
+            + "] == " + getRegForIntermediateValuesName();
+    }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
     }
@@ -409,4 +415,9 @@ ConstraintProcessor::getPatInstAndLabelMappingsMatrixName(void) const {
 string
 ConstraintProcessor::getRegForImmValuesName(void) const {
     return "regForImmValues";
+}
+
+string
+ConstraintProcessor::getRegForIntermediateValuesName(void) const {
+    return "regForIntermediateValues";
 }

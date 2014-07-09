@@ -186,7 +186,7 @@ data CPSolutionData
           -- pattern instance was allocated. An array index for a pattern
           -- instance corresponds to an index into the list.
 
-          bbAllocsForPIs :: [Integer]
+          bbAllocsForPIs :: [Natural]
 
           -- | Indicates whether a particular pattern instance was selected. An
           -- array index for a pattern instance corresponds to an index into the
@@ -197,7 +197,7 @@ data CPSolutionData
           -- | The order of basic blocks. An array index for a label node in the
           -- function graph corresponds to an index into the list.
 
-        , orderOfBBs :: [Integer]
+        , orderOfBBs :: [Natural]
 
       }
     deriving (Show)

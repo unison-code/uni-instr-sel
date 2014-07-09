@@ -177,6 +177,12 @@ DataNodeIsAnIntConstantExpr::DataNodeIsAnIntConstantExpr(const NodeExpr* expr)
 
 DataNodeIsAnIntConstantExpr::~DataNodeIsAnIntConstantExpr(void) {}
 
+DataNodeIsIntermediateExpr::DataNodeIsIntermediateExpr(const NodeExpr* expr)
+    : UnaryExpr(expr)
+{}
+
+DataNodeIsIntermediateExpr::~DataNodeIsIntermediateExpr(void) {}
+
 PatternInstanceIsSelectedExpr::PatternInstanceIsSelectedExpr(
     const PatternInstanceExpr* expr
 ) : UnaryExpr(expr)
@@ -558,6 +564,7 @@ const string OrExpr::STRNAME = "||";
 const string NotExpr::STRNAME = "!";
 const string InSetExpr::STRNAME = "in-set";
 const string DataNodeIsAnIntConstantExpr::STRNAME = "dnode-is-int-const";
+const string DataNodeIsIntermediateExpr::STRNAME = "dnode-is-intermediate";
 const string PatternInstanceIsSelectedExpr::STRNAME = "pat-inst-is-selected";
 const string PlusExpr::STRNAME = "+";
 const string MinusExpr::STRNAME = "-";

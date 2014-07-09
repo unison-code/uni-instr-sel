@@ -70,6 +70,7 @@ instance FromLisp BoolExpr where
     <|> struct "!"   NotExpr e
     <|> struct "in-set" InSetExpr e
     <|> struct "dnode-is-int-const" DataNodeIsAnIntConstantExpr e
+    <|> struct "dnode-is-intermediate" DataNodeIsIntermediateExpr e
 
 instance ToLisp BoolExpr where
   toLisp (EqExpr  lhs rhs) = mkStruct "==" [toLisp lhs, toLisp rhs]
@@ -86,6 +87,8 @@ instance ToLisp BoolExpr where
   toLisp (InSetExpr lhs rhs) = mkStruct "in-set" [toLisp lhs, toLisp rhs]
   toLisp (DataNodeIsAnIntConstantExpr e) =
     mkStruct "dnode-is-int-const" [toLisp e]
+  toLisp (DataNodeIsIntermediateExpr e) =
+    mkStruct "dnode-is-intermediate" [toLisp e]
 
 instance FromLisp NumExpr where
   parseLisp e =

@@ -773,6 +773,37 @@ class DataNodeIsAnIntConstantExpr
 };
 
 /**
+ * Expression so that a data node represents an intermediate data value, which
+ * cannot be reused by other pattern instances.
+ */
+class DataNodeIsIntermediateExpr
+    : public UnaryExpr<BoolExpr, DataNodeIsIntermediateExpr, NodeExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     *
+     * @param e
+     *        The expression.
+     * @throws Exception
+     *         When \c e is \c NULL.
+     */
+    DataNodeIsIntermediateExpr(const NodeExpr* expr);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~DataNodeIsIntermediateExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+};
+
+/**
  * Expression to say that a particular pattern instance is selected.
  */
 class PatternInstanceIsSelectedExpr
