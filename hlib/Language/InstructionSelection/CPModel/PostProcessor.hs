@@ -33,9 +33,10 @@ import Data.Maybe
 
 -- | A data type representing a graph where the nodes represent pattern
 -- instances, and the directed edges represent data dependencies between the
--- pattern instances.
+-- pattern instances. Each edge is labeled with the node ID of the data or state
+-- node which represents the data involved in that edge.
 
-type DataDepGraph = I.Gr PatternInstanceID ()
+type DataDepGraph = I.Gr PatternInstanceID NodeID
 
 
 
@@ -82,7 +83,7 @@ addUseEdgesToGraph' :: I.Node
                        -> DataDepGraph
 addUseEdgesToGraph' n def_maps use g =
   let ns = map fst $ filter (\m -> use `elem` snd m) def_maps
-  in foldr (\n' g' -> I.insEdge (n', n, ()) g') g ns
+  in foldr (\n' g' -> I.insEdge (n', n, use) g') g ns
 
 -- | Gets the internal node ID (if any) of the node with a given pattern
 -- instance ID as its label. It is assumed that there is always at most one such
