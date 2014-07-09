@@ -692,7 +692,8 @@ predecessors (Graph g) n = map (fromJust . intNodeID2Node g)
 -- another node B if there is a directed edge from A to B.
 
 successors :: Graph -> Node -> [Node]
-successors (Graph g) n = map (fromJust . intNodeID2Node g) (I.suc g (intNodeID n))
+successors (Graph g) n =
+  map (fromJust . intNodeID2Node g) (I.suc g (intNodeID n))
 
 -- | Checks if a given node is within the graph.
 
