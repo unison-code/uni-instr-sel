@@ -39,9 +39,11 @@ import Language.InstructionSelection.Patterns.IDs
   , toPatternInstanceID
   )
 import Language.InstructionSelection.Utils
-  ( fromLeft
+  ( Natural
+  , fromLeft
   , fromRight
   , isLeft
+  , toNatural
   )
 import Control.Monad (when)
 import Data.List (sortBy)
@@ -79,7 +81,7 @@ parseArgs =
 
 getPIsAllocatedToBB :: CPSolutionData
                        -> PostParams
-                       -> Integer -- ^ The basic block identifier
+                       -> Natural -- ^ The basic block identifier
                        -> [PatternInstanceID]
 getPIsAllocatedToBB cp pp bbi =
   let ps = map (Just . toPatternInstanceID) $ arrInd2PattInstIDs pp
@@ -89,10 +91,10 @@ getPIsAllocatedToBB cp pp bbi =
 
 -- | Gets a list of basic blocks in the order according to the solution.
 
-getOrderedBBList :: CPSolutionData -> [Integer]
+getOrderedBBList :: CPSolutionData -> [Natural]
 getOrderedBBList cp =
   let last_bb = length (orderOfBBs cp) - 1
-      bbs = zip (orderOfBBs cp) $ map toInteger [0..last_bb]
+      bbs = zip (orderOfBBs cp) $ map toNatural [0..last_bb]
       sorted_bbs = sortBy (\b1 b2 -> compare (fst b1) (fst b2)) bbs
   in map snd sorted_bbs
 
