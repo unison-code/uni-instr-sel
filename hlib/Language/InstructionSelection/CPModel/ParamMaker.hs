@@ -90,18 +90,20 @@ mkPatternInstanceData :: ( OpStructure
 mkPatternInstanceData (os, matchsets, props, b_usedef) =
   let g = osGraph os
       a_ns = (nodeIDs $ filter isActionNode $ allNodes g)
-      getNodes t k = nodeIDs
-                     $ filter (\n -> length (k g n) > 0)
+      getNodes t k = filter (\n -> length (k g n) > 0)
                      $ filter t
                      $ allNodes g
-      d_def_ns = getNodes isDataNode predecessors
+      getNodeIDs t k = nodeIDs $ getNodes t k
+      d_def_ns = getNodeIDs isDataNode predecessors
       d_use_ns = getNodes isDataNode successors
-      s_def_ns = getNodes isStateNode predecessors
-      s_use_ns = getNodes isStateNode successors
-      l_ref_ns = getNodes isLabelNode predecessors
+      d_use_by_phi_ns = filter (\n -> any isPhiNode $ successors g n) d_use_ns
+      s_def_ns = getNodeIDs isStateNode predecessors
+      s_use_ns = getNodeIDs isStateNode successors
+      l_ref_ns = getNodeIDs isLabelNode predecessors
       f (m, pid) = mkPatternInstanceData' a_ns
                                           d_def_ns
-                                          d_use_ns
+                                          (nodeIDs d_use_ns)
+                                          (nodeIDs d_use_by_phi_ns)
                                           s_def_ns
                                           s_use_ns
                                           l_ref_ns
@@ -115,6 +117,7 @@ mkPatternInstanceData (os, matchsets, props, b_usedef) =
 mkPatternInstanceData' :: [NodeID]    -- ^ Action nodes covered by the pattern.
                           -> [NodeID] -- ^ Data nodes defined.
                           -> [NodeID] -- ^ Data nodes used.
+                          -> [NodeID] -- ^ Data nodes used by phi nodes.
                           -> [NodeID] -- ^ State nodes defined.
                           -> [NodeID] -- ^ State nodes used.
                           -> [NodeID] -- ^ Label nodes referred to.
@@ -127,6 +130,7 @@ mkPatternInstanceData' :: [NodeID]    -- ^ Action nodes covered by the pattern.
 mkPatternInstanceData' a_ns
                        d_def_ns
                        d_use_ns
+                       d_use_by_phi_ns
                        s_def_ns
                        s_use_ns
                        l_ref_ns
@@ -139,6 +143,7 @@ mkPatternInstanceData' a_ns
                       (mappedNodesPToF matchset a_ns)
                       (mappedNodesPToF matchset d_def_ns)
                       (mappedNodesPToF matchset d_use_ns)
+                      (mappedNodesPToF matchset d_use_by_phi_ns)
                       (mappedNodesPToF matchset s_def_ns)
                       (mappedNodesPToF matchset s_use_ns)
                       (mappedNodesPToF matchset l_ref_ns)

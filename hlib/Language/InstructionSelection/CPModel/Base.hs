@@ -113,9 +113,18 @@ data PatternInstanceData
         , patDataNodesDefined :: [NodeID]
 
           -- | The data nodes in the function graph which are used by this
+          -- pattern instance. Unlike 'patDataNodesUsedByPhis', this list
+          -- contains all data nodes used by any action node appearing in this
           -- pattern instance.
 
         , patDataNodesUsed :: [NodeID]
+
+          -- | The data nodes in the function graph which are used by phi nodes
+          -- appearing this pattern instance. This information is required
+          -- during instruction emission in order to break cyclic data
+          -- dependencies.
+
+        , patDataNodesUsedByPhis :: [NodeID]
 
           -- | The state nodes in the function graph which are defined by this
           -- pattern instance.

@@ -146,6 +146,7 @@ instance FromJSON PatternInstanceData where
     <*> v .:  "action-nodes-covered"
     <*> v .:  "data-nodes-defined"
     <*> v .:  "data-nodes-used"
+    <*> v .:  "data-nodes-used-by-phis"
     <*> v .:  "state-nodes-defined"
     <*> v .:  "state-nodes-used"
     <*> v .:  "label-nodes-referred"
@@ -157,16 +158,17 @@ instance FromJSON PatternInstanceData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object ([ "pattern-instance-id"  .= (patInstanceID d)
-            , "action-nodes-covered" .= (patActionNodesCovered d)
-            , "data-nodes-defined"   .= (patDataNodesDefined d)
-            , "data-nodes-used"      .= (patDataNodesUsed d)
-            , "state-nodes-defined"  .= (patStateNodesDefined d)
-            , "state-nodes-used"     .= (patStateNodesUsed d)
-            , "label-nodes-referred" .= (patLabelNodesReferred d)
-            , "code-size"            .= (patCodeSize d)
-            , "latency"              .= (patLatency d)
-            , "constraints"          .= (patConstraints d)
+    object ([ "pattern-instance-id"     .= (patInstanceID d)
+            , "action-nodes-covered"    .= (patActionNodesCovered d)
+            , "data-nodes-defined"      .= (patDataNodesDefined d)
+            , "data-nodes-used"         .= (patDataNodesUsed d)
+            , "data-nodes-used-by-phis" .= (patDataNodesUsedByPhis d)
+            , "state-nodes-defined"     .= (patStateNodesDefined d)
+            , "state-nodes-used"        .= (patStateNodesUsed d)
+            , "label-nodes-referred"    .= (patLabelNodesReferred d)
+            , "code-size"               .= (patCodeSize d)
+            , "latency"                 .= (patLatency d)
+            , "constraints"             .= (patConstraints d)
             ]
             ++ if patNoUseDefConstraints d
                   then ["no-use-def-dom-constraints" .= True]
