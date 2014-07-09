@@ -155,8 +155,8 @@ forall (p in allPatternInstances)
     )
 );
 
-% Enforce selection of pattern if and only if an action node is covered or a
-% data or state node is defined by that pattern.
+% Enforce selection of pattern if and only if all of its action nodes are
+% covered and its definable data and state nodes are defined by that pattern.
 constraint
 forall (p in allPatternInstances)
 (
@@ -180,7 +180,8 @@ forall (p in allPatternInstances)
     )
 );
 
-% Allocate all non-selected pattern instances to a null label.
+% Enforce that all non-selected pattern instances be allocated to the null
+% label.
 constraint
 forall (p in allPatternInstances)
 (
@@ -213,7 +214,7 @@ forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 constraint
 alldifferent(bb_order);
 
-% Enforce the channel constraint between bb_order and bb_order_inv
+% Apply the channel constraint between bb_order and bb_order_inv
 constraint
 inverse(bb_order, bb_order_inv);
 
