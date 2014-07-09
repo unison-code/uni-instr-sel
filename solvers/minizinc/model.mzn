@@ -137,20 +137,16 @@ include "inverse.mzn";
 % Prevent a pattern from covering action nodes and defining data or state nodes
 % outside its range.
 constraint
-forall (p in allPatternInstances)
-(
-    forall (n in allFuncActionNodes where not (n in patInstActionsCovered[p]))
-    (
+forall (p in allPatternInstances) (
+    forall (n in allFuncActionNodes where not (n in patInstActionsCovered[p])) (
         an_cov[n] != p
     )
     /\
-    forall (n in allFuncDataNodes where not (n in patInstDataDefined[p]))
-    (
+    forall (n in allFuncDataNodes where not (n in patInstDataDefined[p])) (
         dn_def[n] != p
     )
     /\
-    forall (n in allFuncStateNodes where not (n in patInstStateDefined[p]))
-    (
+    forall (n in allFuncStateNodes where not (n in patInstStateDefined[p])) (
         sn_def[n] != p
     )
 );
@@ -158,8 +154,7 @@ forall (p in allPatternInstances)
 % Enforce selection of pattern if and only if all of its action nodes are
 % covered and its definable data and state nodes are defined by that pattern.
 constraint
-forall (p in allPatternInstances)
-(
+forall (p in allPatternInstances) (
     pi_sel[p]
     <->
     (
@@ -183,8 +178,7 @@ forall (p in allPatternInstances)
 % Enforce that all non-selected pattern instances be allocated to the null
 % label.
 constraint
-forall (p in allPatternInstances)
-(
+forall (p in allPatternInstances) (
     not pi_sel[p] -> pi_bb[p] = nullLabel
 );
 
@@ -193,18 +187,15 @@ forall (p in allPatternInstances)
 % for the state nodes. These constraints should not be applied to the generic
 % phi patterns.
 constraint
-forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
-(
+forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p]) (
     pi_sel[p]
     ->
     (
-        forall (n in patInstDataUsed[p])
-        (
+        forall (n in patInstDataUsed[p]) (
             pi_bb[dn_def[n]] in funcLabelDomsets[pi_bb[p]]
         )
         /\
-        forall (n in patInstStateUsed[p])
-        (
+        forall (n in patInstStateUsed[p]) (
             pi_bb[sn_def[n]] in funcLabelDomsets[pi_bb[p]]
         )
     )
@@ -214,7 +205,7 @@ forall (p in allPatternInstances where not patInstNoUseDefDomConstraints[p])
 constraint
 alldifferent(bb_order);
 
-% Apply the channel constraint between bb_order and bb_order_inv
+% Apply the channel constraint between bb_order and bb_order_inv.
 constraint
 inverse(bb_order, bb_order_inv);
 
@@ -227,54 +218,58 @@ bb_order[nullLabel] == nullLabel;
 
 % Calculate distances between pattern instances (where appropriate) and labels
 constraint
-forall (p in allPatternInstances, l in allFuncLabelNodes
-        where patInstAndLabelMappings[p, l] >= 0)
-(
+forall (
+    p in allPatternInstances,
+    l in allFuncLabelNodes
+    where patInstAndLabelMappings[p, l] >= 0
+) (
     br_bb_dists[patInstAndLabelMappings[p, l]] =
         % When the label appears after the branch
-        sum (i in allFuncLabelNodes)
-        (
+        sum (i in allFuncLabelNodes) (
             % Assuming the branch always appears as the last instruction within
             % the block, which means that we only need to consider the size of
             % the blocks between the source and the target label.
-            sum (pp in allPatternInstances)
-            (
-                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
-            ) * bool2int(bb_order_inv[pi_bb[p]] + 1 <= bb_order_inv[i]
-                         /\
-                         bb_order_inv[i] < bb_order_inv[l])
+            sum (pp in allPatternInstances) (
+                patInstCodeSizes[pp] * bool2int (pi_bb[pp] == i)
+            )
+            *
+            bool2int (
+                bb_order_inv[pi_bb[p]] + 1 <= bb_order_inv[i]
+                /\
+                bb_order_inv[i] < bb_order_inv[l]
+            )
         )
         -
         % When the label appears before the branch
-        sum (i in allFuncLabelNodes)
-        (
+        sum (i in allFuncLabelNodes) (
             % Assuming the branch always appears as the last instruction within
             % the block, which means that we consider all instructions in the
             % block wherein the branch appears as well as the size of the blocks
             % between the source and the target label.
-            sum (pp in allPatternInstances)
-            (
-                patInstCodeSizes[pp] * bool2int(pi_bb[pp] == i)
-            ) * bool2int(bb_order_inv[l] <= bb_order_inv[i]
-                         /\
-                         bb_order_inv[i] <= bb_order_inv[pi_bb[p]])
+            sum (pp in allPatternInstances) (
+                patInstCodeSizes[pp] * bool2int (pi_bb[pp] == i)
+            )
+            *
+            bool2int (
+                bb_order_inv[l] <= bb_order_inv[i]
+                /\
+                bb_order_inv[i] <= bb_order_inv[pi_bb[p]]
+            )
         )
 );
 
 % Force setting of the immediate value for all data nodes which do not represent
 % immediate values
 constraint
-forall (n in allFuncDataNodes)
-(
+forall (n in allFuncDataNodes) (
   dn_reg[n] != regForImmValues -> dn_imm[n] == 0
 );
 
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-cost = sum (p in allPatternInstances)
-       (
-           patInstLatencies[p] * bool2int(pi_sel[p])
+cost = sum (p in allPatternInstances) (
+           patInstLatencies[p] * bool2int (pi_sel[p])
        );
 
 
