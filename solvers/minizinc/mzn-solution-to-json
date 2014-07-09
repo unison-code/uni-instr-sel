@@ -70,7 +70,7 @@ def toValue(s):
             return True
         elif s == "false":
             return False
-        elif s.isdigit():
+        elif s.isdigit() or (s.startswith("-") and s[1:].isdigit()):
             return int(s)
         else:
             return s
@@ -171,6 +171,7 @@ for d in all_data:
             del keep_table[i]
             del replace_table[i]
             break
+
 if len(keep_table) > 0:
     error("Required data '" + keep_table[0] + "' not found")
 
