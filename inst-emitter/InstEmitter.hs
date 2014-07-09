@@ -33,14 +33,21 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.Json
+import Language.InstructionSelection.CPModel.PostProcessor
+import Language.InstructionSelection.Patterns.IDs
+  ( PatternInstanceID
+  , toPatternInstanceID
+  )
 import Language.InstructionSelection.Utils
   ( fromLeft
   , fromRight
   , isLeft
   )
 import Control.Monad (when)
+import Data.List (sortBy)
 import Data.Maybe
-  ( fromJust
+  ( catMaybes
+  , fromJust
   , isNothing
   )
 import System.Console.CmdArgs
@@ -70,6 +77,25 @@ parseArgs =
         &= help "The JSON file containing the post-processing parameters."
   }
 
+getPIsAllocatedToBB :: CPSolutionData
+                       -> PostParams
+                       -> Integer -- ^ The basic block identifier
+                       -> [PatternInstanceID]
+getPIsAllocatedToBB cp pp bbi =
+  let ps = map (Just . toPatternInstanceID) $ arrInd2PattInstIDs pp
+      ps' = zipWith (\p bbi' -> if bbi' == bbi then p else Nothing)
+                    ps (bbAllocsForPIs cp)
+  in catMaybes ps'
+
+-- | Gets a list of basic blocks in the order according to the solution.
+
+getOrderedBBList :: CPSolutionData -> [Integer]
+getOrderedBBList cp =
+  let last_bb = length (orderOfBBs cp) - 1
+      bbs = zip (orderOfBBs cp) $ map toInteger [0..last_bb]
+      sorted_bbs = sortBy (\b1 b2 -> compare (fst b1) (fst b2)) bbs
+  in map snd sorted_bbs
+
 
 
 ----------------
@@ -95,8 +121,12 @@ main =
      when (isLeft pp_res) $
        do putStrLn $ fromLeft pp_res
           exitFailure
-     let s_data = fromRight s_res :: CPSolution
+     let s_data = fromRight s_res :: CPSolutionData
          pp_data = fromRight pp_res :: PostParams
      -- TODO: implement the rest of the program
-     putStrLn $ show s_data
-     putStrLn $ show pp_data
+     let bbs = getOrderedBBList s_data
+         pi_lists = map (getPIsAllocatedToBB s_data pp_data) bbs
+         dags = map (mkDataDepDAG $ patInstData $ modelParams pp_data) pi_lists
+     mapM_ (putStrLn . show) dags
+     --putStrLn $ show s_data
+     --putStrLn $ show pp_data
