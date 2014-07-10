@@ -172,8 +172,6 @@ data NodeExpr
 
     = ANodeIDExpr NodeID
 
-    -- TODO: add missing functions
-
     deriving (Show)
 
 -- | Instance expressions.
@@ -200,8 +198,6 @@ data PatternInstanceExpr
 
     | DefinerOfStateNodeExpr NodeExpr
 
-    -- TODO: add missing functions
-
     deriving (Show)
 
 -- | Instruction expressions.
@@ -216,8 +212,6 @@ data InstructionExpr
 
     | InstructionOfPatternExpr PatternExpr
 
-    -- TODO: add missing functions
-
     deriving (Show)
 
 -- | Pattern expressions.
@@ -231,8 +225,6 @@ data PatternExpr
       -- | Retrieves the pattern to which a pattern instance is derived from.
 
     | PatternOfPatternInstanceExpr PatternInstanceExpr
-
-    -- TODO: add missing functions
 
     deriving (Show)
 
@@ -249,8 +241,6 @@ data LabelExpr
 
     | LabelOfLabelNodeExpr NodeExpr
 
-    -- TODO: add missing functions
-
     deriving (Show)
 
 -- | Register expressions.
@@ -265,8 +255,6 @@ data RegisterExpr
       -- allocated.
 
     | RegisterAllocatedToDataNodeExpr NodeExpr
-
-    -- TODO: add missing functions
 
     deriving (Show)
 
