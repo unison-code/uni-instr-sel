@@ -58,6 +58,8 @@ module Language.InstructionSelection.Graphs.Base (
 , fromMapping
 , fromMatchset
 , fromNodeID
+, hasAnyPredecessors
+, hasAnySuccessors
 , inEdgeNr
 , inEdges
 , insertNewNodeAlongEdge
@@ -1067,3 +1069,13 @@ rootInCFG g =
                 then Just $ head roots
                 else error "More than one root in CFG"
         else Nothing
+
+-- | Checks if a given node has any predecessors.
+
+hasAnyPredecessors :: Graph -> Node -> Bool
+hasAnyPredecessors g n = length (predecessors g n) > 0
+
+-- | Checks if a given node has any successors.
+
+hasAnySuccessors :: Graph -> Node -> Bool
+hasAnySuccessors g n = length (successors g n) > 0

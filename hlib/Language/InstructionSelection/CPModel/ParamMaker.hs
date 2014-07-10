@@ -105,29 +105,33 @@ processMatchset i p m (pids, next_piid) =
                        $ filter f1
                        $ allNodes g
       getNodeIDs f1 f2 = nodeIDs $ getNodes f1 f2
-      a_ns = nodeIDs $ filter isActionNode $ allNodes g
-      d_def_ns = getNodeIDs isDataNode predecessors
-      d_use_ns = getNodes isDataNode successors
+      ns = allNodes g
+      a_ns = filter isActionNode ns
+      d_ns = filter isDataNode ns
+      s_ns = filter isStateNode ns
+      l_ns = filter isLabelNode ns
+      d_def_ns = filter (hasAnyPredecessors g) d_ns
+      d_use_ns = filter (hasAnySuccessors g) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode $ successors g n) d_use_ns
-      s_def_ns = getNodeIDs isStateNode predecessors
-      s_use_ns = getNodeIDs isStateNode successors
-      l_ref_ns = getNodeIDs isLabelNode predecessors
-      inst_props = instProps i
+      s_def_ns = filter (hasAnyPredecessors g) s_ns
+      s_use_ns = filter (hasAnySuccessors g) s_ns
+      l_ref_ns = filter (hasAnyPredecessors g) l_ns
+      i_props = instProps i
       new_pid = PatternInstanceData
                 (instID i)
                 (patID p)
                 next_piid
-                (mapPs2Fs m a_ns)
-                (mapPs2Fs m d_def_ns)
+                (mapPs2Fs m $ nodeIDs a_ns)
+                (mapPs2Fs m $ nodeIDs d_def_ns)
                 (mapPs2Fs m $ nodeIDs d_use_ns)
                 (mapPs2Fs m $ nodeIDs d_use_by_phi_ns)
-                (mapPs2Fs m s_def_ns)
-                (mapPs2Fs m s_use_ns)
-                (mapPs2Fs m l_ref_ns)
+                (mapPs2Fs m $ nodeIDs s_def_ns)
+                (mapPs2Fs m $ nodeIDs s_use_ns)
+                (mapPs2Fs m $ nodeIDs l_ref_ns)
                 (mapPs2FsInConstraints m (osConstraints $ patOS p))
                 (patAUDDC p)
-                (instCodeSize inst_props)
-                (instLatency inst_props)
+                (instCodeSize i_props)
+                (instLatency i_props)
   in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
