@@ -150,12 +150,21 @@ for reg in dn_reg_data:
     has_dnode_imm_data.append(reg == reg_for_imm_values)
 all_data.append(["has_dnode_imm", has_dnode_imm_data])
 
+# Add 'has_dnode_reg' array to data
+dn_reg_data = getRequiredDataByName(all_data, "dn_reg")
+reg_for_inter_values = getRequiredDataByName(all_data, "reg_for_inter_values")
+has_dnode_reg_data = []
+for reg in dn_reg_data:
+    has_dnode_reg_data.append(reg != reg_for_imm_values
+                              and
+                              reg != reg_for_inter_values)
+all_data.append(["has_dnode_reg", has_dnode_reg_data])
+
 # Turn desirable data into JSON
 data_table = [ ["dn_reg",             "reg-selected-for-dnode"]
+             , ["has_dnode_reg",      "has-dnode-reg"]
              , ["dn_imm",             "imm-value-of-dnode"]
              , ["has_dnode_imm",      "has-dnode-imm-value"]
-             , ["dn_def",             "dnode-defined-by-pi"]
-             , ["sn_def",             "snode-defined-by-pi"]
              , ["pi_sel",             "is-pi-selected"]
              , ["pi_bb",              "bb-allocated-for-pi"]
              , ["bb_order",           "order-of-bbs"]

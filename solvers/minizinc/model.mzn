@@ -81,7 +81,7 @@ int: nullLabel = numLabValues - 1;
 
 % Registers
 % Reference to use when a data node represents an intermediate value
-int: regForIntermediateValues = numRegValues - 2;
+int: regForInterValues = numRegValues - 2;
 % Reference to use when a data node represents an immediate value
 int: regForImmValues = numRegValues - 1;
 
@@ -291,7 +291,15 @@ cost = sum (p in allPatternInstances) (
 % SOLVE AND OUTPUT
 %==================
 
-solve minimize cost;
+solve ::
+seq_search (
+    % Improves solving time
+    [ int_search (an_cov, first_fail, indomain_min, complete)
+    % Prevents use of imm values unless explicitly required
+    , int_search (dn_reg, input_order, indomain_min, complete)
+    ]
+)
+minimize cost;
 
 output [ "an_cov=", show(an_cov), "\n"
        , "dn_def=", show(dn_def), "\n"
@@ -303,7 +311,7 @@ output [ "an_cov=", show(an_cov), "\n"
        , "bb_order=", show(bb_order), "\n"
        , "br_bb_dists=", show(br_bb_dists), "\n"
        , "null_label=", show(nullLabel), "\n"
-       , "reg_for_intermediate_values=", show(regForIntermediateValues), "\n"
+       , "reg_for_inter_values=", show(regForInterValues), "\n"
        , "reg_for_imm_values=", show(regForImmValues), "\n"
        , "cost=", show(cost), "\n"
        ];
