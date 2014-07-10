@@ -101,10 +101,6 @@ processMatchset :: Instruction
                    -> ([PatternInstanceData], PatternInstanceID)
 processMatchset i p m (pids, next_piid) =
   let g = osGraph $ patOS p
-      getNodes f1 f2 = filter (\n -> length (f2 g n) > 0)
-                       $ filter f1
-                       $ allNodes g
-      getNodeIDs f1 f2 = nodeIDs $ getNodes f1 f2
       ns = allNodes g
       a_ns = filter isActionNode ns
       d_ns = filter isDataNode ns
