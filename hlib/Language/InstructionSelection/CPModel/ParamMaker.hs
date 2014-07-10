@@ -39,17 +39,16 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Takes a function, a list of instructions, and machine data, to generate the
--- corresponding parameters to the constraint model. This will also perform
--- pattern matching of all patterns over the function graph.
+-- | Takes a function and machine data to generate the corresponding parameters
+-- to the constraint model. This will also perform pattern matching of all
+-- patterns over the function graph.
 
 mkParams :: Function
-            -> [Instruction]
             -> TargetMachine
             -> CPModelParams
-mkParams f is m =
+mkParams f m =
   CPModelParams (mkFunctionGraphData f)
-                (mkPatternInstanceData f is)
+                (mkPatternInstanceData f $ tmInstructions m)
                 (mkMachineData m)
 
 mkFunctionGraphData :: Function -> FunctionGraphData

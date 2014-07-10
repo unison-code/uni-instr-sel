@@ -15,10 +15,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Language.InstructionSelection.Constraints.SExpressions (
-  fromLispExpr
-, toLispExpr
-) where
+module Language.InstructionSelection.Constraints.SExpressions
+  ( fromLispExpr
+  , toLispExpr
+  )
+where
 
 import Language.InstructionSelection.Constraints.Base
 import Language.InstructionSelection.Graphs
@@ -26,10 +27,7 @@ import Language.InstructionSelection.Graphs
   , toNodeID
   )
 import Language.InstructionSelection.Patterns.IDs
-import Language.InstructionSelection.TargetMachine
-  ( RegisterID (..)
-  , toRegisterID
-  )
+import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
   ( fromLeft
   , fromNatural

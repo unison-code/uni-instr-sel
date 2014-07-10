@@ -10,8 +10,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.TargetMachine (
-  module Language.InstructionSelection.TargetMachine.Base
-) where
+module Language.InstructionSelection.TargetMachine
+  ( module Language.InstructionSelection.TargetMachine.Base
+  , module Language.InstructionSelection.TargetMachine.IDs
+  )
+where
 
 import Language.InstructionSelection.TargetMachine.Base
+import Language.InstructionSelection.TargetMachine.IDs

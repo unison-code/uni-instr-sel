@@ -25,7 +25,7 @@ import Language.InstructionSelection.Patterns.IDs
   , PatternID
   , PatternInstanceID
   )
-import Language.InstructionSelection.TargetMachine (RegisterID)
+import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils (Natural)
 
 

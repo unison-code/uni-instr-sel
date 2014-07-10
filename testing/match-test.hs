@@ -422,13 +422,13 @@ main =
                    (AssemblyString [])
 
                  ]
-         target = TargetMachine [ ("r0", 0)
-                                , ("r1", 1)
-                                , ("r2", 2)
-                                ]
-         params = mkParams func
-                           insts
-                           target
+         target = TargetMachine
+                  insts
+                  [ ("r0", 0)
+                  , ("r1", 1)
+                  , ("r2", 2)
+                  ]
+         params = mkParams func target
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))
 --           (match func phi_pattern)

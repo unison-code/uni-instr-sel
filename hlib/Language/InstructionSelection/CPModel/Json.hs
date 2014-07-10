@@ -32,11 +32,7 @@ import Language.InstructionSelection.Graphs
   , toNodeID
   )
 import Language.InstructionSelection.Patterns.IDs
-import Language.InstructionSelection.TargetMachine
-  ( RegisterID
-  , fromRegisterID
-  , toRegisterID
-  )
+import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
   ( Natural (..)
   , fromLeft

@@ -14,16 +14,13 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.TargetMachine.Base (
-  RegisterID (..)
-, TargetMachine (..)
-, fromRegisterID
-, toRegisterID
-) where
+module Language.InstructionSelection.TargetMachine.Base
+  (TargetMachine (..))
+where
 
-import Language.InstructionSelection.Utils ( Natural
-                                           , toNatural
-                                           )
+import Language.InstructionSelection.Patterns
+  (Instruction)
+import Language.InstructionSelection.TargetMachine.IDs
 
 
 
@@ -31,38 +28,22 @@ import Language.InstructionSelection.Utils ( Natural
 -- Data types
 --------------
 
--- | Represents a register ID.
-
-newtype RegisterID = RegisterID Natural
-  deriving (Eq, Ord, Num, Enum)
-
-instance Show RegisterID where
-  show (RegisterID i) = show i
-
 -- | Represents a target machine.
 
 data TargetMachine
     = TargetMachine {
 
+          -- | The set of assembly instructions supported by the target machine.
+
+          tmInstructions :: [Instruction]
+
           -- | The machine registers. Each must be given a unique ID, but not
           -- necessarily in a contiguous order.
 
-          tmRegisters :: [( String     -- ^ Register name (needed during code
+        , tmRegisters :: [( String     -- ^ Register name (needed during code
                                        -- emission).
                           , RegisterID -- ^ Register ID (only used internally).
                           )]
 
       }
     deriving (Show)
-
-
-
--------------
--- Functions
--------------
-
-fromRegisterID :: RegisterID -> Natural
-fromRegisterID (RegisterID i) = i
-
-toRegisterID :: (Integral i) => i -> RegisterID
-toRegisterID = RegisterID . toNatural

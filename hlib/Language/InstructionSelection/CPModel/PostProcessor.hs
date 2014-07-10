@@ -15,13 +15,18 @@
 
 module Language.InstructionSelection.CPModel.PostProcessor
   ( DataDepDAG
+  , emitInstructions
   , mkDataDepDAG
   )
 where
 
 import Language.InstructionSelection.CPModel.Base
-import Language.InstructionSelection.Graphs (NodeID)
-import Language.InstructionSelection.Patterns (PatternInstanceID)
+import Language.InstructionSelection.Graphs
+  (NodeID)
+import Language.InstructionSelection.Patterns
+  ( Instruction
+  , PatternInstanceID
+  )
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 

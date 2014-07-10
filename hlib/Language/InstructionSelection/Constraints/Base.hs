@@ -12,24 +12,26 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.Constraints.Base (
-  BoolExpr (..)
-, Constraint (..)
-, PatternInstanceExpr (..)
-, InstructionExpr (..)
-, IntExpr (..)
-, LabelExpr (..)
-, NodeExpr (..)
-, NumExpr (..)
-, PatternExpr (..)
-, RegisterExpr (..)
-, SetElemExpr (..)
-, SetExpr (..)
-) where
+module Language.InstructionSelection.Constraints.Base
+  ( BoolExpr (..)
+  , Constraint (..)
+  , PatternInstanceExpr (..)
+  , InstructionExpr (..)
+  , IntExpr (..)
+  , LabelExpr (..)
+  , NodeExpr (..)
+  , NumExpr (..)
+  , PatternExpr (..)
+  , RegisterExpr (..)
+  , SetElemExpr (..)
+  , SetExpr (..)
+  )
+where
 
-import Language.InstructionSelection.Graphs (NodeID)
+import Language.InstructionSelection.Graphs
+  (NodeID)
 import Language.InstructionSelection.Patterns.IDs
-import Language.InstructionSelection.TargetMachine (RegisterID)
+import Language.InstructionSelection.TargetMachine.IDs
 
 
 
