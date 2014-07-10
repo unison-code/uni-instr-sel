@@ -342,6 +342,7 @@ main =
                    [ InstPattern
                      0
                      init_def_pattern_os
+                     []
                      True
                      []
                    ]
@@ -353,6 +354,7 @@ main =
                    [ InstPattern
                      0
                      add_pattern_os
+                     [3]
                      True
                      []
                    ]
@@ -364,6 +366,7 @@ main =
                    [ InstPattern
                      0
                      bnz_pattern_os
+                     []
                      True
                      []
                    ]
@@ -375,6 +378,7 @@ main =
                    [ InstPattern
                      0
                      br_pattern_os
+                     []
                      True
                      []
                    ]
@@ -386,6 +390,7 @@ main =
                    [ InstPattern
                      0
                      br_fallthrough_pattern_os
+                     []
                      True
                      []
                    ]
@@ -397,6 +402,7 @@ main =
                    [ InstPattern
                      0
                      ret_pattern_os
+                     []
                      True
                      []
                    ]
@@ -408,6 +414,7 @@ main =
                    [ InstPattern
                      0
                      phi_pattern_os
+                     [2]
                      False
                      []
                    ]
