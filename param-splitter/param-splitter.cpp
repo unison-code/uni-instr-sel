@@ -325,6 +325,15 @@ outputPostprocessingParams(
         )
     );
 
+    out << "," << endl
+        << "\"data-nodes\": ";
+    printJsonValue(
+        out,
+        params.getIDsOfDataNodesInF(
+            createArrayIndices(0, params.getNumDataNodesInF())
+        )
+    );
+
     out << endl
         << "}" << endl;
 
