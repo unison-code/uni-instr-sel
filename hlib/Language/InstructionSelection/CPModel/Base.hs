@@ -213,12 +213,38 @@ data CPSolutionData
           -- array index for a pattern instance corresponds to an index into the
           -- list.
 
-        , selectionOfPIs :: [Bool]
+        , isPISelected :: [Bool]
 
           -- | The order of basic blocks. An array index for a label node in the
           -- function graph corresponds to an index into the list.
 
         , orderOfBBs :: [Natural]
+
+          -- | Indicates whether a register has been selected for a particular
+          -- data node. An array index for a data node corresponds to an index
+          -- into the list.
+
+        , hasDataNodeRegister :: [Bool]
+
+          -- | Specifies the register selected for a particular data node. An
+          -- array index for a data node corresponds to an index into the list.
+          -- The register value is only valid if the corresponding value in
+          -- 'hasDataNodeRegister' is set to 'True'.
+
+        , regsSelectedForDataNodes :: [RegisterID]
+
+          -- | Indicates whether an immediate value has been assigned to a
+          -- particular data node. An array index for a data node corresponds to
+          -- an index into the list.
+
+        , hasDataNodeImmValue :: [Bool]
+
+          -- | Specifies the immediate value assigned to a particular data
+          -- node. An array index for a data node corresponds to an index into
+          -- the list. The immediate value is only valid if the corresponding
+          -- value in 'hasDataNodeImmValue' is set to 'True'.
+
+        , immValuesOfDataNodes :: [Integer]
 
       }
     deriving (Show)
@@ -234,11 +260,15 @@ data PostParams
 
           -- | The array indices-to-pattern instance id mappings.
 
-        , arrInd2PattInstIDs :: [Natural]
+        , arrInd2PattInstIDs :: [PatternInstanceID]
 
           -- | The array indices-to-label node ID mappings.
 
-        , arrInd2LabNodeIDs :: [Natural]
+        , arrInd2LabNodeIDs :: [NodeID]
+
+          -- | The array indices-to-data node ID mappings.
+
+        , arrInd2DataNodeIDs :: [NodeID]
 
       }
     deriving (Show)

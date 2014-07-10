@@ -247,6 +247,10 @@ instance FromJSON CPSolutionData where
     <$> v .: "bb-allocated-for-pi"
     <*> v .: "is-pi-selected"
     <*> v .: "order-of-bbs"
+    <*> v .: "has-dnode-reg"
+    <*> v .: "reg-selected-for-dnode"
+    <*> v .: "has-dnode-imm-value"
+    <*> v .: "imm-value-of-dnode"
   parseJSON _ = mzero
 
 instance FromJSON PostParams where
@@ -255,6 +259,7 @@ instance FromJSON PostParams where
     <$> v .: "model-params"
     <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
     <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
+    <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
   parseJSON _ = mzero
 
 
