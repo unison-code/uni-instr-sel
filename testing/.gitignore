@@ -1,0 +1,7 @@
+*.hi
+*.o
+*.pdf
+*.dot
+*.json
+match-test
+test
