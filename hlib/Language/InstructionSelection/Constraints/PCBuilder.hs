@@ -79,7 +79,6 @@ addInterDataValConstraints os outs =
                                    , hasAnySuccessors g n
                                ]
       inter_data_val_ns = filter (`notElem` outs) d_use_def_ns
-      makeC n = BoolExprConstraint $
-                DataNodeIsIntermediateExpr (ANodeIDExpr n)
+      makeC n = BoolExprConstraint $ DataNodeIsIntermediateExpr (ANodeIDExpr n)
       new_cs = map makeC inter_data_val_ns
   in addConstraints os new_cs
