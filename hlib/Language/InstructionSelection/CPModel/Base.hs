@@ -175,6 +175,14 @@ data PatternInstanceData
 
         , patLatency :: Integer
 
+          -- | Maps an 'AssemblyID', which is denoted as the index into the
+          -- list, that appear in the 'AssemblyString' of the instruction, to a
+          -- particular data node in the function graph according to the
+          -- pattern's operation structure and matchset. See also
+          -- 'InstPattern.patAssIDMaps'.
+
+        , patAssIDMaps :: [NodeID]
+
       }
     deriving (Show)
 

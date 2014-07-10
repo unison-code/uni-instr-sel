@@ -152,6 +152,7 @@ instance FromJSON PatternInstanceData where
     <*> v .: "apply-use-def-dom-constraints"
     <*> v .: "code-size"
     <*> v .: "latency"
+    <*> v .: "assembly-id-maps"
   parseJSON _ = mzero
 
 instance ToJSON PatternInstanceData where
@@ -170,6 +171,7 @@ instance ToJSON PatternInstanceData where
             , "apply-use-def-dom-constraints" .= (patAUDDC d)
             , "code-size"                     .= (patCodeSize d)
             , "latency"                       .= (patLatency d)
+            , "assembly-id-maps"              .= (patAssIDMaps d)
             ])
 
 instance FromJSON MachineData where

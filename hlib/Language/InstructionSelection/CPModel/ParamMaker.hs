@@ -20,7 +20,9 @@ where
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.CPModel
-  hiding (patAUDDC)
+  hiding ( patAssIDMaps
+         , patAUDDC
+         )
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.Graphs.VFTwo
 import Language.InstructionSelection.OpStructures
@@ -128,6 +130,7 @@ processMatchset i p m (pids, next_piid) =
                 (patAUDDC p)
                 (instCodeSize i_props)
                 (instLatency i_props)
+                (mapPs2Fs m $ patAssIDMaps p)
   in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
