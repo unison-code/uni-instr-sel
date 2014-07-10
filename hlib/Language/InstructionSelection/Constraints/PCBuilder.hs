@@ -59,17 +59,27 @@ addBBAllocConstraints os =
         else os
 
 -- | Creates intermediate data value constraints for a pattern graph which
--- contains data nodes which are both defined and used by the pattern but have
--- no register-allocation constraints applied on them. Hence such data values
--- are not accessible from outside the pattern, and must be prevented from being
--- used by other patterns. The produced constraints (if any) are added to the
--- existing 'OpStructure'.
+-- contains data nodes which are both defined and used by the pattern but are
+-- not specified as output nodes. Hence such data values are not accessible from
+-- outside the pattern, and must be prevented from being used by other
+-- patterns. The produced constraints (if any) are added to the existing
+-- 'OpStructure'.
 
 addInterDataValConstraints :: OpStructure    -- ^ The old structure.
+                              -> [NodeID]    -- ^ List of data nodes which are
+                                             -- specified as output.
                               -> OpStructure -- ^ The new structure, with the
                                              -- produced constraints (may be the
                                              -- same structure).
-addInterDataValConstraints os =
+addInterDataValConstraints os outs =
   let g = osGraph os
-  -- TODO: implement
-  in os
+      d_ns = filter isDataNode $ allNodes g
+      d_use_def_ns = nodeIDs $ [ n | n <- d_ns
+                                   , hasAnyPredecessors g n
+                                   , hasAnySuccessors g n
+                               ]
+      inter_data_val_ns = filter (`notElem` outs) d_use_def_ns
+      makeC n = BoolExprConstraint $
+                DataNodeIsIntermediateExpr (ANodeIDExpr n)
+      new_cs = map makeC inter_data_val_ns
+  in addConstraints os new_cs
