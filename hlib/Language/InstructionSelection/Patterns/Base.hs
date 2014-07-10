@@ -92,6 +92,11 @@ data InstPattern
 
         , patOS :: OpStructure
 
+          -- | Specifies the data nodes within the 'OpStructure' which represent
+          -- output that can be observed from outside the pattern.
+
+        , patOutputDataNodes :: [NodeID]
+
           -- | Indicates whether the use-def-dom constraints apply to this
           -- pattern. This will typically always be set to 'True' for all
           -- patterns except the generic phi patterns.
