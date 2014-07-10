@@ -955,7 +955,8 @@ matchingInEdgeOrderingOfSuccs fg pg st m =
   in all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
 
 -- | From a matchset and a list of function nodes, get the list of corresponding
--- pattern nodes for which there exists a mapping.
+-- pattern nodes for which there exists a mapping. The order of the list will be
+-- conserved.
 
 mapFs2Ps :: (Eq n)
             => Matchset n -- ^ The matchset.
@@ -965,7 +966,8 @@ mapFs2Ps (Matchset m) fns =
   [ pn | (fn, pn) <- map fromMapping m, fn' <- fns, fn == fn' ]
 
 -- | From a matchset and a list of pattern nodes, get the list of corresponding
--- function nodes for which there exists a mapping.
+-- function nodes for which there exists a mapping. The order of the list will
+-- be conserved.
 
 mapPs2Fs :: (Eq n)
             => Matchset n -- ^ The matchset.
