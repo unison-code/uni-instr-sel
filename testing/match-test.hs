@@ -185,13 +185,17 @@ main =
                 , (7, 5, EdgeLabel 0 1)
                 , (5, 8, EdgeLabel 0 0)
                 ])
-         init_def_pattern_cs = mkBBAllocConstraints init_def_pattern
-         add_pattern_cs = mkBBAllocConstraints add_pattern
-         bnz_pattern_cs = mkBBAllocConstraints bnz_pattern
-         br_pattern_cs = mkBBAllocConstraints br_pattern
-         br_fallthrough_pattern_cs =
-           mkBBAllocConstraints br_fallthrough_pattern
-           ++
+         init_def_pattern_os =
+           addBBAllocConstraints $ OpStructure init_def_pattern []
+         add_pattern_os =
+           addBBAllocConstraints $ OpStructure add_pattern []
+         bnz_pattern_os =
+           addBBAllocConstraints $ OpStructure  bnz_pattern []
+         br_pattern_os =
+           addBBAllocConstraints $ OpStructure br_pattern []
+         br_fallthrough_pattern_os =
+           addBBAllocConstraints $
+           OpStructure br_fallthrough_pattern
            [ BoolExprConstraint $
              EqExpr
              (
@@ -209,8 +213,10 @@ main =
                AnIntegerExpr 0
              )
            ]
-         ret_pattern_cs =  mkBBAllocConstraints ret_pattern
-         phi_pattern_cs =
+         ret_pattern_os =
+           addBBAllocConstraints $ OpStructure ret_pattern []
+         phi_pattern_os =
+           OpStructure phi_pattern
            [ BoolExprConstraint $
              AndExpr
              (
@@ -335,7 +341,7 @@ main =
                    0
                    [ InstPattern
                      0
-                     (OpStructure init_def_pattern init_def_pattern_cs)
+                     init_def_pattern_os
                      True
                      []
                    ]
@@ -346,7 +352,7 @@ main =
                    1
                    [ InstPattern
                      0
-                     (OpStructure add_pattern add_pattern_cs)
+                     add_pattern_os
                      True
                      []
                    ]
@@ -357,7 +363,7 @@ main =
                    2
                    [ InstPattern
                      0
-                     (OpStructure bnz_pattern bnz_pattern_cs)
+                     bnz_pattern_os
                      True
                      []
                    ]
@@ -368,7 +374,7 @@ main =
                    1
                    [ InstPattern
                      0
-                     (OpStructure br_pattern br_pattern_cs)
+                     br_pattern_os
                      True
                      []
                    ]
@@ -379,10 +385,7 @@ main =
                    1
                    [ InstPattern
                      0
-                     ( OpStructure
-                       br_fallthrough_pattern
-                       br_fallthrough_pattern_cs
-                     )
+                     br_fallthrough_pattern_os
                      True
                      []
                    ]
@@ -393,7 +396,7 @@ main =
                    1
                    [ InstPattern
                      0
-                     (OpStructure ret_pattern ret_pattern_cs)
+                     ret_pattern_os
                      True
                      []
                    ]
@@ -404,7 +407,7 @@ main =
                    1
                    [ InstPattern
                      0
-                     (OpStructure phi_pattern phi_pattern_cs)
+                     phi_pattern_os
                      False
                      []
                    ]
