@@ -18,11 +18,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstructionSelection.OpStructures.Base (
-  OpStructure (..)
-, addConstraint
-, mkEmpty
-) where
+module Language.InstructionSelection.OpStructures.Base
+  ( OpStructure (..)
+  , addConstraint
+  , addConstraints
+  , mkEmpty
+  )
+where
 
 import Language.InstructionSelection.Constraints
 import qualified Language.InstructionSelection.Graphs as G
@@ -53,3 +55,6 @@ mkEmpty = OpStructure G.mkEmpty []
 
 addConstraint :: OpStructure -> Constraint -> OpStructure
 addConstraint os c = os { osConstraints = osConstraints os ++ [c] }
+
+addConstraints :: OpStructure -> [Constraint] -> OpStructure
+addConstraints = foldl addConstraint
