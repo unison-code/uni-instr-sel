@@ -14,43 +14,26 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.Patterns.IDs (
-  AssemblyID (..)
-, InstructionID (..)
-, PatternID (..)
-, PatternInstanceID (..)
-, fromAssemblyID
-, fromPatternInstanceID
-, fromInstructionID
-, fromPatternID
-, toAssemblyID
-, toPatternInstanceID
-, toInstructionID
-, toPatternID
-) where
+module Language.InstructionSelection.Patterns.IDs
+  ( PatternID (..)
+  , PatternInstanceID (..)
+  , fromPatternID
+  , fromPatternInstanceID
+  , toPatternID
+  , toPatternInstanceID
+  )
+where
 
-import Language.InstructionSelection.Utils ( Natural
-                                           , toNatural
-                                           )
+import Language.InstructionSelection.Utils
+  ( Natural
+  , toNatural
+  )
 
 
 
 --------------
 -- Data types
 --------------
-
--- | Represents an instruction ID.
-
-newtype InstructionID = InstructionID Natural
-  deriving (Eq, Ord, Num, Enum)
-
-instance Show InstructionID where
-  show (InstructionID i) = show i
-
--- | Represents a pattern ID. Pattern IDs are used to distinguish which
--- instruction a pattern belongs to. Note, however, that an instance of a
--- pattern - which is an occurrance where a pattern has been matched over a set
--- of nodes in a function graph - is not given pattern IDs but instance IDs.
 
 newtype PatternID = PatternID Natural
   deriving (Eq, Ord, Num, Enum)
@@ -67,14 +50,6 @@ newtype PatternInstanceID = PatternInstanceID Natural
 instance Show PatternInstanceID where
   show (PatternInstanceID i) = show i
 
--- | Represents an ID to be used as place-holders inside an assembly string.
-
-newtype AssemblyID = AssemblyID Natural
-  deriving (Eq, Ord, Num, Enum)
-
-instance Show AssemblyID where
-  show (AssemblyID i) = show i
-
 
 
 -------------
@@ -87,20 +62,8 @@ fromPatternInstanceID (PatternInstanceID i) = i
 toPatternInstanceID :: (Integral i) => i -> PatternInstanceID
 toPatternInstanceID = PatternInstanceID . toNatural
 
-fromInstructionID :: InstructionID -> Natural
-fromInstructionID (InstructionID i) = i
-
-toInstructionID :: (Integral i) => i -> InstructionID
-toInstructionID = InstructionID . toNatural
-
 fromPatternID :: PatternID -> Natural
 fromPatternID (PatternID i) = i
 
 toPatternID :: (Integral i) => i -> PatternID
 toPatternID = PatternID . toNatural
-
-fromAssemblyID :: AssemblyID -> Natural
-fromAssemblyID (AssemblyID i) = i
-
-toAssemblyID :: (Integral i) => i -> AssemblyID
-toAssemblyID = AssemblyID . toNatural

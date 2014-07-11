@@ -31,12 +31,9 @@ import Language.InstructionSelection.Graphs
   , NodeID (..)
   )
 import Language.InstructionSelection.Patterns.IDs
-  ( InstructionID
-  , PatternID
+  ( PatternID
   , PatternInstanceID
   )
-import Language.InstructionSelection.Patterns.AssemblyString
-  (BBLabel (..))
 import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
   (Natural)
@@ -109,7 +106,7 @@ data BBLabelData
 
           -- | The basic block label of the label node.
 
-        , labBB :: BBLabel
+        , labBB :: BBLabelID
 
       }
     deriving (Show)

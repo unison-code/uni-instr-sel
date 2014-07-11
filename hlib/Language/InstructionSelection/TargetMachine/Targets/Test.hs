@@ -24,8 +24,6 @@ import qualified Language.InstructionSelection.DataTypes as D
 import Language.InstructionSelection.Graphs
 import Language.InstructionSelection.OpStructures
 import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Patterns
-import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.TargetMachine
 
 
@@ -38,7 +36,7 @@ tmTest :: TargetMachine
 tmTest =
   let init_def_pattern = mkGraph
              (map Node
-             [ (0, NodeLabel 0 (LabelNode $ BBLabel "start"))
+             [ (0, NodeLabel 0 (LabelNode $ BBLabelID "start"))
              , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
              ])
              (map Edge
@@ -60,9 +58,9 @@ tmTest =
       bnz_pattern = mkGraph
              (map Node
              [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
-             , (1, NodeLabel 1 (LabelNode $ BBLabel ""))
-             , (2, NodeLabel 2 (LabelNode $ BBLabel ""))
-             , (3, NodeLabel 3 (LabelNode $ BBLabel ""))
+             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
+             , (2, NodeLabel 2 (LabelNode $ BBLabelID ""))
+             , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
              , (4, NodeLabel 4 (ControlNode O.CondBranch))
              ])
              (map Edge
@@ -73,8 +71,8 @@ tmTest =
              ])
       br_pattern = mkGraph
              (map Node
-             [ (0, NodeLabel 0 (LabelNode $ BBLabel ""))
-             , (1, NodeLabel 1 (LabelNode $ BBLabel ""))
+             [ (0, NodeLabel 0 (LabelNode $ BBLabelID ""))
+             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
              , (2, NodeLabel 2 (ControlNode O.UncondBranch))
              ])
              (map Edge
@@ -85,7 +83,7 @@ tmTest =
       ret_pattern = mkGraph
              (map Node
              [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
-             , (1, NodeLabel 1 (LabelNode $ BBLabel ""))
+             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
              , (2, NodeLabel 2 (ControlNode O.Ret))
              ])
              (map Edge
@@ -97,9 +95,9 @@ tmTest =
              [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
              , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
              , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
-             , (3, NodeLabel 3 (LabelNode $ BBLabel ""))
-             , (4, NodeLabel 4 (LabelNode $ BBLabel ""))
-             , (5, NodeLabel 5 (LabelNode $ BBLabel ""))
+             , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
+             , (4, NodeLabel 4 (LabelNode $ BBLabelID ""))
+             , (5, NodeLabel 5 (LabelNode $ BBLabelID ""))
              , (6, NodeLabel 6 NullNode)
              , (7, NodeLabel 7 NullNode)
              , (8, NodeLabel 8 PhiNode)
@@ -312,9 +310,9 @@ tmTest =
                   [ AssemblyVerbatim "bnz "
                   , AssemblyRegister 0
                   , AssemblyVerbatim ", "
-                  , AssemblyLabel 1
+                  , AssemblyBBLabel 1
                   , AssemblyVerbatim ", "
-                  , AssemblyLabel 2
+                  , AssemblyBBLabel 2
                   ]
                 )
 
@@ -330,7 +328,7 @@ tmTest =
                 (InstProperties 1 1)
                 ( AssemblyString
                   [ AssemblyVerbatim "br "
-                  , AssemblyLabel 0
+                  , AssemblyBBLabel 0
                   ]
                 )
 
@@ -374,15 +372,15 @@ tmTest =
                 (InstProperties 1 1)
                 ( AssemblyString
                   [ AssemblyVerbatim "phi "
-                  , AssemblyTemporary 0
+                  , AssemblyRegister 0
                   , AssemblyVerbatim " ("
-                  , AssemblyTemporary 1
+                  , AssemblyRegister 1
                   , AssemblyVerbatim ", "
-                  , AssemblyLabel 2
+                  , AssemblyBBLabel 2
                   , AssemblyVerbatim ") ("
-                  , AssemblyTemporary 3
+                  , AssemblyRegister 3
                   , AssemblyVerbatim ", "
-                  , AssemblyLabel 4
+                  , AssemblyBBLabel 4
                   , AssemblyVerbatim ")"
                   ]
                 )

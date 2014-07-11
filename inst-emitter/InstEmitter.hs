@@ -34,12 +34,12 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.PostProcessor
-import Language.InstructionSelection.Graphs
+import Language.InstructionSelection.Graphs.IDs
   (NodeID)
-import Language.InstructionSelection.Patterns.AssemblyString
-  (BBLabel (..))
 import Language.InstructionSelection.Patterns.IDs
   (PatternInstanceID)
+import Language.InstructionSelection.TargetMachine.IDs
+  (BBLabelID)
 import Language.InstructionSelection.TargetMachine.Targets
 import Language.InstructionSelection.Utils
   ( fromLeft
@@ -85,7 +85,7 @@ getPIsAllocatedToBB :: CPSolutionData
 getPIsAllocatedToBB cp_data n =
   map fst $ filter (\t -> snd t == n) $ bbAllocsForPIs cp_data
 
-labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BBLabel]
+labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BBLabelID]
 labNodes2BBLabels cp_data ns =
   let bb_maps = funcBBLabels $ funcData $ modelParams cp_data
   in map (\n -> labBB $ head $ filter (\m -> labNode m == n) bb_maps) ns

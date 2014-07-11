@@ -25,13 +25,8 @@ import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.SExpressions
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
-  ( Domset (..)
-  , NodeID
-  , fromNodeID
-  , toNodeID
-  )
-import Language.InstructionSelection.Patterns.AssemblyString
-  (BBLabel (..))
+  (Domset (..))
+import Language.InstructionSelection.Graphs.IDs
 import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
@@ -244,12 +239,12 @@ instance FromJSON Natural where
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
 
-instance FromJSON BBLabel where
-  parseJSON (String s) = return $ (BBLabel $ T.unpack s)
+instance FromJSON BBLabelID where
+  parseJSON (String s) = return $ (BBLabelID $ T.unpack s)
   parseJSON _ = mzero
 
-instance ToJSON BBLabel where
-  toJSON (BBLabel s) = toJSON s
+instance ToJSON BBLabelID where
+  toJSON (BBLabelID s) = toJSON s
 
 instance FromJSON RawCPSolutionData where
   parseJSON (Object v) =

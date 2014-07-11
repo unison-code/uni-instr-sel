@@ -23,7 +23,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstructionSelection.Graphs.Base
-  ( BBLabel (..)
+  ( module Language.InstructionSelection.Graphs.IDs
+  , BBLabelID (..)
   , Domset (..)
   , Edge (..)
   , EdgeLabel (..)
@@ -33,7 +34,6 @@ module Language.InstructionSelection.Graphs.Base
   , Mapping (..)
   , Matchset (..)
   , Node (..)
-  , NodeID (..)
   , NodeLabel (..)
   , NodeType (..)
   , addToMatchset
@@ -57,7 +57,6 @@ module Language.InstructionSelection.Graphs.Base
   , fromEdgeNr
   , fromMapping
   , fromMatchset
-  , fromNodeID
   , hasAnyPredecessors
   , hasAnySuccessors
   , inEdgeNr
@@ -116,7 +115,6 @@ module Language.InstructionSelection.Graphs.Base
   , toEdgeNr
   , toMapping
   , toMatchset
-  , toNodeID
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
@@ -126,9 +124,10 @@ module Language.InstructionSelection.Graphs.Base
 where
 
 import qualified Language.InstructionSelection.DataTypes as D
+import Language.InstructionSelection.Graphs.IDs
 import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Patterns.AssemblyString
-  (BBLabel (..))
+import Language.InstructionSelection.TargetMachine.IDs
+  (BBLabelID (..))
 import Language.InstructionSelection.Utils
   ( Natural
   , removeDuplicates
@@ -177,15 +176,6 @@ data NodeLabel
 
     deriving (Show, Eq)
 
--- | Node ID data type.
-
-newtype NodeID
-    = NodeID Natural
-    deriving (Eq, Ord, Num, Enum)
-
-instance Show NodeID where
-  show (NodeID i) = show i
-
 -- | The node type information.
 
 data NodeType
@@ -210,7 +200,7 @@ data NodeType
 
       }
 
-    | LabelNode { bbLabel :: BBLabel }
+    | LabelNode { bbLabel :: BBLabelID }
     | PhiNode
     | StateNode
     | CopyNode
@@ -315,12 +305,6 @@ pNode (Mapping (_, n)) = n
 
 pNodes :: (Matchset n) -> [n]
 pNodes (Matchset m) = map pNode m
-
-fromNodeID :: NodeID -> Natural
-fromNodeID (NodeID i) = i
-
-toNodeID :: (Integral i) => i -> NodeID
-toNodeID = NodeID . toNatural
 
 fromNode :: Node -> I.LNode NodeLabel
 fromNode (Node n) = n

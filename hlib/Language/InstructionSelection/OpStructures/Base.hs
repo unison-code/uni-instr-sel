@@ -28,6 +28,9 @@ where
 
 import Language.InstructionSelection.Constraints
 import qualified Language.InstructionSelection.Graphs as G
+  ( Graph
+  , mkEmpty
+  )
 
 
 

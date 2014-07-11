@@ -11,10 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.Patterns
-  ( module Language.InstructionSelection.Patterns.Base
-  , module Language.InstructionSelection.Patterns.IDs
-  )
+  (module Language.InstructionSelection.Patterns.IDs)
 where
 
-import Language.InstructionSelection.Patterns.Base
 import Language.InstructionSelection.Patterns.IDs

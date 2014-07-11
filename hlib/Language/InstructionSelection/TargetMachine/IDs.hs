@@ -14,14 +14,22 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.TargetMachine.IDs (
-  RegisterID (..)
-, TargetMachineID (..)
-, fromRegisterID
-, fromTargetMachineID
-, toRegisterID
-, toTargetMachineID
-) where
+module Language.InstructionSelection.TargetMachine.IDs
+  ( AssemblyID (..)
+  , BBLabelID (..)
+  , InstructionID (..)
+  , RegisterID (..)
+  , TargetMachineID (..)
+  , fromAssemblyID
+  , fromInstructionID
+  , fromRegisterID
+  , fromTargetMachineID
+  , toAssemblyID
+  , toInstructionID
+  , toRegisterID
+  , toTargetMachineID
+  )
+where
 
 import Language.InstructionSelection.Utils
   ( Natural
@@ -33,6 +41,31 @@ import Language.InstructionSelection.Utils
 --------------
 -- Data types
 --------------
+
+-- | Represents a basic block label identifier.
+
+newtype BBLabelID
+    = BBLabelID String
+    deriving (Eq)
+
+instance Show BBLabelID where
+  show (BBLabelID str) = show str
+
+-- | Represents an instruction ID.
+
+newtype InstructionID = InstructionID Natural
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show InstructionID where
+  show (InstructionID i) = show i
+
+-- | Represents an ID to be used as place-holders inside an assembly string.
+
+newtype AssemblyID = AssemblyID Natural
+  deriving (Eq, Ord, Num, Enum)
+
+instance Show AssemblyID where
+  show (AssemblyID i) = show i
 
 -- | Represents a register ID.
 
@@ -64,3 +97,15 @@ fromTargetMachineID (TargetMachineID i) = i
 
 toTargetMachineID :: String -> TargetMachineID
 toTargetMachineID = TargetMachineID
+
+fromInstructionID :: InstructionID -> Natural
+fromInstructionID (InstructionID i) = i
+
+toInstructionID :: (Integral i) => i -> InstructionID
+toInstructionID = InstructionID . toNatural
+
+fromAssemblyID :: AssemblyID -> Natural
+fromAssemblyID (AssemblyID i) = i
+
+toAssemblyID :: (Integral i) => i -> AssemblyID
+toAssemblyID = AssemblyID . toNatural

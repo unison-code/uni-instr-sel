@@ -23,9 +23,6 @@ where
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
   (NodeID)
-import Language.InstructionSelection.Patterns
-  (Instruction (..))
-import Language.InstructionSelection.Patterns.AssemblyString
 import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine
 import qualified Data.Graph.Inductive as I
@@ -156,6 +153,13 @@ produceInstruction :: TargetMachine
                       -> AssemblyPart
                       -> String -- ^ Instruction string produced so far.
                       -> String
-produceInstruction m pid ap s =
+produceInstruction _ _ (AssemblyVerbatim s) ss = ss ++ s
+produceInstruction m pid (AssemblyImmValue aid) ss =
   -- TODO: implement
-  s
+  ss
+produceInstruction m pid (AssemblyRegister aid) ss =
+  -- TODO: implement
+  ss
+produceInstruction m pid (AssemblyBBLabel aid) ss =
+  -- TODO: implement
+  ss
