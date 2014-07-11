@@ -116,7 +116,7 @@ getPIData :: [PatternInstanceData]
              -> PatternInstanceData
 getPIData ds pid = head $ filter (\d -> patInstanceID d == pid) ds
 
--- | TODO: write description
+-- | Emits a list of assembly instructions for a given 'DataDepDAG'.
 
 emitInstructions :: CPSolutionData
                     -> TargetMachine
