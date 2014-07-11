@@ -49,7 +49,7 @@ newtype BBLabelID
     deriving (Eq)
 
 instance Show BBLabelID where
-  show (BBLabelID str) = show str
+  show (BBLabelID str) = str
 
 -- | Represents an instruction ID.
 

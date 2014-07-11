@@ -163,9 +163,9 @@ data TargetMachine
           -- | The machine registers. Each must be given a unique ID, but not
           -- necessarily in a contiguous order.
 
-        , tmRegisters :: [( String     -- ^ Register name (needed during code
+        , tmRegisters :: [( RegisterID -- ^ Register ID (only used internally).
+                          , String     -- ^ Register name (needed during code
                                        -- emission).
-                          , RegisterID -- ^ Register ID (only used internally).
                           )]
 
       }

@@ -389,7 +389,7 @@ tmTest =
   in TargetMachine
      (toTargetMachineID "test")
      insts
-     [ ("r0", 0)
-     , ("r1", 1)
-     , ("r2", 2)
+     [ (0, "r0")
+     , (1, "r1")
+     , (2, "r2")
      ]

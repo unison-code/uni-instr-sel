@@ -25,6 +25,7 @@ import Language.InstructionSelection.Graphs
   (NodeID)
 import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine
+  hiding (patAssIDMaps)
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 
@@ -143,23 +144,41 @@ emitInstruction cp m piid =
   let pi_data = getPIData (patInstData $ modelParams cp) piid
       i_data = getInstData (tmInstructions m) (patInstructionID pi_data)
       inst_ass_parts = instAssemblyStr i_data
-  in foldl
-     (flip $ produceInstruction m pi_data)
-     ""
-     (assStrParts inst_ass_parts)
+  in concatMap (produceInstPart cp m pi_data) (assStrParts inst_ass_parts)
 
-produceInstruction :: TargetMachine
-                      -> PatternInstanceData
-                      -> AssemblyPart
-                      -> String -- ^ Instruction string produced so far.
-                      -> String
-produceInstruction _ _ (AssemblyVerbatim s) ss = ss ++ s
-produceInstruction m pid (AssemblyImmValue aid) ss =
-  -- TODO: implement
-  ss
-produceInstruction m pid (AssemblyRegister aid) ss =
-  -- TODO: implement
-  ss
-produceInstruction m pid (AssemblyBBLabel aid) ss =
-  -- TODO: implement
-  ss
+getNIDFromAID :: PatternInstanceData -> AssemblyID -> NodeID
+getNIDFromAID pid aid = (patAssIDMaps pid) !! (fromIntegral aid)
+
+lookupBBLabel :: NodeID -> [BBLabelData] -> Maybe BBLabelID
+lookupBBLabel n ds =
+  let found = filter (\d -> labNode d == n) ds
+  in if length found > 0
+        then Just $ labBB $ head found
+        else Nothing
+
+produceInstPart :: CPSolutionData
+                   -> TargetMachine
+                   -> PatternInstanceData
+                   -> AssemblyPart
+                   -> String
+produceInstPart _ _ _ (AssemblyVerbatim s) = s
+produceInstPart cp _ pid (AssemblyImmValue aid) =
+  let n = getNIDFromAID pid aid
+      imm = lookup n $ immValuesOfDataNodes cp
+      prefix = "#"
+  in if isJust imm
+        then prefix ++ (show $ fromJust imm)
+        else prefix ++ "?"
+produceInstPart cp m pid (AssemblyRegister aid) =
+  let n = getNIDFromAID pid aid
+      reg = lookup n $ regsOfDataNodes cp
+  in if isJust reg
+        then let regsym = fromJust $ lookup (fromJust reg) (tmRegisters m)
+             in regsym
+        else "?"
+produceInstPart cp _ pid (AssemblyBBLabel aid) =
+  let n = getNIDFromAID pid aid
+      lab = lookupBBLabel n $ funcBBLabels $ funcData $ modelParams cp
+  in if isJust lab
+        then show $ fromJust lab
+        else "?"
