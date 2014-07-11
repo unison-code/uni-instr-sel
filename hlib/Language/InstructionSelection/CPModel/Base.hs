@@ -38,9 +38,7 @@ import Language.InstructionSelection.Patterns.IDs
   )
 import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
-  ( Natural
-  , toNatural
-  )
+  (Natural)
 import Data.List
   (sortBy)
 import Data.Maybe
