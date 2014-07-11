@@ -47,3 +47,15 @@ data AssemblyPart
 data AssemblyString
     = AssemblyString [AssemblyPart]
     deriving (Show)
+
+
+
+-------------
+-- Functions
+-------------
+
+fromAssemblyString :: AssemblyString -> [AssemblyPart]
+fromAssemblyString (AssemblyString ps) = ps
+
+toAssemblyString :: [AssemblyPart] -> AssemblyString
+toAssemblyString ps = AssemblyString ps
