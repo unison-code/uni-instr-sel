@@ -90,6 +90,20 @@ labNodes2BBLabels cp_data ns =
   let bb_maps = funcBBLabels $ funcData $ modelParams cp_data
   in map (\n -> labBB $ head $ filter (\m -> labNode m == n) bb_maps) ns
 
+genCode :: CPSolutionData -> [String]
+genCode cp_data =
+  let labs = orderOfBBs cp_data
+      pi_lists = map (getPIsAllocatedToBB cp_data) labs
+      dags = map (mkDataDepDAG cp_data) pi_lists
+      tm = fromJust $ getTargetMachine $ machID $ machData $ modelParams cp_data
+      is = map (emitInstructions cp_data tm) dags
+      bb_code = zipWith
+                (\bb ss -> (show bb ++ ":"):ss)
+                (labNodes2BBLabels cp_data labs)
+                is
+  in concat bb_code
+
+
 ----------------
 -- Main program
 ----------------
@@ -116,18 +130,5 @@ main =
      let cp_raw_data = fromRight s_res :: RawCPSolutionData
          pp_raw_data = fromRight pp_res :: RawPostParams
          cp_data = fromRawCPSolutionData pp_raw_data cp_raw_data
-     -- TODO: implement the rest of the program
-     let labs = orderOfBBs cp_data
-         pi_lists = map (getPIsAllocatedToBB cp_data) labs
-         dags = map (mkDataDepDAG cp_data) pi_lists
-         tm = fromJust $ getTargetMachine $ machID $ machData $
-              modelParams cp_data
-         is = map (emitInstructions cp_data tm) dags
-         code = concat $
-                zipWith
-                (\bb ss -> (show bb ++ ":"):ss)
-                (labNodes2BBLabels cp_data labs)
-                is
+         code = genCode cp_data
      mapM_ putStrLn code
-     --putStrLn $ show cp_raw_data
-     --putStrLn $ show pp_raw_data
