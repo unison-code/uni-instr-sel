@@ -35,9 +35,12 @@ import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.PostProcessor
 import Language.InstructionSelection.Graphs
-  (NodeID)
+  ( BBLabel
+  , NodeID
+  )
 import Language.InstructionSelection.Patterns.IDs
   (PatternInstanceID)
+import Language.InstructionSelection.TargetMachine.Targets
 import Language.InstructionSelection.Utils
   ( fromLeft
   , fromRight
@@ -82,7 +85,10 @@ getPIsAllocatedToBB :: CPSolutionData
 getPIsAllocatedToBB cp_data n =
   map fst $ filter (\t -> snd t == n) $ bbAllocsForPIs cp_data
 
-
+labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BBLabel]
+labNodes2BBLabels cp_data ns =
+  let bb_maps = funcBBLabels $ funcData $ modelParams cp_data
+  in map (\n -> labBB $ head $ filter (\m -> labNode m == n) bb_maps) ns
 
 ----------------
 -- Main program
@@ -114,7 +120,14 @@ main =
      let labs = orderOfBBs cp_data
          pi_lists = map (getPIsAllocatedToBB cp_data) labs
          dags = map (mkDataDepDAG cp_data) pi_lists
-         --is = map (emitInstructions insts) dags
-     mapM_ (putStrLn . show) dags
+         tm = fromJust $ getTargetMachine $ machID $ machData $
+              modelParams cp_data
+         is = map (emitInstructions cp_data tm) dags
+         code = concat $
+                zipWith
+                (\bb ss -> (show bb ++ ":"):ss)
+                (labNodes2BBLabels cp_data labs)
+                is
+     mapM_ putStrLn code
      --putStrLn $ show cp_raw_data
      --putStrLn $ show pp_raw_data

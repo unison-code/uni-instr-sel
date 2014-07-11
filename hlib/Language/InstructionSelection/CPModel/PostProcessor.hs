@@ -24,7 +24,9 @@ import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
   (NodeID)
 import Language.InstructionSelection.Patterns
-  (PatternInstanceID)
+  (Instruction (..))
+import Language.InstructionSelection.Patterns.AssemblyString
+import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
@@ -116,11 +118,44 @@ getPIData :: [PatternInstanceData]
              -> PatternInstanceData
 getPIData ds pid = head $ filter (\d -> patInstanceID d == pid) ds
 
+-- | Retrieves the 'Instruction' entity with matching instruction ID. It is
+-- assumed that such an entity always exists in the given list.
+
+getInstData :: [Instruction]
+               -> InstructionID
+               -> Instruction
+getInstData ds iid = head $ filter (\d -> instID d == iid) ds
+
 -- | Emits a list of assembly instructions for a given 'DataDepDAG'.
 
 emitInstructions :: CPSolutionData
                     -> TargetMachine
                     -> DataDepDAG
                     -> [String]
--- TODO: implement
-emitInstructions _ _ _ = []
+emitInstructions cp m dag =
+  let sorted_pis = I.topsort' dag
+  in map (emitInstruction cp m) sorted_pis
+
+-- | Emits the corresponding instruction of a given pattern instance ID.
+
+emitInstruction :: CPSolutionData
+                   -> TargetMachine
+                   -> PatternInstanceID
+                   -> String
+emitInstruction cp m piid =
+  let pi_data = getPIData (patInstData $ modelParams cp) piid
+      i_data = getInstData (tmInstructions m) (patInstructionID pi_data)
+      inst_ass_parts = instAssemblyStr i_data
+  in foldl
+     (flip $ produceInstruction m pi_data)
+     ""
+     (assStrParts inst_ass_parts)
+
+produceInstruction :: TargetMachine
+                      -> PatternInstanceData
+                      -> AssemblyPart
+                      -> String -- ^ Instruction string produced so far.
+                      -> String
+produceInstruction m pid ap s =
+  -- TODO: implement
+  s
