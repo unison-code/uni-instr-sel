@@ -241,9 +241,9 @@ instance FromJSON BBLabel where
 instance ToJSON BBLabel where
   toJSON (BBLabel s) = toJSON s
 
-instance FromJSON CPSolutionData where
+instance FromJSON RawCPSolutionData where
   parseJSON (Object v) =
-    CPSolutionData
+    RawCPSolutionData
     <$> v .: "bb-allocated-for-pi"
     <*> v .: "is-pi-selected"
     <*> v .: "order-of-bbs"
@@ -253,9 +253,9 @@ instance FromJSON CPSolutionData where
     <*> v .: "imm-value-of-dnode"
   parseJSON _ = mzero
 
-instance FromJSON PostParams where
+instance FromJSON RawPostParams where
   parseJSON (Object v) =
-    PostParams
+    RawPostParams
     <$> v .: "model-params"
     <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
     <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))

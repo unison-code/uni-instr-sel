@@ -34,22 +34,18 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.PostProcessor
+import Language.InstructionSelection.Graphs
+  (NodeID)
 import Language.InstructionSelection.Patterns.IDs
-  ( PatternInstanceID
-  , toPatternInstanceID
-  )
+  (PatternInstanceID)
 import Language.InstructionSelection.Utils
-  ( Natural
-  , fromLeft
+  ( fromLeft
   , fromRight
   , isLeft
-  , toNatural
   )
 import Control.Monad (when)
-import Data.List (sortBy)
 import Data.Maybe
-  ( catMaybes
-  , fromJust
+  ( fromJust
   , isNothing
   )
 import System.Console.CmdArgs
@@ -80,23 +76,11 @@ parseArgs =
   }
 
 getPIsAllocatedToBB :: CPSolutionData
-                       -> PostParams
-                       -> Natural -- ^ The basic block identifier
+                       -> NodeID              -- ^ The node ID of the
+                                              -- corresponding label node.
                        -> [PatternInstanceID]
-getPIsAllocatedToBB cp pp bbi =
-  let ps = map (Just . toPatternInstanceID) $ arrInd2PattInstIDs pp
-      ps' = zipWith (\p bbi' -> if bbi' == bbi then p else Nothing)
-                    ps (bbAllocsForPIs cp)
-  in catMaybes ps'
-
--- | Gets a list of basic blocks in the order according to the solution.
-
-getOrderedBBList :: CPSolutionData -> [Natural]
-getOrderedBBList cp =
-  let last_bb = length (orderOfBBs cp) - 1
-      bbs = zip (orderOfBBs cp) $ map toNatural [0..last_bb]
-      sorted_bbs = sortBy (\b1 b2 -> compare (fst b1) (fst b2)) bbs
-  in map snd sorted_bbs
+getPIsAllocatedToBB cp_data n =
+  map fst $ filter (\t -> snd t == n) $ bbAllocsForPIs cp_data
 
 
 
@@ -123,12 +107,14 @@ main =
      when (isLeft pp_res) $
        do putStrLn $ fromLeft pp_res
           exitFailure
-     let s_data = fromRight s_res :: CPSolutionData
-         pp_data = fromRight pp_res :: PostParams
+     let cp_raw_data = fromRight s_res :: RawCPSolutionData
+         pp_raw_data = fromRight pp_res :: RawPostParams
+         cp_data = fromRawCPSolutionData pp_raw_data cp_raw_data
      -- TODO: implement the rest of the program
-     let bbs = getOrderedBBList s_data
-         pi_lists = map (getPIsAllocatedToBB s_data pp_data) bbs
-         dags = map (mkDataDepDAG $ patInstData $ modelParams pp_data) pi_lists
+     let labs = orderOfBBs cp_data
+         pi_lists = map (getPIsAllocatedToBB cp_data) labs
+         dags = map (mkDataDepDAG (patInstData $ modelParams cp_data)) pi_lists
+         --is = map (emitInstructions insts) dags
      mapM_ (putStrLn . show) dags
-     --putStrLn $ show s_data
-     --putStrLn $ show pp_data
+     --putStrLn $ show cp_raw_data
+     --putStrLn $ show pp_raw_data

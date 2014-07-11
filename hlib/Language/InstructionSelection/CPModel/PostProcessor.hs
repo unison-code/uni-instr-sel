@@ -24,9 +24,8 @@ import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
   (NodeID)
 import Language.InstructionSelection.Patterns
-  ( Instruction
-  , PatternInstanceID
-  )
+  (PatternInstanceID)
+import Language.InstructionSelection.TargetMachine
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 
@@ -115,3 +114,12 @@ getPIData :: [PatternInstanceData]
              -> PatternInstanceID
              -> PatternInstanceData
 getPIData ds pid = head $ filter (\d -> patInstanceID d == pid) ds
+
+-- | TODO: write description
+
+emitInstructions :: TargetMachine
+                    -> [PatternInstanceData]
+                    -> DataDepDAG
+                    -> [String]
+-- TODO: implement
+emitInstructions _ _ _ = []
