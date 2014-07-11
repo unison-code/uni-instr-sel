@@ -105,8 +105,8 @@ data InstPattern
 
           -- | Maps an 'AssemblyID', which is denoted as the index into the
           -- list, that appear in the 'AssemblyString' of the instruction, to a
-          -- particular data node in the graph of the pattern's operation
-          -- structure. Because of this, all 'AssemblyID's used within the same
+          -- particular node in the graph of the pattern's operation structure.
+          -- Because of this, all 'AssemblyID's used within the same
           -- 'AssemblyString' *must* be unique and contiguous!
 
         , patAssIDMaps :: [NodeID]

@@ -35,9 +35,9 @@ import Language.InstructionSelection.CPModel
 import Language.InstructionSelection.CPModel.Json
 import Language.InstructionSelection.CPModel.PostProcessor
 import Language.InstructionSelection.Graphs
-  ( BBLabel
-  , NodeID
-  )
+  (NodeID)
+import Language.InstructionSelection.Patterns.AssemblyString
+  (BBLabel (..))
 import Language.InstructionSelection.Patterns.IDs
   (PatternInstanceID)
 import Language.InstructionSelection.TargetMachine.Targets

@@ -27,8 +27,7 @@ where
 
 import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Graphs
-  ( BBLabel (..)
-  , Domset (..)
+  ( Domset (..)
   , NodeID (..)
   )
 import Language.InstructionSelection.Patterns.IDs
@@ -36,6 +35,8 @@ import Language.InstructionSelection.Patterns.IDs
   , PatternID
   , PatternInstanceID
   )
+import Language.InstructionSelection.Patterns.AssemblyString
+  (BBLabel (..))
 import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils
   (Natural)

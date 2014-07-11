@@ -25,12 +25,13 @@ import Language.InstructionSelection.Constraints
 import Language.InstructionSelection.Constraints.SExpressions
 import Language.InstructionSelection.CPModel.Base
 import Language.InstructionSelection.Graphs
-  ( BBLabel (..)
-  , Domset (..)
+  ( Domset (..)
   , NodeID
   , fromNodeID
   , toNodeID
   )
+import Language.InstructionSelection.Patterns.AssemblyString
+  (BBLabel (..))
 import Language.InstructionSelection.Patterns.IDs
 import Language.InstructionSelection.TargetMachine.IDs
 import Language.InstructionSelection.Utils

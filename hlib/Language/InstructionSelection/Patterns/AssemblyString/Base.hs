@@ -23,6 +23,15 @@ import Language.InstructionSelection.Patterns.IDs (AssemblyID)
 -- Data types
 --------------
 
+-- | Represents a basic block label.
+
+newtype BBLabel
+    = BBLabel String
+    deriving (Eq)
+
+instance Show BBLabel where
+  show (BBLabel str) = show str
+
 -- | Represents parts of the assembly string. All 'AssemblyID's used within the
 -- same 'AssemblyString' *must* be unique and contiguous!
 
@@ -39,6 +48,14 @@ data AssemblyPart
       -- | Denotes a register.
 
     | AssemblyRegister AssemblyID
+
+      -- | Denotes a basic block label.
+
+    | AssemblyLabel AssemblyID
+
+      -- | Denotes a temporary.
+
+    | AssemblyTemporary AssemblyID
 
     deriving (Show)
 

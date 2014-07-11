@@ -22,116 +22,121 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstructionSelection.Graphs.Base (
-  BBLabel (..)
-, Domset (..)
-, Edge (..)
-, EdgeLabel (..)
-, EdgeNr (..)
-, Graph (..)
-, IntGraph
-, Mapping (..)
-, Matchset (..)
-, Node (..)
-, NodeID (..)
-, NodeLabel (..)
-, NodeType (..)
-, addToMatchset
-, allNodes
-, allEdges
-, addNewEdge
-, addNewNode
-, convertMatchsetN2ID
-, convertMappingN2ID
-, copyNodeLabel
-, delEdge
-, delNode
-, delNodeKeepEdges
-, edges
-, mkEmpty
-, extractCFG
-, extractDomSet
-, extractIDomSet
-, fNode
-, fNodes
-, fromEdgeNr
-, fromMapping
-, fromMatchset
-, fromNodeID
-, hasAnyPredecessors
-, hasAnySuccessors
-, inEdgeNr
-, inEdges
-, insertNewNodeAlongEdge
-, isActionNode
-, isComputationNode
-, isControlNode
-, isCopyNode
-, isDataNode
-, isEntityNode
-, isInGraph
-, isInMatchset
-, isLabelNode
-, isNullNode
-, isOfComputationNodeType
-, isOfControlNodeType
-, isOfCopyNodeType
-, isOfDataNodeType
-, isOfLabelNodeType
-, isOfNullNodeType
-, isOfPhiNodeType
-, isOfStateNodeType
-, isPhiNode
-, isRetControlNode
-, isStateNode
-, lastAddedNode
-, mapF2P
-, mapP2F
-, mapFs2Ps
-, mapPs2Fs
-, matchingNodes
-, mergeNodes
-, mkGraph
-, nodeID
-, nodeIDs
-, nodeID2Node
-, nodeLabel
-, nodesByNodeID
-, nodeType
-, numNodes
-, outEdgeNr
-, outEdges
-, pNode
-, pNodes
-, predecessors
-, redirectEdges
-, redirectInEdges
-, redirectOutEdges
-, rootInCFG
-, sortEdgesByInNumbers
-, sortEdgesByOutNumbers
-, sourceOfEdge
-, successors
-, targetOfEdge
-, toEdgeNr
-, toMapping
-, toMatchset
-, toNodeID
-, updateEdgeLabel
-, updateEdgeSource
-, updateEdgeTarget
-, updateNodeID
-, updateNodeLabel
-) where
+module Language.InstructionSelection.Graphs.Base
+  ( BBLabel (..)
+  , Domset (..)
+  , Edge (..)
+  , EdgeLabel (..)
+  , EdgeNr (..)
+  , Graph (..)
+  , IntGraph
+  , Mapping (..)
+  , Matchset (..)
+  , Node (..)
+  , NodeID (..)
+  , NodeLabel (..)
+  , NodeType (..)
+  , addToMatchset
+  , allNodes
+  , allEdges
+  , addNewEdge
+  , addNewNode
+  , convertMatchsetN2ID
+  , convertMappingN2ID
+  , copyNodeLabel
+  , delEdge
+  , delNode
+  , delNodeKeepEdges
+  , edges
+  , mkEmpty
+  , extractCFG
+  , extractDomSet
+  , extractIDomSet
+  , fNode
+  , fNodes
+  , fromEdgeNr
+  , fromMapping
+  , fromMatchset
+  , fromNodeID
+  , hasAnyPredecessors
+  , hasAnySuccessors
+  , inEdgeNr
+  , inEdges
+  , insertNewNodeAlongEdge
+  , isActionNode
+  , isComputationNode
+  , isControlNode
+  , isCopyNode
+  , isDataNode
+  , isEntityNode
+  , isInGraph
+  , isInMatchset
+  , isLabelNode
+  , isNullNode
+  , isOfComputationNodeType
+  , isOfControlNodeType
+  , isOfCopyNodeType
+  , isOfDataNodeType
+  , isOfLabelNodeType
+  , isOfNullNodeType
+  , isOfPhiNodeType
+  , isOfStateNodeType
+  , isPhiNode
+  , isRetControlNode
+  , isStateNode
+  , lastAddedNode
+  , mapF2P
+  , mapP2F
+  , mapFs2Ps
+  , mapPs2Fs
+  , matchingNodes
+  , mergeNodes
+  , mkGraph
+  , nodeID
+  , nodeIDs
+  , nodeID2Node
+  , nodeLabel
+  , nodesByNodeID
+  , nodeType
+  , numNodes
+  , outEdgeNr
+  , outEdges
+  , pNode
+  , pNodes
+  , predecessors
+  , redirectEdges
+  , redirectInEdges
+  , redirectOutEdges
+  , rootInCFG
+  , sortEdgesByInNumbers
+  , sortEdgesByOutNumbers
+  , sourceOfEdge
+  , successors
+  , targetOfEdge
+  , toEdgeNr
+  , toMapping
+  , toMatchset
+  , toNodeID
+  , updateEdgeLabel
+  , updateEdgeSource
+  , updateEdgeTarget
+  , updateNodeID
+  , updateNodeLabel
+  )
+where
 
 import qualified Language.InstructionSelection.DataTypes as D
 import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.Utils ( Natural
-                                           , removeDuplicates
-                                           , toNatural
-                                           )
+import Language.InstructionSelection.Patterns.AssemblyString
+  (BBLabel (..))
+import Language.InstructionSelection.Utils
+  ( Natural
+  , removeDuplicates
+  , toNatural
+  )
 import qualified Data.Graph.Inductive as I
-import Data.List (sortBy)
+import Data.List
+  (sortBy)
 import Data.Maybe
 
 
@@ -250,15 +255,6 @@ newtype EdgeNr
 
 instance Show EdgeNr where
   show (EdgeNr i) = show i
-
--- | Represents a basic block label.
-
-newtype BBLabel
-    = BBLabel String
-    deriving (Eq)
-
-instance Show BBLabel where
-  show (BBLabel str) = show str
 
 -- | Represents a matchset, which is a list of mappings.
 
