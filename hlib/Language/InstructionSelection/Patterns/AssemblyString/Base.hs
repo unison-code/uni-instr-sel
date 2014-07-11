@@ -45,17 +45,5 @@ data AssemblyPart
 -- | Record for containing the assembly string to produce during code emission.
 
 data AssemblyString
-    = AssemblyString [AssemblyPart]
+    = AssemblyString { assStrParts :: [AssemblyPart] }
     deriving (Show)
-
-
-
--------------
--- Functions
--------------
-
-fromAssemblyString :: AssemblyString -> [AssemblyPart]
-fromAssemblyString (AssemblyString ps) = ps
-
-toAssemblyString :: [AssemblyPart] -> AssemblyString
-toAssemblyString ps = AssemblyString ps
