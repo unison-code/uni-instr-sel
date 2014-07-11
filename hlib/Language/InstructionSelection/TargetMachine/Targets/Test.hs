@@ -317,7 +317,7 @@ tmTest =
                 )
 
               , Instruction
-                1
+                3
                 [ InstPattern
                   0
                   br_pattern_os
@@ -333,7 +333,7 @@ tmTest =
                 )
 
               , Instruction
-                1
+                4
                 [ InstPattern
                   0
                   br_fallthrough_pattern_os
@@ -345,7 +345,7 @@ tmTest =
                 (AssemblyString [])
 
               , Instruction
-                1
+                5
                 [ InstPattern
                   0
                   ret_pattern_os
@@ -361,7 +361,7 @@ tmTest =
                 )
 
               , Instruction
-                1
+                6
                 [ InstPattern
                   0
                   phi_pattern_os
