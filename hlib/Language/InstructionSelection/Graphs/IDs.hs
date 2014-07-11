@@ -34,9 +34,8 @@ import Language.InstructionSelection.Utils
 
 -- | Node ID data type.
 
-newtype NodeID
-    = NodeID Natural
-    deriving (Eq, Ord, Num, Enum)
+newtype NodeID = NodeID Natural
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show NodeID where
   show (NodeID i) = show i

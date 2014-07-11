@@ -36,7 +36,7 @@ import Language.InstructionSelection.Utils
 --------------
 
 newtype PatternID = PatternID Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show PatternID where
   show (PatternID i) = show i
@@ -45,7 +45,7 @@ instance Show PatternID where
 -- between pattern an instance is based on.
 
 newtype PatternInstanceID = PatternInstanceID Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show PatternInstanceID where
   show (PatternInstanceID i) = show i

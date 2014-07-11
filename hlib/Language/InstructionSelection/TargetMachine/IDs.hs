@@ -54,7 +54,7 @@ instance Show BBLabelID where
 -- | Represents an instruction ID.
 
 newtype InstructionID = InstructionID Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show InstructionID where
   show (InstructionID i) = show i
@@ -62,7 +62,7 @@ instance Show InstructionID where
 -- | Represents an ID to be used as place-holders inside an assembly string.
 
 newtype AssemblyID = AssemblyID Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show AssemblyID where
   show (AssemblyID i) = show i
@@ -70,7 +70,7 @@ instance Show AssemblyID where
 -- | Represents a register ID.
 
 newtype RegisterID = RegisterID Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show RegisterID where
   show (RegisterID i) = show i
