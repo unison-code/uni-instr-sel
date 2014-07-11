@@ -173,12 +173,14 @@ instance ToJSON PatternInstanceData where
 instance FromJSON MachineData where
   parseJSON (Object v) =
     MachineData
-    <$> v .: "registers"
+    <$> v .: "target-machine-id"
+    <*> v .: "registers"
   parseJSON _ = mzero
 
 instance ToJSON MachineData where
   toJSON d =
-    object [ "registers" .= (machRegisters d)
+    object [ "target-machine-id" .= (machID d)
+           , "registers" .= (machRegisters d)
            ]
 
 instance FromJSON Constraint where
@@ -226,6 +228,13 @@ instance FromJSON RegisterID where
 
 instance ToJSON RegisterID where
   toJSON rid = toJSON (fromRegisterID rid)
+
+instance FromJSON TargetMachineID where
+  parseJSON (String s) = return $ toTargetMachineID $ T.unpack s
+  parseJSON _ = mzero
+
+instance ToJSON TargetMachineID where
+  toJSON tmid = toJSON (fromTargetMachineID tmid)
 
 instance FromJSON Natural where
   parseJSON (Number sn) = return $ sn2nat sn

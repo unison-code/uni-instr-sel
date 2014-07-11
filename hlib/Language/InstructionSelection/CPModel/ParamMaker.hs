@@ -47,29 +47,33 @@ mkParams :: Function
             -> TargetMachine
             -> CPModelParams
 mkParams f m =
-  CPModelParams (mkFunctionGraphData f)
-                (mkPatternInstanceData f $ tmInstructions m)
-                (mkMachineData m)
+  CPModelParams
+  (mkFunctionGraphData f)
+  (mkPatternInstanceData f $ tmInstructions m)
+  (mkMachineData m)
 
 mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
   let g = osGraph $ functionOS f
       nodeIDsByType f' = nodeIDs $ filter f' $ allNodes g
       cfg = extractCFG g
-  in FunctionGraphData (nodeIDsByType isActionNode)
-                       (nodeIDsByType isDataNode)
-                       (nodeIDsByType isStateNode)
-                       (computeLabelDoms cfg)
-                       (nodeID $ fromJust $ rootInCFG cfg)
-                       (map (\n -> BBLabelData (nodeID n)
-                                   (bbLabel $ nodeType n))
-                        $ filter isLabelNode $ allNodes g
-                       )
-                       (osConstraints $ functionOS f)
+  in FunctionGraphData
+     (nodeIDsByType isActionNode)
+     (nodeIDsByType isDataNode)
+     (nodeIDsByType isStateNode)
+     (computeLabelDoms cfg)
+     (nodeID $ fromJust $ rootInCFG cfg)
+     (map (\n -> BBLabelData (nodeID n)
+                 (bbLabel $ nodeType n))
+      $ filter isLabelNode $ allNodes g
+     )
+     (osConstraints $ functionOS f)
 
 mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
-  MachineData (map snd (tmRegisters m))
+  MachineData
+  (tmID m)
+  (map snd (tmRegisters m))
 
 mkPatternInstanceData :: Function
                          -> [Instruction]
@@ -155,8 +159,8 @@ mapPs2FsInConstraints :: Matchset NodeID
                          -> [Constraint]
 mapPs2FsInConstraints m cs =
   map (replaceFunc m) cs
-  where replaceFunc m' (BoolExprConstraint e) = BoolExprConstraint $
-                                                replaceInBoolExpr m' e
+  where replaceFunc m' (BoolExprConstraint e) =
+          BoolExprConstraint $ replaceInBoolExpr m' e
 
 replaceInBoolExpr :: Matchset NodeID -> BoolExpr -> BoolExpr
 replaceInBoolExpr m (EqExpr  lhs rhs) =

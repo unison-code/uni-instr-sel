@@ -207,9 +207,13 @@ data PatternInstanceData
 data MachineData
     = MachineData {
 
+          -- | The identifier of the target machine.
+
+          machID :: TargetMachineID
+
           -- | The registers in the target machine.
 
-          machRegisters :: [RegisterID]
+        , machRegisters :: [RegisterID]
 
       }
     deriving (Show)

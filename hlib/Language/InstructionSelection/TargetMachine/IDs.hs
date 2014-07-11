@@ -16,8 +16,11 @@
 
 module Language.InstructionSelection.TargetMachine.IDs (
   RegisterID (..)
+, TargetMachineID (..)
 , fromRegisterID
+, fromTargetMachineID
 , toRegisterID
+, toTargetMachineID
 ) where
 
 import Language.InstructionSelection.Utils
@@ -39,6 +42,11 @@ newtype RegisterID = RegisterID Natural
 instance Show RegisterID where
   show (RegisterID i) = show i
 
+-- | Represents a target machine ID
+
+newtype TargetMachineID = TargetMachineID String
+  deriving (Eq, Show)
+
 
 
 -------------
@@ -50,3 +58,9 @@ fromRegisterID (RegisterID i) = i
 
 toRegisterID :: (Integral i) => i -> RegisterID
 toRegisterID = RegisterID . toNatural
+
+fromTargetMachineID :: TargetMachineID -> String
+fromTargetMachineID (TargetMachineID i) = i
+
+toTargetMachineID :: String -> TargetMachineID
+toTargetMachineID = TargetMachineID

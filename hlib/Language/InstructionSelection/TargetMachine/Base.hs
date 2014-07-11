@@ -33,9 +33,13 @@ import Language.InstructionSelection.TargetMachine.IDs
 data TargetMachine
     = TargetMachine {
 
+          -- | The identifier of the target machine.
+
+          tmID :: TargetMachineID
+
           -- | The set of assembly instructions supported by the target machine.
 
-          tmInstructions :: [Instruction]
+        , tmInstructions :: [Instruction]
 
           -- | The machine registers. Each must be given a unique ID, but not
           -- necessarily in a contiguous order.

@@ -423,6 +423,7 @@ main =
 
                  ]
          target = TargetMachine
+                  (toTargetMachineID "test")
                   insts
                   [ ("r0", 0)
                   , ("r1", 1)
