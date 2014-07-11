@@ -134,7 +134,7 @@ emitInstructions :: CPSolutionData
                     -> [String]
 emitInstructions cp m dag =
   let sorted_pis = I.topsort' dag
-  in map (emitInstruction cp m) sorted_pis
+  in filter (\i -> length i > 0) $ map (emitInstruction cp m) sorted_pis
 
 -- | Emits the corresponding instruction of a given pattern instance ID.
 
