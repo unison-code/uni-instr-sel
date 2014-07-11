@@ -113,7 +113,7 @@ main =
      -- TODO: implement the rest of the program
      let labs = orderOfBBs cp_data
          pi_lists = map (getPIsAllocatedToBB cp_data) labs
-         dags = map (mkDataDepDAG (patInstData $ modelParams cp_data)) pi_lists
+         dags = map (mkDataDepDAG cp_data) pi_lists
          --is = map (emitInstructions insts) dags
      mapM_ (putStrLn . show) dags
      --putStrLn $ show cp_raw_data

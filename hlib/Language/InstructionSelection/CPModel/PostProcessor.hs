@@ -48,7 +48,7 @@ type DataDepDAG = I.Gr PatternInstanceID NodeID
 -- Functions
 -------------
 
--- | Takes a list of pattern instance data and pattern instance IDs, and
+-- | Takes a CP solution data set and a list of pattern instance IDs, and
 -- produces a data dependency DAG such that every pattern instance ID is
 -- represented by a node, and there is a directed edge between two nodes if the
 -- pattern instance indicated by the target node uses data produced by the
@@ -56,11 +56,12 @@ type DataDepDAG = I.Gr PatternInstanceID NodeID
 -- such that the pattern containing the phi node which makes use of the data
 -- appears at the top of the DAG.
 
-mkDataDepDAG :: [PatternInstanceData]
+mkDataDepDAG :: CPSolutionData
                 -> [PatternInstanceID]
                 -> DataDepDAG
-mkDataDepDAG ds is =
-  foldr (addUseEdgesToDAG ds) (I.mkGraph (zip [0..] is) []) is
+mkDataDepDAG cp_data is =
+  let ds = patInstData $ modelParams cp_data
+  in foldr (addUseEdgesToDAG ds) (I.mkGraph (zip [0..] is) []) is
 
 -- | Adds an edge for each use of data or state of the given pattern instance
 -- ID. If the source node is not present in the graph, no edge is added. It is
@@ -117,8 +118,8 @@ getPIData ds pid = head $ filter (\d -> patInstanceID d == pid) ds
 
 -- | TODO: write description
 
-emitInstructions :: TargetMachine
-                    -> [PatternInstanceData]
+emitInstructions :: CPSolutionData
+                    -> TargetMachine
                     -> DataDepDAG
                     -> [String]
 -- TODO: implement
