@@ -180,6 +180,10 @@ data PatternInstanceData
 
         , patAUDDC :: Bool
 
+          -- | Whether the pattern contains one or more control nodes.
+
+        , patHasControlNodes :: Bool
+
           -- | The size of the instruction associated with this pattern
           -- instance.
 

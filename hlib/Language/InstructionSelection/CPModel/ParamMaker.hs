@@ -73,7 +73,7 @@ mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
   MachineData
   (tmID m)
-  (map snd (tmRegisters m))
+  (map fst (tmRegisters m))
 
 mkPatternInstanceData :: Function
                          -> [Instruction]
@@ -111,6 +111,7 @@ processMatchset i p m (pids, next_piid) =
       d_ns = filter isDataNode ns
       s_ns = filter isStateNode ns
       l_ns = filter isLabelNode ns
+      c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors g) d_ns
       d_use_ns = filter (hasAnySuccessors g) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode $ successors g n) d_use_ns
@@ -131,6 +132,7 @@ processMatchset i p m (pids, next_piid) =
                 (mapPs2Fs m $ nodeIDs l_ref_ns)
                 (mapPs2FsInConstraints m (osConstraints $ patOS p))
                 (patAUDDC p)
+                (length c_ns > 0)
                 (instCodeSize i_props)
                 (instLatency i_props)
                 (mapPs2Fs m $ patAssIDMaps p)

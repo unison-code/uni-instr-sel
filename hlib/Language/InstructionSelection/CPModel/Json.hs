@@ -142,6 +142,7 @@ instance FromJSON PatternInstanceData where
     <*> v .: "label-nodes-referred"
     <*> v .: "constraints"
     <*> v .: "apply-use-def-dom-constraints"
+    <*> v .: "has-control-nodes"
     <*> v .: "code-size"
     <*> v .: "latency"
     <*> v .: "assembly-id-maps"
@@ -161,6 +162,7 @@ instance ToJSON PatternInstanceData where
             , "label-nodes-referred"          .= (patLabelNodesReferred d)
             , "constraints"                   .= (patConstraints d)
             , "apply-use-def-dom-constraints" .= (patAUDDC d)
+            , "has-control-nodes"             .= (patHasControlNodes d)
             , "code-size"                     .= (patCodeSize d)
             , "latency"                       .= (patLatency d)
             , "assembly-id-maps"              .= (patAssIDMaps d)

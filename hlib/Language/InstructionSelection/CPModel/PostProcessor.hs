@@ -109,10 +109,14 @@ addControlEdgesToDAG :: CPSolutionData
                         -> PatternInstanceID
                         -> ControlDataFlowDAG
                         -> ControlDataFlowDAG
-addControlEdgesToDAG cp_data pid g0 =
-  -- TODO: implement
-  g0
-
+addControlEdgesToDAG cp_data pid g =
+  let pi_data = getPIData (patInstData $ modelParams cp_data) pid
+  in if patHasControlNodes pi_data
+        then let ns = I.labNodes g
+                 pi_n = fst $ head $ filter (\(_, i) -> i == pid) ns
+                 other_ns = map fst $ filter (\(_, i) -> i /= pid) ns
+             in foldr (\n' g' -> I.insEdge (n', pi_n, ()) g') g other_ns
+        else g
 
 -- | Gets the internal node ID (if any) of the node with a given pattern
 -- instance ID as its label. It is assumed that there is always at most one such
@@ -135,15 +139,6 @@ getPIData :: [PatternInstanceData]
              -> PatternInstanceID
              -> PatternInstanceData
 getPIData ps piid = fromJust $ findPatternInstanceData ps piid
-
--- | Retrieves the 'InstPattern' entity with matching instruction ID and pattern
--- ID. It is assumed that such an entity always exists in the given list.
-
-getIP :: [Instruction]
-         -> InstructionID
-         -> PatternID
-         -> InstPattern
-getIP is iid pid = fromJust $ findInstPattern is iid pid
 
 -- | Retrieves the 'Instruction' entity with matching instruction ID. It is
 -- assumed that such an entity always exists in the given list.
