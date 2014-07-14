@@ -942,8 +942,7 @@ mapFs2Ps :: (Eq n)
             => Matchset n -- ^ The matchset.
             -> [n]        -- ^ List of function nodes.
             -> [n]        -- ^ List of corresponding pattern nodes.
-mapFs2Ps (Matchset m) fns =
-  [ pn | (fn, pn) <- map fromMapping m, fn' <- fns, fn == fn' ]
+mapFs2Ps m fns = mapMaybe (mapF2P m) fns
 
 -- | From a matchset and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping. The order of the list will
@@ -953,8 +952,7 @@ mapPs2Fs :: (Eq n)
             => Matchset n -- ^ The matchset.
             -> [n]        -- ^ List of pattern nodes.
             -> [n]        -- ^ List of corresponding function nodes.
-mapPs2Fs (Matchset m) pns =
-  [ fn | (fn, pn) <- map fromMapping m, pn' <- pns, pn == pn' ]
+mapPs2Fs m pns = mapMaybe (mapP2F m) pns
 
 -- | From a matchset and a function node, get the corresponding pattern node if
 -- there exists a such a mapping.
