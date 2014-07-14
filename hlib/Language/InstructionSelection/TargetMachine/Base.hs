@@ -21,6 +21,8 @@ module Language.InstructionSelection.TargetMachine.Base
   , InstPattern (..)
   , InstProperties (..)
   , TargetMachine (..)
+  , findInstruction
+  , findInstPattern
   )
 where
 
@@ -30,6 +32,10 @@ import Language.InstructionSelection.OpStructures
 import Language.InstructionSelection.Patterns.IDs
   (PatternID)
 import Language.InstructionSelection.TargetMachine.IDs
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
 
 
 
@@ -170,3 +176,42 @@ data TargetMachine
 
       }
     deriving (Show)
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Given a list of instructions, the function finds the 'Instruction' entity
+-- with matching instruction ID. If there is more than one match, the first
+-- found is returned. If no such entity is found, 'Nothing' is returned.
+
+findInstruction :: [Instruction]
+                  -> InstructionID
+                  -> Maybe Instruction
+findInstruction is iid =
+  let found = filter (\i -> instID i == iid) is
+  in if length found > 0
+        then Just $ head found
+        else Nothing
+
+-- | Given a list of instructions, the function finds the 'Instruction' entity
+-- with matching instruction ID and pattern ID. If there is more than one match,
+-- the first found is returned. If no such entity is found, 'Nothing' is
+-- returned.
+
+findInstPattern :: [Instruction]
+                   -> InstructionID
+                   -> PatternID
+                   -> Maybe InstPattern
+findInstPattern is iid pid =
+  let maybe_i = findInstruction is iid
+  in if isJust maybe_i
+        then let i = fromJust maybe_i
+                 ps = instPatterns i
+                 found = filter (\p -> patID p == pid) ps
+             in if length found > 0
+                   then Just $ head found
+                   else Nothing
+        else Nothing

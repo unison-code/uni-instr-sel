@@ -14,9 +14,9 @@
 --------------------------------------------------------------------------------
 
 module Language.InstructionSelection.CPModel.PostProcessor
-  ( DataDepDAG
+  ( ControlDataFlowDAG
   , emitInstructions
-  , mkDataDepDAG
+  , mkControlDataFlowDAG
   )
 where
 
@@ -36,11 +36,12 @@ import Data.Maybe
 --------------
 
 -- | A data type representing a DAG where the nodes represent pattern instances,
--- and the directed edges represent data dependencies between the pattern
--- instances. Each edge is labeled with the node ID of the data or state node
--- which represents the data involved in that edge.
+-- and the directed edges represent control and data dependencies between the
+-- pattern instances. Each edge represents either the data flowing from one
+-- pattern to another, or that there is a state or control dependency between
+-- the two.
 
-type DataDepDAG = I.Gr PatternInstanceID ()
+type ControlDataFlowDAG = I.Gr PatternInstanceID ()
 
 
 
@@ -49,19 +50,23 @@ type DataDepDAG = I.Gr PatternInstanceID ()
 -------------
 
 -- | Takes a CP solution data set and a list of pattern instance IDs, and
--- produces a data dependency DAG such that every pattern instance ID is
--- represented by a node, and there is a directed edge between two nodes if the
--- pattern instance indicated by the target node uses data produced by the
--- pattern instance indicated by the source node. Cyclic dependencies be broken
+-- produces a control and data dependency DAG such that every pattern instance
+-- ID is represented by a node, and there is a directed edge between two nodes
+-- if the pattern instance indicated by the target node uses data produced by
+-- the pattern instance indicated by the source node, or if the destination node
+-- represents a pattern with control nodes. Cyclic data dependencies are broken
 -- such that the pattern containing the phi node which makes use of the data
--- appears at the top of the DAG.
+-- appears at the top of the DAG. Cyclic control dependencies will appear if
+-- there is more than one pattern instance with control nodes in the list.
 
-mkDataDepDAG :: CPSolutionData
-                -> [PatternInstanceID]
-                -> DataDepDAG
-mkDataDepDAG cp_data is =
-  let ds = patInstData $ modelParams cp_data
-  in foldr (addUseEdgesToDAG ds) (I.mkGraph (zip [0..] is) []) is
+mkControlDataFlowDAG :: CPSolutionData
+                        -> [PatternInstanceID]
+                        -> ControlDataFlowDAG
+mkControlDataFlowDAG cp_data is =
+  let g0 = I.mkGraph (zip [0..] is) []
+      g1 = foldr (addUseEdgesToDAG cp_data) g0 is
+      g2 = foldr (addControlEdgesToDAG cp_data) g1 is
+  in g2
 
 -- | Adds an edge for each use of data or state of the given pattern instance
 -- ID. If the source node is not present in the graph, no edge is added. It is
@@ -69,12 +74,13 @@ mkDataDepDAG cp_data is =
 -- the pattern instance ID given as argument to the function. Note that this may
 -- lead to cycles, which will have to be broken as a second step.
 
-addUseEdgesToDAG :: [PatternInstanceData]
+addUseEdgesToDAG :: CPSolutionData
                     -> PatternInstanceID
-                    -> DataDepDAG
-                    -> DataDepDAG
-addUseEdgesToDAG ds pid g0 =
-  let pi_n = fromJust $ getNodeOfPI g0 pid
+                    -> ControlDataFlowDAG
+                    -> ControlDataFlowDAG
+addUseEdgesToDAG cp_data pid g0 =
+  let ds = patInstData $ modelParams cp_data
+      pi_n = fromJust $ getNodeOfPI g0 pid
       pi_data = getPIData ds pid
       ns = I.labNodes g0
       d_uses_of_pi = filter (`notElem` patDataNodesUsedByPhis pi_data)
@@ -89,17 +95,30 @@ addUseEdgesToDAG ds pid g0 =
 addUseEdgesToDAG' :: I.Node
                      -> [(I.Node, [NodeID])] -- ^ List of defs.
                      -> NodeID               -- ^ A use.
-                     -> DataDepDAG
-                     -> DataDepDAG
+                     -> ControlDataFlowDAG
+                     -> ControlDataFlowDAG
 addUseEdgesToDAG' n def_maps use g =
   let ns = map fst $ filter (\m -> use `elem` snd m) def_maps
   in foldr (\n' g' -> I.insEdge (n', n, ()) g') g ns
+
+-- | If the given pattern instance ID represents a pattern with control nodes,
+-- then an edge will be added to the node of that pattern instance ID from every
+-- other node.
+
+addControlEdgesToDAG :: CPSolutionData
+                        -> PatternInstanceID
+                        -> ControlDataFlowDAG
+                        -> ControlDataFlowDAG
+addControlEdgesToDAG cp_data pid g0 =
+  -- TODO: implement
+  g0
+
 
 -- | Gets the internal node ID (if any) of the node with a given pattern
 -- instance ID as its label. It is assumed that there is always at most one such
 -- node in the graph.
 
-getNodeOfPI :: DataDepDAG
+getNodeOfPI :: ControlDataFlowDAG
                -> PatternInstanceID
                -> Maybe I.Node
 getNodeOfPI g pid =
@@ -109,26 +128,36 @@ getNodeOfPI g pid =
         else Nothing
 
 -- | Retrieves the 'PatternInstanceData' entity with matching pattern instance
--- ID. It is assumed that such an entity always exists in the given list.
+-- ID. It is assumed that exactly one such entity always exists in the given
+-- list.
 
 getPIData :: [PatternInstanceData]
              -> PatternInstanceID
              -> PatternInstanceData
-getPIData ds pid = head $ filter (\d -> patInstanceID d == pid) ds
+getPIData ps piid = fromJust $ findPatternInstanceData ps piid
+
+-- | Retrieves the 'InstPattern' entity with matching instruction ID and pattern
+-- ID. It is assumed that such an entity always exists in the given list.
+
+getIP :: [Instruction]
+         -> InstructionID
+         -> PatternID
+         -> InstPattern
+getIP is iid pid = fromJust $ findInstPattern is iid pid
 
 -- | Retrieves the 'Instruction' entity with matching instruction ID. It is
 -- assumed that such an entity always exists in the given list.
 
-getInstData :: [Instruction]
-               -> InstructionID
-               -> Instruction
-getInstData ds iid = head $ filter (\d -> instID d == iid) ds
+getInst :: [Instruction]
+           -> InstructionID
+           -> Instruction
+getInst is iid = fromJust $ findInstruction is iid
 
--- | Emits a list of assembly instructions for a given 'DataDepDAG'.
+-- | Emits a list of assembly instructions for a given 'ControlDataFlowDAG'.
 
 emitInstructions :: CPSolutionData
                     -> TargetMachine
-                    -> DataDepDAG
+                    -> ControlDataFlowDAG
                     -> [String]
 emitInstructions cp m dag =
   let sorted_pis = I.topsort' dag
@@ -142,7 +171,7 @@ emitInstruction :: CPSolutionData
                    -> String
 emitInstruction cp m piid =
   let pi_data = getPIData (patInstData $ modelParams cp) piid
-      i_data = getInstData (tmInstructions m) (patInstructionID pi_data)
+      i_data = getInst (tmInstructions m) (patInstructionID pi_data)
       inst_ass_parts = instAssemblyStr i_data
   in concatMap (produceInstPart cp m pi_data) (assStrParts inst_ass_parts)
 

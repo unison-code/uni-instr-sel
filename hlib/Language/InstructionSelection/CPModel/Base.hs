@@ -21,6 +21,7 @@ module Language.InstructionSelection.CPModel.Base
   , PatternInstanceData (..)
   , RawCPSolutionData (..)
   , RawPostParams (..)
+  , findPatternInstanceData
   , fromRawCPSolutionData
   )
 where
@@ -403,3 +404,17 @@ computeImmValuesOfDataNodes pp_data cp_data =
               (rawHasDataNodeImmValue cp_data)
               (rawImmValuesOfDataNodes cp_data)
   in catMaybes keeps
+
+-- | Given a list of pattern instance data, the function finds the
+-- 'PatternInstanceData' entity with matching pattern instance ID. If there is
+-- more than one match, the first found is returned. If no such entity is found,
+-- 'Nothing' is returned.
+
+findPatternInstanceData :: [PatternInstanceData]
+                           -> PatternInstanceID
+                           -> Maybe PatternInstanceData
+findPatternInstanceData ps piid =
+  let found = filter (\p -> patInstanceID p == piid) ps
+  in if length found > 0
+        then Just $ head found
+        else Nothing

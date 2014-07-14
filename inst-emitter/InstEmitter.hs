@@ -94,7 +94,7 @@ genCode :: CPSolutionData -> [String]
 genCode cp_data =
   let labs = orderOfBBs cp_data
       pi_lists = map (getPIsAllocatedToBB cp_data) labs
-      dags = map (mkDataDepDAG cp_data) pi_lists
+      dags = map (mkControlDataFlowDAG cp_data) pi_lists
       tm = fromJust $ getTargetMachine $ machID $ machData $ modelParams cp_data
       is = map (emitInstructions cp_data tm) dags
       bb_code = zipWith
