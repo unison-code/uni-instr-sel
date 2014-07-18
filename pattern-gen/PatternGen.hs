@@ -32,18 +32,15 @@ selection.
 
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
-import Language.InstructionSelection.Utils
-  ( fromLeft
-  , fromRight
-  , isLeft
-  )
-import Control.Monad (when)
+import Control.Monad
+  (when)
 import Data.Maybe
   ( fromJust
   , isNothing
   )
 import System.Console.CmdArgs
-import System.Exit (exitFailure)
+import System.Exit
+  (exitFailure)
 
 
 
