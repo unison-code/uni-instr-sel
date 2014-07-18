@@ -35,22 +35,17 @@ import Data.Maybe
 --------------------------
 
 -- | Record for representing a value range.
-
 data Range t =
     Range
-    { -- | Smallest possible value (i.e. inclusive).
-
-      lowerBound :: t
-
-      -- | Largest possible value (i.e. inclusive).
+    { lowerBound :: t
+      -- | Smallest possible value (i.e. inclusive).
 
     , upperBound :: t
-
+      -- | Largest possible value (i.e. inclusive).
     }
   deriving (Show, Eq)
 
 -- | Creates a new data type that allows numbers from 0 to positive infinity.
-
 newtype Natural =
     Natural Integer
   deriving (Eq, Ord)
@@ -68,17 +63,12 @@ fromNatural (Natural i) = i
 
 instance Num Natural where
     fromInteger = toNatural
-
     x + y = toNatural (fromNatural x + fromNatural y)
-
     x - y = let r = fromNatural x - fromNatural y
             in if r < 0 then error "Subtraction yielded a negative value"
                else toNatural r
-
     x * y = toNatural (fromNatural x * fromNatural y)
-
     abs x = x
-
     signum x = toNatural $ signum $ fromNatural x
 
 instance Enum Natural where
@@ -102,7 +92,6 @@ instance Integral Natural where
 -------------
 
 -- | Removes duplicates from a list.
-
 removeDuplicates :: Eq a => [a] -> [a]
 removeDuplicates = rd []
   where rd seen [] = seen
@@ -114,12 +103,14 @@ removeDuplicates = rd []
 -- returns a list of position mappings such that one list can be transformed
 -- into the other list just by rearranging the positions. If one list is not a
 -- permutation of the other, an error will occur.
-
 computePosMapsOfPerm ::
   Eq a
-  => [a]       -- ^ A list.
-  -> [a]       -- ^ A permutation of the first list.
-  -> [Natural] -- ^ A list of position mappings.
+  => [a]
+     -- ^ A list.
+  -> [a]
+     -- ^ A permutation of the first list.
+  -> [Natural]
+     -- ^ A list of position mappings.
 computePosMapsOfPerm ol pl =
   let addPosMap e (index_in_ol, ms) =
         let checkIndex i = i `notElem` ms && (pl !! i == e)
@@ -142,25 +133,21 @@ computePosMapsOfPerm ol pl =
      else error "computePosMapsOfPerm: the lists are not of equal lengths"
 
 -- | Checks if an 'Either' is of type 'Left'.
-
 isLeft :: Either l r -> Bool
 isLeft (Left _) = True
 isLeft _ = False
 
 -- | Checks if an 'Either' is of type 'Right'.
-
 isRight :: Either l r -> Bool
 isRight (Right _) = True
 isRight _ = False
 
 -- | Gets the data contained by a 'Left'.
-
 fromLeft :: Either l r -> l
 fromLeft (Left l) = l
 fromLeft _ = error "Either is not Left"
 
 -- | Gets the data contained by a 'Right'.
-
 fromRight :: Either l r -> r
 fromRight (Right r) = r
 fromRight _ = error "Either is not Right"

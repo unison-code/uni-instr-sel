@@ -52,7 +52,6 @@ data OpStructure =
 -------------
 
 -- | Creates an empty operation structure.
-
 mkEmpty :: OpStructure
 mkEmpty = OpStructure G.mkEmpty []
 

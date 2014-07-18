@@ -29,7 +29,6 @@ import Data.List
 -------------
 
 -- | Lowers an LLVM AST module.
-
 lowerModule :: Module -> Module
 lowerModule m =
   Module

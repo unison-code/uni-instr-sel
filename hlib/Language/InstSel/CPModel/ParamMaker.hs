@@ -43,7 +43,6 @@ import Data.Maybe
 -- | Takes a function and machine data to generate the corresponding parameters
 -- to the constraint model. This will also perform pattern matching of all
 -- patterns over the function graph.
-
 mkParams :: Function -> TargetMachine -> CPModelParams
 mkParams f m =
   CPModelParams
@@ -62,9 +61,9 @@ mkFunctionGraphData f =
      (nodeIDsByType isStateNode)
      (computeLabelDoms cfg)
      (nodeID $ fromJust $ rootInCFG cfg)
-     (map (\n -> BBLabelData (nodeID n)
-                 (bbLabel $ nodeType n))
-      $ filter isLabelNode $ allNodes g
+     ( map
+       (\n -> BBLabelData (nodeID n) (bbLabel $ nodeType n))
+       (filter isLabelNode $ allNodes g)
      )
      (osConstraints $ functionOS f)
 
@@ -145,25 +144,24 @@ processMatchset i p m (pids, next_piid) =
 -- there exists a single label which acts as the root, which is the label node
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
-
 computeLabelDoms ::
-     Graph           -- ^ The CFG.
-  -> [Domset NodeID] -- ^ Dominator sets.
+     Graph
+     -- ^ The CFG.
+  -> [Domset NodeID]
+     -- ^ Dominator sets.
 computeLabelDoms cfg =
   let root = fromJust $ rootInCFG cfg
       node_domsets = extractDomSet cfg root
-      node_id_domsets = map (\d -> Domset (nodeID $ domNode d)
-                                          (map nodeID $ domSet d))
-                            node_domsets
+      node_id_domsets = map
+                        ( \d ->
+                          Domset (nodeID $ domNode d) (map nodeID $ domSet d)
+                        )
+                        node_domsets
   in node_id_domsets
 
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
 -- to the corresponding function node IDs.
-
-mapPs2FsInConstraints ::
-     Matchset NodeID
-  -> [Constraint]
-  -> [Constraint]
+mapPs2FsInConstraints :: Matchset NodeID -> [Constraint] -> [Constraint]
 mapPs2FsInConstraints m cs =
   map (replaceFunc m) cs
   where replaceFunc m' (BoolExprConstraint e) =
@@ -220,8 +218,9 @@ replaceInNumExpr m (Label2NumExpr e) =
 replaceInNumExpr m (Register2NumExpr e) =
   Register2NumExpr (replaceInRegisterExpr m e)
 replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
-  DistanceBetweenInstanceAndLabelExpr (replaceInPatternInstanceExpr m pat_e)
-                                      (replaceInLabelExpr m lab_e)
+  DistanceBetweenInstanceAndLabelExpr
+  (replaceInPatternInstanceExpr m pat_e)
+  (replaceInLabelExpr m lab_e)
 
 replaceInIntExpr :: Matchset NodeID -> IntExpr -> IntExpr
 replaceInIntExpr _ (AnIntegerExpr i) = AnIntegerExpr i

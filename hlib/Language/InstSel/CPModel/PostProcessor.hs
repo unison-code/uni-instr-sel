@@ -40,12 +40,10 @@ import Data.Maybe
 -- pattern instances. Each edge represents either the data flowing from one
 -- pattern to another, or that there is a state or control dependency between
 -- the two.
-
 newtype ControlDataFlowDAG =
   ControlDataFlowDAG { getIntDag :: IControlDataFlowDAG }
 
 -- | Type synonym for the internal graph.
-
 type IControlDataFlowDAG = I.Gr PatternInstanceID ()
 
 
@@ -63,7 +61,6 @@ type IControlDataFlowDAG = I.Gr PatternInstanceID ()
 -- such that the pattern containing the phi node which makes use of the data
 -- appears at the top of the DAG. Cyclic control dependencies will appear if
 -- there is more than one pattern instance with control nodes in the list.
-
 mkControlDataFlowDAG ::
      CPSolutionData
   -> [PatternInstanceID]
@@ -79,7 +76,6 @@ mkControlDataFlowDAG cp_data is =
 -- assumed that there always exists exactly one node in the graph representing
 -- the pattern instance ID given as argument to the function. Note that this may
 -- lead to cycles, which will have to be broken as a second step.
-
 addUseEdgesToDAG ::
      CPSolutionData
   -> PatternInstanceID
@@ -90,8 +86,9 @@ addUseEdgesToDAG cp_data pid g0 =
       pi_n = fromJust $ getNodeOfPI g0 pid
       pi_data = getPIData ds pid
       ns = I.labNodes g0
-      d_uses_of_pi = filter (`notElem` patDataNodesUsedByPhis pi_data)
-                     $ patDataNodesUsed pi_data
+      d_uses_of_pi = filter
+                     (`notElem` patDataNodesUsedByPhis pi_data)
+                     (patDataNodesUsed pi_data)
       s_uses_of_pi = patStateNodesUsed pi_data
       ns_d_defs = map (\(n, i) -> (n, patDataNodesDefined $ getPIData ds i)) ns
       ns_s_defs = map (\(n, i) -> (n, patStateNodesDefined $ getPIData ds i)) ns
@@ -101,8 +98,10 @@ addUseEdgesToDAG cp_data pid g0 =
 
 addUseEdgesToDAG' ::
      I.Node
-  -> [(I.Node, [NodeID])] -- ^ List of defs.
-  -> NodeID               -- ^ A use.
+  -> [(I.Node, [NodeID])]
+     -- ^ List of defs.
+  -> NodeID
+     -- ^ A use.
   -> IControlDataFlowDAG
   -> IControlDataFlowDAG
 addUseEdgesToDAG' n def_maps use g =
@@ -112,7 +111,6 @@ addUseEdgesToDAG' n def_maps use g =
 -- | If the given pattern instance ID represents a pattern with control nodes,
 -- then an edge will be added to the node of that pattern instance ID from every
 -- other node.
-
 addControlEdgesToDAG ::
      CPSolutionData
   -> PatternInstanceID
@@ -130,7 +128,6 @@ addControlEdgesToDAG cp_data pid g =
 -- | Gets the internal node ID (if any) of the node with a given pattern
 -- instance ID as its label. It is assumed that there is always at most one such
 -- node in the graph.
-
 getNodeOfPI :: IControlDataFlowDAG -> PatternInstanceID -> Maybe I.Node
 getNodeOfPI g pid =
   let ns = filter (\n -> snd n == pid) $ I.labNodes g
@@ -141,18 +138,15 @@ getNodeOfPI g pid =
 -- | Retrieves the 'PatternInstanceData' entity with matching pattern instance
 -- ID. It is assumed that exactly one such entity always exists in the given
 -- list.
-
 getPIData :: [PatternInstanceData] -> PatternInstanceID -> PatternInstanceData
 getPIData ps piid = fromJust $ findPatternInstanceData ps piid
 
 -- | Retrieves the 'Instruction' entity with matching instruction ID. It is
 -- assumed that such an entity always exists in the given list.
-
 getInst :: [Instruction] -> InstructionID -> Instruction
 getInst is iid = fromJust $ findInstruction is iid
 
 -- | Emits a list of assembly instructions for a given 'ControlDataFlowDAG'.
-
 emitInstructions ::
      CPSolutionData
   -> TargetMachine
@@ -163,7 +157,6 @@ emitInstructions cp m dag =
   in filter (\i -> length i > 0) $ map (emitInstruction cp m) sorted_pis
 
 -- | Emits the corresponding instruction of a given pattern instance ID.
-
 emitInstruction ::
      CPSolutionData
   -> TargetMachine

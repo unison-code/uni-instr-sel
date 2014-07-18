@@ -31,171 +31,127 @@ import Prelude
 --------------
 
 -- | Computational operations.
-
 data CompOp =
-
     -- | An integer operation where the sign does not matter.
-
     IntOp CompOpType
 
     -- | An unsigned integer operation.
-
   | UIntOp CompOpType
 
     -- | A signed integer operation.
-
   | SIntOp CompOpType
 
     -- | A fixed-point operation.
-
   | FixpointOp CompOpType
 
     -- | A floating-point operation where the ordering does not matter.
-
   | FloatOp CompOpType
 
     -- | An ordered floating-point operation.
-
   | OFloatOp CompOpType
 
     -- | An unordered floating-point operation.
-
   | UFloatOp CompOpType
-
   deriving (Show, Eq)
 
 -- | Computational operation types.
-
 data CompOpType =
-
     -- | Addition. Commutative.
-
     Add
 
     -- | Saturated addition. Commutative. Typically only used with fixpoint.
-
   | SatAdd
 
     -- | Subtraction.
-
   | Sub
 
     -- | Saturated subtraction. Typically only used with fixpoint.
-
   | SatSub
 
     -- | Multiplication. Commutative.
-
   | Mul
 
     -- | Division.
-
   | Div
 
     -- | Remainder.
-
   | Rem
 
-    -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
-    -- by @y@, then this operation represents @x < y@.
-
+    -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted by
+    -- @y@, then this operation represents @x < y@.
   | Shl
 
     -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x > y@.
-
   | LShr
 
-    -- | Bitwise arithmetic right shift (with sign extension). If LHS is
-    -- denoted by @x@, and RHS is denoted by @y@, then this operation
-    -- represents @x > y@.
-
+    -- | Bitwise arithmetic right shift (with sign extension). If LHS is denoted
+    -- by @x@, and RHS is denoted by @y@, then this operation represents @x >
+    -- y@.
   | AShr
 
     -- | Bitwise AND (@\&@). Commutative.
-
   | And
 
     -- | Bitwise OR (@|@). Commutative.
-
   | Or
 
     -- | Bitwise XOR (@^@). Commutative.
-
   | XOr
 
     -- | Bit-wise NOT (@|@).
-
   | Not
 
     -- | Equality comparison (@==@). Commutative.
-
   | Eq
 
     -- | Inequality comparison (@!=@). Commutative.
-
   | NEq
 
     -- | Greater-than comparison (@>@). If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x > y@.
-
   | GT
 
-    -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@,
-    -- and RHS is denoted by @y@, then this operation represents @x >= y@.
-
+    -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@, and
+    -- RHS is denoted by @y@, then this operation represents @x >= y@.
   | GE
 
     -- | Less-than comparison (@<@). If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x < y@.
-
   | LT
 
-    -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and
-    -- RHS is denoted by @y@, then this operation represents @x <= y@.
-
+    -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and RHS
+    -- is denoted by @y@, then this operation represents @x <= y@.
   | LE
 
     -- | Zero extension.
-
   | ZExt
 
     -- | Sign extension.
-
   | SExt
 
     -- | Truncation.
-
   | Trunc
 
     -- | Square root function.
-
   | Sqrt
 
     -- | Checks if both floating point values are ordered.
-
   | Ordered
 
     -- | Checks if either floating point value is unordered.
-
   | Unordered
-
   deriving (Show, Eq)
 
 data ControlOp =
-
     -- | Conditional branch. Branching is done if the input value is not zero.
-
     CondBranch
 
     -- | Unconditional branch.
-
   | UncondBranch
 
     -- | Return.
-
   | Ret
-
   deriving (Show, Eq)
 
 
@@ -205,7 +161,6 @@ data ControlOp =
 --------------
 
 -- | Gets the operation type from a computational operation.
-
 getCompOpType :: CompOp -> CompOpType
 getCompOpType  (IntOp op)     = op
 getCompOpType (UIntOp op)     = op
@@ -216,24 +171,20 @@ getCompOpType (OFloatOp op)   = op
 getCompOpType (UFloatOp op)   = op
 
 -- | Checks if an operation is commutative.
-
 isOpCommutative :: CompOp -> Bool
 isOpCommutative = isOpTypeCommutative . getCompOpType
 
 -- | Checks if an operation type is commutative. Unary operations are always
 -- considered to be commutative.
-
 isOpTypeCommutative :: CompOpType -> Bool
 isOpTypeCommutative op =
   op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
 
 -- | Gets the number of operands required by a given operation.
-
 numOperandsForOp :: CompOp -> Natural
 numOperandsForOp = numOperandsForOpType . getCompOpType
 
 -- | Gets the number of operands required by a given operation type.
-
 numOperandsForOpType :: CompOpType -> Natural
 numOperandsForOpType op
   | op `elem` [ Not, Sqrt ] = 1
@@ -241,7 +192,6 @@ numOperandsForOpType op
 
 -- | Checks if two computations are compatible, meaning that they are
 -- semantically equivalent.
-
 areComputationsCompatible :: CompOp -> CompOp -> Bool
 areComputationsCompatible   (IntOp op1)     (IntOp op2) = op1 == op2
 areComputationsCompatible   (IntOp op1)    (UIntOp op2) = op1 == op2

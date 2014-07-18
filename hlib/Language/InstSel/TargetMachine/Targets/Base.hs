@@ -30,7 +30,6 @@ import Language.InstSel.TargetMachine.Targets.Test
 
 -- | Retrieves a specific target machine. If no machine exists with such an
 -- identifier, 'Nothing' is returned.
-
 getTargetMachine :: TargetMachineID -> Maybe TargetMachine
 getTargetMachine s =
   case (fromTargetMachineID s) of

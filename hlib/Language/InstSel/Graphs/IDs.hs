@@ -33,7 +33,6 @@ import Language.InstSel.Utils
 --------------
 
 -- | Node ID data type.
-
 newtype NodeID =
   NodeID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)

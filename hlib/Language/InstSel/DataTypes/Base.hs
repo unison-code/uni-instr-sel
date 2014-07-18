@@ -27,15 +27,11 @@ import Language.InstSel.PrettyPrint
 --------------
 
 data DataType =
-
     -- | An integer data type, of a certain number of bits.
-
     IntType Natural
 
     -- | When the data type is unknown and does not matter.
-
   | AnyType
-
   deriving (Show, Eq)
 
 
@@ -45,12 +41,10 @@ data DataType =
 -------------
 
 -- | Gets the data type of a corresponding integer of a certain number of bits.
-
 fromIWidth :: (Integral a) => a -> DataType
 fromIWidth w = IntType $ toNatural w
 
 -- | Gets the data type of a corresponding integer value.
-
 fromIValue :: (Integral a) => a -> DataType
 fromIValue 0 = IntType 1
 fromIValue i =
@@ -60,7 +54,6 @@ fromIValue i =
 
 -- | Checks if two data types are compatible, meaning that they are semantically
 -- equivalent.
-
 areDataTypesCompatible :: DataType -> DataType -> Bool
 areDataTypesCompatible AnyType _ = True
 areDataTypesCompatible _ AnyType = True

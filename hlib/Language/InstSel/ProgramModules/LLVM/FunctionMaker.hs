@@ -44,12 +44,10 @@ import Data.Maybe
 
 -- | Represents a mapping from a symbol to a node currently in the operation
 -- structure.
-
 type SymToNodeMapping = (G.Node, Symbol)
 
 -- | Represents a mapping from constant symbol to a node currently in the
 -- operation structure.
-
 type ConstToNodeMapping = (G.Node, Constant)
 
 -- | Represents auxiliary phi node data which will be needed in order to correct
@@ -59,58 +57,45 @@ type ConstToNodeMapping = (G.Node, Constant)
 -- blocks from which the data values originate, and the order of the list is
 -- exactly that of the edge ordering for the phi node just after it has been
 -- built.
-
 type AuxPhiNodeData = (G.Node, [G.BBLabel])
 
 -- | Represents the intermediate data as the function is being processed.
-
 data ProcessState =
     ProcessState
-    { -- | The operation structure.
-
-      theOS :: OS.OpStructure
-
-      -- | The last node (if any) that was touched. This is used to simplifying
-      -- edge insertion. This value is ignored during post-processing.
+    { theOS :: OS.OpStructure
+      -- ^ The operation structure.
 
     , lastTouchedNode :: Maybe G.Node
+      -- ^ The last node (if any) that was touched. This is used to simplifying
+      -- edge insertion. This value is ignored during post-processing.
 
+    , theLabelNode :: Maybe G.Node
       -- ^ The label node which represents the basic block currently being
       -- processed.
 
-    , theLabelNode :: Maybe G.Node
-
+    , theSymMaps :: [SymToNodeMapping]
       -- ^ List of symbol-to-node mappings. If there are more than one mapping
       -- using the same symbol, then the last one occuring in the list should be
       -- picked.
 
-    , theSymMaps :: [SymToNodeMapping]
-
+    , theConstMaps :: [ConstToNodeMapping]
       -- ^ List of constant-to-node mappings. If there are more than one mapping
       -- using the same symbol, then the last one occuring in the list should be
       -- picked.
 
-    , theConstMaps :: [ConstToNodeMapping]
-
+    , thePhiData :: [AuxPhiNodeData]
       -- ^ Auxiliary phi node data (see description of the type for more
       -- information).
 
-    , thePhiData :: [AuxPhiNodeData]
-
-
+    , theFuncInputs :: [G.NodeID]
       -- ^ The IDs of the nodes representing the function input arguments.
 
-    , theFuncInputs :: [G.NodeID]
-
-      -- ^ The IDs of the nodes representing the function return statements.
-
     , theFuncRets :: [G.NodeID]
-
+      -- ^ The IDs of the nodes representing the function return statements.
     }
   deriving (Show)
 
 -- | Retains various symbol names.
-
 data Symbol =
     LocalStringSymbol String
   | GlobalStringSymbol String
@@ -123,7 +108,6 @@ instance Show Symbol where
   show (TemporarySymbol int) = "t" ++ show int
 
 -- | Retains various constant values.
-
 data Constant =
     IntConstant
     { bitWidth :: Integer
@@ -131,7 +115,6 @@ data Constant =
     }
 
   | FloatConstant Float
-
   deriving (Eq)
 
 instance Show Constant where
@@ -145,7 +128,6 @@ instance Show Constant where
 -----------
 
 -- | Class for converting an LLVM symbol entity into a `Symbol`.
-
 class SymbolFormable a where
   toSymbol :: a -> Symbol
 
@@ -154,7 +136,6 @@ instance SymbolFormable LLVM.Name where
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
 -- | Class for converting an LLVM constant entity into a `Constant`.
-
 class ConstantFormable a where
   toConstant :: a -> Constant
 
@@ -163,16 +144,17 @@ instance ConstantFormable LLVMC.Constant where
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
 -- | Class for processing an LLVM AST element.
-
 class Processable a where
 
   -- | Processes an LLVM element, which builds the coresponding operation
   -- structure.
-
   process ::
-      ProcessState  -- ^ The current state.
-    -> a            -- ^ The LLVM element to process.
-    -> ProcessState -- ^ The new state.
+      ProcessState
+      -- ^ The current state.
+    -> a
+       -- ^ The LLVM element to process.
+    -> ProcessState
+       -- ^ The new state.
 
 
 
@@ -181,7 +163,6 @@ class Processable a where
 -------------
 
 -- | Creates an initial state.
-
 initialState :: ProcessState
 initialState =
   ProcessState
@@ -197,21 +178,18 @@ initialState =
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
-
 mkFunctionsFromLlvmModule :: LLVM.Module -> [PM.Function]
 mkFunctionsFromLlvmModule m =
   mapMaybe mkFunctionFromGlobalDef (LLVM.moduleDefinitions m)
 
 -- | Builds a function from an LLVM AST definition. If the definition is not
 -- global, `Nothing` is returned.
-
 mkFunctionFromGlobalDef :: LLVM.Definition -> Maybe PM.Function
 mkFunctionFromGlobalDef (LLVM.GlobalDefinition g) = mkFunction g
 mkFunctionFromGlobalDef _ = Nothing
 
 -- | Builds a function from a global LLVM AST definition. If the definition is
 -- not a function, `Nothing` is returned.
-
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = initialState
@@ -229,24 +207,20 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
 mkFunction _ = Nothing
 
 -- | Gets the OS graph contained by the operation structure in a given state.
-
 theOSGraph :: ProcessState -> G.Graph
 theOSGraph = OS.osGraph . theOS
 
 -- | Updates the OS graph contained by the operation structure in a given state.
-
 updateOSGraph :: ProcessState -> G.Graph -> ProcessState
 updateOSGraph st g =
   let os = theOS st
   in st { theOS = os { OS.osGraph = g } }
 
 -- | Updates the last touched node information.
-
 touchNode :: ProcessState -> G.Node -> ProcessState
 touchNode st n = st { lastTouchedNode = Just n }
 
 -- | Adds a new node into a given state.
-
 addNewNode :: ProcessState -> G.NodeType -> ProcessState
 addNewNode st0 nt =
   let (new_g, new_n) = G.addNewNode nt (theOSGraph st0)
@@ -255,77 +229,78 @@ addNewNode st0 nt =
   in st2
 
 -- | Adds a new edge into a given state.
-
 addNewEdge ::
-     ProcessState -- ^ The current state.
-  -> G.Node       -- ^ The source node.
-  -> G.Node       -- ^ The destination node.
-  -> ProcessState -- ^ The new state.
+     ProcessState
+     -- ^ The current state.
+  -> G.Node
+     -- ^ The source node.
+  -> G.Node
+     -- ^ The destination node.
+  -> ProcessState
+     -- ^ The new state.
 addNewEdge st src dst =
   let (new_g, _) = G.addNewEdge (src, dst) (theOSGraph st)
   in updateOSGraph st new_g
 
 -- | Adds many new edges into a given state.
-
 addNewEdgesManySources ::
-     ProcessState -- ^ The current state.
-  -> [G.Node]     -- ^ The source nodes.
-  -> G.Node       -- ^ The destination node.
-  -> ProcessState -- ^ The new state.
+     ProcessState
+     -- ^ The current state.
+  -> [G.Node]
+     -- ^ The source nodes.
+  -> G.Node
+     -- ^ The destination node.
+  -> ProcessState
+     -- ^ The new state.
 addNewEdgesManySources st srcs dst =
   let es = zip srcs (repeat dst)
       f g e = fst $ G.addNewEdge e g
   in updateOSGraph st $ foldl f (theOSGraph st) es
 
 -- | Adds many new edges into a given state.
-
 addNewEdgesManyDests ::
-     ProcessState -- ^ The current state.
-  -> G.Node       -- ^ The source node.
-  -> [G.Node]     -- ^ The destination nodes.
-  -> ProcessState -- ^ The new state.
+     ProcessState
+     -- ^ The current state.
+  -> G.Node
+     -- ^ The source node.
+  -> [G.Node]
+     -- ^ The destination nodes.
+  -> ProcessState
+     -- ^ The new state.
 addNewEdgesManyDests st src dsts =
   let es = zip (repeat src) dsts
       f g e = fst $ G.addNewEdge e g
   in updateOSGraph st $ foldl f (theOSGraph st) es
 
 -- | Adds a new constraint into a given state.
-
 addOSConstraint :: ProcessState -> C.Constraint -> ProcessState
 addOSConstraint st c = st { theOS = OS.addConstraint (theOS st) c }
 
 -- | Adds a list of new constraints into a given state.
-
 addOSConstraints :: ProcessState -> [C.Constraint] -> ProcessState
 addOSConstraints st cs = foldl addOSConstraint st cs
 
 -- | Adds a new symbol-to-node mapping to a given state.
-
 addSymMap :: ProcessState -> SymToNodeMapping -> ProcessState
 addSymMap st sm = st { theSymMaps = theSymMaps st ++ [sm] }
 
 -- | Adds a new constant-to-node mapping to a given state.
-
 addConstMap :: ProcessState -> ConstToNodeMapping -> ProcessState
 addConstMap st cm = st { theConstMaps = theConstMaps st ++ [cm] }
 
 -- | Adds additional auxiliary phi node data to a given state.
-
 addAuxPhiNodeData :: ProcessState -> AuxPhiNodeData -> ProcessState
 addAuxPhiNodeData st ad = st { thePhiData = thePhiData st ++ [ad] }
 
 -- | Adds a data node representing a function argument to a given state.
-
 addFuncInput :: ProcessState -> G.Node -> ProcessState
 addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeID n] }
 
 -- | Adds a data node representing a return value to a given state.
-
 addFuncRet :: ProcessState -> G.Node -> ProcessState
 addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeID n] }
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
-
 mappedNodeFromSym :: [SymToNodeMapping] -> Symbol -> Maybe G.Node
 mappedNodeFromSym ms sym =
   let ns = filter (\m -> snd m == sym) ms
@@ -334,7 +309,6 @@ mappedNodeFromSym ms sym =
      else Nothing
 
 -- | Gets the node ID (if any) to which a constant is mapped to.
-
 mappedNodeFromConst :: [ConstToNodeMapping] -> Constant -> Maybe G.Node
 mappedNodeFromConst ms c =
   let ns = filter (\m -> snd m == c) ms
@@ -345,7 +319,6 @@ mappedNodeFromConst ms c =
 -- | Processes a symbol. If a node mapping for that symbol already exists, then
 -- the last touched node is updated to reflect that node. If a mapping does not
 -- exist, then a new data node is added.
-
 processSym :: ProcessState -> Symbol -> ProcessState
 processSym st0 sym =
     let node_for_sym = mappedNodeFromSym (theSymMaps st0) sym
@@ -359,14 +332,14 @@ processSym st0 sym =
 -- | Processes a constant. If a node mapping for that constant already exists,
 -- then the last touched node is updated to reflect that node. If a mapping does
 -- not exist, then a new data node is added.
-
 processConst :: ProcessState -> Constant -> ProcessState
 processConst st0 c =
     let node_for_c = mappedNodeFromConst (theConstMaps st0) c
     in if isJust node_for_c
        then touchNode st0 (fromJust node_for_c)
-       else let st1 = addNewNode st0 (G.DataNode (toDataType c)
-                                                 (Just $ show c))
+       else let st1 = addNewNode
+                      st0
+                      (G.DataNode (toDataType c) (Just $ show c))
                 d_node = fromJust $ lastTouchedNode st1
                 st2 = addConstMap st1 (d_node, c)
                 st3 = addOSConstraints st2 (mkConstConstraints c d_node)
@@ -377,25 +350,24 @@ mkConstConstraints (IntConstant _ v) n =
   [ C.DataNodeIsIntConstantConstraint $ G.nodeID n
   , C.BoolExprConstraint $
     C.EqExpr
-    (
-      C.Int2NumExpr $
+    ( C.Int2NumExpr $
       C.IntConstValueOfDataNodeExpr $
       C.ANodeIDExpr $ G.nodeID n
     )
-    (
-      C.Int2NumExpr $
+    ( C.Int2NumExpr $
       C.AnIntegerExpr v
     )
   ]
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
-
 processCompOp ::
   (Processable o)
   => ProcessState
-  -> Op.CompOp    -- ^ The computational operation.
-  -> [o]          -- ^ The operands.
+  -> Op.CompOp
+     -- ^ The computational operation.
+  -> [o]
+     -- ^ The operands.
   -> ProcessState
 processCompOp st0 op operands =
   let sts = scanl process st0 operands
@@ -408,12 +380,13 @@ processCompOp st0 op operands =
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
-
 processControlOp ::
   (Processable o)
   => ProcessState
-  -> Op.ControlOp -- ^ The control operation.
-  -> [o]          -- ^ The operands.
+  -> Op.ControlOp
+     -- ^ The control operation.
+  -> [o]
+     -- ^ The operands.
   -> ProcessState
 processControlOp st0 op operands =
   let sts = scanl process st0 operands
@@ -427,7 +400,6 @@ processControlOp st0 op operands =
 
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
-
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
 fromLlvmIPred LLVMI.EQ  =  Op.IntOp Op.Eq
 fromLlvmIPred LLVMI.NE  =  Op.IntOp Op.NEq
@@ -442,7 +414,6 @@ fromLlvmIPred LLVMI.SLE = Op.SIntOp Op.LE
 
 -- | Converts an LLVM floating point comparison op into an equivalent op of our
 -- own data type.
-
 fromLlvmFPred :: LLVMF.FloatingPointPredicate -> Op.CompOp
 fromLlvmFPred LLVMF.OEQ = Op.OFloatOp Op.Eq
 fromLlvmFPred LLVMF.ONE = Op.OFloatOp Op.NEq
@@ -461,14 +432,12 @@ fromLlvmFPred LLVMF.UNE = Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Gets the corresponding DataType for a constant value.
-
 toDataType :: Constant -> D.DataType
 toDataType (IntConstant b _) = D.IntType (toNatural b)
 toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-
 getLabelNode :: ProcessState -> G.BBLabel -> Maybe G.Node
 getLabelNode st l =
   let label_nodes = filter G.isLabelNode $ G.allNodes $ theOSGraph st
@@ -481,7 +450,6 @@ getLabelNode st l =
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated to reflect the
 -- label node in question. If not then a new label node is added.
-
 ensureLabelNodeExists :: ProcessState -> G.BBLabel -> ProcessState
 ensureLabelNodeExists st l =
   let label_node = getLabelNode st l
@@ -491,12 +459,10 @@ ensureLabelNodeExists st l =
 
 
 -- | Corrects the edge ordering of the phi nodes.
-
 fixPhiNodeEdgeOrderings :: ProcessState -> ProcessState
 fixPhiNodeEdgeOrderings st = foldl fixPhiNodeEdgeOrdering st (thePhiData st)
 
 -- | Corrects the edge ordering for a single phi node.
-
 fixPhiNodeEdgeOrdering :: ProcessState -> AuxPhiNodeData -> ProcessState
 fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
   let g = theOSGraph st
@@ -509,11 +475,11 @@ fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
                      (tail in_edges_of_phi_node)
                      (map (+1) pos_maps)
   in foldl
-     (\st' (e, new_in_nr) ->
-      let g' = theOSGraph st'
-          new_e_label = G.EdgeLabel (G.outEdgeNr e) (G.toEdgeNr new_in_nr)
-          new_g = G.updateEdgeLabel new_e_label e g'
-      in updateOSGraph st' new_g
+     ( \st' (e, new_in_nr) ->
+       let g' = theOSGraph st'
+           new_e_label = G.EdgeLabel (G.outEdgeNr e) (G.toEdgeNr new_in_nr)
+           new_g = G.updateEdgeLabel new_e_label e g'
+       in updateOSGraph st' new_g
      )
      st
      edge_nr_maps
@@ -521,7 +487,6 @@ fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
 -- | Gets a list of labels of the label nodes which are the predecessors of
 -- another label node. The list is in the same order as the ordering of the
 -- in-edges.
-
 getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabel]
 getPredLabelsOfLabelNode g l_node =
   -- The in-edges to the label node are always from control nodes, and for these
@@ -537,7 +502,6 @@ getPredLabelsOfLabelNode g l_node =
 -- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
 -- arguments).
-
 addMissingInEdgesToDataNodes :: ProcessState -> ProcessState
 addMissingInEdgesToDataNodes st =
   let g = theOSGraph st
@@ -552,7 +516,6 @@ addMissingInEdgesToDataNodes st =
   in updateOSGraph st new_g
 
 -- | Inserts a copy node between between each use of a data node.
-
 insertCopyNodes :: ProcessState -> ProcessState
 insertCopyNodes st =
   let g = theOSGraph st
@@ -562,7 +525,6 @@ insertCopyNodes st =
   in new_st
 
 -- | Inserts a copy and data node along a given edge.
-
 insertCopy :: ProcessState -> G.Edge -> ProcessState
 insertCopy st0 e =
   let g0 = theOSGraph st0
@@ -576,7 +538,8 @@ insertCopy st0 e =
   in if G.isRetControlNode orig_dst_n
      -- Correct function return data node entries
      then let rets = [ nid | nid <- theFuncRets st1
-                           , nid /= G.nodeID orig_src_n ]
+                           , nid /= G.nodeID orig_src_n
+                     ]
           in st1 { theFuncRets = (G.nodeID new_d_node):rets }
      else st1
 

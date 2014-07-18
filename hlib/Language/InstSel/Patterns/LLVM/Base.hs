@@ -25,6 +25,127 @@ import Language.InstSel.Utils
 -- Data types
 --------------
 
+-- | Represents an instruction. It is expected that there is at least one
+-- pattern per instruction.
+
+data Instruction =
+    Instruction [Pattern]
+  deriving (Show)
+
+-- | Data type for representing a pattern.
+
+data Pattern =
+    Pattern [Statement] [Constraint]
+  deriving (Show)
+
+-- | Represents a statement used in patterns.
+
+data Statement =
+
+    -- | Assigns the result of an expression to a temporary.
+
+    AssignmentStmt Temporary StmtExpression
+
+    -- | Assigns the result of an expression to a register, register flag,
+    -- register symbol, or a temporary (which in turn will reference to a
+    -- specific register).
+
+  | SetRegStmt SetRegDestination StmtExpression
+
+    -- | Stores the result of an expression to a memory location.
+
+  | StoreStmt
+
+      -- | Location to store in.
+
+      StmtExpression
+
+      -- | Memory area to store in.
+
+      String
+
+      -- | Size (in bits) of value to store.
+
+      ExprResultSize
+
+      -- | Value to store.
+
+      StmtExpression
+
+    -- | Performs an unconditional branch (or jump) to a label.
+
+  | UncondBranchStmt Label
+
+    -- | Performs an conditional branch (or jump) to a label.
+
+  | CondBranchStmt
+        ProgramData
+
+        -- | Label taken if the register evaluates to @True@.
+
+        Label
+
+        -- | Label taken if the register evaluates to @False@.
+
+        Label
+
+    -- | Declares a label.
+
+  | LabelStmt Label
+
+  deriving (Show)
+
+-- | Data type for a pattern constraint.
+
+data Constraint
+
+      -- | The @AllocateInConstraint@ constraint dictates that a storage unit
+      -- must be located in a particular storage space.
+
+    = AllocateInConstraint (Either Temporary Symbol) DataSpace
+
+      -- | The @ImmediateConstraint@ constraint limits the range of values that
+      -- an immediate value may take.
+
+    | ImmediateConstraint Symbol [Range Integer]
+
+      -- | The @RegFlagConstraint@ constraint dictates that a register flag
+      -- must be assigned any of the values within the set of ranges.
+
+    | RegFlagConstraint RegisterFlag [Range Integer]
+
+      -- | The @AliasesConstraint@ constraint indicates that two or more
+      -- temporaries (or registers) are actually the same (i.e. one temporary is
+      -- simply a name alias for another).
+
+    | AliasesConstraint [[AliasValue]]
+
+      -- | The @RelAddressConstraint@ constraint forces an immediate value to be
+      -- within a certain relative memory address range.
+
+    | RelAddressConstraint Symbol MemoryClass
+
+      -- | Same as for @RelAddressConstraint@ but for absolute values.
+
+    | AbsAddressConstraint Symbol MemoryClass
+
+    deriving (Show)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- | Values used for aliasing.
 
 data AliasValue
@@ -301,126 +422,12 @@ data SetRegDestination
     | SRDTemporary Temporary
     deriving (Show, Eq)
 
--- | Data type for representing an LLVM statement.
-
-data Statement
-
-      -- | Assigns the result of an expression to a temporary.
-
-    = AssignmentStmt Temporary StmtExpression
-
-      -- | Assigns the result of an expression to a register, register flag,
-      -- register symbol, or a temporary (which in turn will reference to a
-      -- specific register).
-
-    | SetRegStmt SetRegDestination StmtExpression
-
-      -- | Stores the result of an expression to a memory location.
-
-    | StoreStmt
-
-          -- | Location to store in.
-
-          StmtExpression
-
-          -- | Memory area to store in.
-
-          String
-
-          -- | Size (in bits) of value to store.
-
-          ExprResultSize
-
-          -- | Value to store.
-
-          StmtExpression
-
-      -- | Performs an unconditional branch (or jump) to a label.
-
-    | UncondBranchStmt Label
-
-      -- | Performs an conditional branch (or jump) to a label.
-
-    | CondBranchStmt
-          ProgramData
-
-          -- | Label taken if the register evaluates to @True@.
-
-          Label
-
-          -- | Label taken if the register evaluates to @False@.
-
-          Label
-
-      -- | Declares a label.
-
-    | LabelStmt Label
-
-    deriving (Show)
-
--- | Data type for a pattern constraint.
-
-data Constraint
-
-      -- | The @AllocateInConstraint@ constraint dictates that a storage unit
-      -- must be located in a particular storage space.
-
-    = AllocateInConstraint (Either Temporary Symbol) DataSpace
-
-      -- | The @ImmediateConstraint@ constraint limits the range of values that
-      -- an immediate value may take.
-
-    | ImmediateConstraint Symbol [Range Integer]
-
-      -- | The @RegFlagConstraint@ constraint dictates that a register flag
-      -- must be assigned any of the values within the set of ranges.
-
-    | RegFlagConstraint RegisterFlag [Range Integer]
-
-      -- | The @AliasesConstraint@ constraint indicates that two or more
-      -- temporaries (or registers) are actually the same (i.e. one temporary is
-      -- simply a name alias for another).
-
-    | AliasesConstraint [[AliasValue]]
-
-      -- | The @RelAddressConstraint@ constraint forces an immediate value to be
-      -- within a certain relative memory address range.
-
-    | RelAddressConstraint Symbol MemoryClass
-
-      -- | Same as for @RelAddressConstraint@ but for absolute values.
-
-    | AbsAddressConstraint Symbol MemoryClass
-
-    deriving (Show)
 
 
--- | Data type for representing a pattern including the constraints.
 
-data Pattern
-    = Pattern
 
-          -- | The LLVM statements.
 
-          [Statement]
 
-          -- | Constraints that must be enforced for the pattern.
-
-          [Constraint]
-
-    deriving (Show)
-
--- | Represents an instruction.
-
-data Instruction
-    = Instruction {
-
-          -- | Patterns which correspond to the instruction. There must be at
-          -- least one pattern.
-
-          instPatterns :: [Pattern]
-      }
-    deriving (Show)
 
 
 

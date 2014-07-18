@@ -50,7 +50,6 @@ import Data.Maybe
 --------------
 
 -- | Wrapper for all model parameters.
-
 data CPModelParams =
     CPModelParams
     { funcData :: FunctionGraphData
@@ -60,266 +59,208 @@ data CPModelParams =
   deriving (Show)
 
 -- | Describes the necessary function graph data.
-
 data FunctionGraphData =
     FunctionGraphData
-    { -- | The action nodes in the function graph.
-
-      funcActionNodes :: [NodeID]
-
-      -- | The data nodes in the function graph.
+    { funcActionNodes :: [NodeID]
+      -- ^ The action nodes in the function graph.
 
     , funcDataNodes :: [NodeID]
-
-      -- | The state nodes in the function graph.
+      -- ^ The data nodes in the function graph.
 
     , funcStateNodes :: [NodeID]
-
-      -- | The label nodes in the function graph, along with their dominator
-      -- sets.
+      -- ^ The state nodes in the function graph.
 
     , funcLabelDoms :: [Domset NodeID]
-
-      -- | The root label, or entry point into the function.
+      -- ^ The label nodes in the function graph, along with their dominator
+      -- sets.
 
     , funcRootLabel :: NodeID
-
-      -- | The basic block labels of the label nodes.
+      -- ^ The root label, or entry point into the function.
 
     , funcBBLabels :: [BBLabelData]
-
-      -- | The function constraints, if any.
+      -- ^ The basic block labels of the label nodes.
 
     , funcConstraints :: [Constraint]
-
+      -- ^ The function constraints, if any.
     }
   deriving (Show)
 
 -- | Associates a basic block label with a label node.
-
 data BBLabelData =
     BBLabelData
-    { -- | The node ID of the label node.
-
-      labNode :: NodeID
-
-      -- | The basic block label of the label node.
+    { labNode :: NodeID
+      -- ^ The node ID of the label node.
 
     , labBB :: BBLabelID
-
+      -- ^ The basic block label of the label node.
     }
   deriving (Show)
 
 -- | Describes the necessary pattern instance data.
-
 data PatternInstanceData =
     PatternInstanceData
-    { -- | The instruction ID of this pattern instance.
-
-      patInstructionID :: InstructionID
-
-      -- | The pattern ID of this pattern instance.
+    { patInstructionID :: InstructionID
+      -- ^ The instruction ID of this pattern instance.
 
     , patPatternID :: PatternID
-
-      -- | The matchset ID of this pattern instance.
+      -- ^ The pattern ID of this pattern instance.
 
     , patInstanceID :: PatternInstanceID
-
-      -- | The action nodes in the function graph which are covered by this
-      -- pattern instance.
+      -- ^ The matchset ID of this pattern instance.
 
     , patActionNodesCovered :: [NodeID]
-
-      -- | The data nodes in the function graph which are defined by this
+      -- ^The action nodes in the function graph which are covered by this
       -- pattern instance.
 
     , patDataNodesDefined :: [NodeID]
+      -- ^ The data nodes in the function graph which are defined by this
+      -- pattern instance.
 
-      -- | The data nodes in the function graph which are used by this pattern
+    , patDataNodesUsed :: [NodeID]
+      -- ^ The data nodes in the function graph which are used by this pattern
       -- instance. Unlike 'patDataNodesUsedByPhis', this list contains all data
       -- nodes used by any action node appearing in this pattern instance.
 
-    , patDataNodesUsed :: [NodeID]
-
-      -- | The data nodes in the function graph which are used by phi nodes
+    , patDataNodesUsedByPhis :: [NodeID]
+      -- ^ The data nodes in the function graph which are used by phi nodes
       -- appearing this pattern instance. This information is required during
       -- instruction emission in order to break cyclic data dependencies.
 
-    , patDataNodesUsedByPhis :: [NodeID]
-
-      -- | The state nodes in the function graph which are defined by this
-      -- pattern instance.
-
     , patStateNodesDefined :: [NodeID]
-
-      -- | The state nodes in the function graph which are used by this pattern
-      -- instance.
+      -- ^ The state nodes in the function graph which are defined by this
+      -- pattern instance.
 
     , patStateNodesUsed :: [NodeID]
-
-      -- | The label nodes in the function graph which are referred to by this
-      -- pattern instance.
+      -- ^ The state nodes in the function graph which are used by this pattern
+      -- instance.
 
     , patLabelNodesReferred :: [NodeID]
-
-      -- | The pattern-specific constraints, if any. All node IDs used in the
-      -- patterns refer to nodes in the function graph (not the pattern graph).
+      -- ^ The label nodes in the function graph which are referred to by this
+      -- pattern instance.
 
     , patConstraints :: [Constraint]
+      -- ^ The pattern-specific constraints, if any. All node IDs used in the
+      -- patterns refer to nodes in the function graph (not the pattern graph).
 
-      -- | Whether the use-def-dom constraints apply to this pattern
+    , patAUDDC :: Bool
+      -- ^ Whether the use-def-dom constraints apply to this pattern
       -- instance. This will typically always be set to 'True' for all patterns
       -- instances except those of the generic phi patterns.
 
-    , patAUDDC :: Bool
-
-      -- | Whether the pattern contains one or more control nodes.
-
     , patHasControlNodes :: Bool
-
-      -- | The size of the instruction associated with this pattern instance.
+      -- ^ Whether the pattern contains one or more control nodes.
 
     , patCodeSize :: Integer
-
-      -- | The latency of the instruction associated with this pattern instance.
+      -- ^ The size of the instruction associated with this pattern instance.
 
     , patLatency :: Integer
+      -- ^ The latency of the instruction associated with this pattern instance.
 
+    , patAssIDMaps :: [NodeID]
       -- | Maps an 'AssemblyID', which is denoted as the index into the list,
       -- that appear in the 'AssemblyString' of the instruction, to a particular
       -- data node in the function graph according to the pattern's operation
       -- structure and matchset. See also 'InstPattern.patAssIDMaps'.
-
-    , patAssIDMaps :: [NodeID]
-
     }
   deriving (Show)
 
 -- | Contains the necessary target machine data.
-
 data MachineData =
     MachineData
-    { -- | The identifier of the target machine.
-
-      machID :: TargetMachineID
-
-      -- | The registers in the target machine.
+    { machID :: TargetMachineID
+      -- ^ The identifier of the target machine.
 
     , machRegisters :: [RegisterID]
-
+      -- ^ The registers in the target machine.
     }
   deriving (Show)
 
 -- | Contains the data for a solution to the CP model.
-
 data RawCPSolutionData =
     RawCPSolutionData
-    { -- | The basic block (given as array indices) to which a particular
+    { rawBBAllocsForPIs :: [Natural]
+      -- ^ The basic block (given as array indices) to which a particular
       -- pattern instance was allocated. An array index for a pattern instance
       -- corresponds to an index into the list.
 
-      rawBBAllocsForPIs :: [Natural]
-
-      -- | Indicates whether a particular pattern instance was selected. An
+    , rawIsPISelected :: [Bool]
+      -- ^ Indicates whether a particular pattern instance was selected. An
       -- array index for a pattern instance corresponds to an index into the
       -- list.
 
-    , rawIsPISelected :: [Bool]
-
-      -- | The order of basic blocks. An array index for a label node in the
+    , rawOrderOfBBs :: [Natural]
+      -- ^ The order of basic blocks. An array index for a label node in the
       -- function graph corresponds to an index into the list.
 
-    , rawOrderOfBBs :: [Natural]
-
-      -- | Indicates whether a register has been selected for a particular data
+    , rawHasDataNodeRegister :: [Bool]
+      -- ^ Indicates whether a register has been selected for a particular data
       -- node. An array index for a data node corresponds to an index into the
       -- list.
 
-    , rawHasDataNodeRegister :: [Bool]
-
-      -- | Specifies the register selected for a particular data node. An array
+    , rawRegsSelectedForDataNodes :: [RegisterID]
+      -- ^ Specifies the register selected for a particular data node. An array
       -- index for a data node corresponds to an index into the list.  The
       -- register value is only valid if the corresponding value in
       -- 'hasDataNodeRegister' is set to 'True'.
 
-    , rawRegsSelectedForDataNodes :: [RegisterID]
-
-      -- | Indicates whether an immediate value has been assigned to a
+    , rawHasDataNodeImmValue :: [Bool]
+      -- ^ Indicates whether an immediate value has been assigned to a
       -- particular data node. An array index for a data node corresponds to an
       -- index into the list.
 
-    , rawHasDataNodeImmValue :: [Bool]
-
-      -- | Specifies the immediate value assigned to a particular data node. An
+    , rawImmValuesOfDataNodes :: [Integer]
+      -- ^ Specifies the immediate value assigned to a particular data node. An
       -- array index for a data node corresponds to an index into the list. The
       -- immediate value is only valid if the corresponding value in
       -- 'hasDataNodeImmValue' is set to 'True'.
-
-    , rawImmValuesOfDataNodes :: [Integer]
-
     }
   deriving (Show)
 
 -- | Contains the post-processing parameters.
-
 data RawPostParams =
     RawPostParams
-    { -- | The CP model parameters.
-
-      rawModelParams :: CPModelParams
-
-      -- | The array indices-to-pattern instance id mappings.
+    { rawModelParams :: CPModelParams
+      -- ^ The CP model parameters.
 
     , rawArrInd2PattInstIDs :: [PatternInstanceID]
-
-      -- | The array indices-to-label node ID mappings.
+      -- ^ The array indices-to-pattern instance id mappings.
 
     , rawArrInd2LabNodeIDs :: [NodeID]
-
-      -- | The array indices-to-data node ID mappings.
+      -- ^ The array indices-to-label node ID mappings.
 
     , rawArrInd2DataNodeIDs :: [NodeID]
-
+      -- ^ The array indices-to-data node ID mappings.
     }
   deriving (Show)
 
 -- | Contains the data for a solution to the CP model, converted from the raw
 -- solution and post-processing parameters data.
-
 data CPSolutionData =
     CPSolutionData
-    { -- | The CP model parameters.
+    { modelParams :: CPModelParams
+      -- ^ The CP model parameters.
 
-      modelParams :: CPModelParams
-
-      -- | The basic block (represented by the node ID of the corresponding
+    , bbAllocsForPIs :: [(PatternInstanceID, NodeID)]
+      -- ^ The basic block (represented by the node ID of the corresponding
       -- label node) to which a particular pattern instance was allocated.  A
       -- missing entry means that the corresponding pattern instance ID was not
       -- selected and thus not allocated to a valid basic block.
 
-    , bbAllocsForPIs :: [(PatternInstanceID, NodeID)]
-
-      -- | The selected pattern instances.
-
     , selectedPIs :: [PatternInstanceID]
-
-      -- | The order of basic blocks (represented by the node ID of the
-      -- corresponding label node).
+      -- ^ The selected pattern instances.
 
     , orderOfBBs :: [NodeID]
-
-      -- | The registers assigned for certain data nodes. A missing entry means
-      -- that no register was assigned to the corresponding data node.
+      -- ^ The order of basic blocks (represented by the node ID of the
+      -- corresponding label node).
 
     , regsOfDataNodes :: [(NodeID, RegisterID)]
-
-      -- | The immediate values assigned for certain data nodes. A missing entry
-      -- means that no immediate value was assigned to the corresponding data
-      -- node.
+      -- ^ The registers assigned for certain data nodes. A missing entry means
+      -- that no register was assigned to the corresponding data node.
 
     , immValuesOfDataNodes :: [(NodeID, Integer)]
-
+      -- ^ The immediate values assigned for certain data nodes. A missing entry
+      -- means that no immediate value was assigned to the corresponding data
+      -- node.
     }
   deriving (Show)
 
@@ -331,7 +272,6 @@ data CPSolutionData =
 
 -- | Converts raw CP solution and post-processing parameters data into a more
 -- convenient form.
-
 fromRawCPSolutionData ::
      RawPostParams
   -> RawCPSolutionData
@@ -346,15 +286,16 @@ fromRawCPSolutionData pp_data cp_data =
   (computeImmValuesOfDataNodes pp_data cp_data)
 
 computeBBAllocsForPIs ::
-      RawPostParams
+     RawPostParams
   -> RawCPSolutionData
   -> [(PatternInstanceID, NodeID)]
 computeBBAllocsForPIs pp_data cp_data =
   let bb2labs = rawArrInd2LabNodeIDs pp_data
       maps = zipWith3
-             (\p b bb -> if b
-                         then Just (p, bb2labs !! (fromIntegral bb))
-                         else Nothing)
+             ( \p b bb -> if b
+                          then Just (p, bb2labs !! (fromIntegral bb))
+                          else Nothing
+             )
              (rawArrInd2PattInstIDs pp_data)
              (rawIsPISelected cp_data)
              (rawBBAllocsForPIs cp_data)
@@ -408,7 +349,6 @@ computeImmValuesOfDataNodes pp_data cp_data =
 -- 'PatternInstanceData' entity with matching pattern instance ID. If there is
 -- more than one match, the first found is returned. If no such entity is found,
 -- 'Nothing' is returned.
-
 findPatternInstanceData ::
      [PatternInstanceData]
   -> PatternInstanceID

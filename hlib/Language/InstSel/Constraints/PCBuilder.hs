@@ -33,7 +33,6 @@ import Data.Maybe
 -- the pattern instance must be allocated to the root label if there is such a
 -- node. The produced constraints (if any) are added to the existing
 -- 'OpStructure'.
-
 addBBAllocConstraints :: OpStructure -> OpStructure
 addBBAllocConstraints os =
   let g = osGraph os
@@ -41,13 +40,11 @@ addBBAllocConstraints os =
   in if isJust root_label
      then let new_cs = [ BoolExprConstraint $
                          EqExpr
-                         (
-                           Label2NumExpr $
+                         ( Label2NumExpr $
                            LabelOfLabelNodeExpr $
                            ANodeIDExpr (nodeID $ fromJust root_label)
                          )
-                         (
-                           Label2NumExpr $
+                         ( Label2NumExpr $
                            LabelAllocatedToPatternInstanceExpr $
                            ThisPatternInstanceExpr
                          )
@@ -63,10 +60,13 @@ addBBAllocConstraints os =
 -- 'OpStructure'.
 
 addInterDataValConstraints ::
-     OpStructure -- ^ The old structure.
-  -> [NodeID]    -- ^ List of data nodes which are specified as output.
-  -> OpStructure -- ^ The new structure, with the produced constraints (may be
-                 -- the same structure).
+     OpStructure
+     -- ^ The old structure.
+  -> [NodeID]
+     -- ^ List of data nodes which are specified as output.
+  -> OpStructure
+     -- ^ The new structure, with the produced constraints (may be the same
+     -- structure).
 addInterDataValConstraints os outs =
   let g = osGraph os
       d_ns = filter isDataNode $ allNodes g

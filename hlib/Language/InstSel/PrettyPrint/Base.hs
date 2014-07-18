@@ -20,6 +20,5 @@ module Language.InstSel.PrettyPrint.Base where
 -- parsing. This means that information can be lost without consequences (for
 -- instance, many operations will be pretty-printed to the same string, but
 -- that's okay since it's only for viewing when this fact is known).
-
 class PrettyPrint a where
   prettyShow :: a -> String

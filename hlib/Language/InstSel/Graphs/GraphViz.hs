@@ -29,12 +29,10 @@ import Data.Maybe
 -------------
 
 -- | Converts a graph into GraphViz's DotGraph format.
-
 toDotGraph :: Graph -> GV.DotGraph I.Node
 toDotGraph g = GV.graphToDot mkParams (intGraph g)
 
 -- | Constructs the appropriate parameters.
-
 mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
 mkParams =
   GV.nonClusteredParams
@@ -43,12 +41,10 @@ mkParams =
   }
 
 -- | Constructs the appropriate node attributes, depending on the node type.
-
 mkNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
 mkNodeAttr (_, NodeLabel _ nt) = mkNodeTypeAttr nt
 
 -- | Constructs the node attributes based on its node type.
-
 mkNodeTypeAttr :: NodeType -> GV.Attributes
 mkNodeTypeAttr (ComputationNode op) =
   [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
@@ -68,7 +64,6 @@ mkNodeTypeAttr NullNode =
   [GV.shape GV.Circle, GV.style GV.dashed, GV.toLabel ""]
 
 -- | Constructs the appropriate edge attributes.
-
 mkEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
 mkEdgeAttr (_, _, EdgeLabel out_nr in_nr) =
   [ GVA.TailLabel (GV.toLabelValue $ show out_nr)

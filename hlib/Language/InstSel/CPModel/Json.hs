@@ -152,23 +152,23 @@ instance FromJSON PatternInstanceData where
 
 instance ToJSON PatternInstanceData where
   toJSON d =
-    object ([ "instruction-id"                .= (patInstructionID d)
-            , "pattern-id"                    .= (patPatternID d)
-            , "pattern-instance-id"           .= (patInstanceID d)
-            , "action-nodes-covered"          .= (patActionNodesCovered d)
-            , "data-nodes-defined"            .= (patDataNodesDefined d)
-            , "data-nodes-used"               .= (patDataNodesUsed d)
-            , "data-nodes-used-by-phis"       .= (patDataNodesUsedByPhis d)
-            , "state-nodes-defined"           .= (patStateNodesDefined d)
-            , "state-nodes-used"              .= (patStateNodesUsed d)
-            , "label-nodes-referred"          .= (patLabelNodesReferred d)
-            , "constraints"                   .= (patConstraints d)
-            , "apply-use-def-dom-constraints" .= (patAUDDC d)
-            , "has-control-nodes"             .= (patHasControlNodes d)
-            , "code-size"                     .= (patCodeSize d)
-            , "latency"                       .= (patLatency d)
-            , "assembly-id-maps"              .= (patAssIDMaps d)
-            ])
+    object [ "instruction-id"                .= (patInstructionID d)
+           , "pattern-id"                    .= (patPatternID d)
+           , "pattern-instance-id"           .= (patInstanceID d)
+           , "action-nodes-covered"          .= (patActionNodesCovered d)
+           , "data-nodes-defined"            .= (patDataNodesDefined d)
+           , "data-nodes-used"               .= (patDataNodesUsed d)
+           , "data-nodes-used-by-phis"       .= (patDataNodesUsedByPhis d)
+           , "state-nodes-defined"           .= (patStateNodesDefined d)
+           , "state-nodes-used"              .= (patStateNodesUsed d)
+           , "label-nodes-referred"          .= (patLabelNodesReferred d)
+           , "constraints"                   .= (patConstraints d)
+           , "apply-use-def-dom-constraints" .= (patAUDDC d)
+           , "has-control-nodes"             .= (patHasControlNodes d)
+           , "code-size"                     .= (patCodeSize d)
+           , "latency"                       .= (patLatency d)
+           , "assembly-id-maps"              .= (patAssIDMaps d)
+           ]
 
 instance FromJSON MachineData where
   parseJSON (Object v) =
@@ -279,7 +279,6 @@ instance FromJSON RawPostParams where
 
 -- | Converts a scientific number to a natural number. If the number is not an
 -- non-negative then an error occurs.
-
 sn2nat :: Scientific -> Natural
 sn2nat sn =
   let int_value = round sn
@@ -288,13 +287,12 @@ sn2nat sn =
      else toNatural int_value
 
 -- | Parses a JSON string into an entity.
-
 fromJson ::
   FromJSON a
   => String
-  -> Either String a -- ^ The left field contains the error message (when
-                     -- parsing failed), and the right field the parsed entity
-                     -- (when parsing was successful).
+  -> Either String a
+     -- ^ The left field contains the error message (when parsing failed), and
+     -- the right field the parsed entity (when parsing was successful).
 fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
@@ -302,6 +300,5 @@ fromJson s =
      else Left ("failed to parse JSON")
 
 -- | Converts an entity into a JSON string.
-
 toJson :: ToJSON a => a -> String
 toJson = BS.unpack . encode

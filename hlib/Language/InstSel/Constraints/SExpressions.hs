@@ -262,12 +262,11 @@ instance ToLisp RegisterID where
 -------------
 
 -- | Parses a lispian expression into a 'Constraint'.
-
 fromLispExpr ::
      String
-  -> Either String Constraint -- ^ The left field contains the error message
-                              -- (when parsing failed), and the right field
-                              -- contains the constraint (if parsing succeeded).
+  -> Either String Constraint
+     -- ^ The left field contains the error message (when parsing failed), and
+     -- the right field contains the constraint (if parsing succeeded).
 fromLispExpr s =
   let lisp_result = parseOnly lisp (BS.pack s)
   in if isLeft lisp_result
@@ -278,6 +277,5 @@ fromLispExpr s =
              else Right (BoolExprConstraint (fromRight expr_result))
 
 -- | Converts a 'Constraint' into a lispian expression.
-
 toLispExpr :: Constraint -> String
 toLispExpr = show . toLisp
