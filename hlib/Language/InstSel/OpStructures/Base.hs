@@ -38,12 +38,12 @@ import qualified Language.InstSel.Graphs as G
 -- Data types
 --------------
 
-data OpStructure
-    = OpStructure {
-          osGraph :: G.Graph
-        , osConstraints :: [Constraint]
-      }
-    deriving (Show)
+data OpStructure =
+    OpStructure
+    { osGraph :: G.Graph
+    , osConstraints :: [Constraint]
+    }
+  deriving (Show)
 
 
 

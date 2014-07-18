@@ -8,23 +8,34 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Contains the data types and records for representing instructions as LLVM
--- patterns.
+-- Contains the data types and records for representing instructions and
+-- patterns read from a lispian formatted file.
 --
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Patterns.LLVM.Base where
 
-import Language.InstSel.Patterns.AssemblyString
-import Language.InstSel.Utils (Range (..))
 import Language.InstSel.OpTypes
-import Language.InstSel.SExpressions
+import Language.InstSel.Utils
+  (Range (..))
 
 
 
--- | Data type for representing a physical regsiter.
+--------------
+-- Data types
+--------------
 
-data Register
+-- | Values used for aliasing.
+
+data AliasValue
+    = AVTemporary Temporary
+    | AVSymbol Symbol
+    | AVNoValue
+    deriving (Show, Eq)
+
+-- | Representing a physical register.
+
+newtype Register
     = Register String
     deriving (Show, Eq)
 
@@ -383,6 +394,40 @@ data Constraint
 
     deriving (Show)
 
+
+-- | Data type for representing a pattern including the constraints.
+
+data Pattern
+    = Pattern
+
+          -- | The LLVM statements.
+
+          [Statement]
+
+          -- | Constraints that must be enforced for the pattern.
+
+          [Constraint]
+
+    deriving (Show)
+
+-- | Represents an instruction.
+
+data Instruction
+    = Instruction {
+
+          -- | Patterns which correspond to the instruction. There must be at
+          -- least one pattern.
+
+          instPatterns :: [Pattern]
+      }
+    deriving (Show)
+
+
+
+-------------
+-- Functions
+-------------
+
 isAllocateInConstraint :: Constraint -> Bool
 isAllocateInConstraint (AllocateInConstraint _ _) = True
 isAllocateInConstraint _ = False
@@ -407,14 +452,6 @@ isAbsAddressConstraint :: Constraint -> Bool
 isAbsAddressConstraint (AbsAddressConstraint _ _) = True
 isAbsAddressConstraint _ = False
 
--- | Data type for containing values used for aliasing.
-
-data AliasValue
-    = AVTemporary Temporary
-    | AVSymbol Symbol
-    | AVNoValue
-    deriving (Show, Eq)
-
 isAVTemporary :: AliasValue -> Bool
 isAVTemporary (AVTemporary _) = True
 isAVTemporary _ = False
@@ -426,251 +463,3 @@ isAVSymbol _ = False
 isAVNoValue :: AliasValue -> Bool
 isAVNoValue AVNoValue = True
 isAVNoValue _ = False
-
--- | Data type for representing a pattern including the constraints.
-
-data Pattern
-    = Pattern
-
-          -- | The LLVM statements.
-
-          [Statement]
-
-          -- | Constraints that must be enforced for the pattern.
-
-          [Constraint]
-
-    deriving (Show)
-
--- | Data type for representing an instruction.
-
-data Instruction
-    = Instruction
-
-          -- | Assembly string to produce upon code emission.
-
-          AssemblyString
-
-          -- | Patterns which correspond to the instruction. There must be at
-          -- least one pattern.
-
-          [Pattern]
-
-    deriving (Show)
-
-
-
---------------------------------------------------
--- SExpressionable instances
---------------------------------------------------
-
-instance SExpressionable Instruction where
-  prettySE (Instruction ass pats) i =
-    let i1 = i + 1
-    in "(instruction"
-       ++ "\n" ++ indent i1 ++ prettySE ass i1
-       ++ prettySEList pats i1
-       ++ ")"
-
-instance SExpressionable Pattern where
-  prettySE (Pattern stmts cnstrs) i =
-    let i1 = i + 1
-        i2 = i + 2
-    in "(pattern"
-       ++ "\n" ++ indent i1 ++ "(constraints"
-       ++ prettySEList cnstrs i2
-       ++ ")"
-       ++ "\n" ++ indent i1 ++ "(code"
-       ++ prettySEList stmts i2
-       ++ ")"
-       ++ ")"
-
-instance SExpressionable Constraint where
-  prettySE (AllocateInConstraint store space) i =
-    "(allocate-in"
-    ++ " " ++ prettySE store i
-    ++ " " ++ prettySE space i
-    ++ ")"
-  prettySE (ImmediateConstraint imm ranges) i =
-    "(immediate"
-    ++ " " ++ prettySE imm i
-    ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
-    ++ ")"
-  prettySE (RegFlagConstraint flag ranges) i =
-    "(reg-flag"
-    ++ " " ++ prettySE flag i
-    ++ " (" ++ prettySEListNoBreak ranges i ++ ")"
-    ++ ")"
-  prettySE (AliasesConstraint aliases) i =
-    "(aliases"
-    ++ " (" ++ prettySEListNoBreak aliases i
-    ++ "))"
-  prettySE (RelAddressConstraint imm memClass) i =
-    "(rel-address"
-    ++ " " ++ prettySE imm i
-    ++ " " ++ prettySE memClass i
-    ++ ")"
-  prettySE (AbsAddressConstraint imm memClass) i =
-    "(abs-address"
-    ++ " " ++ prettySE imm i
-    ++ " " ++ prettySE memClass i
-    ++ ")"
-
-instance SExpressionable AliasValue where
-  prettySE (AVTemporary tmp) i = prettySE tmp i
-  prettySE (AVSymbol sym) i = prettySE sym i
-  prettySE (AVNoValue) i = prettySE noValueStr i
-
-instance SExpressionable Statement where
-  prettySE (AssignmentStmt temp expr) i =
-    "(="
-    ++ " " ++ prettySE temp i
-    ++ " " ++ prettySE expr i
-    ++ ")"
-  prettySE (SetRegStmt dest expr) i =
-    "(set-reg"
-    ++ " " ++ prettySE dest i
-    ++ " " ++ prettySE expr i
-    ++ ")"
-  prettySE (StoreStmt dst area size value) i =
-    "(store"
-    ++ " " ++ prettySE dst i
-    ++ " " ++ prettySE area i
-    ++ " " ++ prettySE size i
-    ++ " " ++ prettySE value i
-    ++ ")"
-
-  prettySE (UncondBranchStmt label) i =
-    "(br"
-    ++ " " ++ prettySE label i
-    ++ ")"
-  prettySE (CondBranchStmt d tLabel fLabel) i =
-    "(br"
-    ++ " " ++ prettySE d i
-    ++ " " ++ prettySE tLabel i
-    ++ " " ++ prettySE fLabel i
-    ++ ")"
-  prettySE (LabelStmt label) i =
-    "(label"
-    ++ " " ++ prettySE label i
-    ++ ")"
-
-instance SExpressionable StmtExpression where
-  prettySE (BinaryOpStmtExpr op (Just result) lhs rhs) i =
-    "(" ++ prettySE op i
-    ++ " " ++ prettySE result i
-    ++ " " ++ prettySE lhs i
-    ++ " " ++ prettySE rhs i
-    ++ ")"
-  prettySE (BinaryOpStmtExpr op Nothing lhs rhs) i =
-    "(" ++ prettySE op i
-    ++ " " ++ prettySE lhs i
-    ++ " " ++ prettySE rhs i
-    ++ ")"
-  prettySE (UnaryOpStmtExpr op (Just result) expr) i =
-    "(" ++ prettySE op i
-    ++ " " ++ prettySE result i
-    ++ " " ++ prettySE expr i
-    ++ ")"
-  prettySE (UnaryOpStmtExpr op Nothing expr) i =
-    "(" ++ prettySE op i
-    ++ " " ++ prettySE expr i
-    ++ ")"
-  prettySE (TypeConvStmtExpr op size_dst size_src expr) i =
-    "(" ++ prettySE op i
-    ++ " " ++ prettySE size_src i
-    ++ " " ++ prettySE expr i
-    ++ " " ++ prettySE size_dst i
-    ++ ")"
-  prettySE (LoadStmtExpr area size src) i =
-    "(load-mem"
-    ++ " " ++ prettySE area i
-    ++ " " ++ prettySE size i
-    ++ " " ++ prettySE src i
-    ++ ")"
-  prettySE (FP2IStmtExpr size_src expr size_dst) i =
-    "(fptosi"
-    ++ " " ++ prettySE size_src i
-    ++ " " ++ prettySE expr i
-    ++ " " ++ prettySE size_dst i
-    ++ ")"
-  prettySE (PhiStmtExpr elements) i =
-    "(phi"
-    ++ " " ++ prettySEListNoBreak elements i
-    ++ ")"
-  prettySE (DataStmtExpr pdata) i = prettySE pdata i
-  prettySE (SizeStmtExpr reg) i = prettySE reg i
-  prettySE (RegRangeStmtExpr sto range) i =
-    "(reg-range"
-    ++ " " ++ prettySE sto i
-    ++ " " ++ prettySE range i
-    ++ ")"
-
-instance SExpressionable PhiElement where
-  prettySE (PhiElement expr label) i =
-    "(" ++ prettySE expr i
-    ++ " . " ++ prettySE label i
-    ++ ")"
-
-instance SExpressionable Label where
-  prettySE (Label str) i = prettySE str i
-
-instance SExpressionable ExprResultSize where
-  prettySE (ERSRegSize reg) i = prettySE reg i
-  prettySE (ERSConstValue c) i = prettySE c i
-  prettySE (ERSConstTemporary temp) i = prettySE temp i
-  prettySE (ERSConstSymbol sym) i = prettySE sym i
-
-instance SExpressionable Temporary where
-  prettySE (Temporary int) i = "(tmp " ++ prettySE int i ++ ")"
-
-instance SExpressionable Register where
-  prettySE (Register str) i = prettySE str i
-
-instance SExpressionable Symbol where
-  prettySE (Symbol str) i = prettySE str i
-
-instance SExpressionable RegisterFlag where
-  prettySE (RegisterFlag sym reg) i =
-    "(reg-flag " ++ prettySE sym i ++ " " ++ prettySE reg i ++ ")"
-
-instance SExpressionable DataSpace where
-  prettySE (DSRegisterClass rc) i = prettySE rc i
-  prettySE (DSRegisterFlag flag) i = prettySE flag i
-  prettySE (DSMemoryClass mc) i = prettySE mc i
-
-instance SExpressionable RegisterClass where
-  prettySE (RegisterClass regs) i =
-    "("
-    ++ prettySEListNoBreak regs i
-    ++ ")"
-
-instance SExpressionable MemoryClass where
-  prettySE (MemoryClass str range) i = str ++ " " ++ prettySE range i
-
-instance SExpressionable ConstantValue where
-  prettySE (ConstIntValue int) i =
-    "(constant ?"
-    ++ " " ++ prettySE int i
-    ++ ")"
-
-instance SExpressionable ProgramData where
-  prettySE (PDConstant c) i = prettySE c i
-  prettySE (PDSymbol sym) i = prettySE sym i
-  prettySE (PDTemporary temp) i = prettySE temp i
-  prettySE (PDRegister reg) i = prettySE reg i
-  prettySE PDNoValue i = prettySE noValueStr i
-
-instance SExpressionable SetRegDestination where
-  prettySE (SRDRegister reg) i = prettySE reg i
-  prettySE (SRDRegisterFlag flag) i = prettySE flag i
-  prettySE (SRDSymbol reg) i = prettySE reg i
-  prettySE (SRDTemporary temp) i = prettySE temp i
-
-instance SExpressionable ProgramStorage where
-  prettySE (PSSymbol sym) i = prettySE sym i
-  prettySE (PSTemporary temp) i = prettySE temp i
-  prettySE (PSRegister reg) i = prettySE reg i
-
-noValueStr :: [Char]
-noValueStr = "no-value"

@@ -14,7 +14,10 @@
 
 module Language.InstSel.DataTypes.Base where
 
-import Language.InstSel.Utils (Natural (..), toNatural)
+import Language.InstSel.Utils
+  ( Natural
+  , toNatural
+  )
 import Language.InstSel.PrettyPrint
 
 
@@ -23,19 +26,17 @@ import Language.InstSel.PrettyPrint
 -- Data types
 --------------
 
-data DataType
+data DataType =
 
-      -- | An integer data type, of a certain number of bits.
+    -- | An integer data type, of a certain number of bits.
 
-    = IntType Natural
+    IntType Natural
 
-      -- TODO: add missing data types
+    -- | When the data type is unknown and does not matter.
 
-      -- | When the data type is unknown and does not matter.
+  | AnyType
 
-    | AnyType
-
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 
 

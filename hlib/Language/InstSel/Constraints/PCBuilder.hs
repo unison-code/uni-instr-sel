@@ -34,29 +34,26 @@ import Data.Maybe
 -- node. The produced constraints (if any) are added to the existing
 -- 'OpStructure'.
 
-addBBAllocConstraints :: OpStructure    -- ^ The old structure.
-                         -> OpStructure -- ^ The new structure, with the
-                                        -- produced constraints (may be the same
-                                        -- structure).
+addBBAllocConstraints :: OpStructure -> OpStructure
 addBBAllocConstraints os =
   let g = osGraph os
       root_label = rootInCFG $ extractCFG g
   in if isJust root_label
-        then let new_cs = [ BoolExprConstraint $
-                            EqExpr
-                            (
-                              Label2NumExpr $
-                              LabelOfLabelNodeExpr $
-                              ANodeIDExpr (nodeID $ fromJust root_label)
-                            )
-                            (
-                              Label2NumExpr $
-                              LabelAllocatedToPatternInstanceExpr $
-                              ThisPatternInstanceExpr
-                            )
-                          ]
-             in addConstraints os new_cs
-        else os
+     then let new_cs = [ BoolExprConstraint $
+                         EqExpr
+                         (
+                           Label2NumExpr $
+                           LabelOfLabelNodeExpr $
+                           ANodeIDExpr (nodeID $ fromJust root_label)
+                         )
+                         (
+                           Label2NumExpr $
+                           LabelAllocatedToPatternInstanceExpr $
+                           ThisPatternInstanceExpr
+                         )
+                       ]
+          in addConstraints os new_cs
+     else os
 
 -- | Creates intermediate data value constraints for a pattern graph which
 -- contains data nodes which are both defined and used by the pattern but are
@@ -65,12 +62,11 @@ addBBAllocConstraints os =
 -- patterns. The produced constraints (if any) are added to the existing
 -- 'OpStructure'.
 
-addInterDataValConstraints :: OpStructure    -- ^ The old structure.
-                              -> [NodeID]    -- ^ List of data nodes which are
-                                             -- specified as output.
-                              -> OpStructure -- ^ The new structure, with the
-                                             -- produced constraints (may be the
-                                             -- same structure).
+addInterDataValConstraints ::
+     OpStructure -- ^ The old structure.
+  -> [NodeID]    -- ^ List of data nodes which are specified as output.
+  -> OpStructure -- ^ The new structure, with the produced constraints (may be
+                 -- the same structure).
 addInterDataValConstraints os outs =
   let g = osGraph os
       d_ns = filter isDataNode $ allNodes g

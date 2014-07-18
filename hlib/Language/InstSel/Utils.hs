@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Utils (
-  module Language.InstSel.Utils.Base
-) where
+module Language.InstSel.Utils
+  (module Language.InstSel.Utils.Base)
+where
 
 import Language.InstSel.Utils.Base

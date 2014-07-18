@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.PrettyPrint (
-  module Language.InstSel.PrettyPrint.Base
-) where
+module Language.InstSel.PrettyPrint
+  (module Language.InstSel.PrettyPrint.Base)
+where
 
 import Language.InstSel.PrettyPrint.Base

@@ -46,136 +46,132 @@ import Data.Maybe
 -- | Represents parts of the assembly string. All 'AssemblyID's used within the
 -- same 'AssemblyString' *must* be unique and contiguous!
 
-data AssemblyPart
+data AssemblyPart =
 
-      -- | Denotes string which is meant to be output verbatim.
+    -- | Denotes string which is meant to be output verbatim.
 
-    = AssemblyVerbatim String
+    AssemblyVerbatim String
 
-      -- | Denotes an immediate value.
+    -- | Denotes an immediate value.
 
-    | AssemblyImmValue AssemblyID
+  | AssemblyImmValue AssemblyID
 
-      -- | Denotes a register.
+    -- | Denotes a register.
 
-    | AssemblyRegister AssemblyID
+  | AssemblyRegister AssemblyID
 
-      -- | Denotes a basic block label.
+    -- | Denotes a basic block label.
 
-    | AssemblyBBLabel AssemblyID
+  | AssemblyBBLabel AssemblyID
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Record for containing the assembly string to produce during code emission.
 
-data AssemblyString
-    = AssemblyString { assStrParts :: [AssemblyPart] }
-    deriving (Show)
+data AssemblyString =
+    AssemblyString { assStrParts :: [AssemblyPart] }
+  deriving (Show)
 
 -- | Defines a machine instruction.
 
-data Instruction
-    = Instruction {
+data Instruction =
+    Instruction
+    { -- | The ID of this instruction. The ID must be globally unique across all
+      -- instructions, but not necessarily contiguous.
 
-          -- | The ID of this instruction. The ID must be globally unique across
-          -- all instructions, but not necessarily contiguous.
+      instID :: InstructionID
 
-          instID :: InstructionID
+      -- | Patterns which correspond to the instruction. There must be at least
+      -- one pattern. Each pattern also has a corresponding ID which must be
+      -- globally unique across all patterns and all instructions, but not
+      -- necessarily contiguous.
 
-          -- | Patterns which correspond to the instruction. There must be at
-          -- least one pattern. Each pattern also has a corresponding ID which
-          -- must be globally unique across all patterns and all instructions,
-          -- but not necessarily contiguous.
+    , instPatterns :: [InstPattern]
 
-        , instPatterns :: [InstPattern]
+      -- | Instruction properties.
 
-          -- | Instruction properties.
+    , instProps :: InstProperties
 
-        , instProps :: InstProperties
+      -- | Assembly string to produce upon code emission.
 
-          -- | Assembly string to produce upon code emission.
+    , instAssemblyStr :: AssemblyString
 
-        , instAssemblyStr :: AssemblyString
-
-      }
-    deriving (Show)
+    }
+  deriving (Show)
 
 -- | Contains the various properties of an instruction, such as code size and
 -- latency.
 
-data InstProperties
-    = InstProperties {
+data InstProperties =
+    InstProperties
+    { -- | Instruction code size (in bytes).
 
-          -- | Instruction code size (in bytes).
+      instCodeSize :: Integer
 
-          instCodeSize :: Integer
+      -- | Instruction latency (in cycles).
 
-          -- | Instruction latency (in cycles).
+    , instLatency :: Integer
 
-        , instLatency :: Integer
-
-      }
-    deriving (Show)
+    }
+  deriving (Show)
 
 -- | Defines a pattern for a machine instruction.
 
-data InstPattern
-    = InstPattern {
+data InstPattern =
+    InstPattern
+    { -- | The ID of this pattern. The ID must be unique within the same
+      -- instruction, but not necessarily contiguous.
 
-          -- | The ID of this pattern. The ID must be unique within the same
-          -- instruction, but not necessarily contiguous.
+      patID :: PatternID
 
-          patID :: PatternID
+      -- | The operation structure of the pattern.
 
-          -- | The operation structure of the pattern.
+    , patOS :: OpStructure
 
-        , patOS :: OpStructure
+      -- | Specifies the data nodes within the 'OpStructure' which represent
+      -- output that can be observed from outside the pattern.
 
-          -- | Specifies the data nodes within the 'OpStructure' which represent
-          -- output that can be observed from outside the pattern.
+    , patOutputDataNodes :: [NodeID]
 
-        , patOutputDataNodes :: [NodeID]
+      -- | Indicates whether the use-def-dom constraints apply to this
+      -- pattern. This will typically always be set to 'True' for all patterns
+      -- except the generic phi patterns.
 
-          -- | Indicates whether the use-def-dom constraints apply to this
-          -- pattern. This will typically always be set to 'True' for all
-          -- patterns except the generic phi patterns.
+    , patAUDDC :: Bool
 
-        , patAUDDC :: Bool
+      -- | Maps an 'AssemblyID', which is denoted as the index into the list,
+      -- that appear in the 'AssemblyString' of the instruction, to a particular
+      -- node in the graph of the pattern's operation structure.  Because of
+      -- this, all 'AssemblyID's used within the same 'AssemblyString' *must* be
+      -- unique and contiguous!
 
-          -- | Maps an 'AssemblyID', which is denoted as the index into the
-          -- list, that appear in the 'AssemblyString' of the instruction, to a
-          -- particular node in the graph of the pattern's operation structure.
-          -- Because of this, all 'AssemblyID's used within the same
-          -- 'AssemblyString' *must* be unique and contiguous!
+    , patAssIDMaps :: [NodeID]
 
-        , patAssIDMaps :: [NodeID]
-
-      }
-    deriving (Show)
+    }
+  deriving (Show)
 
 -- | Represents a target machine.
 
-data TargetMachine
-    = TargetMachine {
+data TargetMachine =
+    TargetMachine
+    { -- | The identifier of the target machine.
 
-          -- | The identifier of the target machine.
+      tmID :: TargetMachineID
 
-          tmID :: TargetMachineID
+      -- | The set of assembly instructions supported by the target machine.
 
-          -- | The set of assembly instructions supported by the target machine.
+    , tmInstructions :: [Instruction]
 
-        , tmInstructions :: [Instruction]
+      -- | The machine registers. Each must be given a unique ID, but not
+      -- necessarily in a contiguous order.
 
-          -- | The machine registers. Each must be given a unique ID, but not
-          -- necessarily in a contiguous order.
+    , tmRegisters :: [( RegisterID -- ^ Register ID (only used internally).
+                      , String     -- ^ Register name (needed during code
+                                   -- emission).
+                      )]
 
-        , tmRegisters :: [( RegisterID -- ^ Register ID (only used internally).
-                          , String     -- ^ Register name (needed during code
-                                       -- emission).
-                          )]
-
-      }
-    deriving (Show)
+    }
+  deriving (Show)
 
 
 
@@ -187,31 +183,33 @@ data TargetMachine
 -- with matching instruction ID. If there is more than one match, the first
 -- found is returned. If no such entity is found, 'Nothing' is returned.
 
-findInstruction :: [Instruction]
-                  -> InstructionID
-                  -> Maybe Instruction
+findInstruction ::
+     [Instruction]
+  -> InstructionID
+  -> Maybe Instruction
 findInstruction is iid =
   let found = filter (\i -> instID i == iid) is
   in if length found > 0
-        then Just $ head found
-        else Nothing
+     then Just $ head found
+     else Nothing
 
 -- | Given a list of instructions, the function finds the 'Instruction' entity
 -- with matching instruction ID and pattern ID. If there is more than one match,
 -- the first found is returned. If no such entity is found, 'Nothing' is
 -- returned.
 
-findInstPattern :: [Instruction]
-                   -> InstructionID
-                   -> PatternID
-                   -> Maybe InstPattern
+findInstPattern ::
+    [Instruction]
+  -> InstructionID
+  -> PatternID
+  -> Maybe InstPattern
 findInstPattern is iid pid =
   let maybe_i = findInstruction is iid
   in if isJust maybe_i
-        then let i = fromJust maybe_i
-                 ps = instPatterns i
-                 found = filter (\p -> patID p == pid) ps
-             in if length found > 0
-                   then Just $ head found
-                   else Nothing
-        else Nothing
+     then let i = fromJust maybe_i
+              ps = instPatterns i
+              found = filter (\p -> patID p == pid) ps
+          in if length found > 0
+             then Just $ head found
+             else Nothing
+     else Nothing

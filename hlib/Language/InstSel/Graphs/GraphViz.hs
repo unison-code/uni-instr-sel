@@ -11,9 +11,9 @@
 -- Converts a graph into a GraphViz graph of DotGraph format.
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Graphs.GraphViz (
-  toDotGraph
-) where
+module Language.InstSel.Graphs.GraphViz
+  (toDotGraph)
+where
 
 import Language.InstSel.Graphs.Base
 import Language.InstSel.PrettyPrint
@@ -36,9 +36,11 @@ toDotGraph g = GV.graphToDot mkParams (intGraph g)
 -- | Constructs the appropriate parameters.
 
 mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
-mkParams = GV.nonClusteredParams { GV.fmtNode = mkNodeAttr
-                                 , GV.fmtEdge = mkEdgeAttr
-                                 }
+mkParams =
+  GV.nonClusteredParams
+  { GV.fmtNode = mkNodeAttr
+  , GV.fmtEdge = mkEdgeAttr
+  }
 
 -- | Constructs the appropriate node attributes, depending on the node type.
 

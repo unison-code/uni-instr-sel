@@ -44,16 +44,17 @@ import Language.InstSel.Utils
 
 -- | Represents a basic block label identifier.
 
-newtype BBLabelID
-    = BBLabelID String
-    deriving (Eq)
+newtype BBLabelID =
+    BBLabelID String
+  deriving (Eq)
 
 instance Show BBLabelID where
   show (BBLabelID str) = str
 
 -- | Represents an instruction ID.
 
-newtype InstructionID = InstructionID Natural
+newtype InstructionID =
+    InstructionID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show InstructionID where
@@ -61,7 +62,8 @@ instance Show InstructionID where
 
 -- | Represents an ID to be used as place-holders inside an assembly string.
 
-newtype AssemblyID = AssemblyID Natural
+newtype AssemblyID =
+    AssemblyID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show AssemblyID where
@@ -69,7 +71,8 @@ instance Show AssemblyID where
 
 -- | Represents a register ID.
 
-newtype RegisterID = RegisterID Natural
+newtype RegisterID =
+    RegisterID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show RegisterID where
@@ -77,7 +80,8 @@ instance Show RegisterID where
 
 -- | Represents a target machine ID
 
-newtype TargetMachineID = TargetMachineID String
+newtype TargetMachineID =
+    TargetMachineID String
   deriving (Eq, Show)
 
 

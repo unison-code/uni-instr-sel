@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Constraints (
-  module Language.InstSel.Constraints.Base
-) where
+module Language.InstSel.Constraints
+  (module Language.InstSel.Constraints.Base)
+where
 
 import Language.InstSel.Constraints.Base

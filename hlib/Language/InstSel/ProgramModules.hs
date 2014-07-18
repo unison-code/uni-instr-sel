@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ProgramModules (
-  module Language.InstSel.ProgramModules.Base
-) where
+module Language.InstSel.ProgramModules
+  (module Language.InstSel.ProgramModules.Base)
+where
 
 import Language.InstSel.ProgramModules.Base

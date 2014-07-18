@@ -12,66 +12,74 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Utils.Base (
-  Natural (..)
-, Range (..)
-, computePosMapsOfPerm
-, fromLeft
-, fromNatural
-, fromRight
-, isLeft
-, isRight
-, removeDuplicates
-, toNatural
-) where
+module Language.InstSel.Utils.Base
+  ( Natural (..)
+  , Range (..)
+  , computePosMapsOfPerm
+  , fromLeft
+  , fromNatural
+  , fromRight
+  , isLeft
+  , isRight
+  , removeDuplicates
+  , toNatural
+  )
+where
 
 import Data.Maybe
 
 
 
-------------------------
--- Class and data types
-------------------------
+--------------------------
+-- Classes and data types
+--------------------------
 
 -- | Record for representing a value range.
 
-data Range t
-     = Range {
-          -- | Smallest possible value (i.e. inclusive).
+data Range t =
+    Range
+    { -- | Smallest possible value (i.e. inclusive).
 
-          lowerBound :: t
+      lowerBound :: t
 
-          -- | Largest possible value (i.e. inclusive).
+      -- | Largest possible value (i.e. inclusive).
 
-        , upperBound :: t
+    , upperBound :: t
 
-       }
-     deriving (Show, Eq)
+    }
+  deriving (Show, Eq)
 
 -- | Creates a new data type that allows numbers from 0 to positive infinity.
 
-newtype Natural = Natural Integer
-    deriving (Eq, Ord)
+newtype Natural =
+    Natural Integer
+  deriving (Eq, Ord)
 
 instance Show Natural where
   show (Natural i) = show i
 
 toNatural :: (Integral i) => i -> Natural
-toNatural x | x < 0     = error "Natural cannot be negative"
-            | otherwise = Natural $ toInteger x
+toNatural x
+  | x < 0     = error "Natural cannot be negative"
+  | otherwise = Natural $ toInteger x
 
 fromNatural :: Natural -> Integer
 fromNatural (Natural i) = i
 
 instance Num Natural where
     fromInteger = toNatural
-    x + y       = toNatural (fromNatural x + fromNatural y)
-    x - y       = let r = fromNatural x - fromNatural y
-                  in if r < 0 then error "Subtraction yielded a negative value"
-                              else toNatural r
-    x * y       = toNatural (fromNatural x * fromNatural y)
-    abs x       = x
-    signum x    = toNatural $ signum $ fromNatural x
+
+    x + y = toNatural (fromNatural x + fromNatural y)
+
+    x - y = let r = fromNatural x - fromNatural y
+            in if r < 0 then error "Subtraction yielded a negative value"
+               else toNatural r
+
+    x * y = toNatural (fromNatural x * fromNatural y)
+
+    abs x = x
+
+    signum x = toNatural $ signum $ fromNatural x
 
 instance Enum Natural where
   toEnum = toNatural . toInteger
@@ -81,9 +89,10 @@ instance Real Natural where
   toRational (Natural i) = toRational i
 
 instance Integral Natural where
-  quotRem (Natural x) (Natural y) = ( toNatural $ quot x y
-                                    , toNatural $ rem x y
-                                    )
+  quotRem (Natural x) (Natural y) =
+    ( toNatural $ quot x y
+    , toNatural $ rem x y
+    )
   toInteger (Natural i) = i
 
 
@@ -106,23 +115,27 @@ removeDuplicates = rd []
 -- into the other list just by rearranging the positions. If one list is not a
 -- permutation of the other, an error will occur.
 
-computePosMapsOfPerm :: Eq a
-                        => [a]       -- ^ A list.
-                        -> [a]       -- ^ A permutation of the first list.
-                        -> [Natural] -- ^ A list of position mappings.
+computePosMapsOfPerm ::
+  Eq a
+  => [a]       -- ^ A list.
+  -> [a]       -- ^ A permutation of the first list.
+  -> [Natural] -- ^ A list of position mappings.
 computePosMapsOfPerm ol pl =
   let addPosMap e (index_in_ol, ms) =
         let checkIndex i = i `notElem` ms && (pl !! i == e)
-            index_in_pl = until (\i -> maybe True checkIndex i)
-                                (\(Just i) -> let next_i = i + 1
-                                              in if next_i < length pl
-                                                 then Just next_i
-                                                 else Nothing)
-                                (Just 0)
+            index_in_pl = until
+                          (\i -> maybe True checkIndex i)
+                          ( \(Just i) ->
+                             let next_i = i + 1
+                             in if next_i < length pl
+                                then Just next_i
+                                else Nothing
+                          )
+                          (Just 0)
         in if isJust index_in_pl
-              then (index_in_ol - 1, (fromJust index_in_pl):ms)
-              else error ("computePosMapsOfPerm: the lists do not contain the "
-                          ++ "same elements")
+           then (index_in_ol - 1, (fromJust index_in_pl):ms)
+           else error ("computePosMapsOfPerm: the lists do not contain the "
+                       ++ "same elements")
       (_, maps) = foldr addPosMap (length ol - 1, []) ol
   in if length ol == length pl
      then map toNatural maps

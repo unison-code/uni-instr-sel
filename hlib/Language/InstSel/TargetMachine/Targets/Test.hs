@@ -34,84 +34,112 @@ import Language.InstSel.TargetMachine
 
 tmTest :: TargetMachine
 tmTest =
-  let init_def_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (LabelNode $ BBLabelID "start"))
-             , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
-             ])
-             (map Edge
-             [ (0, 1, EdgeLabel 0 0)
-             ])
-      add_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (ComputationNode (O.UIntOp O.Add))
-                                        )
-             , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
-             , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
-             , (3, NodeLabel 3 (DataNode D.AnyType Nothing))
-             ])
-             (map Edge
-             [ (1, 0, EdgeLabel 0 0)
-             , (2, 0, EdgeLabel 0 1)
-             , (0, 3, EdgeLabel 0 0)
-             ])
-      bnz_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
-             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
-             , (2, NodeLabel 2 (LabelNode $ BBLabelID ""))
-             , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
-             , (4, NodeLabel 4 (ControlNode O.CondBranch))
-             ])
-             (map Edge
-             [ (0, 4, EdgeLabel 0 1)
-             , (1, 4, EdgeLabel 0 0)
-             , (4, 2, EdgeLabel 0 0)
-             , (4, 3, EdgeLabel 1 0)
-             ])
-      br_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (LabelNode $ BBLabelID ""))
-             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
-             , (2, NodeLabel 2 (ControlNode O.UncondBranch))
-             ])
-             (map Edge
-             [ (0, 2, EdgeLabel 0 0)
-             , (2, 1, EdgeLabel 0 0)
-             ])
+  let init_def_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (LabelNode $ BBLabelID "start"))
+          , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
+          ]
+        )
+        ( map Edge
+          [ (0, 1, EdgeLabel 0 0)
+          ]
+        )
+      add_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (ComputationNode (O.UIntOp O.Add)))
+          , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
+          , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
+          , (3, NodeLabel 3 (DataNode D.AnyType Nothing))
+          ]
+        )
+        ( map
+          Edge
+          [ (1, 0, EdgeLabel 0 0)
+          , (2, 0, EdgeLabel 0 1)
+          , (0, 3, EdgeLabel 0 0)
+          ]
+        )
+      bnz_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
+          , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
+          , (2, NodeLabel 2 (LabelNode $ BBLabelID ""))
+          , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
+          , (4, NodeLabel 4 (ControlNode O.CondBranch))
+          ]
+        )
+        ( map
+          Edge
+          [ (0, 4, EdgeLabel 0 1)
+          , (1, 4, EdgeLabel 0 0)
+          , (4, 2, EdgeLabel 0 0)
+          , (4, 3, EdgeLabel 1 0)
+          ]
+        )
+      br_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (LabelNode $ BBLabelID ""))
+          , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
+          , (2, NodeLabel 2 (ControlNode O.UncondBranch))
+          ]
+        )
+        ( map
+          Edge
+          [ (0, 2, EdgeLabel 0 0)
+          , (2, 1, EdgeLabel 0 0)
+          ]
+        )
       br_fallthrough_pattern = br_pattern
-      ret_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
-             , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
-             , (2, NodeLabel 2 (ControlNode O.Ret))
-             ])
-             (map Edge
-             [ (0, 2, EdgeLabel 0 1)
-             , (1, 2, EdgeLabel 0 0)
-             ])
-      phi_pattern = mkGraph
-             (map Node
-             [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
-             , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
-             , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
-             , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
-             , (4, NodeLabel 4 (LabelNode $ BBLabelID ""))
-             , (5, NodeLabel 5 (LabelNode $ BBLabelID ""))
-             , (6, NodeLabel 6 NullNode)
-             , (7, NodeLabel 7 NullNode)
-             , (8, NodeLabel 8 PhiNode)
-             ])
-             (map Edge
-             [ (0, 8, EdgeLabel 0 1)
-             , (1, 8, EdgeLabel 0 2)
-             , (8, 2, EdgeLabel 0 0)
-             , (3, 6, EdgeLabel 0 0)
-             , (4, 7, EdgeLabel 0 0)
-             , (6, 5, EdgeLabel 0 0)
-             , (7, 5, EdgeLabel 0 1)
-             , (5, 8, EdgeLabel 0 0)
-             ])
+      ret_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
+          , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
+          , (2, NodeLabel 2 (ControlNode O.Ret))
+          ]
+        )
+        ( map
+          Edge
+          [ (0, 2, EdgeLabel 0 1)
+          , (1, 2, EdgeLabel 0 0)
+          ]
+        )
+      phi_pattern =
+        mkGraph
+        ( map
+          Node
+          [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
+          , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
+          , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
+          , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
+          , (4, NodeLabel 4 (LabelNode $ BBLabelID ""))
+          , (5, NodeLabel 5 (LabelNode $ BBLabelID ""))
+          , (6, NodeLabel 6 NullNode)
+          , (7, NodeLabel 7 NullNode)
+          , (8, NodeLabel 8 PhiNode)
+          ]
+        )
+        ( map
+          Edge
+          [ (0, 8, EdgeLabel 0 1)
+          , (1, 8, EdgeLabel 0 2)
+          , (8, 2, EdgeLabel 0 0)
+          , (3, 6, EdgeLabel 0 0)
+          , (4, 7, EdgeLabel 0 0)
+          , (6, 5, EdgeLabel 0 0)
+          , (7, 5, EdgeLabel 0 1)
+          , (5, 8, EdgeLabel 0 0)
+          ]
+        )
       init_def_pattern_os =
         addBBAllocConstraints $ OpStructure init_def_pattern []
       add_pattern_os =
@@ -122,141 +150,113 @@ tmTest =
         addBBAllocConstraints $ OpStructure br_pattern []
       br_fallthrough_pattern_os =
         addBBAllocConstraints $
-        OpStructure br_fallthrough_pattern
+        OpStructure
+        br_fallthrough_pattern
         [ BoolExprConstraint $
           EqExpr
-          (
-            DistanceBetweenInstanceAndLabelExpr
-            (
-              ThisPatternInstanceExpr
-            )
-            (
-              LabelOfLabelNodeExpr $
+          ( DistanceBetweenInstanceAndLabelExpr
+            ThisPatternInstanceExpr
+            ( LabelOfLabelNodeExpr $
               ANodeIDExpr 1
             )
           )
-          (
-            Int2NumExpr $
+          ( Int2NumExpr $
             AnIntegerExpr 0
           )
         ]
       ret_pattern_os =
         addBBAllocConstraints $ OpStructure ret_pattern []
       phi_pattern_os =
-        OpStructure phi_pattern
+        OpStructure
+        phi_pattern
         [ BoolExprConstraint $
           AndExpr
-          (
-            EqExpr
-            (
-              Register2NumExpr $
+          ( EqExpr
+            ( Register2NumExpr $
               RegisterAllocatedToDataNodeExpr $
               ANodeIDExpr 0
             )
-            (
-              Register2NumExpr $
+            ( Register2NumExpr $
               RegisterAllocatedToDataNodeExpr $
               ANodeIDExpr 1
             )
           )
-          (
-            EqExpr
-            (
-              Register2NumExpr $
+          ( EqExpr
+            ( Register2NumExpr $
               RegisterAllocatedToDataNodeExpr $
               ANodeIDExpr 1
             )
-            (
-              Register2NumExpr $
+            ( Register2NumExpr $
               RegisterAllocatedToDataNodeExpr $
               ANodeIDExpr 2
             )
           )
         , BoolExprConstraint $
           EqExpr
-          (
-            Label2NumExpr $
+          ( Label2NumExpr $
             LabelOfLabelNodeExpr $
             ANodeIDExpr 5
           )
-          (
-            Label2NumExpr $
+          ( Label2NumExpr $
             LabelAllocatedToPatternInstanceExpr $
             ThisPatternInstanceExpr
           )
         , BoolExprConstraint $
           AndExpr
-          (
-            InSetExpr
-            (
-              Label2SetElemExpr $
+          ( InSetExpr
+            ( Label2SetElemExpr $
               LabelAllocatedToPatternInstanceExpr $
               DefinerOfDataNodeExpr $
               ANodeIDExpr 0
             )
-            (
-              DomSetOfLabelExpr $
+            ( DomSetOfLabelExpr $
               LabelOfLabelNodeExpr $
               ANodeIDExpr 3
             )
           )
-          (
-            InSetExpr
-            (
-              Label2SetElemExpr $
+          ( InSetExpr
+            ( Label2SetElemExpr $
               LabelAllocatedToPatternInstanceExpr $
               DefinerOfDataNodeExpr $
               ANodeIDExpr 1
             )
-            (
-              DomSetOfLabelExpr $
+            ( DomSetOfLabelExpr $
               LabelOfLabelNodeExpr $
               ANodeIDExpr 4
             )
           )
         , BoolExprConstraint $
           NotExpr $
-          (
-            AndExpr
-            (
-              InSetExpr
-              (
-                Label2SetElemExpr $
+          ( AndExpr
+            ( InSetExpr
+              ( Label2SetElemExpr $
                 LabelAllocatedToPatternInstanceExpr $
                 DefinerOfDataNodeExpr $
                 ANodeIDExpr 0
               )
-              (
-                IntersectSetExpr
-                (
-                  DomSetOfLabelExpr $
+              ( IntersectSetExpr
+                ( DomSetOfLabelExpr $
                   LabelOfLabelNodeExpr $
                   ANodeIDExpr 3
                 )
-                (
-                  DomSetOfLabelExpr $
+                ( DomSetOfLabelExpr $
                   LabelOfLabelNodeExpr $
                   ANodeIDExpr 4
                 )
               )
             )
-            (
-              InSetExpr
-              (
-                Label2SetElemExpr $
+            ( InSetExpr
+              ( Label2SetElemExpr $
                 LabelAllocatedToPatternInstanceExpr $
                 DefinerOfDataNodeExpr $
                 ANodeIDExpr 1
               )
-              (
-                IntersectSetExpr
-                (
-                  DomSetOfLabelExpr $
+              ( IntersectSetExpr
+                ( DomSetOfLabelExpr $
                   LabelOfLabelNodeExpr $
                   ANodeIDExpr 3
                 )
-                (
-                  DomSetOfLabelExpr $
+                ( DomSetOfLabelExpr $
                   LabelOfLabelNodeExpr $
                   ANodeIDExpr 4
                 )

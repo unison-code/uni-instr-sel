@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.DataTypes (
-  module Language.InstSel.DataTypes.Base
-) where
+module Language.InstSel.DataTypes
+  (module Language.InstSel.DataTypes.Base)
+where
 
 import Language.InstSel.DataTypes.Base

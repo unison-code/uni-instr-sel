@@ -32,6 +32,7 @@ selection.
 
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
+import Language.InstSel.Patterns.LLVM
 import Control.Monad
   (when)
 import Data.Maybe

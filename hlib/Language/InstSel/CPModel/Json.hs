@@ -30,7 +30,7 @@ import Language.InstSel.Graphs.IDs
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
-  ( Natural (..)
+  ( Natural
   , fromLeft
   , fromNatural
   , fromRight
@@ -54,8 +54,10 @@ import Data.Maybe
   ( fromJust
   , isJust
   )
-import Data.Scientific (Scientific)
-import qualified Data.Text as T (unpack)
+import Data.Scientific
+  (Scientific)
+import qualified Data.Text as T
+  (unpack)
 
 
 
@@ -287,15 +289,17 @@ sn2nat sn =
 
 -- | Parses a JSON string into an entity.
 
-fromJson :: FromJSON a =>
-            String
-            -> Either String -- ^ The error message, if the parsing failed.
-                      a      -- ^ The entity, if the parsing was successful.
+fromJson ::
+  FromJSON a
+  => String
+  -> Either String a -- ^ The left field contains the error message (when
+                     -- parsing failed), and the right field the parsed entity
+                     -- (when parsing was successful).
 fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
-        then Right (fromJust result)
-        else Left ("failed to parse JSON")
+     then Right (fromJust result)
+     else Left ("failed to parse JSON")
 
 -- | Converts an entity into a JSON string.
 

@@ -19,39 +19,40 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ProgramModules.Base (
-  Function (..)
-) where
+module Language.InstSel.ProgramModules.Base
+  (Function (..))
+where
 
-import Language.InstSel.Graphs (NodeID)
+import Language.InstSel.Graphs
+  (NodeID)
 import Language.InstSel.OpStructures
 
 
 
 -- | The record of representing a program function.
 
-data Function
-    = Function {
+data Function =
+    Function
+    { -- | The function name.
 
-          -- | The function name.
+      functionName :: String
 
-          functionName :: String
+      -- | The semantics of the function.
 
-          -- | The semantics of the function.
+    , functionOS :: OpStructure
 
-        , functionOS :: OpStructure
+      -- | The IDs of the data nodes in the operation structure which represent
+      -- the function input arguments. The order of the list is the same as the
+      -- order specified in the original code from which the semantics have been
+      -- derived.
 
-          -- | The IDs of the data nodes in the operation structure which
-          -- represent the function input arguments. The order of the list is
-          -- the same as the order specified in the original code from which the
-          -- semantics have been derived.
+    , functionInputs :: [NodeID]
 
-        , functionInputs :: [NodeID]
+      -- | The IDs of the data nodes in the operation structure which represent
+      -- the function return values. The order is undefined.
 
-          -- | The IDs of the data nodes in the operation structure which
-          -- represent the function return values. The order is undefined.
+    , functionReturns :: [NodeID]
 
-        , functionReturns :: [NodeID]
+    }
 
-      }
-    deriving (Show)
+  deriving (Show)

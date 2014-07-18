@@ -24,269 +24,266 @@ import Language.InstSel.TargetMachine.IDs
 -- Data types
 --------------
 
-data Constraint
+data Constraint =
 
-      -- | A constraint represented as a Boolean expression.
+    -- | A constraint represented as a Boolean expression.
 
-    = BoolExprConstraint { boolExpr :: BoolExpr }
+    BoolExprConstraint { boolExpr :: BoolExpr }
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Boolean expressions. For binary operations the first argument is always the
 -- left-hand side and the second argument is always the right-hand side.
 
-data BoolExpr
+data BoolExpr =
 
-      -- | Equals.
+    -- | Equals.
 
-    = EqExpr  NumExpr  NumExpr
+    EqExpr  NumExpr  NumExpr
 
-      -- | Not equals.
+    -- | Not equals.
 
-    | NeqExpr NumExpr  NumExpr
+  | NeqExpr NumExpr  NumExpr
 
-      -- | Greater than.
+    -- | Greater than.
 
-    | GTExpr  NumExpr  NumExpr
+  | GTExpr  NumExpr  NumExpr
 
-      -- | Greater than or equals.
+    -- | Greater than or equals.
 
-    | GEExpr  NumExpr  NumExpr
+  | GEExpr  NumExpr  NumExpr
 
-      -- | Less than.
+    -- | Less than.
 
-    | LTExpr  NumExpr  NumExpr
+  | LTExpr  NumExpr  NumExpr
 
-      -- | Less than or equals.
+    -- | Less than or equals.
 
-    | LEExpr  NumExpr  NumExpr
-    | AndExpr BoolExpr BoolExpr
-    | OrExpr  BoolExpr BoolExpr
+  | LEExpr  NumExpr  NumExpr
+  | AndExpr BoolExpr BoolExpr
+  | OrExpr  BoolExpr BoolExpr
 
-      -- | Implication.
+    -- | Implication.
 
-    | ImpExpr BoolExpr BoolExpr
+  | ImpExpr BoolExpr BoolExpr
 
-      -- | Equivalence.
+    -- | Equivalence.
 
-    | EqvExpr BoolExpr BoolExpr
-    | NotExpr BoolExpr
-    | InSetExpr SetElemExpr SetExpr
+  | EqvExpr BoolExpr BoolExpr
+  | NotExpr BoolExpr
+  | InSetExpr SetElemExpr SetExpr
 
-      -- | An expression indicating that a particular data node represents a
-      -- constant integer value.
+    -- | An expression indicating that a particular data node represents a
+    -- constant integer value.
 
-    | DataNodeIsAnIntConstantExpr NodeExpr
+  | DataNodeIsAnIntConstantExpr NodeExpr
 
-      -- | An expression indicating that a particular data node represents an
-      -- intermediate data value, meaning that its value cannot be reused by
-      -- another pattern instance.
+    -- | An expression indicating that a particular data node represents an
+    -- intermediate data value, meaning that its value cannot be reused by
+    -- another pattern instance.
 
-    | DataNodeIsIntermediateExpr NodeExpr
+  | DataNodeIsIntermediateExpr NodeExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
 -- the left-hand side and the second argument is always the right-hand side.
 
-data NumExpr
-    = PlusExpr  NumExpr NumExpr
-    | MinusExpr NumExpr NumExpr
+data NumExpr =
+    PlusExpr  NumExpr NumExpr
+  | MinusExpr NumExpr NumExpr
 
-      -- | Converts an integer value to a numerical expression.
+    -- | Converts an integer value to a numerical expression.
 
-    | Int2NumExpr IntExpr
+  | Int2NumExpr IntExpr
 
-      -- | Converts a Boolean value to a numerical expression.
+    -- | Converts a Boolean value to a numerical expression.
 
-    | Bool2NumExpr BoolExpr
+  | Bool2NumExpr BoolExpr
 
-      -- | Converts a node to a numerical expression.
+    -- | Converts a node to a numerical expression.
 
-    | Node2NumExpr NodeExpr
+  | Node2NumExpr NodeExpr
 
-      -- | Converts a pattern instance to a numerical expression.
+    -- | Converts a pattern instance to a numerical expression.
 
-    | PatternInstance2NumExpr PatternInstanceExpr
+  | PatternInstance2NumExpr PatternInstanceExpr
 
-      -- | Converts an instruction to a numerical expression.
+    -- | Converts an instruction to a numerical expression.
 
-    | Instruction2NumExpr InstructionExpr
+  | Instruction2NumExpr InstructionExpr
 
-      -- | Converts a pattern to a numerical expression.
+    -- | Converts a pattern to a numerical expression.
 
-    | Pattern2NumExpr PatternExpr
+  | Pattern2NumExpr PatternExpr
 
-      -- | Converts a label to a numerical expression.
+    -- | Converts a label to a numerical expression.
 
-    | Label2NumExpr LabelExpr
+  | Label2NumExpr LabelExpr
 
-      -- | Converts a register to a numerical expression.
+    -- | Converts a register to a numerical expression.
 
-    | Register2NumExpr RegisterExpr
+  | Register2NumExpr RegisterExpr
 
-      -- | Represents the distance between a pattern instance and a label. The
-      -- distance starts from the end of the instruction represented by the
-      -- pattern and stops at the beginning of the first instruction within the
-      -- basic block represented by the label. The distance is negative if the
-      -- label appears before the pattern.
+    -- | Represents the distance between a pattern instance and a label. The
+    -- distance starts from the end of the instruction represented by the
+    -- pattern and stops at the beginning of the first instruction within the
+    -- basic block represented by the label. The distance is negative if the
+    -- label appears before the pattern.
 
-    | DistanceBetweenInstanceAndLabelExpr PatternInstanceExpr LabelExpr
+  | DistanceBetweenInstanceAndLabelExpr PatternInstanceExpr LabelExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Integer value expressions.
 
-data IntExpr
+data IntExpr =
 
-      -- | Introduces an integer value.
+    -- | Introduces an integer value.
 
-    = AnIntegerExpr Integer
+    AnIntegerExpr Integer
 
-      -- | Retrieves the value of a data node which represents an integer
-      -- constant. This expression *must* be used together with
-      -- 'DataNodeIsIntConstantConstraint'!
+    -- | Retrieves the value of a data node which represents an integer
+    -- constant. This expression *must* be used together with
+    -- 'DataNodeIsIntConstantConstraint'!
 
-    | IntConstValueOfDataNodeExpr NodeExpr
+  | IntConstValueOfDataNodeExpr NodeExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Node expressions.
 
-data NodeExpr
+data NodeExpr =
 
-      -- | Introduces a node ID.
+    -- | Introduces a node ID.
 
-    = ANodeIDExpr NodeID
+    ANodeIDExpr NodeID
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Instance expressions.
 
-data PatternInstanceExpr
+data PatternInstanceExpr =
 
-      -- | Introduces a pattern instance ID.
+    -- | Introduces a pattern instance ID.
 
-    = APatternInstanceIDExpr PatternInstanceID
+    APatternInstanceIDExpr PatternInstanceID
 
-      -- | Retrieves the pattern instance in which this expression appears.
+    -- | Retrieves the pattern instance in which this expression appears.
 
-    | ThisPatternInstanceExpr
+  | ThisPatternInstanceExpr
 
-      -- | Retrieves the pattern instance which covers a certain action node.
+    -- | Retrieves the pattern instance which covers a certain action node.
 
-    | CovererOfActionNodeExpr NodeExpr
+  | CovererOfActionNodeExpr NodeExpr
 
-      -- | Retrieves the pattern instance which defines a certain data node.
+    -- | Retrieves the pattern instance which defines a certain data node.
 
-    | DefinerOfDataNodeExpr NodeExpr
+  | DefinerOfDataNodeExpr NodeExpr
 
-      -- | Retrieves the pattern instance which defines a certain state node.
+    -- | Retrieves the pattern instance which defines a certain state node.
 
-    | DefinerOfStateNodeExpr NodeExpr
+  | DefinerOfStateNodeExpr NodeExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Instruction expressions.
 
-data InstructionExpr
+data InstructionExpr =
 
-      -- | Introduces an instruction ID.
+    -- | Introduces an instruction ID.
 
-    = AnInstructionIDExpr InstructionID
+    AnInstructionIDExpr InstructionID
 
-      -- | Retrieves the instruction to which a pattern belongs.
+    -- | Retrieves the instruction to which a pattern belongs.
 
-    | InstructionOfPatternExpr PatternExpr
+  | InstructionOfPatternExpr PatternExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Pattern expressions.
 
-data PatternExpr
+data PatternExpr =
 
-     -- | Introduces a pattern ID.
+   -- | Introduces a pattern ID.
 
-    = APatternIDExpr PatternID
+    APatternIDExpr PatternID
 
-      -- | Retrieves the pattern to which a pattern instance is derived from.
+    -- | Retrieves the pattern to which a pattern instance is derived from.
 
-    | PatternOfPatternInstanceExpr PatternInstanceExpr
+  | PatternOfPatternInstanceExpr PatternInstanceExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Label expressions.
 
-data LabelExpr
+data LabelExpr =
 
-      -- | Retrieves the of the label to which a pattern instance has been
-      -- allocated.
+    -- | Retrieves the of the label to which a pattern instance has been
+    -- allocated.
 
-    = LabelAllocatedToPatternInstanceExpr PatternInstanceExpr
+    LabelAllocatedToPatternInstanceExpr PatternInstanceExpr
 
-      -- | Retrieves the label associated with a label node.
+    -- | Retrieves the label associated with a label node.
 
-    | LabelOfLabelNodeExpr NodeExpr
+  | LabelOfLabelNodeExpr NodeExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Register expressions.
 
-data RegisterExpr
+data RegisterExpr =
 
-      -- | Introduces a register ID.
+    -- | Introduces a register ID.
 
-    = ARegisterIDExpr RegisterID
+    ARegisterIDExpr RegisterID
 
-      -- | Retrieves the of the register to which a data node has been
-      -- allocated.
+    -- | Retrieves the of the register to which a data node has been allocated.
 
-    | RegisterAllocatedToDataNodeExpr NodeExpr
+  | RegisterAllocatedToDataNodeExpr NodeExpr
 
-    deriving (Show)
+  deriving (Show)
 
 -- | Set construction expressions.
 
-data SetExpr
+data SetExpr =
 
-    = UnionSetExpr SetExpr SetExpr
-    | IntersectSetExpr SetExpr SetExpr
+    UnionSetExpr SetExpr SetExpr
+  | IntersectSetExpr SetExpr SetExpr
 
-      -- | @A@ `diff` @B@
+    -- | @A@ `diff` @B@
 
-    | DiffSetExpr
+  | DiffSetExpr
 
-          -- | Set @A@.
+      -- | Set @A@.
 
-          SetExpr
+      SetExpr
 
-          -- | Set @B@.
+      -- | Set @B@.
 
-          SetExpr
+      SetExpr
 
-      -- | Retrieves the dominator set of a label.
+    -- | Retrieves the dominator set of a label.
 
-    | DomSetOfLabelExpr LabelExpr
+  | DomSetOfLabelExpr LabelExpr
 
-      -- | Retrieves a register class (which is expressed as a set of individual
-      -- registers belonging to that class).
+    -- | Retrieves a register class (which is expressed as a set of individual
+    -- registers belonging to that class).
 
-    | RegisterClassExpr [RegisterExpr]
+  | RegisterClassExpr [RegisterExpr]
 
-    deriving (Show)
-
-
+  deriving (Show)
 
 -- | Set element expressions.
 
-data SetElemExpr
+data SetElemExpr =
 
-      -- | Converts a label to a set element expression.
+    -- | Converts a label to a set element expression.
 
-    = Label2SetElemExpr LabelExpr
+    Label2SetElemExpr LabelExpr
 
-      -- | Converts a register to a set element expression.
+    -- | Converts a register to a set element expression.
 
-    | Register2SetElemExpr RegisterExpr
+  | Register2SetElemExpr RegisterExpr
 
-    deriving (Show)
+  deriving (Show)

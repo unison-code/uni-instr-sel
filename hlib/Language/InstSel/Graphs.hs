@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Graphs (
-  module Language.InstSel.Graphs.Base
-) where
+module Language.InstSel.Graphs
+  (module Language.InstSel.Graphs.Base)
+where
 
 import Language.InstSel.Graphs.Base

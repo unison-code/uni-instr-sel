@@ -16,8 +16,13 @@ module Language.InstSel.OpTypes.Base where
 
 import Language.InstSel.PrettyPrint
 import Language.InstSel.SExpressions
-import Language.InstSel.Utils (Natural)
-import Prelude hiding (GT, LT)
+import Language.InstSel.Utils
+  (Natural)
+import Prelude
+  hiding
+  ( GT
+  , LT
+  )
 
 
 
@@ -27,171 +32,171 @@ import Prelude hiding (GT, LT)
 
 -- | Computational operations.
 
-data CompOp
+data CompOp =
 
     -- | An integer operation where the sign does not matter.
 
-    = IntOp CompOpType
+    IntOp CompOpType
 
     -- | An unsigned integer operation.
 
-    | UIntOp CompOpType
+  | UIntOp CompOpType
 
     -- | A signed integer operation.
 
-    | SIntOp CompOpType
+  | SIntOp CompOpType
 
     -- | A fixed-point operation.
 
-    | FixpointOp CompOpType
+  | FixpointOp CompOpType
 
     -- | A floating-point operation where the ordering does not matter.
 
-    | FloatOp CompOpType
+  | FloatOp CompOpType
 
-      -- | An ordered floating-point operation.
+    -- | An ordered floating-point operation.
 
-    | OFloatOp CompOpType
+  | OFloatOp CompOpType
 
-      -- | An unordered floating-point operation.
+    -- | An unordered floating-point operation.
 
-    | UFloatOp CompOpType
+  | UFloatOp CompOpType
 
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 -- | Computational operation types.
 
-data CompOpType
+data CompOpType =
 
-      -- | Addition. Commutative.
+    -- | Addition. Commutative.
 
-    = Add
+    Add
 
-      -- | Saturated addition. Commutative. Typically only used with fixpoint.
+    -- | Saturated addition. Commutative. Typically only used with fixpoint.
 
-    | SatAdd
+  | SatAdd
 
-      -- | Subtraction.
+    -- | Subtraction.
 
-    | Sub
+  | Sub
 
-      -- | Saturated subtraction. Typically only used with fixpoint.
+    -- | Saturated subtraction. Typically only used with fixpoint.
 
-    | SatSub
+  | SatSub
 
-      -- | Multiplication. Commutative.
+    -- | Multiplication. Commutative.
 
-    | Mul
+  | Mul
 
-      -- | Division.
+    -- | Division.
 
-    | Div
+  | Div
 
-      -- | Remainder.
+    -- | Remainder.
 
-    | Rem
+  | Rem
 
-      -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
-      -- by @y@, then this operation represents @x < y@.
+    -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted
+    -- by @y@, then this operation represents @x < y@.
 
-    | Shl
+  | Shl
 
-      -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
-      -- denoted by @y@, then this operation represents @x > y@.
+    -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
+    -- denoted by @y@, then this operation represents @x > y@.
 
-    | LShr
+  | LShr
 
-      -- | Bitwise arithmetic right shift (with sign extension). If LHS is
-      -- denoted by @x@, and RHS is denoted by @y@, then this operation
-      -- represents @x > y@.
+    -- | Bitwise arithmetic right shift (with sign extension). If LHS is
+    -- denoted by @x@, and RHS is denoted by @y@, then this operation
+    -- represents @x > y@.
 
-    | AShr
+  | AShr
 
-      -- | Bitwise AND (@\&@). Commutative.
+    -- | Bitwise AND (@\&@). Commutative.
 
-    | And
+  | And
 
-      -- | Bitwise OR (@|@). Commutative.
+    -- | Bitwise OR (@|@). Commutative.
 
-    | Or
+  | Or
 
-      -- | Bitwise XOR (@^@). Commutative.
+    -- | Bitwise XOR (@^@). Commutative.
 
-    | XOr
+  | XOr
 
-      -- | Bit-wise NOT (@|@).
+    -- | Bit-wise NOT (@|@).
 
-    | Not
+  | Not
 
-      -- | Equality comparison (@==@). Commutative.
+    -- | Equality comparison (@==@). Commutative.
 
-    | Eq
+  | Eq
 
-      -- | Inequality comparison (@!=@). Commutative.
+    -- | Inequality comparison (@!=@). Commutative.
 
-    | NEq
+  | NEq
 
-      -- | Greater-than comparison (@>@). If LHS is denoted by @x@, and RHS is
-      -- denoted by @y@, then this operation represents @x > y@.
+    -- | Greater-than comparison (@>@). If LHS is denoted by @x@, and RHS is
+    -- denoted by @y@, then this operation represents @x > y@.
 
-    | GT
+  | GT
 
-      -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@,
-      -- and RHS is denoted by @y@, then this operation represents @x >= y@.
+    -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@,
+    -- and RHS is denoted by @y@, then this operation represents @x >= y@.
 
-    | GE
+  | GE
 
-      -- | Less-than comparison (@<@). If LHS is denoted by @x@, and RHS is
-      -- denoted by @y@, then this operation represents @x < y@.
+    -- | Less-than comparison (@<@). If LHS is denoted by @x@, and RHS is
+    -- denoted by @y@, then this operation represents @x < y@.
 
-    | LT
+  | LT
 
-      -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and
-      -- RHS is denoted by @y@, then this operation represents @x <= y@.
+    -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and
+    -- RHS is denoted by @y@, then this operation represents @x <= y@.
 
-    | LE
+  | LE
 
-      -- | Zero extension.
+    -- | Zero extension.
 
-    | ZExt
+  | ZExt
 
-      -- | Sign extension.
+    -- | Sign extension.
 
-    | SExt
+  | SExt
 
-      -- | Truncation.
+    -- | Truncation.
 
-    | Trunc
+  | Trunc
 
-      -- | Square root function.
+    -- | Square root function.
 
-    | Sqrt
+  | Sqrt
 
-      -- | Checks if both floating point values are ordered.
+    -- | Checks if both floating point values are ordered.
 
-    | Ordered
+  | Ordered
 
-      -- | Checks if either floating point value is unordered.
+    -- | Checks if either floating point value is unordered.
 
-    | Unordered
+  | Unordered
 
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
-data ControlOp
+data ControlOp =
 
     -- | Conditional branch. Branching is done if the input value is not zero.
 
-    = CondBranch
+    CondBranch
 
     -- | Unconditional branch.
 
-    | UncondBranch
+  | UncondBranch
 
     -- | Return.
 
-    | Ret
+  | Ret
 
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 
 

@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.SExpressions (
-  module Language.InstSel.SExpressions.Base
-) where
+module Language.InstSel.SExpressions
+  (module Language.InstSel.SExpressions.Base)
+where
 
 import Language.InstSel.SExpressions.Base

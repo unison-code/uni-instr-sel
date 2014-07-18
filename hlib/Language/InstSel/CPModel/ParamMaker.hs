@@ -20,9 +20,10 @@ where
 
 import Language.InstSel.Constraints
 import Language.InstSel.CPModel
-  hiding ( patAssIDMaps
-         , patAUDDC
-         )
+  hiding
+  ( patAssIDMaps
+  , patAUDDC
+  )
 import Language.InstSel.Graphs
 import Language.InstSel.Graphs.VFTwo
 import Language.InstSel.OpStructures
@@ -43,9 +44,7 @@ import Data.Maybe
 -- to the constraint model. This will also perform pattern matching of all
 -- patterns over the function graph.
 
-mkParams :: Function
-            -> TargetMachine
-            -> CPModelParams
+mkParams :: Function -> TargetMachine -> CPModelParams
 mkParams f m =
   CPModelParams
   (mkFunctionGraphData f)
@@ -75,35 +74,39 @@ mkMachineData m =
   (tmID m)
   (map fst (tmRegisters m))
 
-mkPatternInstanceData :: Function
-                         -> [Instruction]
-                         -> [PatternInstanceData]
+mkPatternInstanceData ::
+     Function
+  -> [Instruction]
+  -> [PatternInstanceData]
 mkPatternInstanceData f is =
   fst $ foldr (processInstruction f) ([], 0) is
 
-processInstruction :: Function
-                      -> Instruction
-                      -> ([PatternInstanceData], PatternInstanceID)
-                      -> ([PatternInstanceData], PatternInstanceID)
+processInstruction ::
+     Function
+  -> Instruction
+  -> ([PatternInstanceData], PatternInstanceID)
+  -> ([PatternInstanceData], PatternInstanceID)
 processInstruction f i t =
   foldr (processInstPattern f i) t $ instPatterns i
 
-processInstPattern :: Function
-                      -> Instruction
-                      -> InstPattern
-                      -> ([PatternInstanceData], PatternInstanceID)
-                      -> ([PatternInstanceData], PatternInstanceID)
+processInstPattern ::
+     Function
+  -> Instruction
+  -> InstPattern
+  -> ([PatternInstanceData], PatternInstanceID)
+  -> ([PatternInstanceData], PatternInstanceID)
 processInstPattern f i p t =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
       ms = map convertMatchsetN2ID $ match fg pg
   in foldr (processMatchset i p) t ms
 
-processMatchset :: Instruction
-                   -> InstPattern
-                   -> Matchset NodeID
-                   -> ([PatternInstanceData], PatternInstanceID)
-                   -> ([PatternInstanceData], PatternInstanceID)
+processMatchset ::
+     Instruction
+  -> InstPattern
+  -> Matchset NodeID
+  -> ([PatternInstanceData], PatternInstanceID)
+  -> ([PatternInstanceData], PatternInstanceID)
 processMatchset i p m (pids, next_piid) =
   let g = osGraph $ patOS p
       ns = allNodes g
@@ -143,8 +146,9 @@ processMatchset i p m (pids, next_piid) =
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
 
-computeLabelDoms :: Graph              -- ^ The CFG.
-                    -> [Domset NodeID] -- ^ Dominator sets.
+computeLabelDoms ::
+     Graph           -- ^ The CFG.
+  -> [Domset NodeID] -- ^ Dominator sets.
 computeLabelDoms cfg =
   let root = fromJust $ rootInCFG cfg
       node_domsets = extractDomSet cfg root
@@ -156,9 +160,10 @@ computeLabelDoms cfg =
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
 -- to the corresponding function node IDs.
 
-mapPs2FsInConstraints :: Matchset NodeID
-                         -> [Constraint]
-                         -> [Constraint]
+mapPs2FsInConstraints ::
+     Matchset NodeID
+  -> [Constraint]
+  -> [Constraint]
 mapPs2FsInConstraints m cs =
   map (replaceFunc m) cs
   where replaceFunc m' (BoolExprConstraint e) =
@@ -227,9 +232,10 @@ replaceInNodeExpr :: Matchset NodeID -> NodeExpr -> NodeExpr
 replaceInNodeExpr m (ANodeIDExpr i) =
   ANodeIDExpr $ fromJust $ mapP2F m i
 
-replaceInPatternInstanceExpr :: Matchset NodeID
-                                -> PatternInstanceExpr
-                                -> PatternInstanceExpr
+replaceInPatternInstanceExpr ::
+     Matchset NodeID
+  -> PatternInstanceExpr
+  -> PatternInstanceExpr
 replaceInPatternInstanceExpr _ (APatternInstanceIDExpr i) =
   APatternInstanceIDExpr i
 replaceInPatternInstanceExpr m (CovererOfActionNodeExpr e) =
@@ -240,9 +246,10 @@ replaceInPatternInstanceExpr m (DefinerOfStateNodeExpr e) =
   DefinerOfStateNodeExpr (replaceInNodeExpr m e)
 replaceInPatternInstanceExpr _ ThisPatternInstanceExpr = ThisPatternInstanceExpr
 
-replaceInInstructionExpr :: Matchset NodeID
-                            -> InstructionExpr
-                            -> InstructionExpr
+replaceInInstructionExpr ::
+     Matchset NodeID
+  -> InstructionExpr
+  -> InstructionExpr
 replaceInInstructionExpr _ (AnInstructionIDExpr i) = AnInstructionIDExpr i
 replaceInInstructionExpr m (InstructionOfPatternExpr e) =
   InstructionOfPatternExpr (replaceInPatternExpr m e)

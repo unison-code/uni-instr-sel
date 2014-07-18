@@ -148,136 +148,126 @@ type IntGraph = I.Gr NodeLabel EdgeLabel
 
 -- | The outer-most data type which contains the graph itself.
 
-newtype Graph
-    = Graph { intGraph :: IntGraph }
-    deriving (Show)
+newtype Graph =
+    Graph { intGraph :: IntGraph }
+  deriving (Show)
 
 -- | Represents a distinct node.
 
-newtype Node
-    = Node (I.LNode NodeLabel)
-    deriving (Show, Eq)
+newtype Node =
+    Node (I.LNode NodeLabel)
+  deriving (Show, Eq)
 
 -- | Node label, consisting of an ID that can be shared by multiple nodes (thus
 -- representing that they are actually the same node) and node information which
 -- denotes the type of node and other auxiliary information.
 
-data NodeLabel
-    = NodeLabel
+data NodeLabel =
+    NodeLabel
 
-          -- | Node identifier. Most often this is equal to the 'Node'
-          -- identifier used by FGL, but it does not need to be.
+      -- | Node identifier. Most often this is equal to the 'Node' identifier
+      -- used by FGL, but it does not need to be.
 
-          NodeID
+      NodeID
 
-          -- | Type of node.
+      -- | Type of node.
 
-          NodeType
+      NodeType
 
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 -- | The node type information.
 
-data NodeType
-    = ComputationNode { compOp :: O.CompOp }
-    | ControlNode { contOp :: O.ControlOp }
+data NodeType =
+    ComputationNode { compOp :: O.CompOp }
+  | ControlNode { contOp :: O.ControlOp }
 
-      -- | Temporary and constant nodes (appearing in IR and pattern code), as
-      -- well as register and immediate nodes (appearing only in pattern code),
-      -- are all represented as data nodes. What distinguishes one from another
-      -- are the constraints applied to it.
+    -- | Temporary and constant nodes (appearing in IR and pattern code), as
+    -- well as register and immediate nodes (appearing only in pattern code),
+    -- are all represented as data nodes. What distinguishes one from another
+    -- are the constraints applied to it.
 
-    | DataNode {
+  | DataNode
+    { dataType :: D.DataType
 
-          dataType :: D.DataType
+      -- | If the data node represents a particular temporary, variable or
+      -- constant which is specified in the source code, then the name of that
+      -- entity can be given here as a string. This will only be used for
+      -- debugging and pretty-printing purposes.
 
-          -- | If the data node represents a particular temporary, variable or
-          -- constant which is specified in the source code, then the name of
-          -- that entity can be given here as a string. This will only be used
-          -- for debugging and pretty-printing purposes.
+    , dataOrigin :: Maybe String
 
-        , dataOrigin :: Maybe String
+    }
 
-      }
+  | LabelNode { bbLabel :: BBLabelID }
+  | PhiNode
+  | StateNode
+  | CopyNode
 
-    | LabelNode { bbLabel :: BBLabelID }
-    | PhiNode
-    | StateNode
-    | CopyNode
+    -- | A node which matches any other node, meaning that @n == m@ is always
+    -- @True@ if either @n@ or @m@ is of type 'NullNode'. Only to be used within
+    -- patterns (like in the generic phi patterns).
 
-      -- | A node which matches any other node, meaning that @n == m@ is always
-      -- @True@ if either @n@ or @m@ is of type 'NullNode'. Only to be used
-      -- within patterns (like in the generic phi patterns).
+  | NullNode
 
-    | NullNode
-
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 -- | Represents a distinct edge.
 
-newtype Edge
-    = Edge (I.LEdge EdgeLabel)
-    deriving (Show, Eq)
+newtype Edge =
+    Edge (I.LEdge EdgeLabel)
+  deriving (Show, Eq)
 
 -- | Data type for describing how an edge relates to the two nodes. Since edges
 -- are ordered, there will be an edge number for each node - one for indicating
 -- which output edge it is of the source node, and another for indicating which
 -- input edge it is for the destination node.
 
-data EdgeLabel
-    = EdgeLabel
-
-          -- | Source edge number.
-
-          EdgeNr
-
-          -- | Destination edge number.
-
-          EdgeNr
-
-    deriving (Show, Eq)
+data EdgeLabel =
+    EdgeLabel
+    { srcNr :: EdgeNr
+    , dstNr :: EdgeNr
+    }
+  deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
 
-newtype EdgeNr
-    = EdgeNr Natural
-    deriving (Eq, Ord, Num, Enum)
+newtype EdgeNr =
+    EdgeNr Natural
+  deriving (Eq, Ord, Num, Enum)
 
 instance Show EdgeNr where
   show (EdgeNr i) = show i
 
 -- | Represents a matchset, which is a list of mappings.
 
-newtype Matchset n
-    = Matchset [Mapping n]
-    deriving (Show)
+newtype Matchset n =
+    Matchset [Mapping n]
+  deriving (Show)
 
 -- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
 -- The first value is the entity in the function, and the second value is the
 -- entity in the pattern.
 
-newtype Mapping n
-    = Mapping (n, n)
-    deriving (Show, Eq)
+newtype Mapping n =
+    Mapping (n, n)
+  deriving (Show, Eq)
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
 
-data Domset t
-    = Domset {
+data Domset t =
+    Domset
+    { -- | The dominator entity.
 
-          -- | The dominator entity.
+      domNode :: t
 
-          domNode :: t
+      -- | The dominated entities.
 
-          -- | The dominated entities.
+    , domSet :: [t]
 
-        , domSet :: [t]
-
-      }
-    deriving (Show)
-
-
+    }
+  deriving (Show)
 
 
 
@@ -420,8 +410,8 @@ nextIntNodeID :: IntGraph -> I.Node
 nextIntNodeID g =
   let existing_nodes = I.nodes g
   in if length existing_nodes > 0
-        then 1 + maximum existing_nodes
-        else 0
+     then 1 + maximum existing_nodes
+     else 0
 
 -- | Gets the next node ID which does not already appear in the graph.
 
@@ -493,10 +483,11 @@ updateNodeID new_id n g =
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
 
-copyNodeLabel :: Node     -- ^ Node to copy label to.
-                 -> Node  -- ^ Node to copy label from.
-                 -> Graph
-                 -> Graph
+copyNodeLabel ::
+     Node  -- ^ Node to copy label to.
+  -> Node  -- ^ Node to copy label from.
+  -> Graph
+  -> Graph
 copyNodeLabel to_n from_n g
   | (intNodeID from_n) == (intNodeID to_n) = g
   | otherwise = updateNodeLabel (nodeLabel from_n) to_n g
@@ -505,10 +496,11 @@ copyNodeLabel to_n from_n g
 -- removes the merged node. If the two nodes are actually the same node, nothing
 -- happens. Any edges already involving the two nodes will be removed.
 
-mergeNodes :: Node     -- ^ Node to merge with (will be kept).
-              -> Node  -- ^ Node to merge with (will be discarded).
-              -> Graph
-              -> Graph
+mergeNodes ::
+     Node  -- ^ Node to merge with (will be kept).
+  -> Node  -- ^ Node to merge with (will be discarded).
+  -> Graph
+  -> Graph
 mergeNodes n_to_keep n_to_discard g
   | (intNodeID n_to_keep) == (intNodeID n_to_discard) = g
   | otherwise = let edges_to_ignore = edges g n_to_discard n_to_keep ++
@@ -519,70 +511,77 @@ mergeNodes n_to_keep n_to_discard g
 
 -- | Redirects all edges involving one node to another node.
 
-redirectEdges :: Node        -- ^ Node to redirect edges to.
-                 -> Node     -- ^ Node to redirect edges from.
-                 -> Graph
-                 -> Graph
+redirectEdges ::
+     Node  -- ^ Node to redirect edges to.
+  -> Node  -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
 redirectEdges to_n from_n g =
   redirectInEdges to_n from_n $ redirectOutEdges to_n from_n g
 
 -- | Redirects all inbound edges to one node to another node.
 
-redirectInEdges :: Node     -- ^ Node to redirect edges to.
-                   -> Node  -- ^ Node to redirect edges from.
-                   -> Graph
-                   -> Graph
+redirectInEdges ::
+     Node  -- ^ Node to redirect edges to.
+  -> Node  -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
 redirectInEdges to_n from_n g =
   foldr (updateEdgeTarget to_n) g (inEdges g from_n)
 
 -- | Updates the target of an edge.
 
-updateEdgeTarget :: Node     -- ^ New target.
-                    -> Edge  -- ^ The edge to update.
-                    -> Graph
-                    -> Graph
+updateEdgeTarget ::
+     Node  -- ^ New target.
+  -> Edge  -- ^ The edge to update.
+  -> Graph
+  -> Graph
 updateEdgeTarget new_target (Edge e@(source, _, EdgeLabel out_nr _)) (Graph g) =
   let new_target_id = intNodeID new_target
-      new_e = (source,
-               new_target_id,
-               EdgeLabel out_nr (nextInEdgeNr g new_target_id))
+      new_e = ( source
+              , new_target_id
+              , EdgeLabel out_nr (nextInEdgeNr g new_target_id)
+              )
   in Graph (I.insEdge new_e $ I.delLEdge e g)
 
 -- | Redirects the outbound edges from one node to another.
 
-redirectOutEdges :: Node     -- ^ Node to redirect edges to.
-                    -> Node  -- ^ Node to redirect edges from.
-                    -> Graph
-                    -> Graph
+redirectOutEdges ::
+     Node  -- ^ Node to redirect edges to.
+  -> Node  -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
 redirectOutEdges to_n from_n g =
   foldr (updateEdgeSource to_n) g (outEdges g from_n)
 
 -- | Updates the source of an edge.
 
-updateEdgeSource :: Node     -- ^ New source.
-                    -> Edge  -- ^ The edge to update.
-                    -> Graph
-                    -> Graph
+updateEdgeSource ::
+     Node  -- ^ New source.
+  -> Edge  -- ^ The edge to update.
+  -> Graph
+  -> Graph
 updateEdgeSource new_source (Edge e@(_, target, EdgeLabel _ in_nr)) (Graph g) =
   let new_source_id = intNodeID new_source
-      new_e = (new_source_id,
-               target,
-               EdgeLabel (nextOutEdgeNr g new_source_id) in_nr)
+      new_e = ( new_source_id
+              , target
+              , EdgeLabel (nextOutEdgeNr g new_source_id) in_nr
+              )
   in Graph (I.insEdge new_e $ I.delLEdge e g)
 
 nextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextInEdgeNr g int =
   let existing_numbers = map inEdgeNr $ map toEdge $ I.inn g int
   in if length existing_numbers > 0
-        then maximum existing_numbers + 1
-        else 0
+     then maximum existing_numbers + 1
+     else 0
 
 nextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
 nextOutEdgeNr g int =
   let existing_numbers = map outEdgeNr $ map toEdge $ I.out g int
   in if length existing_numbers > 0
-        then maximum existing_numbers + 1
-        else 0
+     then maximum existing_numbers + 1
+     else 0
 
 inEdgeNr :: Edge -> EdgeNr
 inEdgeNr (Edge (_, _, EdgeLabel _ nr)) = nr
@@ -592,9 +591,12 @@ outEdgeNr (Edge (_, _, EdgeLabel nr _)) = nr
 
 -- | Adds a new node to the graph.
 
-addNewNode :: NodeType -> Graph -> ( Graph -- ^ The new graph.
-                                   , Node  -- ^ The newly added node.
-                                   )
+addNewNode ::
+     NodeType
+  -> Graph
+  -> ( Graph -- ^ The new graph.
+     , Node  -- ^ The newly added node.
+     )
 addNewNode nt (Graph g) =
   let new_n = (nextIntNodeID g, NodeLabel (nextNodeID g) nt)
       new_g = Graph (I.insNode new_n g)
@@ -603,13 +605,14 @@ addNewNode nt (Graph g) =
 -- | Adds a new edge between two nodes to the graph. The edge numberings will be
 -- set accordingly.
 
-addNewEdge :: ( Node -- ^ Source node (from).
-              , Node -- ^ Destination node (to).
-              )
-              -> Graph
-              -> ( Graph -- ^ The new graph.
-                 , Edge  -- ^ The newly added edge.
-                 )
+addNewEdge ::
+     ( Node -- ^ Source node (from).
+     , Node -- ^ Destination node (to).
+     )
+  -> Graph
+  -> ( Graph -- ^ The new graph.
+     , Edge  -- ^ The newly added edge.
+     )
 addNewEdge (from_n, to_n) (Graph g) =
   let from_node_id = intNodeID from_n
       to_node_id = intNodeID to_n
@@ -623,15 +626,18 @@ addNewEdge (from_n, to_n) (Graph g) =
 -- will be split into two edges which will be connected to the new node. The
 -- edge numbers will be retained as appropriate.
 
-insertNewNodeAlongEdge :: NodeType
-                          -> Edge
-                          -> Graph
-                          -> ( Graph -- ^ The new graph.
-                             , Node  -- ^ The new node.
-                             )
-insertNewNodeAlongEdge nt
-                       e@(Edge (from_nid, to_nid, EdgeLabel out_e_nr in_e_nr))
-                       (Graph g0) =
+insertNewNodeAlongEdge ::
+     NodeType
+  -> Edge
+  -> Graph
+  -> ( Graph -- ^ The new graph.
+     , Node  -- ^ The new node.
+     )
+insertNewNodeAlongEdge
+  nt
+  e@(Edge (from_nid, to_nid, EdgeLabel out_e_nr in_e_nr))
+  (Graph g0)
+  =
   let ((Graph g1), new_n) = addNewNode nt (Graph g0)
       (Graph g2) = delEdge e (Graph g1)
       new_e1 = (from_nid, intNodeID new_n, EdgeLabel out_e_nr 0)
@@ -642,7 +648,7 @@ insertNewNodeAlongEdge nt
 
 -- | Updates the edge label of an already existing edge.
 
-updateEdgeLabel ::  EdgeLabel -> Edge -> Graph -> Graph
+updateEdgeLabel :: EdgeLabel -> Edge -> Graph -> Graph
 updateEdgeLabel new_label e@(Edge (src, dst, _)) g =
   let all_edges_but_e = filter (/= e) (allEdges g)
       new_e = Edge (src, dst, new_label)
@@ -655,8 +661,8 @@ lastAddedNode :: Graph -> Maybe Node
 lastAddedNode (Graph g) =
   let ns = I.nodes g
   in if not $ null ns
-        then intNodeID2Node g (maximum ns)
-        else Nothing
+     then intNodeID2Node g (maximum ns)
+     else Nothing
 
 -- | Gets the corresponding node from an internal node ID.
 
@@ -667,8 +673,8 @@ intNodeID2Node g nid = maybe Nothing (\l -> Just (Node (nid, l))) (I.lab g nid)
 -- of another node B if there is a directed edge from B to A.
 
 predecessors :: Graph -> Node -> [Node]
-predecessors (Graph g) n = map (fromJust . intNodeID2Node g)
-                               (I.pre g (intNodeID n))
+predecessors (Graph g) n =
+  map (fromJust . intNodeID2Node g) (I.pre g (intNodeID n))
 
 -- | Gets the successors (if any) of a given node. A node A is a successor of
 -- another node B if there is a directed edge from A to B.
@@ -699,10 +705,11 @@ outEdges (Graph g) n = map toEdge $ I.out g (intNodeID n)
 
 -- | Gets a particular edge or edges between two nodes.
 
-edges :: Graph
-        -> Node -- ^ The 'from' node.
-        -> Node -- ^ The 'to' node.
-        -> [Edge]
+edges ::
+     Graph
+  -> Node -- ^ The 'from' node.
+  -> Node -- ^ The 'to' node.
+  -> [Edge]
 edges g from_n to_n =
   let out_edges = map fromEdge $ outEdges g from_n
       from_id = intNodeID from_n
@@ -761,11 +768,12 @@ nodeIDs = removeDuplicates . map nodeID
 
 -- | Checks if a node matches another node.
 
-matchingNodes :: Graph         -- ^ The function graph.
-              -> Graph         -- ^ The pattern graph.
-              -> Matchset Node -- ^ Current matchset state.
-              -> Mapping Node  -- ^ Candidate mapping.
-              -> Bool
+matchingNodes ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingNodes fg pg st m =
      matchingNodeTypes (nodeType $ fNode m) (nodeType $ pNode m)
   && matchingEdges fg pg st m
@@ -793,11 +801,12 @@ matchingNodeTypes _ _ = False
 -- candidate mapping have matching node types (although one of the nodes can be
 -- a NullNode).
 
-matchingEdges :: Graph         -- ^ The function graph.
-              -> Graph         -- ^ The pattern graph.
-              -> Matchset Node -- ^ Current matchset state.
-              -> Mapping Node  -- ^ Candidate mapping.
-              -> Bool
+matchingEdges ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingEdges fg pg st m =
      matchingNumberOfInEdges fg pg st m
   && matchingNumberOfOutEdges fg pg st m
@@ -806,33 +815,35 @@ matchingEdges fg pg st m =
   && matchingOutEdgeOrderingOfPreds fg pg st m
   && matchingInEdgeOrderingOfSuccs fg pg st m
 
-matchingNumberOfInEdges :: Graph            -- ^ The function graph.
-                           -> Graph         -- ^ The pattern graph.
-                           -> Matchset Node -- ^ Current matchset state.
-                           -> Mapping Node  -- ^ Candidate mapping.
-                           -> Bool
+matchingNumberOfInEdges ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingNumberOfInEdges fg pg _ m =
   let fn = fNode m
       pn = pNode m
       num_fg_edges = length $ inEdges fg fn
       num_pg_edges = length $ inEdges pg pn
   in if checkNumberOfInEdges fg fn && checkNumberOfInEdges pg pn
-        then num_fg_edges == num_pg_edges
-        else True
+     then num_fg_edges == num_pg_edges
+     else True
 
-matchingNumberOfOutEdges :: Graph            -- ^ The function graph.
-                            -> Graph         -- ^ The pattern graph.
-                            -> Matchset Node -- ^ Current matchset state.
-                            -> Mapping Node  -- ^ Candidate mapping.
-                            -> Bool
+matchingNumberOfOutEdges ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingNumberOfOutEdges fg pg _ m =
   let fn = fNode m
       pn = pNode m
       num_fg_edges = length $ outEdges fg fn
       num_pg_edges = length $ outEdges pg pn
   in if checkNumberOfOutEdges fg fn && checkNumberOfOutEdges pg pn
-        then num_fg_edges == num_pg_edges
-        else True
+     then num_fg_edges == num_pg_edges
+     else True
 
 checkNumberOfInEdges :: Graph -> Node -> Bool
 checkNumberOfInEdges _ n
@@ -861,11 +872,12 @@ checkOrderingOfOutEdges _ n
 -- | If the pattern node requires an ordering on its inbound edges, check that
 -- it is the same as that of the mapped function node.
 
-matchingOrderingOfInEdges :: Graph            -- ^ The function graph.
-                             -> Graph         -- ^ The pattern graph.
-                             -> Matchset Node -- ^ Current matchset state.
-                             -> Mapping Node  -- ^ Candidate mapping.
-                             -> Bool
+matchingOrderingOfInEdges ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingOrderingOfInEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
@@ -874,16 +886,17 @@ matchingOrderingOfInEdges fg pg st m =
       es = zip (sortEdgesByInNumbers (concatMap (flip (edges pg) pn) preds_pn))
                (sortEdgesByInNumbers (concatMap (flip (edges fg) fn) preds_fn))
   in if checkOrderingOfInEdges pg pn
-        then all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
-        else True
+     then all (\(e, e') -> (inEdgeNr e) == (inEdgeNr e')) es
+     else True
 
 -- | Same as matchingOrderingOfInEdges but for outbound edges.
 
-matchingOrderingOfOutEdges :: Graph            -- ^ The function graph.
-                              -> Graph         -- ^ The pattern graph.
-                              -> Matchset Node -- ^ Current matchset state.
-                              -> Mapping Node  -- ^ Candidate mapping.
-                              -> Bool
+matchingOrderingOfOutEdges ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingOrderingOfOutEdges fg pg st m =
   let fn = fNode m
       pn = pNode m
@@ -892,18 +905,19 @@ matchingOrderingOfOutEdges fg pg st m =
       es = zip (sortEdgesByOutNumbers (concatMap (edges pg pn) succs_pn))
                (sortEdgesByOutNumbers (concatMap (edges fg fn) succs_fn))
   in if checkOrderingOfOutEdges pg pn
-        then all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
-        else True
+     then all (\(e, e') -> (outEdgeNr e) == (outEdgeNr e')) es
+     else True
 
 -- | Checks for the pattern node's predecessors which have already been mapped
 -- and require an ordering on the outbound edges that the ordering is the same
 -- as that in the function graph.
 
-matchingOutEdgeOrderingOfPreds :: Graph            -- ^ The function graph.
-                                  -> Graph         -- ^ The pattern graph.
-                                  -> Matchset Node -- ^ Current matchset state.
-                                  -> Mapping Node  -- ^ Candidate mapping.
-                                  -> Bool
+matchingOutEdgeOrderingOfPreds ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingOutEdgeOrderingOfPreds fg pg st m =
   let fn = fNode m
       pn = pNode m
@@ -919,11 +933,12 @@ matchingOutEdgeOrderingOfPreds fg pg st m =
 -- | Same as matchingOutEdgeOrderingOfPreds but for successors and their inbound
 -- edges.
 
-matchingInEdgeOrderingOfSuccs :: Graph            -- ^ The function graph.
-                                 -> Graph         -- ^ The pattern graph.
-                                 -> Matchset Node -- ^ Current matchset state.
-                                 -> Mapping Node  -- ^ Candidate mapping.
-                                 -> Bool
+matchingInEdgeOrderingOfSuccs ::
+     Graph         -- ^ The function graph.
+  -> Graph         -- ^ The pattern graph.
+  -> Matchset Node -- ^ Current matchset state.
+  -> Mapping Node  -- ^ Candidate mapping.
+  -> Bool
 matchingInEdgeOrderingOfSuccs fg pg st m =
   let fn = fNode m
       pn = pNode m
@@ -938,47 +953,51 @@ matchingInEdgeOrderingOfSuccs fg pg st m =
 -- pattern nodes for which there exists a mapping. The order of the list will be
 -- conserved.
 
-mapFs2Ps :: (Eq n)
-            => Matchset n -- ^ The matchset.
-            -> [n]        -- ^ List of function nodes.
-            -> [n]        -- ^ List of corresponding pattern nodes.
+mapFs2Ps ::
+  (Eq n)
+  => Matchset n -- ^ The matchset.
+  -> [n]        -- ^ List of function nodes.
+  -> [n]        -- ^ List of corresponding pattern nodes.
 mapFs2Ps m fns = mapMaybe (mapF2P m) fns
 
 -- | From a matchset and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping. The order of the list will
 -- be conserved.
 
-mapPs2Fs :: (Eq n)
-            => Matchset n -- ^ The matchset.
-            -> [n]        -- ^ List of pattern nodes.
-            -> [n]        -- ^ List of corresponding function nodes.
+mapPs2Fs ::
+  (Eq n)
+  => Matchset n -- ^ The matchset.
+  -> [n]        -- ^ List of pattern nodes.
+  -> [n]        -- ^ List of corresponding function nodes.
 mapPs2Fs m pns = mapMaybe (mapP2F m) pns
 
 -- | From a matchset and a function node, get the corresponding pattern node if
 -- there exists a such a mapping.
 
-mapF2P :: (Eq n)
-          => Matchset n -- ^ The matchset.
-          -> n          -- ^ Function node.
-          -> Maybe n    -- ^ Corresponding pattern node.
+mapF2P ::
+  (Eq n)
+  => Matchset n -- ^ The matchset.
+  -> n          -- ^ Function node.
+  -> Maybe n    -- ^ Corresponding pattern node.
 mapF2P (Matchset m) fn =
   let found = [ pn | (fn', pn) <- map fromMapping m, fn' == fn ]
   in if length found > 0
-        then Just $ head found
-        else Nothing
+     then Just $ head found
+     else Nothing
 
 -- | From a matchset and a pattern node, get the corresponding function node if
 -- there exists a such a mapping.
 
-mapP2F :: (Eq n)
-          => Matchset n -- ^ The matchset.
-          -> n          -- ^ Pattern node.
-          -> Maybe n    -- ^ Corresponding function node.
+mapP2F ::
+  (Eq n)
+  => Matchset n -- ^ The matchset.
+  -> n          -- ^ Pattern node.
+  -> Maybe n    -- ^ Corresponding function node.
 mapP2F (Matchset m) pn =
   let found = [ fn | (fn, pn') <- map fromMapping m, pn' == pn ]
   in if length found > 0
-        then Just $ head found
-        else Nothing
+     then Just $ head found
+     else Nothing
 
 -- | Adds a mapping to an existing matchset.
 
@@ -992,9 +1011,10 @@ isInMatchset (Matchset ms) m = m `elem` ms
 
 -- | Gets a list of dominator sets, given a root node.
 
-extractDomSet :: Graph
-                 -> Node      -- ^ The root node.
-                 -> [Domset Node]
+extractDomSet ::
+     Graph
+  -> Node          -- ^ The root node.
+  -> [Domset Node]
 extractDomSet (Graph g) n =
   let dom_sets = I.dom g (intNodeID n)
       f (n1, ns2) = Domset (fromJust $ intNodeID2Node g n1)
@@ -1003,9 +1023,10 @@ extractDomSet (Graph g) n =
 
 -- | Gets a list of immediate-dominator mappings, given a root node.
 
-extractIDomSet :: Graph
-                  -> Node    -- ^ The root node.
-                  -> [Domset Node]
+extractIDomSet ::
+  Graph
+  -> Node          -- ^ The root node.
+  -> [Domset Node]
 extractIDomSet (Graph g) n =
   let idom_maps = I.iDom g (intNodeID n)
       f (n1, n2) = Domset (fromJust $ intNodeID2Node g n1)
@@ -1035,8 +1056,8 @@ delNodeKeepEdges :: Graph -> Node -> Graph
 delNodeKeepEdges g n =
   let preds = predecessors g n
   in if length preds > 0
-        then mergeNodes (head preds) n g
-        else delNode n g
+     then mergeNodes (head preds) n g
+     else delNode n g
 
 -- | Gets the root from a control-flow graph. If there is no root, @Nothing@ is
 -- returned. If there is more than one root, an error is produced.
@@ -1045,10 +1066,10 @@ rootInCFG :: Graph -> Maybe Node
 rootInCFG g =
   let roots = filter (\n -> length (predecessors g n) == 0) (allNodes g)
   in if length roots > 0
-        then if length roots == 1
-                then Just $ head roots
-                else error "More than one root in CFG"
-        else Nothing
+     then if length roots == 1
+          then Just $ head roots
+          else error "More than one root in CFG"
+     else Nothing
 
 -- | Checks if a given node has any predecessors.
 

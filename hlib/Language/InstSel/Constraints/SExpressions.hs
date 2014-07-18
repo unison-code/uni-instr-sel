@@ -38,11 +38,16 @@ import Control.Applicative
   ( (<|>)
   , pure
   )
-import Control.Monad (mzero)
-import Data.AttoLisp hiding (fromLispExpr)
-import Data.Attoparsec.ByteString (parseOnly)
-import Data.Attoparsec.Number (Number (..))
-import qualified Data.ByteString.Char8 as BS (pack)
+import Control.Monad
+  (mzero)
+import Data.AttoLisp
+  hiding (fromLispExpr)
+import Data.Attoparsec.ByteString
+  (parseOnly)
+import Data.Attoparsec.Number
+  (Number (..))
+import qualified Data.ByteString.Char8 as BS
+  (pack)
 
 
 
@@ -258,19 +263,19 @@ instance ToLisp RegisterID where
 
 -- | Parses a lispian expression into a 'Constraint'.
 
-fromLispExpr :: String
-                -> Either String     -- ^ Contains the error message, if the
-                                     -- parsing failed.
-                          Constraint -- ^ Contains the constraint, if the
-                                     -- parsing was successful.
+fromLispExpr ::
+     String
+  -> Either String Constraint -- ^ The left field contains the error message
+                              -- (when parsing failed), and the right field
+                              -- contains the constraint (if parsing succeeded).
 fromLispExpr s =
   let lisp_result = parseOnly lisp (BS.pack s)
   in if isLeft lisp_result
-        then Left (fromLeft lisp_result)
-        else let expr_result = parseEither parseLisp (fromRight lisp_result)
-             in if isLeft expr_result
-                   then Left (fromLeft expr_result)
-                   else Right (BoolExprConstraint (fromRight expr_result))
+     then Left (fromLeft lisp_result)
+     else let expr_result = parseEither parseLisp (fromRight lisp_result)
+          in if isLeft expr_result
+             then Left (fromLeft expr_result)
+             else Right (BoolExprConstraint (fromRight expr_result))
 
 -- | Converts a 'Constraint' into a lispian expression.
 
