@@ -12,21 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Constraints.Base
-  ( BoolExpr (..)
-  , Constraint (..)
-  , PatternInstanceExpr (..)
-  , InstructionExpr (..)
-  , IntExpr (..)
-  , LabelExpr (..)
-  , NodeExpr (..)
-  , NumExpr (..)
-  , PatternExpr (..)
-  , RegisterExpr (..)
-  , SetElemExpr (..)
-  , SetExpr (..)
-  )
-where
+module Language.InstSel.Constraints.Base where
 
 import Language.InstSel.Graphs.IDs
 import Language.InstSel.Patterns.IDs
