@@ -29,6 +29,7 @@
 #===================
 
 BINARY   := inst-emitter
+SOURCES  := InstEmitter.hs
 HLIBPATH := ../hlib
 
 
@@ -66,7 +67,7 @@ all: $(BINARY)
 
 .PHONY: $(BINARY)
 $(BINARY):
-	$(GHC) $(GHCFLAGS) -o $@ InstEmitter.hs
+	$(GHC) $(GHCFLAGS) -o $@ $(SOURCES)
 
 .PHONY: clean
 clean:
