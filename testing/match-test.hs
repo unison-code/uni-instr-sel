@@ -28,15 +28,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Tests the implementation of the VF2 algorithm.
 -}
 
-import qualified Language.InstructionSelection.DataTypes as D
-import Language.InstructionSelection.Constraints
-import Language.InstructionSelection.CPModel.Json
-import Language.InstructionSelection.CPModel.ParamMaker
-import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.ProgramModules
-import Language.InstructionSelection.OpStructures
-import qualified Language.InstructionSelection.OpTypes as O
-import Language.InstructionSelection.TargetMachine.Targets.Test
+import qualified Language.InstSel.DataTypes as D
+import Language.InstSel.Constraints
+import Language.InstSel.CPModel.Json
+import Language.InstSel.CPModel.ParamMaker
+import Language.InstSel.Graphs
+import Language.InstSel.ProgramModules
+import Language.InstSel.OpStructures
+import qualified Language.InstSel.OpTypes as O
+import Language.InstSel.TargetMachine.Targets.Test
 
 main :: IO ()
 main =

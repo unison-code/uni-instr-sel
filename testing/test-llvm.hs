@@ -31,13 +31,13 @@ import Control.Monad.Error
 import Data.GraphViz hiding (parse)
 import Data.GraphViz.Commands.IO
 import Data.Maybe
-import Language.InstructionSelection.Graphs
-import Language.InstructionSelection.Graphs.GraphViz
-import Language.InstructionSelection.OpStructures
-import qualified Language.InstructionSelection.ProgramModules as PM
-import qualified Language.InstructionSelection.ProgramModules.LLVM as LLVMPro
-import qualified Language.InstructionSelection.PrettyPrint as MyPP
-import Language.InstructionSelection.SExpressions
+import Language.InstSel.Graphs
+import Language.InstSel.Graphs.GraphViz
+import Language.InstSel.OpStructures
+import qualified Language.InstSel.ProgramModules as PM
+import qualified Language.InstSel.ProgramModules.LLVM as LLVMPro
+import qualified Language.InstSel.PrettyPrint as MyPP
+import Language.InstSel.SExpressions
 import LLVM.General
 import LLVM.General.AST
 import LLVM.General.Context

@@ -31,17 +31,17 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
-import Language.InstructionSelection.CPModel
-import Language.InstructionSelection.CPModel.Json
-import Language.InstructionSelection.CPModel.PostProcessor
-import Language.InstructionSelection.Graphs.IDs
+import Language.InstSel.CPModel
+import Language.InstSel.CPModel.Json
+import Language.InstSel.CPModel.PostProcessor
+import Language.InstSel.Graphs.IDs
   (NodeID)
-import Language.InstructionSelection.Patterns.IDs
+import Language.InstSel.Patterns.IDs
   (PatternInstanceID)
-import Language.InstructionSelection.TargetMachine.IDs
+import Language.InstSel.TargetMachine.IDs
   (BBLabelID)
-import Language.InstructionSelection.TargetMachine.Targets
-import Language.InstructionSelection.Utils
+import Language.InstSel.TargetMachine.Targets
+import Language.InstSel.Utils
   ( fromLeft
   , fromRight
   , isLeft
