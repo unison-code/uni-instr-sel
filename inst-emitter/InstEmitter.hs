@@ -46,13 +46,15 @@ import Language.InstructionSelection.Utils
   , fromRight
   , isLeft
   )
-import Control.Monad (when)
+import Control.Monad
+  (when)
 import Data.Maybe
   ( fromJust
   , isNothing
   )
 import System.Console.CmdArgs
-import System.Exit (exitFailure)
+import System.Exit
+  (exitFailure)
 
 
 
