@@ -47,13 +47,13 @@ mkParams :: Function -> TargetMachine -> CPModelParams
 mkParams f m =
   CPModelParams
   (mkFunctionGraphData f)
-  (mkPatternInstanceData f $ tmInstructions m)
+  (mkPatternInstanceData f (tmInstructions m))
   (mkMachineData m)
 
 mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
   let g = osGraph $ functionOS f
-      nodeIDsByType f' = nodeIDs $ filter f' $ allNodes g
+      nodeIDsByType f' = nodeIDs $ filter f' (allNodes g)
       cfg = extractCFG g
   in FunctionGraphData
      (nodeIDsByType isActionNode)
@@ -63,7 +63,7 @@ mkFunctionGraphData f =
      (nodeID $ fromJust $ rootInCFG cfg)
      ( map
        (\n -> BBLabelData (nodeID n) (bbLabel $ nodeType n))
-       (filter isLabelNode $ allNodes g)
+       (filter isLabelNode (allNodes g))
      )
      (osConstraints $ functionOS f)
 
@@ -86,7 +86,7 @@ processInstruction ::
   -> ([PatternInstanceData], PatternInstanceID)
   -> ([PatternInstanceData], PatternInstanceID)
 processInstruction f i t =
-  foldr (processInstPattern f i) t $ instPatterns i
+  foldr (processInstPattern f i) t (instPatterns i)
 
 processInstPattern ::
      Function
@@ -97,7 +97,7 @@ processInstPattern ::
 processInstPattern f i p t =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
-      ms = map convertMatchsetN2ID $ match fg pg
+      ms = map convertMatchsetN2ID (match fg pg)
   in foldr (processMatchset i p) t ms
 
 processMatchset ::
@@ -116,7 +116,7 @@ processMatchset i p m (pids, next_piid) =
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors g) d_ns
       d_use_ns = filter (hasAnySuccessors g) d_ns
-      d_use_by_phi_ns = filter (\n -> any isPhiNode $ successors g n) d_use_ns
+      d_use_by_phi_ns = filter (\n -> any isPhiNode (successors g n)) d_use_ns
       s_def_ns = filter (hasAnyPredecessors g) s_ns
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
@@ -125,19 +125,19 @@ processMatchset i p m (pids, next_piid) =
                 (instID i)
                 (patID p)
                 next_piid
-                (mapPs2Fs m $ nodeIDs a_ns)
-                (mapPs2Fs m $ nodeIDs d_def_ns)
-                (mapPs2Fs m $ nodeIDs d_use_ns)
-                (mapPs2Fs m $ nodeIDs d_use_by_phi_ns)
-                (mapPs2Fs m $ nodeIDs s_def_ns)
-                (mapPs2Fs m $ nodeIDs s_use_ns)
-                (mapPs2Fs m $ nodeIDs l_ref_ns)
+                (mapPs2Fs m (nodeIDs a_ns))
+                (mapPs2Fs m (nodeIDs d_def_ns))
+                (mapPs2Fs m (nodeIDs d_use_ns))
+                (mapPs2Fs m (nodeIDs d_use_by_phi_ns))
+                (mapPs2Fs m (nodeIDs s_def_ns))
+                (mapPs2Fs m (nodeIDs s_use_ns))
+                (mapPs2Fs m (nodeIDs l_ref_ns))
                 (mapPs2FsInConstraints m (osConstraints $ patOS p))
                 (patAUDDC p)
                 (length c_ns > 0)
                 (instCodeSize i_props)
                 (instLatency i_props)
-                (mapPs2Fs m $ patAssIDMaps p)
+                (mapPs2Fs m (patAssIDMaps p))
   in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
@@ -154,7 +154,7 @@ computeLabelDoms cfg =
       node_domsets = extractDomSet cfg root
       node_id_domsets = map
                         ( \d ->
-                          Domset (nodeID $ domNode d) (map nodeID $ domSet d)
+                          Domset (nodeID $ domNode d) (map nodeID (domSet d))
                         )
                         node_domsets
   in node_id_domsets
