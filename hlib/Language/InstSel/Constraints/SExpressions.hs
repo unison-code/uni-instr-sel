@@ -32,19 +32,17 @@ import Language.InstSel.Utils
   ( fromLeft
   , fromNatural
   , fromRight
-  , isLeft
+  , isRight
   )
 import Control.Applicative
-  ( (<|>)
-  , pure
-  )
+  ((<|>))
 import Control.Monad
   (mzero)
 import Data.AttoLisp
   hiding (fromLispExpr)
-import Data.Attoparsec.ByteString
+import qualified Data.Attoparsec.ByteString as AP
   (parseOnly)
-import Data.Attoparsec.Number
+import qualified Data.Attoparsec.Number as AP
   (Number (..))
 import qualified Data.ByteString.Char8 as BS
   (pack)
@@ -54,6 +52,13 @@ import qualified Data.ByteString.Char8 as BS
 ------------------------
 -- Type class instances
 ------------------------
+
+instance FromLisp Constraint where
+  parseLisp e =
+    let v = parseEither parseLisp e
+    in if isRight v
+       then return $ BoolExprConstraint (fromRight v)
+       else mzero
 
 instance ToLisp Constraint where
   toLisp (BoolExprConstraint e) = toLisp e
@@ -138,7 +143,7 @@ instance ToLisp NodeExpr where
   toLisp (ANodeIDExpr nid) = mkStruct "id" [toLisp nid]
 
 instance FromLisp PatternInstanceExpr where
-  parseLisp (Symbol "this") = pure ThisPatternInstanceExpr
+  parseLisp (Symbol "this") = return ThisPatternInstanceExpr
   parseLisp e =
         struct "id" APatternInstanceIDExpr e
     <|> struct "cov-of-anode" CovererOfActionNodeExpr e
@@ -221,39 +226,39 @@ instance ToLisp SetElemExpr where
   toLisp (Register2SetElemExpr e) = mkStruct "reg-to-set-elem" [toLisp e]
 
 instance FromLisp NodeID where
-  parseLisp (Number (I n)) = pure $ toNodeID n
+  parseLisp (Number (AP.I n)) = return $ toNodeID n
   parseLisp _ = mzero
 
 instance ToLisp NodeID where
-  toLisp (NodeID nid) = Number (I (fromNatural nid))
+  toLisp (NodeID nid) = Number (AP.I (fromNatural nid))
 
 instance FromLisp InstructionID where
-  parseLisp (Number (I n)) = pure $ toInstructionID n
+  parseLisp (Number (AP.I n)) = return $ toInstructionID n
   parseLisp _ = mzero
 
 instance ToLisp InstructionID where
-  toLisp (InstructionID nid) = Number (I (fromNatural nid))
+  toLisp (InstructionID nid) = Number (AP.I (fromNatural nid))
 
 instance FromLisp PatternInstanceID where
-  parseLisp (Number (I n)) = pure $ toPatternInstanceID n
+  parseLisp (Number (AP.I n)) = return $ toPatternInstanceID n
   parseLisp _ = mzero
 
 instance ToLisp PatternInstanceID where
-  toLisp (PatternInstanceID nid) = Number (I (fromNatural nid))
+  toLisp (PatternInstanceID nid) = Number (AP.I (fromNatural nid))
 
 instance FromLisp PatternID where
-  parseLisp (Number (I n)) = pure $ toPatternID n
+  parseLisp (Number (AP.I n)) = return $ toPatternID n
   parseLisp _ = mzero
 
 instance ToLisp PatternID where
-  toLisp (PatternID nid) = Number (I (fromNatural nid))
+  toLisp (PatternID nid) = Number (AP.I (fromNatural nid))
 
 instance FromLisp RegisterID where
-  parseLisp (Number (I n)) = pure $ toRegisterID n
+  parseLisp (Number (AP.I n)) = return $ toRegisterID n
   parseLisp _ = mzero
 
 instance ToLisp RegisterID where
-  toLisp (RegisterID nid) = Number (I (fromNatural nid))
+  toLisp (RegisterID nid) = Number (AP.I (fromNatural nid))
 
 
 
@@ -268,13 +273,10 @@ fromLispExpr ::
      -- ^ The left field contains the error message (when parsing failed), and
      -- the right field contains the constraint (if parsing succeeded).
 fromLispExpr s =
-  let lisp_result = parseOnly lisp (BS.pack s)
-  in if isLeft lisp_result
-     then Left (fromLeft lisp_result)
-     else let expr_result = parseEither parseLisp (fromRight lisp_result)
-          in if isLeft expr_result
-             then Left (fromLeft expr_result)
-             else Right (BoolExprConstraint (fromRight expr_result))
+  let lisp_result = AP.parseOnly lisp (BS.pack s)
+  in if isRight lisp_result
+     then parseEither parseLisp (fromRight lisp_result)
+     else Left (fromLeft lisp_result)
 
 -- | Converts a 'Constraint' into a lispian expression.
 toLispExpr :: Constraint -> String
