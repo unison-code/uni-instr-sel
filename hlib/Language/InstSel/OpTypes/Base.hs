@@ -15,7 +15,6 @@
 module Language.InstSel.OpTypes.Base where
 
 import Language.InstSel.PrettyPrint
-import Language.InstSel.SExpressions
 import Language.InstSel.Utils
   (Natural)
 import Prelude
@@ -124,15 +123,6 @@ data CompOpType =
     -- is denoted by @y@, then this operation represents @x <= y@.
   | LE
 
-    -- | Zero extension.
-  | ZExt
-
-    -- | Sign extension.
-  | SExt
-
-    -- | Truncation.
-  | Trunc
-
     -- | Square root function.
   | Sqrt
 
@@ -143,12 +133,37 @@ data CompOpType =
   | Unordered
   deriving (Show, Eq)
 
-data ControlOp =
-    -- | Conditional branch. Branching is done if the input value is not zero.
-    CondBranch
+-- | Operations that convert values of one type to another type.
+data TypeConvOp =
+    -- | Zero extension.
+    ZExt
 
-    -- | Unconditional branch.
-  | UncondBranch
+    -- | Sign extension.
+  | SExt
+
+    -- | Truncation.
+  | Trunc
+
+    -- | Floating-point to signed integer.
+  | Float2SInt
+
+    -- | Floating-point to unsigned integer.
+  | Float2UInt
+
+    -- | Signed integer to floating-point.
+  | SInt2Float
+
+    -- | Unsigned integer to floating-point.
+  | UInt2Float
+
+  deriving (Show, Eq)
+
+data ControlOp =
+    -- | Unconditional branch (same as a jump).
+    Branch
+
+    -- | Conditional branch. Branching is done if the input value is not zero.
+  | IfBranch
 
     -- | Return.
   | Ret
@@ -235,56 +250,20 @@ instance PrettyPrint CompOpType where
   prettyShow GE        = ">="
   prettyShow LT        = "<"
   prettyShow LE        = "<="
-  prettyShow ZExt      = "zext"
-  prettyShow SExt      = "sext"
-  prettyShow Trunc     = "trunc"
   prettyShow Sqrt      = "sqrt"
   prettyShow Ordered   = "ord"
   prettyShow Unordered = "uno"
 
+instance PrettyPrint TypeConvOp where
+  prettyShow ZExt  = "zext"
+  prettyShow SExt  = "sext"
+  prettyShow Trunc = "trunc"
+  prettyShow Float2SInt = "fptosi"
+  prettyShow Float2UInt = "fptoui"
+  prettyShow SInt2Float = "sitofp"
+  prettyShow UInt2Float = "uitofp"
+
 instance PrettyPrint ControlOp where
-  prettyShow CondBranch   = "bnz"
-  prettyShow UncondBranch = "br"
-  prettyShow Ret          = "ret"
-
-instance SExpressionable CompOp where
-  prettySE (IntOp o) i      = prettySE o i
-  prettySE (UIntOp o) i     = "u" ++ (prettySE o i)
-  prettySE (SIntOp o) i     = "s" ++ (prettySE o i)
-  prettySE (FixpointOp o) i = "fixp" ++ (prettySE o i)
-  prettySE (FloatOp o) i    = "f" ++ (prettySE o i)
-  prettySE (OFloatOp o) i   = "of" ++ (prettySE o i)
-  prettySE (UFloatOp o) i   = "uf" ++ (prettySE o i)
-
-instance SExpressionable CompOpType where
-  prettySE Add       _ = "add"
-  prettySE SatAdd    _ = "satadd"
-  prettySE Sub       _ = "sub"
-  prettySE SatSub    _ = "satsub"
-  prettySE Mul       _ = "mul"
-  prettySE Div       _ = "div"
-  prettySE Rem       _ = "rem"
-  prettySE Shl       _ = "shl"
-  prettySE LShr      _ = "lshr"
-  prettySE AShr      _ = "ashr"
-  prettySE And       _ = "and"
-  prettySE Or        _ = "or"
-  prettySE XOr       _ = "xor"
-  prettySE Not       _ = "not"
-  prettySE Eq        _ = "eq"
-  prettySE NEq       _ = "neq"
-  prettySE GT        _ = "gt"
-  prettySE GE        _ = "ge"
-  prettySE LT        _ = "lt"
-  prettySE LE        _ = "le"
-  prettySE ZExt      _ = "zext"
-  prettySE SExt      _ = "sext"
-  prettySE Trunc     _ = "trunc"
-  prettySE Sqrt      _ = "sqrt"
-  prettySE Ordered   _ = "ord"
-  prettySE Unordered _ = "uno"
-
-instance SExpressionable ControlOp where
-  prettySE CondBranch _   = "bnz"
-  prettySE UncondBranch _ = "br"
-  prettySE Ret _          = "ret"
+  prettyShow Branch   = "br"
+  prettyShow IfBranch = "bnz"
+  prettyShow Ret      = "ret"

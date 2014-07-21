@@ -82,6 +82,7 @@ module Language.InstSel.Graphs.Base
   , isOfNullNodeType
   , isOfPhiNodeType
   , isOfStateNodeType
+  , isOfTypeConversionNodeType
   , isPhiNode
   , isRetControlNode
   , isStateNode
@@ -174,6 +175,8 @@ data NodeLabel =
 -- | The node type information.
 data NodeType =
     ComputationNode { compOp :: O.CompOp }
+
+  | TypeConversionNode { convOp :: O.TypeConvOp }
 
   | ControlNode { contOp :: O.ControlOp }
 
@@ -306,6 +309,7 @@ fromMapping (Mapping m) = m
 isActionNode :: Node -> Bool
 isActionNode n =
      isComputationNode n
+  || isTypeConversionNode n
   || isControlNode n
   || isPhiNode n
   || isCopyNode n
@@ -317,6 +321,9 @@ isEntityNode n =
 
 isComputationNode :: Node -> Bool
 isComputationNode n = isOfComputationNodeType $ nodeType n
+
+isTypeConversionNode :: Node -> Bool
+isTypeConversionNode n = isOfTypeConversionNodeType $ nodeType n
 
 isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ nodeType n
@@ -345,6 +352,10 @@ isCopyNode n = isOfCopyNodeType $ nodeType n
 isOfComputationNodeType :: NodeType -> Bool
 isOfComputationNodeType (ComputationNode _) = True
 isOfComputationNodeType _ = False
+
+isOfTypeConversionNodeType :: NodeType -> Bool
+isOfTypeConversionNodeType (TypeConversionNode _) = True
+isOfTypeConversionNodeType _ = False
 
 isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
@@ -823,7 +834,7 @@ checkOrderingOfOutEdges :: Graph -> Node -> Bool
 checkOrderingOfOutEdges _ n
   | isControlNode n = f (nodeType n)
   | otherwise = False
-  where f (ControlNode O.CondBranch) = True
+  where f (ControlNode O.IfBranch) = True
         f _ = False
 
 -- | If the pattern node requires an ordering on its inbound edges, check that

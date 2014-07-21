@@ -71,7 +71,7 @@ tmTest =
           , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
           , (2, NodeLabel 2 (LabelNode $ BBLabelID ""))
           , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
-          , (4, NodeLabel 4 (ControlNode O.CondBranch))
+          , (4, NodeLabel 4 (ControlNode O.IfBranch))
           ]
         )
         ( map
@@ -88,7 +88,7 @@ tmTest =
           Node
           [ (0, NodeLabel 0 (LabelNode $ BBLabelID ""))
           , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
-          , (2, NodeLabel 2 (ControlNode O.UncondBranch))
+          , (2, NodeLabel 2 (ControlNode O.Branch))
           ]
         )
         ( map
@@ -389,7 +389,7 @@ tmTest =
   in TargetMachine
      (toTargetMachineID "test")
      insts
-     [ (0, "r0")
-     , (1, "r1")
-     , (2, "r2")
+     [ (0, RegisterName "r0")
+     , (1, RegisterName "r1")
+     , (2, RegisterName "r2")
      ]

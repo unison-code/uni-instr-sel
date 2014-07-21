@@ -19,6 +19,8 @@ module Language.InstSel.TargetMachine.IDs
   , BBLabelID (..)
   , InstructionID (..)
   , RegisterID (..)
+  , RegisterFlagName (..)
+  , RegisterName (..)
   , TargetMachineID (..)
   , fromAssemblyID
   , fromInstructionID
@@ -74,7 +76,23 @@ newtype RegisterID =
 instance Show RegisterID where
   show (RegisterID i) = show i
 
--- | Represents a target machine ID
+-- | Represents a register name.
+newtype RegisterName =
+    RegisterName String
+  deriving (Eq)
+
+instance Show RegisterName where
+  show (RegisterName s) = s
+
+-- | Represents a register flag name.
+newtype RegisterFlagName =
+    RegisterFlagName String
+  deriving (Eq)
+
+instance Show RegisterFlagName where
+  show (RegisterFlagName s) = s
+
+-- | Represents a target machine ID.
 newtype TargetMachineID =
     TargetMachineID String
   deriving (Eq, Show)

@@ -135,7 +135,7 @@ data TargetMachine =
     , tmInstructions :: [Instruction]
       -- ^ The set of assembly instructions supported by the target machine.
 
-    , tmRegisters :: [(RegisterID, String)]
+    , tmRegisters :: [(RegisterID, RegisterName)]
       -- ^ The machine registers, given as pairs of register IDs and register
       -- names (which are needed during instruction emission). Each must be
       -- given a unique register ID, but not necessarily in a contiguous order.

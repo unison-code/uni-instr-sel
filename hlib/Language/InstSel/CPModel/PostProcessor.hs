@@ -197,7 +197,7 @@ produceInstPart cp m pid (AssemblyRegister aid) =
       reg = lookup n $ regsOfDataNodes cp
   in if isJust reg
      then let regsym = fromJust $ lookup (fromJust reg) (tmRegisters m)
-          in regsym
+          in show regsym
      else "?"
 produceInstPart cp _ pid (AssemblyBBLabel aid) =
   let n = getNIDFromAID pid aid
