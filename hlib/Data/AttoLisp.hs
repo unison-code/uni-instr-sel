@@ -8,6 +8,8 @@
 --
 -- > import qualified Data.AttoLisp as L
 --
+-- Modified by Gabriel Hjort Blindell <ghb@kth.se>
+--
 module Data.AttoLisp
   ( -- * Core Lisp Types
     Lisp(..), nil, isNull,
@@ -16,21 +18,24 @@ module Data.AttoLisp
     Failure, Success, Parser,
     parse, parseMaybe, parseEither, typeMismatch,
 
-    ToLisp(..), 
+    ToLisp(..),
 
     -- * Constructors and destructors
     mkStruct,  struct,
 
-    -- * Encoding and parsing
-    encode, fromLispExpr,
-    
     lisp, atom,
+
+    -- * Encoding and parsing
+    fromLispExprStr, toLispExprStr
   )
 where
 
-import Blaze.ByteString.Builder.Char.Utf8 (fromChar)
+import Language.InstSel.Utils
+  ( fromLeft
+  , fromRight
+  , isRight
+  )
 import Blaze.ByteString.Builder.Word (fromWord8)
-import Blaze.Text (double, integral)
 import Control.Applicative
 import Control.DeepSeq (NFData(..))
 import Control.Monad
@@ -42,17 +47,15 @@ import Data.Ratio ( Ratio )
 import Data.Monoid
 import Data.String
 import Data.Word ( Word, Word8, Word16, Word32, Word64 )
-import Numeric (showHex)
 import qualified Data.Attoparsec as A
 import qualified Data.Attoparsec.Char8 as AC
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Attoparsec.Zepto as Z
 import qualified Blaze.ByteString.Builder as Blaze
-import qualified Blaze.ByteString.Builder.Char.Utf8 as Blaze
 import qualified Data.Map as M
 -- | A Lisp expression (S-expression).
 --
@@ -135,7 +138,7 @@ instance Applicative Parser where
     {-# INLINE pure #-}
     (<*>) = apP
     {-# INLINE (<*>) #-}
-    
+
 instance Alternative Parser where
     empty = fail "empty"
     {-# INLINE empty #-}
@@ -225,9 +228,9 @@ parseEither m v = runParser (m v) Left Right
 {-# INLINE parseEither #-}
 
 --test_parse001 =
---  parseMaybe 
+--  parseMaybe
 
---nth :: [Lisp] -> 
+--nth :: [Lisp] ->
 
 -- | Create a Lisp struct in a standardised format.
 --
@@ -256,9 +259,9 @@ class ToLisp a where
 -- An example type and instance:
 --
 -- @data Coord { x :: Double, y :: Double }
--- 
+--
 -- instance FromLisp Coord where
---   parseLisp ('DotList' [x] y) = pure (Coord x y) 
+--   parseLisp ('DotList' [x] y) = pure (Coord x y)
 --   \-- A non-DotList value is of the wrong shape, so use mzero to fail.
 --   parseLisp _          = 'mzero'
 -- @
@@ -628,7 +631,7 @@ We are using the standard Common Lisp read table.
 The following characters are special:
 
   - whitespace: space, tab, newline, linefeed, return, page
-  
+
   - terminating: ( ) , ` ' " ;
 
   - escaping: \  and  |
@@ -802,41 +805,19 @@ unescapeString = Blaze.toByteString <$> go mempty where
       else rest
   mapping = "\"\\/\n\t\b\r\f"
 
-fromLispExpr :: Lisp -> Blaze.Builder
-fromLispExpr (String str) = string str
- where
-   string s = fromChar '"' `mappend` quote s `mappend` fromChar '"'
-   quote q =
-     let (h, t) = T.break isEscape q in
-     case T.uncons t of
-       Just (c,t') -> Blaze.fromText h `mappend` escape c `mappend` quote t'
-       Nothing     -> Blaze.fromText h
-   isEscape c = c == '"' || c == '\\' || c < '\x20'
-   escape '\"' = Blaze.fromByteString "\\\""
-   escape '\\' = Blaze.fromByteString "\\\\"
-   escape '\n' = Blaze.fromByteString "\\n"
-   escape '\r' = Blaze.fromByteString "\\r"
-   escape '\t' = Blaze.fromByteString "\\t"
-   escape c
-        | c < '\x20' = Blaze.fromString $ "\\x" ++ replicate (2 - length h) '0' ++ h
-        | otherwise  = fromChar c
-        where h = showHex (fromEnum c) "" 
-fromLispExpr (Symbol t) = Blaze.fromText t
-fromLispExpr (Number n) = fromNumber n
-fromLispExpr (List []) = Blaze.fromByteString "nil"
-fromLispExpr (List l) = enc_list l (fromChar ')')
-fromLispExpr (DotList l t) =
-  enc_list l (Blaze.fromByteString " . " `mappend` fromLispExpr t `mappend` fromChar ')')
+-- | Parses a lispian expression string into an entity.
+fromLispExprStr ::
+  (FromLisp a)
+  => String
+  -> Either String a
+     -- ^ The left field contains the error message (when parsing failed), and
+     -- the right field contains the entity (when parsing succeeded).
+fromLispExprStr s =
+  let res = A.parseOnly lisp (BC.pack s)
+  in if isRight res
+     then parseEither parseLisp (fromRight res)
+     else Left (fromLeft res)
 
-enc_list :: [Lisp] -> Blaze.Builder -> Blaze.Builder
-enc_list [] tl = fromChar '(' `mappend` tl
-enc_list (x:xs) tl = fromChar '(' `mappend` fromLispExpr x `mappend` foldr f tl xs
- where f e t = fromChar ' ' `mappend` fromLispExpr e `mappend` t
-
-fromNumber :: Number -> Blaze.Builder
-fromNumber (I i) = integral i
-fromNumber (D d) = double d
-
-encode :: ToLisp a => a -> Lazy.ByteString
-encode = Blaze.toLazyByteString . fromLispExpr . toLisp
-{-# INLINE encode #-}
+-- | Converts an entity into a lispian expression string.
+toLispExprStr :: (ToLisp a) => a -> String
+toLispExprStr = show . toLisp
