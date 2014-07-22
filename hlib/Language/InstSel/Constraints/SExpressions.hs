@@ -29,8 +29,7 @@ import Language.InstSel.Graphs
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
-  ( fromLeft
-  , fromNatural
+  ( fromNatural
   , fromRight
   , isRight
   )
@@ -39,13 +38,8 @@ import Control.Applicative
 import Control.Monad
   (mzero)
 import Data.AttoLisp
-  hiding (fromLispExpr)
-import qualified Data.Attoparsec.ByteString as AP
-  (parseOnly)
 import qualified Data.Attoparsec.Number as AP
   (Number (..))
-import qualified Data.ByteString.Char8 as BS
-  (pack)
 
 
 
@@ -272,12 +266,8 @@ fromLispExpr ::
   -> Either String Constraint
      -- ^ The left field contains the error message (when parsing failed), and
      -- the right field contains the constraint (if parsing succeeded).
-fromLispExpr s =
-  let lisp_result = AP.parseOnly lisp (BS.pack s)
-  in if isRight lisp_result
-     then parseEither parseLisp (fromRight lisp_result)
-     else Left (fromLeft lisp_result)
+fromLispExpr = fromLispExprStr
 
 -- | Converts a 'Constraint' into a lispian expression.
 toLispExpr :: Constraint -> String
-toLispExpr = show . toLisp
+toLispExpr = toLispExprStr
