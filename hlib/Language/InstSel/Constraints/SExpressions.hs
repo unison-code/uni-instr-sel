@@ -29,10 +29,7 @@ import Language.InstSel.Graphs
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
-  ( fromNatural
-  , fromRight
-  , isRight
-  )
+  (fromNatural)
 import Control.Applicative
   ((<|>))
 import Control.Monad
@@ -48,11 +45,7 @@ import qualified Data.Attoparsec.Number as AP
 ------------------------
 
 instance FromLisp Constraint where
-  parseLisp e =
-    let v = parseEither parseLisp e
-    in if isRight v
-       then return $ BoolExprConstraint (fromRight v)
-       else mzero
+  parseLisp = wrapStruct BoolExprConstraint
 
 instance ToLisp Constraint where
   toLisp (BoolExprConstraint e) = toLisp e

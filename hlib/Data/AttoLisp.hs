@@ -21,7 +21,7 @@ module Data.AttoLisp
     ToLisp(..),
 
     -- * Constructors and destructors
-    mkStruct,  struct,
+    mkStruct,  struct, wrapStruct,
 
     lisp, atom,
 
@@ -807,7 +807,7 @@ unescapeString = Blaze.toByteString <$> go mempty where
 
 -- | Parses a lispian expression string into an entity.
 fromLispExprStr ::
-  (FromLisp a)
+  FromLisp a
   => String
   -> Either String a
      -- ^ The left field contains the error message (when parsing failed), and
@@ -819,5 +819,14 @@ fromLispExprStr s =
      else Left (fromLeft res)
 
 -- | Converts an entity into a lispian expression string.
-toLispExprStr :: (ToLisp a) => a -> String
+toLispExprStr :: ToLisp a => a -> String
 toLispExprStr = show . toLisp
+
+-- | Creates a parser for an entity which just wraps another entity and does not
+-- require any parsing of its own.
+wrapStruct :: FromLisp b => (b -> a) -> Lisp -> Parser a
+wrapStruct f e =
+  let v = parseEither parseLisp e
+  in if isRight v
+     then return $ f (fromRight v)
+     else mzero
