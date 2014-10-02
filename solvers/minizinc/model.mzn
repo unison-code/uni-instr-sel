@@ -247,7 +247,7 @@ forall (
             )
             *
             bool2int (
-                bb_order_inv[pi_bb[p]] + 1 <= bb_order_inv[i]
+                bb_order_inv[pi_bb[p]] < bb_order_inv[i]
                 /\
                 bb_order_inv[i] < bb_order_inv[l]
             )
