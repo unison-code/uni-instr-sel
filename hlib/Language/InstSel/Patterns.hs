@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Patterns
-  (module Language.InstSel.Patterns.IDs)
+  ( module Language.InstSel.Patterns.IDs )
 where
 
 import Language.InstSel.Patterns.IDs

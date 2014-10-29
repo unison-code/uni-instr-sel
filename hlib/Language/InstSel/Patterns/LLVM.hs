@@ -10,11 +10,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Patterns.LLVM (
-  module Language.InstSel.Patterns.LLVM.Base
-, module Language.InstSel.Patterns.LLVM.InstructionMaker
-, module Language.InstSel.Patterns.LLVM.SExprParser
-) where
+module Language.InstSel.Patterns.LLVM
+  ( module Language.InstSel.Patterns.LLVM.Base
+  , module Language.InstSel.Patterns.LLVM.InstructionMaker
+  , module Language.InstSel.Patterns.LLVM.SExprParser
+  )
+where
 
 import Language.InstSel.Patterns.LLVM.Base
 import Language.InstSel.Patterns.LLVM.InstructionMaker

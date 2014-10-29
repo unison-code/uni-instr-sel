@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs
-  (module Language.InstSel.Graphs.Base)
+  ( module Language.InstSel.Graphs.Base )
 where
 
 import Language.InstSel.Graphs.Base

@@ -13,12 +13,12 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.LLVM.Lowerer
-  (lowerModule)
+  ( lowerModule )
 where
 
 import LLVM.General.AST
 import LLVM.General.AST.Constant
-  (Constant)
+  ( Constant )
 import qualified LLVM.General.AST.IntegerPredicate as IP
 import Data.List
 

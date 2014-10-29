@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.PrettyPrint
-  (module Language.InstSel.PrettyPrint.Base)
+  ( module Language.InstSel.PrettyPrint.Base )
 where
 
 import Language.InstSel.PrettyPrint.Base

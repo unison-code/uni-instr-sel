@@ -29,14 +29,14 @@ import Language.InstSel.Graphs
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
-  (fromNatural)
+  ( fromNatural )
 import Control.Applicative
-  ((<|>))
+  ( (<|>) )
 import Control.Monad
-  (mzero)
+  ( mzero )
 import Data.AttoLisp
 import qualified Data.Attoparsec.Number as AP
-  (Number (..))
+  ( Number (..) )
 
 
 

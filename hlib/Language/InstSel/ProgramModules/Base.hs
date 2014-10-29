@@ -20,11 +20,11 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.Base
-  (Function (..))
+  ( Function (..) )
 where
 
 import Language.InstSel.Graphs
-  (NodeID)
+  ( NodeID )
 import Language.InstSel.OpStructures
 
 

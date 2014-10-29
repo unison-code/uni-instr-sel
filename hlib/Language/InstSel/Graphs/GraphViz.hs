@@ -12,7 +12,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.GraphViz
-  (toDotGraph)
+  ( toDotGraph )
 where
 
 import Language.InstSel.Graphs.Base

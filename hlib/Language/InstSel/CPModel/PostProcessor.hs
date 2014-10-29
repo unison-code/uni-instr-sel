@@ -22,10 +22,11 @@ where
 
 import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
-  (NodeID)
+  ( NodeID )
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine
-  hiding (patAssIDMaps)
+  hiding
+  ( patAssIDMaps )
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 

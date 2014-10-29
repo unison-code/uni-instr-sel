@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Utils
-  (module Language.InstSel.Utils.Base)
+  ( module Language.InstSel.Utils.Base )
 where
 
 import Language.InstSel.Utils.Base

@@ -16,7 +16,7 @@ module Language.InstSel.OpTypes.Base where
 
 import Language.InstSel.PrettyPrint
 import Language.InstSel.Utils
-  (Natural)
+  ( Natural )
 import Prelude
   hiding
   ( GT
@@ -177,11 +177,11 @@ data ControlOp =
 
 -- | Gets the operation type from a computational operation.
 getCompOpType :: CompOp -> CompOpType
-getCompOpType  (IntOp op)     = op
+getCompOpType ( IntOp op)     = op
 getCompOpType (UIntOp op)     = op
 getCompOpType (SIntOp op)     = op
 getCompOpType (FixpointOp op) = op
-getCompOpType  (FloatOp op)   = op
+getCompOpType ( FloatOp op)   = op
 getCompOpType (OFloatOp op)   = op
 getCompOpType (UFloatOp op)   = op
 
@@ -208,16 +208,16 @@ numOperandsForOpType op
 -- | Checks if two computations are compatible, meaning that they are
 -- semantically equivalent.
 areComputationsCompatible :: CompOp -> CompOp -> Bool
-areComputationsCompatible   (IntOp op1)     (IntOp op2) = op1 == op2
-areComputationsCompatible   (IntOp op1)    (UIntOp op2) = op1 == op2
-areComputationsCompatible   (IntOp op1)    (SIntOp op2) = op1 == op2
-areComputationsCompatible  (UIntOp op1)     (IntOp op2) = op1 == op2
-areComputationsCompatible  (SIntOp op1)     (IntOp op2) = op1 == op2
-areComputationsCompatible  (FloatOp op1)  (FloatOp op2) = op1 == op2
-areComputationsCompatible  (FloatOp op1) (OFloatOp op2) = op1 == op2
-areComputationsCompatible  (FloatOp op1) (UFloatOp op2) = op1 == op2
-areComputationsCompatible (UFloatOp op1)  (FloatOp op2) = op1 == op2
-areComputationsCompatible (OFloatOp op1)  (FloatOp op2) = op1 == op2
+areComputationsCompatible  ( IntOp op1)    ( IntOp op2) = op1 == op2
+areComputationsCompatible  ( IntOp op1)    (UIntOp op2) = op1 == op2
+areComputationsCompatible  ( IntOp op1)    (SIntOp op2) = op1 == op2
+areComputationsCompatible  (UIntOp op1)    ( IntOp op2) = op1 == op2
+areComputationsCompatible  (SIntOp op1)    ( IntOp op2) = op1 == op2
+areComputationsCompatible ( FloatOp op1) ( FloatOp op2) = op1 == op2
+areComputationsCompatible ( FloatOp op1) (OFloatOp op2) = op1 == op2
+areComputationsCompatible ( FloatOp op1) (UFloatOp op2) = op1 == op2
+areComputationsCompatible (UFloatOp op1) ( FloatOp op2) = op1 == op2
+areComputationsCompatible (OFloatOp op1) ( FloatOp op2) = op1 == op2
 areComputationsCompatible op1 op2                       = op1 == op2
 
 

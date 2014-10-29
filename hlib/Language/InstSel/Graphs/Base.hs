@@ -18,6 +18,15 @@
 -- are the same node internally, and comparing the node IDs checks if two nodes
 -- are the same node externally.
 --
+-- Since there exist operations that are not commutative, such as subtraction,
+-- it must be possible to distinguish the operands. This is done by labeling the
+-- input edges to a given node. Likewise it may be necessary to be able to
+-- distinguish between produced values, and this is handled by labeling the
+-- output edges to a given node. Hence every edge is labeled with two integer
+-- values, which are called /edge numbers/: one for indicating which output edge
+-- it is of the source node, and another for indicating which input edge it is
+-- for the destination node.
+--
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -130,7 +139,7 @@ import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs.IDs
 import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.TargetMachine.IDs
-  (BBLabelID (..))
+  ( BBLabelID (..) )
 import Language.InstSel.Utils
   ( Natural
   , removeDuplicates
@@ -138,7 +147,7 @@ import Language.InstSel.Utils
   )
 import qualified Data.Graph.Inductive as I
 import Data.List
-  (sortBy)
+  ( sortBy )
 import Data.Maybe
 
 
@@ -215,7 +224,7 @@ newtype Edge =
   deriving (Show, Eq)
 
 -- | Data type for describing how an edge relates to the two nodes. Since edges
--- are ordered, there will be an edge number for each node - one for indicating
+-- are ordered, there will be an edge number for each node: one for indicating
 -- which output edge it is of the source node, and another for indicating which
 -- input edge it is for the destination node.
 data EdgeLabel =

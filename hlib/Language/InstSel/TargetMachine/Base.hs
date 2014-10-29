@@ -27,13 +27,13 @@ module Language.InstSel.TargetMachine.Base
 where
 
 import Language.InstSel.Graphs.IDs
-  (NodeID)
+  ( NodeID )
 import Language.InstSel.OpStructures
 import Language.InstSel.Patterns.IDs
-  (PatternID)
+  ( PatternID )
 import Language.InstSel.TargetMachine.IDs
 import Control.Monad
-  (when)
+  ( when )
 
 
 

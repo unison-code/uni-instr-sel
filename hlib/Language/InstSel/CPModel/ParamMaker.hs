@@ -15,7 +15,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.CPModel.ParamMaker
-  (mkParams)
+  ( mkParams )
 where
 
 import Language.InstSel.Constraints
@@ -29,10 +29,10 @@ import Language.InstSel.Graphs.VFTwo
 import Language.InstSel.OpStructures
 import Language.InstSel.Patterns
 import Language.InstSel.ProgramModules
-  (Function (..))
+  ( Function (..) )
 import Language.InstSel.TargetMachine
 import Data.Maybe
-  (fromJust)
+  ( fromJust )
 
 
 

@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.DataTypes
-  (module Language.InstSel.DataTypes.Base)
+  ( module Language.InstSel.DataTypes.Base )
 where
 
 import Language.InstSel.DataTypes.Base

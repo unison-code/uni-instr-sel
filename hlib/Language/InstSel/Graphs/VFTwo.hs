@@ -23,14 +23,14 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.VFTwo
-  (match)
+  ( match )
 where
 
 import Language.InstSel.Graphs.Base
 import Language.InstSel.Utils
-  (removeDuplicates)
+  ( removeDuplicates )
 import Data.List
-  (intersect)
+  ( intersect )
 
 
 

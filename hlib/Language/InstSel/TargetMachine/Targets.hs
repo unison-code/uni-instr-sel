@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.TargetMachine.Targets
-  (module Language.InstSel.TargetMachine.Targets.Base)
+  ( module Language.InstSel.TargetMachine.Targets.Base )
 where
 
 import Language.InstSel.TargetMachine.Targets.Base

@@ -55,9 +55,9 @@ import Data.Maybe
   , isJust
   )
 import Data.Scientific
-  (Scientific)
+  ( Scientific )
 import qualified Data.Text as T
-  (unpack)
+  ( unpack )
 
 
 

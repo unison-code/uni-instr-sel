@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.OpTypes
-  (module Language.InstSel.OpTypes.Base)
+  ( module Language.InstSel.OpTypes.Base )
 where
 
 import Language.InstSel.OpTypes.Base

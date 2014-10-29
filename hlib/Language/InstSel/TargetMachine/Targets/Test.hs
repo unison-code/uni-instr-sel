@@ -15,7 +15,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.TargetMachine.Targets.Test
-  (tmTest)
+  ( tmTest )
 where
 
 import Language.InstSel.Constraints

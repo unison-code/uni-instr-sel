@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules
-  (module Language.InstSel.ProgramModules.Base)
+  ( module Language.InstSel.ProgramModules.Base )
 where
 
 import Language.InstSel.ProgramModules.Base

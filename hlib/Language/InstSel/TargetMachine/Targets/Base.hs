@@ -15,7 +15,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.TargetMachine.Targets.Base
-  (getTargetMachine)
+  ( getTargetMachine )
 where
 
 import Language.InstSel.TargetMachine.Base

@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.CPModel
-  (module Language.InstSel.CPModel.Base)
+  ( module Language.InstSel.CPModel.Base )
 where
 
 import Language.InstSel.CPModel.Base

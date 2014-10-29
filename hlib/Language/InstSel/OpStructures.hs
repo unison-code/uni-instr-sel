@@ -11,7 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.OpStructures
-  (module Language.InstSel.OpStructures.Base)
+  ( module Language.InstSel.OpStructures.Base )
 where
 
 import Language.InstSel.OpStructures.Base

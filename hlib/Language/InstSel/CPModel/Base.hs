@@ -37,11 +37,11 @@ import Language.InstSel.Patterns.IDs
   )
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
-  (Natural)
+  ( Natural )
 import Data.List
-  (sortBy)
+  ( sortBy )
 import Data.Maybe
-  (catMaybes)
+  ( catMaybes )
 
 
 
