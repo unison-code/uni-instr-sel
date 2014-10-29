@@ -25,7 +25,9 @@
 -- output edges to a given node. Hence every edge is labeled with two integer
 -- values, which are called /edge numbers/: one for indicating which output edge
 -- it is of the source node, and another for indicating which input edge it is
--- for the destination node.
+-- for the destination node. The edge numbers are only per edge type, which
+-- means that the same pair of edge numbers can appear in multiple edges for
+-- the same node provided that they are of different edge types.
 --
 --------------------------------------------------------------------------------
 
