@@ -52,7 +52,7 @@ main =
                 , (7, NodeLabel 7 (LabelNode $ BBLabelID "start"))
                 , (8, NodeLabel 8 (LabelNode $ BBLabelID "middle"))
                 , (9, NodeLabel 9 (LabelNode $ BBLabelID "end"))
-                , (10, NodeLabel 10 (ControlNode O.IfBranch))
+                , (10, NodeLabel 10 (ControlNode O.CondBranch))
                 , (11, NodeLabel 11 (ControlNode O.Ret))
                 , (12, NodeLabel 12 (ComputationNode (O.UIntOp O.Add)))
                 , (13, NodeLabel 13 (ComputationNode (O.UIntOp O.Add)))

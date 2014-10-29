@@ -71,7 +71,7 @@ tmTest =
           , (1, NodeLabel 1 (LabelNode $ BBLabelID ""))
           , (2, NodeLabel 2 (LabelNode $ BBLabelID ""))
           , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
-          , (4, NodeLabel 4 (ControlNode O.IfBranch))
+          , (4, NodeLabel 4 (ControlNode O.CondBranch))
           ]
         )
         ( map
