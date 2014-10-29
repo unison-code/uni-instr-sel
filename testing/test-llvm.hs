@@ -37,7 +37,6 @@ import Language.InstSel.OpStructures
 import qualified Language.InstSel.ProgramModules as PM
 import qualified Language.InstSel.ProgramModules.LLVM as LLVMPro
 import qualified Language.InstSel.PrettyPrint as MyPP
-import Language.InstSel.SExpressions
 import LLVM.General
 import LLVM.General.AST
 import LLVM.General.Context
