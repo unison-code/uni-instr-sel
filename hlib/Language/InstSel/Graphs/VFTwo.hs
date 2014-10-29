@@ -23,7 +23,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.VFTwo
-  ( match )
+  ( findMatches )
 where
 
 import Language.InstSel.Graphs.Base
@@ -39,33 +39,36 @@ import Data.List
 -------------
 
 -- | Finds all instances where a pattern graph matches within a function graph.
-match ::
+findMatches ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> [Matchset Node]
+  -> [Match Node]
      -- ^ Found matches.
-match fg pg = match' fg pg (Matchset [])
+findMatches fg pg = map Match (match fg pg [])
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
 -- mapping candidates, and then applies a feasibility check on each of
 -- them. Each candidate that passes the test is added to the existing mapping
 -- state, and then the function is recursively called.
-match' ::
+match ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ The current matchset state.
-  -> [Matchset Node]
+  -> [Mapping Node]
+     -- ^ The current mapping state.
+  -> [[Mapping Node]]
      -- ^ Found matches.
-match' fg pg st
-  | length (fromMatchset st) == numNodes pg = [st]
+match fg pg st
+  | length st == getNumNodes pg = [st]
   | otherwise = let cs = getCandidates fg pg st
                     good_cs = filter (checkFeasibility fg pg st) cs
-                in concatMap (match' fg pg) (map (addToMatchset st) good_cs)
+                in concatMap (match fg pg) (map (:st) good_cs)
+
+toMapping :: (n, n) -> Mapping n
+toMapping (fn, pn) = Mapping { fNode = fn, pNode = pn }
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
@@ -77,13 +80,13 @@ getCandidates ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ The current matchset state.
+  -> [Mapping Node]
+     -- ^ The current mapping state.
   -> [Mapping Node]
      -- ^ Potential candidates.
 getCandidates fg pg st =
-  let m_fg = fNodes st
-      m_pg = pNodes st
+  let m_fg = map fNode st
+      m_pg = map pNode st
       t_out_fg = getTOutSet fg m_fg
       t_out_pg = getTOutSet pg m_pg
       t_in_fg = getTInSet fg m_fg
@@ -106,13 +109,13 @@ checkFeasibility ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkFeasibility fg pg st c =
-  matchingNodes fg pg st c && checkSyntax fg pg st c
+  doNodesMatch fg pg st c && checkSyntax fg pg st c
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
 -- equation 2 in the paper).
@@ -124,22 +127,22 @@ checkSyntax ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkSyntax fg pg st c =
   checkSyntaxPred fg pg st c
-   &&
-   checkSyntaxSucc fg pg st c
-   &&
-   checkSyntaxIn   fg pg st c
-   &&
-   checkSyntaxOut  fg pg st c
+  &&
+  checkSyntaxSucc fg pg st c
+  &&
+  checkSyntaxIn   fg pg st c
+  &&
+  checkSyntaxOut  fg pg st c
 
 -- | Checks that for each predecessor of the matched pattern node that appears
--- in the current matchset state, there exists a node mapping for the
+-- in the current mapping state, there exists a node mapping for the
 -- predecessor (modified version of equation 3 in the paper). This is a
 -- consistency check.
 --
@@ -150,18 +153,21 @@ checkSyntaxPred ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxPred fg pg st c =
-  let m_pg = pNodes st
-      preds_fn = predecessors fg (fNode c)
-      preds_pn = predecessors pg (pNode c)
+  let m_pg = map pNode st
+      preds_fn = getPredecessors fg (fNode c)
+      preds_pn = getPredecessors pg (pNode c)
       preds_pn_in_m = preds_pn `intersect` m_pg
   in all
-     (\pn -> any (\fn -> isInMatchset st (Mapping (fn, pn))) preds_fn)
+     ( \pn -> any
+              (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+              preds_fn
+     )
      preds_pn_in_m
 
 -- | Same as checkSyntaxPred but for the successors (modified version of
@@ -171,18 +177,21 @@ checkSyntaxSucc ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxSucc fg pg st c =
-  let m_pg = pNodes st
-      succs_fn = successors fg (fNode c)
-      succs_pn = successors pg (pNode c)
+  let m_pg = map pNode st
+      succs_fn = getSuccessors fg (fNode c)
+      succs_pn = getSuccessors pg (pNode c)
       succs_pn_in_m = succs_pn `intersect` m_pg
   in all
-     (\pn -> any (\fn -> isInMatchset st (Mapping (fn, pn))) succs_fn)
+     ( \pn -> any
+              (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+              succs_fn
+     )
      succs_pn_in_m
 
 -- | Checks that there exists a sufficient number of unmapped predecessors left
@@ -193,20 +202,20 @@ checkSyntaxIn ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxIn fg pg st c =
-  let m_fg = fNodes st
-      m_pg = pNodes st
+  let m_fg = map fNode st
+      m_pg = map pNode st
       fn = fNode c
       pn = pNode c
-      preds_fn = predecessors fg fn
-      preds_pn = predecessors pg pn
-      succs_fn = successors fg fn
-      succs_pn = successors pg pn
+      preds_fn = getPredecessors fg fn
+      preds_pn = getPredecessors pg pn
+      succs_fn = getSuccessors fg fn
+      succs_pn = getSuccessors pg pn
       t_in_fg = getTInSet fg m_fg
       t_in_pg = getTInSet pg m_pg
   in ( length (succs_fn `intersect` t_in_fg)
@@ -225,20 +234,20 @@ checkSyntaxOut ::
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> Matchset Node
-     -- ^ Current matchset state.
+  -> [Mapping Node]
+     -- ^ current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxOut fg pg st c =
-  let m_fg = fNodes st
-      m_pg = pNodes st
+  let m_fg = map fNode st
+      m_pg = map pNode st
       fn = fNode c
       pn = pNode c
-      preds_fn = predecessors fg fn
-      preds_pn = predecessors pg pn
-      succs_fn = successors fg fn
-      succs_pn = successors pg pn
+      preds_fn = getPredecessors fg fn
+      preds_pn = getPredecessors pg pn
+      succs_fn = getSuccessors fg fn
+      succs_pn = getSuccessors pg pn
       t_out_fg = getTOutSet fg m_fg
       t_out_pg = getTOutSet pg m_pg
   in ( length (succs_fn `intersect` t_out_fg)
@@ -258,7 +267,7 @@ getTOutSet ::
      -- ^ The M set.
   -> [Node]
 getTOutSet g ns =
-  removeDuplicates $ filter (`notElem` ns) (concatMap (successors g) ns)
+  removeDuplicates $ filter (`notElem` ns) (concatMap (getSuccessors g) ns)
 
 getTInSet ::
      Graph
@@ -267,7 +276,7 @@ getTInSet ::
      -- ^ The M set.
   -> [Node]
 getTInSet g ns =
-  removeDuplicates $ filter (`notElem` ns) (concatMap (predecessors g) ns)
+  removeDuplicates $ filter (`notElem` ns) (concatMap (getPredecessors g) ns)
 
 getTDSet ::
      Graph
@@ -275,4 +284,4 @@ getTDSet ::
   -> [Node]
      -- ^ The M set.
   -> [Node]
-getTDSet g ns = filter (`notElem` ns) (allNodes g)
+getTDSet g ns = filter (`notElem` ns) (getAllNodes g)

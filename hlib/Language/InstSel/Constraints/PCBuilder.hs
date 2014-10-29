@@ -42,7 +42,7 @@ addBBAllocConstraints os =
                          EqExpr
                          ( Label2NumExpr $
                            LabelOfLabelNodeExpr $
-                           ANodeIDExpr (nodeID $ fromJust root_label)
+                           ANodeIDExpr (getNodeID $ fromJust root_label)
                          )
                          ( Label2NumExpr $
                            LabelAllocatedToPatternInstanceExpr $
@@ -69,11 +69,11 @@ addInterDataValConstraints ::
      -- structure).
 addInterDataValConstraints os outs =
   let g = osGraph os
-      d_ns = filter isDataNode $ allNodes g
-      d_use_def_ns = nodeIDs $ [ n | n <- d_ns
-                                   , hasAnyPredecessors g n
-                                   , hasAnySuccessors g n
-                               ]
+      d_ns = filter isDataNode $ getAllNodes g
+      d_use_def_ns = getNodeIDs $ [ n | n <- d_ns
+                                      , hasAnyPredecessors g n
+                                      , hasAnySuccessors g n
+                                  ]
       inter_data_val_ns = filter (`notElem` outs) d_use_def_ns
       makeC n = BoolExprConstraint $ DataNodeIsIntermediateExpr (ANodeIDExpr n)
       new_cs = map makeC inter_data_val_ns

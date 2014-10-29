@@ -53,17 +53,17 @@ mkParams f m =
 mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
   let g = osGraph $ functionOS f
-      nodeIDsByType f' = nodeIDs $ filter f' (allNodes g)
+      nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       cfg = extractCFG g
   in FunctionGraphData
      (nodeIDsByType isActionNode)
      (nodeIDsByType isDataNode)
      (nodeIDsByType isStateNode)
      (computeLabelDoms cfg)
-     (nodeID $ fromJust $ rootInCFG cfg)
+     (getNodeID $ fromJust $ rootInCFG cfg)
      ( map
-       (\n -> BBLabelData (nodeID n) (bbLabel $ nodeType n))
-       (filter isLabelNode (allNodes g))
+       (\n -> BBLabelData (getNodeID n) (bbLabel $ getNodeType n))
+       (filter isLabelNode (getAllNodes g))
      )
      (osConstraints $ functionOS f)
 
@@ -97,18 +97,18 @@ processInstPattern ::
 processInstPattern f i p t =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
-      ms = map convertMatchsetN2ID (match fg pg)
-  in foldr (processMatchset i p) t ms
+      ms = map convertMatchN2ID (findMatches fg pg)
+  in foldr (processMatch i p) t ms
 
-processMatchset ::
+processMatch ::
      Instruction
   -> InstPattern
-  -> Matchset NodeID
+  -> Match NodeID
   -> ([PatternInstanceData], PatternInstanceID)
   -> ([PatternInstanceData], PatternInstanceID)
-processMatchset i p m (pids, next_piid) =
+processMatch i p m (pids, next_piid) =
   let g = osGraph $ patOS p
-      ns = allNodes g
+      ns = getAllNodes g
       a_ns = filter isActionNode ns
       d_ns = filter isDataNode ns
       s_ns = filter isStateNode ns
@@ -116,7 +116,9 @@ processMatchset i p m (pids, next_piid) =
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors g) d_ns
       d_use_ns = filter (hasAnySuccessors g) d_ns
-      d_use_by_phi_ns = filter (\n -> any isPhiNode (successors g n)) d_use_ns
+      d_use_by_phi_ns = filter
+                        (\n -> any isPhiNode (getSuccessors g n))
+                        d_use_ns
       s_def_ns = filter (hasAnyPredecessors g) s_ns
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
@@ -125,19 +127,19 @@ processMatchset i p m (pids, next_piid) =
                 (instID i)
                 (patID p)
                 next_piid
-                (mapPs2Fs m (nodeIDs a_ns))
-                (mapPs2Fs m (nodeIDs d_def_ns))
-                (mapPs2Fs m (nodeIDs d_use_ns))
-                (mapPs2Fs m (nodeIDs d_use_by_phi_ns))
-                (mapPs2Fs m (nodeIDs s_def_ns))
-                (mapPs2Fs m (nodeIDs s_use_ns))
-                (mapPs2Fs m (nodeIDs l_ref_ns))
+                (findFNsInMatch m (getNodeIDs a_ns))
+                (findFNsInMatch m (getNodeIDs d_def_ns))
+                (findFNsInMatch m (getNodeIDs d_use_ns))
+                (findFNsInMatch m (getNodeIDs d_use_by_phi_ns))
+                (findFNsInMatch m (getNodeIDs s_def_ns))
+                (findFNsInMatch m (getNodeIDs s_use_ns))
+                (findFNsInMatch m (getNodeIDs l_ref_ns))
                 (mapPs2FsInConstraints m (osConstraints $ patOS p))
                 (patAUDDC p)
                 (length c_ns > 0)
                 (instCodeSize i_props)
                 (instLatency i_props)
-                (mapPs2Fs m (patAssIDMaps p))
+                (findFNsInMatch m (patAssIDMaps p))
   in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
@@ -154,35 +156,37 @@ computeLabelDoms cfg =
       node_domsets = extractDomSet cfg root
       node_id_domsets = map
                         ( \d ->
-                          Domset (nodeID $ domNode d) (map nodeID (domSet d))
+                          Domset { domNode = (getNodeID $ domNode d)
+                                 , domSet = (map getNodeID (domSet d))
+                                 }
                         )
                         node_domsets
   in node_id_domsets
 
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
 -- to the corresponding function node IDs.
-mapPs2FsInConstraints :: Matchset NodeID -> [Constraint] -> [Constraint]
+mapPs2FsInConstraints :: Match NodeID -> [Constraint] -> [Constraint]
 mapPs2FsInConstraints m cs =
   map (replaceFunc m) cs
   where replaceFunc m' (BoolExprConstraint e) =
           BoolExprConstraint $ replaceInBoolExpr m' e
 
-replaceInBoolExpr :: Matchset NodeID -> BoolExpr -> BoolExpr
-replaceInBoolExpr m (EqExpr  lhs rhs) =
+replaceInBoolExpr :: Match NodeID -> BoolExpr -> BoolExpr
+replaceInBoolExpr m (EqExpr lhs rhs) =
   EqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
 replaceInBoolExpr m (NeqExpr lhs rhs) =
   NeqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (GTExpr  lhs rhs) =
+replaceInBoolExpr m (GTExpr lhs rhs) =
   GTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (GEExpr  lhs rhs) =
+replaceInBoolExpr m (GEExpr lhs rhs) =
   GEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (LTExpr  lhs rhs) =
+replaceInBoolExpr m (LTExpr lhs rhs) =
   LTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (LEExpr  lhs rhs) =
+replaceInBoolExpr m (LEExpr lhs rhs) =
   LEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
 replaceInBoolExpr m (AndExpr lhs rhs) =
   AndExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
-replaceInBoolExpr m (OrExpr  lhs rhs) =
+replaceInBoolExpr m (OrExpr lhs rhs) =
   OrExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
 replaceInBoolExpr m (ImpExpr lhs rhs) =
   ImpExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
@@ -196,8 +200,8 @@ replaceInBoolExpr m (DataNodeIsAnIntConstantExpr e) =
 replaceInBoolExpr m (DataNodeIsIntermediateExpr e) =
   DataNodeIsIntermediateExpr (replaceInNodeExpr m e)
 
-replaceInNumExpr :: Matchset NodeID -> NumExpr -> NumExpr
-replaceInNumExpr m (PlusExpr  lhs rhs) =
+replaceInNumExpr :: Match NodeID -> NumExpr -> NumExpr
+replaceInNumExpr m (PlusExpr lhs rhs) =
   PlusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
 replaceInNumExpr m (MinusExpr lhs rhs) =
   MinusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
@@ -222,17 +226,17 @@ replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
   (replaceInPatternInstanceExpr m pat_e)
   (replaceInLabelExpr m lab_e)
 
-replaceInIntExpr :: Matchset NodeID -> IntExpr -> IntExpr
+replaceInIntExpr :: Match NodeID -> IntExpr -> IntExpr
 replaceInIntExpr _ (AnIntegerExpr i) = AnIntegerExpr i
 replaceInIntExpr m (IntConstValueOfDataNodeExpr e) =
   IntConstValueOfDataNodeExpr $ replaceInNodeExpr m e
 
-replaceInNodeExpr :: Matchset NodeID -> NodeExpr -> NodeExpr
+replaceInNodeExpr :: Match NodeID -> NodeExpr -> NodeExpr
 replaceInNodeExpr m (ANodeIDExpr i) =
-  ANodeIDExpr $ fromJust $ mapP2F m i
+  ANodeIDExpr $ fromJust $ findFNInMatch m i
 
 replaceInPatternInstanceExpr ::
-     Matchset NodeID
+     Match NodeID
   -> PatternInstanceExpr
   -> PatternInstanceExpr
 replaceInPatternInstanceExpr _ (APatternInstanceIDExpr i) =
@@ -246,36 +250,36 @@ replaceInPatternInstanceExpr m (DefinerOfStateNodeExpr e) =
 replaceInPatternInstanceExpr _ ThisPatternInstanceExpr = ThisPatternInstanceExpr
 
 replaceInInstructionExpr ::
-     Matchset NodeID
+     Match NodeID
   -> InstructionExpr
   -> InstructionExpr
 replaceInInstructionExpr _ (AnInstructionIDExpr i) = AnInstructionIDExpr i
 replaceInInstructionExpr m (InstructionOfPatternExpr e) =
   InstructionOfPatternExpr (replaceInPatternExpr m e)
 
-replaceInPatternExpr :: Matchset NodeID -> PatternExpr -> PatternExpr
+replaceInPatternExpr :: Match NodeID -> PatternExpr -> PatternExpr
 replaceInPatternExpr _ (APatternIDExpr i) = APatternIDExpr i
 replaceInPatternExpr m (PatternOfPatternInstanceExpr e) =
   PatternOfPatternInstanceExpr (replaceInPatternInstanceExpr m e)
 
-replaceInLabelExpr :: Matchset NodeID -> LabelExpr -> LabelExpr
+replaceInLabelExpr :: Match NodeID -> LabelExpr -> LabelExpr
 replaceInLabelExpr m (LabelAllocatedToPatternInstanceExpr e) =
   LabelAllocatedToPatternInstanceExpr (replaceInPatternInstanceExpr m e)
 replaceInLabelExpr m (LabelOfLabelNodeExpr e) =
   LabelOfLabelNodeExpr (replaceInNodeExpr m e)
 
-replaceInRegisterExpr :: Matchset NodeID -> RegisterExpr -> RegisterExpr
+replaceInRegisterExpr :: Match NodeID -> RegisterExpr -> RegisterExpr
 replaceInRegisterExpr _ (ARegisterIDExpr i) = ARegisterIDExpr i
 replaceInRegisterExpr m (RegisterAllocatedToDataNodeExpr e) =
   RegisterAllocatedToDataNodeExpr (replaceInNodeExpr m e)
 
-replaceInSetElemExpr :: Matchset NodeID -> SetElemExpr -> SetElemExpr
+replaceInSetElemExpr :: Match NodeID -> SetElemExpr -> SetElemExpr
 replaceInSetElemExpr m (Label2SetElemExpr e) =
   Label2SetElemExpr (replaceInLabelExpr m e)
 replaceInSetElemExpr m (Register2SetElemExpr e) =
   Register2SetElemExpr (replaceInRegisterExpr m e)
 
-replaceInSetExpr :: Matchset NodeID -> SetExpr -> SetExpr
+replaceInSetExpr :: Match NodeID -> SetExpr -> SetExpr
 replaceInSetExpr m (UnionSetExpr lhs rhs) =
   UnionSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
 replaceInSetExpr m (IntersectSetExpr lhs rhs) =

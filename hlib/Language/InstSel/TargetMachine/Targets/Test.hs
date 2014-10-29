@@ -43,7 +43,7 @@ tmTest =
           ]
         )
         ( map Edge
-          [ (0, 1, EdgeLabel 0 0)
+          [ (0, 1, EdgeLabel DataFlowEdge 0 0)
           ]
         )
       add_pattern =
@@ -58,9 +58,9 @@ tmTest =
         )
         ( map
           Edge
-          [ (1, 0, EdgeLabel 0 0)
-          , (2, 0, EdgeLabel 0 1)
-          , (0, 3, EdgeLabel 0 0)
+          [ (1, 0, EdgeLabel DataFlowEdge 0 0)
+          , (2, 0, EdgeLabel DataFlowEdge 0 1)
+          , (0, 3, EdgeLabel DataFlowEdge 0 0)
           ]
         )
       bnz_pattern =
@@ -76,10 +76,10 @@ tmTest =
         )
         ( map
           Edge
-          [ (0, 4, EdgeLabel 0 1)
-          , (1, 4, EdgeLabel 0 0)
-          , (4, 2, EdgeLabel 0 0)
-          , (4, 3, EdgeLabel 1 0)
+          [ (0, 4, EdgeLabel DataFlowEdge 0 1)
+          , (1, 4, EdgeLabel ControlFlowEdge 0 0)
+          , (4, 2, EdgeLabel ControlFlowEdge 0 0)
+          , (4, 3, EdgeLabel ControlFlowEdge 1 0)
           ]
         )
       br_pattern =
@@ -93,8 +93,8 @@ tmTest =
         )
         ( map
           Edge
-          [ (0, 2, EdgeLabel 0 0)
-          , (2, 1, EdgeLabel 0 0)
+          [ (0, 2, EdgeLabel ControlFlowEdge 0 0)
+          , (2, 1, EdgeLabel ControlFlowEdge 0 0)
           ]
         )
       br_fallthrough_pattern = br_pattern
@@ -109,8 +109,8 @@ tmTest =
         )
         ( map
           Edge
-          [ (0, 2, EdgeLabel 0 1)
-          , (1, 2, EdgeLabel 0 0)
+          [ (0, 2, EdgeLabel DataFlowEdge 0 1)
+          , (1, 2, EdgeLabel ControlFlowEdge 0 0)
           ]
         )
       phi_pattern =
@@ -120,24 +120,14 @@ tmTest =
           [ (0, NodeLabel 0 (DataNode D.AnyType Nothing))
           , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
           , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
-          , (3, NodeLabel 3 (LabelNode $ BBLabelID ""))
-          , (4, NodeLabel 4 (LabelNode $ BBLabelID ""))
-          , (5, NodeLabel 5 (LabelNode $ BBLabelID ""))
-          , (6, NodeLabel 6 NullNode)
-          , (7, NodeLabel 7 NullNode)
-          , (8, NodeLabel 8 PhiNode)
+          , (3, NodeLabel 3 PhiNode)
           ]
         )
         ( map
           Edge
-          [ (0, 8, EdgeLabel 0 1)
-          , (1, 8, EdgeLabel 0 2)
-          , (8, 2, EdgeLabel 0 0)
-          , (3, 6, EdgeLabel 0 0)
-          , (4, 7, EdgeLabel 0 0)
-          , (6, 5, EdgeLabel 0 0)
-          , (7, 5, EdgeLabel 0 1)
-          , (5, 8, EdgeLabel 0 0)
+          [ (0, 3, EdgeLabel DataFlowEdge 0 1)
+          , (1, 3, EdgeLabel DataFlowEdge 0 2)
+          , (3, 2, EdgeLabel DataFlowEdge 0 0)
           ]
         )
       init_def_pattern_os =
