@@ -225,14 +225,11 @@ newtype Edge =
     Edge (I.LEdge EdgeLabel)
   deriving (Show, Eq)
 
--- | Data type for describing how an edge relates to the two nodes. Since edges
--- are ordered, there will be an edge number for each node: one for indicating
--- which output edge it is of the source node, and another for indicating which
--- input edge it is for the destination node.
+-- | Data type for describing how an edge relates to the two nodes.
 data EdgeLabel =
     EdgeLabel
-    { srcNr :: EdgeNr
-    , dstNr :: EdgeNr
+    { outNr :: EdgeNr
+    , inNr :: EdgeNr
     }
   deriving (Show, Eq)
 
