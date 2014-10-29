@@ -76,4 +76,4 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	-$(RM) $(BINARY)
+	$(RM) $(BINARY)
