@@ -5,3 +5,4 @@
 *.json
 match-test
 test
+test-llvm
