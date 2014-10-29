@@ -48,6 +48,8 @@ mkNodeAttr (_, NodeLabel _ nt) = mkNodeTypeAttr nt
 mkNodeTypeAttr :: NodeType -> GV.Attributes
 mkNodeTypeAttr (ComputationNode op) =
   [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
+mkNodeTypeAttr (TypeConversionNode op) =
+  [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
 mkNodeTypeAttr (ControlNode op) =
   [GV.shape GV.InvHouse, GV.toLabel (prettyShow op)]
 mkNodeTypeAttr (DataNode _ src) =
@@ -55,7 +57,7 @@ mkNodeTypeAttr (DataNode _ src) =
   in if isJust src
         then [shape_attr, GV.toLabel $ fromJust src]
         else [shape_attr, GV.toLabel ""]
-mkNodeTypeAttr (LabelNode (BBLabel l)) =
+mkNodeTypeAttr (LabelNode (BBLabelID l)) =
   [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel l]
 mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
 mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape, GV.toLabel ""]

@@ -843,7 +843,7 @@ checkOrderingOfOutEdges :: Graph -> Node -> Bool
 checkOrderingOfOutEdges _ n
   | isControlNode n = f (nodeType n)
   | otherwise = False
-  where f (ControlNode O.IfBranch) = True
+  where f (ControlNode O.CondBranch) = True
         f _ = False
 
 -- | If the pattern node requires an ordering on its inbound edges, check that

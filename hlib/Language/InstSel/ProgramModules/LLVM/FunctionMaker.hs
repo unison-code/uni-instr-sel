@@ -57,7 +57,7 @@ type ConstToNodeMapping = (G.Node, Constant)
 -- blocks from which the data values originate, and the order of the list is
 -- exactly that of the edge ordering for the phi node just after it has been
 -- built.
-type AuxPhiNodeData = (G.Node, [G.BBLabel])
+type AuxPhiNodeData = (G.Node, [G.BBLabelID])
 
 -- | Represents the intermediate data as the function is being processed.
 data ProcessState =
@@ -347,7 +347,8 @@ processConst st0 c =
 
 mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
 mkConstConstraints (IntConstant _ v) n =
-  [ C.DataNodeIsIntConstantConstraint $ G.nodeID n
+  [ C.BoolExprConstraint $
+    C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.nodeID n
   , C.BoolExprConstraint $
     C.EqExpr
     ( C.Int2NumExpr $
@@ -438,7 +439,7 @@ toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-getLabelNode :: ProcessState -> G.BBLabel -> Maybe G.Node
+getLabelNode :: ProcessState -> G.BBLabelID -> Maybe G.Node
 getLabelNode st l =
   let label_nodes = filter G.isLabelNode $ G.allNodes $ theOSGraph st
       nodes_w_matching_labels =
@@ -450,7 +451,7 @@ getLabelNode st l =
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated to reflect the
 -- label node in question. If not then a new label node is added.
-ensureLabelNodeExists :: ProcessState -> G.BBLabel -> ProcessState
+ensureLabelNodeExists :: ProcessState -> G.BBLabelID -> ProcessState
 ensureLabelNodeExists st l =
   let label_node = getLabelNode st l
   in if isJust label_node
@@ -487,7 +488,7 @@ fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
 -- | Gets a list of labels of the label nodes which are the predecessors of
 -- another label node. The list is in the same order as the ordering of the
 -- in-edges.
-getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabel]
+getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabelID]
 getPredLabelsOfLabelNode g l_node =
   -- The in-edges to the label node are always from control nodes, and for these
   -- their first in-edge is always from the label node to which they belong
@@ -564,7 +565,7 @@ instance (Processable n) => Processable (LLVM.Named n) where
 
 instance Processable LLVM.BasicBlock where
   process st0 (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
-    let st1 = ensureLabelNodeExists st0 (G.BBLabel str)
+    let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
         st2 = st1 { theLabelNode = lastTouchedNode st1 }
         st3 = foldl process st2 insts
         st4 = process st3 term_inst
@@ -630,7 +631,7 @@ instance Processable LLVM.Instruction where
         -- been added
         st4 = addNewEdgesManySources st3 operand_ns op_node
         l_strs = map (\(LLVM.Name str) -> str) l_names
-        labels = map G.BBLabel l_strs
+        labels = map G.BBLabelID l_strs
         st5 = addAuxPhiNodeData st4 (op_node, labels)
     in st5
   process _ l = error $ "'process' not implemented for " ++ show l
@@ -652,19 +653,19 @@ instance Processable LLVM.Terminator where
   process st0 (LLVM.Br (LLVM.Name dst) _) =
     let st1 = processControlOp
               st0
-              Op.UncondBranch
+              Op.Branch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (G.BBLabel dst)
+        st2 = ensureLabelNodeExists st1 (G.BBLabelID dst)
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 br_node dst_node
     in st3
   process st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
     let st1 = processControlOp st0 Op.CondBranch [op]
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (G.BBLabel t_dst)
+        st2 = ensureLabelNodeExists st1 (G.BBLabelID t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2
-        st3 = ensureLabelNodeExists st2 (G.BBLabel f_dst)
+        st3 = ensureLabelNodeExists st2 (G.BBLabelID f_dst)
         f_dst_node = fromJust $ lastTouchedNode st3
         st4 = addNewEdgesManyDests st3 br_node [t_dst_node, f_dst_node]
     in st4

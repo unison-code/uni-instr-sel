@@ -163,7 +163,7 @@ data ControlOp =
     Branch
 
     -- | Conditional branch. Branching is done if the input value is not zero.
-  | IfBranch
+  | CondBranch
 
     -- | Return.
   | Ret
@@ -264,6 +264,6 @@ instance PrettyPrint TypeConvOp where
   prettyShow UInt2Float = "uitofp"
 
 instance PrettyPrint ControlOp where
-  prettyShow Branch   = "br"
-  prettyShow IfBranch = "bnz"
-  prettyShow Ret      = "ret"
+  prettyShow Branch     = "br"
+  prettyShow CondBranch = "cbr"
+  prettyShow Ret        = "ret"
