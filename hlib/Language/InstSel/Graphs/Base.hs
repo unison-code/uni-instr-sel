@@ -942,8 +942,8 @@ doOrdersOfInEdgesMatch fg pg st m =
       preds_pn = filter (`elem` (map pNode st)) (getPredecessors pg pn)
       preds_fn = mapPs2Fs st preds_pn
       es = zip
-           (sortEdgesByInNumbers (concatMap (flip (getEdges pg) pn) preds_pn))
-           (sortEdgesByInNumbers (concatMap (flip (getEdges fg) fn) preds_fn))
+           (concatMap (sortEdgesByInNumbers . flip (getEdges pg) pn) preds_pn)
+           (concatMap (sortEdgesByInNumbers . flip (getEdges fg) fn) preds_fn)
   in if checkOrderingOfInEdges pg pn
      then all (\(e, e') -> (getInEdgeNr e) == (getInEdgeNr e')) es
      else True
@@ -965,8 +965,8 @@ doOrdersOfOutEdgesMatch fg pg st m =
       succs_pn = filter (`elem` (map pNode st)) (getSuccessors pg pn)
       succs_fn = mapPs2Fs st succs_pn
       es = zip
-           (sortEdgesByOutNumbers (concatMap (getEdges pg pn) succs_pn))
-           (sortEdgesByOutNumbers (concatMap (getEdges fg fn) succs_fn))
+           (concatMap (sortEdgesByOutNumbers . getEdges pg pn) succs_pn)
+           (concatMap (sortEdgesByOutNumbers . getEdges fg fn) succs_fn)
   in if checkOrderingOfOutEdges pg pn
      then all (\(e, e') -> (getOutEdgeNr e) == (getOutEdgeNr e')) es
      else True
