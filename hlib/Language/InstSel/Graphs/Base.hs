@@ -73,6 +73,12 @@ module Language.InstSel.Graphs.Base
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
+  , getCFInEdges
+  , getCFOutEdges
+  , getDFInEdges
+  , getDFOutEdges
+  , getDPInEdges
+  , getDPOutEdges
   , getEdgeType
   , getEdges
   , getInEdgeNr
@@ -88,6 +94,8 @@ module Language.InstSel.Graphs.Base
   , getOutEdgeNr
   , getOutEdges
   , getPredecessors
+  , getSFInEdges
+  , getSFOutEdges
   , getSourceNode
   , getSuccessors
   , getTargetNode
@@ -96,18 +104,26 @@ module Language.InstSel.Graphs.Base
   , insertNewNodeAlongEdge
   , isActionNode
   , isComputationNode
+  , isControlFlowEdge
   , isControlNode
   , isCopyNode
+  , isDataFlowEdge
   , isDataNode
+  , isDefPlaceEdge
   , isEntityNode
   , isInGraph
   , isLabelNode
+  , isStateFlowEdge
   , isOfComputationNodeType
+  , isOfControlFlowEdgeType
   , isOfControlNodeType
   , isOfCopyNodeType
+  , isOfDataFlowEdgeType
   , isOfDataNodeType
+  , isOfDefPlaceEdgeType
   , isOfLabelNodeType
   , isOfPhiNodeType
+  , isOfStateFlowEdgeType
   , isOfStateNodeType
   , isOfTypeConversionNodeType
   , isPhiNode
@@ -359,6 +375,34 @@ isOfCopyNodeType :: NodeType -> Bool
 isOfCopyNodeType CopyNode = True
 isOfCopyNodeType _ = False
 
+isDataFlowEdge :: Edge -> Bool
+isDataFlowEdge = isOfDataFlowEdgeType . getEdgeType
+
+isStateFlowEdge :: Edge -> Bool
+isStateFlowEdge = isOfStateFlowEdgeType . getEdgeType
+
+isControlFlowEdge :: Edge -> Bool
+isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
+
+isDefPlaceEdge :: Edge -> Bool
+isDefPlaceEdge = isOfDefPlaceEdgeType . getEdgeType
+
+isOfDataFlowEdgeType :: EdgeType -> Bool
+isOfDataFlowEdgeType DataFlowEdge = True
+isOfDataFlowEdgeType _ = False
+
+isOfControlFlowEdgeType :: EdgeType -> Bool
+isOfControlFlowEdgeType ControlFlowEdge = True
+isOfControlFlowEdgeType _ = False
+
+isOfStateFlowEdgeType :: EdgeType -> Bool
+isOfStateFlowEdgeType StateFlowEdge = True
+isOfStateFlowEdgeType _ = False
+
+isOfDefPlaceEdgeType :: EdgeType -> Bool
+isOfDefPlaceEdgeType DefPlaceEdge = True
+isOfDefPlaceEdgeType _ = False
+
 -- | Creates an empty graph.
 mkEmpty :: Graph
 mkEmpty = Graph I.empty
@@ -501,7 +545,11 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
   let new_trg_id = getIntNodeID new_trg
       new_e = ( src
               , new_trg_id
-              , l { inEdgeNr = getNextInEdgeNr g new_trg_id }
+              , l { inEdgeNr = getNextInEdgeNr
+                               g
+                               new_trg_id
+                               (\e' -> getEdgeType e' == edgeType l)
+                  }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
@@ -528,20 +576,30 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
   let new_src_id = getIntNodeID new_src
       new_e = ( new_src_id
               , trg
-              , l { outEdgeNr = getNextOutEdgeNr g new_src_id }
+              , l { outEdgeNr = getNextOutEdgeNr
+                                g
+                                new_src_id
+                                (\e' -> getEdgeType e' == edgeType l)
+                  }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
-getNextInEdgeNr :: IntGraph -> I.Node -> EdgeNr
-getNextInEdgeNr g int =
-  let existing_numbers = map getInEdgeNr (map toEdge (I.inn g int))
+-- | Gets the next input edge number to use for a given node, only regarding the
+-- edges that pass the user-provided check function. The function can be used to
+-- the next edge number for a particular edge type.
+getNextInEdgeNr :: IntGraph -> I.Node -> (Edge -> Bool) -> EdgeNr
+getNextInEdgeNr g int f =
+  let existing_numbers = map getInEdgeNr (filter f $ map toEdge (I.inn g int))
   in if length existing_numbers > 0
      then maximum existing_numbers + 1
      else 0
 
-getNextOutEdgeNr :: IntGraph -> I.Node -> EdgeNr
-getNextOutEdgeNr g int =
-  let existing_numbers = map getOutEdgeNr (map toEdge (I.out g int))
+-- | Gets the next output edge number to use for a given node, only regarding
+-- the edges that pass the user-provided check function. The function can be
+-- used to the next edge number for a particular edge type.
+getNextOutEdgeNr :: IntGraph -> I.Node -> (Edge -> Bool) -> EdgeNr
+getNextOutEdgeNr g int f =
+  let existing_numbers = map getOutEdgeNr (filter f $ map toEdge (I.out g int))
   in if length existing_numbers > 0
      then maximum existing_numbers + 1
      else 0
@@ -572,8 +630,8 @@ addNewEdge :: EdgeType -> (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewEdge et (from_n, to_n) (Graph g) =
   let from_n_id = getIntNodeID from_n
       to_n_id = getIntNodeID to_n
-      out_edge_nr = getNextOutEdgeNr g from_n_id
-      in_edge_nr = getNextInEdgeNr g to_n_id
+      out_edge_nr = getNextOutEdgeNr g from_n_id (\e -> et == getEdgeType e)
+      in_edge_nr = getNextInEdgeNr g to_n_id (\e -> et == getEdgeType e)
       new_e = ( from_n_id
               , to_n_id
               , EdgeLabel { edgeType = et
@@ -656,13 +714,45 @@ isInGraph (Graph g) n = isJust $ getNodeWithIntNodeID g (getIntNodeID n)
 getAllEdges :: Graph -> [Edge]
 getAllEdges (Graph g) = map toEdge $ I.labEdges g
 
--- | Gets all inbound edges to a particular node.
+-- | Gets all inbound edges (regardless of type) to a particular node.
 getInEdges :: Graph -> Node -> [Edge]
 getInEdges (Graph g) n = map toEdge $ I.inn g (getIntNodeID n)
 
--- | Gets all outbound edges from a particular node.
+-- | Gets all inbound data flow edges to a particular node.
+getDFInEdges :: Graph -> Node -> [Edge]
+getDFInEdges g n = filter isDataFlowEdge $ getInEdges g n
+
+-- | Gets all inbound control flow edges to a particular node.
+getCFInEdges :: Graph -> Node -> [Edge]
+getCFInEdges g n = filter isControlFlowEdge $ getInEdges g n
+
+-- | Gets all inbound state flow edges to a particular node.
+getSFInEdges :: Graph -> Node -> [Edge]
+getSFInEdges g n = filter isStateFlowEdge $ getInEdges g n
+
+-- | Gets all inbound definition placement edges to a particular node.
+getDPInEdges :: Graph -> Node -> [Edge]
+getDPInEdges g n = filter isDefPlaceEdge $ getInEdges g n
+
+-- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
 getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
+
+-- | Gets all outbound data flow edges to a particular node.
+getDFOutEdges :: Graph -> Node -> [Edge]
+getDFOutEdges g n = filter isDataFlowEdge $ getOutEdges g n
+
+-- | Gets all outbound control flow edges to a particular node.
+getCFOutEdges :: Graph -> Node -> [Edge]
+getCFOutEdges g n = filter isControlFlowEdge $ getOutEdges g n
+
+-- | Gets all outbound state flow edges to a particular node.
+getSFOutEdges :: Graph -> Node -> [Edge]
+getSFOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
+
+-- | Gets all outbound definition placement edges to a particular node.
+getDPOutEdges :: Graph -> Node -> [Edge]
+getDPOutEdges g n = filter isDefPlaceEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
 getEdges :: Graph -> SrcNode -> DstNode -> [Edge]
