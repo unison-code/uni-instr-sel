@@ -820,8 +820,8 @@ doNodesMatch fg pg st m =
   &&
   doEdgesMatch fg pg st m
 
--- | Checks if two node types are matching-compatible, meaning that they will
--- yield assembly code which is semantically equivalent.
+-- | Checks if two node types are compatible, which means that they will yield
+-- assembly code that is semantically equivalent.
 doNodeTypesMatch :: NodeType -> NodeType -> Bool
 doNodeTypesMatch (ComputationNode op1) (ComputationNode op2) =
   O.areComputationsCompatible op1 op2
