@@ -20,7 +20,6 @@ import Language.InstSel.PrettyPrint
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Attributes.Complete as GVA
-import Data.Maybe
 
 
 
@@ -35,40 +34,74 @@ toDotGraph g = GV.graphToDot mkParams (intGraph g)
 -- | Constructs the appropriate parameters.
 mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
 mkParams =
-  GV.nonClusteredParams
-  { GV.fmtNode = mkNodeAttr
-  , GV.fmtEdge = mkEdgeAttr
-  }
+  GV.nonClusteredParams { GV.fmtNode = mkNodeAttr
+                        , GV.fmtEdge = mkEdgeAttr
+                        }
 
 -- | Constructs the appropriate node attributes, depending on the node type.
 mkNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
-mkNodeAttr (_, NodeLabel _ nt) = mkNodeTypeAttr nt
+mkNodeAttr n = mkNodeAttrByType (getNodeType (Node n))
 
--- | Constructs the node attributes based on its node type.
-mkNodeTypeAttr :: NodeType -> GV.Attributes
-mkNodeTypeAttr (ComputationNode op) =
-  [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
-mkNodeTypeAttr (TypeConversionNode op) =
-  [GV.shape GV.Circle, GV.toLabel (prettyShow op)]
-mkNodeTypeAttr (ControlNode op) =
-  [GV.shape GV.InvHouse, GV.toLabel (prettyShow op)]
-mkNodeTypeAttr (DataNode _ src) =
-  let shape_attr = GV.shape GV.BoxShape
-  in if isJust src
-        then [shape_attr, GV.toLabel $ fromJust src]
-        else [shape_attr, GV.toLabel ""]
-mkNodeTypeAttr (LabelNode (BBLabelID l)) =
-  [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel l]
-mkNodeTypeAttr PhiNode = [GV.shape GV.Circle, GV.toLabel "phi"]
-mkNodeTypeAttr StateNode = [GV.shape GV.BoxShape, GV.toLabel ""]
-mkNodeTypeAttr CopyNode = [GV.shape GV.DiamondShape, GV.toLabel ""]
-mkNodeTypeAttr NullNode =
-  [GV.shape GV.Circle, GV.style GV.dashed, GV.toLabel ""]
+-- | Constructs the node attributes based on the given node type.
+mkNodeAttrByType :: NodeType -> GV.Attributes
+mkNodeAttrByType (ComputationNode op) = mkCompNodeAttr (prettyShow op)
+mkNodeAttrByType (ControlNode op) = mkControlNodeAttr (prettyShow op)
+mkNodeAttrByType (DataNode _ src) = mkDataNodeAttr (maybe "" id src)
+mkNodeAttrByType (LabelNode (BBLabelID l)) = mkLabelNodeAttr l
+mkNodeAttrByType PhiNode = mkPhiNodeAttr
+mkNodeAttrByType StateNode = mkStateNodeAttr
+mkNodeAttrByType CopyNode = mkCopyNodeAttr
+
+mkCompNodeAttr :: String -> GV.Attributes
+mkCompNodeAttr s = [GV.shape GV.Circle, GV.toLabel s]
+
+mkControlNodeAttr :: String -> GV.Attributes
+mkControlNodeAttr s = [GV.shape GV.InvHouse, GV.toLabel s]
+
+mkDataNodeAttr :: String -> GV.Attributes
+mkDataNodeAttr s = [GV.shape GV.BoxShape, GV.toLabel s]
+
+mkLabelNodeAttr :: String -> GV.Attributes
+mkLabelNodeAttr s = [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel s]
+
+mkPhiNodeAttr :: GV.Attributes
+mkPhiNodeAttr = mkCompNodeAttr "phi"
+
+mkStateNodeAttr :: GV.Attributes
+mkStateNodeAttr = mkDataNodeAttr ""
+
+mkCopyNodeAttr :: GV.Attributes
+mkCopyNodeAttr = mkCompNodeAttr "copy"
 
 -- | Constructs the appropriate edge attributes.
 mkEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
-mkEdgeAttr (_, _, EdgeLabel out_nr in_nr) =
-  [ GVA.TailLabel (GV.toLabelValue $ show out_nr)
-  , GVA.HeadLabel (GV.toLabelValue $ show in_nr)
+mkEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
+               ++
+               mkEdgeNrAttributes e
+
+-- | Constructs attributes for the edge numbers.
+mkEdgeNrAttributes :: (I.LEdge EdgeLabel) -> GV.Attributes
+mkEdgeNrAttributes e =
+  [ GVA.TailLabel (GV.toLabelValue $ show $ getOutEdgeNr (Edge e))
+  , GVA.HeadLabel (GV.toLabelValue $ show $ getInEdgeNr (Edge e))
   , GVA.LabelDistance 2.0
   ]
+
+-- | Constructs the edge attributes based on the given edge type.
+mkEdgeAttrByType :: EdgeType -> GV.Attributes
+mkEdgeAttrByType ControlFlowEdge = mkControlFlowEdgeAttr
+mkEdgeAttrByType DataFlowEdge = mkDataFlowEdgeAttr
+mkEdgeAttrByType StateFlowEdge = mkStateFlowEdgeAttr
+mkEdgeAttrByType DefPlaceEdge = mkDefPlaceEdgeAttr
+
+mkControlFlowEdgeAttr :: GV.Attributes
+mkControlFlowEdgeAttr = [GV.style GV.dashed]
+
+mkDataFlowEdgeAttr :: GV.Attributes
+mkDataFlowEdgeAttr = [GV.style GV.solid]
+
+mkStateFlowEdgeAttr :: GV.Attributes
+mkStateFlowEdgeAttr = [GV.style GV.solid]
+
+mkDefPlaceEdgeAttr :: GV.Attributes
+mkDefPlaceEdgeAttr = [GV.style GV.dotted]
