@@ -20,6 +20,9 @@
 -- will not match. But we're only interested in matching all edges in the
 -- pattern, not necessarily all edges in the function graph! I should contact
 -- the authors about this and see whether there's a mistake.
+--
+-- TODO: handle function graphs with multiple edges that have the same edge
+-- numbers
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.VFTwo
