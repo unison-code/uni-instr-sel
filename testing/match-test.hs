@@ -54,8 +54,12 @@ main =
                 , (9, NodeLabel 9 (LabelNode $ BBLabelID "end"))
                 , (10, NodeLabel 10 (ControlNode O.CondBranch))
                 , (11, NodeLabel 11 (ControlNode O.Ret))
-                , (12, NodeLabel 12 (ComputationNode (O.UIntOp O.Add)))
-                , (13, NodeLabel 13 (ComputationNode (O.UIntOp O.Add)))
+                , (12, NodeLabel 12 ( ComputationNode
+                                      (O.CompArithOp $ O.UIntOp O.Add)
+                                    ))
+                , (13, NodeLabel 13 ( ComputationNode
+                                      (O.CompArithOp $ O.UIntOp O.Add)
+                                    ))
                 , (14, NodeLabel 14 PhiNode)
                 , (15, NodeLabel 15 (ControlNode O.Branch))
                 ])

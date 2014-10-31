@@ -50,7 +50,7 @@ tmTest =
         mkGraph
         ( map
           Node
-          [ (0, NodeLabel 0 (ComputationNode (O.UIntOp O.Add)))
+          [ (0, NodeLabel 0 (ComputationNode (O.CompArithOp $ O.UIntOp O.Add)))
           , (1, NodeLabel 1 (DataNode D.AnyType Nothing))
           , (2, NodeLabel 2 (DataNode D.AnyType Nothing))
           , (3, NodeLabel 3 (DataNode D.AnyType Nothing))

@@ -31,30 +31,36 @@ import Prelude
 
 -- | Computational operations.
 data CompOp =
-    -- | An integer operation where the sign does not matter.
-    IntOp CompOpType
-
-    -- | An unsigned integer operation.
-  | UIntOp CompOpType
-
-    -- | A signed integer operation.
-  | SIntOp CompOpType
-
-    -- | A fixed-point operation.
-  | FixpointOp CompOpType
-
-    -- | A floating-point operation where the ordering does not matter.
-  | FloatOp CompOpType
-
-    -- | An ordered floating-point operation.
-  | OFloatOp CompOpType
-
-    -- | An unordered floating-point operation.
-  | UFloatOp CompOpType
+    CompArithOp ArithOp
+  | CompTypeConvOp TypeConvOp
   deriving (Show, Eq)
 
--- | Computational operation types.
-data CompOpType =
+-- | Arithmetic operations.
+data ArithOp =
+    -- | An integer operation where the sign does not matter.
+    IntOp ArithOpType
+
+    -- | An unsigned integer operation.
+  | UIntOp ArithOpType
+
+    -- | A signed integer operation.
+  | SIntOp ArithOpType
+
+    -- | A fixed-point operation.
+  | FixpointOp ArithOpType
+
+    -- | A floating-point operation where the ordering does not matter.
+  | FloatOp ArithOpType
+
+    -- | An ordered floating-point operation.
+  | OFloatOp ArithOpType
+
+    -- | An unordered floating-point operation.
+  | UFloatOp ArithOpType
+  deriving (Show, Eq)
+
+-- | Arithmetic operation types.
+data ArithOpType =
     -- | Addition. Commutative.
     Add
 
@@ -175,61 +181,85 @@ data ControlOp =
 -- Functions
 --------------
 
--- | Gets the operation type from a computational operation.
-getCompOpType :: CompOp -> CompOpType
-getCompOpType ( IntOp op)     = op
-getCompOpType (UIntOp op)     = op
-getCompOpType (SIntOp op)     = op
-getCompOpType (FixpointOp op) = op
-getCompOpType ( FloatOp op)   = op
-getCompOpType (OFloatOp op)   = op
-getCompOpType (UFloatOp op)   = op
+-- | Gets the operation type from an arithmetic operation.
+getArithOpType :: ArithOp -> ArithOpType
+getArithOpType ( IntOp op)     = op
+getArithOpType (UIntOp op)     = op
+getArithOpType (SIntOp op)     = op
+getArithOpType (FixpointOp op) = op
+getArithOpType ( FloatOp op)   = op
+getArithOpType (OFloatOp op)   = op
+getArithOpType (UFloatOp op)   = op
 
--- | Checks if an operation is commutative.
-isOpCommutative :: CompOp -> Bool
-isOpCommutative = isOpTypeCommutative . getCompOpType
-
--- | Checks if an operation type is commutative. Unary operations are always
+-- | Checks if an operation is commutative. Unary operations are always
 -- considered to be commutative.
-isOpTypeCommutative :: CompOpType -> Bool
-isOpTypeCommutative op =
+isOpCommutative :: CompOp -> Bool
+isOpCommutative (CompArithOp op) = isArithOpCommutative op
+isOpCommutative (CompTypeConvOp _) = True
+
+-- | Checks if an arithmetic operation is commutative.
+isArithOpCommutative :: ArithOp -> Bool
+isArithOpCommutative = isArithOpTypeCommutative . getArithOpType
+
+-- | Checks if an arithmetic operation type is commutative. Unary operations are
+-- always considered to be commutative.
+isArithOpTypeCommutative :: ArithOpType -> Bool
+isArithOpTypeCommutative op =
   op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
 
 -- | Gets the number of operands required by a given operation.
-numOperandsForOp :: CompOp -> Natural
-numOperandsForOp = numOperandsForOpType . getCompOpType
+numOperandsForCompOp :: CompOp -> Natural
+numOperandsForCompOp (CompArithOp op) = numOperandsForArithOp op
+numOperandsForCompOp (CompTypeConvOp _) = 1
 
--- | Gets the number of operands required by a given operation type.
-numOperandsForOpType :: CompOpType -> Natural
-numOperandsForOpType op
+-- | Gets the number of operands required by a given arithmetic operation.
+numOperandsForArithOp :: ArithOp -> Natural
+numOperandsForArithOp = numOperandsForArithOpType . getArithOpType
+
+-- | Gets the number of operands required by a given arithmetic operation type.
+numOperandsForArithOpType :: ArithOpType -> Natural
+numOperandsForArithOpType op
   | op `elem` [ Not, Sqrt ] = 1
   | otherwise = 2
 
 -- | Checks if two computations are compatible, meaning that they are
 -- semantically equivalent.
-areComputationsCompatible :: CompOp -> CompOp -> Bool
-areComputationsCompatible  ( IntOp op1)    ( IntOp op2) = op1 == op2
-areComputationsCompatible  ( IntOp op1)    (UIntOp op2) = op1 == op2
-areComputationsCompatible  ( IntOp op1)    (SIntOp op2) = op1 == op2
-areComputationsCompatible  (UIntOp op1)    ( IntOp op2) = op1 == op2
-areComputationsCompatible  (SIntOp op1)    ( IntOp op2) = op1 == op2
-areComputationsCompatible ( FloatOp op1) ( FloatOp op2) = op1 == op2
-areComputationsCompatible ( FloatOp op1) (OFloatOp op2) = op1 == op2
-areComputationsCompatible ( FloatOp op1) (UFloatOp op2) = op1 == op2
-areComputationsCompatible (UFloatOp op1) ( FloatOp op2) = op1 == op2
-areComputationsCompatible (OFloatOp op1) ( FloatOp op2) = op1 == op2
-areComputationsCompatible op1 op2                       = op1 == op2
+areCompOpsCompatible :: CompOp -> CompOp -> Bool
+areCompOpsCompatible (CompArithOp op1) (CompArithOp op2) =
+  areArithOpsCompatible op1 op2
+areCompOpsCompatible (CompTypeConvOp op1) (CompTypeConvOp op2) =
+  areTypeConvOpsCompatible op1 op2
+areCompOpsCompatible _ _ = False
 
+-- | Checks if two arithmetic operations are compatible, meaning that they are
+-- semantically equivalent.
+areArithOpsCompatible :: ArithOp -> ArithOp -> Bool
+areArithOpsCompatible  ( IntOp op1)    ( IntOp op2) = op1 == op2
+areArithOpsCompatible  ( IntOp op1)    (UIntOp op2) = op1 == op2
+areArithOpsCompatible  ( IntOp op1)    (SIntOp op2) = op1 == op2
+areArithOpsCompatible  (UIntOp op1)    ( IntOp op2) = op1 == op2
+areArithOpsCompatible  (SIntOp op1)    ( IntOp op2) = op1 == op2
+areArithOpsCompatible ( FloatOp op1) ( FloatOp op2) = op1 == op2
+areArithOpsCompatible ( FloatOp op1) (OFloatOp op2) = op1 == op2
+areArithOpsCompatible ( FloatOp op1) (UFloatOp op2) = op1 == op2
+areArithOpsCompatible (UFloatOp op1) ( FloatOp op2) = op1 == op2
+areArithOpsCompatible (OFloatOp op1) ( FloatOp op2) = op1 == op2
+areArithOpsCompatible op1 op2                       = op1 == op2
 
+-- | Checks if two type conversion operations are compatible, meaning that they
+-- are semantically equivalent.
+areTypeConvOpsCompatible :: TypeConvOp -> TypeConvOp -> Bool
+areTypeConvOpsCompatible = (==)
 
 ------------------------
 -- Type class instances
 ------------------------
 
 instance PrettyPrint CompOp where
-  prettyShow = prettyShow . getCompOpType
+  prettyShow (CompArithOp op) = prettyShow $ getArithOpType op
+  prettyShow (CompTypeConvOp op) = prettyShow op
 
-instance PrettyPrint CompOpType where
+instance PrettyPrint ArithOpType where
   prettyShow Add       = "+"
   prettyShow SatAdd    = "+"
   prettyShow Sub       = "-"

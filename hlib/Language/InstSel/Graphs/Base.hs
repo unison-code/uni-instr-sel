@@ -128,7 +128,6 @@ module Language.InstSel.Graphs.Base
   , isOfPhiNodeType
   , isOfStateFlowEdgeType
   , isOfStateNodeType
-  , isOfTypeConversionNodeType
   , isPhiNode
   , isRetControlNode
   , isStateNode
@@ -203,8 +202,6 @@ data NodeLabel =
 -- | The node type information.
 data NodeType =
     ComputationNode { compOp :: O.CompOp }
-
-  | TypeConversionNode { convOp :: O.TypeConvOp }
 
   | ControlNode { contOp :: O.ControlOp }
 
@@ -310,7 +307,6 @@ fromEdgeNr (EdgeNr n) = n
 isActionNode :: Node -> Bool
 isActionNode n =
      isComputationNode n
-  || isTypeConversionNode n
   || isControlNode n
   || isPhiNode n
   || isCopyNode n
@@ -322,9 +318,6 @@ isEntityNode n =
 
 isComputationNode :: Node -> Bool
 isComputationNode n = isOfComputationNodeType $ getNodeType n
-
-isTypeConversionNode :: Node -> Bool
-isTypeConversionNode n = isOfTypeConversionNodeType $ getNodeType n
 
 isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ getNodeType n
@@ -350,10 +343,6 @@ isCopyNode n = isOfCopyNodeType $ getNodeType n
 isOfComputationNodeType :: NodeType -> Bool
 isOfComputationNodeType (ComputationNode _) = True
 isOfComputationNodeType _ = False
-
-isOfTypeConversionNodeType :: NodeType -> Bool
-isOfTypeConversionNodeType (TypeConversionNode _) = True
-isOfTypeConversionNodeType _ = False
 
 isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
