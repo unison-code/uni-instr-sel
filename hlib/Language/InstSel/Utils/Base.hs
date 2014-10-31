@@ -21,7 +21,6 @@ module Language.InstSel.Utils.Base
   , fromRight
   , isLeft
   , isRight
-  , removeDuplicates
   , toNatural
   )
 where
@@ -90,14 +89,6 @@ instance Integral Natural where
 -------------
 -- Functions
 -------------
-
--- | Removes duplicates from a list.
-removeDuplicates :: Eq a => [a] -> [a]
-removeDuplicates = rd []
-  where rd seen [] = seen
-        rd seen (x:xs)
-           | x `elem` seen = rd seen xs
-           | otherwise = rd (x:seen) xs
 
 -- | Takes two lists, where one list is a permutation of the another list, and
 -- returns a list of position mappings such that one list can be transformed
