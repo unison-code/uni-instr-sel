@@ -12,6 +12,8 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
+--
+-- TODO: update handling of phi nodes
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.LLVM.FunctionMaker
@@ -232,44 +234,47 @@ addNewNode st0 nt =
 addNewEdge ::
      ProcessState
      -- ^ The current state.
+  -> G.EdgeType
   -> G.Node
      -- ^ The source node.
   -> G.Node
      -- ^ The destination node.
   -> ProcessState
      -- ^ The new state.
-addNewEdge st src dst =
-  let (new_g, _) = G.addNewEdge (src, dst) (theOSGraph st)
+addNewEdge st et src dst =
+  let (new_g, _) = G.addNewEdge et (src, dst) (theOSGraph st)
   in updateOSGraph st new_g
 
--- | Adds many new edges into a given state.
+-- | Adds many new edges of the same type into a given state.
 addNewEdgesManySources ::
      ProcessState
      -- ^ The current state.
+  -> G.EdgeType
   -> [G.Node]
      -- ^ The source nodes.
   -> G.Node
      -- ^ The destination node.
   -> ProcessState
      -- ^ The new state.
-addNewEdgesManySources st srcs dst =
+addNewEdgesManySources st et srcs dst =
   let es = zip srcs (repeat dst)
-      f g e = fst $ G.addNewEdge e g
+      f g e = fst $ G.addNewEdge et e g
   in updateOSGraph st $ foldl f (theOSGraph st) es
 
--- | Adds many new edges into a given state.
+-- | Adds many new edges of the same type into a given state.
 addNewEdgesManyDests ::
      ProcessState
      -- ^ The current state.
+  -> G.EdgeType
   -> G.Node
      -- ^ The source node.
   -> [G.Node]
      -- ^ The destination nodes.
   -> ProcessState
      -- ^ The new state.
-addNewEdgesManyDests st src dsts =
+addNewEdgesManyDests st et src dsts =
   let es = zip (repeat src) dsts
-      f g e = fst $ G.addNewEdge e g
+      f g e = fst $ G.addNewEdge et e g
   in updateOSGraph st $ foldl f (theOSGraph st) es
 
 -- | Adds a new constraint into a given state.
@@ -294,11 +299,11 @@ addAuxPhiNodeData st ad = st { thePhiData = thePhiData st ++ [ad] }
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInput :: ProcessState -> G.Node -> ProcessState
-addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.nodeID n] }
+addFuncInput st n = st { theFuncInputs = theFuncInputs st ++ [G.getNodeID n] }
 
 -- | Adds a data node representing a return value to a given state.
 addFuncRet :: ProcessState -> G.Node -> ProcessState
-addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.nodeID n] }
+addFuncRet st n = st { theFuncRets = theFuncRets st ++ [G.getNodeID n] }
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
 mappedNodeFromSym :: [SymToNodeMapping] -> Symbol -> Maybe G.Node
@@ -348,12 +353,12 @@ processConst st0 c =
 mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
 mkConstConstraints (IntConstant _ v) n =
   [ C.BoolExprConstraint $
-    C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.nodeID n
+    C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.getNodeID n
   , C.BoolExprConstraint $
     C.EqExpr
     ( C.Int2NumExpr $
       C.IntConstValueOfDataNodeExpr $
-      C.ANodeIDExpr $ G.nodeID n
+      C.ANodeIDExpr $ G.getNodeID n
     )
     ( C.Int2NumExpr $
       C.AnIntegerExpr v
@@ -376,7 +381,7 @@ processCompOp st0 op operands =
       st1 = last sts
       st2 = addNewNode st1 (G.ComputationNode op)
       op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 operand_ns op_node
+      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
   in st3
 
 -- | Inserts a new node representing a control operation, and adds edges to that
@@ -395,41 +400,49 @@ processControlOp st0 op operands =
       st1 = last sts
       st2 = addNewNode st1 (G.ControlNode op)
       op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge st2 (fromJust $ theLabelNode st2) op_node
-      st4 = addNewEdgesManySources st3 operand_ns op_node
+      st3 = addNewEdge
+            st2
+            G.ControlFlowEdge
+            (fromJust $ theLabelNode st2)
+            op_node
+      st4 = addNewEdgesManySources
+            st3
+            G.ControlFlowEdge
+            operand_ns
+            op_node
   in st4
 
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
-fromLlvmIPred LLVMI.EQ  =  Op.IntOp Op.Eq
-fromLlvmIPred LLVMI.NE  =  Op.IntOp Op.NEq
-fromLlvmIPred LLVMI.UGT = Op.UIntOp Op.GT
-fromLlvmIPred LLVMI.ULT = Op.UIntOp Op.LT
-fromLlvmIPred LLVMI.UGE = Op.UIntOp Op.GE
-fromLlvmIPred LLVMI.ULE = Op.UIntOp Op.LE
-fromLlvmIPred LLVMI.SGT = Op.SIntOp Op.GT
-fromLlvmIPred LLVMI.SLT = Op.SIntOp Op.LT
-fromLlvmIPred LLVMI.SGE = Op.SIntOp Op.GE
-fromLlvmIPred LLVMI.SLE = Op.SIntOp Op.LE
+fromLlvmIPred LLVMI.EQ  = Op.CompArithOp $  Op.IntOp Op.Eq
+fromLlvmIPred LLVMI.NE  = Op.CompArithOp $  Op.IntOp Op.NEq
+fromLlvmIPred LLVMI.UGT = Op.CompArithOp $ Op.UIntOp Op.GT
+fromLlvmIPred LLVMI.ULT = Op.CompArithOp $ Op.UIntOp Op.LT
+fromLlvmIPred LLVMI.UGE = Op.CompArithOp $ Op.UIntOp Op.GE
+fromLlvmIPred LLVMI.ULE = Op.CompArithOp $ Op.UIntOp Op.LE
+fromLlvmIPred LLVMI.SGT = Op.CompArithOp $ Op.SIntOp Op.GT
+fromLlvmIPred LLVMI.SLT = Op.CompArithOp $ Op.SIntOp Op.LT
+fromLlvmIPred LLVMI.SGE = Op.CompArithOp $ Op.SIntOp Op.GE
+fromLlvmIPred LLVMI.SLE = Op.CompArithOp $ Op.SIntOp Op.LE
 
 -- | Converts an LLVM floating point comparison op into an equivalent op of our
 -- own data type.
 fromLlvmFPred :: LLVMF.FloatingPointPredicate -> Op.CompOp
-fromLlvmFPred LLVMF.OEQ = Op.OFloatOp Op.Eq
-fromLlvmFPred LLVMF.ONE = Op.OFloatOp Op.NEq
-fromLlvmFPred LLVMF.OGT = Op.OFloatOp Op.GT
-fromLlvmFPred LLVMF.OGE = Op.OFloatOp Op.GE
-fromLlvmFPred LLVMF.OLT = Op.OFloatOp Op.LT
-fromLlvmFPred LLVMF.OLE = Op.OFloatOp Op.LE
-fromLlvmFPred LLVMF.ORD =  Op.FloatOp Op.Ordered
-fromLlvmFPred LLVMF.UNO =  Op.FloatOp Op.Unordered
-fromLlvmFPred LLVMF.UEQ = Op.UFloatOp Op.Eq
-fromLlvmFPred LLVMF.UGT = Op.UFloatOp Op.GT
-fromLlvmFPred LLVMF.UGE = Op.UFloatOp Op.GE
-fromLlvmFPred LLVMF.ULT = Op.UFloatOp Op.LT
-fromLlvmFPred LLVMF.ULE = Op.UFloatOp Op.LE
-fromLlvmFPred LLVMF.UNE = Op.UFloatOp Op.NEq
+fromLlvmFPred LLVMF.OEQ = Op.CompArithOp $ Op.OFloatOp Op.Eq
+fromLlvmFPred LLVMF.ONE = Op.CompArithOp $ Op.OFloatOp Op.NEq
+fromLlvmFPred LLVMF.OGT = Op.CompArithOp $ Op.OFloatOp Op.GT
+fromLlvmFPred LLVMF.OGE = Op.CompArithOp $ Op.OFloatOp Op.GE
+fromLlvmFPred LLVMF.OLT = Op.CompArithOp $ Op.OFloatOp Op.LT
+fromLlvmFPred LLVMF.OLE = Op.CompArithOp $ Op.OFloatOp Op.LE
+fromLlvmFPred LLVMF.ORD = Op.CompArithOp $  Op.FloatOp Op.Ordered
+fromLlvmFPred LLVMF.UNO = Op.CompArithOp $  Op.FloatOp Op.Unordered
+fromLlvmFPred LLVMF.UEQ = Op.CompArithOp $ Op.UFloatOp Op.Eq
+fromLlvmFPred LLVMF.UGT = Op.CompArithOp $ Op.UFloatOp Op.GT
+fromLlvmFPred LLVMF.UGE = Op.CompArithOp $ Op.UFloatOp Op.GE
+fromLlvmFPred LLVMF.ULT = Op.CompArithOp $ Op.UFloatOp Op.LT
+fromLlvmFPred LLVMF.ULE = Op.CompArithOp $ Op.UFloatOp Op.LE
+fromLlvmFPred LLVMF.UNE = Op.CompArithOp $ Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Gets the corresponding DataType for a constant value.
@@ -441,9 +454,9 @@ toDataType c = error $ "'toDataType' not implemented for " ++ show c
 -- If no such node exists, `Nothing` is returned.
 getLabelNode :: ProcessState -> G.BBLabelID -> Maybe G.Node
 getLabelNode st l =
-  let label_nodes = filter G.isLabelNode $ G.allNodes $ theOSGraph st
+  let label_nodes = filter G.isLabelNode $ G.getAllNodes $ theOSGraph st
       nodes_w_matching_labels =
-        filter (\n -> (G.bbLabel $ G.nodeType n) == l) label_nodes
+        filter (\n -> (G.bbLabel $ G.getNodeType n) == l) label_nodes
   in if length nodes_w_matching_labels > 0
      then Just (head nodes_w_matching_labels)
      else Nothing
@@ -467,9 +480,11 @@ fixPhiNodeEdgeOrderings st = foldl fixPhiNodeEdgeOrdering st (thePhiData st)
 fixPhiNodeEdgeOrdering :: ProcessState -> AuxPhiNodeData -> ProcessState
 fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
   let g = theOSGraph st
-      in_edges_of_phi_node = G.sortEdgesByInNumbers $ G.inEdges g phi_node
+      in_edges_of_phi_node = G.sortByEdgeNr
+                             G.getInEdgeNr
+                             (G.getInEdges g phi_node)
       -- The in-edge from the label node to the phi node is always first
-      pred_l_node_of_phi = G.sourceOfEdge g (head in_edges_of_phi_node)
+      pred_l_node_of_phi = G.getSourceNode g (head in_edges_of_phi_node)
       pred_labels = getPredLabelsOfLabelNode g pred_l_node_of_phi
       pos_maps = computePosMapsOfPerm phi_labels pred_labels
       edge_nr_maps = zip
@@ -478,7 +493,10 @@ fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
   in foldl
      ( \st' (e, new_in_nr) ->
        let g' = theOSGraph st'
-           new_e_label = G.EdgeLabel (G.outEdgeNr e) (G.toEdgeNr new_in_nr)
+           new_e_label = G.EdgeLabel { G.edgeType = G.DataFlowEdge
+                                     , G.outEdgeNr = (G.getOutEdgeNr e)
+                                     , G.inEdgeNr = (G.toEdgeNr new_in_nr)
+                                     }
            new_g = G.updateEdgeLabel new_e_label e g'
        in updateOSGraph st' new_g
      )
@@ -492,13 +510,17 @@ getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabelID]
 getPredLabelsOfLabelNode g l_node =
   -- The in-edges to the label node are always from control nodes, and for these
   -- their first in-edge is always from the label node to which they belong
-  let in_edges = G.sortEdgesByInNumbers $ G.inEdges g l_node
-      preds = map (G.sourceOfEdge g) in_edges
+  let in_edges = G.sortByEdgeNr G.getInEdgeNr $ G.getInEdges g l_node
+      preds = map (G.getSourceNode g) in_edges
       sought_l_nodes =
         map
-        (G.sourceOfEdge g . head . G.sortEdgesByInNumbers . G.inEdges g)
+        ( G.getSourceNode g
+          . head
+          . G.sortByEdgeNr G.getInEdgeNr
+          . G.getInEdges g
+        )
         preds
-  in map (G.bbLabel . G.nodeType) sought_l_nodes
+  in map (G.bbLabel . G.getNodeType) sought_l_nodes
 
 -- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
@@ -506,12 +528,12 @@ getPredLabelsOfLabelNode g l_node =
 addMissingInEdgesToDataNodes :: ProcessState -> ProcessState
 addMissingInEdgesToDataNodes st =
   let g = theOSGraph st
-      all_d_nodes = filter G.isDataNode (G.allNodes g)
+      all_d_nodes = filter G.isDataNode (G.getAllNodes g)
       d_nodes_with_no_in_edges =
-        filter (\n -> (length $ G.inEdges g n) == 0) all_d_nodes
+        filter (\n -> (length $ G.getInEdges g n) == 0) all_d_nodes
       root_l_node = fromJust $ G.rootInCFG $ G.extractCFG g
       new_g = foldl
-              (\g' e -> fst $ G.addNewEdge e g')
+              (\g' e -> fst $ G.addNewEdge G.DataFlowEdge e g')
               g
               (zip (repeat root_l_node) d_nodes_with_no_in_edges)
   in updateOSGraph st new_g
@@ -520,8 +542,8 @@ addMissingInEdgesToDataNodes st =
 insertCopyNodes :: ProcessState -> ProcessState
 insertCopyNodes st =
   let g = theOSGraph st
-      all_d_nodes = filter G.isDataNode (G.allNodes g)
-      all_out_edges_from_d_nodes = concatMap (G.outEdges g) all_d_nodes
+      all_d_nodes = filter G.isDataNode (G.getAllNodes g)
+      all_out_edges_from_d_nodes = concatMap (G.getOutEdges g) all_d_nodes
       new_st = foldl insertCopy st all_out_edges_from_d_nodes
   in new_st
 
@@ -529,19 +551,19 @@ insertCopyNodes st =
 insertCopy :: ProcessState -> G.Edge -> ProcessState
 insertCopy st0 e =
   let g0 = theOSGraph st0
-      orig_src_n = G.sourceOfEdge g0 e
-      orig_dst_n = G.targetOfEdge g0 e
+      orig_src_n = G.getSourceNode g0 e
+      orig_dst_n = G.getTargetNode g0 e
       -- Modify OS graph
       (g1, new_d_node) = G.insertNewNodeAlongEdge G.CopyNode e g0
-      new_e = head $ G.outEdges g1 new_d_node
+      new_e = head $ G.getOutEdges g1 new_d_node
       (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
       st1 = updateOSGraph st0 g2
   in if G.isRetControlNode orig_dst_n
      -- Correct function return data node entries
      then let rets = [ nid | nid <- theFuncRets st1
-                           , nid /= G.nodeID orig_src_n
+                           , nid /= G.getNodeID orig_src_n
                      ]
-          in st1 { theFuncRets = (G.nodeID new_d_node):rets }
+          in st1 { theFuncRets = (G.getNodeID new_d_node):rets }
      else st1
 
 
@@ -559,7 +581,7 @@ instance (Processable n) => Processable (LLVM.Named n) where
         expr_node = fromJust $ lastTouchedNode st1
         st2 = process st1 name
         dst_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge st2 expr_node dst_node
+        st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
     in st3
   process st (LLVM.Do expr) = process st expr
 
@@ -579,41 +601,41 @@ instance Processable LLVM.Name where
 
 instance Processable LLVM.Instruction where
   process st (LLVM.Add  _ _ op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.Add) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Add) [op1, op2]
   process st (LLVM.FAdd op1 op2 _) =
-    processCompOp st (Op.FloatOp Op.Add) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Add) [op1, op2]
   process st (LLVM.Sub  _ _ op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.Sub) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Sub) [op1, op2]
   process st (LLVM.FSub op1 op2 _) =
-    processCompOp st (Op.FloatOp Op.Sub) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Sub) [op1, op2]
   process st (LLVM.Mul _ _ op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.Mul) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Mul) [op1, op2]
   process st (LLVM.FMul op1 op2 _) =
-    processCompOp st (Op.FloatOp Op.Mul) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Mul) [op1, op2]
   process st (LLVM.UDiv _ op1 op2 _) =
-    processCompOp st (Op.UIntOp  Op.Div) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.UIntOp Op.Div) [op1, op2]
   process st (LLVM.SDiv _ op1 op2 _) =
-    processCompOp st (Op.SIntOp  Op.Div) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.SIntOp Op.Div) [op1, op2]
   process st (LLVM.FDiv op1 op2 _) =
-    processCompOp st (Op.FloatOp Op.Div) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Div) [op1, op2]
   process st (LLVM.URem op1 op2 _) =
-    processCompOp st (Op.UIntOp  Op.Rem) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.UIntOp Op.Rem) [op1, op2]
   process st (LLVM.SRem op1 op2 _) =
-    processCompOp st (Op.SIntOp  Op.Rem) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.SIntOp Op.Rem) [op1, op2]
   process st (LLVM.FRem op1 op2 _) =
-    processCompOp st (Op.FloatOp Op.Rem) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Rem) [op1, op2]
   process st (LLVM.Shl _ _ op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.Shl) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Shl) [op1, op2]
   process st (LLVM.LShr _ op1 op2 _) =
-    processCompOp st (Op.IntOp  Op.LShr) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.LShr) [op1, op2]
   process st (LLVM.AShr _ op1 op2 _) =
-    processCompOp st (Op.IntOp  Op.AShr) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.AShr) [op1, op2]
   process st (LLVM.And op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.And) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.And) [op1, op2]
   process st (LLVM.Or op1 op2 _) =
-    processCompOp st (Op.IntOp    Op.Or) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Or) [op1, op2]
   process st (LLVM.Xor op1 op2 _) =
-    processCompOp st (Op.IntOp   Op.XOr) [op1, op2]
+    processCompOp st (Op.CompArithOp $ Op.IntOp Op.XOr) [op1, op2]
   process st (LLVM.ICmp p op1 op2 _) =
     processCompOp st (fromLlvmIPred p) [op1, op2]
   process st (LLVM.FCmp p op1 op2 _) =
@@ -625,11 +647,15 @@ instance Processable LLVM.Instruction where
         st1 = last sts
         st2 = addNewNode st1 G.PhiNode
         op_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge st2 (fromJust $ theLabelNode st1) op_node
+        st3 = addNewEdge
+              st2
+              G.DataFlowEdge
+              (fromJust $ theLabelNode st1)
+              op_node
         -- Here we simply ignore the edge order, and then run a second pass to
         -- correct the order afterwards after all edges from the branches have
         -- been added
-        st4 = addNewEdgesManySources st3 operand_ns op_node
+        st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
         l_strs = map (\(LLVM.Name str) -> str) l_names
         labels = map G.BBLabelID l_strs
         st5 = addAuxPhiNodeData st4 (op_node, labels)
@@ -643,8 +669,8 @@ instance Processable LLVM.Terminator where
        then let ret_n = fromJust $ lastTouchedNode st1
                 g = theOSGraph st1
                 preds = map
-                        (G.sourceOfEdge g)
-                        (G.sortEdgesByInNumbers $ G.inEdges g ret_n)
+                        (G.getSourceNode g)
+                        (G.sortByEdgeNr G.getInEdgeNr $ G.getInEdges g ret_n)
                 -- For return nodes, the edge from the value node always
                 -- appears last when ordered by in-edge numbers
                 d_node = last preds
@@ -658,7 +684,7 @@ instance Processable LLVM.Terminator where
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (G.BBLabelID dst)
         dst_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge st2 br_node dst_node
+        st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
   process st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
     let st1 = processControlOp st0 Op.CondBranch [op]
@@ -667,7 +693,11 @@ instance Processable LLVM.Terminator where
         t_dst_node = fromJust $ lastTouchedNode st2
         st3 = ensureLabelNodeExists st2 (G.BBLabelID f_dst)
         f_dst_node = fromJust $ lastTouchedNode st3
-        st4 = addNewEdgesManyDests st3 br_node [t_dst_node, f_dst_node]
+        st4 = addNewEdgesManyDests
+              st3
+              G.ControlFlowEdge
+              br_node
+              [t_dst_node, f_dst_node]
     in st4
   process _ l = error $ "'process' not implemented for " ++ show l
 
