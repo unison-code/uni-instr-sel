@@ -27,10 +27,10 @@ module Language.InstSel.Graphs.VFTwo
 where
 
 import Language.InstSel.Graphs.Base
-import Language.InstSel.Utils
-  ( removeDuplicates )
 import Data.List
-  ( intersect )
+  ( intersect
+  , nub
+  )
 
 
 
@@ -115,7 +115,25 @@ checkFeasibility ::
      -- ^ Candidate mapping.
   -> Bool
 checkFeasibility fg pg st c =
-  doNodesMatch fg pg st c && checkSyntax fg pg st c
+  let fn = fNode c
+      pn = pNode c
+      preds_pn = filter (`elem` (map pNode st)) (getPredecessors pg pn)
+      preds_fn = findFNsInMatch (Match st) preds_pn
+      pred_es_pairs = zip
+                      (map (flip (getEdges fg) fn) preds_fn)
+                      (map (flip (getEdges pg) pn) preds_pn)
+      succs_pn = filter (`elem` (map pNode st)) (getSuccessors pg pn)
+      succs_fn = findFNsInMatch (Match st) succs_pn
+      succ_es_pairs = zip
+                      (map (getEdges fg fn) succs_fn)
+                      (map (getEdges pg pn) succs_pn)
+  in doNodesMatch fg pg (fNode c) (pNode c)
+     &&
+     all (\(fes, pes) -> doEdgesMatch fg pg fes pes) pred_es_pairs
+     &&
+     all (\(fes, pes) -> doEdgesMatch fg pg fes pes) succ_es_pairs
+     &&
+     checkSyntax fg pg st c
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
 -- equation 2 in the paper).
@@ -267,7 +285,7 @@ getTOutSet ::
      -- ^ The M set.
   -> [Node]
 getTOutSet g ns =
-  removeDuplicates $ filter (`notElem` ns) (concatMap (getSuccessors g) ns)
+  nub $ filter (`notElem` ns) (concatMap (getSuccessors g) ns)
 
 getTInSet ::
      Graph
@@ -276,7 +294,7 @@ getTInSet ::
      -- ^ The M set.
   -> [Node]
 getTInSet g ns =
-  removeDuplicates $ filter (`notElem` ns) (concatMap (getPredecessors g) ns)
+  nub $ filter (`notElem` ns) (concatMap (getPredecessors g) ns)
 
 getTDSet ::
      Graph

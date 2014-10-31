@@ -62,6 +62,7 @@ module Language.InstSel.Graphs.Base
   , delEdge
   , delNode
   , delNodeKeepEdges
+  , doEdgesMatch
   , doNodesMatch
   , extractCFG
   , extractDomSet
@@ -84,6 +85,7 @@ module Language.InstSel.Graphs.Base
   , getInEdgeNr
   , getInEdges
   , getLastAddedNode
+  , getNeighbors
   , getNodeID
   , getNodeIDs
   , getNodeWithNodeID
@@ -113,6 +115,7 @@ module Language.InstSel.Graphs.Base
   , isEntityNode
   , isInGraph
   , isLabelNode
+  , isLabelNodeAndIntermediate
   , isStateFlowEdge
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
@@ -136,8 +139,7 @@ module Language.InstSel.Graphs.Base
   , redirectInEdges
   , redirectOutEdges
   , rootInCFG
-  , sortEdgesByInNumbers
-  , sortEdgesByOutNumbers
+  , sortByEdgeNr
   , toEdgeNr
   , updateEdgeLabel
   , updateEdgeSource
@@ -154,12 +156,14 @@ import Language.InstSel.TargetMachine.IDs
   ( BBLabelID (..) )
 import Language.InstSel.Utils
   ( Natural
-  , removeDuplicates
   , toNatural
   )
 import qualified Data.Graph.Inductive as I
 import Data.List
-  ( sortBy )
+  ( nub
+  , nubBy
+  , sortBy
+  )
 import Data.Maybe
 
 
@@ -706,6 +710,10 @@ getSuccessors :: Graph -> Node -> [Node]
 getSuccessors (Graph g) n =
   map (fromJust . getNodeWithIntNodeID g) (I.suc g (getIntNodeID n))
 
+-- | Gets both the predecessors and successors of a given node.
+getNeighbors :: Graph -> Node -> [Node]
+getNeighbors g n = getPredecessors g n ++ getSuccessors g n
+
 -- | Checks if a given node is within the graph.
 isInGraph :: Graph -> Node -> Bool
 isInGraph (Graph g) n = isJust $ getNodeWithIntNodeID g (getIntNodeID n)
@@ -765,17 +773,10 @@ getEdges g from_n to_n =
            (filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges)
   in es
 
--- | Sorts a list of edges according to their in-edge numbers (in increasing
--- order).
-sortEdgesByInNumbers :: [Edge] -> [Edge]
-sortEdgesByInNumbers =
-  sortBy (\n -> \m -> if getInEdgeNr n < getInEdgeNr m then LT else GT)
-
--- | Sorts a list of edges according to their out-edge numbers (in increasing
--- order).
-sortEdgesByOutNumbers :: [Edge] -> [Edge]
-sortEdgesByOutNumbers =
-  sortBy (\n -> \m -> if getOutEdgeNr n < getOutEdgeNr m then LT else GT)
+-- | Sorts a list of edges according to their edge numbers (in increasing
+-- order), which are provided by a given function.
+sortByEdgeNr :: (Edge -> EdgeNr) -> [Edge] -> [Edge]
+sortByEdgeNr f = sortBy (\e1 -> \e2 -> if f e1 < f e2 then LT else GT)
 
 -- | Gets the source node of an edge.
 getSourceNode :: Graph -> Edge -> Node
@@ -802,225 +803,263 @@ convertMatchN2ID (Match ms) = Match (map convertMappingN2ID ms)
 
 -- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
 getNodeIDs :: [Node] -> [NodeID]
-getNodeIDs = removeDuplicates . map getNodeID
+getNodeIDs = nub . map getNodeID
 
--- | Checks if a node matches another node.
+-- | Checks if a node matches another node. Two nodes match if they are of
+-- compatible node types and, depending on the node type, they have the same
+-- number of edges of a specific edge type.
 doNodesMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
+  -> Node
+     -- ^ A node from the function graph.
+  -> Node
+     -- ^ A node from the pattern graph.
   -> Bool
-doNodesMatch fg pg st m =
-  doNodeTypesMatch (getNodeType $ fNode m) (getNodeType $ pNode m)
+doNodesMatch fg pg fn pn =
+  areNodeTypesCompatible (getNodeType fn) (getNodeType pn)
   &&
-  doEdgesMatch fg pg st m
+  doNumEdgesMatch fg pg fn pn
 
 -- | Checks if two node types are compatible, which means that they will yield
 -- assembly code that is semantically equivalent.
-doNodeTypesMatch :: NodeType -> NodeType -> Bool
-doNodeTypesMatch (ComputationNode op1) (ComputationNode op2) =
-  O.areComputationsCompatible op1 op2
-doNodeTypesMatch (ControlNode op1) (ControlNode op2) = op1 == op2
-doNodeTypesMatch (DataNode d1 _) (DataNode d2 _) =
+areNodeTypesCompatible :: NodeType -> NodeType -> Bool
+areNodeTypesCompatible (ComputationNode op1) (ComputationNode op2) =
+  O.areCompOpsCompatible op1 op2
+areNodeTypesCompatible (ControlNode op1) (ControlNode op2) = op1 == op2
+areNodeTypesCompatible (DataNode d1 _) (DataNode d2 _) =
   D.areDataTypesCompatible d1 d2
-doNodeTypesMatch (LabelNode _) (LabelNode _) = True
-doNodeTypesMatch PhiNode PhiNode = True
-doNodeTypesMatch StateNode StateNode = True
-doNodeTypesMatch CopyNode CopyNode = True
-doNodeTypesMatch _ _ = False
+areNodeTypesCompatible (LabelNode _) (LabelNode _) = True
+areNodeTypesCompatible PhiNode PhiNode = True
+areNodeTypesCompatible StateNode StateNode = True
+areNodeTypesCompatible CopyNode CopyNode = True
+areNodeTypesCompatible _ _ = False
 
--- | Checks, for cases where it matters, that the nodes have a matching number
--- of edges, and that the already mapped predecessors and successors have a
--- matching edge ordering. At this point it can be assumed that the nodes in the
--- candidate mapping have matching node types.
+-- | Checks if a label node is an intermediate label node, meaning that it has
+-- at least one in-edge to a control node, and at least one out-edge to another
+-- control node.
+isLabelNodeAndIntermediate :: Graph -> Node -> Bool
+isLabelNodeAndIntermediate g n
+  | ( isLabelNode n
+      &&
+      (length $ filter isControlFlowEdge $ getInEdges g n) > 0
+      &&
+      (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
+    ) = True
+  | otherwise = False
+
+-- | Checks if two matching nodes have matching number of edges of particular
+-- edge type.
+doNumEdgesMatch :: Graph -> Graph -> Node -> Node -> Bool
+doNumEdgesMatch fg pg fn pn =
+  let checkEdges f getENr es1 es2 =
+        let areEdgeNrsSame e1 e2 = getENr e1 == getENr e2
+            pruned_es1 = nubBy areEdgeNrsSame $ filter f es1
+            pruned_es2 = nubBy areEdgeNrsSame $ filter f es2
+        in length pruned_es1 == length pruned_es2
+      f_in_es = getInEdges fg fn
+      p_in_es = getInEdges pg pn
+      f_out_es = getOutEdges fg fn
+      p_out_es = getOutEdges pg pn
+  in checkEdges
+     (\e -> doesNumCFInEdgesMatter pg pn && isControlFlowEdge e)
+     getInEdgeNr
+     f_in_es
+     p_in_es
+     &&
+     checkEdges
+     (\e -> doesNumCFOutEdgesMatter pg pn && isControlFlowEdge e)
+     getOutEdgeNr
+     f_out_es
+     p_out_es
+     &&
+     checkEdges
+     (\e -> doesNumDFInEdgesMatter pg pn && isDataFlowEdge e)
+     getInEdgeNr
+     f_in_es
+     p_in_es
+     &&
+     checkEdges
+     (\e -> doesNumDFOutEdgesMatter pg pn && isDataFlowEdge e)
+     getOutEdgeNr
+     f_out_es
+     p_out_es
+     &&
+     checkEdges
+     (\e -> doesNumSFInEdgesMatter pg pn && isStateFlowEdge e)
+     getInEdgeNr
+     f_in_es
+     p_in_es
+     &&
+     checkEdges
+     (\e -> doesNumSFOutEdgesMatter pg pn && isStateFlowEdge e)
+     getOutEdgeNr
+     f_out_es
+     p_out_es
+
+-- | Checks if the number of control flow in-edges matters for a given pattern
+-- node.
+doesNumCFInEdgesMatter :: Graph -> Node -> Bool
+doesNumCFInEdgesMatter g n
+  | isComputationNode n = True
+  | isControlNode n = True
+  | isLabelNodeAndIntermediate g n = True
+  | otherwise = False
+
+-- | Checks if the number of control flow out-edges matters for a given pattern
+-- node.
+doesNumCFOutEdgesMatter :: Graph -> Node -> Bool
+doesNumCFOutEdgesMatter _ n
+  | isComputationNode n = True
+  | isControlNode n = True
+  | otherwise = False
+
+-- | Checks if the number of data flow in-edges matters for a given pattern
+-- node.
+doesNumDFInEdgesMatter :: Graph -> Node -> Bool
+doesNumDFInEdgesMatter _ n
+  | isComputationNode n = True
+  | isControlNode n = True
+  | otherwise = False
+
+-- | Checks if the number of data flow out-edges matters for a given pattern
+-- node.
+doesNumDFOutEdgesMatter :: Graph -> Node -> Bool
+doesNumDFOutEdgesMatter _ n
+  | isComputationNode n = True
+  | otherwise = False
+
+-- | Checks if the number of state flow in-edges matters for a given pattern
+-- node.
+doesNumSFInEdgesMatter :: Graph -> Node -> Bool
+doesNumSFInEdgesMatter _ n
+  | isComputationNode n = True
+  | otherwise = False
+
+-- | Checks if the number of state flow out-edges matters for a given pattern
+-- node.
+doesNumSFOutEdgesMatter :: Graph -> Node -> Bool
+doesNumSFOutEdgesMatter _ n
+  | isComputationNode n = True
+  | otherwise = False
+
+-- | Checks if two lists of edges contain exactly the same edge numbers which
+-- are provided by a given function. If the lists do not have the same number of
+-- edges, an error is produced.
+doEdgeNrsMatch :: (Edge -> EdgeNr) -> [Edge] -> [Edge] -> Bool
+doEdgeNrsMatch f es1 es2 =
+  if length es1 == length es2
+  then all
+       (\(e1, e2) -> (f e1) == (f e2))
+       (zip (sortByEdgeNr f es1) (sortByEdgeNr f es2))
+  else error "Edge lists not of equal length"
+
+-- | Checks if a list of edges matches another list of edges. It is assumed that
+-- the source and target nodes are the same for every edge in each list. It is
+-- also assumed that, for each edge type, a in-edge number appears at most once
+-- in the list (which should be the case if we are considering matches of
+-- patterns on a function graph).
 doEdgesMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
+  -> [Edge]
+     -- ^ In-edges from the function graph.
+  -> [Edge]
+     -- ^ In-edges from the pattern graph.
   -> Bool
-doEdgesMatch fg pg st m =
-  doNumbersOfInEdgesMatch fg pg st m
-  &&
-  doNumbersOfOutEdgesMatch fg pg st m
-  &&
-  doOrdersOfInEdgesMatch fg pg st m
-  &&
-  doOrdersOfOutEdgesMatch fg pg st m
-  &&
-  doOutEdgeOrdersOfPredsMatch fg pg st m
-  &&
-  doInEdgeOrdersOfSuccsMatch fg pg st m
+doEdgesMatch _ _ [] [] = True
+doEdgesMatch fg pg fes pes
+  | length fes /= length pes = False
+  | otherwise = doInEdgesMatch fg pg fes pes && doOutEdgesMatch fg pg fes pes
 
-doNumbersOfInEdgesMatch ::
+-- | Checks if a list of in-edges matches another list of in-edges. It is
+-- assumed that the source and target nodes are the same for every edge in each
+-- list, and that the lists are non-empty and of equal length. It is also
+-- assumed that, for each edge type, a in-edge number appears at most once in
+-- the list (which should be the case if we are considering matches of patterns
+-- on a function graph).
+doInEdgesMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
+  -> [Edge]
+     -- ^ In-edges from the function graph.
+  -> [Edge]
+     -- ^ In-edges from the pattern graph.
   -> Bool
-doNumbersOfInEdgesMatch fg pg _ m =
-  let fn = fNode m
-      pn = pNode m
-      num_fg_edges = length $ getInEdges fg fn
-      num_pg_edges = length $ getInEdges pg pn
-  in if checkNumberOfInEdges fg fn && checkNumberOfInEdges pg pn
-     then num_fg_edges == num_pg_edges
-     else True
+doInEdgesMatch _ pg fes pes =
+  let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
+      pn = getTargetNode pg (head pes)
+  in (not $ doesOrderCFInEdgesMatter pg pn || checkEdges isControlFlowEdge)
+     &&
+     (not $ doesOrderDFInEdgesMatter pg pn || checkEdges isDataFlowEdge)
+     &&
+     (not $ doesOrderSFInEdgesMatter pg pn || checkEdges isStateFlowEdge)
 
-doNumbersOfOutEdgesMatch ::
+-- | Same as doInEdgesMatch but for out-edges.
+doOutEdgesMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
+  -> [Edge]
+     -- ^ In-edges from the function graph.
+  -> [Edge]
+     -- ^ In-edges from the pattern graph.
   -> Bool
-doNumbersOfOutEdgesMatch fg pg _ m =
-  let fn = fNode m
-      pn = pNode m
-      num_fg_edges = length $ getOutEdges fg fn
-      num_pg_edges = length $ getOutEdges pg pn
-  in if checkNumberOfOutEdges fg fn && checkNumberOfOutEdges pg pn
-     then num_fg_edges == num_pg_edges
-     else True
+doOutEdgesMatch _ pg fes pes =
+  let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
+      pn = getSourceNode pg (head pes)
+  in (not $ doesOrderCFOutEdgesMatter pg pn || checkEdges isControlFlowEdge)
+     &&
+     (not $ doesOrderDFOutEdgesMatter pg pn || checkEdges isDataFlowEdge)
+     &&
+     (not $ doesOrderSFOutEdgesMatter pg pn || checkEdges isStateFlowEdge)
 
-checkNumberOfInEdges :: Graph -> Node -> Bool
-checkNumberOfInEdges _ n
-  | isActionNode n = True
+-- | Checks if the order of control flow in-edges matters for a given pattern
+-- node.
+doesOrderCFInEdgesMatter :: Graph -> Node -> Bool
+doesOrderCFInEdgesMatter g n
+  | isLabelNodeAndIntermediate g n = True
   | otherwise = False
 
-checkNumberOfOutEdges :: Graph -> Node -> Bool
-checkNumberOfOutEdges _ n
-  | isActionNode n = True
+-- | Checks if the order of control flow out-edges matters for a given pattern
+-- node.
+doesOrderCFOutEdgesMatter :: Graph -> Node -> Bool
+doesOrderCFOutEdgesMatter _ n
+  | isControlNode n = True
   | otherwise = False
 
-checkOrderingOfInEdges :: Graph -> Node -> Bool
-checkOrderingOfInEdges g n
+-- | Checks if the order of data flow in-edges matters for a given pattern
+-- node.
+doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
+doesOrderDFInEdgesMatter _ n
   | isComputationNode n = not $ O.isOpCommutative $ compOp $ getNodeType n
-  | isLabelNode n =
-    (length $ getInEdges g n) > 0 && (length $ getOutEdges g n) > 0
+  | isControlNode n = True
   | isPhiNode n = True
   | otherwise = False
 
-checkOrderingOfOutEdges :: Graph -> Node -> Bool
-checkOrderingOfOutEdges _ n
-  | isControlNode n = f (getNodeType n)
+-- | Checks if the order of data flow out-edges matters for a given pattern
+-- node.
+doesOrderDFOutEdgesMatter :: Graph -> Node -> Bool
+doesOrderDFOutEdgesMatter _ n
+  | isComputationNode n = True
   | otherwise = False
-  where f (ControlNode O.CondBranch) = True
-        f _ = False
 
--- | If the pattern node requires an ordering on its inbound edges, check that
--- it is the same as that of the mapped function node.
-doOrdersOfInEdgesMatch ::
-     Graph
-     -- ^ The function graph.
-  -> Graph
-     -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
-  -> Bool
-doOrdersOfInEdgesMatch fg pg st m =
-  let fn = fNode m
-      pn = pNode m
-      preds_pn = filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      preds_fn = mapPs2Fs st preds_pn
-      es = zip
-           (concatMap (sortEdgesByInNumbers . flip (getEdges pg) pn) preds_pn)
-           (concatMap (sortEdgesByInNumbers . flip (getEdges fg) fn) preds_fn)
-  in if checkOrderingOfInEdges pg pn
-     then all (\(e, e') -> (getInEdgeNr e) == (getInEdgeNr e')) es
-     else True
+-- | Checks if the order of state flow in-edges matters for a given pattern
+-- node.
+doesOrderSFInEdgesMatter :: Graph -> Node -> Bool
+doesOrderSFInEdgesMatter _ _ = False
 
--- | Same as matchingOrderingOfInEdges but for outbound edges.
-doOrdersOfOutEdgesMatch ::
-     Graph
-     -- ^ The function graph.
-  -> Graph
-     -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
-  -> Bool
-doOrdersOfOutEdgesMatch fg pg st m =
-  let fn = fNode m
-      pn = pNode m
-      succs_pn = filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      succs_fn = mapPs2Fs st succs_pn
-      es = zip
-           (concatMap (sortEdgesByOutNumbers . getEdges pg pn) succs_pn)
-           (concatMap (sortEdgesByOutNumbers . getEdges fg fn) succs_fn)
-  in if checkOrderingOfOutEdges pg pn
-     then all (\(e, e') -> (getOutEdgeNr e) == (getOutEdgeNr e')) es
-     else True
-
--- | Checks for the pattern node's predecessors which have already been mapped
--- and require an ordering on the outbound edges that the ordering is the same
--- as that in the function graph.
-doOutEdgeOrdersOfPredsMatch ::
-     Graph
-     -- ^ The function graph.
-  -> Graph
-     -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
-  -> Bool
-doOutEdgeOrdersOfPredsMatch fg pg st m =
-  let fn = fNode m
-      pn = pNode m
-      preds_pn = filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      pn_ord_preds =  filter (checkOrderingOfOutEdges pg) preds_pn
-      fn_ord_preds = mapPs2Fs st pn_ord_preds
-      es = zip
-           ( sortEdgesByOutNumbers
-             (concatMap (flip (getEdges pg) pn) pn_ord_preds)
-           )
-           ( sortEdgesByOutNumbers
-             (concatMap (flip (getEdges fg) fn) fn_ord_preds)
-           )
-  in all (\(e, e') -> (getOutEdgeNr e) == (getOutEdgeNr e')) es
-
--- | Same as matchingOutEdgeOrderingOfPreds but for successors and their inbound
--- edges.
-doInEdgeOrdersOfSuccsMatch ::
-     Graph
-     -- ^ The function graph.
-  -> Graph
-     -- ^ The pattern graph.
-  -> [Mapping Node]
-     -- ^ Current mapping state.
-  -> Mapping Node
-     -- ^ Candidate mapping.
-  -> Bool
-doInEdgeOrdersOfSuccsMatch fg pg st m =
-  let fn = fNode m
-      pn = pNode m
-      succs_pn = filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      pn_ord_succs =  filter (checkOrderingOfInEdges pg) succs_pn
-      fn_ord_succs = mapPs2Fs st pn_ord_succs
-      es = zip
-           (sortEdgesByInNumbers (concatMap (getEdges pg pn) pn_ord_succs))
-           (sortEdgesByInNumbers (concatMap (getEdges fg fn) fn_ord_succs))
-  in all (\(e, e') -> (getInEdgeNr e) == (getInEdgeNr e')) es
+-- | Checks if the order of state flow out-edges matters for a given pattern
+-- node.
+doesOrderSFOutEdgesMatter :: Graph -> Node -> Bool
+doesOrderSFOutEdgesMatter _ _ = False
 
 -- | Same as `mapFs2Ps`.
 findPNsInMatch ::
