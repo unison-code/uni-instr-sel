@@ -201,18 +201,22 @@ mkFunctionFromGlobalDef _ = Nothing
 -- | Builds a function from a global LLVM AST definition. If the definition is
 -- not a function, `Nothing` is returned.
 mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
+mkFunction (LLVM.Function _ _ _ _ _ fname (params, _) _ _ _ _ bbs) =
   let st1 = mkInitBuildState
       st2 = buildDfg (buildDfg st1 params) bbs
       st3 = buildCfg st2 bbs
       st4 = addMissingLabelToNodeDataFlowEdges st3
       st5 = addMissingDefPlaceEdges st4
-  in Just ( PM.Function { PM.functionName = fname
+  in Just ( PM.Function { PM.functionName = toFunctionName fname
                         , PM.functionOS = osGraph st5
                         , PM.functionInputs = funcInputValues st5
                         }
           )
 mkFunction _ = Nothing
+
+toFunctionName :: LLVM.Name -> Maybe String
+toFunctionName (LLVM.Name str) = Just str
+toFunctionName (LLVM.UnName _) = Nothing
 
 -- | Gets the OS graph contained by the operation structure in a given state.
 getOSGraph :: BuildState -> G.Graph

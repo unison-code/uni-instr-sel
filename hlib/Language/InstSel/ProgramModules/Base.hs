@@ -31,7 +31,7 @@ import Language.InstSel.OpStructures
 
 -- | The record of representing a program function.
 data Function =
-    Function { functionName :: String
+    Function { functionName :: Maybe String
                -- ^ The function name.
 
              , functionOS :: OpStructure
