@@ -61,15 +61,15 @@ type ConstToNodeMapping = (G.Node, Constant)
 -- built.
 type AuxPhiNodeData = (G.Node, [G.BBLabelID])
 
--- | Represents the intermediate data as the function is being processed.
-data ProcessState =
-    ProcessState
+-- | Represents the intermediate build data.
+data BuildState =
+    BuildState
     { osGraph :: OS.OpStructure
-      -- ^ The operation structure.
+      -- ^ The current operation structure.
 
     , lastTouchedNode :: Maybe G.Node
       -- ^ The last node (if any) that was touched. This is used to simplifying
-      -- edge insertion. This value is ignored during post-processing.
+      -- edge insertion.
 
     , currentLabelNode :: Maybe G.Node
       -- ^ The label node which represents the basic block currently being
@@ -145,17 +145,16 @@ instance ConstantFormable LLVMC.Constant where
   toConstant (LLVMC.Int b v) = IntConstant (fromIntegral b) v
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
--- | Class for processing an LLVM AST element.
-class Processable a where
+-- | Class for building the data flow graph.
+class DfgBuildable a where
 
-  -- | Processes an LLVM element, which builds the coresponding operation
-  -- structure.
-  process ::
-      ProcessState
+  -- | Builds the corresponding data flow graph from a given LLVM element.
+  buildDfg ::
+      BuildState
       -- ^ The current state.
     -> a
        -- ^ The LLVM element to process.
-    -> ProcessState
+    -> BuildState
        -- ^ The new state.
 
 
@@ -165,9 +164,9 @@ class Processable a where
 -------------
 
 -- | Creates an initial state.
-initialState :: ProcessState
+initialState :: BuildState
 initialState =
-  ProcessState
+  BuildState
   { osGraph = OS.mkEmpty
   , lastTouchedNode = Nothing
   , currentLabelNode = Nothing
@@ -195,8 +194,8 @@ mkFunctionFromGlobalDef _ = Nothing
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = initialState
-      st2 = process st1 params
-      st3 = process st2 bbs
+      st2 = buildDfg st1 params
+      st3 = buildDfg st2 bbs
       st4 = fixPhiNodeEdgeOrderings st3
       st5 = addMissingInEdgesToDataNodes st4
       st6 = insertCopyNodes st5
@@ -209,21 +208,21 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
 mkFunction _ = Nothing
 
 -- | Gets the OS graph contained by the operation structure in a given state.
-getOSGraph :: ProcessState -> G.Graph
+getOSGraph :: BuildState -> G.Graph
 getOSGraph = OS.osGraph . osGraph
 
 -- | Updates the OS graph contained by the operation structure in a given state.
-updateOSGraph :: ProcessState -> G.Graph -> ProcessState
+updateOSGraph :: BuildState -> G.Graph -> BuildState
 updateOSGraph st g =
   let os = osGraph st
   in st { osGraph = os { OS.osGraph = g } }
 
 -- | Updates the last touched node information.
-touchNode :: ProcessState -> G.Node -> ProcessState
+touchNode :: BuildState -> G.Node -> BuildState
 touchNode st n = st { lastTouchedNode = Just n }
 
 -- | Adds a new node into a given state.
-addNewNode :: ProcessState -> G.NodeType -> ProcessState
+addNewNode :: BuildState -> G.NodeType -> BuildState
 addNewNode st0 nt =
   let (new_g, new_n) = G.addNewNode nt (getOSGraph st0)
       st1 = updateOSGraph st0 new_g
@@ -232,14 +231,14 @@ addNewNode st0 nt =
 
 -- | Adds a new edge into a given state.
 addNewEdge ::
-     ProcessState
+     BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> G.Node
      -- ^ The source node.
   -> G.Node
      -- ^ The destination node.
-  -> ProcessState
+  -> BuildState
      -- ^ The new state.
 addNewEdge st et src dst =
   let (new_g, _) = G.addNewEdge et (src, dst) (getOSGraph st)
@@ -247,14 +246,14 @@ addNewEdge st et src dst =
 
 -- | Adds many new edges of the same type into a given state.
 addNewEdgesManySources ::
-     ProcessState
+     BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> [G.Node]
      -- ^ The source nodes.
   -> G.Node
      -- ^ The destination node.
-  -> ProcessState
+  -> BuildState
      -- ^ The new state.
 addNewEdgesManySources st et srcs dst =
   let es = zip srcs (repeat dst)
@@ -263,14 +262,14 @@ addNewEdgesManySources st et srcs dst =
 
 -- | Adds many new edges of the same type into a given state.
 addNewEdgesManyDests ::
-     ProcessState
+     BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> G.Node
      -- ^ The source node.
   -> [G.Node]
      -- ^ The destination nodes.
-  -> ProcessState
+  -> BuildState
      -- ^ The new state.
 addNewEdgesManyDests st et src dsts =
   let es = zip (repeat src) dsts
@@ -278,31 +277,31 @@ addNewEdgesManyDests st et src dsts =
   in updateOSGraph st $ foldl f (getOSGraph st) es
 
 -- | Adds a new constraint into a given state.
-addOSConstraint :: ProcessState -> C.Constraint -> ProcessState
+addOSConstraint :: BuildState -> C.Constraint -> BuildState
 addOSConstraint st c = st { osGraph = OS.addConstraint (osGraph st) c }
 
 -- | Adds a list of new constraints into a given state.
-addOSConstraints :: ProcessState -> [C.Constraint] -> ProcessState
+addOSConstraints :: BuildState -> [C.Constraint] -> BuildState
 addOSConstraints st cs = foldl addOSConstraint st cs
 
 -- | Adds a new symbol-to-node mapping to a given state.
-addSymMap :: ProcessState -> SymToNodeMapping -> ProcessState
+addSymMap :: BuildState -> SymToNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = symMaps st ++ [sm] }
 
 -- | Adds a new constant-to-node mapping to a given state.
-addConstMap :: ProcessState -> ConstToNodeMapping -> ProcessState
+addConstMap :: BuildState -> ConstToNodeMapping -> BuildState
 addConstMap st cm = st { constMaps = constMaps st ++ [cm] }
 
 -- | Adds additional auxiliary phi node data to a given state.
-addAuxPhiNodeData :: ProcessState -> AuxPhiNodeData -> ProcessState
+addAuxPhiNodeData :: BuildState -> AuxPhiNodeData -> BuildState
 addAuxPhiNodeData st ad = st { phiData = phiData st ++ [ad] }
 
 -- | Adds a data node representing a function argument to a given state.
-addFuncInput :: ProcessState -> G.Node -> ProcessState
+addFuncInput :: BuildState -> G.Node -> BuildState
 addFuncInput st n = st { funcInputs = funcInputs st ++ [G.getNodeID n] }
 
 -- | Adds a data node representing a return value to a given state.
-addFuncRet :: ProcessState -> G.Node -> ProcessState
+addFuncRet :: BuildState -> G.Node -> BuildState
 addFuncRet st n = st { funcRets = funcRets st ++ [G.getNodeID n] }
 
 -- | Gets the node ID (if any) to which a symbol is mapped to.
@@ -321,11 +320,12 @@ mappedNodeFromConst ms c =
      then Just $ fst $ last ns
      else Nothing
 
--- | Processes a symbol. If a node mapping for that symbol already exists, then
--- the last touched node is updated to reflect that node. If a mapping does not
--- exist, then a new data node is added.
-processSym :: ProcessState -> Symbol -> ProcessState
-processSym st0 sym =
+-- | Builds the corresponding data flow graph from a symbol. If a node mapping
+-- for that symbol already exists, then the last touched node is updated to
+-- reflect that node. If a mapping does not exist, then a new data node is
+-- added.
+buildDfgFromSym :: BuildState -> Symbol -> BuildState
+buildDfgFromSym st0 sym =
     let node_for_sym = mappedNodeFromSym (symMaps st0) sym
     in if isJust node_for_sym
        then touchNode st0 (fromJust node_for_sym)
@@ -334,11 +334,12 @@ processSym st0 sym =
                 st2 = addSymMap st1 (d_node, sym)
             in st2
 
--- | Processes a constant. If a node mapping for that constant already exists,
--- then the last touched node is updated to reflect that node. If a mapping does
--- not exist, then a new data node is added.
-processConst :: ProcessState -> Constant -> ProcessState
-processConst st0 c =
+-- | Builds the corresponding data flow graph from a constant value. If a node
+-- mapping for that constant already exists, then the last touched node is
+-- updated to reflect that node. If a mapping does not exist, then a new data
+-- node is added.
+buildDfgFromConst :: BuildState -> Constant -> BuildState
+buildDfgFromConst st0 c =
     let node_for_c = mappedNodeFromConst (constMaps st0) c
     in if isJust node_for_c
        then touchNode st0 (fromJust node_for_c)
@@ -367,16 +368,16 @@ mkConstConstraints (IntConstant _ v) n =
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
-processCompOp ::
-  (Processable o)
-  => ProcessState
+buildDfgFromCompOp ::
+  (DfgBuildable o)
+  => BuildState
   -> Op.CompOp
      -- ^ The computational operation.
   -> [o]
      -- ^ The operands.
-  -> ProcessState
-processCompOp st0 op operands =
-  let sts = scanl process st0 operands
+  -> BuildState
+buildDfgFromCompOp st0 op operands =
+  let sts = scanl buildDfg st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
       st2 = addNewNode st1 (G.ComputationNode op)
@@ -386,16 +387,16 @@ processCompOp st0 op operands =
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
-processControlOp ::
-  (Processable o)
-  => ProcessState
+buildDfgFromControlOp ::
+  (DfgBuildable o)
+  => BuildState
   -> Op.ControlOp
      -- ^ The control operation.
   -> [o]
      -- ^ The operands.
-  -> ProcessState
-processControlOp st0 op operands =
-  let sts = scanl process st0 operands
+  -> BuildState
+buildDfgFromControlOp st0 op operands =
+  let sts = scanl buildDfg st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
       st2 = addNewNode st1 (G.ControlNode op)
@@ -452,7 +453,7 @@ toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-getLabelNode :: ProcessState -> G.BBLabelID -> Maybe G.Node
+getLabelNode :: BuildState -> G.BBLabelID -> Maybe G.Node
 getLabelNode st l =
   let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
       nodes_w_matching_labels =
@@ -464,7 +465,7 @@ getLabelNode st l =
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated to reflect the
 -- label node in question. If not then a new label node is added.
-ensureLabelNodeExists :: ProcessState -> G.BBLabelID -> ProcessState
+ensureLabelNodeExists :: BuildState -> G.BBLabelID -> BuildState
 ensureLabelNodeExists st l =
   let label_node = getLabelNode st l
   in if isJust label_node
@@ -473,11 +474,11 @@ ensureLabelNodeExists st l =
 
 
 -- | Corrects the edge ordering of the phi nodes.
-fixPhiNodeEdgeOrderings :: ProcessState -> ProcessState
+fixPhiNodeEdgeOrderings :: BuildState -> BuildState
 fixPhiNodeEdgeOrderings st = foldl fixPhiNodeEdgeOrdering st (phiData st)
 
 -- | Corrects the edge ordering for a single phi node.
-fixPhiNodeEdgeOrdering :: ProcessState -> AuxPhiNodeData -> ProcessState
+fixPhiNodeEdgeOrdering :: BuildState -> AuxPhiNodeData -> BuildState
 fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
   let g = getOSGraph st
       in_edges_of_phi_node = G.sortByEdgeNr
@@ -525,7 +526,7 @@ getPredLabelsOfLabelNode g l_node =
 -- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
 -- arguments).
-addMissingInEdgesToDataNodes :: ProcessState -> ProcessState
+addMissingInEdgesToDataNodes :: BuildState -> BuildState
 addMissingInEdgesToDataNodes st =
   let g = getOSGraph st
       all_d_nodes = filter G.isDataNode (G.getAllNodes g)
@@ -539,7 +540,7 @@ addMissingInEdgesToDataNodes st =
   in updateOSGraph st new_g
 
 -- | Inserts a copy node between between each use of a data node.
-insertCopyNodes :: ProcessState -> ProcessState
+insertCopyNodes :: BuildState -> BuildState
 insertCopyNodes st =
   let g = getOSGraph st
       all_d_nodes = filter G.isDataNode (G.getAllNodes g)
@@ -548,7 +549,7 @@ insertCopyNodes st =
   in new_st
 
 -- | Inserts a copy and data node along a given edge.
-insertCopy :: ProcessState -> G.Edge -> ProcessState
+insertCopy :: BuildState -> G.Edge -> BuildState
 insertCopy st0 e =
   let g0 = getOSGraph st0
       orig_src_n = G.getSourceNode g0 e
@@ -569,80 +570,80 @@ insertCopy st0 e =
 
 
 ---------------------------------
--- 'Processable' class instances
+-- 'DfgBuildable' class instances
 ---------------------------------
 
-instance (Processable a) => Processable [a] where
-  process = foldl process
+instance (DfgBuildable a) => DfgBuildable [a] where
+  buildDfg = foldl buildDfg
 
-instance (Processable n) => Processable (LLVM.Named n) where
-  process st0 (name LLVM.:= expr) =
-    let st1 = process st0 expr
+instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
+  buildDfg st0 (name LLVM.:= expr) =
+    let st1 = buildDfg st0 expr
         expr_node = fromJust $ lastTouchedNode st1
-        st2 = process st1 name
+        st2 = buildDfg st1 name
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
     in st3
-  process st (LLVM.Do expr) = process st expr
+  buildDfg st (LLVM.Do expr) = buildDfg st expr
 
-instance Processable LLVM.BasicBlock where
-  process st0 (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
+instance DfgBuildable LLVM.BasicBlock where
+  buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
     let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
         st2 = st1 { currentLabelNode = lastTouchedNode st1 }
-        st3 = foldl process st2 insts
-        st4 = process st3 term_inst
+        st3 = foldl buildDfg st2 insts
+        st4 = buildDfg st3 term_inst
     in st4
-  process _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'process' not supported for un-named basic blocks"
+  buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+    error $ "'buildDfg' not supported for un-named basic blocks"
 
-instance Processable LLVM.Name where
-  process st name@(LLVM.Name _) = processSym st (toSymbol name)
-  process st name@(LLVM.UnName _) = processSym st (toSymbol name)
+instance DfgBuildable LLVM.Name where
+  buildDfg st name@(LLVM.Name _) = buildDfgFromSym st (toSymbol name)
+  buildDfg st name@(LLVM.UnName _) = buildDfgFromSym st (toSymbol name)
 
-instance Processable LLVM.Instruction where
-  process st (LLVM.Add  _ _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Add) [op1, op2]
-  process st (LLVM.FAdd op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Add) [op1, op2]
-  process st (LLVM.Sub  _ _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Sub) [op1, op2]
-  process st (LLVM.FSub op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Sub) [op1, op2]
-  process st (LLVM.Mul _ _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Mul) [op1, op2]
-  process st (LLVM.FMul op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Mul) [op1, op2]
-  process st (LLVM.UDiv _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.UIntOp Op.Div) [op1, op2]
-  process st (LLVM.SDiv _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.SIntOp Op.Div) [op1, op2]
-  process st (LLVM.FDiv op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Div) [op1, op2]
-  process st (LLVM.URem op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.UIntOp Op.Rem) [op1, op2]
-  process st (LLVM.SRem op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.SIntOp Op.Rem) [op1, op2]
-  process st (LLVM.FRem op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.FloatOp Op.Rem) [op1, op2]
-  process st (LLVM.Shl _ _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Shl) [op1, op2]
-  process st (LLVM.LShr _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.LShr) [op1, op2]
-  process st (LLVM.AShr _ op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.AShr) [op1, op2]
-  process st (LLVM.And op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.And) [op1, op2]
-  process st (LLVM.Or op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.Or) [op1, op2]
-  process st (LLVM.Xor op1 op2 _) =
-    processCompOp st (Op.CompArithOp $ Op.IntOp Op.XOr) [op1, op2]
-  process st (LLVM.ICmp p op1 op2 _) =
-    processCompOp st (fromLlvmIPred p) [op1, op2]
-  process st (LLVM.FCmp p op1 op2 _) =
-    processCompOp st (fromLlvmFPred p) [op1, op2]
-  process st0 (LLVM.Phi _ operands _) =
+instance DfgBuildable LLVM.Instruction where
+  buildDfg st (LLVM.Add  _ _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Add) [op1, op2]
+  buildDfg st (LLVM.FAdd op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Add) [op1, op2]
+  buildDfg st (LLVM.Sub  _ _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Sub) [op1, op2]
+  buildDfg st (LLVM.FSub op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Sub) [op1, op2]
+  buildDfg st (LLVM.Mul _ _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Mul) [op1, op2]
+  buildDfg st (LLVM.FMul op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Mul) [op1, op2]
+  buildDfg st (LLVM.UDiv _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Div) [op1, op2]
+  buildDfg st (LLVM.SDiv _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Div) [op1, op2]
+  buildDfg st (LLVM.FDiv op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Div) [op1, op2]
+  buildDfg st (LLVM.URem op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Rem) [op1, op2]
+  buildDfg st (LLVM.SRem op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Rem) [op1, op2]
+  buildDfg st (LLVM.FRem op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Rem) [op1, op2]
+  buildDfg st (LLVM.Shl _ _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Shl) [op1, op2]
+  buildDfg st (LLVM.LShr _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.LShr) [op1, op2]
+  buildDfg st (LLVM.AShr _ op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.AShr) [op1, op2]
+  buildDfg st (LLVM.And op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.And) [op1, op2]
+  buildDfg st (LLVM.Or op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Or) [op1, op2]
+  buildDfg st (LLVM.Xor op1 op2 _) =
+    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.XOr) [op1, op2]
+  buildDfg st (LLVM.ICmp p op1 op2 _) =
+    buildDfgFromCompOp st (fromLlvmIPred p) [op1, op2]
+  buildDfg st (LLVM.FCmp p op1 op2 _) =
+    buildDfgFromCompOp st (fromLlvmFPred p) [op1, op2]
+  buildDfg st0 (LLVM.Phi _ operands _) =
     let (ops, l_names) = unzip operands
-        sts = scanl process st0 ops
+        sts = scanl buildDfg st0 ops
         operand_ns = map (fromJust . lastTouchedNode) (tail sts)
         st1 = last sts
         st2 = addNewNode st1 G.PhiNode
@@ -660,11 +661,11 @@ instance Processable LLVM.Instruction where
         labels = map G.BBLabelID l_strs
         st5 = addAuxPhiNodeData st4 (op_node, labels)
     in st5
-  process _ l = error $ "'process' not implemented for " ++ show l
+  buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
-instance Processable LLVM.Terminator where
-  process st0 (LLVM.Ret op _) =
-    let st1 = processControlOp st0 Op.Ret (maybeToList op)
+instance DfgBuildable LLVM.Terminator where
+  buildDfg st0 (LLVM.Ret op _) =
+    let st1 = buildDfgFromControlOp st0 Op.Ret (maybeToList op)
     in if isJust op
        then let ret_n = fromJust $ lastTouchedNode st1
                 g = getOSGraph st1
@@ -676,8 +677,8 @@ instance Processable LLVM.Terminator where
                 d_node = last preds
             in addFuncRet st1 d_node
        else st1
-  process st0 (LLVM.Br (LLVM.Name dst) _) =
-    let st1 = processControlOp
+  buildDfg st0 (LLVM.Br (LLVM.Name dst) _) =
+    let st1 = buildDfgFromControlOp
               st0
               Op.Branch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
@@ -686,8 +687,8 @@ instance Processable LLVM.Terminator where
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
-  process st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
-    let st1 = processControlOp st0 Op.CondBranch [op]
+  buildDfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
+    let st1 = buildDfgFromControlOp st0 Op.CondBranch [op]
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (G.BBLabelID t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2
@@ -699,16 +700,16 @@ instance Processable LLVM.Terminator where
               br_node
               [t_dst_node, f_dst_node]
     in st4
-  process _ l = error $ "'process' not implemented for " ++ show l
+  buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
-instance Processable LLVM.Operand where
-  process st (LLVM.LocalReference name) = process st name
-  process st (LLVM.ConstantOperand c) = processConst st (toConstant c)
-  process _ o = error $ "'process' not supported for " ++ show o
+instance DfgBuildable LLVM.Operand where
+  buildDfg st (LLVM.LocalReference name) = buildDfg st name
+  buildDfg st (LLVM.ConstantOperand c) = buildDfgFromConst st (toConstant c)
+  buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
 
-instance Processable LLVM.Parameter where
-  process st0 (LLVM.Parameter _ pname _) =
-    let st1 = process st0 pname
+instance DfgBuildable LLVM.Parameter where
+  buildDfg st0 (LLVM.Parameter _ pname _) =
+    let st1 = buildDfg st0 pname
         n = fromJust $ lastTouchedNode st1
         st2 = addFuncInput st1 n
     in st2
