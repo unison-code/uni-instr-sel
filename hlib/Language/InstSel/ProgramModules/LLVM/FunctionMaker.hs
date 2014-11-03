@@ -12,9 +12,6 @@
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
---
--- TODO: update building of the CFG
--- TODO: turn definition placement conditions into edges
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.LLVM.FunctionMaker
