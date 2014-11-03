@@ -13,7 +13,8 @@
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
 --
--- TODO: update handling of phi nodes
+-- TODO: update building of the CFG
+-- TODO: turn definition placement conditions into edges
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.LLVM.FunctionMaker
@@ -52,14 +53,9 @@ type SymToNodeMapping = (G.Node, Symbol)
 -- operation structure.
 type ConstToNodeMapping = (G.Node, Constant)
 
--- | Represents auxiliary phi node data which will be needed in order to correct
--- the edge ordering. This is because the ordering is difficult to achieve as
--- the operation structure is being built, which is why it is fixed as a
--- post-step. The adjoining list of labels represents the labels of the basic
--- blocks from which the data values originate, and the order of the list is
--- exactly that of the edge ordering for the phi node just after it has been
--- built.
-type AuxPhiNodeData = (G.Node, [G.BBLabelID])
+-- | Represents a definition placement condition, stating that the given node
+-- must be defined in the basic block identified by the given ID.
+type DefPlaceCond = (G.Node, G.BBLabelID)
 
 -- | Represents the intermediate build data.
 data BuildState =
@@ -85,9 +81,9 @@ data BuildState =
       -- using the same symbol, then the last one occuring in the list should be
       -- picked.
 
-    , phiData :: [AuxPhiNodeData]
-      -- ^ Auxiliary phi node data (see description of the type for more
-      -- information).
+    , defPlaceConds :: [DefPlaceCond]
+      -- ^ List of definition placement conditions which are yet to be converted
+      -- into edges.
 
     , funcInputs :: [G.NodeID]
       -- ^ The IDs of the nodes representing the function input arguments.
@@ -172,7 +168,7 @@ mkInitBuildState =
   , currentLabelNode = Nothing
   , symMaps = []
   , constMaps = []
-  , phiData = []
+  , defPlaceConds = []
   , funcInputs = []
   , funcRets = []
   }
@@ -196,14 +192,13 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = mkInitBuildState
       st2 = buildDfg st1 params
       st3 = buildDfg st2 bbs
-      st4 = fixPhiNodeEdgeOrderings st3
-      st5 = addMissingInEdgesToDataNodes st4
-      st6 = insertCopyNodes st5
+      st4 = addMissingInEdgesToDataNodes st5
+      st5 = insertCopyNodes st4
   in Just (PM.Function
            { PM.functionName = fname
-           , PM.functionOS = osGraph st6
-           , PM.functionInputs = funcInputs st6
-           , PM.functionReturns = funcRets st6
+           , PM.functionOS = osGraph st5
+           , PM.functionInputs = funcInputs st5
+           , PM.functionReturns = funcRets st5
            })
 mkFunction _ = Nothing
 
@@ -292,9 +287,9 @@ addSymMap st sm = st { symMaps = symMaps st ++ [sm] }
 addConstMap :: BuildState -> ConstToNodeMapping -> BuildState
 addConstMap st cm = st { constMaps = constMaps st ++ [cm] }
 
--- | Adds additional auxiliary phi node data to a given state.
-addAuxPhiNodeData :: BuildState -> AuxPhiNodeData -> BuildState
-addAuxPhiNodeData st ad = st { phiData = phiData st ++ [ad] }
+-- | Adds a list of definition placement conditions to a given state.
+addDefPlaceConds :: BuildState -> [DefPlaceCond] -> BuildState
+addDefPlaceConds st dps = st { defPlaceConds = defPlaceConds st ++ dps }
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInput :: BuildState -> G.Node -> BuildState
@@ -472,57 +467,6 @@ ensureLabelNodeExists st l =
      then touchNode st (fromJust label_node)
      else addNewNode st (G.LabelNode l)
 
-
--- | Corrects the edge ordering of the phi nodes.
-fixPhiNodeEdgeOrderings :: BuildState -> BuildState
-fixPhiNodeEdgeOrderings st = foldl fixPhiNodeEdgeOrdering st (phiData st)
-
--- | Corrects the edge ordering for a single phi node.
-fixPhiNodeEdgeOrdering :: BuildState -> AuxPhiNodeData -> BuildState
-fixPhiNodeEdgeOrdering st (phi_node, phi_labels) =
-  let g = getOSGraph st
-      in_edges_of_phi_node = G.sortByEdgeNr
-                             G.getInEdgeNr
-                             (G.getInEdges g phi_node)
-      -- The in-edge from the label node to the phi node is always first
-      pred_l_node_of_phi = G.getSourceNode g (head in_edges_of_phi_node)
-      pred_labels = getPredLabelsOfLabelNode g pred_l_node_of_phi
-      pos_maps = computePosMapsOfPerm phi_labels pred_labels
-      edge_nr_maps = zip
-                     (tail in_edges_of_phi_node)
-                     (map (+1) pos_maps)
-  in foldl
-     ( \st' (e, new_in_nr) ->
-       let g' = getOSGraph st'
-           new_e_label = G.EdgeLabel { G.edgeType = G.DataFlowEdge
-                                     , G.outEdgeNr = (G.getOutEdgeNr e)
-                                     , G.inEdgeNr = (G.toEdgeNr new_in_nr)
-                                     }
-           new_g = G.updateEdgeLabel new_e_label e g'
-       in updateOSGraph st' new_g
-     )
-     st
-     edge_nr_maps
-
--- | Gets a list of labels of the label nodes which are the predecessors of
--- another label node. The list is in the same order as the ordering of the
--- in-edges.
-getPredLabelsOfLabelNode :: G.Graph -> G.Node -> [G.BBLabelID]
-getPredLabelsOfLabelNode g l_node =
-  -- The in-edges to the label node are always from control nodes, and for these
-  -- their first in-edge is always from the label node to which they belong
-  let in_edges = G.sortByEdgeNr G.getInEdgeNr $ G.getInEdges g l_node
-      preds = map (G.getSourceNode g) in_edges
-      sought_l_nodes =
-        map
-        ( G.getSourceNode g
-          . head
-          . G.sortByEdgeNr G.getInEdgeNr
-          . G.getInEdges g
-        )
-        preds
-  in map (G.bbLabel . G.getNodeType) sought_l_nodes
-
 -- | Adds an edge from the root label node to all data edges which currently
 -- have no in-bound edges (such data nodes represent either constants or input
 -- arguments).
@@ -641,26 +585,17 @@ instance DfgBuildable LLVM.Instruction where
     buildDfgFromCompOp st (fromLlvmIPred p) [op1, op2]
   buildDfg st (LLVM.FCmp p op1 op2 _) =
     buildDfgFromCompOp st (fromLlvmFPred p) [op1, op2]
-  buildDfg st0 (LLVM.Phi _ operands _) =
-    let (ops, l_names) = unzip operands
-        sts = scanl buildDfg st0 ops
-        operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-        st1 = last sts
-        st2 = addNewNode st1 G.PhiNode
-        op_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge
-              st2
-              G.DataFlowEdge
-              (fromJust $ currentLabelNode st1)
-              op_node
-        -- Here we simply ignore the edge order, and then run a second pass to
-        -- correct the order afterwards after all edges from the branches have
-        -- been added
+  buildDfg st0 (LLVM.Phi _ phi_operands _) =
+    let (operands, label_names) = unzip phi_operands
+        bb_labels = map (\(LLVM.Name str) -> G.BBLabelID str) label_names
+        operand_node_sts = scanl buildDfg st0 operands
+        operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
+        st1 = last operand_node_sts
+        st2 = addDefPlaceConds st1 (zip operand_ns bb_labels)
+        st3 = addNewNode st2 G.PhiNode
+        op_node = fromJust $ lastTouchedNode st3
         st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
-        l_strs = map (\(LLVM.Name str) -> str) l_names
-        labels = map G.BBLabelID l_strs
-        st5 = addAuxPhiNodeData st4 (op_node, labels)
-    in st5
+    in st4
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
 instance DfgBuildable LLVM.Terminator where
