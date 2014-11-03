@@ -193,10 +193,9 @@ type DstNode = Node
 -- representing that they are actually the same node) and node information which
 -- denotes the type of node and other auxiliary information.
 data NodeLabel =
-    NodeLabel
-    { nodeID :: NodeID
-    , nodeType :: NodeType
-    }
+    NodeLabel { nodeID :: NodeID
+              , nodeType :: NodeType
+              }
   deriving (Show, Eq)
 
 -- | The node type information.
@@ -209,14 +208,13 @@ data NodeType =
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as data nodes. What distinguishes one from another
     -- are the constraints applied to it.
-  | DataNode
-    { dataType :: D.DataType
-    , dataOrigin :: Maybe String
-      -- ^ If the data node represents a particular temporary, variable or
-      -- constant which is specified in the source code, then the name of that
-      -- entity can be given here as a string. This will only be used for
-      -- debugging and pretty-printing purposes.
-    }
+  | DataNode { dataType :: D.DataType
+             , dataOrigin :: Maybe String
+               -- ^ If the data node represents a particular temporary, variable
+               -- or constant which is specified in the source code, then the
+               -- name of that entity can be given here as a string. This will
+               -- only be used for debugging and pretty-printing purposes.
+             }
 
   | LabelNode { bbLabel :: BBLabelID }
 
@@ -234,11 +232,10 @@ newtype Edge =
 
 -- | Data type for describing how an edge relates to the two nodes.
 data EdgeLabel =
-    EdgeLabel
-    { edgeType :: EdgeType
-    , outEdgeNr :: EdgeNr
-    , inEdgeNr :: EdgeNr
-    }
+    EdgeLabel { edgeType :: EdgeType
+              , outEdgeNr :: EdgeNr
+              , inEdgeNr :: EdgeNr
+              }
   deriving (Show, Eq)
 
 -- | Data type for determining the edge type.
@@ -259,13 +256,12 @@ instance Show EdgeNr where
 
 -- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
 data Mapping n =
-    Mapping
-    { fNode :: n
-      -- ^ The mapped node appearing in the function graph.
+    Mapping { fNode :: n
+              -- ^ The mapped node appearing in the function graph.
 
-    , pNode :: n
-      -- ^ The mapped node appearing in the pattern graph.
-    }
+            , pNode :: n
+              -- ^ The mapped node appearing in the pattern graph.
+            }
   deriving (Show, Eq)
 
 -- | Represents a match between two graphs.
@@ -274,13 +270,12 @@ newtype Match n = Match [Mapping n]
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
 data Domset t =
-    Domset
-    { domNode :: t
-      -- ^ The dominator entity.
+    Domset { domNode :: t
+             -- ^ The dominator entity.
 
-    , domSet :: [t]
-      -- ^ The dominated entities.
-    }
+           , domSet :: [t]
+             -- ^ The dominated entities.
+           }
   deriving (Show)
 
 

@@ -57,38 +57,39 @@ type DefPlaceCond = (G.Node, G.BBLabelID)
 
 -- | Represents the intermediate build data.
 data BuildState =
-    BuildState
-    { osGraph :: OS.OpStructure
-      -- ^ The current operation structure.
+    BuildState { osGraph :: OS.OpStructure
+                 -- ^ The current operation structure.
 
-    , lastTouchedNode :: Maybe G.Node
-      -- ^ The last node (if any) that was touched. This is used to simplifying
-      -- edge insertion.
+               , lastTouchedNode :: Maybe G.Node
+                 -- ^ The last node (if any) that was touched. This is used to
+                 -- simplifying edge insertion.
 
-    , currentLabelNode :: Maybe G.Node
-      -- ^ The label node which represents the basic block currently being
-      -- processed.
+               , currentLabelNode :: Maybe G.Node
+                 -- ^ The label node which represents the basic block currently
+                 -- being processed.
 
-    , symMaps :: [SymToNodeMapping]
-      -- ^ List of symbol-to-node mappings. If there are more than one mapping
-      -- using the same symbol, then the last one occuring in the list should be
-      -- picked.
+               , symMaps :: [SymToNodeMapping]
+                 -- ^ List of symbol-to-node mappings. If there are more than
+                 -- one mapping using the same symbol, then the last one
+                 -- occuring in the list should be picked.
 
-    , constMaps :: [ConstToNodeMapping]
-      -- ^ List of constant-to-node mappings. If there are more than one mapping
-      -- using the same symbol, then the last one occuring in the list should be
-      -- picked.
+               , constMaps :: [ConstToNodeMapping]
+                 -- ^ List of constant-to-node mappings. If there are more than
+                 -- one mapping using the same symbol, then the last one
+                 -- occuring in the list should be picked.
 
-    , defPlaceConds :: [DefPlaceCond]
-      -- ^ List of definition placement conditions which are yet to be converted
-      -- into edges.
+               , defPlaceConds :: [DefPlaceCond]
+                 -- ^ List of definition placement conditions which are yet to
+                 -- be converted into edges.
 
-    , funcInputs :: [G.NodeID]
-      -- ^ The IDs of the nodes representing the function input arguments.
+               , funcInputs :: [G.NodeID]
+                 -- ^ The IDs of the nodes representing the function input
+                 -- arguments.
 
-    , funcRets :: [G.NodeID]
-      -- ^ The IDs of the nodes representing the function return statements.
-    }
+               , funcRets :: [G.NodeID]
+                 -- ^ The IDs of the nodes representing the function return
+                 -- statements.
+               }
   deriving (Show)
 
 -- | Retains various symbol names.
@@ -105,10 +106,9 @@ instance Show Symbol where
 
 -- | Retains various constant values.
 data Constant =
-    IntConstant
-    { bitWidth :: Integer
-    , intValue :: Integer
-    }
+    IntConstant { bitWidth :: Integer
+                , intValue :: Integer
+                }
 
   | FloatConstant Float
   deriving (Eq)
@@ -145,11 +145,23 @@ class DfgBuildable a where
   -- | Builds the corresponding data flow graph from a given LLVM element.
   buildDfg ::
       BuildState
-      -- ^ The current state.
+      -- ^ The current build state.
     -> a
        -- ^ The LLVM element to process.
     -> BuildState
-       -- ^ The new state.
+       -- ^ The new build state.
+
+-- | Class for building the control flow graph.
+class CfgBuildable a where
+
+  -- | Builds the corresponding control flow graph from a given LLVM element.
+  buildCfg ::
+      BuildState
+      -- ^ The current build state.
+    -> a
+       -- ^ The LLVM element to process.
+    -> BuildState
+       -- ^ The new build state.
 
 
 
@@ -160,16 +172,15 @@ class DfgBuildable a where
 -- | Creates an initial state.
 mkInitBuildState :: BuildState
 mkInitBuildState =
-  BuildState
-  { osGraph = OS.mkEmpty
-  , lastTouchedNode = Nothing
-  , currentLabelNode = Nothing
-  , symMaps = []
-  , constMaps = []
-  , defPlaceConds = []
-  , funcInputs = []
-  , funcRets = []
-  }
+  BuildState { osGraph = OS.mkEmpty
+             , lastTouchedNode = Nothing
+             , currentLabelNode = Nothing
+             , symMaps = []
+             , constMaps = []
+             , defPlaceConds = []
+             , funcInputs = []
+             , funcRets = []
+             }
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
@@ -192,12 +203,12 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
       st3 = buildDfg st2 bbs
       st4 = addMissingInEdgesToDataNodes st5
       st5 = insertCopyNodes st4
-  in Just (PM.Function
-           { PM.functionName = fname
-           , PM.functionOS = osGraph st5
-           , PM.functionInputs = funcInputs st5
-           , PM.functionReturns = funcRets st5
-           })
+  in Just ( PM.Function { PM.functionName = fname
+                        , PM.functionOS = osGraph st5
+                        , PM.functionInputs = funcInputs st5
+                        , PM.functionReturns = funcRets st5
+                        }
+          )
 mkFunction _ = Nothing
 
 -- | Gets the OS graph contained by the operation structure in a given state.
@@ -481,33 +492,7 @@ addMissingInEdgesToDataNodes st =
               (zip (repeat root_l_node) d_nodes_with_no_in_edges)
   in updateOSGraph st new_g
 
--- | Inserts a copy node between between each use of a data node.
-insertCopyNodes :: BuildState -> BuildState
-insertCopyNodes st =
-  let g = getOSGraph st
-      all_d_nodes = filter G.isDataNode (G.getAllNodes g)
-      all_out_edges_from_d_nodes = concatMap (G.getOutEdges g) all_d_nodes
-      new_st = foldl insertCopy st all_out_edges_from_d_nodes
-  in new_st
 
--- | Inserts a copy and data node along a given edge.
-insertCopy :: BuildState -> G.Edge -> BuildState
-insertCopy st0 e =
-  let g0 = getOSGraph st0
-      orig_src_n = G.getSourceNode g0 e
-      orig_dst_n = G.getTargetNode g0 e
-      -- Modify OS graph
-      (g1, new_d_node) = G.insertNewNodeAlongEdge G.CopyNode e g0
-      new_e = head $ G.getOutEdges g1 new_d_node
-      (g2, _) = G.insertNewNodeAlongEdge (G.DataNode D.AnyType Nothing) new_e g1
-      st1 = updateOSGraph st0 g2
-  in if G.isRetControlNode orig_dst_n
-     -- Correct function return data node entries
-     then let rets = [ nid | nid <- funcRets st1
-                           , nid /= G.getNodeID orig_src_n
-                     ]
-          in st1 { funcRets = (G.getNodeID new_d_node):rets }
-     else st1
 
 
 
