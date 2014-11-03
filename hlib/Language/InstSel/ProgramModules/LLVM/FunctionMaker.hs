@@ -202,14 +202,14 @@ mkFunctionFromGlobalDef _ = Nothing
 -- not a function, `Nothing` is returned.
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ fname (params, _) _ _ _ _ bbs) =
-  let st1 = mkInitBuildState
-      st2 = buildDfg (buildDfg st1 params) bbs
-      st3 = buildCfg st2 bbs
-      st4 = addMissingLabelToNodeDataFlowEdges st3
-      st5 = addMissingDefPlaceEdges st4
+  let st0 = mkInitBuildState
+      st1 = buildDfg (buildDfg st0 params) bbs
+      st2 = buildCfg st1 bbs
+      st3 = addMissingLabelToNodeDataFlowEdges st2
+      st4 = addMissingDefPlaceEdges st3
   in Just ( PM.Function { PM.functionName = toFunctionName fname
-                        , PM.functionOS = osGraph st5
-                        , PM.functionInputs = funcInputValues st5
+                        , PM.functionOS = osGraph st4
+                        , PM.functionInputs = funcInputValues st4
                         }
           )
 mkFunction _ = Nothing
