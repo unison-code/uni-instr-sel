@@ -34,9 +34,7 @@ import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
 import Language.InstSel.Utils
-  ( computePosMapsOfPerm
-  , toNatural
-  )
+  ( toNatural )
 import Data.Maybe
 
 
