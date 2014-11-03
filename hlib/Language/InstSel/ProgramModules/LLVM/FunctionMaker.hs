@@ -658,7 +658,7 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
 instance CfgBuildable LLVM.Operand where
-  buildCfg st (LLVM.LocalReference name) = buildDfg st name
+  buildCfg st (LLVM.LocalReference name) = buildCfg st name
   buildCfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
   buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
 
