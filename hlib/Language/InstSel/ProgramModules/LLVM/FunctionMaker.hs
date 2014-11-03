@@ -51,8 +51,15 @@ type SymToNodeMapping = (G.Node, Symbol)
 -- operation structure.
 type ConstToNodeMapping = (G.Node, Constant)
 
+-- | Represents a data flow that goes from the label node, identified by a given
+-- ID, to some given node. This is needed to draw the missing data flow edges
+-- after both the data flow graph and the control flow graph have been built.
+type LabelToNodeDF = (G.BBLabelID, G.Node)
+
 -- | Represents a definition placement condition, stating that the given node
--- must be defined in the basic block identified by the given ID.
+-- must be defined in the basic block identified by the given ID. This is needed
+-- to draw the missing definition placement edges after both the data flow graph
+-- and the control flow graph have been built.
 type DefPlaceCond = (G.Node, G.BBLabelID)
 
 -- | Represents the intermediate build data.
@@ -77,6 +84,10 @@ data BuildState =
                  -- ^ List of constant-to-node mappings. If there are more than
                  -- one mapping using the same symbol, then the last one
                  -- occuring in the list should be picked.
+
+               , labelToNodeDFs :: [LabelToNodeDF]
+                 -- ^ List of label-to-node data flow dependencies which are yet
+                 -- to be converted into edges.
 
                , defPlaceConds :: [DefPlaceCond]
                  -- ^ List of definition placement conditions which are yet to
@@ -177,6 +188,7 @@ mkInitBuildState =
              , currentLabelNode = Nothing
              , symMaps = []
              , constMaps = []
+             , labelToNodeDFs = []
              , defPlaceConds = []
              , funcInputs = []
              , funcRets = []
@@ -201,8 +213,8 @@ mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = mkInitBuildState
       st2 = buildDfg st1 params
       st3 = buildDfg st2 bbs
-      st4 = addMissingInEdgesToDataNodes st5
-      st5 = insertCopyNodes st4
+      st4 = addMissingLabelToNodeDataFlowEdges st3
+      st5 = addMissingDefPlaceEdges st4
   in Just ( PM.Function { PM.functionName = fname
                         , PM.functionOS = osGraph st5
                         , PM.functionInputs = funcInputs st5
@@ -457,8 +469,8 @@ toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-getLabelNode :: BuildState -> G.BBLabelID -> Maybe G.Node
-getLabelNode st l =
+findLabelNodeWithID :: BuildState -> G.BBLabelID -> Maybe G.Node
+findLabelNodeWithID st l =
   let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
       nodes_w_matching_labels =
         filter (\n -> (G.bbLabel $ G.getNodeType n) == l) label_nodes
@@ -471,28 +483,42 @@ getLabelNode st l =
 -- label node in question. If not then a new label node is added.
 ensureLabelNodeExists :: BuildState -> G.BBLabelID -> BuildState
 ensureLabelNodeExists st l =
-  let label_node = getLabelNode st l
+  let label_node = findLabelNodeWithID st l
   in if isJust label_node
      then touchNode st (fromJust label_node)
      else addNewNode st (G.LabelNode l)
 
--- | Adds an edge from the root label node to all data edges which currently
--- have no in-bound edges (such data nodes represent either constants or input
--- arguments).
-addMissingInEdgesToDataNodes :: BuildState -> BuildState
-addMissingInEdgesToDataNodes st =
-  let g = getOSGraph st
-      all_d_nodes = filter G.isDataNode (G.getAllNodes g)
-      d_nodes_with_no_in_edges =
-        filter (\n -> (length $ G.getInEdges g n) == 0) all_d_nodes
-      root_l_node = fromJust $ G.rootInCFG $ G.extractCFG g
-      new_g = foldl
-              (\g' e -> fst $ G.addNewEdge G.DataFlowEdge e g')
-              g
-              (zip (repeat root_l_node) d_nodes_with_no_in_edges)
-  in updateOSGraph st new_g
+-- | Adds the missing data or state flow edges from label nodes to data or state
+-- nodes, as described in the given build state.
+addMissingLabelToNodeDataFlowEdges :: BuildState -> BuildState
+addMissingLabelToNodeDataFlowEdges st =
+  let g0 = getOSGraph st
+      deps = labelToNodeDFs st
+      -- Add data flow edges
+      df_deps = filter (\(_, n) -> G.isDataNode n) deps
+      df_pairs = map
+                 (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
+                 df_deps
+      g1 = foldr (\p g -> fst $ G.addNewDFEdge p g) g0 df_pairs
+      -- Add state flow edges
+      sf_deps = filter (\(_, n) -> G.isStateNode n) deps
+      sf_pairs = map
+                 (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
+                 sf_deps
+      g2 = foldr (\p g -> fst $ G.addNewSFEdge p g) g1 sf_pairs
+  in updateOSGraph st g2
 
-
+-- | Adds the missing definition placement edges, as described in the given
+-- build state.
+addMissingDefPlaceEdges :: BuildState -> BuildState
+addMissingDefPlaceEdges st =
+  let g0 = getOSGraph st
+      conds = defPlaceConds st
+      dp_pairs = map
+                 (\(n, bb_id) -> (n, fromJust $ findLabelNodeWithID st bb_id))
+                 conds
+      g1 = foldr (\p g -> fst $ G.addNewDPEdge p g) g0 dp_pairs
+  in updateOSGraph st g1
 
 
 
