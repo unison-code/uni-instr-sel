@@ -25,8 +25,9 @@ where
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
-import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
+import qualified LLVM.General.AST.Global as LLVMG
+import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified Language.InstSel.Constraints as C
 import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
@@ -201,13 +202,13 @@ mkFunctionFromGlobalDef _ = Nothing
 -- | Builds a function from a global LLVM AST definition. If the definition is
 -- not a function, `Nothing` is returned.
 mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction (LLVM.Function _ _ _ _ _ fname (params, _) _ _ _ _ bbs) =
+mkFunction f@(LLVM.Function {}) =
   let st0 = mkInitBuildState
-      st1 = buildDfg (buildDfg st0 params) bbs
-      st2 = buildCfg st1 bbs
+      st1 = buildDfg st0 f
+      st2 = buildCfg st1 f
       st3 = addMissingLabelToNodeDataFlowEdges st2
       st4 = addMissingDefPlaceEdges st3
-  in Just ( PM.Function { PM.functionName = toFunctionName fname
+  in Just ( PM.Function { PM.functionName = toFunctionName $ LLVMG.name f
                         , PM.functionOS = osGraph st4
                         , PM.functionInputs = funcInputValues st4
                         }
@@ -532,6 +533,14 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
     in st3
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
+instance DfgBuildable LLVM.Global where
+  buildDfg st0 f@(LLVM.Function {}) =
+    let (params, _) = LLVMG.parameters f
+        st1 = buildDfg st0 params
+        st2 = buildDfg st1 $ LLVMG.basicBlocks f
+    in st2
+  buildDfg _ l = error $ "'buildDfg' not supported for " ++ show l
+
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
     let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
@@ -632,6 +641,11 @@ instance CfgBuildable LLVM.BasicBlock where
 instance (CfgBuildable n) => CfgBuildable (LLVM.Named n) where
   buildCfg st (_ LLVM.:= expr) = buildCfg st expr
   buildCfg st (LLVM.Do expr) = buildCfg st expr
+
+instance CfgBuildable LLVM.Global where
+  buildCfg st f@(LLVM.Function {}) =
+    buildCfg st $ LLVMG.basicBlocks f
+  buildCfg _ l = error $ "'buildCfg' not supported for " ++ show l
 
 instance CfgBuildable LLVM.Terminator where
   buildCfg st (LLVM.Ret op _) =
