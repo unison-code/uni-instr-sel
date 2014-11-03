@@ -164,8 +164,8 @@ class DfgBuildable a where
 -------------
 
 -- | Creates an initial state.
-initialState :: BuildState
-initialState =
+mkInitBuildState :: BuildState
+mkInitBuildState =
   BuildState
   { osGraph = OS.mkEmpty
   , lastTouchedNode = Nothing
@@ -193,7 +193,7 @@ mkFunctionFromGlobalDef _ = Nothing
 -- not a function, `Nothing` is returned.
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
-  let st1 = initialState
+  let st1 = mkInitBuildState
       st2 = buildDfg st1 params
       st3 = buildDfg st2 bbs
       st4 = fixPhiNodeEdgeOrderings st3
