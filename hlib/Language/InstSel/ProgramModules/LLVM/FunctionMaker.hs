@@ -43,13 +43,12 @@ import Data.Maybe
 -- Data types
 --------------
 
--- | Represents a mapping from a symbol to a node currently in the operation
--- structure.
-type SymToNodeMapping = (G.Node, Symbol)
+-- | Represents a mapping from a symbol to a data node currently in the graph.
+type SymToDataNodeMapping = (G.Node, Symbol)
 
--- | Represents a mapping from constant symbol to a node currently in the
--- operation structure.
-type ConstToNodeMapping = (G.Node, Constant)
+-- | Represents a mapping from constant symbol to a data node currently in the
+-- graph.
+type ConstToDataNodeMapping = (G.Node, Constant)
 
 -- | Represents a data flow that goes from the label node, identified by a given
 -- ID, to some given node. This is needed to draw the missing data flow edges
@@ -75,12 +74,12 @@ data BuildState =
                  -- ^ The label node which represents the basic block currently
                  -- being processed.
 
-               , symMaps :: [SymToNodeMapping]
+               , symMaps :: [SymToDataNodeMapping]
                  -- ^ List of symbol-to-node mappings. If there are more than
                  -- one mapping using the same symbol, then the last one
                  -- occuring in the list should be picked.
 
-               , constMaps :: [ConstToNodeMapping]
+               , constMaps :: [ConstToDataNodeMapping]
                  -- ^ List of constant-to-node mappings. If there are more than
                  -- one mapping using the same symbol, then the last one
                  -- occuring in the list should be picked.
@@ -93,13 +92,9 @@ data BuildState =
                  -- ^ List of definition placement conditions which are yet to
                  -- be converted into edges.
 
-               , funcInputs :: [G.NodeID]
+               , funcInputValues :: [G.NodeID]
                  -- ^ The IDs of the nodes representing the function input
                  -- arguments.
-
-               , funcRets :: [G.NodeID]
-                 -- ^ The IDs of the nodes representing the function return
-                 -- statements.
                }
   deriving (Show)
 
@@ -152,7 +147,6 @@ instance ConstantFormable LLVMC.Constant where
 
 -- | Class for building the data flow graph.
 class DfgBuildable a where
-
   -- | Builds the corresponding data flow graph from a given LLVM element.
   buildDfg ::
       BuildState
@@ -164,7 +158,6 @@ class DfgBuildable a where
 
 -- | Class for building the control flow graph.
 class CfgBuildable a where
-
   -- | Builds the corresponding control flow graph from a given LLVM element.
   buildCfg ::
       BuildState
@@ -190,8 +183,7 @@ mkInitBuildState =
              , constMaps = []
              , labelToNodeDFs = []
              , defPlaceConds = []
-             , funcInputs = []
-             , funcRets = []
+             , funcInputValues = []
              }
 
 -- | Builds a list of functions from an LLVM module. If the module does not
@@ -211,14 +203,13 @@ mkFunctionFromGlobalDef _ = Nothing
 mkFunction :: LLVM.Global -> Maybe PM.Function
 mkFunction (LLVM.Function _ _ _ _ _ (LLVM.Name fname) (params, _) _ _ _ _ bbs) =
   let st1 = mkInitBuildState
-      st2 = buildDfg st1 params
-      st3 = buildDfg st2 bbs
+      st2 = buildDfg (buildDfg st1 params) bbs
+      st3 = buildCfg st2 bbs
       st4 = addMissingLabelToNodeDataFlowEdges st3
       st5 = addMissingDefPlaceEdges st4
   in Just ( PM.Function { PM.functionName = fname
                         , PM.functionOS = osGraph st5
-                        , PM.functionInputs = funcInputs st5
-                        , PM.functionReturns = funcRets st5
+                        , PM.functionInputs = funcInputValues st5
                         }
           )
 mkFunction _ = Nothing
@@ -301,11 +292,11 @@ addOSConstraints :: BuildState -> [C.Constraint] -> BuildState
 addOSConstraints st cs = foldl addOSConstraint st cs
 
 -- | Adds a new symbol-to-node mapping to a given state.
-addSymMap :: BuildState -> SymToNodeMapping -> BuildState
+addSymMap :: BuildState -> SymToDataNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = symMaps st ++ [sm] }
 
 -- | Adds a new constant-to-node mapping to a given state.
-addConstMap :: BuildState -> ConstToNodeMapping -> BuildState
+addConstMap :: BuildState -> ConstToDataNodeMapping -> BuildState
 addConstMap st cm = st { constMaps = constMaps st ++ [cm] }
 
 -- | Adds a list of definition placement conditions to a given state.
@@ -313,36 +304,34 @@ addDefPlaceConds :: BuildState -> [DefPlaceCond] -> BuildState
 addDefPlaceConds st dps = st { defPlaceConds = defPlaceConds st ++ dps }
 
 -- | Adds a data node representing a function argument to a given state.
-addFuncInput :: BuildState -> G.Node -> BuildState
-addFuncInput st n = st { funcInputs = funcInputs st ++ [G.getNodeID n] }
+addFuncInputValue :: BuildState -> G.Node -> BuildState
+addFuncInputValue st n =
+  st { funcInputValues = funcInputValues st ++ [G.getNodeID n] }
 
--- | Adds a data node representing a return value to a given state.
-addFuncRet :: BuildState -> G.Node -> BuildState
-addFuncRet st n = st { funcRets = funcRets st ++ [G.getNodeID n] }
-
--- | Gets the node ID (if any) to which a symbol is mapped to.
-mappedNodeFromSym :: [SymToNodeMapping] -> Symbol -> Maybe G.Node
-mappedNodeFromSym ms sym =
+-- | Gets the node ID (if any) of the data node to which a symbol is mapped to.
+mappedDataNodeFromSym :: [SymToDataNodeMapping] -> Symbol -> Maybe G.Node
+mappedDataNodeFromSym ms sym =
   let ns = filter (\m -> snd m == sym) ms
   in if not $ null ns
      then Just $ fst $ last ns
      else Nothing
 
--- | Gets the node ID (if any) to which a constant is mapped to.
-mappedNodeFromConst :: [ConstToNodeMapping] -> Constant -> Maybe G.Node
-mappedNodeFromConst ms c =
+-- | Gets the node ID (if any) of the data node to which a constant is mapped
+-- to.
+mappedDataNodeFromConst :: [ConstToDataNodeMapping] -> Constant -> Maybe G.Node
+mappedDataNodeFromConst ms c =
   let ns = filter (\m -> snd m == c) ms
   in if not $ null ns
      then Just $ fst $ last ns
      else Nothing
 
--- | Builds the corresponding data flow graph from a symbol. If a node mapping
--- for that symbol already exists, then the last touched node is updated to
--- reflect that node. If a mapping does not exist, then a new data node is
+-- | Builds the corresponding operation structure from a symbol. If a node
+-- mapping for that symbol already exists, then the last touched node is updated
+-- to reflect that node. If a mapping does not exist, then a new data node is
 -- added.
-buildDfgFromSym :: BuildState -> Symbol -> BuildState
-buildDfgFromSym st0 sym =
-    let node_for_sym = mappedNodeFromSym (symMaps st0) sym
+buildOSFromSym :: BuildState -> Symbol -> BuildState
+buildOSFromSym st0 sym =
+    let node_for_sym = mappedDataNodeFromSym (symMaps st0) sym
     in if isJust node_for_sym
        then touchNode st0 (fromJust node_for_sym)
        else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
@@ -350,13 +339,13 @@ buildDfgFromSym st0 sym =
                 st2 = addSymMap st1 (d_node, sym)
             in st2
 
--- | Builds the corresponding data flow graph from a constant value. If a node
--- mapping for that constant already exists, then the last touched node is
+-- | Builds the corresponding operation structure from a constant value. If a
+-- node mapping for that constant already exists, then the last touched node is
 -- updated to reflect that node. If a mapping does not exist, then a new data
 -- node is added.
-buildDfgFromConst :: BuildState -> Constant -> BuildState
-buildDfgFromConst st0 c =
-    let node_for_c = mappedNodeFromConst (constMaps st0) c
+buildOSFromConst :: BuildState -> Constant -> BuildState
+buildOSFromConst st0 c =
+    let node_for_c = mappedDataNodeFromConst (constMaps st0) c
     in if isJust node_for_c
        then touchNode st0 (fromJust node_for_c)
        else let st1 = addNewNode
@@ -403,16 +392,16 @@ buildDfgFromCompOp st0 op operands =
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
-buildDfgFromControlOp ::
-  (DfgBuildable o)
+buildCfgFromControlOp ::
+  (CfgBuildable o)
   => BuildState
   -> Op.ControlOp
      -- ^ The control operation.
   -> [o]
      -- ^ The operands.
   -> BuildState
-buildDfgFromControlOp st0 op operands =
-  let sts = scanl buildDfg st0 operands
+buildCfgFromControlOp st0 op operands =
+  let sts = scanl buildCfg st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
       st2 = addNewNode st1 (G.ControlNode op)
@@ -424,7 +413,7 @@ buildDfgFromControlOp st0 op operands =
             op_node
       st4 = addNewEdgesManySources
             st3
-            G.ControlFlowEdge
+            G.DataFlowEdge
             operand_ns
             op_node
   in st4
@@ -540,18 +529,17 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
 instance DfgBuildable LLVM.BasicBlock where
-  buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts term_inst) =
+  buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
     let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
         st2 = st1 { currentLabelNode = lastTouchedNode st1 }
         st3 = foldl buildDfg st2 insts
-        st4 = buildDfg st3 term_inst
-    in st4
+    in st3
   buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
     error $ "'buildDfg' not supported for un-named basic blocks"
 
 instance DfgBuildable LLVM.Name where
-  buildDfg st name@(LLVM.Name _) = buildDfgFromSym st (toSymbol name)
-  buildDfg st name@(LLVM.UnName _) = buildDfgFromSym st (toSymbol name)
+  buildDfg st name@(LLVM.Name _) = buildOSFromSym st (toSymbol name)
+  buildDfg st name@(LLVM.UnName _) = buildOSFromSym st (toSymbol name)
 
 instance DfgBuildable LLVM.Instruction where
   buildDfg st (LLVM.Add  _ _ op1 op2 _) =
@@ -607,22 +595,45 @@ instance DfgBuildable LLVM.Instruction where
     in st4
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
-instance DfgBuildable LLVM.Terminator where
-  buildDfg st0 (LLVM.Ret op _) =
-    let st1 = buildDfgFromControlOp st0 Op.Ret (maybeToList op)
-    in if isJust op
-       then let ret_n = fromJust $ lastTouchedNode st1
-                g = getOSGraph st1
-                preds = map
-                        (G.getSourceNode g)
-                        (G.sortByEdgeNr G.getInEdgeNr $ G.getInEdges g ret_n)
-                -- For return nodes, the edge from the value node always
-                -- appears last when ordered by in-edge numbers
-                d_node = last preds
-            in addFuncRet st1 d_node
-       else st1
-  buildDfg st0 (LLVM.Br (LLVM.Name dst) _) =
-    let st1 = buildDfgFromControlOp
+instance DfgBuildable LLVM.Operand where
+  buildDfg st (LLVM.LocalReference name) = buildDfg st name
+  buildDfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
+  buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
+
+instance DfgBuildable LLVM.Parameter where
+  buildDfg st0 (LLVM.Parameter _ pname _) =
+    let st1 = buildDfg st0 pname
+        n = fromJust $ lastTouchedNode st1
+        st2 = addFuncInputValue st1 n
+    in st2
+
+
+
+---------------------------------
+-- 'CfgBuildable' class instances
+---------------------------------
+
+instance (CfgBuildable a) => CfgBuildable [a] where
+  buildCfg = foldl buildCfg
+
+instance CfgBuildable LLVM.BasicBlock where
+  buildCfg st0 (LLVM.BasicBlock (LLVM.Name str) _ term_inst) =
+    let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
+        st2 = st1 { currentLabelNode = lastTouchedNode st1 }
+        st3 = buildCfg st2 term_inst
+    in st3
+  buildCfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+    error $ "'buildCfg' not supported for un-named basic blocks"
+
+instance (CfgBuildable n) => CfgBuildable (LLVM.Named n) where
+  buildCfg st (_ LLVM.:= expr) = buildCfg st expr
+  buildCfg st (LLVM.Do expr) = buildCfg st expr
+
+instance CfgBuildable LLVM.Terminator where
+  buildCfg st (LLVM.Ret op _) =
+    buildCfgFromControlOp st Op.Ret (maybeToList op)
+  buildCfg st0 (LLVM.Br (LLVM.Name dst) _) =
+    let st1 = buildCfgFromControlOp
               st0
               Op.Branch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
@@ -631,8 +642,8 @@ instance DfgBuildable LLVM.Terminator where
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
-  buildDfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
-    let st1 = buildDfgFromControlOp st0 Op.CondBranch [op]
+  buildCfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
+    let st1 = buildCfgFromControlOp st0 Op.CondBranch [op]
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (G.BBLabelID t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2
@@ -644,16 +655,13 @@ instance DfgBuildable LLVM.Terminator where
               br_node
               [t_dst_node, f_dst_node]
     in st4
-  buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
+  buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
-instance DfgBuildable LLVM.Operand where
-  buildDfg st (LLVM.LocalReference name) = buildDfg st name
-  buildDfg st (LLVM.ConstantOperand c) = buildDfgFromConst st (toConstant c)
-  buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
+instance CfgBuildable LLVM.Operand where
+  buildCfg st (LLVM.LocalReference name) = buildDfg st name
+  buildCfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
+  buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
 
-instance DfgBuildable LLVM.Parameter where
-  buildDfg st0 (LLVM.Parameter _ pname _) =
-    let st1 = buildDfg st0 pname
-        n = fromJust $ lastTouchedNode st1
-        st2 = addFuncInput st1 n
-    in st2
+instance CfgBuildable LLVM.Name where
+  buildCfg st name@(LLVM.Name _) = buildOSFromSym st (toSymbol name)
+  buildCfg st name@(LLVM.UnName _) = buildOSFromSym st (toSymbol name)
