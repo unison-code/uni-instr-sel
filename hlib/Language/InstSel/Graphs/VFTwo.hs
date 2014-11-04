@@ -14,12 +14,17 @@
 -- graph on which another graph will be matched. The graph to match is called
 -- the pattern graph.
 --
--- However, it seems that the paper has some bugs as it forbids matching of
--- certain subgraph isomorphism. Basically, if there is an edge in the function
--- graph between two nodes which does not appear in the pattern graph, then it
--- will not match. But we're only interested in matching all edges in the
--- pattern, not necessarily all edges in the function graph! I should contact
--- the authors about this and see whether there's a mistake.
+-- The VF2 algorithm assumes that neither graph contains multi-edges (that is,
+-- more than one edges between the same pair of nodes). This limitations,
+-- however, can be circumvented by duplicating nodes and giving them the same
+-- node IDs before invoking the algorithm.
+--
+-- It seems that the paper has some bugs as it forbids matching of certain
+-- subgraph isomorphism. Basically, if there is an edge in the function graph
+-- between two nodes which does not appear in the pattern graph, then it will
+-- not match. But we're only interested in matching all edges in the pattern,
+-- not necessarily all edges in the function graph! I should contact the authors
+-- about this and see whether there's a mistake.
 --
 -- TODO: handle function graphs with multiple edges that have the same edge
 -- numbers
