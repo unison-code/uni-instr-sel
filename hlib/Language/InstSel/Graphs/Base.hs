@@ -270,7 +270,9 @@ data Mapping n =
   deriving (Show, Eq)
 
 -- | Represents a match between two graphs.
-newtype Match n = Match [Mapping n]
+newtype Match n =
+    Match [Mapping n]
+  deriving (Show)
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
