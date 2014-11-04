@@ -127,7 +127,7 @@ checkFeasibility ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
@@ -163,7 +163,7 @@ checkSyntax ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
@@ -189,7 +189,7 @@ checkSyntaxPred ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
@@ -213,7 +213,7 @@ checkSyntaxSucc ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
@@ -238,7 +238,7 @@ checkSyntaxIn ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
@@ -270,7 +270,7 @@ checkSyntaxOut ::
   -> Graph
      -- ^ The pattern graph.
   -> [Mapping Node]
-     -- ^ current mapping state.
+     -- ^ Current mapping state.
   -> Mapping Node
      -- ^ Candidate mapping.
   -> Bool
