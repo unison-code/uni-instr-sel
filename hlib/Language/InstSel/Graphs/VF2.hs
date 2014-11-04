@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Graphs.VFTwo
+-- Module      : Language.InstSel.Graphs.VF2
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -30,7 +30,7 @@
 -- numbers
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Graphs.VFTwo
+module Language.InstSel.Graphs.VF2
   ( findMatches )
 where
 
