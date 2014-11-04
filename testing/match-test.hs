@@ -104,6 +104,29 @@ main =
                      , (15,  9, EdgeLabel ControlFlowEdge 0 1)
                      ]
                  )
+         fg3 = mkGraph
+                 ( map
+                     Node
+                     [ ( 0, NodeLabel 0 ( ComputationNode
+                                            (O.CompArithOp $ O.UIntOp O.Add)
+                                        )
+                       )
+                     , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
+                     , ( 2, NodeLabel 2 (DataNode D.AnyType Nothing) )
+                     , ( 3, NodeLabel 3 (DataNode D.AnyType Nothing) )
+                     , ( 4, NodeLabel 10 (DataNode D.AnyType Nothing) )
+                     , ( 5, NodeLabel 20 (DataNode D.AnyType Nothing) )
+                     ]
+                 )
+                 ( map
+                     Edge
+                     [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                     , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
+                     , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
+                     , ( 5, 0, EdgeLabel DataFlowEdge 0 1 )
+                     , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
+                     ]
+                 )
          p1 = mkGraph
                 ( map
                     Node
@@ -125,4 +148,4 @@ main =
                 )
      mapM_
        (\m -> putStrLn $ show $ convertMatchN2ID m)
-       (findMatches fg1 p1)
+       (findMatches fg3 p1)
