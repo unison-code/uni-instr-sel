@@ -121,8 +121,8 @@ getCandidates fg pg st =
 
 -- | From a mapping state and a pattern node, get the corresponding function
 -- node. It is assumed that there is always such a mapping.
-getFNFromMapping :: [Mapping Node] -> Node -> Node
-getFNFromMapping st pn = fromJust $ findFNInMatch (Match st) pn
+getFNFromState :: [Mapping Node] -> Node -> Node
+getFNFromState st pn = fromJust $ findFNInMatch (Match st) pn
 
 -- | Checks that the node mapping is feasible by comparing their semantics and
 -- syntax.
@@ -153,6 +153,7 @@ checkSemantics ::
 checkSemantics fg pg st c =
   let fn = fNode c
       pn = pNode c
+      all_f_nodes_in_st = map fNode st
       mapped_preds_to_pn =
         filter (`elem` (map pNode st)) (getPredecessors pg pn)
       mapped_preds_to_fn = findFNsInMatch (Match st) mapped_preds_to_pn
@@ -166,14 +167,14 @@ checkSemantics fg pg st c =
      -- function graph to be included in the mapping state
      all
        ( \pred_fn ->
-           let already_matched_in_edges =
+           let already_matched_out_edges =
                  filter
-                   (\e -> getTargetNode fg e `elem` mapped_preds_to_fn)
-                   (getInEdges fg pred_fn)
+                   (\e -> getTargetNode fg e `elem` all_f_nodes_in_st)
+                   (getOutEdges fg pred_fn)
            in not $
                 any
                   ( \e ->
-                      any (areInEdgesEquivalent fg e) already_matched_in_edges
+                      any (areOutEdgesEquivalent fg e) already_matched_out_edges
                   )
                   (getEdges fg pred_fn fn)
        )
@@ -183,16 +184,16 @@ checkSemantics fg pg st c =
      -- function graph to be included in the mapping state
      all
        ( \succ_fn ->
-           let already_matched_out_edges =
+           let already_matched_in_edges =
                  filter
-                   (\e -> getTargetNode fg e `elem` mapped_succs_to_fn)
-                   (getOutEdges fg succ_fn)
+                   (\e -> getSourceNode fg e `elem` all_f_nodes_in_st)
+                   (getInEdges fg succ_fn)
            in not $
                 any
                   ( \e ->
-                      any (areOutEdgesEquivalent fg e) already_matched_out_edges
+                      any (areInEdgesEquivalent fg e) already_matched_in_edges
                   )
-                  (getEdges fg succ_fn fn)
+                  (getEdges fg fn succ_fn)
        )
        mapped_succs_to_fn
      &&
@@ -201,7 +202,7 @@ checkSemantics fg pg st c =
        ( \pred_pn -> doEdgeListsMatch
                        fg
                        pg
-                       (getEdges fg (getFNFromMapping st pred_pn) fn)
+                       (getEdges fg (getFNFromState st pred_pn) fn)
                        (getEdges pg pred_pn pn)
        )
        mapped_preds_to_pn
@@ -211,7 +212,7 @@ checkSemantics fg pg st c =
        ( \succ_pn -> doEdgeListsMatch
                        fg
                        pg
-                       (getEdges fg fn (getFNFromMapping st succ_pn))
+                       (getEdges fg fn (getFNFromState st succ_pn))
                        (getEdges pg pn succ_pn)
        )
        mapped_succs_to_pn
