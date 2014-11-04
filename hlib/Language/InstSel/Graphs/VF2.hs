@@ -26,6 +26,7 @@
 -- not necessarily all edges in the function graph! I should contact the authors
 -- about this and see whether there's a mistake.
 --
+-- TODO: implement routine for undoing multi-edges
 -- TODO: handle function graphs with multiple edges that have the same edge
 -- numbers
 --------------------------------------------------------------------------------
@@ -54,7 +55,10 @@ findMatches ::
      -- ^ The pattern graph.
   -> [Match Node]
      -- ^ Found matches.
-findMatches fg pg = map Match (match fg pg [])
+findMatches fg pg =
+  let fg' = breakMultiEdges fg
+      pg' = breakMultiEdges pg
+  in map Match (match fg' pg' [])
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
 -- mapping candidates, and then applies a feasibility check on each of
@@ -74,6 +78,13 @@ match fg pg st
   | otherwise = let cs = getCandidates fg pg st
                     good_cs = filter (checkFeasibility fg pg st) cs
                 in concatMap (match fg pg) (map (:st) good_cs)
+
+-- | Breaks multi-edges by duplicating the source node such that they share the
+-- same node ID.
+--
+-- TODO: implement
+breakMultiEdges :: Graph -> Graph
+breakMultiEdges g = g
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
