@@ -134,16 +134,16 @@ checkFeasibility ::
 checkFeasibility fg pg st c =
   let fn = fNode c
       pn = pNode c
-      preds_pn = filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      preds_fn = findFNsInMatch (Match st) preds_pn
+      p_preds_in_st = filter (`elem` (map pNode st)) (getPredecessors pg pn)
+      f_preds_in_st = findFNsInMatch (Match st) p_preds_in_st
       pred_es_pairs = zip
-                      (map (flip (getEdges fg) fn) preds_fn)
-                      (map (flip (getEdges pg) pn) preds_pn)
-      succs_pn = filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      succs_fn = findFNsInMatch (Match st) succs_pn
+                      (map (flip (getEdges fg) fn) f_preds_in_st)
+                      (map (flip (getEdges pg) pn) p_preds_in_st)
+      p_succs_in_st = filter (`elem` (map pNode st)) (getSuccessors pg pn)
+      f_succs_in_st = findFNsInMatch (Match st) p_succs_in_st
       succ_es_pairs = zip
-                      (map (getEdges fg fn) succs_fn)
-                      (map (getEdges pg pn) succs_pn)
+                      (map (getEdges fg fn) f_succs_in_st)
+                      (map (getEdges pg pn) p_succs_in_st)
   in doNodesMatch fg pg (fNode c) (pNode c)
      &&
      all (\(fes, pes) -> doEdgesMatch fg pg fes pes) pred_es_pairs
