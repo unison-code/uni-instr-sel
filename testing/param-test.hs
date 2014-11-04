@@ -25,7 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
 {-
-Tests the implementation of the VF2 algorithm.
+Tests the param maker.
 -}
 
 import qualified Language.InstSel.DataTypes as D
