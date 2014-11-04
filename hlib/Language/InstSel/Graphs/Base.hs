@@ -997,11 +997,11 @@ doInEdgeListsMatch ::
 doInEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
       pn = getTargetNode pg (head pes)
-  in (not $ doesOrderCFInEdgesMatter pg pn || checkEdges isControlFlowEdge)
+  in ((not $ doesOrderCFInEdgesMatter pg pn) || checkEdges isControlFlowEdge)
      &&
-     (not $ doesOrderDFInEdgesMatter pg pn || checkEdges isDataFlowEdge)
+     ((not $ doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge)
      &&
-     (not $ doesOrderSFInEdgesMatter pg pn || checkEdges isStateFlowEdge)
+     ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Same as `doInEdgeListsMatch` but for out-edges.
 doOutEdgeListsMatch ::
@@ -1017,11 +1017,11 @@ doOutEdgeListsMatch ::
 doOutEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
       pn = getSourceNode pg (head pes)
-  in (not $ doesOrderCFOutEdgesMatter pg pn || checkEdges isControlFlowEdge)
+  in ((not $ doesOrderCFOutEdgesMatter pg pn) || checkEdges isControlFlowEdge)
      &&
-     (not $ doesOrderDFOutEdgesMatter pg pn || checkEdges isDataFlowEdge)
+     ((not $ doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge)
      &&
-     (not $ doesOrderSFOutEdgesMatter pg pn || checkEdges isStateFlowEdge)
+     ((not $ doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Checks if the order of control flow in-edges matters for a given pattern
 -- node.
