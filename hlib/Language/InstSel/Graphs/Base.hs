@@ -965,16 +965,22 @@ doEdgesMatch ::
      -- ^ In-edges from the pattern graph.
   -> Bool
 doEdgesMatch _ _ [] [] = True
-doEdgesMatch fg pg fes pes
-  | length fes /= length pes = False
-  | otherwise = doInEdgesMatch fg pg fes pes && doOutEdgesMatch fg pg fes pes
+doEdgesMatch fg pg fes pes =
+  let checkEdgeLengths f = (length $ filter f fes) == (length $ filter f pes)
+  in checkEdgeLengths isControlFlowEdge
+     &&
+     checkEdgeLengths isDataFlowEdge
+     &&
+     checkEdgeLengths isStateFlowEdge
+     &&
+     doInEdgesMatch fg pg fes pes && doOutEdgesMatch fg pg fes pes
 
 -- | Checks if a list of in-edges matches another list of in-edges. It is
 -- assumed that the source and target nodes are the same for every edge in each
--- list, and that the lists are non-empty and of equal length. It is also
--- assumed that, for each edge type, a in-edge number appears at most once in
--- the list (which should be the case if we are considering matches of patterns
--- on a function graph).
+-- list, and that the lists are non-empty and has the same number of edges per
+-- edge type. It is also assumed that, for each edge type, a in-edge number
+-- appears at most once in the list (which should be the case if we are
+-- considering matches of patterns on a function graph).
 doInEdgesMatch ::
      Graph
      -- ^ The function graph.
