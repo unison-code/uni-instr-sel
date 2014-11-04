@@ -61,39 +61,39 @@ type DefPlaceCond = (G.Node, G.BBLabelID)
 
 -- | Represents the intermediate build data.
 data BuildState =
-    BuildState { osGraph :: OS.OpStructure
-                 -- ^ The current operation structure.
+    BuildState
+    { osGraph :: OS.OpStructure
+      -- ^ The current operation structure.
 
-               , lastTouchedNode :: Maybe G.Node
-                 -- ^ The last node (if any) that was touched. This is used to
-                 -- simplifying edge insertion.
+    , lastTouchedNode :: Maybe G.Node
+      -- ^ The last node (if any) that was touched. This is used to simplifying
+      -- edge insertion.
 
-               , currentLabelNode :: Maybe G.Node
-                 -- ^ The label node which represents the basic block currently
-                 -- being processed.
+    , currentLabelNode :: Maybe G.Node
+      -- ^ The label node which represents the basic block currently being
+      -- processed.
 
-               , symMaps :: [SymToDataNodeMapping]
-                 -- ^ List of symbol-to-node mappings. If there are more than
-                 -- one mapping using the same symbol, then the last one
-                 -- occuring in the list should be picked.
+    , symMaps :: [SymToDataNodeMapping]
+      -- ^ List of symbol-to-node mappings. If there are more than one mapping
+      -- using the same symbol, then the last one occuring in the list should be
+      -- picked.
 
-               , constMaps :: [ConstToDataNodeMapping]
-                 -- ^ List of constant-to-node mappings. If there are more than
-                 -- one mapping using the same symbol, then the last one
-                 -- occuring in the list should be picked.
+    , constMaps :: [ConstToDataNodeMapping]
+      -- ^ List of constant-to-node mappings. If there are more than one mapping
+      -- using the same symbol, then the last one occuring in the list should be
+      -- picked.
 
-               , labelToNodeDFs :: [LabelToNodeDF]
-                 -- ^ List of label-to-node data flow dependencies which are yet
-                 -- to be converted into edges.
+    , labelToNodeDFs :: [LabelToNodeDF]
+      -- ^ List of label-to-node data flow dependencies which are yet to be
+      -- converted into edges.
 
-               , defPlaceConds :: [DefPlaceCond]
-                 -- ^ List of definition placement conditions which are yet to
-                 -- be converted into edges.
+    , defPlaceConds :: [DefPlaceCond]
+      -- ^ List of definition placement conditions which are yet to be converted
+      -- into edges.
 
-               , funcInputValues :: [G.NodeID]
-                 -- ^ The IDs of the nodes representing the function input
-                 -- arguments.
-               }
+    , funcInputValues :: [G.NodeID]
+      -- ^ The IDs of the nodes representing the function input arguments.
+    }
   deriving (Show)
 
 -- | Retains various symbol names.
@@ -110,9 +110,10 @@ instance Show Symbol where
 
 -- | Retains various constant values.
 data Constant =
-    IntConstant { bitWidth :: Integer
-                , intValue :: Integer
-                }
+    IntConstant
+    { bitWidth :: Integer
+    , intValue :: Integer
+    }
 
   | FloatConstant Float
   deriving (Eq)
@@ -174,15 +175,16 @@ class CfgBuildable a where
 -- | Creates an initial state.
 mkInitBuildState :: BuildState
 mkInitBuildState =
-  BuildState { osGraph = OS.mkEmpty
-             , lastTouchedNode = Nothing
-             , currentLabelNode = Nothing
-             , symMaps = []
-             , constMaps = []
-             , labelToNodeDFs = []
-             , defPlaceConds = []
-             , funcInputValues = []
-             }
+  BuildState
+  { osGraph = OS.mkEmpty
+  , lastTouchedNode = Nothing
+  , currentLabelNode = Nothing
+  , symMaps = []
+  , constMaps = []
+  , labelToNodeDFs = []
+  , defPlaceConds = []
+  , funcInputValues = []
+  }
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
@@ -205,10 +207,11 @@ mkFunction f@(LLVM.Function {}) =
       st2 = buildCfg st1 f
       st3 = addMissingLabelToNodeDataFlowEdges st2
       st4 = addMissingDefPlaceEdges st3
-  in Just ( PM.Function { PM.functionName = toFunctionName $ LLVMG.name f
-                        , PM.functionOS = osGraph st4
-                        , PM.functionInputs = funcInputValues st4
-                        }
+  in Just ( PM.Function
+            { PM.functionName = toFunctionName $ LLVMG.name f
+            , PM.functionOS = osGraph st4
+            , PM.functionInputs = funcInputValues st4
+            }
           )
 mkFunction _ = Nothing
 

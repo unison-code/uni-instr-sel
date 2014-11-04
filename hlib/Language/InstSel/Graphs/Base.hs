@@ -193,9 +193,10 @@ type DstNode = Node
 -- representing that they are actually the same node) and node information which
 -- denotes the type of node and other auxiliary information.
 data NodeLabel =
-    NodeLabel { nodeID :: NodeID
-              , nodeType :: NodeType
-              }
+    NodeLabel
+    { nodeID :: NodeID
+    , nodeType :: NodeType
+    }
   deriving (Show, Eq)
 
 -- | The node type information.
@@ -208,13 +209,14 @@ data NodeType =
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as data nodes. What distinguishes one from another
     -- are the constraints applied to it.
-  | DataNode { dataType :: D.DataType
-             , dataOrigin :: Maybe String
-               -- ^ If the data node represents a particular temporary, variable
-               -- or constant which is specified in the source code, then the
-               -- name of that entity can be given here as a string. This will
-               -- only be used for debugging and pretty-printing purposes.
-             }
+  | DataNode
+    { dataType :: D.DataType
+    , dataOrigin :: Maybe String
+      -- ^ If the data node represents a particular temporary, variable or
+      -- constant which is specified in the source code, then the name of that
+      -- entity can be given here as a string. This will only be used for
+      -- debugging and pretty-printing purposes.
+    }
 
   | LabelNode { bbLabel :: BBLabelID }
 
@@ -232,10 +234,11 @@ newtype Edge =
 
 -- | Data type for describing how an edge relates to the two nodes.
 data EdgeLabel =
-    EdgeLabel { edgeType :: EdgeType
-              , outEdgeNr :: EdgeNr
-              , inEdgeNr :: EdgeNr
-              }
+    EdgeLabel
+    { edgeType :: EdgeType
+    , outEdgeNr :: EdgeNr
+    , inEdgeNr :: EdgeNr
+    }
   deriving (Show, Eq)
 
 -- | Data type for determining the edge type.
@@ -256,12 +259,13 @@ instance Show EdgeNr where
 
 -- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
 data Mapping n =
-    Mapping { fNode :: n
-              -- ^ The mapped node appearing in the function graph.
+    Mapping
+    { fNode :: n
+      -- ^ The mapped node appearing in the function graph.
 
-            , pNode :: n
-              -- ^ The mapped node appearing in the pattern graph.
-            }
+    , pNode :: n
+      -- ^ The mapped node appearing in the pattern graph.
+    }
   deriving (Show, Eq)
 
 -- | Represents a match between two graphs.
@@ -270,12 +274,13 @@ newtype Match n = Match [Mapping n]
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
 data Domset t =
-    Domset { domNode :: t
-             -- ^ The dominator entity.
+    Domset
+    { domNode :: t
+      -- ^ The dominator entity.
 
-           , domSet :: [t]
-             -- ^ The dominated entities.
-           }
+    , domSet :: [t]
+      -- ^ The dominated entities.
+    }
   deriving (Show)
 
 
@@ -533,11 +538,12 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
   let new_trg_id = getIntNodeID new_trg
       new_e = ( src
               , new_trg_id
-              , l { inEdgeNr = getNextInEdgeNr
-                               g
-                               new_trg_id
-                               (\e' -> getEdgeType e' == edgeType l)
-                  }
+              , l
+                { inEdgeNr = getNextInEdgeNr
+                             g
+                             new_trg_id
+                             (\e' -> getEdgeType e' == edgeType l)
+                }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
@@ -564,11 +570,12 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
   let new_src_id = getIntNodeID new_src
       new_e = ( new_src_id
               , trg
-              , l { outEdgeNr = getNextOutEdgeNr
-                                g
-                                new_src_id
-                                (\e' -> getEdgeType e' == edgeType l)
-                  }
+              , l
+                { outEdgeNr = getNextOutEdgeNr
+                              g
+                              new_src_id
+                              (\e' -> getEdgeType e' == edgeType l)
+                }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
@@ -622,10 +629,11 @@ addNewEdge et (from_n, to_n) (Graph g) =
       in_edge_nr = getNextInEdgeNr g to_n_id (\e -> et == getEdgeType e)
       new_e = ( from_n_id
               , to_n_id
-              , EdgeLabel { edgeType = et
-                          , outEdgeNr = out_edge_nr
-                          , inEdgeNr = in_edge_nr
-                          }
+              , EdgeLabel
+                { edgeType = et
+                , outEdgeNr = out_edge_nr
+                , inEdgeNr = in_edge_nr
+                }
               )
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
@@ -777,9 +785,10 @@ getNodeWithNodeID g nid = filter (\n -> getNodeID n == nid) (getAllNodes g)
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
 convertMappingN2ID m =
-  Mapping { fNode = getNodeID $ fNode m
-          , pNode = getNodeID $ pNode m
-          }
+  Mapping
+  { fNode = getNodeID $ fNode m
+  , pNode = getNodeID $ pNode m
+  }
 
 -- | Converts a match with nodes into a match with node IDs.
 convertMatchN2ID :: Match Node -> Match NodeID
