@@ -39,15 +39,15 @@ addBBAllocConstraints os =
       root_label = rootInCFG $ extractCFG g
   in if isJust root_label
      then let new_cs = [ BoolExprConstraint $
-                         EqExpr
-                         ( Label2NumExpr $
-                           LabelOfLabelNodeExpr $
-                           ANodeIDExpr (getNodeID $ fromJust root_label)
-                         )
-                         ( Label2NumExpr $
-                           LabelAllocatedToPatternInstanceExpr $
-                           ThisPatternInstanceExpr
-                         )
+                           EqExpr
+                           ( Label2NumExpr $
+                               LabelOfLabelNodeExpr $
+                                 ANodeIDExpr (getNodeID $ fromJust root_label)
+                           )
+                           ( Label2NumExpr $
+                               LabelAllocatedToPatternInstanceExpr $
+                                 ThisPatternInstanceExpr
+                           )
                        ]
           in addConstraints os new_cs
      else os

@@ -32,10 +32,10 @@ import Data.List
 lowerModule :: Module -> Module
 lowerModule m =
   Module
-  (moduleName m)
-  (moduleDataLayout m)
-  (moduleTargetTriple m)
-  (map lowerFunction (moduleDefinitions m))
+    (moduleName m)
+    (moduleDataLayout m)
+    (moduleTargetTriple m)
+    (map lowerFunction (moduleDefinitions m))
 
 lowerFunction :: Definition -> Definition
 lowerFunction (GlobalDefinition g) = GlobalDefinition (lowerGlobalDef g)
@@ -74,10 +74,10 @@ mkBBFromCase ::
 mkBBFromCase op_value f_label (all_labels, all_tmp_names) (cmp_val, label) =
   let cmp_result_name = getNewTempName all_tmp_names
       cmp_inst = cmp_result_name := ICmp
-                                    IP.EQ
-                                    op_value
-                                    (ConstantOperand cmp_val)
-                                    []
+                                      IP.EQ
+                                      op_value
+                                      (ConstantOperand cmp_val)
+                                      []
       new_label = getNewBBLabel all_labels
       br_inst = Do $ CondBr (LocalReference cmp_result_name) label f_label []
       new_acc = (new_label:all_labels, cmp_result_name:all_tmp_names)

@@ -148,22 +148,22 @@ checkFeasibility fg pg st c =
   in doNodesMatch fg pg (fNode c) (pNode c)
      &&
      all
-     ( \pred_pn -> doEdgesMatch
-                   fg
-                   pg
-                   (getEdges fg (getFNFromMapping st pred_pn) fn)
-                   (getEdges pg pred_pn pn)
-     )
-     mapped_preds_to_pn
+       ( \pred_pn -> doEdgesMatch
+                       fg
+                       pg
+                       (getEdges fg (getFNFromMapping st pred_pn) fn)
+                       (getEdges pg pred_pn pn)
+       )
+       mapped_preds_to_pn
      &&
      all
-     ( \succ_pn -> doEdgesMatch
-                   fg
-                   pg
-                   (getEdges fg fn (getFNFromMapping st succ_pn))
-                   (getEdges pg pn succ_pn)
-     )
-     mapped_succs_to_pn
+       ( \succ_pn -> doEdgesMatch
+                       fg
+                       pg
+                       (getEdges fg fn (getFNFromMapping st succ_pn))
+                       (getEdges pg pn succ_pn)
+       )
+       mapped_succs_to_pn
      &&
      checkSyntax fg pg st c
 
@@ -214,11 +214,11 @@ checkSyntaxPred fg pg st c =
       preds_pn = getPredecessors pg (pNode c)
       preds_pn_in_m = preds_pn `intersect` m_pg
   in all
-     ( \pn -> any
-              (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
-              preds_fn
-     )
-     preds_pn_in_m
+       ( \pn -> any
+                (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+                preds_fn
+       )
+       preds_pn_in_m
 
 -- | Same as checkSyntaxPred but for the successors (modified version of
 -- equation 4 in the paper).
@@ -238,11 +238,11 @@ checkSyntaxSucc fg pg st c =
       succs_pn = getSuccessors pg (pNode c)
       succs_pn_in_m = succs_pn `intersect` m_pg
   in all
-     ( \pn -> any
-              (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
-              succs_fn
-     )
-     succs_pn_in_m
+       ( \pn -> any
+                (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+                succs_fn
+       )
+       succs_pn_in_m
 
 -- | Checks that there exists a sufficient number of unmapped predecessors left
 -- in the function graph to cover the unmapped predecessors left in the pattern

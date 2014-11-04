@@ -88,8 +88,8 @@ addUseEdgesToDAG cp_data pid g0 =
       pi_data = getPIData ds pid
       ns = I.labNodes g0
       d_uses_of_pi = filter
-                     (`notElem` patDataNodesUsedByPhis pi_data)
-                     (patDataNodesUsed pi_data)
+                       (`notElem` patDataNodesUsedByPhis pi_data)
+                       (patDataNodesUsed pi_data)
       s_uses_of_pi = patStateNodesUsed pi_data
       ns_d_defs = map (\(n, i) -> (n, patDataNodesDefined $ getPIData ds i)) ns
       ns_s_defs = map (\(n, i) -> (n, patStateNodesDefined $ getPIData ds i)) ns

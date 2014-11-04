@@ -68,9 +68,9 @@ import qualified Data.Text as T
 instance FromJSON CPModelParams where
   parseJSON (Object v) =
     CPModelParams
-    <$> v .: "function-data"
-    <*> v .: "pattern-instance-data"
-    <*> v .: "machine-data"
+      <$> v .: "function-data"
+      <*> v .: "pattern-instance-data"
+      <*> v .: "machine-data"
   parseJSON _ = mzero
 
 instance ToJSON CPModelParams where
@@ -83,13 +83,13 @@ instance ToJSON CPModelParams where
 instance FromJSON FunctionGraphData where
   parseJSON (Object v) =
     FunctionGraphData
-    <$> v .: "action-nodes"
-    <*> v .: "data-nodes"
-    <*> v .: "state-nodes"
-    <*> v .: "label-nodes"
-    <*> v .: "root-label"
-    <*> v .: "bb-labels"
-    <*> v .: "constraints"
+      <$> v .: "action-nodes"
+      <*> v .: "data-nodes"
+      <*> v .: "state-nodes"
+      <*> v .: "label-nodes"
+      <*> v .: "root-label"
+      <*> v .: "bb-labels"
+      <*> v .: "constraints"
   parseJSON _ = mzero
 
 instance ToJSON FunctionGraphData where
@@ -106,8 +106,8 @@ instance ToJSON FunctionGraphData where
 instance FromJSON (Domset NodeID) where
   parseJSON (Object v) =
     Domset
-    <$> v .: "node"
-    <*> v .: "domset"
+      <$> v .: "node"
+      <*> v .: "domset"
   parseJSON _ = mzero
 
 instance ToJSON (Domset NodeID) where
@@ -119,8 +119,8 @@ instance ToJSON (Domset NodeID) where
 instance FromJSON BBLabelData where
   parseJSON (Object v) =
     BBLabelData
-    <$> v .: "node"
-    <*> v .: "label"
+      <$> v .: "node"
+      <*> v .: "label"
   parseJSON _ = mzero
 
 instance ToJSON BBLabelData where
@@ -132,22 +132,22 @@ instance ToJSON BBLabelData where
 instance FromJSON PatternInstanceData where
   parseJSON (Object v) =
     PatternInstanceData
-    <$> v .: "instruction-id"
-    <*> v .: "pattern-id"
-    <*> v .: "pattern-instance-id"
-    <*> v .: "action-nodes-covered"
-    <*> v .: "data-nodes-defined"
-    <*> v .: "data-nodes-used"
-    <*> v .: "data-nodes-used-by-phis"
-    <*> v .: "state-nodes-defined"
-    <*> v .: "state-nodes-used"
-    <*> v .: "label-nodes-referred"
-    <*> v .: "constraints"
-    <*> v .: "apply-use-def-dom-constraints"
-    <*> v .: "has-control-nodes"
-    <*> v .: "code-size"
-    <*> v .: "latency"
-    <*> v .: "assembly-id-maps"
+      <$> v .: "instruction-id"
+      <*> v .: "pattern-id"
+      <*> v .: "pattern-instance-id"
+      <*> v .: "action-nodes-covered"
+      <*> v .: "data-nodes-defined"
+      <*> v .: "data-nodes-used"
+      <*> v .: "data-nodes-used-by-phis"
+      <*> v .: "state-nodes-defined"
+      <*> v .: "state-nodes-used"
+      <*> v .: "label-nodes-referred"
+      <*> v .: "constraints"
+      <*> v .: "apply-use-def-dom-constraints"
+      <*> v .: "has-control-nodes"
+      <*> v .: "code-size"
+      <*> v .: "latency"
+      <*> v .: "assembly-id-maps"
   parseJSON _ = mzero
 
 instance ToJSON PatternInstanceData where
@@ -173,8 +173,8 @@ instance ToJSON PatternInstanceData where
 instance FromJSON MachineData where
   parseJSON (Object v) =
     MachineData
-    <$> v .: "target-machine-id"
-    <*> v .: "registers"
+      <$> v .: "target-machine-id"
+      <*> v .: "registers"
   parseJSON _ = mzero
 
 instance ToJSON MachineData where
@@ -253,22 +253,22 @@ instance ToJSON BBLabelID where
 instance FromJSON RawCPSolutionData where
   parseJSON (Object v) =
     RawCPSolutionData
-    <$> v .: "bb-allocated-for-pi"
-    <*> v .: "is-pi-selected"
-    <*> v .: "order-of-bbs"
-    <*> v .: "has-dnode-reg"
-    <*> v .: "reg-selected-for-dnode"
-    <*> v .: "has-dnode-imm-value"
-    <*> v .: "imm-value-of-dnode"
+      <$> v .: "bb-allocated-for-pi"
+      <*> v .: "is-pi-selected"
+      <*> v .: "order-of-bbs"
+      <*> v .: "has-dnode-reg"
+      <*> v .: "reg-selected-for-dnode"
+      <*> v .: "has-dnode-imm-value"
+      <*> v .: "imm-value-of-dnode"
   parseJSON _ = mzero
 
 instance FromJSON RawPostParams where
   parseJSON (Object v) =
     RawPostParams
-    <$> v .: "model-params"
-    <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
-    <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
-    <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
+      <$> v .: "model-params"
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
   parseJSON _ = mzero
 
 

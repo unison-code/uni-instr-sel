@@ -40,9 +40,9 @@ import qualified Language.InstSel.Graphs as G
 
 data OpStructure =
     OpStructure
-    { osGraph :: G.Graph
-    , osConstraints :: [Constraint]
-    }
+      { osGraph :: G.Graph
+      , osConstraints :: [Constraint]
+      }
   deriving (Show)
 
 

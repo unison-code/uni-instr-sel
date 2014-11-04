@@ -62,38 +62,31 @@ type DefPlaceCond = (G.Node, G.BBLabelID)
 -- | Represents the intermediate build data.
 data BuildState =
     BuildState
-    { osGraph :: OS.OpStructure
-      -- ^ The current operation structure.
-
-    , lastTouchedNode :: Maybe G.Node
-      -- ^ The last node (if any) that was touched. This is used to simplifying
-      -- edge insertion.
-
-    , currentLabelNode :: Maybe G.Node
-      -- ^ The label node which represents the basic block currently being
-      -- processed.
-
-    , symMaps :: [SymToDataNodeMapping]
-      -- ^ List of symbol-to-node mappings. If there are more than one mapping
-      -- using the same symbol, then the last one occuring in the list should be
-      -- picked.
-
-    , constMaps :: [ConstToDataNodeMapping]
-      -- ^ List of constant-to-node mappings. If there are more than one mapping
-      -- using the same symbol, then the last one occuring in the list should be
-      -- picked.
-
-    , labelToNodeDFs :: [LabelToNodeDF]
-      -- ^ List of label-to-node data flow dependencies which are yet to be
-      -- converted into edges.
-
-    , defPlaceConds :: [DefPlaceCond]
-      -- ^ List of definition placement conditions which are yet to be converted
-      -- into edges.
-
-    , funcInputValues :: [G.NodeID]
-      -- ^ The IDs of the nodes representing the function input arguments.
-    }
+      { osGraph :: OS.OpStructure
+        -- ^ The current operation structure.
+      , lastTouchedNode :: Maybe G.Node
+        -- ^ The last node (if any) that was touched. This is used to
+        -- simplifying edge insertion.
+      , currentLabelNode :: Maybe G.Node
+        -- ^ The label node which represents the basic block currently being
+        -- processed.
+      , symMaps :: [SymToDataNodeMapping]
+        -- ^ List of symbol-to-node mappings. If there are more than one mapping
+        -- using the same symbol, then the last one occuring in the list should
+        -- be picked.
+      , constMaps :: [ConstToDataNodeMapping]
+        -- ^ List of constant-to-node mappings. If there are more than one
+        -- mapping using the same symbol, then the last one occuring in the list
+        -- should be picked.
+      , labelToNodeDFs :: [LabelToNodeDF]
+        -- ^ List of label-to-node data flow dependencies which are yet to be
+        -- converted into edges.
+      , defPlaceConds :: [DefPlaceCond]
+        -- ^ List of definition placement conditions which are yet to be
+        -- converted into edges.
+      , funcInputValues :: [G.NodeID]
+        -- ^ The IDs of the nodes representing the function input arguments.
+      }
   deriving (Show)
 
 -- | Retains various symbol names.
@@ -111,9 +104,9 @@ instance Show Symbol where
 -- | Retains various constant values.
 data Constant =
     IntConstant
-    { bitWidth :: Integer
-    , intValue :: Integer
-    }
+      { bitWidth :: Integer
+      , intValue :: Integer
+      }
 
   | FloatConstant Float
   deriving (Eq)
@@ -176,15 +169,15 @@ class CfgBuildable a where
 mkInitBuildState :: BuildState
 mkInitBuildState =
   BuildState
-  { osGraph = OS.mkEmpty
-  , lastTouchedNode = Nothing
-  , currentLabelNode = Nothing
-  , symMaps = []
-  , constMaps = []
-  , labelToNodeDFs = []
-  , defPlaceConds = []
-  , funcInputValues = []
-  }
+    { osGraph = OS.mkEmpty
+    , lastTouchedNode = Nothing
+    , currentLabelNode = Nothing
+    , symMaps = []
+    , constMaps = []
+    , labelToNodeDFs = []
+    , defPlaceConds = []
+    , funcInputValues = []
+    }
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
@@ -208,10 +201,10 @@ mkFunction f@(LLVM.Function {}) =
       st3 = addMissingLabelToNodeDataFlowEdges st2
       st4 = addMissingDefPlaceEdges st3
   in Just ( PM.Function
-            { PM.functionName = toFunctionName $ LLVMG.name f
-            , PM.functionOS = osGraph st4
-            , PM.functionInputs = funcInputValues st4
-            }
+              { PM.functionName = toFunctionName $ LLVMG.name f
+              , PM.functionOS = osGraph st4
+              , PM.functionInputs = funcInputValues st4
+              }
           )
 mkFunction _ = Nothing
 
@@ -354,8 +347,8 @@ buildOSFromConst st0 c =
     in if isJust node_for_c
        then touchNode st0 (fromJust node_for_c)
        else let st1 = addNewNode
-                      st0
-                      (G.DataNode (toDataType c) (Just $ show c))
+                        st0
+                        (G.DataNode (toDataType c) (Just $ show c))
                 d_node = fromJust $ lastTouchedNode st1
                 st2 = addConstMap st1 (d_node, c)
                 st3 = addOSConstraints st2 (mkConstConstraints c d_node)
@@ -364,16 +357,16 @@ buildOSFromConst st0 c =
 mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
 mkConstConstraints (IntConstant _ v) n =
   [ C.BoolExprConstraint $
-    C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.getNodeID n
+      C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.getNodeID n
   , C.BoolExprConstraint $
-    C.EqExpr
-    ( C.Int2NumExpr $
-      C.IntConstValueOfDataNodeExpr $
-      C.ANodeIDExpr $ G.getNodeID n
-    )
-    ( C.Int2NumExpr $
-      C.AnIntegerExpr v
-    )
+      C.EqExpr
+        ( C.Int2NumExpr $
+            C.IntConstValueOfDataNodeExpr $
+              C.ANodeIDExpr $ G.getNodeID n
+        )
+        ( C.Int2NumExpr $
+            C.AnIntegerExpr v
+        )
   ]
 
 -- | Inserts a new node representing a computational operation, and adds edges
@@ -412,15 +405,15 @@ buildCfgFromControlOp st0 op operands =
       st2 = addNewNode st1 (G.ControlNode op)
       op_node = fromJust $ lastTouchedNode st2
       st3 = addNewEdge
-            st2
-            G.ControlFlowEdge
-            (fromJust $ currentLabelNode st2)
-            op_node
+              st2
+              G.ControlFlowEdge
+              (fromJust $ currentLabelNode st2)
+              op_node
       st4 = addNewEdgesManySources
-            st3
-            G.DataFlowEdge
-            operand_ns
-            op_node
+              st3
+              G.DataFlowEdge
+              operand_ns
+              op_node
   in st4
 
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
@@ -491,14 +484,14 @@ addMissingLabelToNodeDataFlowEdges st =
       -- Add data flow edges
       df_deps = filter (\(_, n) -> G.isDataNode n) deps
       df_pairs = map
-                 (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
-                 df_deps
+                   (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
+                   df_deps
       g1 = foldr (\p g -> fst $ G.addNewDFEdge p g) g0 df_pairs
       -- Add state flow edges
       sf_deps = filter (\(_, n) -> G.isStateNode n) deps
       sf_pairs = map
-                 (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
-                 sf_deps
+                   (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
+                   sf_deps
       g2 = foldr (\p g -> fst $ G.addNewSFEdge p g) g1 sf_pairs
   in updateOSGraph st g2
 
@@ -509,8 +502,8 @@ addMissingDefPlaceEdges st =
   let g0 = getOSGraph st
       conds = defPlaceConds st
       dp_pairs = map
-                 (\(n, bb_id) -> (n, fromJust $ findLabelNodeWithID st bb_id))
-                 conds
+                   (\(n, bb_id) -> (n, fromJust $ findLabelNodeWithID st bb_id))
+                   conds
       g1 = foldr (\p g -> fst $ G.addNewDPEdge p g) g0 dp_pairs
   in updateOSGraph st g1
 

@@ -36,12 +36,11 @@ import Data.Maybe
 -- | Record for representing a value range.
 data Range t =
     Range
-    { lowerBound :: t
-      -- | Smallest possible value (i.e. inclusive).
-
-    , upperBound :: t
-      -- | Largest possible value (i.e. inclusive).
-    }
+      { lowerBound :: t
+        -- | Smallest possible value (i.e. inclusive).
+      , upperBound :: t
+        -- | Largest possible value (i.e. inclusive).
+      }
   deriving (Show, Eq)
 
 -- | Creates a new data type that allows numbers from 0 to positive infinity.

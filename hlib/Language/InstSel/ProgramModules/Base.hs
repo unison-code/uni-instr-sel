@@ -31,16 +31,15 @@ import Language.InstSel.OpStructures
 
 -- | The record of representing a program function.
 data Function =
-    Function { functionName :: Maybe String
-               -- ^ The function name.
-
-             , functionOS :: OpStructure
-               -- ^ The semantics of the function.
-
-             , functionInputs :: [NodeID]
-               -- ^ The IDs of the data nodes in the operation structure which
-               -- represent the function input arguments. The order of the list
-               -- is the same as the order specified in the original code from
-               -- which the semantics have been derived.
-             }
+    Function
+      { functionName :: Maybe String
+        -- ^ The function name.
+      , functionOS :: OpStructure
+        -- ^ The semantics of the function.
+      , functionInputs :: [NodeID]
+        -- ^ The IDs of the data nodes in the operation structure which
+        -- represent the function input arguments. The order of the list is the
+        -- same as the order specified in the original code from which the
+        -- semantics have been derived.
+      }
   deriving (Show)

@@ -46,9 +46,9 @@ import Data.Maybe
 mkParams :: Function -> TargetMachine -> CPModelParams
 mkParams f m =
   CPModelParams
-  (mkFunctionGraphData f)
-  (mkPatternInstanceData f (tmInstructions m))
-  (mkMachineData m)
+    (mkFunctionGraphData f)
+    (mkPatternInstanceData f (tmInstructions m))
+    (mkMachineData m)
 
 mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
@@ -56,16 +56,16 @@ mkFunctionGraphData f =
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       cfg = extractCFG g
   in FunctionGraphData
-     (nodeIDsByType isActionNode)
-     (nodeIDsByType isDataNode)
-     (nodeIDsByType isStateNode)
-     (computeLabelDoms cfg)
-     (getNodeID $ fromJust $ rootInCFG cfg)
-     ( map
-       (\n -> BBLabelData (getNodeID n) (bbLabel $ getNodeType n))
-       (filter isLabelNode (getAllNodes g))
-     )
-     (osConstraints $ functionOS f)
+       (nodeIDsByType isActionNode)
+       (nodeIDsByType isDataNode)
+       (nodeIDsByType isStateNode)
+       (computeLabelDoms cfg)
+       (getNodeID $ fromJust $ rootInCFG cfg)
+       ( map
+         (\n -> BBLabelData (getNodeID n) (bbLabel $ getNodeType n))
+         (filter isLabelNode (getAllNodes g))
+       )
+       (osConstraints $ functionOS f)
 
 mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
@@ -117,29 +117,29 @@ processMatch i p m (pids, next_piid) =
       d_def_ns = filter (hasAnyPredecessors g) d_ns
       d_use_ns = filter (hasAnySuccessors g) d_ns
       d_use_by_phi_ns = filter
-                        (\n -> any isPhiNode (getSuccessors g n))
-                        d_use_ns
+                          (\n -> any isPhiNode (getSuccessors g n))
+                          d_use_ns
       s_def_ns = filter (hasAnyPredecessors g) s_ns
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
       i_props = instProps i
       new_pid = PatternInstanceData
-                (instID i)
-                (patID p)
-                next_piid
-                (findFNsInMatch m (getNodeIDs a_ns))
-                (findFNsInMatch m (getNodeIDs d_def_ns))
-                (findFNsInMatch m (getNodeIDs d_use_ns))
-                (findFNsInMatch m (getNodeIDs d_use_by_phi_ns))
-                (findFNsInMatch m (getNodeIDs s_def_ns))
-                (findFNsInMatch m (getNodeIDs s_use_ns))
-                (findFNsInMatch m (getNodeIDs l_ref_ns))
-                (mapPs2FsInConstraints m (osConstraints $ patOS p))
-                (patAUDDC p)
-                (length c_ns > 0)
-                (instCodeSize i_props)
-                (instLatency i_props)
-                (findFNsInMatch m (patAssIDMaps p))
+                  (instID i)
+                  (patID p)
+                  next_piid
+                  (findFNsInMatch m (getNodeIDs a_ns))
+                  (findFNsInMatch m (getNodeIDs d_def_ns))
+                  (findFNsInMatch m (getNodeIDs d_use_ns))
+                  (findFNsInMatch m (getNodeIDs d_use_by_phi_ns))
+                  (findFNsInMatch m (getNodeIDs s_def_ns))
+                  (findFNsInMatch m (getNodeIDs s_use_ns))
+                  (findFNsInMatch m (getNodeIDs l_ref_ns))
+                  (mapPs2FsInConstraints m (osConstraints $ patOS p))
+                  (patAUDDC p)
+                  (length c_ns > 0)
+                  (instCodeSize i_props)
+                  (instLatency i_props)
+                  (findFNsInMatch m (patAssIDMaps p))
   in (new_pid:pids, next_piid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
@@ -155,12 +155,12 @@ computeLabelDoms cfg =
   let root = fromJust $ rootInCFG cfg
       node_domsets = extractDomSet cfg root
       node_id_domsets = map
-                        ( \d ->
-                          Domset { domNode = (getNodeID $ domNode d)
-                                 , domSet = (map getNodeID (domSet d))
-                                 }
-                        )
-                        node_domsets
+                          ( \d -> Domset
+                                    { domNode = (getNodeID $ domNode d)
+                                    , domSet = (map getNodeID (domSet d))
+                                    }
+                          )
+                          node_domsets
   in node_id_domsets
 
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
@@ -223,8 +223,8 @@ replaceInNumExpr m (Register2NumExpr e) =
   Register2NumExpr (replaceInRegisterExpr m e)
 replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
   DistanceBetweenInstanceAndLabelExpr
-  (replaceInPatternInstanceExpr m pat_e)
-  (replaceInLabelExpr m lab_e)
+    (replaceInPatternInstanceExpr m pat_e)
+    (replaceInLabelExpr m lab_e)
 
 replaceInIntExpr :: Match NodeID -> IntExpr -> IntExpr
 replaceInIntExpr _ (AnIntegerExpr i) = AnIntegerExpr i

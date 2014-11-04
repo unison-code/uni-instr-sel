@@ -194,9 +194,9 @@ type DstNode = Node
 -- denotes the type of node and other auxiliary information.
 data NodeLabel =
     NodeLabel
-    { nodeID :: NodeID
-    , nodeType :: NodeType
-    }
+      { nodeID :: NodeID
+      , nodeType :: NodeType
+      }
   deriving (Show, Eq)
 
 -- | The node type information.
@@ -210,13 +210,13 @@ data NodeType =
     -- are all represented as data nodes. What distinguishes one from another
     -- are the constraints applied to it.
   | DataNode
-    { dataType :: D.DataType
-    , dataOrigin :: Maybe String
-      -- ^ If the data node represents a particular temporary, variable or
-      -- constant which is specified in the source code, then the name of that
-      -- entity can be given here as a string. This will only be used for
-      -- debugging and pretty-printing purposes.
-    }
+      { dataType :: D.DataType
+      , dataOrigin :: Maybe String
+        -- ^ If the data node represents a particular temporary, variable or
+        -- constant which is specified in the source code, then the name of that
+        -- entity can be given here as a string. This will only be used for
+        -- debugging and pretty-printing purposes.
+      }
 
   | LabelNode { bbLabel :: BBLabelID }
 
@@ -235,10 +235,10 @@ newtype Edge =
 -- | Data type for describing how an edge relates to the two nodes.
 data EdgeLabel =
     EdgeLabel
-    { edgeType :: EdgeType
-    , outEdgeNr :: EdgeNr
-    , inEdgeNr :: EdgeNr
-    }
+      { edgeType :: EdgeType
+      , outEdgeNr :: EdgeNr
+      , inEdgeNr :: EdgeNr
+      }
   deriving (Show, Eq)
 
 -- | Data type for determining the edge type.
@@ -260,12 +260,11 @@ instance Show EdgeNr where
 -- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
 data Mapping n =
     Mapping
-    { fNode :: n
-      -- ^ The mapped node appearing in the function graph.
-
-    , pNode :: n
-      -- ^ The mapped node appearing in the pattern graph.
-    }
+      { fNode :: n
+        -- ^ The mapped node appearing in the function graph.
+      , pNode :: n
+        -- ^ The mapped node appearing in the pattern graph.
+      }
   deriving (Show, Eq)
 
 -- | Represents a match between two graphs.
@@ -275,12 +274,11 @@ newtype Match n = Match [Mapping n]
 -- set, then only one node will appear in the set of dominated entities.
 data Domset t =
     Domset
-    { domNode :: t
-      -- ^ The dominator entity.
-
-    , domSet :: [t]
-      -- ^ The dominated entities.
-    }
+      { domNode :: t
+        -- ^ The dominator entity.
+      , domSet :: [t]
+        -- ^ The dominated entities.
+      }
   deriving (Show)
 
 
@@ -465,8 +463,8 @@ updateNodeID :: NodeID -> Node -> Graph -> Graph
 updateNodeID new_id n g =
   let all_nodes_but_n = filter (/= n) (getAllNodes g)
   in mkGraph
-     (Node (getIntNodeID n, NodeLabel new_id (getNodeType n)):all_nodes_but_n)
-     (getAllEdges g)
+       (Node (getIntNodeID n, NodeLabel new_id (getNodeType n)):all_nodes_but_n)
+       (getAllEdges g)
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
@@ -493,16 +491,17 @@ mergeNodes ::
   -> Graph
 mergeNodes n_to_keep n_to_discard g
   | (getIntNodeID n_to_keep) == (getIntNodeID n_to_discard) = g
-  | otherwise = let edges_to_ignore = getEdges g n_to_discard n_to_keep
-                                      ++
-                                      getEdges g n_to_keep n_to_discard
-                in delNode
-                   n_to_discard
-                   ( redirectEdges
-                     n_to_keep
-                     n_to_discard
-                     (foldl (flip delEdge) g edges_to_ignore)
-                   )
+  | otherwise =
+      let edges_to_ignore = getEdges g n_to_discard n_to_keep
+                            ++
+                            getEdges g n_to_keep n_to_discard
+      in delNode
+           n_to_discard
+           ( redirectEdges
+             n_to_keep
+             n_to_discard
+             (foldl (flip delEdge) g edges_to_ignore)
+           )
 
 -- | Redirects all edges involving one node to another node.
 redirectEdges ::
@@ -540,9 +539,9 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
               , new_trg_id
               , l
                 { inEdgeNr = getNextInEdgeNr
-                             g
-                             new_trg_id
-                             (\e' -> getEdgeType e' == edgeType l)
+                               g
+                               new_trg_id
+                               (\e' -> getEdgeType e' == edgeType l)
                 }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
@@ -572,9 +571,9 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
               , trg
               , l
                 { outEdgeNr = getNextOutEdgeNr
-                              g
-                              new_src_id
-                              (\e' -> getEdgeType e' == edgeType l)
+                                g
+                                new_src_id
+                                (\e' -> getEdgeType e' == edgeType l)
                 }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
@@ -630,10 +629,10 @@ addNewEdge et (from_n, to_n) (Graph g) =
       new_e = ( from_n_id
               , to_n_id
               , EdgeLabel
-                { edgeType = et
-                , outEdgeNr = out_edge_nr
-                , inEdgeNr = in_edge_nr
-                }
+                  { edgeType = et
+                  , outEdgeNr = out_edge_nr
+                  , inEdgeNr = in_edge_nr
+                  }
               )
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
@@ -761,8 +760,8 @@ getEdges g from_n to_n =
       from_id = getIntNodeID from_n
       to_id = getIntNodeID to_n
       es = map
-           toEdge
-           (filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges)
+             toEdge
+             (filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges)
   in es
 
 -- | Sorts a list of edges according to their edge numbers (in increasing
@@ -786,9 +785,9 @@ getNodeWithNodeID g nid = filter (\n -> getNodeID n == nid) (getAllNodes g)
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
 convertMappingN2ID m =
   Mapping
-  { fNode = getNodeID $ fNode m
-  , pNode = getNodeID $ pNode m
-  }
+    { fNode = getNodeID $ fNode m
+    , pNode = getNodeID $ pNode m
+    }
 
 -- | Converts a match with nodes into a match with node IDs.
 convertMatchN2ID :: Match Node -> Match NodeID
@@ -857,40 +856,40 @@ doNumEdgesMatch fg pg fn pn =
       f_out_es = getOutEdges fg fn
       p_out_es = getOutEdges pg pn
   in checkEdges
-     (\e -> doesNumCFInEdgesMatter pg pn && isControlFlowEdge e)
-     getInEdgeNr
-     f_in_es
-     p_in_es
+       (\e -> doesNumCFInEdgesMatter pg pn && isControlFlowEdge e)
+       getInEdgeNr
+       f_in_es
+       p_in_es
      &&
      checkEdges
-     (\e -> doesNumCFOutEdgesMatter pg pn && isControlFlowEdge e)
-     getOutEdgeNr
-     f_out_es
-     p_out_es
+       (\e -> doesNumCFOutEdgesMatter pg pn && isControlFlowEdge e)
+       getOutEdgeNr
+       f_out_es
+       p_out_es
      &&
      checkEdges
-     (\e -> doesNumDFInEdgesMatter pg pn && isDataFlowEdge e)
-     getInEdgeNr
-     f_in_es
-     p_in_es
+       (\e -> doesNumDFInEdgesMatter pg pn && isDataFlowEdge e)
+       getInEdgeNr
+       f_in_es
+       p_in_es
      &&
      checkEdges
-     (\e -> doesNumDFOutEdgesMatter pg pn && isDataFlowEdge e)
-     getOutEdgeNr
-     f_out_es
-     p_out_es
+       (\e -> doesNumDFOutEdgesMatter pg pn && isDataFlowEdge e)
+       getOutEdgeNr
+       f_out_es
+       p_out_es
      &&
      checkEdges
-     (\e -> doesNumSFInEdgesMatter pg pn && isStateFlowEdge e)
-     getInEdgeNr
-     f_in_es
-     p_in_es
+       (\e -> doesNumSFInEdgesMatter pg pn && isStateFlowEdge e)
+       getInEdgeNr
+       f_in_es
+       p_in_es
      &&
      checkEdges
-     (\e -> doesNumSFOutEdgesMatter pg pn && isStateFlowEdge e)
-     getOutEdgeNr
-     f_out_es
-     p_out_es
+       (\e -> doesNumSFOutEdgesMatter pg pn && isStateFlowEdge e)
+       getOutEdgeNr
+       f_out_es
+       p_out_es
 
 -- | Checks if the number of control flow in-edges matters for a given pattern
 -- node.
@@ -945,8 +944,8 @@ doEdgeNrsMatch :: (Edge -> EdgeNr) -> [Edge] -> [Edge] -> Bool
 doEdgeNrsMatch f es1 es2 =
   if length es1 == length es2
   then all
-       (\(e1, e2) -> (f e1) == (f e2))
-       (zip (sortByEdgeNr f es1) (sortByEdgeNr f es2))
+         (\(e1, e2) -> (f e1) == (f e2))
+         (zip (sortByEdgeNr f es1) (sortByEdgeNr f es2))
   else error "Edge lists not of equal length"
 
 -- | Checks if a list of edges matches another list of edges. It is assumed that
@@ -1000,7 +999,7 @@ doInEdgesMatch _ pg fes pes =
      &&
      (not $ doesOrderSFInEdgesMatter pg pn || checkEdges isStateFlowEdge)
 
--- | Same as doInEdgesMatch but for out-edges.
+-- | Same as `doInEdgesMatch` but for out-edges.
 doOutEdgesMatch ::
      Graph
      -- ^ The function graph.
@@ -1170,8 +1169,9 @@ extractDomSet ::
 extractDomSet (Graph g) n =
   let dom_sets = I.dom g (getIntNodeID n)
       f (n1, ns2) = Domset
-                    (fromJust $ getNodeWithIntNodeID g n1)
-                    (map (fromJust . getNodeWithIntNodeID g) ns2)
+                      { domNode = fromJust $ getNodeWithIntNodeID g n1
+                      , domSet = map (fromJust . getNodeWithIntNodeID g) ns2
+                      }
   in map f dom_sets
 
 -- | Gets a list of immediate-dominator mappings for a given graph and root
@@ -1183,8 +1183,9 @@ extractIDomSet ::
 extractIDomSet (Graph g) n =
   let idom_maps = I.iDom g (getIntNodeID n)
       f (n1, n2) = Domset
-                   (fromJust $ getNodeWithIntNodeID g n1)
-                   [(fromJust $ getNodeWithIntNodeID g n2)]
+                     { domNode = fromJust $ getNodeWithIntNodeID g n1
+                     , domSet = [fromJust $ getNodeWithIntNodeID g n2]
+                     }
   in map f idom_maps
 
 -- | Extracts the control-flow graph from a graph. If there is no label node in
@@ -1192,13 +1193,13 @@ extractIDomSet (Graph g) n =
 extractCFG :: Graph -> Graph
 extractCFG g =
   let nodes_to_remove = filter
-                        (\n -> not (isLabelNode n || isControlNode n))
-                        (getAllNodes g)
+                          (\n -> not (isLabelNode n || isControlNode n))
+                          (getAllNodes g)
       cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
       cfg = foldl
-            delNodeKeepEdges
-            cfg_with_ctrl_nodes
-            (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
+              delNodeKeepEdges
+              cfg_with_ctrl_nodes
+              (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
   in cfg
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
