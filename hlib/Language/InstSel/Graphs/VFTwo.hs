@@ -75,9 +75,6 @@ match fg pg st
                     good_cs = filter (checkFeasibility fg pg st) cs
                 in concatMap (match fg pg) (map (:st) good_cs)
 
-toMapping :: (n, n) -> Mapping n
-toMapping (fn, pn) = Mapping { fNode = fn, pNode = pn }
-
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
 -- resultant set is empty, then the set consists of the pairs of nodes which are
@@ -93,7 +90,8 @@ getCandidates ::
   -> [Mapping Node]
      -- ^ Potential candidates.
 getCandidates fg pg st =
-  let m_fg = map fNode st
+  let toMapping (fn, pn) = Mapping { fNode = fn, pNode = pn }
+      m_fg = map fNode st
       m_pg = map pNode st
       t_out_fg = getTOutSet fg m_fg
       t_out_pg = getTOutSet pg m_pg
