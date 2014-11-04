@@ -40,6 +40,8 @@ import Data.List
   ( intersect
   , nub
   )
+import Data.Maybe
+  ( fromJust )
 
 
 
@@ -119,6 +121,11 @@ getCandidates fg pg st =
           then map toMapping p_in
           else map toMapping p_d
 
+-- | From a mapping state and a pattern node, get the corresponding function
+-- node. It is assumed that there is always such a mapping.
+getFNFromMapping :: [Mapping Node] -> Node -> Node
+getFNFromMapping st pn = fromJust $ findFNInMatch (Match st) pn
+
 -- | Checks that the node mapping is feasible by comparing their syntax and
 -- semantics.
 checkFeasibility ::
@@ -134,21 +141,29 @@ checkFeasibility ::
 checkFeasibility fg pg st c =
   let fn = fNode c
       pn = pNode c
-      p_preds_in_st = filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      f_preds_in_st = findFNsInMatch (Match st) p_preds_in_st
-      pred_es_pairs = zip
-                      (map (flip (getEdges fg) fn) f_preds_in_st)
-                      (map (flip (getEdges pg) pn) p_preds_in_st)
-      p_succs_in_st = filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      f_succs_in_st = findFNsInMatch (Match st) p_succs_in_st
-      succ_es_pairs = zip
-                      (map (getEdges fg fn) f_succs_in_st)
-                      (map (getEdges pg pn) p_succs_in_st)
+      mapped_preds_to_pn =
+        filter (`elem` (map pNode st)) (getPredecessors pg pn)
+      mapped_succs_to_pn =
+        filter (`elem` (map pNode st)) (getSuccessors pg pn)
   in doNodesMatch fg pg (fNode c) (pNode c)
      &&
-     all (\(fes, pes) -> doEdgesMatch fg pg fes pes) pred_es_pairs
+     all
+     ( \pred_pn -> doEdgesMatch
+                   fg
+                   pg
+                   (getEdges fg (getFNFromMapping st pred_pn) fn)
+                   (getEdges pg pred_pn pn)
+     )
+     mapped_preds_to_pn
      &&
-     all (\(fes, pes) -> doEdgesMatch fg pg fes pes) succ_es_pairs
+     all
+     ( \succ_pn -> doEdgesMatch
+                   fg
+                   pg
+                   (getEdges fg fn (getFNFromMapping st succ_pn))
+                   (getEdges pg pn succ_pn)
+     )
+     mapped_succs_to_pn
      &&
      checkSyntax fg pg st c
 
