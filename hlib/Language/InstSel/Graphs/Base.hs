@@ -56,13 +56,15 @@ module Language.InstSel.Graphs.Base
   , addNewEdge
   , addNewSFEdge
   , addNewNode
+  , areInEdgesEquivalent
+  , areOutEdgesEquivalent
   , convertMappingN2ID
   , convertMatchN2ID
   , copyNodeLabel
   , delEdge
   , delNode
   , delNodeKeepEdges
-  , doEdgesMatch
+  , doEdgeListsMatch
   , doNodesMatch
   , extractCFG
   , extractDomSet
@@ -953,7 +955,7 @@ doEdgeNrsMatch f es1 es2 =
 -- also assumed that, for each edge type, a in-edge number appears at most once
 -- in the list (which should be the case if we are considering matches of
 -- patterns on a function graph).
-doEdgesMatch ::
+doEdgeListsMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
@@ -963,8 +965,8 @@ doEdgesMatch ::
   -> [Edge]
      -- ^ In-edges from the pattern graph.
   -> Bool
-doEdgesMatch _ _ [] [] = True
-doEdgesMatch fg pg fes pes =
+doEdgeListsMatch _ _ [] [] = True
+doEdgeListsMatch fg pg fes pes =
   let checkEdgeLengths f = (length $ filter f fes) == (length $ filter f pes)
   in checkEdgeLengths isControlFlowEdge
      &&
@@ -972,7 +974,7 @@ doEdgesMatch fg pg fes pes =
      &&
      checkEdgeLengths isStateFlowEdge
      &&
-     doInEdgesMatch fg pg fes pes && doOutEdgesMatch fg pg fes pes
+     doInEdgeListsMatch fg pg fes pes && doOutEdgeListsMatch fg pg fes pes
 
 -- | Checks if a list of in-edges matches another list of in-edges. It is
 -- assumed that the source and target nodes are the same for every edge in each
@@ -980,7 +982,7 @@ doEdgesMatch fg pg fes pes =
 -- edge type. It is also assumed that, for each edge type, a in-edge number
 -- appears at most once in the list (which should be the case if we are
 -- considering matches of patterns on a function graph).
-doInEdgesMatch ::
+doInEdgeListsMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
@@ -990,7 +992,7 @@ doInEdgesMatch ::
   -> [Edge]
      -- ^ In-edges from the pattern graph.
   -> Bool
-doInEdgesMatch _ pg fes pes =
+doInEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
       pn = getTargetNode pg (head pes)
   in (not $ doesOrderCFInEdgesMatter pg pn || checkEdges isControlFlowEdge)
@@ -999,8 +1001,8 @@ doInEdgesMatch _ pg fes pes =
      &&
      (not $ doesOrderSFInEdgesMatter pg pn || checkEdges isStateFlowEdge)
 
--- | Same as `doInEdgesMatch` but for out-edges.
-doOutEdgesMatch ::
+-- | Same as `doInEdgeListsMatch` but for out-edges.
+doOutEdgeListsMatch ::
      Graph
      -- ^ The function graph.
   -> Graph
@@ -1010,7 +1012,7 @@ doOutEdgesMatch ::
   -> [Edge]
      -- ^ In-edges from the pattern graph.
   -> Bool
-doOutEdgesMatch _ pg fes pes =
+doOutEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
       pn = getSourceNode pg (head pes)
   in (not $ doesOrderCFOutEdgesMatter pg pn || checkEdges isControlFlowEdge)
@@ -1058,6 +1060,38 @@ doesOrderSFInEdgesMatter _ _ = False
 -- node.
 doesOrderSFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderSFOutEdgesMatter _ _ = False
+
+-- | Checks if two in-edges are equivalent, meaning they must be of the same
+-- edge type, have target nodes with the same node ID, and have the same in-edge
+-- numbers.
+areInEdgesEquivalent ::
+     Graph
+     -- ^ The graph to which the edges belong.
+  -> Edge
+  -> Edge
+  -> Bool
+areInEdgesEquivalent g e1 e2 =
+  getEdgeType e1 == getEdgeType e2
+  &&
+  getTargetNode g e1 == getTargetNode g e2
+  &&
+  getInEdgeNr e1 == getInEdgeNr e2
+
+-- | Checks if two out-edges are equivalent, meaning they must be of the same
+-- edge type, have source nodes with the same node ID, and have the same
+-- out-edge numbers.
+areOutEdgesEquivalent ::
+     Graph
+     -- ^ The graph to which the edges belong.
+  -> Edge
+  -> Edge
+  -> Bool
+areOutEdgesEquivalent g e1 e2 =
+  getEdgeType e1 == getEdgeType e2
+  &&
+  getSourceNode g e1 == getSourceNode g e2
+  &&
+  getOutEdgeNr e1 == getOutEdgeNr e2
 
 -- | Same as `mapFs2Ps`.
 findPNsInMatch ::

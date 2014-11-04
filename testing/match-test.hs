@@ -102,9 +102,8 @@ main =
                      )
                    ]
          func = Function
-                "test"
+                (Just "test")
                 (OpStructure func_g func_cs)
-                []
                 []
          params = mkParams func tmTest
      putStrLn $ toJson params

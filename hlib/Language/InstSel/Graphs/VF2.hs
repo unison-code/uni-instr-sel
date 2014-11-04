@@ -27,8 +27,6 @@
 -- about this and see whether there's a mistake.
 --
 -- TODO: implement routine for undoing multi-edges
--- TODO: handle function graphs with multiple edges that have the same edge
--- numbers
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.VF2
@@ -126,8 +124,8 @@ getCandidates fg pg st =
 getFNFromMapping :: [Mapping Node] -> Node -> Node
 getFNFromMapping st pn = fromJust $ findFNInMatch (Match st) pn
 
--- | Checks that the node mapping is feasible by comparing their syntax and
--- semantics.
+-- | Checks that the node mapping is feasible by comparing their semantics and
+-- syntax.
 checkFeasibility ::
      Graph
      -- ^ The function graph.
@@ -139,16 +137,68 @@ checkFeasibility ::
      -- ^ Candidate mapping.
   -> Bool
 checkFeasibility fg pg st c =
+  checkSemantics fg pg st c && checkSyntax fg pg st c
+
+-- | Checks that the semantics of the matched nodes and edges are compatible.
+checkSemantics ::
+     Graph
+     -- ^ The function graph.
+  -> Graph
+     -- ^ The pattern graph.
+  -> [Mapping Node]
+     -- ^ Current mapping state.
+  -> Mapping Node
+     -- ^ Candidate mapping.
+  -> Bool
+checkSemantics fg pg st c =
   let fn = fNode c
       pn = pNode c
       mapped_preds_to_pn =
         filter (`elem` (map pNode st)) (getPredecessors pg pn)
+      mapped_preds_to_fn = findFNsInMatch (Match st) mapped_preds_to_pn
       mapped_succs_to_pn =
         filter (`elem` (map pNode st)) (getSuccessors pg pn)
-  in doNodesMatch fg pg (fNode c) (pNode c)
+      mapped_succs_to_fn = findFNsInMatch (Match st) mapped_succs_to_pn
+  in -- Check that the nodes are of matching type
+     doNodesMatch fg pg (fNode c) (pNode c)
      &&
+     -- Check that there are no existing matches for the in-edges from the
+     -- function graph to be included in the mapping state
      all
-       ( \pred_pn -> doEdgesMatch
+       ( \pred_fn ->
+           let already_matched_in_edges =
+                 filter
+                   (\e -> getTargetNode fg e `elem` mapped_preds_to_fn)
+                   (getInEdges fg pred_fn)
+           in not $
+                any
+                  ( \e ->
+                      any (areInEdgesEquivalent fg e) already_matched_in_edges
+                  )
+                  (getEdges fg pred_fn fn)
+       )
+       mapped_preds_to_fn
+     &&
+     -- Check that there are no existing matches for the out-edges from the
+     -- function graph to be included in the mapping state
+     all
+       ( \succ_fn ->
+           let already_matched_out_edges =
+                 filter
+                   (\e -> getTargetNode fg e `elem` mapped_succs_to_fn)
+                   (getOutEdges fg succ_fn)
+           in not $
+                any
+                  ( \e ->
+                      any (areOutEdgesEquivalent fg e) already_matched_out_edges
+                  )
+                  (getEdges fg succ_fn fn)
+       )
+       mapped_succs_to_fn
+     &&
+     -- Check that the new in-edge mappings are of matching type
+     all
+       ( \pred_pn -> doEdgeListsMatch
                        fg
                        pg
                        (getEdges fg (getFNFromMapping st pred_pn) fn)
@@ -156,16 +206,15 @@ checkFeasibility fg pg st c =
        )
        mapped_preds_to_pn
      &&
+     -- Check that the new out-edge mappings are of matching type
      all
-       ( \succ_pn -> doEdgesMatch
+       ( \succ_pn -> doEdgeListsMatch
                        fg
                        pg
                        (getEdges fg fn (getFNFromMapping st succ_pn))
                        (getEdges pg pn succ_pn)
        )
        mapped_succs_to_pn
-     &&
-     checkSyntax fg pg st c
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
 -- equation 2 in the paper).
