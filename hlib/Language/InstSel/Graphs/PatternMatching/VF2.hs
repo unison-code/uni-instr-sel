@@ -15,9 +15,7 @@
 -- the pattern graph.
 --
 -- The VF2 algorithm assumes that neither graph contains multi-edges (that is,
--- more than one edges between the same pair of nodes). This limitations,
--- however, can be circumvented by duplicating nodes and giving them the same
--- node IDs before invoking the algorithm.
+-- more than one edges between the same pair of nodes).
 --
 -- It seems that the paper has some bugs as it forbids matching of certain
 -- subgraph isomorphism. Basically, if there is an edge in the function graph
@@ -53,10 +51,7 @@ findMatches ::
      -- ^ The pattern graph.
   -> [Match Node]
      -- ^ Found matches.
-findMatches fg pg =
-  let fg' = breakMultiEdges fg
-      pg' = breakMultiEdges pg
-  in map Match (match fg' pg' [])
+findMatches fg pg = map toMatch (match fg pg [])
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
 -- mapping candidates, and then applies a feasibility check on each of
@@ -76,13 +71,6 @@ match fg pg st
   | otherwise = let cs = getCandidates fg pg st
                     good_cs = filter (checkFeasibility fg pg st) cs
                 in concatMap (match fg pg) (map (:st) good_cs)
-
--- | Breaks multi-edges by duplicating the source node such that they share the
--- same node ID.
---
--- TODO: implement
-breakMultiEdges :: Graph -> Graph
-breakMultiEdges g = g
 
 -- | Gets a set of node mapping candidates. This set consists of the pairs of
 -- nodes which are successors to the nodes currently in the match set. If this
