@@ -30,7 +30,7 @@ Tests the VF2 algorithm.
 
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
-import Language.InstSel.Graphs.VF2
+import Language.InstSel.Graphs.PatternMatching.VF2
 import qualified Language.InstSel.OpTypes as O
 
 main :: IO ()
@@ -127,6 +127,24 @@ main =
                      , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
                      ]
                  )
+         fg4 = mkGraph
+                 ( map
+                     Node
+                     [ ( 0, NodeLabel 0 ( ComputationNode
+                                            (O.CompArithOp $ O.UIntOp O.Add)
+                                        )
+                       )
+                     , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
+                     , ( 3, NodeLabel 3 (DataNode D.AnyType Nothing) )
+                     ]
+                 )
+                 ( map
+                     Edge
+                     [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                     , ( 1, 0, EdgeLabel DataFlowEdge 1 1 )
+                     , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
+                     ]
+                 )
          p1 = mkGraph
                 ( map
                     Node
@@ -146,6 +164,6 @@ main =
                     , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
                     ]
                 )
-     mapM_
-       (\m -> putStrLn $ show $ convertMatchN2ID m)
-       (findMatches fg3 p1)
+     let matches = findMatches fg4 p1
+     mapM_ (\m -> putStrLn $ show $ convertMatchN2ID m) matches
+     putStrLn (show $ length matches)

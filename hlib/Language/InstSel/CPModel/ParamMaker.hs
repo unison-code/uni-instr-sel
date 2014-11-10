@@ -25,7 +25,7 @@ import Language.InstSel.CPModel
   , patAUDDC
   )
 import Language.InstSel.Graphs
-import Language.InstSel.Graphs.VF2
+import Language.InstSel.Graphs.PatternMatching.VF2
 import Language.InstSel.OpStructures
 import Language.InstSel.Patterns
 import Language.InstSel.ProgramModules

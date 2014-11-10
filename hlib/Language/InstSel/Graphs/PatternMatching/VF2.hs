@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Graphs.VF2
+-- Module      : Language.InstSel.Graphs.PatternMatching.VF2
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -25,11 +25,9 @@
 -- not match. But we're only interested in matching all edges in the pattern,
 -- not necessarily all edges in the function graph! I should contact the authors
 -- about this and see whether there's a mistake.
---
--- TODO: implement routine for undoing multi-edges
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Graphs.VF2
+module Language.InstSel.Graphs.PatternMatching.VF2
   ( findMatches )
 where
 
