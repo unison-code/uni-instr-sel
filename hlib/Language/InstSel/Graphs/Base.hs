@@ -69,9 +69,13 @@ module Language.InstSel.Graphs.Base
   , extractCFG
   , extractDomSet
   , extractIDomSet
+  , findFNInMapping
   , findFNInMatch
+  , findFNsInMapping
   , findFNsInMatch
+  , findPNInMapping
   , findPNInMatch
+  , findPNsInMapping
   , findPNsInMatch
   , fromEdgeNr
   , getAllNodes
@@ -142,6 +146,7 @@ module Language.InstSel.Graphs.Base
   , rootInCFG
   , sortByEdgeNr
   , toEdgeNr
+  , toMatch
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
@@ -166,7 +171,7 @@ import Data.List
   , sortBy
   )
 import Data.Maybe
-
+import qualified Data.Set as Set
 
 
 --------------
@@ -184,6 +189,9 @@ newtype Graph =
 newtype Node =
     Node (I.LNode NodeLabel)
   deriving (Show, Eq)
+
+instance Ord Node where
+  (Node (n1, _)) <= (Node (n2, _)) = n1 <= n2
 
 -- | A synonym for indicating the source node of an edge.
 type SrcNode = Node
@@ -267,12 +275,12 @@ data Mapping n =
       , pNode :: n
         -- ^ The mapped node appearing in the pattern graph.
       }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Represents a match between two graphs.
 newtype Match n =
-    Match [Mapping n]
-  deriving (Show)
+    Match (Set.Set (Mapping n))
+  deriving (Show, Eq)
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
@@ -795,7 +803,8 @@ convertMappingN2ID m =
 
 -- | Converts a match with nodes into a match with node IDs.
 convertMatchN2ID :: Match Node -> Match NodeID
-convertMatchN2ID (Match ms) = Match (map convertMappingN2ID ms)
+convertMatchN2ID (Match ms) =
+  Match (Set.fromList $ map convertMappingN2ID (Set.toList ms))
 
 -- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
 getNodeIDs :: [Node] -> [NodeID]
@@ -1095,7 +1104,7 @@ areOutEdgesEquivalent g e1 e2 =
   &&
   getOutEdgeNr e1 == getOutEdgeNr e2
 
--- | Same as `mapFs2Ps`.
+-- | Same as `findPNsInMapping`.
 findPNsInMatch ::
   (Eq n)
   => Match n
@@ -1104,9 +1113,9 @@ findPNsInMatch ::
      -- ^ List of function nodes.
   -> [n]
      -- ^ List of corresponding pattern nodes.
-findPNsInMatch (Match m) = mapFs2Ps m
+findPNsInMatch (Match m) = findPNsInMapping (Set.toList m)
 
--- | Same as `mapPs2Fs`.
+-- | Same as `findFNsInMapping`.
 findFNsInMatch ::
   (Eq n)
   => Match n
@@ -1115,9 +1124,9 @@ findFNsInMatch ::
      -- ^ List of pattern nodes.
   -> [n]
      -- ^ List of corresponding function nodes.
-findFNsInMatch (Match m) = mapPs2Fs m
+findFNsInMatch (Match m) = findFNsInMapping (Set.toList m)
 
--- | Same as `mapF2P`.
+-- | Same as `findPNInMapping`.
 findPNInMatch ::
   (Eq n)
   => Match n
@@ -1126,9 +1135,9 @@ findPNInMatch ::
      -- ^ Function node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-findPNInMatch (Match m) = mapF2P m
+findPNInMatch (Match m) = findPNInMapping (Set.toList m)
 
--- | Same as `mapP2F`.
+-- | Same as `findFNInMapping`.
 findFNInMatch ::
   (Eq n)
   => Match n
@@ -1137,12 +1146,12 @@ findFNInMatch ::
      -- ^ Pattern node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-findFNInMatch (Match m) = mapP2F m
+findFNInMatch (Match m) = findFNInMapping (Set.toList m)
 
 -- | From a match and a list of function nodes, get the list of corresponding
 -- pattern nodes for which there exists a mapping. The order of the list will be
 -- conserved.
-mapFs2Ps ::
+findPNsInMapping ::
   (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
@@ -1150,12 +1159,12 @@ mapFs2Ps ::
      -- ^ List of function nodes.
   -> [n]
      -- ^ List of corresponding pattern nodes.
-mapFs2Ps m fns = mapMaybe (mapF2P m) fns
+findPNsInMapping m fns = mapMaybe (findPNInMapping m) fns
 
 -- | From a match and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping. The order of the list will
 -- be conserved.
-mapPs2Fs ::
+findFNsInMapping ::
   (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
@@ -1163,11 +1172,11 @@ mapPs2Fs ::
      -- ^ List of pattern nodes.
   -> [n]
      -- ^ List of corresponding function nodes.
-mapPs2Fs m pns = mapMaybe (mapP2F m) pns
+findFNsInMapping m pns = mapMaybe (findFNInMapping m) pns
 
 -- | From a mapping state and a function node, get the corresponding pattern
 -- node if there exists a such a mapping.
-mapF2P ::
+findPNInMapping ::
   (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
@@ -1175,7 +1184,7 @@ mapF2P ::
      -- ^ Function node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-mapF2P st fn =
+findPNInMapping st fn =
   let found = [ pNode m | m <- st, fn == fNode m ]
   in if length found > 0
      then Just $ head found
@@ -1183,7 +1192,7 @@ mapF2P st fn =
 
 -- | From a mapping state and a pattern node, get the corresponding function
 -- node if there exists a such a mapping.
-mapP2F ::
+findFNInMapping ::
   (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
@@ -1191,7 +1200,7 @@ mapP2F ::
      -- ^ Pattern node.
   -> Maybe n
      -- ^ Corresponding function node.
-mapP2F st pn =
+findFNInMapping st pn =
   let found = [ fNode m | m <- st, pn == pNode m ]
   in if length found > 0
      then Just $ head found
@@ -1268,3 +1277,7 @@ hasAnyPredecessors g n = length (getPredecessors g n) > 0
 -- | Checks if a given node has any successors.
 hasAnySuccessors :: Graph -> Node -> Bool
 hasAnySuccessors g n = length (getSuccessors g n) > 0
+
+-- | Converts a list of mappings to a match.
+toMatch :: Ord n => [Mapping n] -> Match n
+toMatch m = Match (Set.fromList m)

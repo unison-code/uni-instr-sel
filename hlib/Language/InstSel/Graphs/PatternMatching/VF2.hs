@@ -108,7 +108,7 @@ getCandidates fg pg st =
 -- | From a mapping state and a pattern node, get the corresponding function
 -- node. It is assumed that there is always such a mapping.
 getFNFromState :: [Mapping Node] -> Node -> Node
-getFNFromState st pn = fromJust $ findFNInMatch (Match st) pn
+getFNFromState st pn = fromJust $ findFNInMapping st pn
 
 -- | Checks that the node mapping is feasible by comparing their semantics and
 -- syntax.
@@ -142,10 +142,10 @@ checkSemantics fg pg st c =
       all_f_nodes_in_st = map fNode st
       mapped_preds_to_pn =
         filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      mapped_preds_to_fn = findFNsInMatch (Match st) mapped_preds_to_pn
+      mapped_preds_to_fn = findFNsInMapping st mapped_preds_to_pn
       mapped_succs_to_pn =
         filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      mapped_succs_to_fn = findFNsInMatch (Match st) mapped_succs_to_pn
+      mapped_succs_to_fn = findFNsInMapping st mapped_succs_to_pn
   in -- Check that the nodes are of matching type
      doNodesMatch fg pg (fNode c) (pNode c)
      &&
