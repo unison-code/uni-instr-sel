@@ -19,6 +19,7 @@ module Language.InstSel.Utils.Base
   , fromLeft
   , fromNatural
   , fromRight
+  , groupBy
   , isLeft
   , isRight
   , toNatural
@@ -141,3 +142,16 @@ fromLeft _ = error "Either is not Left"
 fromRight :: Either l r -> r
 fromRight (Right r) = r
 fromRight _ = error "Either is not Right"
+
+-- | Groups elements according to a predicate function such that a set of
+-- elements, for which the predicate holds for every element pair in that set,
+-- are grouped together. It is assumed that the predicate function is
+-- commutative and associative.
+groupBy :: (n -> n -> Bool) -> [n] -> [[n]]
+groupBy f es =
+  foldr (gr f) [] es
+  where gr _ e [] = [[e]]
+        gr f' e (p:ps) =
+          if belongs f' e p then (e:p):ps else p:(gr f' e ps)
+        belongs f'' e' es' = any (f'' e') es'
+

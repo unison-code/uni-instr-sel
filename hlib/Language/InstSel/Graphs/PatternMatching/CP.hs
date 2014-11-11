@@ -33,6 +33,8 @@ module Language.InstSel.Graphs.PatternMatching.CP
 where
 
 import Language.InstSel.Graphs.Base
+import Language.InstSel.Utils
+  ( groupBy )
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
@@ -235,7 +237,7 @@ findAlternativeInEdges g n =
         getEdgeType e1 == getEdgeType e2
         &&
         getInEdgeNr e1 == getInEdgeNr e2
-      groups = groupEdges areAlternatives (getInEdges g n)
+      groups = groupBy areAlternatives (getInEdges g n)
   in filter (\p -> length p > 1) groups
 
 findAlternativeOutEdges :: Graph -> Node -> [[Edge]]
@@ -244,20 +246,8 @@ findAlternativeOutEdges g n =
         getEdgeType e1 == getEdgeType e2
         &&
         getOutEdgeNr e1 == getOutEdgeNr e2
-      groups = groupEdges areAlternatives (getOutEdges g n)
+      groups = groupBy areAlternatives (getOutEdges g n)
   in filter (\p -> length p > 1) groups
-
--- | Groups edges according to a predicate function such that a set of edges,
--- for which the predicate holds for every edge pair in that set, are grouped
--- together. It is assumed that the predicate function is commutative and
--- associative.
-groupEdges :: (Edge -> Edge -> Bool) -> [Edge] -> [[Edge]]
-groupEdges f es =
-  foldr (gr f) [] es
-  where gr _ e [] = [[e]]
-        gr f' e (p:ps) =
-          if belongs f' e p then (e:p):ps else p:(gr f' e ps)
-        belongs f'' e' es' = any (f'' e') es'
 
 invokeMatcher :: Parameters -> IO SolutionData
 invokeMatcher p = shelly (invokeMatcherShell p)
