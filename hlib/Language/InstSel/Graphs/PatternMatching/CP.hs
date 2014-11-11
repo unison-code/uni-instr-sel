@@ -121,9 +121,10 @@ instance ToJSON JsonParamData where
 
 data SolutionData =
   SolutionData
-    { nodeMaps :: [[(Int, Int)]]
-      -- ^ Found node maps. The first element in the tuple represents the index
-      -- of a pattern node, and the second element the index of a function node.
+    { nodeMaps :: [[Int]]
+      -- ^ Found node maps. The index of the pattern node is the element index
+      -- to the inner list, where each such element is the index of a function
+      -- node.
     }
 
 instance FromJSON SolutionData where
@@ -255,11 +256,17 @@ invokeMatcher p = shelly (invokeMatcherShell p)
 invokeMatcherShell :: Parameters -> Sh SolutionData
 invokeMatcherShell p =
   do prepareSystem
-     json_file <- queryJsonFilePath
-     dumpParamsToJsonFile p json_file
+     json_input_file <- queryJsonInputFilePath
+     json_output_file <- queryJsonOutputFilePath
+     dumpParamsToJsonFile p json_input_file
+     abs_json_input_file <- absPath json_input_file
+     abs_json_output_file <- absPath json_output_file
      script <- queryScriptPath
-     abs_json_file <- absPath json_file
-     result <- run script [toTextIgnore abs_json_file]
+     run_ script [ "-o"
+                 , toTextIgnore abs_json_output_file
+                 , toTextIgnore abs_json_input_file
+                 ]
+     result <- readfile json_output_file
      readSolutionData result
 
 toJsonParamData :: Parameters -> JsonParamData
@@ -277,10 +284,15 @@ toJsonParamData p =
 queryDataDirPath :: Sh FilePath
 queryDataDirPath = return ".PatMatchData"
 
-queryJsonFilePath :: Sh FilePath
-queryJsonFilePath =
+queryJsonInputFilePath :: Sh FilePath
+queryJsonInputFilePath =
   do dir <- queryDataDirPath
      return $ dir </> "pat-match-data.json"
+
+queryJsonOutputFilePath :: Sh FilePath
+queryJsonOutputFilePath =
+  do dir <- queryDataDirPath
+     return $ dir </> "solutions.json"
 
 queryScriptPath :: Sh FilePath
 queryScriptPath =
@@ -310,7 +322,7 @@ readSolutionData t =
 makeMatchesFromSolutionData :: Parameters -> SolutionData -> [Match Node]
 makeMatchesFromSolutionData params sol =
   let makeMatchFromIndexMapping maps =
-        map makeNodeMappingFromIndexMapping maps
+        map makeNodeMappingFromIndexMapping (zip [0..] maps)
       makeNodeMappingFromIndexMapping (n1, n2) =
         let pn = indexedPatternNodes params !! n1
             fn = indexedFunctionNodes params !! n2
