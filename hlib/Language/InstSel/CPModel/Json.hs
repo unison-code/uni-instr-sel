@@ -25,7 +25,7 @@ import Language.InstSel.Constraints
 import Language.InstSel.Constraints.SExpressions
 import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
-  (Domset (..))
+  ( Domset (..) )
 import Language.InstSel.Graphs.IDs
 import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachine.IDs
