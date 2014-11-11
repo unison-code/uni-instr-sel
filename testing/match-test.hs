@@ -30,7 +30,7 @@ Tests the VF2 algorithm.
 
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
-import Language.InstSel.Graphs.PatternMatching.VF2
+import Language.InstSel.Graphs.PatternMatching.CP
 import qualified Language.InstSel.OpTypes as O
 
 main :: IO ()
