@@ -262,10 +262,13 @@ invokeMatcherShell p =
      abs_json_input_file <- absPath json_input_file
      abs_json_output_file <- absPath json_output_file
      script <- queryScriptPath
-     run_ script [ "-o"
-                 , toTextIgnore abs_json_output_file
-                 , toTextIgnore abs_json_input_file
-                 ]
+     print_stdout
+       False
+       ( run_ script [ "-o"
+                     , toTextIgnore abs_json_output_file
+                     , toTextIgnore abs_json_input_file
+                     ]
+       )
      result <- readfile json_output_file
      readSolutionData result
 
