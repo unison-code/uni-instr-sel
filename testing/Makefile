@@ -1,3 +1,5 @@
+export CP_PATTERN_MATCHER_SCRIPT := /home/ghb/projects/zapbar/repo-int/src/inst-sel/pattern-matcher/minizinc/pattern-matcher
+
 HLIBPATH := ../hlib
 
 GHC      := ghc
@@ -12,6 +14,10 @@ param-test:
 .PHONY: match-test
 match-test:
 	$(GHC) $(GHCFLAGS) match-test.hs
+
+.PHONY: run-match-test
+run-match-test: match-test
+	./match-test
 
 .PHONY: test-frontend
 test-frontend:
