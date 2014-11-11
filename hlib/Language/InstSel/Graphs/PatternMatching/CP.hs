@@ -83,8 +83,8 @@ data Parameters =
   deriving (Show)
 
 -- | A data type used to conveniently dump the data to a JSON file.
-data JsonParams =
-  JsonParams
+data JsonData =
+  JsonData
     { jsonNumPatternNodes :: Int
     , jsonPatternEdges :: [(Int, Int)]
     , jsonNumFunctionNodes :: Int
@@ -94,7 +94,7 @@ data JsonParams =
     , jsonAlternativeEdges :: [[Int]]
     }
 
-instance ToJSON JsonParams where
+instance ToJSON JsonData where
   toJSON p =
     object [ "num-pattern-nodes"    .= (jsonNumPatternNodes p)
            , "pattern-edges"        .= (jsonPatternEdges p)
@@ -234,3 +234,15 @@ invokeMatcher :: Parameters -> [Match Node]
 invokeMatcher p =
   -- TODO: implement
   []
+
+toJsonData :: Parameters -> JsonData
+toJsonData p =
+  JsonData
+    { jsonNumPatternNodes = length $ indexedPatternNodes p
+    , jsonPatternEdges = indexedPatternEdges p
+    , jsonNumFunctionNodes = length $ indexedFunctionNodes p
+    , jsonFunctionEdges = indexedFunctionEdges p
+    , jsonInitialNodeDomains = initialNodeDomains p
+    , jsonInitialEdgeDomains = initialEdgeDomains p
+    , jsonAlternativeEdges = alternativeEdges p
+    }
