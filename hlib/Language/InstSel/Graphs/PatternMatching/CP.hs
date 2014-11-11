@@ -199,7 +199,7 @@ findAlternativeOutEdges g n =
 groupEdges :: (Edge -> Edge -> Bool) -> [Edge] -> [[Edge]]
 groupEdges f es =
   foldr (gr f) [] es
-  where gr f' e [] = [[e]]
+  where gr _ e [] = [[e]]
         gr f' e (p:ps) =
           if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
