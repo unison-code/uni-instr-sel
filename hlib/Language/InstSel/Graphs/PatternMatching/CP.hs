@@ -18,11 +18,18 @@
 -- matching, reads its output, and constructs a list of matches.
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
 module Language.InstSel.Graphs.PatternMatching.CP
   ( findMatches )
 where
 
 import Language.InstSel.Graphs.Base
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as BS
+  ( pack
+  , unpack
+  )
 import Data.List
   ( elemIndex
   , nub
@@ -30,6 +37,12 @@ import Data.List
 import Data.Maybe
   ( fromJust )
 
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
+import qualified Data.Text as T
+  ( unpack )
 
 
 ---------
@@ -68,6 +81,29 @@ data Parameters =
       -- at most one edge from each set may be matched by the pattern graph.
     }
   deriving (Show)
+
+-- | A data type used to conveniently dump the data to a JSON file.
+data JsonParams =
+  JsonParams
+    { jsonNumPatternNodes :: Int
+    , jsonPatternEdges :: [(Int, Int)]
+    , jsonNumFunctionNodes :: Int
+    , jsonFunctionEdges :: [(Int, Int)]
+    , jsonInitialNodeDomains :: [[Int]]
+    , jsonInitialEdgeDomains :: [[Int]]
+    , jsonAlternativeEdges :: [[Int]]
+    }
+
+instance ToJSON JsonParams where
+  toJSON p =
+    object [ "num-pattern-nodes"    .= (jsonNumPatternNodes p)
+           , "pattern-edges"        .= (jsonPatternEdges p)
+           , "num-function-nodes"   .= (jsonNumFunctionNodes p)
+           , "function-edges"       .= (jsonFunctionEdges p)
+           , "initial-node-domains" .= (jsonInitialNodeDomains p)
+           , "initial-edge-domains" .= (jsonInitialEdgeDomains p)
+           , "alternative-edges"    .= (jsonAlternativeEdges p)
+           ]
 
 
 
