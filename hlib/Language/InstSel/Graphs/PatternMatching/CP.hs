@@ -52,6 +52,8 @@ import qualified Data.Text as T
 import Prelude
   hiding ( FilePath )
 import Shelly
+import System.IO.Unsafe
+  ( unsafePerformIO )
 
 
 
@@ -139,6 +141,7 @@ instance FromJSON SolutionData where
 -- graph to the function graph, with the additional constraint that the edge
 -- mapping must be injective. Matches that are identical to one another will be
 -- removed such that only one match will remain.
+{-# NOINLINE findMatches #-}
 findMatches ::
      Graph
      -- ^ The function graph.
@@ -148,9 +151,8 @@ findMatches ::
      -- ^ Found matches.
 findMatches fg pg =
   let params = computeParameters fg pg
---      matches = invokeMatcher params
-      -- TODO: implement
-      matches = []
+      sol = unsafePerformIO (invokeMatcher params)
+      matches = makeMatchesFromSolutionData params sol
   in nub matches
 
 computeParameters ::
@@ -255,8 +257,11 @@ groupEdges f es =
           if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
 
-invokeMatcher :: Parameters -> Sh SolutionData
-invokeMatcher p =
+invokeMatcher :: Parameters -> IO SolutionData
+invokeMatcher p = shelly (invokeMatcherShell p)
+
+invokeMatcherShell :: Parameters -> Sh SolutionData
+invokeMatcherShell p =
   do prepareSystem
      json_file <- queryJsonFilePath
      dumpParamsToJsonFile p json_file
@@ -308,3 +313,14 @@ readSolutionData t =
      if (isJust result)
      then return $ fromJust result
      else terror "failed to parse JSON"
+
+-- | Converts the solution data into matches.
+makeMatchesFromSolutionData :: Parameters -> SolutionData -> [Match Node]
+makeMatchesFromSolutionData params sol =
+  let makeMatchFromIndexMapping maps =
+        map makeNodeMappingFromIndexMapping maps
+      makeNodeMappingFromIndexMapping (n1, n2) =
+        let pn = indexedPatternNodes params !! n1
+            fn = indexedFunctionNodes params !! n2
+        in Mapping { pNode = pn, fNode = fn }
+  in map (toMatch . makeMatchFromIndexMapping) (nodeMaps sol)
