@@ -1,0 +1,187 @@
+#!/usr/bin/python
+
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+def extractData(line):
+    pos = line.find("=")
+    if pos < 0:
+        raise SyntaxError("Expected '=' not found")
+    name = line[:pos].strip()
+    data = toValue(line[pos + 1:].strip())
+    return name, data
+
+def toValue(s):
+    s = s.strip()
+    if len(s) == 0:
+        raise SyntaxError("No data")
+    if s[0] == '[':
+        if not s[-1] == ']':
+            raise SyntaxError("Expected ']' not found")
+        values = []
+        for t in s[1:-1].split(','):
+            if len(t) == 0:
+                continue
+            values.append(toValue(t))
+        return values
+    else:
+        if s == "true":
+            return True
+        elif s == "false":
+            return False
+        elif s.isdigit() or (s.startswith("-") and s[1:].isdigit()):
+            return int(s)
+        else:
+            return s
+
+def consistsOnlyOf(s, ch):
+    for c in s:
+        if c != ch:
+            return False
+    return True
+
+def getDataByName(data, name):
+    for d in data:
+        if d[0] == name:
+            return d[1]
+
+def getRequiredDataByName(data, name):
+    d = getDataByName(data, name)
+    if d == None:
+        error("Required data '" + name + "' not found")
+    return d
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check solution file
+if len(sys.argv) < 2:
+    sys.stderr.write("No parameter file\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    sys.stderr.write("Too many arguments\n")
+    sys.exit(1)
+param_file = sys.argv[1]
+if not os.path.isfile(param_file):
+    error("Parameter file '" + param_file +"' not found")
+
+# Read parameter file and parse as JSON
+with open(param_file, 'r') as file:
+    data = json.load(file)
+
+# Generate output for Minizinc parameter file
+
+print "% AUTO-GENERATED"
+print
+
+print "%============"
+print "% PARAMETERS"
+print "%============"
+print
+
+print "% Pattern graph"
+print "numNodesInP = " + str(data["num-pattern-nodes"]) + ";"
+print "numEdgesInP = " + str(len(data["pattern-edges"])) + ";"
+print "edgesInP = array2d(allEdgesInP, 0..1, [",
+print ",".join([ str(e) for pairs in data["pattern-edges"] for e in pairs ]),
+print "]);"
+
+print
+print "% Function graph"
+print "numNodesInF = " + str(data["num-function-nodes"]) + ";"
+print "numEdgesInF = " + str(len(data["function-edges"])) + ";"
+print "edgesInF = array2d(allEdgesInF, 0..1, [",
+print ",".join([ str(e) for pairs in data["function-edges"] for e in pairs ]),
+print "]);"
+
+print
+
+print
+print
+print "%============="
+print "% CONSTRAINTS"
+print "%============="
+print
+print "include \"global_cardinality.mzn\";"
+print
+print "% Restrict node domains"
+init_node_doms = data["initial-node-domains"]
+for i in range(len(init_node_doms)):
+    print "constraint"
+    print ( "  NP[" + str(i) + "] in {"
+          + ",".join([ str(n) for n in init_node_doms[i] ])
+          + "};"
+          )
+print
+print "% Restrict edge domains"
+init_edge_doms = data["initial-edge-domains"]
+for i in range(len(init_edge_doms)):
+    print "constraint"
+    print ( "  EP[" + str(i) + "] in {"
+          + ",".join([ str(e) for e in init_edge_doms[i] ])
+          + "};"
+          )
+print
+print "% Restrict edge mappings involving alternative edges (if any)"
+alt_edge_data = data["alternative-edges"]
+var_index = 0
+for es in alt_edge_data:
+    if len(es) <= 1:
+        continue
+    cover_var = "cover" + str(var_index)
+    counts_var = "counts" + str(var_index)
+    num_alts = str(len(es))
+    print "array[1.." + num_alts + "] of int: " + cover_var + " = [",
+    print ",".join([ str(e) for e in es ]),
+    print "];"
+    print "array[1.." + num_alts + "] of var 0..1: " + counts_var + ";"
+    print "constraint"
+    print "  global_cardinality(EP, " + cover_var + ", " + counts_var + ");"
+    print "constraint"
+    print "  sum(" + counts_var + ") <= 1;"
+    print
+    var_index += 1
