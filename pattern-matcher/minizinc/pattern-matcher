@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#==========
+# SETTINGS
+#==========
+
+THIS_DIR=$(dirname $0)
+MINIZINC_PARAMS_FILE="$THIS_DIR/params.mzn"
+MINIZINC_OUTPUT_FILE="$THIS_DIR/model.sol.mzn"
+MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
+
+# These will be set after parsing command-line arguments
+MODEL_PARAMS_FILE=""
+OUTPUT_FILE=""
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+function echoerr {
+    echo "$@" 1>&2
+}
+
+function checkStatus {
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check arguments
+if [ $# -gt 3 ]; then
+    echoerr "Too many input arguments"
+    exit 1
+fi
+if [ "$1" == "-o" ]; then
+    if [ -z "$2" ]; then
+        echoerr "'-o' requires an argument"
+        exit 1
+    fi
+    OUTPUT_FILE=$2
+    if [ -z "$3" ]; then
+        echoerr "No model params file provided"
+        exit 1
+    fi
+    MODEL_PARAMS_FILE=$3
+else
+    echoerr "No '-o' option provided (must be first)"
+    exit 1
+fi
+
+# Generate params to Minizinc model
+echo "Generating Minizinc params..."
+$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILE > $MINIZINC_PARAMS_FILE
+checkStatus
+
+# Run Minizinc solver
+echo "Running Minizinc solver..."
+CURRENT_DIR=`pwd`
+cd $THIS_DIR
+minizinc -a $(basename $MINIZINC_MODEL_FILE) > $(basename $MINIZINC_OUTPUT_FILE)
+STATUS=$?
+cd $CURRENT_DIR
+if [ $STATUS -ne 0 ]; then
+    exit 1
+fi
+
+# Convert solution into JSON format
+echo "Converting Minizinc solution to JSON format..."
+$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $OUTPUT_FILE
+checkStatus
