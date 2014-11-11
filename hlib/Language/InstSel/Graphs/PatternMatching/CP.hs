@@ -76,8 +76,10 @@ data Parameters =
 -------------
 
 -- | Finds all occurrences where a pattern graph matches within a function
--- graph. Matches that are identical to one another will be removed such that
--- only one match will remain.
+-- graph. A valid pattern graph match is a graph homomorphism from the pattern
+-- graph to the function graph, with the additional constraint that the edge
+-- mapping must be injective. Matches that are identical to one another will be
+-- removed such that only one match will remain.
 findMatches ::
      Graph
      -- ^ The function graph.
@@ -85,22 +87,10 @@ findMatches ::
      -- ^ The pattern graph.
   -> [Match Node]
      -- ^ Found matches.
-findMatches fg pg = nub $ match fg pg
-
--- | Finds all valid graph homomorphisms from the pattern graph to the function
--- graph, with the additional constraint that the edge mapping must be
--- injective.
-match ::
-     Graph
-     -- ^ The function graph.
-  -> Graph
-     -- ^ The pattern graph.
-  -> [Match Node]
-     -- ^ Found matches.
-match fg pg =
+findMatches fg pg =
   let params = computeParameters fg pg
-  -- TODO: implement
-  in []
+      matches = invokeMatcher params
+  in nub matches
 
 computeParameters ::
      Graph
@@ -203,3 +193,8 @@ groupEdges f es =
         gr f' e (p:ps) =
           if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
+
+invokeMatcher :: Parameters -> [Match Node]
+invokeMatcher p =
+  -- TODO: implement
+  []
