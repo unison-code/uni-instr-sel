@@ -15,10 +15,18 @@
 -- with an injective mapping for the edges.
 --
 -- This module invokes an external script which performs the actual pattern
--- matching, reads its output, and constructs a list of matches.
+-- matching, reads its output, and constructs a list of matches. The script to
+-- execute is expected to be specific in the system environment (see the
+-- `queryScriptPath` function).
 --------------------------------------------------------------------------------
 
+-- Needed for JSON package
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
+-- Needed for Shelly package
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module Language.InstSel.Graphs.PatternMatching.CP
   ( findMatches )
@@ -30,19 +38,21 @@ import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
   , unpack
   )
+import Control.Monad
+  ( mzero )
 import Data.List
   ( elemIndex
   , nub
   )
 import Data.Maybe
-  ( fromJust )
-
-import Data.Maybe
   ( fromJust
   , isJust
   )
 import qualified Data.Text as T
-  ( unpack )
+import Prelude
+  hiding ( FilePath )
+import Shelly
+
 
 
 ---------
@@ -82,9 +92,9 @@ data Parameters =
     }
   deriving (Show)
 
--- | A data type used to conveniently dump the data to a JSON file.
-data JsonData =
-  JsonData
+-- | A data type used to conveniently dump parameter data to a JSON file.
+data JsonParamData =
+  JsonParamData
     { jsonNumPatternNodes :: Int
     , jsonPatternEdges :: [(Int, Int)]
     , jsonNumFunctionNodes :: Int
@@ -94,7 +104,7 @@ data JsonData =
     , jsonAlternativeEdges :: [[Int]]
     }
 
-instance ToJSON JsonData where
+instance ToJSON JsonParamData where
   toJSON p =
     object [ "num-pattern-nodes"    .= (jsonNumPatternNodes p)
            , "pattern-edges"        .= (jsonPatternEdges p)
@@ -104,6 +114,19 @@ instance ToJSON JsonData where
            , "initial-edge-domains" .= (jsonInitialEdgeDomains p)
            , "alternative-edges"    .= (jsonAlternativeEdges p)
            ]
+
+data SolutionData =
+  SolutionData
+    { nodeMaps :: [[(Int, Int)]]
+      -- ^ Found node maps. The first element in the tuple represents the index
+      -- of a pattern node, and the second element the index of a function node.
+    }
+
+instance FromJSON SolutionData where
+  parseJSON (Object v) =
+    SolutionData
+      <$> v .: "pat-to-func-node-maps"
+  parseJSON _ = mzero
 
 
 
@@ -125,7 +148,9 @@ findMatches ::
      -- ^ Found matches.
 findMatches fg pg =
   let params = computeParameters fg pg
-      matches = invokeMatcher params
+--      matches = invokeMatcher params
+      -- TODO: implement
+      matches = []
   in nub matches
 
 computeParameters ::
@@ -230,14 +255,19 @@ groupEdges f es =
           if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
 
-invokeMatcher :: Parameters -> [Match Node]
+invokeMatcher :: Parameters -> Sh SolutionData
 invokeMatcher p =
-  -- TODO: implement
-  []
+  do prepareSystem
+     json_file <- queryJsonFilePath
+     dumpParamsToJsonFile p json_file
+     script <- queryScriptPath
+     abs_json_file <- absPath json_file
+     result <- run script [toTextIgnore abs_json_file]
+     readSolutionData result
 
-toJsonData :: Parameters -> JsonData
-toJsonData p =
-  JsonData
+toJsonParamData :: Parameters -> JsonParamData
+toJsonParamData p =
+  JsonParamData
     { jsonNumPatternNodes = length $ indexedPatternNodes p
     , jsonPatternEdges = indexedPatternEdges p
     , jsonNumFunctionNodes = length $ indexedFunctionNodes p
@@ -246,3 +276,35 @@ toJsonData p =
     , jsonInitialEdgeDomains = initialEdgeDomains p
     , jsonAlternativeEdges = alternativeEdges p
     }
+
+queryDataDirPath :: Sh FilePath
+queryDataDirPath = return ".PatMatchData"
+
+queryJsonFilePath :: Sh FilePath
+queryJsonFilePath =
+  do dir <- queryDataDirPath
+     return $ dir </> "pat-match-data.json"
+
+queryScriptPath :: Sh FilePath
+queryScriptPath =
+  do text <- get_env_text "CP_PATTERN_MATCHER_SCRIPT"
+     return $ fromText text
+
+-- | Sets up necessary directories and files.
+prepareSystem :: Sh ()
+prepareSystem =
+  do dir <-queryDataDirPath
+     does_dir_exist <- test_d dir
+     when (not does_dir_exist) (mkdir dir)
+
+dumpParamsToJsonFile :: Parameters -> FilePath -> Sh ()
+dumpParamsToJsonFile p file =
+  do let json_str = T.pack $ BS.unpack $ encode $ toJsonParamData p
+     writefile file json_str
+
+readSolutionData :: T.Text -> Sh SolutionData
+readSolutionData t =
+  do let result = decode (BS.pack $ T.unpack t)
+     if (isJust result)
+     then return $ fromJust result
+     else terror "failed to parse JSON"
