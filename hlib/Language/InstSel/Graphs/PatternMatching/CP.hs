@@ -235,7 +235,8 @@ findAlternativeInEdges g n =
         getEdgeType e1 == getEdgeType e2
         &&
         getInEdgeNr e1 == getInEdgeNr e2
-  in groupEdges areAlternatives (getInEdges g n)
+      groups = groupEdges areAlternatives (getInEdges g n)
+  in filter (\p -> length p > 1) groups
 
 findAlternativeOutEdges :: Graph -> Node -> [[Edge]]
 findAlternativeOutEdges g n =
@@ -243,7 +244,8 @@ findAlternativeOutEdges g n =
         getEdgeType e1 == getEdgeType e2
         &&
         getOutEdgeNr e1 == getOutEdgeNr e2
-  in groupEdges areAlternatives (getOutEdges g n)
+      groups = groupEdges areAlternatives (getOutEdges g n)
+  in filter (\p -> length p > 1) groups
 
 -- | Groups edges according to a predicate function such that a set of edges,
 -- for which the predicate holds for every edge pair in that set, are grouped
