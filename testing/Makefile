@@ -11,6 +11,10 @@ GHCFLAGS += -Wall -i$(HLIBPATH)
 param-test:
 	$(GHC) $(GHCFLAGS) param-test.hs
 
+.PHONY: run-param-test
+run-param-test: param-test
+	./param-test
+
 .PHONY: match-test
 match-test:
 	$(GHC) $(GHCFLAGS) match-test.hs
