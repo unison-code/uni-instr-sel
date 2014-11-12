@@ -293,7 +293,7 @@ tmTest =
                       , AssemblyRegister 1
                       , AssemblyVerbatim ", ?"
                       , AssemblyVerbatim ") ("
-                      , AssemblyRegister 3
+                      , AssemblyRegister 2
                       , AssemblyVerbatim ", ?"
                       , AssemblyVerbatim ")"
                       ]
