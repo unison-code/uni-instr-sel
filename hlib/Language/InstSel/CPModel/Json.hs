@@ -69,15 +69,15 @@ instance FromJSON CPModelParams where
   parseJSON (Object v) =
     CPModelParams
       <$> v .: "function-data"
-      <*> v .: "pattern-instance-data"
+      <*> v .: "match-data"
       <*> v .: "machine-data"
   parseJSON _ = mzero
 
 instance ToJSON CPModelParams where
   toJSON p =
-    object [ "function-data"         .= (funcData p)
-           , "pattern-instance-data" .= (patInstData p)
-           , "machine-data"          .= (machData p)
+    object [ "function-data" .= (functionData p)
+           , "match-data"    .= (matchData p)
+           , "machine-data"  .= (machineData p)
            ]
 
 instance FromJSON FunctionGraphData where
@@ -129,12 +129,12 @@ instance ToJSON BBLabelData where
            , "label" .= (labBB d)
            ]
 
-instance FromJSON PatternInstanceData where
+instance FromJSON MatchData where
   parseJSON (Object v) =
-    PatternInstanceData
+    MatchData
       <$> v .: "instruction-id"
       <*> v .: "pattern-id"
-      <*> v .: "pattern-instance-id"
+      <*> v .: "match-id"
       <*> v .: "operation-nodes-covered"
       <*> v .: "data-nodes-defined"
       <*> v .: "data-nodes-used"
@@ -150,24 +150,24 @@ instance FromJSON PatternInstanceData where
       <*> v .: "assembly-id-maps"
   parseJSON _ = mzero
 
-instance ToJSON PatternInstanceData where
+instance ToJSON MatchData where
   toJSON d =
-    object [ "instruction-id"                .= (patInstructionID d)
-           , "pattern-id"                    .= (patPatternID d)
-           , "pattern-instance-id"           .= (patInstanceID d)
-           , "operation-nodes-covered"       .= (patOperationsCovered d)
-           , "data-nodes-defined"            .= (patDataNodesDefined d)
-           , "data-nodes-used"               .= (patDataNodesUsed d)
-           , "data-nodes-used-by-phis"       .= (patDataNodesUsedByPhis d)
-           , "state-nodes-defined"           .= (patStateNodesDefined d)
-           , "state-nodes-used"              .= (patStateNodesUsed d)
-           , "label-nodes-referred"          .= (patLabelNodesReferred d)
-           , "constraints"                   .= (patConstraints d)
-           , "apply-use-def-dom-constraints" .= (patAUDDC d)
-           , "has-control-nodes"             .= (patHasControlNodes d)
-           , "code-size"                     .= (patCodeSize d)
-           , "latency"                       .= (patLatency d)
-           , "assembly-id-maps"              .= (patAssIDMaps d)
+    object [ "instruction-id"                .= (mInstructionID d)
+           , "pattern-id"                    .= (mPatternID d)
+           , "match-id"                      .= (mMatchID d)
+           , "operation-nodes-covered"       .= (mOperationsCovered d)
+           , "data-nodes-defined"            .= (mDataNodesDefined d)
+           , "data-nodes-used"               .= (mDataNodesUsed d)
+           , "data-nodes-used-by-phis"       .= (mDataNodesUsedByPhis d)
+           , "state-nodes-defined"           .= (mStateNodesDefined d)
+           , "state-nodes-used"              .= (mStateNodesUsed d)
+           , "label-nodes-referred"          .= (mLabelNodesReferred d)
+           , "constraints"                   .= (mConstraints d)
+           , "apply-use-def-dom-constraints" .= (mAUDDC d)
+           , "has-control-nodes"             .= (mHasControlNodes d)
+           , "code-size"                     .= (mCodeSize d)
+           , "latency"                       .= (mLatency d)
+           , "assembly-id-maps"              .= (mAssIDMaps d)
            ]
 
 instance FromJSON MachineData where
@@ -213,14 +213,14 @@ instance FromJSON PatternID where
   parseJSON _ = mzero
 
 instance ToJSON PatternID where
-  toJSON iid = toJSON (fromPatternID iid)
+  toJSON pid = toJSON (fromPatternID pid)
 
-instance FromJSON PatternInstanceID where
-  parseJSON (Number sn) = return $ toPatternInstanceID $ sn2nat sn
+instance FromJSON MatchID where
+  parseJSON (Number sn) = return $ toMatchID $ sn2nat sn
   parseJSON _ = mzero
 
-instance ToJSON PatternInstanceID where
-  toJSON iid = toJSON (fromPatternInstanceID iid)
+instance ToJSON MatchID where
+  toJSON mid = toJSON (fromMatchID mid)
 
 instance FromJSON RegisterID where
   parseJSON (Number sn) = return $ toRegisterID $ sn2nat sn
@@ -253,8 +253,8 @@ instance ToJSON BBLabelID where
 instance FromJSON RawCPSolutionData where
   parseJSON (Object v) =
     RawCPSolutionData
-      <$> v .: "bb-allocated-for-pi"
-      <*> v .: "is-pi-selected"
+      <$> v .: "bb-allocated-for-match"
+      <*> v .: "is-match-selected"
       <*> v .: "order-of-bbs"
       <*> v .: "has-dnode-reg"
       <*> v .: "reg-selected-for-dnode"
@@ -266,7 +266,7 @@ instance FromJSON RawPostParams where
   parseJSON (Object v) =
     RawPostParams
       <$> v .: "model-params"
-      <*> ((v .: "array-index-to-id-maps") >>= (.: "pattern-instances"))
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "matches"))
       <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
       <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
   parseJSON _ = mzero

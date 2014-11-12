@@ -92,12 +92,12 @@ class Params {
     getNumRegistersInM(void) const;
 
     /**
-     * Gets the number of pattern instances.
+     * Gets the number of matches.
      *
-     * @returns Number of instances.
+     * @returns Number of matches.
      */
     size_t
-    getNumPIs(void) const;
+    getNumMatches(void) const;
 
     /**
      * Gets the list of dominators for a given label node in the function graph.
@@ -120,115 +120,113 @@ class Params {
     getRootLabelInF(void) const;
 
     /**
-     * Gets the code size of selecting a particular pattern instance.
+     * Gets the code size of selecting a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns The code size (in bytes).
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     int
-    getCodeSizeForPI(const Model::ID& instance) const;
+    getCodeSizeForMatch(const Model::ID& match) const;
 
     /**
-     * Gets the latency of selecting a particular pattern instance.
+     * Gets the latency of selecting a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns The latency (in cycles).
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     int
-    getLatencyForPI(const Model::ID& instance) const;
+    getLatencyForMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function operation nodes covered by a particular pattern
-     * instance.
+     * Gets the function operation nodes covered by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getOperationNodesCoveredByPI(const Model::ID& instance) const;
+    getOperationNodesCoveredByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function data nodes defined by a particular pattern instance.
+     * Gets the function data nodes defined by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getDataNodesDefinedByPI(const Model::ID& instance) const;
+    getDataNodesDefinedByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function state nodes defined by a particular pattern instance.
+     * Gets the function state nodes defined by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getStateNodesDefinedByPI(const Model::ID& instance) const;
+    getStateNodesDefinedByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function data nodes used by a particular pattern instance.
+     * Gets the function data nodes used by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getDataNodesUsedByPI(const Model::ID& instance) const;
+    getDataNodesUsedByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function state nodes used by a particular pattern instance.
+     * Gets the function state nodes used by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getStateNodesUsedByPI(const Model::ID& instance) const;
+    getStateNodesUsedByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function label nodes referred to by a particular pattern
-     * instance.
+     * Gets the function label nodes referred to by a particular match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns List of node IDs.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getLabelNodesReferredByPI(const Model::ID& instance) const;
+    getLabelNodesReferredByMatch(const Model::ID& match) const;
 
     /**
      * Checks if use-def-dom constraints should be removed for a particular
-     * pattern instance.
+     * match.
      *
-     * @param instance
-     *        Pattern instance ID.
+     * @param match
+     *        Match ID.
      * @returns Boolean.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     bool
-    getAUDDCSettingForPI(const Model::ID& instance) const;
+    getAUDDCSettingForMatch(const Model::ID& match) const;
 
     /**
      * Gets the array index for a given operation node in the function graph.
@@ -355,28 +353,28 @@ class Params {
     getIDOfRegisterInM(const Model::ArrayIndex& i) const;
 
     /**
-     * Gets the array index for a given pattern instance.
+     * Gets the array index for a given match.
      *
      * @param id
-     *        Pattern instance ID.
+     *        Match ID.
      * @returns Corresponding array index.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     Model::ArrayIndex
-    getIndexForPI(const Model::ID& id) const;
+    getIndexForMatch(const Model::ID& id) const;
 
     /**
-     * Gets the ID of a given array index for a pattern instance.
+     * Gets the ID of a given array index for a match.
      *
      * @param i
      *        Array index.
-     * @returns Corresponding pattern instance ID.
+     * @returns Corresponding match ID.
      * @throws Exception
-     *         When there is no instance with such an array index.
+     *         When there is no match with such an array index.
      */
     Model::ID
-    getIDOfPI(const Model::ArrayIndex& i) const;
+    getIDOfMatch(const Model::ArrayIndex& i) const;
 
     /**
      * Gets a list of array indices for a given list of operation nodes in the
@@ -508,17 +506,16 @@ class Params {
     getIDsOfRegistersInM(const std::list<Model::ArrayIndex>& is) const;
 
     /**
-     * Gets a list of IDs of a given list of array indices for pattern
-     * instances.
+     * Gets a list of IDs of a given list of array indices for matches.
      *
      * @param is
      *        List of array indices.
-     * @returns List of corresponding pattern instance IDs.
+     * @returns List of corresponding match IDs.
      * @throws Exception
      *         When there is an array index with no mapping.
      */
     std::list<Model::ID>
-    getIDsOfPIs(const std::list<Model::ArrayIndex>& is) const;
+    getIDsOfMatches(const std::list<Model::ArrayIndex>& is) const;
 
     /**
      * Gets a list of IDs for all operation nodes in the function graph.
@@ -561,12 +558,12 @@ class Params {
     getIDsForAllRegisterInM(void) const;
 
     /**
-     * Gets a list of IDs for all pattern instances.
+     * Gets a list of IDs for all matches.
      *
      * @returns List of IDs.
      */
     std::list<Model::ID>
-    getIDsForAllPIs(void) const;
+    getIDsForAllMatches(void) const;
 
     /**
      * Gets the constraints for the function graph.
@@ -577,16 +574,16 @@ class Params {
     getConstraintsForF(void) const;
 
     /**
-     * Gets the constraints for a given pattern instance.
+     * Gets the constraints for a given match.
      *
      * @param id
-     *        Pattern instance ID.
+     *        Match ID.
      * @returns Corresponding constraints.
      * @throws Exception
-     *         When there is no instance with such an ID.
+     *         When there is no match with such an ID.
      */
     std::list<const Model::Constraint*>
-    getConstraintsForPI(const Model::ID& id) const;
+    getConstraintsForMatch(const Model::ID& id) const;
 
     /**
      * Checks if a node ID represents an operation node in the function graph.
@@ -888,7 +885,7 @@ class Params {
 
     /**
      * Same as computeMappingsForFOperationNodes(const Json::Value&,
-     * Params&) but for the pattern instance IDs.
+     * Params&) but for the match IDs.
      *
      * @param root
      *        The JSON root value.
@@ -898,7 +895,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForPIs(const Json::Value& root, Params& p);
+    computeMappingsForMatches(const Json::Value& root, Params& p);
 
     /**
      * Sets the root label for the function graph.
@@ -927,7 +924,7 @@ class Params {
     setConstraintsForF(const Json::Value& root, Params& p);
 
     /**
-     * Sets the code size values of the pattern instances.
+     * Sets the code size values of the matches.
      *
      * @param root
      *        The JSON root value.
@@ -937,10 +934,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setCodeSizesForPIs(const Json::Value& root, Params& p);
+    setCodeSizesForMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the latency values of the pattern instances.
+     * Sets the latency values of the matches.
      *
      * @param root
      *        The JSON root value.
@@ -950,11 +947,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLatenciesForPIs(const Json::Value& root, Params& p);
+    setLatenciesForMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the apply-use-def-dom-constraints settings for the pattern
-     * instances.
+     * Sets the apply-use-def-dom-constraints settings for the matches.
      *
      * @param root
      *        The JSON root value.
@@ -964,11 +960,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setAUDDCSettingsForPIs(const Json::Value& root, Params& p);
+    setAUDDCSettingsForMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function operation nodes covered by the respective pattern
-     * instances.
+     * Sets the function operation nodes covered by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -978,11 +973,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setOperationNodesCoveredByPIs(const Json::Value& root, Params& p);
+    setOperationNodesCoveredByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function data nodes defined by the respective pattern
-     * instances.
+     * Sets the function data nodes defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -992,11 +986,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByPIs(const Json::Value& root, Params& p);
+    setDataNodesDefinedByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function state nodes defined by the respective pattern
-     * instances.
+     * Sets the function state nodes defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -1006,10 +999,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByPIs(const Json::Value& root, Params& p);
+    setStateNodesDefinedByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function data nodes used by the respective pattern instances.
+     * Sets the function data nodes used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -1019,10 +1012,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setDataNodesUsedByPIs(const Json::Value& root, Params& p);
+    setDataNodesUsedByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function state nodes used by the respective pattern instances.
+     * Sets the function state nodes used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -1032,11 +1025,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setStateNodesUsedByPIs(const Json::Value& root, Params& p);
+    setStateNodesUsedByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function label nodes referred to by the respective pattern
-     * instances.
+     * Sets the function label nodes referred to by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -1046,10 +1038,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByPIs(const Json::Value& root, Params& p);
+    setLabelNodesReferredByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the pattern constraints.
+     * Sets the match constraints.
      *
      * @param root
      *        The JSON root value.
@@ -1059,7 +1051,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setConstraintsForPIs(const Json::Value& root, Params& p);
+    setConstraintsForMatches(const Json::Value& root, Params& p);
 
     /**
      * Destroys the function constraints contained by this object.
@@ -1068,10 +1060,10 @@ class Params {
     destroyConstraintsForF(void);
 
     /**
-     * Destroys the pattern instance constraints contained by this object.
+     * Destroys the match constraints contained by this object.
      */
     void
-    destroyConstraintsForPIs(void);
+    destroyConstraintsForMatches(void);
 
   protected:
     /**
@@ -1141,74 +1133,70 @@ class Params {
     std::map<Model::ArrayIndex, Model::ID> mach_reg_vk_mappings_;
 
     /**
-     * Maps the ID of a pattern instance to an array index.
+     * Maps the ID of a match to an array index.
      */
-    std::map<Model::ID, Model::ArrayIndex> pat_inst_kv_mappings_;
+    std::map<Model::ID, Model::ArrayIndex> match_kv_mappings_;
 
     /**
-     * Maps an array index to the ID of a pattern instance.
+     * Maps an array index to the ID of a match.
      */
-    std::map<Model::ArrayIndex, Model::ID> pat_inst_vk_mappings_;
+    std::map<Model::ArrayIndex, Model::ID> match_vk_mappings_;
 
     /**
-     * The code size (in bytes) of the instruction for each pattern instance.
+     * The code size (in bytes) of the instruction for each match.
      */
-    std::map<Model::ID, int> pat_inst_code_sizes_;
+    std::map<Model::ID, int> match_code_sizes_;
 
     /**
-     * The latency (in cycles) of the instruction for each pattern instance.
+     * The latency (in cycles) of the instruction for each match.
      */
-    std::map<Model::ID, int> pat_inst_latencies_;
+    std::map<Model::ID, int> match_latencies_;
 
     /**
      * The operation nodes in the function graph which are covered by each
-     * pattern instance.
+     * match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_operations_covered_;
+    std::map<Model::ID, std::list<Model::ID> > match_operations_covered_;
 
     /**
-     * The data nodes in the function graph which are defined by each pattern
-     * instance.
+     * The data nodes in the function graph which are defined by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_data_defined_;
+    std::map<Model::ID, std::list<Model::ID> > match_data_defined_;
 
     /**
-     * The data nodes in the function graph which are used by each pattern
-     * instance.
+     * The data nodes in the function graph which are used by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_data_used_;
+    std::map<Model::ID, std::list<Model::ID> > match_data_used_;
 
     /**
-     * The state nodes in the function graph which are defined by each pattern
-     * instance.
+     * The state nodes in the function graph which are defined by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_states_defined_;
+    std::map<Model::ID, std::list<Model::ID> > match_states_defined_;
 
     /**
-     * The state nodes in the function graph which are used by each pattern
-     * instance.
+     * The state nodes in the function graph which are used by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_states_used_;
+    std::map<Model::ID, std::list<Model::ID> > match_states_used_;
 
     /**
      * The label nodes in the function graph which are referred to by each
-     * pattern instance.
+     * match.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_labels_referred_;
+    std::map<Model::ID, std::list<Model::ID> > match_labels_referred_;
 
     /**
-     * The constraints for each pattern instance. The constraints are destroyed
-     * when this object is deleted.
+     * The constraints for each match. The constraints are destroyed when this
+     * object is deleted.
      */
     std::map<Model::ID, std::list<const Model::Constraint*> >
-    pat_inst_constraints_;
+    match_constraints_;
 
     /**
-     * Whether use-def-dom constraints should be applied on a particular pattern
-     * instance. The ability to turn these off are required by the generic phi
+     * Whether use-def-dom constraints should be applied on a particular
+     * match. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::map<Model::ID, bool> pat_inst_use_def_dom_constraints_;
+    std::map<Model::ID, bool> match_use_def_dom_constraints_;
 };
 
 #endif

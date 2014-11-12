@@ -23,7 +23,9 @@ where
 
 import Language.InstSel.Constraints.Base
 import Language.InstSel.Graphs
-  ( NodeID (..)
+  ( MatchID (..)
+  , NodeID (..)
+  , toMatchID
   , toNodeID
   )
 import Language.InstSel.Patterns.IDs
@@ -92,12 +94,12 @@ instance FromLisp NumExpr where
     <|> struct "int-to-num" Int2NumExpr e
     <|> struct "bool-to-num" Bool2NumExpr e
     <|> struct "node-to-num" Node2NumExpr e
-    <|> struct "pat-inst-to-num" PatternInstance2NumExpr e
+    <|> struct "match-to-num" Match2NumExpr e
     <|> struct "instr-to-num" Instruction2NumExpr e
     <|> struct "pat-to-num" Pattern2NumExpr e
     <|> struct "lab-to-num" Label2NumExpr e
     <|> struct "reg-to-num" Register2NumExpr e
-    <|> struct "dist-pat-to-lab" DistanceBetweenInstanceAndLabelExpr e
+    <|> struct "dist-pat-to-lab" DistanceBetweenMatchAndLabelExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)         = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -105,12 +107,12 @@ instance ToLisp NumExpr where
   toLisp (Int2NumExpr e)             = mkStruct "int-to-num" [toLisp e]
   toLisp (Bool2NumExpr e)            = mkStruct "bool-to-num" [toLisp e]
   toLisp (Node2NumExpr e)            = mkStruct "node-to-num" [toLisp e]
-  toLisp (PatternInstance2NumExpr e) = mkStruct "pat-inst-to-num" [toLisp e]
+  toLisp (Match2NumExpr e) = mkStruct "match-to-num" [toLisp e]
   toLisp (Instruction2NumExpr e)     = mkStruct "instr-to-num" [toLisp e]
   toLisp (Pattern2NumExpr e)         = mkStruct "pat-to-num" [toLisp e]
   toLisp (Label2NumExpr e)           = mkStruct "lab-to-num" [toLisp e]
   toLisp (Register2NumExpr e)        = mkStruct "reg-to-num" [toLisp e]
-  toLisp (DistanceBetweenInstanceAndLabelExpr lhs rhs) =
+  toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
     mkStruct "dist-pat-to-lab" [toLisp lhs, toLisp rhs]
 
 instance FromLisp IntExpr where
@@ -129,17 +131,17 @@ instance FromLisp NodeExpr where
 instance ToLisp NodeExpr where
   toLisp (ANodeIDExpr nid) = mkStruct "id" [toLisp nid]
 
-instance FromLisp PatternInstanceExpr where
-  parseLisp (Symbol "this") = return ThisPatternInstanceExpr
+instance FromLisp MatchExpr where
+  parseLisp (Symbol "this") = return ThisMatchExpr
   parseLisp e =
-        struct "id" APatternInstanceIDExpr e
+        struct "id" AMatchIDExpr e
     <|> struct "cov-of-onode" CovererOfOperationNodeExpr e
     <|> struct "def-of-dnode" DefinerOfDataNodeExpr e
     <|> struct "def-of-snode" DefinerOfStateNodeExpr e
 
-instance ToLisp PatternInstanceExpr where
-  toLisp (APatternInstanceIDExpr piid) = mkStruct "id" [toLisp piid]
-  toLisp ThisPatternInstanceExpr = Symbol "this"
+instance ToLisp MatchExpr where
+  toLisp (AMatchIDExpr piid) = mkStruct "id" [toLisp piid]
+  toLisp ThisMatchExpr = Symbol "this"
   toLisp (CovererOfOperationNodeExpr e) = mkStruct "cov-of-onode" [toLisp e]
   toLisp (DefinerOfDataNodeExpr e)  = mkStruct "def-of-dnode" [toLisp e]
   toLisp (DefinerOfStateNodeExpr e) = mkStruct "def-of-snode" [toLisp e]
@@ -156,21 +158,21 @@ instance ToLisp InstructionExpr where
 instance FromLisp PatternExpr where
   parseLisp e =
         struct "id" APatternIDExpr e
-    <|> struct "pat-of-pat-inst" PatternOfPatternInstanceExpr e
+    <|> struct "pat-of-match" PatternOfMatchExpr e
 
 instance ToLisp PatternExpr where
   toLisp (APatternIDExpr iid) = mkStruct "id" [toLisp iid]
-  toLisp (PatternOfPatternInstanceExpr e) =
-    mkStruct "pat-of-pat-inst" [toLisp e]
+  toLisp (PatternOfMatchExpr e) =
+    mkStruct "pat-of-match" [toLisp e]
 
 instance FromLisp LabelExpr where
   parseLisp e =
-        struct "lab-alloc-to-pat-inst" LabelAllocatedToPatternInstanceExpr e
+        struct "lab-alloc-to-match" LabelAllocatedToMatchExpr e
     <|> struct "lab-of-lnode" LabelOfLabelNodeExpr e
 
 instance ToLisp LabelExpr where
-  toLisp (LabelAllocatedToPatternInstanceExpr e) =
-    mkStruct "lab-alloc-to-pat-inst" [toLisp e]
+  toLisp (LabelAllocatedToMatchExpr e) =
+    mkStruct "lab-alloc-to-match" [toLisp e]
   toLisp (LabelOfLabelNodeExpr e) = mkStruct "lab-of-lnode" [toLisp e]
 
 instance FromLisp RegisterExpr where
@@ -226,12 +228,12 @@ instance FromLisp InstructionID where
 instance ToLisp InstructionID where
   toLisp (InstructionID nid) = Number (AP.I (fromNatural nid))
 
-instance FromLisp PatternInstanceID where
-  parseLisp (Number (AP.I n)) = return $ toPatternInstanceID n
+instance FromLisp MatchID where
+  parseLisp (Number (AP.I n)) = return $ toMatchID n
   parseLisp _ = mzero
 
-instance ToLisp PatternInstanceID where
-  toLisp (PatternInstanceID nid) = Number (AP.I (fromNatural nid))
+instance ToLisp MatchID where
+  toLisp (MatchID nid) = Number (AP.I (fromNatural nid))
 
 instance FromLisp PatternID where
   parseLisp (Number (AP.I n)) = return $ toPatternID n

@@ -156,137 +156,140 @@ void outputModelParams(
         << "\"num-registers\" : ";
     printJsonValue(out, params.getNumRegistersInM());
 
-    // Pattern instance data
+    // Match data
 
     out << "," << endl
-        << "\"num-pattern-instances\" : ";
-    printJsonValue(out, params.getNumPIs());
+        << "\"num-matches\" : ";
+    printJsonValue(out, params.getNumMatches());
 
     out << "," << endl
-        << "\"pat-inst-onodes-covered\" : ";
+        << "\"match-onodes-covered\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getOperationNodesCoveredByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getOperationNodesCoveredByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForOperationNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-dnodes-defined\" : ";
+        << "\"match-dnodes-defined\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getDataNodesDefinedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getDataNodesDefinedByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForDataNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-snodes-defined\" : ";
+        << "\"match-snodes-defined\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getStateNodesDefinedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getStateNodesDefinedByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForStateNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-dnodes-used\" : ";
+        << "\"match-dnodes-used\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getDataNodesUsedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getDataNodesUsedByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForDataNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-snodes-used\" : ";
+        << "\"match-snodes-used\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getStateNodesUsedByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getStateNodesUsedByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForStateNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-lnodes-referred\" : ";
+        << "\"match-lnodes-referred\" : ";
     {
-        size_t num_instances = params.getNumPIs();
-        vector< list<ArrayIndex> > node_lists(num_instances);
-        for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getLabelNodesReferredByPI(id);
-            node_lists[params.getIndexForPI(id)] =
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getLabelNodesReferredByMatch(id);
+            node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForLabelNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }
 
     out << "," << endl
-        << "\"pat-inst-code-sizes\" : ";
+        << "\"match-code-sizes\" : ";
     {
-        vector<int> code_sizes(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            code_sizes[params.getIndexForPI(id)] = params.getCodeSizeForPI(id);
+        vector<int> code_sizes(params.getNumMatches());
+        for (const ID& id : params.getIDsForAllMatches()) {
+            code_sizes[params.getIndexForMatch(id)] =
+                params.getCodeSizeForMatch(id);
         }
         printJsonValue(out, code_sizes);
     }
 
     out << "," << endl
-        << "\"pat-inst-latencies\" : ";
+        << "\"match-latencies\" : ";
     {
-        vector<int> latencies(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            latencies[params.getIndexForPI(id)] = params.getLatencyForPI(id);
+        vector<int> latencies(params.getNumMatches());
+        for (const ID& id : params.getIDsForAllMatches()) {
+            latencies[params.getIndexForMatch(id)] =
+                params.getLatencyForMatch(id);
         }
         printJsonValue(out, latencies);
     }
 
     out << "," << endl
-        << "\"pat-inst-apply-use-def-dom-constraints\" : ";
+        << "\"match-apply-use-def-dom-constraints\" : ";
     {
-        vector<bool> settings(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
-            settings[params.getIndexForPI(id)] =
-                params.getAUDDCSettingForPI(id);
+        vector<bool> settings(params.getNumMatches());
+        for (const ID& id : params.getIDsForAllMatches()) {
+            settings[params.getIndexForMatch(id)] =
+                params.getAUDDCSettingForMatch(id);
         }
         printJsonValue(out, settings);
     }
 
     out << "," << endl
-        << "\"pat-inst-constraints\" : ";
+        << "\"match-constraints\" : ";
     {
-        vector< list<string> > all_cs_str(params.getNumPIs());
-        for (const ID& id : params.getIDsForAllPIs()) {
+        vector< list<string> > all_cs_str(params.getNumMatches());
+        for (const ID& id : params.getIDsForAllMatches()) {
             list<string> cs_str;
-            const list<const Constraint*>& cs = params.getConstraintsForPI(id);
+            const list<const Constraint*>& cs =
+                params.getConstraintsForMatch(id);
             for (const Constraint* c : cs) {
                 string str;
                 const Constraint* new_c =
-                    cprocessor.processConstraintForPI(c, id);
+                    cprocessor.processConstraintForMatch(c, id);
                 str += "\"" + new_c->toLisp() + "\"";
                 cs_str.push_back(str);
                 delete new_c;
             }
-            all_cs_str[params.getIndexForPI(id)] = cs_str;
+            all_cs_str[params.getIndexForMatch(id)] = cs_str;
         }
         printJsonValue(out, all_cs_str);
     }
@@ -310,10 +313,10 @@ outputPostprocessingParams(
     out << "," << endl;
     out << "\"array-index-to-id-maps\": {" << endl;
 
-    out << "\"pattern-instances\": ";
+    out << "\"matches\": ";
     printJsonValue(
         out,
-        params.getIDsOfPIs(createArrayIndices(0, params.getNumPIs()))
+        params.getIDsOfMatches(createArrayIndices(0, params.getNumMatches()))
     );
 
     out << "," << endl

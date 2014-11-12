@@ -104,14 +104,14 @@ class ConstraintParser {
     parseNodeExpr(std::string& str);
 
     /**
-     * Parses a pattern instance expression.
+     * Parses a match expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    PatternInstanceExpr*
-    parsePatternInstanceExpr(std::string& str);
+    MatchExpr*
+    parseMatchExpr(std::string& str);
 
     /**
      * Parses an instruction expression.

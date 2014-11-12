@@ -30,15 +30,18 @@ using namespace Model;
 
 ConstraintProcessor::ConstraintProcessor(const Params& p)
     : p_(p),
-      is_processing_pi_constraint_(false)
+      is_processing_constraint_(false)
 {}
 
 ConstraintProcessor::~ConstraintProcessor(void) {}
 
 Constraint*
-ConstraintProcessor::processConstraintForPI(const Constraint* c, const ID& id) {
-    is_processing_pi_constraint_ = true;
-    piid_ = id;
+ConstraintProcessor::processConstraintForMatch(
+    const Constraint* c,
+    const ID& id
+) {
+    is_processing_constraint_ = true;
+    mid_ = id;
 
     if (const BoolExprConstraint* dc =
         dynamic_cast<const BoolExprConstraint*>(c))
@@ -115,10 +118,10 @@ ConstraintProcessor::processBoolExpr(const BoolExpr* e) {
              dynamic_cast<const DataNodeIsAnIntConstantExpr*>(e)) {
         return new DataNodeIsAnIntConstantExpr(processNodeExpr(de->getExpr()));
     }
-    else if (const PatternInstanceIsSelectedExpr* de =
-             dynamic_cast<const PatternInstanceIsSelectedExpr*>(e)) {
-        return new PatternInstanceIsSelectedExpr(
-            processPatternInstanceExpr(de->getExpr()));
+    else if (const MatchIsSelectedExpr* de =
+             dynamic_cast<const MatchIsSelectedExpr*>(e))
+    {
+        return new MatchIsSelectedExpr(processMatchExpr(de->getExpr()));
     }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
@@ -146,17 +149,15 @@ ConstraintProcessor::processNumExpr(const NumExpr* e) {
     {
         return new NodeToNumExpr(processNodeExpr(de->getExpr()));
     }
-    else if (const PatternInstanceToNumExpr* de =
-             dynamic_cast<const PatternInstanceToNumExpr*>(e))
+    else if (const MatchToNumExpr* de =
+             dynamic_cast<const MatchToNumExpr*>(e))
     {
-        return new PatternInstanceToNumExpr(
-            processPatternInstanceExpr(de->getExpr()));
+        return new MatchToNumExpr(processMatchExpr(de->getExpr()));
     }
     else if (const InstructionToNumExpr* de =
              dynamic_cast<const InstructionToNumExpr*>(e))
     {
-        return new InstructionToNumExpr(
-            processInstructionExpr(de->getExpr()));
+        return new InstructionToNumExpr(processInstructionExpr(de->getExpr()));
     }
     else if (const PatternToNumExpr* de =
              dynamic_cast<const PatternToNumExpr*>(e))
@@ -173,11 +174,11 @@ ConstraintProcessor::processNumExpr(const NumExpr* e) {
     {
         return new RegisterToNumExpr(processRegisterExpr(de->getExpr()));
     }
-    else if (const DistanceBetweenPatternInstanceAndLabelExpr* de =
-             dynamic_cast<const DistanceBetweenPatternInstanceAndLabelExpr*>(e))
+    else if (const DistanceBetweenMatchAndLabelExpr* de =
+             dynamic_cast<const DistanceBetweenMatchAndLabelExpr*>(e))
     {
-        return new DistanceBetweenPatternInstanceAndLabelExpr(
-            processPatternInstanceExpr(de->getLhs()),
+        return new DistanceBetweenMatchAndLabelExpr(
+            processMatchExpr(de->getLhs()),
             processLabelExpr(de->getRhs()));
     }
     else {
@@ -227,20 +228,20 @@ ConstraintProcessor::processIntExpr(const IntExpr* e) {
     }
 }
 
-PatternInstanceExpr*
-ConstraintProcessor::processPatternInstanceExpr(const PatternInstanceExpr* e) {
-    if (const APatternInstanceIDExpr* de =
-        dynamic_cast<const APatternInstanceIDExpr*>(e))
+MatchExpr*
+ConstraintProcessor::processMatchExpr(const MatchExpr* e) {
+    if (const AMatchIDExpr* de =
+        dynamic_cast<const AMatchIDExpr*>(e))
     {
-        return new APatternInstanceArrayIndexExpr(
-            p_.getIndexForPI(de->getID()));
+        return new AMatchArrayIndexExpr(
+            p_.getIndexForMatch(de->getID()));
     }
-    else if (dynamic_cast<const ThisPatternInstanceExpr*>(e)) {
-        if (!is_processing_pi_constraint_) {
-            THROW(Exception, "ThisPatternInstanceExpr is only allowed to be "
+    else if (dynamic_cast<const ThisMatchExpr*>(e)) {
+        if (!is_processing_constraint_) {
+            THROW(Exception, "ThisMatchExpr is only allowed to be "
                              "used within pattern instance constraints");
         }
-        return new APatternInstanceArrayIndexExpr(p_.getIndexForPI(piid_));
+        return new AMatchArrayIndexExpr(p_.getIndexForMatch(mid_));
     }
     else if (const CovererOfOperationNodeExpr* de =
              dynamic_cast<const CovererOfOperationNodeExpr*>(e))
@@ -258,7 +259,7 @@ ConstraintProcessor::processPatternInstanceExpr(const PatternInstanceExpr* e) {
         return new DefinerOfStateNodeExpr(processNodeExpr(de->getExpr()));
     }
     else {
-        THROW(Exception, "PatternInstanceExpr is of unknown derived class");
+        THROW(Exception, "MatchExpr is of unknown derived class");
     }
 }
 
@@ -269,7 +270,8 @@ ConstraintProcessor::processInstructionExpr(const InstructionExpr* e) {
         return NULL;
     }
     else if (const InstructionOfPatternExpr* de =
-             dynamic_cast<const InstructionOfPatternExpr*>(e)) {
+             dynamic_cast<const InstructionOfPatternExpr*>(e))
+    {
         return new InstructionOfPatternExpr(processPatternExpr(de->getExpr()));
     }
     else {
@@ -283,10 +285,10 @@ ConstraintProcessor::processPatternExpr(const PatternExpr* e) {
         // TODO: fix implementation
         return NULL;
     }
-    else if (const PatternOfPatternInstanceExpr* de =
-             dynamic_cast<const PatternOfPatternInstanceExpr*>(e)) {
-        return new PatternOfPatternInstanceExpr(
-            processPatternInstanceExpr(de->getExpr()));
+    else if (const PatternOfMatchExpr* de =
+             dynamic_cast<const PatternOfMatchExpr*>(e))
+    {
+        return new PatternOfMatchExpr(processMatchExpr(de->getExpr()));
     }
     else {
         THROW(Exception, "PatternExpr is of unknown derived class");
@@ -295,11 +297,10 @@ ConstraintProcessor::processPatternExpr(const PatternExpr* e) {
 
 LabelExpr*
 ConstraintProcessor::processLabelExpr(const LabelExpr* e) {
-    if (const LabelAllocatedToPatternInstanceExpr* de =
-        dynamic_cast<const LabelAllocatedToPatternInstanceExpr*>(e))
+    if (const LabelAllocatedToMatchExpr* de =
+        dynamic_cast<const LabelAllocatedToMatchExpr*>(e))
     {
-        return new LabelAllocatedToPatternInstanceExpr(
-            processPatternInstanceExpr(de->getExpr()));
+        return new LabelAllocatedToMatchExpr(processMatchExpr(de->getExpr()));
     }
     else if (const LabelOfLabelNodeExpr* de =
              dynamic_cast<const LabelOfLabelNodeExpr*>(e))

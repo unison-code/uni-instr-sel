@@ -40,7 +40,7 @@ ModelParams::ModelParams(void) {}
 
 ModelParams::~ModelParams(void) {
     destroyConstraintsForF();
-    destroyConstraintsForPIs();
+    destroyConstraintsForMatches();
 }
 
 size_t
@@ -64,7 +64,7 @@ ModelParams::getNumLabelNodesInF(void) const {
 }
 
 size_t
-ModelParams::getNumPIs(void) const {
+ModelParams::getNumMatches(void) const {
     return num_pis_;
 }
 
@@ -90,16 +90,16 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setRootLabelInF(root, p);
     setDomsetsForLabelNodesInF(root, p);
     setConstraintsForF(root, p);
-    setCodeSizesForPIs(root, p);
-    setLatenciesForPIs(root, p);
-    setConstraintsForPIs(root, p);
-    setAUDDCSettingsForPIs(root, p);
-    setOperationNodesCoveredByPIs(root, p);
-    setDataNodesDefinedByPIs(root, p);
-    setDataNodesUsedByPIs(root, p);
-    setStateNodesDefinedByPIs(root, p);
-    setStateNodesUsedByPIs(root, p);
-    setLabelNodesReferredByPIs(root, p);
+    setCodeSizesForMatches(root, p);
+    setLatenciesForMatches(root, p);
+    setConstraintsForMatches(root, p);
+    setAUDDCSettingsForMatches(root, p);
+    setOperationNodesCoveredByMatches(root, p);
+    setDataNodesDefinedByMatches(root, p);
+    setDataNodesUsedByMatches(root, p);
+    setStateNodesDefinedByMatches(root, p);
+    setStateNodesUsedByMatches(root, p);
+    setLabelNodesReferredByMatches(root, p);
 }
 
 bool
@@ -149,26 +149,26 @@ ModelParams::toString(const Value& value) {
 }
 
 vector<int>
-ModelParams::getCodeSizesForAllPIs(void) const {
-    return pat_inst_code_sizes_;
+ModelParams::getCodeSizesForAllMatches(void) const {
+    return match_code_sizes_;
 }
 
 vector<int>
-ModelParams::getLatenciesForAllPIs(void) const {
-    return pat_inst_latencies_;
+ModelParams::getLatenciesForAllMatches(void) const {
+    return match_latencies_;
 }
 
 void
-ModelParams::setCodeSizesForPIs(const Json::Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "pat-inst-code-sizes")) {
-        p.pat_inst_code_sizes_.push_back(toInt(entry));
+ModelParams::setCodeSizesForMatches(const Json::Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "match-code-sizes")) {
+        p.match_code_sizes_.push_back(toInt(entry));
     }
 }
 
 void
-ModelParams::setLatenciesForPIs(const Json::Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "pat-inst-latencies")) {
-        p.pat_inst_latencies_.push_back(toInt(entry));
+ModelParams::setLatenciesForMatches(const Json::Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "match-latencies")) {
+        p.match_latencies_.push_back(toInt(entry));
     }
 }
 
@@ -178,110 +178,118 @@ ModelParams::getConstraintsForF(void) const {
 }
 
 vector< list<const Constraint*> >
-ModelParams::getConstraintsForAllPIs(void) const {
-    return pat_inst_constraints_;
+ModelParams::getConstraintsForAllMatches(void) const {
+    return match_constraints_;
 }
 
 void
-ModelParams::setOperationNodesCoveredByPIs(
+ModelParams::setOperationNodesCoveredByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-onodes-covered")) {
+    for (auto jsonlist : getJsonValue(root, "match-onodes-covered")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_operations_covered_.push_back(covers);
+        p.match_operations_covered_.push_back(covers);
     }
 }
 
 void
-ModelParams::setDataNodesDefinedByPIs(const Json::Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-dnodes-defined")) {
-        list<ArrayIndex> covers;
-        for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
-        }
-        p.pat_inst_data_defined_.push_back(covers);
-    }
-}
-
-void
-ModelParams::setStateNodesDefinedByPIs(
+ModelParams::setDataNodesDefinedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-snodes-defined")) {
+    for (auto jsonlist : getJsonValue(root, "match-dnodes-defined")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_states_defined_.push_back(covers);
+        p.match_data_defined_.push_back(covers);
     }
 }
 
 void
-ModelParams::setDataNodesUsedByPIs(const Json::Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-dnodes-used")) {
+ModelParams::setStateNodesDefinedByMatches(
+    const Json::Value& root,
+    ModelParams& p
+) {
+    for (auto jsonlist : getJsonValue(root, "match-snodes-defined")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_data_used_.push_back(covers);
+        p.match_states_defined_.push_back(covers);
     }
 }
 
 void
-ModelParams::setStateNodesUsedByPIs(const Json::Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-snodes-used")) {
+ModelParams::setDataNodesUsedByMatches(const Json::Value& root, ModelParams& p)
+{
+    for (auto jsonlist : getJsonValue(root, "match-dnodes-used")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_states_used_.push_back(covers);
+        p.match_data_used_.push_back(covers);
     }
 }
 
 void
-ModelParams::setLabelNodesReferredByPIs(const Json::Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-lnodes-referred")) {
+ModelParams::setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p)
+{
+    for (auto jsonlist : getJsonValue(root, "match-snodes-used")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_labels_referred_.push_back(covers);
+        p.match_states_used_.push_back(covers);
+    }
+}
+
+void
+ModelParams::setLabelNodesReferredByMatches(
+    const Json::Value& root,
+    ModelParams& p
+) {
+    for (auto jsonlist : getJsonValue(root, "match-lnodes-referred")) {
+        list<ArrayIndex> covers;
+        for (auto entry : jsonlist) {
+            covers.push_back(toArrayIndex(entry));
+        }
+        p.match_labels_referred_.push_back(covers);
     }
 }
 
 vector< list<ID> >
-ModelParams::getOperationNodesCoveredByAllPIs(void) const {
-    return pat_inst_operations_covered_;
+ModelParams::getOperationNodesCoveredByAllMatches(void) const {
+    return match_operations_covered_;
 }
 
 vector< list<ID> >
-ModelParams::getDataNodesDefinedByAllPIs(void) const {
-    return pat_inst_data_defined_;
+ModelParams::getDataNodesDefinedByAllMatches(void) const {
+    return match_data_defined_;
 }
 
 vector< list<ID> >
-ModelParams::getStateNodesDefinedByAllPIs(void) const {
-    return pat_inst_states_defined_;
+ModelParams::getStateNodesDefinedByAllMatches(void) const {
+    return match_states_defined_;
 }
 
 vector< list<ID> >
-ModelParams::getDataNodesUsedByAllPIs(void) const {
-    return pat_inst_data_used_;
+ModelParams::getDataNodesUsedByAllMatches(void) const {
+    return match_data_used_;
 }
 
 vector< list<ID> >
-ModelParams::getStateNodesUsedByAllPIs(void) const {
-    return pat_inst_states_used_;
+ModelParams::getStateNodesUsedByAllMatches(void) const {
+    return match_states_used_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelNodesReferredByAllPIs(void) const {
-    return pat_inst_labels_referred_;
+ModelParams::getLabelNodesReferredByAllMatches(void) const {
+    return match_labels_referred_;
 }
 
 vector< list<ID> >
@@ -297,8 +305,8 @@ ModelParams::destroyConstraintsForF(void) {
 }
 
 void
-ModelParams::destroyConstraintsForPIs(void) {
-    for (auto& cs : pat_inst_constraints_) {
+ModelParams::destroyConstraintsForMatches(void) {
+    for (auto& cs : match_constraints_) {
         for (auto c : cs) {
             delete c;
         }
@@ -315,32 +323,32 @@ ModelParams::setConstraintsForF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setConstraintsForPIs(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-constraints")) {
+ModelParams::setConstraintsForMatches(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "match-constraints")) {
         list<const Constraint*> cs;
         ConstraintParser parser;
         for (auto entry : jsonlist) {
             Constraint* c = parser.parseConstraint(toString(entry));
             cs.push_back(c);
         }
-        p.pat_inst_constraints_.push_back(cs);
+        p.match_constraints_.push_back(cs);
     }
 }
 
 vector<bool>
-ModelParams::getAUDDCSettingForAllPIs(void) const {
-    return pat_inst_use_def_dom_constraints_;
+ModelParams::getAUDDCSettingForAllMatches(void) const {
+    return match_use_def_dom_constraints_;
 }
 
 void
-ModelParams::setAUDDCSettingsForPIs(
+ModelParams::setAUDDCSettingsForMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
     for (auto entry
-             : getJsonValue(root, "pat-inst-apply-use-def-dom-constraints"))
+             : getJsonValue(root, "match-apply-use-def-dom-constraints"))
     {
-        p.pat_inst_use_def_dom_constraints_.push_back(toBool(entry));
+        p.match_use_def_dom_constraints_.push_back(toBool(entry));
     }
 }
 
@@ -356,7 +364,7 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_state_nodes_ = toInt(getJsonValue(root, "num-func-snodes"));
     p.num_func_label_nodes_ = toInt(getJsonValue(root, "num-func-lnodes"));
     p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
-    p.num_pis_ = toInt(getJsonValue(root, "num-pattern-instances"));
+    p.num_pis_ = toInt(getJsonValue(root, "num-matches"));
 }
 
 void

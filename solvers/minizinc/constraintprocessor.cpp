@@ -40,11 +40,11 @@ ConstraintProcessor::processConstraintForF(const Constraint* c) {
 }
 
 string
-ConstraintProcessor::processConstraintForPI(
+ConstraintProcessor::processConstraintForMatch(
     const Constraint* c,
     const ArrayIndex& i
 ) {
-    return string("constraint\n") + getPatInstSelectedVariableArrayName() + "["
+    return string("constraint\n") + getMatchSelectedVariableArrayName() + "["
         + Utils::toString(i) + "] -> " + process(c) + ";";
 }
 
@@ -147,8 +147,8 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const PatternInstanceToNumExpr* de =
-             dynamic_cast<const PatternInstanceToNumExpr*>(e))
+    else if (const MatchToNumExpr* de =
+             dynamic_cast<const MatchToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -172,11 +172,11 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const DistanceBetweenPatternInstanceAndLabelExpr* de =
-             dynamic_cast<const DistanceBetweenPatternInstanceAndLabelExpr*>(e))
+    else if (const DistanceBetweenMatchAndLabelExpr* de =
+             dynamic_cast<const DistanceBetweenMatchAndLabelExpr*>(e))
     {
-        return getPatInstLabelDistsVariableArrayName()
-            + "[" + getPatInstAndLabelMappingsMatrixName() + "["
+        return getMatchLabelDistsVariableArrayName()
+            + "[" + getMatchAndLabelMappingsMatrixName() + "["
             + process(de->getLhs()) + "," + process(de->getRhs()) + "]]";
     }
     else {
@@ -216,17 +216,17 @@ ConstraintProcessor::process(const IntExpr* e) {
 }
 
 string
-ConstraintProcessor::process(const PatternInstanceExpr* e) {
-    if (const APatternInstanceArrayIndexExpr* de =
-        dynamic_cast<const APatternInstanceArrayIndexExpr*>(e))
+ConstraintProcessor::process(const MatchExpr* e) {
+    if (const AMatchArrayIndexExpr* de =
+        dynamic_cast<const AMatchArrayIndexExpr*>(e))
     {
         return Utils::toString(de->getArrayIndex());
     }
-    else if (dynamic_cast<const APatternInstanceIDExpr*>(e)) {
-        THROW(Exception, "APatternInstanceIDExpr is not allowed here");
+    else if (dynamic_cast<const AMatchIDExpr*>(e)) {
+        THROW(Exception, "AMatchIDExpr is not allowed here");
     }
-    else if (dynamic_cast<const ThisPatternInstanceExpr*>(e)) {
-        THROW(Exception, "ThisPatternInstanceExpr is not allowed here");
+    else if (dynamic_cast<const ThisMatchExpr*>(e)) {
+        THROW(Exception, "ThisMatchExpr is not allowed here");
     }
     else if (const CovererOfOperationNodeExpr* de =
              dynamic_cast<const CovererOfOperationNodeExpr*>(e))
@@ -247,7 +247,7 @@ ConstraintProcessor::process(const PatternInstanceExpr* e) {
             + "[" + process(de->getExpr()) + "]";
     }
     else {
-        THROW(Exception, "PatternInstanceExpr is of unknown derived class");
+        THROW(Exception, "MatchExpr is of unknown derived class");
     }
 }
 
@@ -270,7 +270,7 @@ ConstraintProcessor::process(const PatternExpr* e) {
     if (dynamic_cast<const APatternIDExpr*>(e)) {
         THROW(Exception, "APatternIDExpr is not allowed here");
     }
-    else if (dynamic_cast<const PatternOfPatternInstanceExpr*>(e)) {
+    else if (dynamic_cast<const PatternOfMatchExpr*>(e)) {
         // TODO: fix implementation
         return "?";
     }
@@ -281,8 +281,8 @@ ConstraintProcessor::process(const PatternExpr* e) {
 
 string
 ConstraintProcessor::process(const LabelExpr* e) {
-    if (const LabelAllocatedToPatternInstanceExpr* de =
-        dynamic_cast<const LabelAllocatedToPatternInstanceExpr*>(e))
+    if (const LabelAllocatedToMatchExpr* de =
+        dynamic_cast<const LabelAllocatedToMatchExpr*>(e))
     {
         return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
@@ -398,18 +398,18 @@ ConstraintProcessor::getDomSetParameterArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getPatInstSelectedVariableArrayName(void) const {
+ConstraintProcessor::getMatchSelectedVariableArrayName(void) const {
     return "pi_sel";
 }
 
 string
-ConstraintProcessor::getPatInstLabelDistsVariableArrayName(void) const {
+ConstraintProcessor::getMatchLabelDistsVariableArrayName(void) const {
     return "br_bb_dists";
 }
 
 string
-ConstraintProcessor::getPatInstAndLabelMappingsMatrixName(void) const {
-    return "patInstAndLabelMappings";
+ConstraintProcessor::getMatchAndLabelMappingsMatrixName(void) const {
+    return "matchAndLabelMappings";
 }
 
 string

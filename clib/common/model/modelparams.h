@@ -94,12 +94,12 @@ class ModelParams {
     getNumRegistersInM(void) const;
 
     /**
-     * Gets the number of pattern instances.
+     * Gets the number of matches.
      *
-     * @returns Number of instances.
+     * @returns Number of matches.
      */
     size_t
-    getNumPIs(void) const;
+    getNumMatches(void) const;
 
     /**
      * Gets the list of dominators per given label node in the function graph.
@@ -118,76 +118,76 @@ class ModelParams {
     getRootLabelInF(void) const;
 
     /**
-     * Gets code sizes per pattern instance.
+     * Gets code sizes per match.
      *
      * @returns The code sizes (in bytes).
      */
     std::vector<int>
-    getCodeSizesForAllPIs(void) const;
+    getCodeSizesForAllMatches(void) const;
 
     /**
-     * Gets latencies per pattern instances.
+     * Gets latencies per matches.
      *
      * @returns The latencies (in bytes).
      */
     std::vector<int>
-    getLatenciesForAllPIs(void) const;
+    getLatenciesForAllMatches(void) const;
 
     /**
-     * Gets the function operation nodes covered per pattern instances.
+     * Gets the function operation nodes covered per matches.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getOperationNodesCoveredByAllPIs(void) const;
+    getOperationNodesCoveredByAllMatches(void) const;
 
     /**
-     * Gets the function data nodes defined per pattern instance.
+     * Gets the function data nodes defined per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getDataNodesDefinedByAllPIs(void) const;
+    getDataNodesDefinedByAllMatches(void) const;
 
     /**
-     * Gets the function state nodes defined per pattern instance.
+     * Gets the function state nodes defined per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getStateNodesDefinedByAllPIs(void) const;
+    getStateNodesDefinedByAllMatches(void) const;
 
     /**
-     * Gets the function data nodes used per pattern instance.
+     * Gets the function data nodes used per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getDataNodesUsedByAllPIs(void) const;
+    getDataNodesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function state nodes used per pattern instance.
+     * Gets the function state nodes used per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getStateNodesUsedByAllPIs(void) const;
+    getStateNodesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function label nodes referred per pattern instance.
+     * Gets the function label nodes referred per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getLabelNodesReferredByAllPIs(void) const;
+    getLabelNodesReferredByAllMatches(void) const;
 
     /**
-     * Gets the use-def-dom constraint settings per pattern instance.
+     * Gets the use-def-dom constraint settings per match.
      *
      * @returns Boolean.
      */
     std::vector<bool>
-    getAUDDCSettingForAllPIs(void) const;
+    getAUDDCSettingForAllMatches(void) const;
 
     /**
      * Gets the constraints for the function graph.
@@ -198,12 +198,12 @@ class ModelParams {
     getConstraintsForF(void) const;
 
     /**
-     * Gets the constraints per pattern instance.
+     * Gets the constraints per match.
      *
      * @returns Corresponding constraints.
      */
     std::vector< std::list<const Constraint*> >
-    getConstraintsForAllPIs(void) const;
+    getConstraintsForAllMatches(void) const;
 
     /**
      * Parses a JSON string into an internal model parameters object.
@@ -334,7 +334,7 @@ class ModelParams {
     setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the code size values of the pattern instances.
+     * Sets the code size values of the matches.
      *
      * @param root
      *        The JSON root value.
@@ -344,10 +344,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setCodeSizesForPIs(const Json::Value& root, ModelParams& p);
+    setCodeSizesForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the latency values of the pattern instances.
+     * Sets the latency values of the matches.
      *
      * @param root
      *        The JSON root value.
@@ -357,11 +357,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLatenciesForPIs(const Json::Value& root, ModelParams& p);
+    setLatenciesForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the apply-use-def-dom-constraints settings for the pattern
-     * instances.
+     * Sets the apply-use-def-dom-constraints settings for the matches.
      *
      * @param root
      *        The JSON root value.
@@ -371,11 +370,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setAUDDCSettingsForPIs(const Json::Value& root, ModelParams& p);
+    setAUDDCSettingsForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function operation nodes covered by the respective pattern
-     * instances.
+     * Sets the function operation nodes covered by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -385,11 +383,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setOperationNodesCoveredByPIs(const Json::Value& root, ModelParams& p);
+    setOperationNodesCoveredByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function data nodes defined by the respective pattern
-     * instances.
+     * Sets the function data nodes defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -399,11 +396,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByPIs(const Json::Value& root, ModelParams& p);
+    setDataNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function state nodes defined by the respective pattern
-     * instances.
+     * Sets the function state nodes defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -413,10 +409,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByPIs(const Json::Value& root, ModelParams& p);
+    setStateNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function data nodes used by the respective pattern instances.
+     * Sets the function data nodes used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -426,10 +422,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setDataNodesUsedByPIs(const Json::Value& root, ModelParams& p);
+    setDataNodesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function state nodes used by the respective pattern instances.
+     * Sets the function state nodes used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -439,11 +435,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setStateNodesUsedByPIs(const Json::Value& root, ModelParams& p);
+    setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function label nodes referred to by the respective pattern
-     * instances.
+     * Sets the function label nodes referred to by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -453,7 +448,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByPIs(const Json::Value& root, ModelParams& p);
+    setLabelNodesReferredByMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -466,7 +461,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setConstraintsForPIs(const Json::Value& root, ModelParams& p);
+    setConstraintsForMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the "number of ..." values.
@@ -488,10 +483,10 @@ class ModelParams {
     destroyConstraintsForF(void);
 
     /**
-     * Destroys the pattern instance constraints contained by this object.
+     * Destroys the match constraints contained by this object.
      */
     void
-    destroyConstraintsForPIs(void);
+    destroyConstraintsForMatches(void);
 
   protected:
 
@@ -521,7 +516,7 @@ class ModelParams {
     size_t num_regs_;
 
     /**
-     * Numbers of pattern instances.
+     * Numbers of matches.
      */
     size_t num_pis_;
 
@@ -542,63 +537,59 @@ class ModelParams {
     std::list<const Constraint*> func_constraints_;
 
     /**
-     * The code size (in bytes) of the instruction for each pattern instance.
+     * The code size (in bytes) of the instruction for each match.
      */
-    std::vector<int> pat_inst_code_sizes_;
+    std::vector<int> match_code_sizes_;
 
     /**
-     * The latency (in cycles) of the instruction for each pattern instance.
+     * The latency (in cycles) of the instruction for each match.
      */
-    std::vector<int> pat_inst_latencies_;
+    std::vector<int> match_latencies_;
 
     /**
      * The operation nodes in the function graph which are covered by each
-     * pattern instance.
+     * match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_operations_covered_;
+    std::vector< std::list<ArrayIndex> > match_operations_covered_;
 
     /**
-     * The data nodes in the function graph which are defined by each pattern
-     * instance.
+     * The data nodes in the function graph which are defined by each match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_data_defined_;
+    std::vector< std::list<ArrayIndex> > match_data_defined_;
 
     /**
-     * The data nodes in the function graph which are used by each pattern
-     * instance.
+     * The data nodes in the function graph which are used by each match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_data_used_;
+    std::vector< std::list<ArrayIndex> > match_data_used_;
 
     /**
-     * The state nodes in the function graph which are defined by each pattern
-     * instance.
+     * The state nodes in the function graph which are defined by each match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_states_defined_;
+    std::vector< std::list<ArrayIndex> > match_states_defined_;
 
     /**
-     * The state nodes in the function graph which are used by each pattern
-     * instance.
+     * The state nodes in the function graph which are used by each match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_states_used_;
+    std::vector< std::list<ArrayIndex> > match_states_used_;
 
     /**
      * The label nodes in the function graph which are referred to by each
-     * pattern instance.
+     * match.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_labels_referred_;
+    std::vector< std::list<ArrayIndex> > match_labels_referred_;
 
     /**
-     * The constraints for each pattern instance. The constraints are destroyed
-     * when this object is deleted.
+     * The constraints for each match. The constraints are destroyed when this
+     * object is deleted.
      */
-    std::vector< std::list<const Constraint*> > pat_inst_constraints_;
+    std::vector< std::list<const Constraint*> > match_constraints_;
 
     /**
-     * Whether use-def-dom constraints should be applied on a particular pattern
-     * instance. The ability to turn these off are required by the generic phi
+     * Whether use-def-dom constraints should be applied on a particular
+     * match. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::vector<bool> pat_inst_use_def_dom_constraints_;
+    std::vector<bool> match_use_def_dom_constraints_;
 };
 
 }

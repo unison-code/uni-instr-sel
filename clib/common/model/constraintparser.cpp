@@ -128,9 +128,9 @@ ConstraintParser::parseBoolExpr(string& str) {
             auto e = parseNodeExpr(str);
             expr = new DataNodeIsIntermediateExpr(e);
         }
-        else if (eatType<PatternInstanceIsSelectedExpr>(str)) {
-            auto e = parsePatternInstanceExpr(str);
-            expr = new PatternInstanceIsSelectedExpr(e);
+        else if (eatType<MatchIsSelectedExpr>(str)) {
+            auto e = parseMatchExpr(str);
+            expr = new MatchIsSelectedExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -178,9 +178,9 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseNodeExpr(str);
             expr = new NodeToNumExpr(e);
         }
-        else if (eatType<PatternInstanceToNumExpr>(str)) {
-            auto e = parsePatternInstanceExpr(str);
-            expr = new PatternInstanceToNumExpr(e);
+        else if (eatType<MatchToNumExpr>(str)) {
+            auto e = parseMatchExpr(str);
+            expr = new MatchToNumExpr(e);
         }
         else if (eatType<InstructionToNumExpr>(str)) {
             auto e = parseInstructionExpr(str);
@@ -198,10 +198,10 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseRegisterExpr(str);
             expr = new RegisterToNumExpr(e);
         }
-        else if (eatType<DistanceBetweenPatternInstanceAndLabelExpr>(str)) {
-            auto lhs = parsePatternInstanceExpr(str);
+        else if (eatType<DistanceBetweenMatchAndLabelExpr>(str)) {
+            auto lhs = parseMatchExpr(str);
             auto rhs = parseLabelExpr(str);
-            expr = new DistanceBetweenPatternInstanceAndLabelExpr(lhs, rhs);
+            expr = new DistanceBetweenMatchAndLabelExpr(lhs, rhs);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -284,20 +284,20 @@ ConstraintParser::parseNodeExpr(string& str) {
     return expr;
 }
 
-PatternInstanceExpr*
-ConstraintParser::parsePatternInstanceExpr(string& str) {
-    PatternInstanceExpr* expr = NULL;
+MatchExpr*
+ConstraintParser::parseMatchExpr(string& str) {
+    MatchExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<APatternInstanceIDExpr>(str)) {
+        if (eatType<AMatchIDExpr>(str)) {
             ID id = eatID(str);
-            expr = new APatternInstanceIDExpr(id);
+            expr = new AMatchIDExpr(id);
         }
-        else if (eatType<APatternInstanceArrayIndexExpr>(str)) {
+        else if (eatType<AMatchArrayIndexExpr>(str)) {
             ArrayIndex i = eatArrayIndex(str);
-            expr = new APatternInstanceArrayIndexExpr(i);
+            expr = new AMatchArrayIndexExpr(i);
         }
         else if (eatType<CovererOfOperationNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
@@ -322,8 +322,8 @@ ConstraintParser::parsePatternInstanceExpr(string& str) {
         }
     }
     else {
-        if (eatType<ThisPatternInstanceExpr>(str)) {
-            expr = new ThisPatternInstanceExpr;
+        if (eatType<ThisMatchExpr>(str)) {
+            expr = new ThisMatchExpr;
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -373,9 +373,9 @@ ConstraintParser::parsePatternExpr(string& str) {
             ID e = eatID(str);
             expr = new APatternIDExpr(e);
         }
-        else if (eatType<PatternOfPatternInstanceExpr>(str)) {
-            auto e = parsePatternInstanceExpr(str);
-            expr = new PatternOfPatternInstanceExpr(e);
+        else if (eatType<PatternOfMatchExpr>(str)) {
+            auto e = parseMatchExpr(str);
+            expr = new PatternOfMatchExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -401,9 +401,9 @@ ConstraintParser::parseLabelExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<LabelAllocatedToPatternInstanceExpr>(str)) {
-            auto e = parsePatternInstanceExpr(str);
-            expr = new LabelAllocatedToPatternInstanceExpr(e);
+        if (eatType<LabelAllocatedToMatchExpr>(str)) {
+            auto e = parseMatchExpr(str);
+            expr = new LabelAllocatedToMatchExpr(e);
         }
         else if (eatType<LabelOfLabelNodeExpr>(str)) {
             auto e = parseNodeExpr(str);

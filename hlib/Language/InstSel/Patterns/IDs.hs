@@ -16,11 +16,8 @@
 
 module Language.InstSel.Patterns.IDs
   ( PatternID (..)
-  , PatternInstanceID (..)
   , fromPatternID
-  , fromPatternInstanceID
   , toPatternID
-  , toPatternInstanceID
   )
 where
 
@@ -41,26 +38,11 @@ newtype PatternID = PatternID Natural
 instance Show PatternID where
   show (PatternID i) = show i
 
--- | Represents a pattern instance ID. Instance IDs are used to distinguish
--- between pattern an instance is based on.
-
-newtype PatternInstanceID = PatternInstanceID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
-
-instance Show PatternInstanceID where
-  show (PatternInstanceID i) = show i
-
 
 
 -------------
 -- Functions
 -------------
-
-fromPatternInstanceID :: PatternInstanceID -> Natural
-fromPatternInstanceID (PatternInstanceID i) = i
-
-toPatternInstanceID :: (Integral i) => i -> PatternInstanceID
-toPatternInstanceID = PatternInstanceID . toNatural
 
 fromPatternID :: PatternID -> Natural
 fromPatternID (PatternID i) = i

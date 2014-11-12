@@ -18,10 +18,10 @@ module Language.InstSel.CPModel.Base
   , CPSolutionData (..)
   , FunctionGraphData (..)
   , MachineData (..)
-  , PatternInstanceData (..)
+  , MatchData (..)
   , RawCPSolutionData (..)
   , RawPostParams (..)
-  , findPatternInstanceData
+  , findMatchData
   , fromRawCPSolutionData
   )
 where
@@ -29,11 +29,11 @@ where
 import Language.InstSel.Constraints
 import Language.InstSel.Graphs
   ( Domset (..)
+  , MatchID (..)
   , NodeID (..)
   )
 import Language.InstSel.Patterns.IDs
   ( PatternID
-  , PatternInstanceID
   )
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
@@ -52,9 +52,9 @@ import Data.Maybe
 -- | Wrapper for all model parameters.
 data CPModelParams =
     CPModelParams
-      { funcData :: FunctionGraphData
-      , patInstData :: [PatternInstanceData]
-      , machData :: MachineData
+      { functionData :: FunctionGraphData
+      , matchData :: [MatchData]
+      , machineData :: MachineData
       }
   deriving (Show)
 
@@ -89,59 +89,57 @@ data BBLabelData =
       }
   deriving (Show)
 
--- | Describes the necessary pattern instance data.
-data PatternInstanceData =
-    PatternInstanceData
-      { patInstructionID :: InstructionID
-        -- ^ The instruction ID of this pattern instance.
-      , patPatternID :: PatternID
-        -- ^ The pattern ID of this pattern instance.
-      , patInstanceID :: PatternInstanceID
-        -- ^ The matchset ID of this pattern instance.
-      , patOperationsCovered :: [NodeID]
+-- | Describes the necessary match data.
+data MatchData =
+    MatchData
+      { mInstructionID :: InstructionID
+        -- ^ The instruction ID of this match.
+      , mPatternID :: PatternID
+        -- ^ The pattern ID of this match.
+      , mMatchID :: MatchID
+        -- ^ The matchset ID of this match.
+      , mOperationsCovered :: [NodeID]
         -- ^ The operations in the function graph which are covered by this
-        -- pattern instance.
-      , patDataNodesDefined :: [NodeID]
+        -- match.
+      , mDataNodesDefined :: [NodeID]
         -- ^ The data nodes in the function graph which are defined by this
-        -- pattern instance.
-      , patDataNodesUsed :: [NodeID]
-        -- ^ The data nodes in the function graph which are used by this pattern
-        -- instance. Unlike 'patDataNodesUsedByPhis', this list contains all
-        -- data nodes used by any operation appearing in this pattern instance.
-      , patDataNodesUsedByPhis :: [NodeID]
+        -- match.
+      , mDataNodesUsed :: [NodeID]
+        -- ^ The data nodes in the function graph which are used by this
+        -- match. Unlike 'mDataNodesUsedByPhis', this list contains all data
+        -- nodes used by any operation appearing in this match.
+      , mDataNodesUsedByPhis :: [NodeID]
         -- ^ The data nodes in the function graph which are used by phi nodes
-        -- appearing this pattern instance. This information is required during
-        -- instruction emission in order to break cyclic data dependencies.
-      , patStateNodesDefined :: [NodeID]
+        -- appearing this match. This information is required during instruction
+        -- emission in order to break cyclic data dependencies.
+      , mStateNodesDefined :: [NodeID]
         -- ^ The state nodes in the function graph which are defined by this
-        -- pattern instance.
-      , patStateNodesUsed :: [NodeID]
-        -- ^ The state nodes in the function graph which are used by this
-        -- pattern instance.
-      , patLabelNodesReferred :: [NodeID]
+        -- match.
+      , mStateNodesUsed :: [NodeID]
+        -- ^ The state nodes in the function graph which are used by this match.
+      , mLabelNodesReferred :: [NodeID]
         -- ^ The label nodes in the function graph which are referred to by this
-        -- pattern instance.
-      , patConstraints :: [Constraint]
+        -- match.
+      , mConstraints :: [Constraint]
         -- ^ The pattern-specific constraints, if any. All node IDs used in the
         -- patterns refer to nodes in the function graph (not the pattern
         -- graph).
-      , patAUDDC :: Bool
-        -- ^ Whether the use-def-dom constraints apply to this pattern
-        -- instance. This will typically always be set to 'True' for all
-        -- patterns instances except those of the generic phi patterns.
-      , patHasControlNodes :: Bool
+      , mAUDDC :: Bool
+        -- ^ Whether the use-def-dom constraints apply to this match. This will
+        -- typically always be set to 'True' for all matches except those of the
+        -- generic phi patterns.
+      , mHasControlNodes :: Bool
         -- ^ Whether the pattern contains one or more control nodes.
-      , patCodeSize :: Integer
-        -- ^ The size of the instruction associated with this pattern instance.
-      , patLatency :: Integer
-        -- ^ The latency of the instruction associated with this pattern
-        -- instance.
-      , patAssIDMaps :: [NodeID]
+      , mCodeSize :: Integer
+        -- ^ The size of the instruction associated with this match.
+      , mLatency :: Integer
+        -- ^ The latency of the instruction associated with this match.
+      , mAssIDMaps :: [NodeID]
         -- | Maps an 'AssemblyID', which is denoted as the index into the list,
         -- that appear in the 'AssemblyString' of the instruction, to a
         -- particular data node in the function graph according to the pattern's
         -- operation structure and matchset. See also
-        -- 'InstPattern.patAssIDMaps'.
+        -- 'InstPattern.mAssIDMaps'.
       }
   deriving (Show)
 
@@ -158,14 +156,13 @@ data MachineData =
 -- | Contains the data for a solution to the CP model.
 data RawCPSolutionData =
     RawCPSolutionData
-      { rawBBAllocsForPIs :: [Natural]
+      { rawBBAllocsForMatches :: [Natural]
         -- ^ The basic block (given as array indices) to which a particular
-        -- pattern instance was allocated. An array index for a pattern instance
-        -- corresponds to an index into the list.
-      , rawIsPISelected :: [Bool]
-        -- ^ Indicates whether a particular pattern instance was selected. An
-        -- array index for a pattern instance corresponds to an index into the
-        -- list.
+        -- match was allocated. An array index for a match corresponds to an
+        -- index into the list.
+      , rawIsMatchSelected :: [Bool]
+        -- ^ Indicates whether a particular match was selected. An array index
+        -- for a match corresponds to an index into the list.
       , rawOrderOfBBs :: [Natural]
         -- ^ The order of basic blocks. An array index for a label node in the
         -- function graph corresponds to an index into the list.
@@ -195,8 +192,8 @@ data RawPostParams =
     RawPostParams
       { rawModelParams :: CPModelParams
         -- ^ The CP model parameters.
-      , rawArrInd2PattInstIDs :: [PatternInstanceID]
-        -- ^ The array indices-to-pattern instance id mappings.
+      , rawArrInd2MatchIDs :: [MatchID]
+        -- ^ The array indices-to-match id mappings.
       , rawArrInd2LabNodeIDs :: [NodeID]
         -- ^ The array indices-to-label node ID mappings.
       , rawArrInd2DataNodeIDs :: [NodeID]
@@ -210,13 +207,13 @@ data CPSolutionData =
     CPSolutionData
       { modelParams :: CPModelParams
         -- ^ The CP model parameters.
-      , bbAllocsForPIs :: [(PatternInstanceID, NodeID)]
+      , bbAllocsForMatches :: [(MatchID, NodeID)]
         -- ^ The basic block (represented by the node ID of the corresponding
-        -- label node) to which a particular pattern instance was allocated.  A
-        -- missing entry means that the corresponding pattern instance ID was
-        -- not selected and thus not allocated to a valid basic block.
-      , selectedPIs :: [PatternInstanceID]
-        -- ^ The selected pattern instances.
+        -- label node) to which a particular match was allocated.  A missing
+        -- entry means that the corresponding match ID was not selected and thus
+        -- not allocated to a valid basic block.
+      , selectedMatches :: [MatchID]
+        -- ^ The selected matchs.
       , orderOfBBs :: [NodeID]
         -- ^ The order of basic blocks (represented by the node ID of the
         -- corresponding label node).
@@ -242,48 +239,48 @@ fromRawCPSolutionData ::
      RawPostParams
   -> RawCPSolutionData
   -> CPSolutionData
-fromRawCPSolutionData pp_data cp_data =
+fromRawCPSolutionData m_data cp_data =
   CPSolutionData
-    (rawModelParams pp_data)
-    (computeBBAllocsForPIs pp_data cp_data)
-    (computeSelectionOfPIs pp_data cp_data)
-    (computeOrderOfBBs pp_data cp_data)
-    (computeRegsOfDataNodes pp_data cp_data)
-    (computeImmValuesOfDataNodes pp_data cp_data)
+    (rawModelParams m_data)
+    (computeBBAllocsForMatches m_data cp_data)
+    (computeSelectionOfMatches m_data cp_data)
+    (computeOrderOfBBs m_data cp_data)
+    (computeRegsOfDataNodes m_data cp_data)
+    (computeImmValuesOfDataNodes m_data cp_data)
 
-computeBBAllocsForPIs ::
+computeBBAllocsForMatches ::
      RawPostParams
   -> RawCPSolutionData
-  -> [(PatternInstanceID, NodeID)]
-computeBBAllocsForPIs pp_data cp_data =
-  let bb2labs = rawArrInd2LabNodeIDs pp_data
+  -> [(MatchID, NodeID)]
+computeBBAllocsForMatches m_data cp_data =
+  let bb2labs = rawArrInd2LabNodeIDs m_data
       maps = zipWith3
                ( \p b bb -> if b
                             then Just (p, bb2labs !! (fromIntegral bb))
                             else Nothing
                )
-               (rawArrInd2PattInstIDs pp_data)
-               (rawIsPISelected cp_data)
-               (rawBBAllocsForPIs cp_data)
+               (rawArrInd2MatchIDs m_data)
+               (rawIsMatchSelected cp_data)
+               (rawBBAllocsForMatches cp_data)
   in catMaybes maps
 
-computeSelectionOfPIs ::
+computeSelectionOfMatches ::
      RawPostParams
   -> RawCPSolutionData
-  -> [PatternInstanceID]
-computeSelectionOfPIs pp_data cp_data =
+  -> [MatchID]
+computeSelectionOfMatches m_data cp_data =
   let keeps = zipWith
                 (\p b -> if b then Just p else Nothing)
-                (rawArrInd2PattInstIDs pp_data)
-                (rawIsPISelected cp_data)
+                (rawArrInd2MatchIDs m_data)
+                (rawIsMatchSelected cp_data)
   in catMaybes keeps
 
 computeOrderOfBBs ::
      RawPostParams
   -> RawCPSolutionData
   -> [NodeID]
-computeOrderOfBBs pp_data cp_data =
-  let lab_order = zip (rawArrInd2LabNodeIDs pp_data) (rawOrderOfBBs cp_data)
+computeOrderOfBBs m_data cp_data =
+  let lab_order = zip (rawArrInd2LabNodeIDs m_data) (rawOrderOfBBs cp_data)
       sorted_labs = sortBy (\l1 l2 -> compare (snd l1) (snd l2)) lab_order
   in map fst sorted_labs
 
@@ -291,10 +288,10 @@ computeRegsOfDataNodes ::
      RawPostParams
   -> RawCPSolutionData
   -> [(NodeID, RegisterID)]
-computeRegsOfDataNodes pp_data cp_data =
+computeRegsOfDataNodes m_data cp_data =
   let keeps = zipWith3
                 (\n b r -> if b then Just (n, r) else Nothing)
-                (rawArrInd2DataNodeIDs pp_data)
+                (rawArrInd2DataNodeIDs m_data)
                 (rawHasDataNodeRegister cp_data)
                 (rawRegsSelectedForDataNodes cp_data)
   in catMaybes keeps
@@ -303,24 +300,23 @@ computeImmValuesOfDataNodes ::
      RawPostParams
   -> RawCPSolutionData
   -> [(NodeID, Integer)]
-computeImmValuesOfDataNodes pp_data cp_data =
+computeImmValuesOfDataNodes m_data cp_data =
   let keeps = zipWith3
                 (\n b r -> if b then Just (n, r) else Nothing)
-                (rawArrInd2DataNodeIDs pp_data)
+                (rawArrInd2DataNodeIDs m_data)
                 (rawHasDataNodeImmValue cp_data)
                 (rawImmValuesOfDataNodes cp_data)
   in catMaybes keeps
 
--- | Given a list of pattern instance data, the function finds the
--- 'PatternInstanceData' entity with matching pattern instance ID. If there is
--- more than one match, the first found is returned. If no such entity is found,
--- 'Nothing' is returned.
-findPatternInstanceData ::
-     [PatternInstanceData]
-  -> PatternInstanceID
-  -> Maybe PatternInstanceData
-findPatternInstanceData ps piid =
-  let found = filter (\p -> patInstanceID p == piid) ps
+-- | Given a list of match data, the function finds the 'MatchData' entity with
+-- matching match ID. If there is more than one match, the first found is
+-- returned. If no such entity is found, 'Nothing' is returned.
+findMatchData ::
+     [MatchData]
+  -> MatchID
+  -> Maybe MatchData
+findMatchData ps piid =
+  let found = filter (\p -> mMatchID p == piid) ps
   in if length found > 0
      then Just $ head found
      else Nothing

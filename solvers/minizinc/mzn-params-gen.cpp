@@ -197,44 +197,44 @@ generateModelTargetMachineParameters(
 }
 
 void
-generateModelPatternInstanceParameters(
+generateModelMatchParameters(
     const ModelParams& params,
     ostream& out
 ) {
-    out << "% Pattern instance data" << endl;
+    out << "% Match data" << endl;
 
-    out << "numPatternInstances = " << params.getNumPIs() << ";"
+    out << "numMatches = " << params.getNumMatches() << ";"
          << endl;
 
-    out << "patInstOperationsCovered = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getOperationNodesCoveredByAllPIs());
+    out << "matchOperationsCovered = array1d(allMatches, ";
+    printMinizincValue(out, params.getOperationNodesCoveredByAllMatches());
     out << ");" << endl;
 
-    out << "patInstDataDefined = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getDataNodesDefinedByAllPIs());
+    out << "matchDataDefined = array1d(allMatches, ";
+    printMinizincValue(out, params.getDataNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "patInstStateDefined = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getStateNodesDefinedByAllPIs());
+    out << "matchStateDefined = array1d(allMatches, ";
+    printMinizincValue(out, params.getStateNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "patInstDataUsed = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getDataNodesUsedByAllPIs());
+    out << "matchDataUsed = array1d(allMatches, ";
+    printMinizincValue(out, params.getDataNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "patInstStateUsed = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getStateNodesUsedByAllPIs());
+    out << "matchStateUsed = array1d(allMatches, ";
+    printMinizincValue(out, params.getStateNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "patInstAndLabelMappings = "
-         << "array2d(allPatternInstances, allFuncLabelNodes, ";
+    out << "matchAndLabelMappings = "
+         << "array2d(allMatches, allFuncLabelNodes, ";
     {
-        size_t num_instances = params.getNumPIs();
+        size_t num_matches = params.getNumMatches();
         size_t num_labels = params.getNumLabelNodesInF();
-        vector<int> mappings(num_instances * num_labels, -1);
+        vector<int> mappings(num_matches * num_labels, -1);
         int index = 0;
         ArrayIndex pat_index = 0;
-        for (const auto& entries : params.getLabelNodesReferredByAllPIs()) {
+        for (const auto& entries : params.getLabelNodesReferredByAllMatches()) {
             for (const ArrayIndex& node_index : entries) {
                 mappings[pat_index * num_labels + node_index] = index++;
             }
@@ -244,16 +244,16 @@ generateModelPatternInstanceParameters(
     }
     out << ");" << endl;
 
-    out << "patInstCodeSizes = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getCodeSizesForAllPIs());
+    out << "matchCodeSizes = array1d(allMatches, ";
+    printMinizincValue(out, params.getCodeSizesForAllMatches());
     out << ");" << endl;
 
-    out << "patInstLatencies = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getLatenciesForAllPIs());
+    out << "matchLatencies = array1d(allMatches, ";
+    printMinizincValue(out, params.getLatenciesForAllMatches());
     out << ");" << endl;
 
-    out << "patInstApplyUseDefDomConstraints = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getAUDDCSettingForAllPIs());
+    out << "matchApplyUseDefDomConstraints = array1d(allMatches, ";
+    printMinizincValue(out, params.getAUDDCSettingForAllMatches());
     out << ");" << endl;
 }
 
@@ -266,7 +266,7 @@ generateModelParameters(
     out << endl;
     generateModelTargetMachineParameters(params, out);
     out << endl;
-    generateModelPatternInstanceParameters(params, out);
+    generateModelMatchParameters(params, out);
 }
 
 void
@@ -282,16 +282,16 @@ generateModelConstraintsForF(
 }
 
 void
-generateModelConstraintsForPIs(
+generateModelConstraintsForMatches(
     const ModelParams& params,
     ostream& out
 ) {
     ConstraintProcessor cprocessor;
     ArrayIndex pi = 0;
-    for (const auto& cs : params.getConstraintsForAllPIs()) {
+    for (const auto& cs : params.getConstraintsForAllMatches()) {
         if (cs.size() > 0) {
             for (const Constraint* c : cs) {
-                out << cprocessor.processConstraintForPI(c, pi) << endl;
+                out << cprocessor.processConstraintForMatch(c, pi) << endl;
             }
             out << endl;
         }
@@ -327,7 +327,7 @@ void outputModelParams(
     sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
     sout << "%==============================" << endl;
     sout << endl;
-    generateModelConstraintsForPIs(params, sout);
+    generateModelConstraintsForMatches(params, sout);
 
     out << "% AUTO-GENERATED" << endl;
     out << endl;

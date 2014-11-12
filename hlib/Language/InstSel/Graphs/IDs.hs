@@ -15,8 +15,11 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.Graphs.IDs
-  ( NodeID (..)
+  ( MatchID (..)
+  , NodeID (..)
+  , fromMatchID
   , fromNodeID
+  , toMatchID
   , toNodeID
   )
 where
@@ -32,6 +35,14 @@ import Language.InstSel.Utils
 -- Data types
 --------------
 
+-- | Represents a match ID.
+
+newtype MatchID = MatchID Natural
+  deriving (Eq, Ord, Num, Enum, Real, Integral)
+
+instance Show MatchID where
+  show (MatchID i) = show i
+
 -- | Node ID data type.
 newtype NodeID =
   NodeID Natural
@@ -45,6 +56,12 @@ instance Show NodeID where
 -------------
 -- Functions
 -------------
+
+fromMatchID :: MatchID -> Natural
+fromMatchID (MatchID i) = i
+
+toMatchID :: (Integral i) => i -> MatchID
+toMatchID = MatchID . toNatural
 
 fromNodeID :: NodeID -> Natural
 fromNodeID (NodeID i) = i

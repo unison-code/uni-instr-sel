@@ -63,19 +63,19 @@ class ConstraintProcessor {
     processConstraintForF(const Model::Constraint* c);
 
     /**
-     * Converts a constraint for a pattern instance into a Minizinc equivalent.
+     * Converts a constraint for a match into a Minizinc equivalent.
      *
      * @param c
      *        The constraint.
      * @param i
-     *        The array index for the pattern instance.
+     *        The array index for the match.
      * @returns Minizinc constraint as a string.
      * @throws Exception
      *         When something went wrong.
      */
     std::string
-    processConstraintForPI(const Model::Constraint* c,
-                           const Model::ArrayIndex& i);
+    processConstraintForMatch(const Model::Constraint* c,
+                              const Model::ArrayIndex& i);
 
   protected:
     /**
@@ -119,7 +119,7 @@ class ConstraintProcessor {
     getStateDefinerVariableArrayName(void) const;
 
     /**
-     * Gets the variable array for the pattern instance-to-basic block
+     * Gets the variable array for the match-to-basic block
      * allocation.
      *
      * @returns Variable name.
@@ -128,12 +128,12 @@ class ConstraintProcessor {
     getBBAllocationVariableArrayName(void) const;
 
     /**
-     * Gets the variable array for the pattern instance selection.
+     * Gets the variable array for the match selection.
      *
      * @returns Variable name.
      */
     std::string
-    getPatInstSelectedVariableArrayName(void) const;
+    getMatchSelectedVariableArrayName(void) const;
 
     /**
      * Gets the parameter array for the dominator sets.
@@ -144,21 +144,21 @@ class ConstraintProcessor {
     getDomSetParameterArrayName(void) const;
 
     /**
-     * Gets the variable array for the distances between certain pattern
-     * instances and basic block labels.
+     * Gets the variable array for the distances between certain matches and
+     * basic block labels.
      *
      * @returns Variable name.
      */
     std::string
-    getPatInstLabelDistsVariableArrayName(void) const;
+    getMatchLabelDistsVariableArrayName(void) const;
 
     /**
-     * Gets the parameter matrix for the pattern instance and label mappings.
+     * Gets the parameter matrix for the match and label mappings.
      *
      * @returns Parameter name.
      */
     std::string
-    getPatInstAndLabelMappingsMatrixName(void) const;
+    getMatchAndLabelMappingsMatrixName(void) const;
 
     /**
      * Gets the register value used for indicating that a data node represents
@@ -171,8 +171,7 @@ class ConstraintProcessor {
 
     /**
      * Gets the register value used for indicating that a data node represents
-     * an intermediate data value, which cannot be reused by other pattern
-     * instances.
+     * an intermediate data value, which cannot be reused by other matches.
      *
      * @returns Value name.
      */
@@ -225,7 +224,7 @@ class ConstraintProcessor {
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::PatternInstanceExpr* e);
+    process(const Model::MatchExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)

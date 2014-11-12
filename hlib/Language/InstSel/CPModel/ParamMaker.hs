@@ -21,13 +21,12 @@ where
 import Language.InstSel.Constraints
 import Language.InstSel.CPModel
   hiding
-  ( patAssIDMaps
-  , patAUDDC
+  ( mAssIDMaps
+  , mAUDDC
   )
 import Language.InstSel.Graphs
 import Language.InstSel.Graphs.PatternMatching.VF2
 import Language.InstSel.OpStructures
-import Language.InstSel.Patterns
 import Language.InstSel.ProgramModules
   ( Function (..) )
 import Language.InstSel.TargetMachine
@@ -47,7 +46,7 @@ mkParams :: Function -> TargetMachine -> CPModelParams
 mkParams f m =
   CPModelParams
     (mkFunctionGraphData f)
-    (mkPatternInstanceData f (tmInstructions m))
+    (mkMatchData f (tmInstructions m))
     (mkMachineData m)
 
 mkFunctionGraphData :: Function -> FunctionGraphData
@@ -73,18 +72,18 @@ mkMachineData m =
   (tmID m)
   (map fst (tmRegisters m))
 
-mkPatternInstanceData ::
+mkMatchData ::
      Function
   -> [Instruction]
-  -> [PatternInstanceData]
-mkPatternInstanceData f is =
+  -> [MatchData]
+mkMatchData f is =
   fst $ foldr (processInstruction f) ([], 0) is
 
 processInstruction ::
      Function
   -> Instruction
-  -> ([PatternInstanceData], PatternInstanceID)
-  -> ([PatternInstanceData], PatternInstanceID)
+  -> ([MatchData], MatchID)
+  -> ([MatchData], MatchID)
 processInstruction f i t =
   foldr (processInstPattern f i) t (instPatterns i)
 
@@ -92,8 +91,8 @@ processInstPattern ::
      Function
   -> Instruction
   -> InstPattern
-  -> ([PatternInstanceData], PatternInstanceID)
-  -> ([PatternInstanceData], PatternInstanceID)
+  -> ([MatchData], MatchID)
+  -> ([MatchData], MatchID)
 processInstPattern f i p t =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
@@ -104,9 +103,9 @@ processMatch ::
      Instruction
   -> InstPattern
   -> Match NodeID
-  -> ([PatternInstanceData], PatternInstanceID)
-  -> ([PatternInstanceData], PatternInstanceID)
-processMatch i p m (pids, next_piid) =
+  -> ([MatchData], MatchID)
+  -> ([MatchData], MatchID)
+processMatch i p m (mids, next_mid) =
   let g = osGraph $ patOS p
       ns = getAllNodes g
       a_ns = filter isOperationNode ns
@@ -123,10 +122,10 @@ processMatch i p m (pids, next_piid) =
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
       i_props = instProps i
-      new_pid = PatternInstanceData
+      new_mid = MatchData
                   (instID i)
                   (patID p)
-                  next_piid
+                  next_mid
                   (findFNsInMatch m (getNodeIDs a_ns))
                   (findFNsInMatch m (getNodeIDs d_def_ns))
                   (findFNsInMatch m (getNodeIDs d_use_ns))
@@ -140,7 +139,7 @@ processMatch i p m (pids, next_piid) =
                   (instCodeSize i_props)
                   (instLatency i_props)
                   (findFNsInMatch m (patAssIDMaps p))
-  in (new_pid:pids, next_piid + 1)
+  in (new_mid:mids, next_mid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
@@ -211,8 +210,8 @@ replaceInNumExpr m (Bool2NumExpr e) =
   Bool2NumExpr (replaceInBoolExpr m e)
 replaceInNumExpr m (Node2NumExpr e) =
   Node2NumExpr (replaceInNodeExpr m e)
-replaceInNumExpr m (PatternInstance2NumExpr e) =
-  PatternInstance2NumExpr (replaceInPatternInstanceExpr m e)
+replaceInNumExpr m (Match2NumExpr e) =
+  Match2NumExpr (replaceInMatchExpr m e)
 replaceInNumExpr m (Instruction2NumExpr e) =
   Instruction2NumExpr (replaceInInstructionExpr m e)
 replaceInNumExpr m (Pattern2NumExpr e) =
@@ -221,9 +220,9 @@ replaceInNumExpr m (Label2NumExpr e) =
   Label2NumExpr (replaceInLabelExpr m e)
 replaceInNumExpr m (Register2NumExpr e) =
   Register2NumExpr (replaceInRegisterExpr m e)
-replaceInNumExpr m (DistanceBetweenInstanceAndLabelExpr pat_e lab_e) =
-  DistanceBetweenInstanceAndLabelExpr
-    (replaceInPatternInstanceExpr m pat_e)
+replaceInNumExpr m (DistanceBetweenMatchAndLabelExpr pat_e lab_e) =
+  DistanceBetweenMatchAndLabelExpr
+    (replaceInMatchExpr m pat_e)
     (replaceInLabelExpr m lab_e)
 
 replaceInIntExpr :: Match NodeID -> IntExpr -> IntExpr
@@ -235,19 +234,19 @@ replaceInNodeExpr :: Match NodeID -> NodeExpr -> NodeExpr
 replaceInNodeExpr m (ANodeIDExpr i) =
   ANodeIDExpr $ fromJust $ findFNInMatch m i
 
-replaceInPatternInstanceExpr ::
+replaceInMatchExpr ::
      Match NodeID
-  -> PatternInstanceExpr
-  -> PatternInstanceExpr
-replaceInPatternInstanceExpr _ (APatternInstanceIDExpr i) =
-  APatternInstanceIDExpr i
-replaceInPatternInstanceExpr m (CovererOfOperationNodeExpr e) =
+  -> MatchExpr
+  -> MatchExpr
+replaceInMatchExpr _ (AMatchIDExpr i) =
+  AMatchIDExpr i
+replaceInMatchExpr m (CovererOfOperationNodeExpr e) =
   CovererOfOperationNodeExpr (replaceInNodeExpr m e)
-replaceInPatternInstanceExpr m (DefinerOfDataNodeExpr e) =
+replaceInMatchExpr m (DefinerOfDataNodeExpr e) =
   DefinerOfDataNodeExpr (replaceInNodeExpr m e)
-replaceInPatternInstanceExpr m (DefinerOfStateNodeExpr e) =
+replaceInMatchExpr m (DefinerOfStateNodeExpr e) =
   DefinerOfStateNodeExpr (replaceInNodeExpr m e)
-replaceInPatternInstanceExpr _ ThisPatternInstanceExpr = ThisPatternInstanceExpr
+replaceInMatchExpr _ ThisMatchExpr = ThisMatchExpr
 
 replaceInInstructionExpr ::
      Match NodeID
@@ -259,12 +258,12 @@ replaceInInstructionExpr m (InstructionOfPatternExpr e) =
 
 replaceInPatternExpr :: Match NodeID -> PatternExpr -> PatternExpr
 replaceInPatternExpr _ (APatternIDExpr i) = APatternIDExpr i
-replaceInPatternExpr m (PatternOfPatternInstanceExpr e) =
-  PatternOfPatternInstanceExpr (replaceInPatternInstanceExpr m e)
+replaceInPatternExpr m (PatternOfMatchExpr e) =
+  PatternOfMatchExpr (replaceInMatchExpr m e)
 
 replaceInLabelExpr :: Match NodeID -> LabelExpr -> LabelExpr
-replaceInLabelExpr m (LabelAllocatedToPatternInstanceExpr e) =
-  LabelAllocatedToPatternInstanceExpr (replaceInPatternInstanceExpr m e)
+replaceInLabelExpr m (LabelAllocatedToMatchExpr e) =
+  LabelAllocatedToMatchExpr (replaceInMatchExpr m e)
 replaceInLabelExpr m (LabelOfLabelNodeExpr e) =
   LabelOfLabelNodeExpr (replaceInNodeExpr m e)
 

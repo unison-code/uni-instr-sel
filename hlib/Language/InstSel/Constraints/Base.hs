@@ -71,7 +71,7 @@ data BoolExpr =
 
     -- | An expression indicating that a particular data node represents an
     -- intermediate data value, meaning that its value cannot be reused by
-    -- another pattern instance.
+    -- another match.
   | DataNodeIsIntermediateExpr NodeExpr
   deriving (Show)
 
@@ -92,8 +92,8 @@ data NumExpr =
     -- | Converts a node to a numerical expression.
   | Node2NumExpr NodeExpr
 
-    -- | Converts a pattern instance to a numerical expression.
-  | PatternInstance2NumExpr PatternInstanceExpr
+    -- | Converts a match to a numerical expression.
+  | Match2NumExpr MatchExpr
 
     -- | Converts an instruction to a numerical expression.
   | Instruction2NumExpr InstructionExpr
@@ -107,12 +107,12 @@ data NumExpr =
     -- | Converts a register to a numerical expression.
   | Register2NumExpr RegisterExpr
 
-    -- | Represents the distance between a pattern instance and a label. The
-    -- distance starts from the end of the instruction represented by the
-    -- pattern and stops at the beginning of the first instruction within the
-    -- basic block represented by the label. The distance is negative if the
-    -- label appears before the pattern.
-  | DistanceBetweenInstanceAndLabelExpr PatternInstanceExpr LabelExpr
+    -- | Represents the distance between a match and a label. The distance
+    -- starts from the end of the instruction represented by the pattern and
+    -- stops at the beginning of the first instruction within the basic block
+    -- represented by the label. The distance is negative if the label appears
+    -- before the pattern.
+  | DistanceBetweenMatchAndLabelExpr MatchExpr LabelExpr
   deriving (Show)
 
 -- | Integer value expressions.
@@ -132,21 +132,21 @@ data NodeExpr =
     ANodeIDExpr NodeID
   deriving (Show)
 
--- | Instance expressions.
-data PatternInstanceExpr =
-    -- | Introduces a pattern instance ID.
-    APatternInstanceIDExpr PatternInstanceID
+-- | Match expressions.
+data MatchExpr =
+    -- | Introduces a match ID.
+    AMatchIDExpr MatchID
 
-    -- | Retrieves the pattern instance in which this expression appears.
-  | ThisPatternInstanceExpr
+    -- | Retrieves the match in which this expression appears.
+  | ThisMatchExpr
 
-    -- | Retrieves the pattern instance which covers a certain operation node.
+    -- | Retrieves the match which covers a certain operation node.
   | CovererOfOperationNodeExpr NodeExpr
 
-    -- | Retrieves the pattern instance which defines a certain data node.
+    -- | Retrieves the match which defines a certain data node.
   | DefinerOfDataNodeExpr NodeExpr
 
-    -- | Retrieves the pattern instance which defines a certain state node.
+    -- | Retrieves the match which defines a certain state node.
   | DefinerOfStateNodeExpr NodeExpr
   deriving (Show)
 
@@ -164,15 +164,14 @@ data PatternExpr =
    -- | Introduces a pattern ID.
     APatternIDExpr PatternID
 
-    -- | Retrieves the pattern to which a pattern instance is derived from.
-  | PatternOfPatternInstanceExpr PatternInstanceExpr
+    -- | Retrieves the pattern from which a match is derived.
+  | PatternOfMatchExpr MatchExpr
   deriving (Show)
 
 -- | Label expressions.
 data LabelExpr =
-    -- | Retrieves the of the label to which a pattern instance has been
-    -- allocated.
-    LabelAllocatedToPatternInstanceExpr PatternInstanceExpr
+    -- | Retrieves the of the label to which a match has been allocated.
+    LabelAllocatedToMatchExpr MatchExpr
 
     -- | Retrieves the label associated with a label node.
   | LabelOfLabelNodeExpr NodeExpr

@@ -30,9 +30,8 @@ import Data.Maybe
 -------------
 
 -- | Creates basic block allocation constraints for a pattern graph such that
--- the pattern instance must be allocated to the root label if there is such a
--- node. The produced constraints (if any) are added to the existing
--- 'OpStructure'.
+-- the match must be allocated to the root label if there is such a node. The
+-- produced constraints (if any) are added to the existing 'OpStructure'.
 addBBAllocConstraints :: OpStructure -> OpStructure
 addBBAllocConstraints os =
   let g = osGraph os
@@ -40,14 +39,14 @@ addBBAllocConstraints os =
   in if isJust root_label
      then let new_cs = [ BoolExprConstraint $
                            EqExpr
-                           ( Label2NumExpr $
-                               LabelOfLabelNodeExpr $
-                                 ANodeIDExpr (getNodeID $ fromJust root_label)
-                           )
-                           ( Label2NumExpr $
-                               LabelAllocatedToPatternInstanceExpr $
-                                 ThisPatternInstanceExpr
-                           )
+                             ( Label2NumExpr $
+                                 LabelOfLabelNodeExpr $
+                                   ANodeIDExpr (getNodeID $ fromJust root_label)
+                             )
+                             ( Label2NumExpr $
+                                 LabelAllocatedToMatchExpr $
+                                   ThisMatchExpr
+                             )
                        ]
           in addConstraints os new_cs
      else os

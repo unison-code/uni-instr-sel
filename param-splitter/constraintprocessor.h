@@ -32,8 +32,8 @@
 
 /**
  * Walks a constraint and replaces all occurrences of IDs with array indices.
- * Also, a constraint relating to a pattern instance will be augmented such that
- * the constraint will only be activated if the pattern instance is selected.
+ * Also, a constraint relating to a match will be augmented such that the
+ * constraint will only be activated if the match is selected.
  *
  * An object of this class should not be used by multiple threads as its methods
  * are not thread-safe.
@@ -57,18 +57,18 @@ class ConstraintProcessor {
     /**
      * Walks a given constraint and replaces all occurrences of IDs with array
      * indices, and augments the constraints such that it will only be activated
-     * if the pattern instance is selected.
+     * if the match is selected.
      *
      * @param c
      *        The constraint. This can be destroyed upon return.
      * @param id
-     *        ID of the pattern instance to which the constraint belongs.
+     *        ID of the match to which the constraint belongs.
      * @returns The new constraint.
      * @throws Exception
      *         When something went wrong.
      */
     Model::Constraint*
-    processConstraintForPI(const Model::Constraint* c, const Model::ID& id);
+    processConstraintForMatch(const Model::Constraint* c, const Model::ID& id);
 
     /**
      * Walks a given constraint and replaces all occurrences of IDs with array
@@ -118,8 +118,8 @@ class ConstraintProcessor {
     /**
      * \copydoc process(const Model::BoolExpr*)
      */
-    Model::PatternInstanceExpr*
-    processPatternInstanceExpr(const Model::PatternInstanceExpr* e);
+    Model::MatchExpr*
+    processMatchExpr(const Model::MatchExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
@@ -164,16 +164,15 @@ class ConstraintProcessor {
     const Params& p_;
 
     /**
-     * Determines whether a constraint for a pattern instance is currently being
-     * processed.
+     * Determines whether a constraint for a match is currently being processed.
      */
-    bool is_processing_pi_constraint_;
+    bool is_processing_constraint_;
 
     /**
-     * ID of the pattern instance to which the constraint which is currently
-     * being processed belongs to.
+     * ID of the match to which the constraint that is currently being processed
+     * belongs.
      */
-    Model::ID piid_;
+    Model::ID mid_;
 };
 
 #endif

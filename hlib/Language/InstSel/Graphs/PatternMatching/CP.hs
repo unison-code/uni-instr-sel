@@ -69,7 +69,7 @@ data Parameters =
     { indexedPatternNodes :: [Node]
       -- ^ The nodes in the pattern graph, where each has been given a unique
       -- index (which is the element index).
-    , patternOperations :: [Int]
+    , patternOperationNodes :: [Int]
       -- ^ The indices of the pattern nodes that are operations.
     , indexedPatternEdges :: [(Int, Int)]
       -- ^ The edges in the pattern graph, where the first value is the index of
@@ -194,10 +194,10 @@ computeParameters fg pg =
               ]
           )
           pg_node_index_maps
-      pg_opsindices =
+      pg_ops_indices =
         map
           fst
-          (filter (patternOperation . snd) (zip [0..] pg_node_index_maps))
+          (filter (isOperationNode . snd) (zip [0..] pg_node_index_maps))
       pe_init_doms =
         map
           ( \pe ->
@@ -212,7 +212,7 @@ computeParameters fg pg =
           (findAlternativeEdges fg)
   in Parameters
        { indexedPatternNodes = pg_node_index_maps
-       , patternOperation = pg_ops_indices
+       , patternOperationNodes = pg_ops_indices
        , indexedPatternEdges = pg_edges_as_indices
        , indexedFunctionNodes = fg_node_index_maps
        , indexedFunctionEdges = fg_edges_as_indices

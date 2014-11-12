@@ -39,17 +39,17 @@ array[allFuncLabelNodes] of set of int: funcLabelDomsets;
 % Target machine data
 int: numRegisters;
 
-% Pattern instance data
-int: numPatternInstances;
-array[allPatternInstances] of set of int: patInstOperationsCovered;
-array[allPatternInstances] of set of int: patInstDataDefined;
-array[allPatternInstances] of set of int: patInstDataUsed;
-array[allPatternInstances] of set of int: patInstStateDefined;
-array[allPatternInstances] of set of int: patInstStateUsed;
-array[allPatternInstances, allFuncLabelNodes] of int: patInstAndLabelMappings;
-array[allPatternInstances] of int: patInstCodeSizes;
-array[allPatternInstances] of int: patInstLatencies;
-array[allPatternInstances] of bool: patInstApplyUseDefDomConstraints;
+% Match data
+int: numMatches;
+array[allMatches] of set of int: matchOperationsCovered;
+array[allMatches] of set of int: matchDataDefined;
+array[allMatches] of set of int: matchDataUsed;
+array[allMatches] of set of int: matchStateDefined;
+array[allMatches] of set of int: matchStateUsed;
+array[allMatches, allFuncLabelNodes] of int: matchAndLabelMappings;
+array[allMatches] of int: matchCodeSizes;
+array[allMatches] of int: matchLatencies;
+array[allMatches] of bool: matchApplyUseDefDomConstraints;
 
 
 
@@ -61,10 +61,10 @@ include "params.mzn";
 % INTERNAL PARAMETERS
 %=====================
 
-% Number of indices in the pattern instance-to-destination label node mappings
+% Number of indices in the match-to-destination label node mappings
 % (a negative value indicates absence of a valid index)
 int: numIndicesInPatInstLabelMappings =
-     max([ i | i in patInstAndLabelMappings ]) + 1;
+     max([ i | i in matchAndLabelMappings ]) + 1;
 
 % Total number of registers values (additional values will be needed for
 % representing certain settings, such as whether the value is an intermediate
@@ -72,8 +72,7 @@ int: numIndicesInPatInstLabelMappings =
 int: numRegValues = numRegisters + 2;
 
 % Total number of labels values (an additional value will be needed for
-% representing the null label, to which non-selected pattern instances will be
-% allocated).
+% representing the null label, to which non-selected matches will be allocated).
 int: numLabValues = numFuncLabelNodes + 1;
 
 % Reference to the null label
@@ -91,7 +90,7 @@ set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
 set of int: allFuncLabelNodesPlusNull = 0..numLabValues-1;
-set of int: allPatternInstances = 0..numPatternInstances-1;
+set of int: allMatches = 0..numMatches-1;
 set of int: allRegValues = 0..numRegValues-1;
 set of int: allIndicesInPatInstLabelMappings =
     0..numIndicesInPatInstLabelMappings-1;
@@ -103,21 +102,21 @@ set of int: allIndicesInPatInstLabelMappings =
 %===========
 
 % Operation node coverage
-array[allFuncOperationNodes] of var allPatternInstances: on_cov;
+array[allFuncOperationNodes] of var allMatches: on_cov;
 
 % Data node definitions, register allocation, and immediate values
-array[allFuncDataNodes] of var allPatternInstances: dn_def;
+array[allFuncDataNodes] of var allMatches: dn_def;
 array[allFuncDataNodes] of var allRegValues: dn_reg;
 array[allFuncDataNodes] of var int: dn_imm;
 
 % State node definitions
-array[allFuncStateNodes] of var allPatternInstances: sn_def;
+array[allFuncStateNodes] of var allMatches: sn_def;
 
-% Pattern instance selection
-array[allPatternInstances] of var bool: pi_sel;
+% Match selection
+array[allMatches] of var bool: pi_sel;
 
-% Basic block allocation of pattern instances
-array[allPatternInstances] of var allFuncLabelNodesPlusNull: pi_bb;
+% Basic block allocation of matches
+array[allMatches] of var allFuncLabelNodesPlusNull: pi_bb;
 
 % Basic block ordering. In the first variable (bb_order) each index represents a
 % position (and the value the label put at that position), and the second
@@ -150,16 +149,16 @@ include "inverse.mzn";
 % Prevent a pattern from covering operation nodes and defining data or state
 % nodes outside its range.
 constraint
-forall (p in allPatternInstances) (
-    forall (n in allFuncOperationNodes where not (n in patInstOperationsCovered[p])) (
+forall (p in allMatches) (
+    forall (n in allFuncOperationNodes where not (n in matchOperationsCovered[p])) (
         on_cov[n] != p
     )
     /\
-    forall (n in allFuncDataNodes where not (n in patInstDataDefined[p])) (
+    forall (n in allFuncDataNodes where not (n in matchDataDefined[p])) (
         dn_def[n] != p
     )
     /\
-    forall (n in allFuncStateNodes where not (n in patInstStateDefined[p])) (
+    forall (n in allFuncStateNodes where not (n in matchStateDefined[p])) (
         sn_def[n] != p
     )
 );
@@ -167,48 +166,47 @@ forall (p in allPatternInstances) (
 % Enforce selection of pattern if and only if all of its operation nodes are
 % covered and its definable data and state nodes are defined by that pattern.
 constraint
-forall (p in allPatternInstances) (
+forall (p in allMatches) (
     pi_sel[p]
     <->
     (
-        forall (n in patInstOperationsCovered[p])
+        forall (n in matchOperationsCovered[p])
         (
             on_cov[n] == p
         )
         /\
-        forall (n in patInstDataDefined[p])
+        forall (n in matchDataDefined[p])
         (
             dn_def[n] == p
         )
         /\
-        forall (n in patInstStateDefined[p])
+        forall (n in matchStateDefined[p])
         (
             sn_def[n] == p
         )
     )
 );
 
-% Enforce that all non-selected pattern instances be allocated to the null
-% label.
+% Enforce that all non-selected matches be allocated to the null label.
 constraint
-forall (p in allPatternInstances) (
+forall (p in allMatches) (
     not pi_sel[p] -> pi_bb[p] = nullLabel
 );
 
-% Enforce that all selected pattern instances must be allocated to a basic block
-% such that every used data node is dominated by its data definition. Likewise
-% for the state nodes. These constraints should not be applied to the generic
-% phi patterns.
+% Enforce that all selected matches must be allocated to a basic block such that
+% every used data node is dominated by its data definition. Likewise for the
+% state nodes. These constraints should not be applied to the generic phi
+% patterns.
 constraint
-forall (p in allPatternInstances where patInstApplyUseDefDomConstraints[p]) (
+forall (p in allMatches where matchApplyUseDefDomConstraints[p]) (
     pi_sel[p]
     ->
     (
-        forall (n in patInstDataUsed[p]) (
+        forall (n in matchDataUsed[p]) (
             pi_bb[dn_def[n]] in funcLabelDomsets[pi_bb[p]]
         )
         /\
-        forall (n in patInstStateUsed[p]) (
+        forall (n in matchStateUsed[p]) (
             pi_bb[sn_def[n]] in funcLabelDomsets[pi_bb[p]]
         )
     )
@@ -229,21 +227,21 @@ bb_order[rootLabel] == 0;
 constraint
 bb_order[nullLabel] == nullLabel;
 
-% Calculate distances between pattern instances (where appropriate) and labels.
+% Calculate distances between matches (where appropriate) and labels.
 constraint
 forall (
-    p in allPatternInstances,
+    p in allMatches,
     l in allFuncLabelNodes
-    where patInstAndLabelMappings[p, l] >= 0
+    where matchAndLabelMappings[p, l] >= 0
 ) (
-    br_bb_dists[patInstAndLabelMappings[p, l]] =
+    br_bb_dists[matchAndLabelMappings[p, l]] =
         % When the label appears after the branch
         sum (i in allFuncLabelNodes) (
             % Assuming the branch always appears as the last instruction within
             % the block, which means that we only need to consider the size of
             % the blocks between the source and the target label.
-            sum (pp in allPatternInstances) (
-                patInstCodeSizes[pp] * bool2int (pi_bb[pp] == i)
+            sum (pp in allMatches) (
+                matchCodeSizes[pp] * bool2int (pi_bb[pp] == i)
             )
             *
             bool2int (
@@ -259,8 +257,8 @@ forall (
             % the block, which means that we consider all instructions in the
             % block wherein the branch appears as well as the size of the blocks
             % between the source and the target label.
-            sum (pp in allPatternInstances) (
-                patInstCodeSizes[pp] * bool2int (pi_bb[pp] == i)
+            sum (pp in allMatches) (
+                matchCodeSizes[pp] * bool2int (pi_bb[pp] == i)
             )
             *
             bool2int (
@@ -281,8 +279,8 @@ forall (n in allFuncDataNodes) (
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-cost = sum (p in allPatternInstances) (
-           patInstLatencies[p] * bool2int (pi_sel[p])
+cost = sum (p in allMatches) (
+           matchLatencies[p] * bool2int (pi_sel[p])
        );
 
 

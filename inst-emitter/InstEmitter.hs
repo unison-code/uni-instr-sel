@@ -35,11 +35,11 @@ import Language.InstSel.CPModel
 import Language.InstSel.CPModel.Json
 import Language.InstSel.CPModel.PostProcessor
 import Language.InstSel.Graphs.IDs
-  (NodeID)
-import Language.InstSel.Patterns.IDs
-  (PatternInstanceID)
+  ( MatchID
+  , NodeID
+  )
 import Language.InstSel.TargetMachine.IDs
-  (BBLabelID)
+  ( BBLabelID )
 import Language.InstSel.TargetMachine.Targets
 import Language.InstSel.Utils
   ( fromLeft
@@ -47,14 +47,14 @@ import Language.InstSel.Utils
   , isLeft
   )
 import Control.Monad
-  (when)
+  ( when )
 import Data.Maybe
   ( fromJust
   , isNothing
   )
 import System.Console.CmdArgs
 import System.Exit
-  (exitFailure)
+  ( exitFailure )
 
 
 
@@ -83,13 +83,13 @@ parseArgs =
 getPIsAllocatedToBB :: CPSolutionData
                        -> NodeID              -- ^ The node ID of the
                                               -- corresponding label node.
-                       -> [PatternInstanceID]
+                       -> [MatchID]
 getPIsAllocatedToBB cp_data n =
-  map fst $ filter (\t -> snd t == n) $ bbAllocsForPIs cp_data
+  map fst $ filter (\t -> snd t == n) $ bbAllocsForMatches cp_data
 
 labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BBLabelID]
 labNodes2BBLabels cp_data ns =
-  let bb_maps = funcBBLabels $ funcData $ modelParams cp_data
+  let bb_maps = funcBBLabels $ functionData $ modelParams cp_data
   in map (\n -> labBB $ head $ filter (\m -> labNode m == n) bb_maps) ns
 
 genCode :: CPSolutionData -> [String]
@@ -97,7 +97,11 @@ genCode cp_data =
   let labs = orderOfBBs cp_data
       pi_lists = map (getPIsAllocatedToBB cp_data) labs
       dags = map (mkControlDataFlowDAG cp_data) pi_lists
-      tm = fromJust $ getTargetMachine $ machID $ machData $ modelParams cp_data
+      tm = fromJust
+           $ getTargetMachine
+           $ machID
+           $ machineData
+           $ modelParams cp_data
       is = map (emitInstructions cp_data tm) dags
       bb_code = zipWith
                 (\bb ss -> (show bb ++ ":"):ss)
