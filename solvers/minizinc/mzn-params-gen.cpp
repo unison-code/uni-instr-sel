@@ -168,19 +168,19 @@ generateModelFunctionParameters(
 ) {
     out << "% Function data" << endl;
 
-    out << "numFuncOperationNodes = " << params.getNumOperationNodesInF() << ";"
+    out << "numOpsInFunction = " << params.getNumOperationNodesInF() << ";"
          << endl;
-    out << "numFuncDataNodes = " << params.getNumDataNodesInF() << ";"
+    out << "numDataInFunction = " << params.getNumDataNodesInF() << ";"
          << endl;
-    out << "numFuncStateNodes = " << params.getNumStateNodesInF() << ";"
+    out << "numStatesInFunction = " << params.getNumStateNodesInF() << ";"
          << endl;
-    out << "numFuncLabelNodes = " << params.getNumLabelNodesInF() << ";"
-         << endl;
-
-    out << "rootLabel = " << params.getRootLabelInF() << ";"
+    out << "numLabelsInFunction = " << params.getNumLabelNodesInF() << ";"
          << endl;
 
-    out << "funcLabelDomsets = array1d(allFuncLabelNodes, ";
+    out << "rootLabelOfFunction = " << params.getRootLabelInF() << ";"
+         << endl;
+
+    out << "domsetOfLabelInFunction = array1d(allLabelsInFunction, ";
     printMinizincValue(out, params.getDomsetForAllLabelNodesInF());
     out << ");" << endl;
 }
@@ -206,28 +206,28 @@ generateModelMatchParameters(
     out << "numMatches = " << params.getNumMatches() << ";"
          << endl;
 
-    out << "matchOperationsCovered = array1d(allMatches, ";
+    out << "opsCoveredByMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getOperationNodesCoveredByAllMatches());
     out << ");" << endl;
 
-    out << "matchDataDefined = array1d(allMatches, ";
+    out << "dataDefinedByMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getDataNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "matchStateDefined = array1d(allMatches, ";
+    out << "statesDefinedByMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getStateNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "matchDataUsed = array1d(allMatches, ";
+    out << "dataUsedInMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getDataNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "matchStateUsed = array1d(allMatches, ";
+    out << "statesUsedInMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getStateNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "matchAndLabelMappings = "
-         << "array2d(allMatches, allFuncLabelNodes, ";
+    out << "indexOfMatchLabelMapping = "
+         << "array2d(allMatches, allLabelsInFunction, ";
     {
         size_t num_matches = params.getNumMatches();
         size_t num_labels = params.getNumLabelNodesInF();
@@ -244,16 +244,12 @@ generateModelMatchParameters(
     }
     out << ");" << endl;
 
-    out << "matchCodeSizes = array1d(allMatches, ";
+    out << "codeSizeOfMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getCodeSizesForAllMatches());
     out << ");" << endl;
 
-    out << "matchLatencies = array1d(allMatches, ";
+    out << "latencyOfMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getLatenciesForAllMatches());
-    out << ");" << endl;
-
-    out << "matchApplyUseDefDomConstraints = array1d(allMatches, ";
-    printMinizincValue(out, params.getAUDDCSettingForAllMatches());
     out << ");" << endl;
 }
 

@@ -167,7 +167,7 @@ class ConstraintProcessor {
      * @returns Value name.
      */
     std::string
-    getRegForImmValuesName(void) const;
+    getRegValueForImm(void) const;
 
     /**
      * Gets the register value used for indicating that a data node represents
@@ -176,7 +176,7 @@ class ConstraintProcessor {
      * @returns Value name.
      */
     std::string
-    getRegForIntermediateValuesName(void) const;
+    getRegValueForNoReuse(void) const;
 
     /**
      * Converts a constraint into a Minizinc equivalent.

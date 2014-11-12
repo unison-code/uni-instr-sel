@@ -113,13 +113,13 @@ ConstraintProcessor::process(const BoolExpr* e) {
              dynamic_cast<const DataNodeIsAnIntConstantExpr*>(e))
     {
         return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getRegForImmValuesName();
+            + "] == " + getRegValueForImm();
     }
     else if (const DataNodeIsIntermediateExpr* de =
              dynamic_cast<const DataNodeIsIntermediateExpr*>(e))
     {
         return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getRegForIntermediateValuesName();
+            + "] == " + getRegValueForNoReuse();
     }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
@@ -364,60 +364,60 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 
 string
 ConstraintProcessor::getOperationCovererVariableArrayName(void) const {
-    return "on_cov";
+    return "cov";
 }
 
 string
 ConstraintProcessor::getDataDefinerVariableArrayName(void) const {
-    return "dn_def";
+    return "ddefm";
 }
 
 string
 ConstraintProcessor::getDataRegisterVariableArrayName(void) const {
-    return "dn_reg";
+    return "reg";
 }
 
 string
 ConstraintProcessor::getDataImmediateValuesVariableArrayName(void) const {
-    return "dn_imm";
+    return "cnst";
 }
 
 string
 ConstraintProcessor::getStateDefinerVariableArrayName(void) const {
-    return "sn_def";
+    return "sdefm";
 }
 
 string
 ConstraintProcessor::getBBAllocationVariableArrayName(void) const {
-    return "pi_bb";
+    return "bb";
 }
 
 string
 ConstraintProcessor::getDomSetParameterArrayName(void) const {
-    return "funcLabelDomsets";
+    return "domsetOfLabelInFunction";
 }
 
 string
 ConstraintProcessor::getMatchSelectedVariableArrayName(void) const {
-    return "pi_sel";
+    return "sel";
 }
 
 string
 ConstraintProcessor::getMatchLabelDistsVariableArrayName(void) const {
-    return "br_bb_dists";
+    return "dist";
 }
 
 string
 ConstraintProcessor::getMatchAndLabelMappingsMatrixName(void) const {
-    return "matchAndLabelMappings";
+    return "indexOfMatchLabelMapping";
 }
 
 string
-ConstraintProcessor::getRegForImmValuesName(void) const {
-    return "regForImmValues";
+ConstraintProcessor::getRegValueForImm(void) const {
+    return "regValueForImm";
 }
 
 string
-ConstraintProcessor::getRegForIntermediateValuesName(void) const {
-    return "regForIntermediateValues";
+ConstraintProcessor::getRegValueForNoReuse(void) const {
+    return "regValueForNoReuse";
 }

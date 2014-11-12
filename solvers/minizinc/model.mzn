@@ -29,27 +29,31 @@
 %=====================
 
 % Function data
-int: numFuncOperationNodes;
-int: numFuncDataNodes;
-int: numFuncStateNodes;
-int: numFuncLabelNodes;
-int: rootLabel;
-array[allFuncLabelNodes] of set of int: funcLabelDomsets;
+int: numOpsInFunction;
+int: numDataInFunction;
+int: numStatesInFunction;
+int: numLabelsInFunction;
+int: rootLabelOfFunction;
+array[allLabelsInFunction] of set of int: domsetOfLabelInFunction;
+array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
+array[allDataInFunction] of set of int: dpEdgesForDataInFunction;
+array[allStatesInFunction] of set of int: dpEdgesForStatesInFunction;
 
 % Target machine data
 int: numRegisters;
 
 % Match data
 int: numMatches;
-array[allMatches] of set of int: matchOperationsCovered;
-array[allMatches] of set of int: matchDataDefined;
-array[allMatches] of set of int: matchDataUsed;
-array[allMatches] of set of int: matchStateDefined;
-array[allMatches] of set of int: matchStateUsed;
-array[allMatches, allFuncLabelNodes] of int: matchAndLabelMappings;
-array[allMatches] of int: matchCodeSizes;
-array[allMatches] of int: matchLatencies;
-array[allMatches] of bool: matchApplyUseDefDomConstraints;
+array[allMatches] of set of int: opsCoveredByMatch;
+array[allMatches] of set of int: dataDefinedByMatch;
+array[allMatches] of set of int: dataUsedInMatch;
+array[allMatches] of set of int: statesDefinedByMatch;
+array[allMatches] of set of int: statesUsedInMatch;
+array[allMatches] of set of int: labelsAppearingInMatch;
+array[allMatches] of set of int: rootLabelOfFunctionOfMatch;
+array[allMatches] of int: codeSizeOfMatch;
+array[allMatches] of int: latencyOfMatch;
+array[allMatches, allLabelsInFunction] of int: indexOfMatchLabelMapping;
 
 
 
@@ -63,8 +67,7 @@ include "params.mzn";
 
 % Number of indices in the match-to-destination label node mappings
 % (a negative value indicates absence of a valid index)
-int: numIndicesInPatInstLabelMappings =
-     max([ i | i in matchAndLabelMappings ]) + 1;
+int: numMatchLabelMappings = max([ i | i in indexOfMatchLabelMapping ]) + 1;
 
 % Total number of registers values (additional values will be needed for
 % representing certain settings, such as whether the value is an intermediate
@@ -72,28 +75,36 @@ int: numIndicesInPatInstLabelMappings =
 int: numRegValues = numRegisters + 2;
 
 % Total number of labels values (an additional value will be needed for
-% representing the null label, to which non-selected matches will be allocated).
-int: numLabValues = numFuncLabelNodes + 1;
+% representing the dummy label, to which non-selected matches will be
+% allocated).
+int: numLabelValues = numLabelsInFunction + 1;
 
-% Reference to the null label
-int: nullLabel = numLabValues - 1;
+% Reference to the dummy-label value
+int: labelValueForDummy = numLabelValues - 1;
 
-% Registers
-% Reference to use when a data node represents an intermediate value
-int: regForInterValues = numRegValues - 2;
+% Register values
+% Reference to use when a data node represents an no-reuse value
+int: regValueForNoReuse = numRegValues - 2;
 % Reference to use when a data node represents an immediate value
-int: regForImmValues = numRegValues - 1;
+int: regValueForImm = numRegValues - 1;
+
+% Total number of match values (an additional value will be needed for
+% indicating that the match is inactive).
+int: numMatchValues = numMatches + 1;
+
+% Reference to the inactive-match value
+int: matchValueForInactive = numMatchValues - 1;
 
 % Sets to be used as array ranges
-set of int: allFuncOperationNodes = 0..numFuncOperationNodes-1;
-set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
-set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
-set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
-set of int: allFuncLabelNodesPlusNull = 0..numLabValues-1;
+set of int: allOperationsInFunction = 0..numOpsInFunction-1;
+set of int: allDataInFunction = 0..numDataInFunction-1;
+set of int: allStatesInFunction = 0..numStatesInFunction-1;
+set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
+set of int: allLabelsInFunctionPlusDummy = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
+set of int: allMatchesPlusInactive = 0..numMatchValues-1;
 set of int: allRegValues = 0..numRegValues-1;
-set of int: allIndicesInPatInstLabelMappings =
-    0..numIndicesInPatInstLabelMappings-1;
+set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 
 
 
@@ -102,31 +113,34 @@ set of int: allIndicesInPatInstLabelMappings =
 %===========
 
 % Operation node coverage
-array[allFuncOperationNodes] of var allMatches: on_cov;
+array[allOperationsInFunction] of var allMatchesPlusInactive: cov;
 
 % Data node definitions, register allocation, and immediate values
-array[allFuncDataNodes] of var allMatches: dn_def;
-array[allFuncDataNodes] of var allRegValues: dn_reg;
-array[allFuncDataNodes] of var int: dn_imm;
+array[allDataInFunction] of var allMatchesPlusInactive: ddefm;
+array[allDataInFunction] of var set of allLabelsInFunctionPlusDummy: ddefbb;
+array[allDataInFunction] of var allRegValues: reg;
+array[allDataInFunction] of var int: cnst;
 
 % State node definitions
-array[allFuncStateNodes] of var allMatches: sn_def;
+array[allStatesInFunction] of var allMatchesPlusInactive: sdefm;
+array[allStatesInFunction] of var set of allLabelsInFunctionPlusDummy: sdefbb;
 
 % Match selection
-array[allMatches] of var bool: pi_sel;
+array[allMatches] of var bool: sel;
 
 % Basic block allocation of matches
-array[allMatches] of var allFuncLabelNodesPlusNull: pi_bb;
+array[allMatches] of var allLabelsInFunctionPlusDummy: bb;
 
-% Basic block ordering. In the first variable (bb_order) each index represents a
+% Basic block ordering. In the first variable (ord) each index represents a
 % position (and the value the label put at that position), and the second
-% variable (bb_order_inv) is the inverse of the first variable (that is, each
+% variable (ord_inv) is the inverse of the first variable (that is, each
 % index represents a label, and a value its position).
-array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order;
-array[allFuncLabelNodesPlusNull] of var allFuncLabelNodesPlusNull: bb_order_inv;
+array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy: ord;
+array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy:
+  ord_inv;
 
 % Branch-to-label distances
-array[allIndicesInPatInstLabelMappings] of var int: br_bb_dists;
+array[allIndicesInMatchLabelMappings] of var int: dist;
 
 % Cost
 var int: cost;
@@ -138,6 +152,7 @@ var int: cost;
 %====================
 
 include "alldifferent.mzn";
+include "global_cardinality.mzn";
 include "inverse.mzn";
 
 
@@ -146,142 +161,265 @@ include "inverse.mzn";
 % CONSTRAINTS
 %============
 
-% Prevent a pattern from covering operation nodes and defining data or state
-% nodes outside its range.
+% Restrict the initial domains of 'cov', 'ddefm', and 'sdefm' such that matches
+% are not allowed to cover or define nodes which are not part of the match
 constraint
-forall (p in allMatches) (
-    forall (n in allFuncOperationNodes where not (n in matchOperationsCovered[p])) (
-        on_cov[n] != p
+  forall (m in allMatches)
+  (
+    forall ( n in allOperationsInFunction
+             where not (n in opsCoveredByMatch[m])
+           )
+    (
+      cov[n] != m
     )
     /\
-    forall (n in allFuncDataNodes where not (n in matchDataDefined[p])) (
-        dn_def[n] != p
+    forall (n in allDataInFunction where not (n in dataDefinedByMatch[m]))
+    (
+      ddefm[n] != m
     )
     /\
-    forall (n in allFuncStateNodes where not (n in matchStateDefined[p])) (
-        sn_def[n] != p
+    forall (n in allStatesInFunction where not (n in statesDefinedByMatch[m]))
+    (
+      sdefm[n] != m
     )
-);
+  );
 
-% Enforce selection of pattern if and only if all of its operation nodes are
-% covered and its definable data and state nodes are defined by that pattern.
+% Either all or none of the operations of match must be covered.
 constraint
-forall (p in allMatches) (
-    pi_sel[p]
+  let { array[1..numMatches] of var int: counts }
+  in forall (m in allMatches)
+     (
+       counts[m+1] == 0 \/ counts[m+1] == card(opsCoveredByMatch[m])
+     )
+     /\
+     global_cardinality(cov, [ m | m in allMatches ], counts);
+
+% A match is selected if and only if all of its operation nodes are covered and
+% its definable data and state nodes are defined by that pattern.
+constraint
+  forall (m in allMatches)
+  (
+    sel[m]
     <->
     (
-        forall (n in matchOperationsCovered[p])
-        (
-            on_cov[n] == p
-        )
-        /\
-        forall (n in matchDataDefined[p])
-        (
-            dn_def[n] == p
-        )
-        /\
-        forall (n in matchStateDefined[p])
-        (
-            sn_def[n] == p
-        )
+      forall (n in opsCoveredByMatch[m])
+      (
+          cov[n] == m
+      )
+      /\
+      forall (n in dataDefinedByMatch[m])
+      (
+          ddefm[n] == m
+      )
+      /\
+      forall (n in statesDefinedByMatch[m])
+      (
+          sdefm[n] == m
+      )
     )
-);
+  );
 
-% Enforce that all non-selected matches be allocated to the null label.
+% Non-selected matches must be allocated to the dummy block.
 constraint
-forall (p in allMatches) (
-    not pi_sel[p] -> pi_bb[p] = nullLabel
-);
+  forall (m in allMatches)
+  (
+    not sel[m] -> bb[m] = labelValueForDummy
+  );
+
+% Selected matches which have a root label must be allocated in the basic block
+% of that label.
+constraint
+  forall (m in allMatches)
+  (
+    % If a match has no root label, then this set will be empty and hence there
+    % will be no such constraint.
+    forall (r in rootLabelOfMatch[m])
+    (
+      sel[m] -> bb[m] == rootLabelOfMatch[m]
+    )
+  );
+
+% Entities defined by a selected match must be defined in the basic blocks
+% consisting of the union between the basic block to which the match is
+% allocated and the set of basic blocks which appears as label nodes in the
+% pattern.
+constraint
+  forall (m in allMatches)
+  (
+    sel[m]
+    ->
+    ( forall (e in dataDefinedByMatch[m])
+      (
+        let { var set of allLabelsInFunction: bb_m_as_set
+            , var set of allLabelsInFunction: labels_in_m
+            }
+        in bb[m] in bb_m_as_set /\ card(bb_m_as_set) == 1
+           /\
+           labels_in_m == labelsAppearingInMatch[m]
+           /\
+           ddefbb[e] == (bb_m_as_set union labels_in_m)
+      )
+    )
+  );
+
+% An entity with a definition placement edge to a label must be defined within
+% the basic block of that label.
+constraint
+  forall (e in allDataInFunction)
+  (
+    forall (l in dpEdgesForDataInFunction[e])
+    (
+      l in ddefbb[e]
+    )
+  )
+  /\
+  forall (e in allStatesInFunction)
+  (
+    forall (l in dpEdgesForStatesInFunction[e])
+    (
+      l in sdefbb[e]
+    )
+  );
+
+% Inactive entities must not be defined by any match nor be defined in any basic
+% block.
+constraint
+  forall (e in allDataInFunction)
+  (
+    ddefm[e] == matchValueForInactive
+    <->
+    ddefbb[e] == {labelValueForDummy}
+  )
+  /\
+  forall (e in allStatesInFunction)
+  (
+    sdefm[e] == matchValueForInactive
+    <->
+    sdefbb[e] == {labelValueForDummy}
+  );
 
 % Enforce that all selected matches must be allocated to a basic block such that
 % every used data node is dominated by its data definition. Likewise for the
 % state nodes. These constraints should not be applied to the generic phi
 % patterns.
 constraint
-forall (p in allMatches where matchApplyUseDefDomConstraints[p]) (
-    pi_sel[p]
+  forall (m in allMatches) (
+    sel[m]
     ->
     (
-        forall (n in matchDataUsed[p]) (
-            pi_bb[dn_def[n]] in funcLabelDomsets[pi_bb[p]]
+      forall (e in dataUsedInMatch[m])
+      (
+        exists (l in allLabelsInFunctionPlusDummy)
+        (
+          l in ddefbb[e]
+          /\
+          l in domsetOfLabelInFunction[bb[m]]
         )
-        /\
-        forall (n in matchStateUsed[p]) (
-            pi_bb[sn_def[n]] in funcLabelDomsets[pi_bb[p]]
+      )
+      /\
+      forall (e in statesUsedInMatch[m]) (
+        exists (l in allLabelsInFunctionPlusDummy)
+        (
+          l in ddefbb[e]
+          /\
+          l in domsetOfLabelInFunction[bb[m]]
         )
+      )
     )
-);
+  );
 
-% Enforce that all basic blocks are serialized in some order.
+% The basic blocks must be serialized in some order.
 constraint
-alldifferent(bb_order);
+  alldifferent(ord);
 
-% Apply the channel constraint between bb_order and bb_order_inv.
+% Apply the channel constraint between 'ord' and 'ord_inv'.
 constraint
-inverse(bb_order, bb_order_inv);
+  inverse(ord, ord_inv);
 
-% Enforce that the root label (i.e. function entry point) is set as the first
-% block, and that the null label is set as the last block.
+% The root label (i.e. function entry point) must be placed as the first basic
+% block, and the dummy label must be placed as the last basic block.
 constraint
-bb_order[rootLabel] == 0;
+  ord[rootLabelOfFunction] == 0;
 constraint
-bb_order[nullLabel] == nullLabel;
+  ord[labelValueForDummy] == numLabelValues - 1;
 
 % Calculate distances between matches (where appropriate) and labels.
 constraint
-forall (
-    p in allMatches,
-    l in allFuncLabelNodes
-    where matchAndLabelMappings[p, l] >= 0
-) (
-    br_bb_dists[matchAndLabelMappings[p, l]] =
+  forall ( m in allMatches
+         , l in allLabelsInFunction
+           where indexOfMatchLabelMapping[m, l] >= 0
+         )
+  (
+    (
+      sel[m]
+      ->
+      dist[indexOfMatchLabelMapping[m, l]] =
         % When the label appears after the branch
-        sum (i in allFuncLabelNodes) (
-            % Assuming the branch always appears as the last instruction within
-            % the block, which means that we only need to consider the size of
-            % the blocks between the source and the target label.
-            sum (pp in allMatches) (
-                matchCodeSizes[pp] * bool2int (pi_bb[pp] == i)
-            )
-            *
-            bool2int (
-                bb_order_inv[pi_bb[p]] < bb_order_inv[i]
-                /\
-                bb_order_inv[i] < bb_order_inv[l]
+        sum (i in allLabelsInFunction)
+        (
+          % Assuming the branch always appears as the last instruction within
+          % the block, which means that we only need to consider the size of
+          % the blocks between the source and the target label.
+          sum (mm in allMatches)
+          (
+            codeSizeOfMatch[mm] * bool2int (bb[mm] == i)
+          )
+          *
+          bool2int
+            (  ord_inv[bb[m]] < ord_inv[i]
+            /\ ord_inv[i] < ord_inv[l]
             )
         )
         -
         % When the label appears before the branch
-        sum (i in allFuncLabelNodes) (
-            % Assuming the branch always appears as the last instruction within
-            % the block, which means that we consider all instructions in the
-            % block wherein the branch appears as well as the size of the blocks
-            % between the source and the target label.
-            sum (pp in allMatches) (
-                matchCodeSizes[pp] * bool2int (pi_bb[pp] == i)
-            )
-            *
-            bool2int (
-                bb_order_inv[l] <= bb_order_inv[i]
-                /\
-                bb_order_inv[i] <= bb_order_inv[pi_bb[p]]
+        sum (i in allLabelsInFunction)
+        (
+          % Assuming the branch always appears as the last instruction within
+          % the block, which means that we consider all instructions in the
+          % block wherein the branch appears as well as the size of the blocks
+          % between the source and the target label.
+          sum (mm in allMatches)
+          (
+            codeSizeOfMatch[mm] * bool2int (bb[mm] == i)
+          )
+          *
+          bool2int
+            (  ord_inv[l] <= ord_inv[i]
+            /\ ord_inv[i] <= ord_inv[bb[m]]
             )
         )
-);
+    )
+    /\
+    (
+      not sel[m]
+      ->
+      dist[indexOfMatchLabelMapping[m, l]] = 0
+    )
+  );
 
-% Enforce setting of the immediate value for all data nodes which do not
-% represent immediate values.
+% Matches that are not selected are assigned to the dummy basic block.
 constraint
-forall (n in allFuncDataNodes) (
-  dn_reg[n] != regForImmValues -> dn_imm[n] == 0
-);
+  forall (m in allMatches)
+  (
+    not sel[m] -> bb[m] == labelValueForDummy
+  );
+
+% Constraint the immediate value for all data nodes which do not represent
+% immediate values.
+constraint
+  forall (n in allDataInFunction)
+  (
+    reg[n] != regValueForImm -> cnst[n] == 0
+  );
 
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-cost = sum (p in allMatches) (
-           matchLatencies[p] * bool2int (pi_sel[p])
-       );
+  cost = sum (m in allMatches)
+         ( bool2int(sel[m])
+         * latencyOfMatch[m]
+         * execFrequencyOfLabelInFunction[bb[m]]
+         );
 
 
 
@@ -290,26 +428,25 @@ cost = sum (p in allMatches) (
 %==================
 
 solve ::
-seq_search (
-    % Improves solving time
-    [ int_search (on_cov, first_fail, indomain_min, complete)
-    % Prevents use of imm values unless explicitly required
-    , int_search (dn_reg, input_order, indomain_min, complete)
-    ]
-)
+seq_search
+  ( % Improves solving time
+    [ int_search (cov, first_fail, indomain_min, complete) ]
+  )
 minimize cost;
 
-output [ "on_cov=", show(on_cov), "\n"
-       , "dn_def=", show(dn_def), "\n"
-       , "dn_reg=", show(dn_reg), "\n"
-       , "dn_imm=", show(dn_imm), "\n"
-       , "sn_def=", show(sn_def), "\n"
-       , "pi_sel=", show(pi_sel), "\n"
-       , "pi_bb=", show(pi_bb), "\n"
-       , "bb_order=", show(bb_order), "\n"
-       , "br_bb_dists=", show(br_bb_dists), "\n"
-       , "null_label=", show(nullLabel), "\n"
-       , "reg_for_inter_values=", show(regForInterValues), "\n"
-       , "reg_for_imm_values=", show(regForImmValues), "\n"
+output [ "cov=", show(cov), "\n"
+       , "ddefm=", show(ddefm), "\n"
+       , "ddefbb=", show(ddefbb), "\n"
+       , "reg=", show(reg), "\n"
+       , "cnst=", show(cnst), "\n"
+       , "sdefm=", show(sdefm), "\n"
+       , "sdefbb=", show(sdefbb), "\n"
+       , "sel=", show(sel), "\n"
+       , "bb=", show(bb), "\n"
+       , "ord=", show(ord), "\n"
+       , "dist=", show(dist), "\n"
+       , "label_value_for_dummy=", show(labelValueForDummy), "\n"
+       , "reg_value_for_no_reuse=", show(regValueForNoReuse), "\n"
+       , "reg_value_for_imm=", show(regValueForImm), "\n"
        , "cost=", show(cost), "\n"
        ];
