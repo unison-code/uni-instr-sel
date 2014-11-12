@@ -140,8 +140,8 @@ data PatternInstanceExpr =
     -- | Retrieves the pattern instance in which this expression appears.
   | ThisPatternInstanceExpr
 
-    -- | Retrieves the pattern instance which covers a certain action node.
-  | CovererOfActionNodeExpr NodeExpr
+    -- | Retrieves the pattern instance which covers a certain operation node.
+  | CovererOfOperationNodeExpr NodeExpr
 
     -- | Retrieves the pattern instance which defines a certain data node.
   | DefinerOfDataNodeExpr NodeExpr

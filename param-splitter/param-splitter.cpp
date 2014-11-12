@@ -105,8 +105,8 @@ void outputModelParams(
 
     // Function graph data
 
-    out << "\"num-func-anodes\" : ";
-    printJsonValue(out, params.getNumActionNodesInF());
+    out << "\"num-func-onodes\" : ";
+    printJsonValue(out, params.getNumOperationNodesInF());
     out << "," << endl
         << "\"num-func-dnodes\" : ";
     printJsonValue(out, params.getNumDataNodesInF());
@@ -163,14 +163,14 @@ void outputModelParams(
     printJsonValue(out, params.getNumPIs());
 
     out << "," << endl
-        << "\"pat-inst-anodes-covered\" : ";
+        << "\"pat-inst-onodes-covered\" : ";
     {
         size_t num_instances = params.getNumPIs();
         vector< list<ArrayIndex> > node_lists(num_instances);
         for (const ID& id : params.getIDsForAllPIs()) {
-            const list<ID>& nodes = params.getActionNodesCoveredByPI(id);
+            const list<ID>& nodes = params.getOperationNodesCoveredByPI(id);
             node_lists[params.getIndexForPI(id)] =
-                params.getIndicesForActionNodesInF(nodes);
+                params.getIndicesForOperationNodesInF(nodes);
         }
         printJsonValue(out, node_lists);
     }

@@ -228,10 +228,10 @@ ConstraintProcessor::process(const PatternInstanceExpr* e) {
     else if (dynamic_cast<const ThisPatternInstanceExpr*>(e)) {
         THROW(Exception, "ThisPatternInstanceExpr is not allowed here");
     }
-    else if (const CovererOfActionNodeExpr* de =
-             dynamic_cast<const CovererOfActionNodeExpr*>(e))
+    else if (const CovererOfOperationNodeExpr* de =
+             dynamic_cast<const CovererOfOperationNodeExpr*>(e))
     {
-        return getActionCovererVariableArrayName()
+        return getOperationCovererVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else if (const DefinerOfDataNodeExpr* de =
@@ -363,8 +363,8 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 }
 
 string
-ConstraintProcessor::getActionCovererVariableArrayName(void) const {
-    return "an_cov";
+ConstraintProcessor::getOperationCovererVariableArrayName(void) const {
+    return "on_cov";
 }
 
 string

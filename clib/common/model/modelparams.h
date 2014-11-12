@@ -54,12 +54,12 @@ class ModelParams {
     ~ModelParams(void);
 
     /**
-     * Gets the number of action nodes in the function graph.
+     * Gets the number of operation nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumActionNodesInF(void) const;
+    getNumOperationNodesInF(void) const;
 
     /**
      * Gets the number of data nodes in the function graph.
@@ -134,12 +134,12 @@ class ModelParams {
     getLatenciesForAllPIs(void) const;
 
     /**
-     * Gets the function action nodes covered per pattern instances.
+     * Gets the function operation nodes covered per pattern instances.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getActionNodesCoveredByAllPIs(void) const;
+    getOperationNodesCoveredByAllPIs(void) const;
 
     /**
      * Gets the function data nodes defined per pattern instance.
@@ -374,7 +374,7 @@ class ModelParams {
     setAUDDCSettingsForPIs(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function action nodes covered by the respective pattern
+     * Sets the function operation nodes covered by the respective pattern
      * instances.
      *
      * @param root
@@ -385,7 +385,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPIs(const Json::Value& root, ModelParams& p);
+    setOperationNodesCoveredByPIs(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function data nodes defined by the respective pattern
@@ -496,9 +496,9 @@ class ModelParams {
   protected:
 
     /**
-     * Numbers of action nodes in the function.
+     * Numbers of operation nodes in the function.
      */
-    size_t num_func_action_nodes_;
+    size_t num_func_operation_nodes_;
 
     /**
      * Numbers of data nodes in the function.
@@ -552,10 +552,10 @@ class ModelParams {
     std::vector<int> pat_inst_latencies_;
 
     /**
-     * The action nodes in the function graph which are covered by each pattern
-     * instance.
+     * The operation nodes in the function graph which are covered by each
+     * pattern instance.
      */
-    std::vector< std::list<ArrayIndex> > pat_inst_actions_covered_;
+    std::vector< std::list<ArrayIndex> > pat_inst_operations_covered_;
 
     /**
      * The data nodes in the function graph which are defined by each pattern

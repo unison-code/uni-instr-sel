@@ -56,7 +56,7 @@ mkFunctionGraphData f =
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       cfg = extractCFG g
   in FunctionGraphData
-       (nodeIDsByType isActionNode)
+       (nodeIDsByType isOperationNode)
        (nodeIDsByType isDataNode)
        (nodeIDsByType isStateNode)
        (computeLabelDoms cfg)
@@ -109,7 +109,7 @@ processMatch ::
 processMatch i p m (pids, next_piid) =
   let g = osGraph $ patOS p
       ns = getAllNodes g
-      a_ns = filter isActionNode ns
+      a_ns = filter isOperationNode ns
       d_ns = filter isDataNode ns
       s_ns = filter isStateNode ns
       l_ns = filter isLabelNode ns
@@ -241,8 +241,8 @@ replaceInPatternInstanceExpr ::
   -> PatternInstanceExpr
 replaceInPatternInstanceExpr _ (APatternInstanceIDExpr i) =
   APatternInstanceIDExpr i
-replaceInPatternInstanceExpr m (CovererOfActionNodeExpr e) =
-  CovererOfActionNodeExpr (replaceInNodeExpr m e)
+replaceInPatternInstanceExpr m (CovererOfOperationNodeExpr e) =
+  CovererOfOperationNodeExpr (replaceInNodeExpr m e)
 replaceInPatternInstanceExpr m (DefinerOfDataNodeExpr e) =
   DefinerOfDataNodeExpr (replaceInNodeExpr m e)
 replaceInPatternInstanceExpr m (DefinerOfStateNodeExpr e) =

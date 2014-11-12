@@ -83,7 +83,7 @@ instance ToJSON CPModelParams where
 instance FromJSON FunctionGraphData where
   parseJSON (Object v) =
     FunctionGraphData
-      <$> v .: "action-nodes"
+      <$> v .: "operation-nodes"
       <*> v .: "data-nodes"
       <*> v .: "state-nodes"
       <*> v .: "label-nodes"
@@ -94,13 +94,13 @@ instance FromJSON FunctionGraphData where
 
 instance ToJSON FunctionGraphData where
   toJSON d =
-    object [ "action-nodes" .= (funcActionNodes d)
-           , "data-nodes"   .= (funcDataNodes d)
-           , "state-nodes"  .= (funcStateNodes d)
-           , "label-nodes"  .= (funcLabelDoms d)
-           , "root-label"   .= (funcRootLabel d)
-           , "bb-labels"    .= (funcBBLabels d)
-           , "constraints"  .= (funcConstraints d)
+    object [ "operation-nodes" .= (funcOperations d)
+           , "data-nodes"      .= (funcDataNodes d)
+           , "state-nodes"     .= (funcStateNodes d)
+           , "label-nodes"     .= (funcLabelDoms d)
+           , "root-label"      .= (funcRootLabel d)
+           , "bb-labels"       .= (funcBBLabels d)
+           , "constraints"     .= (funcConstraints d)
            ]
 
 instance FromJSON (Domset NodeID) where
@@ -135,7 +135,7 @@ instance FromJSON PatternInstanceData where
       <$> v .: "instruction-id"
       <*> v .: "pattern-id"
       <*> v .: "pattern-instance-id"
-      <*> v .: "action-nodes-covered"
+      <*> v .: "operation-nodes-covered"
       <*> v .: "data-nodes-defined"
       <*> v .: "data-nodes-used"
       <*> v .: "data-nodes-used-by-phis"
@@ -155,7 +155,7 @@ instance ToJSON PatternInstanceData where
     object [ "instruction-id"                .= (patInstructionID d)
            , "pattern-id"                    .= (patPatternID d)
            , "pattern-instance-id"           .= (patInstanceID d)
-           , "action-nodes-covered"          .= (patActionNodesCovered d)
+           , "operation-nodes-covered"       .= (patOperationsCovered d)
            , "data-nodes-defined"            .= (patDataNodesDefined d)
            , "data-nodes-used"               .= (patDataNodesUsed d)
            , "data-nodes-used-by-phis"       .= (patDataNodesUsedByPhis d)

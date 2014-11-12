@@ -1607,22 +1607,24 @@ class ThisPatternInstanceExpr
 };
 
 /**
- * Represents the pattern instance which covers a certain action node.
+ * Represents the pattern instance which covers a certain operation node.
  */
-class CovererOfActionNodeExpr
-    : public UnaryExpr<PatternInstanceExpr, CovererOfActionNodeExpr, NodeExpr>
+class CovererOfOperationNodeExpr
+    : public UnaryExpr<PatternInstanceExpr,
+                       CovererOfOperationNodeExpr,
+                       NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    CovererOfActionNodeExpr(const NodeExpr* expr);
+    CovererOfOperationNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~CovererOfActionNodeExpr(void);
+    ~CovererOfOperationNodeExpr(void);
 
   public:
     /**

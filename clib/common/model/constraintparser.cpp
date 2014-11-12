@@ -299,9 +299,9 @@ ConstraintParser::parsePatternInstanceExpr(string& str) {
             ArrayIndex i = eatArrayIndex(str);
             expr = new APatternInstanceArrayIndexExpr(i);
         }
-        else if (eatType<CovererOfActionNodeExpr>(str)) {
+        else if (eatType<CovererOfOperationNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
-            expr = new CovererOfActionNodeExpr(e);
+            expr = new CovererOfOperationNodeExpr(e);
         }
         else if (eatType<DefinerOfDataNodeExpr>(str)) {
             auto e = parseNodeExpr(str);

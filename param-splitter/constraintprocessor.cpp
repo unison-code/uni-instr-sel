@@ -190,8 +190,8 @@ ConstraintProcessor::processNodeExpr(const NodeExpr* e) {
     if (const ANodeIDExpr* de = dynamic_cast<const ANodeIDExpr*>(e)) {
         const ID& id = de->getID();
         ArrayIndex i;
-        if (p_.isActionNodeInF(id)) {
-            i = p_.getIndexForActionNodeInF(id);
+        if (p_.isOperationNodeInF(id)) {
+            i = p_.getIndexForOperationNodeInF(id);
         }
         else if (p_.isDataNodeInF(id)) {
             i = p_.getIndexForDataNodeInF(id);
@@ -242,10 +242,10 @@ ConstraintProcessor::processPatternInstanceExpr(const PatternInstanceExpr* e) {
         }
         return new APatternInstanceArrayIndexExpr(p_.getIndexForPI(piid_));
     }
-    else if (const CovererOfActionNodeExpr* de =
-             dynamic_cast<const CovererOfActionNodeExpr*>(e))
+    else if (const CovererOfOperationNodeExpr* de =
+             dynamic_cast<const CovererOfOperationNodeExpr*>(e))
     {
-        return new CovererOfActionNodeExpr(processNodeExpr(de->getExpr()));
+        return new CovererOfOperationNodeExpr(processNodeExpr(de->getExpr()));
     }
     else if (const DefinerOfDataNodeExpr* de =
              dynamic_cast<const DefinerOfDataNodeExpr*>(e))

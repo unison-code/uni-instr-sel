@@ -79,12 +79,12 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * Gets the variable array for the action node coverage.
+     * Gets the variable array for the operation node coverage.
      *
      * @returns Variable name.
      */
     std::string
-    getActionCovererVariableArrayName(void) const;
+    getOperationCovererVariableArrayName(void) const;
 
     /**
      * Gets the variable array for the data node definitions.

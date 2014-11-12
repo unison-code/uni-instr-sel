@@ -52,12 +52,12 @@ class Params {
     ~Params(void);
 
     /**
-     * Gets the number of action nodes in the function graph.
+     * Gets the number of operation nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumActionNodesInF(void) const;
+    getNumOperationNodesInF(void) const;
 
     /**
      * Gets the number of data nodes in the function graph.
@@ -144,7 +144,8 @@ class Params {
     getLatencyForPI(const Model::ID& instance) const;
 
     /**
-     * Gets the function action nodes covered by a particular pattern instance.
+     * Gets the function operation nodes covered by a particular pattern
+     * instance.
      *
      * @param instance
      *        Pattern instance ID.
@@ -153,7 +154,7 @@ class Params {
      *         When there is no instance with such an ID.
      */
     std::list<Model::ID>
-    getActionNodesCoveredByPI(const Model::ID& instance) const;
+    getOperationNodesCoveredByPI(const Model::ID& instance) const;
 
     /**
      * Gets the function data nodes defined by a particular pattern instance.
@@ -230,7 +231,7 @@ class Params {
     getAUDDCSettingForPI(const Model::ID& instance) const;
 
     /**
-     * Gets the array index for a given action node in the function graph.
+     * Gets the array index for a given operation node in the function graph.
      *
      * @param id
      *        Node ID.
@@ -239,7 +240,7 @@ class Params {
      *         When there is no node with such an ID.
      */
     Model::ArrayIndex
-    getIndexForActionNodeInF(const Model::ID& id) const;
+    getIndexForOperationNodeInF(const Model::ID& id) const;
 
     /**
      * Gets the array index for a given data node in the function graph.
@@ -278,7 +279,7 @@ class Params {
     getIndexForLabelNodeInF(const Model::ID& id) const;
 
     /**
-     * Gets the ID of a given array index for an action node in the function
+     * Gets the ID of a given array index for an operation node in the function
      * graph.
      *
      * @param i
@@ -288,7 +289,7 @@ class Params {
      *         When there is no node with such an array index.
      */
     Model::ID
-    getIDOfActionNodeInF(const Model::ArrayIndex& i) const;
+    getIDOfOperationNodeInF(const Model::ArrayIndex& i) const;
 
     /**
      * Gets the ID for a given array index of an data node in the function
@@ -378,7 +379,7 @@ class Params {
     getIDOfPI(const Model::ArrayIndex& i) const;
 
     /**
-     * Gets a list of array indices for a given list of action nodes in the
+     * Gets a list of array indices for a given list of operation nodes in the
      * function graph.
      *
      * @param ids
@@ -388,7 +389,7 @@ class Params {
      *         When there is a node ID with no mapping.
      */
     std::list<Model::ArrayIndex>
-    getIndicesForActionNodesInF(const std::list<Model::ID>& ids) const;
+    getIndicesForOperationNodesInF(const std::list<Model::ID>& ids) const;
 
     /**
      * Gets a list of array indices for a given list of data nodes in the
@@ -442,8 +443,8 @@ class Params {
     getIndicesForRegistersInM(const std::list<Model::ID>& ids) const;
 
     /**
-     * Gets a list of IDs of a given list of array indices for action nodes in
-     * the function graph.
+     * Gets a list of IDs of a given list of array indices for operation nodes
+     * in the function graph.
      *
      * @param is
      *        List of array indices.
@@ -452,7 +453,7 @@ class Params {
      *         When there is an array index with no mapping.
      */
     std::list<Model::ID>
-    getIDsOfActionNodesInF(const std::list<Model::ArrayIndex>& is) const;
+    getIDsOfOperationNodesInF(const std::list<Model::ArrayIndex>& is) const;
 
     /**
      * Gets a list of IDs of a given list of array indices for data nodes in
@@ -520,12 +521,12 @@ class Params {
     getIDsOfPIs(const std::list<Model::ArrayIndex>& is) const;
 
     /**
-     * Gets a list of IDs for all action nodes in the function graph.
+     * Gets a list of IDs for all operation nodes in the function graph.
      *
      * @returns List of IDs.
      */
     std::list<Model::ID>
-    getIDsForAllActionNodesInF(void) const;
+    getIDsForAllOperationNodesInF(void) const;
 
     /**
      * Gets a list of IDs for all data nodes in the function graph.
@@ -588,14 +589,14 @@ class Params {
     getConstraintsForPI(const Model::ID& id) const;
 
     /**
-     * Checks if a node ID represents an action node in the function graph.
+     * Checks if a node ID represents an operation node in the function graph.
      *
      * @param id
      *        Node ID.
-     * @returns \c true if action node.
+     * @returns \c true if operation node.
      */
     bool
-    isActionNodeInF(const Model::ID& id) const;
+    isOperationNodeInF(const Model::ID& id) const;
 
     /**
      * Checks if a node ID represents an data node in the function graph.
@@ -813,8 +814,8 @@ class Params {
     toString(const Json::Value& value);
 
     /**
-     * Computes the node ID-to-array index mappings for the action nodes of the
-     * function graph.
+     * Computes the node ID-to-array index mappings for the operation nodes of
+     * the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -824,10 +825,10 @@ class Params {
      *         When an error occurs.
      */
     static void
-    computeMappingsForActionNodesInF(const Json::Value& root, Params& p);
+    computeMappingsForOperationNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
+     * Same as computeMappingsForFOperationNodes(const Json::Value&,
      * Params&) but for the data nodes.
      *
      * @param root
@@ -841,7 +842,7 @@ class Params {
     computeMappingsForDataNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
+     * Same as computeMappingsForFOperationNodes(const Json::Value&,
      * Params&) but for the state nodes.
      *
      * @param root
@@ -855,7 +856,7 @@ class Params {
     computeMappingsForStateNodesInF(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
+     * Same as computeMappingsForFOperationNodes(const Json::Value&,
      * Params&) but for the label nodes, and also sets the dominator sets.
      *
      * @param root
@@ -872,8 +873,8 @@ class Params {
     );
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&, Params&) but
-     * for the register in the target machine.
+     * Same as computeMappingsForFOperationNodes(const Json::Value&, Params&)
+     * but for the register in the target machine.
      *
      * @param root
      *        The JSON root value.
@@ -886,7 +887,7 @@ class Params {
     computeMappingsForRegistersInM(const Json::Value& root, Params& p);
 
     /**
-     * Same as computeMappingsForFActionNodes(const Json::Value&,
+     * Same as computeMappingsForFOperationNodes(const Json::Value&,
      * Params&) but for the pattern instance IDs.
      *
      * @param root
@@ -966,7 +967,7 @@ class Params {
     setAUDDCSettingsForPIs(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function action nodes covered by the respective pattern
+     * Sets the function operation nodes covered by the respective pattern
      * instances.
      *
      * @param root
@@ -977,7 +978,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setActionNodesCoveredByPIs(const Json::Value& root, Params& p);
+    setOperationNodesCoveredByPIs(const Json::Value& root, Params& p);
 
     /**
      * Sets the function data nodes defined by the respective pattern
@@ -1074,42 +1075,42 @@ class Params {
 
   protected:
     /**
-     * Maps the ID of an action node in the function graph to an array index.
+     * Maps the ID of an operation node in the function graph to an array index.
      */
-    std::map<Model::ID, Model::ArrayIndex> func_action_node_kv_mappings_;
+    std::map<Model::ID, Model::ArrayIndex> func_operation_node_kv_mappings_;
 
     /**
-     * Maps an array index to the ID of an action node in the function graph.
+     * Maps an array index to the ID of an operation node in the function graph.
      */
-    std::map<Model::ArrayIndex, Model::ID> func_action_node_vk_mappings_;
+    std::map<Model::ArrayIndex, Model::ID> func_operation_node_vk_mappings_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for data nodes.
+     * Same as #func_operation_node_kv_mappings_ but for data nodes.
      */
     std::map<Model::ID, Model::ArrayIndex> func_data_node_kv_mappings_;
 
     /**
-     * Same as #func_action_node_vk_mappings_ but for data nodes.
+     * Same as #func_operation_node_vk_mappings_ but for data nodes.
      */
     std::map<Model::ArrayIndex, Model::ID> func_data_node_vk_mappings_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for state nodes.
+     * Same as #func_operation_node_kv_mappings_ but for state nodes.
      */
     std::map<Model::ID, Model::ArrayIndex> func_state_node_kv_mappings_;
 
     /**
-     * Same as #func_action_node_vk_mappings_ but for state nodes.
+     * Same as #func_operation_node_vk_mappings_ but for state nodes.
      */
     std::map<Model::ArrayIndex, Model::ID> func_state_node_vk_mappings_;
 
     /**
-     * Same as #func_action_node_kv_mappings_ but for label nodes.
+     * Same as #func_operation_node_kv_mappings_ but for label nodes.
      */
     std::map<Model::ID, Model::ArrayIndex> func_label_node_kv_mappings_;
 
     /**
-     * Same as #func_action_node_vk_mappings_ but for label nodes.
+     * Same as #func_operation_node_vk_mappings_ but for label nodes.
      */
     std::map<Model::ArrayIndex, Model::ID> func_label_node_vk_mappings_;
 
@@ -1160,10 +1161,10 @@ class Params {
     std::map<Model::ID, int> pat_inst_latencies_;
 
     /**
-     * The action nodes in the function graph which are covered by each pattern
-     * instance.
+     * The operation nodes in the function graph which are covered by each
+     * pattern instance.
      */
-    std::map<Model::ID, std::list<Model::ID> > pat_inst_actions_covered_;
+    std::map<Model::ID, std::list<Model::ID> > pat_inst_operations_covered_;
 
     /**
      * The data nodes in the function graph which are defined by each pattern

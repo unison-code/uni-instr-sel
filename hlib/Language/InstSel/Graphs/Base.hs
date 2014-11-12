@@ -110,7 +110,7 @@ module Language.InstSel.Graphs.Base
   , hasAnyPredecessors
   , hasAnySuccessors
   , insertNewNodeAlongEdge
-  , isActionNode
+  , isOperationNode
   , isComputationNode
   , isControlFlowEdge
   , isControlNode
@@ -314,8 +314,8 @@ toEdgeNr = EdgeNr . toNatural
 fromEdgeNr :: EdgeNr -> Natural
 fromEdgeNr (EdgeNr n) = n
 
-isActionNode :: Node -> Bool
-isActionNode n =
+isOperationNode :: Node -> Bool
+isOperationNode n =
      isComputationNode n
   || isControlNode n
   || isPhiNode n

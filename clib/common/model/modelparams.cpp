@@ -44,8 +44,8 @@ ModelParams::~ModelParams(void) {
 }
 
 size_t
-ModelParams::getNumActionNodesInF(void) const {
-    return num_func_action_nodes_;
+ModelParams::getNumOperationNodesInF(void) const {
+    return num_func_operation_nodes_;
 }
 
 size_t
@@ -94,7 +94,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setLatenciesForPIs(root, p);
     setConstraintsForPIs(root, p);
     setAUDDCSettingsForPIs(root, p);
-    setActionNodesCoveredByPIs(root, p);
+    setOperationNodesCoveredByPIs(root, p);
     setDataNodesDefinedByPIs(root, p);
     setDataNodesUsedByPIs(root, p);
     setStateNodesDefinedByPIs(root, p);
@@ -183,16 +183,16 @@ ModelParams::getConstraintsForAllPIs(void) const {
 }
 
 void
-ModelParams::setActionNodesCoveredByPIs(
+ModelParams::setOperationNodesCoveredByPIs(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "pat-inst-anodes-covered")) {
+    for (auto jsonlist : getJsonValue(root, "pat-inst-onodes-covered")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.pat_inst_actions_covered_.push_back(covers);
+        p.pat_inst_operations_covered_.push_back(covers);
     }
 }
 
@@ -255,8 +255,8 @@ ModelParams::setLabelNodesReferredByPIs(const Json::Value& root, ModelParams& p)
 }
 
 vector< list<ID> >
-ModelParams::getActionNodesCoveredByAllPIs(void) const {
-    return pat_inst_actions_covered_;
+ModelParams::getOperationNodesCoveredByAllPIs(void) const {
+    return pat_inst_operations_covered_;
 }
 
 vector< list<ID> >
@@ -351,7 +351,7 @@ ModelParams::setRootLabelInF(const Json::Value& root, ModelParams& p) {
 
 void
 ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
-    p.num_func_action_nodes_ = toInt(getJsonValue(root, "num-func-anodes"));
+    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "num-func-onodes"));
     p.num_func_data_nodes_ = toInt(getJsonValue(root, "num-func-dnodes"));
     p.num_func_state_nodes_ = toInt(getJsonValue(root, "num-func-snodes"));
     p.num_func_label_nodes_ = toInt(getJsonValue(root, "num-func-lnodes"));

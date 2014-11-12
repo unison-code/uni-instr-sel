@@ -168,7 +168,7 @@ generateModelFunctionParameters(
 ) {
     out << "% Function data" << endl;
 
-    out << "numFuncActionNodes = " << params.getNumActionNodesInF() << ";"
+    out << "numFuncOperationNodes = " << params.getNumOperationNodesInF() << ";"
          << endl;
     out << "numFuncDataNodes = " << params.getNumDataNodesInF() << ";"
          << endl;
@@ -206,8 +206,8 @@ generateModelPatternInstanceParameters(
     out << "numPatternInstances = " << params.getNumPIs() << ";"
          << endl;
 
-    out << "patInstActionsCovered = array1d(allPatternInstances, ";
-    printMinizincValue(out, params.getActionNodesCoveredByAllPIs());
+    out << "patInstOperationsCovered = array1d(allPatternInstances, ";
+    printMinizincValue(out, params.getOperationNodesCoveredByAllPIs());
     out << ");" << endl;
 
     out << "patInstDataDefined = array1d(allPatternInstances, ";

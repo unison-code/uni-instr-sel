@@ -423,11 +423,11 @@ ThisPatternInstanceExpr::toLisp(void) const {
     return getStrName();
 }
 
-CovererOfActionNodeExpr::CovererOfActionNodeExpr(const NodeExpr* expr)
+CovererOfOperationNodeExpr::CovererOfOperationNodeExpr(const NodeExpr* expr)
     : UnaryExpr(expr)
 {}
 
-CovererOfActionNodeExpr::~CovererOfActionNodeExpr(void) {}
+CovererOfOperationNodeExpr::~CovererOfOperationNodeExpr(void) {}
 
 DefinerOfDataNodeExpr::DefinerOfDataNodeExpr(const NodeExpr* expr)
     : UnaryExpr(expr)
@@ -590,7 +590,7 @@ const string ANodeArrayIndexExpr::STRNAME = "array-index";
 const string APatternInstanceArrayIndexExpr::STRNAME = "array-index";
 const string ARegisterArrayIndexExpr::STRNAME = "array-index";
 const string ThisPatternInstanceExpr::STRNAME = "this";
-const string CovererOfActionNodeExpr::STRNAME = "cov-of-anode";
+const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
 const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
 const string InstructionOfPatternExpr::STRNAME = "instr-of-pat";

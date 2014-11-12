@@ -133,16 +133,16 @@ instance FromLisp PatternInstanceExpr where
   parseLisp (Symbol "this") = return ThisPatternInstanceExpr
   parseLisp e =
         struct "id" APatternInstanceIDExpr e
-    <|> struct "cov-of-anode" CovererOfActionNodeExpr e
+    <|> struct "cov-of-onode" CovererOfOperationNodeExpr e
     <|> struct "def-of-dnode" DefinerOfDataNodeExpr e
     <|> struct "def-of-snode" DefinerOfStateNodeExpr e
 
 instance ToLisp PatternInstanceExpr where
   toLisp (APatternInstanceIDExpr piid) = mkStruct "id" [toLisp piid]
   toLisp ThisPatternInstanceExpr = Symbol "this"
-  toLisp (CovererOfActionNodeExpr e) = mkStruct "cov-of-anode" [toLisp e]
-  toLisp (DefinerOfDataNodeExpr e)   = mkStruct "def-of-dnode" [toLisp e]
-  toLisp (DefinerOfStateNodeExpr e)  = mkStruct "def-of-snode" [toLisp e]
+  toLisp (CovererOfOperationNodeExpr e) = mkStruct "cov-of-onode" [toLisp e]
+  toLisp (DefinerOfDataNodeExpr e)  = mkStruct "def-of-dnode" [toLisp e]
+  toLisp (DefinerOfStateNodeExpr e) = mkStruct "def-of-snode" [toLisp e]
 
 instance FromLisp InstructionExpr where
   parseLisp e =

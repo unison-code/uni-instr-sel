@@ -29,7 +29,7 @@
 %=====================
 
 % Function data
-int: numFuncActionNodes;
+int: numFuncOperationNodes;
 int: numFuncDataNodes;
 int: numFuncStateNodes;
 int: numFuncLabelNodes;
@@ -41,7 +41,7 @@ int: numRegisters;
 
 % Pattern instance data
 int: numPatternInstances;
-array[allPatternInstances] of set of int: patInstActionsCovered;
+array[allPatternInstances] of set of int: patInstOperationsCovered;
 array[allPatternInstances] of set of int: patInstDataDefined;
 array[allPatternInstances] of set of int: patInstDataUsed;
 array[allPatternInstances] of set of int: patInstStateDefined;
@@ -86,7 +86,7 @@ int: regForInterValues = numRegValues - 2;
 int: regForImmValues = numRegValues - 1;
 
 % Sets to be used as array ranges
-set of int: allFuncActionNodes = 0..numFuncActionNodes-1;
+set of int: allFuncOperationNodes = 0..numFuncOperationNodes-1;
 set of int: allFuncDataNodes = 0..numFuncDataNodes-1;
 set of int: allFuncStateNodes = 0..numFuncStateNodes-1;
 set of int: allFuncLabelNodes = 0..numFuncLabelNodes-1;
@@ -102,8 +102,8 @@ set of int: allIndicesInPatInstLabelMappings =
 % VARIABLES
 %===========
 
-% Action node coverage
-array[allFuncActionNodes] of var allPatternInstances: an_cov;
+% Operation node coverage
+array[allFuncOperationNodes] of var allPatternInstances: on_cov;
 
 % Data node definitions, register allocation, and immediate values
 array[allFuncDataNodes] of var allPatternInstances: dn_def;
@@ -147,12 +147,12 @@ include "inverse.mzn";
 % CONSTRAINTS
 %============
 
-% Prevent a pattern from covering action nodes and defining data or state nodes
-% outside its range.
+% Prevent a pattern from covering operation nodes and defining data or state
+% nodes outside its range.
 constraint
 forall (p in allPatternInstances) (
-    forall (n in allFuncActionNodes where not (n in patInstActionsCovered[p])) (
-        an_cov[n] != p
+    forall (n in allFuncOperationNodes where not (n in patInstOperationsCovered[p])) (
+        on_cov[n] != p
     )
     /\
     forall (n in allFuncDataNodes where not (n in patInstDataDefined[p])) (
@@ -164,16 +164,16 @@ forall (p in allPatternInstances) (
     )
 );
 
-% Enforce selection of pattern if and only if all of its action nodes are
+% Enforce selection of pattern if and only if all of its operation nodes are
 % covered and its definable data and state nodes are defined by that pattern.
 constraint
 forall (p in allPatternInstances) (
     pi_sel[p]
     <->
     (
-        forall (n in patInstActionsCovered[p])
+        forall (n in patInstOperationsCovered[p])
         (
-            an_cov[n] == p
+            on_cov[n] == p
         )
         /\
         forall (n in patInstDataDefined[p])
@@ -294,14 +294,14 @@ cost = sum (p in allPatternInstances) (
 solve ::
 seq_search (
     % Improves solving time
-    [ int_search (an_cov, first_fail, indomain_min, complete)
+    [ int_search (on_cov, first_fail, indomain_min, complete)
     % Prevents use of imm values unless explicitly required
     , int_search (dn_reg, input_order, indomain_min, complete)
     ]
 )
 minimize cost;
 
-output [ "an_cov=", show(an_cov), "\n"
+output [ "on_cov=", show(on_cov), "\n"
        , "dn_def=", show(dn_def), "\n"
        , "dn_reg=", show(dn_reg), "\n"
        , "dn_imm=", show(dn_imm), "\n"

@@ -61,8 +61,8 @@ data CPModelParams =
 -- | Describes the necessary function graph data.
 data FunctionGraphData =
     FunctionGraphData
-      { funcActionNodes :: [NodeID]
-        -- ^ The action nodes in the function graph.
+      { funcOperations :: [NodeID]
+        -- ^ The operations in the function graph.
       , funcDataNodes :: [NodeID]
         -- ^ The data nodes in the function graph.
       , funcStateNodes :: [NodeID]
@@ -98,8 +98,8 @@ data PatternInstanceData =
         -- ^ The pattern ID of this pattern instance.
       , patInstanceID :: PatternInstanceID
         -- ^ The matchset ID of this pattern instance.
-      , patActionNodesCovered :: [NodeID]
-        -- ^The action nodes in the function graph which are covered by this
+      , patOperationsCovered :: [NodeID]
+        -- ^ The operations in the function graph which are covered by this
         -- pattern instance.
       , patDataNodesDefined :: [NodeID]
         -- ^ The data nodes in the function graph which are defined by this
@@ -107,8 +107,7 @@ data PatternInstanceData =
       , patDataNodesUsed :: [NodeID]
         -- ^ The data nodes in the function graph which are used by this pattern
         -- instance. Unlike 'patDataNodesUsedByPhis', this list contains all
-        -- data nodes used by any action node appearing in this pattern
-        -- instance.
+        -- data nodes used by any operation appearing in this pattern instance.
       , patDataNodesUsedByPhis :: [NodeID]
         -- ^ The data nodes in the function graph which are used by phi nodes
         -- appearing this pattern instance. This information is required during
