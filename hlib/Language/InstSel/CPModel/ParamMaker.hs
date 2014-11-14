@@ -63,6 +63,10 @@ mkFunctionGraphData f =
   let g = osGraph $ functionOS f
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       cfg = extractCFG g
+      dp_edge_data =
+        map
+          (\e -> (getNodeID $ getSourceNode g e, getNodeID $ getTargetNode g e))
+          (filter isDefPlaceEdge (getAllEdges g))
       getExecFreq n =
         fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
   in FunctionGraphData
@@ -70,6 +74,7 @@ mkFunctionGraphData f =
        (nodeIDsByType isDataNode)
        (nodeIDsByType isStateNode)
        (computeLabelDoms cfg)
+       dp_edge_data
        (getNodeID $ fromJust $ rootInCFG cfg)
        ( map
            ( \n -> BasicBlockData
@@ -138,6 +143,9 @@ processMatch i p m (mids, next_mid) =
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
       i_props = instProps i
+      cfg = extractCFG g
+      root_label_node_id =
+        maybe Nothing ((findFNInMatch m) . getNodeID) (rootInCFG cfg)
       new_mid = MatchData
                   (instID i)
                   (patID p)
@@ -148,6 +156,7 @@ processMatch i p m (mids, next_mid) =
                   (findFNsInMatch m (getNodeIDs d_use_by_phi_ns))
                   (findFNsInMatch m (getNodeIDs s_def_ns))
                   (findFNsInMatch m (getNodeIDs s_use_ns))
+                  root_label_node_id
                   (findFNsInMatch m (getNodeIDs l_ref_ns))
                   (mapPs2FsInConstraints m (osConstraints $ patOS p))
                   (patAUDDC p)

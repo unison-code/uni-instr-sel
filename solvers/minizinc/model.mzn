@@ -36,8 +36,10 @@ int: numLabelsInFunction;
 int: rootLabelOfFunction;
 array[allLabelsInFunction] of set of int: domsetOfLabelInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
-array[allDataInFunction] of set of int: dpEdgesForDataInFunction;
-array[allStatesInFunction] of set of int: dpEdgesForStatesInFunction;
+array[allDataInFunction] of set of allLabelsInFunction:
+  labelsWhereDataInFunctionMustBeDefined;
+array[allStatesInFunction] of set of allLabelsInFunction:
+  labelsWhereStatesInFunctionMustBeDefined;
 
 % Target machine data
 int: numRegisters;
@@ -49,8 +51,8 @@ array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedInMatch;
 array[allMatches] of set of int: statesDefinedByMatch;
 array[allMatches] of set of int: statesUsedInMatch;
-array[allMatches] of set of int: labelsAppearingInMatch;
-array[allMatches] of set of int: rootLabelOfFunctionOfMatch;
+array[allMatches] of set of int: rootLabelOfMatch;
+array[allMatches] of set of int: nonRootLabelsInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
@@ -236,7 +238,7 @@ constraint
     % will be no such constraint.
     forall (r in rootLabelOfMatch[m])
     (
-      sel[m] -> bb[m] == rootLabelOfMatch[m]
+      sel[m] -> bb[m] == r
     )
   );
 
@@ -256,7 +258,7 @@ constraint
             }
         in bb[m] in bb_m_as_set /\ card(bb_m_as_set) == 1
            /\
-           labels_in_m == labelsAppearingInMatch[m]
+           labels_in_m == nonRootLabelsInMatch[m]
            /\
            ddefbb[e] == (bb_m_as_set union labels_in_m)
       )
@@ -268,7 +270,7 @@ constraint
 constraint
   forall (e in allDataInFunction)
   (
-    forall (l in dpEdgesForDataInFunction[e])
+    forall (l in labelsWhereDataInFunctionMustBeDefined[e])
     (
       l in ddefbb[e]
     )
@@ -276,7 +278,7 @@ constraint
   /\
   forall (e in allStatesInFunction)
   (
-    forall (l in dpEdgesForStatesInFunction[e])
+    forall (l in labelsWhereStatesInFunctionMustBeDefined[e])
     (
       l in sdefbb[e]
     )

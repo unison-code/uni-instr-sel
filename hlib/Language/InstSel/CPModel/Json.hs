@@ -93,6 +93,7 @@ instance FromJSON FunctionGraphData where
       <*> v .: "data-nodes"
       <*> v .: "state-nodes"
       <*> v .: "label-nodes"
+      <*> v .: "def-place-edges"
       <*> v .: "root-label"
       <*> v .: "bb-labels"
       <*> v .: "constraints"
@@ -100,10 +101,11 @@ instance FromJSON FunctionGraphData where
 
 instance ToJSON FunctionGraphData where
   toJSON d =
-    object [ "operation-nodes" .= (funcOperations d)
+    object [ "operation-nodes" .= (funcOpNodes d)
            , "data-nodes"      .= (funcDataNodes d)
            , "state-nodes"     .= (funcStateNodes d)
-           , "label-nodes"     .= (funcLabelDoms d)
+           , "label-nodes"     .= (funcLabelNodes d)
+           , "def-place-edges" .= (funcDefPlaceEdges d)
            , "root-label"      .= (funcRootLabel d)
            , "bb-data"         .= (funcBasicBlockData d)
            , "constraints"     .= (funcConstraints d)
@@ -149,7 +151,8 @@ instance FromJSON MatchData where
       <*> v .: "data-nodes-used-by-phis"
       <*> v .: "state-nodes-defined"
       <*> v .: "state-nodes-used"
-      <*> v .: "label-nodes-referred"
+      <*> v .: "root-label-node"
+      <*> v .: "non-root-label-nodes"
       <*> v .: "constraints"
       <*> v .: "apply-use-def-dom-constraints"
       <*> v .: "has-control-nodes"
@@ -169,7 +172,8 @@ instance ToJSON MatchData where
            , "data-nodes-used-by-phis"      .= (mDataNodesUsedByPhis d)
            , "state-nodes-defined"          .= (mStateNodesDefined d)
            , "state-nodes-used"             .= (mStateNodesUsed d)
-           , "label-nodes-referred"         .= (mLabelNodesReferred d)
+           , "root-label-node"              .= (mRootLabelNode d)
+           , "non-root-label-nodes"         .= (mNonRootLabelNodes d)
            , "constraints"                  .= (mConstraints d)
            , "apply-def-dom-use-constraint" .= (mADDUC d)
            , "has-control-nodes"            .= (mHasControlNodes d)

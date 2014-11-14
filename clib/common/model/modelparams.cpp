@@ -65,7 +65,7 @@ ModelParams::getNumLabelNodesInF(void) const {
 
 size_t
 ModelParams::getNumMatches(void) const {
-    return num_pis_;
+    return num_matches_;
 }
 
 size_t
@@ -88,6 +88,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
 
     setNumValues(root, p);
     setRootLabelInF(root, p);
+    setLabelDefsForDataNodesInF(root, p);
+    setLabelDefsForStateNodesInF(root, p);
     setDomsetsForLabelNodesInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
@@ -99,7 +101,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setDataNodesUsedByMatches(root, p);
     setStateNodesDefinedByMatches(root, p);
     setStateNodesUsedByMatches(root, p);
-    setLabelNodesReferredByMatches(root, p);
+    setRootLabelNodeOfMatches(root, p);
+    setNonRootLabelNodesInMatches(root, p);
 }
 
 bool
@@ -249,16 +252,30 @@ ModelParams::setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p)
 }
 
 void
-ModelParams::setLabelNodesReferredByMatches(
+ModelParams::setRootLabelNodeOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-lnodes-referred")) {
+    for (auto jsonlist : getJsonValue(root, "match-root-lnode")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.match_labels_referred_.push_back(covers);
+        p.match_root_label_.push_back(covers);
+    }
+}
+
+void
+ModelParams::setNonRootLabelNodesInMatches(
+    const Json::Value& root,
+    ModelParams& p
+) {
+    for (auto jsonlist : getJsonValue(root, "match-non-root-lnodes")) {
+        list<ArrayIndex> covers;
+        for (auto entry : jsonlist) {
+            covers.push_back(toArrayIndex(entry));
+        }
+        p.match_non_root_labels_.push_back(covers);
     }
 }
 
@@ -288,13 +305,28 @@ ModelParams::getStateNodesUsedByAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getLabelNodesReferredByAllMatches(void) const {
-    return match_labels_referred_;
+ModelParams::getRootLabelNodeOfAllMatches(void) const {
+    return match_root_label_;
+}
+
+vector< list<ID> >
+ModelParams::getNonRootLabelNodesInAllMatches(void) const {
+    return match_non_root_labels_;
 }
 
 vector< list<ID> >
 ModelParams::getDomsetForAllLabelNodesInF(void) const {
     return func_label_domsets_;
+}
+
+vector< list<ID> >
+ModelParams::getLabelDefsForAllDataNodesInF(void) const {
+    return func_data_nodes_labels_defs_;
+}
+
+vector< list<ID> >
+ModelParams::getLabelDefsForAllStateNodesInF(void) const {
+    return func_state_nodes_labels_defs_;
 }
 
 void
@@ -346,7 +378,7 @@ ModelParams::setADDUCSettingsForMatches(
     ModelParams& p
 ) {
     for (auto entry
-             : getJsonValue(root, "match-apply-use-def-dom-constraints"))
+             : getJsonValue(root, "match-apply-def-dom-use-constraint"))
     {
         p.match_apply_def_dom_use_constraint_.push_back(toBool(entry));
     }
@@ -364,7 +396,7 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_state_nodes_ = toInt(getJsonValue(root, "num-func-snodes"));
     p.num_func_label_nodes_ = toInt(getJsonValue(root, "num-func-lnodes"));
     p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
-    p.num_pis_ = toInt(getJsonValue(root, "num-matches"));
+    p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }
 
 void
@@ -375,5 +407,27 @@ ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
             domset.push_back(toArrayIndex(entry));
         }
         p.func_label_domsets_.push_back(domset);
+    }
+}
+
+void
+ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "func-dnodes-label-defs")) {
+        list<ArrayIndex> labels;
+        for (auto entry : jsonlist) {
+            labels.push_back(toArrayIndex(entry));
+        }
+        p.func_data_nodes_labels_defs_.push_back(labels);
+    }
+}
+
+void
+ModelParams::setLabelDefsForStateNodesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "func-dnodes-label-defs")) {
+        list<ArrayIndex> labels;
+        for (auto entry : jsonlist) {
+            labels.push_back(toArrayIndex(entry));
+        }
+        p.func_state_nodes_labels_defs_.push_back(labels);
     }
 }

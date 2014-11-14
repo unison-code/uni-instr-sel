@@ -35,6 +35,13 @@
 #include <map>
 #include <string>
 
+struct DefPlaceEdgeData {
+    DefPlaceEdgeData(const Model::ID& entity, const Model::ID& label);
+
+    Model::ID entity;
+    Model::ID label;
+};
+
 /**
  * Contains the parameters which will be used to create an instance of the CP
  * model.
@@ -110,6 +117,23 @@ class Params {
      */
     std::list<Model::ID>
     getDomsetForLabelNodeInF(const Model::ID& id) const;
+
+    /**
+     * Gets the definition placement edges in the function graph that involves
+     * data nodes.
+     *
+     * @returns List of definition placement edges.
+     */
+    std::list<DefPlaceEdgeData>
+    getDefPlaceEdgesForDataNodesInF(void) const;
+
+    /**
+     * Same as getDefPlaceEdgesForDataInF(void) but for state nodes.
+     *
+     * @returns List of definition placement edges.
+     */
+    std::list<DefPlaceEdgeData>
+    getDefPlaceEdgesForStateNodesInF(void) const;
 
     /**
      * Gets the root label in the function graph.
@@ -204,7 +228,34 @@ class Params {
     getStateNodesUsedByMatch(const Model::ID& match) const;
 
     /**
-     * Gets the function label nodes referred to by a particular match.
+     * Checks if a particular match has a root label node.
+     *
+     * @param match
+     *        Match ID.
+     * @returns Whether the match has a root label node.
+     * @throws Exception
+     *         When there is no match with such an ID.
+     */
+    bool
+    hasMatchRootLabel(const Model::ID& match) const;
+
+    /**
+     * Gets the label node in the function graph that is the root of a
+     * particular match.
+     *
+     * @param match
+     *        Match ID.
+     * @returns The node ID of the root label.
+     * @throws Exception
+     *         When there is no match with such an ID, or if the match does not
+     *         have a root label.
+     */
+    Model::ID
+    getRootLabelOfMatch(const Model::ID& match) const;
+
+    /**
+     * Gets the label nodes in the function graph that appear in a particular
+     * match but not as roots.
      *
      * @param match
      *        Match ID.
@@ -213,10 +264,10 @@ class Params {
      *         When there is no match with such an ID.
      */
     std::list<Model::ID>
-    getLabelNodesReferredByMatch(const Model::ID& match) const;
+    getNonRootLabelNodesInMatch(const Model::ID& match) const;
 
     /**
-     * Checks if use-def-dom constraints should be removed for a particular
+     * Checks if def-dom-use constraint should be applied for a particular
      * match.
      *
      * @param match
@@ -226,7 +277,7 @@ class Params {
      *         When there is no match with such an ID.
      */
     bool
-    getAUDDCSettingForMatch(const Model::ID& match) const;
+    getADDUCSettingForMatch(const Model::ID& match) const;
 
     /**
      * Gets the array index for a given operation node in the function graph.
@@ -811,6 +862,18 @@ class Params {
     toString(const Json::Value& value);
 
     /**
+     * Gets a JSON value as a DefPlaceEdgeData.
+     *
+     * @param value
+     *        JSON value.
+     * @returns The converted value.
+     * @throws Exception
+     *         When the value is not of expected type.
+     */
+    static DefPlaceEdgeData
+    toDefPlaceEdgeData(const Json::Value& value);
+
+    /**
      * Computes the node ID-to-array index mappings for the operation nodes of
      * the function graph.
      *
@@ -911,6 +974,19 @@ class Params {
     setRootLabelInF(const Json::Value& root, Params& p);
 
     /**
+     * Sets the definition placement edges in the function graph.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setDefPlaceEdgesForF(const Json::Value& root, Params& p);
+
+    /**
      * Sets the constraints of the function graph.
      *
      * @param root
@@ -950,7 +1026,7 @@ class Params {
     setLatenciesForMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the apply-use-def-dom-constraints settings for the matches.
+     * Sets the apply-def-dom-use-constraint settings for the matches.
      *
      * @param root
      *        The JSON root value.
@@ -960,7 +1036,7 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setAUDDCSettingsForMatches(const Json::Value& root, Params& p);
+    setADDUCSettingsForMatches(const Json::Value& root, Params& p);
 
     /**
      * Sets the function operation nodes covered by the respective match.
@@ -1028,7 +1104,8 @@ class Params {
     setStateNodesUsedByMatches(const Json::Value& root, Params& p);
 
     /**
-     * Sets the function label nodes referred to by the respective match.
+     * Sets the label nodes in the function graph that appear in the matches but
+     * not as roots.
      *
      * @param root
      *        The JSON root value.
@@ -1038,7 +1115,21 @@ class Params {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByMatches(const Json::Value& root, Params& p);
+    setNonRootLabelNodesInMatches(const Json::Value& root, Params& p);
+
+    /**
+     * Sets the function label nodes that is the root label of each respective
+     * match.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setRootLabelNodeOfMatches(const Json::Value& root, Params& p);
 
     /**
      * Sets the match constraints.
@@ -1109,7 +1200,7 @@ class Params {
     /**
      * The dominator sets for each label node in the function graph.
      */
-    std::map<Model::ID, std::list<Model::ID> > func_label_domsets_;
+    std::map< Model::ID, std::list<Model::ID> > func_label_domsets_;
 
     /**
      * The root label which indicates the entry point in the function graph.
@@ -1121,6 +1212,11 @@ class Params {
      * when this object is deleted.
      */
     std::list<const Model::Constraint*> func_constraints_;
+
+    /**
+     * The definition placement edges appearing in the function graph.
+     */
+    std::list<DefPlaceEdgeData> func_def_place_edges_;
 
     /**
      * Maps the ID of a register in the target machine to an array index.
@@ -1156,47 +1252,52 @@ class Params {
      * The operation nodes in the function graph which are covered by each
      * match.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_operations_covered_;
+    std::map< Model::ID, std::list<Model::ID> > match_operations_covered_;
 
     /**
      * The data nodes in the function graph which are defined by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_data_defined_;
+    std::map< Model::ID, std::list<Model::ID> > match_data_defined_;
 
     /**
      * The data nodes in the function graph which are used by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_data_used_;
+    std::map< Model::ID, std::list<Model::ID> > match_data_used_;
 
     /**
      * The state nodes in the function graph which are defined by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_states_defined_;
+    std::map< Model::ID, std::list<Model::ID> > match_states_defined_;
 
     /**
      * The state nodes in the function graph which are used by each match.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_states_used_;
+    std::map< Model::ID, std::list<Model::ID> > match_states_used_;
 
     /**
-     * The label nodes in the function graph which are referred to by each
-     * match.
+     * The label nodes in the function graph which appear in each match but not
+     * as roots.
      */
-    std::map<Model::ID, std::list<Model::ID> > match_labels_referred_;
+    std::map< Model::ID, std::list<Model::ID> > match_non_root_labels_;
+
+    /**
+     * The root label, if any, for each match.
+     */
+    std::map<Model::ID, Model::ID> match_root_label_;
 
     /**
      * The constraints for each match. The constraints are destroyed when this
      * object is deleted.
      */
-    std::map<Model::ID, std::list<const Model::Constraint*> >
-    match_constraints_;
+    std::map< Model::ID, std::list<const Model::Constraint*> >
+      match_constraints_;
 
     /**
-     * Whether use-def-dom constraints should be applied on a particular
+     * Whether the def-dom-use constraint should be applied on a particular
      * match. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::map<Model::ID, bool> match_use_def_dom_constraints_;
+    std::map<Model::ID, bool> match_apply_def_dom_use_constraint_;
 };
 
 #endif

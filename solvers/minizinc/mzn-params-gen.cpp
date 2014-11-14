@@ -183,6 +183,16 @@ generateModelFunctionParameters(
     out << "domsetOfLabelInFunction = array1d(allLabelsInFunction, ";
     printMinizincValue(out, params.getDomsetForAllLabelNodesInF());
     out << ");" << endl;
+
+    out << "labelsWhereDataInFunctionMustBeDefined = "
+        << "array1d(allDataInFunction, ";
+    printMinizincValue(out, params.getLabelDefsForAllDataNodesInF());
+    out << ");" << endl;
+
+    out << "labelsWhereStatesInFunctionMustBeDefined = "
+        << "array1d(allStatesInFunction, ";
+    printMinizincValue(out, params.getLabelDefsForAllStateNodesInF());
+    out << ");" << endl;
 }
 
 void
@@ -226,6 +236,14 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getStateNodesUsedByAllMatches());
     out << ");" << endl;
 
+    out << "rootLabelOfMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getRootLabelNodeOfAllMatches());
+    out << ");" << endl;
+
+    out << "nonRootLabelsInMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getNonRootLabelNodesInAllMatches());
+    out << ");" << endl;
+
     out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getADDUCSettingForAllMatches());
     out << ");" << endl;
@@ -238,7 +256,7 @@ generateModelMatchParameters(
         vector<int> mappings(num_matches * num_labels, -1);
         int index = 0;
         ArrayIndex pat_index = 0;
-        for (const auto& entries : params.getLabelNodesReferredByAllMatches()) {
+        for (const auto& entries : params.getNonRootLabelNodesInAllMatches()) {
             for (const ArrayIndex& node_index : entries) {
                 mappings[pat_index * num_labels + node_index] = index++;
             }

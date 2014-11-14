@@ -110,6 +110,24 @@ class ModelParams {
     getDomsetForAllLabelNodesInF(void) const;
 
     /**
+     * Gets the list of label nodes in which the respective data node in the
+     * function graph must be defined.
+     *
+     * @returns List of label nodes.
+     */
+    std::vector< std::list<ArrayIndex> >
+    getLabelDefsForAllDataNodesInF(void) const;
+
+    /**
+     * Gets the list of label nodes in which the respective state node in the
+     * function graph must be defined.
+     *
+     * @returns List of label nodes.
+     */
+    std::vector< std::list<ArrayIndex> >
+    getLabelDefsForAllStateNodesInF(void) const;
+
+    /**
      * Gets the root label in the function graph.
      *
      * @returns Array index for a label node.
@@ -174,12 +192,20 @@ class ModelParams {
     getStateNodesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function label nodes referred per match.
+     * Gets the function label nodes per match that are roots.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getLabelNodesReferredByAllMatches(void) const;
+    getRootLabelNodeOfAllMatches(void) const;
+
+    /**
+     * Gets the function label nodes per match that are not roots.
+     *
+     * @returns List of node IDs.
+     */
+    std::vector< std::list<ID> >
+    getNonRootLabelNodesInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
@@ -306,6 +332,34 @@ class ModelParams {
      */
     static void
     setRootLabelInF(const Json::Value& root, ModelParams& p);
+
+    /**
+     * Sets the label nodes in which the respective data nodes in the function
+     * graph must be defined.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setLabelDefsForDataNodesInF(const Json::Value& root, ModelParams& p);
+
+    /**
+     * Sets the label nodes in which the respective state nodes in the function
+     * graph must be defined.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setLabelDefsForStateNodesInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the domsets for the label nodes in the function graph.
@@ -438,7 +492,8 @@ class ModelParams {
     setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function label nodes referred to by the respective match.
+     * Sets the function label nodes that is the root label of each respective
+     * match.
      *
      * @param root
      *        The JSON root value.
@@ -448,7 +503,21 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelNodesReferredByMatches(const Json::Value& root, ModelParams& p);
+    setRootLabelNodeOfMatches(const Json::Value& root, ModelParams& p);
+
+    /**
+     * Sets the function label nodes that appear in the respective match but
+     * not as roots.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setNonRootLabelNodesInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -518,7 +587,7 @@ class ModelParams {
     /**
      * Numbers of matches.
      */
-    size_t num_pis_;
+    size_t num_matches_;
 
     /**
      * The dominator sets for each label node in the function graph.
@@ -529,6 +598,16 @@ class ModelParams {
      * The root label which indicates the entry point in the function graph.
      */
     ArrayIndex func_root_label_;
+
+    /**
+     * The label nodes in which the respective data nodes must be defined.
+     */
+    std::vector< std::list<ArrayIndex> > func_data_nodes_labels_defs_;
+
+    /**
+     * The label nodes in which the respective state nodes must be defined.
+     */
+    std::vector< std::list<ArrayIndex> > func_state_nodes_labels_defs_;
 
     /**
      * The constraints for the function graph. The constraints are destroyed
@@ -573,10 +652,15 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_states_used_;
 
     /**
-     * The label nodes in the function graph which are referred to by each
-     * match.
+     * The label nodes in the function graph which appear in each match but not
+     * as roots.
      */
-    std::vector< std::list<ArrayIndex> > match_labels_referred_;
+    std::vector< std::list<ArrayIndex> > match_non_root_labels_;
+
+    /**
+     * The root label, if any, for each match.
+     */
+    std::vector< std::list<ArrayIndex> > match_root_label_;
 
     /**
      * The constraints for each match. The constraints are destroyed when this

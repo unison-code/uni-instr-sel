@@ -35,6 +35,10 @@ using std::list;
 using std::map;
 using std::string;
 
+DefPlaceEdgeData::DefPlaceEdgeData(const ID& entity, const ID& label)
+    : entity(entity), label(label)
+{}
+
 Params::Params(void) {}
 
 Params::~Params(void) {
@@ -86,18 +90,20 @@ Params::parseJson(const string& str, Params& p) {
     computeMappingsAndDomsetsForLabelNodesInF(root, p);
     computeMappingsForMatches(root, p);
     computeMappingsForRegistersInM(root, p);
+    setDefPlaceEdgesForF(root, p);
     setRootLabelInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
     setConstraintsForMatches(root, p);
-    setAUDDCSettingsForMatches(root, p);
+    setADDUCSettingsForMatches(root, p);
     setOperationNodesCoveredByMatches(root, p);
     setDataNodesDefinedByMatches(root, p);
     setDataNodesUsedByMatches(root, p);
     setStateNodesDefinedByMatches(root, p);
     setStateNodesUsedByMatches(root, p);
-    setLabelNodesReferredByMatches(root, p);
+    setRootLabelNodeOfMatches(root, p);
+    setNonRootLabelNodesInMatches(root, p);
 }
 
 bool
@@ -144,6 +150,14 @@ Params::toString(const Value& value) {
         THROW(Exception, "Not a JSON string");
     }
     return value.asString();
+}
+
+DefPlaceEdgeData
+Params::toDefPlaceEdgeData(const Value& value) {
+    if (value.size() != 2) {
+        THROW(Exception, "Not a JSON list with 2 elements");
+    }
+    return DefPlaceEdgeData(toID(value[0]), toID(value[1]));
 }
 
 void
@@ -349,14 +363,26 @@ Params::setStateNodesUsedByMatches(const Json::Value& root, Params& p) {
 }
 
 void
-Params::setLabelNodesReferredByMatches(const Json::Value& root, Params& p) {
+Params::setNonRootLabelNodesInMatches(const Json::Value& root, Params& p) {
     for (auto match : getJsonValue(root, "match-data")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> refs;
-        for (auto node_id : getJsonValue(match, "label-nodes-referred")) {
+        for (auto node_id : getJsonValue(match, "non-root-label-nodes")) {
             refs.push_back(toID(node_id));
         }
-        addMapping(match_id, refs, p.match_labels_referred_);
+        addMapping(match_id, refs, p.match_non_root_labels_);
+    }
+}
+
+void
+Params::setRootLabelNodeOfMatches(const Json::Value& root, Params& p) {
+    for (auto match : getJsonValue(root, "match-data")) {
+        const ID& match_id = toID(getJsonValue(match, "match-id"));
+        if (hasJsonValue(match, "root-label-node")) {
+            addMapping(match_id,
+                       toID(getJsonValue(match, "root-label-node")),
+                       p.match_root_label_);
+        }
     }
 }
 
@@ -386,8 +412,30 @@ Params::getStateNodesUsedByMatch(const ID& match) const {
 }
 
 list<ID>
-Params::getLabelNodesReferredByMatch(const ID& match) const {
-    return getMappedValue(match, match_labels_referred_);
+Params::getNonRootLabelNodesInMatch(const ID& match) const {
+    return getMappedValue(match, match_non_root_labels_);
+}
+
+list<DefPlaceEdgeData>
+Params::getDefPlaceEdgesForDataNodesInF(void) const {
+    list<DefPlaceEdgeData> edges;
+    for (auto& edge : func_def_place_edges_) {
+        if (isDataNodeInF(edge.entity)) {
+            edges.push_back(edge);
+        }
+    }
+    return edges;
+}
+
+list<DefPlaceEdgeData>
+Params::getDefPlaceEdgesForStateNodesInF(void) const {
+    list<DefPlaceEdgeData> edges;
+    for (auto& edge : func_def_place_edges_) {
+        if (isStateNodeInF(edge.entity)) {
+            edges.push_back(edge);
+        }
+    }
+    return edges;
 }
 
 list<ID>
@@ -528,21 +576,21 @@ Params::isLabelNodeInF(const ID& id) const {
 }
 
 bool
-Params::getAUDDCSettingForMatch(const ID& match) const {
-    return getMappedValue(match, match_use_def_dom_constraints_);
+Params::getADDUCSettingForMatch(const ID& match) const {
+    return getMappedValue(match, match_apply_def_dom_use_constraint_);
 }
 
 void
-Params::setAUDDCSettingsForMatches(
+Params::setADDUCSettingsForMatches(
     const Json::Value& root,
     Params& p
 ) {
     for (auto match : getJsonValue(root, "match-data")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
-        const string field_name("apply-use-def-dom-constraints");
+        const string field_name("apply-def-dom-use-constraint");
         addMapping(match_id,
                    toBool(getJsonValue(match, field_name)),
-                   p.match_use_def_dom_constraints_);
+                   p.match_apply_def_dom_use_constraint_);
     }
 }
 
@@ -550,6 +598,14 @@ void
 Params::setRootLabelInF(const Json::Value& root, Params& p) {
     const Value& function = getJsonValue(root, "function-data");
     p.func_root_label_ = toID(getJsonValue(function, "root-label"));
+}
+
+void
+Params::setDefPlaceEdgesForF(const Json::Value& root, Params& p) {
+    const Value& function = getJsonValue(root, "function-data");
+    for (auto e : getJsonValue(function, "def-place-edges")) {
+        p.func_def_place_edges_.push_back(toDefPlaceEdgeData(e));
+    }
 }
 
 ID
@@ -615,4 +671,20 @@ Params::getIDsOfRegistersInM(const list<ArrayIndex>& is) const {
 list<ID>
 Params::getIDsOfMatches(const list<ArrayIndex>& is) const {
     return getMappedValues(is, match_vk_mappings_);
+}
+
+bool
+Params::hasMatchRootLabel(const ID& match) const {
+    try {
+        getMappedValue(match, match_root_label_);
+        return true;
+    }
+    catch (Exception&) {
+        return false;
+    }
+}
+
+Model::ID
+Params::getRootLabelOfMatch(const ID& match) const {
+    return getMappedValue(match, match_root_label_);
 }

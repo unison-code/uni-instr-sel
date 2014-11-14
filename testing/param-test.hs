@@ -68,9 +68,9 @@ main =
                 , (1,  12, EdgeLabel DataFlowEdge 0 0)
                 , (2,  12, EdgeLabel DataFlowEdge 0 1)
                 , (3,  13, EdgeLabel DataFlowEdge 0 0)
-                , (4,  14, EdgeLabel DataFlowEdge 0 1)
+                , (4,  14, EdgeLabel DataFlowEdge 0 0)
                 , (4,  13, EdgeLabel DataFlowEdge 1 1)
-                , (5,  14, EdgeLabel DataFlowEdge 0 2)
+                , (5,  14, EdgeLabel DataFlowEdge 0 1)
                 , (6,  11, EdgeLabel DataFlowEdge 0 1)
                 , (7,   0, EdgeLabel DataFlowEdge 0 0)
                 , (7,   1, EdgeLabel DataFlowEdge 1 0)
@@ -85,6 +85,9 @@ main =
                 , (13,  5, EdgeLabel DataFlowEdge 0 0)
                 , (14,  6, EdgeLabel DataFlowEdge 0 0)
                 , (15,  9, EdgeLabel ControlFlowEdge 0 1)
+                , ( 4,  7, EdgeLabel DefPlaceEdge 0 0)
+                , ( 5,  8, EdgeLabel DefPlaceEdge 0 0)
+                , ( 6,  9, EdgeLabel DefPlaceEdge 0 0)
                 ])
          func_cs = [ BoolExprConstraint $
                      DataNodeIsAnIntConstantExpr $

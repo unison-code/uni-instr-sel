@@ -136,6 +136,46 @@ void outputModelParams(
     }
 
     out << "," << endl
+        << "\"func-dnodes-label-defs\" : ";
+    {
+        size_t num_nodes = params.getNumDataNodesInF();
+        vector< list<ArrayIndex> > node_lists(num_nodes);
+        const auto& dp_edge_data = params.getDefPlaceEdgesForDataNodesInF();
+        for (const ID& id : params.getIDsForAllDataNodesInF()) {
+            list<ArrayIndex> label_indices;
+            for (const auto& edge_data : dp_edge_data) {
+                if (edge_data.entity == id) {
+                    ArrayIndex label_index =
+                        params.getIndexForLabelNodeInF(edge_data.label);
+                    label_indices.push_back(label_index);
+                }
+            }
+            node_lists[params.getIndexForDataNodeInF(id)] = label_indices;
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"func-snodes-label-defs\" : ";
+    {
+        size_t num_nodes = params.getNumStateNodesInF();
+        vector< list<ArrayIndex> > node_lists(num_nodes);
+        const auto& dp_edge_data = params.getDefPlaceEdgesForStateNodesInF();
+        for (const ID& id : params.getIDsForAllStateNodesInF()) {
+            list<ArrayIndex> label_indices;
+            for (const auto& edge_data : dp_edge_data) {
+                if (edge_data.entity == id) {
+                    ArrayIndex label_index =
+                        params.getIndexForLabelNodeInF(edge_data.label);
+                    label_indices.push_back(label_index);
+                }
+            }
+            node_lists[params.getIndexForStateNodeInF(id)] = label_indices;
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
         << "\"func-constraints\" : ";
     {
         list<string> cs_str;
@@ -228,12 +268,28 @@ void outputModelParams(
     }
 
     out << "," << endl
-        << "\"match-lnodes-referred\" : ";
+        << "\"match-root-lnode\" : ";
     {
         size_t num_matches = params.getNumMatches();
         vector< list<ArrayIndex> > node_lists(num_matches);
         for (const ID& id : params.getIDsForAllMatches()) {
-            const list<ID>& nodes = params.getLabelNodesReferredByMatch(id);
+            list<ID> root;
+            if (params.hasMatchRootLabel(id)) {
+                root.push_back(params.getRootLabelOfMatch(id));
+            }
+            node_lists[params.getIndexForMatch(id)] =
+                params.getIndicesForLabelNodesInF(root);
+        }
+        printJsonValue(out, node_lists);
+    }
+
+    out << "," << endl
+        << "\"match-non-root-lnodes\" : ";
+    {
+        size_t num_matches = params.getNumMatches();
+        vector< list<ArrayIndex> > node_lists(num_matches);
+        for (const ID& id : params.getIDsForAllMatches()) {
+            const list<ID>& nodes = params.getNonRootLabelNodesInMatch(id);
             node_lists[params.getIndexForMatch(id)] =
                 params.getIndicesForLabelNodesInF(nodes);
         }
@@ -263,12 +319,12 @@ void outputModelParams(
     }
 
     out << "," << endl
-        << "\"match-apply-use-def-dom-constraints\" : ";
+        << "\"match-apply-def-dom-use-constraint\" : ";
     {
         vector<bool> settings(params.getNumMatches());
         for (const ID& id : params.getIDsForAllMatches()) {
             settings[params.getIndexForMatch(id)] =
-                params.getAUDDCSettingForMatch(id);
+                params.getADDUCSettingForMatch(id);
         }
         printJsonValue(out, settings);
     }

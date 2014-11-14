@@ -64,15 +64,19 @@ data CPModelParams =
 -- | Describes the necessary function graph data.
 data FunctionGraphData =
     FunctionGraphData
-      { funcOperations :: [NodeID]
-        -- ^ The operations in the function graph.
+      { funcOpNodes :: [NodeID]
+        -- ^ The operation nodes in the function graph.
       , funcDataNodes :: [NodeID]
         -- ^ The data nodes in the function graph.
       , funcStateNodes :: [NodeID]
         -- ^ The state nodes in the function graph.
-      , funcLabelDoms :: [Domset NodeID]
+      , funcLabelNodes :: [Domset NodeID]
         -- ^ The label nodes in the function graph, along with their dominator
         -- sets.
+      , funcDefPlaceEdges :: [(NodeID, NodeID)]
+        -- ^ The definition placement edges in the function graph. The first
+        -- node in the tuple is the entity node and the second node is the label
+        -- node.
       , funcRootLabel :: NodeID
         -- ^ The root label, or entry point into the function.
       , funcBasicBlockData :: [BasicBlockData]
@@ -122,9 +126,12 @@ data MatchData =
         -- match.
       , mStateNodesUsed :: [NodeID]
         -- ^ The state nodes in the function graph which are used by this match.
-      , mLabelNodesReferred :: [NodeID]
-        -- ^ The label nodes in the function graph which are referred to by this
-        -- match.
+      , mRootLabelNode :: Maybe NodeID
+        -- ^ The label node in the function graph that appears as root label (if
+        -- there is such a node) in this match.
+      , mNonRootLabelNodes :: [NodeID]
+        -- ^ The label nodes in the function graph that appears in this match
+        -- but not as roots.
       , mConstraints :: [Constraint]
         -- ^ The pattern-specific constraints, if any. All node IDs used in the
         -- patterns refer to nodes in the function graph (not the pattern
