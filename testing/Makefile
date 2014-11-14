@@ -15,6 +15,9 @@ param-test:
 run-param-test: param-test
 	./param-test
 
+params.json: param-test
+	./param-test > params.json
+
 .PHONY: match-test
 match-test:
 	$(GHC) $(GHCFLAGS) match-test.hs
