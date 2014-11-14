@@ -32,7 +32,7 @@ import Language.InstSel.Graphs
   ( bbLabel )
 import qualified Language.InstSel.Graphs as G
   ( bbLabel )
-import Language.InstSel.Graphs.PatternMatching.VF2
+import Language.InstSel.Graphs.PatternMatching.CP
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
   ( Function (..)
