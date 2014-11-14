@@ -99,7 +99,7 @@ instance FromLisp NumExpr where
     <|> struct "pat-to-num" Pattern2NumExpr e
     <|> struct "lab-to-num" Label2NumExpr e
     <|> struct "reg-to-num" Register2NumExpr e
-    <|> struct "dist-pat-to-lab" DistanceBetweenMatchAndLabelExpr e
+    <|> struct "dist-match-to-lab" DistanceBetweenMatchAndLabelExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)         = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -113,7 +113,7 @@ instance ToLisp NumExpr where
   toLisp (Label2NumExpr e)           = mkStruct "lab-to-num" [toLisp e]
   toLisp (Register2NumExpr e)        = mkStruct "reg-to-num" [toLisp e]
   toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
-    mkStruct "dist-pat-to-lab" [toLisp lhs, toLisp rhs]
+    mkStruct "dist-match-to-lab" [toLisp lhs, toLisp rhs]
 
 instance FromLisp IntExpr where
   parseLisp e =
