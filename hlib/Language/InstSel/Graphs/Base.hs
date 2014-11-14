@@ -35,7 +35,6 @@
 
 module Language.InstSel.Graphs.Base
   ( module Language.InstSel.Graphs.IDs
-  , BBLabelID (..)
   , Domset (..)
   , DstNode
   , Edge (..)
@@ -158,8 +157,8 @@ where
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs.IDs
 import qualified Language.InstSel.OpTypes as O
-import Language.InstSel.TargetMachine.IDs
-  ( BBLabelID (..) )
+import Language.InstSel.ProgramModules.IDs
+  ( BasicBlockLabel (..) )
 import Language.InstSel.Utils
   ( Natural
   , toNatural
@@ -228,7 +227,7 @@ data NodeType =
         -- debugging and pretty-printing purposes.
       }
 
-  | LabelNode { bbLabel :: BBLabelID }
+  | LabelNode { bbLabel :: BasicBlockLabel }
 
   | PhiNode
 

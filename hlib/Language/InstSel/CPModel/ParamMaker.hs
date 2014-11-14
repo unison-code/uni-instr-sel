@@ -21,14 +21,23 @@ where
 import Language.InstSel.Constraints
 import Language.InstSel.CPModel
   hiding
-  ( mAssIDMaps
-  , mAUDDC
+  ( bbLabel
+  , mAssIDMaps
+  , mADDUC
   )
+import qualified Language.InstSel.CPModel as C
+  ( bbLabel )
 import Language.InstSel.Graphs
+  hiding
+  ( bbLabel )
+import qualified Language.InstSel.Graphs as G
+  ( bbLabel )
 import Language.InstSel.Graphs.PatternMatching.VF2
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
-  ( Function (..) )
+  ( Function (..)
+  , getExecFreqOfBBInFunction
+  )
 import Language.InstSel.TargetMachine
 import Data.Maybe
   ( fromJust )
@@ -54,6 +63,8 @@ mkFunctionGraphData f =
   let g = osGraph $ functionOS f
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       cfg = extractCFG g
+      getExecFreq n =
+        fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
   in FunctionGraphData
        (nodeIDsByType isOperationNode)
        (nodeIDsByType isDataNode)
@@ -61,8 +72,13 @@ mkFunctionGraphData f =
        (computeLabelDoms cfg)
        (getNodeID $ fromJust $ rootInCFG cfg)
        ( map
-         (\n -> BBLabelData (getNodeID n) (bbLabel $ getNodeType n))
-         (filter isLabelNode (getAllNodes g))
+           ( \n -> BasicBlockData
+                     { C.bbLabel = (G.bbLabel $ getNodeType n)
+                     , bbLabelNode = (getNodeID n)
+                     , bbExecFrequency = getExecFreq n
+                     }
+           )
+           (filter isLabelNode (getAllNodes g))
        )
        (osConstraints $ functionOS f)
 

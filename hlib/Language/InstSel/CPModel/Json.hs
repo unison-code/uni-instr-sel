@@ -28,6 +28,12 @@ import Language.InstSel.Graphs
   ( Domset (..) )
 import Language.InstSel.Graphs.IDs
 import Language.InstSel.Patterns.IDs
+import Language.InstSel.ProgramModules.IDs
+import Language.InstSel.ProgramModules
+  ( ExecFreq (..)
+  , fromExecFreq
+  , toExecFreq
+  )
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
   ( Natural
@@ -99,7 +105,7 @@ instance ToJSON FunctionGraphData where
            , "state-nodes"     .= (funcStateNodes d)
            , "label-nodes"     .= (funcLabelDoms d)
            , "root-label"      .= (funcRootLabel d)
-           , "bb-labels"       .= (funcBBLabels d)
+           , "bb-data"         .= (funcBasicBlockData d)
            , "constraints"     .= (funcConstraints d)
            ]
 
@@ -116,17 +122,19 @@ instance ToJSON (Domset NodeID) where
            , "domset" .= (domSet d)
            ]
 
-instance FromJSON BBLabelData where
+instance FromJSON BasicBlockData where
   parseJSON (Object v) =
-    BBLabelData
-      <$> v .: "node"
-      <*> v .: "label"
+    BasicBlockData
+      <$> v .: "label"
+      <*> v .: "label-node"
+      <*> v .: "exec-frequency"
   parseJSON _ = mzero
 
-instance ToJSON BBLabelData where
+instance ToJSON BasicBlockData where
   toJSON d =
-    object [ "node" .= (labNode d)
-           , "label" .= (labBB d)
+    object [ "label"          .= (bbLabel d)
+           , "label-node"     .= (bbLabelNode d)
+           , "exec-frequency" .= (bbExecFrequency d)
            ]
 
 instance FromJSON MatchData where
@@ -152,22 +160,22 @@ instance FromJSON MatchData where
 
 instance ToJSON MatchData where
   toJSON d =
-    object [ "instruction-id"                .= (mInstructionID d)
-           , "pattern-id"                    .= (mPatternID d)
-           , "match-id"                      .= (mMatchID d)
-           , "operation-nodes-covered"       .= (mOperationsCovered d)
-           , "data-nodes-defined"            .= (mDataNodesDefined d)
-           , "data-nodes-used"               .= (mDataNodesUsed d)
-           , "data-nodes-used-by-phis"       .= (mDataNodesUsedByPhis d)
-           , "state-nodes-defined"           .= (mStateNodesDefined d)
-           , "state-nodes-used"              .= (mStateNodesUsed d)
-           , "label-nodes-referred"          .= (mLabelNodesReferred d)
-           , "constraints"                   .= (mConstraints d)
-           , "apply-use-def-dom-constraints" .= (mAUDDC d)
-           , "has-control-nodes"             .= (mHasControlNodes d)
-           , "code-size"                     .= (mCodeSize d)
-           , "latency"                       .= (mLatency d)
-           , "assembly-id-maps"              .= (mAssIDMaps d)
+    object [ "instruction-id"               .= (mInstructionID d)
+           , "pattern-id"                   .= (mPatternID d)
+           , "match-id"                     .= (mMatchID d)
+           , "operation-nodes-covered"      .= (mOperationsCovered d)
+           , "data-nodes-defined"           .= (mDataNodesDefined d)
+           , "data-nodes-used"              .= (mDataNodesUsed d)
+           , "data-nodes-used-by-phis"      .= (mDataNodesUsedByPhis d)
+           , "state-nodes-defined"          .= (mStateNodesDefined d)
+           , "state-nodes-used"             .= (mStateNodesUsed d)
+           , "label-nodes-referred"         .= (mLabelNodesReferred d)
+           , "constraints"                  .= (mConstraints d)
+           , "apply-def-dom-use-constraint" .= (mADDUC d)
+           , "has-control-nodes"            .= (mHasControlNodes d)
+           , "code-size"                    .= (mCodeSize d)
+           , "latency"                      .= (mLatency d)
+           , "assembly-id-maps"             .= (mAssIDMaps d)
            ]
 
 instance FromJSON MachineData where
@@ -243,12 +251,19 @@ instance FromJSON Natural where
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
 
-instance FromJSON BBLabelID where
-  parseJSON (String s) = return $ (BBLabelID $ T.unpack s)
+instance FromJSON ExecFreq where
+  parseJSON (Number sn) = return $ toExecFreq $ sn2nat sn
   parseJSON _ = mzero
 
-instance ToJSON BBLabelID where
-  toJSON (BBLabelID s) = toJSON s
+instance ToJSON ExecFreq where
+  toJSON i = toJSON (fromExecFreq i)
+
+instance FromJSON BasicBlockLabel where
+  parseJSON (String s) = return $ (BasicBlockLabel $ T.unpack s)
+  parseJSON _ = mzero
+
+instance ToJSON BasicBlockLabel where
+  toJSON (BasicBlockLabel s) = toJSON s
 
 instance FromJSON RawCPSolutionData where
   parseJSON (Object v) =

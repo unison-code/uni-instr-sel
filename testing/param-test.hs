@@ -49,9 +49,9 @@ main =
                 , (4, NodeLabel 4 (DataNode D.AnyType Nothing))
                 , (5, NodeLabel 5 (DataNode D.AnyType Nothing))
                 , (6, NodeLabel 6 (DataNode D.AnyType Nothing))
-                , (7, NodeLabel 7 (LabelNode $ BBLabelID "start"))
-                , (8, NodeLabel 8 (LabelNode $ BBLabelID "middle"))
-                , (9, NodeLabel 9 (LabelNode $ BBLabelID "end"))
+                , (7, NodeLabel 7 (LabelNode $ BasicBlockLabel "start"))
+                , (8, NodeLabel 8 (LabelNode $ BasicBlockLabel "middle"))
+                , (9, NodeLabel 9 (LabelNode $ BasicBlockLabel "end"))
                 , (10, NodeLabel 10 (ControlNode O.CondBranch))
                 , (11, NodeLabel 11 (ControlNode O.Ret))
                 , (12, NodeLabel 12 ( ComputationNode
@@ -105,6 +105,10 @@ main =
                 (Just "test")
                 (OpStructure func_g func_cs)
                 []
+                [ (BasicBlockLabel "start" , 1)
+                , (BasicBlockLabel "middle", 1)
+                , (BasicBlockLabel "end"   , 1)
+                ]
          params = mkParams func tmTest
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))

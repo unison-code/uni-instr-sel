@@ -16,7 +16,6 @@
 
 module Language.InstSel.TargetMachine.IDs
   ( AssemblyID (..)
-  , BBLabelID (..)
   , InstructionID (..)
   , RegisterID (..)
   , RegisterFlagName (..)
@@ -43,14 +42,6 @@ import Language.InstSel.Utils
 --------------
 -- Data types
 --------------
-
--- | Represents a basic block label identifier.
-newtype BBLabelID =
-    BBLabelID String
-  deriving (Eq)
-
-instance Show BBLabelID where
-  show (BBLabelID str) = str
 
 -- | Represents an instruction ID.
 newtype InstructionID =

@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.CPModel.Base
-  ( BBLabelData (..)
+  ( BasicBlockData (..)
   , CPModelParams (..)
   , CPSolutionData (..)
   , FunctionGraphData (..)
@@ -33,7 +33,10 @@ import Language.InstSel.Graphs
   , NodeID (..)
   )
 import Language.InstSel.Patterns.IDs
-  ( PatternID
+  ( PatternID )
+import Language.InstSel.ProgramModules
+  ( BasicBlockLabel (..)
+  , ExecFreq (..)
   )
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.Utils
@@ -72,20 +75,22 @@ data FunctionGraphData =
         -- sets.
       , funcRootLabel :: NodeID
         -- ^ The root label, or entry point into the function.
-      , funcBBLabels :: [BBLabelData]
-        -- ^ The basic block labels of the label nodes.
+      , funcBasicBlockData :: [BasicBlockData]
+        -- ^ The basic block information.
       , funcConstraints :: [Constraint]
         -- ^ The function constraints, if any.
       }
   deriving (Show)
 
--- | Associates a basic block label with a label node.
-data BBLabelData =
-    BBLabelData
-      { labNode :: NodeID
-        -- ^ The node ID of the label node.
-      , labBB :: BBLabelID
-        -- ^ The basic block label of the label node.
+-- | Information about the basic blocks.
+data BasicBlockData =
+    BasicBlockData
+      { bbLabel :: BasicBlockLabel
+        -- ^ The label of this basic block.
+      , bbLabelNode :: NodeID
+        -- ^ The node ID of the label node that represents this basic block.
+      , bbExecFrequency :: ExecFreq
+        -- ^ The execution frequency of this basic block.
       }
   deriving (Show)
 
@@ -124,10 +129,10 @@ data MatchData =
         -- ^ The pattern-specific constraints, if any. All node IDs used in the
         -- patterns refer to nodes in the function graph (not the pattern
         -- graph).
-      , mAUDDC :: Bool
-        -- ^ Whether the use-def-dom constraints apply to this match. This will
-        -- typically always be set to 'True' for all matches except those of the
-        -- generic phi patterns.
+      , mADDUC :: Bool
+        -- ^ Whether to apply the def-dom-use constraint to this match. This
+        -- will typically always be set to 'True' for all matches except those
+        -- of the generic phi patterns.
       , mHasControlNodes :: Bool
         -- ^ Whether the pattern contains one or more control nodes.
       , mCodeSize :: Integer

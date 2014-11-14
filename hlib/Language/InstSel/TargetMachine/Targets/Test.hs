@@ -24,6 +24,8 @@ import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import qualified Language.InstSel.OpTypes as O
+import Language.InstSel.ProgramModules.IDs
+  ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachine
 
 
@@ -38,7 +40,7 @@ tmTest =
         mkGraph
         ( map
             Node
-            [ ( 0, NodeLabel 0 (LabelNode $ BBLabelID "start") )
+            [ ( 0, NodeLabel 0 (LabelNode $ BasicBlockLabel "start") )
             , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
             ]
         )
@@ -72,9 +74,9 @@ tmTest =
          ( map
              Node
              [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-             , ( 1, NodeLabel 1 (LabelNode $ BBLabelID "") )
-             , ( 2, NodeLabel 2 (LabelNode $ BBLabelID "") )
-             , ( 3, NodeLabel 3 (LabelNode $ BBLabelID "") )
+             , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
+             , ( 2, NodeLabel 2 (LabelNode $ BasicBlockLabel "") )
+             , ( 3, NodeLabel 3 (LabelNode $ BasicBlockLabel "") )
              , ( 4, NodeLabel 4 (ControlNode O.CondBranch) )
              ]
          )
@@ -90,8 +92,8 @@ tmTest =
         mkGraph
           ( map
               Node
-              [ ( 0, NodeLabel 0 (LabelNode $ BBLabelID "") )
-              , ( 1, NodeLabel 1 (LabelNode $ BBLabelID "") )
+              [ ( 0, NodeLabel 0 (LabelNode $ BasicBlockLabel "") )
+              , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
               , ( 2, NodeLabel 2 (ControlNode O.Branch) )
               ]
           )
@@ -107,7 +109,7 @@ tmTest =
           ( map
               Node
               [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-              , ( 1, NodeLabel 1 (LabelNode $ BBLabelID "") )
+              , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
               , ( 2, NodeLabel 2 (ControlNode O.Ret) )
               ]
           )
