@@ -131,8 +131,8 @@ tmTest =
           )
           ( map
               Edge
-              [ ( 0, 3, EdgeLabel DataFlowEdge 0 1 )
-              , ( 1, 3, EdgeLabel DataFlowEdge 0 2 )
+              [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
+              , ( 1, 3, EdgeLabel DataFlowEdge 0 1 )
               , ( 3, 2, EdgeLabel DataFlowEdge 0 0 )
               ]
           )
