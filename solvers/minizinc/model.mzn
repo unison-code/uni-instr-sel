@@ -53,6 +53,7 @@ array[allMatches] of set of int: labelsAppearingInMatch;
 array[allMatches] of set of int: rootLabelOfFunctionOfMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
+array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 array[allMatches, allLabelsInFunction] of int: indexOfMatchLabelMapping;
 
 
@@ -303,7 +304,7 @@ constraint
 % state nodes. These constraints should not be applied to the generic phi
 % patterns.
 constraint
-  forall (m in allMatches) (
+  forall (m in allMatches where applyDefDomUseConstraintForMatch[m]) (
     sel[m]
     ->
     (

@@ -182,12 +182,12 @@ class ModelParams {
     getLabelNodesReferredByAllMatches(void) const;
 
     /**
-     * Gets the use-def-dom constraint settings per match.
+     * Gets the apply-def-dom-use-constraint settings per match.
      *
      * @returns Boolean.
      */
     std::vector<bool>
-    getAUDDCSettingForAllMatches(void) const;
+    getADDUCSettingForAllMatches(void) const;
 
     /**
      * Gets the constraints for the function graph.
@@ -360,7 +360,7 @@ class ModelParams {
     setLatenciesForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the apply-use-def-dom-constraints settings for the matches.
+     * Sets the apply-def-dom-use-constraint settings for the matches.
      *
      * @param root
      *        The JSON root value.
@@ -370,7 +370,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setAUDDCSettingsForMatches(const Json::Value& root, ModelParams& p);
+    setADDUCSettingsForMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function operation nodes covered by the respective match.
@@ -585,11 +585,11 @@ class ModelParams {
     std::vector< std::list<const Constraint*> > match_constraints_;
 
     /**
-     * Whether use-def-dom constraints should be applied on a particular
+     * Whether def-dom-use constraint should be applied on a particular
      * match. The ability to turn these off are required by the generic phi
      * patterns.
      */
-    std::vector<bool> match_use_def_dom_constraints_;
+    std::vector<bool> match_apply_def_dom_use_constraint_;
 };
 
 }

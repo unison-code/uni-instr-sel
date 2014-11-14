@@ -93,7 +93,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
     setConstraintsForMatches(root, p);
-    setAUDDCSettingsForMatches(root, p);
+    setADDUCSettingsForMatches(root, p);
     setOperationNodesCoveredByMatches(root, p);
     setDataNodesDefinedByMatches(root, p);
     setDataNodesUsedByMatches(root, p);
@@ -336,19 +336,19 @@ ModelParams::setConstraintsForMatches(const Value& root, ModelParams& p) {
 }
 
 vector<bool>
-ModelParams::getAUDDCSettingForAllMatches(void) const {
-    return match_use_def_dom_constraints_;
+ModelParams::getADDUCSettingForAllMatches(void) const {
+    return match_apply_def_dom_use_constraint_;
 }
 
 void
-ModelParams::setAUDDCSettingsForMatches(
+ModelParams::setADDUCSettingsForMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
     for (auto entry
              : getJsonValue(root, "match-apply-use-def-dom-constraints"))
     {
-        p.match_use_def_dom_constraints_.push_back(toBool(entry));
+        p.match_apply_def_dom_use_constraint_.push_back(toBool(entry));
     }
 }
 

@@ -226,6 +226,10 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getStateNodesUsedByAllMatches());
     out << ");" << endl;
 
+    out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getADDUCSettingForAllMatches());
+    out << ");" << endl;
+
     out << "indexOfMatchLabelMapping = "
          << "array2d(allMatches, allLabelsInFunction, ";
     {
