@@ -247,19 +247,19 @@ constraint
     sel[m]
     <->
     (
-      forall (n in opsCoveredByMatch[m])
+      forall (o in opsCoveredByMatch[m])
       (
-          cov[n] == m
+          cov[o] == m
       )
       /\
-      forall (n in dataDefinedByMatch[m])
+      forall (e in dataDefinedByMatch[m])
       (
-          ddefm[n] == m
+          ddefm[e] == m
       )
       /\
-      forall (n in statesDefinedByMatch[m])
+      forall (e in statesDefinedByMatch[m])
       (
-          sdefm[n] == m
+          sdefm[e] == m
       )
     )
   );
@@ -284,28 +284,28 @@ constraint
     )
   );
 
-% Entities defined by a selected match must be defined in the basic blocks
-% consisting of the union between the basic block to which the match is
-% allocated and the set of basic blocks which appears as label nodes in the
-% pattern.
-constraint
-  forall (m in allMatches)
-  (
-    sel[m]
-    ->
-    ( forall (e in dataDefinedByMatch[m])
-      (
-        let { var set of allLabelsInFunction: bb_m_as_set
-            , var set of allLabelsInFunction: labels_in_m
-            }
-        in bb[m] in bb_m_as_set /\ card(bb_m_as_set) == 1
-           /\
-           labels_in_m == nonRootLabelsInMatch[m]
-           /\
-           ddefbb[e] == (bb_m_as_set union labels_in_m)
-      )
-    )
-  );
+%% Entities defined by a selected match must be defined in the basic blocks
+%% consisting of the union between the basic block to which the match is
+%% allocated and the set of basic blocks which appears as label nodes in the
+%% pattern.
+%constraint
+%  forall (m in allMatches)
+%  (
+%    sel[m]
+%    ->
+%    ( forall (e in dataDefinedByMatch[m])
+%      (
+%        let { var set of allLabelsInFunction: bb_m_as_set
+%            , var set of allLabelsInFunction: labels_in_m =
+%                nonRootLabelsInMatch[m]
+%            }
+%        in bb[m] in bb_m_as_set /\ card(bb_m_as_set) == 1
+%           /\
+%           ddefbb[e] == (bb_m_as_set union labels_in_m)
+%      )
+%    )
+%    % TODO: add constraint for state nodes
+%  );
 
 % An entity with a definition placement edge to a label must be defined within
 % the basic block of that label.
