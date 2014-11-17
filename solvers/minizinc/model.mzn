@@ -235,7 +235,7 @@ constraint
 constraint
   forall (m in allMatches)
   (
-    (not sel[m]) <-> bb[m] == labelValueForDummy
+    not sel[m] <-> bb[m] == labelValueForDummy
   );
 
 % Selected matches which have a root label must be allocated in the basic block
@@ -407,13 +407,6 @@ constraint
       ->
       dist[indexOfMatchLabelMapping[m, l]] = 0
     )
-  );
-
-% Matches that are not selected are assigned to the dummy basic block.
-constraint
-  forall (m in allMatches)
-  (
-    not sel[m] <-> bb[m] == labelValueForDummy
   );
 
 % Constraint the immediate value for all data nodes which do not represent
