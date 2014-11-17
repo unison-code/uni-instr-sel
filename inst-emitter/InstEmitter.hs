@@ -56,8 +56,6 @@ import System.Console.CmdArgs
 import System.Exit
   ( exitFailure )
 
-import Debug.Trace
-
 
 
 ---------------------------------
