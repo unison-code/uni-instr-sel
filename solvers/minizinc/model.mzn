@@ -234,6 +234,25 @@ constraint
     )
   );
 
+% Selected matches must define all of its entities.
+constraint
+  forall (m in allMatches)
+  (
+    sel[m]
+    ->
+    (
+      forall (e in dataDefinedByMatch[m])
+      (
+          ddefm[e] == m
+      )
+      /\
+      forall (e in statesDefinedByMatch[m])
+      (
+          sdefm[e] == m
+      )
+    )
+  );
+
 % Essential operations must be covered by some match.
 constraint
   forall (o in essentialOperationsInFunction)
