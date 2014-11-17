@@ -184,6 +184,10 @@ generateModelFunctionParameters(
     printMinizincValue(out, params.getDomsetForAllLabelNodesInF());
     out << ");" << endl;
 
+    out << "execFrequencyOfLabelInFunction = array1d(allLabelsInFunction, ";
+    printMinizincValue(out, params.getExecFreqOfAllBBsInF());
+    out << ");" << endl;
+
     out << "labelsWhereDataInFunctionMustBeDefined = "
         << "array1d(allDataInFunction, ";
     printMinizincValue(out, params.getLabelDefsForAllDataNodesInF());

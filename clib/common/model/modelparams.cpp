@@ -91,6 +91,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setLabelDefsForDataNodesInF(root, p);
     setLabelDefsForStateNodesInF(root, p);
     setDomsetsForLabelNodesInF(root, p);
+    setExecFreqOfBBsInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
@@ -343,6 +344,18 @@ ModelParams::destroyConstraintsForMatches(void) {
             delete c;
         }
     }
+}
+
+void
+ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "func-bb-exec-freq")) {
+        p.func_bb_exec_freq_.push_back(toInt(entry));
+    }
+}
+
+vector<int>
+ModelParams::getExecFreqOfAllBBsInF(void) const {
+    return func_bb_exec_freq_;
 }
 
 void

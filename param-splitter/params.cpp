@@ -93,6 +93,7 @@ Params::parseJson(const string& str, Params& p) {
     setDefPlaceEdgesForF(root, p);
     setRootLabelInF(root, p);
     setConstraintsForF(root, p);
+    setExecFreqOfBBsInF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
     setConstraintsForMatches(root, p);
@@ -237,6 +238,11 @@ Params::computeMappingsForMatches(const Value& root, Params& p) {
         addMapping(index, pi_id, p.match_vk_mappings_);
         index++;
     }
+}
+
+int
+Params::getExecFreqOfBBInF(const ID& label) const {
+    return getMappedValue(label, func_bb_exec_freq_);
 }
 
 int
@@ -526,6 +532,16 @@ Params::setConstraintsForF(const Value& root, Params& p) {
         ConstraintParser parser;
         Constraint* c = parser.parseConstraint(toString(expr));
         p.func_constraints_.push_back(c);
+    }
+}
+
+void
+Params::setExecFreqOfBBsInF(const Value& root, Params& p) {
+    const Value& function = getJsonValue(root, "function-data");
+    for (auto data : getJsonValue(function, "bb-data")) {
+        const ID& label_id = toID(getJsonValue(data, "label-node"));
+        const int freq = toInt(getJsonValue(data, "exec-frequency"));
+        addMapping(label_id, freq, p.func_bb_exec_freq_);
     }
 }
 

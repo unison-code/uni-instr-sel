@@ -144,6 +144,19 @@ class Params {
     getRootLabelInF(void) const;
 
     /**
+     * Gets the execution frequency of the basic block (in the function graph)
+     * with the given label node ID.
+     *
+     * @param label
+     *        Node ID.
+     * @returns The execution frequency.
+     * @throws Exception
+     *         When there is no label node with such an ID.
+     */
+    int
+    getExecFreqOfBBInF(const Model::ID& label) const;
+
+    /**
      * Gets the code size of selecting a particular match.
      *
      * @param match
@@ -1000,6 +1013,20 @@ class Params {
     setConstraintsForF(const Json::Value& root, Params& p);
 
     /**
+     * Sets the execution frequencies of the basic blocks in the function
+     * graph.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setExecFreqOfBBsInF(const Json::Value& root, Params& p);
+
+    /**
      * Sets the code size values of the matches.
      *
      * @param root
@@ -1217,6 +1244,11 @@ class Params {
      * The definition placement edges appearing in the function graph.
      */
     std::list<DefPlaceEdgeData> func_def_place_edges_;
+
+    /**
+     * The execution frequency per basic block in the function graph.
+     */
+    std::map<Model::ID, int> func_bb_exec_freq_;
 
     /**
      * Maps the ID of a register in the target machine to an array index.

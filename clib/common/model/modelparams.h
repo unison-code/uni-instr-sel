@@ -136,6 +136,15 @@ class ModelParams {
     getRootLabelInF(void) const;
 
     /**
+     * Gets execution frequencies per basic block (as identified by the label
+     * nodes) in the function graph.
+     *
+     * @returns The execution frequencies.
+     */
+    std::vector<int>
+    getExecFreqOfAllBBsInF(void) const;
+
+    /**
      * Gets code sizes per match.
      *
      * @returns The code sizes (in bytes).
@@ -388,6 +397,20 @@ class ModelParams {
     setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
+     * Sets the execution frequencies of the basic blocks (as identified by the
+     * label nodes) in the function graph.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setExecFreqOfBBsInF(const Json::Value& root, ModelParams& p);
+
+    /**
      * Sets the code size values of the matches.
      *
      * @param root
@@ -608,6 +631,12 @@ class ModelParams {
      * The label nodes in which the respective state nodes must be defined.
      */
     std::vector< std::list<ArrayIndex> > func_state_nodes_labels_defs_;
+
+    /**
+     * The execution frequency per basic block (as identified by the label
+     * nodes) in the function graph.
+     */
+    std::vector<int> func_bb_exec_freq_;
 
     /**
      * The constraints for the function graph. The constraints are destroyed

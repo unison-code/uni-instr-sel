@@ -176,6 +176,17 @@ void outputModelParams(
     }
 
     out << "," << endl
+        << "\"func-bb-exec-freq\" : ";
+    {
+        vector<int> exec_freqs(params.getNumLabelNodesInF());
+        for (const ID& id : params.getIDsForAllLabelNodesInF()) {
+            exec_freqs[params.getIndexForLabelNodeInF(id)] =
+                params.getExecFreqOfBBInF(id);
+        }
+        printJsonValue(out, exec_freqs);
+    }
+
+    out << "," << endl
         << "\"func-constraints\" : ";
     {
         list<string> cs_str;
