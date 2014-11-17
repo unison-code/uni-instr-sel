@@ -281,6 +281,7 @@ instance FromJSON RawCPSolutionData where
       <*> v .: "reg-selected-for-dnode"
       <*> v .: "has-dnode-imm-value"
       <*> v .: "imm-value-of-dnode"
+      <*> v .: "cost"
   parseJSON _ = mzero
 
 instance FromJSON RawPostParams where

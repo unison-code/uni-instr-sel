@@ -198,6 +198,8 @@ data RawCPSolutionData =
         -- node. An array index for a data node corresponds to an index into the
         -- list. The immediate value is only valid if the corresponding value in
         -- 'hasDataNodeImmValue' is set to 'True'.
+      , rawCost :: Integer
+        -- ^ The cost metric of the found solution.
       }
   deriving (Show)
 
