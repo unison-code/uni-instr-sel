@@ -98,6 +98,15 @@ int: numMatchValues = numMatches + 1;
 % Reference to the inactive-match value
 int: matchValueForInactive = numMatchValues - 1;
 
+% Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
+% of 0 for the dummy label
+array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
+  array1d( allLabelsInFunctionPlusDummy
+         , execFrequencyOfLabelInFunction
+           ++
+           array1d(labelValueForDummy..labelValueForDummy, [0])
+         );
+
 % Sets to be used as array ranges
 set of int: allOperationsInFunction = 0..numOpsInFunction-1;
 set of int: allDataInFunction = 0..numDataInFunction-1;
@@ -421,7 +430,7 @@ constraint
   cost = sum (m in allMatches)
          ( bool2int(sel[m])
          * latencyOfMatch[m]
-         * execFrequencyOfLabelInFunction[bb[m]]
+         * execFrequencyOfLabelsPlusDummy[bb[m]]
          );
 
 
