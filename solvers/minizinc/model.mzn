@@ -207,6 +207,31 @@ constraint
      /\
      global_cardinality(cov, [ m | m in allMatches ], counts);
 
+% A match must be selected if some operation is covered by that match, or if
+% some entity is defined by that match.
+constraint
+  forall (m in allMatches)
+  (
+    sel[m]
+    <->
+    (
+      exists (o in opsCoveredByMatch[m])
+      (
+          cov[o] == m
+      )
+      \/
+      exists (e in dataDefinedByMatch[m])
+      (
+          ddefm[e] == m
+      )
+      \/
+      exists (e in statesDefinedByMatch[m])
+      (
+          sdefm[e] == m
+      )
+    )
+  );
+
 % Essential operations must be covered by some match.
 constraint
   forall (o in essentialOperationsInFunction)
