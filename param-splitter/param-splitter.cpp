@@ -176,6 +176,13 @@ void outputModelParams(
     }
 
     out << "," << endl
+        << "\"func-essential-op-nodes\" : ";
+    {
+        const list<ID>& op_nodes = params.getAllEssentialOpNodesInF();
+        printJsonValue(out, params.getIndicesForOperationNodesInF(op_nodes));
+    }
+
+    out << "," << endl
         << "\"func-bb-exec-freq\" : ";
     {
         vector<int> exec_freqs(params.getNumLabelNodesInF());

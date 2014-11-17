@@ -35,6 +35,7 @@ int: numStatesInFunction;
 int: numLabelsInFunction;
 int: rootLabelOfFunction;
 array[allLabelsInFunction] of set of int: domsetOfLabelInFunction;
+array[int] of allOperationsInFunction: essentialOperationsInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
 array[allDataInFunction] of set of allLabelsInFunction:
   labelsWhereDataInFunctionMustBeDefined;
@@ -205,6 +206,13 @@ constraint
      )
      /\
      global_cardinality(cov, [ m | m in allMatches ], counts);
+
+% Essential operations must be covered by some match.
+constraint
+  forall (o in essentialOperationsInFunction)
+  (
+    cov[o] != matchValueForInactive
+  );
 
 % A match is selected if and only if all of its operation nodes are covered and
 % its definable data and state nodes are defined by that pattern.

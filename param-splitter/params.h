@@ -157,6 +157,15 @@ class Params {
     getExecFreqOfBBInF(const Model::ID& label) const;
 
     /**
+     * Gets the essential operation nodes in the function, which must be
+     * covered.
+     *
+     * @returns List of node IDs.
+     */
+    std::list<Model::ID>
+    getAllEssentialOpNodesInF(void) const;
+
+    /**
      * Gets the code size of selecting a particular match.
      *
      * @param match
@@ -1027,6 +1036,20 @@ class Params {
     setExecFreqOfBBsInF(const Json::Value& root, Params& p);
 
     /**
+     * Sets the essential operation nodes in the function graph, which must be
+     * covered.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setEssentialOpNodesInF(const Json::Value& root, Params& p);
+
+    /**
      * Sets the code size values of the matches.
      *
      * @param root
@@ -1249,6 +1272,12 @@ class Params {
      * The execution frequency per basic block in the function graph.
      */
     std::map<Model::ID, int> func_bb_exec_freq_;
+
+    /**
+     * The essential operation nodes in the function graph, which must be
+     * covered.
+     */
+    std::list<Model::ID> func_essential_op_nodes_;
 
     /**
      * Maps the ID of a register in the target machine to an array index.

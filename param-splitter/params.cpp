@@ -94,6 +94,7 @@ Params::parseJson(const string& str, Params& p) {
     setRootLabelInF(root, p);
     setConstraintsForF(root, p);
     setExecFreqOfBBsInF(root, p);
+    setEssentialOpNodesInF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
     setConstraintsForMatches(root, p);
@@ -243,6 +244,11 @@ Params::computeMappingsForMatches(const Value& root, Params& p) {
 int
 Params::getExecFreqOfBBInF(const ID& label) const {
     return getMappedValue(label, func_bb_exec_freq_);
+}
+
+list<ID>
+Params::getAllEssentialOpNodesInF(void) const {
+    return func_essential_op_nodes_;
 }
 
 int
@@ -542,6 +548,14 @@ Params::setExecFreqOfBBsInF(const Value& root, Params& p) {
         const ID& label_id = toID(getJsonValue(data, "label-node"));
         const int freq = toInt(getJsonValue(data, "exec-frequency"));
         addMapping(label_id, freq, p.func_bb_exec_freq_);
+    }
+}
+
+void
+Params::setEssentialOpNodesInF(const Value& root, Params& p) {
+    const Value& function = getJsonValue(root, "function-data");
+    for (auto entry : getJsonValue(function, "essential-op-nodes")) {
+        p.func_essential_op_nodes_.push_back(toID(entry));
     }
 }
 

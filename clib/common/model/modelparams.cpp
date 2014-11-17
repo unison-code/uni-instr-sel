@@ -91,6 +91,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setLabelDefsForDataNodesInF(root, p);
     setLabelDefsForStateNodesInF(root, p);
     setDomsetsForLabelNodesInF(root, p);
+    setEssentialOpNodesInF(root, p);
     setExecFreqOfBBsInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
@@ -347,10 +348,22 @@ ModelParams::destroyConstraintsForMatches(void) {
 }
 
 void
+ModelParams::setEssentialOpNodesInF(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "func-essential-op-nodes")) {
+        p.func_essential_op_nodes_.push_back(toArrayIndex(entry));
+    }
+}
+
+void
 ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "func-bb-exec-freq")) {
         p.func_bb_exec_freq_.push_back(toInt(entry));
     }
+}
+
+list<ArrayIndex>
+ModelParams::getAllEssentialOpNodesInF(void) const {
+    return func_essential_op_nodes_;
 }
 
 vector<int>

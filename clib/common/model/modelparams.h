@@ -136,6 +136,15 @@ class ModelParams {
     getRootLabelInF(void) const;
 
     /**
+     * Gets the essential operation nodes in the function, which must be
+     * covered.
+     *
+     * @returns List of array indices for operation nodes.
+     */
+    std::list<ArrayIndex>
+    getAllEssentialOpNodesInF(void) const;
+
+    /**
      * Gets execution frequencies per basic block (as identified by the label
      * nodes) in the function graph.
      *
@@ -411,6 +420,20 @@ class ModelParams {
     setExecFreqOfBBsInF(const Json::Value& root, ModelParams& p);
 
     /**
+     * Sets the essential operation nodes in the function, which must be
+     * covered.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setEssentialOpNodesInF(const Json::Value& root, ModelParams& p);
+
+    /**
      * Sets the code size values of the matches.
      *
      * @param root
@@ -631,6 +654,12 @@ class ModelParams {
      * The label nodes in which the respective state nodes must be defined.
      */
     std::vector< std::list<ArrayIndex> > func_state_nodes_labels_defs_;
+
+    /**
+     * The essential operation nodes in the function graph, which must be
+     * covered.
+     */
+    std::list<ArrayIndex> func_essential_op_nodes_;
 
     /**
      * The execution frequency per basic block (as identified by the label

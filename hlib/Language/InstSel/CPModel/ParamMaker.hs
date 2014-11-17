@@ -62,6 +62,10 @@ mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
   let g = osGraph $ functionOS f
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
+      essential_op_nodes =
+        filter
+          (\n -> isOperationNode n && (not $ isCopyNode n))
+          (getAllNodes g)
       cfg = extractCFG g
       dp_edge_data =
         map
@@ -71,6 +75,7 @@ mkFunctionGraphData f =
         fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
   in FunctionGraphData
        (nodeIDsByType isOperationNode)
+       (map getNodeID essential_op_nodes)
        (nodeIDsByType isDataNode)
        (nodeIDsByType isStateNode)
        (computeLabelDoms cfg)

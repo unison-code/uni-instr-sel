@@ -90,6 +90,7 @@ instance FromJSON FunctionGraphData where
   parseJSON (Object v) =
     FunctionGraphData
       <$> v .: "operation-nodes"
+      <*> v .: "essential-op-nodes"
       <*> v .: "data-nodes"
       <*> v .: "state-nodes"
       <*> v .: "label-nodes"
@@ -101,14 +102,15 @@ instance FromJSON FunctionGraphData where
 
 instance ToJSON FunctionGraphData where
   toJSON d =
-    object [ "operation-nodes" .= (funcOpNodes d)
-           , "data-nodes"      .= (funcDataNodes d)
-           , "state-nodes"     .= (funcStateNodes d)
-           , "label-nodes"     .= (funcLabelNodes d)
-           , "def-place-edges" .= (funcDefPlaceEdges d)
-           , "root-label"      .= (funcRootLabel d)
-           , "bb-data"         .= (funcBasicBlockData d)
-           , "constraints"     .= (funcConstraints d)
+    object [ "operation-nodes"    .= (funcOpNodes d)
+           , "essential-op-nodes" .= (funcEssentialOpNodes d)
+           , "data-nodes"         .= (funcDataNodes d)
+           , "state-nodes"        .= (funcStateNodes d)
+           , "label-nodes"        .= (funcLabelNodes d)
+           , "def-place-edges"    .= (funcDefPlaceEdges d)
+           , "root-label"         .= (funcRootLabel d)
+           , "bb-data"            .= (funcBasicBlockData d)
+           , "constraints"        .= (funcConstraints d)
            ]
 
 instance FromJSON (Domset NodeID) where

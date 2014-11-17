@@ -66,6 +66,8 @@ data FunctionGraphData =
     FunctionGraphData
       { funcOpNodes :: [NodeID]
         -- ^ The operation nodes in the function graph.
+      , funcEssentialOpNodes :: [NodeID]
+        -- ^ Operation nodes that are essential, meaning they *must* be covered.
       , funcDataNodes :: [NodeID]
         -- ^ The data nodes in the function graph.
       , funcStateNodes :: [NodeID]
