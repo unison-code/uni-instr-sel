@@ -179,21 +179,21 @@ include "inverse.mzn";
 constraint
   forall (m in allMatches)
   (
-    forall ( n in allOperationsInFunction
-             where not (n in opsCoveredByMatch[m])
+    forall ( o in allOperationsInFunction
+             where not (o in opsCoveredByMatch[m])
            )
     (
-      cov[n] != m
+      cov[o] != m
     )
     /\
-    forall (n in allDataInFunction where not (n in dataDefinedByMatch[m]))
+    forall (e in allDataInFunction where not (e in dataDefinedByMatch[m]))
     (
-      ddefm[n] != m
+      ddefm[e] != m
     )
     /\
-    forall (n in allStatesInFunction where not (n in statesDefinedByMatch[m]))
+    forall (e in allStatesInFunction where not (e in statesDefinedByMatch[m]))
     (
-      sdefm[n] != m
+      sdefm[e] != m
     )
   );
 
@@ -202,7 +202,8 @@ constraint
   let { array[1..numMatches] of var int: counts }
   in forall (m in allMatches)
      (
-       counts[m+1] == 0 \/ counts[m+1] == card(opsCoveredByMatch[m])
+       let { int: i = m + 1 }
+       in counts[i] == 0 \/ counts[i] == card(opsCoveredByMatch[m])
      )
      /\
      global_cardinality(cov, [ m | m in allMatches ], counts);
