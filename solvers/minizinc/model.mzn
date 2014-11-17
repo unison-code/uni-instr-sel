@@ -207,8 +207,8 @@ constraint
      /\
      global_cardinality(cov, [ m | m in allMatches ], counts);
 
-% A match must be selected if some operation is covered by that match, or if
-% some entity is defined by that match.
+% A match is selected if and only if some operation is covered by that match, or
+% if some entity is defined by that match.
 constraint
   forall (m in allMatches)
   (
