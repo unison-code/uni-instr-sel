@@ -436,7 +436,7 @@ ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDefsForStateNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "func-dnodes-label-defs")) {
+    for (auto jsonlist : getJsonValue(root, "func-snodes-label-defs")) {
         list<ArrayIndex> labels;
         for (auto entry : jsonlist) {
             labels.push_back(toArrayIndex(entry));
