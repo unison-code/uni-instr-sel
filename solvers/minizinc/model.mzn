@@ -239,31 +239,6 @@ constraint
     cov[o] != matchValueForInactive
   );
 
-% A match is selected if and only if all of its operation nodes are covered and
-% its definable data and state nodes are defined by that pattern.
-constraint
-  forall (m in allMatches)
-  (
-    sel[m]
-    <->
-    (
-      forall (o in opsCoveredByMatch[m])
-      (
-          cov[o] == m
-      )
-      /\
-      forall (e in dataDefinedByMatch[m])
-      (
-          ddefm[e] == m
-      )
-      /\
-      forall (e in statesDefinedByMatch[m])
-      (
-          sdefm[e] == m
-      )
-    )
-  );
-
 % Non-selected matches must be allocated to the dummy block.
 constraint
   forall (m in allMatches)
