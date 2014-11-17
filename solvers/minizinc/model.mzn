@@ -28,7 +28,7 @@
 % EXTERNAL PARAMETERS
 %=====================
 
-% Function data
+% Function data.
 int: numOpsInFunction;
 int: numDataInFunction;
 int: numStatesInFunction;
@@ -42,10 +42,10 @@ array[allDataInFunction] of set of allLabelsInFunction:
 array[allStatesInFunction] of set of allLabelsInFunction:
   labelsWhereStatesInFunctionMustBeDefined;
 
-% Target machine data
+% Target machine data.
 int: numRegisters;
 
-% Match data
+% Match data.
 int: numMatches;
 array[allMatches] of set of int: opsCoveredByMatch;
 array[allMatches] of set of int: dataDefinedByMatch;
@@ -70,7 +70,7 @@ include "params.mzn";
 %=====================
 
 % Number of indices in the match-to-destination label node mappings
-% (a negative value indicates absence of a valid index)
+% (a negative value indicates absence of a valid index).
 int: numMatchLabelMappings = max([ i | i in indexOfMatchLabelMapping ]) + 1;
 
 % Total number of registers values (additional values will be needed for
@@ -83,24 +83,25 @@ int: numRegValues = numRegisters + 2;
 % allocated).
 int: numLabelValues = numLabelsInFunction + 1;
 
-% Reference to the dummy-label value
+% Reference to the dummy-label value.
 int: labelValueForDummy = numLabelValues - 1;
 
-% Register values
-% Reference to use when a data node represents an no-reuse value
+% Register values.
+
+% Reference to use when a data node represents an no-reuse value.
 int: regValueForNoReuse = numRegValues - 2;
-% Reference to use when a data node represents an immediate value
+% Reference to use when a data node represents an immediate value.
 int: regValueForImm = numRegValues - 1;
 
 % Total number of match values (an additional value will be needed for
 % indicating that the match is inactive).
 int: numMatchValues = numMatches + 1;
 
-% Reference to the inactive-match value
+% Reference to the inactive-match value.
 int: matchValueForInactive = numMatchValues - 1;
 
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
-% of 0 for the dummy label
+% of 0 for the dummy label.
 array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
   array1d( allLabelsInFunctionPlusDummy
          , execFrequencyOfLabelInFunction
@@ -108,7 +109,7 @@ array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
            array1d(labelValueForDummy..labelValueForDummy, [0])
          );
 
-% Sets to be used as array ranges
+% Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOpsInFunction-1;
 set of int: allDataInFunction = 0..numDataInFunction-1;
 set of int: allStatesInFunction = 0..numStatesInFunction-1;
@@ -125,23 +126,23 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 % VARIABLES
 %===========
 
-% Operation node coverage
+% Operation node coverage.
 array[allOperationsInFunction] of var allMatchesPlusInactive: cov;
 
-% Data node definitions, register allocation, and immediate values
+% Data node definitions, register allocation, and immediate values.
 array[allDataInFunction] of var allMatchesPlusInactive: ddefm;
 array[allDataInFunction] of var set of allLabelsInFunctionPlusDummy: ddefbb;
 array[allDataInFunction] of var allRegValues: reg;
 array[allDataInFunction] of var int: cnst;
 
-% State node definitions
+% State node definitions.
 array[allStatesInFunction] of var allMatchesPlusInactive: sdefm;
 array[allStatesInFunction] of var set of allLabelsInFunctionPlusDummy: sdefbb;
 
-% Match selection
+% Match selection.
 array[allMatches] of var bool: sel;
 
-% Basic block allocation of matches
+% Basic block allocation of matches.
 array[allMatches] of var allLabelsInFunctionPlusDummy: bb;
 
 % Basic block ordering. In the first variable (ord) each index represents a
@@ -152,10 +153,10 @@ array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy: ord;
 array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy:
   ord_inv;
 
-% Branch-to-label distances
+% Branch-to-label distances.
 array[allIndicesInMatchLabelMappings] of var int: dist;
 
-% Cost
+% Cost.
 var int: cost;
 
 
@@ -175,7 +176,7 @@ include "inverse.mzn";
 %============
 
 % Restrict the initial domains of 'cov', 'ddefm', and 'sdefm' such that matches
-% are not allowed to cover or define nodes which are not part of the match
+% are not allowed to cover or define nodes which are not part of the match.
 constraint
   forall (m in allMatches)
   (
@@ -253,7 +254,8 @@ constraint
   forall (m in allMatches)
   (
     % If a match has no root label, then this set will be empty and hence there
-    % will be no such constraint.
+    % will be no such constraint. It is assumed that there will be at most one
+    % root.
     forall (r in rootLabelOfMatch[m])
     (
       sel[m] -> bb[m] == r
@@ -318,8 +320,8 @@ constraint
     )
   );
 
-% Inactive entities must not be defined by any match nor be defined in any basic
-% block.
+% Inactive entities must not be defined by any match nor be defined in any
+% (real) basic block.
 constraint
   forall (e in allDataInFunction)
   (
@@ -391,7 +393,7 @@ constraint
       sel[m]
       ->
       dist[indexOfMatchLabelMapping[m, l]] =
-        % When the label appears after the branch
+        % When the label appears after the branch.
         sum (i in allLabelsInFunction)
         (
           % Assuming the branch always appears as the last instruction within
@@ -408,7 +410,7 @@ constraint
             )
         )
         -
-        % When the label appears before the branch
+        % When the label appears before the branch.
         sum (i in allLabelsInFunction)
         (
           % Assuming the branch always appears as the last instruction within
@@ -459,7 +461,7 @@ constraint
 
 solve ::
 seq_search
-  ( % Improves solving time
+  ( % Improves solving time.
     [ int_search (cov, first_fail, indomain_min, complete) ]
   )
 minimize cost;
