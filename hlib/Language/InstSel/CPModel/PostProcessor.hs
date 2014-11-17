@@ -25,6 +25,8 @@ import Language.InstSel.Graphs
   ( MatchID
   , NodeID
   )
+import Language.InstSel.ProgramModules
+  ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachine
   hiding
   ( patAssIDMaps )
@@ -173,11 +175,11 @@ emitInstruction cp m piid =
 getNIDFromAID :: MatchData -> AssemblyID -> NodeID
 getNIDFromAID md aid = (mAssIDMaps md) !! (fromIntegral aid)
 
-lookupBBLabel :: NodeID -> [BBLabelData] -> Maybe BBLabelID
+lookupBBLabel :: NodeID -> [BasicBlockData] -> Maybe BasicBlockLabel
 lookupBBLabel n ds =
-  let found = filter (\d -> labNode d == n) ds
+  let found = filter (\d -> bbLabelNode d == n) ds
   in if length found > 0
-     then Just $ labBB $ head found
+     then Just $ bbLabel $ head found
      else Nothing
 
 produceInstPart ::
@@ -203,7 +205,7 @@ produceInstPart cp m md (AssemblyRegister aid) =
      else "?"
 produceInstPart cp _ md (AssemblyBBLabel aid) =
   let n = getNIDFromAID md aid
-      lab = lookupBBLabel n $ funcBBLabels $ functionData $ modelParams cp
+      lab = lookupBBLabel n $ funcBasicBlockData $ functionData $ modelParams cp
   in if isJust lab
      then show $ fromJust lab
      else "?"

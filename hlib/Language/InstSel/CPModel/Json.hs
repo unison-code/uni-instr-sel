@@ -96,7 +96,7 @@ instance FromJSON FunctionGraphData where
       <*> v .: "label-nodes"
       <*> v .: "def-place-edges"
       <*> v .: "root-label"
-      <*> v .: "bb-labels"
+      <*> v .: "bb-data"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -156,7 +156,7 @@ instance FromJSON MatchData where
       <*> v .: "root-label-node"
       <*> v .: "non-root-label-nodes"
       <*> v .: "constraints"
-      <*> v .: "apply-use-def-dom-constraints"
+      <*> v .: "apply-def-dom-use-constraint"
       <*> v .: "has-control-nodes"
       <*> v .: "code-size"
       <*> v .: "latency"

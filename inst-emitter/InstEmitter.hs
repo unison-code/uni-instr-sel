@@ -38,8 +38,8 @@ import Language.InstSel.Graphs.IDs
   ( MatchID
   , NodeID
   )
-import Language.InstSel.TargetMachine.IDs
-  ( BBLabelID )
+import Language.InstSel.ProgramModules.IDs
+  ( BasicBlockLabel )
 import Language.InstSel.TargetMachine.Targets
 import Language.InstSel.Utils
   ( fromLeft
@@ -55,6 +55,8 @@ import Data.Maybe
 import System.Console.CmdArgs
 import System.Exit
   ( exitFailure )
+
+import Debug.Trace
 
 
 
@@ -87,10 +89,10 @@ getPIsAllocatedToBB :: CPSolutionData
 getPIsAllocatedToBB cp_data n =
   map fst $ filter (\t -> snd t == n) $ bbAllocsForMatches cp_data
 
-labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BBLabelID]
+labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BasicBlockLabel]
 labNodes2BBLabels cp_data ns =
-  let bb_maps = funcBBLabels $ functionData $ modelParams cp_data
-  in map (\n -> labBB $ head $ filter (\m -> labNode m == n) bb_maps) ns
+  let bb_maps = funcBasicBlockData $ functionData $ modelParams cp_data
+  in map (\n -> bbLabel $ head $ filter (\m -> bbLabelNode m == n) bb_maps) ns
 
 genCode :: CPSolutionData -> [String]
 genCode cp_data =
