@@ -259,28 +259,44 @@ constraint
     )
   );
 
-%% Entities defined by a selected match must be defined in the basic blocks
-%% consisting of the union between the basic block to which the match is
-%% allocated and the set of basic blocks which appears as label nodes in the
-%% pattern.
-%constraint
-%  forall (m in allMatches)
-%  (
-%    sel[m]
-%    ->
-%    ( forall (e in dataDefinedByMatch[m])
-%      (
-%        let { var set of allLabelsInFunction: bb_m_as_set
-%            , var set of allLabelsInFunction: labels_in_m =
-%                nonRootLabelsInMatch[m]
-%            }
-%        in bb[m] in bb_m_as_set /\ card(bb_m_as_set) == 1
-%           /\
-%           ddefbb[e] == (bb_m_as_set union labels_in_m)
-%      )
-%    )
-%    % TODO: add constraint for state nodes
-%  );
+% Entities defined by a selected match must be defined in the basic blocks
+% consisting of the union between the basic block to which the match is
+% allocated and the set of basic blocks that appear as label nodes in the
+% pattern. Due to the restrctions of Minizinc, however, we need to reformulate
+% this constraint a bit in order to achieve this effect.
+constraint
+  forall (m in allMatches)
+  (
+    sel[m]
+    ->
+    ( forall (e in dataDefinedByMatch[m])
+      (
+        if (card(rootLabelOfMatch[m]) > 0)
+        then
+          let { set of allLabelsInFunction: labels_in_m =
+                  rootLabelOfMatch[m] union nonRootLabelsInMatch[m]
+              }
+          in ddefbb[e] == labels_in_m
+        else
+          bb[m] in ddefbb[e] /\ card(ddefbb[e]) == 1
+        endif
+      )
+    )
+    /\
+    ( forall (e in statesDefinedByMatch[m])
+      (
+        if (card(rootLabelOfMatch[m]) > 0)
+        then
+          let { set of allLabelsInFunction: labels_in_m =
+                  rootLabelOfMatch[m] union nonRootLabelsInMatch[m]
+              }
+          in ddefbb[e] == labels_in_m
+        else
+          bb[m] in ddefbb[e] /\ card(ddefbb[e]) == 1
+        endif
+      )
+    )
+  );
 
 % An entity with a definition placement edge to a label must be defined within
 % the basic block of that label.
