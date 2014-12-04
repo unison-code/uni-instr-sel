@@ -63,22 +63,22 @@ import System.Exit
 ---------------------------------
 
 data Options
-    = Options {
-          sFile :: Maybe String
+    = Options
+        { sFile :: Maybe String
         , ppFile :: Maybe String
-      }
+        }
     deriving (Data, Typeable)
 
 parseArgs :: Options
 parseArgs =
-  Options {
-    sFile = Nothing
+  Options
+    { sFile = Nothing
         &= typFile
         &= help "The JSON file containing the solution."
-  , ppFile = Nothing
+    , ppFile = Nothing
         &= typFile
         &= help "The JSON file containing the post-processing parameters."
-  }
+    }
 
 getPIsAllocatedToBB :: CPSolutionData
                        -> NodeID              -- ^ The node ID of the

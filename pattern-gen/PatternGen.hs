@@ -50,18 +50,16 @@ import System.Exit
 ---------------------------------
 
 data Options
-    = Options {
-          pFile :: Maybe String
-      }
+    = Options { pFile :: Maybe String }
     deriving (Data, Typeable)
 
 parseArgs :: Options
 parseArgs =
-  Options {
-    pFile = Nothing
+  Options
+    { pFile = Nothing
         &= typFile
         &= help "The target pattern file."
-  }
+    }
 
 
 
