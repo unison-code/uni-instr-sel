@@ -31,6 +31,7 @@ import qualified Language.InstSel.Graphs as G
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
+import qualified Language.InstSel.ProgramModules.IDs as PM
 import Language.InstSel.Utils
   ( toNatural )
 import Data.Maybe
@@ -51,13 +52,13 @@ type ConstToDataNodeMapping = (G.Node, Constant)
 -- | Represents a data flow that goes from the label node, identified by a given
 -- ID, to some given node. This is needed to draw the missing data flow edges
 -- after both the data flow graph and the control flow graph have been built.
-type LabelToNodeDF = (G.BBLabelID, G.Node)
+type LabelToNodeDF = (PM.BasicBlockLabel, G.Node)
 
 -- | Represents a definition placement condition, stating that the given node
 -- must be defined in the basic block identified by the given ID. This is needed
 -- to draw the missing definition placement edges after both the data flow graph
 -- and the control flow graph have been built.
-type DefPlaceCond = (G.Node, G.BBLabelID)
+type DefPlaceCond = (G.Node, PM.BasicBlockLabel)
 
 -- | Represents the intermediate build data.
 data BuildState =
