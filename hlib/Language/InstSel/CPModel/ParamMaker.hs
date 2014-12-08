@@ -51,8 +51,8 @@ import Data.Maybe
 -- | Takes a function and machine data to generate the corresponding parameters
 -- to the constraint model. This will also perform pattern matching of all
 -- patterns over the function graph.
-mkParams :: Function -> TargetMachine -> CPModelParams
-mkParams f m =
+mkParams :: TargetMachine -> Function -> CPModelParams
+mkParams m f =
   CPModelParams
     (mkFunctionGraphData f)
     (mkMatchData f (tmInstructions m))

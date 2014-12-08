@@ -112,7 +112,7 @@ main =
                 , (BasicBlockLabel "middle", 1)
                 , (BasicBlockLabel "end"   , 1)
                 ]
-         params = mkParams func tmTest
+         params = mkParams tmTest func
      putStrLn $ toJson params
 --     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))
 --           (match func phi_pattern)
