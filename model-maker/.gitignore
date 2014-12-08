@@ -1,0 +1,5 @@
+model-maker
+*.hi
+*.o
+.PatMatchData
+pattern-matcher
