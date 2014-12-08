@@ -1,5 +1,3 @@
-export CP_PATTERN_MATCHER_SCRIPT := /home/ghb/projects/zapbar/repo-int/src/inst-sel/pattern-matcher/minizinc/pattern-matcher
-
 HLIBPATH := ../hlib
 
 GHC      := ghc

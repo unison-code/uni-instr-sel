@@ -16,8 +16,8 @@
 --
 -- This module invokes an external script which performs the actual pattern
 -- matching, reads its output, and constructs a list of matches. The script to
--- execute is expected to be specific in the system environment (see the
--- `queryScriptPath` function).
+-- execute is expected to be of certain name and located in the working
+-- directory (see the `queryScriptPath` function).
 --------------------------------------------------------------------------------
 
 -- Needed for JSON package
@@ -299,8 +299,7 @@ queryJsonOutputFilePath =
 
 queryScriptPath :: Sh FilePath
 queryScriptPath =
-  do text <- get_env_text "CP_PATTERN_MATCHER_SCRIPT"
-     return $ fromText text
+  do return "./pattern-matcher"
 
 -- | Sets up necessary directories and files.
 prepareSystem :: Sh ()
