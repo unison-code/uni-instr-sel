@@ -63,7 +63,9 @@ type DefPlaceCond = (G.Node, PM.BasicBlockLabel)
 -- | Represents the intermediate build data.
 data BuildState =
     BuildState
-      { osGraph :: OS.OpStructure
+      { llvmModule :: LLVM.Module
+        -- ^ The original LLVM module.
+      , osGraph :: OS.OpStructure
         -- ^ The current operation structure.
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched. This is used to
@@ -71,6 +73,8 @@ data BuildState =
       , currentLabelNode :: Maybe G.Node
         -- ^ The label node which represents the basic block currently being
         -- processed.
+      , funcBBExecFreqs :: [(PM.BasicBlockLabel, PM.ExecFreq)]
+        -- ^ The execution frequencies of the respective basic blocks.
       , symMaps :: [SymToDataNodeMapping]
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
@@ -167,12 +171,14 @@ class CfgBuildable a where
 -------------
 
 -- | Creates an initial state.
-mkInitBuildState :: BuildState
-mkInitBuildState =
+mkInitBuildState :: LLVM.Module -> BuildState
+mkInitBuildState m =
   BuildState
-    { osGraph = OS.mkEmpty
+    { llvmModule = m
+    , osGraph = OS.mkEmpty
     , lastTouchedNode = Nothing
     , currentLabelNode = Nothing
+    , funcBBExecFreqs = []
     , symMaps = []
     , constMaps = []
     , labelToNodeDFs = []
@@ -184,19 +190,19 @@ mkInitBuildState =
 -- contain any globally defined functions, an empty list is returned.
 mkFunctionsFromLlvmModule :: LLVM.Module -> [PM.Function]
 mkFunctionsFromLlvmModule m =
-  mapMaybe mkFunctionFromGlobalDef (LLVM.moduleDefinitions m)
+  mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
 
 -- | Builds a function from an LLVM AST definition. If the definition is not
 -- global, `Nothing` is returned.
-mkFunctionFromGlobalDef :: LLVM.Definition -> Maybe PM.Function
-mkFunctionFromGlobalDef (LLVM.GlobalDefinition g) = mkFunction g
-mkFunctionFromGlobalDef _ = Nothing
+mkFunctionFromGlobalDef :: LLVM.Module -> LLVM.Definition -> Maybe PM.Function
+mkFunctionFromGlobalDef m (LLVM.GlobalDefinition g) = mkFunction m g
+mkFunctionFromGlobalDef _ _ = Nothing
 
 -- | Builds a function from a global LLVM AST definition. If the definition is
 -- not a function, `Nothing` is returned.
-mkFunction :: LLVM.Global -> Maybe PM.Function
-mkFunction f@(LLVM.Function {}) =
-  let st0 = mkInitBuildState
+mkFunction :: LLVM.Module -> LLVM.Global -> Maybe PM.Function
+mkFunction m f@(LLVM.Function {}) =
+  let st0 = mkInitBuildState m
       st1 = buildDfg st0 f
       st2 = buildCfg st1 f
       st3 = addMissingLabelToNodeDataFlowEdges st2
@@ -205,9 +211,10 @@ mkFunction f@(LLVM.Function {}) =
               { PM.functionName = toFunctionName $ LLVMG.name f
               , PM.functionOS = osGraph st4
               , PM.functionInputs = funcInputValues st4
+              , PM.functionBBExecFreq = funcBBExecFreqs st4
               }
           )
-mkFunction _ = Nothing
+mkFunction _ _ = Nothing
 
 toFunctionName :: LLVM.Name -> Maybe String
 toFunctionName (LLVM.Name str) = Just str
@@ -457,7 +464,7 @@ toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-findLabelNodeWithID :: BuildState -> G.BBLabelID -> Maybe G.Node
+findLabelNodeWithID :: BuildState -> PM.BasicBlockLabel -> Maybe G.Node
 findLabelNodeWithID st l =
   let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
       nodes_w_matching_labels =
@@ -469,7 +476,7 @@ findLabelNodeWithID st l =
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated to reflect the
 -- label node in question. If not then a new label node is added.
-ensureLabelNodeExists :: BuildState -> G.BBLabelID -> BuildState
+ensureLabelNodeExists :: BuildState -> PM.BasicBlockLabel -> BuildState
 ensureLabelNodeExists st l =
   let label_node = findLabelNodeWithID st l
   in if isJust label_node
@@ -508,6 +515,62 @@ addMissingDefPlaceEdges st =
       g1 = foldr (\p g -> fst $ G.addNewDPEdge p g) g0 dp_pairs
   in updateOSGraph st g1
 
+-- | Extracts the block execution frequency from the metadata (which should be
+-- attached to the terminator instruction of the corresponding basic block).
+extractExecFreq :: LLVM.Module -> LLVM.InstructionMetadata -> PM.ExecFreq
+extractExecFreq m im =
+  mkExecFreq $ head $ checkNumOps $ getOps $ head $ checkNumNodes $ findNodes im
+  where soughtMetaName = "exec_freq"
+        findNodes = map snd . filter (\m' -> fst m' == soughtMetaName)
+        checkNumNodes ms | length ms == 0 =
+                             error $
+                               "No metadata entry with name '" ++
+                               soughtMetaName ++ "'!"
+                         | length ms > 1 =
+                             error $
+                               "Multiple metadata entries with name '" ++
+                               soughtMetaName ++ "'!"
+                         | otherwise = ms
+
+        getOps = catMaybes . (retrieveMetadataOps m)
+        checkNumOps ops | length ops == 0 = error "No operands in metadata!"
+                        | length ops > 1 =
+                            error "Multiple operands in metadata!"
+                        | otherwise = ops
+        mkExecFreq (LLVM.ConstantOperand (LLVMC.Int _ freq)) =
+          PM.toExecFreq freq
+        mkExecFreq _ = error "Invalid execution frequency value!"
+
+-- | Gets the metadata of a given LLVM terminator instruction.
+getTermMetadata :: LLVM.Terminator -> LLVM.InstructionMetadata
+getTermMetadata t = LLVM.metadata' t
+
+-- | Gets the LLVM instruction from a named expression.
+fromNamed :: LLVM.Named i -> i
+fromNamed (_ LLVM.:= i) = i
+fromNamed (LLVM.Do i) = i
+
+-- | Retrieves the list of operands attached to a metadata node. If the node is
+-- a metanode ID, then the operands of that metanode ID will be retrieved.
+retrieveMetadataOps :: LLVM.Module -> LLVM.MetadataNode -> [Maybe LLVM.Operand]
+retrieveMetadataOps _ (LLVM.MetadataNode ops) = ops
+retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
+  let module_defs = LLVM.moduleDefinitions m
+      isMetaDef (LLVM.MetadataNodeDefinition _ _) = True
+      isMetaDef _ = False
+      meta_defs = filter isMetaDef module_defs
+      sought_ops = mapMaybe
+                     ( \(LLVM.MetadataNodeDefinition mid' ops) ->
+                         if mid' == mid
+                         then Just ops
+                         else Nothing
+                     )
+                     meta_defs
+  in if length sought_ops == 1
+     then head sought_ops
+     else let (LLVM.MetadataNodeID mid_value) = mid
+          in error $ "No metadata with ID " ++ (show mid_value)
+
 
 
 ---------------------------------
@@ -537,7 +600,7 @@ instance DfgBuildable LLVM.Global where
 
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
+    let st1 = ensureLabelNodeExists st0 (PM.BasicBlockLabel str)
         st2 = st1 { currentLabelNode = lastTouchedNode st1 }
         st3 = foldl buildDfg st2 insts
     in st3
@@ -591,7 +654,7 @@ instance DfgBuildable LLVM.Instruction where
     buildDfgFromCompOp st (fromLlvmFPred p) [op1, op2]
   buildDfg st0 (LLVM.Phi _ phi_operands _) =
     let (operands, label_names) = unzip phi_operands
-        bb_labels = map (\(LLVM.Name str) -> G.BBLabelID str) label_names
+        bb_labels = map (\(LLVM.Name str) -> PM.BasicBlockLabel str) label_names
         operand_node_sts = scanl buildDfg st0 operands
         operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
         st1 = last operand_node_sts
@@ -624,17 +687,21 @@ instance (CfgBuildable a) => CfgBuildable [a] where
   buildCfg = foldl buildCfg
 
 instance CfgBuildable LLVM.BasicBlock where
-  buildCfg st0 (LLVM.BasicBlock (LLVM.Name str) _ term_inst) =
-    let st1 = ensureLabelNodeExists st0 (G.BBLabelID str)
+  buildCfg st0 (LLVM.BasicBlock (LLVM.Name str) _ named_term_inst) =
+    let bb_label = PM.BasicBlockLabel str
+        term_inst = fromNamed named_term_inst
+        bb_exec_freq = ( bb_label
+                       , extractExecFreq
+                           (llvmModule st0)
+                           (getTermMetadata term_inst)
+                       )
+        st1 = ensureLabelNodeExists st0 bb_label
         st2 = st1 { currentLabelNode = lastTouchedNode st1 }
-        st3 = buildCfg st2 term_inst
-    in st3
+        st3 = st2 { funcBBExecFreqs = bb_exec_freq:(funcBBExecFreqs st2) }
+        st4 = buildCfg st3 term_inst
+    in st4
   buildCfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
     error $ "'buildCfg' not supported for un-named basic blocks"
-
-instance (CfgBuildable n) => CfgBuildable (LLVM.Named n) where
-  buildCfg st (_ LLVM.:= expr) = buildCfg st expr
-  buildCfg st (LLVM.Do expr) = buildCfg st expr
 
 instance CfgBuildable LLVM.Global where
   buildCfg st f@(LLVM.Function {}) =
@@ -650,16 +717,16 @@ instance CfgBuildable LLVM.Terminator where
               Op.Branch
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (G.BBLabelID dst)
+        st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel dst)
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
   buildCfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
     let st1 = buildCfgFromControlOp st0 Op.CondBranch [op]
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (G.BBLabelID t_dst)
+        st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2
-        st3 = ensureLabelNodeExists st2 (G.BBLabelID f_dst)
+        st3 = ensureLabelNodeExists st2 (PM.BasicBlockLabel f_dst)
         f_dst_node = fromJust $ lastTouchedNode st3
         st4 = addNewEdgesManyDests
               st3
