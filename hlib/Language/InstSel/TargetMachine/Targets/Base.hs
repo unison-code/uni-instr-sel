@@ -12,8 +12,6 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Language.InstSel.TargetMachine.Targets.Base
   ( getTargetMachine )
 where
