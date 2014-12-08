@@ -73,10 +73,6 @@ function checkStatus {
 # MAIN SCRIPT
 #=============
 
-
-
-echo $DIR
-
 # Check arguments
 if [ $# -gt 3 ]; then
     echoerr "Too many input arguments"
