@@ -103,7 +103,9 @@ checkStatus
 echo "Running Minizinc solver..."
 CURRENT_DIR=`pwd`
 cd $THIS_DIR
-minizinc -a $(basename $MINIZINC_MODEL_FILE) > $(basename $MINIZINC_OUTPUT_FILE)
+minizinc -a $(basename $MINIZINC_MODEL_FILE) \
+  > $(basename $MINIZINC_OUTPUT_FILE) \
+  2> /dev/null
 STATUS=$?
 cd $CURRENT_DIR
 if [ $STATUS -ne 0 ]; then
