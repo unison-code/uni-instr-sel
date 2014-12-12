@@ -26,6 +26,7 @@ import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
 import qualified LLVM.General.AST.Global as LLVMG
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified Language.InstSel.Constraints as C
+import qualified Language.InstSel.Constraints.PCBuilder as C
 import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
 import qualified Language.InstSel.OpStructures as OS
@@ -366,23 +367,12 @@ buildOSFromConst st0 c =
                         (G.DataNode (toDataType c) (Just $ show c))
                 d_node = fromJust $ lastTouchedNode st1
                 st2 = addConstMap st1 (d_node, c)
-                st3 = addOSConstraints st2 (mkConstConstraints c d_node)
+                st3 = addOSConstraints st2 (mkConstConstraints d_node c)
             in st3
 
-mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
-mkConstConstraints (IntConstant { signedIntValue = v }) n =
-  [ C.BoolExprConstraint $
-      C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.getNodeID n
-  , C.BoolExprConstraint $
-      C.EqExpr
-        ( C.Int2NumExpr $
-            C.IntConstValueOfDataNodeExpr $
-              C.ANodeIDExpr $ G.getNodeID n
-        )
-        ( C.Int2NumExpr $
-            C.AnIntegerExpr v
-        )
-  ]
+mkConstConstraints :: G.Node -> Constant -> [C.Constraint]
+mkConstConstraints n (IntConstant { signedIntValue = v }) =
+  C.mkIntConstConstraints (G.getNodeID n) v
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
