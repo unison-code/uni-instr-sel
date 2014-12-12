@@ -109,16 +109,20 @@ instance Show Symbol where
 -- | Retains various constant values.
 data Constant =
     IntConstant
-      { bitWidth :: Integer
-      , intValue :: Integer
+      { intBitWidth :: Integer
+        -- ^ Number of bits that represents the integer value.
+      , signedIntValue :: Integer
+        -- ^ The integer value. Note that this value is the signed-interpreted
+        -- value of the value provided in the LLVM AST (see
+        -- `LLVMC.signedIntegerValue`).
       }
 
-  | FloatConstant Float
+  | FloatConstant { floatValue :: Float }
   deriving (Eq)
 
 instance Show Constant where
-  show (IntConstant _ v) = show v
-  show (FloatConstant f) = show f
+  show IntConstant { signedIntValue = v } = show v
+  show FloatConstant { floatValue = v } = show v
 
 
 
@@ -139,7 +143,10 @@ class ConstantFormable a where
   toConstant :: a -> Constant
 
 instance ConstantFormable LLVMC.Constant where
-  toConstant (LLVMC.Int b v) = IntConstant (fromIntegral b) v
+  toConstant i@(LLVMC.Int b _) = IntConstant
+                                 { intBitWidth = fromIntegral b
+                                 , signedIntValue = LLVMC.signedIntegerValue i
+                                 }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
 -- | Class for building the data flow graph.
@@ -363,7 +370,7 @@ buildOSFromConst st0 c =
             in st3
 
 mkConstConstraints :: Constant -> G.Node -> [C.Constraint]
-mkConstConstraints (IntConstant _ v) n =
+mkConstConstraints (IntConstant { signedIntValue = v }) n =
   [ C.BoolExprConstraint $
       C.DataNodeIsAnIntConstantExpr $ C.ANodeIDExpr $ G.getNodeID n
   , C.BoolExprConstraint $
@@ -459,7 +466,7 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Gets the corresponding DataType for a constant value.
 toDataType :: Constant -> D.DataType
-toDataType (IntConstant b _) = D.IntType (toNatural b)
+toDataType IntConstant { intBitWidth = w } = D.fromIWidth $ toNatural w
 toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.
