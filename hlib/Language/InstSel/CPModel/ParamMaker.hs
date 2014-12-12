@@ -164,7 +164,7 @@ processMatch i p m (mids, next_mid) =
                   root_label_node_id
                   (findFNsInMatch m (getNodeIDs l_ref_ns))
                   (mapPs2FsInConstraints m (osConstraints $ patOS p))
-                  (patAUDDC p)
+                  (patADDUC p)
                   (length c_ns > 0)
                   (instCodeSize i_props)
                   (instLatency i_props)

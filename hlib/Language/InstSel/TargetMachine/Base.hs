@@ -103,9 +103,9 @@ data InstPattern =
         -- ^ The operation structure of the pattern.
       , patOutputDataNodes :: [NodeID]
         -- ^ Specifies the data nodes within the 'OpStructure' which represent
-        -- output that can be observed from outside the pattern.
-      , patAUDDC :: Bool
-        -- ^ Indicates whether the use-def-dom constraints apply to this
+        -- the output that can be observed from outside the pattern.
+      , patADDUC :: Bool
+        -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
         -- except the generic phi patterns.
       , patAssIDMaps :: [NodeID]
