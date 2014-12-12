@@ -19,7 +19,9 @@ where
 import Language.InstSel.TargetMachine.Base
 import Language.InstSel.TargetMachine.IDs
 
+import Language.InstSel.TargetMachine.Targets.Mips32
 import Language.InstSel.TargetMachine.Targets.Test
+
 
 
 -------------
@@ -31,5 +33,6 @@ import Language.InstSel.TargetMachine.Targets.Test
 getTargetMachine :: TargetMachineID -> Maybe TargetMachine
 getTargetMachine s =
   case (fromTargetMachineID s) of
-    "test" -> Just tmTest
+    "mips32" -> Just tmMips32
+    "test"   -> Just tmTest
     _ -> Nothing
