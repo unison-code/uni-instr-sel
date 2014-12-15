@@ -27,6 +27,7 @@ import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.ProgramModules.IDs
   ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachine
+import Language.InstSel.TargetMachine.Targets.Generic
 
 
 
@@ -119,23 +120,6 @@ tmTest =
               , ( 1, 2, EdgeLabel ControlFlowEdge 0 0 )
               ]
           )
-      phi_pattern =
-        mkGraph
-          ( map
-              Node
-              [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-              , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
-              , ( 2, NodeLabel 2 (DataNode D.AnyType Nothing) )
-              , ( 3, NodeLabel 3 PhiNode )
-              ]
-          )
-          ( map
-              Edge
-              [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
-              , ( 1, 3, EdgeLabel DataFlowEdge 0 1 )
-              , ( 3, 2, EdgeLabel DataFlowEdge 0 0 )
-              ]
-          )
       init_def_pattern_os =
         addBBAllocConstraints $ OpStructure init_def_pattern []
       add_pattern_os =
@@ -162,148 +146,94 @@ tmTest =
             ]
       ret_pattern_os =
         addBBAllocConstraints $ OpStructure ret_pattern []
-      phi_pattern_os =
-        OpStructure
-          phi_pattern
-          [ BoolExprConstraint $
-              AndExpr
-                ( EqExpr
-                    ( Register2NumExpr $
-                        RegisterAllocatedToDataNodeExpr $
-                          ANodeIDExpr 0
-                    )
-                    ( Register2NumExpr $
-                        RegisterAllocatedToDataNodeExpr $
-                          ANodeIDExpr 1
-                    )
-                )
-                ( EqExpr
-                  ( Register2NumExpr $
-                      RegisterAllocatedToDataNodeExpr $
-                        ANodeIDExpr 1
-                  )
-                  ( Register2NumExpr $
-                      RegisterAllocatedToDataNodeExpr $
-                        ANodeIDExpr 2
-                  )
-                )
-          ]
       insts = [ Instruction
                   0
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       init_def_pattern_os
                       []
                       True
-                      []
+                      (AssemblyString [])
                   ]
-                  (InstProperties 1 1)
-                  (AssemblyString [])
+                  (InstrProperties 1 1)
               , Instruction
                   1
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       add_pattern_os
                       [3]
                       True
-                      [3, 1, 2]
+                      ( AssemblyString
+                          [ ASVerbatim "add "
+                          , ASRegisterOf 3
+                          , ASVerbatim ", "
+                          , ASRegisterOf 1
+                          , ASVerbatim ", "
+                          , ASRegisterOf 2
+                          ]
+                      )
                   ]
-                  (InstProperties 1 1)
-                  ( AssemblyString
-                      [ AssemblyVerbatim "add "
-                      , AssemblyRegisterOf 0
-                      , AssemblyVerbatim ", "
-                      , AssemblyRegisterOf 1
-                      , AssemblyVerbatim ", "
-                      , AssemblyRegisterOf 2
-                      ]
-                  )
+                  (InstrProperties 1 1)
               , Instruction
                   2
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       bnz_pattern_os
                       []
                       True
-                      [0, 2, 3]
+                      ( AssemblyString
+                          [ ASVerbatim "bnz "
+                          , ASRegisterOf 0
+                          , ASVerbatim ", "
+                          , ASBasicBlockLabelOf 2
+                          , ASVerbatim ", "
+                          , ASBasicBlockLabelOf 3
+                          ]
+                      )
                   ]
-                  (InstProperties 1 1)
-                  ( AssemblyString
-                      [ AssemblyVerbatim "bnz "
-                      , AssemblyRegisterOf 0
-                      , AssemblyVerbatim ", "
-                      , AssemblyBBLabelOf 1
-                      , AssemblyVerbatim ", "
-                      , AssemblyBBLabelOf 2
-                      ]
-                  )
+                  (InstrProperties 1 1)
               , Instruction
                   3
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       br_pattern_os
                       []
                       True
-                      [1]
+                      ( AssemblyString
+                          [ ASVerbatim "br "
+                          , ASBasicBlockLabelOf 1
+                          ]
+                      )
                   ]
-                  (InstProperties 1 1)
-                  ( AssemblyString
-                      [ AssemblyVerbatim "br "
-                      , AssemblyBBLabelOf 0
-                      ]
-                  )
+                  (InstrProperties 1 1)
               , Instruction
                   4
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       br_fallthrough_pattern_os
                       []
                       True
-                      []
+                      (AssemblyString [])
                   ]
-                  (InstProperties 1 1)
-                  (AssemblyString [])
+                  (InstrProperties 1 1)
               , Instruction
                   5
-                  [ InstPattern
+                  [ InstrPattern
                       0
                       ret_pattern_os
                       []
                       True
-                      [0]
+                      ( AssemblyString
+                        [ ASVerbatim "ret "
+                        , ASRegisterOf 0
+                        ]
+                      )
                   ]
-                  (InstProperties 1 1)
-                  ( AssemblyString
-                    [ AssemblyVerbatim "ret "
-                    , AssemblyRegisterOf 0
-                    ]
-                  )
-              , Instruction
-                  6
-                  [ InstPattern
-                      0
-                      phi_pattern_os
-                      [2]
-                      False
-                      [2, 0, 1]
-                  ]
-                  (InstProperties 1 1)
-                  ( AssemblyString
-                      [ AssemblyVerbatim "phi "
-                      , AssemblyRegisterOf 0
-                      , AssemblyVerbatim " ("
-                      , AssemblyRegisterOf 1
-                      , AssemblyVerbatim ", ?"
-                      , AssemblyVerbatim ") ("
-                      , AssemblyRegisterOf 2
-                      , AssemblyVerbatim ", ?"
-                      , AssemblyVerbatim ")"
-                      ]
-                  )
+                  (InstrProperties 1 1)
               ]
   in TargetMachine
        (toTargetMachineID "test")
-       insts
+       (fixInstrIDs $ insts ++ mkGenericPhiInstructions)
        [ Register { regID = 0, regName = RegisterName "r0" }
        , Register { regID = 1, regName = RegisterName "r1" }
        , Register { regID = 2, regName = RegisterName "r2" }

@@ -14,11 +14,13 @@
 
 module Language.InstSel.Constraints.PCBuilder
   ( addBBAllocConstraints
+  , addFallthroughConstraints
   , addIntConstConstraints
   , addIntRangeConstraints
   , addInterDataValConstraints
   , addRegAllocConstraints
   , mkBBAllocConstraints
+  , mkFallthroughConstraints
   , mkIntConstConstraints
   , mkIntRangeConstraints
   , mkInterDataValConstraints
@@ -218,5 +220,32 @@ mkIntRangeConstraints d (Range { lowerBound = low_v, upperBound = up_v }) =
             ( Int2NumExpr $
                 AnIntegerExpr up_v
             )
+        )
+  ]
+
+-- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
+-- these (if any) to the existing 'OpStructure'.
+addFallthroughConstraints :: OpStructure -> NodeID -> OpStructure
+addFallthroughConstraints os l =
+  addConstraints os (mkFallthroughConstraints l)
+
+-- | Creates constraints for enforcing branch fallthrough, meaning that the
+-- distance between the basic block to which to jump and the basic block from
+-- which to jump must be zero.
+mkFallthroughConstraints ::
+     NodeID
+     -- ^ A label node.
+  -> [Constraint]
+mkFallthroughConstraints l =
+  [ BoolExprConstraint $
+      EqExpr
+        ( DistanceBetweenMatchAndLabelExpr
+            ThisMatchExpr
+            ( LabelOfLabelNodeExpr $
+                ANodeIDExpr l
+            )
+        )
+        ( Int2NumExpr $
+            AnIntegerExpr 0
         )
   ]

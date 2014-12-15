@@ -25,11 +25,11 @@ import Language.InstSel.Graphs
   ( MatchID
   , NodeID
   )
+import Language.InstSel.Patterns.IDs
+  ( PatternID )
 import Language.InstSel.ProgramModules
   ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachine
-  hiding
-  ( patAssIDMaps )
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 
@@ -143,12 +143,12 @@ getNodeOfMatch g mid =
 -- ID. It is assumed that exactly one such entity always exists in the given
 -- list.
 getMatchData :: [MatchData] -> MatchID -> MatchData
-getMatchData ps piid = fromJust $ findMatchData ps piid
+getMatchData ps mid = fromJust $ findMatchData ps mid
 
--- | Retrieves the 'Instruction' entity with matching instruction ID. It is
--- assumed that such an entity always exists in the given list.
-getInst :: [Instruction] -> InstructionID -> Instruction
-getInst is iid = fromJust $ findInstruction is iid
+-- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
+-- that such an entity always exists in the given list.
+getInstrPattern :: [Instruction] -> InstructionID -> PatternID -> InstrPattern
+getInstrPattern is iid pid  = fromJust $ findInstrPattern is iid pid
 
 -- | Emits a list of assembly instructions for a given 'ControlDataFlowDAG'.
 emitInstructions ::
@@ -166,46 +166,46 @@ emitInstruction ::
   -> TargetMachine
   -> MatchID
   -> String
-emitInstruction cp m piid =
-  let pi_data = getMatchData (matchData $ modelParams cp) piid
-      i_data = getInst (tmInstructions m) (mInstructionID pi_data)
-      inst_ass_parts = instAssemblyStr i_data
-  in concatMap (produceInstPart cp m pi_data) (assStrParts inst_ass_parts)
+emitInstruction cp m mid =
+  let match_data = getMatchData (matchData $ modelParams cp) mid
+      pat_data = getInstrPattern
+                   (tmInstructions m)
+                   (mInstructionID match_data)
+                   (mPatternID match_data)
+      instr_str = patAssemblyStr pat_data
+  in concatMap
+       (produceAssemblyString cp m)
+       (assemblyStrParts instr_str)
 
-getNIDFromAID :: MatchData -> AssemblyID -> NodeID
-getNIDFromAID md aid = (mAssIDMaps md) !! (fromIntegral aid)
-
-lookupBBLabel :: NodeID -> [BasicBlockData] -> Maybe BasicBlockLabel
-lookupBBLabel n ds =
+lookupBasicBlockLabel :: NodeID -> [BasicBlockData] -> Maybe BasicBlockLabel
+lookupBasicBlockLabel n ds =
   let found = filter (\d -> bbLabelNode d == n) ds
   in if length found > 0
      then Just $ bbLabel $ head found
      else Nothing
 
-produceInstPart ::
+produceAssemblyString ::
      CPSolutionData
   -> TargetMachine
-  -> MatchData
-  -> AssemblyPart
+  -> AssemblyStringPart
   -> String
-produceInstPart _ _ _ (AssemblyVerbatim s) = s
-produceInstPart cp _ md (AssemblyImmValue aid) =
-  let n = getNIDFromAID md aid
-      imm = lookup n $ immValuesOfDataNodes cp
-      prefix = "#"
+produceAssemblyString _ _ (ASVerbatim s) = s
+produceAssemblyString cp _ (ASImmValueOf n) =
+  let imm = lookup n $ immValuesOfDataNodes cp
   in if isJust imm
-     then prefix ++ (show $ fromJust imm)
-     else prefix ++ "?"
-produceInstPart cp m md (AssemblyRegister aid) =
-  let n = getNIDFromAID md aid
-      reg = lookup n $ regsOfDataNodes cp
+     then show $ fromJust imm
+     else "?"
+produceAssemblyString cp m (ASRegisterOf n) =
+  let reg = lookup n $ regsOfDataNodes cp
   in if isJust reg
-     then let regsym = fromJust $ lookup (fromJust reg) (tmRegisters m)
+     then let regsym = fromJust $ findRegister (tmRegisters m) (fromJust reg)
           in show regsym
      else "?"
-produceInstPart cp _ md (AssemblyBBLabel aid) =
-  let n = getNIDFromAID md aid
-      lab = lookupBBLabel n $ funcBasicBlockData $ functionData $ modelParams cp
+produceAssemblyString cp _ (ASBasicBlockLabelOf n) =
+  let lab = lookupBasicBlockLabel n $
+              funcBasicBlockData $
+                functionData $
+                  modelParams cp
   in if isJust lab
      then show $ fromJust lab
      else "?"

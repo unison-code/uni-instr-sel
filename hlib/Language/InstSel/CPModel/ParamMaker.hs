@@ -21,10 +21,7 @@ where
 import Language.InstSel.Constraints
 import Language.InstSel.CPModel
   hiding
-  ( bbLabel
-  , mAssIDMaps
-  , mADDUC
-  )
+  ( bbLabel )
 import qualified Language.InstSel.CPModel as C
   ( bbLabel )
 import Language.InstSel.Graphs
@@ -54,9 +51,10 @@ import Data.Maybe
 mkParams :: TargetMachine -> Function -> CPModelParams
 mkParams m f =
   CPModelParams
-    (mkFunctionGraphData f)
-    (mkMatchData f (tmInstructions m))
-    (mkMachineData m)
+    { functionData = mkFunctionGraphData f
+    , matchData = mkMatchData f (tmInstructions m)
+    , machineData = mkMachineData m
+    }
 
 mkFunctionGraphData :: Function -> FunctionGraphData
 mkFunctionGraphData f =
@@ -74,29 +72,31 @@ mkFunctionGraphData f =
       getExecFreq n =
         fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
   in FunctionGraphData
-       (nodeIDsByType isOperationNode)
-       (map getNodeID essential_op_nodes)
-       (nodeIDsByType isDataNode)
-       (nodeIDsByType isStateNode)
-       (computeLabelDoms cfg)
-       dp_edge_data
-       (getNodeID $ fromJust $ rootInCFG cfg)
-       ( map
-           ( \n -> BasicBlockData
-                     { C.bbLabel = (G.bbLabel $ getNodeType n)
-                     , bbLabelNode = (getNodeID n)
-                     , bbExecFrequency = getExecFreq n
-                     }
-           )
-           (filter isLabelNode (getAllNodes g))
-       )
-       (osConstraints $ functionOS f)
+       { funcOpNodes = nodeIDsByType isOperationNode
+       , funcEssentialOpNodes = map getNodeID essential_op_nodes
+       , funcDataNodes = nodeIDsByType isDataNode
+       , funcStateNodes= nodeIDsByType isStateNode
+       , funcLabelNodes= computeLabelDoms cfg
+       , funcDefPlaceEdges = dp_edge_data
+       , funcRootLabel = getNodeID $ fromJust $ rootInCFG cfg
+       , funcBasicBlockData =
+           map
+             ( \n -> BasicBlockData
+                       { C.bbLabel = (G.bbLabel $ getNodeType n)
+                       , bbLabelNode = (getNodeID n)
+                       , bbExecFrequency = getExecFreq n
+                       }
+             )
+             (filter isLabelNode (getAllNodes g))
+       , funcConstraints = osConstraints $ functionOS f
+       }
 
 mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
   MachineData
-  (tmID m)
-  (map regID (tmRegisters m))
+    { machID = tmID m
+    , machRegisters = map regID (tmRegisters m)
+    }
 
 mkMatchData ::
      Function
@@ -111,15 +111,15 @@ processInstruction ::
   -> ([MatchData], MatchID)
   -> ([MatchData], MatchID)
 processInstruction f i t =
-  foldr (processInstPattern f i) t (instPatterns i)
+  foldr (processInstrPattern f i) t (instrPatterns i)
 
-processInstPattern ::
+processInstrPattern ::
      Function
   -> Instruction
-  -> InstPattern
+  -> InstrPattern
   -> ([MatchData], MatchID)
   -> ([MatchData], MatchID)
-processInstPattern f i p t =
+processInstrPattern f i p t =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
       ms = map convertMatchN2ID (findMatches fg pg)
@@ -127,7 +127,7 @@ processInstPattern f i p t =
 
 processMatch ::
      Instruction
-  -> InstPattern
+  -> InstrPattern
   -> Match NodeID
   -> ([MatchData], MatchID)
   -> ([MatchData], MatchID)
@@ -147,28 +147,29 @@ processMatch i p m (mids, next_mid) =
       s_def_ns = filter (hasAnyPredecessors g) s_ns
       s_use_ns = filter (hasAnySuccessors g) s_ns
       l_ref_ns = filter (hasAnyPredecessors g) l_ns
-      i_props = instProps i
+      i_props = instrProps i
       cfg = extractCFG g
       root_label_node_id =
         maybe Nothing ((findFNInMatch m) . getNodeID) (rootInCFG cfg)
-      new_mid = MatchData
-                  (instID i)
-                  (patID p)
-                  next_mid
-                  (findFNsInMatch m (getNodeIDs a_ns))
-                  (findFNsInMatch m (getNodeIDs d_def_ns))
-                  (findFNsInMatch m (getNodeIDs d_use_ns))
-                  (findFNsInMatch m (getNodeIDs d_use_by_phi_ns))
-                  (findFNsInMatch m (getNodeIDs s_def_ns))
-                  (findFNsInMatch m (getNodeIDs s_use_ns))
-                  root_label_node_id
-                  (findFNsInMatch m (getNodeIDs l_ref_ns))
-                  (mapPs2FsInConstraints m (osConstraints $ patOS p))
-                  (patADDUC p)
-                  (length c_ns > 0)
-                  (instCodeSize i_props)
-                  (instLatency i_props)
-                  (findFNsInMatch m (patAssIDMaps p))
+      new_mid =
+        MatchData
+          { mInstructionID = instrID i
+          , mPatternID = patID p
+          , mMatchID = next_mid
+          , mOperationsCovered = findFNsInMatch m (getNodeIDs a_ns)
+          , mDataNodesDefined = findFNsInMatch m (getNodeIDs d_def_ns)
+          , mDataNodesUsed = findFNsInMatch m (getNodeIDs d_use_ns)
+          , mDataNodesUsedByPhis = findFNsInMatch m (getNodeIDs d_use_by_phi_ns)
+          , mStateNodesDefined = findFNsInMatch m (getNodeIDs s_def_ns)
+          , mStateNodesUsed = findFNsInMatch m (getNodeIDs s_use_ns)
+          , mRootLabelNode = root_label_node_id
+          , mNonRootLabelNodes = findFNsInMatch m (getNodeIDs l_ref_ns)
+          , mConstraints = mapPs2FsInConstraints m (osConstraints $ patOS p)
+          , mADDUC = patADDUC p
+          , mHasControlNodes = length c_ns > 0
+          , mCodeSize = instrCodeSize i_props
+          , mLatency = instrLatency i_props
+          }
   in (new_mid:mids, next_mid + 1)
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed

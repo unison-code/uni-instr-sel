@@ -15,15 +15,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.TargetMachine.Base
-  ( AssemblyPart (..)
-  , AssemblyString (..)
+  ( AssemblyString (..)
+  , AssemblyStringPart (..)
   , Instruction (..)
-  , InstPattern (..)
-  , InstProperties (..)
+  , InstrPattern (..)
+  , InstrProperties (..)
   , Register (..)
   , TargetMachine (..)
   , findInstruction
-  , findInstPattern
+  , findInstrPattern
+  , findRegister
   )
 where
 
@@ -42,66 +43,63 @@ import Control.Monad
 -- Data types
 --------------
 
--- | Represents parts of the assembly string. All 'AssemblyID's used within the
--- same 'AssemblyString' *must* be unique and contiguous!
-data AssemblyPart =
+-- | Record for containing the assembly string to produce during code emission.
+data AssemblyString =
+    AssemblyString { assemblyStrParts :: [AssemblyStringPart] }
+  deriving (Show)
+
+-- | Represents parts of the assembly string.
+data AssemblyStringPart =
     -- | Denotes string which is meant to be output verbatim.
-    AssemblyVerbatim String
+    ASVerbatim String
 
     -- | Denotes an immediate value. If a data node is referenced, then the
     -- constant value of that data node will be retrieved.
-  | AssemblyImmValueOf AssemblyID
+  | ASImmValueOf NodeID
 
     -- | Denotes a register. If a data node is referenced, then the register
     -- allocated to that data node will be retrieved.
-  | AssemblyRegisterOf AssemblyID
+  | ASRegisterOf NodeID
 
     -- | Denotes a basic block label. If a label node is referenced, then the
     -- block label of that label node is retrieved. If a data node is
     -- referenced, then the block label of the basic block in which that data
     -- node is defined is retrieved.
-  | AssemblyBBLabelOf AssemblyID
-  deriving (Show)
-
--- | Record for containing the assembly string to produce during code emission.
-data AssemblyString =
-    AssemblyString { assStrParts :: [AssemblyPart] }
+  | ASBasicBlockLabelOf NodeID
   deriving (Show)
 
 -- | Defines a machine instruction.
 data Instruction =
     Instruction
-      { instID :: InstructionID
+      { instrID :: InstructionID
         -- ^ The ID of this instruction. The ID must be globally unique across
         -- all instructions, but not necessarily contiguous.
-      , instPatterns :: [InstPattern]
+      , instrPatterns :: [InstrPattern]
         -- ^ Patterns which correspond to the instruction. There must be at
         -- least one pattern. Each pattern also has a corresponding ID which
         -- must be globally unique across all patterns and all instructions, but
         -- not necessarily contiguous.
-      , instProps :: InstProperties
+      , instrProps :: InstrProperties
         -- ^ Instruction properties.
-      , instAssemblyStr :: AssemblyString
-        -- ^ Assembly string to produce upon code emission.
       }
   deriving (Show)
 
 -- | Contains the various properties of an instruction, such as code size and
 -- latency.
 
-data InstProperties =
-    InstProperties
-      { instCodeSize :: Integer
+data InstrProperties =
+    InstrProperties
+      { instrCodeSize :: Integer
         -- ^ Instruction code size (in bytes).
-      , instLatency :: Integer
+      , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
       }
   deriving (Show)
 
 -- | Defines a pattern for a machine instruction.
 
-data InstPattern =
-    InstPattern
+data InstrPattern =
+    InstrPattern
       { patID :: PatternID
         -- ^ The ID of this pattern. The ID must be unique within the same
         -- instruction, but not necessarily contiguous.
@@ -114,12 +112,9 @@ data InstPattern =
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
         -- except the generic phi patterns.
-      , patAssIDMaps :: [NodeID]
-        -- ^ Maps an 'AssemblyID', which is denoted as the index into the list,
-        -- that appear in the 'AssemblyString' of the instruction, to a
-        -- particular node in the graph of the pattern's operation structure.
-        -- Because of this, all 'AssemblyID's used within the same
-        -- 'AssemblyString' *must* be unique and contiguous!
+      , patAssemblyStr :: AssemblyString
+        -- ^ Assembly string to produce upon code emission if this pattern is
+        -- selected.
       }
   deriving (Show)
 
@@ -159,12 +154,9 @@ data Register =
 -- | Given a list of instructions, the function finds the 'Instruction' entity
 -- with matching instruction ID. If there is more than one match, the first
 -- found is returned. If no such entity is found, 'Nothing' is returned.
-findInstruction ::
-     [Instruction]
-  -> InstructionID
-  -> Maybe Instruction
+findInstruction :: [Instruction] -> InstructionID -> Maybe Instruction
 findInstruction is iid =
-  let found = filter (\i -> instID i == iid) is
+  let found = filter (\i -> instrID i == iid) is
   in if length found > 0
      then Just $ head found
      else Nothing
@@ -173,14 +165,24 @@ findInstruction is iid =
 -- with matching instruction ID and pattern ID. If there is more than one match,
 -- the first found is returned. If no such entity is found, 'Nothing' is
 -- returned.
-findInstPattern ::
+findInstrPattern ::
     [Instruction]
   -> InstructionID
   -> PatternID
-  -> Maybe InstPattern
-findInstPattern is iid pid =
+  -> Maybe InstrPattern
+findInstrPattern is iid pid =
   do i <- findInstruction is iid
-     let ps = instPatterns i
+     let ps = instrPatterns i
          found = filter (\p -> patID p == pid) ps
      when (length found == 0) Nothing
      return $ head found
+
+-- | Given a list of registers, the function finds the 'Register' with matching
+-- register ID. If there is more than one match, the first found is returned. If
+-- no such entity is found, 'Nothing' is returned.
+findRegister :: [Register] -> RegisterID -> Maybe Register
+findRegister rs rid =
+  let found = filter (\r -> regID r == rid) rs
+  in if length found > 0
+     then Just $ head found
+     else Nothing

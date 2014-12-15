@@ -161,7 +161,6 @@ instance FromJSON MatchData where
       <*> v .: "has-control-nodes"
       <*> v .: "code-size"
       <*> v .: "latency"
-      <*> v .: "assembly-id-maps"
   parseJSON _ = mzero
 
 instance ToJSON MatchData where
@@ -182,7 +181,6 @@ instance ToJSON MatchData where
            , "has-control-nodes"            .= (mHasControlNodes d)
            , "code-size"                    .= (mCodeSize d)
            , "latency"                      .= (mLatency d)
-           , "assembly-id-maps"             .= (mAssIDMaps d)
            ]
 
 instance FromJSON MachineData where

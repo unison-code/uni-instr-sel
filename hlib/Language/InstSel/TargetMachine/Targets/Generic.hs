@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.TargetMachine.Targets.Generic
-  ( fixInstIDs
+  ( fixInstrIDs
   , mkGenericPhiInstructions
   )
 where
@@ -76,31 +76,31 @@ mkGenericPhiInstructions =
                      )
                  )
            ]
-      pat = InstPattern
+      pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = False
-              , patAssIDMaps = [3, 1, 2]
+              , patAssemblyStr = ( AssemblyString
+                                     [ ASVerbatim "phi "
+                                     , ASRegisterOf 3
+                                     , ASVerbatim " ("
+                                     , ASRegisterOf 1
+                                     , ASVerbatim ", "
+                                     , ASBasicBlockLabelOf 1
+                                     , ASVerbatim ") ("
+                                     , ASRegisterOf 2
+                                     , ASVerbatim ", "
+                                     , ASBasicBlockLabelOf 2
+                                     , ASVerbatim ")"
+                                     ]
+                                 )
               }
   in [ Instruction
-         { instID = 0
-         , instPatterns = [pat]
-         , instProps = ( InstProperties { instCodeSize = 0, instLatency = 0 } )
-         , instAssemblyStr = ( AssemblyString
-                                 [ AssemblyVerbatim "phi "
-                                 , AssemblyRegisterOf 0
-                                 , AssemblyVerbatim " ("
-                                 , AssemblyRegisterOf 1
-                                 , AssemblyVerbatim ", "
-                                 , AssemblyBBLabelOf 1
-                                 , AssemblyVerbatim ") ("
-                                 , AssemblyRegisterOf 2
-                                 , AssemblyVerbatim ", "
-                                 , AssemblyBBLabelOf 2
-                                 , AssemblyVerbatim ")"
-                                 ]
-                             )
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps =
+             ( InstrProperties { instrCodeSize = 0, instrLatency = 0 } )
          }
      ]
 
@@ -108,6 +108,6 @@ mkGenericPhiInstructions =
 -- unique, we let this function fix those for us afterwards. The function goes
 -- over the list of instructions and reassigns the instruction IDs such that
 -- each instruction gets a unique ID.
-fixInstIDs :: [Instruction] -> [Instruction]
-fixInstIDs insts =
-  map ( \(new_iid, inst) -> inst { instID = new_iid } ) (zip [0..] insts)
+fixInstrIDs :: [Instruction] -> [Instruction]
+fixInstrIDs insts =
+  map ( \(new_iid, inst) -> inst { instrID = new_iid } ) (zip [0..] insts)
