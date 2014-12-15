@@ -22,10 +22,15 @@ module Language.InstSel.Utils.Base
   , groupBy
   , isLeft
   , isRight
+  , replace
   , toNatural
   )
 where
 
+import Data.List
+  ( intercalate )
+import Data.List.Split
+  ( splitOn )
 import Data.Maybe
 
 
@@ -155,3 +160,13 @@ groupBy f es =
           if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
 
+-- | Replaces a substring with another substring.
+replace ::
+     String
+     -- ^ What to search for.
+  -> String
+     -- ^ What to replace with.
+  -> String
+     -- ^ What to search in.
+  -> String
+replace old new = intercalate new . splitOn old
