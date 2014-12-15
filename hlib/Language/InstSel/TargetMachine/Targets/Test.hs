@@ -211,11 +211,11 @@ tmTest =
                   (InstProperties 1 1)
                   ( AssemblyString
                       [ AssemblyVerbatim "add "
-                      , AssemblyRegister 0
+                      , AssemblyRegisterOf 0
                       , AssemblyVerbatim ", "
-                      , AssemblyRegister 1
+                      , AssemblyRegisterOf 1
                       , AssemblyVerbatim ", "
-                      , AssemblyRegister 2
+                      , AssemblyRegisterOf 2
                       ]
                   )
               , Instruction
@@ -230,11 +230,11 @@ tmTest =
                   (InstProperties 1 1)
                   ( AssemblyString
                       [ AssemblyVerbatim "bnz "
-                      , AssemblyRegister 0
+                      , AssemblyRegisterOf 0
                       , AssemblyVerbatim ", "
-                      , AssemblyBBLabel 1
+                      , AssemblyBBLabelOf 1
                       , AssemblyVerbatim ", "
-                      , AssemblyBBLabel 2
+                      , AssemblyBBLabelOf 2
                       ]
                   )
               , Instruction
@@ -249,7 +249,7 @@ tmTest =
                   (InstProperties 1 1)
                   ( AssemblyString
                       [ AssemblyVerbatim "br "
-                      , AssemblyBBLabel 0
+                      , AssemblyBBLabelOf 0
                       ]
                   )
               , Instruction
@@ -275,7 +275,7 @@ tmTest =
                   (InstProperties 1 1)
                   ( AssemblyString
                     [ AssemblyVerbatim "ret "
-                    , AssemblyRegister 0
+                    , AssemblyRegisterOf 0
                     ]
                   )
               , Instruction
@@ -290,12 +290,12 @@ tmTest =
                   (InstProperties 1 1)
                   ( AssemblyString
                       [ AssemblyVerbatim "phi "
-                      , AssemblyRegister 0
+                      , AssemblyRegisterOf 0
                       , AssemblyVerbatim " ("
-                      , AssemblyRegister 1
+                      , AssemblyRegisterOf 1
                       , AssemblyVerbatim ", ?"
                       , AssemblyVerbatim ") ("
-                      , AssemblyRegister 2
+                      , AssemblyRegisterOf 2
                       , AssemblyVerbatim ", ?"
                       , AssemblyVerbatim ")"
                       ]

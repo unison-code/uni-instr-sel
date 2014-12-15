@@ -48,14 +48,19 @@ data AssemblyPart =
     -- | Denotes string which is meant to be output verbatim.
     AssemblyVerbatim String
 
-    -- | Denotes an immediate value.
-  | AssemblyImmValue AssemblyID
+    -- | Denotes an immediate value. If a data node is referenced, then the
+    -- constant value of that data node will be retrieved.
+  | AssemblyImmValueOf AssemblyID
 
-    -- | Denotes a register.
-  | AssemblyRegister AssemblyID
+    -- | Denotes a register. If a data node is referenced, then the register
+    -- allocated to that data node will be retrieved.
+  | AssemblyRegisterOf AssemblyID
 
-    -- | Denotes a basic block label.
-  | AssemblyBBLabel AssemblyID
+    -- | Denotes a basic block label. If a label node is referenced, then the
+    -- block label of that label node is retrieved. If a data node is
+    -- referenced, then the block label of the basic block in which that data
+    -- node is defined is retrieved.
+  | AssemblyBBLabelOf AssemblyID
   deriving (Show)
 
 -- | Record for containing the assembly string to produce during code emission.

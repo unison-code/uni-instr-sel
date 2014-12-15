@@ -24,6 +24,7 @@ import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.TargetMachine
+import Language.InstSel.TargetMachine.Targets.Generic
 import Language.InstSel.Utils
   ( Range (..) )
 
@@ -135,11 +136,11 @@ mkSimpleRegRegCompInst str op r1 r2 r3 =
        , instProps = ( InstProperties { instCodeSize = 4, instLatency = 1 } )
        , instAssemblyStr = ( AssemblyString
                                [ AssemblyVerbatim (str ++ " ")
-                               , AssemblyRegister 0
+                               , AssemblyRegisterOf 0
                                , AssemblyVerbatim ","
-                               , AssemblyRegister 1
+                               , AssemblyRegisterOf 1
                                , AssemblyVerbatim ","
-                               , AssemblyRegister 2
+                               , AssemblyRegisterOf 2
                                ]
                            )
        }
@@ -183,11 +184,11 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
        , instProps = ( InstProperties { instCodeSize = 4, instLatency = 1 } )
        , instAssemblyStr = ( AssemblyString
                                [ AssemblyVerbatim (str ++ " ")
-                               , AssemblyRegister 0
+                               , AssemblyRegisterOf 0
                                , AssemblyVerbatim ","
-                               , AssemblyRegister 1
+                               , AssemblyRegisterOf 1
                                , AssemblyVerbatim ","
-                               , AssemblyRegister 2
+                               , AssemblyRegisterOf 2
                                ]
                            )
        }
@@ -196,6 +197,8 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
 mkInstructions =
+  mkGenericPhiInstructions
+  ++
   map
     ( \a -> mkSimpleRegRegCompInst
               (fst a)
