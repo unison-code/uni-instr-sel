@@ -90,7 +90,7 @@ mkSimpleRegRegCompInst ::
 mkSimpleRegRegCompInst str op =
   let g = mkSimplePattern op (D.IntType 32) (D.IntType 32) (D.IntType 32)
       regs = map fst mkGPRegisters
-      cs = concatMap (flip mkRegAllocConstraints regs) [1, 2, 3]
+      cs = concatMap (mkRegAllocConstraints regs) [1, 2, 3]
       pat = InstPattern
               { patID = 0
               , patOS = OS.OpStructure g cs
@@ -129,7 +129,7 @@ mkSimpleRegImmCompInst ::
 mkSimpleRegImmCompInst str op r =
   let g = mkSimplePattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
       regs = map fst mkGPRegisters
-      reg_cs = concatMap (flip mkRegAllocConstraints regs) [1, 3]
+      reg_cs = concatMap (mkRegAllocConstraints regs) [1, 3]
       imm_cs = mkIntRangeConstraints 2 r
       cs = reg_cs ++ imm_cs
       pat = InstPattern

@@ -106,25 +106,25 @@ mkInterDataValConstraints g outs =
 addRegAllocConstraints ::
      OpStructure
      -- ^ The old structure.
-  -> NodeID
-     -- ^ A data node.
   -> [RegisterID]
      -- ^ List of registers to which the data can be allocated.
+  -> NodeID
+     -- ^ A data node.
   -> OpStructure
      -- ^ The new structure, with the produced constraints (may be the same
      -- structure).
-addRegAllocConstraints os d regs =
-  addConstraints os (mkRegAllocConstraints d regs)
+addRegAllocConstraints os regs d =
+  addConstraints os (mkRegAllocConstraints regs d)
 
 -- | Creates register allocation constraints such that the data of a particular
 -- data node must be allocated one of a particular set of registers.
 mkRegAllocConstraints ::
-     NodeID
-     -- ^ A data node.
-  -> [RegisterID]
+     [RegisterID]
      -- ^ List of registers to which the data can be allocated.
+  -> NodeID
+     -- ^ A data node.
   -> [Constraint]
-mkRegAllocConstraints d regs =
+mkRegAllocConstraints regs d =
   [ BoolExprConstraint $
       InSetExpr
         ( Register2SetElemExpr $
