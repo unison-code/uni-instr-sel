@@ -8,12 +8,14 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- A module for creating generic instructions.
+-- A module for creating generic instructions, and other useful help functions.
 --
 --------------------------------------------------------------------------------
 
 module Language.InstSel.TargetMachine.Targets.Generic
-  ( mkGenericPhiInstructions )
+  ( fixInstIDs
+  , mkGenericPhiInstructions
+  )
 where
 
 import Language.InstSel.Constraints
@@ -30,7 +32,8 @@ import Language.InstSel.TargetMachine.Base
 -------------
 
 -- | Creates a set of instructions for handling the generic cases where
--- 'PhiNode's appear.
+-- 'PhiNode's appear. The instruction IDs of all instructions will be
+-- (incorrectly) set to 0, meaning they must be reassigned afterwards.
 mkGenericPhiInstructions :: [Instruction]
 mkGenericPhiInstructions =
   let mkDataNode = DataNode { dataType = AnyType, dataOrigin = Nothing }
@@ -100,3 +103,11 @@ mkGenericPhiInstructions =
                              )
          }
      ]
+
+-- | In order to not have to concern ourselves with instruction IDs being
+-- unique, we let this function fix those for us afterwards. The function goes
+-- over the list of instructions and reassigns the instruction IDs such that
+-- each instruction gets a unique ID.
+fixInstIDs :: [Instruction] -> [Instruction]
+fixInstIDs insts =
+  map ( \(new_iid, inst) -> inst { instID = new_iid } ) (zip [0..] insts)

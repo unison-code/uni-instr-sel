@@ -245,14 +245,6 @@ mkInstructions =
     , ("multu", O.CompArithOp $ O.UIntOp O.Mul)
     ]
 
--- | In order to not have to concern ourselves with instruction IDs being
--- unique, we let this function fix those for us afterwards. The function goes
--- over the list of instructions and reassigns the instruction IDs such that
--- each instruction gets a unique ID.
-fixInstIDs :: [Instruction] -> [Instruction]
-fixInstIDs insts =
-  map ( \(new_iid, inst) -> inst { instID = new_iid } ) (zip [0..] insts)
-
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine
 tmMips32 = TargetMachine
