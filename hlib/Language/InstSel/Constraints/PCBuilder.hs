@@ -15,10 +15,12 @@
 module Language.InstSel.Constraints.PCBuilder
   ( addBBAllocConstraints
   , addIntConstConstraints
+  , addIntRangeConstraints
   , addInterDataValConstraints
   , addRegAllocConstraints
   , mkBBAllocConstraints
   , mkIntConstConstraints
+  , mkIntRangeConstraints
   , mkInterDataValConstraints
   , mkRegAllocConstraints
   )
