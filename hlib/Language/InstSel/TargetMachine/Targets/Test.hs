@@ -304,7 +304,7 @@ tmTest =
   in TargetMachine
        (toTargetMachineID "test")
        insts
-       [ (0, RegisterName "r0")
-       , (1, RegisterName "r1")
-       , (2, RegisterName "r2")
+       [ Register { regID = 0, regName = RegisterName "r0" }
+       , Register { regID = 1, regName = RegisterName "r1" }
+       , Register { regID = 2, regName = RegisterName "r2" }
        ]

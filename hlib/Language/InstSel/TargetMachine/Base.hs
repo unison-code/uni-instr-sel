@@ -20,6 +20,7 @@ module Language.InstSel.TargetMachine.Base
   , Instruction (..)
   , InstPattern (..)
   , InstProperties (..)
+  , Register (..)
   , TargetMachine (..)
   , findInstruction
   , findInstPattern
@@ -125,13 +126,24 @@ data TargetMachine =
         -- ^ The identifier of the target machine.
       , tmInstructions :: [Instruction]
         -- ^ The set of assembly instructions supported by the target machine.
-      , tmRegisters :: [(RegisterID, RegisterName)]
+      , tmRegisters :: [Register]
         -- ^ The machine registers, given as pairs of register IDs and register
         -- names (which are needed during instruction emission). Each must be
         -- given a unique register ID, but not necessarily in a contiguous
         -- order.
       }
   deriving (Show)
+
+data Register =
+    Register
+      { regID :: RegisterID
+        -- ^ The ID of this register. This must be unique for every register
+        -- within the same target machine.
+      , regName :: RegisterName
+        -- ^ The name of this register (as it shall appear in the assembly
+        -- string).
+      }
+  deriving (Show, Eq)
 
 
 

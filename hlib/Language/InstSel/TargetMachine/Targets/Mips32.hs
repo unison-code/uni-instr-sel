@@ -35,15 +35,19 @@ import Language.InstSel.Utils
 
 -- | Creates all register classes. The register IDs will be correctly set such
 -- that every registers gets a unique ID.
-mkRegClasses :: [(RegisterID, RegisterName)]
+mkRegClasses :: [Register]
 mkRegClasses = mkGPRegisters
 
 -- | Creates the list of general-purpose registers. The register IDs will be
 -- correctly set such that every register gets a unique ID.
-mkGPRegisters :: [(RegisterID, RegisterName)]
+mkGPRegisters :: [Register]
 mkGPRegisters =
   map
-    ( \i -> (toRegisterID i, RegisterName $ "$" ++ show i) )
+    ( \i -> Register
+              { regID = toRegisterID i
+              , regName = RegisterName $ "$" ++ show i
+              }
+    )
     ( [0..31] :: [Integer] ) -- Cast needed to prevent compilation warning
 
 -- | Creates a simple pattern that consists of a single computation node, which
@@ -89,7 +93,7 @@ mkSimpleRegRegCompInst ::
   -> Instruction
 mkSimpleRegRegCompInst str op =
   let g = mkSimplePattern op (D.IntType 32) (D.IntType 32) (D.IntType 32)
-      regs = map fst mkGPRegisters
+      regs = map regID mkGPRegisters
       cs = concatMap (mkRegAllocConstraints regs) [1, 2, 3]
       pat = InstPattern
               { patID = 0
@@ -128,7 +132,7 @@ mkSimpleRegImmCompInst ::
   -> Instruction
 mkSimpleRegImmCompInst str op r =
   let g = mkSimplePattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
-      regs = map fst mkGPRegisters
+      regs = map regID mkGPRegisters
       reg_cs = concatMap (mkRegAllocConstraints regs) [1, 3]
       imm_cs = mkIntRangeConstraints 2 r
       cs = reg_cs ++ imm_cs

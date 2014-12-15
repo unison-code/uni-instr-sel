@@ -96,7 +96,7 @@ mkMachineData :: TargetMachine -> MachineData
 mkMachineData m =
   MachineData
   (tmID m)
-  (map fst (tmRegisters m))
+  (map regID (tmRegisters m))
 
 mkMatchData ::
      Function
