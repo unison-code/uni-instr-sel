@@ -202,6 +202,7 @@ produceAssemblyString cp m (ASRegisterOf n) =
           in show regsym
      else "?"
 produceAssemblyString cp _ (ASBasicBlockLabelOf n) =
+  -- TODO: handle cases where 'n' points to a data node instead of a label node
   let lab = lookupBasicBlockLabel n $
               funcBasicBlockData $
                 functionData $

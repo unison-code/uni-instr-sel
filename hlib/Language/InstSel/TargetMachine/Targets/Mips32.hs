@@ -195,6 +195,7 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
 -- | Makes the unconditional branch instructions.
 mkCondBrInstrs :: [Instruction]
 mkCondBrInstrs =
+  -- TODO: extend to with patterns to handle simple conditional branches
   let mkLabelNode = LabelNode $ BasicBlockLabel ""
       mkCompNode = ComputationNode { compOp = O.CompArithOp $ O.IntOp O.Eq }
       mk32BitDataNode = DataNode (D.IntType 32) Nothing
