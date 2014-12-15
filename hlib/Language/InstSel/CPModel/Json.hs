@@ -41,6 +41,7 @@ import Language.InstSel.Utils
   , fromNatural
   , fromRight
   , isLeft
+  , replace
   , toNatural
   )
 import Control.Applicative
@@ -323,4 +324,7 @@ fromJson s =
 
 -- | Converts an entity into a JSON string.
 toJson :: ToJSON a => a -> String
-toJson = BS.unpack . encode
+toJson = unescape . BS.unpack . encode
+  where unescape = replace "\\u003c" "<" . replace "\\u003e" ">"
+        -- ^ For security reasons, Aeson will escape '<' and '>' when dumping
+        -- JSON data to string, which is something we want to undo.
