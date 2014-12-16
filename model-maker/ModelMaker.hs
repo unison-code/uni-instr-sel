@@ -48,7 +48,9 @@ import LLVM.General
 import LLVM.General.Context
 import System.Console.CmdArgs
 import System.Exit
-  (exitFailure)
+  ( exitFailure
+  , exitSuccess
+  )
 
 
 
@@ -120,3 +122,4 @@ main =
      -- Produce parameters
      let params = mkParams target function
      putStrLn $ toJson params
+     exitSuccess
