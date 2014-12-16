@@ -72,7 +72,7 @@ mkLORegister = [Register { regID = 34, regName = RegisterName "LO" }]
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
-mkSimplePattern ::
+mkSimpleCompPattern ::
      O.CompOp
      -- ^ The computation operation.
   -> D.DataType
@@ -82,7 +82,7 @@ mkSimplePattern ::
   -> D.DataType
      -- ^ The data type of the result.
   -> Graph
-mkSimplePattern op src1 src2 dst =
+mkSimpleCompPattern op src1 src2 dst =
   let mkCompNode = ComputationNode { compOp = op }
       mkDataNode dt = DataNode { dataType = dt, dataOrigin = Nothing }
   in mkGraph
@@ -118,7 +118,7 @@ mkSimpleRegRegCompInst ::
      -- ^ The register class of the destination.
   -> Instruction
 mkSimpleRegRegCompInst str op r1 r2 r3 =
-  let g = mkSimplePattern op (D.IntType 32) (D.IntType 32) (D.IntType 32)
+  let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 32) (D.IntType 32)
       cs = concatMap
              ( \(r, nid) ->
                  mkRegAllocConstraints (map regID r) nid
@@ -163,7 +163,7 @@ mkSimpleRegImmCompInst ::
      -- ^ The range of the immediate (which is the second operand).
   -> Instruction
 mkSimpleRegImmCompInst str op r1 r3 imm =
-  let g = mkSimplePattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
+  let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
       reg_cs = concatMap
                ( \(r, nid) ->
                    mkRegAllocConstraints (map regID r) nid
@@ -192,59 +192,92 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
        , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
        }
 
--- | Makes the unconditional branch instructions.
+-- | Creates a simple conditional branch pattern.
+mkSimpleCondBrPattern :: Graph
+mkSimpleCondBrPattern =
+  let mkLabelNode = LabelNode $ BasicBlockLabel ""
+  in mkGraph
+       ( map
+           Node
+           [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
+           , ( 1, NodeLabel 1 mkLabelNode )
+           , ( 2, NodeLabel 2 mkLabelNode )
+           , ( 3, NodeLabel 3 mkLabelNode )
+           , ( 4, NodeLabel 4 (DataNode (D.IntType 1) Nothing) )
+           ]
+       )
+       ( map
+           Edge
+           [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+           , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+           , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
+           , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
+           ]
+       )
+
+-- | Makes the conditional branch instructions.
 mkCondBrInstrs :: [Instruction]
 mkCondBrInstrs =
-  -- TODO: extend to with patterns to handle simple conditional branches
-  let mkLabelNode = LabelNode $ BasicBlockLabel ""
-      mkCompNode = ComputationNode { compOp = O.CompArithOp $ O.IntOp O.Eq }
-      mk32BitDataNode = DataNode (D.IntType 32) Nothing
-      g = mkGraph
-            ( map
-                Node
-                [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
-                , ( 1, NodeLabel 1 mkLabelNode )
-                , ( 2, NodeLabel 2 mkLabelNode )
-                , ( 3, NodeLabel 3 mkLabelNode )
-                , ( 4, NodeLabel 4 (DataNode (D.IntType 1) Nothing) )
-                , ( 5, NodeLabel 5 mkCompNode )
-                , ( 6, NodeLabel 6 mk32BitDataNode )
-                , ( 7, NodeLabel 7 mk32BitDataNode )
-                ]
-            )
-            ( map
-                Edge
-                [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
-                , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
-                , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
-                , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
-                , ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
-                , ( 6, 5, EdgeLabel DataFlowEdge 0 0 )
-                , ( 7, 5, EdgeLabel DataFlowEdge 0 1 )
-                ]
-            )
-      bb_alloc_cs = mkBBAllocConstraints g
+  let simple_g = mkSimpleCondBrPattern
+      bb_alloc_cs = mkBBAllocConstraints simple_g
       fallthrough_cs = mkFallthroughConstraints 3
       cs = bb_alloc_cs ++ fallthrough_cs
-      pat = InstrPattern
-              { patID = 0
-              , patOS = OS.OpStructure g cs
-              , patOutputDataNodes = [3]
-              , patADDUC = True
-              , patAssemblyStr = ( AssemblyString
-                                     [ ASVerbatim "beq "
-                                      , ASRegisterOfDataNode 6
-                                      , ASVerbatim ","
-                                      , ASRegisterOfDataNode 7
-                                      , ASVerbatim ","
-                                      , ASBBLabelOfLabelNode 2
-                                      ]
-                                 )
-              }
+      mkCompNode = ComputationNode { compOp = O.CompArithOp $ O.IntOp O.Eq }
+      mk32BitDataNode = DataNode (D.IntType 32) Nothing
+      complex_g =
+        mkGraph
+          ( getAllNodes simple_g
+            ++
+            map
+              Node
+              [ ( 5, NodeLabel 5 mkCompNode )
+              , ( 6, NodeLabel 6 mk32BitDataNode )
+              , ( 7, NodeLabel 7 mk32BitDataNode )
+              ]
+          )
+          ( getAllEdges simple_g
+            ++
+            map
+              Edge
+              [ ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
+              , ( 6, 5, EdgeLabel DataFlowEdge 0 0 )
+              , ( 7, 5, EdgeLabel DataFlowEdge 0 1 )
+              ]
+          )
+      simple_pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure simple_g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = ( AssemblyString
+                                 [ ASVerbatim "beq "
+                                  , ASRegisterOfDataNode 6
+                                  , ASVerbatim ","
+                                  , ASRegisterOfDataNode 7
+                                  , ASVerbatim ","
+                                  , ASBBLabelOfLabelNode 2
+                                  ]
+                             )
+          }
+      complex_pat =
+        InstrPattern
+          { patID = 1
+          , patOS = OS.OpStructure complex_g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = ( AssemblyString
+                                 [ ASVerbatim "bne "
+                                  , ASRegisterOfDataNode 4
+                                  , ASVerbatim ",$0,"
+                                  , ASBBLabelOfLabelNode 2
+                                  ]
+                             )
+          }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+         , instrPatterns = [simple_pat, complex_pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
          }
      ]
 
