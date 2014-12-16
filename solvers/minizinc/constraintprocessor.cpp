@@ -26,8 +26,10 @@
 
 #include "constraintprocessor.h"
 #include "common/utils/string.h"
+#include <list>
 
 using namespace Model;
+using std::list;
 using std::string;
 
 ConstraintProcessor::ConstraintProcessor(void) {}
@@ -339,6 +341,18 @@ ConstraintProcessor::process(const SetExpr* e) {
     {
         return getDomSetParameterArrayName()
             + "[" + process(de->getExpr()) + "]";
+    }
+    else if (const RegisterClassExpr* de =
+             dynamic_cast<const RegisterClassExpr*>(e))
+    {
+        string result("{");
+        list<string> subresults;
+        for (auto& expr : de->getExprList()) {
+            subresults.push_back(process(expr));
+        }
+        result += Utils::join(subresults, ", ");
+        result += "}";
+        return result;
     }
     else {
         THROW(Exception, "SetExpr is of unknown derived class");
