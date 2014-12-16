@@ -157,7 +157,7 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patOutputDataNodes = [3]
               , patADDUC = True
               , patAssemblyStr = AssemblyString
-                                   [ ASVerbatim (str ++ " ")
+                                   [ ASVerbatim $ str ++ " "
                                    , ASRegisterOfDataNode 0
                                    , ASVerbatim ","
                                    , ASRegisterOfDataNode 1
@@ -243,7 +243,7 @@ mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
               , patOutputDataNodes = [3]
               , patADDUC = True
               , patAssemblyStr = AssemblyString
-                                   [ ASVerbatim (str ++ " ")
+                                   [ ASVerbatim $ str ++ " "
                                    , ASRegisterOfDataNode 3
                                    , ASVerbatim ","
                                    , ASRegisterOfDataNode 1
@@ -317,12 +317,12 @@ mkCondBrInstrs =
           , patADDUC = True
           , patAssemblyStr = AssemblyString
                                [ ASVerbatim "beq "
-                                , ASRegisterOfDataNode 6
-                                , ASVerbatim ","
-                                , ASRegisterOfDataNode 7
-                                , ASVerbatim ","
-                                , ASBBLabelOfLabelNode 2
-                                ]
+                               , ASRegisterOfDataNode 6
+                               , ASVerbatim ","
+                               , ASRegisterOfDataNode 7
+                               , ASVerbatim ","
+                               , ASBBLabelOfLabelNode 2
+                               ]
           }
       complex_pat =
         InstrPattern
@@ -332,10 +332,10 @@ mkCondBrInstrs =
           , patADDUC = True
           , patAssemblyStr = AssemblyString
                                [ ASVerbatim "bne "
-                                , ASRegisterOfDataNode 4
-                                , ASVerbatim ",$0,"
-                                , ASBBLabelOfLabelNode 2
-                                ]
+                               , ASRegisterOfDataNode 4
+                               , ASVerbatim ",$0,"
+                               , ASBBLabelOfLabelNode 2
+                               ]
           }
   in [ Instruction
          { instrID = 0
@@ -343,6 +343,61 @@ mkCondBrInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
          }
      ]
+
+-- | Makes the conditional branch pseudoinstructions.
+mkCondBrPseudoInstrs ::
+     String
+     -- ^ The assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The operation corresponding to this instruction.
+  -> Instruction
+mkCondBrPseudoInstrs str op =
+  let simple_g = mkSimpleCondBrPattern
+      mkCompNode = ComputationNode { compOp = op }
+      mk32BitDataNode = DataNode (D.IntType 32) Nothing
+      complex_g =
+        mkGraph
+          ( getAllNodes simple_g
+            ++
+            map
+              Node
+              [ ( 5, NodeLabel 5 mkCompNode )
+              , ( 6, NodeLabel 6 mk32BitDataNode )
+              , ( 7, NodeLabel 7 mk32BitDataNode )
+              ]
+          )
+          ( getAllEdges simple_g
+            ++
+            map
+              Edge
+              [ ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
+              , ( 6, 5, EdgeLabel DataFlowEdge 0 0 )
+              , ( 7, 5, EdgeLabel DataFlowEdge 0 1 )
+              ]
+          )
+      bb_alloc_cs = mkBBAllocConstraints simple_g
+      fallthrough_cs = mkFallthroughConstraints 3
+      cs = bb_alloc_cs ++ fallthrough_cs
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure complex_g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim $ str ++ " "
+                               , ASRegisterOfDataNode 6
+                               , ASVerbatim ","
+                               , ASRegisterOfDataNode 7
+                               , ASVerbatim ","
+                               , ASBBLabelOfLabelNode 2
+                               ]
+          }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 8, instrLatency = 3 }
+       }
 
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
@@ -439,6 +494,7 @@ mkInstructions =
     , ("addu", O.CompArithOp $ O.UIntOp O.Add)
     , ("sub" , O.CompArithOp $ O.SIntOp O.Sub)
     , ("subu", O.CompArithOp $ O.UIntOp O.Sub)
+    , ("mul" , O.CompArithOp $ O.SIntOp O.Mul)
     ]
   ++
   map
@@ -488,6 +544,14 @@ mkInstructions =
     ]
   ++
   mkCondBrInstrs
+  ++
+  map
+    (\a -> mkCondBrPseudoInstrs (fst a) (snd a))
+    [ ("bgt", O.CompArithOp $ O.IntOp O.GT)
+    , ("blt", O.CompArithOp $ O.IntOp O.LT)
+    , ("bge", O.CompArithOp $ O.IntOp O.GE)
+    , ("ble", O.CompArithOp $ O.IntOp O.LE)
+    ]
   ++
   mkBrInstrs
   ++
