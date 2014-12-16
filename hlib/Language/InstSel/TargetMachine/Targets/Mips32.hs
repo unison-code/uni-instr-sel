@@ -562,5 +562,5 @@ tmMips32 :: TargetMachine
 tmMips32 = TargetMachine
              { tmID = toTargetMachineID "mips32"
              , tmInstructions = fixInstrIDs mkInstructions
-             , tmRegisters = mkRegClasses
+             , tmRegisters = getAllRegisters
              }
