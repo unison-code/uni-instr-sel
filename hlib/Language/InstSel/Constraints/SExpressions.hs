@@ -203,7 +203,7 @@ instance ToLisp SetExpr where
   toLisp (DomSetOfLabelExpr e) =
     mkStruct "domset-of-lab" [toLisp e]
   toLisp (RegisterClassExpr es) =
-    mkStruct "reg-class" (map toLisp es)
+    mkStruct "reg-class" [List (map toLisp es)]
 
 instance FromLisp SetElemExpr where
   parseLisp e =
