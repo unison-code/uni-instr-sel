@@ -24,6 +24,7 @@ import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
   ( MatchID
   , NodeID
+  , domNode
   )
 import Language.InstSel.Patterns.IDs
   ( PatternID )
@@ -184,6 +185,17 @@ lookupBasicBlockLabel n ds =
      then Just $ bbLabel $ head found
      else Nothing
 
+findDefinerOfData :: CPSolutionData -> NodeID -> Maybe MatchID
+findDefinerOfData cp n =
+  let match_data = matchData $ modelParams cp
+      definers = map
+                   mMatchID
+                   (filter (\mid -> n `elem` mDataNodesDefined mid) match_data)
+      selected = filter (`elem` (selectedMatches cp)) definers
+  in if length selected == 1
+     then Just $ head selected
+     else Nothing
+
 produceAssemblyString ::
      CPSolutionData
   -> TargetMachine
@@ -191,7 +203,7 @@ produceAssemblyString ::
   -> String
 produceAssemblyString _ _ (ASVerbatim s) = s
 produceAssemblyString cp _ (ASImmValueOf n) =
-  let imm = lookup n $ immValuesOfDataNodes cp
+  let imm = lookup n (immValuesOfDataNodes cp)
   in if isJust imm
      then show $ fromJust imm
      else "?"
@@ -202,11 +214,21 @@ produceAssemblyString cp m (ASRegisterOf n) =
           in show regsym
      else "?"
 produceAssemblyString cp _ (ASBasicBlockLabelOf n) =
-  -- TODO: handle cases where 'n' points to a data node instead of a label node
-  let lab = lookupBasicBlockLabel n $
-              funcBasicBlockData $
-                functionData $
-                  modelParams cp
-  in if isJust lab
-     then show $ fromJust lab
-     else "?"
+  let fun_data = functionData $ modelParams cp
+      data_nodes = funcDataNodes fun_data
+      label_nodes = map domNode (funcLabelNodes fun_data)
+      printError = "?"
+      printBasicBlockLabel n' =
+        maybe
+          printError
+          show
+          (lookupBasicBlockLabel n' $ funcBasicBlockData fun_data)
+  in if n `elem` data_nodes
+     then let mid = fromJust $ findDefinerOfData cp n
+              l = lookup mid (bbAllocsForMatches cp)
+          in if isJust l
+             then printBasicBlockLabel $ fromJust l
+             else printError
+     else if n `elem` label_nodes
+          then printBasicBlockLabel n
+          else printError
