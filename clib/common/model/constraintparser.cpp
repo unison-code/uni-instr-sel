@@ -437,6 +437,10 @@ ConstraintParser::parseRegisterExpr(string& str) {
             ID id = eatID(str);
             expr = new ARegisterIDExpr(id);
         }
+        else if (eatType<ARegisterArrayIndexExpr>(str)) {
+            ArrayIndex i = eatArrayIndex(str);
+            expr = new ARegisterArrayIndexExpr(i);
+        }
         else if (eatType<RegisterAllocatedToDataNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
             expr = new RegisterAllocatedToDataNodeExpr(e);
