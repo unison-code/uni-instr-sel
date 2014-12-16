@@ -14,8 +14,8 @@
 
 module Language.InstSel.CPModel.Verifier
   ( Errors (..)
-  , foundErrors
-  , printAndDie
+  , hasErrors
+  , printErrors
   , sanityCheck
   )
 where
@@ -26,7 +26,6 @@ import Language.InstSel.CPModel.Base
 import qualified Language.InstSel.Graphs as G
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
-import System.Exit
 
 
 
@@ -52,16 +51,15 @@ data Errors
   Errors { errors = es1 ++ es2 }
 
 -- | Checks whether any errors were found.
-foundErrors :: Errors -> Bool
-foundErrors NoErrors = False
-foundErrors _ = True
+hasErrors :: Errors -> Bool
+hasErrors NoErrors = False
+hasErrors _ = True
 
--- | Prints all errors and then exists.
-printAndDie :: Errors -> IO ()
-printAndDie NoErrors = exitSuccess
-printAndDie Errors { errors = es } =
-  do mapM_ (\s -> putStrLn $ "ERROR: " ++ s) es
-     exitFailure
+-- | Prints all errors as a string.
+printErrors :: Errors -> String
+printErrors NoErrors = ""
+printErrors Errors { errors = es } =
+  foldl (\rest s -> rest ++ "ERROR: " ++ s ++ "\n") "" es
 
 -- | Performs a series of sanity checks on the given function and CP model.
 sanityCheck :: Function -> CPModelParams -> Errors
@@ -78,7 +76,7 @@ areAllOpNodesCoverable f cp =
         let matches = filter (\m -> n `elem` mOperationsCovered m) match_data
             ns = G.getNodeWithNodeID g n
             nt_str = if length ns > 0
-                     then show $ head ns
+                     then show $ G.getNodeType $ head ns
                      else "?"
         in if length matches > 0
            then NoErrors

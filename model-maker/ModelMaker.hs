@@ -33,6 +33,7 @@ instruction selection. The model is output in JSON format and written on STDOUT.
 
 import Language.InstSel.CPModel.Json
 import Language.InstSel.CPModel.ParamMaker
+import Language.InstSel.CPModel.Verifier
 import Language.InstSel.ProgramModules.LLVM.FunctionMaker
 import Language.InstSel.TargetMachine.IDs
 import Language.InstSel.TargetMachine.Targets
@@ -62,6 +63,7 @@ data Options
     = Options
         { llvmFile :: Maybe String
         , targetName :: Maybe String
+        , doSanityCheck :: Bool
         }
     deriving (Data, Typeable)
 
@@ -74,6 +76,8 @@ parseArgs =
     , targetName = Nothing
         &= typ "TARGET"
         &= help "Name of the target machine."
+    , doSanityCheck = False
+        &= help "Whether to perform a sanity check."
     }
 
 isError :: Either a b -> Bool
@@ -121,5 +125,11 @@ main =
      let target = fromJust maybe_target
      -- Produce parameters
      let params = mkParams target function
+     -- Do sanity check
+     when doSanityCheck $
+       do let check_res = sanityCheck function params
+          when (hasErrors check_res) $
+            do putStrLn $ printErrors check_res
+               exitFailure
      putStrLn $ toJson params
      exitSuccess
