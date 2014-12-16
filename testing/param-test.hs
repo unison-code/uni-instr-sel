@@ -32,6 +32,7 @@ import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Constraints
 import Language.InstSel.CPModel.Json
 import Language.InstSel.CPModel.ParamMaker
+import Language.InstSel.CPModel.Verifier
 import Language.InstSel.Graphs
 import Language.InstSel.ProgramModules
 import Language.InstSel.OpStructures
@@ -114,5 +115,4 @@ main =
                 ]
          params = mkParams tmTest func
      putStrLn $ toJson params
---     mapM_ (\nn -> (putStrLn $ show $ map convertMappingNToID nn))
---           (match func phi_pattern)
+--     printAndDie $ sanityCheck func params

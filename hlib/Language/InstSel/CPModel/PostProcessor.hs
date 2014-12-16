@@ -24,7 +24,6 @@ import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
   ( MatchID
   , NodeID
-  , domNode
   )
 import Language.InstSel.Patterns.IDs
   ( PatternID )
@@ -202,33 +201,31 @@ produceAssemblyString ::
   -> AssemblyStringPart
   -> String
 produceAssemblyString _ _ (ASVerbatim s) = s
-produceAssemblyString cp _ (ASImmValueOf n) =
+produceAssemblyString cp _ (ASImmValueOfDataNode n) =
   let imm = lookup n (immValuesOfDataNodes cp)
   in if isJust imm
      then show $ fromJust imm
      else "?"
-produceAssemblyString cp m (ASRegisterOf n) =
+produceAssemblyString cp m (ASRegisterOfDataNode n) =
   let reg = lookup n $ regsOfDataNodes cp
   in if isJust reg
      then let regsym = fromJust $ findRegister (tmRegisters m) (fromJust reg)
           in show regsym
      else "?"
-produceAssemblyString cp _ (ASBasicBlockLabelOf n) =
+produceAssemblyString cp _ (ASBBLabelOfLabelNode n) =
+  let fun_data = functionData $ modelParams cp
+      l = lookupBasicBlockLabel n (funcBasicBlockData $ fun_data)
+  in if isJust l
+     then show l
+     else "?"
+produceAssemblyString cp m (ASBBLabelOfDataNode n) =
   let fun_data = functionData $ modelParams cp
       data_nodes = funcDataNodes fun_data
-      label_nodes = map domNode (funcLabelNodes fun_data)
       printError = "?"
-      printBasicBlockLabel n' =
-        maybe
-          printError
-          show
-          (lookupBasicBlockLabel n' $ funcBasicBlockData fun_data)
   in if n `elem` data_nodes
      then let mid = fromJust $ findDefinerOfData cp n
               l = lookup mid (bbAllocsForMatches cp)
           in if isJust l
-             then printBasicBlockLabel $ fromJust l
+             then produceAssemblyString cp m (ASBBLabelOfLabelNode $ fromJust l)
              else printError
-     else if n `elem` label_nodes
-          then printBasicBlockLabel n
-          else printError
+     else printError

@@ -83,15 +83,15 @@ mkGenericPhiInstructions =
               , patADDUC = False
               , patAssemblyStr = ( AssemblyString
                                      [ ASVerbatim "phi "
-                                     , ASRegisterOf 3
+                                     , ASRegisterOfDataNode 3
                                      , ASVerbatim " ("
-                                     , ASRegisterOf 1
+                                     , ASRegisterOfDataNode 1
                                      , ASVerbatim ", "
-                                     , ASBasicBlockLabelOf 1
+                                     , ASBBLabelOfDataNode 1
                                      , ASVerbatim ") ("
-                                     , ASRegisterOf 2
+                                     , ASRegisterOfDataNode 2
                                      , ASVerbatim ", "
-                                     , ASBasicBlockLabelOf 2
+                                     , ASBBLabelOfDataNode 2
                                      , ASVerbatim ")"
                                      ]
                                  )

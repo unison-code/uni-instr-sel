@@ -165,11 +165,11 @@ tmTest =
                       True
                       ( AssemblyString
                           [ ASVerbatim "add "
-                          , ASRegisterOf 3
+                          , ASRegisterOfDataNode 3
                           , ASVerbatim ", "
-                          , ASRegisterOf 1
+                          , ASRegisterOfDataNode 1
                           , ASVerbatim ", "
-                          , ASRegisterOf 2
+                          , ASRegisterOfDataNode 2
                           ]
                       )
                   ]
@@ -183,11 +183,11 @@ tmTest =
                       True
                       ( AssemblyString
                           [ ASVerbatim "bnz "
-                          , ASRegisterOf 0
+                          , ASRegisterOfDataNode 0
                           , ASVerbatim ", "
-                          , ASBasicBlockLabelOf 2
+                          , ASBBLabelOfLabelNode 2
                           , ASVerbatim ", "
-                          , ASBasicBlockLabelOf 3
+                          , ASBBLabelOfLabelNode 3
                           ]
                       )
                   ]
@@ -201,7 +201,7 @@ tmTest =
                       True
                       ( AssemblyString
                           [ ASVerbatim "br "
-                          , ASBasicBlockLabelOf 1
+                          , ASBBLabelOfLabelNode 1
                           ]
                       )
                   ]
@@ -225,7 +225,7 @@ tmTest =
                       True
                       ( AssemblyString
                         [ ASVerbatim "ret "
-                        , ASRegisterOf 0
+                        , ASRegisterOfDataNode 0
                         ]
                       )
                   ]

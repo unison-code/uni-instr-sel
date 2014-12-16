@@ -131,11 +131,11 @@ mkSimpleRegRegCompInst str op r1 r2 r3 =
               , patADDUC = True
               , patAssemblyStr = ( AssemblyString
                                      [ ASVerbatim (str ++ " ")
-                                     , ASRegisterOf 0
+                                     , ASRegisterOfDataNode 0
                                      , ASVerbatim ","
-                                     , ASRegisterOf 1
+                                     , ASRegisterOfDataNode 1
                                      , ASVerbatim ","
-                                     , ASRegisterOf 2
+                                     , ASRegisterOfDataNode 2
                                      ]
                                  )
               }
@@ -178,11 +178,11 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
               , patADDUC = True
               , patAssemblyStr = ( AssemblyString
                                      [ ASVerbatim (str ++ " ")
-                                     , ASRegisterOf 3
+                                     , ASRegisterOfDataNode 3
                                      , ASVerbatim ","
-                                     , ASRegisterOf 1
+                                     , ASRegisterOfDataNode 1
                                      , ASVerbatim ","
-                                     , ASRegisterOf 2
+                                     , ASRegisterOfDataNode 2
                                      ]
                                  )
               }
@@ -233,11 +233,11 @@ mkCondBrInstrs =
               , patADDUC = True
               , patAssemblyStr = ( AssemblyString
                                      [ ASVerbatim "beq "
-                                      , ASRegisterOf 6
+                                      , ASRegisterOfDataNode 6
                                       , ASVerbatim ","
-                                      , ASRegisterOf 7
+                                      , ASRegisterOfDataNode 7
                                       , ASVerbatim ","
-                                      , ASBasicBlockLabelOf 2
+                                      , ASBBLabelOfLabelNode 2
                                       ]
                                  )
               }

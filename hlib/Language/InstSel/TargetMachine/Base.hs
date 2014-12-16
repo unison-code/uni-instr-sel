@@ -53,19 +53,19 @@ data AssemblyStringPart =
     -- | Denotes string which is meant to be output verbatim.
     ASVerbatim String
 
-    -- | Denotes an immediate value. If a data node is referenced, then the
-    -- constant value of that data node will be retrieved.
-  | ASImmValueOf NodeID
+    -- | Denotes the immediate value of a given data node.
+  | ASImmValueOfDataNode NodeID
 
-    -- | Denotes a register. If a data node is referenced, then the register
-    -- allocated to that data node will be retrieved.
-  | ASRegisterOf NodeID
+    -- | Denotes the register allocated to a given data node.
+  | ASRegisterOfDataNode NodeID
 
-    -- | Denotes a basic block label. If a label node is referenced, then the
-    -- block label of that label node is retrieved. If a data node is
-    -- referenced, then the block label of the basic block in which that data
-    -- node is defined is retrieved.
-  | ASBasicBlockLabelOf NodeID
+    -- | Denotes the basic block label of a given label node.
+  | ASBBLabelOfLabelNode NodeID
+
+    -- | Denotes the basic block label of the basic block in which the definer
+    -- of a given data node has been placed.
+  | ASBBLabelOfDataNode NodeID
+
   deriving (Show)
 
 -- | Defines a machine instruction.
