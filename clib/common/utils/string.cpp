@@ -27,7 +27,10 @@
 #include "string.h"
 #include "../exceptions/exception.h"
 
+using std::list;
 using std::string;
+using std::stringstream;
+using std::vector;
 
 namespace Utils {
 
@@ -99,6 +102,38 @@ searchReplace(
         pos += replace.length();
     }
     return new_str;
+}
+
+string
+join(const list<string>& strs,
+     const string& delim
+) {
+    if (strs.size() == 0) return "";
+
+    stringstream joined;
+    bool is_first = true;
+    for (auto& str : strs) {
+        if (!is_first) joined << delim;
+        else is_first = false;
+        joined << str;
+    }
+    return joined.str();
+}
+
+string
+join(const vector<string>& strs,
+     const string& delim
+) {
+    if (strs.size() == 0) return "";
+
+    stringstream joined;
+    bool is_first = true;
+    for (auto& str : strs) {
+        if (!is_first) joined << delim;
+        else is_first = false;
+        joined << str;
+    }
+    return joined.str();
 }
 
 }

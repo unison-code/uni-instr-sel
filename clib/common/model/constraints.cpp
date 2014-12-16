@@ -512,10 +512,14 @@ RegisterClassExpr::getExprList(void) const {
 string
 RegisterClassExpr::toLisp(void) const {
     string str;
-    str += "(" + getStrName();
+    str += "(" + getStrName() + " ";
+    str += "(";
+    list<string> exprs;
     for (auto& expr : getExprList()) {
-        str += " " + expr->toLisp();
+        exprs.push_back(expr->toLisp());
     }
+    str += Utils::join(exprs, " ");
+    str += ")";
     str += ")";
     return str;
 }

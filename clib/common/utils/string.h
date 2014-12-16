@@ -27,8 +27,10 @@
 #ifndef SOLVERS_COMMON_UTILS_STRING__
 #define SOLVERS_COMMON_UTILS_STRING__
 
+#include <list>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace Utils {
 
@@ -106,6 +108,34 @@ std::string
 searchReplace(const std::string& str,
               const std::string& search,
               const std::string& replace);
+
+/**
+ * Joins a list of string using a given delimiter.
+ *
+ * @param strs
+ *        The strings.
+ * @param delim
+ *        The delimiter.
+ * @param replace
+ *        The joined string.
+ */
+std::string
+join(const std::list<std::string>& strs,
+     const std::string& delim);
+
+/**
+ * Joins a vector of string using a given delimiter.
+ *
+ * @param strs
+ *        The strings.
+ * @param delim
+ *        The delimiter.
+ * @param replace
+ *        The joined string.
+ */
+std::string
+join(const std::vector<std::string>& strs,
+     const std::string& delim);
 
 }
 

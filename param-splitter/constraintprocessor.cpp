@@ -25,8 +25,10 @@
  */
 
 #include "constraintprocessor.h"
+#include <list>
 
 using namespace Model;
+using std::list;
 
 ConstraintProcessor::ConstraintProcessor(const Params& p)
     : p_(p),
@@ -349,6 +351,15 @@ ConstraintProcessor::processSetExpr(const SetExpr* e) {
              dynamic_cast<const DomSetOfLabelExpr*>(e))
     {
         return new DomSetOfLabelExpr(processLabelExpr(de->getExpr()));
+    }
+    else if (const RegisterClassExpr* de =
+             dynamic_cast<const RegisterClassExpr*>(e))
+    {
+        list<const RegisterExpr*> new_exprs;
+        for (auto expr : de->getExprList()) {
+            new_exprs.push_back(processRegisterExpr(expr));
+        }
+        return new RegisterClassExpr(new_exprs);
     }
     else {
         THROW(Exception, "SetExpr is of unknown derived class");
