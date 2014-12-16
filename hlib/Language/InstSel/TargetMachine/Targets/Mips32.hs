@@ -35,40 +35,49 @@ import Language.InstSel.Utils
 -- Functions
 -------------
 
--- | Creates all register classes. The register IDs will be correctly set such
--- that every registers gets a unique ID.
-mkRegClasses :: [Register]
-mkRegClasses = mkGPRegisters ++ mkHILORegister ++ mkHIRegister ++ mkLORegister
+-- | Retrieves all registers, and fixes the register IDs such that every
+-- register is given a unique ID.
+getAllRegisters :: [Register]
+getAllRegisters = fixRegIDs $ mkRegClasses
 
--- | Creates the list of general-purpose registers. The register IDs will be
--- correctly set such that every register gets a unique ID.
+-- | Creates all register classes, but there are no guarantees that the register
+-- IDs will be correctly set!
+mkRegClasses :: [Register]
+mkRegClasses = mkGPRegisters ++ mkHILORegisters
+
+-- | Creates the list of general-purpose registers, but there are no guarantees
+-- that the register IDs will be correctly set!
 mkGPRegisters :: [Register]
 mkGPRegisters =
   map
     ( \i -> Register
-              { regID = toRegisterID i
+              { regID = 0
               , regName = RegisterName $ "$" ++ show i
               }
     )
-    ( [0..31] :: [Integer] ) -- Cast needed to prevent compilation warning
+    ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
 
--- | Creates a list consisting only of the compound register 'HILO' (which is
--- actually a memory location). The register ID will be correctly set such that
--- every register gets a unique ID.
-mkHILORegister :: [Register]
-mkHILORegister = [Register { regID = 32, regName = RegisterName "HILO" }]
+-- | Creates the list of 'HILO' registers (which are actually memory
+-- locations). Note that there are no guarantees that the register IDs will be
+-- correctly set!
+mkHILORegisters :: [Register]
+mkHILORegisters =
+  [ Register { regID = 0, regName = RegisterName "HILO" }
+  , Register { regID = 0, regName = RegisterName "HI" }
+  , Register { regID = 0, regName = RegisterName "LO" }
+  ]
 
--- | Creates a list consisting only of the register component 'HI' (which is
--- actually a memory location). The register ID will be correctly set such that
--- every register gets a unique ID.
-mkHIRegister :: [Register]
-mkHIRegister = [Register { regID = 33, regName = RegisterName "HI" }]
+-- | Retrieves the register with a given register name. It is assumed that there
+-- will exist exactly one such register.
+getRegisterByName :: RegisterName -> Register
+getRegisterByName rname =
+  let regs = getAllRegisters
+      found = filter (\r -> rname == regName r) regs
+  in head found
 
--- | Creates a list consisting only of the register component 'LO' (which is
--- actually a memory location). The register ID will be correctly set such that
--- every register gets a unique ID.
-mkLORegister :: [Register]
-mkLORegister = [Register { regID = 34, regName = RegisterName "LO" }]
+-- | Retrieves the general-purpose register that serves as the return register.
+getRetRegister :: Register
+getRetRegister = getRegisterByName $ RegisterName "$31"
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
@@ -129,15 +138,14 @@ mkSimpleRegRegCompInst str op r1 r2 r3 =
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAssemblyStr = ( AssemblyString
-                                     [ ASVerbatim (str ++ " ")
-                                     , ASRegisterOfDataNode 0
-                                     , ASVerbatim ","
-                                     , ASRegisterOfDataNode 1
-                                     , ASVerbatim ","
-                                     , ASRegisterOfDataNode 2
-                                     ]
-                                 )
+              , patAssemblyStr = AssemblyString
+                                   [ ASVerbatim (str ++ " ")
+                                   , ASRegisterOfDataNode 0
+                                   , ASVerbatim ","
+                                   , ASRegisterOfDataNode 1
+                                   , ASVerbatim ","
+                                   , ASRegisterOfDataNode 2
+                                   ]
               }
   in Instruction
        { instrID = 0
@@ -176,15 +184,14 @@ mkSimpleRegImmCompInst str op r1 r3 imm =
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAssemblyStr = ( AssemblyString
-                                     [ ASVerbatim (str ++ " ")
-                                     , ASRegisterOfDataNode 3
-                                     , ASVerbatim ","
-                                     , ASRegisterOfDataNode 1
-                                     , ASVerbatim ","
-                                     , ASRegisterOfDataNode 2
-                                     ]
-                                 )
+              , patAssemblyStr = AssemblyString
+                                   [ ASVerbatim (str ++ " ")
+                                   , ASRegisterOfDataNode 3
+                                   , ASVerbatim ","
+                                   , ASRegisterOfDataNode 1
+                                   , ASVerbatim ","
+                                   , ASRegisterOfDataNode 2
+                                   ]
               }
   in Instruction
        { instrID = 0
@@ -250,15 +257,14 @@ mkCondBrInstrs =
           , patOS = OS.OpStructure simple_g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = ( AssemblyString
-                                 [ ASVerbatim "beq "
-                                  , ASRegisterOfDataNode 6
-                                  , ASVerbatim ","
-                                  , ASRegisterOfDataNode 7
-                                  , ASVerbatim ","
-                                  , ASBBLabelOfLabelNode 2
-                                  ]
-                             )
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "beq "
+                                , ASRegisterOfDataNode 6
+                                , ASVerbatim ","
+                                , ASRegisterOfDataNode 7
+                                , ASVerbatim ","
+                                , ASBBLabelOfLabelNode 2
+                                ]
           }
       complex_pat =
         InstrPattern
@@ -266,17 +272,91 @@ mkCondBrInstrs =
           , patOS = OS.OpStructure complex_g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = ( AssemblyString
-                                 [ ASVerbatim "bne "
-                                  , ASRegisterOfDataNode 4
-                                  , ASVerbatim ",$0,"
-                                  , ASBBLabelOfLabelNode 2
-                                  ]
-                             )
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "bne "
+                                , ASRegisterOfDataNode 4
+                                , ASVerbatim ",$0,"
+                                , ASBBLabelOfLabelNode 2
+                                ]
           }
   in [ Instruction
          { instrID = 0
          , instrPatterns = [simple_pat, complex_pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         }
+     ]
+
+-- | Makes the unconditional branch instructions.
+mkBrInstrs :: [Instruction]
+mkBrInstrs =
+  let mkLabelNode = LabelNode $ BasicBlockLabel ""
+      g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
+                , ( 1, NodeLabel 1 mkLabelNode )
+                , ( 2, NodeLabel 2 mkLabelNode )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+                , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+                ]
+            )
+      cs = mkBBAllocConstraints g
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "j "
+                                , ASBBLabelOfLabelNode 2
+                                ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         }
+     ]
+
+-- | Makes the return instructions.
+mkRetInstrs :: [Instruction]
+mkRetInstrs =
+  let g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
+                , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
+                , ( 2, NodeLabel 2 (DataNode (D.IntType 32) Nothing) )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+                , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
+                ]
+            )
+      bb_cs = mkBBAllocConstraints g
+      reg_cs = mkRegAllocConstraints [regID $ getRetRegister] 2
+      cs = bb_cs ++ reg_cs
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "j "
+                                , ASBBLabelOfLabelNode 2
+                                ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
          }
      ]
@@ -286,6 +366,8 @@ mkCondBrInstrs =
 mkInstructions :: [Instruction]
 mkInstructions =
   mkGenericPhiInstructions
+  ++
+  mkGenericBrFallthroughInstructions
   ++
   map
     ( \a -> mkSimpleRegRegCompInst
@@ -327,13 +409,17 @@ mkInstructions =
               (snd a)
               mkGPRegisters
               mkGPRegisters
-              mkHILORegister
+              [getRegisterByName $ RegisterName "HILO"]
     )
     [ ("mult" , O.CompArithOp $ O.SIntOp O.Mul)
     , ("multu", O.CompArithOp $ O.UIntOp O.Mul)
     ]
   ++
   mkCondBrInstrs
+  ++
+  mkBrInstrs
+  ++
+  mkRetInstrs
 
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine

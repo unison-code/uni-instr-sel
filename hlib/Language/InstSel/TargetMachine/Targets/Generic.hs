@@ -14,15 +14,20 @@
 
 module Language.InstSel.TargetMachine.Targets.Generic
   ( fixInstrIDs
+  , fixRegIDs
+  , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
   )
 where
 
 import Language.InstSel.Constraints
+import Language.InstSel.Constraints.PCBuilder
 import Language.InstSel.DataTypes
   ( DataType (..) )
 import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS
+import qualified Language.InstSel.OpTypes as O
+import Language.InstSel.ProgramModules.IDs
 import Language.InstSel.TargetMachine.Base
 
 
@@ -104,6 +109,45 @@ mkGenericPhiInstructions =
          }
      ]
 
+-- | Creates a set of instructions for handling unconditional branching to the
+-- immediately following basic block (that is, fallthroughs). The instruction
+-- IDs of all instructions will be (incorrectly) set to 0, meaning they must be
+-- reassigned afterwards.
+mkGenericBrFallthroughInstructions :: [Instruction]
+mkGenericBrFallthroughInstructions =
+  let mkLabelNode = LabelNode $ BasicBlockLabel ""
+      g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
+                , ( 1, NodeLabel 1 mkLabelNode )
+                , ( 2, NodeLabel 2 mkLabelNode )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+                , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+                ]
+            )
+      bb_alloc_cs = mkBBAllocConstraints g
+      fallthrough_cs = mkFallthroughConstraints 2
+      cs = bb_alloc_cs ++ fallthrough_cs
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString []
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         }
+     ]
+
 -- | In order to not have to concern ourselves with instruction IDs being
 -- unique, we let this function fix those for us afterwards. The function goes
 -- over the list of instructions and reassigns the instruction IDs such that
@@ -111,3 +155,8 @@ mkGenericPhiInstructions =
 fixInstrIDs :: [Instruction] -> [Instruction]
 fixInstrIDs insts =
   map ( \(new_iid, inst) -> inst { instrID = new_iid } ) (zip [0..] insts)
+
+-- | Same as 'fixInstrIDs' but for register IDs.
+fixRegIDs :: [Register] -> [Register]
+fixRegIDs regs =
+  map ( \(new_rid, r) -> r { regID = new_rid } ) (zip [0..] regs)
