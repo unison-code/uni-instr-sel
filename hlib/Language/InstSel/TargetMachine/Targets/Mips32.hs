@@ -35,15 +35,13 @@ import Language.InstSel.Utils
 -- Functions
 -------------
 
--- | Retrieves all registers, and fixes the register IDs such that every
--- register is given a unique ID.
-getAllRegisters :: [Register]
-getAllRegisters = fixRegIDs $ mkRegClasses
-
 -- | Creates all register classes, but there are no guarantees that the register
 -- IDs will be correctly set!
 mkRegClasses :: [Register]
 mkRegClasses = mkGPRegisters ++ mkHILORegisters
+
+regPrefix :: String
+regPrefix = "$"
 
 -- | Creates the list of general-purpose registers, but there are no guarantees
 -- that the register IDs will be correctly set!
@@ -52,7 +50,7 @@ mkGPRegisters =
   map
     ( \i -> Register
               { regID = 0
-              , regName = RegisterName $ "$" ++ show i
+              , regName = RegisterName $ regPrefix ++ show i
               }
     )
     ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
@@ -75,9 +73,24 @@ getRegisterByName rname =
       found = filter (\r -> rname == regName r) regs
   in head found
 
+-- | Retrieves all registers, where the register IDs have been set such that
+-- every register is given a unique ID.
+getAllRegisters :: [Register]
+getAllRegisters = fixRegIDs $ mkRegClasses
+
+-- | Retrieves all general-purpose registers, where the register IDs have been
+-- set such that every register is given a unique ID.
+getGPRegisters :: [Register]
+getGPRegisters =
+  map
+    (\i -> getRegisterByName $ RegisterName $ regPrefix ++ show i)
+    ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
+
+
 -- | Retrieves the general-purpose register that serves as the return register.
+-- The register ID will be correctly set.
 getRetRegister :: Register
-getRetRegister = getRegisterByName $ RegisterName "$31"
+getRetRegister = getRegisterByName $ RegisterName $ regPrefix ++ "31"
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
@@ -113,12 +126,17 @@ mkSimpleCompPattern op src1 src2 dst =
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
--- All data are assumed to reside in one of the 32 general-purpose registers.
-mkSimpleRegRegCompInst ::
+mkGenericSimpleRegRegCompInst ::
      String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
+  -> D.DataType
+     -- ^ The data type of the first operand.
+  -> D.DataType
+     -- ^ The data type of the second operand.
+  -> D.DataType
+     -- ^ The data type of the result.
   -> [Register]
      -- ^ The register class of the first operand.
   -> [Register]
@@ -126,8 +144,8 @@ mkSimpleRegRegCompInst ::
   -> [Register]
      -- ^ The register class of the destination.
   -> Instruction
-mkSimpleRegRegCompInst str op r1 r2 r3 =
-  let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 32) (D.IntType 32)
+mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
+  let g = mkSimpleCompPattern op d1 d2 d3
       cs = concatMap
              ( \(r, nid) ->
                  mkRegAllocConstraints (map regID r) nid
@@ -155,10 +173,50 @@ mkSimpleRegRegCompInst str op r1 r2 r3 =
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
+-- All data are assumed to be 32 bits in size.
+mkSimple32BitRegRegCompInst ::
+     String
+     -- ^ The assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The operation corresponding to this instruction.
+  -> [Register]
+     -- ^ The register class of the first operand.
+  -> [Register]
+     -- ^ The register class of the second.
+  -> [Register]
+     -- ^ The register class of the destination.
+  -> Instruction
+mkSimple32BitRegRegCompInst str op r1 r2 r3 =
+  let dt = D.IntType 32
+  in mkGenericSimpleRegRegCompInst str op dt dt dt r1 r2 r3
+
+-- | Creates an instruction that consists of only a single computation node,
+-- that takes two data nodes as input, and produces another data node as output.
+-- The input operands are assumed to be 32 bits in size, and the result is
+-- assumed to be 1 bit in size.
+mkSimple32BitRegs1BitResultCompInst ::
+     String
+     -- ^ The assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The operation corresponding to this instruction.
+  -> [Register]
+     -- ^ The register class of the first operand.
+  -> [Register]
+     -- ^ The register class of the second.
+  -> [Register]
+     -- ^ The register class of the destination.
+  -> Instruction
+mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
+  let dt32 = D.IntType 32
+      dt1  = D.IntType  1
+  in mkGenericSimpleRegRegCompInst str op dt32 dt32 dt1 r1 r2 r3
+
+-- | Creates an instruction that consists of only a single computation node,
+-- that takes two data nodes as input, and produces another data node as output.
 -- The first input operand and result are assumed to reside in one of the 32
 -- general-purpose registers, and the second input operand is assumed to be a
 -- 16-bit immediate of a given range.
-mkSimpleRegImmCompInst ::
+mkSimple32BitReg16BitImmCompInst ::
      String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
@@ -170,7 +228,7 @@ mkSimpleRegImmCompInst ::
   -> Range Integer
      -- ^ The range of the immediate (which is the second operand).
   -> Instruction
-mkSimpleRegImmCompInst str op r1 r3 imm =
+mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
   let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
       reg_cs = concatMap
                ( \(r, nid) ->
@@ -370,12 +428,12 @@ mkInstructions =
   mkGenericBrFallthroughInstructions
   ++
   map
-    ( \a -> mkSimpleRegRegCompInst
+    ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
               (snd a)
-              mkGPRegisters
-              mkGPRegisters
-              mkGPRegisters
+              getGPRegisters
+              getGPRegisters
+              getGPRegisters
     )
     [ ("add" , O.CompArithOp $ O.SIntOp O.Add)
     , ("addu", O.CompArithOp $ O.UIntOp O.Add)
@@ -384,35 +442,49 @@ mkInstructions =
     ]
   ++
   map
-    ( \a -> mkSimpleRegImmCompInst
+    ( \a -> mkSimple32BitReg16BitImmCompInst
               (fst a)
               (snd a)
-              mkGPRegisters
-              mkGPRegisters
+              getGPRegisters
+              getGPRegisters
               (Range (-32768) 32767)
     )
     [ ("addi", O.CompArithOp $ O.SIntOp O.Add) ]
   ++
   map
-    ( \a -> mkSimpleRegImmCompInst
+    ( \a -> mkSimple32BitReg16BitImmCompInst
               (fst a)
               (snd a)
-              mkGPRegisters
-              mkGPRegisters
+              getGPRegisters
+              getGPRegisters
               (Range 0 65535)
     )
     [ ("addiu", O.CompArithOp $ O.UIntOp O.Add) ]
   ++
   map
-    ( \a -> mkSimpleRegRegCompInst
+    ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
               (snd a)
-              mkGPRegisters
-              mkGPRegisters
-              [getRegisterByName $ RegisterName "HILO"]
+              getGPRegisters
+              getGPRegisters
+              [getRegisterByName $ RegisterName "LO"]
     )
     [ ("mult" , O.CompArithOp $ O.SIntOp O.Mul)
     , ("multu", O.CompArithOp $ O.UIntOp O.Mul)
+    ]
+  ++
+  map
+    ( \a -> mkSimple32BitRegs1BitResultCompInst
+              (fst a)
+              (snd a)
+              getGPRegisters
+              getGPRegisters
+              getGPRegisters
+    )
+    [ ("and", O.CompArithOp $ O.IntOp O.And)
+    , ("or" , O.CompArithOp $ O.IntOp O.Or)
+    , ("xor", O.CompArithOp $ O.IntOp O.XOr)
+    , ("slt", O.CompArithOp $ O.IntOp O.LT)
     ]
   ++
   mkCondBrInstrs
