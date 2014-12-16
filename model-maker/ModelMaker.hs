@@ -71,13 +71,15 @@ parseArgs :: Options
 parseArgs =
   Options
     { llvmFile = Nothing
-        &= typFile
         &= help "The LLVM IR file."
+        &= typFile
     , targetName = Nothing
-        &= typ "TARGET"
         &= help "Name of the target machine."
+        &= typ "TARGET"
     , doSanityCheck = False
         &= help "Whether to perform a sanity check."
+        &= explicit
+        &= name "do-sanity-check"
     }
 
 isError :: Either a b -> Bool
