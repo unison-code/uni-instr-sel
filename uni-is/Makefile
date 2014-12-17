@@ -29,7 +29,7 @@
 #===================
 
 BINARY   := uni-is
-SOURCES  := Driver.hs
+SOURCES  := UniIS.hs
 HLIBPATH := ../hlib
 
 

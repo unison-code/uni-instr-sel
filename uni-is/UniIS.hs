@@ -32,29 +32,20 @@ selection.
 {-# LANGUAGE DeriveDataTypeable #-}
 
 import qualified Language.InstSel.Drivers.Modeler as Modeler
-import Language.InstSel.ProgramModules
-  ( Function )
-import Language.InstSel.ProgramModules.LLVM
-  ( mkFunctionsFromLlvmModule )
+import qualified Language.InstSel.Drivers.Dumper as Dumper
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.Utils
-  ( isLeft
-  , toLower
-  )
-import Control.Monad.Error
-  ( runErrorT )
+  ( toLower )
 import Control.Monad
   ( when )
 import Data.Maybe
   ( fromJust
   , isNothing
   )
-import LLVM.General
-import LLVM.General.Context
 import System.Console.CmdArgs
 import System.Directory
   ( doesFileExist )
@@ -113,30 +104,14 @@ parseArgs =
               "Gabriel Hjort Blindell   ghb@kth.se"
             )
 
-getFunctionFromLLVM :: Options -> IO (Function)
-getFunctionFromLLVM opts =
-  do let file = inFile opts
-     when (isNothing file) $
-       error "No LLVM IR file is provided as input."
-     exists_file <- doesFileExist $ fromJust file
+readFileContent :: FilePath -> IO String
+readFileContent file =
+  do exists_file <- doesFileExist file
      when (not exists_file) $
-       error $ "File " ++ show (fromJust file) ++ " does not exist."
-     llvm_src <- readFile $ fromJust file
-     llvm_module_result <-
-       withContext
-         ( \context ->
-             runErrorT $ withModuleFromLLVMAssembly context llvm_src moduleAST
-         )
-     when (isLeft llvm_module_result) $
-       do let (Left e) = llvm_module_result
-          error $ show e
-     let (Right llvm_module) = llvm_module_result
-     let functions = mkFunctionsFromLlvmModule llvm_module
-     when (length functions > 1) $
-       error "Only supports one function per module."
-     return $ head functions
+       error $ "File " ++ show file ++ " does not exist."
+     readFile file
 
-getTarget :: Options -> IO (TargetMachine)
+getTarget :: Options -> IO TargetMachine
 getTarget opts =
   do let tname = targetName opts
      when (isNothing tname) $
@@ -166,16 +141,20 @@ main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
      case (toLower $ command opts) of
-       "model" -> do function <- getFunctionFromLLVM opts
+       "model" -> do when (isNothing $ inFile opts) $
+                       error "No LLVM IR file is provided as input."
+                     content <- readFileContent $ fromJust $ inFile opts
                      target <- getTarget opts
                      emitter <- getEmitFunction opts
-                     Modeler.run function target emitter
-       "dump" ->
-         -- TODO: implement
-         return ()
-
-       "lint" ->
-         -- TODO: implement
-         return ()
-
+                     Modeler.run content target emitter
+       "dump" -> do when (isNothing $ inFile opts) $
+                      error "No input file."
+                    content <- readFileContent $ fromJust $ inFile opts
+                    emitter <- getEmitFunction opts
+                    Dumper.run
+                      content
+                      ( dumpFunctionGraph opts )
+                      emitter
+       "lint" -> undefined
+                 -- TODO: implement
        cmd -> error $ "Unrecognized command: " ++ show cmd
