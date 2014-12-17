@@ -28,8 +28,8 @@
 # PROGRAM VARIABLES
 #===================
 
-BINARY   := model-maker
-SOURCES  := ModelMaker.hs
+BINARY   := uni-is
+SOURCES  := Driver.hs
 HLIBPATH := ../hlib
 
 
