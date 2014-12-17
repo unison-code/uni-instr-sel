@@ -23,7 +23,9 @@ module Language.InstSel.Utils.Base
   , isLeft
   , isRight
   , replace
+  , toLower
   , toNatural
+  , toUpper
   )
 where
 
@@ -32,7 +34,10 @@ import Data.List
 import Data.List.Split
   ( splitOn )
 import Data.Maybe
-
+import qualified Data.Char as Char
+  ( toLower
+  , toUpper
+  )
 
 
 --------------------------
@@ -170,3 +175,11 @@ replace ::
      -- ^ What to search in.
   -> String
 replace old new = intercalate new . splitOn old
+
+-- | Converts a string to lower cases.
+toLower :: String -> String
+toLower = map Char.toLower
+
+-- | Converts a string to upper cases.
+toUpper :: String -> String
+toUpper = map Char.toUpper

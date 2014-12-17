@@ -42,7 +42,9 @@ import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.Utils
-  ( isLeft )
+  ( isLeft
+  , toLower
+  )
 import Control.Monad.Error
   ( runErrorT )
 import Control.Monad
@@ -69,6 +71,7 @@ data Options
         , inFile :: Maybe String
         , outFile :: Maybe String
         , targetName :: Maybe String
+        , dumpFunctionGraph :: Bool
         }
     deriving (Data, Typeable)
 
@@ -96,6 +99,11 @@ parseArgs =
         &= explicit
         &= name "t"
         &= name "target"
+    , dumpFunctionGraph = False
+        &= help "Print the function graph as a DOT file."
+        &= explicit
+        &= name "dump-function-graph"
+        &= groupname "DUMP only"
     }
     &=
     program "uni-is"
@@ -157,7 +165,7 @@ getEmitFunction opts =
 main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
-     case command opts of
+     case (toLower $ command opts) of
        "model" -> do function <- getFunctionFromLLVM opts
                      target <- getTarget opts
                      emitter <- getEmitFunction opts
