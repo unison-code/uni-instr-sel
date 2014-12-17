@@ -25,17 +25,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
 {-
-Takes an LLVM IR file and target machine ID as input, and performs some action
-on those. The action is determined on the command line.
+The main driver for invoking various Unison commands related to instruction
+selection.
 -}
 
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
-import Language.InstSel.Drivers
+import qualified Language.InstSel.Drivers.Modeler as Modeler
 import Language.InstSel.ProgramModules
   ( Function )
-import Language.InstSel.TargetMachine
+import Language.InstSel.ProgramModules.LLVM
+  ( mkFunctionsFromLlvmModule )
+import Language.InstSel.TargetMachines
   ( TargetMachine )
+import Language.InstSel.TargetMachines.IDs
+import Language.InstSel.TargetMachines.Targets
+  ( getTargetMachine )
 import Language.InstSel.Utils
   ( isLeft )
 import Control.Monad.Error
@@ -46,7 +51,11 @@ import Data.Maybe
   ( fromJust
   , isNothing
   )
+import LLVM.General
+import LLVM.General.Context
 import System.Console.CmdArgs
+import System.Directory
+  ( doesFileExist )
 
 
 
@@ -57,7 +66,8 @@ import System.Console.CmdArgs
 data Options
     = Options
         { command :: String
-        , llvmFile :: Maybe String
+        , inFile :: Maybe String
+        , outFile :: Maybe String
         , targetName :: Maybe String
         }
     deriving (Data, Typeable)
@@ -68,9 +78,18 @@ parseArgs =
     { command = def
         &= argPos 0
         &= typ "COMMAND"
-    , llvmFile = def
-        &= argPos 1
-        &= typ "LLVM-FILE"
+    , inFile = def
+        &= help "File that contains the input."
+        &= typFile
+        &= explicit
+        &= name "i"
+        &= name "input"
+    , outFile = Nothing
+        &= help "File for writing the result."
+        &= typFile
+        &= explicit
+        &= name "o"
+        &= name "output"
     , targetName = Nothing
         &= help "Name of the target machine."
         &= typ "TARGET"
@@ -81,16 +100,20 @@ parseArgs =
     &=
     program "uni-is"
     &=
-    summary ( "Unison (instruction selection) tool\n"
+    summary ( "Unison (instruction selection) tool\n\n"
               ++
               "Gabriel Hjort Blindell   ghb@kth.se"
             )
 
-readFunctionFromLLVM :: Maybe String -> IO (Function)
-readFunctionFromLLVM arg =
-  do when (isNothing arg) $
-       error "No LLVM IR file provided."
-     llvm_src <- readFile $ fromJust arg
+getFunctionFromLLVM :: Options -> IO (Function)
+getFunctionFromLLVM opts =
+  do let file = inFile opts
+     when (isNothing file) $
+       error "No LLVM IR file is provided as input."
+     exists_file <- doesFileExist $ fromJust file
+     when (not exists_file) $
+       error $ "File " ++ show (fromJust file) ++ " does not exist."
+     llvm_src <- readFile $ fromJust file
      llvm_module_result <-
        withContext
          ( \context ->
@@ -105,15 +128,25 @@ readFunctionFromLLVM arg =
        error "Only supports one function per module."
      return $ head functions
 
-getTarget :: Maybe String -> IO (TargetMachine)
-getTarget arg =
-  do when (isNothing arg) $
+getTarget :: Options -> IO (TargetMachine)
+getTarget opts =
+  do let tname = targetName opts
+     when (isNothing tname) $
        error "No target provided."
-     let maybe_target =
-           getTargetMachine $ toTargetMachineID $ fromJust arg
-     when (isNothing maybe_target) $
-       error "No such target."
-     return $ fromJust maybe_target
+     let target = getTargetMachine $ toTargetMachineID $ fromJust tname
+     when (isNothing target) $
+       error $ "Unrecognized target: " ++ (show $ fromJust tname)
+     return $ fromJust target
+
+-- | If an output file is given as part of the options, then the returned
+-- function will write all data to the output file. Otherwise the data will be
+-- written to 'STDOUT'.
+getEmitFunction :: Options -> IO (String -> IO ())
+getEmitFunction opts =
+  do let file = outFile opts
+     if isNothing file
+     then return putStrLn
+     else return $ writeFile (fromJust file)
 
 
 
@@ -123,11 +156,12 @@ getTarget arg =
 
 main :: IO ()
 main =
-  do Options {..} <- cmdArgs parseArgs
-     function <- readFunctionFromLLVM llvmFile
-     target <- getTarget targetName
-     case command of
-       "model" -> Modeler.run function target
+  do opts <- cmdArgs parseArgs
+     case command opts of
+       "model" -> do function <- getFunctionFromLLVM opts
+                     target <- getTarget opts
+                     emitter <- getEmitFunction opts
+                     Modeler.run function target emitter
        "dump" ->
          -- TODO: implement
          return ()
@@ -136,5 +170,4 @@ main =
          -- TODO: implement
          return ()
 
-       otherwise ->
-         error $ "Unrecognized command: " ++ show command
+       cmd -> error $ "Unrecognized command: " ++ show cmd
