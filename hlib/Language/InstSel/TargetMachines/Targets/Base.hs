@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstSel.TargetMachine.Targets.Base
+-- Module      :  Language.InstSel.TargetMachines.Targets.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -12,15 +12,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.TargetMachine.Targets.Base
+module Language.InstSel.TargetMachines.Targets.Base
   ( getTargetMachine )
 where
 
-import Language.InstSel.TargetMachine.Base
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.Base
+import Language.InstSel.TargetMachines.IDs
 
-import Language.InstSel.TargetMachine.Targets.Mips32
-import Language.InstSel.TargetMachine.Targets.Test
+import Language.InstSel.TargetMachines.Targets.Mips32
+import Language.InstSel.TargetMachines.Targets.Test
 
 
 

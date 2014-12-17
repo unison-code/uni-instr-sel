@@ -40,7 +40,7 @@ import Language.InstSel.Graphs.IDs
   )
 import Language.InstSel.ProgramModules.IDs
   ( BasicBlockLabel )
-import Language.InstSel.TargetMachine.Targets
+import Language.InstSel.TargetMachines.Targets
 import Language.InstSel.Utils
   ( fromLeft
   , fromRight

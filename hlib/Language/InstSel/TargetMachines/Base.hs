@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstSel.TargetMachine.Base
+-- Module      :  Language.InstSel.TargetMachines.Base
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstSel.TargetMachine.Base
+module Language.InstSel.TargetMachines.Base
   ( AssemblyString (..)
   , AssemblyStringPart (..)
   , Instruction (..)
@@ -33,7 +33,7 @@ import Language.InstSel.Graphs.IDs
 import Language.InstSel.OpStructures
 import Language.InstSel.Patterns.IDs
   ( PatternID )
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
 import Control.Monad
   ( when )
 

@@ -29,7 +29,7 @@ import Language.InstSel.Graphs
   , toNodeID
   )
 import Language.InstSel.Patterns.IDs
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( fromNatural )
 import Control.Applicative

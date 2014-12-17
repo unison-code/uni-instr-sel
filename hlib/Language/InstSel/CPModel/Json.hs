@@ -34,7 +34,7 @@ import Language.InstSel.ProgramModules
   , fromExecFreq
   , toExecFreq
   )
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( Natural
   , fromLeft

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.InstSel.TargetMachine.Targets.Generic
+-- Module      :  Language.InstSel.TargetMachines.Targets.Generic
 -- Copyright   :  (c) Gabriel Hjort Blindell 2013-2014
 -- License     :  BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.TargetMachine.Targets.Generic
+module Language.InstSel.TargetMachines.Targets.Generic
   ( fixInstrIDs
   , fixRegIDs
   , mkGenericBrFallthroughInstructions
@@ -28,7 +28,7 @@ import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.ProgramModules.IDs
-import Language.InstSel.TargetMachine.Base
+import Language.InstSel.TargetMachines.Base
 
 
 

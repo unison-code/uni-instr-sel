@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.TargetMachine.IDs
+-- Module      : Language.InstSel.TargetMachines.IDs
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstSel.TargetMachine.IDs
+module Language.InstSel.TargetMachines.IDs
   ( AssemblyID (..)
   , InstructionID (..)
   , RegisterID (..)

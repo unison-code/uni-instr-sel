@@ -16,7 +16,7 @@ module Language.InstSel.Constraints.Base where
 
 import Language.InstSel.Graphs.IDs
 import Language.InstSel.Patterns.IDs
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
 
 
 

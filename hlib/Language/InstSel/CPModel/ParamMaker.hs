@@ -35,7 +35,7 @@ import Language.InstSel.ProgramModules
   ( Function (..)
   , getExecFreqOfBBInFunction
   )
-import Language.InstSel.TargetMachine
+import Language.InstSel.TargetMachines
 import Data.Maybe
   ( fromJust )
 

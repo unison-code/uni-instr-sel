@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.TargetMachine.Targets.Mips32
+-- Module      : Language.InstSel.TargetMachines.Targets.Mips32
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstSel.TargetMachine.Targets.Mips32
+module Language.InstSel.TargetMachines.Targets.Mips32
   ( tmMips32 )
 where
 
@@ -24,8 +24,8 @@ import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.ProgramModules.IDs
-import Language.InstSel.TargetMachine
-import Language.InstSel.TargetMachine.Targets.Generic
+import Language.InstSel.TargetMachines
+import Language.InstSel.TargetMachines.Targets.Generic
 import Language.InstSel.Utils
   ( Range (..) )
 

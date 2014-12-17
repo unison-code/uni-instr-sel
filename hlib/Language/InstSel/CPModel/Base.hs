@@ -38,7 +38,7 @@ import Language.InstSel.ProgramModules
   ( BasicBlockLabel (..)
   , ExecFreq (..)
   )
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( Natural )
 import Data.List

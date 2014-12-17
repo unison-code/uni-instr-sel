@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.TargetMachine.Targets.Test
+-- Module      : Language.InstSel.TargetMachines.Targets.Test
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Language.InstSel.TargetMachine.Targets.Test
+module Language.InstSel.TargetMachines.Targets.Test
   ( tmTest )
 where
 
@@ -26,8 +26,8 @@ import Language.InstSel.OpStructures
 import qualified Language.InstSel.OpTypes as O
 import Language.InstSel.ProgramModules.IDs
   ( BasicBlockLabel (..) )
-import Language.InstSel.TargetMachine
-import Language.InstSel.TargetMachine.Targets.Generic
+import Language.InstSel.TargetMachines
+import Language.InstSel.TargetMachines.Targets.Generic
 
 
 

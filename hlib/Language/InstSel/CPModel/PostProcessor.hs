@@ -29,7 +29,7 @@ import Language.InstSel.Patterns.IDs
   ( PatternID )
 import Language.InstSel.ProgramModules
   ( BasicBlockLabel (..) )
-import Language.InstSel.TargetMachine
+import Language.InstSel.TargetMachines
 import qualified Data.Graph.Inductive as I
 import Data.Maybe
 

@@ -31,7 +31,7 @@ where
 import Language.InstSel.Constraints.Base
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
-import Language.InstSel.TargetMachine.IDs
+import Language.InstSel.TargetMachines.IDs
   ( RegisterID )
 import Language.InstSel.Utils
   ( Range (..) )

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.TargetMachine.Targets
+-- Module      : Language.InstSel.TargetMachines
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.TargetMachine.Targets
-  ( module Language.InstSel.TargetMachine.Targets.Base )
+module Language.InstSel.TargetMachines
+  ( module Language.InstSel.TargetMachines.Base
+  , module Language.InstSel.TargetMachines.IDs
+  )
 where
 
-import Language.InstSel.TargetMachine.Targets.Base
+import Language.InstSel.TargetMachines.Base
+import Language.InstSel.TargetMachines.IDs
