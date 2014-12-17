@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.Dumper
+-- Module      : Language.InstSel.Drivers.Plotter
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,9 +12,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.Dumper
+module Language.InstSel.Drivers.Plotter
   ( run )
 where
+
+import Language.InstSel.TargetMachines
+  ( TargetMachine )
 
 
 
@@ -22,5 +25,16 @@ where
 -- Functions
 -------------
 
+run ::
+     String
+     -- ^ The content of some input file.
+  -> TargetMachine
+     -- ^ The target machine.
+  -> [Bool]
+     -- ^ List of Boolean arguments which determine what to plot. Note that the
+     -- order is important.
+  -> (String -> IO ())
+     -- ^ The function that takes care of emitting the JSON data.
+  -> IO ()
 run = undefined
       -- TODO: implement

@@ -32,7 +32,7 @@ selection.
 {-# LANGUAGE DeriveDataTypeable #-}
 
 import qualified Language.InstSel.Drivers.Modeler as Modeler
-import qualified Language.InstSel.Drivers.Dumper as Dumper
+import qualified Language.InstSel.Drivers.Plotter as Plotter
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.IDs
@@ -141,20 +141,26 @@ main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
      case (toLower $ command opts) of
-       "model" -> do when (isNothing $ inFile opts) $
-                       error "No LLVM IR file is provided as input."
-                     content <- readFileContent $ fromJust $ inFile opts
-                     target <- getTarget opts
-                     emitter <- getEmitFunction opts
-                     Modeler.run content target emitter
-       "dump" -> do when (isNothing $ inFile opts) $
-                      error "No input file."
-                    content <- readFileContent $ fromJust $ inFile opts
-                    emitter <- getEmitFunction opts
-                    Dumper.run
-                      content
-                      ( dumpFunctionGraph opts )
-                      emitter
-       "lint" -> undefined
-                 -- TODO: implement
-       cmd -> error $ "Unrecognized command: " ++ show cmd
+       "model" ->
+         do when (isNothing $ inFile opts) $
+              error "No LLVM IR file is provided as input."
+            content <- readFileContent $ fromJust $ inFile opts
+            target <- getTarget opts
+            emitter <- getEmitFunction opts
+            Modeler.run content target emitter
+       "plot" ->
+         do when (isNothing $ inFile opts) $
+              error "No input file."
+            content <- readFileContent $ fromJust $ inFile opts
+            target <- getTarget opts
+            emitter <- getEmitFunction opts
+            Plotter.run
+              content
+              target
+              [ dumpFunctionGraph opts ]
+              emitter
+       "check" ->
+         undefined
+         -- TODO: implement
+       cmd ->
+         error $ "Unrecognized command: " ++ show cmd
