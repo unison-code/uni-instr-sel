@@ -8,7 +8,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Used for dumping various information about the input.
+-- Used for plotting various information about the input.
 --
 --------------------------------------------------------------------------------
 
@@ -16,8 +16,21 @@ module Language.InstSel.Drivers.Plotter
   ( run )
 where
 
+import Language.InstSel.Graphs.GraphViz
+import Language.InstSel.Drivers.Modeler
+  ( parseFunction )
+import Language.InstSel.OpStructures
+import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines
   ( TargetMachine )
+import Control.Monad
+  ( when )
+import Data.GraphViz.Printing
+  ( renderDot
+  , toDot
+  )
+import qualified Data.Text.Lazy as T
+  ( unpack )
 
 
 
@@ -36,5 +49,15 @@ run ::
   -> (String -> IO ())
      -- ^ The function that takes care of emitting the JSON data.
   -> IO ()
-run = undefined
-      -- TODO: implement
+run str target [ plotFunctionGraph ] emit =
+  do function <- parseFunction str
+     when plotFunctionGraph $
+       do let dot = T.unpack $
+                      renderDot $
+                        toDot $
+                          toDotGraph $
+                            osGraph $
+                              functionOS function
+          emit dot
+     return ()
+run _ _ _ _ = error "Invalid call to Plotter.run!"

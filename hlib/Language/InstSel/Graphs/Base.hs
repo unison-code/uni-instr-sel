@@ -35,6 +35,7 @@
 
 module Language.InstSel.Graphs.Base
   ( module Language.InstSel.Graphs.IDs
+  , module Language.InstSel.ProgramModules.IDs
   , Domset (..)
   , DstNode
   , Edge (..)

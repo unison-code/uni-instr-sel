@@ -32,11 +32,7 @@ import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( fromNatural )
-import Control.Applicative
-  ( (<|>) )
-import Control.Monad
-  ( mzero )
-import Data.AttoLisp
+import Language.InstSel.Utils.AttoLisp
 import qualified Data.Attoparsec.Number as AP
   ( Number (..) )
 

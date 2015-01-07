@@ -14,7 +14,9 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Drivers.Modeler
-  ( run )
+  ( parseFunction
+  , run
+  )
 where
 
 
@@ -30,8 +32,8 @@ import Language.InstSel.Utils
   ( isLeft )
 import Control.Monad
   ( when )
-import Control.Monad.Error
-  ( runErrorT )
+import Control.Monad.Except
+  ( runExceptT )
 import LLVM.General
 import LLVM.General.Context
 
@@ -59,7 +61,7 @@ parseFunction str =
   do llvm_module_result <-
        withContext
          ( \context ->
-             runErrorT $ withModuleFromLLVMAssembly context str moduleAST
+             runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft llvm_module_result) $
        do let (Left e) = llvm_module_result

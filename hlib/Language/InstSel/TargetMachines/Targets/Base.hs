@@ -17,7 +17,6 @@ module Language.InstSel.TargetMachines.Targets.Base
 where
 
 import Language.InstSel.TargetMachines.Base
-import Language.InstSel.TargetMachines.IDs
 
 import Language.InstSel.TargetMachines.Targets.Mips32
 import Language.InstSel.TargetMachines.Targets.Test

@@ -22,7 +22,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.ProgramModules.Base
-  ( ExecFreq (..)
+  ( module Language.InstSel.ProgramModules.IDs
+  , ExecFreq (..)
   , Function (..)
   , fromExecFreq
   , getExecFreqOfBBInFunction

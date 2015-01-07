@@ -15,7 +15,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.TargetMachines.Base
-  ( AssemblyString (..)
+  ( module Language.InstSel.Graphs.IDs
+  , module Language.InstSel.Patterns.IDs
+  , module Language.InstSel.TargetMachines.IDs
+  , AssemblyString (..)
   , AssemblyStringPart (..)
   , Instruction (..)
   , InstrPattern (..)

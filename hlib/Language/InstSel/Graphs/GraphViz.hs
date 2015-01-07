@@ -12,7 +12,9 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.GraphViz
-  ( toDotGraph )
+  ( toDotGraph
+  , toDotString
+  )
 where
 
 import Language.InstSel.Graphs.Base
@@ -20,16 +22,25 @@ import Language.InstSel.PrettyPrint
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Attributes.Complete as GVA
-
+import qualified Data.GraphViz.Printing as GVP
+import qualified Data.Text.Lazy as T
 
 
 -------------
 -- Functions
 -------------
 
--- | Converts a graph into GraphViz's DotGraph format.
+-- | Converts a graph into GraphViz's DotGraph internal format.
 toDotGraph :: Graph -> GV.DotGraph I.Node
 toDotGraph g = GV.graphToDot mkParams (intGraph g)
+
+-- | Converts a graph into GraphViz's DotGraph string format, which can then be
+-- written to file.
+toDotString :: Graph -> String
+toDotString g =
+  let text = GVP.renderDot $ GVP.toDot $ toDotGraph g
+      str = T.unpack text
+  in str
 
 -- | Constructs the appropriate parameters.
 mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
@@ -47,7 +58,7 @@ mkNodeAttrByType :: NodeType -> GV.Attributes
 mkNodeAttrByType (ComputationNode op) = mkCompNodeAttr (prettyShow op)
 mkNodeAttrByType (ControlNode op) = mkControlNodeAttr (prettyShow op)
 mkNodeAttrByType (DataNode _ src) = mkDataNodeAttr (maybe "" id src)
-mkNodeAttrByType (LabelNode (BBLabelID l)) = mkLabelNodeAttr l
+mkNodeAttrByType (LabelNode (BasicBlockLabel l)) = mkLabelNodeAttr l
 mkNodeAttrByType PhiNode = mkPhiNodeAttr
 mkNodeAttrByType StateNode = mkStateNodeAttr
 mkNodeAttrByType CopyNode = mkCopyNodeAttr

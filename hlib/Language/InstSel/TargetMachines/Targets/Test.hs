@@ -24,8 +24,6 @@ import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import qualified Language.InstSel.OpTypes as O
-import Language.InstSel.ProgramModules.IDs
-  ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.Targets.Generic
 

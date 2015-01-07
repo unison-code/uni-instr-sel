@@ -611,27 +611,27 @@ instance DfgBuildable LLVM.Name where
 instance DfgBuildable LLVM.Instruction where
   buildDfg st (LLVM.Add  _ _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Add) [op1, op2]
-  buildDfg st (LLVM.FAdd op1 op2 _) =
+  buildDfg st (LLVM.FAdd _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Add) [op1, op2]
   buildDfg st (LLVM.Sub  _ _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Sub) [op1, op2]
-  buildDfg st (LLVM.FSub op1 op2 _) =
+  buildDfg st (LLVM.FSub _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Sub) [op1, op2]
   buildDfg st (LLVM.Mul _ _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Mul) [op1, op2]
-  buildDfg st (LLVM.FMul op1 op2 _) =
+  buildDfg st (LLVM.FMul _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Mul) [op1, op2]
   buildDfg st (LLVM.UDiv _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Div) [op1, op2]
   buildDfg st (LLVM.SDiv _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Div) [op1, op2]
-  buildDfg st (LLVM.FDiv op1 op2 _) =
+  buildDfg st (LLVM.FDiv _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Div) [op1, op2]
   buildDfg st (LLVM.URem op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Rem) [op1, op2]
   buildDfg st (LLVM.SRem op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Rem) [op1, op2]
-  buildDfg st (LLVM.FRem op1 op2 _) =
+  buildDfg st (LLVM.FRem _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Rem) [op1, op2]
   buildDfg st (LLVM.Shl _ _ op1 op2 _) =
     buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Shl) [op1, op2]
@@ -663,7 +663,9 @@ instance DfgBuildable LLVM.Instruction where
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
 instance DfgBuildable LLVM.Operand where
-  buildDfg st (LLVM.LocalReference name) = buildDfg st name
+  buildDfg st (LLVM.LocalReference typ name) =
+    -- TODO: make use of type?
+    buildDfg st name
   buildDfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
   buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
 
@@ -734,7 +736,9 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
 instance CfgBuildable LLVM.Operand where
-  buildCfg st (LLVM.LocalReference name) = buildCfg st name
+  buildCfg st (LLVM.LocalReference typ name) =
+    -- TODO: make use of typ?
+    buildCfg st name
   buildCfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
   buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
 

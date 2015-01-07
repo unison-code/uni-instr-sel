@@ -27,7 +27,6 @@ import Language.InstSel.DataTypes
 import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as O
-import Language.InstSel.ProgramModules.IDs
 import Language.InstSel.TargetMachines.Base
 
 
