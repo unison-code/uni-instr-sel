@@ -62,7 +62,7 @@ data Options
         , inFile :: Maybe String
         , outFile :: Maybe String
         , targetName :: Maybe String
-        , dumpFunctionGraph :: Bool
+        , plotFunctionGraph :: Bool
         }
     deriving (Data, Typeable)
 
@@ -90,11 +90,11 @@ parseArgs =
         &= explicit
         &= name "t"
         &= name "target"
-    , dumpFunctionGraph = False
+    , plotFunctionGraph = False
         &= help "Print function graph (DOT format)."
         &= explicit
-        &= name "dump-function-graph"
-        &= groupname "DUMP only"
+        &= name "plot-function-graph"
+        &= groupname "PLOT only"
     }
     &=
     program "uni-is"
@@ -103,6 +103,12 @@ parseArgs =
               ++
               "Gabriel Hjort Blindell   ghb@kth.se"
             )
+    &=
+    details [ "Available options:"
+            , "   MODEL - for producing a CP model instance"
+            , "   PLOT - for producing various plots of the input"
+            , "   CHECK - for sanity checks of the input"
+            ]
 
 readFileContent :: FilePath -> IO String
 readFileContent file =
@@ -157,7 +163,7 @@ main =
             Plotter.run
               content
               target
-              [ dumpFunctionGraph opts ]
+              [ plotFunctionGraph opts ]
               emitter
        "check" ->
          undefined
