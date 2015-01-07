@@ -11,10 +11,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ProgramModules.LLVM
-  ( module Language.InstSel.ProgramModules.LLVM.FunctionMaker
-  , module Language.InstSel.ProgramModules.LLVM.Lowerer
-  )
+  ( module Language.InstSel.ProgramModules.LLVM.FunctionMaker )
 where
 
 import Language.InstSel.ProgramModules.LLVM.FunctionMaker
-import Language.InstSel.ProgramModules.LLVM.Lowerer
