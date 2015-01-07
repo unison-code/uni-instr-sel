@@ -59,10 +59,10 @@ import System.Directory
 data Options
     = Options
         { command :: String
+        , plotFunctionGraph :: Bool
         , inFile :: Maybe String
         , outFile :: Maybe String
         , targetName :: Maybe String
-        , plotFunctionGraph :: Bool
         }
     deriving (Data, Typeable)
 
@@ -78,6 +78,7 @@ parseArgs =
         &= explicit
         &= name "i"
         &= name "input"
+        &= groupname "Common options"
     , outFile = Nothing
         &= help "File for writing the result."
         &= typFile
@@ -94,20 +95,22 @@ parseArgs =
         &= help "Print function graph (DOT format)."
         &= explicit
         &= name "plot-function-graph"
-        &= groupname "PLOT only"
+        &= groupname "PLOT ONLY options"
     }
     &=
     program "uni-is"
     &=
-    summary ( "Unison (instruction selection) tool\n\n"
+    summary ( "Unison (instruction selection) tool\n"
               ++
               "Gabriel Hjort Blindell   ghb@kth.se"
             )
     &=
-    details [ "Available options:"
+    details [ "Available commands:"
+            , "   LOWER - for rewriting the input into canonical form"
             , "   MODEL - for producing a CP model instance"
-            , "   PLOT - for producing various plots of the input"
+            , "   PLOT  - for producing various plots of the input"
             , "   CHECK - for sanity checks of the input"
+            , "The commands may be written in lower or upper case."
             ]
 
 readFileContent :: FilePath -> IO String
@@ -165,6 +168,9 @@ main =
               target
               [ plotFunctionGraph opts ]
               emitter
+       "lower" ->
+         undefined
+         -- TODO: implement
        "check" ->
          undefined
          -- TODO: implement
