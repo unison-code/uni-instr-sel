@@ -37,8 +37,6 @@ import Language.InstSel.OpStructures
 import Language.InstSel.Patterns.IDs
   ( PatternID )
 import Language.InstSel.TargetMachines.IDs
-import Control.Monad
-  ( when )
 
 
 
@@ -164,21 +162,18 @@ findInstruction is iid =
      then Just $ head found
      else Nothing
 
--- | Given a list of instructions, the function finds the 'Instruction' entity
--- with matching instruction ID and pattern ID. If there is more than one match,
--- the first found is returned. If no such entity is found, 'Nothing' is
--- returned.
+-- | Given a list of instruction patterns, the function finds the 'InstrPattern'
+-- entity with matching pattern ID. If there is more than one match, the first
+-- found is returned. If no such entity is found, 'Nothing' is returned.
 findInstrPattern ::
-    [Instruction]
-  -> InstructionID
+    [InstrPattern]
   -> PatternID
   -> Maybe InstrPattern
-findInstrPattern is iid pid =
-  do i <- findInstruction is iid
-     let ps = instrPatterns i
-         found = filter (\p -> patID p == pid) ps
-     when (length found == 0) Nothing
-     return $ head found
+findInstrPattern ps pid =
+  let found = filter (\p -> patID p == pid) ps
+  in if length found > 0
+     then Just $ head found
+     else Nothing
 
 -- | Given a list of registers, the function finds the 'Register' with matching
 -- register ID. If there is more than one match, the first found is returned. If

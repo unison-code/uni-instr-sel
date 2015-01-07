@@ -8,20 +8,22 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Contains the data structures representing the data for the CP model.
+-- Contains the data structures representing the parameters for the CP model.
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
 module Language.InstSel.CPModel.Base
-  ( BasicBlockData (..)
+  ( BasicBlockParams (..)
   , CPModelParams (..)
   , CPSolutionData (..)
-  , FunctionGraphData (..)
-  , MachineData (..)
-  , MatchData (..)
+  , FunctionGraphParams (..)
+  , MachineParams (..)
+  , MatchParams (..)
   , RawCPSolutionData (..)
   , RawPostParams (..)
-  , findMatchData
+  , findMatchParams
   , fromRawCPSolutionData
   )
 where
@@ -41,6 +43,7 @@ import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( Natural )
+import Language.InstSel.Utils.JSON
 import Data.List
   ( sortBy )
 import Data.Maybe
@@ -55,15 +58,15 @@ import Data.Maybe
 -- | Wrapper for all model parameters.
 data CPModelParams =
     CPModelParams
-      { functionData :: FunctionGraphData
-      , matchData :: [MatchData]
-      , machineData :: MachineData
+      { functionParams :: FunctionGraphParams
+      , matchParams :: [MatchParams]
+      , machineParams :: MachineParams
       }
   deriving (Show)
 
--- | Describes the necessary function graph data.
-data FunctionGraphData =
-    FunctionGraphData
+-- | Describes the necessary function graph parameters.
+data FunctionGraphParams =
+    FunctionGraphParams
       { funcOpNodes :: [NodeID]
         -- ^ The operation nodes in the function graph.
       , funcEssentialOpNodes :: [NodeID]
@@ -81,7 +84,7 @@ data FunctionGraphData =
         -- node.
       , funcRootLabel :: NodeID
         -- ^ The root label, or entry point into the function.
-      , funcBasicBlockData :: [BasicBlockData]
+      , funcBasicBlockParams :: [BasicBlockParams]
         -- ^ The basic block information.
       , funcConstraints :: [Constraint]
         -- ^ The function constraints, if any.
@@ -89,8 +92,8 @@ data FunctionGraphData =
   deriving (Show)
 
 -- | Information about the basic blocks.
-data BasicBlockData =
-    BasicBlockData
+data BasicBlockParams =
+    BasicBlockParams
       { bbLabel :: BasicBlockLabel
         -- ^ The label of this basic block.
       , bbLabelNode :: NodeID
@@ -100,9 +103,9 @@ data BasicBlockData =
       }
   deriving (Show)
 
--- | Describes the necessary match data.
-data MatchData =
-    MatchData
+-- | Describes the necessary match parameters.
+data MatchParams =
+    MatchParams
       { mInstructionID :: InstructionID
         -- ^ The instruction ID of this match.
       , mPatternID :: PatternID
@@ -151,9 +154,9 @@ data MatchData =
       }
   deriving (Show)
 
--- | Contains the necessary target machine data.
-data MachineData =
-    MachineData
+-- | Contains the necessary target machine parameters.
+data MachineParams =
+    MachineParams
       { machID :: TargetMachineID
         -- ^ The identifier of the target machine.
       , machRegisters :: [RegisterID]
@@ -239,6 +242,145 @@ data CPSolutionData =
 
 
 
+--------------------------------
+-- JSON-related class instances
+--------------------------------
+
+instance FromJSON CPModelParams where
+  parseJSON (Object v) =
+    CPModelParams
+      <$> v .: "function-params"
+      <*> v .: "match-params"
+      <*> v .: "machine-params"
+  parseJSON _ = mzero
+
+instance ToJSON CPModelParams where
+  toJSON p =
+    object [ "function-params" .= (functionParams p)
+           , "match-params"    .= (matchParams p)
+           , "machine-params"  .= (machineParams p)
+           ]
+
+instance FromJSON FunctionGraphParams where
+  parseJSON (Object v) =
+    FunctionGraphParams
+      <$> v .: "operation-nodes"
+      <*> v .: "essential-op-nodes"
+      <*> v .: "data-nodes"
+      <*> v .: "state-nodes"
+      <*> v .: "label-nodes"
+      <*> v .: "def-place-edges"
+      <*> v .: "root-label"
+      <*> v .: "bb-data"
+      <*> v .: "constraints"
+  parseJSON _ = mzero
+
+instance ToJSON FunctionGraphParams where
+  toJSON d =
+    object [ "operation-nodes"    .= (funcOpNodes d)
+           , "essential-op-nodes" .= (funcEssentialOpNodes d)
+           , "data-nodes"         .= (funcDataNodes d)
+           , "state-nodes"        .= (funcStateNodes d)
+           , "label-nodes"        .= (funcLabelNodes d)
+           , "def-place-edges"    .= (funcDefPlaceEdges d)
+           , "root-label"         .= (funcRootLabel d)
+           , "bb-params"          .= (funcBasicBlockParams d)
+           , "constraints"        .= (funcConstraints d)
+           ]
+
+instance FromJSON BasicBlockParams where
+  parseJSON (Object v) =
+    BasicBlockParams
+      <$> v .: "label"
+      <*> v .: "label-node"
+      <*> v .: "exec-frequency"
+  parseJSON _ = mzero
+
+instance ToJSON BasicBlockParams where
+  toJSON d =
+    object [ "label"          .= (bbLabel d)
+           , "label-node"     .= (bbLabelNode d)
+           , "exec-frequency" .= (bbExecFrequency d)
+           ]
+
+instance FromJSON MatchParams where
+  parseJSON (Object v) =
+    MatchParams
+      <$> v .: "instruction-id"
+      <*> v .: "pattern-id"
+      <*> v .: "match-id"
+      <*> v .: "operation-nodes-covered"
+      <*> v .: "data-nodes-defined"
+      <*> v .: "data-nodes-used"
+      <*> v .: "data-nodes-used-by-phis"
+      <*> v .: "state-nodes-defined"
+      <*> v .: "state-nodes-used"
+      <*> v .: "root-label-node"
+      <*> v .: "non-root-label-nodes"
+      <*> v .: "constraints"
+      <*> v .: "apply-def-dom-use-constraint"
+      <*> v .: "has-control-nodes"
+      <*> v .: "code-size"
+      <*> v .: "latency"
+  parseJSON _ = mzero
+
+instance ToJSON MatchParams where
+  toJSON d =
+    object [ "instruction-id"               .= (mInstructionID d)
+           , "pattern-id"                   .= (mPatternID d)
+           , "match-id"                     .= (mMatchID d)
+           , "operation-nodes-covered"      .= (mOperationsCovered d)
+           , "data-nodes-defined"           .= (mDataNodesDefined d)
+           , "data-nodes-used"              .= (mDataNodesUsed d)
+           , "data-nodes-used-by-phis"      .= (mDataNodesUsedByPhis d)
+           , "state-nodes-defined"          .= (mStateNodesDefined d)
+           , "state-nodes-used"             .= (mStateNodesUsed d)
+           , "root-label-node"              .= (mRootLabelNode d)
+           , "non-root-label-nodes"         .= (mNonRootLabelNodes d)
+           , "constraints"                  .= (mConstraints d)
+           , "apply-def-dom-use-constraint" .= (mADDUC d)
+           , "has-control-nodes"            .= (mHasControlNodes d)
+           , "code-size"                    .= (mCodeSize d)
+           , "latency"                      .= (mLatency d)
+           ]
+
+instance FromJSON MachineParams where
+  parseJSON (Object v) =
+    MachineParams
+      <$> v .: "target-machine-id"
+      <*> v .: "registers"
+  parseJSON _ = mzero
+
+instance ToJSON MachineParams where
+  toJSON d =
+    object [ "target-machine-id" .= (machID d)
+           , "registers" .= (machRegisters d)
+           ]
+
+instance FromJSON RawCPSolutionData where
+  parseJSON (Object v) =
+    RawCPSolutionData
+      <$> v .: "bb-allocated-for-match"
+      <*> v .: "is-match-selected"
+      <*> v .: "order-of-bbs"
+      <*> v .: "has-dnode-reg"
+      <*> v .: "reg-selected-for-dnode"
+      <*> v .: "has-dnode-imm-value"
+      <*> v .: "imm-value-of-dnode"
+      <*> v .: "cost"
+  parseJSON _ = mzero
+
+instance FromJSON RawPostParams where
+  parseJSON (Object v) =
+    RawPostParams
+      <$> v .: "model-params"
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "matches"))
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
+      <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
+  parseJSON _ = mzero
+
+
+
 -------------
 -- Functions
 -------------
@@ -318,14 +460,14 @@ computeImmValuesOfDataNodes m_data cp_data =
                 (rawImmValuesOfDataNodes cp_data)
   in catMaybes keeps
 
--- | Given a list of match data, the function finds the 'MatchData' entity with
--- matching match ID. If there is more than one match, the first found is
+-- | Given a list of match params, the function finds the 'MatchParams' entity
+-- with matching match ID. If there is more than one match, the first found is
 -- returned. If no such entity is found, 'Nothing' is returned.
-findMatchData ::
-     [MatchData]
+findMatchParams ::
+     [MatchParams]
   -> MatchID
-  -> Maybe MatchData
-findMatchData ps piid =
+  -> Maybe MatchParams
+findMatchParams ps piid =
   let found = filter (\p -> mMatchID p == piid) ps
   in if length found > 0
      then Just $ head found

@@ -9,13 +9,17 @@
 -- Portability : portable
 --
 -- Constructs the parameters which are used to create the CP model. These
--- include the function data, such as the IDs of the various nodes, and the
--- pattern data, which also contain the matchsets.
+-- include the function parameters, such as the IDs of the various nodes, and
+-- the pattern parameters, which also contain the matchsets.
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
 module Language.InstSel.CPModel.ParamMaker
-  ( mkParams )
+  ( MatchData (..)
+  , mkParams
+  )
 where
 
 import Language.InstSel.Constraints
@@ -29,15 +33,56 @@ import Language.InstSel.Graphs
   ( bbLabel )
 import qualified Language.InstSel.Graphs as G
   ( bbLabel )
-import Language.InstSel.Graphs.PatternMatching.CP
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
   ( Function (..)
   , getExecFreqOfBBInFunction
   )
 import Language.InstSel.TargetMachines
+import Language.InstSel.Utils.JSON
 import Data.Maybe
   ( fromJust )
+
+
+
+--------------
+-- Data types
+--------------
+
+-- | Contains the information needed to identify which instruction and pattern a
+-- given match originates from. Each match is also given a 'MatchID' that must
+-- be unique (although not necessarily continuous) for every match within a list
+-- of 'MatchData'.
+data MatchData =
+    MatchData
+      { mdInstrID :: InstructionID
+      , mdPatternID :: PatternID
+      , mdMatchID :: MatchID
+      , mdMatch :: Match NodeID
+      }
+
+
+
+--------------------------------
+-- JSON-related class instances
+--------------------------------
+
+instance FromJSON MatchData where
+  parseJSON (Object v) =
+    MatchData
+      <$> v .: "instr-id"
+      <*> v .: "pattern-id"
+      <*> v .: "match-id"
+      <*> v .: "match"
+  parseJSON _ = mzero
+
+instance ToJSON MatchData where
+  toJSON m =
+    object [ "instr-id"   .= (mdInstrID m)
+           , "pattern-id" .= (mdPatternID m)
+           , "match-id"   .= (mdMatchID m)
+           , "match"      .= (mdMatch m)
+           ]
 
 
 
@@ -45,19 +90,22 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Takes a function and machine data to generate the corresponding parameters
--- to the constraint model. This will also perform pattern matching of all
--- patterns over the function graph.
-mkParams :: TargetMachine -> Function -> CPModelParams
-mkParams m f =
+-- | Takes a function, a set of matches, and a target machine and generates the
+-- corresponding parameters to the constraint model.
+mkParams ::
+     TargetMachine
+  -> Function
+  -> [MatchData]
+  -> CPModelParams
+mkParams tm f ms =
   CPModelParams
-    { functionData = mkFunctionGraphData f
-    , matchData = mkMatchData f (tmInstructions m)
-    , machineData = mkMachineData m
+    { functionParams = mkFunctionGraphParams f
+    , matchParams = mkMatchParams tm ms
+    , machineParams = mkMachineParams tm
     }
 
-mkFunctionGraphData :: Function -> FunctionGraphData
-mkFunctionGraphData f =
+mkFunctionGraphParams :: Function -> FunctionGraphParams
+mkFunctionGraphParams f =
   let g = osGraph $ functionOS f
       nodeIDsByType f' = getNodeIDs $ filter f' (getAllNodes g)
       essential_op_nodes =
@@ -71,7 +119,7 @@ mkFunctionGraphData f =
           (filter isDefPlaceEdge (getAllEdges g))
       getExecFreq n =
         fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
-  in FunctionGraphData
+  in FunctionGraphParams
        { funcOpNodes = nodeIDsByType isOperationNode
        , funcEssentialOpNodes = map getNodeID essential_op_nodes
        , funcDataNodes = nodeIDsByType isDataNode
@@ -79,9 +127,9 @@ mkFunctionGraphData f =
        , funcLabelNodes= computeLabelDoms cfg
        , funcDefPlaceEdges = dp_edge_data
        , funcRootLabel = getNodeID $ fromJust $ rootInCFG cfg
-       , funcBasicBlockData =
+       , funcBasicBlockParams =
            map
-             ( \n -> BasicBlockData
+             ( \n -> BasicBlockParams
                        { C.bbLabel = (G.bbLabel $ getNodeType n)
                        , bbLabelNode = (getNodeID n)
                        , bbExecFrequency = getExecFreq n
@@ -91,47 +139,35 @@ mkFunctionGraphData f =
        , funcConstraints = osConstraints $ functionOS f
        }
 
-mkMachineData :: TargetMachine -> MachineData
-mkMachineData m =
-  MachineData
-    { machID = tmID m
-    , machRegisters = map regID (tmRegisters m)
+mkMachineParams :: TargetMachine -> MachineParams
+mkMachineParams tm =
+  MachineParams
+    { machID = tmID tm
+    , machRegisters = map regID (tmRegisters tm)
     }
 
-mkMatchData ::
-     Function
-  -> [Instruction]
+mkMatchParams ::
+     TargetMachine
   -> [MatchData]
-mkMatchData f is =
-  fst $ foldr (processInstruction f) ([], 0) is
+  -> [MatchParams]
+mkMatchParams tm ms = map (processMatchData tm) ms
 
-processInstruction ::
-     Function
-  -> Instruction
-  -> ([MatchData], MatchID)
-  -> ([MatchData], MatchID)
-processInstruction f i t =
-  foldr (processInstrPattern f i) t (instrPatterns i)
-
-processInstrPattern ::
-     Function
-  -> Instruction
-  -> InstrPattern
-  -> ([MatchData], MatchID)
-  -> ([MatchData], MatchID)
-processInstrPattern f i p t =
-  let fg = osGraph $ functionOS f
-      pg = osGraph $ patOS p
-      ms = map convertMatchN2ID (findMatches fg pg)
-  in foldr (processMatch i p) t ms
+processMatchData ::
+     TargetMachine
+  -> MatchData
+  -> MatchParams
+processMatchData tm m =
+  let i = fromJust $ findInstruction (tmInstructions tm) (mdInstrID m)
+      p = fromJust $ findInstrPattern (instrPatterns i) (mdPatternID m)
+  in processMatch i p (mdMatch m) (mdMatchID m)
 
 processMatch ::
      Instruction
   -> InstrPattern
   -> Match NodeID
-  -> ([MatchData], MatchID)
-  -> ([MatchData], MatchID)
-processMatch i p m (mids, next_mid) =
+  -> MatchID
+  -> MatchParams
+processMatch i p m mid =
   let g = osGraph $ patOS p
       ns = getAllNodes g
       a_ns = filter isOperationNode ns
@@ -151,11 +187,11 @@ processMatch i p m (mids, next_mid) =
       cfg = extractCFG g
       root_label_node_id =
         maybe Nothing ((findFNInMatch m) . getNodeID) (rootInCFG cfg)
-      new_mid =
-        MatchData
+      mp =
+        MatchParams
           { mInstructionID = instrID i
           , mPatternID = patID p
-          , mMatchID = next_mid
+          , mMatchID = mid
           , mOperationsCovered = findFNsInMatch m (getNodeIDs a_ns)
           , mDataNodesDefined = findFNsInMatch m (getNodeIDs d_def_ns)
           , mDataNodesUsed = findFNsInMatch m (getNodeIDs d_use_ns)
@@ -170,7 +206,7 @@ processMatch i p m (mids, next_mid) =
           , mCodeSize = instrCodeSize i_props
           , mLatency = instrLatency i_props
           }
-  in (new_mid:mids, next_mid + 1)
+  in mp
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
@@ -192,6 +228,10 @@ computeLabelDoms cfg =
                           )
                           node_domsets
   in node_id_domsets
+
+
+
+-- TODO: move this somewhere else
 
 -- | Replaces the node IDs used in the constraints from matched pattern node IDs
 -- to the corresponding function node IDs.

@@ -32,6 +32,7 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.Graphs.Base
   ( module Language.InstSel.Graphs.IDs
@@ -164,6 +165,7 @@ import Language.InstSel.Utils
   ( Natural
   , toNatural
   )
+import Language.InstSel.Utils.JSON
 import qualified Data.Graph.Inductive as I
 import Data.List
   ( nub
@@ -292,6 +294,40 @@ data Domset t =
         -- ^ The dominated entities.
       }
   deriving (Show)
+
+
+
+-------------------------------------
+-- JSON-related type class instances
+-------------------------------------
+
+instance FromJSON Graph where
+  parseJSON (Object v) = undefined
+  parseJSON _ = mzero
+
+instance ToJSON Graph where
+  toJSON g = undefined
+
+instance FromJSON (Domset NodeID) where
+  parseJSON (Object v) =
+    Domset
+      <$> v .: "node"
+      <*> v .: "domset"
+  parseJSON _ = mzero
+
+instance ToJSON (Domset NodeID) where
+  toJSON d =
+    object [ "node"   .= (domNode d)
+           , "domset" .= (domSet d)
+           ]
+
+instance FromJSON (Match NodeID) where
+  parseJSON (Array av) =
+    Match (Set.fromList $ parseJSON av)
+  parseJSON _ = mzero
+
+instance ToJSON (Match NodeID) where
+  toJSON (Match set) = toJSON set
 
 
 

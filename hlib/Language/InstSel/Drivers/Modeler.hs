@@ -20,7 +20,6 @@ module Language.InstSel.Drivers.Modeler
 where
 
 
-import Language.InstSel.CPModel.Json
 import Language.InstSel.CPModel.ParamMaker
 import Language.InstSel.ProgramModules
   ( Function )
@@ -29,13 +28,19 @@ import Language.InstSel.ProgramModules.LLVM
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.Utils
-  ( isLeft )
+  ( fromLeft
+  , fromRight
+  , isLeft
+  )
+import Language.InstSel.Utils.JSON
 import Control.Monad
   ( when )
 import Control.Monad.Except
   ( runExceptT )
 import LLVM.General
 import LLVM.General.Context
+import System.Exit
+  ( exitFailure )
 
 
 
@@ -45,15 +50,26 @@ import LLVM.General.Context
 
 run ::
      String
-     -- ^ The content of the LLVM IR file.
+     -- ^ The function in JSON format.
+  -> String
+     -- ^ The instruction pattern matches in JSON format.
   -> TargetMachine
      -- ^ The target machine.
   -> (String -> IO ())
-     -- ^ The function that takes care of emitting the JSON data.
+     -- ^ The function that takes care of emitting the CP model parameters.
   -> IO ()
-run str target emit =
-  do function <- parseFunction str
-     let params = mkParams target function
+run f_str m_str target emit =
+  do let f_res = fromJson f_str
+         m_res = fromJson m_str
+     when (isLeft f_res) $
+       do putStrLn $ fromLeft f_res
+          exitFailure
+     when (isLeft m_res) $
+       do putStrLn $ fromLeft m_res
+          exitFailure
+     let function = fromRight f_res :: Function
+         matches = fromRight m_res :: [MatchData]
+         params = mkParams target function matches
      emit $ toJson params
 
 parseFunction :: String -> IO Function

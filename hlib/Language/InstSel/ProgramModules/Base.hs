@@ -20,6 +20,7 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.ProgramModules.Base
   ( module Language.InstSel.ProgramModules.IDs
@@ -39,6 +40,7 @@ import Language.InstSel.Utils
   ( Natural
   , toNatural
   )
+import Language.InstSel.Utils.JSON
 
 
 
@@ -70,6 +72,36 @@ data Function =
         -- ^ The execution frequency of the basic blocks.
       }
   deriving (Show)
+
+
+
+--------------------------
+-- JSON-related instances
+--------------------------
+
+instance FromJSON Function where
+  parseJSON (Object v) =
+    Function
+      <$> v .: "name"
+      <*> v .: "op-struct"
+      <*> v .: "inputs"
+      <*> v .: "bb-exec-freqs"
+  parseJSON _ = mzero
+
+instance ToJSON Function where
+  toJSON f =
+    object [ "name"          .= (functionName f)
+           , "op-struct"     .= (functionOS f)
+           , "inputs"        .= (functionInputs f)
+           , "bb-exec-freqs" .= (functionBBExecFreq f)
+           ]
+
+instance FromJSON ExecFreq where
+  parseJSON (Number sn) = return $ toExecFreq $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON ExecFreq where
+  toJSON i = toJSON (fromExecFreq i)
 
 
 

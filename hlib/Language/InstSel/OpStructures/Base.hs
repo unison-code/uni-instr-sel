@@ -18,6 +18,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
 module Language.InstSel.OpStructures.Base
   ( OpStructure (..)
   , addConstraint
@@ -31,6 +33,7 @@ import qualified Language.InstSel.Graphs as G
   ( Graph
   , mkEmpty
   )
+import Language.InstSel.Utils.JSON
 
 
 
@@ -44,6 +47,25 @@ data OpStructure =
       , osConstraints :: [Constraint]
       }
   deriving (Show)
+
+
+
+--------------------------
+-- JSON-related instances
+--------------------------
+
+instance FromJSON OpStructure where
+  parseJSON (Object v) =
+    OpStructure
+      <$> v .: "graph"
+      <*> v .: "constraints"
+  parseJSON _ = mzero
+
+instance ToJSON OpStructure where
+  toJSON os =
+    object [ "graph"       .= (osGraph os)
+           , "constraints" .= (osConstraints os)
+           ]
 
 
 

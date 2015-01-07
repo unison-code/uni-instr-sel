@@ -13,6 +13,7 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.TargetMachines.IDs
   ( AssemblyID (..)
@@ -34,8 +35,21 @@ where
 
 import Language.InstSel.Utils
   ( Natural
+  , fromNatural
   , toNatural
   )
+import Language.InstSel.Utils.Lisp
+  hiding
+  ( Lisp (..) )
+import qualified Language.InstSel.Utils.Lisp as Lisp
+  ( Lisp (..) )
+import Language.InstSel.Utils.JSON
+  hiding
+  ( Value (..) )
+import qualified Language.InstSel.Utils.JSON as JSON
+  ( Value (..) )
+import qualified Data.Text as T
+  ( unpack )
 
 
 
@@ -87,6 +101,67 @@ instance Show RegisterFlagName where
 newtype TargetMachineID =
     TargetMachineID String
   deriving (Eq, Show)
+
+
+
+-------------------------------------
+-- JSON-related type class instances
+-------------------------------------
+
+instance FromJSON InstructionID where
+  parseJSON (JSON.Number sn) = return $ toInstructionID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON InstructionID where
+  toJSON iid = toJSON (fromInstructionID iid)
+
+instance FromJSON RegisterID where
+  parseJSON (JSON.Number sn) = return $ toRegisterID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON RegisterID where
+  toJSON rid = toJSON (fromRegisterID rid)
+
+instance FromJSON AssemblyID where
+  parseJSON (JSON.Number sn) = return $ toAssemblyID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON AssemblyID where
+  toJSON aid = toJSON (fromAssemblyID aid)
+
+instance FromJSON TargetMachineID where
+  parseJSON (JSON.String s) = return $ toTargetMachineID $ T.unpack s
+  parseJSON _ = mzero
+
+instance ToJSON TargetMachineID where
+  toJSON tmid = toJSON (fromTargetMachineID tmid)
+
+
+
+-------------------------------------
+-- Lisp-related type class instances
+-------------------------------------
+
+instance FromLisp InstructionID where
+  parseLisp (Lisp.Number (I n)) = return $ toInstructionID n
+  parseLisp _ = mzero
+
+instance ToLisp InstructionID where
+  toLisp (InstructionID nid) = Lisp.Number (I (fromNatural nid))
+
+instance FromLisp RegisterID where
+  parseLisp (Lisp.Number (I n)) = return $ toRegisterID n
+  parseLisp _ = mzero
+
+instance ToLisp RegisterID where
+  toLisp (RegisterID nid) = Lisp.Number (I (fromNatural nid))
+
+instance FromLisp AssemblyID where
+  parseLisp (Lisp.Number (I n)) = return $ toAssemblyID n
+  parseLisp _ = mzero
+
+instance ToLisp AssemblyID where
+  toLisp (AssemblyID aid) = Lisp.Number (I (fromNatural aid))
 
 
 

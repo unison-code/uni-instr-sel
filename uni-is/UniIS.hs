@@ -31,6 +31,7 @@ selection.
 
 {-# LANGUAGE DeriveDataTypeable #-}
 
+import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
 import qualified Language.InstSel.Drivers.Modeler as Modeler
 import qualified Language.InstSel.Drivers.Plotter as Plotter
 import Language.InstSel.TargetMachines
@@ -106,10 +107,13 @@ parseArgs =
             )
     &=
     details [ "Available commands:"
-            , "   LOWER - for rewriting the input into canonical form"
-            , "   MODEL - for producing a CP model instance"
-            , "   PLOT  - for producing various plots of the input"
-            , "   CHECK - for sanity checks of the input"
+            , "   process-llvm-ir   Converts an LLVM IR file into the "
+              ++ "graph-based IR format"
+            , "   lower-llvm-ir     Rewriting an LLVM IR file into an expected "
+              ++ "canonical form"
+            , "   make-cp-model     Produces a CP model instance"
+            , "   plot              Produces various plots of a given function"
+            , "   check-function    Performs sanity checks on a given function"
             , "The commands may be written in lower or upper case."
             ]
 
@@ -150,7 +154,14 @@ main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
      case (toLower $ command opts) of
-       "model" ->
+       "process-llvm-ir" ->
+         do when (isNothing $ inFile opts) $
+              error "No LLVM IR file is provided as input."
+            content <- readFileContent $ fromJust $ inFile opts
+            emitter <- getEmitFunction opts
+            LlvmIrProcessor.run content emitter
+       "make-cp-model" ->
+         -- TODO: rewrite code to accept JSON data instead
          do when (isNothing $ inFile opts) $
               error "No LLVM IR file is provided as input."
             content <- readFileContent $ fromJust $ inFile opts
@@ -168,10 +179,10 @@ main =
               target
               [ plotFunctionGraph opts ]
               emitter
-       "lower" ->
+       "lower-llvm-ir" ->
          undefined
          -- TODO: implement
-       "check" ->
+       "check-function" ->
          undefined
          -- TODO: implement
        cmd ->

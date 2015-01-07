@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Utils.AttoLisp
+-- Module      : Language.InstSel.Utils.Lisp
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,10 +12,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Utils.AttoLisp
+module Language.InstSel.Utils.Lisp
   ( module Data.AttoLisp
   , module Control.Applicative
   , module Control.Monad
+  , module Data.Attoparsec.Number
   , fromLispExprStr
   , toLispExprStr
   , wrapStruct,
@@ -38,6 +39,8 @@ import Control.Applicative
   ( (<|>) )
 import Control.Monad
   ( mzero )
+import Data.Attoparsec.Number
+  ( Number (..) )
 
 
 

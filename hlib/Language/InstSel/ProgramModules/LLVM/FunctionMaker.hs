@@ -32,7 +32,6 @@ import qualified Language.InstSel.Graphs as G
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
-import qualified Language.InstSel.ProgramModules.IDs as PM
 import Language.InstSel.Utils
   ( toNatural )
 import Data.Maybe
