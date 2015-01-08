@@ -117,7 +117,7 @@ with open(solution_file, 'r') as file:
 # Check if Minizinc reported that the model was unsatisfiable
 for l in content:
     if l.strip() == "=====UNSATISFIABLE=====":
-        print json.dumps({"has_solution": False})
+        print json.dumps({"has-solution": False})
         sys.exit(0)
 
 # Extract data
@@ -190,7 +190,7 @@ for d in all_data:
             break
 
 # Add additional field indicating that this is a solution
-json_data["has_solution"] = True
+json_data["has-solution"] = True
 
 if len(keep_table) > 0:
     error("Required data '" + keep_table[0] + "' not found")
