@@ -33,6 +33,7 @@ selection.
 
 import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
 import qualified Language.InstSel.Drivers.Modeler as Modeler
+import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
 import qualified Language.InstSel.Drivers.Plotter as Plotter
 import Language.InstSel.TargetMachines
   ( TargetMachine )
@@ -45,6 +46,7 @@ import Control.Monad
   ( when )
 import Data.Maybe
   ( fromJust
+  , isJust
   , isNothing
   )
 import System.Console.CmdArgs
@@ -118,6 +120,8 @@ parseArgs =
               ++ "graph-based IR format"
             , "   lower-llvm-ir     Rewriting an LLVM IR file into an expected "
               ++ "canonical form"
+            , "   pattern-match     Performs pattern matching on the function "
+              ++ "graph"
             , "   make-cp-model     Produces a CP model instance"
             , "   plot              Produces various plots of a given function"
             , "   check-function    Performs sanity checks on a given function"
@@ -131,8 +135,10 @@ readFileContent file =
        error $ "File " ++ show file ++ " does not exist."
      readFile file
 
-getTarget :: Options -> IO TargetMachine
-getTarget opts =
+-- | Returns the target machine specified on the command line. If no target is
+-- specified, or if no such target exists, failure is reported.
+getRequiredTarget :: Options -> IO TargetMachine
+getRequiredTarget opts =
   do let tname = targetName opts
      when (isNothing tname) $
        error "No target provided."
@@ -141,11 +147,24 @@ getTarget opts =
        error $ "Unrecognized target: " ++ (show $ fromJust tname)
      return $ fromJust target
 
+-- | Returns the target machine specified on the command line. If no target is
+-- specified, 'Nothing' is returned. If a target is specified, but no such
+-- target exists, failure is reported.
+getOptionalTarget :: Options -> IO (Maybe TargetMachine)
+getOptionalTarget opts =
+  do let tname = targetName opts
+     if isJust tname
+     then do let target = getTargetMachine $ toTargetMachineID $ fromJust tname
+             when (isNothing target) $
+               error $ "Unrecognized target: " ++ (show $ fromJust tname)
+             return target
+     else return Nothing
+
 -- | If an output file is given as part of the options, then the returned
 -- function will write all data to the output file. Otherwise the data will be
 -- written to 'STDOUT'.
-getEmitFunction :: Options -> IO (String -> IO ())
-getEmitFunction opts =
+getOutputFunction :: Options -> IO (String -> IO ())
+getOutputFunction opts =
   do let file = outFile opts
      if isNothing file
      then return putStrLn
@@ -165,8 +184,15 @@ main =
          do when (isNothing $ inFile opts) $
               error "No LLVM IR file is provided as input."
             content <- readFileContent $ fromJust $ inFile opts
-            emitter <- getEmitFunction opts
-            LlvmIrProcessor.run content emitter
+            outputter <- getOutputFunction opts
+            LlvmIrProcessor.run content outputter
+       "pattern-match" ->
+         do when (isNothing $ inFile opts) $
+              error "No function JSON file is provided as input."
+            content <- readFileContent $ fromJust $ inFile opts
+            target <- getRequiredTarget opts
+            outputter <- getOutputFunction opts
+            PatternMatcher.run content target outputter
        "make-cp-model" ->
          do when (isNothing $ inFile opts) $
               error "No function JSON file is provided as input."
@@ -174,20 +200,19 @@ main =
               error "No matches JSON file is provided as input."
             fcontent <- readFileContent $ fromJust $ inFile opts
             mcontent <- readFileContent $ fromJust $ matchFile opts
-            target <- getTarget opts
-            emitter <- getEmitFunction opts
-            Modeler.run fcontent mcontent target emitter
+            outputter <- getOutputFunction opts
+            Modeler.run fcontent mcontent outputter
        "plot" ->
          do when (isNothing $ inFile opts) $
               error "No input file."
             content <- readFileContent $ fromJust $ inFile opts
-            target <- getTarget opts
-            emitter <- getEmitFunction opts
+            target <- getOptionalTarget opts
+            outputter <- getOutputFunction opts
             Plotter.run
               content
               target
               [ plotFunctionGraph opts ]
-              emitter
+              outputter
        "lower-llvm-ir" ->
          undefined
          -- TODO: implement

@@ -17,9 +17,7 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.CPModel.ParamMaker
-  ( MatchData (..)
-  , mkParams
-  )
+  ( mkParams )
 where
 
 import Language.InstSel.Constraints
@@ -39,50 +37,10 @@ import Language.InstSel.ProgramModules
   , getExecFreqOfBBInFunction
   )
 import Language.InstSel.TargetMachines
-import Language.InstSel.Utils.JSON
+import Language.InstSel.TargetMachines.PatternMatching
+  ( MatchData (..) )
 import Data.Maybe
   ( fromJust )
-
-
-
---------------
--- Data types
---------------
-
--- | Contains the information needed to identify which instruction and pattern a
--- given match originates from. Each match is also given a 'MatchID' that must
--- be unique (although not necessarily continuous) for every match within a list
--- of 'MatchData'.
-data MatchData =
-    MatchData
-      { mdInstrID :: InstructionID
-      , mdPatternID :: PatternID
-      , mdMatchID :: MatchID
-      , mdMatch :: Match NodeID
-      }
-
-
-
---------------------------------
--- JSON-related class instances
---------------------------------
-
-instance FromJSON MatchData where
-  parseJSON (Object v) =
-    MatchData
-      <$> v .: "instr-id"
-      <*> v .: "pattern-id"
-      <*> v .: "match-id"
-      <*> v .: "match"
-  parseJSON _ = mzero
-
-instance ToJSON MatchData where
-  toJSON m =
-    object [ "instr-id"   .= (mdInstrID m)
-           , "pattern-id" .= (mdPatternID m)
-           , "match-id"   .= (mdMatchID m)
-           , "match"      .= (mdMatch m)
-           ]
 
 
 

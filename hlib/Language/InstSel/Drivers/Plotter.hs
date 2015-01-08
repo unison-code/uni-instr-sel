@@ -17,20 +17,26 @@ module Language.InstSel.Drivers.Plotter
 where
 
 import Language.InstSel.Graphs.GraphViz
-import Language.InstSel.Drivers.Modeler
-  ( parseFunction )
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines
   ( TargetMachine )
-import Control.Monad
-  ( when )
+import Language.InstSel.Utils
+  ( fromLeft
+  , fromRight
+  , isLeft
+  )
+import Language.InstSel.Utils.JSON
+  hiding
+  ( unpack )
 import Data.GraphViz.Printing
   ( renderDot
   , toDot
   )
-import qualified Data.Text.Lazy as T
+import Data.Text.Lazy
   ( unpack )
+import System.Exit
+  ( exitFailure )
 
 
 
@@ -40,19 +46,23 @@ import qualified Data.Text.Lazy as T
 
 run ::
      String
-     -- ^ The content of some input file.
-  -> TargetMachine
-     -- ^ The target machine.
+     -- ^ The content of the function graph.
+  -> Maybe TargetMachine
+     -- ^ The target machine, if needed.
   -> [Bool]
      -- ^ List of Boolean arguments which determine what to plot. Note that the
      -- order is important.
   -> (String -> IO ())
      -- ^ The function that takes care of emitting the JSON data.
   -> IO ()
-run str target [ plotFunctionGraph ] emit =
-  do function <- parseFunction str
+run f_str _ [ plotFunctionGraph ] emit =
+  do let f_res = fromJson f_str
+     when (isLeft f_res) $
+       do putStrLn $ fromLeft f_res
+          exitFailure
+     let function = fromRight f_res
      when plotFunctionGraph $
-       do let dot = T.unpack $
+       do let dot = unpack $
                       renderDot $
                         toDot $
                           toDotGraph $

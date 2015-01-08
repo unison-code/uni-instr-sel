@@ -8,8 +8,8 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Takes a function graph, a set of pattern matches, and target machine as
--- input, and produces the data needed for the CP model.
+-- Takes a function graph, a set of pattern matches as input, and produces the
+-- data needed for the CP model.
 --
 --------------------------------------------------------------------------------
 
@@ -19,22 +19,20 @@ where
 
 
 import Language.InstSel.CPModel.ParamMaker
-import Language.InstSel.ProgramModules
-  ( Function )
-import Language.InstSel.ProgramModules.LLVM
-  ( mkFunctionsFromLlvmModule )
-import Language.InstSel.TargetMachines
-  ( TargetMachine )
+import Language.InstSel.TargetMachines.Targets
+  ( getTargetMachine )
+import Language.InstSel.TargetMachines.PatternMatching
+  ( MatchsetInfo (..) )
 import Language.InstSel.Utils
   ( fromLeft
   , fromRight
   , isLeft
   )
 import Language.InstSel.Utils.JSON
-import Control.Monad.Except
-  ( runExceptT )
-import LLVM.General
-import LLVM.General.Context
+import Data.Maybe
+  ( fromJust
+  , isNothing
+  )
 import System.Exit
   ( exitFailure )
 
@@ -49,12 +47,10 @@ run ::
      -- ^ The function in JSON format.
   -> String
      -- ^ The instruction pattern matches in JSON format.
-  -> TargetMachine
-     -- ^ The target machine.
   -> (String -> IO ())
-     -- ^ The function that takes care of emitting the CP model parameters.
+     -- ^ The function that takes care of outputting the result.
   -> IO ()
-run f_str m_str target emit =
+run f_str m_str output =
   do let f_res = fromJson f_str
          m_res = fromJson m_str
      when (isLeft f_res) $
@@ -63,7 +59,14 @@ run f_str m_str target emit =
      when (isLeft m_res) $
        do putStrLn $ fromLeft m_res
           exitFailure
-     let function = fromRight f_res :: Function
-         matches = fromRight m_res :: [MatchData]
+     let function = fromRight f_res
+         msinfo = fromRight m_res
+         matches = msiMatches msinfo
+         target_id = msiTarget msinfo
+         mtarget = getTargetMachine target_id
+     when (isNothing mtarget) $
+       do putStrLn $ "No target machine with ID '" ++ show target_id ++ "'"
+          exitFailure
+     let target = fromJust mtarget
          params = mkParams target function matches
-     emit $ toJson params
+     output $ toJson params
