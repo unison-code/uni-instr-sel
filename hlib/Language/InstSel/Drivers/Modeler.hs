@@ -33,8 +33,6 @@ import Language.InstSel.Utils
   , isLeft
   )
 import Language.InstSel.Utils.JSON
-import Control.Monad
-  ( when )
 import Control.Monad.Except
   ( runExceptT )
 import LLVM.General

@@ -53,10 +53,6 @@ import Language.InstSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstSel.Utils.JSON as JSON
   ( Value (..) )
-import Control.Monad
-  ( when )
-import qualified Data.Text as T
-  ( unpack )
 
 
 
@@ -263,7 +259,7 @@ data SetElemExpr =
 
 instance FromJSON Constraint where
   parseJSON (JSON.String vs) =
-    do let s = T.unpack vs
+    do let s = unpack vs
            res = fromLispExpr s
        when (isLeft res) $ fail $ fromLeft res
        return (fromRight res)

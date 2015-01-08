@@ -22,7 +22,9 @@ module Language.InstSel.Utils.Base
   , groupBy
   , isLeft
   , isRight
+  , maybeToNatural
   , replace
+  , splitOn
   , toLower
   , toNatural
   , toUpper
@@ -62,10 +64,17 @@ newtype Natural =
 instance Show Natural where
   show (Natural i) = show i
 
+maybeToNatural :: (Integral i) => i -> Maybe Natural
+maybeToNatural x
+  | x < 0     = Nothing
+  | otherwise = Just $ Natural $ toInteger x
+
 toNatural :: (Integral i) => i -> Natural
-toNatural x
-  | x < 0     = error "Natural cannot be negative"
-  | otherwise = Natural $ toInteger x
+toNatural x =
+  let n = maybeToNatural x
+  in if isJust n
+     then fromJust n
+     else error "Natural cannot be negative"
 
 fromNatural :: Natural -> Integer
 fromNatural (Natural i) = i
@@ -74,8 +83,9 @@ instance Num Natural where
     fromInteger = toNatural
     x + y = toNatural (fromNatural x + fromNatural y)
     x - y = let r = fromNatural x - fromNatural y
-            in if r < 0 then error "Subtraction yielded a negative value"
-               else toNatural r
+            in if r < 0
+            then error "Subtraction yielded a negative value"
+            else toNatural r
     x * y = toNatural (fromNatural x * fromNatural y)
     abs x = x
     signum x = toNatural $ signum $ fromNatural x

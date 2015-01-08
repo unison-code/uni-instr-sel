@@ -17,9 +17,6 @@ module Language.InstSel.Drivers.LlvmIrProcessor
   ( run )
 where
 
-
-import Language.InstSel.ProgramModules
-  ( Function )
 import Language.InstSel.ProgramModules.LLVM
   ( mkFunctionsFromLlvmModule )
 import Language.InstSel.Utils
@@ -27,8 +24,7 @@ import Language.InstSel.Utils
   , fromRight
   , isLeft
   )
-import Control.Monad
-  ( when )
+import Language.InstSel.Utils.JSON
 import Control.Monad.Except
   ( runExceptT )
 import LLVM.General
@@ -55,11 +51,11 @@ run str emit =
              runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft llvm_module_result) $
-       do putStrLn $ fromLeft llvm_module_result
+       do putStrLn $ fromLeft $ fromLeft llvm_module_result
           exitFailure
      let llvm_module = fromRight llvm_module_result
      let functions = mkFunctionsFromLlvmModule llvm_module
      when (length functions > 1) $
-       putStrLn "Only supports one function per module."
-       exitFailure
+       do putStrLn "Only supports one function per module."
+          exitFailure
      emit $ toJson $ head functions

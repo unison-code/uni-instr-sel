@@ -19,8 +19,10 @@ module Language.InstSel.Utils.JSON
   , module Control.Applicative
   , module Control.Monad
   , fromJson
+  , pack
   , sn2nat
   , toJson
+  , unpack
   )
 where
 
@@ -36,7 +38,9 @@ import Control.Applicative
   , (<*>)
   )
 import Control.Monad
-  ( mzero )
+  ( mzero
+  , when
+  )
 import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
   , unpack
@@ -47,6 +51,11 @@ import Data.Maybe
   )
 import Data.Scientific
   ( Scientific )
+import qualified Data.Text as T
+  ( Text
+  , pack
+  , unpack
+  )
 
 
 
@@ -82,6 +91,14 @@ toJson = unescape . BS.unpack . encode
   where unescape = replace "\\u003c" "<" . replace "\\u003e" ">"
         -- ^ For security reasons, Aeson will escape '<' and '>' when dumping
         -- JSON data to string, which is something we want to undo.
+
+-- | Converts 'Text' into a 'String'.
+unpack :: T.Text -> String
+unpack = T.unpack
+
+-- | Converts a 'String' into 'Text'.
+pack :: String -> T.Text
+pack = T.pack
 
 
 

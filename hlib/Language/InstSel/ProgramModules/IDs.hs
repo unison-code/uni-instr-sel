@@ -17,8 +17,6 @@ module Language.InstSel.ProgramModules.IDs
 where
 
 import Language.InstSel.Utils.JSON
-import qualified Data.Text as T
-  ( unpack )
 
 
 
@@ -41,7 +39,7 @@ instance Show BasicBlockLabel where
 --------------------------
 
 instance FromJSON BasicBlockLabel where
-  parseJSON (String s) = return $ (BasicBlockLabel $ T.unpack s)
+  parseJSON (String s) = return $ (BasicBlockLabel $ unpack s)
   parseJSON _ = mzero
 
 instance ToJSON BasicBlockLabel where

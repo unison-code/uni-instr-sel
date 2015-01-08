@@ -173,7 +173,8 @@ import Data.List
   , sortBy
   )
 import Data.Maybe
-import qualified Data.Set as Set
+import qualified Data.Set as S
+import qualified Data.Vector as V
 
 
 --------------
@@ -215,7 +216,7 @@ data NodeLabel =
 data NodeType =
     ComputationNode { compOp :: O.CompOp }
 
-  | ControlNode { contOp :: O.ControlOp }
+  | ControlNode { ctrlOp :: O.ControlOp }
 
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
@@ -281,7 +282,7 @@ data Mapping n =
 
 -- | Represents a match between two graphs.
 newtype Match n =
-    Match (Set.Set (Mapping n))
+    Match (S.Set (Mapping n))
   deriving (Show, Eq)
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
@@ -302,11 +303,117 @@ data Domset t =
 -------------------------------------
 
 instance FromJSON Graph where
-  parseJSON (Object v) = undefined
+  parseJSON v@(Object _) = Graph <$> parseJSON v
   parseJSON _ = mzero
 
 instance ToJSON Graph where
-  toJSON g = undefined
+  toJSON g = toJSON $ intGraph g
+
+instance FromJSON IntGraph where
+  parseJSON (Object v) =
+    I.mkGraph
+      <$> v .: "nodes"
+      <*> v .: "edges"
+  parseJSON _ = mzero
+
+instance ToJSON IntGraph where
+  toJSON g =
+    object [ "nodes" .= (I.labNodes g)
+           , "edges" .= (I.labEdges g)
+           ]
+
+instance FromJSON NodeLabel where
+  parseJSON (Object v) =
+    NodeLabel
+      <$> v .: "id"
+      <*> v .: "type"
+  parseJSON _ = mzero
+
+instance ToJSON NodeLabel where
+  toJSON l =
+    object [ "id"   .= (nodeID l)
+           , "type" .= (nodeType l)
+           ]
+
+instance FromJSON NodeType where
+  parseJSON (Object v) =
+    do str <- v .: "ntype"
+       let typ = unpack str
+       case typ of "comp" -> ComputationNode
+                               <$> v .: "op"
+                   "ctrl" -> ControlNode
+                               <$> v .: "op"
+                   "data" -> DataNode
+                               <$> v .: "dtype"
+                               <*> v .: "origin"
+                   "lab"  -> LabelNode
+                               <$> v .: "bb-label"
+                   "phi"  -> return PhiNode
+                   "stat" -> return StateNode
+                   "copy" -> return CopyNode
+                   _      -> mzero
+  parseJSON _ = mzero
+
+instance ToJSON NodeType where
+  toJSON n@(ComputationNode {}) =
+    object [ "ntype" .= String "comp"
+           , "op"    .= toJSON (compOp n)
+           ]
+  toJSON n@(ControlNode {}) =
+    object [ "ntype" .= String "ctrl"
+           , "op"    .= toJSON (ctrlOp n)
+           ]
+  toJSON n@(DataNode {}) =
+    object [ "ntype"   .= String "data"
+           , "dtype"   .= toJSON (dataType n)
+           , "origin"  .= toJSON (dataOrigin n)
+           ]
+  toJSON n@(LabelNode {}) =
+    object [ "ntype"    .= String "lab"
+           , "bb-label" .= toJSON (bbLabel n)
+           ]
+  toJSON (PhiNode {}) =
+    object [ "ntype" .= String "phi" ]
+  toJSON (StateNode {}) =
+    object [ "ntype" .= String "stat" ]
+  toJSON (CopyNode {}) =
+    object [ "ntype" .= String "copy" ]
+
+instance FromJSON EdgeLabel where
+  parseJSON (Object v) =
+    EdgeLabel
+      <$> v .: "etype"
+      <*> v .: "out-nr"
+      <*> v .: "in-nr"
+  parseJSON _ = mzero
+
+instance ToJSON EdgeLabel where
+  toJSON l =
+    object [ "etype"   .= (edgeType l)
+           , "out-nr" .= (outEdgeNr l)
+           , "in-nr"  .= (inEdgeNr l)
+           ]
+
+instance FromJSON EdgeType where
+  parseJSON (String str) =
+    case str of "ctrl" -> return ControlFlowEdge
+                "data" -> return DataFlowEdge
+                "stat" -> return StateFlowEdge
+                "def"  -> return DefPlaceEdge
+                _      -> mzero
+  parseJSON _ = mzero
+
+instance ToJSON EdgeType where
+  toJSON ControlFlowEdge = "ctrl"
+  toJSON DataFlowEdge    = "data"
+  toJSON StateFlowEdge   = "stat"
+  toJSON DefPlaceEdge    = "def"
+
+instance FromJSON EdgeNr where
+  parseJSON v = EdgeNr <$> parseJSON v
+
+instance ToJSON EdgeNr where
+  toJSON (EdgeNr nr) = toJSON nr
 
 instance FromJSON (Domset NodeID) where
   parseJSON (Object v) =
@@ -322,12 +429,24 @@ instance ToJSON (Domset NodeID) where
            ]
 
 instance FromJSON (Match NodeID) where
-  parseJSON (Array av) =
-    Match (Set.fromList $ parseJSON av)
+  parseJSON v@(Array _) = Match <$> parseJSON v
   parseJSON _ = mzero
 
 instance ToJSON (Match NodeID) where
   toJSON (Match set) = toJSON set
+
+instance FromJSON (Mapping NodeID) where
+  parseJSON v@(Array _) =
+    do list <- parseJSON v
+       when (length list /= 2) mzero
+       return Mapping
+                { fNode = head list
+                , pNode = last list
+                }
+  parseJSON _ = mzero
+
+instance ToJSON (Mapping NodeID) where
+  toJSON m = Array (V.fromList [toJSON $ fNode m, toJSON $ pNode m])
 
 
 
@@ -369,7 +488,7 @@ isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ getNodeType n
 
 isRetControlNode :: Node -> Bool
-isRetControlNode n = isControlNode n && (contOp $ getNodeType n) == O.Ret
+isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
 
 isDataNode :: Node -> Bool
 isDataNode n = isOfDataNodeType $ getNodeType n
@@ -840,7 +959,7 @@ convertMappingN2ID m =
 -- | Converts a match with nodes into a match with node IDs.
 convertMatchN2ID :: Match Node -> Match NodeID
 convertMatchN2ID (Match ms) =
-  Match (Set.fromList $ map convertMappingN2ID (Set.toList ms))
+  Match (S.fromList $ map convertMappingN2ID (S.toList ms))
 
 -- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
 getNodeIDs :: [Node] -> [NodeID]
@@ -1149,7 +1268,7 @@ findPNsInMatch ::
      -- ^ List of function nodes.
   -> [n]
      -- ^ List of corresponding pattern nodes.
-findPNsInMatch (Match m) = findPNsInMapping (Set.toList m)
+findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
 
 -- | Same as `findFNsInMapping`.
 findFNsInMatch ::
@@ -1160,7 +1279,7 @@ findFNsInMatch ::
      -- ^ List of pattern nodes.
   -> [n]
      -- ^ List of corresponding function nodes.
-findFNsInMatch (Match m) = findFNsInMapping (Set.toList m)
+findFNsInMatch (Match m) = findFNsInMapping (S.toList m)
 
 -- | Same as `findPNInMapping`.
 findPNInMatch ::
@@ -1171,7 +1290,7 @@ findPNInMatch ::
      -- ^ Function node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-findPNInMatch (Match m) = findPNInMapping (Set.toList m)
+findPNInMatch (Match m) = findPNInMapping (S.toList m)
 
 -- | Same as `findFNInMapping`.
 findFNInMatch ::
@@ -1182,7 +1301,7 @@ findFNInMatch ::
      -- ^ Pattern node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-findFNInMatch (Match m) = findFNInMapping (Set.toList m)
+findFNInMatch (Match m) = findFNInMapping (S.toList m)
 
 -- | From a match and a list of function nodes, get the list of corresponding
 -- pattern nodes for which there exists a mapping. The order of the list will be
@@ -1316,4 +1435,4 @@ hasAnySuccessors g n = length (getSuccessors g n) > 0
 
 -- | Converts a list of mappings to a match.
 toMatch :: Ord n => [Mapping n] -> Match n
-toMatch m = Match (Set.fromList m)
+toMatch m = Match (S.fromList m)

@@ -61,6 +61,7 @@ data Options
     = Options
         { command :: String
         , plotFunctionGraph :: Bool
+        , matchFile :: Maybe String
         , inFile :: Maybe String
         , outFile :: Maybe String
         , targetName :: Maybe String
@@ -74,14 +75,14 @@ parseArgs =
         &= argPos 0
         &= typ "COMMAND"
     , inFile = def
-        &= help "File that contains the input."
+        &= help "File containing the input."
         &= typFile
         &= explicit
         &= name "i"
         &= name "input"
         &= groupname "Common options"
     , outFile = Nothing
-        &= help "File for writing the result."
+        &= help "File that will contain the output."
         &= typFile
         &= explicit
         &= name "o"
@@ -97,6 +98,12 @@ parseArgs =
         &= explicit
         &= name "plot-function-graph"
         &= groupname "PLOT ONLY options"
+    , matchFile = Nothing
+        &= help "File containing the matches."
+        &= typFile
+        &= explicit
+        &= name "match-file"
+        &= groupname "MODEL ONLY options"
     }
     &=
     program "uni-is"
@@ -161,13 +168,15 @@ main =
             emitter <- getEmitFunction opts
             LlvmIrProcessor.run content emitter
        "make-cp-model" ->
-         -- TODO: rewrite code to accept JSON data instead
          do when (isNothing $ inFile opts) $
-              error "No LLVM IR file is provided as input."
-            content <- readFileContent $ fromJust $ inFile opts
+              error "No function JSON file is provided as input."
+            when (isNothing $ matchFile opts) $
+              error "No matches JSON file is provided as input."
+            fcontent <- readFileContent $ fromJust $ inFile opts
+            mcontent <- readFileContent $ fromJust $ matchFile opts
             target <- getTarget opts
             emitter <- getEmitFunction opts
-            Modeler.run content target emitter
+            Modeler.run fcontent mcontent target emitter
        "plot" ->
          do when (isNothing $ inFile opts) $
               error "No input file."

@@ -48,8 +48,6 @@ import Language.InstSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstSel.Utils.JSON as JSON
   ( Value (..) )
-import qualified Data.Text as T
-  ( unpack )
 
 
 
@@ -130,7 +128,7 @@ instance ToJSON AssemblyID where
   toJSON aid = toJSON (fromAssemblyID aid)
 
 instance FromJSON TargetMachineID where
-  parseJSON (JSON.String s) = return $ toTargetMachineID $ T.unpack s
+  parseJSON (JSON.String s) = return $ toTargetMachineID $ unpack s
   parseJSON _ = mzero
 
 instance ToJSON TargetMachineID where

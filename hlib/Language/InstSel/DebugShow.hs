@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.PrettyPrint
+-- Module      : Language.InstSel.DebugShow
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.PrettyPrint
-  ( module Language.InstSel.PrettyPrint.Base )
+module Language.InstSel.DebugShow
+  ( module Language.InstSel.DebugShow.Base )
 where
 
-import Language.InstSel.PrettyPrint.Base
+import Language.InstSel.DebugShow.Base

@@ -17,8 +17,8 @@ module Language.InstSel.Graphs.GraphViz
   )
 where
 
+import Language.InstSel.DebugShow
 import Language.InstSel.Graphs.Base
-import Language.InstSel.PrettyPrint
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Attributes.Complete as GVA
@@ -55,8 +55,8 @@ mkNodeAttr n = mkNodeAttrByType (getNodeType (Node n))
 
 -- | Constructs the node attributes based on the given node type.
 mkNodeAttrByType :: NodeType -> GV.Attributes
-mkNodeAttrByType (ComputationNode op) = mkCompNodeAttr (prettyShow op)
-mkNodeAttrByType (ControlNode op) = mkControlNodeAttr (prettyShow op)
+mkNodeAttrByType (ComputationNode op) = mkCompNodeAttr (dShow op)
+mkNodeAttrByType (ControlNode op) = mkControlNodeAttr (dShow op)
 mkNodeAttrByType (DataNode _ src) = mkDataNodeAttr (maybe "" id src)
 mkNodeAttrByType (LabelNode (BasicBlockLabel l)) = mkLabelNodeAttr l
 mkNodeAttrByType PhiNode = mkPhiNodeAttr

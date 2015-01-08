@@ -12,13 +12,21 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+
 module Language.InstSel.DataTypes.Base where
 
+import Language.InstSel.DebugShow
 import Language.InstSel.Utils
   ( Natural
+  , maybeToNatural
   , toNatural
   )
-import Language.InstSel.PrettyPrint
+import Language.InstSel.Utils.JSON
+import Data.Maybe
+  ( fromJust
+  , isNothing
+  )
 
 
 
@@ -32,7 +40,7 @@ data DataType =
 
     -- | When the data type is unknown and does not matter.
   | AnyType
-  deriving (Show, Eq)
+  deriving (Eq)
 
 
 
@@ -61,10 +69,54 @@ areDataTypesCompatible d1 d2 = d1 == d2
 
 
 
-------------------------
--- Type class instances
-------------------------
+-------------------------------------
+-- Show-related type class instances
+-------------------------------------
 
-instance PrettyPrint DataType where
-  prettyShow (IntType w) = "i" ++ show w
-  prettyShow AnyType = ""
+instance Show DataType where
+  show (IntType w) = "i" ++ show w
+  show AnyType = "any"
+
+
+
+------------------------------------------
+-- DebugShow-related type class instances
+------------------------------------------
+
+instance DebugShow DataType where
+  dShow t@(IntType {}) = show t
+  dShow AnyType = ""
+
+
+
+-------------------------------------
+-- JSON-related type class instances
+-------------------------------------
+
+instance FromJSON DataType where
+  parseJSON (String v) =
+    do let str = unpack v
+           mt = parseDataType str
+       when (isNothing mt) mzero
+       return $ fromJust mt
+  parseJSON _ = mzero
+
+instance ToJSON DataType where
+  toJSON t = String $ pack $ show t
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Parses a data type from a string. If parsing fails, 'Nothing' is returned.
+parseDataType :: String -> Maybe DataType
+parseDataType [] = Nothing
+parseDataType str =
+  if str == show AnyType
+  then Just AnyType
+  else if head str == 'i'
+       then do n <- maybeToNatural $ (read (tail str) :: Integer)
+               return $ IntType n
+       else Nothing
