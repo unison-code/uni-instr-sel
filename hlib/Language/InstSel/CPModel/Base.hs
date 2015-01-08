@@ -271,7 +271,7 @@ instance FromJSON FunctionGraphParams where
       <*> v .: "label-nodes"
       <*> v .: "def-place-edges"
       <*> v .: "root-label"
-      <*> v .: "bb-data"
+      <*> v .: "bb-params"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
