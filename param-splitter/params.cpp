@@ -164,7 +164,7 @@ Params::toDefPlaceEdgeData(const Value& value) {
 
 void
 Params::computeMappingsForOperationNodesInF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "operation-nodes")) {
         const ID& node_id = toID(entry);
@@ -176,7 +176,7 @@ Params::computeMappingsForOperationNodesInF(const Value& root, Params& p) {
 
 void
 Params::computeMappingsForDataNodesInF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "data-nodes")) {
         const ID& node_id = toID(entry);
@@ -188,7 +188,7 @@ Params::computeMappingsForDataNodesInF(const Value& root, Params& p) {
 
 void
 Params::computeMappingsForStateNodesInF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "state-nodes")) {
         const ID& node_id = toID(entry);
@@ -203,7 +203,7 @@ Params::computeMappingsAndDomsetsForLabelNodesInF(
     const Value& root,
     Params& p
 ) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(function, "label-nodes")) {
         const ID& node_id = toID(getJsonValue(entry, "node"));
@@ -220,7 +220,7 @@ Params::computeMappingsAndDomsetsForLabelNodesInF(
 
 void
 Params::computeMappingsForRegistersInM(const Value& root, Params& p) {
-    const Value& machine = getJsonValue(root, "machine-data");
+    const Value& machine = getJsonValue(root, "machine-params");
     ArrayIndex index = 0;
     for (auto entry : getJsonValue(machine, "registers")) {
         const ID& reg_id = toID(entry);
@@ -233,7 +233,7 @@ Params::computeMappingsForRegistersInM(const Value& root, Params& p) {
 void
 Params::computeMappingsForMatches(const Value& root, Params& p) {
     ArrayIndex index = 0;
-    for (auto entry : getJsonValue(root, "match-data")) {
+    for (auto entry : getJsonValue(root, "match-params")) {
         const ID& pi_id = toID(getJsonValue(entry, "match-id"));
         addMapping(pi_id, index, p.match_kv_mappings_);
         addMapping(index, pi_id, p.match_vk_mappings_);
@@ -263,7 +263,7 @@ Params::getLatencyForMatch(const ID& match) const {
 
 void
 Params::setCodeSizesForMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         int code_size = toInt(getJsonValue(match, "code-size"));
         addMapping(match_id, code_size, p.match_code_sizes_);
@@ -272,7 +272,7 @@ Params::setCodeSizesForMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setLatenciesForMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         int latency = toInt(getJsonValue(match, "latency"));
         addMapping(match_id, latency, p.match_latencies_);
@@ -316,7 +316,7 @@ Params::getConstraintsForMatch(const ID& id) const {
 
 void
 Params::setOperationNodesCoveredByMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(match, "operation-nodes-covered")) {
@@ -328,7 +328,7 @@ Params::setOperationNodesCoveredByMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setDataNodesDefinedByMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(match, "data-nodes-defined")) {
@@ -340,7 +340,7 @@ Params::setDataNodesDefinedByMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setStateNodesDefinedByMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(match, "state-nodes-defined")) {
@@ -352,7 +352,7 @@ Params::setStateNodesDefinedByMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setDataNodesUsedByMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(match, "data-nodes-used")) {
@@ -364,7 +364,7 @@ Params::setDataNodesUsedByMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setStateNodesUsedByMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> covers;
         for (auto node_id : getJsonValue(match, "state-nodes-used")) {
@@ -376,7 +376,7 @@ Params::setStateNodesUsedByMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setNonRootLabelNodesInMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<ID> refs;
         for (auto node_id : getJsonValue(match, "non-root-label-nodes")) {
@@ -388,7 +388,7 @@ Params::setNonRootLabelNodesInMatches(const Json::Value& root, Params& p) {
 
 void
 Params::setRootLabelNodeOfMatches(const Json::Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         if (hasJsonValue(match, "root-label-node")) {
             addMapping(match_id,
@@ -533,7 +533,7 @@ Params::destroyConstraintsForMatches(void) {
 
 void
 Params::setConstraintsForF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     for (auto expr : getJsonValue(function, "constraints")) {
         ConstraintParser parser;
         Constraint* c = parser.parseConstraint(toString(expr));
@@ -543,8 +543,8 @@ Params::setConstraintsForF(const Value& root, Params& p) {
 
 void
 Params::setExecFreqOfBBsInF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
-    for (auto data : getJsonValue(function, "bb-data")) {
+    const Value& function = getJsonValue(root, "function-params");
+    for (auto data : getJsonValue(function, "bb-params")) {
         const ID& label_id = toID(getJsonValue(data, "label-node"));
         const int freq = toInt(getJsonValue(data, "exec-frequency"));
         addMapping(label_id, freq, p.func_bb_exec_freq_);
@@ -553,7 +553,7 @@ Params::setExecFreqOfBBsInF(const Value& root, Params& p) {
 
 void
 Params::setEssentialOpNodesInF(const Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     for (auto entry : getJsonValue(function, "essential-op-nodes")) {
         p.func_essential_op_nodes_.push_back(toID(entry));
     }
@@ -561,7 +561,7 @@ Params::setEssentialOpNodesInF(const Value& root, Params& p) {
 
 void
 Params::setConstraintsForMatches(const Value& root, Params& p) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         list<const Constraint*> constraints;
         ConstraintParser parser;
@@ -615,7 +615,7 @@ Params::setADDUCSettingsForMatches(
     const Json::Value& root,
     Params& p
 ) {
-    for (auto match : getJsonValue(root, "match-data")) {
+    for (auto match : getJsonValue(root, "match-params")) {
         const ID& match_id = toID(getJsonValue(match, "match-id"));
         const string field_name("apply-def-dom-use-constraint");
         addMapping(match_id,
@@ -626,13 +626,13 @@ Params::setADDUCSettingsForMatches(
 
 void
 Params::setRootLabelInF(const Json::Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     p.func_root_label_ = toID(getJsonValue(function, "root-label"));
 }
 
 void
 Params::setDefPlaceEdgesForF(const Json::Value& root, Params& p) {
-    const Value& function = getJsonValue(root, "function-data");
+    const Value& function = getJsonValue(root, "function-params");
     for (auto e : getJsonValue(function, "def-place-edges")) {
         p.func_def_place_edges_.push_back(toDefPlaceEdgeData(e));
     }
