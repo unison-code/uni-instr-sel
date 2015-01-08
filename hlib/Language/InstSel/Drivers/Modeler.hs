@@ -8,15 +8,13 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Takes an LLVM IR file and target machine as input, and produces the data
--- needed for the CP model.
+-- Takes a function graph, a set of pattern matches, and target machine as
+-- input, and produces the data needed for the CP model.
 --
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Drivers.Modeler
-  ( parseFunction
-  , run
-  )
+  ( run )
 where
 
 
@@ -69,19 +67,3 @@ run f_str m_str target emit =
          matches = fromRight m_res :: [MatchData]
          params = mkParams target function matches
      emit $ toJson params
-
-parseFunction :: String -> IO Function
-parseFunction str =
-  do llvm_module_result <-
-       withContext
-         ( \context ->
-             runExceptT $ withModuleFromLLVMAssembly context str moduleAST
-         )
-     when (isLeft llvm_module_result) $
-       do let (Left e) = llvm_module_result
-          error $ show e
-     let (Right llvm_module) = llvm_module_result
-     let functions = mkFunctionsFromLlvmModule llvm_module
-     when (length functions > 1) $
-       error "Only supports one function per module."
-     return $ head functions
