@@ -3,3 +3,6 @@ uni-is
 *.o
 .PatMatchData
 pattern-matcher
+*.pdf
+*.json
+*.dot
