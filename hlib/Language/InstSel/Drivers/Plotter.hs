@@ -18,6 +18,7 @@ module Language.InstSel.Drivers.Plotter
   )
 where
 
+import Language.InstSel.Drivers.Base
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
@@ -51,47 +52,28 @@ import System.Exit
 data PlotAction
   = PlotFunctionGraph
   | PlotFunctionGraphCoverage
+  | PlotFunctionGraphCoveragePerMatch
 
 -------------
 -- Functions
 -------------
 
-run
-  :: String
-     -- ^ The content of the function graph.
-  -> Maybe String
-     -- ^ The content of the matches, if needed.
-  -> PlotAction
-     -- ^ The action to perform.
-  -> (String -> IO ())
-     -- ^ The function that takes care of outputting the result.
-  -> IO ()
-
-run f_str _ PlotFunctionGraph output =
-  do let f_res = fromJson f_str
-     when (isLeft f_res) $
-       do putStrLn $ fromLeft f_res
-          exitFailure
-     let function = fromRight f_res
-         dot = toDotString $ osGraph $ functionOS function
-     output dot
-
-run f_str m_str PlotFunctionGraphCoverage output =
-  do let f_res = fromJson f_str
-     when (isLeft f_res) $
-       do putStrLn $ fromLeft f_res
-          exitFailure
-     when (isNothing m_str) $
+-- | Gets the matchest information from a JSON string. Reports error if this
+-- fails.
+getMatchsetInfo :: Maybe String -> IO MatchsetInfo
+getMatchsetInfo str =
+  do when (isNothing str) $
        do putStrLn "No match file provided."
           exitFailure
-     let m_res = fromJson $ fromJust m_str
-     when (isLeft m_res) $
-       do putStrLn $ fromLeft m_res
+     let res = fromJson $ fromJust str
+     when (isLeft res) $
+       do putStrLn $ fromLeft res
           exitFailure
-     let function = fromRight f_res
-         match_info = fromRight m_res
-         matches = map mdMatch (msiMatches match_info)
-         hasMatch n =
+     return $ fromRight res
+
+mkCoveragePlot :: Function -> [Match NodeID] -> IO String
+mkCoveragePlot function matches =
+  do let hasMatch n =
            any
              (\m -> isJust $ findPNInMatch m (getNodeID n))
              matches
@@ -103,4 +85,41 @@ run f_str m_str PlotFunctionGraphCoverage output =
          dot = (toDotStringWith nf noMoreEdgeAttr) $
                  osGraph $
                    functionOS function
-     output dot
+     return dot
+
+run
+  :: String
+     -- ^ The content of the function graph.
+  -> Maybe String
+     -- ^ The content of the matches, if needed.
+  -> PlotAction
+     -- ^ The action to perform.
+  -> IO [Output]
+     -- ^ The produced output.
+
+run str _ PlotFunctionGraph =
+  do function <- getFunction str
+     let dot = toDotString $ osGraph $ functionOS function
+     return [toOutputWithoutID dot]
+
+run f_str m_str PlotFunctionGraphCoverage =
+  do function <- getFunction f_str
+     match_info <- getMatchsetInfo m_str
+     let matches = map mdMatch (msiMatches match_info)
+     dot <- mkCoveragePlot function matches
+     return [toOutputWithoutID dot]
+
+run f_str m_str PlotFunctionGraphCoveragePerMatch =
+  do function <- getFunction f_str
+     match_info <- getMatchsetInfo m_str
+     mapM
+       ( \m ->
+          do dot <- mkCoveragePlot function [mdMatch m]
+             let oid = show (mdInstrID m)
+                       ++ "-" ++
+                       show (mdPatternID m)
+                       ++ "-" ++
+                       show (mdMatchID m)
+             return $ toOutput oid dot
+       )
+       (msiMatches match_info)

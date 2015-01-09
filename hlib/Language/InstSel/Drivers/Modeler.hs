@@ -18,6 +18,7 @@ module Language.InstSel.Drivers.Modeler
 where
 
 
+import Language.InstSel.Drivers.Base
 import Language.InstSel.CPModel.ParamMaker
 import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
@@ -48,10 +49,9 @@ run
      -- ^ The function in JSON format.
   -> String
      -- ^ The instruction pattern matches in JSON format.
-  -> (String -> IO ())
-     -- ^ The function that takes care of outputting the result.
-  -> IO ()
-run f_str m_str output =
+  -> IO [Output]
+     -- ^ The produced output.
+run f_str m_str =
   do let f_res = fromJson f_str
          m_res = fromJson m_str
      when (isLeft f_res) $
@@ -70,4 +70,4 @@ run f_str m_str output =
           exitFailure
      let target = fromJust mtarget
          params = mkParams target function matches
-     output $ toJson params
+     return [toOutputWithoutID $ toJson params]

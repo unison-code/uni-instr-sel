@@ -17,6 +17,7 @@ module Language.InstSel.Drivers.LlvmIrProcessor
   ( run )
 where
 
+import Language.InstSel.Drivers.Base
 import Language.InstSel.Utils
   ( fromLeft
   , fromRight
@@ -43,10 +44,9 @@ import System.Exit
 run
   :: String
      -- ^ The function in LLVM IR format.
-  -> (String -> IO ())
-     -- ^ The function that takes care of emitting the result.
-  -> IO ()
-run str emit =
+  -> IO [Output]
+     -- ^ The produced output.
+run str =
   do llvm_module_result <-
        withContext
          ( \context ->
@@ -60,4 +60,4 @@ run str emit =
      when (length functions > 1) $
        do putStrLn "Only supports one function per module."
           exitFailure
-     emit $ toJson $ head functions
+     return [toOutputWithoutID $ toJson $ head functions]

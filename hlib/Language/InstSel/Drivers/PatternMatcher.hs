@@ -17,6 +17,7 @@ module Language.InstSel.Drivers.PatternMatcher
   ( run )
 where
 
+import Language.InstSel.Drivers.Base
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
@@ -42,14 +43,13 @@ run
      -- ^ The function in JSON format.
   -> TargetMachine
      -- ^ The target machine.
-  -> (String -> IO ())
-     -- ^ The function that takes care of outputting the result.
-  -> IO ()
-run str target output =
+  -> IO [Output]
+     -- ^ The produced output.
+run str target =
   do let res = fromJson str
      when (isLeft res) $
        do putStrLn $ fromLeft res
           exitFailure
      let function = fromRight res
          matches = mkMatchsetInfo function target
-     output $ toJson matches
+     return [toOutputWithoutID $ toJson matches]

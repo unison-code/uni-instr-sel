@@ -37,6 +37,7 @@ import Language.InstSel.TargetMachines.Targets
 import Language.InstSel.Utils
   ( toLower )
 
+import Language.InstSel.Drivers
 import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
 import qualified Language.InstSel.Drivers.Modeler as Modeler
 import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
@@ -53,6 +54,8 @@ import Data.Maybe
   )
 import System.Directory
   ( doesFileExist )
+import System.FilePath.Posix
+  ( splitExtension )
 
 
 
@@ -65,6 +68,7 @@ data Options
       { command :: String
       , plotFunctionGraph :: Bool
       , plotFunctionGraphCoverage :: Bool
+      , plotFunctionGraphCoveragePerMatch :: Bool
       , matchFile :: Maybe String
       , inFile :: Maybe String
       , outFile :: Maybe String
@@ -86,7 +90,10 @@ parseArgs =
         &= name "input"
         &= groupname "Common options"
     , outFile = Nothing
-        &= help "File that will contain the output."
+        &= help ( "File that will contain the output. If the output involves "
+                  ++ "multiple files, each file will be suffixed with a "
+                  ++ "unique ID."
+                )
         &= typFile
         &= explicit
         &= name "o"
@@ -108,6 +115,13 @@ parseArgs =
                 )
         &= explicit
         &= name "plot-function-graph-coverage"
+        &= groupname "PLOT ONLY options"
+    , plotFunctionGraphCoveragePerMatch = False
+        &= help ( "Same as --plot-function-graph-coverage, but shows the "
+                  ++ "coverage for each individual match."
+                )
+        &= explicit
+        &= name "plot-function-graph-coverage-per-match"
         &= groupname "PLOT ONLY options"
     , matchFile = Nothing
         &= help "File containing the matches."
@@ -176,14 +190,27 @@ getOptionalTarget opts =
      else return Nothing
 
 -- | If an output file is given as part of the options, then the returned
--- function will write all data to the output file. Otherwise the data will be
--- written to 'STDOUT'.
-getOutputFunction :: Options -> IO (String -> IO ())
-getOutputFunction opts =
+-- function will emit all data to the output file with the output ID suffixed to
+-- the output file name (this may mean that several output files are
+-- produced). Otherwise the data will be emitted to 'STDOUT'.
+getEmitFunction :: Options -> IO (Output -> IO ())
+getEmitFunction opts =
   do let file = outFile opts
      if isNothing file
-     then return putStrLn
-     else return $ writeFile (fromJust file)
+     then return emitToStdout
+     else return $ emitToFile (fromJust file)
+
+-- | A function that emits output to 'STDOUT'.
+emitToStdout :: Output -> IO ()
+emitToStdout = putStrLn . oData
+
+-- | A function that emits output to a file of a given name and the output ID
+-- suffixed.
+emitToFile :: FilePath -> Output -> IO ()
+emitToFile fp o =
+  let (fname, ext) = splitExtension fp
+      filename = fname ++ oID o ++ ext
+  in writeFile filename (oData o)
 
 -- | Gets the requested plot action, based on the command line options. If no
 -- action is requested, an error is reported. If more than one action is
@@ -195,6 +222,9 @@ getRequiredPlotAction opts =
                   )
                 , ( Plotter.PlotFunctionGraphCoverage
                   , plotFunctionGraphCoverage opts
+                  )
+                , ( Plotter.PlotFunctionGraphCoveragePerMatch
+                  , plotFunctionGraphCoveragePerMatch opts
                   )
                 ]
       selected = filter snd actions
@@ -211,49 +241,45 @@ getRequiredPlotAction opts =
 main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
-     case (toLower $ command opts) of
-       "process-llvm-ir" ->
-         do when (isNothing $ inFile opts) $
-              error "No LLVM IR file is provided as input."
-            content <- readFileContent $ fromJust $ inFile opts
-            outputter <- getOutputFunction opts
-            LlvmIrProcessor.run content outputter
-       "pattern-match" ->
-         do when (isNothing $ inFile opts) $
-              error "No function JSON file is provided as input."
-            content <- readFileContent $ fromJust $ inFile opts
-            target <- getRequiredTarget opts
-            outputter <- getOutputFunction opts
-            PatternMatcher.run content target outputter
-       "make-cp-model" ->
-         do when (isNothing $ inFile opts) $
-              error "No function JSON file is provided as input."
-            when (isNothing $ matchFile opts) $
-              error "No matches JSON file is provided as input."
-            fcontent <- readFileContent $ fromJust $ inFile opts
-            mcontent <- readFileContent $ fromJust $ matchFile opts
-            outputter <- getOutputFunction opts
-            Modeler.run fcontent mcontent outputter
-       "plot" ->
-         do when (isNothing $ inFile opts) $
-              error "No function JSON file is provided as input."
-            fcontent <- readFileContent $ fromJust $ inFile opts
-            mcontent <- if isJust $ matchFile opts
-                        then do c <- readFileContent $ fromJust $ matchFile opts
-                                return $ Just c
-                        else return Nothing
-            action <- getRequiredPlotAction opts
-            outputter <- getOutputFunction opts
-            Plotter.run
-              fcontent
-              mcontent
-              action
-              outputter
-       "lower-llvm-ir" ->
-         undefined
-         -- TODO: implement
-       "check-function" ->
-         undefined
-         -- TODO: implement
-       cmd ->
-         error $ "Unrecognized command: " ++ show cmd
+     output <-
+       case (toLower $ command opts) of
+         "process-llvm-ir" ->
+           do when (isNothing $ inFile opts) $
+                error "No LLVM IR file is provided as input."
+              content <- readFileContent $ fromJust $ inFile opts
+              LlvmIrProcessor.run content
+         "pattern-match" ->
+           do when (isNothing $ inFile opts) $
+                error "No function JSON file is provided as input."
+              content <- readFileContent $ fromJust $ inFile opts
+              target <- getRequiredTarget opts
+              PatternMatcher.run content target
+         "make-cp-model" ->
+           do when (isNothing $ inFile opts) $
+                error "No function JSON file is provided as input."
+              when (isNothing $ matchFile opts) $
+                error "No matches JSON file is provided as input."
+              fcontent <- readFileContent $ fromJust $ inFile opts
+              mcontent <- readFileContent $ fromJust $ matchFile opts
+              Modeler.run fcontent mcontent
+         "plot" ->
+           do when (isNothing $ inFile opts) $
+                error "No function JSON file is provided as input."
+              fcontent <- readFileContent $ fromJust $ inFile opts
+              mcontent <- if isJust $ matchFile opts
+                          then
+                            do c <- readFileContent $ fromJust $ matchFile opts
+                               return $ Just c
+                          else return Nothing
+              action <- getRequiredPlotAction opts
+              Plotter.run fcontent mcontent action
+         "lower-llvm-ir" ->
+           undefined
+           -- TODO: implement
+         "check-function" ->
+           undefined
+           -- TODO: implement
+         cmd ->
+           error $ "Unrecognized command: " ++ show cmd
+     emit <- getEmitFunction opts
+     mapM_ emit output
