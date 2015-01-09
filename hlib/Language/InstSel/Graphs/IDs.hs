@@ -48,15 +48,16 @@ import qualified Language.InstSel.Utils.JSON as JSON
 
 -- | Represents a match ID.
 
-newtype MatchID = MatchID Natural
+newtype MatchID
+  = MatchID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show MatchID where
   show (MatchID i) = show i
 
 -- | Node ID data type.
-newtype NodeID =
-  NodeID Natural
+newtype NodeID
+  = NodeID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show NodeID where

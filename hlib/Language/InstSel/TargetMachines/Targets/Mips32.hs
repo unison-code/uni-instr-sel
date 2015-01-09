@@ -93,8 +93,8 @@ getRetRegister = getRegisterByName $ RegisterName $ regPrefix ++ "31"
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
-mkSimpleCompPattern ::
-     O.CompOp
+mkSimpleCompPattern
+  :: O.CompOp
      -- ^ The computation operation.
   -> D.DataType
      -- ^ The data type of the first operand.
@@ -125,8 +125,8 @@ mkSimpleCompPattern op src1 src2 dst =
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
-mkGenericSimpleRegRegCompInst ::
-     String
+mkGenericSimpleRegRegCompInst
+  :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
@@ -173,8 +173,8 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
 -- All data are assumed to be 32 bits in size.
-mkSimple32BitRegRegCompInst ::
-     String
+mkSimple32BitRegRegCompInst
+  :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
@@ -193,8 +193,8 @@ mkSimple32BitRegRegCompInst str op r1 r2 r3 =
 -- that takes two data nodes as input, and produces another data node as output.
 -- The input operands are assumed to be 32 bits in size, and the result is
 -- assumed to be 1 bit in size.
-mkSimple32BitRegs1BitResultCompInst ::
-     String
+mkSimple32BitRegs1BitResultCompInst
+  :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
@@ -215,8 +215,8 @@ mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
 -- The first input operand and result are assumed to reside in one of the 32
 -- general-purpose registers, and the second input operand is assumed to be a
 -- 16-bit immediate of a given range.
-mkSimple32BitReg16BitImmCompInst ::
-     String
+mkSimple32BitReg16BitImmCompInst
+  :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
@@ -344,8 +344,8 @@ mkCondBrInstrs =
      ]
 
 -- | Makes the conditional branch pseudoinstructions.
-mkCondBrPseudoInstrs ::
-     String
+mkCondBrPseudoInstrs
+  :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.

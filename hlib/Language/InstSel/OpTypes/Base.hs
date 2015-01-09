@@ -26,6 +26,7 @@ import Data.Maybe
   ( fromJust
   , isJust
   )
+
 import Prelude
   hiding
   ( GT
@@ -39,147 +40,110 @@ import Prelude
 --------------
 
 -- | Computational operations.
-data CompOp =
-    CompArithOp ArithOp
+data CompOp
+  = CompArithOp ArithOp
   | CompTypeConvOp TypeConvOp
   deriving (Eq)
 
 -- | Arithmetic operations.
-data ArithOp =
+data ArithOp
     -- | An integer operation where the sign does not matter.
-    IntOp ArithOpType
-
+  = IntOp ArithOpType
     -- | An unsigned integer operation.
   | UIntOp ArithOpType
-
     -- | A signed integer operation.
   | SIntOp ArithOpType
-
     -- | A fixed-point operation.
   | FixpointOp ArithOpType
-
     -- | A floating-point operation where the ordering does not matter.
   | FloatOp ArithOpType
-
     -- | An ordered floating-point operation.
   | OFloatOp ArithOpType
-
     -- | An unordered floating-point operation.
   | UFloatOp ArithOpType
   deriving (Eq)
 
 -- | Arithmetic operation types.
-data ArithOpType =
+data ArithOpType
     -- | Addition. Commutative.
-    Add
-
+  = Add
     -- | Saturated addition. Commutative. Typically only used with fixpoint.
   | SatAdd
-
     -- | Subtraction.
   | Sub
-
     -- | Saturated subtraction. Typically only used with fixpoint.
   | SatSub
-
     -- | Multiplication. Commutative.
   | Mul
-
     -- | Division.
   | Div
-
     -- | Remainder.
   | Rem
-
     -- | Bitwise left shift. If LHS is denoted by @x@, and RHS is denoted by
     -- @y@, then this operation represents @x < y@.
   | Shl
-
     -- | Bitwise logical right shift. If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x > y@.
   | LShr
-
     -- | Bitwise arithmetic right shift (with sign extension). If LHS is denoted
     -- by @x@, and RHS is denoted by @y@, then this operation represents @x >
     -- y@.
   | AShr
-
     -- | Bitwise AND (@\&@). Commutative.
   | And
-
     -- | Bitwise OR (@|@). Commutative.
   | Or
-
     -- | Bitwise XOR (@^@). Commutative.
   | XOr
-
     -- | Bit-wise NOT (@|@).
   | Not
-
     -- | Equality comparison (@==@). Commutative.
   | Eq
-
     -- | Inequality comparison (@!=@). Commutative.
   | NEq
-
     -- | Greater-than comparison (@>@). If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x > y@.
   | GT
-
     -- | Greater-than-or-equal comparison (@>=@). If LHS is denoted by @x@, and
     -- RHS is denoted by @y@, then this operation represents @x >= y@.
   | GE
-
     -- | Less-than comparison (@<@). If LHS is denoted by @x@, and RHS is
     -- denoted by @y@, then this operation represents @x < y@.
   | LT
-
     -- | Less-than-or-equal comparison (@<=@). If LHS is denoted by @x@, and RHS
     -- is denoted by @y@, then this operation represents @x <= y@.
   | LE
-
     -- | Square root function.
   | Sqrt
-
     -- | Checks if both floating point values are ordered.
   | Ordered
-
     -- | Checks if either floating point value is unordered.
   | Unordered
   deriving (Eq)
 
 -- | Operations that convert values of one type to another type.
-data TypeConvOp =
+data TypeConvOp
     -- | Zero extension.
-    ZExt
-
+  = ZExt
     -- | Sign extension.
   | SExt
-
     -- | Truncation.
   | Trunc
-
     -- | Floating-point to signed integer.
   | Float2SInt
-
     -- | Floating-point to unsigned integer.
   | Float2UInt
-
     -- | Signed integer to floating-point.
   | SInt2Float
-
     -- | Unsigned integer to floating-point.
   | UInt2Float
-
   deriving (Eq)
 
-data ControlOp =
+data ControlOp
     -- | Unconditional branch (same as a jump).
-    Branch
-
+  = Branch
     -- | Conditional branch. Branching is done if the input value is not zero.
   | CondBranch
-
     -- | Return.
   | Ret
   deriving (Eq)

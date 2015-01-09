@@ -49,16 +49,16 @@ import Language.InstSel.Utils.JSON
 --------------
 
 -- | Represents the execution frequency of a basic block.
-newtype ExecFreq =
-  ExecFreq Natural
+newtype ExecFreq
+  = ExecFreq Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show ExecFreq where
   show (ExecFreq i) = show i
 
 -- | The record of representing a program function.
-data Function =
-    Function
+data Function
+  = Function
       { functionName :: Maybe String
         -- ^ The function name.
       , functionOS :: OpStructure

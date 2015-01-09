@@ -28,6 +28,7 @@ import Language.InstSel.Utils
   , fromRight
   , isRight
   )
+
 import Data.AttoLisp
   hiding
   ( fromLispExpr )
@@ -35,12 +36,13 @@ import qualified Data.Attoparsec.ByteString as BS
   ( parseOnly )
 import qualified Data.ByteString.Char8 as BC
   ( pack )
+import Data.Attoparsec.Number
+  ( Number (..) )
+
 import Control.Applicative
   ( (<|>) )
 import Control.Monad
   ( mzero )
-import Data.Attoparsec.Number
-  ( Number (..) )
 
 
 

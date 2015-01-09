@@ -35,11 +35,18 @@ where
 import Language.InstSel.Graphs.Base
 import Language.InstSel.Utils
   ( groupBy )
+
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
   , unpack
   )
+import qualified Data.Text as T
+
+import Shelly
+import System.IO.Unsafe
+  ( unsafePerformIO )
+
 import Control.Monad
   ( mzero )
 import Data.List
@@ -50,22 +57,18 @@ import Data.Maybe
   ( fromJust
   , isJust
   )
-import qualified Data.Text as T
 import Prelude
   hiding ( FilePath )
-import Shelly
-import System.IO.Unsafe
-  ( unsafePerformIO )
 
 
 
----------
--- Types
----------
+--------------
+-- Data types
+--------------
 
 -- | A data type used to conveniently pass data from one function to another.
-data Parameters =
-  Parameters
+data Parameters
+  = Parameters
     { indexedPatternNodes :: [Node]
       -- ^ The nodes in the pattern graph, where each has been given a unique
       -- index (which is the element index).
@@ -97,16 +100,30 @@ data Parameters =
   deriving (Show)
 
 -- | A data type used to conveniently dump parameter data to a JSON file.
-data JsonParamData =
-  JsonParamData
-    { jsonNumPatternNodes :: Int
-    , jsonPatternEdges :: [(Int, Int)]
-    , jsonNumFunctionNodes :: Int
-    , jsonFunctionEdges :: [(Int, Int)]
-    , jsonInitialNodeDomains :: [[Int]]
-    , jsonInitialEdgeDomains :: [[Int]]
-    , jsonAlternativeEdges :: [[Int]]
+data JsonParamData
+  = JsonParamData
+      { jsonNumPatternNodes :: Int
+      , jsonPatternEdges :: [(Int, Int)]
+      , jsonNumFunctionNodes :: Int
+      , jsonFunctionEdges :: [(Int, Int)]
+      , jsonInitialNodeDomains :: [[Int]]
+      , jsonInitialEdgeDomains :: [[Int]]
+      , jsonAlternativeEdges :: [[Int]]
+      }
+
+data SolutionData =
+  SolutionData
+    { nodeMaps :: [[Int]]
+      -- ^ Found node maps. The index of the pattern node is the element index
+      -- to the inner list, where each such element is the index of a function
+      -- node.
     }
+
+
+
+-------------------------------------
+-- JSON-related type class instances
+-------------------------------------
 
 instance ToJSON JsonParamData where
   toJSON p =
@@ -118,14 +135,6 @@ instance ToJSON JsonParamData where
            , "initial-edge-domains" .= (jsonInitialEdgeDomains p)
            , "alternative-edges"    .= (jsonAlternativeEdges p)
            ]
-
-data SolutionData =
-  SolutionData
-    { nodeMaps :: [[Int]]
-      -- ^ Found node maps. The index of the pattern node is the element index
-      -- to the inner list, where each such element is the index of a function
-      -- node.
-    }
 
 instance FromJSON SolutionData where
   parseJSON (Object v) =
@@ -145,8 +154,8 @@ instance FromJSON SolutionData where
 -- mapping must be injective. Matches that are identical to one another will be
 -- removed such that only one match will remain.
 {-# NOINLINE findMatches #-}
-findMatches ::
-     Graph
+findMatches
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -158,8 +167,8 @@ findMatches fg pg =
       matches = makeMatchesFromSolutionData params sol
   in nub matches
 
-computeParameters ::
-     Graph
+computeParameters
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -223,8 +232,8 @@ computeParameters fg pg =
 
 -- | Finds and aggregates the edges that are alternatives to one another,
 -- meaning at most one of them may be matched per pattern.
-findAlternativeEdges ::
-     Graph
+findAlternativeEdges
+  :: Graph
   -> [[Edge]]
      -- ^ List of set of edges that are alternative.
 findAlternativeEdges g =

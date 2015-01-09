@@ -17,18 +17,20 @@ module Language.InstSel.Drivers.LlvmIrProcessor
   ( run )
 where
 
-import Language.InstSel.ProgramModules.LLVM
-  ( mkFunctionsFromLlvmModule )
 import Language.InstSel.Utils
   ( fromLeft
   , fromRight
   , isLeft
   )
 import Language.InstSel.Utils.JSON
-import Control.Monad.Except
-  ( runExceptT )
+
+import Language.InstSel.ProgramModules.LLVM
+  ( mkFunctionsFromLlvmModule )
 import LLVM.General
 import LLVM.General.Context
+import Control.Monad.Except
+  ( runExceptT )
+
 import System.Exit
   ( exitFailure )
 
@@ -38,8 +40,8 @@ import System.Exit
 -- Functions
 -------------
 
-run ::
-     String
+run
+  :: String
      -- ^ The function in LLVM IR format.
   -> (String -> IO ())
      -- ^ The function that takes care of emitting the result.

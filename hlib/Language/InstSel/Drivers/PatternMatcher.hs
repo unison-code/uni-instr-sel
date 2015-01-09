@@ -17,7 +17,6 @@ module Language.InstSel.Drivers.PatternMatcher
   ( run )
 where
 
-
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
@@ -28,6 +27,7 @@ import Language.InstSel.Utils
   , isLeft
   )
 import Language.InstSel.Utils.JSON
+
 import System.Exit
   ( exitFailure )
 
@@ -37,8 +37,8 @@ import System.Exit
 -- Functions
 -------------
 
-run ::
-     String
+run
+  :: String
      -- ^ The function in JSON format.
   -> TargetMachine
      -- ^ The target machine.

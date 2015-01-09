@@ -166,7 +166,9 @@ import Language.InstSel.Utils
   , toNatural
   )
 import Language.InstSel.Utils.JSON
+
 import qualified Data.Graph.Inductive as I
+
 import Data.List
   ( nub
   , nubBy
@@ -177,6 +179,7 @@ import qualified Data.Set as S
 import qualified Data.Vector as V
 
 
+
 --------------
 -- Data types
 --------------
@@ -184,13 +187,13 @@ import qualified Data.Vector as V
 type IntGraph = I.Gr NodeLabel EdgeLabel
 
 -- | The outer-most data type which contains the graph itself.
-newtype Graph =
-    Graph { intGraph :: IntGraph }
+newtype Graph
+  = Graph { intGraph :: IntGraph }
   deriving (Show)
 
 -- | Represents a distinct node.
-newtype Node =
-    Node (I.LNode NodeLabel)
+newtype Node
+  = Node (I.LNode NodeLabel)
   deriving (Show, Eq)
 
 instance Ord Node where
@@ -205,19 +208,17 @@ type DstNode = Node
 -- | Node label, consisting of an ID that can be shared by multiple nodes (thus
 -- representing that they are actually the same node) and node information which
 -- denotes the type of node and other auxiliary information.
-data NodeLabel =
-    NodeLabel
+data NodeLabel
+  = NodeLabel
       { nodeID :: NodeID
       , nodeType :: NodeType
       }
   deriving (Show, Eq)
 
 -- | The node type information.
-data NodeType =
-    ComputationNode { compOp :: O.CompOp }
-
+data NodeType
+  = ComputationNode { compOp :: O.CompOp }
   | ControlNode { ctrlOp :: O.ControlOp }
-
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as data nodes. What distinguishes one from another
@@ -230,24 +231,20 @@ data NodeType =
         -- entity can be given here as a string. This will only be used for
         -- debugging and pretty-printing purposes.
       }
-
   | LabelNode { bbLabel :: BasicBlockLabel }
-
   | PhiNode
-
   | StateNode
-
   | CopyNode
   deriving (Show, Eq)
 
 -- | Represents a distinct edge.
-newtype Edge =
-    Edge (I.LEdge EdgeLabel)
+newtype Edge
+  = Edge (I.LEdge EdgeLabel)
   deriving (Show, Eq)
 
 -- | Data type for describing how an edge relates to the two nodes.
-data EdgeLabel =
-    EdgeLabel
+data EdgeLabel
+  = EdgeLabel
       { edgeType :: EdgeType
       , outEdgeNr :: EdgeNr
       , inEdgeNr :: EdgeNr
@@ -255,24 +252,24 @@ data EdgeLabel =
   deriving (Show, Eq)
 
 -- | Data type for determining the edge type.
-data EdgeType =
-    ControlFlowEdge
+data EdgeType
+  = ControlFlowEdge
   | DataFlowEdge
   | StateFlowEdge
   | DefPlaceEdge
   deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
-newtype EdgeNr =
-    EdgeNr Natural
+newtype EdgeNr
+  = EdgeNr Natural
   deriving (Eq, Ord, Num, Enum)
 
 instance Show EdgeNr where
   show (EdgeNr i) = show i
 
 -- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
-data Mapping n =
-    Mapping
+data Mapping n
+  = Mapping
       { fNode :: n
         -- ^ The mapped node appearing in the function graph.
       , pNode :: n
@@ -281,14 +278,14 @@ data Mapping n =
   deriving (Show, Eq, Ord)
 
 -- | Represents a match between two graphs.
-newtype Match n =
-    Match (S.Set (Mapping n))
+newtype Match n
+  = Match (S.Set (Mapping n))
   deriving (Show, Eq)
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
-data Domset t =
-    Domset
+data Domset t
+  = Domset
       { domNode :: t
         -- ^ The dominator entity.
       , domSet :: [t]
@@ -635,8 +632,8 @@ updateNodeID new_id n g =
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
-copyNodeLabel ::
-     Node
+copyNodeLabel
+  :: Node
      -- ^ Node to copy label to.
   -> Node
      -- ^ Node to copy label from.
@@ -649,8 +646,8 @@ copyNodeLabel to_n from_n g
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
 -- removes the merged node. If the two nodes are actually the same node, nothing
 -- happens. Any edges already involving the two nodes will be removed.
-mergeNodes ::
-     Node
+mergeNodes
+  :: Node
      -- ^ Node to merge with (will be kept).
   -> Node
      -- ^ Node to merge with (will be discarded).
@@ -671,8 +668,8 @@ mergeNodes n_to_keep n_to_discard g
            )
 
 -- | Redirects all edges involving one node to another node.
-redirectEdges ::
-     Node
+redirectEdges
+  :: Node
      -- ^ Node to redirect edges to.
   -> Node
      -- ^ Node to redirect edges from.
@@ -682,8 +679,8 @@ redirectEdges to_n from_n g =
   redirectInEdges to_n from_n (redirectOutEdges to_n from_n g)
 
 -- | Redirects all inbound edges to one node to another node.
-redirectInEdges ::
-     Node
+redirectInEdges
+  :: Node
      -- ^ Node to redirect edges to.
   -> Node
      -- ^ Node to redirect edges from.
@@ -693,8 +690,8 @@ redirectInEdges to_n from_n g =
   foldr (updateEdgeTarget to_n) g (getInEdges g from_n)
 
 -- | Updates the target of an edge.
-updateEdgeTarget ::
-     Node
+updateEdgeTarget
+  :: Node
      -- ^ New target.
   -> Edge
      -- ^ The edge to update.
@@ -714,8 +711,8 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
 -- | Redirects the outbound edges from one node to another.
-redirectOutEdges ::
-     Node
+redirectOutEdges
+  :: Node
      -- ^ Node to redirect edges to.
   -> Node
      -- ^ Node to redirect edges from.
@@ -725,8 +722,8 @@ redirectOutEdges to_n from_n g =
   foldr (updateEdgeSource to_n) g (getOutEdges g from_n)
 
 -- | Updates the source of an edge.
-updateEdgeSource ::
-     Node
+updateEdgeSource
+  :: Node
      -- ^ New source.
   -> Edge
      -- ^ The edge to update.
@@ -968,8 +965,8 @@ getNodeIDs = nub . map getNodeID
 -- | Checks if a node matches another node. Two nodes match if they are of
 -- compatible node types and, depending on the node type, they have the same
 -- number of edges of a specific edge type.
-doNodesMatch ::
-     Graph
+doNodesMatch
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -1121,8 +1118,8 @@ doEdgeNrsMatch f es1 es2 =
 -- also assumed that, for each edge type, a in-edge number appears at most once
 -- in the list (which should be the case if we are considering matches of
 -- patterns on a function graph).
-doEdgeListsMatch ::
-     Graph
+doEdgeListsMatch
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -1148,8 +1145,8 @@ doEdgeListsMatch fg pg fes pes =
 -- edge type. It is also assumed that, for each edge type, a in-edge number
 -- appears at most once in the list (which should be the case if we are
 -- considering matches of patterns on a function graph).
-doInEdgeListsMatch ::
-     Graph
+doInEdgeListsMatch
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -1168,8 +1165,8 @@ doInEdgeListsMatch _ pg fes pes =
      ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Same as `doInEdgeListsMatch` but for out-edges.
-doOutEdgeListsMatch ::
-     Graph
+doOutEdgeListsMatch
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -1230,8 +1227,8 @@ doesOrderSFOutEdgesMatter _ _ = False
 -- | Checks if two in-edges are equivalent, meaning they must be of the same
 -- edge type, have target nodes with the same node ID, and have the same in-edge
 -- numbers.
-areInEdgesEquivalent ::
-     Graph
+areInEdgesEquivalent
+  :: Graph
      -- ^ The graph to which the edges belong.
   -> Edge
   -> Edge
@@ -1246,8 +1243,8 @@ areInEdgesEquivalent g e1 e2 =
 -- | Checks if two out-edges are equivalent, meaning they must be of the same
 -- edge type, have source nodes with the same node ID, and have the same
 -- out-edge numbers.
-areOutEdgesEquivalent ::
-     Graph
+areOutEdgesEquivalent
+  :: Graph
      -- ^ The graph to which the edges belong.
   -> Edge
   -> Edge
@@ -1362,8 +1359,8 @@ findFNInMapping st pn =
      else Nothing
 
 -- | Gets a list of dominator sets for a given graph and root node.
-extractDomSet ::
-     Graph
+extractDomSet
+  :: Graph
   -> Node
   -> [Domset Node]
 extractDomSet (Graph g) n =

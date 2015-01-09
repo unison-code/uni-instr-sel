@@ -29,6 +29,7 @@ import Language.InstSel.Utils
   , isLeft
   )
 import Language.InstSel.Utils.JSON
+
 import Data.Maybe
   ( fromJust
   , isNothing
@@ -42,8 +43,8 @@ import System.Exit
 -- Functions
 -------------
 
-run ::
-     String
+run
+  :: String
      -- ^ The function in JSON format.
   -> String
      -- ^ The instruction pattern matches in JSON format.

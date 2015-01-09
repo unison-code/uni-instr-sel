@@ -32,7 +32,20 @@ import Language.InstSel.Utils
   , replace
   , toNatural
   )
+
 import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as BS
+  ( pack
+  , unpack
+  )
+import Data.Scientific
+  ( Scientific )
+import qualified Data.Text as T
+  ( Text
+  , pack
+  , unpack
+  )
+
 import Control.Applicative
   ( (<$>)
   , (<*>)
@@ -41,20 +54,9 @@ import Control.Monad
   ( mzero
   , when
   )
-import qualified Data.ByteString.Lazy.Char8 as BS
-  ( pack
-  , unpack
-  )
 import Data.Maybe
   ( fromJust
   , isJust
-  )
-import Data.Scientific
-  ( Scientific )
-import qualified Data.Text as T
-  ( Text
-  , pack
-  , unpack
   )
 
 

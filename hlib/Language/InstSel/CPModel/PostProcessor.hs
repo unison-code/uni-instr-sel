@@ -30,7 +30,9 @@ import Language.InstSel.Patterns.IDs
 import Language.InstSel.ProgramModules
   ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachines
+
 import qualified Data.Graph.Inductive as I
+
 import Data.Maybe
 
 
@@ -43,8 +45,8 @@ import Data.Maybe
 -- directed edges represent control and data dependencies between the
 -- matches. Each edge represents either the data flowing from one pattern to
 -- another, or that there is a state or control dependency between the two.
-newtype ControlDataFlowDAG =
-  ControlDataFlowDAG { getIntDag :: IControlDataFlowDAG }
+newtype ControlDataFlowDAG
+  = ControlDataFlowDAG { getIntDag :: IControlDataFlowDAG }
 
 -- | Type synonym for the internal graph.
 type IControlDataFlowDAG = I.Gr MatchID ()
@@ -64,8 +66,8 @@ type IControlDataFlowDAG = I.Gr MatchID ()
 -- the phi node which makes use of the data appears at the top of the
 -- DAG. Cyclic control dependencies will appear if there is more than one match
 -- with control nodes in the list.
-mkControlDataFlowDAG ::
-     CPSolutionData
+mkControlDataFlowDAG
+  :: CPSolutionData
   -> [MatchID]
   -> ControlDataFlowDAG
 mkControlDataFlowDAG cp_data is =
@@ -79,8 +81,8 @@ mkControlDataFlowDAG cp_data is =
 -- there always exists exactly one node in the graph representing the match ID
 -- given as argument to the function. Note that this may lead to cycles, which
 -- will have to be broken as a second step.
-addUseEdgesToDAG ::
-     CPSolutionData
+addUseEdgesToDAG
+  :: CPSolutionData
   -> MatchID
   -> IControlDataFlowDAG
   -> IControlDataFlowDAG
@@ -101,8 +103,8 @@ addUseEdgesToDAG cp_data mid g0 =
       g2 = foldr (addUseEdgesToDAG' pi_n ns_s_defs) g1 s_uses_of_pi
   in g2
 
-addUseEdgesToDAG' ::
-     I.Node
+addUseEdgesToDAG'
+  :: I.Node
   -> [(I.Node, [NodeID])]
      -- ^ List of defs.
   -> NodeID
@@ -116,8 +118,8 @@ addUseEdgesToDAG' n def_maps use g =
 -- | If the given match ID represents a pattern with control nodes,
 -- then an edge will be added to the node of that match ID from every
 -- other node.
-addControlEdgesToDAG ::
-     CPSolutionData
+addControlEdgesToDAG
+  :: CPSolutionData
   -> MatchID
   -> IControlDataFlowDAG
   -> IControlDataFlowDAG
@@ -151,8 +153,8 @@ getInstrPattern :: [Instruction] -> InstructionID -> PatternID -> InstrPattern
 getInstrPattern is iid pid  = fromJust $ findInstrPattern is iid pid
 
 -- | Emits a list of assembly instructions for a given 'ControlDataFlowDAG'.
-emitInstructions ::
-     CPSolutionData
+emitInstructions
+  :: CPSolutionData
   -> TargetMachine
   -> ControlDataFlowDAG
   -> [String]
@@ -161,8 +163,8 @@ emitInstructions cp m dag =
   in filter (\i -> length i > 0) $ map (emitInstruction cp m) sorted_pis
 
 -- | Emits the corresponding instruction of a given match ID.
-emitInstruction ::
-     CPSolutionData
+emitInstruction
+  :: CPSolutionData
   -> TargetMachine
   -> MatchID
   -> String
@@ -195,8 +197,8 @@ findDefinerOfData cp n =
      then Just $ head selected
      else Nothing
 
-produceAssemblyString ::
-     CPSolutionData
+produceAssemblyString
+  :: CPSolutionData
   -> TargetMachine
   -> AssemblyStringPart
   -> String

@@ -42,13 +42,13 @@ import qualified Data.Char as Char
   )
 
 
---------------------------
--- Classes and data types
---------------------------
+--------------
+-- Data types
+--------------
 
 -- | Record for representing a value range.
-data Range t =
-    Range
+data Range t
+  = Range
       { lowerBound :: t
         -- | Smallest possible value (i.e. inclusive).
       , upperBound :: t
@@ -57,27 +57,18 @@ data Range t =
   deriving (Show, Eq)
 
 -- | Creates a new data type that allows numbers from 0 to positive infinity.
-newtype Natural =
-    Natural Integer
+newtype Natural
+  = Natural Integer
   deriving (Eq, Ord)
+
+
+
+----------------------------------------
+-- Natural-related type class instances
+----------------------------------------
 
 instance Show Natural where
   show (Natural i) = show i
-
-maybeToNatural :: (Integral i) => i -> Maybe Natural
-maybeToNatural x
-  | x < 0     = Nothing
-  | otherwise = Just $ Natural $ toInteger x
-
-toNatural :: (Integral i) => i -> Natural
-toNatural x =
-  let n = maybeToNatural x
-  in if isJust n
-     then fromJust n
-     else error "Natural cannot be negative"
-
-fromNatural :: Natural -> Integer
-fromNatural (Natural i) = i
 
 instance Num Natural where
     fromInteger = toNatural
@@ -109,6 +100,26 @@ instance Integral Natural where
 -------------
 -- Functions
 -------------
+
+-- | Converts an 'Integral' into a 'Natural'. If conversion fails, 'Nothing' is
+-- returned.
+maybeToNatural :: (Integral i) => i -> Maybe Natural
+maybeToNatural x
+  | x < 0     = Nothing
+  | otherwise = Just $ Natural $ toInteger x
+
+-- | Converts an 'Integral' into a 'Natural'. If conversion fails, an error is
+-- reported.
+toNatural :: (Integral i) => i -> Natural
+toNatural x =
+  let n = maybeToNatural x
+  in if isJust n
+     then fromJust n
+     else error "Natural cannot be negative"
+
+-- | Converts a 'Natural' into an 'Integer'.
+fromNatural :: Natural -> Integer
+fromNatural (Natural i) = i
 
 -- | Takes two lists, where one list is a permutation of the another list, and
 -- returns a list of position mappings such that one list can be transformed
@@ -176,8 +187,8 @@ groupBy f es =
         belongs f'' e' es' = any (f'' e') es'
 
 -- | Replaces a substring with another substring.
-replace ::
-     String
+replace
+  :: String
      -- ^ What to search for.
   -> String
      -- ^ What to replace with.

@@ -23,6 +23,7 @@ import Language.InstSel.Utils
   , toNatural
   )
 import Language.InstSel.Utils.JSON
+
 import Data.Maybe
   ( fromJust
   , isNothing
@@ -34,10 +35,9 @@ import Data.Maybe
 -- Data types
 --------------
 
-data DataType =
+data DataType
     -- | An integer data type, of a certain number of bits.
-    IntType Natural
-
+  = IntType Natural
     -- | When the data type is unknown and does not matter.
   | AnyType
   deriving (Eq)

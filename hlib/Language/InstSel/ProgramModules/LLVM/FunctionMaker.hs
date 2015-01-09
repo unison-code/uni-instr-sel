@@ -20,11 +20,6 @@ module Language.InstSel.ProgramModules.LLVM.FunctionMaker
   )
 where
 
-import qualified LLVM.General.AST as LLVM
-import qualified LLVM.General.AST.Constant as LLVMC
-import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
-import qualified LLVM.General.AST.Global as LLVMG
-import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 import qualified Language.InstSel.Constraints as C
 import qualified Language.InstSel.Constraints.PCBuilder as C
 import qualified Language.InstSel.DataTypes as D
@@ -34,6 +29,13 @@ import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
 import Language.InstSel.Utils
   ( toNatural )
+
+import qualified LLVM.General.AST as LLVM
+import qualified LLVM.General.AST.Constant as LLVMC
+import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
+import qualified LLVM.General.AST.Global as LLVMG
+import qualified LLVM.General.AST.IntegerPredicate as LLVMI
+
 import Data.Maybe
 
 
@@ -61,8 +63,8 @@ type LabelToNodeDF = (PM.BasicBlockLabel, G.Node)
 type DefPlaceCond = (G.Node, PM.BasicBlockLabel)
 
 -- | Represents the intermediate build data.
-data BuildState =
-    BuildState
+data BuildState
+  = BuildState
       { llvmModule :: LLVM.Module
         -- ^ The original LLVM module.
       , osGraph :: OS.OpStructure
@@ -95,8 +97,8 @@ data BuildState =
   deriving (Show)
 
 -- | Retains various symbol names.
-data Symbol =
-    LocalStringSymbol String
+data Symbol
+  = LocalStringSymbol String
   | GlobalStringSymbol String
   | TemporarySymbol Integer
   deriving (Eq)
@@ -107,8 +109,8 @@ instance Show Symbol where
   show (TemporarySymbol int) = "t" ++ show int
 
 -- | Retains various constant values.
-data Constant =
-    IntConstant
+data Constant
+  = IntConstant
       { intBitWidth :: Integer
         -- ^ Number of bits that represents the integer value.
       , signedIntValue :: Integer
@@ -126,9 +128,9 @@ instance Show Constant where
 
 
 
------------
--- Classes
------------
+----------------
+-- Type classes
+----------------
 
 -- | Class for converting an LLVM symbol entity into a `Symbol`.
 class SymbolFormable a where
@@ -152,8 +154,8 @@ instance ConstantFormable LLVMC.Constant where
 -- | Class for building the data flow graph.
 class DfgBuildable a where
   -- | Builds the corresponding data flow graph from a given LLVM element.
-  buildDfg ::
-      BuildState
+  buildDfg
+    :: BuildState
       -- ^ The current build state.
     -> a
        -- ^ The LLVM element to process.
@@ -163,8 +165,8 @@ class DfgBuildable a where
 -- | Class for building the control flow graph.
 class CfgBuildable a where
   -- | Builds the corresponding control flow graph from a given LLVM element.
-  buildCfg ::
-      BuildState
+  buildCfg
+    :: BuildState
       -- ^ The current build state.
     -> a
        -- ^ The LLVM element to process.
@@ -250,8 +252,8 @@ addNewNode st0 nt =
   in st2
 
 -- | Adds a new edge into a given state.
-addNewEdge ::
-     BuildState
+addNewEdge
+  :: BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> G.Node
@@ -265,8 +267,8 @@ addNewEdge st et src dst =
   in updateOSGraph st new_g
 
 -- | Adds many new edges of the same type into a given state.
-addNewEdgesManySources ::
-     BuildState
+addNewEdgesManySources
+  :: BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> [G.Node]
@@ -281,8 +283,8 @@ addNewEdgesManySources st et srcs dst =
   in updateOSGraph st $ foldl f (getOSGraph st) es
 
 -- | Adds many new edges of the same type into a given state.
-addNewEdgesManyDests ::
-     BuildState
+addNewEdgesManyDests
+  :: BuildState
      -- ^ The current state.
   -> G.EdgeType
   -> G.Node
@@ -344,13 +346,13 @@ mappedDataNodeFromConst ms c =
 -- added.
 buildOSFromSym :: BuildState -> Symbol -> BuildState
 buildOSFromSym st0 sym =
-    let node_for_sym = mappedDataNodeFromSym (symMaps st0) sym
-    in if isJust node_for_sym
-       then touchNode st0 (fromJust node_for_sym)
-       else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
-                d_node = fromJust $ lastTouchedNode st1
-                st2 = addSymMap st1 (d_node, sym)
-            in st2
+  let node_for_sym = mappedDataNodeFromSym (symMaps st0) sym
+  in if isJust node_for_sym
+     then touchNode st0 (fromJust node_for_sym)
+     else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
+              d_node = fromJust $ lastTouchedNode st1
+              st2 = addSymMap st1 (d_node, sym)
+          in st2
 
 -- | Builds the corresponding operation structure from a constant value. If a
 -- node mapping for that constant already exists, then the last touched node is
@@ -358,16 +360,16 @@ buildOSFromSym st0 sym =
 -- node is added.
 buildOSFromConst :: BuildState -> Constant -> BuildState
 buildOSFromConst st0 c =
-    let node_for_c = mappedDataNodeFromConst (constMaps st0) c
-    in if isJust node_for_c
-       then touchNode st0 (fromJust node_for_c)
-       else let st1 = addNewNode
-                        st0
-                        (G.DataNode (toDataType c) (Just $ show c))
-                d_node = fromJust $ lastTouchedNode st1
-                st2 = addConstMap st1 (d_node, c)
-                st3 = addOSConstraints st2 (mkConstConstraints d_node c)
-            in st3
+  let node_for_c = mappedDataNodeFromConst (constMaps st0) c
+  in if isJust node_for_c
+     then touchNode st0 (fromJust node_for_c)
+     else let st1 = addNewNode
+                      st0
+                      (G.DataNode (toDataType c) (Just $ show c))
+              d_node = fromJust $ lastTouchedNode st1
+              st2 = addConstMap st1 (d_node, c)
+              st3 = addOSConstraints st2 (mkConstConstraints d_node c)
+          in st3
 
 mkConstConstraints :: G.Node -> Constant -> [C.Constraint]
 mkConstConstraints n (IntConstant { signedIntValue = v }) =
@@ -569,9 +571,9 @@ retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
 
 
 
----------------------------------
--- 'DfgBuildable' class instances
----------------------------------
+---------------------------------------------
+-- DfgBuildable-related type class instances
+---------------------------------------------
 
 instance (DfgBuildable a) => DfgBuildable [a] where
   buildDfg = foldl buildDfg
@@ -677,9 +679,9 @@ instance DfgBuildable LLVM.Parameter where
 
 
 
----------------------------------
--- 'CfgBuildable' class instances
----------------------------------
+---------------------------------------------
+-- CfgBuildable-related type class instances
+---------------------------------------------
 
 instance (CfgBuildable a) => CfgBuildable [a] where
   buildCfg = foldl buildCfg

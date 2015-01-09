@@ -30,6 +30,7 @@ module Language.InstSel.Graphs.PatternMatching.VF2
 where
 
 import Language.InstSel.Graphs.Base
+
 import Data.List
   ( intersect
   , nub
@@ -44,8 +45,8 @@ import Data.Maybe
 -------------
 
 -- | Finds all instances where a pattern graph matches within a function graph.
-findMatches ::
-     Graph
+findMatches
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -57,8 +58,8 @@ findMatches fg pg = map toMatch (match fg pg [])
 -- mapping candidates, and then applies a feasibility check on each of
 -- them. Each candidate that passes the test is added to the existing mapping
 -- state, and then the function is recursively called.
-match ::
-     Graph
+match
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -77,8 +78,8 @@ match fg pg st
 -- resultant set is empty, then the set consists of the pairs of nodes which are
 -- corresponding predecessors. If this set too is empty, then the returned set
 -- consists of the pairs of nodes not contained in the match set.
-getCandidates ::
-     Graph
+getCandidates
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -112,8 +113,8 @@ getFNFromState st pn = fromJust $ findFNInMapping st pn
 
 -- | Checks that the node mapping is feasible by comparing their semantics and
 -- syntax.
-checkFeasibility ::
-     Graph
+checkFeasibility
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -126,8 +127,8 @@ checkFeasibility fg pg st c =
   checkSemantics fg pg st c && checkSyntax fg pg st c
 
 -- | Checks that the semantics of the matched nodes and edges are compatible.
-checkSemantics ::
-     Graph
+checkSemantics
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -208,8 +209,8 @@ checkSemantics fg pg st c =
 --
 -- The modification is that the last check is removed as it appear to forbid
 -- certain cases of subgraph isomorphism which we still want.
-checkSyntax ::
-     Graph
+checkSyntax
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -234,8 +235,8 @@ checkSyntax fg pg st c =
 --
 -- The modification is that in this implementation I have removed the equivalent
 -- check for the matched function node; I believe this to be a bug in the paper.
-checkSyntaxPred ::
-     Graph
+checkSyntaxPred
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -258,8 +259,8 @@ checkSyntaxPred fg pg st c =
 
 -- | Same as checkSyntaxPred but for the successors (modified version of
 -- equation 4 in the paper).
-checkSyntaxSucc ::
-     Graph
+checkSyntaxSucc
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -283,8 +284,8 @@ checkSyntaxSucc fg pg st c =
 -- | Checks that there exists a sufficient number of unmapped predecessors left
 -- in the function graph to cover the unmapped predecessors left in the pattern
 -- graph (equation 5 in the paper). This is a 1-look-ahead check.
-checkSyntaxIn ::
-     Graph
+checkSyntaxIn
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -315,8 +316,8 @@ checkSyntaxIn fg pg st c =
      )
 
 -- | Same as checkSyntaxIn but for successors (equation 6 in the paper).
-checkSyntaxOut ::
-     Graph
+checkSyntaxOut
+  :: Graph
      -- ^ The function graph.
   -> Graph
      -- ^ The pattern graph.
@@ -346,8 +347,9 @@ checkSyntaxOut fg pg st c =
        length (preds_pn `intersect` t_out_pg)
      )
 
-getTOutSet ::
-     Graph
+-- | Gets the T_out set.
+getTOutSet
+  :: Graph
      -- ^ Graph in which the nodes of M belong.
   -> [Node]
      -- ^ The M set.
@@ -355,8 +357,9 @@ getTOutSet ::
 getTOutSet g ns =
   nub $ filter (`notElem` ns) (concatMap (getSuccessors g) ns)
 
-getTInSet ::
-     Graph
+-- | Gets the T_in set.
+getTInSet
+  :: Graph
      -- ^ Graph in which the nodes of M belong.
   -> [Node]
      -- ^ The M set.
@@ -364,8 +367,9 @@ getTInSet ::
 getTInSet g ns =
   nub $ filter (`notElem` ns) (concatMap (getPredecessors g) ns)
 
-getTDSet ::
-     Graph
+-- | Gets the T_D set.
+getTDSet
+  :: Graph
      -- ^ Graph in which the nodes of M belong.
   -> [Node]
      -- ^ The M set.

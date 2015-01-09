@@ -32,7 +32,6 @@ outputs (on stdout) the corresponding assembly instructions for that solution.
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, RecordWildCards #-}
 
 import Language.InstSel.CPModel
-import Language.InstSel.CPModel.Json
 import Language.InstSel.CPModel.PostProcessor
 import Language.InstSel.Graphs.IDs
   ( MatchID
@@ -46,28 +45,31 @@ import Language.InstSel.Utils
   , fromRight
   , isLeft
   )
+import Language.InstSel.Utils.JSON
+
+import System.Console.CmdArgs
+
 import Control.Monad
   ( when )
 import Data.Maybe
   ( fromJust
   , isNothing
   )
-import System.Console.CmdArgs
 import System.Exit
   ( exitFailure )
 
 
 
----------------------------------
--- Help functions and data types
----------------------------------
+--------------------------------------------
+-- Options-related data types and functions
+--------------------------------------------
 
 data Options
-    = Options
-        { sFile :: Maybe String
-        , ppFile :: Maybe String
-        }
-    deriving (Data, Typeable)
+  = Options
+      { sFile :: Maybe String
+      , ppFile :: Maybe String
+      }
+  deriving (Data, Typeable)
 
 parseArgs :: Options
 parseArgs =
@@ -80,10 +82,17 @@ parseArgs =
         &= help "The JSON file containing the post-processing parameters."
     }
 
-getPIsAllocatedToBB :: CPSolutionData
-                       -> NodeID              -- ^ The node ID of the
-                                              -- corresponding label node.
-                       -> [MatchID]
+
+
+-------------
+-- Functions
+-------------
+
+getPIsAllocatedToBB
+  :: CPSolutionData
+  -> NodeID
+      -- ^ The node ID of the corresponding label node.
+  -> [MatchID]
 getPIsAllocatedToBB cp_data n =
   map fst $ filter (\t -> snd t == n) $ bbAllocsForMatches cp_data
 

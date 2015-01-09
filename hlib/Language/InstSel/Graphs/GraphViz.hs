@@ -12,18 +12,24 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.GraphViz
-  ( toDotGraph
+  ( noMoreEdgeAttr
+  , noMoreNodeAttr
+  , toDotGraph
+  , toDotGraphWith
   , toDotString
+  , toDotStringWith
   )
 where
 
 import Language.InstSel.DebugShow
 import Language.InstSel.Graphs.Base
+
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
 import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text.Lazy as T
+
 
 
 -------------
@@ -32,26 +38,54 @@ import qualified Data.Text.Lazy as T
 
 -- | Converts a graph into GraphViz's DotGraph internal format.
 toDotGraph :: Graph -> GV.DotGraph I.Node
-toDotGraph g = GV.graphToDot mkParams (intGraph g)
+toDotGraph = toDotGraphWith noMoreNodeAttr noMoreEdgeAttr
+
+-- | Same as 'toDotGraph' but may take two additional functions for customizing
+-- the appearance of the nodes and edges. This is done by adding additional
+-- attributes to the nodes and edges.
+toDotGraphWith
+  :: (Node -> GV.Attributes)
+  -> (Edge -> GV.Attributes)
+  -> Graph
+  -> GV.DotGraph I.Node
+toDotGraphWith nf ef g =
+  GV.graphToDot (mkParams nf ef) (intGraph g)
 
 -- | Converts a graph into GraphViz's DotGraph string format, which can then be
 -- written to file.
 toDotString :: Graph -> String
-toDotString g =
-  let text = GVP.renderDot $ GVP.toDot $ toDotGraph g
+toDotString = toDotStringWith noMoreNodeAttr noMoreEdgeAttr
+
+-- | Same as 'toDotString' but may take two additional functions for customizing
+-- the appearance of the nodes and edges. This is done by adding additional
+-- attributes to the nodes and edges.
+toDotStringWith
+  :: (Node -> GV.Attributes)
+  -> (Edge -> GV.Attributes)
+  -> Graph
+  -> String
+toDotStringWith nf ef g =
+  let text = GVP.renderDot $ GVP.toDot $ toDotGraphWith nf ef g
       str = T.unpack text
   in str
 
--- | Constructs the appropriate parameters.
-mkParams :: GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
-mkParams =
-  GV.nonClusteredParams { GV.fmtNode = mkNodeAttr
-                        , GV.fmtEdge = mkEdgeAttr
-                        }
+-- | Constructs the dot graph parameters, including the attributes for the nodes
+-- and edges.
+mkParams
+  :: (Node -> GV.Attributes)
+  -> (Edge -> GV.Attributes)
+  -> GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
+mkParams nf ef =
+  let mkNodeAttr n = mkDefaultNodeAttr n ++ nf (Node n)
+      mkEdgeAttr e = mkDefaultEdgeAttr e ++ ef (Edge e)
+  in GV.nonClusteredParams
+       { GV.fmtNode = mkNodeAttr
+       , GV.fmtEdge = mkEdgeAttr
+       }
 
--- | Constructs the appropriate node attributes, depending on the node type.
-mkNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
-mkNodeAttr n = mkNodeAttrByType (getNodeType (Node n))
+-- | Constructs the default node attributes, depending on the node type.
+mkDefaultNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
+mkDefaultNodeAttr n = mkNodeAttrByType (getNodeType (Node n))
 
 -- | Constructs the node attributes based on the given node type.
 mkNodeAttrByType :: NodeType -> GV.Attributes
@@ -84,9 +118,14 @@ mkStateNodeAttr = mkDataNodeAttr ""
 mkCopyNodeAttr :: GV.Attributes
 mkCopyNodeAttr = mkCompNodeAttr "copy"
 
--- | Constructs the appropriate edge attributes.
-mkEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
-mkEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
+-- | A function that produces an empty list of attributes, no matter the
+-- argument.
+noMoreNodeAttr :: Node -> GV.Attributes
+noMoreNodeAttr _ = []
+
+-- | Constructs the default edge attributes.
+mkDefaultEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
+mkDefaultEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
                ++
                mkEdgeNrAttributes e
 
@@ -116,3 +155,8 @@ mkStateFlowEdgeAttr = [GV.style GV.solid]
 
 mkDefPlaceEdgeAttr :: GV.Attributes
 mkDefPlaceEdgeAttr = [GV.style GV.dotted]
+
+-- | A function that produces an empty list of attributes, no matter the
+-- argument.
+noMoreEdgeAttr :: Edge -> GV.Attributes
+noMoreEdgeAttr _ = []

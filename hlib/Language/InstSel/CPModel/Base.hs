@@ -44,6 +44,7 @@ import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( Natural )
 import Language.InstSel.Utils.JSON
+
 import Data.List
   ( sortBy )
 import Data.Maybe
@@ -56,8 +57,8 @@ import Data.Maybe
 --------------
 
 -- | Wrapper for all model parameters.
-data CPModelParams =
-    CPModelParams
+data CPModelParams
+  = CPModelParams
       { functionParams :: FunctionGraphParams
       , matchParams :: [MatchParams]
       , machineParams :: MachineParams
@@ -65,8 +66,8 @@ data CPModelParams =
   deriving (Show)
 
 -- | Describes the necessary function graph parameters.
-data FunctionGraphParams =
-    FunctionGraphParams
+data FunctionGraphParams
+  = FunctionGraphParams
       { funcOpNodes :: [NodeID]
         -- ^ The operation nodes in the function graph.
       , funcEssentialOpNodes :: [NodeID]
@@ -92,8 +93,8 @@ data FunctionGraphParams =
   deriving (Show)
 
 -- | Information about the basic blocks.
-data BasicBlockParams =
-    BasicBlockParams
+data BasicBlockParams
+  = BasicBlockParams
       { bbLabel :: BasicBlockLabel
         -- ^ The label of this basic block.
       , bbLabelNode :: NodeID
@@ -104,8 +105,8 @@ data BasicBlockParams =
   deriving (Show)
 
 -- | Describes the necessary match parameters.
-data MatchParams =
-    MatchParams
+data MatchParams
+  = MatchParams
       { mInstructionID :: InstructionID
         -- ^ The instruction ID of this match.
       , mPatternID :: PatternID
@@ -155,8 +156,8 @@ data MatchParams =
   deriving (Show)
 
 -- | Contains the necessary target machine parameters.
-data MachineParams =
-    MachineParams
+data MachineParams
+  = MachineParams
       { machID :: TargetMachineID
         -- ^ The identifier of the target machine.
       , machRegisters :: [RegisterID]
@@ -165,8 +166,8 @@ data MachineParams =
   deriving (Show)
 
 -- | Contains the data for a solution to the CP model.
-data RawCPSolutionData =
-    RawCPSolutionData
+data RawCPSolutionData
+  = RawCPSolutionData
       { rawBBAllocsForMatches :: [Natural]
         -- ^ The basic block (given as array indices) to which a particular
         -- match was allocated. An array index for a match corresponds to an
@@ -201,8 +202,8 @@ data RawCPSolutionData =
   deriving (Show)
 
 -- | Contains the post-processing parameters.
-data RawPostParams =
-    RawPostParams
+data RawPostParams
+  = RawPostParams
       { rawModelParams :: CPModelParams
         -- ^ The CP model parameters.
       , rawArrInd2MatchIDs :: [MatchID]
@@ -216,8 +217,8 @@ data RawPostParams =
 
 -- | Contains the data for a solution to the CP model, converted from the raw
 -- solution and post-processing parameters data.
-data CPSolutionData =
-    CPSolutionData
+data CPSolutionData
+  = CPSolutionData
       { modelParams :: CPModelParams
         -- ^ The CP model parameters.
       , bbAllocsForMatches :: [(MatchID, NodeID)]
@@ -387,8 +388,8 @@ instance FromJSON RawPostParams where
 
 -- | Converts raw CP solution and post-processing parameters data into a more
 -- convenient form.
-fromRawCPSolutionData ::
-     RawPostParams
+fromRawCPSolutionData
+  :: RawPostParams
   -> RawCPSolutionData
   -> CPSolutionData
 fromRawCPSolutionData m_data cp_data =
@@ -400,8 +401,8 @@ fromRawCPSolutionData m_data cp_data =
     (computeRegsOfDataNodes m_data cp_data)
     (computeImmValuesOfDataNodes m_data cp_data)
 
-computeBBAllocsForMatches ::
-     RawPostParams
+computeBBAllocsForMatches
+  :: RawPostParams
   -> RawCPSolutionData
   -> [(MatchID, NodeID)]
 computeBBAllocsForMatches m_data cp_data =
@@ -416,8 +417,8 @@ computeBBAllocsForMatches m_data cp_data =
                (rawBBAllocsForMatches cp_data)
   in catMaybes maps
 
-computeSelectionOfMatches ::
-     RawPostParams
+computeSelectionOfMatches
+  :: RawPostParams
   -> RawCPSolutionData
   -> [MatchID]
 computeSelectionOfMatches m_data cp_data =
@@ -427,8 +428,8 @@ computeSelectionOfMatches m_data cp_data =
                 (rawIsMatchSelected cp_data)
   in catMaybes keeps
 
-computeOrderOfBBs ::
-     RawPostParams
+computeOrderOfBBs
+  :: RawPostParams
   -> RawCPSolutionData
   -> [NodeID]
 computeOrderOfBBs m_data cp_data =
@@ -436,8 +437,8 @@ computeOrderOfBBs m_data cp_data =
       sorted_labs = sortBy (\l1 l2 -> compare (snd l1) (snd l2)) lab_order
   in map fst sorted_labs
 
-computeRegsOfDataNodes ::
-     RawPostParams
+computeRegsOfDataNodes
+  :: RawPostParams
   -> RawCPSolutionData
   -> [(NodeID, RegisterID)]
 computeRegsOfDataNodes m_data cp_data =
@@ -448,8 +449,8 @@ computeRegsOfDataNodes m_data cp_data =
                 (rawRegsSelectedForDataNodes cp_data)
   in catMaybes keeps
 
-computeImmValuesOfDataNodes ::
-     RawPostParams
+computeImmValuesOfDataNodes
+  :: RawPostParams
   -> RawCPSolutionData
   -> [(NodeID, Integer)]
 computeImmValuesOfDataNodes m_data cp_data =
@@ -463,8 +464,8 @@ computeImmValuesOfDataNodes m_data cp_data =
 -- | Given a list of match params, the function finds the 'MatchParams' entity
 -- with matching match ID. If there is more than one match, the first found is
 -- returned. If no such entity is found, 'Nothing' is returned.
-findMatchParams ::
-     [MatchParams]
+findMatchParams
+  :: [MatchParams]
   -> MatchID
   -> Maybe MatchParams
 findMatchParams ps piid =

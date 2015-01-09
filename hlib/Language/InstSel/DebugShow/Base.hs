@@ -16,6 +16,10 @@ module Language.InstSel.DebugShow.Base where
 
 
 
+----------------
+-- Type classes
+----------------
+
 -- | A class for when to print stuff for debugging-purposes only, not for any
 -- later parsing. This means that information can be lost without consequences
 -- (for instance, many operations will shown the same string, but that's okay

@@ -35,6 +35,7 @@ import Language.InstSel.TargetMachines.IDs
   ( RegisterID )
 import Language.InstSel.Utils
   ( Range (..) )
+
 import Data.Maybe
 
 
@@ -71,8 +72,8 @@ mkBBAllocConstraints g =
 -- | Creates intermediate data value constraints (see
 -- `mkInterDataValConstraints`) and adds these (if any) are added to the
 -- existing 'OpStructure'.
-addInterDataValConstraints ::
-     OpStructure
+addInterDataValConstraints
+  :: OpStructure
      -- ^ The old structure.
   -> [NodeID]
      -- ^ List of data nodes which are specified as output.
@@ -87,8 +88,8 @@ addInterDataValConstraints os outs =
 -- not specified as output nodes. Hence such data values are not accessible from
 -- outside the pattern, and must be prevented from being used by other
 -- patterns.
-mkInterDataValConstraints ::
-     Graph
+mkInterDataValConstraints
+  :: Graph
      -- ^ The pattern graph.
   -> [NodeID]
      -- ^ List of data nodes which are specified as output.
@@ -105,8 +106,8 @@ mkInterDataValConstraints g outs =
 
 -- | Creates register allocation constraints (see `mkRegAllocConstraints`) and
 -- adds these (if any) are added to the existing 'OpStructure'.
-addRegAllocConstraints ::
-     OpStructure
+addRegAllocConstraints
+  :: OpStructure
      -- ^ The old structure.
   -> [RegisterID]
      -- ^ List of registers to which the data can be allocated.
@@ -120,8 +121,8 @@ addRegAllocConstraints os regs d =
 
 -- | Creates register allocation constraints such that the data of a particular
 -- data node must be allocated one of a particular set of registers.
-mkRegAllocConstraints ::
-     [RegisterID]
+mkRegAllocConstraints
+  :: [RegisterID]
      -- ^ List of registers to which the data can be allocated.
   -> NodeID
      -- ^ A data node.
@@ -140,8 +141,8 @@ mkRegAllocConstraints regs d =
 
 -- | Creates integer constant constraints (see 'mkIntConstConstraints'), and
 -- adds (if any) these to the existing 'OpStructure'.
-addIntConstConstraints ::
-     OpStructure
+addIntConstConstraints
+  :: OpStructure
      -- ^ The old structure.
   -> NodeID
      -- ^ A data node.
@@ -154,8 +155,8 @@ addIntConstConstraints os d v =
 
 -- | Creates constraints such that the value of particular data node is a
 -- constant integer value.
-mkIntConstConstraints ::
-     NodeID
+mkIntConstConstraints
+  :: NodeID
      -- ^ A data node.
   -> Integer
      -- ^ A signed integer constant.
@@ -177,8 +178,8 @@ mkIntConstConstraints d v =
 
 -- | Creates integer value range constraints (see 'mkIntRangeConstraints'), and
 -- adds (if any) these to the existing 'OpStructure'.
-addIntRangeConstraints ::
-     OpStructure
+addIntRangeConstraints
+  :: OpStructure
      -- ^ The old structure.
   -> NodeID
      -- ^ A data node.
@@ -191,8 +192,8 @@ addIntRangeConstraints os d v =
 
 -- | Creates constraints such that the value of particular data node is an
 -- integer value that is within a given range.
-mkIntRangeConstraints ::
-     NodeID
+mkIntRangeConstraints
+  :: NodeID
      -- ^ A data node.
   -> Range Integer
      -- ^ An inclusive signed integer range.
@@ -232,8 +233,8 @@ addFallthroughConstraints os l =
 -- | Creates constraints for enforcing branch fallthrough, meaning that the
 -- distance between the basic block to which to jump and the basic block from
 -- which to jump must be zero.
-mkFallthroughConstraints ::
-     NodeID
+mkFallthroughConstraints
+  :: NodeID
      -- ^ A label node.
   -> [Constraint]
 mkFallthroughConstraints l =

@@ -45,33 +45,28 @@ import Language.InstSel.TargetMachines.IDs
 --------------
 
 -- | Record for containing the assembly string to produce during code emission.
-data AssemblyString =
-    AssemblyString { assemblyStrParts :: [AssemblyStringPart] }
+data AssemblyString
+  = AssemblyString { assemblyStrParts :: [AssemblyStringPart] }
   deriving (Show)
 
 -- | Represents parts of the assembly string.
-data AssemblyStringPart =
+data AssemblyStringPart
     -- | Denotes string which is meant to be output verbatim.
-    ASVerbatim String
-
+  = ASVerbatim String
     -- | Denotes the immediate value of a given data node.
   | ASImmValueOfDataNode NodeID
-
     -- | Denotes the register allocated to a given data node.
   | ASRegisterOfDataNode NodeID
-
     -- | Denotes the basic block label of a given label node.
   | ASBBLabelOfLabelNode NodeID
-
     -- | Denotes the basic block label of the basic block in which the definer
     -- of a given data node has been placed.
   | ASBBLabelOfDataNode NodeID
-
   deriving (Show)
 
 -- | Defines a machine instruction.
-data Instruction =
-    Instruction
+data Instruction
+  = Instruction
       { instrID :: InstructionID
         -- ^ The ID of this instruction. The ID must be globally unique across
         -- all instructions, but not necessarily contiguous.
@@ -87,9 +82,8 @@ data Instruction =
 
 -- | Contains the various properties of an instruction, such as code size and
 -- latency.
-
-data InstrProperties =
-    InstrProperties
+data InstrProperties
+  = InstrProperties
       { instrCodeSize :: Integer
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
@@ -98,9 +92,8 @@ data InstrProperties =
   deriving (Show)
 
 -- | Defines a pattern for a machine instruction.
-
-data InstrPattern =
-    InstrPattern
+data InstrPattern
+  = InstrPattern
       { patID :: PatternID
         -- ^ The ID of this pattern. The ID must be unique within the same
         -- instruction, but not necessarily contiguous.
@@ -120,9 +113,8 @@ data InstrPattern =
   deriving (Show)
 
 -- | Represents a target machine.
-
-data TargetMachine =
-    TargetMachine
+data TargetMachine
+  = TargetMachine
       { tmID :: TargetMachineID
         -- ^ The identifier of the target machine.
       , tmInstructions :: [Instruction]
@@ -135,8 +127,9 @@ data TargetMachine =
       }
   deriving (Show)
 
-data Register =
-    Register
+-- | Represents a machine register.
+data Register
+  = Register
       { regID :: RegisterID
         -- ^ The ID of this register. This must be unique for every register
         -- within the same target machine.

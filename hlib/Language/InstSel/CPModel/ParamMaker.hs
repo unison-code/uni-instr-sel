@@ -39,6 +39,7 @@ import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
   ( MatchData (..) )
+
 import Data.Maybe
   ( fromJust )
 
@@ -50,8 +51,8 @@ import Data.Maybe
 
 -- | Takes a function, a set of matches, and a target machine and generates the
 -- corresponding parameters to the constraint model.
-mkParams ::
-     TargetMachine
+mkParams
+  :: TargetMachine
   -> Function
   -> [MatchData]
   -> CPModelParams
@@ -104,14 +105,14 @@ mkMachineParams tm =
     , machRegisters = map regID (tmRegisters tm)
     }
 
-mkMatchParams ::
-     TargetMachine
+mkMatchParams
+  :: TargetMachine
   -> [MatchData]
   -> [MatchParams]
 mkMatchParams tm ms = map (processMatchData tm) ms
 
-processMatchData ::
-     TargetMachine
+processMatchData
+  :: TargetMachine
   -> MatchData
   -> MatchParams
 processMatchData tm m =
@@ -119,8 +120,8 @@ processMatchData tm m =
       p = fromJust $ findInstrPattern (instrPatterns i) (mdPatternID m)
   in processMatch i p (mdMatch m) (mdMatchID m)
 
-processMatch ::
-     Instruction
+processMatch
+  :: Instruction
   -> InstrPattern
   -> Match NodeID
   -> MatchID
@@ -170,8 +171,8 @@ processMatch i p m mid =
 -- there exists a single label which acts as the root, which is the label node
 -- with no predecessors. It is also assumed that every other label node can be
 -- reached from the root.
-computeLabelDoms ::
-     Graph
+computeLabelDoms
+  :: Graph
      -- ^ The CFG.
   -> [Domset NodeID]
      -- ^ Dominator sets.
@@ -263,8 +264,8 @@ replaceInNodeExpr :: Match NodeID -> NodeExpr -> NodeExpr
 replaceInNodeExpr m (ANodeIDExpr i) =
   ANodeIDExpr $ fromJust $ findFNInMatch m i
 
-replaceInMatchExpr ::
-     Match NodeID
+replaceInMatchExpr
+  :: Match NodeID
   -> MatchExpr
   -> MatchExpr
 replaceInMatchExpr _ (AMatchIDExpr i) =
@@ -277,8 +278,8 @@ replaceInMatchExpr m (DefinerOfStateNodeExpr e) =
   DefinerOfStateNodeExpr (replaceInNodeExpr m e)
 replaceInMatchExpr _ ThisMatchExpr = ThisMatchExpr
 
-replaceInInstructionExpr ::
-     Match NodeID
+replaceInInstructionExpr
+  :: Match NodeID
   -> InstructionExpr
   -> InstructionExpr
 replaceInInstructionExpr _ (AnInstructionIDExpr i) = AnInstructionIDExpr i

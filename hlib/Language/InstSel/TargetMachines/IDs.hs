@@ -56,48 +56,48 @@ import qualified Language.InstSel.Utils.JSON as JSON
 --------------
 
 -- | Represents an instruction ID.
-newtype InstructionID =
-    InstructionID Natural
+newtype InstructionID
+  = InstructionID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show InstructionID where
   show (InstructionID i) = show i
 
 -- | Represents an ID to be used as place-holders inside an assembly string.
-newtype AssemblyID =
-    AssemblyID Natural
+newtype AssemblyID
+  = AssemblyID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show AssemblyID where
   show (AssemblyID i) = show i
 
 -- | Represents a register ID.
-newtype RegisterID =
-    RegisterID Natural
+newtype RegisterID
+  = RegisterID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show RegisterID where
   show (RegisterID i) = show i
 
 -- | Represents a register name.
-newtype RegisterName =
-    RegisterName String
+newtype RegisterName
+  = RegisterName String
   deriving (Eq)
 
 instance Show RegisterName where
   show (RegisterName s) = s
 
 -- | Represents a register flag name.
-newtype RegisterFlagName =
-    RegisterFlagName String
+newtype RegisterFlagName
+  = RegisterFlagName String
   deriving (Eq)
 
 instance Show RegisterFlagName where
   show (RegisterFlagName s) = s
 
 -- | Represents a target machine ID.
-newtype TargetMachineID =
-    TargetMachineID String
+newtype TargetMachineID
+  = TargetMachineID String
   deriving (Eq, Show)
 
 

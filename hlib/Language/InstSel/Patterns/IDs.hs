@@ -44,7 +44,8 @@ import qualified Language.InstSel.Utils.JSON as JSON
 -- Data types
 --------------
 
-newtype PatternID = PatternID Natural
+newtype PatternID
+  = PatternID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show PatternID where

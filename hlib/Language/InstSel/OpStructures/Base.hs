@@ -41,8 +41,8 @@ import Language.InstSel.Utils.JSON
 -- Data types
 --------------
 
-data OpStructure =
-    OpStructure
+data OpStructure
+  = OpStructure
       { osGraph :: G.Graph
       , osConstraints :: [Constraint]
       }

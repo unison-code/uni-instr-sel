@@ -25,8 +25,8 @@ import Language.InstSel.Utils.JSON
 --------------
 
 -- | Represents a basic block label identifier.
-newtype BasicBlockLabel =
-    BasicBlockLabel String
+newtype BasicBlockLabel
+  = BasicBlockLabel String
   deriving (Eq)
 
 instance Show BasicBlockLabel where

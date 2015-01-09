@@ -20,12 +20,11 @@ module Language.InstSel.CPModel.Verifier
   )
 where
 
-
-
 import Language.InstSel.CPModel.Base
-import qualified Language.InstSel.Graphs as G
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
+
+import qualified Language.InstSel.Graphs as G
 
 
 
@@ -34,8 +33,8 @@ import Language.InstSel.ProgramModules
 --------------
 
 data Errors
-    = Errors { errors :: [String] }
-    | NoErrors
+  = Errors { errors :: [String] }
+  | NoErrors
 
 
 

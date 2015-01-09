@@ -44,23 +44,25 @@ import Language.InstSel.Utils.JSON
 
 -- | Contains the matchset information; that is, the information to determine
 -- which target machine the matchset concerns, along the match data.
-data MatchsetInfo =
-    MatchsetInfo
+data MatchsetInfo
+  = MatchsetInfo
       { msiTarget :: TargetMachineID
       , msiMatches :: [MatchData]
       }
+  deriving (Show)
 
 -- | Contains the information needed to identify which instruction and pattern a
 -- given match originates from. Each match is also given a 'MatchID' that must
 -- be unique (although not necessarily continuous) for every match within a list
 -- of 'MatchData'.
-data MatchData =
-    MatchData
+data MatchData
+  = MatchData
       { mdInstrID :: InstructionID
       , mdPatternID :: PatternID
       , mdMatchID :: MatchID
       , mdMatch :: Match NodeID
       }
+  deriving (Show)
 
 
 
