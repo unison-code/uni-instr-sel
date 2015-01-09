@@ -24,6 +24,7 @@ import qualified Language.InstSel.Constraints as C
 import qualified Language.InstSel.Constraints.PCBuilder as C
 import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
+import qualified Language.InstSel.Graphs.Transformations as G
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
@@ -52,9 +53,9 @@ type SymToDataNodeMapping = (G.Node, Symbol)
 type ConstToDataNodeMapping = (G.Node, Constant)
 
 -- | Represents a data flow that goes from the label node, identified by a given
--- ID, to some given node. This is needed to draw the missing data flow edges
--- after both the data flow graph and the control flow graph have been built.
-type LabelToNodeDF = (PM.BasicBlockLabel, G.Node)
+-- ID, to some given node. This is needed to draw the missing flow edges after
+-- both the data flow graph and the control flow graph have been built.
+type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
 
 -- | Represents a definition placement condition, stating that the given node
 -- must be defined in the basic block identified by the given ID. This is needed
@@ -72,9 +73,12 @@ data BuildState
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched. This is used to
         -- simplifying edge insertion.
-      , currentLabelNode :: Maybe G.Node
-        -- ^ The label node which represents the basic block currently being
-        -- processed.
+      , entryLabel :: Maybe PM.BasicBlockLabel
+        -- ^ The label of the function entry point. A 'Nothing' value means that
+        -- this value has not yet been assigned.
+      , currentLabel :: Maybe PM.BasicBlockLabel
+        -- ^ The label of the basic block currently being processed. A 'Nothing'
+        -- value means that no basic block has yet been processed.
       , funcBBExecFreqs :: [(PM.BasicBlockLabel, PM.ExecFreq)]
         -- ^ The execution frequencies of the respective basic blocks.
       , symMaps :: [SymToDataNodeMapping]
@@ -85,14 +89,14 @@ data BuildState
         -- ^ List of constant-to-node mappings. If there are more than one
         -- mapping using the same symbol, then the last one occuring in the list
         -- should be picked.
-      , labelToNodeDFs :: [LabelToNodeDF]
-        -- ^ List of label-to-node data flow dependencies which are yet to be
+      , labelToEntityFlows :: [LabelToEntityFlow]
+        -- ^ List of label-to-entity flow dependencies which are yet to be
         -- converted into edges.
       , defPlaceConds :: [DefPlaceCond]
         -- ^ List of definition placement conditions which are yet to be
         -- converted into edges.
-      , funcInputValues :: [G.NodeID]
-        -- ^ The IDs of the nodes representing the function input arguments.
+      , funcInputValues :: [G.Node]
+        -- ^ The data nodes representing the function input arguments.
       }
   deriving (Show)
 
@@ -186,11 +190,12 @@ mkInitBuildState m =
     { llvmModule = m
     , osGraph = OS.mkEmpty
     , lastTouchedNode = Nothing
-    , currentLabelNode = Nothing
+    , entryLabel = Nothing
+    , currentLabel = Nothing
     , funcBBExecFreqs = []
     , symMaps = []
     , constMaps = []
-    , labelToNodeDFs = []
+    , labelToEntityFlows = []
     , defPlaceConds = []
     , funcInputValues = []
     }
@@ -214,13 +219,14 @@ mkFunction m f@(LLVM.Function {}) =
   let st0 = mkInitBuildState m
       st1 = buildDfg st0 f
       st2 = buildCfg st1 f
-      st3 = addMissingLabelToNodeDataFlowEdges st2
+      st3 = addMissingLabelToEntityFlowEdges st2
       st4 = addMissingDefPlaceEdges st3
+      st5 = updateOSGraph st4 (G.removeRedundantDPEdges $ getOSGraph st4)
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
-              , PM.functionOS = osGraph st4
-              , PM.functionInputs = funcInputValues st4
-              , PM.functionBBExecFreq = funcBBExecFreqs st4
+              , PM.functionOS = osGraph st5
+              , PM.functionInputs = map G.getNodeID (funcInputValues st5)
+              , PM.functionBBExecFreq = funcBBExecFreqs st5
               }
           )
 mkFunction _ _ = Nothing
@@ -308,11 +314,16 @@ addOSConstraints st cs = foldl addOSConstraint st cs
 
 -- | Adds a new symbol-to-node mapping to a given state.
 addSymMap :: BuildState -> SymToDataNodeMapping -> BuildState
-addSymMap st sm = st { symMaps = symMaps st ++ [sm] }
+addSymMap st sm = st { symMaps = sm:(symMaps st) }
 
 -- | Adds a new constant-to-node mapping to a given state.
 addConstMap :: BuildState -> ConstToDataNodeMapping -> BuildState
-addConstMap st cm = st { constMaps = constMaps st ++ [cm] }
+addConstMap st cm = st { constMaps = cm:(constMaps st) }
+
+-- | Adds label-to-entity flow to a given state.
+addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
+addLabelToEntityFlow st ef =
+  st { labelToEntityFlows = ef:(labelToEntityFlows st) }
 
 -- | Adds a list of definition placement conditions to a given state.
 addDefPlaceConds :: BuildState -> [DefPlaceCond] -> BuildState
@@ -321,7 +332,7 @@ addDefPlaceConds st dps = st { defPlaceConds = defPlaceConds st ++ dps }
 -- | Adds a data node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
 addFuncInputValue st n =
-  st { funcInputValues = funcInputValues st ++ [G.getNodeID n] }
+  st { funcInputValues = n:(funcInputValues st) }
 
 -- | Gets the node ID (if any) of the data node to which a symbol is mapped to.
 mappedDataNodeFromSym :: [SymToDataNodeMapping] -> Symbol -> Maybe G.Node
@@ -369,7 +380,8 @@ buildOSFromConst st0 c =
               d_node = fromJust $ lastTouchedNode st1
               st2 = addConstMap st1 (d_node, c)
               st3 = addOSConstraints st2 (mkConstConstraints d_node c)
-          in st3
+              st4 = addLabelToEntityFlow st3 (fromJust $ entryLabel st3, d_node)
+          in st4
 
 mkConstConstraints :: G.Node -> Constant -> [C.Constraint]
 mkConstConstraints n (IntConstant { signedIntValue = v }) =
@@ -413,7 +425,7 @@ buildCfgFromControlOp st0 op operands =
       st3 = addNewEdge
               st2
               G.ControlFlowEdge
-              (fromJust $ currentLabelNode st2)
+              (fromJust $ findLabelNodeWithID st2 (fromJust $ currentLabel st2))
               op_node
       st4 = addNewEdgesManySources
               st3
@@ -483,23 +495,30 @@ ensureLabelNodeExists st l =
 
 -- | Adds the missing data or state flow edges from label nodes to data or state
 -- nodes, as described in the given build state.
-addMissingLabelToNodeDataFlowEdges :: BuildState -> BuildState
-addMissingLabelToNodeDataFlowEdges st =
+addMissingLabelToEntityFlowEdges :: BuildState -> BuildState
+addMissingLabelToEntityFlowEdges st =
   let g0 = getOSGraph st
-      deps = labelToNodeDFs st
-      -- Add data flow edges
-      df_deps = filter (\(_, n) -> G.isDataNode n) deps
-      df_pairs = map
-                   (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
-                   df_deps
-      g1 = foldr (\p g -> fst $ G.addNewDFEdge p g) g0 df_pairs
-      -- Add state flow edges
-      sf_deps = filter (\(_, n) -> G.isStateNode n) deps
-      sf_pairs = map
-                   (\(bb_id, n) -> (fromJust $ findLabelNodeWithID st bb_id, n))
-                   sf_deps
-      g2 = foldr (\p g -> fst $ G.addNewSFEdge p g) g1 sf_pairs
-  in updateOSGraph st g2
+      deps =
+        map
+        ( \(l, n) ->
+            if G.isDataNode n
+            then (l, n, G.DataFlowEdge)
+            else if G.isStateNode n
+                 then (l, n, G.StateFlowEdge)
+                 else error ( "addMissingLabelToEntityFlowEdges: "
+                              ++ "This should never happen"
+                            )
+        )
+        (labelToEntityFlows st)
+      g1 =
+        foldr
+        ( \(l, n, et) g ->
+            let pair = (fromJust $ findLabelNodeWithID st l, n)
+            in fst $ G.addNewEdge et pair g
+        )
+        g0
+        deps
+  in updateOSGraph st g1
 
 -- | Adds the missing definition placement edges, as described in the given
 -- build state.
@@ -598,8 +617,14 @@ instance DfgBuildable LLVM.Global where
 
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let st1 = ensureLabelNodeExists st0 (PM.BasicBlockLabel str)
-        st2 = st1 { currentLabelNode = lastTouchedNode st1 }
+    let bb_label = PM.BasicBlockLabel str
+        st1 = if isNothing $ entryLabel st0
+              then foldl
+                     (\st n -> addLabelToEntityFlow st (bb_label, n))
+                     (st0 { entryLabel = Just bb_label })
+                     (funcInputValues st0)
+              else st0
+        st2 = st1 { currentLabel = Just bb_label }
         st3 = foldl buildDfg st2 insts
     in st3
   buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
@@ -695,11 +720,14 @@ instance CfgBuildable LLVM.BasicBlock where
                            (llvmModule st0)
                            (getTermMetadata term_inst)
                        )
-        st1 = ensureLabelNodeExists st0 bb_label
-        st2 = st1 { currentLabelNode = lastTouchedNode st1 }
-        st3 = st2 { funcBBExecFreqs = bb_exec_freq:(funcBBExecFreqs st2) }
-        st4 = buildCfg st3 term_inst
-    in st4
+        st1 = if isNothing $ entryLabel st0
+              then st1 { entryLabel = Just bb_label }
+              else st0
+        st2 = ensureLabelNodeExists st1 bb_label
+        st3 = st2 { currentLabel = Just bb_label }
+        st4 = st3 { funcBBExecFreqs = bb_exec_freq:(funcBBExecFreqs st3) }
+        st5 = buildCfg st4 term_inst
+    in st5
   buildCfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
     error $ "'buildCfg' not supported for un-named basic blocks"
 
