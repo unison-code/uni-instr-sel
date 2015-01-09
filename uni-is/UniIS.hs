@@ -107,7 +107,7 @@ parseArgs =
                   ++ "has a potential cover"
                 )
         &= explicit
-        &= name "plot-function-graph-with-matches"
+        &= name "plot-function-graph-coverage"
         &= groupname "PLOT ONLY options"
     , matchFile = Nothing
         &= help "File containing the matches."

@@ -18,7 +18,7 @@ module Language.InstSel.Drivers.Plotter
   )
 where
 
-import Language.InstSel.Graphs.GraphViz
+import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines.PatternMatching
@@ -31,8 +31,12 @@ import Language.InstSel.Utils.JSON
   hiding
   ( unpack )
 
+import Language.InstSel.Graphs.GraphViz
+import qualified Data.GraphViz as GV
+
 import Data.Maybe
   ( fromJust
+  , isJust
   , isNothing
   )
 import System.Exit
@@ -85,6 +89,18 @@ run f_str m_str PlotFunctionGraphCoverage output =
        do putStrLn $ fromLeft m_res
           exitFailure
      let function = fromRight f_res
-         matches = fromRight m_res :: MatchsetInfo
-         dot = toDotString $ osGraph $ functionOS function
+         match_info = fromRight m_res
+         matches = map mdMatch (msiMatches match_info)
+         hasMatch n =
+           any
+             (\m -> isJust $ findPNInMatch m (getNodeID n))
+             matches
+         nf n = [ GV.style GV.filled,
+                  if hasMatch n
+                  then GV.fillColor GV.Green
+                  else GV.fillColor GV.Red
+                ]
+         dot = (toDotStringWith nf noMoreEdgeAttr) $
+                 osGraph $
+                   functionOS function
      output dot
