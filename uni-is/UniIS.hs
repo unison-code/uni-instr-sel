@@ -31,17 +31,19 @@ selection.
 
 {-# LANGUAGE DeriveDataTypeable #-}
 
-import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
-import qualified Language.InstSel.Drivers.Modeler as Modeler
-import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
-import qualified Language.InstSel.Drivers.Plotter as Plotter
 import Language.InstSel.TargetMachines
-  ( TargetMachine )
-import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.Utils
   ( toLower )
+
+import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
+import qualified Language.InstSel.Drivers.Modeler as Modeler
+import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
+import qualified Language.InstSel.Drivers.Plotter as Plotter
+
+import System.Console.CmdArgs
+
 import Control.Monad
   ( when )
 import Data.Maybe
@@ -49,26 +51,26 @@ import Data.Maybe
   , isJust
   , isNothing
   )
-import System.Console.CmdArgs
 import System.Directory
   ( doesFileExist )
 
 
 
----------------------------------
--- Help functions and data types
----------------------------------
+--------------------------------------------
+-- Options-related data types and functions
+--------------------------------------------
 
 data Options
-    = Options
-        { command :: String
-        , plotFunctionGraph :: Bool
-        , matchFile :: Maybe String
-        , inFile :: Maybe String
-        , outFile :: Maybe String
-        , targetName :: Maybe String
-        }
-    deriving (Data, Typeable)
+  = Options
+      { command :: String
+      , plotFunctionGraph :: Bool
+      , plotFunctionGraphCoverage :: Bool
+      , matchFile :: Maybe String
+      , inFile :: Maybe String
+      , outFile :: Maybe String
+      , targetName :: Maybe String
+      }
+  deriving (Data, Typeable)
 
 parseArgs :: Options
 parseArgs =
@@ -96,9 +98,16 @@ parseArgs =
         &= name "t"
         &= name "target"
     , plotFunctionGraph = False
-        &= help "Print function graph (DOT format)."
+        &= help "Print function graph in DOT format."
         &= explicit
         &= name "plot-function-graph"
+        &= groupname "PLOT ONLY options"
+    , plotFunctionGraphCoverage = False
+        &= help ( "Print function graph in DOT format, and mark the nodes that "
+                  ++ "has a potential cover"
+                )
+        &= explicit
+        &= name "plot-function-graph-with-matches"
         &= groupname "PLOT ONLY options"
     , matchFile = Nothing
         &= help "File containing the matches."
@@ -127,6 +136,12 @@ parseArgs =
             , "   check-function    Performs sanity checks on a given function"
             , "The commands may be written in lower or upper case."
             ]
+
+
+
+-------------
+-- Functions
+-------------
 
 readFileContent :: FilePath -> IO String
 readFileContent file =
@@ -170,6 +185,23 @@ getOutputFunction opts =
      then return putStrLn
      else return $ writeFile (fromJust file)
 
+-- | Gets the requested plot action, based on the command line options. If no
+-- action is requested, an error is reported. If more than one action is
+-- requested, an arbitrary action is selected.
+getRequiredPlotAction :: Options -> IO Plotter.PlotAction
+getRequiredPlotAction opts =
+  let actions = [ ( Plotter.PlotFunctionGraph
+                  , plotFunctionGraph opts
+                  )
+                , ( Plotter.PlotFunctionGraphCoverage
+                  , plotFunctionGraphCoverage opts
+                  )
+                ]
+      selected = filter snd actions
+  in if length selected > 0
+     then return $ fst $ head selected
+     else error "No plot action provided."
+
 
 
 ----------------
@@ -204,14 +236,18 @@ main =
             Modeler.run fcontent mcontent outputter
        "plot" ->
          do when (isNothing $ inFile opts) $
-              error "No input file."
-            content <- readFileContent $ fromJust $ inFile opts
-            target <- getOptionalTarget opts
+              error "No function JSON file is provided as input."
+            fcontent <- readFileContent $ fromJust $ inFile opts
+            mcontent <- if isJust $ matchFile opts
+                        then do c <- readFileContent $ fromJust $ matchFile opts
+                                return $ Just c
+                        else return Nothing
+            action <- getRequiredPlotAction opts
             outputter <- getOutputFunction opts
             Plotter.run
-              content
-              target
-              [ plotFunctionGraph opts ]
+              fcontent
+              mcontent
+              action
               outputter
        "lower-llvm-ir" ->
          undefined
