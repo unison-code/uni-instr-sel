@@ -481,6 +481,8 @@ mkInstructions =
   ++
   mkGenericBrFallthroughInstructions
   ++
+  mkGenericEntityDefInstructions
+  ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)

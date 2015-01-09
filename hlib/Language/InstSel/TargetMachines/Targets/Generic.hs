@@ -17,6 +17,7 @@ module Language.InstSel.TargetMachines.Targets.Generic
   , fixRegIDs
   , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
+  , mkGenericEntityDefInstructions
   )
 where
 
@@ -35,19 +36,26 @@ import Language.InstSel.TargetMachines.Base
 -- Functions
 -------------
 
+-- | Creates a generic data node type.
+mkGenericDataNodeType :: NodeType
+mkGenericDataNodeType = DataNode { dataType = AnyType, dataOrigin = Nothing }
+
+-- | Creates a generic label node type.
+mkGenericLabelNodeType :: NodeType
+mkGenericLabelNodeType = LabelNode $ BasicBlockLabel ""
+
 -- | Creates a set of instructions for handling the generic cases where
 -- 'PhiNode's appear. The instruction IDs of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
 mkGenericPhiInstructions :: [Instruction]
 mkGenericPhiInstructions =
-  let mkDataNode = DataNode { dataType = AnyType, dataOrigin = Nothing }
-      g = mkGraph
+  let g = mkGraph
             ( map
                 Node
                 [ ( 0, NodeLabel 0 PhiNode )
-                , ( 1, NodeLabel 1 mkDataNode )
-                , ( 2, NodeLabel 2 mkDataNode )
-                , ( 3, NodeLabel 3 mkDataNode )
+                , ( 1, NodeLabel 1 mkGenericDataNodeType )
+                , ( 2, NodeLabel 2 mkGenericDataNodeType )
+                , ( 3, NodeLabel 3 mkGenericDataNodeType )
                 ]
             )
             ( map
@@ -114,13 +122,12 @@ mkGenericPhiInstructions =
 -- reassigned afterwards.
 mkGenericBrFallthroughInstructions :: [Instruction]
 mkGenericBrFallthroughInstructions =
-  let mkLabelNode = LabelNode $ BasicBlockLabel ""
-      g = mkGraph
+  let g = mkGraph
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
-                , ( 1, NodeLabel 1 mkLabelNode )
-                , ( 2, NodeLabel 2 mkLabelNode )
+                , ( 1, NodeLabel 1 mkGenericLabelNodeType )
+                , ( 2, NodeLabel 2 mkGenericLabelNodeType )
                 ]
             )
             ( map
@@ -132,6 +139,38 @@ mkGenericBrFallthroughInstructions =
       bb_alloc_cs = mkBBAllocConstraints g
       fallthrough_cs = mkFallthroughConstraints 2
       cs = bb_alloc_cs ++ fallthrough_cs
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString []
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         }
+     ]
+
+-- | Creates a set of instructions for handling definition of entities that
+-- represent constants and function arguments.
+mkGenericEntityDefInstructions :: [Instruction]
+mkGenericEntityDefInstructions =
+  let g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 mkGenericLabelNodeType )
+                , ( 1, NodeLabel 1 mkGenericDataNodeType )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 )
+                ]
+            )
+      cs = mkBBAllocConstraints g
       pat =
         InstrPattern
           { patID = 0
