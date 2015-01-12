@@ -13,12 +13,16 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.Transformations
-  ( extendWithCopies
-  , removeRedundantDPEdges
-  )
+  ( extendWithCopies )
 where
 
 import Language.InstSel.Graphs.Base
+import qualified Language.InstSel.DataTypes as D
+
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
 
 
 
@@ -27,31 +31,70 @@ import Language.InstSel.Graphs.Base
 -------------
 
 -- | Inserts a copy node along every data flow edge that involves a use of a
--- data node. Note that the definition placement edges will not be updated!
+-- data node. This also updates the definition placement edges to retain the
+-- same semantics of the original graph. This means that if there is a
+-- definition placement edge $e$ that involves a data node used by a phi node,
+-- then upon copy extension $e$ will be moved to the new data node. Otherwise
+-- $e$ will remain on the original data node. In cases where the same data node
+-- is used by multiple phi nodes, $e$ will be duplicated for each such instance,
+-- which are then moved for each copy extension (hence no invariants are
+-- violated when returning).
 extendWithCopies :: Graph -> Graph
-extendWithCopies g = id g
---  TODO: fix
---  let d_nodes = filter isDataNode (getAllNodes g)
---      df_out_edges_from_d_nodes = concatMap
---                                  (filter isDataFlowEdge $ getOutEdges g)
---                                  d_nodes
---      new_g = foldl insertCopy g df_out_edges_from_d_nodes
---  in new_g
+extendWithCopies g =
+  let d_nodes = filter isDataNode (getAllNodes g)
+      df_out_edges = concatMap
+                       ((filter isDataFlowEdge) . getOutEdges g)
+                       d_nodes
+  in foldl insertCopy (duplicateDPEdgesForPhis g) df_out_edges
 
--- | Inserts a copy and data node along a given edge.
+-- | Inserts a new copy and data node along a given data flow edge. If the data
+-- node is used by a phi node, and there is a definition placement edge on that
+-- data node, then that edge will be moved to the new data node (it is assumed
+-- that the data node has as many definition placement edges as it number of
+-- uses by phi nodes).
 insertCopy :: Graph -> Edge -> Graph
-insertCopy g0 e = id g0
---  TODO: fix
---  let orig_src_n = getSourceNode g0 e
---      orig_dst_n = getTargetNode g0 e
---      (g1, new_d_node) = insertNewNodeAlongEdge CopyNode e g0
---      new_e = head $ getOutEdges g1 new_d_node
---      (g2, _) = insertNewNodeAlongEdge (DataNode D.AnyType Nothing) new_e g1
---  in g2
+insertCopy g0 df_edge =
+  let orig_d_node = getSourceNode g0 df_edge
+      orig_op_n = getTargetNode g0 df_edge
+      dp_edge = if isPhiNode orig_op_n
+                then let d_node_edges = getOutEdges g0 orig_d_node
+                         dp_edges = filter isDefPlaceEdge d_node_edges
+                     in Just $ head dp_edges
+                else Nothing
+      (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
+      (g2, new_d_node) = insertNewNodeAlongEdge
+                           (DataNode D.AnyType Nothing)
+                           (head $ getOutEdges g1 new_cp_node)
+                           g1
+      g3 = if isJust dp_edge
+           then let e = fromJust dp_edge
+                in fst $
+                     addNewDPEdge
+                     (new_d_node, getTargetNode g2 e)
+                     (delEdge e g2)
+           else g2
+  in g3
 
--- | Removes redundant definition placement edges (such an edge is redundant if
--- there already exists such an edge between a pair of nodes).
-removeRedundantDPEdges :: Graph -> Graph
-removeRedundantDPEdges =
-  -- TODO: implement
-  id
+-- | For each data node $d$ that has a definition placement edge, that edge will
+-- be duplicated the number of times $d$ is used by a phi node - 1.
+duplicateDPEdgesForPhis :: Graph -> Graph
+duplicateDPEdgesForPhis g =
+  let d_nodes = filter isDataNode (getAllNodes g)
+  in foldl
+       ( \g n ->
+           let all_out_edges = getOutEdges g n
+               dp_edges = filter isDefPlaceEdge all_out_edges
+           in if length dp_edges > 0
+              then let dp_edge = head dp_edges
+                       df_edges = filter isDataFlowEdge all_out_edges
+                       num_phis =
+                         length $ filter (isPhiNode . getTargetNode g) df_edges
+                       src = getSourceNode g dp_edge
+                       dst = getTargetNode g dp_edge
+                   in (iterate (fst . addNewDPEdge (src, dst)) g)
+                      !!
+                      (num_phis - 1)
+              else g
+       )
+       g
+       d_nodes

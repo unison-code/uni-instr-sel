@@ -12,6 +12,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Language.InstSel.Drivers.Plotter
   ( PlotAction (..)
   , run
@@ -23,11 +25,6 @@ import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines.PatternMatching
-import Language.InstSel.Utils
-  ( fromLeft
-  , fromRight
-  , isLeft
-  )
 import Language.InstSel.Utils.JSON
   hiding
   ( unpack )
@@ -35,13 +32,16 @@ import Language.InstSel.Utils.JSON
 import Language.InstSel.Graphs.GraphViz
 import qualified Data.GraphViz as GV
 
+import System.Console.CmdArgs
+  ( Data
+  , Typeable
+  )
+
 import Data.Maybe
   ( fromJust
   , isJust
   , isNothing
   )
-import System.Exit
-  ( exitFailure )
 
 
 
@@ -53,6 +53,8 @@ data PlotAction
   = PlotFunctionGraph
   | PlotFunctionGraphCoverage
   | PlotFunctionGraphCoveragePerMatch
+  | DoNothing
+  deriving (Typeable, Data)
 
 -------------
 -- Functions
@@ -63,12 +65,10 @@ data PlotAction
 getMatchsetInfo :: Maybe String -> IO MatchsetInfo
 getMatchsetInfo str =
   do when (isNothing str) $
-       do putStrLn "No match file provided."
-          exitFailure
+       reportError "No match file provided."
      let res = fromJson $ fromJust str
      when (isLeft res) $
-       do putStrLn $ fromLeft res
-          exitFailure
+       reportError $ fromLeft res
      return $ fromRight res
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
@@ -96,6 +96,8 @@ run
      -- ^ The action to perform.
   -> IO [Output]
      -- ^ The produced output.
+
+run _ _ DoNothing = reportError "No plot action provided."
 
 run str _ PlotFunctionGraph =
   do function <- getFunction str

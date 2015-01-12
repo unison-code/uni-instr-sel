@@ -36,12 +36,14 @@ import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.Utils
   ( toLower )
+import Language.InstSel.Utils.IO
 
 import Language.InstSel.Drivers
 import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
 import qualified Language.InstSel.Drivers.Modeler as Modeler
 import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
 import qualified Language.InstSel.Drivers.Plotter as Plotter
+import qualified Language.InstSel.Drivers.Transformer as Transformer
 
 import System.Console.CmdArgs
 
@@ -66,13 +68,12 @@ import System.FilePath.Posix
 data Options
   = Options
       { command :: String
-      , plotFunctionGraph :: Bool
-      , plotFunctionGraphCoverage :: Bool
-      , plotFunctionGraphCoveragePerMatch :: Bool
-      , matchFile :: Maybe String
       , inFile :: Maybe String
       , outFile :: Maybe String
       , targetName :: Maybe String
+      , matchFile :: Maybe String
+      , plotAction :: Plotter.PlotAction
+      , transformAction :: Transformer.TransformAction
       }
   deriving (Data, Typeable)
 
@@ -83,73 +84,93 @@ parseArgs =
         &= argPos 0
         &= typ "COMMAND"
     , inFile = def
-        &= help "File containing the input."
-        &= typFile
+        &= help "File containing the function."
+        &= name "f"
+        &= name "function-file"
         &= explicit
-        &= name "i"
-        &= name "input"
-        &= groupname "Common options"
+        &= typFile
     , outFile = Nothing
         &= help ( "File that will contain the output. If the output involves "
                   ++ "multiple files, each file will be suffixed with a "
                   ++ "unique ID."
                 )
-        &= typFile
-        &= explicit
         &= name "o"
         &= name "output"
+        &= explicit
+        &= typFile
     , targetName = Nothing
         &= help "Name of the target machine."
-        &= typ "TARGET"
-        &= explicit
         &= name "t"
-        &= name "target"
-    , plotFunctionGraph = False
-        &= help "Print function graph in DOT format."
+        &= name "target-name"
         &= explicit
-        &= name "plot-function-graph"
-        &= groupname "PLOT ONLY options"
-    , plotFunctionGraphCoverage = False
-        &= help ( "Print function graph in DOT format, and mark the nodes that "
-                  ++ "has a potential cover"
-                )
-        &= explicit
-        &= name "plot-function-graph-coverage"
-        &= groupname "PLOT ONLY options"
-    , plotFunctionGraphCoveragePerMatch = False
-        &= help ( "Same as --plot-function-graph-coverage, but shows the "
-                  ++ "coverage for each individual match."
-                )
-        &= explicit
-        &= name "plot-function-graph-coverage-per-match"
-        &= groupname "PLOT ONLY options"
+        &= typ "TARGET"
     , matchFile = Nothing
         &= help "File containing the matches."
         &= typFile
         &= explicit
+        &= name "m"
         &= name "match-file"
-        &= groupname "MODEL ONLY options"
+    , plotAction =
+        enum [ Plotter.DoNothing
+                 &= auto
+                 &= ignore
+             , Plotter.PlotFunctionGraph
+                 &= help "Print function graph in DOT format."
+                 &= name "plot-function-graph"
+                 &= explicit
+             , Plotter.PlotFunctionGraphCoverage
+                 &= help ( "Print function graph in DOT format, and mark the "
+                           ++ "nodes that has a potential cover."
+                         )
+                 &= name "plot-function-graph-coverage"
+                 &= explicit
+             , Plotter.PlotFunctionGraphCoveragePerMatch
+                 &= help ( "Same as --plot-function-graph-coverage, but shows "
+                           ++ "the coverage for each individual match."
+                         )
+                 &= name "plot-function-graph-coverage-per-match"
+                 &= explicit
+             ]
+        &= groupname "Plot flags"
+    , transformAction =
+        enum [ Transformer.DoNothing
+                 &= auto
+                 &= ignore
+             , Transformer.CopyExtendFunction
+                 &= help "Extends the given function graph with copies."
+                 &= name "extend-function-with-copies"
+                 &= explicit
+             ]
+        &= groupname "Transformation flags"
     }
-    &=
-    program "uni-is"
-    &=
-    summary ( "Unison (instruction selection) tool\n"
-              ++
-              "Gabriel Hjort Blindell   ghb@kth.se"
-            )
-    &=
-    details [ "Available commands:"
-            , "   process-llvm-ir   Converts an LLVM IR file into the "
-              ++ "graph-based IR format"
-            , "   lower-llvm-ir     Rewriting an LLVM IR file into an expected "
-              ++ "canonical form"
-            , "   pattern-match     Performs pattern matching on the function "
-              ++ "graph"
-            , "   make-cp-model     Produces a CP model instance"
-            , "   plot              Produces various plots of a given function"
-            , "   check-function    Performs sanity checks on a given function"
-            , "The commands may be written in lower or upper case."
-            ]
+    &= helpArg [ help "Displays this message."
+               , name "h"
+               , name "help"
+               , explicit
+               , groupname "Other flags"
+               ]
+    &= versionArg [ ignore ]
+    &= program "uni-is"
+    &= summary ( "Unison (instruction selection) tool\n"
+                 ++
+                 "Gabriel Hjort Blindell <ghb@kth.se>"
+               )
+    &= details [ "Available commands:"
+               , "   lower-llvm-ir        Rewriting an LLVM IR file into an "
+                 ++ "expected canonical form"
+               , "   process-llvm-ir      Converts an LLVM IR file into the "
+                 ++ "graph-based IR format"
+               , "   transform-function   Converts an LLVM IR file into the "
+                 ++ "graph-based IR format"
+               , "   pattern-match        Performs pattern matching on the "
+                 ++ "function graph"
+               , "   make-cp-model        Produces a CP model instance"
+               , "   plot                 Produces various plots of a given "
+                 ++ "function"
+               , "   check-function       Performs sanity checks on a given "
+                 ++ "function"
+               , "The commands may be written in lower or upper case."
+               ]
 
 
 
@@ -161,8 +182,25 @@ readFileContent :: FilePath -> IO String
 readFileContent file =
   do exists_file <- doesFileExist file
      when (not exists_file) $
-       error $ "File " ++ show file ++ " does not exist."
+       reportError $ "File " ++ show file ++ " does not exist."
      readFile file
+
+getRequiredFunctionFile :: Options -> IO FilePath
+getRequiredFunctionFile opts =
+  do let file = inFile opts
+     when (isNothing file) $
+       reportError "No function file provided."
+     return $ fromJust file
+
+getRequiredMatchFile :: Options -> IO FilePath
+getRequiredMatchFile opts =
+  do let file = matchFile opts
+     when (isNothing file) $
+       reportError "No match file provided."
+     return $ fromJust file
+
+getOptionalMatchFile :: Options -> IO (Maybe FilePath)
+getOptionalMatchFile opts = return $ matchFile opts
 
 -- | Returns the target machine specified on the command line. If no target is
 -- specified, or if no such target exists, failure is reported.
@@ -170,10 +208,10 @@ getRequiredTarget :: Options -> IO TargetMachine
 getRequiredTarget opts =
   do let tname = targetName opts
      when (isNothing tname) $
-       error "No target provided."
+       reportError "No target provided."
      let target = getTargetMachine $ toTargetMachineID $ fromJust tname
      when (isNothing target) $
-       error $ "Unrecognized target: " ++ (show $ fromJust tname)
+       reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
      return $ fromJust target
 
 -- | Returns the target machine specified on the command line. If no target is
@@ -185,7 +223,7 @@ getOptionalTarget opts =
      if isJust tname
      then do let target = getTargetMachine $ toTargetMachineID $ fromJust tname
              when (isNothing target) $
-               error $ "Unrecognized target: " ++ (show $ fromJust tname)
+               reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
              return target
      else return Nothing
 
@@ -212,26 +250,6 @@ emitToFile fp o =
       filename = fname ++ oID o ++ ext
   in writeFile filename (oData o)
 
--- | Gets the requested plot action, based on the command line options. If no
--- action is requested, an error is reported. If more than one action is
--- requested, an arbitrary action is selected.
-getRequiredPlotAction :: Options -> IO Plotter.PlotAction
-getRequiredPlotAction opts =
-  let actions = [ ( Plotter.PlotFunctionGraph
-                  , plotFunctionGraph opts
-                  )
-                , ( Plotter.PlotFunctionGraphCoverage
-                  , plotFunctionGraphCoverage opts
-                  )
-                , ( Plotter.PlotFunctionGraphCoveragePerMatch
-                  , plotFunctionGraphCoveragePerMatch opts
-                  )
-                ]
-      selected = filter snd actions
-  in if length selected > 0
-     then return $ fst $ head selected
-     else error "No plot action provided."
-
 
 
 ----------------
@@ -244,35 +262,34 @@ main =
      output <-
        case (toLower $ command opts) of
          "process-llvm-ir" ->
-           do when (isNothing $ inFile opts) $
-                error "No LLVM IR file is provided as input."
-              content <- readFileContent $ fromJust $ inFile opts
+           do file <- getRequiredFunctionFile opts
+              content <- readFileContent file
               LlvmIrProcessor.run content
          "pattern-match" ->
-           do when (isNothing $ inFile opts) $
-                error "No function JSON file is provided as input."
-              content <- readFileContent $ fromJust $ inFile opts
+           do file <- getRequiredFunctionFile opts
+              content <- readFileContent file
               target <- getRequiredTarget opts
               PatternMatcher.run content target
          "make-cp-model" ->
-           do when (isNothing $ inFile opts) $
-                error "No function JSON file is provided as input."
-              when (isNothing $ matchFile opts) $
-                error "No matches JSON file is provided as input."
-              fcontent <- readFileContent $ fromJust $ inFile opts
-              mcontent <- readFileContent $ fromJust $ matchFile opts
-              Modeler.run fcontent mcontent
+           do f_file <- getRequiredFunctionFile opts
+              m_file <- getRequiredMatchFile opts
+              f_content <- readFileContent f_file
+              m_content <- readFileContent m_file
+              Modeler.run f_content m_content
          "plot" ->
-           do when (isNothing $ inFile opts) $
-                error "No function JSON file is provided as input."
-              fcontent <- readFileContent $ fromJust $ inFile opts
-              mcontent <- if isJust $ matchFile opts
-                          then
-                            do c <- readFileContent $ fromJust $ matchFile opts
-                               return $ Just c
-                          else return Nothing
-              action <- getRequiredPlotAction opts
-              Plotter.run fcontent mcontent action
+           do f_file <- getRequiredFunctionFile opts
+              m_file <- getOptionalMatchFile opts
+              f_content <- readFileContent f_file
+              m_content <- if isJust m_file
+                           then
+                             do content <- readFileContent $ fromJust m_file
+                                return $ Just content
+                           else return Nothing
+              Plotter.run f_content m_content (plotAction opts)
+         "transform-function" ->
+           do file <- getRequiredFunctionFile opts
+              content <- readFileContent file
+              Transformer.run content (transformAction opts)
          "lower-llvm-ir" ->
            undefined
            -- TODO: implement

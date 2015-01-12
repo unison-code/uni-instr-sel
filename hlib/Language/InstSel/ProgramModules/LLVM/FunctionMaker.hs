@@ -221,12 +221,11 @@ mkFunction m f@(LLVM.Function {}) =
       st2 = buildCfg st1 f
       st3 = addMissingLabelToEntityFlowEdges st2
       st4 = addMissingDefPlaceEdges st3
-      st5 = updateOSGraph st4 (G.removeRedundantDPEdges $ getOSGraph st4)
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
-              , PM.functionOS = osGraph st5
-              , PM.functionInputs = map G.getNodeID (funcInputValues st5)
-              , PM.functionBBExecFreq = funcBBExecFreqs st5
+              , PM.functionOS = osGraph st4
+              , PM.functionInputs = map G.getNodeID (funcInputValues st4)
+              , PM.functionBBExecFreq = funcBBExecFreqs st4
               }
           )
 mkFunction _ _ = Nothing
@@ -325,9 +324,20 @@ addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
 addLabelToEntityFlow st ef =
   st { labelToEntityFlows = ef:(labelToEntityFlows st) }
 
--- | Adds a list of definition placement conditions to a given state.
+-- | Add a new definition placement condition to a given state. If an identical
+-- 'DefPlaceCond' already exists in the state, the state is not updated and the
+-- old state is returned.
+addDefPlaceCond :: BuildState -> DefPlaceCond -> BuildState
+addDefPlaceCond st dp =
+  if any (== dp) (defPlaceConds st)
+  then st
+  else st { defPlaceConds = dp:(defPlaceConds st) }
+
+-- | Adds a list of definition placement conditions to a given state. The
+-- returned state may be same as the old state (see 'addDefPlaceCond' for more
+-- information).
 addDefPlaceConds :: BuildState -> [DefPlaceCond] -> BuildState
-addDefPlaceConds st dps = st { defPlaceConds = defPlaceConds st ++ dps }
+addDefPlaceConds st dps = foldl addDefPlaceCond st dps
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState

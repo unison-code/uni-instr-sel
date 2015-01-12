@@ -24,19 +24,12 @@ import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
   ( MatchsetInfo (..) )
-import Language.InstSel.Utils
-  ( fromLeft
-  , fromRight
-  , isLeft
-  )
 import Language.InstSel.Utils.JSON
 
 import Data.Maybe
   ( fromJust
   , isNothing
   )
-import System.Exit
-  ( exitFailure )
 
 
 
@@ -55,19 +48,16 @@ run f_str m_str =
   do let f_res = fromJson f_str
          m_res = fromJson m_str
      when (isLeft f_res) $
-       do putStrLn $ fromLeft f_res
-          exitFailure
+       reportError $ fromLeft f_res
      when (isLeft m_res) $
-       do putStrLn $ fromLeft m_res
-          exitFailure
+       reportError $ fromLeft m_res
      let function = fromRight f_res
          msinfo = fromRight m_res
          matches = msiMatches msinfo
          target_id = msiTarget msinfo
          mtarget = getTargetMachine target_id
      when (isNothing mtarget) $
-       do putStrLn $ "No target machine with ID '" ++ show target_id ++ "'"
-          exitFailure
+       reportError $ "No target machine with ID '" ++ show target_id ++ "'"
      let target = fromJust mtarget
          params = mkParams target function matches
      return [toOutputWithoutID $ toJson params]

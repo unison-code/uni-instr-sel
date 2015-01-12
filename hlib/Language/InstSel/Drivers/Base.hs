@@ -12,7 +12,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.Base where
+module Language.InstSel.Drivers.Base
+  ( module Language.InstSel.ProgramModules
+  , module Language.InstSel.Utils
+  , module Language.InstSel.Utils.IO
+  , Output (..)
+  , getFunction
+  , toOutput
+  , toOutputWithoutID
+  )
+where
 
 import Language.InstSel.ProgramModules
   ( Function )
@@ -21,10 +30,8 @@ import Language.InstSel.Utils
   , fromRight
   , isLeft
   )
+import Language.InstSel.Utils.IO
 import Language.InstSel.Utils.JSON
-
-import System.Exit
-  ( exitFailure )
 
 
 
@@ -70,6 +77,5 @@ getFunction :: String -> IO Function
 getFunction str =
   do let res = fromJson str
      when (isLeft res) $
-       do putStrLn $ fromLeft res
-          exitFailure
+       reportError $ fromLeft res
      return $ fromRight res
