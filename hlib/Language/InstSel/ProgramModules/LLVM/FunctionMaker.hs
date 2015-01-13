@@ -24,7 +24,6 @@ import qualified Language.InstSel.Constraints as C
 import qualified Language.InstSel.Constraints.PCBuilder as C
 import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
-import qualified Language.InstSel.Graphs.Transformations as G
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
 import qualified Language.InstSel.ProgramModules.Base as PM
@@ -614,7 +613,10 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         st2 = buildDfg st1 name
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
-    in st3
+        st4 = if G.isPhiNode expr_node
+              then addDefPlaceCond st3 (dst_node, fromJust $ currentLabel st3)
+              else st3
+    in st4
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
 instance DfgBuildable LLVM.Global where

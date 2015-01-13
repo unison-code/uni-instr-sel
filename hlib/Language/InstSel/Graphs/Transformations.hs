@@ -78,8 +78,8 @@ insertCopy g0 df_edge =
 -- | For each data node $d$ that has a definition placement edge, that edge will
 -- be duplicated the number of times $d$ is used by a phi node - 1.
 duplicateDPEdgesForPhis :: Graph -> Graph
-duplicateDPEdgesForPhis g =
-  let d_nodes = filter isDataNode (getAllNodes g)
+duplicateDPEdgesForPhis g0 =
+  let d_nodes = filter isDataNode (getAllNodes g0)
   in foldl
        ( \g n ->
            let all_out_edges = getOutEdges g n
@@ -93,8 +93,8 @@ duplicateDPEdgesForPhis g =
                        dst = getTargetNode g dp_edge
                    in (iterate (fst . addNewDPEdge (src, dst)) g)
                       !!
-                      (num_phis - 1)
+                      max (num_phis - 1) 0
               else g
        )
-       g
+       g0
        d_nodes
