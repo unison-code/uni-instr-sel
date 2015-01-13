@@ -7,15 +7,20 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-UNI    := ../uni-is/uni-is
-PS     := ../param-splitter/param-splitter
-SOLVER := ../solvers/minizinc/solver
-
+UNI      := ../uni-is/uni-is
+PS       := ../param-splitter/param-splitter
+SOLVER   := ../solvers/minizinc/solver
+PRETTIFY := ../tools/prettify-json
 
 
 #===============
 # GENERIC RULES
 #===============
+
+.SECONDARY:
+
+%.pretty.json: %.json
+	$(PRETTIFY) $< > $@
 
 %.f.json: %.ll
 	$(UNI) process-llvm-ir -f $< > $@
@@ -24,16 +29,10 @@ SOLVER := ../solvers/minizinc/solver
 	$(UNI) transform --copy-extend-fg -f $< > $@
 
 %.mips32.m.json: %.f.json
-	$(UNI) pattern-match -t mips32 -f $< > $@
-
-%.mips32.ce.m.json: %.ce.f.json
 	$(UNI) pattern-match -t mips32.ce -f $< > $@
 
 %.params.json: %.f.json %.mips32.m.json
 	$(UNI) make-cp-model -f $< --match-file $*.mips32.m.json > $@
-
-%.ce.cp.json: %.ce.f.json %.mips32.ce.m.json
-	$(UNI) make-cp-model -f $< --match-file $*.mips32.ce.m.json > $@
 
 %.model.json %.post.json: %.params.json
 	$(PS) --mpf=$@ --ppf=$*.post.json $<
