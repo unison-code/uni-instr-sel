@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Constraints.PCBuilder
+-- Module      : Language.InstSel.Constraints.ConstraintBuilder
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,11 +8,12 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Creates pattern constraints.
+-- Provides functions for creating various constraints to be used as part of the
+-- function graph or pattern graphs.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Constraints.PCBuilder
+module Language.InstSel.Constraints.ConstraintBuilder
   ( addBBAllocConstraints
   , addFallthroughConstraints
   , addIntConstConstraints

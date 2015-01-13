@@ -19,7 +19,7 @@ module Language.InstSel.TargetMachines.Targets.Test
 where
 
 import Language.InstSel.Constraints
-import Language.InstSel.Constraints.PCBuilder
+import Language.InstSel.Constraints.ConstraintBuilder
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures

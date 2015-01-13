@@ -23,7 +23,7 @@ module Language.InstSel.TargetMachines.Targets.Generic
 where
 
 import Language.InstSel.Constraints
-import Language.InstSel.Constraints.PCBuilder
+import Language.InstSel.Constraints.ConstraintBuilder
 import Language.InstSel.DataTypes
   ( DataType (..) )
 import Language.InstSel.Graphs

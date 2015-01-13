@@ -18,7 +18,7 @@ module Language.InstSel.TargetMachines.Targets.Mips32
   ( tmMips32 )
 where
 
-import Language.InstSel.Constraints.PCBuilder
+import Language.InstSel.Constraints.ConstraintBuilder
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Graphs
 import qualified Language.InstSel.OpStructures as OS

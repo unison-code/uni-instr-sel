@@ -21,7 +21,7 @@ module Language.InstSel.ProgramModules.LLVM.FunctionMaker
 where
 
 import qualified Language.InstSel.Constraints as C
-import qualified Language.InstSel.Constraints.PCBuilder as C
+import qualified Language.InstSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
 import qualified Language.InstSel.OpStructures as OS
