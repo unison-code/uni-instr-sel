@@ -126,8 +126,8 @@ noMoreNodeAttr _ = []
 -- | Constructs the default edge attributes.
 mkDefaultEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
 mkDefaultEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
-               ++
-               mkEdgeNrAttributes e
+                      ++
+                      mkEdgeNrAttributes e
 
 -- | Constructs attributes for the edge numbers.
 mkEdgeNrAttributes :: (I.LEdge EdgeLabel) -> GV.Attributes
