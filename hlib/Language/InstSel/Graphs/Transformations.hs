@@ -13,7 +13,10 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.Transformations
-  ( extendWithCopies )
+  ( copyExtendWhen
+  , copyExtendEverywhere
+  , copyExtendExcludeRootData
+  )
 where
 
 import Language.InstSel.Graphs.Base
@@ -30,22 +33,42 @@ import Data.Maybe
 -- Functions
 -------------
 
+-- | Copy-extends the given graph along every eligable data flow edge. This is
+-- typically used for function graphs. See @copyExtendWhen@ for more
+-- information.
+copyExtendEverywhere :: Graph -> Graph
+copyExtendEverywhere = copyExtendWhen (\_ _ -> True)
+
+-- | Same as @copyExtendEverywhere@, but excludes data flow edges where the data
+-- node has no definition (that is, no parents). This is typically used for
+-- patterns graphs, where we only want to copy-extend the the internal data flow
+-- edges and not those on the perimeter of the pattern graph. See
+-- @copyExtendWhen@ for more information.
+copyExtendExcludeRootData :: Graph -> Graph
+copyExtendExcludeRootData =
+  copyExtendWhen (\g e -> length (getDFInEdges g (getSourceNode g e)) > 0)
+
 -- | Inserts a copy node along every data flow edge that involves a use of a
--- data node. This also updates the definition placement edges to retain the
--- same semantics of the original graph. This means that if there is a
--- definition placement edge $e$ that involves a data node used by a phi node,
--- then upon copy extension $e$ will be moved to the new data node. Otherwise
--- $e$ will remain on the original data node. In cases where the same data node
--- is used by multiple phi nodes, $e$ will be duplicated for each such instance,
--- which are then moved for each copy extension (hence no invariants are
--- violated when returning).
-extendWithCopies :: Graph -> Graph
-extendWithCopies g =
+-- data node and passes the predicate function. This also updates the definition
+-- placement edges to retain the same semantics of the original graph. This
+-- means that if there is a definition placement edge $e$ that involves a data
+-- node used by a phi node, then upon copy extension $e$ will be moved to the
+-- new data node. Otherwise $e$ will remain on the original data node. In cases
+-- where the same data node is used by multiple phi nodes, $e$ will be
+-- duplicated for each such instance, which are then moved for each copy
+-- extension (hence no invariants are violated when returning).
+copyExtendWhen
+  :: (Graph -> Edge -> Bool)
+     -- ^ The predicate function, which checks whether to copy-extend the given
+     -- edge.
+  -> Graph
+     -- ^ The graph to extend.
+ -> Graph
+copyExtendWhen f g =
   let d_nodes = filter isDataNode (getAllNodes g)
-      df_out_edges = concatMap
-                       ((filter isDataFlowEdge) . getOutEdges g)
-                       d_nodes
-  in foldl insertCopy (duplicateDPEdgesForPhis g) df_out_edges
+      all_df_out_edges = concatMap (getDFOutEdges g) d_nodes
+      filtered_df_out_edges = filter (f g) all_df_out_edges
+  in foldl insertCopy (duplicateDPEdgesForPhis g) filtered_df_out_edges
 
 -- | Inserts a new copy and data node along a given data flow edge. If the data
 -- node is used by a phi node, and there is a definition placement edge on that

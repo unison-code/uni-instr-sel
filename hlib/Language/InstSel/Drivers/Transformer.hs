@@ -64,7 +64,7 @@ run str CopyExtendFunction =
   do function <- getFunction str
      let os = functionOS function
          g = osGraph os
-         new_g = extendWithCopies g
+         new_g = copyExtendEverywhere g
          new_os = os { osGraph = new_g }
          new_function = function { functionOS = new_os }
      return [toOutputWithoutID $ toJson new_function]
