@@ -35,7 +35,9 @@ import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.Targets
   ( getTargetMachine )
 import Language.InstSel.Utils
-  ( toLower )
+  ( splitOn
+  , toLower
+  )
 import Language.InstSel.Utils.IO
 
 import Language.InstSel.Drivers
@@ -46,6 +48,7 @@ import qualified Language.InstSel.Drivers.Plotter as Plotter
 import qualified Language.InstSel.Drivers.Transformer as Transformer
 
 import System.Console.CmdArgs
+import System.Console.CmdArgs.Text
 
 import Control.Monad
   ( when )
@@ -155,22 +158,40 @@ parseArgs =
                  ++
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
-    &= details [ "Available commands:"
-               , "   lower-llvm-ir        Rewriting an LLVM IR file into an "
-                 ++ "expected canonical form"
-               , "   process-llvm-ir      Converts an LLVM IR file into the "
-                 ++ "graph-based IR format"
-               , "   transform-function   Converts an LLVM IR file into the "
-                 ++ "graph-based IR format"
-               , "   pattern-match        Performs pattern matching on the "
-                 ++ "function graph"
-               , "   make-cp-model        Produces a CP model instance"
-               , "   plot                 Produces various plots of a given "
-                 ++ "function"
-               , "   check-function       Performs sanity checks on a given "
-                 ++ "function"
-               , "The commands may be written in lower or upper case."
-               ]
+    &= details
+         ( splitOn
+             "\n"
+             ( showText
+                 defaultWrap
+                 [ Line "Available commands:"
+                 , Cols [ "  lower-llvm-ir"
+                        , " Rewrites an LLVM IR file into an expected "
+                          ++ "canonical form."
+                        ]
+                 , Cols [ "  process-llvm-ir"
+                        , " Converts an LLVM IR file into the graph-based IR "
+                          ++ "format."
+                        ]
+                 , Cols [ "  transform"
+                        , " Performs a transformation on the input."
+                        ]
+                 , Cols [ "  pattern-match"
+                        , " Performs pattern matching on the given function "
+                          ++ "graph."
+                        ]
+                 , Cols [ "  make-cp-model"
+                        , " Produces a CP model instance."
+                        ]
+                 , Cols [ "  plot"
+                        , " Produces various plots for the input."
+                        ]
+                 , Cols [ "  check-function"
+                        , " Performs sanity checks on the input."
+                        ]
+                 , Line "The commands may be written in lower or upper case."
+                 ]
+             )
+         )
 
 
 
