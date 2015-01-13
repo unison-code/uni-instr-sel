@@ -60,9 +60,21 @@ mkGPRegisters =
 mkHILORegisters :: [Register]
 mkHILORegisters =
   [ Register { regID = 0, regName = RegisterName "HILO" }
-  , Register { regID = 0, regName = RegisterName "HI" }
-  , Register { regID = 0, regName = RegisterName "LO" }
+  , mkHIRegister
+  , mkLORegister
   ]
+
+-- | Creates the list of 'HI' register (which is actually a memory
+-- location). Note that there are no guarantees that the register IDs will be
+-- correctly set!
+mkHIRegister :: Register
+mkHIRegister = Register { regID = 0, regName = RegisterName "HI" }
+
+-- | Creates the list of 'LO' register (which is actually a memory
+-- location). Note that there are no guarantees that the register IDs will be
+-- correctly set!
+mkLORegister :: Register
+mkLORegister = Register { regID = 0, regName = RegisterName "LO" }
 
 -- | Retrieves the register with a given register name. It is assumed that there
 -- will exist exactly one such register.
@@ -90,6 +102,14 @@ getGPRegisters =
 -- The register ID will be correctly set.
 getRetRegister :: Register
 getRetRegister = getRegisterByName $ RegisterName $ regPrefix ++ "31"
+
+-- | Retrieves the 'HI' register. The register ID will be correctly set.
+getHIRegister :: Register
+getHIRegister = getRegisterByName $ RegisterName "HI"
+
+-- | Retrieves the 'LO' register. The register ID will be correctly set.
+getLORegister :: Register
+getLORegister = getRegisterByName $ RegisterName "LO"
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
@@ -122,6 +142,38 @@ mkSimpleCompPattern op src1 src2 dst =
            , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
            ]
        )
+
+-- | Creates a simple pattern that consists of a single copy node, which takes a
+-- data node as input, and produces another data node as output.
+mkSimpleCopyPattern
+  :: D.DataType
+     -- ^ The data type of the operand.
+  -> D.DataType
+     -- ^ The data type of the result.
+  -> Graph
+mkSimpleCopyPattern src dst =
+  let mkDataNode dt = DataNode { dataType = dt, dataOrigin = Nothing }
+  in mkGraph
+       ( map
+           Node
+           [ ( 0, NodeLabel 0 CopyNode )
+           , ( 1, NodeLabel 1 (mkDataNode src) )
+           , ( 2, NodeLabel 2 (mkDataNode dst) )
+           ]
+       )
+       ( map
+           Edge
+           [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+           , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+           ]
+       )
+
+-- | Creates an instance of the simple copy pattern. All data are assumed to be
+-- 32 bits in size.
+mkSimpleCopy32Pattern :: Graph
+mkSimpleCopy32Pattern =
+  let dt = D.IntType 32
+  in mkSimpleCopyPattern dt dt
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
@@ -453,7 +505,7 @@ mkRetInstrs =
                 ]
             )
       bb_cs = mkBBAllocConstraints g
-      reg_cs = mkRegAllocConstraints [regID $ getRetRegister] 2
+      reg_cs = mkRegAllocConstraints [regID getRetRegister] 2
       cs = bb_cs ++ reg_cs
       pat =
         InstrPattern
@@ -472,6 +524,93 @@ mkRetInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
          }
      ]
+
+-- | Makes the 'mfhi' instruction.
+mkMfhiInstrs :: [Instruction]
+mkMfhiInstrs =
+  let g = mkSimpleCopy32Pattern
+      cs = mkRegAllocConstraints [regID getHIRegister] 1
+           ++
+           mkRegAllocConstraints (map regID getGPRegisters) 2
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = [2]
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "mfhi "
+                               , ASRegisterOfDataNode 2
+                               ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         }
+     ]
+
+-- | Makes the 'mflo' instruction.
+mkMfloInstrs :: [Instruction]
+mkMfloInstrs =
+  let g = mkSimpleCopy32Pattern
+      cs = mkRegAllocConstraints [regID getLORegister] 1
+           ++
+           mkRegAllocConstraints (map regID getGPRegisters) 2
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = [2]
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "mflo "
+                               , ASRegisterOfDataNode 2
+                               ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         }
+     ]
+
+-- | Makes the 'move' instruction.
+mkPseudoMoveInstrs :: [Instruction]
+mkPseudoMoveInstrs =
+  let g = mkSimpleCopy32Pattern
+      cs = mkRegAllocConstraints (map regID getGPRegisters) 1
+           ++
+           mkRegAllocConstraints (map regID getGPRegisters) 2
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = [2]
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim "move "
+                               , ASRegisterOfDataNode 1
+                               , ASVerbatim ","
+                               , ASRegisterOfDataNode 2
+                               ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+         }
+     ]
+
+-- | Makes the various move instructions. Note that the instruction ID will be
+-- (incorrectly) set to 0 for all instructions.
+mkMoveInstrs :: [Instruction]
+mkMoveInstrs =
+  mkMfhiInstrs
+  ++
+  mkMfloInstrs
+  ++
+  mkPseudoMoveInstrs
 
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
@@ -497,7 +636,20 @@ mkInstructions =
     , ("addu", O.CompArithOp $ O.UIntOp O.Add)
     , ("sub" , O.CompArithOp $ O.SIntOp O.Sub)
     , ("subu", O.CompArithOp $ O.UIntOp O.Sub)
+      -- | TODO: fix constraints of mul
     , ("mul" , O.CompArithOp $ O.SIntOp O.Mul)
+    ]
+  ++
+  map
+    ( \a -> mkSimple32BitRegRegCompInst
+              (fst a)
+              (snd a)
+              getGPRegisters
+              getGPRegisters
+              [getLORegister]
+    )
+    [ ("mul" , O.CompArithOp $ O.SIntOp O.Mul)
+    , ("div" , O.CompArithOp $ O.SIntOp O.Div)
     ]
   ++
   map
@@ -559,6 +711,8 @@ mkInstructions =
   mkBrInstrs
   ++
   mkRetInstrs
+  ++
+  mkMoveInstrs
 
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine
