@@ -49,4 +49,8 @@ copyExtendTargetMachine tm =
       copyExtendInstr i = i { instrPatterns =
                                 map copyExtendPat (instrPatterns i)
                             }
-  in tm { tmInstructions = map copyExtendInstr (tmInstructions tm) }
+      new_id = toTargetMachineID $ fromTargetMachineID (tmID tm) ++ ".ce"
+      new_instrs = map copyExtendInstr (tmInstructions tm)
+  in tm { tmID = new_id
+        , tmInstructions = new_instrs
+        }
