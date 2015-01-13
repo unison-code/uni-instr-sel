@@ -1,9 +1,64 @@
+#==========
+# SETTINGS
+#==========
+
 HLIBPATH := ../hlib
 
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
+UNI := ../uni-is/uni-is
 
+
+
+#===============
+# GENERIC RULES
+#===============
+
+%.f.json: %.ll
+	$(UNI) process-llvm-ir -f $< > $@
+
+%.ce.f.json: %.f.json
+	$(UNI) transform --copy-extend-fg -f $< > $@
+
+%.mips32.m.json: %.f.json
+	$(UNI) pattern-match -t mips32 -f $< > $@
+
+%.mips32.ce.m.json: %.ce.f.json
+	$(UNI) pattern-match -t mips32.ce -f $< > $@
+
+%.cp.json: %.f.json %.mips32.m.json
+	$(UNI) make-cp-model -f $< --match-file $*.mips32.m.json > $@
+
+%.ce.cp.json: %.ce.f.json %.mips32.ce.m.json
+	$(UNI) make-cp-model -f $< --match-file $*.mips32.ce.m.json > $@
+
+%.dot: %.f.json
+	$(UNI) plot --plot-fg -f $< > $@
+
+%.mips32.cov.dot: %.f.json %.mips32.m.json
+	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.m.json > $@
+
+%.mips32.ce.cov.dot: %.ce.f.json %.mips32.ce.m.json
+	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.ce.m.json > $@
+
+%.pdf: %.dot
+	dot -Tpdf $< -o $@
+
+.PHONY: clean
+clean:
+	find . -name "*.hi" -type f -exec rm {} \;
+	find . -name "*.o" -type f -exec rm {} \;
+
+.PHONY: veryclean
+veryclean: clean
+	-rm parser
+
+
+
+#=================
+# TEMPORARY RULES
+#=================
 
 .PHONY: param-test
 param-test:
@@ -12,9 +67,6 @@ param-test:
 .PHONY: run-param-test
 run-param-test: param-test
 	./param-test
-
-params.json: param-test
-	./param-test > params.json
 
 .PHONY: match-test
 match-test:
@@ -32,19 +84,3 @@ test-frontend:
 
 parser:
 	$(GHC) $(GHCFLAGS) parser.hs
-
-run: parser fact.ll
-	./parser fact.ll
-#	./parser < test.txt
-
-test.pdf: test.dot
-	dot -Tpdf test.dot -o test.pdf
-
-clean:
-	find . -name "*.hi" -type f -exec rm {} \;
-	find . -name "*.o" -type f -exec rm {} \;
-
-veryclean: clean
-	-rm parser
-
-.PHONY: parser clean veryclean
