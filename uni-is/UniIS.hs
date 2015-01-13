@@ -119,19 +119,19 @@ parseArgs =
                  &= ignore
              , Plotter.PlotFunctionGraph
                  &= help "Print function graph in DOT format."
-                 &= name "plot-function-graph"
+                 &= name "plot-fg"
                  &= explicit
              , Plotter.PlotFunctionGraphCoverage
                  &= help ( "Print function graph in DOT format, and mark the "
                            ++ "nodes that has a potential cover."
                          )
-                 &= name "plot-function-graph-coverage"
+                 &= name "plot-fg-cov"
                  &= explicit
              , Plotter.PlotFunctionGraphCoveragePerMatch
-                 &= help ( "Same as --plot-function-graph-coverage, but shows "
+                 &= help ( "Same as --plot-fg-cov, but shows "
                            ++ "the coverage for each individual match."
                          )
-                 &= name "plot-function-graph-coverage-per-match"
+                 &= name "plot-fg-cov-per-match"
                  &= explicit
              ]
         &= groupname "Plot flags"
@@ -141,7 +141,7 @@ parseArgs =
                  &= ignore
              , Transformer.CopyExtendFunction
                  &= help "Extends the given function graph with copies."
-                 &= name "extend-function-with-copies"
+                 &= name "copy-extend-fg"
                  &= explicit
              ]
         &= groupname "Transformation flags"
