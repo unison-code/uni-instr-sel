@@ -7,7 +7,9 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-UNI := ../uni-is/uni-is
+UNI    := ../uni-is/uni-is
+PS     := ../param-splitter/param-splitter
+SOLVER := ../solvers/minizinc/solver
 
 
 
@@ -27,11 +29,17 @@ UNI := ../uni-is/uni-is
 %.mips32.ce.m.json: %.ce.f.json
 	$(UNI) pattern-match -t mips32.ce -f $< > $@
 
-%.cp.json: %.f.json %.mips32.m.json
+%.params.json: %.f.json %.mips32.m.json
 	$(UNI) make-cp-model -f $< --match-file $*.mips32.m.json > $@
 
 %.ce.cp.json: %.ce.f.json %.mips32.ce.m.json
 	$(UNI) make-cp-model -f $< --match-file $*.mips32.ce.m.json > $@
+
+%.model.json %.post.json: %.params.json
+	$(PS) --mpf=$@ --ppf=$*.post.json $<
+
+%.sol.json: %.model.json
+	$(SOLVER) -o $@ $<
 
 %.dot: %.f.json
 	$(UNI) plot --plot-fg -f $< > $@
