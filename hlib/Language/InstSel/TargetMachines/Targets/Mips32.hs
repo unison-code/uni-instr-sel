@@ -483,6 +483,8 @@ mkInstructions =
   ++
   mkGenericEntityDefInstructions
   ++
+  mkGenericCopyInstructions
+  ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)

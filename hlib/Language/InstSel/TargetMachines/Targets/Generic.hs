@@ -18,6 +18,7 @@ module Language.InstSel.TargetMachines.Targets.Generic
   , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
   , mkGenericEntityDefInstructions
+  , mkGenericCopyInstructions
   )
 where
 
@@ -175,6 +176,38 @@ mkGenericEntityDefInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString []
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         }
+     ]
+
+-- | Creates a set of instructions for handling null-copy operations.
+mkGenericCopyInstructions :: [Instruction]
+mkGenericCopyInstructions =
+  let g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 CopyNode )
+                , ( 1, NodeLabel 1 mkGenericDataNodeType )
+                , ( 2, NodeLabel 2 mkGenericDataNodeType )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+                ]
+            )
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g []
           , patOutputDataNodes = []
           , patADDUC = True
           , patAssemblyStr = AssemblyString []
