@@ -307,7 +307,7 @@ main =
                                 return $ Just content
                            else return Nothing
               Plotter.run f_content m_content (plotAction opts)
-         "transform-function" ->
+         "transform" ->
            do file <- getRequiredFunctionFile opts
               content <- readFileContent file
               Transformer.run content (transformAction opts)
