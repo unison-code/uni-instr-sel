@@ -347,7 +347,7 @@ instance FromJSON NodeType where
                                <$> v .: "bb-label"
                    "phi"  -> return PhiNode
                    "stat" -> return StateNode
-                   "cp"   -> return CopyNode
+                   "copy" -> return CopyNode
                    _      -> mzero
   parseJSON _ = mzero
 
@@ -374,7 +374,7 @@ instance ToJSON NodeType where
   toJSON (StateNode {}) =
     object [ "ntype" .= String "stat" ]
   toJSON (CopyNode {}) =
-    object [ "ntype" .= String "cp" ]
+    object [ "ntype" .= String "copy" ]
 
 instance FromJSON EdgeLabel where
   parseJSON (Object v) =

@@ -116,7 +116,7 @@ mkStateNodeAttr :: GV.Attributes
 mkStateNodeAttr = mkDataNodeAttr ""
 
 mkCopyNodeAttr :: GV.Attributes
-mkCopyNodeAttr = mkCompNodeAttr "copy"
+mkCopyNodeAttr = mkCompNodeAttr "cp"
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
