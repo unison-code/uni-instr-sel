@@ -94,6 +94,8 @@ duplicateDPEdgesForPhis g0 =
                    in (iterate (fst . addNewDPEdge (src, dst)) g)
                       !!
                       max (num_phis - 1) 0
+                      -- ^ We use max here as (num_phis - 1) can result in a
+                      -- negative number
               else g
        )
        g0
