@@ -143,6 +143,12 @@ parseArgs =
                  &= help "Extends the given function graph with copies."
                  &= name "copy-extend-fg"
                  &= explicit
+             , Transformer.BranchExtendFunction
+                 &= help ( "Extends the given function graph with additional "
+                           ++ "branches."
+                         )
+                 &= name "branch-extend-fg"
+                 &= explicit
              ]
         &= groupname "Transformation flags"
     }
@@ -206,22 +212,27 @@ readFileContent file =
        reportError $ "File " ++ show file ++ " does not exist."
      readFile file
 
-getRequiredFunctionFile :: Options -> IO FilePath
+getRequiredFunctionFile :: Options -> IO String
 getRequiredFunctionFile opts =
   do let file = inFile opts
-     when (isNothing file) $
-       reportError "No function file provided."
-     return $ fromJust file
+     if isJust file
+     then readFileContent $ fromJust file
+     else getContents
 
-getRequiredMatchFile :: Options -> IO FilePath
+getRequiredMatchFile :: Options -> IO String
 getRequiredMatchFile opts =
   do let file = matchFile opts
      when (isNothing file) $
        reportError "No match file provided."
-     return $ fromJust file
+     readFileContent $ fromJust file
 
-getOptionalMatchFile :: Options -> IO (Maybe FilePath)
-getOptionalMatchFile opts = return $ matchFile opts
+getOptionalMatchFile :: Options -> IO (Maybe String)
+getOptionalMatchFile opts =
+  do let file = matchFile opts
+     if isJust file
+     then do content <- readFileContent $ fromJust file
+             return $ Just content
+     else return Nothing
 
 -- | Returns the target machine specified on the command line. If no target is
 -- specified, or if no such target exists, failure is reported.
@@ -283,33 +294,22 @@ main =
      output <-
        case (toLower $ command opts) of
          "process-llvm-ir" ->
-           do file <- getRequiredFunctionFile opts
-              content <- readFileContent file
+           do content <- getRequiredFunctionFile opts
               LlvmIrProcessor.run content
          "pattern-match" ->
-           do file <- getRequiredFunctionFile opts
-              content <- readFileContent file
+           do content <- getRequiredFunctionFile opts
               target <- getRequiredTarget opts
               PatternMatcher.run content target
          "make-cp-model" ->
-           do f_file <- getRequiredFunctionFile opts
-              m_file <- getRequiredMatchFile opts
-              f_content <- readFileContent f_file
-              m_content <- readFileContent m_file
+           do f_content <- getRequiredFunctionFile opts
+              m_content <- getRequiredMatchFile opts
               Modeler.run f_content m_content
          "plot" ->
-           do f_file <- getRequiredFunctionFile opts
-              m_file <- getOptionalMatchFile opts
-              f_content <- readFileContent f_file
-              m_content <- if isJust m_file
-                           then
-                             do content <- readFileContent $ fromJust m_file
-                                return $ Just content
-                           else return Nothing
+           do f_content <- getRequiredFunctionFile opts
+              m_content <- getOptionalMatchFile opts
               Plotter.run f_content m_content (plotAction opts)
          "transform" ->
-           do file <- getRequiredFunctionFile opts
-              content <- readFileContent file
+           do content <- getRequiredFunctionFile opts
               Transformer.run content (transformAction opts)
          "lower-llvm-ir" ->
            undefined
