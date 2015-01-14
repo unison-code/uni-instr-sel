@@ -308,10 +308,15 @@ mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
        , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
        }
 
--- | Creates a simple conditional branch pattern.
-mkSimpleCondBrPattern :: Graph
-mkSimpleCondBrPattern =
+-- | Creates a conditional branch pattern for a given comparison operator. The
+-- first and second operands are the (32-bit) data nodes with IDs 5 and 6,
+-- respectively, and the 'true' and 'false' labels are the label node with IDs 2
+-- and 3, respectively.
+mkCondBrPattern :: O.CompOp -> Graph
+mkCondBrPattern op =
   let mkLabelNode = LabelNode $ BasicBlockLabel ""
+      mkCompNode = ComputationNode { compOp = op }
+      mk32BitDataNode = DataNode (D.IntType 32) Nothing
   in mkGraph
        ( map
            Node
@@ -319,7 +324,10 @@ mkSimpleCondBrPattern =
            , ( 1, NodeLabel 1 mkLabelNode )
            , ( 2, NodeLabel 2 mkLabelNode )
            , ( 3, NodeLabel 3 mkLabelNode )
-           , ( 4, NodeLabel 4 (DataNode (D.IntType 1) Nothing) )
+           , ( 4, NodeLabel 4 mkCompNode )
+           , ( 5, NodeLabel 5 mk32BitDataNode )
+           , ( 6, NodeLabel 6 mk32BitDataNode )
+           , ( 7, NodeLabel 7 (DataNode (D.IntType 1) Nothing) )
            ]
        )
        ( map
@@ -327,128 +335,76 @@ mkSimpleCondBrPattern =
            [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
            , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
            , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
-           , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
+           , ( 7, 0, EdgeLabel DataFlowEdge 0 0 )
+           , ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
+           , ( 6, 4, EdgeLabel DataFlowEdge 0 1 )
+           , ( 4, 7, EdgeLabel DataFlowEdge 0 0 )
            ]
        )
 
--- | Makes the conditional branch instructions.
-mkCondBrInstrs :: [Instruction]
-mkCondBrInstrs =
-  let simple_g = mkSimpleCondBrPattern
-      bb_alloc_cs = mkBBAllocConstraints simple_g
-      fallthrough_cs = mkFallthroughConstraints 3
-      cs = bb_alloc_cs ++ fallthrough_cs
-      mkCompNode = ComputationNode { compOp = O.CompArithOp $ O.IntOp O.Eq }
-      mk32BitDataNode = DataNode (D.IntType 32) Nothing
-      complex_g =
-        mkGraph
-          ( getAllNodes simple_g
-            ++
-            map
-              Node
-              [ ( 5, NodeLabel 5 mkCompNode )
-              , ( 6, NodeLabel 6 mk32BitDataNode )
-              , ( 7, NodeLabel 7 mk32BitDataNode )
-              ]
-          )
-          ( getAllEdges simple_g
-            ++
-            map
-              Edge
-              [ ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
-              , ( 6, 5, EdgeLabel DataFlowEdge 0 0 )
-              , ( 7, 5, EdgeLabel DataFlowEdge 0 1 )
-              ]
-          )
-      simple_pat =
-        InstrPattern
-          { patID = 0
-          , patOS = OS.OpStructure simple_g cs
-          , patOutputDataNodes = []
-          , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "beq "
-                               , ASRegisterOfDataNode 6
-                               , ASVerbatim ","
-                               , ASRegisterOfDataNode 7
-                               , ASVerbatim ","
-                               , ASBBLabelOfLabelNode 2
-                               ]
-          }
-      complex_pat =
-        InstrPattern
-          { patID = 1
-          , patOS = OS.OpStructure complex_g cs
-          , patOutputDataNodes = []
-          , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "bne "
-                               , ASRegisterOfDataNode 4
-                               , ASVerbatim ",$0,"
-                               , ASBBLabelOfLabelNode 2
-                               ]
-          }
-  in [ Instruction
-         { instrID = 0
-         , instrPatterns = [simple_pat, complex_pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
-         }
-     ]
-
--- | Makes the conditional branch pseudoinstructions.
-mkCondBrPseudoInstrs
+-- | Makes two conditional branch instructions: an ordinary branch instruction,
+-- and its inverse branch instruction. The inverse is achieved by inverting the
+-- comparison, and swapping the branch labels, which means both instructions
+-- carry the same semantics. Both are needed to handle cases where a comparison
+-- needs to be inverted in order to achieve a valid basic block ordering.
+mkCondBrInstrs
   :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
-     -- ^ The operation corresponding to this instruction.
-  -> Instruction
-mkCondBrPseudoInstrs str op =
-  let simple_g = mkSimpleCondBrPattern
-      mkCompNode = ComputationNode { compOp = op }
-      mk32BitDataNode = DataNode (D.IntType 32) Nothing
-      complex_g =
-        mkGraph
-          ( getAllNodes simple_g
-            ++
-            map
-              Node
-              [ ( 5, NodeLabel 5 mkCompNode )
-              , ( 6, NodeLabel 6 mk32BitDataNode )
-              , ( 7, NodeLabel 7 mk32BitDataNode )
-              ]
-          )
-          ( getAllEdges simple_g
-            ++
-            map
-              Edge
-              [ ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
-              , ( 6, 5, EdgeLabel DataFlowEdge 0 0 )
-              , ( 7, 5, EdgeLabel DataFlowEdge 0 1 )
-              ]
-          )
-      bb_alloc_cs = mkBBAllocConstraints simple_g
-      fallthrough_cs = mkFallthroughConstraints 3
-      cs = bb_alloc_cs ++ fallthrough_cs
-      pat =
+     -- ^ The comparison corresponding to this instruction.
+  -> String
+     -- ^ The inverse assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The inverse comparison corresponding to this instruction.
+  -> [Instruction]
+mkCondBrInstrs ord_str ord_op inv_str inv_op =
+  let ord_g = mkCondBrPattern ord_op
+      inv_g = mkCondBrPattern inv_op
+      ord_bb_alloc_cs = mkBBAllocConstraints ord_g
+      inv_bb_alloc_cs = mkBBAllocConstraints inv_g
+      ord_fallthrough_cs = mkFallthroughConstraints 3
+      inv_fallthrough_cs = mkFallthroughConstraints 2
+      ord_cs = ord_bb_alloc_cs ++ ord_fallthrough_cs
+      inv_cs = inv_bb_alloc_cs ++ inv_fallthrough_cs
+      ord_pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure complex_g cs
+          , patOS = OS.OpStructure ord_g ord_cs
           , patOutputDataNodes = []
           , patADDUC = True
           , patAssemblyStr = AssemblyString
-                               [ ASVerbatim $ str ++ " "
-                               , ASRegisterOfDataNode 6
+                               [ ASVerbatim $ ord_str ++ " "
+                               , ASRegisterOfDataNode 5
                                , ASVerbatim ","
-                               , ASRegisterOfDataNode 7
+                               , ASRegisterOfDataNode 6
                                , ASVerbatim ","
                                , ASBBLabelOfLabelNode 2
                                ]
           }
-  in Instruction
-       { instrID = 0
-       , instrPatterns = [pat]
-       , instrProps = InstrProperties { instrCodeSize = 8, instrLatency = 3 }
-       }
+      inv_pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure inv_g inv_cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAssemblyStr = AssemblyString
+                               [ ASVerbatim $ inv_str ++ " "
+                               , ASRegisterOfDataNode 5
+                               , ASVerbatim ","
+                               , ASRegisterOfDataNode 6
+                               , ASVerbatim ","
+                               , ASBBLabelOfLabelNode 3
+                               ]
+          }
+      mkInst p =
+        Instruction
+          { instrID = 0
+          , instrPatterns = [p]
+          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+          }
+  in [ mkInst ord_pat
+     , mkInst inv_pat
+     ]
 
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
@@ -627,85 +583,88 @@ mkInstructions =
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               getGPRegisters
     )
-    [ ("add" , O.CompArithOp $ O.SIntOp O.Add)
-    , ("addu", O.CompArithOp $ O.UIntOp O.Add)
-    , ("sub" , O.CompArithOp $ O.SIntOp O.Sub)
-    , ("subu", O.CompArithOp $ O.UIntOp O.Sub)
+    [ ("add" , O.SIntOp O.Add)
+    , ("addu", O.UIntOp O.Add)
+    , ("sub" , O.SIntOp O.Sub)
+    , ("subu", O.UIntOp O.Sub)
       -- | TODO: fix constraints of mul
-    , ("mul" , O.CompArithOp $ O.SIntOp O.Mul)
+    , ("mul" , O.SIntOp O.Mul)
     ]
   ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               [getLORegister]
     )
-    [ ("mul" , O.CompArithOp $ O.SIntOp O.Mul)
-    , ("div" , O.CompArithOp $ O.SIntOp O.Div)
+    [ ("mul" , O.SIntOp O.Mul)
+    , ("div" , O.SIntOp O.Div)
     ]
   ++
   map
     ( \a -> mkSimple32BitReg16BitImmCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               (Range (-32768) 32767)
     )
-    [ ("addi", O.CompArithOp $ O.SIntOp O.Add) ]
+    [ ("addi", O.SIntOp O.Add) ]
   ++
   map
     ( \a -> mkSimple32BitReg16BitImmCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               (Range 0 65535)
     )
-    [ ("addiu", O.CompArithOp $ O.UIntOp O.Add) ]
+    [ ("addiu", O.UIntOp O.Add) ]
   ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               [getRegisterByName $ RegisterName "LO"]
     )
-    [ ("mult" , O.CompArithOp $ O.SIntOp O.Mul)
-    , ("multu", O.CompArithOp $ O.UIntOp O.Mul)
+    [ ("mult" , O.SIntOp O.Mul)
+    , ("multu", O.UIntOp O.Mul)
     ]
   ++
   map
     ( \a -> mkSimple32BitRegs1BitResultCompInst
               (fst a)
-              (snd a)
+              (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               getGPRegisters
     )
-    [ ("and", O.CompArithOp $ O.IntOp O.And)
-    , ("or" , O.CompArithOp $ O.IntOp O.Or)
-    , ("xor", O.CompArithOp $ O.IntOp O.XOr)
-    , ("slt", O.CompArithOp $ O.IntOp O.LT)
+    [ ("and", O.IntOp O.And)
+    , ("or" , O.IntOp O.Or)
+    , ("xor", O.IntOp O.XOr)
+    , ("slt", O.IntOp O.LT)
     ]
   ++
-  mkCondBrInstrs
-  ++
-  map
-    (\a -> mkCondBrPseudoInstrs (fst a) (snd a))
-    [ ("bgt", O.CompArithOp $ O.IntOp O.GT)
-    , ("blt", O.CompArithOp $ O.IntOp O.LT)
-    , ("bge", O.CompArithOp $ O.IntOp O.GE)
-    , ("ble", O.CompArithOp $ O.IntOp O.LE)
+  concatMap
+    ( \(s1, op1, s2, op2) -> mkCondBrInstrs
+                               s1
+                               (O.CompArithOp op1)
+                               s2
+                               (O.CompArithOp op2)
+    )
+    [ ("bgt", O.SIntOp O.GT, "ble", O.SIntOp O.LE)
+    , ("blt", O.SIntOp O.LT, "bge", O.SIntOp O.GE)
+    , ("bge", O.SIntOp O.GE, "blt", O.SIntOp O.LT)
+    , ("ble", O.SIntOp O.LE, "bgt", O.SIntOp O.GT)
     ]
   ++
   mkBrInstrs
