@@ -268,7 +268,7 @@ emitToStdout = putStrLn . oData
 emitToFile :: FilePath -> Output -> IO ()
 emitToFile fp o =
   let (fname, ext) = splitExtension fp
-      filename = fname ++ oID o ++ ext
+      filename = fname ++ "." ++ oID o ++ ext
   in writeFile filename (oData o)
 
 
