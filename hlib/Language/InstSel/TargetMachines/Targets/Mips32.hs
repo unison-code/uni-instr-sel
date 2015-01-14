@@ -356,7 +356,7 @@ mkCondBrInstrs
      -- ^ The inverse assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The inverse comparison corresponding to this instruction.
-  -> [Instruction]
+  -> Instruction
 mkCondBrInstrs ord_str ord_op inv_str inv_op =
   let ord_g = mkCondBrPattern ord_op
       inv_g = mkCondBrPattern inv_op
@@ -383,7 +383,7 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
           }
       inv_pat =
         InstrPattern
-          { patID = 0
+          { patID = 1
           , patOS = OS.OpStructure inv_g inv_cs
           , patOutputDataNodes = []
           , patADDUC = True
@@ -396,15 +396,11 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
                                , ASBBLabelOfLabelNode 3
                                ]
           }
-      mkInst p =
-        Instruction
-          { instrID = 0
-          , instrPatterns = [p]
-          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
-          }
-  in [ mkInst ord_pat
-     , mkInst inv_pat
-     ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [ord_pat, inv_pat]
+       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+       }
 
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
@@ -654,7 +650,7 @@ mkInstructions =
     , ("slt", O.IntOp O.LT)
     ]
   ++
-  concatMap
+  map
     ( \(s1, op1, s2, op2) -> mkCondBrInstrs
                                s1
                                (O.CompArithOp op1)
