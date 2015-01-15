@@ -1,6 +1,6 @@
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel.PostProcessor
+-- Module      : Language.InstSel.TargetMachines.CodeEmission
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,17 +8,25 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Performs the post-processing of the CP solution and post-processing
--- parameters.
+-- Provides functions for performing code emission.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.CPModel.PostProcessor
-  ( ControlDataFlowDAG
-  , emitInstructions
-  , mkControlDataFlowDAG
+module Language.InstSel.TargetMachines.CodeEmission
+  ( AssemblyCode (..)
+  , generateCode
   )
 where
+
+import Language.InstSel.CPModel
+import Language.InstSel.Graphs.IDs
+  ( MatchID
+  , NodeID
+  )
+import Language.InstSel.Functions
+  ( BasicBlockLabel )
+import Language.InstSel.TargetMachines.Targets
+
 
 import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
@@ -30,6 +38,63 @@ import Language.InstSel.TargetMachines
 import qualified Data.Graph.Inductive as I
 
 import Data.Maybe
+
+
+import Data.Maybe
+  ( fromJust )
+
+
+
+--------------
+-- Data types
+--------------
+
+data AssemblyCode
+  = AsmBasicBlockLabel String
+  | AsmInstruction String
+
+instance Show AssemblyCode where
+  show (AsmBasicBlockLabel str) = str
+  show (AsmInstruction str) = str
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Produces the corresponding assembly code from a set of CP model solution
+-- data.
+generateCode :: CPSolutionData -> [AssemblyCode]
+generateCode cp_data =
+  let labs = orderOfBBs cp_data
+      pi_lists = map (getPIsAllocatedToBB cp_data) labs
+      dags = map (mkControlDataFlowDAG cp_data) pi_lists
+      tm = fromJust
+           $ getTargetMachine
+           $ machID
+           $ machineParams
+           $ modelParams cp_data
+      is = map (emitInstructions cp_data tm) dags
+      bb_code = zipWith
+                (\bb ss -> (show bb ++ ":"):ss)
+                (labNodes2BBLabels cp_data labs)
+                is
+  in concat bb_code
+
+getPIsAllocatedToBB
+  :: CPSolutionData
+  -> NodeID
+      -- ^ The node ID of the corresponding label node.
+  -> [MatchID]
+getPIsAllocatedToBB cp_data n =
+  map fst $ filter (\t -> snd t == n) $ bbAllocsForMatches cp_data
+
+labNodes2BBLabels :: CPSolutionData -> [NodeID] -> [BasicBlockLabel]
+labNodes2BBLabels cp_data ns =
+  let bb_maps = funcBasicBlockParams $ functionParams $ modelParams cp_data
+  in map (\n -> bbLabel $ head $ filter (\m -> bbLabelNode m == n) bb_maps) ns
+
 
 
 
