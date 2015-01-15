@@ -13,7 +13,10 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Functions.IDs
-  ( BasicBlockLabel (..) )
+  ( BasicBlockLabel (..)
+  , mkEmptyBBLabel
+  , isBBLabelEmpty
+  )
 where
 
 import Language.InstSel.Utils.JSON
@@ -44,3 +47,17 @@ instance FromJSON BasicBlockLabel where
 
 instance ToJSON BasicBlockLabel where
   toJSON (BasicBlockLabel s) = toJSON s
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Creates a basic block label that is essentially empty.
+mkEmptyBBLabel :: BasicBlockLabel
+mkEmptyBBLabel = BasicBlockLabel ""
+
+-- | Checks if a basic block label is empty.
+isBBLabelEmpty :: BasicBlockLabel -> Bool
+isBBLabelEmpty (BasicBlockLabel str) = str == ""
