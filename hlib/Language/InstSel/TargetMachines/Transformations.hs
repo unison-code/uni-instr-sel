@@ -10,6 +10,7 @@
 --
 -- Provides a set of transformation functions which can be applied on a given
 -- target machine.
+--
 --------------------------------------------------------------------------------
 
 module Language.InstSel.TargetMachines.Transformations
