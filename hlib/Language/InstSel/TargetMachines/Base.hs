@@ -155,10 +155,7 @@ findInstruction is iid =
 -- | Given a list of instruction patterns, the function finds the 'InstrPattern'
 -- entity with matching pattern ID. If there is more than one match, the first
 -- found is returned. If no such entity is found, 'Nothing' is returned.
-findInstrPattern ::
-    [InstrPattern]
-  -> PatternID
-  -> Maybe InstrPattern
+findInstrPattern :: [InstrPattern] -> PatternID -> Maybe InstrPattern
 findInstrPattern ps pid =
   let found = filter (\p -> patID p == pid) ps
   in if length found > 0
