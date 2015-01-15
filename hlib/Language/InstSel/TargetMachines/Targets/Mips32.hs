@@ -409,7 +409,7 @@ mkBrInstrs =
       g = mkGraph
             ( map
                 Node
-                [ ( 0, NodeLabel 0 (ControlNode O.CondBranch) )
+                [ ( 0, NodeLabel 0 (ControlNode O.Branch) )
                 , ( 1, NodeLabel 1 mkLabelNode )
                 , ( 2, NodeLabel 2 mkLabelNode )
                 ]
