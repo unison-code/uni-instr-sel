@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Graphs
+-- Module      : Language.InstSel.Functions.LLVM
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,14 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Graphs
-  ( module Language.InstSel.Graphs.Base
-  , module Language.InstSel.Graphs.IDs
-  , module Language.InstSel.Functions.IDs
-  )
+module Language.InstSel.Functions.LLVM
+  ( module Language.InstSel.Functions.LLVM.FunctionMaker )
 where
 
-import Language.InstSel.Graphs.Base
-import Language.InstSel.Graphs.IDs
-import Language.InstSel.Functions.IDs
-  ( BasicBlockLabel (..) )
+import Language.InstSel.Functions.LLVM.FunctionMaker

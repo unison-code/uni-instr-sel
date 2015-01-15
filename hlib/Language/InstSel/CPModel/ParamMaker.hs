@@ -32,10 +32,8 @@ import Language.InstSel.Graphs
 import qualified Language.InstSel.Graphs as G
   ( bbLabel )
 import Language.InstSel.OpStructures
-import Language.InstSel.ProgramModules
-  ( Function (..)
-  , getExecFreqOfBBInFunction
-  )
+import Language.InstSel.Functions
+  ( Function (..) )
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
   ( MatchData (..) )
@@ -77,7 +75,10 @@ mkFunctionGraphParams f =
           (\e -> (getNodeID $ getSourceNode g e, getNodeID $ getTargetNode g e))
           (filter isDefPlaceEdge (getAllEdges g))
       getExecFreq n =
-        fromJust $ getExecFreqOfBBInFunction f (G.bbLabel $ getNodeType n)
+        fromJust $
+          lookup
+            (G.bbLabel $ getNodeType n)
+            (functionBBExecFreq f)
   in FunctionGraphParams
        { funcOpNodes = nodeIDsByType isOperationNode
        , funcEssentialOpNodes = map getNodeID essential_op_nodes

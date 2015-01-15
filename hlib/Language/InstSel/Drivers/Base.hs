@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Drivers.Base
-  ( module Language.InstSel.ProgramModules
+  ( module Language.InstSel.Functions
   , module Language.InstSel.Utils
   , module Language.InstSel.Utils.IO
   , Output (..)
@@ -23,7 +23,7 @@ module Language.InstSel.Drivers.Base
   )
 where
 
-import Language.InstSel.ProgramModules
+import Language.InstSel.Functions
   ( Function )
 import Language.InstSel.Utils
   ( fromLeft

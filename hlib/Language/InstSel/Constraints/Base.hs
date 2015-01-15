@@ -36,7 +36,6 @@ import Language.InstSel.Graphs
   ( MatchID (..)
   , NodeID (..)
   )
-import Language.InstSel.Patterns.IDs
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( fromLeft

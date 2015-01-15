@@ -21,13 +21,7 @@ module Language.InstSel.Drivers.Transformer
 where
 
 import Language.InstSel.Drivers.Base
-
-import Language.InstSel.Graphs.Transformations
-import Language.InstSel.OpStructures
-  ( OpStructure (..) )
-import Language.InstSel.ProgramModules
-  ( Function (..) )
-
+import Language.InstSel.Functions.Transformations
 import Language.InstSel.Utils.JSON
 
 import System.Console.CmdArgs
@@ -43,8 +37,11 @@ import System.Console.CmdArgs
 
 data TransformAction
   = CopyExtendFunction
+  | BranchExtendFunction
   | DoNothing
   deriving (Typeable, Data)
+
+
 
 -------------
 -- Functions
@@ -61,10 +58,11 @@ run
 run _ DoNothing = reportError "No transform action provided."
 
 run str CopyExtendFunction =
-  do function <- getFunction str
-     let os = functionOS function
-         g = osGraph os
-         new_g = copyExtendEverywhere g
-         new_os = os { osGraph = new_g }
-         new_function = function { functionOS = new_os }
-     return [toOutputWithoutID $ toJson new_function]
+  do f <- getFunction str
+     let new_f = copyExtend f
+     return [toOutputWithoutID $ toJson new_f]
+
+run str BranchExtendFunction =
+  do f <- getFunction str
+     let new_f = branchExtend f
+     return [toOutputWithoutID $ toJson new_f]

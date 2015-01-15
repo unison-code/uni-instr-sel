@@ -8,19 +8,21 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Provides a set of transformation function which can be applied on a given
+-- Provides a set of transformation functions that can be applied on a given
 -- graph.
 --------------------------------------------------------------------------------
 
 module Language.InstSel.Graphs.Transformations
-  ( copyExtendWhen
-  , copyExtendEverywhere
-  , copyExtendExcludeRootData
+  ( branchExtendWhen
+  , copyExtendWhen
   )
 where
 
 import Language.InstSel.Graphs.Base
 import qualified Language.InstSel.DataTypes as D
+import Language.InstSel.Functions
+  ( BasicBlockLabel (..) )
+import qualified Language.InstSel.OpTypes as O
 
 import Data.Maybe
   ( fromJust
@@ -32,21 +34,6 @@ import Data.Maybe
 -------------
 -- Functions
 -------------
-
--- | Copy-extends the given graph along every eligable data flow edge. This is
--- typically used for function graphs. See @copyExtendWhen@ for more
--- information.
-copyExtendEverywhere :: Graph -> Graph
-copyExtendEverywhere = copyExtendWhen (\_ _ -> True)
-
--- | Same as @copyExtendEverywhere@, but excludes data flow edges where the data
--- node has no definition (that is, no parents). This is typically used for
--- patterns graphs, where we only want to copy-extend the the internal data flow
--- edges and not those on the perimeter of the pattern graph. See
--- @copyExtendWhen@ for more information.
-copyExtendExcludeRootData :: Graph -> Graph
-copyExtendExcludeRootData =
-  copyExtendWhen (\g e -> length (getDFInEdges g (getSourceNode g e)) > 0)
 
 -- | Inserts a copy node along every data flow edge that involves a use of a
 -- data node and passes the predicate function. This also updates the definition
@@ -65,10 +52,10 @@ copyExtendWhen
      -- ^ The graph to extend.
  -> Graph
 copyExtendWhen f g =
-  let d_nodes = filter isDataNode (getAllNodes g)
-      all_df_out_edges = concatMap (getDFOutEdges g) d_nodes
-      filtered_df_out_edges = filter (f g) all_df_out_edges
-  in foldl insertCopy (duplicateDPEdgesForPhis g) filtered_df_out_edges
+  let nodes = filter isDataNode (getAllNodes g)
+      edges = concatMap (getDFOutEdges g) nodes
+      filtered_edges = filter (f g) edges
+  in foldl insertCopy (duplicateDPEdgesForPhis g) filtered_edges
 
 -- | Inserts a new copy and data node along a given data flow edge. If the data
 -- node is used by a phi node, and there is a definition placement edge on that
@@ -123,3 +110,31 @@ duplicateDPEdgesForPhis g0 =
        )
        g0
        d_nodes
+
+-- | Inserts a new label node and jump control node along each outbound control
+-- edge from every conditional jump control node and passes the predicate
+-- function.
+branchExtendWhen
+  :: (Graph -> Edge -> Bool)
+     -- ^ The predicate function, which checks whether to branch-extend the
+     -- given edge.
+  -> Graph
+     -- ^ The graph to extend.
+ -> Graph
+branchExtendWhen f g =
+  let c_nodes = filter isControlNode (getAllNodes g)
+      nodes = filter
+                    (\n -> (ctrlOp $ getNodeType n) == O.CondBranch)
+                    c_nodes
+      edges = concatMap (getCFOutEdges g) nodes
+      filtered_edges = filter (f g) edges
+  in foldl insertBranch g filtered_edges
+
+-- | Inserts a new label node and jump control node along the given control flow
+-- edge.
+insertBranch :: Graph -> Edge -> Graph
+insertBranch g0 e =
+  let (g1, l) = insertNewNodeAlongEdge (LabelNode $ BasicBlockLabel "") e g0
+      new_e = head $ getCFOutEdges g1 l
+      (g2, _) = insertNewNodeAlongEdge (ControlNode O.Branch) new_e g1
+  in g2

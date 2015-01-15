@@ -22,6 +22,8 @@ module Language.InstSel.Graphs.GraphViz
 where
 
 import Language.InstSel.DebugShow
+import Language.InstSel.Functions
+  ( BasicBlockLabel (..) )
 import Language.InstSel.Graphs.Base
 
 import qualified Data.Graph.Inductive as I

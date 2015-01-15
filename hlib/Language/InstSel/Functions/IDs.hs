@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ProgramModules.IDs
+-- Module      : Language.InstSel.Functions.IDs
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ProgramModules.IDs
+module Language.InstSel.Functions.IDs
   ( BasicBlockLabel (..) )
 where
 

@@ -22,7 +22,7 @@ where
 
 import Language.InstSel.CPModel.Base
 import Language.InstSel.OpStructures
-import Language.InstSel.ProgramModules
+import Language.InstSel.Functions
 
 import qualified Language.InstSel.Graphs as G
 

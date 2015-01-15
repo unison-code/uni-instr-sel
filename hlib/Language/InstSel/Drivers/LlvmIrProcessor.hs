@@ -18,10 +18,10 @@ module Language.InstSel.Drivers.LlvmIrProcessor
 where
 
 import Language.InstSel.Drivers.Base
+import Language.InstSel.Functions.LLVM
+  ( mkFunctionsFromLlvmModule )
 import Language.InstSel.Utils.JSON
 
-import Language.InstSel.ProgramModules.LLVM
-  ( mkFunctionsFromLlvmModule )
 import LLVM.General
 import LLVM.General.Context
 import Control.Monad.Except

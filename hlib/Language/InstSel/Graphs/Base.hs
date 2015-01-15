@@ -35,9 +35,7 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.Graphs.Base
-  ( module Language.InstSel.Graphs.IDs
-  , module Language.InstSel.ProgramModules.IDs
-  , Domset (..)
+  ( Domset (..)
   , DstNode
   , Edge (..)
   , EdgeLabel (..)
@@ -157,10 +155,10 @@ module Language.InstSel.Graphs.Base
 where
 
 import qualified Language.InstSel.DataTypes as D
+import Language.InstSel.Functions.IDs
+  ( BasicBlockLabel (..) )
 import Language.InstSel.Graphs.IDs
 import qualified Language.InstSel.OpTypes as O
-import Language.InstSel.ProgramModules.IDs
-  ( BasicBlockLabel (..) )
 import Language.InstSel.Utils
   ( Natural
   , toNatural

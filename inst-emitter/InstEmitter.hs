@@ -37,7 +37,7 @@ import Language.InstSel.Graphs.IDs
   ( MatchID
   , NodeID
   )
-import Language.InstSel.ProgramModules.IDs
+import Language.InstSel.Functions
   ( BasicBlockLabel )
 import Language.InstSel.TargetMachines.Targets
 import Language.InstSel.Utils

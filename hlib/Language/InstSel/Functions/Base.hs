@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ProgramModules.Base
+-- Module      : Language.InstSel.Functions.Base
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,11 +8,10 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Contains the data types and records for representing program modules, which
--- basically consist of a list of functions. This is the format on which
--- subsequent preparation for instruction selection will build on (i.e. other
--- programs forms, such as those based on LLVM, will be converted into this
--- format).
+-- Contains the data types and records for representing functions. This is the
+-- format on which subsequent preparation for instruction selection will build
+-- on (i.e. other programs forms, such as those based on LLVM, will be converted
+-- into this format).
 --
 -- Since only the function name is retained, the names of overloaded functions
 -- must have been resolved such that each is given a unique name.
@@ -22,12 +21,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
-module Language.InstSel.ProgramModules.Base
-  ( module Language.InstSel.ProgramModules.IDs
-  , ExecFreq (..)
+module Language.InstSel.Functions.Base
+  ( ExecFreq (..)
   , Function (..)
   , fromExecFreq
-  , getExecFreqOfBBInFunction
   , toExecFreq
   )
 where
@@ -35,7 +32,7 @@ where
 import Language.InstSel.Graphs
   ( NodeID )
 import Language.InstSel.OpStructures
-import Language.InstSel.ProgramModules.IDs
+import Language.InstSel.Functions.IDs
 import Language.InstSel.Utils
   ( Natural
   , toNatural
@@ -108,14 +105,6 @@ instance ToJSON ExecFreq where
 -------------
 -- Functions
 -------------
-
--- | Gets the execution frequency of a given basic block in a function.
-getExecFreqOfBBInFunction :: Function -> BasicBlockLabel -> Maybe ExecFreq
-getExecFreqOfBBInFunction f bb =
-  let matching_data = filter ((bb ==) . fst) (functionBBExecFreq f)
-  in if length matching_data > 0
-     then Just $ snd $ head matching_data
-     else Nothing
 
 fromExecFreq :: ExecFreq -> Natural
 fromExecFreq (ExecFreq i) = i

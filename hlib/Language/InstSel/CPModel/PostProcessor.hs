@@ -25,11 +25,10 @@ import Language.InstSel.Graphs
   ( MatchID
   , NodeID
   )
-import Language.InstSel.Patterns.IDs
-  ( PatternID )
-import Language.InstSel.ProgramModules
+import Language.InstSel.Functions
   ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachines
+  ( PatternID )
 
 import qualified Data.Graph.Inductive as I
 

@@ -16,7 +16,6 @@
 
 module Language.InstSel.TargetMachines.Base
   ( module Language.InstSel.Graphs.IDs
-  , module Language.InstSel.Patterns.IDs
   , module Language.InstSel.TargetMachines.IDs
   , AssemblyString (..)
   , AssemblyStringPart (..)
@@ -34,8 +33,6 @@ where
 import Language.InstSel.Graphs.IDs
   ( NodeID )
 import Language.InstSel.OpStructures
-import Language.InstSel.Patterns.IDs
-  ( PatternID )
 import Language.InstSel.TargetMachines.IDs
 
 

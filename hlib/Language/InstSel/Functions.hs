@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ProgramModules
+-- Module      : Language.InstSel.Functions
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,11 +10,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ProgramModules
-  ( module Language.InstSel.ProgramModules.Base
-  , module Language.InstSel.ProgramModules.IDs
+module Language.InstSel.Functions
+  ( module Language.InstSel.Functions.Base
+  , module Language.InstSel.Functions.IDs
   )
 where
 
-import Language.InstSel.ProgramModules.Base
-import Language.InstSel.ProgramModules.IDs
+import Language.InstSel.Functions.Base
+import Language.InstSel.Functions.IDs

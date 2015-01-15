@@ -31,7 +31,7 @@ import Language.InstSel.Graphs
 import Language.InstSel.Graphs.PatternMatching.CP
 import Language.InstSel.OpStructures
   ( OpStructure (..) )
-import Language.InstSel.ProgramModules
+import Language.InstSel.Functions
   ( Function (..) )
 import Language.InstSel.TargetMachines
 import Language.InstSel.Utils.JSON

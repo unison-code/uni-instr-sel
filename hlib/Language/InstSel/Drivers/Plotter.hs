@@ -21,9 +21,9 @@ module Language.InstSel.Drivers.Plotter
 where
 
 import Language.InstSel.Drivers.Base
+import Language.InstSel.Functions
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
-import Language.InstSel.ProgramModules
 import Language.InstSel.TargetMachines.PatternMatching
 import Language.InstSel.Utils.JSON
   hiding

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ProgramModules.LLVM.FunctionMaker
+-- Module      : Language.InstSel.Functions.LLVM.FunctionMaker
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 -- must have been resolved such that each is given a unique name.
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ProgramModules.LLVM.FunctionMaker
+module Language.InstSel.Functions.LLVM.FunctionMaker
   ( mkFunctionsFromLlvmModule
   , mkFunction
   )
@@ -26,7 +26,7 @@ import qualified Language.InstSel.DataTypes as D
 import qualified Language.InstSel.Graphs as G
 import qualified Language.InstSel.OpStructures as OS
 import qualified Language.InstSel.OpTypes as Op
-import qualified Language.InstSel.ProgramModules.Base as PM
+import qualified Language.InstSel.Functions as PM
 import Language.InstSel.Utils
   ( toNatural )
 

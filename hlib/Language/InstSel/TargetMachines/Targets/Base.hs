@@ -16,11 +16,10 @@ module Language.InstSel.TargetMachines.Targets.Base
   ( getTargetMachine )
 where
 
-import Language.InstSel.Graphs.Transformations
-  ( copyExtendExcludeRootData )
 import Language.InstSel.TargetMachines.Base
-import Language.InstSel.OpStructures
-  ( OpStructure (..) )
+import Language.InstSel.TargetMachines.Transformations
+import Language.InstSel.Utils
+  ( splitOn )
 
 import Language.InstSel.TargetMachines.Targets.Mips32
 import Language.InstSel.TargetMachines.Targets.Test
@@ -31,26 +30,19 @@ import Language.InstSel.TargetMachines.Targets.Test
 -- Functions
 -------------
 
--- | Retrieves a specific target machine. If no machine exists with such an
--- identifier, 'Nothing' is returned.
+-- | Retrieves a specific target machine. If the name contains a dot ('.'), and
+-- the suffix is "ce", then the returned target machine will have been
+-- copy-extended. If no machine exists with such an identifier, 'Nothing' is
+-- returned.
 getTargetMachine :: TargetMachineID -> Maybe TargetMachine
-getTargetMachine s =
-  case (fromTargetMachineID s) of
-    "mips32"    -> Just tmMips32
-    "mips32.ce" -> Just $ copyExtendTargetMachine tmMips32
-    "test"      -> Just tmTest
-    _ -> Nothing
-
--- | Copy-extends every instruction in the given target machine.
-copyExtendTargetMachine :: TargetMachine -> TargetMachine
-copyExtendTargetMachine tm =
-  let copyExtendOS os = os { osGraph = copyExtendExcludeRootData $ osGraph os }
-      copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
-      copyExtendInstr i = i { instrPatterns =
-                                map copyExtendPat (instrPatterns i)
-                            }
-      new_id = toTargetMachineID $ fromTargetMachineID (tmID tm) ++ ".ce"
-      new_instrs = map copyExtendInstr (tmInstructions tm)
-  in tm { tmID = new_id
-        , tmInstructions = new_instrs
-        }
+getTargetMachine tmid =
+  getTM $ splitOn "." (fromTargetMachineID tmid)
+  where getTM [m] = case m of
+                      "mips32" -> Just tmMips32
+                      "test"   -> Just tmTest
+                      _        -> Nothing
+        getTM [m, suf] = if suf == "ce"
+                         then do tm <- getTM [m]
+                                 return $ copyExtend tm
+                         else Nothing
+        getTM _ = Nothing

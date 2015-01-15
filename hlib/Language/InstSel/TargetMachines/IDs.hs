@@ -16,18 +16,18 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.TargetMachines.IDs
-  ( AssemblyID (..)
-  , InstructionID (..)
+  ( InstructionID (..)
+  , PatternID (..)
   , RegisterID (..)
   , RegisterFlagName (..)
   , RegisterName (..)
   , TargetMachineID (..)
-  , fromAssemblyID
   , fromInstructionID
+  , fromPatternID
   , fromRegisterID
   , fromTargetMachineID
-  , toAssemblyID
   , toInstructionID
+  , toPatternID
   , toRegisterID
   , toTargetMachineID
   )
@@ -55,7 +55,6 @@ import qualified Language.InstSel.Utils.JSON as JSON
 -- Data types
 --------------
 
--- | Represents an instruction ID.
 newtype InstructionID
   = InstructionID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
@@ -63,15 +62,13 @@ newtype InstructionID
 instance Show InstructionID where
   show (InstructionID i) = show i
 
--- | Represents an ID to be used as place-holders inside an assembly string.
-newtype AssemblyID
-  = AssemblyID Natural
+newtype PatternID
+  = PatternID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show AssemblyID where
-  show (AssemblyID i) = show i
+instance Show PatternID where
+  show (PatternID i) = show i
 
--- | Represents a register ID.
 newtype RegisterID
   = RegisterID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
@@ -79,7 +76,6 @@ newtype RegisterID
 instance Show RegisterID where
   show (RegisterID i) = show i
 
--- | Represents a register name.
 newtype RegisterName
   = RegisterName String
   deriving (Eq)
@@ -87,7 +83,6 @@ newtype RegisterName
 instance Show RegisterName where
   show (RegisterName s) = s
 
--- | Represents a register flag name.
 newtype RegisterFlagName
   = RegisterFlagName String
   deriving (Eq)
@@ -95,7 +90,6 @@ newtype RegisterFlagName
 instance Show RegisterFlagName where
   show (RegisterFlagName s) = s
 
--- | Represents a target machine ID.
 newtype TargetMachineID
   = TargetMachineID String
   deriving (Eq, Show)
@@ -113,19 +107,19 @@ instance FromJSON InstructionID where
 instance ToJSON InstructionID where
   toJSON iid = toJSON (fromInstructionID iid)
 
+instance FromJSON PatternID where
+  parseJSON (JSON.Number sn) = return $ toPatternID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON PatternID where
+  toJSON pid = toJSON (fromPatternID pid)
+
 instance FromJSON RegisterID where
   parseJSON (JSON.Number sn) = return $ toRegisterID $ sn2nat sn
   parseJSON _ = mzero
 
 instance ToJSON RegisterID where
   toJSON rid = toJSON (fromRegisterID rid)
-
-instance FromJSON AssemblyID where
-  parseJSON (JSON.Number sn) = return $ toAssemblyID $ sn2nat sn
-  parseJSON _ = mzero
-
-instance ToJSON AssemblyID where
-  toJSON aid = toJSON (fromAssemblyID aid)
 
 instance FromJSON TargetMachineID where
   parseJSON (JSON.String s) = return $ toTargetMachineID $ unpack s
@@ -147,6 +141,13 @@ instance FromLisp InstructionID where
 instance ToLisp InstructionID where
   toLisp (InstructionID nid) = Lisp.Number (I (fromNatural nid))
 
+instance FromLisp PatternID where
+  parseLisp (Lisp.Number (I n)) = return $ toPatternID n
+  parseLisp _ = mzero
+
+instance ToLisp PatternID where
+  toLisp (PatternID nid) = Lisp.Number (I (fromNatural nid))
+
 instance FromLisp RegisterID where
   parseLisp (Lisp.Number (I n)) = return $ toRegisterID n
   parseLisp _ = mzero
@@ -154,18 +155,17 @@ instance FromLisp RegisterID where
 instance ToLisp RegisterID where
   toLisp (RegisterID nid) = Lisp.Number (I (fromNatural nid))
 
-instance FromLisp AssemblyID where
-  parseLisp (Lisp.Number (I n)) = return $ toAssemblyID n
-  parseLisp _ = mzero
-
-instance ToLisp AssemblyID where
-  toLisp (AssemblyID aid) = Lisp.Number (I (fromNatural aid))
-
 
 
 -------------
 -- Functions
 -------------
+
+fromPatternID :: PatternID -> Natural
+fromPatternID (PatternID i) = i
+
+toPatternID :: (Integral i) => i -> PatternID
+toPatternID = PatternID . toNatural
 
 fromRegisterID :: RegisterID -> Natural
 fromRegisterID (RegisterID i) = i
@@ -184,9 +184,3 @@ fromInstructionID (InstructionID i) = i
 
 toInstructionID :: (Integral i) => i -> InstructionID
 toInstructionID = InstructionID . toNatural
-
-fromAssemblyID :: AssemblyID -> Natural
-fromAssemblyID (AssemblyID i) = i
-
-toAssemblyID :: (Integral i) => i -> AssemblyID
-toAssemblyID = AssemblyID . toNatural

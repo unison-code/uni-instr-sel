@@ -34,9 +34,7 @@ import Language.InstSel.Graphs
   , MatchID (..)
   , NodeID (..)
   )
-import Language.InstSel.Patterns.IDs
-  ( PatternID )
-import Language.InstSel.ProgramModules
+import Language.InstSel.Functions
   ( BasicBlockLabel (..)
   , ExecFreq (..)
   )
