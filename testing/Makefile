@@ -28,6 +28,9 @@ PRETTIFY := ../tools/prettify-json
 %.ce.f.json: %.f.json
 	$(UNI) transform --copy-extend-fg -f $< > $@
 
+%.be.f.json: %.f.json
+	$(UNI) transform --branch-extend-fg -f $< > $@
+
 %.mips32.m.json: %.f.json
 	$(UNI) pattern-match -t mips32.ce -f $< > $@
 
@@ -40,7 +43,7 @@ PRETTIFY := ../tools/prettify-json
 %.sol.json: %.model.json
 	$(SOLVER) -o $@ $<
 
-%.dot: %.f.json
+%.f.dot: %.f.json
 	$(UNI) plot --plot-fg -f $< > $@
 
 %.mips32.cov.dot: %.f.json %.mips32.m.json
