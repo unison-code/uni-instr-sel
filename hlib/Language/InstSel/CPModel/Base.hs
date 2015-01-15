@@ -24,7 +24,7 @@ module Language.InstSel.CPModel.Base
   , RawCPSolutionData (..)
   , RawPostParams (..)
   , findMatchParams
-  , fromRawCPSolutionData
+  , mkCPSolutionData
   )
 where
 
@@ -386,11 +386,11 @@ instance FromJSON RawPostParams where
 
 -- | Converts raw CP solution and post-processing parameters data into a more
 -- convenient form.
-fromRawCPSolutionData
+mkCPSolutionData
   :: RawPostParams
   -> RawCPSolutionData
   -> CPSolutionData
-fromRawCPSolutionData m_data cp_data =
+mkCPSolutionData m_data cp_data =
   CPSolutionData
     (rawModelParams m_data)
     (computeBBAllocsForMatches m_data cp_data)
