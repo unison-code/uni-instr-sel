@@ -62,14 +62,11 @@ data PlotAction
 
 -- | Gets the matchest information from a JSON string. Reports error if this
 -- fails.
-getMatchsetInfo :: Maybe String -> IO MatchsetInfo
-getMatchsetInfo str =
+loadMatchsetInfo :: Maybe String -> IO MatchsetInfo
+loadMatchsetInfo str =
   do when (isNothing str) $
        reportError "No match file provided."
-     let res = fromJson $ fromJust str
-     when (isLeft res) $
-       reportError $ fromLeft res
-     return $ fromRight res
+     parseJson $ fromJust str
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =
@@ -100,20 +97,20 @@ run
 run _ _ DoNothing = reportError "No plot action provided."
 
 run str _ PlotFunctionGraph =
-  do function <- getFunction str
+  do function <- parseJson str
      let dot = toDotString $ osGraph $ functionOS function
      return [toOutputWithoutID dot]
 
 run f_str m_str PlotFunctionGraphCoverage =
-  do function <- getFunction f_str
-     match_info <- getMatchsetInfo m_str
+  do function <- parseJson f_str
+     match_info <- loadMatchsetInfo m_str
      let matches = map mdMatch (msiMatches match_info)
      dot <- mkCoveragePlot function matches
      return [toOutputWithoutID dot]
 
 run f_str m_str PlotFunctionGraphCoveragePerMatch =
-  do function <- getFunction f_str
-     match_info <- getMatchsetInfo m_str
+  do function <- parseJson f_str
+     match_info <- loadMatchsetInfo m_str
      mapM
        ( \m ->
           do dot <- mkCoveragePlot function [mdMatch m]

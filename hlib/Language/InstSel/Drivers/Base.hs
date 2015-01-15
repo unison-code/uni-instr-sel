@@ -17,7 +17,8 @@ module Language.InstSel.Drivers.Base
   , module Language.InstSel.Utils
   , module Language.InstSel.Utils.IO
   , Output (..)
-  , getFunction
+  , parseJson
+  , toJson
   , toOutput
   , toOutputWithoutID
   )
@@ -72,9 +73,10 @@ toOutput
   -> Output
 toOutput oid s = Output { oID = oid, oData = s }
 
--- | Gets the function from a JSON string. Reports error if this fails.
-getFunction :: String -> IO Function
-getFunction str =
+-- | Parses a given JSON string and loads its content. Reports error if this
+-- fails.
+parseJson :: (FromJSON a) => String -> IO a
+parseJson str =
   do let res = fromJson str
      when (isLeft res) $
        reportError $ fromLeft res

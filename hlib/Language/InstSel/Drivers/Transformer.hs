@@ -22,7 +22,6 @@ where
 
 import Language.InstSel.Drivers.Base
 import Language.InstSel.Functions.Transformations
-import Language.InstSel.Utils.JSON
 
 import System.Console.CmdArgs
   ( Data
@@ -58,11 +57,11 @@ run
 run _ DoNothing = reportError "No transform action provided."
 
 run str CopyExtendFunction =
-  do f <- getFunction str
+  do f <- parseJson str
      let new_f = copyExtend f
      return [toOutputWithoutID $ toJson new_f]
 
 run str BranchExtendFunction =
-  do f <- getFunction str
+  do f <- parseJson str
      let new_f = branchExtend f
      return [toOutputWithoutID $ toJson new_f]

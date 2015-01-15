@@ -45,15 +45,9 @@ run
   -> IO [Output]
      -- ^ The produced output.
 run f_str m_str =
-  do let f_res = fromJson f_str
-         m_res = fromJson m_str
-     when (isLeft f_res) $
-       reportError $ fromLeft f_res
-     when (isLeft m_res) $
-       reportError $ fromLeft m_res
-     let function = fromRight f_res
-         msinfo = fromRight m_res
-         matches = msiMatches msinfo
+  do function <- parseJson f_str
+     msinfo <- parseJson m_str
+     let matches = msiMatches msinfo
          target_id = msiTarget msinfo
          mtarget = getTargetMachine target_id
      when (isNothing mtarget) $

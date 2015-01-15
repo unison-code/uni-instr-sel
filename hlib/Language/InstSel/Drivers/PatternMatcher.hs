@@ -22,7 +22,6 @@ import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
   ( mkMatchsetInfo )
-import Language.InstSel.Utils.JSON
 
 
 
@@ -38,9 +37,6 @@ run
   -> IO [Output]
      -- ^ The produced output.
 run str target =
-  do let res = fromJson str
-     when (isLeft res) $
-       reportError $ fromLeft res
-     let function = fromRight res
-         matches = mkMatchsetInfo function target
+  do function <- parseJson str
+     let matches = mkMatchsetInfo function target
      return [toOutputWithoutID $ toJson matches]
