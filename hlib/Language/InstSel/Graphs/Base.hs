@@ -151,6 +151,7 @@ module Language.InstSel.Graphs.Base
   , updateEdgeTarget
   , updateNodeID
   , updateNodeLabel
+  , updateNodeType
   )
 where
 
@@ -618,6 +619,17 @@ updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
 updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (getAllNodes g)
       new_n = Node (getIntNodeID n, new_label)
+  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g)
+
+-- | Updates the node type of a node.
+updateNodeType :: NodeType -> Node -> Graph -> Graph
+updateNodeType new_type n g =
+  let all_nodes_but_n = filter (/= n) (getAllNodes g)
+      new_n = Node ( getIntNodeID n
+                   , NodeLabel { nodeID = getNodeID n
+                               , nodeType = new_type
+                               }
+                   )
   in mkGraph (new_n:all_nodes_but_n) (getAllEdges g)
 
 -- | Updates the node ID of an already existing node.
