@@ -22,13 +22,10 @@ where
 
 import Language.InstSel.CPModel.Base
 import Language.InstSel.Graphs
-  ( MatchID
-  , NodeID
-  )
+  ( MatchID )
 import Language.InstSel.Functions
   ( BasicBlockLabel (..) )
 import Language.InstSel.TargetMachines
-  ( PatternID )
 
 import qualified Data.Graph.Inductive as I
 
@@ -86,18 +83,18 @@ addUseEdgesToDAG
   -> IControlDataFlowDAG
   -> IControlDataFlowDAG
 addUseEdgesToDAG cp_data mid g0 =
-  let ds = matchData $ modelParams cp_data
+  let ds = matchParams $ modelParams cp_data
       pi_n = fromJust $ getNodeOfMatch g0 mid
-      pi_data = getMatchData ds mid
+      pi_data = getMatchParams ds mid
       ns = I.labNodes g0
       d_uses_of_pi = filter
                        (`notElem` mDataNodesUsedByPhis pi_data)
                        (mDataNodesUsed pi_data)
       s_uses_of_pi = mStateNodesUsed pi_data
       ns_d_defs =
-        map (\(n, i) -> (n, mDataNodesDefined $ getMatchData ds i)) ns
+        map (\(n, i) -> (n, mDataNodesDefined $ getMatchParams ds i)) ns
       ns_s_defs =
-        map (\(n, i) -> (n, mStateNodesDefined $ getMatchData ds i)) ns
+        map (\(n, i) -> (n, mStateNodesDefined $ getMatchParams ds i)) ns
       g1 = foldr (addUseEdgesToDAG' pi_n ns_d_defs) g0 d_uses_of_pi
       g2 = foldr (addUseEdgesToDAG' pi_n ns_s_defs) g1 s_uses_of_pi
   in g2
@@ -123,7 +120,7 @@ addControlEdgesToDAG
   -> IControlDataFlowDAG
   -> IControlDataFlowDAG
 addControlEdgesToDAG cp_data mid g =
-  let pi_data = getMatchData (matchData $ modelParams cp_data) mid
+  let pi_data = getMatchParams (matchParams $ modelParams cp_data) mid
   in if mHasControlNodes pi_data
      then let ns = I.labNodes g
               pi_n = fst $ head $ filter (\(_, i) -> i == mid) ns
@@ -140,16 +137,19 @@ getNodeOfMatch g mid =
      then Just (fst $ head ns)
      else Nothing
 
--- | Retrieves the 'MatchData' entity with matching match
+-- | Retrieves the 'MatchParams' entity with matching match
 -- ID. It is assumed that exactly one such entity always exists in the given
 -- list.
-getMatchData :: [MatchData] -> MatchID -> MatchData
-getMatchData ps mid = fromJust $ findMatchData ps mid
+getMatchParams :: [MatchParams] -> MatchID -> MatchParams
+getMatchParams ps mid = fromJust $ findMatchParams ps mid
 
 -- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
 -- that such an entity always exists in the given list.
 getInstrPattern :: [Instruction] -> InstructionID -> PatternID -> InstrPattern
-getInstrPattern is iid pid  = fromJust $ findInstrPattern is iid pid
+getInstrPattern is iid pid =
+  let instr = findInstruction is iid
+      pat = findInstrPattern (instrPatterns $ fromJust instr) pid
+  in fromJust pat
 
 -- | Emits a list of assembly instructions for a given 'ControlDataFlowDAG'.
 emitInstructions
@@ -168,7 +168,7 @@ emitInstruction
   -> MatchID
   -> String
 emitInstruction cp m mid =
-  let match_data = getMatchData (matchData $ modelParams cp) mid
+  let match_data = getMatchParams (matchParams $ modelParams cp) mid
       pat_data = getInstrPattern
                    (tmInstructions m)
                    (mInstructionID match_data)
@@ -178,7 +178,7 @@ emitInstruction cp m mid =
        (produceAssemblyString cp m)
        (assemblyStrParts instr_str)
 
-lookupBasicBlockLabel :: NodeID -> [BasicBlockData] -> Maybe BasicBlockLabel
+lookupBasicBlockLabel :: NodeID -> [BasicBlockParams] -> Maybe BasicBlockLabel
 lookupBasicBlockLabel n ds =
   let found = filter (\d -> bbLabelNode d == n) ds
   in if length found > 0
@@ -187,7 +187,7 @@ lookupBasicBlockLabel n ds =
 
 findDefinerOfData :: CPSolutionData -> NodeID -> Maybe MatchID
 findDefinerOfData cp n =
-  let match_data = matchData $ modelParams cp
+  let match_data = matchParams $ modelParams cp
       definers = map
                    mMatchID
                    (filter (\mid -> n `elem` mDataNodesDefined mid) match_data)
@@ -214,13 +214,13 @@ produceAssemblyString cp m (ASRegisterOfDataNode n) =
           in show regsym
      else "?"
 produceAssemblyString cp _ (ASBBLabelOfLabelNode n) =
-  let fun_data = functionData $ modelParams cp
-      l = lookupBasicBlockLabel n (funcBasicBlockData $ fun_data)
+  let fun_data = functionParams $ modelParams cp
+      l = lookupBasicBlockLabel n (funcBasicBlockParams $ fun_data)
   in if isJust l
      then show l
      else "?"
 produceAssemblyString cp m (ASBBLabelOfDataNode n) =
-  let fun_data = functionData $ modelParams cp
+  let fun_data = functionParams $ modelParams cp
       data_nodes = funcDataNodes fun_data
       printError = "?"
   in if n `elem` data_nodes
