@@ -21,7 +21,7 @@ where
 import Language.InstSel.Graphs.Base
 import qualified Language.InstSel.DataTypes as D
 import Language.InstSel.Functions
-  ( BasicBlockLabel (..) )
+  ( mkEmptyBBLabel )
 import qualified Language.InstSel.OpTypes as O
 
 import Data.Maybe
@@ -44,6 +44,8 @@ import Data.Maybe
 -- where the same data node is used by multiple phi nodes, $e$ will be
 -- duplicated for each such instance, which are then moved for each copy
 -- extension (hence no invariants are violated when returning).
+--
+-- The new data nodes will not have any origin, and will be of any data type.
 copyExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to copy-extend the given
@@ -114,6 +116,8 @@ duplicateDPEdgesForPhis g0 =
 -- | Inserts a new label node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
 -- function.
+--
+-- The new label nodes will all have empty basic block labels.
 branchExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to branch-extend the
@@ -134,7 +138,7 @@ branchExtendWhen f g =
 -- edge.
 insertBranch :: Graph -> Edge -> Graph
 insertBranch g0 e =
-  let (g1, l) = insertNewNodeAlongEdge (LabelNode $ BasicBlockLabel "") e g0
+  let (g1, l) = insertNewNodeAlongEdge (LabelNode mkEmptyBBLabel) e g0
       new_e = head $ getCFOutEdges g1 l
       (g2, _) = insertNewNodeAlongEdge (ControlNode O.Branch) new_e g1
   in g2
