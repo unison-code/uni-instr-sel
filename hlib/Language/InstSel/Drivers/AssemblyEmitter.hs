@@ -22,6 +22,8 @@ import Language.InstSel.CPModel
   ( mkCPSolutionData )
 import Language.InstSel.TargetMachines.CodeEmission
 
+import Data.List
+  ( intercalate )
 
 
 -------------
@@ -40,4 +42,9 @@ run s_str p_str =
      p_data <- parseJson p_str
      let cp_data = mkCPSolutionData p_data s_data
          code = generateCode cp_data
-     return [toOutputWithoutID code]
+         code_str = intercalate "\n" (map showCode code)
+     return [toOutputWithoutID code_str]
+
+showCode :: AssemblyCode -> String
+showCode (AsmBasicBlockLabel str) = str ++ ":"
+showCode (AsmInstruction str) = "  " ++ str

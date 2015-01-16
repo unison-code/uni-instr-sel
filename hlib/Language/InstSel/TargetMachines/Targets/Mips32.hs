@@ -207,14 +207,14 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAssemblyStr = AssemblyString
-                                   [ ASVerbatim $ str ++ " "
-                                   , ASRegisterOfDataNode 0
-                                   , ASVerbatim ","
-                                   , ASRegisterOfDataNode 1
-                                   , ASVerbatim ","
-                                   , ASRegisterOfDataNode 2
-                                   ]
+              , patAsmStrTemplate = AssemblyStringTemplate
+                                      [ ASVerbatim $ str ++ " "
+                                      , ASRegisterOfDataNode 0
+                                      , ASVerbatim ","
+                                      , ASRegisterOfDataNode 1
+                                      , ASVerbatim ","
+                                      , ASRegisterOfDataNode 2
+                                      ]
               }
   in Instruction
        { instrID = 0
@@ -293,14 +293,14 @@ mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAssemblyStr = AssemblyString
-                                   [ ASVerbatim $ str ++ " "
-                                   , ASRegisterOfDataNode 3
-                                   , ASVerbatim ","
-                                   , ASRegisterOfDataNode 1
-                                   , ASVerbatim ","
-                                   , ASRegisterOfDataNode 2
-                                   ]
+              , patAsmStrTemplate = AssemblyStringTemplate
+                                      [ ASVerbatim $ str ++ " "
+                                      , ASRegisterOfDataNode 3
+                                      , ASVerbatim ","
+                                      , ASRegisterOfDataNode 1
+                                      , ASVerbatim ","
+                                      , ASRegisterOfDataNode 2
+                                      ]
               }
   in Instruction
        { instrID = 0
@@ -372,14 +372,14 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
           , patOS = OS.OpStructure ord_g ord_cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim $ ord_str ++ " "
-                               , ASRegisterOfDataNode 5
-                               , ASVerbatim ","
-                               , ASRegisterOfDataNode 6
-                               , ASVerbatim ","
-                               , ASBBLabelOfLabelNode 2
-                               ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim $ ord_str ++ " "
+                                  , ASRegisterOfDataNode 5
+                                  , ASVerbatim ","
+                                  , ASRegisterOfDataNode 6
+                                  , ASVerbatim ","
+                                  , ASBBLabelOfLabelNode 2
+                                  ]
           }
       inv_pat =
         InstrPattern
@@ -387,14 +387,14 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
           , patOS = OS.OpStructure inv_g inv_cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim $ inv_str ++ " "
-                               , ASRegisterOfDataNode 5
-                               , ASVerbatim ","
-                               , ASRegisterOfDataNode 6
-                               , ASVerbatim ","
-                               , ASBBLabelOfLabelNode 3
-                               ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim $ inv_str ++ " "
+                                  , ASRegisterOfDataNode 5
+                                  , ASVerbatim ","
+                                  , ASRegisterOfDataNode 6
+                                  , ASVerbatim ","
+                                  , ASBBLabelOfLabelNode 3
+                                  ]
           }
   in Instruction
        { instrID = 0
@@ -427,10 +427,10 @@ mkBrInstrs =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "j "
-                                , ASBBLabelOfLabelNode 2
-                                ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "j "
+                                  , ASBBLabelOfLabelNode 2
+                                  ]
           }
   in [ Instruction
          { instrID = 0
@@ -465,10 +465,7 @@ mkRetInstrs =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "j "
-                                , ASBBLabelOfLabelNode 2
-                                ]
+          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
           }
   in [ Instruction
          { instrID = 0
@@ -490,10 +487,10 @@ mkMfhiInstrs =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "mfhi "
-                               , ASRegisterOfDataNode 2
-                               ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "mfhi "
+                                  , ASRegisterOfDataNode 2
+                                  ]
           }
   in [ Instruction
          { instrID = 0
@@ -515,10 +512,10 @@ mkMfloInstrs =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "mflo "
-                               , ASRegisterOfDataNode 2
-                               ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "mflo "
+                                  , ASRegisterOfDataNode 2
+                                  ]
           }
   in [ Instruction
          { instrID = 0
@@ -540,12 +537,12 @@ mkPseudoMoveInstrs =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAssemblyStr = AssemblyString
-                               [ ASVerbatim "move "
-                               , ASRegisterOfDataNode 1
-                               , ASVerbatim ","
-                               , ASRegisterOfDataNode 2
-                               ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "move "
+                                  , ASRegisterOfDataNode 1
+                                  , ASVerbatim ","
+                                  , ASRegisterOfDataNode 2
+                                  ]
           }
   in [ Instruction
          { instrID = 0

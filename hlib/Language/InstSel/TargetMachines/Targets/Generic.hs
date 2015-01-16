@@ -94,20 +94,20 @@ mkGenericPhiInstructions =
               , patOS = OS.OpStructure g cs
               , patOutputDataNodes = [3]
               , patADDUC = False
-              , patAssemblyStr = ( AssemblyString
-                                     [ ASVerbatim "phi "
-                                     , ASRegisterOfDataNode 3
-                                     , ASVerbatim " ("
-                                     , ASRegisterOfDataNode 1
-                                     , ASVerbatim ", "
-                                     , ASBBLabelOfDataNode 1
-                                     , ASVerbatim ") ("
-                                     , ASRegisterOfDataNode 2
-                                     , ASVerbatim ", "
-                                     , ASBBLabelOfDataNode 2
-                                     , ASVerbatim ")"
-                                     ]
-                                 )
+              , patAsmStrTemplate = ( AssemblyStringTemplate
+                                        [ ASVerbatim "phi "
+                                        , ASRegisterOfDataNode 3
+                                        , ASVerbatim " ("
+                                        , ASRegisterOfDataNode 1
+                                        , ASVerbatim ", "
+                                        , ASBBLabelOfDataNode 1
+                                        , ASVerbatim ") ("
+                                        , ASRegisterOfDataNode 2
+                                        , ASVerbatim ", "
+                                        , ASBBLabelOfDataNode 2
+                                        , ASVerbatim ")"
+                                        ]
+                                    )
               }
   in [ Instruction
          { instrID = 0
@@ -146,7 +146,7 @@ mkGenericBrFallthroughInstructions =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString []
+          , patAsmStrTemplate = AssemblyStringTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -178,7 +178,7 @@ mkGenericEntityDefInstructions =
           , patOS = OS.OpStructure g cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString []
+          , patAsmStrTemplate = AssemblyStringTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -210,7 +210,7 @@ mkGenericCopyInstructions =
           , patOS = OS.OpStructure g []
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAssemblyStr = AssemblyString []
+          , patAsmStrTemplate = AssemblyStringTemplate []
           }
   in [ Instruction
          { instrID = 0

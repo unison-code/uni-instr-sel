@@ -33,7 +33,7 @@ selection.
 
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.Targets
-  ( getTargetMachine )
+  ( retrieveTargetMachine )
 import Language.InstSel.Utils
   ( splitOn
   , toLower
@@ -279,7 +279,7 @@ loadRequiredTarget opts =
   do let tname = targetName opts
      when (isNothing tname) $
        reportError "No target provided."
-     let target = getTargetMachine $ toTargetMachineID $ fromJust tname
+     let target = retrieveTargetMachine $ toTargetMachineID $ fromJust tname
      when (isNothing target) $
        reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
      return $ fromJust target
@@ -291,7 +291,9 @@ loadOptionalTarget :: Options -> IO (Maybe TargetMachine)
 loadOptionalTarget opts =
   do let tname = targetName opts
      if isJust tname
-     then do let target = getTargetMachine $ toTargetMachineID $ fromJust tname
+     then do let target = retrieveTargetMachine
+                          $ toTargetMachineID
+                          $ fromJust tname
              when (isNothing target) $
                reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
              return target

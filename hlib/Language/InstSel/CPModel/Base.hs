@@ -150,6 +150,13 @@ data MatchParams
         -- ^ The size of the instruction associated with this match.
       , mLatency :: Integer
         -- ^ The latency of the instruction associated with this match.
+      , mAsmStrNodeMaps :: [Maybe NodeID]
+        -- ^ A mapping of the node IDs that appears in the assembly instruction
+        -- template (which refer to nodes in the pattern graph) to the node IDs
+        -- in the function graph which are covered by this pattern. The mapping
+        -- list has the following appearance: each element in mapping list
+        -- corresponds to a assembly string part with the same index in the
+        -- assembly instruction template.
       }
   deriving (Show)
 
@@ -321,6 +328,7 @@ instance FromJSON MatchParams where
       <*> v .: "has-control-nodes"
       <*> v .: "code-size"
       <*> v .: "latency"
+      <*> v .: "asm-str-node-maps"
   parseJSON _ = mzero
 
 instance ToJSON MatchParams where
@@ -341,6 +349,7 @@ instance ToJSON MatchParams where
            , "has-control-nodes"            .= (mHasControlNodes d)
            , "code-size"                    .= (mCodeSize d)
            , "latency"                      .= (mLatency d)
+           , "asm-str-node-maps"            .= (mAsmStrNodeMaps d)
            ]
 
 instance FromJSON MachineParams where

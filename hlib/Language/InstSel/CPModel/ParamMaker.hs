@@ -147,26 +147,26 @@ processMatch i p m mid =
       cfg = extractCFG g
       root_label_node_id =
         maybe Nothing ((findFNInMatch m) . getNodeID) (rootInCFG cfg)
-      mp =
-        MatchParams
-          { mInstructionID = instrID i
-          , mPatternID = patID p
-          , mMatchID = mid
-          , mOperationsCovered = findFNsInMatch m (getNodeIDs a_ns)
-          , mDataNodesDefined = findFNsInMatch m (getNodeIDs d_def_ns)
-          , mDataNodesUsed = findFNsInMatch m (getNodeIDs d_use_ns)
-          , mDataNodesUsedByPhis = findFNsInMatch m (getNodeIDs d_use_by_phi_ns)
-          , mStateNodesDefined = findFNsInMatch m (getNodeIDs s_def_ns)
-          , mStateNodesUsed = findFNsInMatch m (getNodeIDs s_use_ns)
-          , mRootLabelNode = root_label_node_id
-          , mNonRootLabelNodes = findFNsInMatch m (getNodeIDs l_ref_ns)
-          , mConstraints = mapPs2FsInConstraints m (osConstraints $ patOS p)
-          , mADDUC = patADDUC p
-          , mHasControlNodes = length c_ns > 0
-          , mCodeSize = instrCodeSize i_props
-          , mLatency = instrLatency i_props
-          }
-  in mp
+      asm_maps = computeAsmStrNodeMaps (patAsmStrTemplate p) m
+  in MatchParams
+       { mInstructionID = instrID i
+       , mPatternID = patID p
+       , mMatchID = mid
+       , mOperationsCovered = findFNsInMatch m (getNodeIDs a_ns)
+       , mDataNodesDefined = findFNsInMatch m (getNodeIDs d_def_ns)
+       , mDataNodesUsed = findFNsInMatch m (getNodeIDs d_use_ns)
+       , mDataNodesUsedByPhis = findFNsInMatch m (getNodeIDs d_use_by_phi_ns)
+       , mStateNodesDefined = findFNsInMatch m (getNodeIDs s_def_ns)
+       , mStateNodesUsed = findFNsInMatch m (getNodeIDs s_use_ns)
+       , mRootLabelNode = root_label_node_id
+       , mNonRootLabelNodes = findFNsInMatch m (getNodeIDs l_ref_ns)
+       , mConstraints = mapPs2FsInConstraints m (osConstraints $ patOS p)
+       , mADDUC = patADDUC p
+       , mHasControlNodes = length c_ns > 0
+       , mCodeSize = instrCodeSize i_props
+       , mLatency = instrLatency i_props
+       , mAsmStrNodeMaps = asm_maps
+       }
 
 -- | Computes the dominator sets concerning only the label nodes. It is assumed
 -- there exists a single label which acts as the root, which is the label node
@@ -188,6 +188,21 @@ computeLabelDoms cfg =
                           )
                           node_domsets
   in node_id_domsets
+
+-- | Computes the assembly string node ID mappings, which is done as follows: if
+-- the assembly string part contains a node ID, take the node ID from the
+-- corresponding node in the function graph. Otherwise use @Nothing@.
+computeAsmStrNodeMaps
+  :: AssemblyStringTemplate
+  -> Match NodeID
+  -> [Maybe NodeID]
+computeAsmStrNodeMaps t m =
+  map f (asmStrParts t)
+  where f (ASVerbatim _) = Nothing
+        f (ASRegisterOfDataNode n) = findFNInMatch m n
+        f (ASImmValueOfDataNode n) = findFNInMatch m n
+        f (ASBBLabelOfLabelNode n) = findFNInMatch m n
+        f (ASBBLabelOfDataNode  n) = findFNInMatch m n
 
 
 

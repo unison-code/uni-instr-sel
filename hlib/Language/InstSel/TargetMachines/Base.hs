@@ -17,7 +17,7 @@
 module Language.InstSel.TargetMachines.Base
   ( module Language.InstSel.Graphs.IDs
   , module Language.InstSel.TargetMachines.IDs
-  , AssemblyString (..)
+  , AssemblyStringTemplate (..)
   , AssemblyStringPart (..)
   , Instruction (..)
   , InstrPattern (..)
@@ -41,12 +41,13 @@ import Language.InstSel.TargetMachines.IDs
 -- Data types
 --------------
 
--- | Record for containing the assembly string to produce during code emission.
-data AssemblyString
-  = AssemblyString { assemblyStrParts :: [AssemblyStringPart] }
+-- | Represents the assembly string template, which are used to produce the
+-- assembly instructions during code emission.
+data AssemblyStringTemplate
+  = AssemblyStringTemplate { asmStrParts :: [AssemblyStringPart] }
   deriving (Show)
 
--- | Represents parts of the assembly string.
+-- | Represents parts of the assembly string template.
 data AssemblyStringPart
     -- | Denotes string which is meant to be output verbatim.
   = ASVerbatim String
@@ -103,9 +104,9 @@ data InstrPattern
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
         -- except the generic phi patterns.
-      , patAssemblyStr :: AssemblyString
-        -- ^ Assembly string to produce upon code emission if this pattern is
-        -- selected.
+      , patAsmStrTemplate :: AssemblyStringTemplate
+        -- ^ The assembly string template, from which the assembly instruction
+        -- will be produced upon code emission if this pattern is selected.
       }
   deriving (Show)
 
