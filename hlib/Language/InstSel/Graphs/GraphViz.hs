@@ -22,9 +22,9 @@ module Language.InstSel.Graphs.GraphViz
 where
 
 import Language.InstSel.DebugShow
-import Language.InstSel.Functions
-  ( BasicBlockLabel (..) )
 import Language.InstSel.Graphs.Base
+import Language.InstSel.Graphs.IDs
+  ( NodeID )
 
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
@@ -87,38 +87,34 @@ mkParams nf ef =
 
 -- | Constructs the default node attributes, depending on the node type.
 mkDefaultNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
-mkDefaultNodeAttr n = mkNodeAttrByType (getNodeType (Node n))
+mkDefaultNodeAttr i_n =
+  let n = Node i_n
+      nt = getNodeType n
+      nid = getNodeID n
+  in mkNodeShapeAttr nt ++ mkNodeLabelAttr nid nt
 
--- | Constructs the node attributes based on the given node type.
-mkNodeAttrByType :: NodeType -> GV.Attributes
-mkNodeAttrByType (ComputationNode op) = mkCompNodeAttr (dShow op)
-mkNodeAttrByType (ControlNode op) = mkControlNodeAttr (dShow op)
-mkNodeAttrByType (DataNode _ src) = mkDataNodeAttr (maybe "" id src)
-mkNodeAttrByType (LabelNode (BasicBlockLabel l)) = mkLabelNodeAttr l
-mkNodeAttrByType PhiNode = mkPhiNodeAttr
-mkNodeAttrByType StateNode = mkStateNodeAttr
-mkNodeAttrByType CopyNode = mkCopyNodeAttr
+-- | Constructs the node shape attributes based on the given node type.
+mkNodeShapeAttr :: NodeType -> GV.Attributes
+mkNodeShapeAttr (ComputationNode _) = [GV.shape GV.Circle]
+mkNodeShapeAttr (ControlNode _) = [GV.shape GV.InvHouse]
+mkNodeShapeAttr (DataNode _ _) = [GV.shape GV.BoxShape]
+mkNodeShapeAttr (LabelNode _) = [GV.shape GV.BoxShape, GV.penWidth 3.0]
+mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
+mkNodeShapeAttr StateNode = [GV.shape GV.BoxShape]
+mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
 
-mkCompNodeAttr :: String -> GV.Attributes
-mkCompNodeAttr s = [GV.shape GV.Circle, GV.toLabel s]
-
-mkControlNodeAttr :: String -> GV.Attributes
-mkControlNodeAttr s = [GV.shape GV.InvHouse, GV.toLabel s]
-
-mkDataNodeAttr :: String -> GV.Attributes
-mkDataNodeAttr s = [GV.shape GV.BoxShape, GV.toLabel s]
-
-mkLabelNodeAttr :: String -> GV.Attributes
-mkLabelNodeAttr s = [GV.shape GV.BoxShape, GV.penWidth 3.0, GV.toLabel s]
-
-mkPhiNodeAttr :: GV.Attributes
-mkPhiNodeAttr = mkCompNodeAttr "phi"
-
-mkStateNodeAttr :: GV.Attributes
-mkStateNodeAttr = mkDataNodeAttr ""
-
-mkCopyNodeAttr :: GV.Attributes
-mkCopyNodeAttr = mkCompNodeAttr "cp"
+-- | Constructs a label attribute based on the node ID and node type.
+mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
+mkNodeLabelAttr nid nt =
+  [GV.toLabel s]
+  where s = f nt ++ "\n" ++ show nid
+        f (ComputationNode op) = dShow op
+        f (ControlNode op) = dShow op
+        f (DataNode _ src) = maybe "" id src
+        f (LabelNode l) = dShow l
+        f PhiNode = "phi"
+        f StateNode = ""
+        f CopyNode = "cp"
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.

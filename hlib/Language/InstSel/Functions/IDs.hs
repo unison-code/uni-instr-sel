@@ -19,6 +19,7 @@ module Language.InstSel.Functions.IDs
   )
 where
 
+import Language.InstSel.DebugShow
 import Language.InstSel.Utils.JSON
 
 
@@ -34,6 +35,9 @@ newtype BasicBlockLabel
 
 instance Show BasicBlockLabel where
   show (BasicBlockLabel str) = str
+
+instance DebugShow BasicBlockLabel where
+  dShow = show
 
 
 
