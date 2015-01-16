@@ -406,8 +406,8 @@ computeBBAllocsForMatches
 computeBBAllocsForMatches m_data cp_data =
   let bb2labs = rawArrInd2LabNodeIDs m_data
       maps = zipWith3
-               ( \p b bb -> if b
-                            then Just (p, bb2labs !! (fromIntegral bb))
+               ( \m b bb -> if b
+                            then Just (m, bb2labs !! (fromIntegral bb))
                             else Nothing
                )
                (rawArrInd2MatchIDs m_data)

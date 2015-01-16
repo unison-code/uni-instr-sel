@@ -60,6 +60,35 @@ data PlotAction
 -- Functions
 -------------
 
+run _ _ DoNothing = reportError "No plot action provided."
+
+run str _ PlotFunctionGraph =
+  do function <- parseJson str
+     let dot = toDotString $ osGraph $ functionOS function
+     return [toOutputWithoutID dot]
+
+run f_str m_str PlotFunctionGraphCoverage =
+  do function <- parseJson f_str
+     match_info <- loadMatchsetInfo m_str
+     let matches = map mdMatch (msiMatches match_info)
+     dot <- mkCoveragePlot function matches
+     return [toOutputWithoutID dot]
+
+run f_str m_str PlotFunctionGraphCoveragePerMatch =
+  do function <- parseJson f_str
+     match_info <- loadMatchsetInfo m_str
+     mapM
+       ( \m ->
+          do dot <- mkCoveragePlot function [mdMatch m]
+             let oid = show (mdInstrID m)
+                       ++ "-" ++
+                       show (mdPatternID m)
+                       ++ "-" ++
+                       show (mdMatchID m)
+             return $ toOutput oid dot
+       )
+       (msiMatches match_info)
+
 -- | Gets the matchest information from a JSON string. Reports error if this
 -- fails.
 loadMatchsetInfo :: Maybe String -> IO MatchsetInfo
@@ -93,32 +122,3 @@ run
      -- ^ The action to perform.
   -> IO [Output]
      -- ^ The produced output.
-
-run _ _ DoNothing = reportError "No plot action provided."
-
-run str _ PlotFunctionGraph =
-  do function <- parseJson str
-     let dot = toDotString $ osGraph $ functionOS function
-     return [toOutputWithoutID dot]
-
-run f_str m_str PlotFunctionGraphCoverage =
-  do function <- parseJson f_str
-     match_info <- loadMatchsetInfo m_str
-     let matches = map mdMatch (msiMatches match_info)
-     dot <- mkCoveragePlot function matches
-     return [toOutputWithoutID dot]
-
-run f_str m_str PlotFunctionGraphCoveragePerMatch =
-  do function <- parseJson f_str
-     match_info <- loadMatchsetInfo m_str
-     mapM
-       ( \m ->
-          do dot <- mkCoveragePlot function [mdMatch m]
-             let oid = show (mdInstrID m)
-                       ++ "-" ++
-                       show (mdPatternID m)
-                       ++ "-" ++
-                       show (mdMatchID m)
-             return $ toOutput oid dot
-       )
-       (msiMatches match_info)

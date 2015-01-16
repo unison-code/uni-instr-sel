@@ -21,7 +21,6 @@ where
 import Language.InstSel.Drivers.Base
 import Language.InstSel.CPModel.ParamMaker
 import Language.InstSel.TargetMachines.Targets
-  ( getTargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
   ( MatchsetInfo (..) )
 import Language.InstSel.Utils.JSON
@@ -49,7 +48,7 @@ run f_str m_str =
      msinfo <- parseJson m_str
      let matches = msiMatches msinfo
          target_id = msiTarget msinfo
-         mtarget = getTargetMachine target_id
+         mtarget = retrieveTargetMachine target_id
      when (isNothing mtarget) $
        reportError $ "No target machine with ID '" ++ show target_id ++ "'"
      let target = fromJust mtarget
