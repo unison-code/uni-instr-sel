@@ -19,6 +19,10 @@ PRETTIFY := ../tools/prettify-json
 
 .SECONDARY:
 
+.PHONY: uni-is
+uni-is:
+	cd ../uni-is && make
+
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
 
@@ -35,13 +39,16 @@ PRETTIFY := ../tools/prettify-json
 	$(UNI) pattern-match -t mips32.ce -f $< > $@
 
 %.params.json: %.f.json %.mips32.m.json
-	$(UNI) make-cp-model -f $< --match-file $*.mips32.m.json > $@
+	$(UNI) make-cp-model -f $*.f.json --match-file $*.mips32.m.json > $@
 
 %.model.json %.post.json: %.params.json
-	$(PS) --mpf=$@ --ppf=$*.post.json $<
+	$(PS) --mpf=$*.model.json --ppf=$*.post.json $<
 
 %.sol.json: %.model.json
 	$(SOLVER) -o $@ $<
+
+%.s: %.sol.json %.post.json
+	$(UNI) emit-asm -s $*.sol.json -p $*.post.json > $@
 
 %.f.dot: %.f.json
 	$(UNI) plot --plot-fg -f $< > $@
