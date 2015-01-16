@@ -24,64 +24,32 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-{-
-The main driver for invoking various Unison commands related to instruction
-selection.
--}
+import Language.InstSel.Drivers
+import qualified Language.InstSel.Drivers.CheckDispatcher as Check
+import qualified Language.InstSel.Drivers.MakeDispatcher as Make
+import qualified Language.InstSel.Drivers.PlotDispatcher as Plot
+import qualified Language.InstSel.Drivers.TransformDispatcher as Transform
 
-{-# LANGUAGE DeriveDataTypeable #-}
-
-import Language.InstSel.TargetMachines
-import Language.InstSel.TargetMachines.Targets
-  ( retrieveTargetMachine )
 import Language.InstSel.Utils
   ( splitOn
   , toLower
   )
-import Language.InstSel.Utils.IO
-
-import Language.InstSel.Drivers
-import qualified Language.InstSel.Drivers.AssemblyEmitter as AssemblyEmitter
-import qualified Language.InstSel.Drivers.LlvmIrProcessor as LlvmIrProcessor
-import qualified Language.InstSel.Drivers.Modeler as Modeler
-import qualified Language.InstSel.Drivers.PatternMatcher as PatternMatcher
-import qualified Language.InstSel.Drivers.Plotter as Plotter
-import qualified Language.InstSel.Drivers.Transformer as Transformer
 
 import System.Console.CmdArgs
 import System.Console.CmdArgs.Text
 
-import Control.Monad
-  ( when )
 import Data.Maybe
   ( fromJust
-  , isJust
   , isNothing
   )
-import System.Directory
-  ( doesFileExist )
 import System.FilePath.Posix
   ( splitExtension )
 
 
 
---------------------------------------------
--- Options-related data types and functions
---------------------------------------------
-
-data Options
-  = Options
-      { command :: String
-      , functionFile :: Maybe String
-      , solutionFile :: Maybe String
-      , postFile :: Maybe String
-      , outFile :: Maybe String
-      , targetName :: Maybe String
-      , matchFile :: Maybe String
-      , plotAction :: Plotter.PlotAction
-      , transformAction :: Transformer.TransformAction
-      }
-  deriving (Data, Typeable)
+-------------
+-- Functions
+-------------
 
 parseArgs :: Options
 parseArgs =
@@ -90,82 +58,99 @@ parseArgs =
         &= argPos 0
         &= typ "COMMAND"
     , outFile = Nothing
+        &= name "o"
+        &= name "output"
+        &= explicit
         &= help ( "File that will contain the output. If the output involves "
                   ++ "multiple files, each file will be suffixed with a "
                   ++ "unique ID."
                 )
-        &= name "o"
-        &= name "output"
-        &= explicit
         &= typFile
     , functionFile = def
-        &= help "File containing a function."
         &= name "f"
         &= name "function-file"
         &= explicit
         &= typFile
-    , matchFile = Nothing
-        &= help "File containing matchset information."
+        &= help "File containing a function."
+    , matchsetFile = Nothing
         &= typFile
         &= explicit
         &= name "m"
-        &= name "match-file"
+        &= name "matchset-file"
+        &= help "File containing matchset information."
     , solutionFile = def
-        &= help "File containing a CP model solution."
         &= name "s"
         &= name "solution-file"
         &= explicit
         &= typFile
+        &= help "File containing a CP model solution."
     , postFile = def
-        &= help "File containing post parameters."
         &= name "p"
         &= name "post-file"
         &= explicit
         &= typFile
+        &= help "File containing post parameters."
     , targetName = Nothing
-        &= help "Name of a target machine."
         &= name "t"
         &= name "target-name"
         &= explicit
         &= typ "TARGET"
-    , plotAction =
-        enum [ Plotter.DoNothing
+        &= help "Name of a target machine."
+    , makeAction =
+        enum [ MakeNothing
                  &= auto
                  &= ignore
-             , Plotter.PlotFunctionGraph
-                 &= help "Print function graph in DOT format."
-                 &= name "plot-fg"
+             , MakeFunctionGraphFromLLVM
+                 &= name "make-fun-from-llvm"
                  &= explicit
-             , Plotter.PlotFunctionGraphCoverage
-                 &= help ( "Print function graph in DOT format, and mark the "
-                           ++ "nodes that has a potential cover."
-                         )
-                 &= name "plot-fg-cov"
-                 &= explicit
-             , Plotter.PlotFunctionGraphCoveragePerMatch
-                 &= help ( "Same as --plot-fg-cov, but shows "
-                           ++ "the coverage for each individual match."
-                         )
-                 &= name "plot-fg-cov-per-match"
-                 &= explicit
+                 &= help "Makes a function from an LLVM IR file."
              ]
-        &= groupname "Plot flags"
+        &= groupname "'make' command flags"
     , transformAction =
-        enum [ Transformer.DoNothing
+        enum [ TransformNothing
                  &= auto
                  &= ignore
-             , Transformer.CopyExtendFunction
-                 &= help "Extends the given function graph with copies."
-                 &= name "copy-extend-fg"
+             , CopyExtendFunctionGraph
+                 &= name "copy-extend-fun"
                  &= explicit
-             , Transformer.BranchExtendFunction
-                 &= help ( "Extends the given function graph with additional "
-                           ++ "branches."
+                 &= help "Extends the given function with copies."
+             , BranchExtendFunctionGraph
+                 &= name "branch-extend-fun"
+                 &= explicit
+                 &= help ( "Extends the given function with additional "
+                           ++ "branches alone every conditional control flow "
+                           ++ "edge."
                          )
-                 &= name "branch-extend-fg"
-                 &= explicit
              ]
-        &= groupname "Transformation flags"
+        &= groupname "'transform' command flags"
+    , plotAction =
+        enum [ PlotNothing
+                 &= auto
+                 &= ignore
+             , PlotFunctionGraph
+                 &= name "plot-fun-graph"
+                 &= explicit
+                 &= help "Plots the function graph (in DOT format)."
+             , PlotCoverAllMatches
+                 &= name "plot-cover-all-matches"
+                 &= explicit
+                 &= help ( "Same as --plot-fun-graph, but also marks the nodes "
+                           ++ "that is potentially covered by some match."
+                         )
+             , PlotCoverPerMatch
+                 &= name "plot-cover-per-match"
+                 &= explicit
+                 &= help ( "Same as --plot-cover-all-matches, but produces a "
+                           ++ "separate plot for each individual match."
+                         )
+             ]
+        &= groupname "'plot' command flags"
+    , checkAction =
+        enum [ CheckNothing
+                 &= auto
+                 &= ignore
+             ]
+        &= groupname "'check' command flags"
     }
     &= helpArg [ help "Displays this message."
                , name "h"
@@ -185,126 +170,29 @@ parseArgs =
              ( showText
                  defaultWrap
                  [ Line "Available commands:"
-                 , Cols [ "  lower-llvm-ir"
-                        , " Rewrites an LLVM IR file into an expected "
-                          ++ "canonical form."
-                        ]
-                 , Cols [ "  process-llvm-ir"
-                        , " Converts an LLVM IR file into the graph-based IR "
-                          ++ "format."
+                 , Cols [ "  make"
+                        , " Produce new data from the input."
                         ]
                  , Cols [ "  transform"
-                        , " Performs a transformation on the input."
-                        ]
-                 , Cols [ "  pattern-match"
-                        , " Performs pattern matching on the given function "
-                          ++ "graph."
-                        ]
-                 , Cols [ "  make-cp-model"
-                        , " Produces a CP model instance."
-                        ]
-                 , Cols [ "  emit-asm"
-                        , " Emits the corresponding assembly code for a "
-                          ++ "solution."
+                        , " Perform a transformation on the input."
                         ]
                  , Cols [ "  plot"
-                        , " Produces various plots for the input."
+                        , " Produce various plots for the input."
                         ]
-                 , Cols [ "  check-function"
-                        , " Performs sanity checks on the input."
+                 , Cols [ "  check"
+                        , " Perform various checks on the input."
                         ]
                  , Line "The commands may be written in lower or upper case."
                  ]
              )
          )
 
-
-
--------------
--- Functions
--------------
-
-readFileContent :: FilePath -> IO String
-readFileContent file =
-  do exists_file <- doesFileExist file
-     when (not exists_file) $
-       reportError $ "File " ++ show file ++ " does not exist."
-     readFile file
-
--- | Loads the content of a file.
-loadRequiredFile
-  :: String
-     -- ^ Error message when the file path is @Nothing@.
-  -> Maybe FilePath
-     -- ^ The file to load.
-  -> IO String
-     -- ^ The file content.
-loadRequiredFile err file =
-  do when (isNothing file) $
-       reportError err
-     readFileContent $ fromJust file
-
--- | Loads the content of a file, but only if one is provided.
-loadOptionalFile :: Maybe FilePath -> IO (Maybe String)
-loadOptionalFile file =
-  do if isJust file
-     then do content <- readFileContent $ fromJust file
-             return $ Just content
-     else return Nothing
-
-loadRequiredFunctionFile :: Options -> IO String
-loadRequiredFunctionFile opts =
-  loadRequiredFile "No function file provided." (functionFile opts)
-
-loadRequiredMatchFile :: Options -> IO String
-loadRequiredMatchFile opts =
-  loadRequiredFile "No match file provided." (matchFile opts)
-
-loadOptionalMatchFile :: Options -> IO (Maybe String)
-loadOptionalMatchFile opts =
-  loadOptionalFile $ matchFile opts
-
-loadRequiredSolutionFile :: Options -> IO String
-loadRequiredSolutionFile opts =
-  loadRequiredFile "No solution file provided." (solutionFile opts)
-
-loadRequiredPostFile :: Options -> IO String
-loadRequiredPostFile opts =
-  loadRequiredFile "No post file provided." (postFile opts)
-
--- | Returns the target machine specified on the command line. If no target is
--- specified, or if no such target exists, failure is reported.
-loadRequiredTarget :: Options -> IO TargetMachine
-loadRequiredTarget opts =
-  do let tname = targetName opts
-     when (isNothing tname) $
-       reportError "No target provided."
-     let target = retrieveTargetMachine $ toTargetMachineID $ fromJust tname
-     when (isNothing target) $
-       reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
-     return $ fromJust target
-
--- | Returns the target machine specified on the command line. If no target is
--- specified, 'Nothing' is returned. If a target is specified, but no such
--- target exists, failure is reported.
-loadOptionalTarget :: Options -> IO (Maybe TargetMachine)
-loadOptionalTarget opts =
-  do let tname = targetName opts
-     if isJust tname
-     then do let target = retrieveTargetMachine
-                          $ toTargetMachineID
-                          $ fromJust tname
-             when (isNothing target) $
-               reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
-             return target
-     else return Nothing
-
 -- | If an output file is given as part of the options, then the returned
 -- function will emit all data to the output file with the output ID suffixed to
 -- the output file name (this may mean that several output files are
 -- produced). Otherwise the data will be emitted to 'STDOUT'.
-getEmitFunction :: Options -> IO (Output -> IO ())
-getEmitFunction opts =
+mkEmitFunction :: Options -> IO (Output -> IO ())
+mkEmitFunction opts =
   do let file = outFile opts
      if isNothing file
      then return emitToStdout
@@ -333,35 +221,11 @@ main =
   do opts <- cmdArgs parseArgs
      output <-
        case (toLower $ command opts) of
-         "process-llvm-ir" ->
-           do content <- loadRequiredFunctionFile opts
-              LlvmIrProcessor.run content
-         "pattern-match" ->
-           do content <- loadRequiredFunctionFile opts
-              target <- loadRequiredTarget opts
-              PatternMatcher.run content target
-         "make-cp-model" ->
-           do f_content <- loadRequiredFunctionFile opts
-              m_content <- loadRequiredMatchFile opts
-              Modeler.run f_content m_content
-         "plot" ->
-           do f_content <- loadRequiredFunctionFile opts
-              m_content <- loadOptionalMatchFile opts
-              Plotter.run f_content m_content (plotAction opts)
-         "transform" ->
-           do content <- loadRequiredFunctionFile opts
-              Transformer.run content (transformAction opts)
-         "emit-asm" ->
-           do s_content <- loadRequiredSolutionFile opts
-              p_content <- loadRequiredPostFile opts
-              AssemblyEmitter.run s_content p_content
-         "lower-llvm-ir" ->
-           undefined
-           -- TODO: implement
-         "check-function" ->
-           undefined
-           -- TODO: implement
+         "make"      -> Make.run opts
+         "transform" -> Transform.run opts
+         "plot"      -> Plot.run opts
+         "check"     -> Check.run opts
          cmd ->
            error $ "Unrecognized command: " ++ show cmd
-     emit <- getEmitFunction opts
+     emit <- mkEmitFunction opts
      mapM_ emit output

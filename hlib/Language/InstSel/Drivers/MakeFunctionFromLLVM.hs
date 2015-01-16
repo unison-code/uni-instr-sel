@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.LlvmIrProcessor
+-- Module      : Language.InstSel.Drivers.MakeFunctionFromLLVM
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,12 +8,11 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Takes an LLVM IR file and processes it into the graph-based representation,
--- and outputs the result in JSON format.
+-- Produces a function from LLVM IR.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.LlvmIrProcessor
+module Language.InstSel.Drivers.MakeFunctionFromLLVM
   ( run )
 where
 
@@ -21,6 +20,14 @@ import Language.InstSel.Drivers.Base
 import Language.InstSel.Functions.LLVM
   ( mkFunctionsFromLlvmModule )
 import Language.InstSel.Utils.JSON
+
+import Language.InstSel.Utils
+  ( fromLeft
+  , fromRight
+  , isLeft
+  )
+import Language.InstSel.Utils.IO
+  ( reportError )
 
 import LLVM.General
 import LLVM.General.Context
@@ -34,11 +41,12 @@ import Control.Monad.Except
 -------------
 
 run
-  :: String
-     -- ^ The function in LLVM IR format.
+  :: MakeAction
+  -> String
+     -- ^ The content of the LLVM IR file.
   -> IO [Output]
-     -- ^ The produced output.
-run str =
+
+run MakeFunctionGraphFromLLVM str =
   do llvm_module_result <-
        withContext
          ( \context ->
@@ -51,3 +59,5 @@ run str =
      when (length functions > 1) $
        reportError "Only supports one function per module."
      return [toOutputWithoutID $ toJson $ head functions]
+
+run _ _ = reportError "MakeFunctionFromLLVM: unsupported action"

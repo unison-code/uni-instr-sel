@@ -12,33 +12,45 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Language.InstSel.Drivers.Base
-  ( module Language.InstSel.Functions
-  , module Language.InstSel.Utils
-  , module Language.InstSel.Utils.IO
+  ( CheckAction (..)
+  , MakeAction (..)
+  , Options (..)
   , Output (..)
-  , parseJson
-  , toJson
+  , PlotAction (..)
+  , TransformAction (..)
   , toOutput
   , toOutputWithoutID
   )
 where
 
-import Language.InstSel.Functions
-  ( Function )
-import Language.InstSel.Utils
-  ( fromLeft
-  , fromRight
-  , isLeft
+import System.Console.CmdArgs
+  ( Data
+  , Typeable
   )
-import Language.InstSel.Utils.IO
-import Language.InstSel.Utils.JSON
-
 
 
 --------------
 -- Data types
 --------------
+
+data Options
+  = Options
+      { command :: String
+      , functionFile :: Maybe String
+      , solutionFile :: Maybe String
+      , postFile :: Maybe String
+      , outFile :: Maybe String
+      , targetName :: Maybe String
+      , matchsetFile :: Maybe String
+      , makeAction :: MakeAction
+      , transformAction :: TransformAction
+      , plotAction :: PlotAction
+      , checkAction :: CheckAction
+      }
+  deriving (Data, Typeable)
 
 -- | A representation of the output produced by the drivers.
 data Output
@@ -49,6 +61,33 @@ data Output
       , oData :: String
         -- ^ The produced output.
       }
+
+data MakeAction
+  = MakeNothing
+  | MakeFunctionGraphFromLLVM
+  deriving (Eq, Typeable, Data)
+
+data TransformAction
+  = TransformNothing
+  | CopyExtendFunctionGraph
+  | BranchExtendFunctionGraph
+  deriving (Eq, Typeable, Data)
+
+data PlotAction
+  = PlotNothing
+  | PlotFunctionGraph
+  | PlotFunctionCFG
+  | PlotFunctionSSA
+  | PlotPatternGraph
+  | PlotPatternCFG
+  | PlotPatternSSA
+  | PlotCoverAllMatches
+  | PlotCoverPerMatch
+  deriving (Eq, Typeable, Data)
+
+data CheckAction
+  = CheckNothing
+  deriving (Eq, Typeable, Data)
 
 
 
@@ -72,12 +111,3 @@ toOutput
      -- ^ The output string.
   -> Output
 toOutput oid s = Output { oID = oid, oData = s }
-
--- | Parses a given JSON string and loads its content. Reports error if this
--- fails.
-parseJson :: (FromJSON a) => String -> IO a
-parseJson str =
-  do let res = fromJson str
-     when (isLeft res) $
-       reportError $ fromLeft res
-     return $ fromRight res

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.Plotter
+-- Module      : Language.InstSel.Drivers.PlotCoverGraph
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,16 +8,12 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Used for plotting various information about the input.
+-- Used for plotting how matches cover a function graph.
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable #-}
-
-module Language.InstSel.Drivers.Plotter
-  ( PlotAction (..)
-  , run
-  )
+module Language.InstSel.Drivers.PlotCoverGraph
+  ( run )
 where
 
 import Language.InstSel.Drivers.Base
@@ -25,58 +21,31 @@ import Language.InstSel.Functions
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import Language.InstSel.TargetMachines.PatternMatching
-import Language.InstSel.Utils.JSON
-  hiding
-  ( unpack )
 
 import Language.InstSel.Graphs.GraphViz
 import qualified Data.GraphViz as GV
 
-import System.Console.CmdArgs
-  ( Data
-  , Typeable
-  )
+import Language.InstSel.Utils.IO
+  ( reportError )
 
 import Data.Maybe
-  ( fromJust
-  , isJust
-  , isNothing
-  )
+  ( isJust )
 
 
-
---------------
--- Data types
---------------
-
-data PlotAction
-  = PlotFunctionGraph
-  | PlotFunctionGraphCoverage
-  | PlotFunctionGraphCoveragePerMatch
-  | DoNothing
-  deriving (Typeable, Data)
 
 -------------
 -- Functions
 -------------
 
-run _ _ DoNothing = reportError "No plot action provided."
+run :: PlotAction -> Function -> MatchsetInfo -> IO [Output]
 
-run str _ PlotFunctionGraph =
-  do function <- parseJson str
-     let dot = toDotString $ osGraph $ functionOS function
-     return [toOutputWithoutID dot]
-
-run f_str m_str PlotFunctionGraphCoverage =
-  do function <- parseJson f_str
-     match_info <- loadMatchsetInfo m_str
-     let matches = map mdMatch (msiMatches match_info)
+run PlotCoverAllMatches function matchset =
+  do let matches = map mdMatch (msiMatches matchset)
      dot <- mkCoveragePlot function matches
      return [toOutputWithoutID dot]
 
-run f_str m_str PlotFunctionGraphCoveragePerMatch =
-  do function <- parseJson f_str
-     match_info <- loadMatchsetInfo m_str
+run PlotCoverPerMatch function matchset =
+  do let matches = msiMatches matchset
      mapM
        ( \m ->
           do dot <- mkCoveragePlot function [mdMatch m]
@@ -87,15 +56,9 @@ run f_str m_str PlotFunctionGraphCoveragePerMatch =
                        show (mdMatchID m)
              return $ toOutput oid dot
        )
-       (msiMatches match_info)
+       matches
 
--- | Gets the matchest information from a JSON string. Reports error if this
--- fails.
-loadMatchsetInfo :: Maybe String -> IO MatchsetInfo
-loadMatchsetInfo str =
-  do when (isNothing str) $
-       reportError "No match file provided."
-     parseJson $ fromJust str
+run _ _ _ = reportError "PlotCoverGraph: unsupported action"
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =
@@ -112,13 +75,3 @@ mkCoveragePlot function matches =
                  osGraph $
                    functionOS function
      return dot
-
-run
-  :: String
-     -- ^ The content of the function graph.
-  -> Maybe String
-     -- ^ The content of the matches, if needed.
-  -> PlotAction
-     -- ^ The action to perform.
-  -> IO [Output]
-     -- ^ The produced output.
