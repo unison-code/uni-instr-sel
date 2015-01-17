@@ -57,7 +57,37 @@ parseArgs =
     { command = def
         &= argPos 0
         &= typ "COMMAND"
-    , outFile = Nothing
+    , functionFile = def
+        &= name "f"
+        &= name "function-file"
+        &= explicit
+        &= typFile
+        &= help "File containing a function."
+    , matchsetFile = def
+        &= typFile
+        &= explicit
+        &= name "m"
+        &= name "matchset-file"
+        &= help "File containing matchset information."
+    , arraysNodesMapFile = def
+        &= name "a"
+        &= name "arrays-nodes-map-file"
+        &= explicit
+        &= typFile
+        &= help "File containing array-index-to-node-ID mapping information."
+    , cpModelFile = def
+        &= typFile
+        &= explicit
+        &= name "c"
+        &= name "cp-model-file"
+        &= help "File containing a CP model instance."
+    , solutionFile = def
+        &= name "s"
+        &= name "solution-file"
+        &= explicit
+        &= typFile
+        &= help "File containing a CP model solution."
+    , outFile = def
         &= name "o"
         &= name "output"
         &= explicit
@@ -66,31 +96,7 @@ parseArgs =
                   ++ "unique ID."
                 )
         &= typFile
-    , functionFile = def
-        &= name "f"
-        &= name "function-file"
-        &= explicit
-        &= typFile
-        &= help "File containing a function."
-    , matchsetFile = Nothing
-        &= typFile
-        &= explicit
-        &= name "m"
-        &= name "matchset-file"
-        &= help "File containing matchset information."
-    , solutionFile = def
-        &= name "s"
-        &= name "solution-file"
-        &= explicit
-        &= typFile
-        &= help "File containing a CP model solution."
-    , postFile = def
-        &= name "p"
-        &= name "post-file"
-        &= explicit
-        &= typFile
-        &= help "File containing post parameters."
-    , targetName = Nothing
+    , targetName = def
         &= name "t"
         &= name "target-name"
         &= explicit
@@ -104,6 +110,12 @@ parseArgs =
                  &= name "make-fun-from-llvm"
                  &= explicit
                  &= help "Makes a function from an LLVM IR file."
+             , MakeMatchset
+                 &= name "make-matchset"
+                 &= explicit
+                 &= help ( "Makes the matchset by performing pattern matching "
+                           ++ "the given function and target machine."
+                         )
              ]
         &= groupname "'make' command flags"
     , transformAction =
@@ -171,16 +183,16 @@ parseArgs =
                  defaultWrap
                  [ Line "Available commands:"
                  , Cols [ "  make"
-                        , " Produce new data from the input."
+                        , "  Produce new data from the input."
                         ]
                  , Cols [ "  transform"
-                        , " Perform a transformation on the input."
+                        , "  Perform a transformation on the input."
                         ]
                  , Cols [ "  plot"
-                        , " Produce various plots for the input."
+                        , "  Produce various plots for the input."
                         ]
                  , Cols [ "  check"
-                        , " Perform various checks on the input."
+                        , "  Perform various checks on the input."
                         ]
                  , Line "The commands may be written in lower or upper case."
                  ]

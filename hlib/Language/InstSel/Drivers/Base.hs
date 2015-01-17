@@ -40,11 +40,12 @@ data Options
   = Options
       { command :: String
       , functionFile :: Maybe String
-      , solutionFile :: Maybe String
-      , postFile :: Maybe String
-      , outFile :: Maybe String
-      , targetName :: Maybe String
       , matchsetFile :: Maybe String
+      , cpModelFile :: Maybe String
+      , arraysNodesMapFile :: Maybe String
+      , solutionFile :: Maybe String
+      , targetName :: Maybe String
+      , outFile :: Maybe String
       , makeAction :: MakeAction
       , transformAction :: TransformAction
       , plotAction :: PlotAction
@@ -65,6 +66,7 @@ data Output
 data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM
+  | MakeMatchset
   deriving (Eq, Typeable, Data)
 
 data TransformAction
