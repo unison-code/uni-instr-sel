@@ -13,12 +13,11 @@
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstSel.TargetMachines.PatternMatching
-  ( MatchData (..)
-  , MatchsetInfo (..)
-  , mkMatchsetInfo
+  ( PatternMatch (..)
+  , PatternMatchset (..)
+  , mkPatternMatchset
   )
 where
 
@@ -44,19 +43,19 @@ import Language.InstSel.Utils.JSON
 
 -- | Contains the matchset information; that is, the information to determine
 -- which target machine the matchset concerns, along the match data.
-data MatchsetInfo
-  = MatchsetInfo
+data PatternMatchset
+  = PatternMatchset
       { msiTarget :: TargetMachineID
-      , msiMatches :: [MatchData]
+      , msiMatches :: [PatternMatch]
       }
   deriving (Show)
 
 -- | Contains the information needed to identify which instruction and pattern a
 -- given match originates from. Each match is also given a 'MatchID' that must
 -- be unique (although not necessarily continuous) for every match within a list
--- of 'MatchData'.
-data MatchData
-  = MatchData
+-- of @PatternMatch@.
+data PatternMatch
+  = PatternMatch
       { mdInstrID :: InstructionID
       , mdPatternID :: PatternID
       , mdMatchID :: MatchID
@@ -70,29 +69,29 @@ data MatchData
 -- JSON-related class instances
 --------------------------------
 
-instance FromJSON MatchsetInfo where
+instance FromJSON PatternMatchset where
   parseJSON (Object v) =
-    MatchsetInfo
+    PatternMatchset
       <$> v .: "target-machine-id"
       <*> v .: "match-data"
   parseJSON _ = mzero
 
-instance ToJSON MatchsetInfo where
+instance ToJSON PatternMatchset where
   toJSON m =
     object [ "target-machine-id" .= (msiTarget m)
            , "match-data"        .= (msiMatches m)
            ]
 
-instance FromJSON MatchData where
+instance FromJSON PatternMatch where
   parseJSON (Object v) =
-    MatchData
+    PatternMatch
       <$> v .: "instr-id"
       <*> v .: "pattern-id"
       <*> v .: "match-id"
       <*> v .: "match"
   parseJSON _ = mzero
 
-instance ToJSON MatchData where
+instance ToJSON PatternMatch where
   toJSON m =
     object [ "instr-id"   .= (mdInstrID m)
            , "pattern-id" .= (mdPatternID m)
@@ -106,26 +105,30 @@ instance ToJSON MatchData where
 -- Functions
 -------------
 
--- | Produces the matchset information for a given function and target machine.
-mkMatchsetInfo :: Function -> TargetMachine -> MatchsetInfo
-mkMatchsetInfo f tm =
+-- | Produces the pattern matchset for a given function and target machine.
+mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
+mkPatternMatchset f tm =
   let mdata = concatMap (processInstr f) (tmInstructions tm)
       proper_mdata = map (\(m, mid) -> m { mdMatchID = mid }) $ zip mdata [0..]
-  in MatchsetInfo { msiTarget = tmID tm, msiMatches = proper_mdata }
+  in PatternMatchset { msiTarget = tmID tm, msiMatches = proper_mdata }
 
-processInstr :: Function -> Instruction -> [MatchData]
+processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =
   let iid = instrID i
       patterns = instrPatterns i
   in concatMap (processInstrPattern f iid) patterns
 
-processInstrPattern :: Function -> InstructionID -> InstrPattern -> [MatchData]
+processInstrPattern
+  :: Function
+  -> InstructionID
+  -> InstrPattern
+  -> [PatternMatch]
 processInstrPattern f iid p =
   let fg = osGraph $ functionOS f
       pg = osGraph $ patOS p
       matches = map convertMatchN2ID $ findMatches fg pg
   in map
-       ( \m -> MatchData
+       ( \m -> PatternMatch
                  { mdInstrID = iid
                  , mdPatternID = patID p
                  , mdMatchID = 0

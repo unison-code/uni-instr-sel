@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ConstraintModels.ArrayIndexMapMaker
+-- Module      : Language.InstSel.ConstraintModels.ArrayIndexMaplistsMaker
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,14 +8,13 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Constructs the array index mapping information which is necessary both to
--- simplify the input to the CP solver and to interpret the subsequent solution
--- of the CP model.
+-- Constructs the array index mapping information which is necessary to lower a
+-- high-level CP model instances and to raise low-level CP model solutions.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ConstraintModels.ArrayIndexMapMaker
-  ( mkArrayIndexMapInfo )
+module Language.InstSel.ConstraintModels.ArrayIndexMaplistsMaker
+  ( mkArrayIndexMaplists )
 where
 
 import Language.InstSel.ConstraintModels.Base
@@ -24,26 +23,34 @@ import Language.InstSel.Functions
   ( Function (..) )
 import Language.InstSel.OpStructures
   ( OpStructure (..) )
+import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
-  ( MatchData (..)
-  , MatchsetInfo (..)
+  ( PatternMatch (..)
+  , PatternMatchset (..)
   )
+import Language.InstSel.TargetMachines.Targets
+  ( retrieveTargetMachine )
 
+import Data.Maybe
+  ( fromJust )
 
 
 -------------
 -- Functions
 -------------
 
-mkArrayIndexMapInfo :: Function -> MatchsetInfo -> ArrayIndexMapInfo
-mkArrayIndexMapInfo function matchset =
+mkArrayIndexMaplists :: Function -> PatternMatchset -> ArrayIndexMaplists
+mkArrayIndexMaplists function matchset =
   let match_ids = map mdMatchID (msiMatches matchset)
       g = osGraph $ functionOS function
       nodes = getAllNodes g
       l_nodes = filter isLabelNode nodes
       d_nodes = filter isDataNode nodes
-  in ArrayIndexMapInfo
+      tm = fromJust $ retrieveTargetMachine (msiTarget matchset)
+      registers = tmRegisters tm
+  in ArrayIndexMaplists
        { ai2MatchIDs = match_ids
        , ai2LabelNodeIDs = map getNodeID l_nodes
        , ai2DataNodeIDs = map getNodeID d_nodes
+       , ai2RegisterIDs = map regID registers
        }

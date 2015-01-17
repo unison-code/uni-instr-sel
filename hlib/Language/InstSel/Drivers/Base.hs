@@ -40,9 +40,9 @@ data Options
   = Options
       { command :: String
       , functionFile :: Maybe String
-      , matchsetFile :: Maybe String
+      , patternMatchsetFile :: Maybe String
       , cpModelFile :: Maybe String
-      , arraysNodesMapFile :: Maybe String
+      , arrayIndexMaplistsFile :: Maybe String
       , solutionFile :: Maybe String
       , targetName :: Maybe String
       , outFile :: Maybe String
@@ -66,14 +66,15 @@ data Output
 data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM
-  | MakeMatchsetInfo
-  | MakeArrayIndexMapInfo
+  | MakePatternMatchset
+  | MakeArrayIndexMaplists
   deriving (Eq, Typeable, Data)
 
 data TransformAction
   = TransformNothing
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph
+  | RaiseLowLevelCPSolution
   deriving (Eq, Typeable, Data)
 
 data PlotAction

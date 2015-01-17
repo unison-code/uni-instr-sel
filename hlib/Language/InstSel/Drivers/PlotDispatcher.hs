@@ -17,9 +17,12 @@ module Language.InstSel.Drivers.PlotDispatcher
 where
 
 import Language.InstSel.Drivers.DispatcherTools
-import qualified Language.InstSel.Drivers.PlotCoverGraph as PCov
-import qualified Language.InstSel.Drivers.PlotFunctionGraph as PFun
-import qualified Language.InstSel.Drivers.PlotPatternGraph as PPat
+import qualified Language.InstSel.Drivers.PlotCoverGraph
+  as PlotCoverGraph
+import qualified Language.InstSel.Drivers.PlotFunctionGraph
+  as PlotFunctionGraph
+import qualified Language.InstSel.Drivers.PlotPatternGraph
+  as PlotPatternGraph
 
 
 
@@ -36,13 +39,13 @@ dispatch a opts
       reportError "No plot action provided."
   | a `elem` [PlotFunctionGraph, PlotFunctionCFG, PlotFunctionSSA] =
       do function <- loadFunctionFromJson opts
-         PFun.run a function
+         PlotFunctionGraph.run a function
   | a `elem` [PlotPatternGraph, PlotPatternCFG, PlotPatternSSA] =
       -- TODO: implement
       undefined
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
-         matchset <- loadMatchsetInfoFromJson opts
-         PCov.run a function matchset
+         matchset <- loadPatternMatchsetFromJson opts
+         PlotCoverGraph.run a function matchset
   | otherwise =
       reportError "PlotDispatcher: unsupported action"

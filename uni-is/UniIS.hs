@@ -63,23 +63,23 @@ parseArgs =
         &= explicit
         &= typFile
         &= help "File containing a function."
-    , matchsetFile = def
+    , patternMatchsetFile = def
         &= typFile
         &= explicit
-        &= name "m"
-        &= name "matchset-file"
-        &= help "File containing matchset information."
-    , arraysNodesMapFile = def
+        &= name "p"
+        &= name "pattern-matchset-file"
+        &= help "File containing a pattern matchset."
+    , arrayIndexMaplistsFile = def
         &= name "a"
-        &= name "arrays-nodes-map-file"
+        &= name "array-index-maplists-file"
         &= explicit
         &= typFile
-        &= help "File containing array-index mapping information."
+        &= help "File containing array index maplists."
     , cpModelFile = def
         &= typFile
         &= explicit
-        &= name "c"
-        &= name "cp-model-file"
+        &= name "m"
+        &= name "model-file"
         &= help "File containing a CP model instance."
     , solutionFile = def
         &= name "s"
@@ -110,18 +110,18 @@ parseArgs =
                  &= name "make-fun-from-llvm"
                  &= explicit
                  &= help "Constructs a function from an LLVM IR file."
-             , MakeMatchsetInfo
-                 &= name "make-matchset"
+             , MakePatternMatchset
+                 &= name "make-pattern-matchset"
                  &= explicit
-                 &= help ( "Computes the matchset information by performing "
+                 &= help ( "Computes the pattern matchset by performing "
                            ++ "pattern matching on the given function using "
                            ++ "the instruction patterns available in the given "
                            ++ "target machine."
                          )
-             , MakeArrayIndexMapInfo
-                 &= name "make-array-index-maps"
+             , MakeArrayIndexMaplists
+                 &= name "make-array-index-maplists"
                  &= explicit
-                 &= help ( "Computes the array-index mapping information from "
+                 &= help ( "Computes the array index maplists from "
                            ++ "the given function graph and matchset "
                            ++ "information."
                          )
@@ -141,6 +141,12 @@ parseArgs =
                  &= help ( "Extends the given function with additional "
                            ++ "branches alone every conditional control flow "
                            ++ "edge."
+                         )
+             , RaiseLowLevelCPSolution
+                 &= name "raise-ll-cp-solution"
+                 &= explicit
+                 &= help ( "Raises a low-level CP model solution to a "
+                           ++ "high-level CP model solution."
                          )
              ]
         &= groupname "'transform' command flags"

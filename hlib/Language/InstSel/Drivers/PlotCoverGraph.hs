@@ -37,7 +37,7 @@ import Data.Maybe
 -- Functions
 -------------
 
-run :: PlotAction -> Function -> MatchsetInfo -> IO [Output]
+run :: PlotAction -> Function -> PatternMatchset -> IO [Output]
 
 run PlotCoverAllMatches function matchset =
   do let matches = map mdMatch (msiMatches matchset)

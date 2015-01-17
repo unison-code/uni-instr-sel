@@ -17,9 +17,12 @@ module Language.InstSel.Drivers.MakeDispatcher
 where
 
 import Language.InstSel.Drivers.DispatcherTools
-import qualified Language.InstSel.Drivers.MakeArrayIndexMapInfo as MArray
-import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM as MLLVM
-import qualified Language.InstSel.Drivers.MakeMatchsetInfo as MMatch
+import qualified Language.InstSel.Drivers.MakeArrayIndexMaplists
+  as MakeArrayIndexMaplists
+import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM
+  as MakeFunctionFromLLVM
+import qualified Language.InstSel.Drivers.MakePatternMatchset
+  as MakePatternMatchset
 
 
 
@@ -36,14 +39,14 @@ dispatch a opts
       reportError "No make action provided."
   | a `elem` [MakeFunctionGraphFromLLVM] =
       do content <- loadFunctionFileContent opts
-         MLLVM.run a content
-  | a `elem` [MakeMatchsetInfo] =
+         MakeFunctionFromLLVM.run a content
+  | a `elem` [MakePatternMatchset] =
       do function <- loadFunctionFromJson opts
          target <- loadTargetMachine opts
-         MMatch.run a function target
-  | a `elem` [MakeArrayIndexMapInfo] =
+         MakePatternMatchset.run a function target
+  | a `elem` [MakeArrayIndexMaplists] =
       do function <- loadFunctionFromJson opts
-         matchset <- loadMatchsetInfoFromJson opts
-         MArray.run a function matchset
+         matchset <- loadPatternMatchsetFromJson opts
+         MakeArrayIndexMaplists.run a function matchset
   | otherwise =
       reportError "MakeDispatcher: unsupported action"

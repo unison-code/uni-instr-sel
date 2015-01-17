@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.MakeArrayIndexMapInfo
+-- Module      : Language.InstSel.Drivers.MakeArrayIndexMaplists
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,22 +8,22 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Takes a function graph and matchset information as input, and computes the
--- corresponding array index mapping information.
+-- Takes a function graph and pattern matchset as input, and computes the
+-- corresponding array index mapset.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.MakeArrayIndexMapInfo
+module Language.InstSel.Drivers.MakeArrayIndexMaplists
   ( run )
 where
 
 import Language.InstSel.Drivers.Base
-import Language.InstSel.ConstraintModels.ArrayIndexMapMaker
-  ( mkArrayIndexMapInfo )
+import Language.InstSel.ConstraintModels.ArrayIndexMaplistsMaker
+  ( mkArrayIndexMaplists )
 import Language.InstSel.Functions
   ( Function )
 import Language.InstSel.TargetMachines.PatternMatching
-  ( MatchsetInfo )
+  ( PatternMatchset )
 import Language.InstSel.Utils.JSON
 
 import Language.InstSel.Utils.IO
@@ -35,10 +35,10 @@ import Language.InstSel.Utils.IO
 -- Functions
 -------------
 
-run :: MakeAction -> Function -> MatchsetInfo -> IO [Output]
+run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 
-run MakeArrayIndexMapInfo function target =
-  do let maps = mkArrayIndexMapInfo function target
-     return [toOutputWithoutID $ toJson maps]
+run MakeArrayIndexMaplists function matchset =
+  do let mapset = mkArrayIndexMaplists function matchset
+     return [toOutputWithoutID $ toJson mapset]
 
-run _ _ _ = reportError "MakeMatchset: unsupported action"
+run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"

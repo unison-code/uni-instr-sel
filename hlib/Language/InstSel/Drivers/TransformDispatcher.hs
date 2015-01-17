@@ -17,7 +17,10 @@ module Language.InstSel.Drivers.TransformDispatcher
 where
 
 import Language.InstSel.Drivers.DispatcherTools
-import qualified Language.InstSel.Drivers.TransformFunctionGraph as TFun
+import qualified Language.InstSel.Drivers.TransformFunctionGraph
+  as TransformFunctionGraph
+import qualified Language.InstSel.Drivers.TransformCPSolution
+  as TransformCPSolution
 
 
 
@@ -35,6 +38,11 @@ dispatch a opts
   | a `elem` [CopyExtendFunctionGraph, BranchExtendFunctionGraph] =
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
-         TFun.run a function
+         TransformFunctionGraph.run a function
+  | a `elem` [RaiseLowLevelCPSolution] =
+      do sol_content <- loadSolutionFileContent opts
+         ai_content <- loadArrayIndexMaplistsFileContent opts
+         ai_maps <- loadFromJson ai_content
+         TransformCPSolution.run a sol_content ai_maps
   | otherwise =
       reportError "TransformDispatcher: unsupported action"

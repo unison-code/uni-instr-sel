@@ -17,12 +17,14 @@ module Language.InstSel.Drivers.DispatcherTools
   , module Language.InstSel.Utils
   , module Language.InstSel.Utils.IO
   , loadFileContent
+  , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
-  , loadMatchsetFileContent
+  , loadPatternMatchsetFileContent
+  , loadSolutionFileContent
   , loadTargetMachine
   , loadFromJson
   , loadFunctionFromJson
-  , loadMatchsetInfoFromJson
+  , loadPatternMatchsetFromJson
   )
 where
 
@@ -34,7 +36,7 @@ import Language.InstSel.TargetMachines
   , toTargetMachineID
   )
 import Language.InstSel.TargetMachines.PatternMatching
-  ( MatchsetInfo )
+  ( PatternMatchset )
 import Language.InstSel.TargetMachines.Targets
   ( retrieveTargetMachine )
 import Language.InstSel.Utils
@@ -78,13 +80,22 @@ loadFileContent err file =
        reportError err
      readFileContent $ fromJust file
 
+loadArrayIndexMaplistsFileContent :: Options -> IO String
+loadArrayIndexMaplistsFileContent =
+  loadFileContent "No array index maplists file provided."
+  . arrayIndexMaplistsFile
+
 loadFunctionFileContent :: Options -> IO String
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
 
-loadMatchsetFileContent :: Options -> IO String
-loadMatchsetFileContent =
-  loadFileContent "No matchset file provided." . matchsetFile
+loadPatternMatchsetFileContent :: Options -> IO String
+loadPatternMatchsetFileContent =
+  loadFileContent "No pattern matchset file provided." . patternMatchsetFile
+
+loadSolutionFileContent :: Options -> IO String
+loadSolutionFileContent =
+  loadFileContent "No solution file provided." . solutionFile
 
 -- | Returns the target machine specified on the command line. If no target is
 -- specified, or if no such target exists, failure is reported.
@@ -112,7 +123,7 @@ loadFunctionFromJson opts =
   do content <- loadFunctionFileContent opts
      loadFromJson content
 
-loadMatchsetInfoFromJson :: Options -> IO MatchsetInfo
-loadMatchsetInfoFromJson opts =
-  do content <- loadMatchsetFileContent opts
+loadPatternMatchsetFromJson :: Options -> IO PatternMatchset
+loadPatternMatchsetFromJson opts =
+  do content <- loadPatternMatchsetFileContent opts
      loadFromJson content
