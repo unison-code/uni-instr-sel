@@ -110,7 +110,7 @@ parseArgs =
                  &= name "make-fun-from-llvm"
                  &= explicit
                  &= help "Makes a function from an LLVM IR file."
-             , MakeMatchset
+             , MakeMatchsetInfo
                  &= name "make-matchset"
                  &= explicit
                  &= help ( "Makes the matchset by performing pattern matching "

@@ -18,7 +18,7 @@ where
 
 import Language.InstSel.Drivers.DispatcherTools
 import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM as MLLVM
-import qualified Language.InstSel.Drivers.MakeMatchset as MMatch
+import qualified Language.InstSel.Drivers.MakeMatchsetInfo as MMatch
 
 
 

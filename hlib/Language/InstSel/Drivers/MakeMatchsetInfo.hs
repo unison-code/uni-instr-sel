@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.MakeMatchset
+-- Module      : Language.InstSel.Drivers.MakeMatchsetInfo
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,12 +8,13 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Takes a function and target machine as input, and performs pattern matching
--- of all instruction patterns on the function graph.
+-- Takes a function and target machine as input, and produces the corresponding
+-- matchset information by performing pattern matching of all instruction
+-- patterns in the target machine on the function graph.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.MakeMatchset
+module Language.InstSel.Drivers.MakeMatchsetInfo
   ( run )
 where
 
@@ -37,8 +38,8 @@ import Language.InstSel.Utils.IO
 
 run :: MakeAction -> Function -> TargetMachine -> IO [Output]
 
-run MakeMatchset function target =
+run MakeMatchsetInfo function target =
   do let matches = mkMatchsetInfo function target
      return [toOutputWithoutID $ toJson matches]
 
-run _ _ _ = reportError "MakeMatchset: unsupported action"
+run _ _ _ = reportError "MakeMatchsetInfo: unsupported action"

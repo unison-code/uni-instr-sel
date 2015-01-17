@@ -66,7 +66,7 @@ data Output
 data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM
-  | MakeMatchset
+  | MakeMatchsetInfo
   deriving (Eq, Typeable, Data)
 
 data TransformAction
