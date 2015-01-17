@@ -75,7 +75,7 @@ parseArgs =
         &= explicit
         &= typFile
         &= help "File containing array index maplists."
-    , cpModelFile = def
+    , modelFile = def
         &= typFile
         &= explicit
         &= name "m"
@@ -122,8 +122,19 @@ parseArgs =
                  &= name "make-array-index-maplists"
                  &= explicit
                  &= help ( "Computes the array index maplists from "
-                           ++ "the given function graph and matchset "
-                           ++ "information."
+                           ++ "the given function graph and pattern matchset. "
+                         )
+             , MakeHighLevelCPModel
+                 &= name "make-hl-cp-model"
+                 &= explicit
+                 &= help ( "Constructs a high-level CP model instance from the "
+                           ++ "given function graph and pattern matchset ."
+                         )
+             , MakeAssemblyCode
+                 &= name "make-asm"
+                 &= explicit
+                 &= help ( "Generates the corresponding assembly code from the "
+                           ++ "given high-level CP model and solution."
                          )
              ]
         &= groupname "'make' command flags"

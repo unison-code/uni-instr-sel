@@ -19,12 +19,14 @@ where
 import Language.InstSel.Drivers.DispatcherTools
 import qualified Language.InstSel.Drivers.MakeArrayIndexMaplists
   as MakeArrayIndexMaplists
+import qualified Language.InstSel.Drivers.MakeAssemblyCode
+  as MakeAssemblyCode
+import qualified Language.InstSel.Drivers.MakeCPModel
+  as MakeCPModel
 import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM
   as MakeFunctionFromLLVM
 import qualified Language.InstSel.Drivers.MakePatternMatchset
   as MakePatternMatchset
-import qualified Language.InstSel.Drivers.MakeCPModel
-  as MakeCPModel
 
 
 
@@ -44,7 +46,8 @@ dispatch a opts
          MakeFunctionFromLLVM.run a content
   | a `elem` [MakePatternMatchset] =
       do function <- loadFunctionFromJson opts
-         target <- loadTargetMachine opts
+         tid <- getSelectedTargetMachineID opts
+         target <- loadTargetMachine tid
          MakePatternMatchset.run a function target
   | a `elem` [MakeArrayIndexMaplists] =
       do function <- loadFunctionFromJson opts
@@ -54,5 +57,11 @@ dispatch a opts
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          MakeCPModel.run a function matchset
+  | a `elem` [MakeAssemblyCode] =
+      do model_content <- loadModelFileContent opts
+         model <- loadFromJson model_content
+         sol_content <- loadSolutionFileContent opts
+         sol <- loadFromJson model_content
+         MakeAssemblyCode.run a model sol
   | otherwise =
       reportError "MakeDispatcher: unsupported action"

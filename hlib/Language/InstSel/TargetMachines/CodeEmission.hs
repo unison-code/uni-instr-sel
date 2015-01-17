@@ -18,13 +18,12 @@ module Language.InstSel.TargetMachines.CodeEmission
   )
 where
 
-import Language.InstSel.CPModel
+import Language.InstSel.ConstraintModels
 import Language.InstSel.Graphs.IDs
   ( MatchID )
 import Language.InstSel.Functions
   ( BasicBlockLabel )
 import Language.InstSel.TargetMachines
-import Language.InstSel.TargetMachines.Targets
 
 import qualified Data.Graph.Inductive as I
 
@@ -63,50 +62,48 @@ type IFlowDAG = I.Gr MatchID ()
 -- Functions
 -------------
 
--- | Produces the corresponding assembly code from a set of CP model solution
--- data.
-generateCode :: CPSolutionData -> [AssemblyCode]
-generateCode sol =
-  let tm = ( fromJust
-           $ retrieveTargetMachine
-           $ machID
-           $ machineParams
-           $ modelParams sol
-           )
-  in concat $
-       map
-       ( \l_node ->
-           let matches = getMatchesAllocatedToBB sol l_node
-               sorted_matches = sortMatchesByFlow sol matches
-               instrs = mapMaybe (emitInstruction sol tm) sorted_matches
-               bblabel = fromJust $ findBBLabelOfLabelNode sol l_node
-           in (AsmBasicBlockLabel $ show bblabel):instrs
-       )
-       (orderOfBBs sol)
+-- | Produces the corresponding assembly code for a given target machine and
+-- high-level CP model and solution.
+generateCode
+  :: TargetMachine
+  -> HighLevelModel
+  -> HighLevelSolution
+  -> [AssemblyCode]
+generateCode target model sol =
+  concat $
+    map
+    ( \l_node ->
+        let matches = getMatchesAllocatedToBB sol l_node
+            sorted_matches = sortMatchesByFlow model matches
+            instrs = mapMaybe (emitInstruction model sol target) sorted_matches
+            bblabel = fromJust $ findBBLabelOfLabelNode model l_node
+        in (AsmBasicBlockLabel $ show bblabel):instrs
+    )
+    (hlSolOrderOfBBs sol)
 
 -- | Gets the list of matches that has been allocated to a given basic block in
 -- the CP model solution. The basic block is identified using the node ID of its
 -- corresponding label node.
-getMatchesAllocatedToBB :: CPSolutionData -> NodeID -> [MatchID]
+getMatchesAllocatedToBB :: HighLevelSolution -> NodeID -> [MatchID]
 getMatchesAllocatedToBB sol n =
-  map fst $ filter (\t -> snd t == n) $ bbAllocsForMatches sol
+  map fst $ filter (\t -> snd t == n) $ hlSolBBAllocsForSelMatches sol
 
--- | Gets the basic block label for a given label node and CP solution data. If
--- no such label can be found, @Nothing@ is returned.
-findBBLabelOfLabelNode :: CPSolutionData -> NodeID -> Maybe BasicBlockLabel
-findBBLabelOfLabelNode sol n =
-  let bb_params = funcBasicBlockParams $ functionParams $ modelParams sol
-      found_bbs = filter (\m -> bbLabelNode m == n) bb_params
+-- | Gets the basic block label for a given label node. If no such label can be
+-- found, @Nothing@ is returned.
+findBBLabelOfLabelNode :: HighLevelModel -> NodeID -> Maybe BasicBlockLabel
+findBBLabelOfLabelNode model n =
+  let bb_params = hlFunBasicBlockParams $ hlFunctionParams model
+      found_bbs = filter (\m -> hlBBLabelNode m == n) bb_params
   in if length found_bbs > 0
-     then Just $ bbLabel $ head found_bbs
+     then Just $ hlBBLabel $ head found_bbs
      else Nothing
 
 -- | Sorts a list of matches according to their flow dependencies. This is done
 -- by first constructing the corresponding @FlowGraph@ for the matches, and then
 -- performing a topological sort on that DAG.
-sortMatchesByFlow :: CPSolutionData -> [MatchID] -> [MatchID]
-sortMatchesByFlow sol ms =
-  let dag = mkFlowDAG sol ms
+sortMatchesByFlow :: HighLevelModel -> [MatchID] -> [MatchID]
+sortMatchesByFlow model ms =
+  let dag = mkFlowDAG model ms
   in I.topsort' (getIntDag dag)
 
 -- | Takes a CP solution data set and a list of match IDs, and produces a
@@ -118,11 +115,11 @@ sortMatchesByFlow sol ms =
 -- the phi node which makes use of the data appears at the top of the
 -- DAG. Cyclic control dependencies will appear if there is more than one match
 -- with control nodes in the list (which should not happen).
-mkFlowDAG :: CPSolutionData -> [MatchID] -> FlowDAG
-mkFlowDAG sol ms =
+mkFlowDAG :: HighLevelModel -> [MatchID] -> FlowDAG
+mkFlowDAG model ms =
   let g0 = I.mkGraph (zip [0..] ms) []
-      g1 = foldr (addUseEdgesToDAG sol) g0 ms
-      g2 = foldr (addControlEdgesToDAG sol) g1 ms
+      g1 = foldr (addUseEdgesToDAG model) g0 ms
+      g2 = foldr (addControlEdgesToDAG model) g1 ms
   in FlowDAG g2
 
 -- | Adds an edge for each use of data or state of the given match ID. If the
@@ -130,20 +127,24 @@ mkFlowDAG sol ms =
 -- there always exists exactly one node in the graph representing the match ID
 -- given as argument to the function. Note that this may lead to cycles, which
 -- will have to be broken as a second step.
-addUseEdgesToDAG :: CPSolutionData -> MatchID -> IFlowDAG -> IFlowDAG
-addUseEdgesToDAG sol mid g0 =
-  let ds = matchParams $ modelParams sol
+addUseEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
+addUseEdgesToDAG model mid g0 =
+  let ds = hlMatchParams model
       pi_n = fromJust $ getNodeOfMatch g0 mid
-      m_data = getMatchParams ds mid
+      match = getHLMatchParams ds mid
       ns = I.labNodes g0
       d_uses_of_pi = filter
-                       (`notElem` mDataNodesUsedByPhis m_data)
-                       (mDataNodesUsed m_data)
-      s_uses_of_pi = mStateNodesUsed m_data
+                       (`notElem` hlMatchDataNodesUsedByPhis match)
+                       (hlMatchDataNodesUsed match)
+      s_uses_of_pi = hlMatchStateNodesUsed match
       ns_d_defs =
-        map (\(n, i) -> (n, mDataNodesDefined $ getMatchParams ds i)) ns
+        map
+          (\(n, i) -> (n, hlMatchDataNodesDefined $ getHLMatchParams ds i))
+          ns
       ns_s_defs =
-        map (\(n, i) -> (n, mStateNodesDefined $ getMatchParams ds i)) ns
+        map
+          (\(n, i) -> (n, hlMatchStateNodesDefined $ getHLMatchParams ds i))
+          ns
       g1 = foldr (addUseEdgesToDAG' pi_n ns_d_defs) g0 d_uses_of_pi
       g2 = foldr (addUseEdgesToDAG' pi_n ns_s_defs) g1 s_uses_of_pi
   in g2
@@ -173,20 +174,20 @@ getNodeOfMatch g mid =
 -- nodes, then an edge will be added to the node of that match ID from every
 -- other node. This is to ensure that the instruction of that pattern appears
 -- last in the basic block.
-addControlEdgesToDAG :: CPSolutionData -> MatchID -> IFlowDAG -> IFlowDAG
-addControlEdgesToDAG sol mid g =
-  let m_data = getMatchParams (matchParams $ modelParams sol) mid
-  in if mHasControlNodes m_data
+addControlEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
+addControlEdgesToDAG model mid g =
+  let match = getHLMatchParams (hlMatchParams model) mid
+  in if hlMatchHasControlNodes match
      then let ns = I.labNodes g
               pi_n = fst $ head $ filter (\(_, i) -> i == mid) ns
               other_ns = map fst $ filter (\(_, i) -> i /= mid) ns
           in foldr (\n' g' -> I.insEdge (n', pi_n, ()) g') g other_ns
      else g
 
--- | Retrieves the @MatchParams@ entity with matching match ID. It is assumed
--- that exactly one such entity always exists in the given list.
-getMatchParams :: [MatchParams] -> MatchID -> MatchParams
-getMatchParams ps mid = fromJust $ findMatchParams ps mid
+-- | Retrieves the @HighLevelMatchParams@ entity with matching match ID. It is
+-- assumed that exactly one such entity always exists in the given list.
+getHLMatchParams :: [HighLevelMatchParams] -> MatchID -> HighLevelMatchParams
+getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
 
 -- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
 -- that such an entity always exists in the given list.
@@ -199,24 +200,25 @@ getInstrPattern is iid pid =
 -- | Emits the assembly instruction corresponding to a given match. If that
 -- match does not produce an actual assembly instruction, @Nothing@ is returned.
 emitInstruction
-  :: CPSolutionData
+  :: HighLevelModel
+  -> HighLevelSolution
   -> TargetMachine
   -> MatchID
   -> Maybe AssemblyCode
-emitInstruction sol tm mid =
-  let m_params = getMatchParams (matchParams $ modelParams sol) mid
+emitInstruction model sol tm mid =
+  let match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern
                    (tmInstructions tm)
-                   (mInstructionID m_params)
-                   (mPatternID m_params)
+                   (hlMatchInstructionID match)
+                   (hlMatchPatternID match)
       instr_parts = updateNodeIDsInAsmStrParts
                        (asmStrParts $ patAsmStrTemplate pat_data)
-                       (mAsmStrNodeMaps m_params)
+                       (hlMatchAsmStrNodeMaplist match)
   in if length instr_parts > 0
      then ( Just
           $ AsmInstruction
           $ concatMap
-              (emitInstructionPart sol tm)
+              (emitInstructionPart model sol tm)
               instr_parts
           )
      else Nothing
@@ -240,38 +242,43 @@ updateNodeIDsInAsmStrParts asm maps =
 
 -- | Emits part of an assembly instruction.
 emitInstructionPart
-  :: CPSolutionData
+  :: HighLevelModel
+  -> HighLevelSolution
   -> TargetMachine
   -> AssemblyStringPart
   -> String
-emitInstructionPart _ _ (ASVerbatim s) = s
-emitInstructionPart sol _ (ASImmValueOfDataNode n) =
-  let i = lookup n (immValuesOfDataNodes sol)
+emitInstructionPart _ _ _ (ASVerbatim s) = s
+emitInstructionPart _ sol _ (ASImmValueOfDataNode n) =
+  let i = lookup n (hlSolImmValuesOfDataNodes sol)
   in if isJust i
      then show $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart sol m (ASRegisterOfDataNode n) =
-  let reg_id = lookup n $ regsOfDataNodes sol
+emitInstructionPart _ sol m (ASRegisterOfDataNode n) =
+  let reg_id = lookup n $ hlSolRegsOfDataNodes sol
   in if isJust reg_id
      then let reg = fromJust $ findRegister (tmRegisters m) (fromJust reg_id)
           in show $ regName reg
      else -- TODO: handle this case
           "r?"
-emitInstructionPart sol _ (ASBBLabelOfLabelNode n) =
-  let l = findBBLabelOfLabelNode sol n
+emitInstructionPart model _ _ (ASBBLabelOfLabelNode n) =
+  let l = findBBLabelOfLabelNode model n
   in if isJust l
      then show $ fromJust l
      else -- TODO: handle this case
           "l?"
-emitInstructionPart sol m (ASBBLabelOfDataNode n) =
-  let f_params = functionParams $ modelParams sol
-      data_nodes = funcDataNodes f_params
+emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
+  let function = hlFunctionParams model
+      data_nodes = hlFunDataNodes function
   in if n `elem` data_nodes
-     then let mid = fromJust $ findDefinerOfData sol n
-              l = lookup mid (bbAllocsForMatches sol)
+     then let mid = fromJust $ findDefinerOfData model sol n
+              l = lookup mid (hlSolBBAllocsForSelMatches sol)
           in if isJust l
-             then emitInstructionPart sol m (ASBBLabelOfLabelNode $ fromJust l)
+             then emitInstructionPart
+                    model
+                    sol
+                    m
+                    (ASBBLabelOfLabelNode $ fromJust l)
              else -- TODO: handle this case
                   "l?"
      else -- TODO: handle this case
@@ -279,13 +286,20 @@ emitInstructionPart sol m (ASBBLabelOfDataNode n) =
 
 -- | Takes the node ID of an entity, and returns the selected match that defines
 -- that entity. If no such match can be found, @Nothing@ is returned.
-findDefinerOfData :: CPSolutionData -> NodeID -> Maybe MatchID
-findDefinerOfData sol n =
-  let m_params = matchParams $ modelParams sol
+findDefinerOfData
+  :: HighLevelModel
+  -> HighLevelSolution
+  -> NodeID
+  -> Maybe MatchID
+findDefinerOfData model sol n =
+  let match = hlMatchParams model
       definers = map
-                   mMatchID
-                   (filter (\mid -> n `elem` mDataNodesDefined mid) m_params)
-      selected = filter (`elem` (selectedMatches sol)) definers
+                   hlMatchID
+                   ( filter
+                       (\mid -> n `elem` hlMatchDataNodesDefined mid)
+                       match
+                   )
+      selected = filter (`elem` (hlSolSelMatches sol)) definers
   in if length selected == 1
      then Just $ head selected
      else Nothing

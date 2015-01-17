@@ -41,7 +41,7 @@ data Options
       { command :: String
       , functionFile :: Maybe String
       , patternMatchsetFile :: Maybe String
-      , cpModelFile :: Maybe String
+      , modelFile :: Maybe String
       , arrayIndexMaplistsFile :: Maybe String
       , solutionFile :: Maybe String
       , targetName :: Maybe String
@@ -69,6 +69,7 @@ data MakeAction
   | MakePatternMatchset
   | MakeArrayIndexMaplists
   | MakeHighLevelCPModel
+  | MakeAssemblyCode
   deriving (Eq, Typeable, Data)
 
 data TransformAction

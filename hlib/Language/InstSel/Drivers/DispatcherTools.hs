@@ -16,9 +16,11 @@ module Language.InstSel.Drivers.DispatcherTools
   ( module Language.InstSel.Drivers.Base
   , module Language.InstSel.Utils
   , module Language.InstSel.Utils.IO
+  , getSelectedTargetMachineID
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
+  , loadModelFileContent
   , loadPatternMatchsetFileContent
   , loadSolutionFileContent
   , loadTargetMachine
@@ -33,6 +35,7 @@ import Language.InstSel.Functions
   ( Function )
 import Language.InstSel.TargetMachines
   ( TargetMachine
+  , TargetMachineID
   , toTargetMachineID
   )
 import Language.InstSel.TargetMachines.PatternMatching
@@ -89,6 +92,10 @@ loadFunctionFileContent :: Options -> IO String
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
 
+loadModelFileContent :: Options -> IO String
+loadModelFileContent =
+  loadFileContent "No model file provided." . modelFile
+
 loadPatternMatchsetFileContent :: Options -> IO String
 loadPatternMatchsetFileContent =
   loadFileContent "No pattern matchset file provided." . patternMatchsetFile
@@ -97,16 +104,22 @@ loadSolutionFileContent :: Options -> IO String
 loadSolutionFileContent =
   loadFileContent "No solution file provided." . solutionFile
 
--- | Returns the target machine specified on the command line. If no target is
--- specified, or if no such target exists, failure is reported.
-loadTargetMachine :: Options -> IO TargetMachine
-loadTargetMachine opts =
-  do let tname = targetName opts
-     when (isNothing tname) $
-       reportError "No target provided."
-     let target = retrieveTargetMachine $ toTargetMachineID $ fromJust tname
+-- | Returns the target machine ID specified on the command line. Reports error
+-- if no target is specified.
+getSelectedTargetMachineID :: Options -> IO TargetMachineID
+getSelectedTargetMachineID opts =
+  do let tid = targetName opts
+     when (isNothing tid) $
+       reportError "No target machine provided."
+     return $ toTargetMachineID $ fromJust tid
+
+-- | Returns the target machine with given ID. Reports error if no such target
+-- machine exists.
+loadTargetMachine :: TargetMachineID -> IO TargetMachine
+loadTargetMachine tid =
+  do let target = retrieveTargetMachine tid
      when (isNothing target) $
-       reportError $ "Unrecognized target machine: " ++ (show $ fromJust tname)
+       reportError $ "Unrecognized target machine: " ++ (show tid)
      return $ fromJust target
 
 -- | Parses a given JSON string and loads its content. Reports error if this

@@ -124,7 +124,7 @@ data HighLevelMatchParams
         -- ^ The instruction ID of this match.
       , hlMatchPatternID :: PatternID
         -- ^ The pattern ID of this match.
-      , hlMatchMatchID :: MatchID
+      , hlMatchID :: MatchID
         -- ^ The matchset ID of this match.
       , hlMatchOperationsCovered :: [NodeID]
         -- ^ The operations in the function graph which are covered by this
@@ -440,7 +440,7 @@ instance ToJSON HighLevelMatchParams where
   toJSON d =
     object [ "instruction-id"               .= (hlMatchInstructionID d)
            , "pattern-id"                   .= (hlMatchPatternID d)
-           , "match-id"                     .= (hlMatchMatchID d)
+           , "match-id"                     .= (hlMatchID d)
            , "operation-nodes-covered"      .= (hlMatchOperationsCovered d)
            , "data-nodes-defined"           .= (hlMatchDataNodesDefined d)
            , "data-nodes-used"              .= (hlMatchDataNodesUsed d)
