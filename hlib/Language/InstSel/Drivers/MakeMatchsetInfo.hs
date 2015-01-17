@@ -24,7 +24,9 @@ import Language.InstSel.Functions
 import Language.InstSel.TargetMachines
   ( TargetMachine )
 import Language.InstSel.TargetMachines.PatternMatching
-  ( mkMatchsetInfo )
+  ( MatchsetInfo
+  , mkMatchsetInfo
+  )
 import Language.InstSel.Utils.JSON
 
 import Language.InstSel.Utils.IO

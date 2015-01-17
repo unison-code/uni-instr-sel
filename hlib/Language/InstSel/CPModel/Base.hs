@@ -15,7 +15,8 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.CPModel.Base
-  ( BasicBlockParams (..)
+  ( ArrayIndexMapInfo (..)
+  , BasicBlockParams (..)
   , CPModelParams (..)
   , CPSolutionData (..)
   , FunctionGraphParams (..)
@@ -246,6 +247,23 @@ data CPSolutionData
       }
   deriving (Show)
 
+-- | Contains mappings from an array index to some ID. This is used when
+-- generating the CP model instance, where we want all identifiers to be array
+-- indices, which must be contiguous, instead of node IDs, match IDs, register
+-- IDs, etc., which may be sparse.
+data ArrayIndexMapInfo
+  = ArrayIndexMapInfo
+      { ai2MatchIDs :: [MatchID]
+        -- ^ The mappings from array indices (represented as list indies) to
+        -- match IDs.
+      , ai2LabelNodeIDs :: [NodeID]
+        -- ^ The mappings from array indices (represented as list indies) to the
+        -- node IDs of label nodes.
+      , ai2DataNodeIDs :: [NodeID]
+        -- ^ The mappings from array indices (represented as list indies) to the
+        -- node IDs of data nodes.
+      }
+
 
 
 --------------------------------
@@ -385,6 +403,21 @@ instance FromJSON RawPostParams where
       <*> ((v .: "array-index-to-id-maps") >>= (.: "matches"))
       <*> ((v .: "array-index-to-id-maps") >>= (.: "label-nodes"))
       <*> ((v .: "array-index-to-id-maps") >>= (.: "data-nodes"))
+  parseJSON _ = mzero
+
+instance ToJSON ArrayIndexMapInfo where
+  toJSON d =
+    object [ "array-index-to-match-id-maps" .= (ai2MatchIDs d)
+           , "array-index-to-label-node-id-maps" .= (ai2LabelNodeIDs d)
+           , "array-index-to-data-node-id-maps" .= (ai2DataNodeIDs d)
+           ]
+
+instance FromJSON ArrayIndexMapInfo where
+  parseJSON (Object v) =
+    ArrayIndexMapInfo
+      <$> v .: "array-index-to-match-id-maps"
+      <*> v .: "array-index-to-label-node-id-maps"
+      <*> v .: "array-index-to-data-node-id-maps"
   parseJSON _ = mzero
 
 

@@ -17,6 +17,7 @@ module Language.InstSel.Drivers.MakeDispatcher
 where
 
 import Language.InstSel.Drivers.DispatcherTools
+import qualified Language.InstSel.Drivers.MakeArrayIndexMapInfo as MArray
 import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM as MLLVM
 import qualified Language.InstSel.Drivers.MakeMatchsetInfo as MMatch
 
@@ -36,9 +37,13 @@ dispatch a opts
   | a `elem` [MakeFunctionGraphFromLLVM] =
       do content <- loadFunctionFileContent opts
          MLLVM.run a content
-  | a `elem` [MakeMatchset] =
+  | a `elem` [MakeMatchsetInfo] =
       do function <- loadFunctionFromJson opts
          target <- loadTargetMachine opts
          MMatch.run a function target
+  | a `elem` [MakeArrayIndexMapInfo] =
+      do function <- loadFunctionFromJson opts
+         matchset <- loadMatchsetInfoFromJson opts
+         MArray.run a function matchset
   | otherwise =
       reportError "MakeDispatcher: unsupported action"

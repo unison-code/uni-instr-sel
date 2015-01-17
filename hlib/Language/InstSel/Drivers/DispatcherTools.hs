@@ -22,7 +22,7 @@ module Language.InstSel.Drivers.DispatcherTools
   , loadTargetMachine
   , loadFromJson
   , loadFunctionFromJson
-  , loadMatchsetFromJson
+  , loadMatchsetInfoFromJson
   )
 where
 
@@ -112,7 +112,7 @@ loadFunctionFromJson opts =
   do content <- loadFunctionFileContent opts
      loadFromJson content
 
-loadMatchsetFromJson :: Options -> IO MatchsetInfo
-loadMatchsetFromJson opts =
+loadMatchsetInfoFromJson :: Options -> IO MatchsetInfo
+loadMatchsetInfoFromJson opts =
   do content <- loadMatchsetFileContent opts
      loadFromJson content

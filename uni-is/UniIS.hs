@@ -74,7 +74,7 @@ parseArgs =
         &= name "arrays-nodes-map-file"
         &= explicit
         &= typFile
-        &= help "File containing array-index-to-node-ID mapping information."
+        &= help "File containing array-index mapping information."
     , cpModelFile = def
         &= typFile
         &= explicit
@@ -109,12 +109,21 @@ parseArgs =
              , MakeFunctionGraphFromLLVM
                  &= name "make-fun-from-llvm"
                  &= explicit
-                 &= help "Makes a function from an LLVM IR file."
+                 &= help "Constructs a function from an LLVM IR file."
              , MakeMatchsetInfo
                  &= name "make-matchset"
                  &= explicit
-                 &= help ( "Makes the matchset by performing pattern matching "
-                           ++ "the given function and target machine."
+                 &= help ( "Computes the matchset information by performing "
+                           ++ "pattern matching on the given function using "
+                           ++ "the instruction patterns available in the given "
+                           ++ "target machine."
+                         )
+             , MakeArrayIndexMapInfo
+                 &= name "make-array-index-maps"
+                 &= explicit
+                 &= help ( "Computes the array-index mapping information from "
+                           ++ "the given function graph and matchset "
+                           ++ "information."
                          )
              ]
         &= groupname "'make' command flags"

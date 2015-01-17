@@ -67,6 +67,7 @@ data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM
   | MakeMatchsetInfo
+  | MakeArrayIndexMapInfo
   deriving (Eq, Typeable, Data)
 
 data TransformAction

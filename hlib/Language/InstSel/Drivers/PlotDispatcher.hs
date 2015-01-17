@@ -35,14 +35,14 @@ dispatch a opts
   | a == PlotNothing =
       reportError "No plot action provided."
   | a `elem` [PlotFunctionGraph, PlotFunctionCFG, PlotFunctionSSA] =
-      do f <- loadFunctionFromJson opts
-         PFun.run a f
+      do function <- loadFunctionFromJson opts
+         PFun.run a function
   | a `elem` [PlotPatternGraph, PlotPatternCFG, PlotPatternSSA] =
       -- TODO: implement
       undefined
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
-      do f <- loadFunctionFromJson opts
-         m <- loadMatchsetFromJson opts
-         PCov.run a f m
+      do function <- loadFunctionFromJson opts
+         matchset <- loadMatchsetInfoFromJson opts
+         PCov.run a function matchset
   | otherwise =
       reportError "PlotDispatcher: unsupported action"
