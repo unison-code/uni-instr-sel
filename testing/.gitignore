@@ -3,6 +3,7 @@
 *.pdf
 *.dot
 *.json
+*.s
 match-test
 test
 test-llvm
