@@ -68,6 +68,7 @@ data MakeAction
   | MakeFunctionGraphFromLLVM
   | MakePatternMatchset
   | MakeArrayIndexMaplists
+  | MakeHighLevelCPModel
   deriving (Eq, Typeable, Data)
 
 data TransformAction

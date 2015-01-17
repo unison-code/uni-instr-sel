@@ -106,7 +106,7 @@ loadTargetMachine opts =
        reportError "No target provided."
      let target = retrieveTargetMachine $ toTargetMachineID $ fromJust tname
      when (isNothing target) $
-       reportError $ "Unrecognized target: " ++ (show $ fromJust tname)
+       reportError $ "Unrecognized target machine: " ++ (show $ fromJust tname)
      return $ fromJust target
 
 -- | Parses a given JSON string and loads its content. Reports error if this

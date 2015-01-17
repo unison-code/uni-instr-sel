@@ -19,7 +19,6 @@ where
 
 import Language.InstSel.Drivers.Base
 import Language.InstSel.ConstraintModels.ArrayIndexMaplistsMaker
-  ( mkArrayIndexMaplists )
 import Language.InstSel.Functions
   ( Function )
 import Language.InstSel.TargetMachines.PatternMatching

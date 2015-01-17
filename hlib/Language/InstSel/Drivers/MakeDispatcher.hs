@@ -23,6 +23,8 @@ import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM
   as MakeFunctionFromLLVM
 import qualified Language.InstSel.Drivers.MakePatternMatchset
   as MakePatternMatchset
+import qualified Language.InstSel.Drivers.MakeCPModel
+  as MakeCPModel
 
 
 
@@ -48,5 +50,9 @@ dispatch a opts
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          MakeArrayIndexMaplists.run a function matchset
+  | a `elem` [MakeHighLevelCPModel] =
+      do function <- loadFunctionFromJson opts
+         matchset <- loadPatternMatchsetFromJson opts
+         MakeCPModel.run a function matchset
   | otherwise =
       reportError "MakeDispatcher: unsupported action"
