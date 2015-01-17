@@ -18,6 +18,7 @@ where
 
 import Language.InstSel.Drivers.DispatcherTools
 import qualified Language.InstSel.Drivers.MakeFunctionFromLLVM as MLLVM
+import qualified Language.InstSel.Drivers.MakeMatchset as MMatch
 
 
 
@@ -35,5 +36,9 @@ dispatch a opts
   | a `elem` [MakeFunctionGraphFromLLVM] =
       do content <- loadFunctionFileContent opts
          MLLVM.run a content
+  | a `elem` [MakeMatchset] =
+      do function <- loadFunctionFromJson opts
+         target <- loadTargetMachine opts
+         MMatch.run a function target
   | otherwise =
       reportError "MakeDispatcher: unsupported action"
