@@ -72,6 +72,7 @@ module Language.InstSel.Graphs.Base
   , findFNInMatch
   , findFNsInMapping
   , findFNsInMatch
+  , findNodesWithNodeID
   , findPNInMapping
   , findPNInMatch
   , findPNsInMapping
@@ -93,8 +94,6 @@ module Language.InstSel.Graphs.Base
   , getNeighbors
   , getNodeID
   , getNodeIDs
-  , getNodeWithNodeID
-  , getNodesWithNodeID
   , getNodeLabel
   , getNodeType
   , getNumNodes
@@ -611,8 +610,8 @@ delEdge :: Edge -> Graph -> Graph
 delEdge (Edge e) (Graph g) = Graph (I.delLEdge e g)
 
 -- | Gets a list of nodes with the same node ID.
-getNodesWithNodeID :: Graph -> NodeID -> [Node]
-getNodesWithNodeID g i = filter ((i ==) . getNodeID) $ getAllNodes g
+findNodesWithNodeID :: Graph -> NodeID -> [Node]
+findNodesWithNodeID g i = filter ((i ==) . getNodeID) $ getAllNodes g
 
 -- | Updates the node label of an already existing node.
 updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
@@ -950,10 +949,6 @@ getSourceNode (Graph g) (Edge (n, _, _)) = fromJust $ getNodeWithIntNodeID g n
 -- | Gets the target node of an edge.
 getTargetNode :: Graph -> Edge -> Node
 getTargetNode (Graph g) (Edge (_, n, _)) = fromJust $ getNodeWithIntNodeID g n
-
--- | Gets the nodes that matches a given node ID.
-getNodeWithNodeID :: Graph -> NodeID -> [Node]
-getNodeWithNodeID g nid = filter (\n -> getNodeID n == nid) (getAllNodes g)
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
