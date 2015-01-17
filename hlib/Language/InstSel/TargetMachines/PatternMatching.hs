@@ -45,8 +45,8 @@ import Language.InstSel.Utils.JSON
 -- which target machine the matchset concerns, along the match data.
 data PatternMatchset
   = PatternMatchset
-      { msiTarget :: TargetMachineID
-      , msiMatches :: [PatternMatch]
+      { pmTarget :: TargetMachineID
+      , pmMatches :: [PatternMatch]
       }
   deriving (Show)
 
@@ -56,10 +56,10 @@ data PatternMatchset
 -- of @PatternMatch@.
 data PatternMatch
   = PatternMatch
-      { mdInstrID :: InstructionID
-      , mdPatternID :: PatternID
-      , mdMatchID :: MatchID
-      , mdMatch :: Match NodeID
+      { pmInstrID :: InstructionID
+      , pmPatternID :: PatternID
+      , pmMatchID :: MatchID
+      , pmMatch :: Match NodeID
       }
   deriving (Show)
 
@@ -78,8 +78,8 @@ instance FromJSON PatternMatchset where
 
 instance ToJSON PatternMatchset where
   toJSON m =
-    object [ "target-machine-id" .= (msiTarget m)
-           , "match-data"        .= (msiMatches m)
+    object [ "target-machine-id" .= (pmTarget m)
+           , "match-data"        .= (pmMatches m)
            ]
 
 instance FromJSON PatternMatch where
@@ -93,10 +93,10 @@ instance FromJSON PatternMatch where
 
 instance ToJSON PatternMatch where
   toJSON m =
-    object [ "instr-id"   .= (mdInstrID m)
-           , "pattern-id" .= (mdPatternID m)
-           , "match-id"   .= (mdMatchID m)
-           , "match"      .= (mdMatch m)
+    object [ "instr-id"   .= (pmInstrID m)
+           , "pattern-id" .= (pmPatternID m)
+           , "match-id"   .= (pmMatchID m)
+           , "match"      .= (pmMatch m)
            ]
 
 
@@ -107,10 +107,11 @@ instance ToJSON PatternMatch where
 
 -- | Produces the pattern matchset for a given function and target machine.
 mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
-mkPatternMatchset f tm =
-  let mdata = concatMap (processInstr f) (tmInstructions tm)
-      proper_mdata = map (\(m, mid) -> m { mdMatchID = mid }) $ zip mdata [0..]
-  in PatternMatchset { msiTarget = tmID tm, msiMatches = proper_mdata }
+mkPatternMatchset function target =
+  let matches = concatMap (processInstr function) (tmInstructions target)
+      proper_matches =
+        map (\(m, mid) -> m { pmMatchID = mid }) $ zip matches [0..]
+  in PatternMatchset { pmTarget = tmID target, pmMatches = proper_matches }
 
 processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =
@@ -123,16 +124,16 @@ processInstrPattern
   -> InstructionID
   -> InstrPattern
   -> [PatternMatch]
-processInstrPattern f iid p =
-  let fg = osGraph $ functionOS f
-      pg = osGraph $ patOS p
+processInstrPattern function iid pattern =
+  let fg = osGraph $ functionOS function
+      pg = osGraph $ patOS pattern
       matches = map convertMatchN2ID $ findMatches fg pg
   in map
        ( \m -> PatternMatch
-                 { mdInstrID = iid
-                 , mdPatternID = patID p
-                 , mdMatchID = 0
-                 , mdMatch = m
+                 { pmInstrID = iid
+                 , pmPatternID = patID pattern
+                 , pmMatchID = 0
+                 , pmMatch = m
                  }
        )
        matches

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.ConstraintModels.SolutionTransformer
+-- Module      : Language.InstSel.ConstraintModels.SolutionHandler
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.ConstraintModels.SolutionTransformer
+module Language.InstSel.ConstraintModels.SolutionHandler
   ( raiseLowLevelSolution )
 where
 

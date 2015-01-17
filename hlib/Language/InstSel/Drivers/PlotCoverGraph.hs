@@ -40,20 +40,20 @@ import Data.Maybe
 run :: PlotAction -> Function -> PatternMatchset -> IO [Output]
 
 run PlotCoverAllMatches function matchset =
-  do let matches = map mdMatch (msiMatches matchset)
+  do let matches = map pmMatch (pmMatches matchset)
      dot <- mkCoveragePlot function matches
      return [toOutputWithoutID dot]
 
 run PlotCoverPerMatch function matchset =
-  do let matches = msiMatches matchset
+  do let matches = pmMatches matchset
      mapM
        ( \m ->
-          do dot <- mkCoveragePlot function [mdMatch m]
-             let oid = show (mdInstrID m)
+          do dot <- mkCoveragePlot function [pmMatch m]
+             let oid = show (pmInstrID m)
                        ++ "-" ++
-                       show (mdPatternID m)
+                       show (pmPatternID m)
                        ++ "-" ++
-                       show (mdMatchID m)
+                       show (pmMatchID m)
              return $ toOutput oid dot
        )
        matches

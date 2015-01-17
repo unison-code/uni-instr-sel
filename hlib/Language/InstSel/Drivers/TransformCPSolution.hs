@@ -20,7 +20,7 @@ import Language.InstSel.Drivers.Base
 import Language.InstSel.Drivers.DispatcherTools
   ( loadFromJson )
 import Language.InstSel.ConstraintModels
-import Language.InstSel.ConstraintModels.SolutionTransformer
+import Language.InstSel.ConstraintModels.SolutionHandler
 import Language.InstSel.Utils.JSON
   ( toJson )
 
