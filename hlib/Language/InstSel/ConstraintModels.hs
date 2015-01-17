@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel
+-- Module      : Language.InstSel.ConstraintModels
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.CPModel
-  ( module Language.InstSel.CPModel.Base )
+module Language.InstSel.ConstraintModels
+  ( module Language.InstSel.ConstraintModels.Base )
 where
 
-import Language.InstSel.CPModel.Base
+import Language.InstSel.ConstraintModels.Base

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel.Base
+-- Module      : Language.InstSel.ConstraintModels.Base
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
-module Language.InstSel.CPModel.Base
+module Language.InstSel.ConstraintModels.Base
   ( ArrayIndexMapInfo (..)
   , BasicBlockParams (..)
   , CPModelParams (..)

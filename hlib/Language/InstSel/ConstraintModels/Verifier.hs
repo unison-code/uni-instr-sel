@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel.Verifier
+-- Module      : Language.InstSel.ConstraintModels.Verifier
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.CPModel.Verifier
+module Language.InstSel.ConstraintModels.Verifier
   ( Errors (..)
   , hasErrors
   , printErrors
@@ -20,7 +20,7 @@ module Language.InstSel.CPModel.Verifier
   )
 where
 
-import Language.InstSel.CPModel.Base
+import Language.InstSel.ConstraintModels.Base
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
 

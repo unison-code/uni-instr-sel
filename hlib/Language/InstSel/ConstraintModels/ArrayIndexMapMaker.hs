@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel.ArrayIndexMapMaker
+-- Module      : Language.InstSel.ConstraintModels.ArrayIndexMapMaker
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,11 +14,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.CPModel.ArrayIndexMapMaker
+module Language.InstSel.ConstraintModels.ArrayIndexMapMaker
   ( mkArrayIndexMapInfo )
 where
 
-import Language.InstSel.CPModel.Base
+import Language.InstSel.ConstraintModels.Base
 import Language.InstSel.Graphs
 import Language.InstSel.Functions
   ( Function (..) )

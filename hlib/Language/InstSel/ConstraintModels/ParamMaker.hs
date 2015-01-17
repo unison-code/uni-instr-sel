@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.CPModel.ParamMaker
+-- Module      : Language.InstSel.ConstraintModels.ParamMaker
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -16,15 +16,15 @@
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
-module Language.InstSel.CPModel.ParamMaker
+module Language.InstSel.ConstraintModels.ParamMaker
   ( mkParams )
 where
 
 import Language.InstSel.Constraints
-import Language.InstSel.CPModel
+import Language.InstSel.ConstraintModels
   hiding
   ( bbLabel )
-import qualified Language.InstSel.CPModel as C
+import qualified Language.InstSel.ConstraintModels as C
   ( bbLabel )
 import Language.InstSel.Graphs
   hiding

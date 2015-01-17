@@ -18,7 +18,7 @@ module Language.InstSel.Drivers.MakeArrayIndexMapInfo
 where
 
 import Language.InstSel.Drivers.Base
-import Language.InstSel.CPModel.ArrayIndexMapMaker
+import Language.InstSel.ConstraintModels.ArrayIndexMapMaker
   ( mkArrayIndexMapInfo )
 import Language.InstSel.Functions
   ( Function )
