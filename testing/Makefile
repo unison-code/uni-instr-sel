@@ -8,7 +8,6 @@ GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
 UNI      := ../uni-is/uni-is
-PS       := ../param-splitter/param-splitter
 SOLVER   := ../solvers/minizinc/solver
 PRETTIFY := ../tools/prettify-json
 
@@ -27,37 +26,46 @@ uni-is:
 	$(PRETTIFY) $< > $@
 
 %.f.json: %.ll
-	$(UNI) process-llvm-ir -f $< > $@
+	$(UNI) make --make-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json
-	$(UNI) transform --copy-extend-fg -f $< > $@
+	$(UNI) transform --copy-extend-fun -f $< -o $@
 
 %.be.f.json: %.f.json
-	$(UNI) transform --branch-extend-fg -f $< > $@
+	$(UNI) transform --branch-extend-fun -f $< -o $@
 
 %.mips32.m.json: %.f.json
-	$(UNI) pattern-match -t mips32.ce -f $< > $@
+	$(UNI) make --make-pattern-matchset -t mips32.ce -f $< -o $@
 
-%.params.json: %.f.json %.mips32.m.json
-	$(UNI) make-cp-model -f $*.f.json --match-file $*.mips32.m.json > $@
+%.hl.model.json: %.f.json %.mips32.m.json
+	$(UNI) make --make-hl-cp-model -f $*.f.json -p $*.mips32.m.json -o $@
 
-%.model.json %.post.json: %.params.json
-	$(PS) --mpf=$*.model.json --ppf=$*.post.json $<
+%.aimaps.json: %.f.json %.mips32.m.json
+	$(UNI) make --make-array-index-maplists \
+      -f $*.f.json -p $*.mips32.m.json -o $@
 
-%.sol.json: %.model.json
+%.ll.model.json: %.hl.model.json %.aimaps.json
+	$(UNI) transform --lower-hl-cp-model \
+      -m $*.hl.model.json-o -a $*.aimaps.json -o $@
+
+%.ll.sol.json: %.ll.model.json
 	$(SOLVER) -o $@ $<
 
-%.s: %.sol.json %.post.json
-	$(UNI) emit-asm -s $*.sol.json -p $*.post.json > $@
+%.hl.sol.json: %.ll.sol.json %.aimaps.json
+	$(UNI) transform --raise-ll-cp-solution \
+      -s $*.ll.sol.json -a $*.aimaps.json -o $@
+
+%.s: %.hl.model.json %.hl.sol.json
+	$(UNI) make -m $*.hl.model.json -s $*.hl.sol.json -o $@
 
 %.f.dot: %.f.json
-	$(UNI) plot --plot-fg -f $< > $@
+	$(UNI) plot --plot-fg -f $< -o $@
 
 %.mips32.cov.dot: %.f.json %.mips32.m.json
-	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.m.json > $@
+	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.m.json -o $@
 
 %.mips32.ce.cov.dot: %.ce.f.json %.mips32.ce.m.json
-	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.ce.m.json > $@
+	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.ce.m.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
