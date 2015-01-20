@@ -4,6 +4,7 @@
 *.dot
 *.json
 *.s
+*.ll
 match-test
 test
 test-llvm
