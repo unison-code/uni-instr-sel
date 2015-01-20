@@ -40,6 +40,7 @@ import System.Console.CmdArgs.Text
 
 import Data.Maybe
   ( fromJust
+  , isJust
   , isNothing
   )
 import System.FilePath.Posix
@@ -245,7 +246,8 @@ emitToStdout = putStrLn . oData
 emitToFile :: FilePath -> Output -> IO ()
 emitToFile fp o =
   let (fname, ext) = splitExtension fp
-      filename = fname ++ "." ++ oID o ++ ext
+      oid = oID o
+      filename = fname ++ if isJust oid then "." ++ fromJust oid else "" ++ ext
   in writeFile filename (oData o)
 
 

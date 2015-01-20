@@ -17,10 +17,10 @@
 module Language.InstSel.Drivers.Base
   ( CheckAction (..)
   , MakeAction (..)
-  , Options (..)
-  , Output (..)
   , PlotAction (..)
   , TransformAction (..)
+  , Options (..)
+  , Output (..)
   , toOutput
   , toOutputWithoutID
   )
@@ -56,7 +56,7 @@ data Options
 -- | A representation of the output produced by the drivers.
 data Output
   = Output
-      { oID :: String
+      { oID :: Maybe String
         -- ^ A unique string that identifies this output. If the output is to be
         -- written to file, the ID will be suffixed to the file name.
       , oData :: String
@@ -107,7 +107,7 @@ toOutputWithoutID
   :: String
      -- ^ The output string.
   -> Output
-toOutputWithoutID = toOutput ""
+toOutputWithoutID = toOutput' Nothing
 
 -- | Creates an output.
 toOutput
@@ -116,4 +116,7 @@ toOutput
   -> String
      -- ^ The output string.
   -> Output
-toOutput oid s = Output { oID = oid, oData = s }
+toOutput oid s = toOutput' (Just oid) s
+
+toOutput' :: Maybe String -> String -> Output
+toOutput' oid s = Output { oID = oid, oData = s }
