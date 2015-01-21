@@ -209,11 +209,15 @@ data LowLevelModel
       , llFunDataNodeLabelDefs :: [Maybe ArrayIndex]
         -- ^ The array index of the label (if any) where a particular data node
         -- in the function graph must be defined. An index into the list
-        -- corresponds to the array index of a particular data node.
+        -- corresponds to the array index of a particular data node. If there is
+        -- no such constraint, the corresponding value in the list will be
+        -- @Nothing@.
       , llFunStateNodeLabelDefs :: [Maybe ArrayIndex]
         -- ^ The array index of the label (if any) where a particular state node
         -- in the function graph must be defined. An index into the list
-        -- corresponds to the array index of a particular state node.
+        -- corresponds to the array index of a particular state node. If there
+        -- is no such constraint, the corresponding value in the list will be
+        -- @Nothing@.
       , llFunEssentialOpNodes :: [ArrayIndex]
         -- ^ Operation nodes that are essential, meaning they *must* be
         -- covered. An index into the list corresponds to the array index of a

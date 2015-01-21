@@ -160,6 +160,12 @@ parseArgs =
                  &= help ( "Raises a low-level CP model solution to a "
                            ++ "high-level CP model solution."
                          )
+             , LowerHighLevelCPModel
+                 &= name "lower-hl-cp-solution"
+                 &= explicit
+                 &= help ( "Lowers a high-level CP model instance to a "
+                           ++ "low-level CP model instance."
+                         )
              ]
         &= groupname "'transform' command flags"
     , plotAction =
