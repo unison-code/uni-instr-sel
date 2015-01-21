@@ -59,13 +59,10 @@ uni-is:
 	$(UNI) make --generate-asm -m $*.hl.model.json -s $*.hl.sol.json -o $@
 
 %.f.dot: %.f.json
-	$(UNI) plot --plot-fg -f $< -o $@
+	$(UNI) plot --plot-fun-graph -f $< -o $@
 
 %.mips32.cov.dot: %.f.json %.mips32.m.json
-	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.m.json -o $@
-
-%.mips32.ce.cov.dot: %.ce.f.json %.mips32.ce.m.json
-	$(UNI) plot --plot-fg-cov -f $< --match-file $*.mips32.ce.m.json -o $@
+	$(UNI) plot --plot-cover-all-matches -f $< -m $*.mips32.m.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
