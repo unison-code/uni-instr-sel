@@ -18,11 +18,13 @@ module Language.InstSel.Drivers.MakeArrayIndexMaplists
 where
 
 import Language.InstSel.Drivers.Base
+import Language.InstSel.Drivers.DispatcherTools
+  ( loadTargetMachine )
 import Language.InstSel.ConstraintModels.ArrayIndexMaplistsMaker
 import Language.InstSel.Functions
   ( Function )
 import Language.InstSel.TargetMachines.PatternMatching
-  ( PatternMatchset )
+  ( PatternMatchset (..) )
 import Language.InstSel.Utils.JSON
 
 import Language.InstSel.Utils.IO
@@ -37,7 +39,8 @@ import Language.InstSel.Utils.IO
 run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 
 run MakeArrayIndexMaplists function matchset =
-  do let mapset = mkArrayIndexMaplists function matchset
+  do tm <- loadTargetMachine (pmTarget matchset)
+     let mapset = mkArrayIndexMaplists function tm (pmMatches matchset)
      return [toOutputWithoutID $ toJson mapset]
 
 run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"

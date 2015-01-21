@@ -11,7 +11,10 @@
 --------------------------------------------------------------------------------
 
 module Language.InstSel.ConstraintModels
-  ( module Language.InstSel.ConstraintModels.Base )
+  ( module Language.InstSel.ConstraintModels.Base
+  , module Language.InstSel.ConstraintModels.IDs
+  )
 where
 
 import Language.InstSel.ConstraintModels.Base
+import Language.InstSel.ConstraintModels.IDs

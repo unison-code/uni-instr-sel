@@ -9,29 +9,31 @@
 -- Portability : portable
 --
 -- Contains the data structures representing CP model instances and solutions to
--- these instances. There are two kinds of instances and solutions: high-level
--- versions, and low-level versions. In a high-level version, all IDs (such as
--- node IDs, match IDs, register IDs, etc.) appearing the model are left
--- intact. In a low-level version, these IDs are instead represented as array
--- indices. The reason for having a low-level version is because this simplifies
--- the implementation of the solver backend; an ID is often used to identify a
--- specific domain variable, which are typically organized as domain variable
--- arrays, but since IDs are not required to be contiguous they cannot be used
--- as array indices directly. By lowering a high-level version into a low-level
--- version, the IDs are converted into corresponding array indices such that the
--- array indices later can be converted back into the original IDs. In addition,
--- information appearing in the high-level CP model instance that is not
--- strictly needed for solving is removed from the low-level CP model instance.
--- Low-level CP model instances also have a flatter hierarchy than their
--- high-level counterparts.
+-- these instances.
+--
+-- There are two kinds of instances and solutions: high-level versions, and
+-- low-level versions. In a high-level version, all IDs (such as node IDs, match
+-- IDs, register IDs, etc.) appearing the model are left intact. In a low-level
+-- version, these IDs are instead represented as array indices. The reason for
+-- having a low-level version is because this simplifies the implementation of
+-- the solver backend; an ID is often used to identify a specific domain
+-- variable, which are typically organized as domain variable arrays, but since
+-- IDs are not required to be contiguous they cannot be used as array indices
+-- directly. By lowering a high-level version into a low-level version, the IDs
+-- are converted into corresponding array indices such that the array indices
+-- later can be converted back into the original IDs.
+--
+-- In addition, low-level CP model instances have a flatter hierarchy than their
+-- high-level counterparts, and information appearing in the high-level CP model
+-- instance that is not strictly needed for solving is removed from the
+-- low-level CP model instance.
 --
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.ConstraintModels.Base
-  ( ArrayIndex
-  , ArrayIndexMaplists (..)
+  ( ArrayIndexMaplists (..)
   , HighLevelModel (..)
   , HighLevelBasicBlockParams (..)
   , HighLevelFunctionParams (..)
@@ -40,9 +42,10 @@ module Language.InstSel.ConstraintModels.Base
   , HighLevelSolution (..)
   , LowLevelModel (..)
   , LowLevelSolution (..)
-  , toArrayIndex
   )
 where
+
+import Language.InstSel.ConstraintModels.IDs
 
 import Language.InstSel.Constraints
 import Language.InstSel.Graphs
@@ -55,10 +58,6 @@ import Language.InstSel.Functions
   , ExecFreq (..)
   )
 import Language.InstSel.TargetMachines.IDs
-import Language.InstSel.Utils
-  ( Natural
-  , toNatural
-  )
 import Language.InstSel.Utils.JSON
 
 
@@ -66,10 +65,6 @@ import Language.InstSel.Utils.JSON
 --------------
 -- Data types
 --------------
-
--- | A type synonym for array indices.
-type ArrayIndex
-  = Natural
 
 -- | Contains a high-level CP model.
 data HighLevelModel
@@ -356,12 +351,15 @@ data ArrayIndexMaplists
       , ai2LabelNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of label nodes.
-      , ai2RegisterIDs :: [RegisterID]
-        -- ^ The list of mappings from array indices (represented as list
-        -- indices) to register IDs.
       , ai2MatchIDs :: [MatchID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to match IDs.
+      , ai2RegisterIDs :: [RegisterID]
+        -- ^ The list of mappings from array indices (represented as list
+        -- indices) to register IDs.
+      , ai2InstructionIDs :: [InstructionID]
+        -- ^ The list of mappings from array indices (represented as list
+        -- indices) to instruction IDs.
       }
 
 
@@ -389,26 +387,26 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operation-nodes"
-      <*> v .: "essential-op-nodes"
       <*> v .: "data-nodes"
       <*> v .: "state-nodes"
       <*> v .: "label-nodes"
-      <*> v .: "def-place-edges"
       <*> v .: "root-label"
       <*> v .: "bb-params"
+      <*> v .: "def-place-edges"
+      <*> v .: "essential-op-nodes"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operation-nodes"    .= (hlFunOpNodes d)
-           , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
            , "data-nodes"         .= (hlFunDataNodes d)
            , "state-nodes"        .= (hlFunStateNodes d)
            , "label-nodes"        .= (hlFunLabelNodes d)
-           , "def-place-edges"    .= (hlFunDefPlaceEdges d)
            , "root-label"         .= (hlFunRootLabelNode d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
+           , "def-place-edges"    .= (hlFunDefPlaceEdges d)
+           , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
            , "constraints"        .= (hlFunConstraints d)
            ]
 
@@ -486,10 +484,10 @@ instance ToJSON HighLevelMachineParams where
 instance FromJSON LowLevelModel where
   parseJSON (Object v) =
     LowLevelModel
-      <$> v .: "num-fun-onodes"
-      <*> v .: "num-fun-dnodes"
-      <*> v .: "num-fun-snodes"
-      <*> v .: "num-fun-lnodes"
+      <$> v .: "fun-num-onodes"
+      <*> v .: "fun-num-dnodes"
+      <*> v .: "fun-num-snodes"
+      <*> v .: "fun-num-lnodes"
       <*> v .: "fun-root-lnode"
       <*> v .: "fun-label-domsets"
       <*> v .: "fun-bb-exec-freqs"
@@ -514,10 +512,10 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "num-fun-onodes"         .= (llNumFunOpNodes m)
-           , "num-fun-dnodes"         .= (llNumFunDataNodes m)
-           , "num-fun-snodes"         .= (llNumFunStateNodes m)
-           , "num-fun-lnodes"         .= (llNumFunLabelNodes m)
+    object [ "fun-num-onodes"         .= (llNumFunOpNodes m)
+           , "fun-num-dnodes"         .= (llNumFunDataNodes m)
+           , "fun-num-snodes"         .= (llNumFunStateNodes m)
+           , "fun-num-lnodes"         .= (llNumFunLabelNodes m)
            , "fun-root-lnode"         .= (llFunRootLabel m)
            , "fun-label-domsets"      .= (llFunDomsets m)
            , "fun-bb-exec-freqs"      .= (llFunBBExecFreqs m)
@@ -576,12 +574,13 @@ instance FromJSON LowLevelSolution where
 
 instance ToJSON ArrayIndexMaplists where
   toJSON d =
-    object [ "array-index-to-op-node-id-maps"  .= (ai2OpNodeIDs d)
-           , "array-index-to-data-node-id-maps"  .= (ai2DataNodeIDs d)
+    object [ "array-index-to-op-node-id-maps"     .= (ai2OpNodeIDs d)
+           , "array-index-to-data-node-id-maps"   .= (ai2DataNodeIDs d)
            , "array-index-to-state-node-id-maps"  .= (ai2StateNodeIDs d)
-           , "array-index-to-label-node-id-maps" .= (ai2LabelNodeIDs d)
-           , "array-index-to-register-id-maps"   .= (ai2RegisterIDs d)
-           , "array-index-to-match-id-maps"      .= (ai2MatchIDs d)
+           , "array-index-to-label-node-id-maps"  .= (ai2LabelNodeIDs d)
+           , "array-index-to-match-id-maps"       .= (ai2MatchIDs d)
+           , "array-index-to-register-id-maps"    .= (ai2RegisterIDs d)
+           , "array-index-to-instruction-id-maps" .= (ai2InstructionIDs d)
            ]
 
 instance FromJSON ArrayIndexMaplists where
@@ -591,16 +590,7 @@ instance FromJSON ArrayIndexMaplists where
       <*> v .: "array-index-to-data-node-id-maps"
       <*> v .: "array-index-to-state-node-id-maps"
       <*> v .: "array-index-to-label-node-id-maps"
-      <*> v .: "array-index-to-register-id-maps"
       <*> v .: "array-index-to-match-id-maps"
+      <*> v .: "array-index-to-register-id-maps"
+      <*> v .: "array-index-to-instruction-id-maps"
   parseJSON _ = mzero
-
-
-
--------------
--- Functions
--------------
-
--- | Converts an @Integral@ to an @ArrayIndex@.
-toArrayIndex :: (Integral i) => i -> ArrayIndex
-toArrayIndex = toNatural

@@ -124,16 +124,6 @@ class ConstraintParser {
     parseInstructionExpr(std::string& str);
 
     /**
-     * Parses a pattern expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    PatternExpr*
-    parsePatternExpr(std::string& str);
-
-    /**
      * Parses a label expression.
      *
      * @param str

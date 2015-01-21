@@ -44,7 +44,6 @@ class MatchExpr;
 class InstructionExpr;
 class IntExpr;
 class NodeExpr;
-class PatternExpr;
 class SetElemExpr;
 class SetExpr;
 
@@ -233,7 +232,7 @@ class NodeExpr : public Expr {
 };
 
 /**
- * Base class for a pattern instance expression.
+ * Base class for a match expression.
  */
 class MatchExpr : public Expr {
   public:
@@ -255,19 +254,6 @@ class InstructionExpr : public Expr {
      */
     virtual
     ~InstructionExpr(void)
-    =0;
-};
-
-/**
- * Base class for a pattern expression.
- */
-class PatternExpr : public Expr {
-  public:
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~PatternExpr(void)
     =0;
 };
 
@@ -774,7 +760,7 @@ class DataNodeIsAnIntConstantExpr
 
 /**
  * Expression so that a data node represents an intermediate data value, which
- * cannot be reused by other pattern instances.
+ * cannot be reused by other matches.
  */
 class DataNodeIsIntermediateExpr
     : public UnaryExpr<BoolExpr, DataNodeIsIntermediateExpr, NodeExpr>
@@ -804,7 +790,7 @@ class DataNodeIsIntermediateExpr
 };
 
 /**
- * Expression to say that a particular pattern instance is selected.
+ * Expression to say that a particular match is selected.
  */
 class MatchIsSelectedExpr
     : public UnaryExpr<BoolExpr, MatchIsSelectedExpr, MatchExpr>
@@ -1017,30 +1003,6 @@ class NodeToNumExpr : public UnaryExpr<NumExpr, NodeToNumExpr, NodeExpr> {
     static const std::string STRNAME;
 };
 
-/**
- * Converts a pattern instance into a numerical expression.
- */
-class PatternToNumExpr
-    : public UnaryExpr<NumExpr, PatternToNumExpr, PatternExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    PatternToNumExpr(const PatternExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~PatternToNumExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
 
 /**
  * Converts a instance into a numerical expression.
@@ -1143,11 +1105,10 @@ class RegisterToNumExpr
 };
 
 /**
- * Represents the distance between a pattern instance and a label. The distance
- * starts from the end of the instruction represented by the pattern and stops
- * at the beginning of the first instruction within the basic block represented
- * by the label. The distance is negative if the label appears before the
- * pattern.
+ * Represents the distance between a match and a label. The distance starts from
+ * the end of the instruction represented by the match and stops at the
+ * beginning of the first instruction within the basic block represented by the
+ * label. The distance is negative if the label appears before the match.
  */
 class DistanceBetweenMatchAndLabelExpr
     : public BinaryExpr<NumExpr,
@@ -1177,7 +1138,7 @@ class DistanceBetweenMatchAndLabelExpr
 };
 
 /**
- * Introduces a node ID to be part of an expression.
+ * Introduces the ID of a node to be part of an expression.
  */
 class ANodeIDExpr : public WithStrName<NodeExpr, ANodeIDExpr> {
   public:
@@ -1220,7 +1181,7 @@ class ANodeIDExpr : public WithStrName<NodeExpr, ANodeIDExpr> {
 };
 
 /**
- * Introduces a node array index to be part of an expression.
+ * Introduces the array index of a node to be part of an expression.
  */
 class ANodeArrayIndexExpr
     : public WithStrName<NodeExpr, ANodeArrayIndexExpr>
@@ -1265,7 +1226,7 @@ class ANodeArrayIndexExpr
 };
 
 /**
- * Introduces a pattern instance ID to be part of an expression.
+ * Introduces the ID of a match to be part of an expression.
  */
 class AMatchIDExpr
     : public WithStrName<MatchExpr, AMatchIDExpr>
@@ -1310,7 +1271,7 @@ class AMatchIDExpr
 };
 
 /**
- * Introduces a node array index to be part of an expression.
+ * Introduces the array index of a match to be part of an expression.
  */
 class AMatchArrayIndexExpr
     : public WithStrName<MatchExpr, AMatchArrayIndexExpr>
@@ -1355,7 +1316,7 @@ class AMatchArrayIndexExpr
 };
 
 /**
- * Introduces an instruction ID to be part of an expression.
+ * Introduces the ID of an instruction to be part of an expression.
  */
 class AnInstructionIDExpr
     : public WithStrName<InstructionExpr, AnInstructionIDExpr>
@@ -1400,31 +1361,33 @@ class AnInstructionIDExpr
 };
 
 /**
- * Introduces a label ID to be part of an expression.
+ * Introduces the array index of a instruction to be part of an expression.
  */
-class APatternIDExpr : public WithStrName<PatternExpr, APatternIDExpr> {
+class AnInstructionArrayIndexExpr
+    : public WithStrName<InstructionExpr, AnInstructionArrayIndexExpr>
+{
   public:
     /**
      * \copydoc Expr::Expr()
      *
-     * @param id
-     *        The pattern ID.
+     * @param i
+     *        The instruction array index.
      */
-    APatternIDExpr(const ID& id);
+    AnInstructionArrayIndexExpr(const ArrayIndex& i);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~APatternIDExpr(void);
+    ~AnInstructionArrayIndexExpr(void);
 
     /**
-     * Gets the pattern ID.
+     * Gets the instruction array index.
      *
-     * @returns The ID.
+     * @returns The array index.
      */
-    ID
-    getID(void) const;
+    ArrayIndex
+    getArrayIndex(void) const;
 
     /**
      * \copydoc Constraint::toLisp() const
@@ -1439,54 +1402,11 @@ class APatternIDExpr : public WithStrName<PatternExpr, APatternIDExpr> {
     static const std::string STRNAME;
 
   private:
-    ID id_;
+    ArrayIndex i_;
 };
 
 /**
- * Introduces a label ID to be part of an expression.
- */
-class ALabelIDExpr : public WithStrName<LabelExpr, ALabelIDExpr> {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param id
-     *        The label ID.
-     */
-    ALabelIDExpr(const ID& id);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~ALabelIDExpr(void);
-
-    /**
-     * Gets the label ID.
-     *
-     * @returns The ID.
-     */
-    ID
-    getID(void) const;
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-
-  private:
-    ID id_;
-};
-
-/**
- * Introduces a register ID to be part of an expression.
+ * Introduces the ID of a register to be part of an expression.
  */
 class ARegisterIDExpr : public WithStrName<RegisterExpr, ARegisterIDExpr> {
   public:
@@ -1529,7 +1449,7 @@ class ARegisterIDExpr : public WithStrName<RegisterExpr, ARegisterIDExpr> {
 };
 
 /**
- * Introduces a register array index to be part of an expression.
+ * Introduces the array index of a register to be part of an expression.
  */
 class ARegisterArrayIndexExpr
     : public WithStrName<RegisterExpr, ARegisterArrayIndexExpr>
@@ -1574,7 +1494,7 @@ class ARegisterArrayIndexExpr
 };
 
 /**
- * Represents the pattern instance where this is declared.
+ * Represents the match where this is declared.
  */
 class ThisMatchExpr
     : public WithStrName<MatchExpr, ThisMatchExpr>
@@ -1605,7 +1525,7 @@ class ThisMatchExpr
 };
 
 /**
- * Represents the pattern instance which covers a certain operation node.
+ * Represents the match which covers a certain operation node.
  */
 class CovererOfOperationNodeExpr
     : public UnaryExpr<MatchExpr, CovererOfOperationNodeExpr, NodeExpr>
@@ -1630,7 +1550,7 @@ class CovererOfOperationNodeExpr
 };
 
 /**
- * Represents the pattern instance which defines a certain data node.
+ * Represents the match which defines a certain data node.
  */
 class DefinerOfDataNodeExpr
     : public UnaryExpr<MatchExpr, DefinerOfDataNodeExpr, NodeExpr>
@@ -1655,7 +1575,7 @@ class DefinerOfDataNodeExpr
 };
 
 /**
- * Represents the pattern instance which defines a certain state node.
+ * Represents the match which defines a certain state node.
  */
 class DefinerOfStateNodeExpr
     : public UnaryExpr<MatchExpr, DefinerOfStateNodeExpr, NodeExpr>
@@ -1680,22 +1600,22 @@ class DefinerOfStateNodeExpr
 };
 
 /**
- * Represents the instruction to which a pattern belongs.
+ * Represents the instruction to which a match belongs.
  */
-class InstructionOfPatternExpr
-    : public UnaryExpr<InstructionExpr, InstructionOfPatternExpr, PatternExpr>
+class InstructionOfMatchExpr
+    : public UnaryExpr<InstructionExpr, InstructionOfMatchExpr, MatchExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    InstructionOfPatternExpr(const PatternExpr* expr);
+    InstructionOfMatchExpr(const MatchExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~InstructionOfPatternExpr(void);
+    ~InstructionOfMatchExpr(void);
 
   public:
     /**
@@ -1705,32 +1625,7 @@ class InstructionOfPatternExpr
 };
 
 /**
- * Represents the pattern to which a pattern instance is derived from.
- */
-class PatternOfMatchExpr
-    : public UnaryExpr<PatternExpr, PatternOfMatchExpr, MatchExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    PatternOfMatchExpr(const MatchExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~PatternOfMatchExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
- * Represents the label to which a pattern instance has been allocated.
+ * Represents the label to which a match has been allocated.
  */
 class LabelAllocatedToMatchExpr
     : public UnaryExpr<LabelExpr, LabelAllocatedToMatchExpr, MatchExpr>

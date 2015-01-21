@@ -186,10 +186,6 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseInstructionExpr(str);
             expr = new InstructionToNumExpr(e);
         }
-        else if (eatType<PatternToNumExpr>(str)) {
-            auto e = parsePatternExpr(str);
-            expr = new PatternToNumExpr(e);
-        }
         else if (eatType<LabelToNumExpr>(str)) {
             auto e = parseLabelExpr(str);
             expr = new LabelToNumExpr(e);
@@ -340,42 +336,17 @@ ConstraintParser::parseInstructionExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<InstructionOfPatternExpr>(str)) {
-            auto e = parsePatternExpr(str);
-            expr = new InstructionOfPatternExpr(e);
+        if (eatType<AnInstructionIDExpr>(str)) {
+            ID id = eatID(str);
+            expr = new AnInstructionIDExpr(id);
         }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        else if (eatType<AnInstructionArrayIndexExpr>(str)) {
+            ArrayIndex i = eatArrayIndex(str);
+            expr = new AnInstructionArrayIndexExpr(i);
         }
-
-        eatWhitespace(str);
-        if (!eat(")", str)) {
-            THROW(Exception,
-                  "Invalid constraint expression (missing ')' char)");
-        }
-    }
-    else {
-        ID id = eatID(str);
-        expr = new AnInstructionIDExpr(id);
-    }
-
-    return expr;
-}
-
-PatternExpr*
-ConstraintParser::parsePatternExpr(string& str) {
-    PatternExpr* expr = NULL;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        eatWhitespace(str);
-        if (eatType<APatternIDExpr>(str)) {
-            ID e = eatID(str);
-            expr = new APatternIDExpr(e);
-        }
-        else if (eatType<PatternOfMatchExpr>(str)) {
+        if (eatType<InstructionOfMatchExpr>(str)) {
             auto e = parseMatchExpr(str);
-            expr = new PatternOfMatchExpr(e);
+            expr = new InstructionOfMatchExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -388,7 +359,7 @@ ConstraintParser::parsePatternExpr(string& str) {
         }
     }
     else {
-        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+        THROW(Exception, "Invalid constraint expression (unknown keyword)");
     }
 
     return expr;

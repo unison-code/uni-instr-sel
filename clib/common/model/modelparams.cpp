@@ -258,7 +258,7 @@ ModelParams::setRootLabelNodeOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-root-lnode")) {
+    for (auto jsonlist : getJsonValue(root, "match-root-lnodes")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
@@ -349,14 +349,14 @@ ModelParams::destroyConstraintsForMatches(void) {
 
 void
 ModelParams::setEssentialOpNodesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "func-essential-op-nodes")) {
+    for (auto entry : getJsonValue(root, "fun-essential-op-nodes")) {
         p.func_essential_op_nodes_.push_back(toArrayIndex(entry));
     }
 }
 
 void
 ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "func-bb-exec-freq")) {
+    for (auto entry : getJsonValue(root, "fun-bb-exec-freqs")) {
         p.func_bb_exec_freq_.push_back(toInt(entry));
     }
 }
@@ -373,7 +373,7 @@ ModelParams::getExecFreqOfAllBBsInF(void) const {
 
 void
 ModelParams::setConstraintsForF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "func-constraints")) {
+    for (auto entry : getJsonValue(root, "fun-constraints")) {
         ConstraintParser parser;
         Constraint* c = parser.parseConstraint(toString(entry));
         p.func_constraints_.push_back(c);
@@ -404,7 +404,7 @@ ModelParams::setADDUCSettingsForMatches(
     ModelParams& p
 ) {
     for (auto entry
-             : getJsonValue(root, "match-apply-def-dom-use-constraint"))
+             : getJsonValue(root, "match-adduc-settings"))
     {
         p.match_apply_def_dom_use_constraint_.push_back(toBool(entry));
     }
@@ -412,22 +412,22 @@ ModelParams::setADDUCSettingsForMatches(
 
 void
 ModelParams::setRootLabelInF(const Json::Value& root, ModelParams& p) {
-    p.func_root_label_ = toArrayIndex(getJsonValue(root, "func-root-label"));
+    p.func_root_label_ = toArrayIndex(getJsonValue(root, "fun-root-lnode"));
 }
 
 void
 ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
-    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "num-func-onodes"));
-    p.num_func_data_nodes_ = toInt(getJsonValue(root, "num-func-dnodes"));
-    p.num_func_state_nodes_ = toInt(getJsonValue(root, "num-func-snodes"));
-    p.num_func_label_nodes_ = toInt(getJsonValue(root, "num-func-lnodes"));
+    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "fun-num-onodes"));
+    p.num_func_data_nodes_ = toInt(getJsonValue(root, "fun-num-dnodes"));
+    p.num_func_state_nodes_ = toInt(getJsonValue(root, "fun-num-snodes"));
+    p.num_func_label_nodes_ = toInt(getJsonValue(root, "fun-num-lnodes"));
     p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }
 
 void
 ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "func-label-domsets")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-domsets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
@@ -438,7 +438,7 @@ ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "func-dnodes-label-defs")) {
+    for (auto jsonlist : getJsonValue(root, "fun-dnodes-label-defs")) {
         list<ArrayIndex> labels;
         for (auto entry : jsonlist) {
             labels.push_back(toArrayIndex(entry));
@@ -449,7 +449,7 @@ ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDefsForStateNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "func-snodes-label-defs")) {
+    for (auto jsonlist : getJsonValue(root, "fun-snodes-label-defs")) {
         list<ArrayIndex> labels;
         for (auto entry : jsonlist) {
             labels.push_back(toArrayIndex(entry));

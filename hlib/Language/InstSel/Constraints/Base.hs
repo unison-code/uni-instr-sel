@@ -23,7 +23,6 @@ module Language.InstSel.Constraints.Base
   , MatchExpr (..)
   , NodeExpr (..)
   , NumExpr (..)
-  , PatternExpr (..)
   , RegisterExpr (..)
   , SetElemExpr (..)
   , SetExpr (..)
@@ -32,10 +31,8 @@ module Language.InstSel.Constraints.Base
   )
 where
 
-import Language.InstSel.Graphs
-  ( MatchID (..)
-  , NodeID (..)
-  )
+import Language.InstSel.ConstraintModels.IDs
+import Language.InstSel.Graphs.IDs
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
   ( fromLeft
@@ -70,7 +67,7 @@ data BoolExpr
     -- | Equals.
   = EqExpr  NumExpr  NumExpr
     -- | Not equals.
-  | NeqExpr NumExpr  NumExpr
+  | NEqExpr NumExpr  NumExpr
     -- | Greater than.
   | GTExpr  NumExpr  NumExpr
     -- | Greater than or equals.
@@ -113,8 +110,6 @@ data NumExpr
     -- | Converts an instruction to a numerical expression.
   | Instruction2NumExpr InstructionExpr
     -- | Converts a pattern to a numerical expression.
-  | Pattern2NumExpr PatternExpr
-    -- | Converts a label to a numerical expression.
   | Label2NumExpr LabelExpr
     -- | Converts a register to a numerical expression.
   | Register2NumExpr RegisterExpr
@@ -138,14 +133,18 @@ data IntExpr
 
 -- | Node expressions.
 data NodeExpr
-    -- | Introduces a node ID.
+    -- | Introduces the ID of a node.
   = ANodeIDExpr NodeID
+    -- | Introduces an array index of a node.
+  | ANodeArrayIndexExpr ArrayIndex
   deriving (Show)
 
 -- | Match expressions.
 data MatchExpr
-    -- | Introduces a match ID.
+    -- | Introduces the ID of a match.
   = AMatchIDExpr MatchID
+    -- | Introduces the array index of a match.
+  | AMatchArrayIndexExpr ArrayIndex
     -- | Retrieves the match in which this expression appears.
   | ThisMatchExpr
     -- | Retrieves the match which covers a certain operation node.
@@ -158,18 +157,12 @@ data MatchExpr
 
 -- | Instruction expressions.
 data InstructionExpr
-    -- | Introduces an instruction ID.
+    -- | Introduces the ID of an instruction.
   = AnInstructionIDExpr InstructionID
-    -- | Retrieves the instruction to which a pattern belongs.
-  | InstructionOfPatternExpr PatternExpr
-  deriving (Show)
-
--- | Pattern expressions.
-data PatternExpr
-   -- | Introduces a pattern ID.
-  = APatternIDExpr PatternID
-    -- | Retrieves the pattern from which a match is derived.
-  | PatternOfMatchExpr MatchExpr
+    -- | Introduces the array index of an instruction.
+  | AnInstructionArrayIndexExpr ArrayIndex
+    -- | Retrieves the instruction from which a match has been derived.
+  | InstructionOfMatchExpr MatchExpr
   deriving (Show)
 
 -- | Label expressions.
@@ -182,8 +175,10 @@ data LabelExpr
 
 -- | Register expressions.
 data RegisterExpr
-    -- | Introduces a register ID.
+    -- | Introduces the ID of a register.
   = ARegisterIDExpr RegisterID
+    -- | Introduces the array index of a register.
+  | ARegisterArrayIndexExpr ArrayIndex
     -- | Retrieves the of the register to which a data node has been allocated.
   | RegisterAllocatedToDataNodeExpr NodeExpr
   deriving (Show)
@@ -242,7 +237,7 @@ instance ToLisp Constraint where
 instance FromLisp BoolExpr where
   parseLisp e =
         struct "=="  EqExpr  e
-    <|> struct "!="  NeqExpr e
+    <|> struct "!="  NEqExpr e
     <|> struct ">"   GTExpr  e
     <|> struct ">="  GEExpr  e
     <|> struct "<"   LTExpr  e
@@ -258,7 +253,7 @@ instance FromLisp BoolExpr where
 
 instance ToLisp BoolExpr where
   toLisp (EqExpr  lhs rhs) = mkStruct "==" [toLisp lhs, toLisp rhs]
-  toLisp (NeqExpr lhs rhs) = mkStruct "!=" [toLisp lhs, toLisp rhs]
+  toLisp (NEqExpr lhs rhs) = mkStruct "!=" [toLisp lhs, toLisp rhs]
   toLisp (GTExpr  lhs rhs) = mkStruct ">"  [toLisp lhs, toLisp rhs]
   toLisp (GEExpr  lhs rhs) = mkStruct ">=" [toLisp lhs, toLisp rhs]
   toLisp (LTExpr  lhs rhs) = mkStruct "<"  [toLisp lhs, toLisp rhs]
@@ -283,7 +278,6 @@ instance FromLisp NumExpr where
     <|> struct "node-to-num" Node2NumExpr e
     <|> struct "match-to-num" Match2NumExpr e
     <|> struct "instr-to-num" Instruction2NumExpr e
-    <|> struct "pat-to-num" Pattern2NumExpr e
     <|> struct "lab-to-num" Label2NumExpr e
     <|> struct "reg-to-num" Register2NumExpr e
     <|> struct "dist-match-to-lab" DistanceBetweenMatchAndLabelExpr e
@@ -296,7 +290,6 @@ instance ToLisp NumExpr where
   toLisp (Node2NumExpr e)            = mkStruct "node-to-num" [toLisp e]
   toLisp (Match2NumExpr e) = mkStruct "match-to-num" [toLisp e]
   toLisp (Instruction2NumExpr e)     = mkStruct "instr-to-num" [toLisp e]
-  toLisp (Pattern2NumExpr e)         = mkStruct "pat-to-num" [toLisp e]
   toLisp (Label2NumExpr e)           = mkStruct "lab-to-num" [toLisp e]
   toLisp (Register2NumExpr e)        = mkStruct "reg-to-num" [toLisp e]
   toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
@@ -313,21 +306,26 @@ instance ToLisp IntExpr where
     mkStruct "int-const-val-of-dnode" [toLisp e]
 
 instance FromLisp NodeExpr where
-  parseLisp e = struct "id" ANodeIDExpr e
+  parseLisp e =
+        struct "id" ANodeIDExpr e
+    <|> struct "ai" ANodeArrayIndexExpr e
 
 instance ToLisp NodeExpr where
   toLisp (ANodeIDExpr nid) = mkStruct "id" [toLisp nid]
+  toLisp (ANodeArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
 
 instance FromLisp MatchExpr where
   parseLisp (Lisp.Symbol "this") = return ThisMatchExpr
   parseLisp e =
         struct "id" AMatchIDExpr e
+    <|> struct "ai" AMatchArrayIndexExpr e
     <|> struct "cov-of-onode" CovererOfOperationNodeExpr e
     <|> struct "def-of-dnode" DefinerOfDataNodeExpr e
     <|> struct "def-of-snode" DefinerOfStateNodeExpr e
 
 instance ToLisp MatchExpr where
   toLisp (AMatchIDExpr piid) = mkStruct "id" [toLisp piid]
+  toLisp (AMatchArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
   toLisp ThisMatchExpr = Lisp.Symbol "this"
   toLisp (CovererOfOperationNodeExpr e) = mkStruct "cov-of-onode" [toLisp e]
   toLisp (DefinerOfDataNodeExpr e)  = mkStruct "def-of-dnode" [toLisp e]
@@ -336,21 +334,13 @@ instance ToLisp MatchExpr where
 instance FromLisp InstructionExpr where
   parseLisp e =
         struct "id" AnInstructionIDExpr e
-    <|> struct "instr-of-pat" InstructionOfPatternExpr e
+    <|> struct "ai" AnInstructionArrayIndexExpr e
+    <|> struct "instr-of-match" InstructionOfMatchExpr e
 
 instance ToLisp InstructionExpr where
   toLisp (AnInstructionIDExpr iid) = mkStruct "id" [toLisp iid]
-  toLisp (InstructionOfPatternExpr e) = mkStruct "instr-of-pat" [toLisp e]
-
-instance FromLisp PatternExpr where
-  parseLisp e =
-        struct "id" APatternIDExpr e
-    <|> struct "pat-of-match" PatternOfMatchExpr e
-
-instance ToLisp PatternExpr where
-  toLisp (APatternIDExpr iid) = mkStruct "id" [toLisp iid]
-  toLisp (PatternOfMatchExpr e) =
-    mkStruct "pat-of-match" [toLisp e]
+  toLisp (AnInstructionArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
+  toLisp (InstructionOfMatchExpr e) = mkStruct "instr-of-match" [toLisp e]
 
 instance FromLisp LabelExpr where
   parseLisp e =
@@ -365,10 +355,12 @@ instance ToLisp LabelExpr where
 instance FromLisp RegisterExpr where
   parseLisp e =
         struct "id" ARegisterIDExpr e
+    <|> struct "ai" ARegisterArrayIndexExpr e
     <|> struct "reg-alloc-to-dnode" RegisterAllocatedToDataNodeExpr e
 
 instance ToLisp RegisterExpr where
-  toLisp (ARegisterIDExpr iid) = mkStruct "id" [toLisp iid]
+  toLisp (ARegisterIDExpr rid) = mkStruct "id" [toLisp rid]
+  toLisp (ARegisterArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
   toLisp (RegisterAllocatedToDataNodeExpr e) =
     mkStruct "reg-alloc-to-dnode" [toLisp e]
 

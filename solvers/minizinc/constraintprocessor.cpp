@@ -159,11 +159,6 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const PatternToNumExpr* de =
-             dynamic_cast<const PatternToNumExpr*>(e))
-    {
-        return process(de->getExpr());
-    }
     else if (const LabelToNumExpr* de =
              dynamic_cast<const LabelToNumExpr*>(e))
     {
@@ -255,29 +250,20 @@ ConstraintProcessor::process(const MatchExpr* e) {
 
 string
 ConstraintProcessor::process(const InstructionExpr* e) {
-    if (dynamic_cast<const AnInstructionIDExpr*>(e)) {
+    if (const AnInstructionArrayIndexExpr* de =
+        dynamic_cast<const AnInstructionArrayIndexExpr*>(e))
+    {
+        return Utils::toString(de->getArrayIndex());
+    }
+    else if (dynamic_cast<const AnInstructionIDExpr*>(e)) {
         THROW(Exception, "AnInstructionIDExpr is not allowed here");
     }
-    else if (dynamic_cast<const InstructionOfPatternExpr*>(e)) {
-        // TODO: fix implementation
-        return "?";
+    else if (dynamic_cast<const InstructionOfMatchExpr*>(e)) {
+        // TODO: implement
+        THROW(Exception, "Support for InstructionOfMatchExpr not implemented");
     }
     else {
         THROW(Exception, "InstructionExpr is of unknown derived class");
-    }
-}
-
-string
-ConstraintProcessor::process(const PatternExpr* e) {
-    if (dynamic_cast<const APatternIDExpr*>(e)) {
-        THROW(Exception, "APatternIDExpr is not allowed here");
-    }
-    else if (dynamic_cast<const PatternOfMatchExpr*>(e)) {
-        // TODO: fix implementation
-        return "?";
-    }
-    else {
-        THROW(Exception, "PatternExpr is of unknown derived class");
     }
 }
 

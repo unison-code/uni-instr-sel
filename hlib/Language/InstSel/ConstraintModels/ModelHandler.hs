@@ -18,8 +18,11 @@ module Language.InstSel.ConstraintModels.ModelHandler
   )
 where
 
-import Language.InstSel.Constraints
 import Language.InstSel.ConstraintModels.Base
+import Language.InstSel.ConstraintModels.IDs
+
+import Language.InstSel.Constraints
+import Language.InstSel.Constraints.ConstraintReconstructor
 import Language.InstSel.Graphs
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
@@ -33,7 +36,9 @@ import Data.List
   , sortBy
   )
 import Data.Maybe
-  ( fromJust )
+  ( fromJust
+  , isJust
+  )
 
 
 
@@ -177,7 +182,9 @@ processMatch instr pattern match mid =
        , hlMatchRootLabelNode = root_label_node_id
        , hlMatchNonRootLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
-           mapPs2FsInConstraints match (osConstraints $ patOS pattern)
+           map
+             ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
+             (osConstraints $ patOS pattern)
        , hlMatchADDUC = patADDUC pattern
        , hlMatchHasControlNodes = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
@@ -200,11 +207,36 @@ computeAsmStrNodeMaps t m =
         f (ASBBLabelOfLabelNode n) = findFNInMatch m n
         f (ASBBLabelOfDataNode  n) = findFNInMatch m n
 
+-- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
+-- match ID.
+replaceThisMatchExprInC :: MatchID -> Constraint -> Constraint
+replaceThisMatchExprInC mid c =
+  let def_r = mkDefaultReconstructor
+      mkMatchExpr _ ThisMatchExpr = AMatchIDExpr mid
+      mkMatchExpr r expr = (mkMatchExprF r) r expr
+      new_r = def_r { mkMatchExprF = mkMatchExpr }
+  in apply new_r c
+
+-- | Replaces the node IDs used in the constraint from matched pattern node IDs
+-- to the corresponding function node IDs.
+replaceNodeIDsFromP2FInC :: Match NodeID -> Constraint -> Constraint
+replaceNodeIDsFromP2FInC match c =
+  let def_r = mkDefaultReconstructor
+      mkNodeExpr _ (ANodeIDExpr nid) =
+        ANodeIDExpr (fromJust $ findFNInMatch match nid)
+      mkNodeExpr r expr = (mkNodeExprF r) r expr
+      new_r = def_r { mkNodeExprF = mkNodeExpr }
+  in apply new_r c
+
 -- | Computes the corresponding low-level version of a high-level CP model
 -- instance.
 lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
-  let getAI ai_list nid = toArrayIndex $ fromJust $ nid `elemIndex` ai_list
+  let getAIFromOpNodeID nid = fromJust $ findAIFromOpNodeID ai_maps nid
+      getAIFromDataNodeID nid = fromJust $ findAIFromDataNodeID ai_maps nid
+      getAIFromStateNodeID nid = fromJust $ findAIFromStateNodeID ai_maps nid
+      getAIFromLabelNodeID nid = fromJust $ findAIFromLabelNodeID ai_maps nid
+      getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
       sortByAI get_ai_f nids =
         map
@@ -213,11 +245,6 @@ lowerHighLevelModel model ai_maps =
               (\(ai1, _) (ai2, _) -> compare ai1 ai2)
               (pairWithAI get_ai_f nids)
           )
-      getAIFromOpNodeID nid = getAI (ai2OpNodeIDs ai_maps) nid
-      getAIFromDataNodeID nid = getAI (ai2DataNodeIDs ai_maps) nid
-      getAIFromStateNodeID nid = getAI (ai2StateNodeIDs ai_maps) nid
-      getAIFromLabelNodeID nid = getAI (ai2LabelNodeIDs ai_maps) nid
-      getAIFromMatchID mid = getAI (ai2MatchIDs ai_maps) mid
       f_params = hlFunctionParams model
       tm_params = hlMachineParams model
       m_params = sortByAI (getAIFromMatchID . hlMatchID) (hlMatchParams model)
@@ -304,140 +331,70 @@ lowerHighLevelModel model ai_maps =
 -- | Converts any ID appearing in a constraint with the corresponding array
 -- index.
 replaceIDWithArrayIndex :: ArrayIndexMaplists -> Constraint -> Constraint
-replaceIDWithArrayIndex = undefined
+replaceIDWithArrayIndex ai_maps c =
+  let getAIFromAnyNodeID nid = fromJust $ findAIFromAnyNodeID ai_maps nid
+      getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
+      getAIFromRegisterID rid = fromJust $ findAIFromRegisterID ai_maps rid
+      getAIFromInstructionID iid =
+        fromJust $ findAIFromInstructionID ai_maps iid
+      def_r = mkDefaultReconstructor
+      mkNodeExpr _ (ANodeIDExpr nid) =
+        ANodeArrayIndexExpr $ getAIFromAnyNodeID nid
+      mkNodeExpr r expr = (mkNodeExprF def_r) r expr
+      mkMatchExpr _ (AMatchIDExpr nid) =
+        AMatchArrayIndexExpr $ getAIFromMatchID nid
+      mkMatchExpr r expr = (mkMatchExprF def_r) r expr
+      mkRegisterExpr _ (ARegisterIDExpr nid) =
+        ARegisterArrayIndexExpr $ getAIFromRegisterID nid
+      mkRegisterExpr r expr = (mkRegisterExprF def_r) r expr
+      mkInstructionExpr _ (AnInstructionIDExpr nid) =
+        AnInstructionArrayIndexExpr $ getAIFromInstructionID nid
+      mkInstructionExpr r expr = (mkInstructionExprF def_r) r expr
+      new_r = def_r { mkNodeExprF = mkNodeExpr
+                    , mkMatchExprF = mkMatchExpr
+                    , mkRegisterExprF = mkRegisterExpr
+                    , mkInstructionExprF = mkInstructionExpr
+                    }
+  in apply new_r c
 
+findAIFromOpNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
 
+findAIFromDataNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromDataNodeID ai_maps = findArrayIndexInList (ai2DataNodeIDs ai_maps)
 
+findAIFromStateNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromStateNodeID ai_maps = findArrayIndexInList (ai2StateNodeIDs ai_maps)
 
+findAIFromLabelNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
 
+findAIFromAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromAnyNodeID ai_maps nid =
+  let lists = [ ai2OpNodeIDs ai_maps
+              , ai2DataNodeIDs ai_maps
+              , ai2StateNodeIDs ai_maps
+              , ai2LabelNodeIDs ai_maps
+              ]
+      matching_lists = filter (nid `elem`) lists
+  in findArrayIndexInList (head matching_lists) nid
 
+findAIFromMatchID :: ArrayIndexMaplists -> MatchID -> Maybe ArrayIndex
+findAIFromMatchID ai_maps = findArrayIndexInList (ai2MatchIDs ai_maps)
 
--- TODO: move this somewhere else
+findAIFromRegisterID :: ArrayIndexMaplists -> RegisterID -> Maybe ArrayIndex
+findAIFromRegisterID ai_maps = findArrayIndexInList (ai2RegisterIDs ai_maps)
 
--- | Replaces the node IDs used in the constraints from matched pattern node IDs
--- to the corresponding function node IDs.
-mapPs2FsInConstraints :: Match NodeID -> [Constraint] -> [Constraint]
-mapPs2FsInConstraints m cs =
-  map (replaceFunc m) cs
-  where replaceFunc m' (BoolExprConstraint e) =
-          BoolExprConstraint $ replaceInBoolExpr m' e
+findAIFromInstructionID
+  :: ArrayIndexMaplists
+  -> InstructionID
+  -> Maybe ArrayIndex
+findAIFromInstructionID ai_maps =
+  findArrayIndexInList (ai2InstructionIDs ai_maps)
 
-replaceInBoolExpr :: Match NodeID -> BoolExpr -> BoolExpr
-replaceInBoolExpr m (EqExpr lhs rhs) =
-  EqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (NeqExpr lhs rhs) =
-  NeqExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (GTExpr lhs rhs) =
-  GTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (GEExpr lhs rhs) =
-  GEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (LTExpr lhs rhs) =
-  LTExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (LEExpr lhs rhs) =
-  LEExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInBoolExpr m (AndExpr lhs rhs) =
-  AndExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
-replaceInBoolExpr m (OrExpr lhs rhs) =
-  OrExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
-replaceInBoolExpr m (ImpExpr lhs rhs) =
-  ImpExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
-replaceInBoolExpr m (EqvExpr lhs rhs) =
-  EqvExpr (replaceInBoolExpr m lhs) (replaceInBoolExpr m rhs)
-replaceInBoolExpr m (NotExpr e) = NotExpr (replaceInBoolExpr m e)
-replaceInBoolExpr m (InSetExpr lhs rhs) =
-  InSetExpr (replaceInSetElemExpr m lhs) (replaceInSetExpr m rhs)
-replaceInBoolExpr m (DataNodeIsAnIntConstantExpr e) =
-  DataNodeIsAnIntConstantExpr (replaceInNodeExpr m e)
-replaceInBoolExpr m (DataNodeIsIntermediateExpr e) =
-  DataNodeIsIntermediateExpr (replaceInNodeExpr m e)
-
-replaceInNumExpr :: Match NodeID -> NumExpr -> NumExpr
-replaceInNumExpr m (PlusExpr lhs rhs) =
-  PlusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInNumExpr m (MinusExpr lhs rhs) =
-  MinusExpr (replaceInNumExpr m lhs) (replaceInNumExpr m rhs)
-replaceInNumExpr m (Int2NumExpr e) =
-  Int2NumExpr (replaceInIntExpr m e)
-replaceInNumExpr m (Bool2NumExpr e) =
-  Bool2NumExpr (replaceInBoolExpr m e)
-replaceInNumExpr m (Node2NumExpr e) =
-  Node2NumExpr (replaceInNodeExpr m e)
-replaceInNumExpr m (Match2NumExpr e) =
-  Match2NumExpr (replaceInMatchExpr m e)
-replaceInNumExpr m (Instruction2NumExpr e) =
-  Instruction2NumExpr (replaceInInstructionExpr m e)
-replaceInNumExpr m (Pattern2NumExpr e) =
-  Pattern2NumExpr (replaceInPatternExpr m e)
-replaceInNumExpr m (Label2NumExpr e) =
-  Label2NumExpr (replaceInLabelExpr m e)
-replaceInNumExpr m (Register2NumExpr e) =
-  Register2NumExpr (replaceInRegisterExpr m e)
-replaceInNumExpr m (DistanceBetweenMatchAndLabelExpr pat_e lab_e) =
-  DistanceBetweenMatchAndLabelExpr
-    (replaceInMatchExpr m pat_e)
-    (replaceInLabelExpr m lab_e)
-
-replaceInIntExpr :: Match NodeID -> IntExpr -> IntExpr
-replaceInIntExpr _ (AnIntegerExpr i) = AnIntegerExpr i
-replaceInIntExpr m (IntConstValueOfDataNodeExpr e) =
-  IntConstValueOfDataNodeExpr $ replaceInNodeExpr m e
-
-replaceInNodeExpr :: Match NodeID -> NodeExpr -> NodeExpr
-replaceInNodeExpr m (ANodeIDExpr i) =
-  ANodeIDExpr $ fromJust $ findFNInMatch m i
-
-replaceInMatchExpr
-  :: Match NodeID
-  -> MatchExpr
-  -> MatchExpr
-replaceInMatchExpr _ (AMatchIDExpr i) =
-  AMatchIDExpr i
-replaceInMatchExpr m (CovererOfOperationNodeExpr e) =
-  CovererOfOperationNodeExpr (replaceInNodeExpr m e)
-replaceInMatchExpr m (DefinerOfDataNodeExpr e) =
-  DefinerOfDataNodeExpr (replaceInNodeExpr m e)
-replaceInMatchExpr m (DefinerOfStateNodeExpr e) =
-  DefinerOfStateNodeExpr (replaceInNodeExpr m e)
-replaceInMatchExpr _ ThisMatchExpr = ThisMatchExpr
-
-replaceInInstructionExpr
-  :: Match NodeID
-  -> InstructionExpr
-  -> InstructionExpr
-replaceInInstructionExpr _ (AnInstructionIDExpr i) = AnInstructionIDExpr i
-replaceInInstructionExpr m (InstructionOfPatternExpr e) =
-  InstructionOfPatternExpr (replaceInPatternExpr m e)
-
-replaceInPatternExpr :: Match NodeID -> PatternExpr -> PatternExpr
-replaceInPatternExpr _ (APatternIDExpr i) = APatternIDExpr i
-replaceInPatternExpr m (PatternOfMatchExpr e) =
-  PatternOfMatchExpr (replaceInMatchExpr m e)
-
-replaceInLabelExpr :: Match NodeID -> LabelExpr -> LabelExpr
-replaceInLabelExpr m (LabelAllocatedToMatchExpr e) =
-  LabelAllocatedToMatchExpr (replaceInMatchExpr m e)
-replaceInLabelExpr m (LabelOfLabelNodeExpr e) =
-  LabelOfLabelNodeExpr (replaceInNodeExpr m e)
-
-replaceInRegisterExpr :: Match NodeID -> RegisterExpr -> RegisterExpr
-replaceInRegisterExpr _ (ARegisterIDExpr i) = ARegisterIDExpr i
-replaceInRegisterExpr m (RegisterAllocatedToDataNodeExpr e) =
-  RegisterAllocatedToDataNodeExpr (replaceInNodeExpr m e)
-
-replaceInSetElemExpr :: Match NodeID -> SetElemExpr -> SetElemExpr
-replaceInSetElemExpr m (Label2SetElemExpr e) =
-  Label2SetElemExpr (replaceInLabelExpr m e)
-replaceInSetElemExpr m (Register2SetElemExpr e) =
-  Register2SetElemExpr (replaceInRegisterExpr m e)
-
-replaceInSetExpr :: Match NodeID -> SetExpr -> SetExpr
-replaceInSetExpr m (UnionSetExpr lhs rhs) =
-  UnionSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
-replaceInSetExpr m (IntersectSetExpr lhs rhs) =
-  IntersectSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
-replaceInSetExpr m (DiffSetExpr lhs rhs) =
-  DiffSetExpr (replaceInSetExpr m lhs) (replaceInSetExpr m rhs)
-replaceInSetExpr m (DomSetOfLabelExpr e) =
-  DomSetOfLabelExpr (replaceInLabelExpr m e)
-replaceInSetExpr m (RegisterClassExpr es) =
-  RegisterClassExpr (map (replaceInRegisterExpr m) es)
+findArrayIndexInList :: (Eq a) => [a] -> a -> Maybe ArrayIndex
+findArrayIndexInList ai_list nid =
+  let index = nid `elemIndex` ai_list
+  in if isJust index
+     then Just $ toArrayIndex $ fromJust index
+     else Nothing

@@ -236,12 +236,6 @@ class ConstraintProcessor {
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::PatternExpr* e);
-
-    /**
-     * \copydoc process(const Model::BoolExpr*)
-     */
-    std::string
     process(const Model::LabelExpr* e);
 
     /**

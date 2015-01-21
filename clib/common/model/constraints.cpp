@@ -85,8 +85,6 @@ MatchExpr::~MatchExpr(void) {}
 
 InstructionExpr::~InstructionExpr(void) {}
 
-PatternExpr::~PatternExpr(void) {}
-
 LabelExpr::~LabelExpr(void) {}
 
 RegisterExpr::~RegisterExpr(void) {}
@@ -249,12 +247,6 @@ InstructionToNumExpr::InstructionToNumExpr(const InstructionExpr* expr)
 
 InstructionToNumExpr::~InstructionToNumExpr(void) {}
 
-PatternToNumExpr::PatternToNumExpr(const PatternExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-PatternToNumExpr::~PatternToNumExpr(void) {}
-
 LabelToNumExpr::LabelToNumExpr(const LabelExpr* expr)
     : UnaryExpr(expr)
 {}
@@ -315,36 +307,20 @@ AnInstructionIDExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
 }
 
-APatternIDExpr::APatternIDExpr(const ID& id)
-    : id_(id)
+AnInstructionArrayIndexExpr::AnInstructionArrayIndexExpr(const ArrayIndex& i)
+    : i_(i)
 {}
 
-APatternIDExpr::~APatternIDExpr(void) {}
+AnInstructionArrayIndexExpr::~AnInstructionArrayIndexExpr(void) {}
 
-ID
-APatternIDExpr::getID(void) const {
-    return id_;
+ArrayIndex
+AnInstructionArrayIndexExpr::getArrayIndex(void) const {
+    return i_;
 }
 
 string
-APatternIDExpr::toLisp(void) const {
-    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
-}
-
-ALabelIDExpr::ALabelIDExpr(const ID& id)
-    : id_(id)
-{}
-
-ALabelIDExpr::~ALabelIDExpr(void) {}
-
-ID
-ALabelIDExpr::getID(void) const {
-    return id_;
-}
-
-string
-ALabelIDExpr::toLisp(void) const {
-    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
+AnInstructionArrayIndexExpr::toLisp(void) const {
+    return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
 ARegisterIDExpr::ARegisterIDExpr(const ID& id)
@@ -438,17 +414,11 @@ DefinerOfStateNodeExpr::DefinerOfStateNodeExpr(const NodeExpr* expr)
 
 DefinerOfStateNodeExpr::~DefinerOfStateNodeExpr(void) {}
 
-InstructionOfPatternExpr::InstructionOfPatternExpr(const PatternExpr* expr)
+InstructionOfMatchExpr::InstructionOfMatchExpr(const MatchExpr* expr)
     : UnaryExpr(expr)
 {}
 
-InstructionOfPatternExpr::~InstructionOfPatternExpr(void) {}
-
-PatternOfMatchExpr::PatternOfMatchExpr(const MatchExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-PatternOfMatchExpr::~PatternOfMatchExpr(void) {}
+InstructionOfMatchExpr::~InstructionOfMatchExpr(void) {}
 
 LabelAllocatedToMatchExpr::LabelAllocatedToMatchExpr(const MatchExpr* expr)
     : UnaryExpr(expr)
@@ -570,7 +540,6 @@ const string AnIntegerExpr::STRNAME = "int";
 const string IntConstValueOfDataNodeExpr::STRNAME = "int-const-val-of-dnode";
 const string BoolToNumExpr::STRNAME = "bool-to-num";
 const string NodeToNumExpr::STRNAME = "node-to-num";
-const string PatternToNumExpr::STRNAME = "pat-to-num";
 const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
 const string LabelToNumExpr::STRNAME = "lab-to-num";
@@ -579,18 +548,16 @@ const string DistanceBetweenMatchAndLabelExpr::STRNAME = "dist-match-to-lab";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";
-const string APatternIDExpr::STRNAME = "id";
-const string ALabelIDExpr::STRNAME = "id";
 const string ARegisterIDExpr::STRNAME = "id";
-const string ANodeArrayIndexExpr::STRNAME = "array-index";
-const string AMatchArrayIndexExpr::STRNAME = "array-index";
-const string ARegisterArrayIndexExpr::STRNAME = "array-index";
+const string ANodeArrayIndexExpr::STRNAME = "ai";
+const string AMatchArrayIndexExpr::STRNAME = "ai";
+const string ARegisterArrayIndexExpr::STRNAME = "ai";
+const string AnInstructionArrayIndexExpr::STRNAME = "ai";
 const string ThisMatchExpr::STRNAME = "this";
 const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
 const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
-const string InstructionOfPatternExpr::STRNAME = "instr-of-pat";
-const string PatternOfMatchExpr::STRNAME = "pat-of-match";
+const string InstructionOfMatchExpr::STRNAME = "instr-of-match";
 const string LabelAllocatedToMatchExpr::STRNAME = "lab-alloc-to-match";
 const string LabelOfLabelNodeExpr::STRNAME = "lab-of-lnode";
 const string RegisterAllocatedToDataNodeExpr::STRNAME = "reg-alloc-to-dnode";
