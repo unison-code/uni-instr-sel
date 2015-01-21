@@ -543,20 +543,20 @@ instance FromJSON HighLevelSolution where
     HighLevelSolution
       <$> v .: "order-of-bbs"
       <*> v .: "selected-matches"
-      <*> v .: "bb-allocated-for-match"
-      <*> v .: "reg-allocated-for-dnode"
-      <*> v .: "imm-value-of-dnode"
+      <*> v .: "bbs-allocated-for-sel-matches"
+      <*> v .: "regs-allocated-for-dnodes"
+      <*> v .: "imm-values-of-dnodes"
       <*> v .: "cost"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelSolution where
   toJSON d =
-    object [ "order-of-bbs"               .= (hlSolOrderOfBBs d)
-           , "selected-matches"           .= (hlSolSelMatches d)
-           , "bb-allocated-for-sel-match" .= (hlSolBBAllocsForSelMatches d)
-           , "reg-allocated-for-dnode"    .= (hlSolRegsOfDataNodes d)
-           , "imm-value-of-dnode"         .= (hlSolImmValuesOfDataNodes d)
-           , "cost"                       .= (hlSolCost d)
+    object [ "order-of-bbs"                  .= (hlSolOrderOfBBs d)
+           , "selected-matches"              .= (hlSolSelMatches d)
+           , "bbs-allocated-for-sel-matches" .= (hlSolBBAllocsForSelMatches d)
+           , "regs-allocated-for-dnodes"     .= (hlSolRegsOfDataNodes d)
+           , "imm-values-of-dnodes"          .= (hlSolImmValuesOfDataNodes d)
+           , "cost"                          .= (hlSolCost d)
            ]
 
 instance FromJSON LowLevelSolution where

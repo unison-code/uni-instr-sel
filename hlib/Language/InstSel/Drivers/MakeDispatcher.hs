@@ -61,7 +61,7 @@ dispatch a opts
       do model_content <- loadModelFileContent opts
          model <- loadFromJson model_content
          sol_content <- loadSolutionFileContent opts
-         sol <- loadFromJson model_content
+         sol <- loadFromJson sol_content
          MakeAssemblyCode.run a model sol
   | otherwise =
       reportError "MakeDispatcher: unsupported action"
