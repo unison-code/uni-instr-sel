@@ -31,9 +31,6 @@ import Language.InstSel.TargetMachines.CodeEmission
 import Language.InstSel.Utils.IO
   ( reportError )
 
-import Data.List
-  ( intercalate )
-
 
 
 -------------
@@ -45,7 +42,7 @@ run :: MakeAction -> HighLevelModel -> HighLevelSolution -> IO [Output]
 run MakeAssemblyCode model sol =
   do target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
      let code = generateCode target model sol
-         code_str = intercalate "\n" (map showCode code)
+         code_str = concat $ map (\c -> showCode c ++ "\n") code
      return [toOutputWithoutID code_str]
 
 run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"
