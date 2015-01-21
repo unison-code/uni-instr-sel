@@ -161,7 +161,7 @@ parseArgs =
                            ++ "high-level CP model solution."
                          )
              , LowerHighLevelCPModel
-                 &= name "lower-hl-cp-solution"
+                 &= name "lower-hl-cp-model"
                  &= explicit
                  &= help ( "Lowers a high-level CP model instance to a "
                            ++ "low-level CP model instance."

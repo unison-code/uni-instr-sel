@@ -77,6 +77,7 @@ data TransformAction
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph
   | RaiseLowLevelCPSolution
+  | LowerHighLevelCPModel
   deriving (Eq, Typeable, Data)
 
 data PlotAction

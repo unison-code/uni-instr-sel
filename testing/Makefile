@@ -46,7 +46,7 @@ uni-is:
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
-      -m $*.hl.model.json-o -a $*.aimaps.json -o $@
+      -m $*.hl.model.json -a $*.aimaps.json -o $@
 
 %.ll.sol.json: %.ll.model.json
 	$(SOLVER) -o $@ $<

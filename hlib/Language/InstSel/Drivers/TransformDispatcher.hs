@@ -19,6 +19,8 @@ where
 import Language.InstSel.Drivers.DispatcherTools
 import qualified Language.InstSel.Drivers.TransformFunctionGraph
   as TransformFunctionGraph
+import qualified Language.InstSel.Drivers.TransformCPModel
+  as TransformCPModel
 import qualified Language.InstSel.Drivers.TransformCPSolution
   as TransformCPSolution
 
@@ -39,6 +41,11 @@ dispatch a opts
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
          TransformFunctionGraph.run a function
+  | a `elem` [LowerHighLevelCPModel] =
+      do m_content <- loadModelFileContent opts
+         ai_content <- loadArrayIndexMaplistsFileContent opts
+         ai_maps <- loadFromJson ai_content
+         TransformCPModel.run a m_content ai_maps
   | a `elem` [RaiseLowLevelCPSolution] =
       do sol_content <- loadSolutionFileContent opts
          ai_content <- loadArrayIndexMaplistsFileContent opts

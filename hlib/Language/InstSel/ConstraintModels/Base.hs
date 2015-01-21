@@ -40,6 +40,7 @@ module Language.InstSel.ConstraintModels.Base
   , HighLevelSolution (..)
   , LowLevelModel (..)
   , LowLevelSolution (..)
+  , toArrayIndex
   )
 where
 
@@ -55,7 +56,9 @@ import Language.InstSel.Functions
   )
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils
-  ( Natural )
+  ( Natural
+  , toNatural
+  )
 import Language.InstSel.Utils.JSON
 
 
@@ -82,8 +85,6 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOpNodes :: [NodeID]
         -- ^ The operation nodes in the function graph.
-      , hlFunEssentialOpNodes :: [NodeID]
-        -- ^ Operation nodes that are essential, meaning they *must* be covered.
       , hlFunDataNodes :: [NodeID]
         -- ^ The data nodes in the function graph.
       , hlFunStateNodes :: [NodeID]
@@ -91,14 +92,16 @@ data HighLevelFunctionParams
       , hlFunLabelNodes :: [Domset NodeID]
         -- ^ The label nodes in the function graph, along with their dominator
         -- sets.
+      , hlFunRootLabelNode :: NodeID
+        -- ^ The root label, or entry point into the function.
+      , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
+        -- ^ The basic block information.
       , hlFunDefPlaceEdges :: [(NodeID, NodeID)]
         -- ^ The definition placement edges in the function graph. The first
         -- node in the tuple is the entity node and the second node is the label
         -- node.
-      , hlFunRootLabel :: NodeID
-        -- ^ The root label, or entry point into the function.
-      , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
-        -- ^ The basic block information.
+      , hlFunEssentialOpNodes :: [NodeID]
+        -- ^ Operation nodes that are essential, meaning they *must* be covered.
       , hlFunConstraints :: [Constraint]
         -- ^ The function constraints, if any. No constraint in this list may
         -- use array indices.
@@ -249,11 +252,11 @@ data LowLevelModel
         -- ^ The list of state nodes in the function graph that are used by each
         -- match. An index into the outer list corresponds to the array index of
         -- a particular match.
-      , llMatchRootLabel :: [Maybe ArrayIndex]
+      , llMatchRootLabelNode :: [Maybe ArrayIndex]
         -- ^ The label node in the function graph that is the root label (if
         -- any) of each match. An index into the list corresponds to the array
         -- index of a particular match.
-      , llMatchNonRootLabels :: [[ArrayIndex]]
+      , llMatchNonRootLabelNodes :: [[ArrayIndex]]
         -- ^ The label nodes in the function graph that are non-root labels of
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
@@ -341,18 +344,24 @@ data LowLevelSolution
 -- IDs, etc., which may be sparse.
 data ArrayIndexMaplists
   = ArrayIndexMaplists
-      { ai2MatchIDs :: [MatchID]
+      { ai2OpNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to match IDs.
-      , ai2LabelNodeIDs :: [NodeID]
-        -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of label nodes.
+        -- indices) to the node IDs of operation nodes.
       , ai2DataNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of data nodes.
+      , ai2StateNodeIDs :: [NodeID]
+        -- ^ The list of mappings from array indices (represented as list
+        -- indices) to the node IDs of state nodes.
+      , ai2LabelNodeIDs :: [NodeID]
+        -- ^ The list of mappings from array indices (represented as list
+        -- indices) to the node IDs of label nodes.
       , ai2RegisterIDs :: [RegisterID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to register IDs.
+      , ai2MatchIDs :: [MatchID]
+        -- ^ The list of mappings from array indices (represented as list
+        -- indices) to match IDs.
       }
 
 
@@ -398,7 +407,7 @@ instance ToJSON HighLevelFunctionParams where
            , "state-nodes"        .= (hlFunStateNodes d)
            , "label-nodes"        .= (hlFunLabelNodes d)
            , "def-place-edges"    .= (hlFunDefPlaceEdges d)
-           , "root-label"         .= (hlFunRootLabel d)
+           , "root-label"         .= (hlFunRootLabelNode d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
            , "constraints"        .= (hlFunConstraints d)
            ]
@@ -523,8 +532,8 @@ instance ToJSON LowLevelModel where
            , "match-snodes-defined"   .= (llMatchStateNodesDefined m)
            , "match-dnodes-used"      .= (llMatchDataNodesUsed m)
            , "match-snodes-used"      .= (llMatchStateNodesUsed m)
-           , "match-root-lnodes"      .= (llMatchRootLabel m)
-           , "match-non-root-lnodes"  .= (llMatchNonRootLabels m)
+           , "match-root-lnodes"      .= (llMatchRootLabelNode m)
+           , "match-non-root-lnodes"  .= (llMatchNonRootLabelNodes m)
            , "match-code-sizes"       .= (llMatchCodeSizes m)
            , "match-latencies"        .= (llMatchLatencies m)
            , "match-adduc-settings"   .= (llMatchADDUCs m)
@@ -567,17 +576,31 @@ instance FromJSON LowLevelSolution where
 
 instance ToJSON ArrayIndexMaplists where
   toJSON d =
-    object [ "array-index-to-match-id-maps"      .= (ai2MatchIDs d)
-           , "array-index-to-label-node-id-maps" .= (ai2LabelNodeIDs d)
+    object [ "array-index-to-op-node-id-maps"  .= (ai2OpNodeIDs d)
            , "array-index-to-data-node-id-maps"  .= (ai2DataNodeIDs d)
+           , "array-index-to-state-node-id-maps"  .= (ai2StateNodeIDs d)
+           , "array-index-to-label-node-id-maps" .= (ai2LabelNodeIDs d)
            , "array-index-to-register-id-maps"   .= (ai2RegisterIDs d)
+           , "array-index-to-match-id-maps"      .= (ai2MatchIDs d)
            ]
 
 instance FromJSON ArrayIndexMaplists where
   parseJSON (Object v) =
     ArrayIndexMaplists
-      <$> v .: "array-index-to-match-id-maps"
-      <*> v .: "array-index-to-label-node-id-maps"
+      <$> v .: "array-index-to-op-node-id-maps"
       <*> v .: "array-index-to-data-node-id-maps"
+      <*> v .: "array-index-to-state-node-id-maps"
+      <*> v .: "array-index-to-label-node-id-maps"
       <*> v .: "array-index-to-register-id-maps"
+      <*> v .: "array-index-to-match-id-maps"
   parseJSON _ = mzero
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Converts an @Integral@ to an @ArrayIndex@.
+toArrayIndex :: (Integral i) => i -> ArrayIndex
+toArrayIndex = toNatural

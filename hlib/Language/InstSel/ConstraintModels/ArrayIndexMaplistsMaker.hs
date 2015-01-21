@@ -41,16 +41,20 @@ import Data.Maybe
 
 mkArrayIndexMaplists :: Function -> PatternMatchset -> ArrayIndexMaplists
 mkArrayIndexMaplists function matchset =
-  let match_ids = map pmMatchID (pmMatches matchset)
-      g = osGraph $ functionOS function
+  let g = osGraph $ functionOS function
       nodes = getAllNodes g
-      l_nodes = filter isLabelNode nodes
+      o_nodes = filter isOperationNode nodes
       d_nodes = filter isDataNode nodes
+      s_nodes = filter isStateNode nodes
+      l_nodes = filter isLabelNode nodes
       tm = fromJust $ retrieveTargetMachine (pmTarget matchset)
       registers = tmRegisters tm
+      match_ids = map pmMatchID (pmMatches matchset)
   in ArrayIndexMaplists
-       { ai2MatchIDs = match_ids
-       , ai2LabelNodeIDs = map getNodeID l_nodes
+       { ai2OpNodeIDs = map getNodeID o_nodes
        , ai2DataNodeIDs = map getNodeID d_nodes
+       , ai2StateNodeIDs = map getNodeID s_nodes
+       , ai2LabelNodeIDs = map getNodeID l_nodes
        , ai2RegisterIDs = map regID registers
+       , ai2MatchIDs = match_ids
        }

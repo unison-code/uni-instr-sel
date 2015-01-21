@@ -28,6 +28,10 @@ import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
 
+import Data.List
+  ( elemIndex
+  , sortBy
+  )
 import Data.Maybe
   ( fromJust )
 
@@ -80,7 +84,7 @@ mkHLFunctionParams function =
        , hlFunStateNodes= nodeIDsByType isStateNode
        , hlFunLabelNodes= computeLabelDoms cfg
        , hlFunDefPlaceEdges = dp_edge_data
-       , hlFunRootLabel = getNodeID $ fromJust $ rootInCFG cfg
+       , hlFunRootLabelNode = getNodeID $ fromJust $ rootInCFG cfg
        , hlFunBasicBlockParams =
            map
              ( \n -> HighLevelBasicBlockParams
@@ -199,7 +203,112 @@ computeAsmStrNodeMaps t m =
 -- | Computes the corresponding low-level version of a high-level CP model
 -- instance.
 lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
-lowerHighLevelModel = undefined
+lowerHighLevelModel model ai_maps =
+  let getAI ai_list nid = toArrayIndex $ fromJust $ nid `elemIndex` ai_list
+      pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
+      sortByAI get_ai_f nids =
+        map
+          snd
+          ( sortBy
+              (\(ai1, _) (ai2, _) -> compare ai1 ai2)
+              (pairWithAI get_ai_f nids)
+          )
+      getAIFromOpNodeID nid = getAI (ai2OpNodeIDs ai_maps) nid
+      getAIFromDataNodeID nid = getAI (ai2DataNodeIDs ai_maps) nid
+      getAIFromStateNodeID nid = getAI (ai2StateNodeIDs ai_maps) nid
+      getAIFromLabelNodeID nid = getAI (ai2LabelNodeIDs ai_maps) nid
+      getAIFromMatchID mid = getAI (ai2MatchIDs ai_maps) mid
+      f_params = hlFunctionParams model
+      tm_params = hlMachineParams model
+      m_params = sortByAI (getAIFromMatchID . hlMatchID) (hlMatchParams model)
+  in LowLevelModel
+       { llNumFunOpNodes = toInteger $ length $ hlFunOpNodes f_params
+       , llNumFunDataNodes = toInteger $ length $ hlFunDataNodes f_params
+       , llNumFunStateNodes = toInteger $ length $ hlFunStateNodes f_params
+       , llNumFunLabelNodes = toInteger $ length $ hlFunLabelNodes f_params
+       , llFunRootLabel = getAIFromLabelNodeID $ hlFunRootLabelNode f_params
+       , llFunDomsets =
+           map
+             (\d -> map getAIFromLabelNodeID (domSet d))
+             ( sortByAI
+                 (getAIFromLabelNodeID . domNode)
+                 (hlFunLabelNodes f_params)
+             )
+       , llFunBBExecFreqs =
+           map
+             hlBBExecFrequency
+             ( sortByAI
+                 (getAIFromLabelNodeID . hlBBLabelNode)
+                 (hlFunBasicBlockParams f_params)
+             )
+       , llFunDataNodeLabelDefs =
+           let all_data_nodes = hlFunDataNodes f_params
+               maybe_defs =
+                 map
+                   (\n -> (n, lookup n (hlFunDefPlaceEdges f_params)))
+                   all_data_nodes
+           in map
+                (maybe Nothing (Just . getAIFromLabelNodeID))
+                (map snd (sortByAI fst maybe_defs))
+       , llFunStateNodeLabelDefs =
+           let all_state_nodes = hlFunStateNodes f_params
+               maybe_defs =
+                 map
+                   (\n -> (n, lookup n (hlFunDefPlaceEdges f_params)))
+                   all_state_nodes
+           in map
+                (maybe Nothing (Just . getAIFromLabelNodeID))
+                (map snd (sortByAI fst maybe_defs))
+       , llFunEssentialOpNodes = map getAIFromOpNodeID (hlFunOpNodes f_params)
+       , llFunConstraints =
+           map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
+       , llNumRegisters = toInteger $ length $ hlMachineRegisters tm_params
+       , llNumMatches = toInteger $ length m_params
+       , llMatchOpNodesCovered =
+           map
+             (\m -> map getAIFromOpNodeID (hlMatchOperationsCovered m))
+             m_params
+       , llMatchDataNodesDefined =
+           map
+             (\m -> map getAIFromDataNodeID (hlMatchDataNodesDefined m))
+             m_params
+       , llMatchStateNodesDefined =
+           map
+             (\m -> map getAIFromStateNodeID (hlMatchStateNodesDefined m))
+             m_params
+       , llMatchDataNodesUsed =
+           map
+             (\m -> map getAIFromDataNodeID (hlMatchDataNodesUsed m))
+             m_params
+       , llMatchStateNodesUsed =
+           map
+             (\m -> map getAIFromStateNodeID (hlMatchStateNodesUsed m))
+             m_params
+       , llMatchRootLabelNode =
+           map
+             (maybe Nothing (Just . getAIFromLabelNodeID))
+             (map hlMatchRootLabelNode m_params)
+       , llMatchNonRootLabelNodes =
+           map
+             (map getAIFromLabelNodeID)
+             (map hlMatchNonRootLabelNodes m_params)
+       , llMatchCodeSizes = map hlMatchCodeSize m_params
+       , llMatchLatencies = map hlMatchLatency m_params
+       , llMatchADDUCs = map hlMatchADDUC m_params
+       , llMatchConstraints =
+           map
+             (map (replaceIDWithArrayIndex ai_maps))
+             (map hlMatchConstraints m_params)
+       }
+
+-- | Converts any ID appearing in a constraint with the corresponding array
+-- index.
+replaceIDWithArrayIndex :: ArrayIndexMaplists -> Constraint -> Constraint
+replaceIDWithArrayIndex = undefined
+
+
+
+
 
 
 
