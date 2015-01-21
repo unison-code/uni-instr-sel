@@ -26,7 +26,7 @@ uni-is:
 	$(PRETTIFY) $< > $@
 
 %.f.json: %.ll
-	$(UNI) make --make-fun-from-llvm -f $< -o $@
+	$(UNI) make --construct-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json
 	$(UNI) transform --copy-extend-fun -f $< -o $@
@@ -35,13 +35,13 @@ uni-is:
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
 %.mips32.m.json: %.f.json
-	$(UNI) make --make-pattern-matchset -t mips32.ce -f $< -o $@
+	$(UNI) make --compute-pattern-matchset -t mips32.ce -f $< -o $@
 
 %.hl.model.json: %.f.json %.mips32.m.json
-	$(UNI) make --make-hl-cp-model -f $*.f.json -p $*.mips32.m.json -o $@
+	$(UNI) make --construct-hl-cp-model -f $*.f.json -p $*.mips32.m.json -o $@
 
 %.aimaps.json: %.f.json %.mips32.m.json
-	$(UNI) make --make-array-index-maplists \
+	$(UNI) make --compute-array-index-maplists \
       -f $*.f.json -p $*.mips32.m.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
@@ -56,7 +56,7 @@ uni-is:
       -s $*.ll.sol.json -a $*.aimaps.json -o $@
 
 %.s: %.hl.model.json %.hl.sol.json
-	$(UNI) make -m $*.hl.model.json -s $*.hl.sol.json -o $@
+	$(UNI) make --generate-asm -m $*.hl.model.json -s $*.hl.sol.json -o $@
 
 %.f.dot: %.f.json
 	$(UNI) plot --plot-fg -f $< -o $@

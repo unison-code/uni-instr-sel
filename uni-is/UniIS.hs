@@ -108,11 +108,11 @@ parseArgs =
                  &= auto
                  &= ignore
              , MakeFunctionGraphFromLLVM
-                 &= name "make-fun-from-llvm"
+                 &= name "construct-fun-from-llvm"
                  &= explicit
                  &= help "Constructs a function from an LLVM IR file."
              , MakePatternMatchset
-                 &= name "make-pattern-matchset"
+                 &= name "compute-pattern-matchset"
                  &= explicit
                  &= help ( "Computes the pattern matchset by performing "
                            ++ "pattern matching on the given function using "
@@ -120,19 +120,19 @@ parseArgs =
                            ++ "target machine."
                          )
              , MakeArrayIndexMaplists
-                 &= name "make-array-index-maplists"
+                 &= name "compute-array-index-maplists"
                  &= explicit
                  &= help ( "Computes the array index maplists from "
                            ++ "the given function graph and pattern matchset. "
                          )
              , MakeHighLevelCPModel
-                 &= name "make-hl-cp-model"
+                 &= name "construct-hl-cp-model"
                  &= explicit
                  &= help ( "Constructs a high-level CP model instance from the "
                            ++ "given function graph and pattern matchset ."
                          )
              , MakeAssemblyCode
-                 &= name "make-asm"
+                 &= name "generate-asm"
                  &= explicit
                  &= help ( "Generates the corresponding assembly code from the "
                            ++ "given high-level CP model and solution."
