@@ -438,9 +438,9 @@ ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-dnodes-label-defs")) {
+    for (auto entry : getJsonValue(root, "fun-dnodes-label-defs")) {
         list<ArrayIndex> labels;
-        for (auto entry : jsonlist) {
+        if (!entry.isNull()) {
             labels.push_back(toArrayIndex(entry));
         }
         p.func_data_nodes_labels_defs_.push_back(labels);
@@ -449,9 +449,9 @@ ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDefsForStateNodesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-snodes-label-defs")) {
+    for (auto entry : getJsonValue(root, "fun-snodes-label-defs")) {
         list<ArrayIndex> labels;
-        for (auto entry : jsonlist) {
+        if (!entry.isNull()) {
             labels.push_back(toArrayIndex(entry));
         }
         p.func_state_nodes_labels_defs_.push_back(labels);
