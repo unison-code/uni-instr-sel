@@ -68,6 +68,8 @@ copyExtend f =
 -- frequency. These will be set to have the same frequency as its preceding
 -- label in the CFG (at this point we know for sure that each new label has only
 -- one preceding label).
+--
+-- TODO: update the def-placement edges when phi nodes are involved!
 branchExtend :: Function -> Function
 branchExtend =
   assignMissingExecFreqs . assignMissinBasicBlockLabels . extend
