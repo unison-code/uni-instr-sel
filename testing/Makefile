@@ -34,15 +34,15 @@ uni-is:
 %.be.f.json: %.f.json
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
-%.mips32.m.json: %.f.json
+%.mips32.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t mips32.ce -f $< -o $@
 
-%.hl.model.json: %.f.json %.mips32.m.json
-	$(UNI) make --construct-hl-cp-model -f $*.f.json -p $*.mips32.m.json -o $@
+%.hl.model.json: %.f.json %.mips32.p.json
+	$(UNI) make --construct-hl-cp-model -f $*.f.json -p $*.mips32.p.json -o $@
 
-%.aimaps.json: %.f.json %.mips32.m.json
+%.aimaps.json: %.f.json %.mips32.p.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.f.json -p $*.mips32.m.json -o $@
+      -f $*.f.json -p $*.mips32.p.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
@@ -61,8 +61,8 @@ uni-is:
 %.f.dot: %.f.json
 	$(UNI) plot --plot-fun-graph -f $< -o $@
 
-%.mips32.cov.dot: %.f.json %.mips32.m.json
-	$(UNI) plot --plot-cover-all-matches -f $< -m $*.mips32.m.json -o $@
+%.mips32.cov.dot: %.f.json %.mips32.p.json
+	$(UNI) plot --plot-cover-all-matches -f $< -p $*.mips32.p.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
