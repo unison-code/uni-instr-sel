@@ -172,10 +172,20 @@ parseArgs =
         enum [ PlotNothing
                  &= auto
                  &= ignore
-             , PlotFunctionGraph
-                 &= name "plot-fun-graph"
+             , PlotFunctionFullGraph
+                 &= name "plot-fun-full-graph"
                  &= explicit
-                 &= help "Plots the function graph (in DOT format)."
+                 &= help "Plots the full graph (in DOT format) of a function."
+             , PlotFunctionControlFlowGraph
+                 &= name "plot-fun-cf-graph"
+                 &= explicit
+                 &= help ( "Plots the control flow graph (in DOT format) "
+                           ++ "of a function."
+                         )
+             , PlotFunctionSSAGraph
+                 &= name "plot-fun-ssa-graph"
+                 &= explicit
+                 &= help "Plots the SSA graph (in DOT format) of a function."
              , PlotCoverAllMatches
                  &= name "plot-cover-all-matches"
                  &= explicit

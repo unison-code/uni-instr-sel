@@ -68,6 +68,7 @@ module Language.InstSel.Graphs.Base
   , extractCFG
   , extractDomSet
   , extractIDomSet
+  , extractSSA
   , findFNInMapping
   , findFNInMatch
   , findFNsInMapping
@@ -1390,8 +1391,8 @@ extractIDomSet (Graph g) n =
                      }
   in map f idom_maps
 
--- | Extracts the control-flow graph from a graph. If there is no label node in
--- the graph, an empty graph is returned.
+-- | Extracts the control-flow graph from a graph. If there are no label nodes
+-- in the graph, an empty graph is returned.
 extractCFG :: Graph -> Graph
 extractCFG g =
   let nodes_to_remove = filter
@@ -1403,6 +1404,22 @@ extractCFG g =
               cfg_with_ctrl_nodes
               (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
   in cfg
+
+-- | Extracts the SSA graph (including entity nodes) from a graph. If there are
+-- no operation nodes in the graph, an empty graph is returned.
+extractSSA :: Graph -> Graph
+extractSSA g =
+  let nodes_to_remove =
+        filter
+          ( \n -> not (  isOperationNode n
+                      || isEntityNode n
+                      )
+                  ||
+                  (isControlNode n && not (isRetControlNode n))
+          )
+          (getAllNodes g)
+      ssa = foldl (flip delNode) g nodes_to_remove
+  in ssa
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
 -- node such that all outbound edges will become outbound edges of the node's

@@ -17,12 +17,12 @@ module Language.InstSel.Drivers.PlotDispatcher
 where
 
 import Language.InstSel.Drivers.DispatcherTools
-import qualified Language.InstSel.Drivers.PlotCoverGraph
-  as PlotCoverGraph
-import qualified Language.InstSel.Drivers.PlotFunctionGraph
-  as PlotFunctionGraph
-import qualified Language.InstSel.Drivers.PlotPatternGraph
-  as PlotPatternGraph
+import qualified Language.InstSel.Drivers.PlotCoverGraphs
+  as PlotCoverGraphs
+import qualified Language.InstSel.Drivers.PlotFunctionGraphs
+  as PlotFunctionGraphs
+import qualified Language.InstSel.Drivers.PlotPatternGraphs
+  as PlotPatternGraphs
 
 
 
@@ -37,15 +37,21 @@ dispatch :: PlotAction -> Options -> IO [Output]
 dispatch a opts
   | a == PlotNothing =
       reportError "No plot action provided."
-  | a `elem` [PlotFunctionGraph, PlotFunctionCFG, PlotFunctionSSA] =
+  | a `elem` [ PlotFunctionFullGraph
+             , PlotFunctionControlFlowGraph
+             , PlotFunctionSSAGraph
+             ] =
       do function <- loadFunctionFromJson opts
-         PlotFunctionGraph.run a function
-  | a `elem` [PlotPatternGraph, PlotPatternCFG, PlotPatternSSA] =
+         PlotFunctionGraphs.run a function
+  | a `elem` [ PlotPatternFullGraph
+             , PlotPatternControlFlowGraph
+             , PlotPatternSSAGraph
+             ] =
       -- TODO: implement
       undefined
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
-         PlotCoverGraph.run a function matchset
+         PlotCoverGraphs.run a function matchset
   | otherwise =
       reportError "PlotDispatcher: unsupported action"

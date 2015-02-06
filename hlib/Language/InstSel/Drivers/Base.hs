@@ -82,12 +82,12 @@ data TransformAction
 
 data PlotAction
   = PlotNothing
-  | PlotFunctionGraph
-  | PlotFunctionCFG
-  | PlotFunctionSSA
-  | PlotPatternGraph
-  | PlotPatternCFG
-  | PlotPatternSSA
+  | PlotFunctionFullGraph
+  | PlotFunctionControlFlowGraph
+  | PlotFunctionSSAGraph
+  | PlotPatternFullGraph
+  | PlotPatternControlFlowGraph
+  | PlotPatternSSAGraph
   | PlotCoverAllMatches
   | PlotCoverPerMatch
   deriving (Eq, Typeable, Data)

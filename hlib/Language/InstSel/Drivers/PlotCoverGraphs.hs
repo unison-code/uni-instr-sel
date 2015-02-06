@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.PlotCoverGraph
+-- Module      : Language.InstSel.Drivers.PlotCoverGraphs
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.PlotCoverGraph
+module Language.InstSel.Drivers.PlotCoverGraphs
   ( run )
 where
 

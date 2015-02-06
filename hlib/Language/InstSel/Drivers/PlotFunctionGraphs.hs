@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.PlotFunctionGraph
+-- Module      : Language.InstSel.Drivers.PlotFunctionGraphs
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,11 +12,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.PlotFunctionGraph
+module Language.InstSel.Drivers.PlotFunctionGraphs
   ( run )
 where
 
 import Language.InstSel.Drivers.Base
+import Language.InstSel.Graphs
+  ( Graph
+  , extractCFG
+  , extractSSA
+  )
 import Language.InstSel.Functions
 import Language.InstSel.OpStructures
 
@@ -31,10 +36,19 @@ import Language.InstSel.Utils.IO
 -- Functions
 -------------
 
+-- | Produces DOT data as output by applying a given graph-to-graph function on
+-- the given 'Function'.
+produceDotOutputWith :: (Graph -> Graph) -> Function -> IO [Output]
+produceDotOutputWith f fun =
+  do let dot = toDotString $ f $ osGraph $ functionOS fun
+     return [toOutputWithoutID dot]
+
 run :: PlotAction -> Function -> IO [Output]
 
-run PlotFunctionGraph f =
-  do let dot = toDotString $ osGraph $ functionOS f
-     return [toOutputWithoutID dot]
+run PlotFunctionFullGraph fun = produceDotOutputWith id fun
+
+run PlotFunctionControlFlowGraph fun = produceDotOutputWith extractCFG fun
+
+run PlotFunctionSSAGraph fun = produceDotOutputWith extractSSA fun
 
 run _ _ = reportError "PlotFunction: unsupported action"

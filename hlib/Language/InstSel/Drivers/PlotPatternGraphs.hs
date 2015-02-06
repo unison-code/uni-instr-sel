@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstSel.Drivers.PlotPatternGraph
+-- Module      : Language.InstSel.Drivers.PlotPatternGraphs
 -- Copyright   : (c) Gabriel Hjort Blindell 2014
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,7 +12,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstSel.Drivers.PlotPatternGraph
+module Language.InstSel.Drivers.PlotPatternGraphs
   ( run )
 where
 
