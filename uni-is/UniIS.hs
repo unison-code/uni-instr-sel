@@ -253,7 +253,8 @@ emitToFile :: FilePath -> Output -> IO ()
 emitToFile fp o =
   let (fname, ext) = splitExtension fp
       oid = oID o
-      filename = fname ++ if isJust oid then "." ++ fromJust oid else "" ++ ext
+      filename =
+        fname ++ (if isJust oid then "." ++ fromJust oid else "") ++ ext
   in writeFile filename (oData o)
 
 
