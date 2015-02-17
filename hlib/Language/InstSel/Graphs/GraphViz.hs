@@ -93,12 +93,16 @@ mkDefaultNodeAttr i_n =
       nid = getNodeID n
   in mkNodeShapeAttr nt ++ mkNodeLabelAttr nid nt
 
+-- | Creates attribute for drawing thick lines.
+thickWidthAttr :: GV.Attribute
+thickWidthAttr = GV.penWidth 3.0
+
 -- | Constructs the node shape attributes based on the given node type.
 mkNodeShapeAttr :: NodeType -> GV.Attributes
 mkNodeShapeAttr (ComputationNode _) = [GV.shape GV.Circle]
-mkNodeShapeAttr (ControlNode _) = [GV.shape GV.InvHouse]
+mkNodeShapeAttr (ControlNode _) = [GV.shape GV.DiamondShape, thickWidthAttr]
 mkNodeShapeAttr (DataNode _ _) = [GV.shape GV.BoxShape]
-mkNodeShapeAttr (LabelNode _) = [GV.shape GV.BoxShape, GV.penWidth 3.0]
+mkNodeShapeAttr (LabelNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
 mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
 mkNodeShapeAttr StateNode = [GV.shape GV.BoxShape]
 mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
@@ -143,7 +147,7 @@ mkEdgeAttrByType StateFlowEdge = mkStateFlowEdgeAttr
 mkEdgeAttrByType DefPlaceEdge = mkDefPlaceEdgeAttr
 
 mkControlFlowEdgeAttr :: GV.Attributes
-mkControlFlowEdgeAttr = [GV.style GV.dashed]
+mkControlFlowEdgeAttr = [GV.style GV.solid, thickWidthAttr]
 
 mkDataFlowEdgeAttr :: GV.Attributes
 mkDataFlowEdgeAttr = [GV.style GV.solid]
