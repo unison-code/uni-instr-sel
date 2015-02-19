@@ -551,7 +551,7 @@ addMissingDomEdges st =
       g1 = foldr
              ( \(dn, bb_id, nr) g ->
                let ln = fromJust $ findLabelNodeWithID st bb_id
-                   (g', new_e) = G.addNewEdge G.DomEdge (dn, ln) g
+                   (g', new_e) = G.addNewDomEdge (dn, ln) g
                    new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
                    g'' = G.updateEdgeLabel new_el new_e g'
                in g''
@@ -569,7 +569,7 @@ addMissingPostDomEdges st =
       g1 = foldr
              ( \(dn, bb_id, nr) g ->
                let ln = fromJust $ findLabelNodeWithID st bb_id
-                   (g', new_e) = G.addNewEdge G.PostDomEdge (ln, dn) g
+                   (g', new_e) = G.addNewPostDomEdge (ln, dn) g
                    new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
                    g'' = G.updateEdgeLabel new_el new_e g'
                in g''

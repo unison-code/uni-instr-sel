@@ -51,11 +51,17 @@ module Language.InstSel.Graphs.Base
   , NodeType (..)
   , SrcNode
   , addNewEdge
+  , addNewEdges
   , addNewCtrlFlowEdge
+  , addNewCtrlFlowEdges
   , addNewDtFlowEdge
+  , addNewDtFlowEdges
   , addNewDomEdge
+  , addNewDomEdges
   , addNewPostDomEdge
+  , addNewPostDomEdges
   , addNewStFlowEdge
+  , addNewStFlowEdges
   , addNewNode
   , areInEdgesEquivalent
   , areOutEdgesEquivalent
@@ -834,20 +840,41 @@ addNewEdge et (from_n, to_n) (Graph g) =
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
 
+-- | Adds many new edges between two nodes to the graph. The edges will be
+-- inserted in the order of the list, and the edge numberings will be set
+-- accordingly.
+addNewEdges :: EdgeType -> [(SrcNode, DstNode)] -> Graph -> Graph
+addNewEdges et pairs g = foldl (\g' p -> fst $ addNewEdge et p g') g pairs
+
 addNewDtFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewDtFlowEdge = addNewEdge DataFlowEdge
+
+addNewDtFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewDtFlowEdges = addNewEdges DataFlowEdge
 
 addNewCtrlFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewCtrlFlowEdge = addNewEdge ControlFlowEdge
 
+addNewCtrlFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewCtrlFlowEdges = addNewEdges ControlFlowEdge
+
 addNewStFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewStFlowEdge = addNewEdge StateFlowEdge
+
+addNewStFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewStFlowEdges = addNewEdges StateFlowEdge
 
 addNewDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewDomEdge = addNewEdge DomEdge
 
+addNewDomEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewDomEdges = addNewEdges DomEdge
+
 addNewPostDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewPostDomEdge = addNewEdge PostDomEdge
+
+addNewPostDomEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewPostDomEdges = addNewEdges PostDomEdge
 
 -- | Inserts a new node along an existing edge in the graph, returning both the
 -- new graph and the new node. The existing edge will be split into two edges
@@ -995,7 +1022,7 @@ convertDomsetN2ID d =
 
 -- | Converts a postdominator set of nodes into a postdominator set of node IDs.
 convertPostDomsetN2ID :: PostDomset Node -> PostDomset NodeID
-convertPostDomsetN2ID = convertPostDomsetN2ID
+convertPostDomsetN2ID = convertDomsetN2ID
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
@@ -1411,10 +1438,7 @@ findFNInMapping st pn =
      else Nothing
 
 -- | Computes the dominator sets for a given graph and root node.
-computeDomsets
-  :: Graph
-  -> Node
-  -> [Domset Node]
+computeDomsets :: Graph -> Node -> [Domset Node]
 computeDomsets (Graph g) n =
   let dom_sets = I.dom g (getIntNodeID n)
       f (n1, ns2) = Domset
@@ -1423,20 +1447,8 @@ computeDomsets (Graph g) n =
                       }
   in map f dom_sets
 
--- | Computes the postdominator sets for a given graph and sink node.
-computePostDomsets
-  :: Graph
-  -> Node
-  -> [Domset Node]
-computePostDomsets (Graph g) n =
-  -- TODO: implement
-  undefined
-
 -- | Computes the immediate-dominator sets for a given graph and root node.
-computeIDomsets ::
-  Graph
-  -> Node
-  -> [Domset Node]
+computeIDomsets :: Graph -> Node -> [PostDomset Node]
 computeIDomsets (Graph g) n =
   let idom_maps = I.iDom g (getIntNodeID n)
       f (n1, n2) = Domset
@@ -1445,15 +1457,22 @@ computeIDomsets (Graph g) n =
                      }
   in map f idom_maps
 
--- | Computes the immediate-postdominator sets for a given graph and sink
--- node.
-computeIPostDomsets ::
-  Graph
-  -> Node
-  -> [Domset Node]
-computeIPostDomsets (Graph g) n =
-  -- TODO: implement
-  undefined
+-- | Reverses the direction of all edges in the given graph.
+reverseAllEdges :: Graph -> Graph
+reverseAllEdges g =
+  let nodes = getAllNodes g
+      old_edges = getAllEdges g
+      new_edges =
+        map (\(Edge (src, dst, label)) -> Edge (dst, src, label)) old_edges
+  in mkGraph nodes new_edges
+
+-- | Computes the postdominator sets for a given graph and sink node.
+computePostDomsets :: Graph -> Node -> [PostDomset Node]
+computePostDomsets g n = computeDomsets (reverseAllEdges g) n
+
+-- | Computes the immediate-postdominator sets for a given graph and sink node.
+computeIPostDomsets :: Graph -> Node -> [Domset Node]
+computeIPostDomsets g n = computeIDomsets (reverseAllEdges g) n
 
 -- | Extracts the control-flow graph from a graph. If there are no label nodes
 -- in the graph, an empty graph is returned.
