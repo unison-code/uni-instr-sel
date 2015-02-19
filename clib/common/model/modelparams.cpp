@@ -83,8 +83,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
 
     setNumValues(root, p);
     setEntryLabelInF(root, p);
-    setLabelDomsetsInF(root, p);
-    setLabelPostDomsetsInF(root, p);
+    setLabelDomSetsInF(root, p);
+    setLabelPostDomSetsInF(root, p);
     setLabelDomEdgesInF(root, p);
     setLabelPostDomEdgesInF(root, p);
     setEssentialOpNodesInF(root, p);
@@ -277,12 +277,12 @@ ModelParams::getNonEntryLabelNodesInAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getLabelDomsetsInF(void) const {
+ModelParams::getLabelDomSetsInF(void) const {
     return func_label_dom_sets_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelPostDomsetsInF(void) const {
+ModelParams::getLabelPostDomSetsInF(void) const {
     return func_label_postdom_sets_;
 }
 
@@ -392,7 +392,7 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setLabelDomsetsInF(const Value& root, ModelParams& p) {
+ModelParams::setLabelDomSetsInF(const Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "fun-label-dom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
@@ -403,7 +403,7 @@ ModelParams::setLabelDomsetsInF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setLabelPostDomsetsInF(const Value& root, ModelParams& p) {
+ModelParams::setLabelPostDomSetsInF(const Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "fun-label-postdom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {

@@ -99,7 +99,7 @@ class ModelParams {
      * @returns List of label nodes that dominates a particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelDomsetsInF(void) const;
+    getLabelDomSetsInF(void) const;
 
     /**
      * Gets the list of postdominators per given label node in the function
@@ -108,7 +108,7 @@ class ModelParams {
      * @returns List of label nodes that postdominates a particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelPostDomsetsInF(void) const;
+    getLabelPostDomSetsInF(void) const;
 
     /**
      * Gets the list of dominance edges per given label node in the function
@@ -349,7 +349,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelDomsetsInF(const Json::Value& root, ModelParams& p);
+    setLabelDomSetsInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the postdominator sets for the label nodes in the function graph.
@@ -362,7 +362,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelPostDomsetsInF(const Json::Value& root, ModelParams& p);
+    setLabelPostDomSetsInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the dominance edges for the respective label nodes in the function
