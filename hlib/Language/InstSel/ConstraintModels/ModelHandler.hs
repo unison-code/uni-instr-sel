@@ -177,7 +177,8 @@ processMatch instr pattern match mid =
        , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs a_ns)
        , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
        , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
-       , hlMatchEntryLabelNode = entry_l_node_id
+       , hlMatchEntryLabelNode =
+           maybe Nothing (findFNInMatch match) entry_l_node_id
        , hlMatchNonEntryLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
            map
