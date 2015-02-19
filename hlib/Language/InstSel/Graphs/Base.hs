@@ -36,6 +36,7 @@
 
 module Language.InstSel.Graphs.Base
   ( Domset (..)
+  , PostDomset
   , DstNode
   , Edge (..)
   , EdgeLabel (..)
@@ -49,14 +50,21 @@ module Language.InstSel.Graphs.Base
   , NodeLabel (..)
   , NodeType (..)
   , SrcNode
-  , addNewCFEdge
-  , addNewDFEdge
-  , addNewDPEdge
   , addNewEdge
-  , addNewSFEdge
+  , addNewCtrlFlowEdge
+  , addNewDtFlowEdge
+  , addNewDomEdge
+  , addNewPostDomEdge
+  , addNewStFlowEdge
   , addNewNode
   , areInEdgesEquivalent
   , areOutEdgesEquivalent
+  , computeDomsets
+  , computeIDomsets
+  , computePostDomsets
+  , computeIPostDomsets
+  , convertDomsetN2ID
+  , convertPostDomsetN2ID
   , convertMappingN2ID
   , convertMatchN2ID
   , copyNodeLabel
@@ -66,8 +74,6 @@ module Language.InstSel.Graphs.Base
   , doEdgeListsMatch
   , doNodesMatch
   , extractCFG
-  , extractDomSet
-  , extractIDomSet
   , extractSSA
   , findFNInMapping
   , findFNInMatch
@@ -81,14 +87,19 @@ module Language.InstSel.Graphs.Base
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
-  , getCFInEdges
-  , getCFOutEdges
-  , getDFInEdges
-  , getDFOutEdges
-  , getDPInEdges
-  , getDPOutEdges
+  , getCtrlFlowInEdges
+  , getCtrlFlowOutEdges
+  , getDtFlowInEdges
+  , getDtFlowOutEdges
+  , getDomInEdges
+  , getDomOutEdges
+  , getPostDomInEdges
+  , getPostDomOutEdges
+  , getStFlowInEdges
+  , getStFlowOutEdges
   , getEdgeType
   , getEdges
+  , getEdgeLabel
   , getInEdgeNr
   , getInEdges
   , getLastAddedNode
@@ -101,8 +112,6 @@ module Language.InstSel.Graphs.Base
   , getOutEdgeNr
   , getOutEdges
   , getPredecessors
-  , getSFInEdges
-  , getSFOutEdges
   , getSourceNode
   , getSuccessors
   , getTargetNode
@@ -116,7 +125,8 @@ module Language.InstSel.Graphs.Base
   , isCopyNode
   , isDataFlowEdge
   , isDataNode
-  , isDefPlaceEdge
+  , isDomEdge
+  , isPostDomEdge
   , isEntityNode
   , isInGraph
   , isLabelNode
@@ -128,7 +138,8 @@ module Language.InstSel.Graphs.Base
   , isOfCopyNodeType
   , isOfDataFlowEdgeType
   , isOfDataNodeType
-  , isOfDefPlaceEdgeType
+  , isOfDomEdgeType
+  , isOfPostDomEdgeType
   , isOfLabelNodeType
   , isOfPhiNodeType
   , isOfStateFlowEdgeType
@@ -255,7 +266,8 @@ data EdgeType
   = ControlFlowEdge
   | DataFlowEdge
   | StateFlowEdge
-  | DefPlaceEdge
+  | DomEdge
+  | PostDomEdge
   deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
@@ -291,6 +303,8 @@ data Domset t
         -- ^ The dominated entities.
       }
   deriving (Show)
+
+type PostDomset = Domset
 
 
 
@@ -395,7 +409,8 @@ instance FromJSON EdgeType where
     case str of "ctrl" -> return ControlFlowEdge
                 "data" -> return DataFlowEdge
                 "stat" -> return StateFlowEdge
-                "def"  -> return DefPlaceEdge
+                "dom"  -> return DomEdge
+                "pdom" -> return PostDomEdge
                 _      -> mzero
   parseJSON _ = mzero
 
@@ -403,7 +418,8 @@ instance ToJSON EdgeType where
   toJSON ControlFlowEdge = "ctrl"
   toJSON DataFlowEdge    = "data"
   toJSON StateFlowEdge   = "stat"
-  toJSON DefPlaceEdge    = "def"
+  toJSON DomEdge         = "dom"
+  toJSON PostDomEdge     = "pdom"
 
 instance FromJSON EdgeNr where
   parseJSON v = EdgeNr <$> parseJSON v
@@ -538,8 +554,11 @@ isStateFlowEdge = isOfStateFlowEdgeType . getEdgeType
 isControlFlowEdge :: Edge -> Bool
 isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
 
-isDefPlaceEdge :: Edge -> Bool
-isDefPlaceEdge = isOfDefPlaceEdgeType . getEdgeType
+isDomEdge :: Edge -> Bool
+isDomEdge = isOfDomEdgeType . getEdgeType
+
+isPostDomEdge :: Edge -> Bool
+isPostDomEdge = isOfPostDomEdgeType . getEdgeType
 
 isOfDataFlowEdgeType :: EdgeType -> Bool
 isOfDataFlowEdgeType DataFlowEdge = True
@@ -553,9 +572,13 @@ isOfStateFlowEdgeType :: EdgeType -> Bool
 isOfStateFlowEdgeType StateFlowEdge = True
 isOfStateFlowEdgeType _ = False
 
-isOfDefPlaceEdgeType :: EdgeType -> Bool
-isOfDefPlaceEdgeType DefPlaceEdge = True
-isOfDefPlaceEdgeType _ = False
+isOfDomEdgeType :: EdgeType -> Bool
+isOfDomEdgeType DomEdge = True
+isOfDomEdgeType _ = False
+
+isOfPostDomEdgeType :: EdgeType -> Bool
+isOfPostDomEdgeType PostDomEdge = True
+isOfPostDomEdgeType _ = False
 
 -- | Creates an empty graph.
 mkEmpty :: Graph
@@ -811,17 +834,20 @@ addNewEdge et (from_n, to_n) (Graph g) =
       new_g = Graph (I.insEdge new_e g)
   in (new_g, Edge new_e)
 
-addNewDFEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewDFEdge = addNewEdge DataFlowEdge
+addNewDtFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewDtFlowEdge = addNewEdge DataFlowEdge
 
-addNewCFEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewCFEdge = addNewEdge ControlFlowEdge
+addNewCtrlFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewCtrlFlowEdge = addNewEdge ControlFlowEdge
 
-addNewSFEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewSFEdge = addNewEdge StateFlowEdge
+addNewStFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewStFlowEdge = addNewEdge StateFlowEdge
 
-addNewDPEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewDPEdge = addNewEdge DefPlaceEdge
+addNewDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewDomEdge = addNewEdge DomEdge
+
+addNewPostDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewPostDomEdge = addNewEdge PostDomEdge
 
 -- | Inserts a new node along an existing edge in the graph, returning both the
 -- new graph and the new node. The existing edge will be split into two edges
@@ -892,40 +918,48 @@ getInEdges :: Graph -> Node -> [Edge]
 getInEdges (Graph g) n = map toEdge $ I.inn g (getIntNodeID n)
 
 -- | Gets all inbound data flow edges to a particular node.
-getDFInEdges :: Graph -> Node -> [Edge]
-getDFInEdges g n = filter isDataFlowEdge $ getInEdges g n
+getDtFlowInEdges :: Graph -> Node -> [Edge]
+getDtFlowInEdges g n = filter isDataFlowEdge $ getInEdges g n
 
 -- | Gets all inbound control flow edges to a particular node.
-getCFInEdges :: Graph -> Node -> [Edge]
-getCFInEdges g n = filter isControlFlowEdge $ getInEdges g n
+getCtrlFlowInEdges :: Graph -> Node -> [Edge]
+getCtrlFlowInEdges g n = filter isControlFlowEdge $ getInEdges g n
 
 -- | Gets all inbound state flow edges to a particular node.
-getSFInEdges :: Graph -> Node -> [Edge]
-getSFInEdges g n = filter isStateFlowEdge $ getInEdges g n
+getStFlowInEdges :: Graph -> Node -> [Edge]
+getStFlowInEdges g n = filter isStateFlowEdge $ getInEdges g n
 
--- | Gets all inbound definition placement edges to a particular node.
-getDPInEdges :: Graph -> Node -> [Edge]
-getDPInEdges g n = filter isDefPlaceEdge $ getInEdges g n
+-- | Gets all inbound dominance edges to a particular node.
+getDomInEdges :: Graph -> Node -> [Edge]
+getDomInEdges g n = filter isDomEdge $ getInEdges g n
+
+-- | Gets all inbound postdominance edges to a particular node.
+getPostDomInEdges :: Graph -> Node -> [Edge]
+getPostDomInEdges g n = filter isPostDomEdge $ getInEdges g n
 
 -- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
 getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
 
 -- | Gets all outbound data flow edges to a particular node.
-getDFOutEdges :: Graph -> Node -> [Edge]
-getDFOutEdges g n = filter isDataFlowEdge $ getOutEdges g n
+getDtFlowOutEdges :: Graph -> Node -> [Edge]
+getDtFlowOutEdges g n = filter isDataFlowEdge $ getOutEdges g n
 
 -- | Gets all outbound control flow edges to a particular node.
-getCFOutEdges :: Graph -> Node -> [Edge]
-getCFOutEdges g n = filter isControlFlowEdge $ getOutEdges g n
+getCtrlFlowOutEdges :: Graph -> Node -> [Edge]
+getCtrlFlowOutEdges g n = filter isControlFlowEdge $ getOutEdges g n
 
 -- | Gets all outbound state flow edges to a particular node.
-getSFOutEdges :: Graph -> Node -> [Edge]
-getSFOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
+getStFlowOutEdges :: Graph -> Node -> [Edge]
+getStFlowOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
 
--- | Gets all outbound definition placement edges to a particular node.
-getDPOutEdges :: Graph -> Node -> [Edge]
-getDPOutEdges g n = filter isDefPlaceEdge $ getOutEdges g n
+-- | Gets all outbound dominance edges to a particular node.
+getDomOutEdges :: Graph -> Node -> [Edge]
+getDomOutEdges g n = filter isDomEdge $ getOutEdges g n
+
+-- | Gets all outbound postdominance edges to a particular node.
+getPostDomOutEdges :: Graph -> Node -> [Edge]
+getPostDomOutEdges g n = filter isPostDomEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
 getEdges :: Graph -> SrcNode -> DstNode -> [Edge]
@@ -950,6 +984,18 @@ getSourceNode (Graph g) (Edge (n, _, _)) = fromJust $ getNodeWithIntNodeID g n
 -- | Gets the target node of an edge.
 getTargetNode :: Graph -> Edge -> Node
 getTargetNode (Graph g) (Edge (_, n, _)) = fromJust $ getNodeWithIntNodeID g n
+
+-- | Converts a dominator set of nodes into a dominator set of node IDs.
+convertDomsetN2ID :: Domset Node -> Domset NodeID
+convertDomsetN2ID d =
+  Domset
+    { domNode = getNodeID $ domNode d
+    , domSet = map getNodeID (domSet d)
+    }
+
+-- | Converts a postdominator set of nodes into a postdominator set of node IDs.
+convertPostDomsetN2ID :: PostDomset Node -> PostDomset NodeID
+convertPostDomsetN2ID = convertPostDomsetN2ID
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
@@ -1364,12 +1410,12 @@ findFNInMapping st pn =
      then Just $ head found
      else Nothing
 
--- | Gets a list of dominator sets for a given graph and root node.
-extractDomSet
+-- | Computes the dominator sets for a given graph and root node.
+computeDomsets
   :: Graph
   -> Node
   -> [Domset Node]
-extractDomSet (Graph g) n =
+computeDomsets (Graph g) n =
   let dom_sets = I.dom g (getIntNodeID n)
       f (n1, ns2) = Domset
                       { domNode = fromJust $ getNodeWithIntNodeID g n1
@@ -1377,19 +1423,37 @@ extractDomSet (Graph g) n =
                       }
   in map f dom_sets
 
--- | Gets a list of immediate-dominator mappings for a given graph and root
--- node.
-extractIDomSet ::
+-- | Computes the postdominator sets for a given graph and sink node.
+computePostDomsets
+  :: Graph
+  -> Node
+  -> [Domset Node]
+computePostDomsets (Graph g) n =
+  -- TODO: implement
+  undefined
+
+-- | Computes the immediate-dominator sets for a given graph and root node.
+computeIDomsets ::
   Graph
   -> Node
   -> [Domset Node]
-extractIDomSet (Graph g) n =
+computeIDomsets (Graph g) n =
   let idom_maps = I.iDom g (getIntNodeID n)
       f (n1, n2) = Domset
                      { domNode = fromJust $ getNodeWithIntNodeID g n1
                      , domSet = [fromJust $ getNodeWithIntNodeID g n2]
                      }
   in map f idom_maps
+
+-- | Computes the immediate-postdominator sets for a given graph and sink
+-- node.
+computeIPostDomsets ::
+  Graph
+  -> Node
+  -> [Domset Node]
+computeIPostDomsets (Graph g) n =
+  -- TODO: implement
+  undefined
 
 -- | Extracts the control-flow graph from a graph. If there are no label nodes
 -- in the graph, an empty graph is returned.

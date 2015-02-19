@@ -50,6 +50,7 @@ import Language.InstSel.ConstraintModels.IDs
 import Language.InstSel.Constraints
 import Language.InstSel.Graphs
   ( Domset (..)
+  , PostDomset
   , MatchID (..)
   , NodeID (..)
   )
@@ -80,21 +81,24 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOpNodes :: [NodeID]
         -- ^ The operation nodes in the function graph.
-      , hlFunDataNodes :: [NodeID]
-        -- ^ The data nodes in the function graph.
-      , hlFunStateNodes :: [NodeID]
-        -- ^ The state nodes in the function graph.
-      , hlFunLabelNodes :: [Domset NodeID]
-        -- ^ The label nodes in the function graph, along with their dominator
-        -- sets.
-      , hlFunRootLabelNode :: NodeID
-        -- ^ The root label, or entry point into the function.
+      , hlFunEntityNodes :: [NodeID]
+        -- ^ The entity nodes in the function graph.
+      , hlFunLabelNodes :: [NodeID]
+        -- ^ The label nodes in the function graph.
+      , hlFunEntryLabelNode :: NodeID
+        -- ^ The label that is the entry point into the function.
+      , hlFunLabelDomsets :: [Domset NodeID]
+        -- ^ The dominator sets of the label nodes.
+      , hlFunLabelPostDomsets :: [PostDomset NodeID]
+        -- ^ The postdominator sets of the label nodes.
+      , hlFunDomEdges :: [(NodeID, NodeID)]
+        -- ^ The dominance edges, where the first element in the tuple is the
+        -- entity node and the second element is the label node.
+      , hlFunPostDomEdges :: [(NodeID, NodeID)]
+        -- ^ The postdominance edges, where the first element in the tuple is
+        -- the entity node and the second element is the label node.
       , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
         -- ^ The basic block information.
-      , hlFunDefPlaceEdges :: [(NodeID, NodeID)]
-        -- ^ The definition placement edges in the function graph. The first
-        -- node in the tuple is the entity node and the second node is the label
-        -- node.
       , hlFunEssentialOpNodes :: [NodeID]
         -- ^ Operation nodes that are essential, meaning they *must* be covered.
       , hlFunConstraints :: [Constraint]
@@ -124,31 +128,24 @@ data HighLevelMatchParams
         -- ^ The pattern ID of this match.
       , hlMatchID :: MatchID
         -- ^ The matchset ID of this match.
-      , hlMatchOperationsCovered :: [NodeID]
+      , hlMatchOpNodesCovered :: [NodeID]
         -- ^ The operations in the function graph which are covered by this
         -- match.
-      , hlMatchDataNodesDefined :: [NodeID]
-        -- ^ The data nodes in the function graph which are defined by this
+      , hlMatchEntityNodesDefined :: [NodeID]
+        -- ^ The entities in the function graph which are defined by this match.
+      , hlMatchEntityNodesUsed :: [NodeID]
+        -- ^ The entities in the function graph which are used by this
         -- match.
-      , hlMatchDataNodesUsed :: [NodeID]
-        -- ^ The data nodes in the function graph which are used by this
-        -- match. Unlike 'mDataNodesUsedByPhis', this list contains all data
-        -- nodes used by any operation appearing in this match.
-      , hlMatchDataNodesUsedByPhis :: [NodeID]
-        -- ^ The data nodes in the function graph which are used by phi nodes
-        -- appearing this match. This information is required during instruction
-        -- emission in order to break cyclic data dependencies.
-      , hlMatchStateNodesDefined :: [NodeID]
-        -- ^ The state nodes in the function graph which are defined by this
-        -- match.
-      , hlMatchStateNodesUsed :: [NodeID]
-        -- ^ The state nodes in the function graph which are used by this match.
-      , hlMatchRootLabelNode :: Maybe NodeID
-        -- ^ The label node in the function graph that appears as root label (if
-        -- there is such a node) in this match.
-      , hlMatchNonRootLabelNodes :: [NodeID]
+      , hlMatchEntryLabelNode :: Maybe NodeID
+        -- ^ The label node in the function graph that appears as entry label
+        -- (if there is such a node) in this match.
+      , hlMatchNonEntryLabelNodes :: [NodeID]
         -- ^ The label nodes in the function graph that appears in this match
-        -- but not as roots.
+        -- but not as entries.
+      , hlMatchCodeSize :: Integer
+        -- ^ The size of the instruction associated with this match.
+      , hlMatchLatency :: Integer
+        -- ^ The latency of the instruction associated with this match.
       , hlMatchConstraints :: [Constraint]
         -- ^ The pattern-specific constraints, if any. All node IDs used in the
         -- patterns refer to nodes in the function graph (not the pattern
@@ -159,10 +156,10 @@ data HighLevelMatchParams
         -- of the generic phi patterns.
       , hlMatchHasControlNodes :: Bool
         -- ^ Whether the pattern contains one or more control nodes.
-      , hlMatchCodeSize :: Integer
-        -- ^ The size of the instruction associated with this match.
-      , hlMatchLatency :: Integer
-        -- ^ The latency of the instruction associated with this match.
+      , hlMatchDataNodesUsedByPhis :: [NodeID]
+        -- ^ The data nodes in the function graph which are used by phi nodes
+        -- appearing this match. This information is required during instruction
+        -- emission in order to break cyclic data dependencies.
       , hlMatchAsmStrNodeMaplist :: [Maybe NodeID]
         -- ^ A list of mappings of the node IDs that appears in the assembly
         -- instruction template (which refer to nodes in the pattern graph) to
@@ -188,34 +185,32 @@ data LowLevelModel
   = LowLevelModel
       { llNumFunOpNodes :: Integer
         -- ^ The number of operation nodes appearing in the function graph.
-      , llNumFunDataNodes :: Integer
-        -- ^ The number of data nodes appearing in the function graph.
-      , llNumFunStateNodes :: Integer
-        -- ^ The number of state nodes appearing in the function graph.
+      , llNumFunEntityNodes :: Integer
+        -- ^ The number of entity nodes appearing in the function graph.
       , llNumFunLabelNodes :: Integer
         -- ^ The number of label nodes appearing in the function graph.
-      , llFunRootLabel :: ArrayIndex
-        -- ^ The root label of the function graph.
-      , llFunDomsets :: [[ArrayIndex]]
+      , llFunEntryLabelNode :: ArrayIndex
+        -- ^ The entry label node of the function graph.
+      , llFunLabelDomsets :: [[ArrayIndex]]
         -- ^ The list of dominators for each label node in the function graph.
         -- An index into the outer list corresponds to the array index of a
         -- particular label node.
+      , llFunLabelPostDomsets :: [[ArrayIndex]]
+        -- ^ The list of postdominators for each label node in the function
+        -- graph. An index into the outer list corresponds to the array index of
+        -- a particular label node.
+      , llFunLabelDomEdges :: [[ArrayIndex]]
+        -- ^ The list of entity nodes for each label node in the function graph
+        -- for which there is a dominance edge. An index into the outer list
+        -- corresponds to the array index of a particular label node.
+      , llFunLabelPostDomEdges :: [[ArrayIndex]]
+        -- ^ The list of entity nodes for each label node in the function graph
+        -- for which there is a postdominance edge. An index into the outer
+        -- list corresponds to the array index of a particular label node.
       , llFunBBExecFreqs :: [ExecFreq]
         -- ^ The execution frequency of each basic block. An index into the list
         -- corresponds to the array index of a particular label node in the
         -- function graph.
-      , llFunDataNodeLabelDefs :: [Maybe ArrayIndex]
-        -- ^ The array index of the label (if any) where a particular data node
-        -- in the function graph must be defined. An index into the list
-        -- corresponds to the array index of a particular data node. If there is
-        -- no such constraint, the corresponding value in the list will be
-        -- @Nothing@.
-      , llFunStateNodeLabelDefs :: [Maybe ArrayIndex]
-        -- ^ The array index of the label (if any) where a particular state node
-        -- in the function graph must be defined. An index into the list
-        -- corresponds to the array index of a particular state node. If there
-        -- is no such constraint, the corresponding value in the list will be
-        -- @Nothing@.
       , llFunEssentialOpNodes :: [ArrayIndex]
         -- ^ Operation nodes that are essential, meaning they *must* be
         -- covered. An index into the list corresponds to the array index of a
@@ -231,28 +226,20 @@ data LowLevelModel
         -- ^ The list of operation nodes in the function graph that are covered
         -- by each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchDataNodesDefined :: [[ArrayIndex]]
-        -- ^ The list of data nodes in the function graph that are defined by
+      , llMatchEntityNodesDefined :: [[ArrayIndex]]
+        -- ^ The list of entity nodes in the function graph that are defined by
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchStateNodesDefined :: [[ArrayIndex]]
-        -- ^ The list of state nodes in the function graph that are defined by
+      , llMatchEntityNodesUsed :: [[ArrayIndex]]
+        -- ^ The list of entity nodes in the function graph that are used by
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchDataNodesUsed :: [[ArrayIndex]]
-        -- ^ The list of data nodes in the function graph that are used by each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
-      , llMatchStateNodesUsed :: [[ArrayIndex]]
-        -- ^ The list of state nodes in the function graph that are used by each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
-      , llMatchRootLabelNode :: [Maybe ArrayIndex]
-        -- ^ The label node in the function graph that is the root label (if
+      , llMatchEntryLabelNode :: [Maybe ArrayIndex]
+        -- ^ The label node in the function graph that is the entry label (if
         -- any) of each match. An index into the list corresponds to the array
         -- index of a particular match.
-      , llMatchNonRootLabelNodes :: [[ArrayIndex]]
-        -- ^ The label nodes in the function graph that are non-root labels of
+      , llMatchNonEntryLabelNodes :: [[ArrayIndex]]
+        -- ^ The label nodes in the function graph that are non-entry labels of
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
       , llMatchCodeSizes :: [Integer]
@@ -342,12 +329,9 @@ data ArrayIndexMaplists
       { ai2OpNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of operation nodes.
-      , ai2DataNodeIDs :: [NodeID]
+      , ai2EntityNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of data nodes.
-      , ai2StateNodeIDs :: [NodeID]
-        -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of state nodes.
+        -- indices) to the node IDs of entity nodes.
       , ai2LabelNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of label nodes.
@@ -387,12 +371,14 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operation-nodes"
-      <*> v .: "data-nodes"
-      <*> v .: "state-nodes"
+      <*> v .: "entity-nodes"
       <*> v .: "label-nodes"
-      <*> v .: "root-label"
+      <*> v .: "entry-label"
+      <*> v .: "label-domsets"
+      <*> v .: "label-post-domsets"
+      <*> v .: "dom-edges"
+      <*> v .: "post-dom-edges"
       <*> v .: "bb-params"
-      <*> v .: "def-place-edges"
       <*> v .: "essential-op-nodes"
       <*> v .: "constraints"
   parseJSON _ = mzero
@@ -400,12 +386,14 @@ instance FromJSON HighLevelFunctionParams where
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operation-nodes"    .= (hlFunOpNodes d)
-           , "data-nodes"         .= (hlFunDataNodes d)
-           , "state-nodes"        .= (hlFunStateNodes d)
+           , "entity-nodes"       .= (hlFunEntityNodes d)
            , "label-nodes"        .= (hlFunLabelNodes d)
-           , "root-label"         .= (hlFunRootLabelNode d)
+           , "label-domsets"      .= (hlFunLabelDomsets d)
+           , "label-post-domsets" .= (hlFunLabelPostDomsets d)
+           , "entry-label"        .= (hlFunEntryLabelNode d)
+           , "dom-edges"          .= (hlFunDomEdges d)
+           , "post-dom-edges"     .= (hlFunPostDomEdges d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
-           , "def-place-edges"    .= (hlFunDefPlaceEdges d)
            , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
            , "constraints"        .= (hlFunConstraints d)
            ]
@@ -432,18 +420,16 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "pattern-id"
       <*> v .: "match-id"
       <*> v .: "operation-nodes-covered"
-      <*> v .: "data-nodes-defined"
-      <*> v .: "data-nodes-used"
-      <*> v .: "data-nodes-used-by-phis"
-      <*> v .: "state-nodes-defined"
-      <*> v .: "state-nodes-used"
-      <*> v .: "root-label-node"
-      <*> v .: "non-root-label-nodes"
+      <*> v .: "entity-nodes-defined"
+      <*> v .: "entity-nodes-used"
+      <*> v .: "entry-label-node"
+      <*> v .: "non-entry-label-nodes"
+      <*> v .: "code-size"
+      <*> v .: "latency"
       <*> v .: "constraints"
       <*> v .: "apply-def-dom-use-constraint"
       <*> v .: "has-control-nodes"
-      <*> v .: "code-size"
-      <*> v .: "latency"
+      <*> v .: "data-nodes-used-by-phis"
       <*> v .: "asm-str-node-maps"
   parseJSON _ = mzero
 
@@ -452,19 +438,17 @@ instance ToJSON HighLevelMatchParams where
     object [ "instruction-id"               .= (hlMatchInstructionID d)
            , "pattern-id"                   .= (hlMatchPatternID d)
            , "match-id"                     .= (hlMatchID d)
-           , "operation-nodes-covered"      .= (hlMatchOperationsCovered d)
-           , "data-nodes-defined"           .= (hlMatchDataNodesDefined d)
-           , "data-nodes-used"              .= (hlMatchDataNodesUsed d)
-           , "data-nodes-used-by-phis"      .= (hlMatchDataNodesUsedByPhis d)
-           , "state-nodes-defined"          .= (hlMatchStateNodesDefined d)
-           , "state-nodes-used"             .= (hlMatchStateNodesUsed d)
-           , "root-label-node"              .= (hlMatchRootLabelNode d)
-           , "non-root-label-nodes"         .= (hlMatchNonRootLabelNodes d)
+           , "operation-nodes-covered"      .= (hlMatchOpNodesCovered d)
+           , "entity-nodes-defined"         .= (hlMatchEntityNodesDefined d)
+           , "entity-nodes-used"            .= (hlMatchEntityNodesUsed d)
+           , "entry-label-node"             .= (hlMatchEntryLabelNode d)
+           , "non-entry-label-nodes"        .= (hlMatchNonEntryLabelNodes d)
+           , "code-size"                    .= (hlMatchCodeSize d)
+           , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
            , "has-control-nodes"            .= (hlMatchHasControlNodes d)
-           , "code-size"                    .= (hlMatchCodeSize d)
-           , "latency"                      .= (hlMatchLatency d)
+           , "data-nodes-used-by-phis"      .= (hlMatchDataNodesUsedByPhis d)
            , "asm-str-node-maps"            .= (hlMatchAsmStrNodeMaplist d)
            ]
 
@@ -484,26 +468,24 @@ instance ToJSON HighLevelMachineParams where
 instance FromJSON LowLevelModel where
   parseJSON (Object v) =
     LowLevelModel
-      <$> v .: "fun-num-onodes"
-      <*> v .: "fun-num-dnodes"
-      <*> v .: "fun-num-snodes"
-      <*> v .: "fun-num-lnodes"
-      <*> v .: "fun-root-lnode"
+      <$> v .: "fun-num-op-nodes"
+      <*> v .: "fun-num-entity-nodes"
+      <*> v .: "fun-num-label-nodes"
+      <*> v .: "fun-entry-label-node"
       <*> v .: "fun-label-domsets"
+      <*> v .: "fun-label-post-domsets"
+      <*> v .: "fun-label-dom-edges"
+      <*> v .: "fun-label-post-dom-edges"
       <*> v .: "fun-bb-exec-freqs"
-      <*> v .: "fun-dnodes-label-defs"
-      <*> v .: "fun-snodes-label-defs"
       <*> v .: "fun-essential-op-nodes"
       <*> v .: "fun-constraints"
       <*> v .: "num-registers"
       <*> v .: "num-matches"
-      <*> v .: "match-onodes-covered"
-      <*> v .: "match-dnodes-defined"
-      <*> v .: "match-snodes-defined"
-      <*> v .: "match-dnodes-used"
-      <*> v .: "match-snodes-used"
-      <*> v .: "match-root-lnodes"
-      <*> v .: "match-non-root-lnodes"
+      <*> v .: "match-op-nodes-covered"
+      <*> v .: "match-entity-nodes-defined"
+      <*> v .: "match-entity-nodes-used"
+      <*> v .: "match-entry-label-nodes"
+      <*> v .: "match-non-entry-label-nodes"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-adduc-settings"
@@ -512,30 +494,28 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-onodes"         .= (llNumFunOpNodes m)
-           , "fun-num-dnodes"         .= (llNumFunDataNodes m)
-           , "fun-num-snodes"         .= (llNumFunStateNodes m)
-           , "fun-num-lnodes"         .= (llNumFunLabelNodes m)
-           , "fun-root-lnode"         .= (llFunRootLabel m)
-           , "fun-label-domsets"      .= (llFunDomsets m)
-           , "fun-bb-exec-freqs"      .= (llFunBBExecFreqs m)
-           , "fun-dnodes-label-defs"  .= (llFunDataNodeLabelDefs m)
-           , "fun-snodes-label-defs"  .= (llFunStateNodeLabelDefs m)
-           , "fun-essential-op-nodes" .= (llFunEssentialOpNodes m)
-           , "fun-constraints"        .= (llFunConstraints m)
-           , "num-registers"          .= (llNumRegisters m)
-           , "num-matches"            .= (llNumMatches m)
-           , "match-onodes-covered"   .= (llMatchOpNodesCovered m)
-           , "match-dnodes-defined"   .= (llMatchDataNodesDefined m)
-           , "match-snodes-defined"   .= (llMatchStateNodesDefined m)
-           , "match-dnodes-used"      .= (llMatchDataNodesUsed m)
-           , "match-snodes-used"      .= (llMatchStateNodesUsed m)
-           , "match-root-lnodes"      .= (llMatchRootLabelNode m)
-           , "match-non-root-lnodes"  .= (llMatchNonRootLabelNodes m)
-           , "match-code-sizes"       .= (llMatchCodeSizes m)
-           , "match-latencies"        .= (llMatchLatencies m)
-           , "match-adduc-settings"   .= (llMatchADDUCs m)
-           , "match-constraints"      .= (llMatchConstraints m)
+    object [ "fun-num-op-nodes"            .= (llNumFunOpNodes m)
+           , "fun-num-entity-nodes"        .= (llNumFunEntityNodes m)
+           , "fun-num-label-nodes"         .= (llNumFunLabelNodes m)
+           , "fun-entry-label-node"        .= (llFunEntryLabelNode m)
+           , "fun-label-domsets"           .= (llFunLabelDomsets m)
+           , "fun-label-post-domsets"      .= (llFunLabelPostDomsets m)
+           , "fun-label-dom-edges"         .= (llFunLabelDomEdges m)
+           , "fun-label-dom-post-edges"    .= (llFunLabelPostDomEdges m)
+           , "fun-bb-exec-freqs"           .= (llFunBBExecFreqs m)
+           , "fun-essential-op-nodes"      .= (llFunEssentialOpNodes m)
+           , "fun-constraints"             .= (llFunConstraints m)
+           , "num-registers"               .= (llNumRegisters m)
+           , "num-matches"                 .= (llNumMatches m)
+           , "match-op-nodes-covered"      .= (llMatchOpNodesCovered m)
+           , "match-entity-nodes-defined"  .= (llMatchEntityNodesDefined m)
+           , "match-entity-nodes-used"     .= (llMatchEntityNodesUsed m)
+           , "match-entry-label-nodes"     .= (llMatchEntryLabelNode m)
+           , "match-non-entry-label-nodes" .= (llMatchNonEntryLabelNodes m)
+           , "match-code-sizes"            .= (llMatchCodeSizes m)
+           , "match-latencies"             .= (llMatchLatencies m)
+           , "match-adduc-settings"        .= (llMatchADDUCs m)
+           , "match-constraints"           .= (llMatchConstraints m)
            ]
 
 instance FromJSON HighLevelSolution where
@@ -575,8 +555,7 @@ instance FromJSON LowLevelSolution where
 instance ToJSON ArrayIndexMaplists where
   toJSON d =
     object [ "array-index-to-op-node-id-maps"     .= (ai2OpNodeIDs d)
-           , "array-index-to-data-node-id-maps"   .= (ai2DataNodeIDs d)
-           , "array-index-to-state-node-id-maps"  .= (ai2StateNodeIDs d)
+           , "array-index-to-entity-node-id-maps" .= (ai2EntityNodeIDs d)
            , "array-index-to-label-node-id-maps"  .= (ai2LabelNodeIDs d)
            , "array-index-to-match-id-maps"       .= (ai2MatchIDs d)
            , "array-index-to-register-id-maps"    .= (ai2RegisterIDs d)
@@ -587,8 +566,7 @@ instance FromJSON ArrayIndexMaplists where
   parseJSON (Object v) =
     ArrayIndexMaplists
       <$> v .: "array-index-to-op-node-id-maps"
-      <*> v .: "array-index-to-data-node-id-maps"
-      <*> v .: "array-index-to-state-node-id-maps"
+      <*> v .: "array-index-to-entity-node-id-maps"
       <*> v .: "array-index-to-label-node-id-maps"
       <*> v .: "array-index-to-match-id-maps"
       <*> v .: "array-index-to-register-id-maps"

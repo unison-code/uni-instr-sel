@@ -35,7 +35,7 @@ import Language.InstSel.OpStructures
 -- should therefore not be copy-extended.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph =
-  copyExtendWhen (\g e -> length (getDFInEdges g (getSourceNode g e)) > 0)
+  copyExtendWhen (\g e -> length (getDtFlowInEdges g (getSourceNode g e)) > 0)
 
 -- | Copy-extends every instruction in the given target machine.
 copyExtend :: TargetMachine -> TargetMachine

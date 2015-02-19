@@ -91,7 +91,7 @@ mkGenericPhiInstructions =
            ]
       pat = InstrPattern
               { patID = 0
-              , patOS = OS.OpStructure g cs
+              , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = False
               , patAsmStrTemplate = ( AssemblyStringTemplate
@@ -126,7 +126,7 @@ mkGenericBrFallthroughInstructions =
   let g = mkGraph
             ( map
                 Node
-                [ ( 0, NodeLabel 0 (ControlNode O.Branch) )
+                [ ( 0, NodeLabel 0 (ControlNode O.Br) )
                 , ( 1, NodeLabel 1 mkGenericLabelNodeType )
                 , ( 2, NodeLabel 2 mkGenericLabelNodeType )
                 ]
@@ -143,7 +143,7 @@ mkGenericBrFallthroughInstructions =
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g cs
+          , patOS = OS.OpStructure g (Just 1) cs
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate []
@@ -175,7 +175,7 @@ mkGenericEntityDefInstructions =
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g cs
+          , patOS = OS.OpStructure g (Just 0) cs
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate []
@@ -207,7 +207,7 @@ mkGenericCopyInstructions =
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g []
+          , patOS = OS.OpStructure g Nothing []
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate []

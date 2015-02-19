@@ -56,11 +56,17 @@ type ConstToDataNodeMapping = (G.Node, Constant)
 -- both the data flow graph and the control flow graph have been built.
 type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
 
--- | Represents a definition placement condition, stating that the given node
--- must be defined in the basic block identified by the given ID. This is needed
--- to draw the missing definition placement edges after both the data flow graph
--- and the control flow graph have been built.
-type DefPlaceCond = (G.Node, PM.BasicBlockLabel)
+-- | Represents a dominance condition, stating that the given node must be
+-- defined in a basic block that dominates the basic block identified by the
+-- given ID. This is needed to draw the missing dominance edges edges after both
+-- the data flow graph and the control flow graph have been built. Since the
+-- out-edge number of an data-flow edge must match that of the corresponding
+-- dominance edge, the out-edge number of the data-flow edge is also included in
+-- the tuple.
+type DominanceCondition = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
+
+-- | Same as 'DominanceCondition' but for postdominance conditions.
+type PostDominanceCondition = DominanceCondition
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -91,9 +97,12 @@ data BuildState
       , labelToEntityFlows :: [LabelToEntityFlow]
         -- ^ List of label-to-entity flow dependencies which are yet to be
         -- converted into edges.
-      , defPlaceConds :: [DefPlaceCond]
-        -- ^ List of definition placement conditions which are yet to be
-        -- converted into edges.
+      , domConds :: [DominanceCondition]
+        -- ^ List of dominance conditions which are yet to be converted into
+        -- edges.
+      , postDomConds :: [PostDominanceCondition]
+        -- ^ List of postdominance conditions which are yet to be converted into
+        -- edges.
       , funcInputValues :: [G.Node]
         -- ^ The data nodes representing the function input arguments.
       }
@@ -195,7 +204,8 @@ mkInitBuildState m =
     , symMaps = []
     , constMaps = []
     , labelToEntityFlows = []
-    , defPlaceConds = []
+    , domConds = []
+    , postDomConds = []
     , funcInputValues = []
     }
 
@@ -219,12 +229,13 @@ mkFunction m f@(LLVM.Function {}) =
       st1 = buildDfg st0 f
       st2 = buildCfg st1 f
       st3 = addMissingLabelToEntityFlowEdges st2
-      st4 = addMissingDefPlaceEdges st3
+      st4 = addMissingDomEdges st3
+      st5 = addMissingPostDomEdges st4
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
-              , PM.functionOS = osGraph st4
-              , PM.functionInputs = map G.getNodeID (funcInputValues st4)
-              , PM.functionBBExecFreq = funcBBExecFreqs st4
+              , PM.functionOS = osGraph st5
+              , PM.functionInputs = map G.getNodeID (funcInputValues st5)
+              , PM.functionBBExecFreq = funcBBExecFreqs st5
               }
           )
 mkFunction _ _ = Nothing
@@ -323,20 +334,13 @@ addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
 addLabelToEntityFlow st ef =
   st { labelToEntityFlows = ef:(labelToEntityFlows st) }
 
--- | Add a new definition placement condition to a given state. If an identical
--- 'DefPlaceCond' already exists in the state, the state is not updated and the
--- old state is returned.
-addDefPlaceCond :: BuildState -> DefPlaceCond -> BuildState
-addDefPlaceCond st dp =
-  if any (== dp) (defPlaceConds st)
-  then st
-  else st { defPlaceConds = dp:(defPlaceConds st) }
+-- | Add a new dominance condition to a given state.
+addDomCond :: BuildState -> DominanceCondition -> BuildState
+addDomCond st dom = st { domConds = dom:(domConds st) }
 
--- | Adds a list of definition placement conditions to a given state. The
--- returned state may be same as the old state (see 'addDefPlaceCond' for more
--- information).
-addDefPlaceConds :: BuildState -> [DefPlaceCond] -> BuildState
-addDefPlaceConds st dps = foldl addDefPlaceCond st dps
+-- | Add a new postdominance condition to a given state.
+addPostDomCond :: BuildState -> PostDominanceCondition -> BuildState
+addPostDomCond st pdom = st { postDomConds = pdom:(postDomConds st) }
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
@@ -529,16 +533,39 @@ addMissingLabelToEntityFlowEdges st =
         deps
   in updateOSGraph st g1
 
--- | Adds the missing definition placement edges, as described in the given
--- build state.
-addMissingDefPlaceEdges :: BuildState -> BuildState
-addMissingDefPlaceEdges st =
+-- | Adds the missing dominance edges, as described in the given build state.
+addMissingDomEdges :: BuildState -> BuildState
+addMissingDomEdges st =
   let g0 = getOSGraph st
-      conds = defPlaceConds st
-      dp_pairs = map
-                   (\(n, bb_id) -> (n, fromJust $ findLabelNodeWithID st bb_id))
-                   conds
-      g1 = foldr (\p g -> fst $ G.addNewDPEdge p g) g0 dp_pairs
+      conds = domConds st
+      g1 = foldr
+             ( \(dn, bb_id, nr) g ->
+               let ln = fromJust $ findLabelNodeWithID st bb_id
+                   (g', new_e) = G.addNewEdge G.DomEdge (dn, ln) g
+                   new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
+                   g'' = G.updateEdgeLabel new_el new_e g'
+               in g''
+             )
+             g0
+             conds
+  in updateOSGraph st g1
+
+-- | Adds the missing postdominance edges, as described in the given build
+-- state.
+addMissingPostDomEdges :: BuildState -> BuildState
+addMissingPostDomEdges st =
+  let g0 = getOSGraph st
+      conds = postDomConds st
+      g1 = foldr
+             ( \(dn, bb_id, nr) g ->
+               let ln = fromJust $ findLabelNodeWithID st bb_id
+                   (g', new_e) = G.addNewEdge G.PostDomEdge (ln, dn) g
+                   new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
+                   g'' = G.updateEdgeLabel new_el new_e g'
+               in g''
+             )
+             g0
+             conds
   in updateOSGraph st g1
 
 -- | Extracts the block execution frequency from the metadata (which should be
@@ -614,7 +641,10 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
         st4 = if G.isPhiNode expr_node
-              then addDefPlaceCond st3 (dst_node, fromJust $ currentLabel st3)
+              then addPostDomCond st3 (dst_node, fromJust $ currentLabel st3, 0)
+                   -- ^ Since we've just created the data node and only added a
+                   -- a single data-flow edge to it, we are guaranteed that
+                   -- the in-edge number of that data-flow edge is 0.
               else st3
     in st4
   buildDfg st (LLVM.Do expr) = buildDfg st expr
@@ -693,10 +723,19 @@ instance DfgBuildable LLVM.Instruction where
         operand_node_sts = scanl buildDfg st0 operands
         operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
         st1 = last operand_node_sts
-        st2 = addDefPlaceConds st1 (zip operand_ns bb_labels)
-        st3 = addNewNode st2 G.PhiNode
-        op_node = fromJust $ lastTouchedNode st3
-        st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
+        st2 = addNewNode st1 G.PhiNode
+        phi_node = fromJust $ lastTouchedNode st2
+        st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
+        st4 = foldl
+                ( \st (n, bb_id) ->
+                  let g = getOSGraph st
+                      dfe = head
+                            $ filter G.isDataFlowEdge
+                            $ G.getEdges g n phi_node
+                  in addDomCond st (n, bb_id, G.getOutEdgeNr dfe)
+                )
+                st3
+                (zip operand_ns bb_labels)
     in st4
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
@@ -754,7 +793,7 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg st0 (LLVM.Br (LLVM.Name dst) _) =
     let st1 = buildCfgFromControlOp
               st0
-              Op.Branch
+              Op.Br
               ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel dst)
@@ -762,7 +801,7 @@ instance CfgBuildable LLVM.Terminator where
         st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
   buildCfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
-    let st1 = buildCfgFromControlOp st0 Op.CondBranch [op]
+    let st1 = buildCfgFromControlOp st0 Op.CondBr [op]
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2

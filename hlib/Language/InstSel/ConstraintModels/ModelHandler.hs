@@ -63,20 +63,31 @@ mkHighLevelModel function target matches =
 mkHLFunctionParams :: Function -> HighLevelFunctionParams
 mkHLFunctionParams function =
   let graph = osGraph $ functionOS function
+      entry_label = fromJust $ osEntryLabelNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
       essential_op_nodes =
         filter
           (\n -> isOperationNode n && (not $ isCopyNode n))
           (getAllNodes graph)
-      cfg = extractCFG graph
-      dp_edge_data =
+      dom_edge_data =
         map
           ( \e ->
               ( getNodeID $ getSourceNode graph e
               , getNodeID $ getTargetNode graph e
               )
           )
-          (filter isDefPlaceEdge (getAllEdges graph))
+          (filter isDomEdge (getAllEdges graph))
+      pdom_edge_data =
+        map
+          ( \e ->
+              ( getNodeID $ getTargetNode graph e
+              , getNodeID $ getSourceNode graph e
+              )
+          )
+          (filter isPostDomEdge (getAllEdges graph))
+      domsets = computeDomsets
+                  graph
+                  (head $ findNodesWithNodeID graph entry_label)
       getExecFreq n =
         fromJust $
           lookup
@@ -84,12 +95,13 @@ mkHLFunctionParams function =
             (functionBBExecFreq function)
   in HighLevelFunctionParams
        { hlFunOpNodes = nodeIDsByType isOperationNode
-       , hlFunEssentialOpNodes = map getNodeID essential_op_nodes
-       , hlFunDataNodes = nodeIDsByType isDataNode
-       , hlFunStateNodes= nodeIDsByType isStateNode
-       , hlFunLabelNodes= computeLabelDoms cfg
-       , hlFunDefPlaceEdges = dp_edge_data
-       , hlFunRootLabelNode = getNodeID $ fromJust $ rootInCFG cfg
+       , hlFunEntityNodes = nodeIDsByType isEntityNode
+       , hlFunLabelNodes = nodeIDsByType isLabelNode
+       , hlFunEntryLabelNode = entry_label
+       , hlFunLabelDomsets = map convertDomsetN2ID domsets
+       , hlFunLabelPostDomsets = [] -- TODO: implement
+       , hlFunDomEdges = dom_edge_data
+       , hlFunPostDomEdges = pdom_edge_data
        , hlFunBasicBlockParams =
            map
              ( \n -> HighLevelBasicBlockParams
@@ -99,29 +111,9 @@ mkHLFunctionParams function =
                        }
              )
              (filter isLabelNode (getAllNodes graph))
+       , hlFunEssentialOpNodes = map getNodeID essential_op_nodes
        , hlFunConstraints = osConstraints $ functionOS function
        }
-
--- | Computes the dominator sets concerning only the label nodes. It is assumed
--- there exists a single label which acts as the root, which is the label node
--- with no predecessors. It is also assumed that every other label node can be
--- reached from the root.
-computeLabelDoms
-  :: Graph
-     -- ^ The CFG.
-  -> [Domset NodeID]
-     -- ^ Dominator sets.
-computeLabelDoms cfg =
-  let root = fromJust $ rootInCFG cfg
-      node_domsets = extractDomSet cfg root
-      node_id_domsets = map
-                          ( \d -> Domset
-                                    { domNode = (getNodeID $ domNode d)
-                                    , domSet = (map getNodeID (domSet d))
-                                    }
-                          )
-                          node_domsets
-  in node_id_domsets
 
 mkHLMachineParams :: TargetMachine -> HighLevelMachineParams
 mkHLMachineParams target =
@@ -151,36 +143,32 @@ processMatch instr pattern match mid =
   let graph = osGraph $ patOS pattern
       ns = getAllNodes graph
       a_ns = filter isOperationNode ns
+      e_ns = filter isEntityNode ns
       d_ns = filter isDataNode ns
-      s_ns = filter isStateNode ns
       l_ns = filter isLabelNode ns
       c_ns = filter isControlNode ns
-      d_def_ns = filter (hasAnyPredecessors graph) d_ns
+      e_def_ns = filter (hasAnyPredecessors graph) e_ns
+      e_use_ns = filter (hasAnySuccessors graph) e_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_use_by_phi_ns = filter
                           (\n -> any isPhiNode (getSuccessors graph n))
                           d_use_ns
-      s_def_ns = filter (hasAnyPredecessors graph) s_ns
-      s_use_ns = filter (hasAnySuccessors graph) s_ns
-      l_ref_ns = filter (hasAnyPredecessors graph) l_ns
+      entry_l_node_id = osEntryLabelNode $ patOS pattern
+      l_ref_ns = if isJust entry_l_node_id
+                 then let nid = fromJust entry_l_node_id
+                      in filter (\n -> getNodeID n /= nid) l_ns
+                 else l_ns
       i_props = instrProps instr
-      cfg = extractCFG graph
-      root_label_node_id =
-        maybe Nothing ((findFNInMatch match) . getNodeID) (rootInCFG cfg)
       asm_maps = computeAsmStrNodeMaps (patAsmStrTemplate pattern) match
   in HighLevelMatchParams
        { hlMatchInstructionID = instrID instr
        , hlMatchPatternID = patID pattern
        , hlMatchID = mid
-       , hlMatchOperationsCovered = findFNsInMatch match (getNodeIDs a_ns)
-       , hlMatchDataNodesDefined = findFNsInMatch match (getNodeIDs d_def_ns)
-       , hlMatchDataNodesUsed = findFNsInMatch match (getNodeIDs d_use_ns)
-       , hlMatchDataNodesUsedByPhis =
-           findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
-       , hlMatchStateNodesDefined = findFNsInMatch match (getNodeIDs s_def_ns)
-       , hlMatchStateNodesUsed = findFNsInMatch match (getNodeIDs s_use_ns)
-       , hlMatchRootLabelNode = root_label_node_id
-       , hlMatchNonRootLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
+       , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs a_ns)
+       , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
+       , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
+       , hlMatchEntryLabelNode = entry_l_node_id
+       , hlMatchNonEntryLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
@@ -189,6 +177,8 @@ processMatch instr pattern match mid =
        , hlMatchHasControlNodes = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
+       , hlMatchDataNodesUsedByPhis =
+           findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
        , hlMatchAsmStrNodeMaplist = asm_maps
        }
 
@@ -233,8 +223,7 @@ replaceNodeIDsFromP2FInC match c =
 lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
   let getAIFromOpNodeID nid = fromJust $ findAIFromOpNodeID ai_maps nid
-      getAIFromDataNodeID nid = fromJust $ findAIFromDataNodeID ai_maps nid
-      getAIFromStateNodeID nid = fromJust $ findAIFromStateNodeID ai_maps nid
+      getAIFromEntityNodeID nid = fromJust $ findAIFromEntityNodeID ai_maps nid
       getAIFromLabelNodeID nid = fromJust $ findAIFromLabelNodeID ai_maps nid
       getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
@@ -250,17 +239,40 @@ lowerHighLevelModel model ai_maps =
       m_params = sortByAI (getAIFromMatchID . hlMatchID) (hlMatchParams model)
   in LowLevelModel
        { llNumFunOpNodes = toInteger $ length $ hlFunOpNodes f_params
-       , llNumFunDataNodes = toInteger $ length $ hlFunDataNodes f_params
-       , llNumFunStateNodes = toInteger $ length $ hlFunStateNodes f_params
+       , llNumFunEntityNodes = toInteger $ length $ hlFunEntityNodes f_params
        , llNumFunLabelNodes = toInteger $ length $ hlFunLabelNodes f_params
-       , llFunRootLabel = getAIFromLabelNodeID $ hlFunRootLabelNode f_params
-       , llFunDomsets =
+       , llFunEntryLabelNode =
+           getAIFromLabelNodeID $ hlFunEntryLabelNode f_params
+       , llFunLabelDomsets =
            map
              (\d -> map getAIFromLabelNodeID (domSet d))
              ( sortByAI
                  (getAIFromLabelNodeID . domNode)
-                 (hlFunLabelNodes f_params)
+                 (hlFunLabelDomsets f_params)
              )
+       , llFunLabelPostDomsets =
+           map
+             (\d -> map getAIFromLabelNodeID (domSet d))
+             ( sortByAI
+                 (getAIFromLabelNodeID . domNode)
+                 (hlFunLabelPostDomsets f_params)
+             )
+       , llFunLabelDomEdges =
+           map
+             ( \n ->
+               map
+                 (getAIFromEntityNodeID . snd)
+                 (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
+             )
+             (sortByAI id (hlFunLabelNodes f_params))
+       , llFunLabelPostDomEdges =
+           map
+             ( \n ->
+               map
+                 (getAIFromEntityNodeID . snd)
+                 (filter (\(n', _) -> n == n') (hlFunPostDomEdges f_params))
+             )
+             (sortByAI id (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
            map
              hlBBExecFrequency
@@ -268,24 +280,6 @@ lowerHighLevelModel model ai_maps =
                  (getAIFromLabelNodeID . hlBBLabelNode)
                  (hlFunBasicBlockParams f_params)
              )
-       , llFunDataNodeLabelDefs =
-           let all_data_nodes = hlFunDataNodes f_params
-               maybe_defs =
-                 map
-                   (\n -> (n, lookup n (hlFunDefPlaceEdges f_params)))
-                   all_data_nodes
-           in map
-                (maybe Nothing (Just . getAIFromLabelNodeID))
-                (map snd (sortByAI fst maybe_defs))
-       , llFunStateNodeLabelDefs =
-           let all_state_nodes = hlFunStateNodes f_params
-               maybe_defs =
-                 map
-                   (\n -> (n, lookup n (hlFunDefPlaceEdges f_params)))
-                   all_state_nodes
-           in map
-                (maybe Nothing (Just . getAIFromLabelNodeID))
-                (map snd (sortByAI fst maybe_defs))
        , llFunEssentialOpNodes = map getAIFromOpNodeID (hlFunOpNodes f_params)
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
@@ -293,32 +287,24 @@ lowerHighLevelModel model ai_maps =
        , llNumMatches = toInteger $ length m_params
        , llMatchOpNodesCovered =
            map
-             (\m -> map getAIFromOpNodeID (hlMatchOperationsCovered m))
+             (\m -> map getAIFromOpNodeID (hlMatchOpNodesCovered m))
              m_params
-       , llMatchDataNodesDefined =
+       , llMatchEntityNodesDefined =
            map
-             (\m -> map getAIFromDataNodeID (hlMatchDataNodesDefined m))
+             (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesDefined m))
              m_params
-       , llMatchStateNodesDefined =
+       , llMatchEntityNodesUsed =
            map
-             (\m -> map getAIFromStateNodeID (hlMatchStateNodesDefined m))
+             (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesUsed m))
              m_params
-       , llMatchDataNodesUsed =
-           map
-             (\m -> map getAIFromDataNodeID (hlMatchDataNodesUsed m))
-             m_params
-       , llMatchStateNodesUsed =
-           map
-             (\m -> map getAIFromStateNodeID (hlMatchStateNodesUsed m))
-             m_params
-       , llMatchRootLabelNode =
+       , llMatchEntryLabelNode =
            map
              (maybe Nothing (Just . getAIFromLabelNodeID))
-             (map hlMatchRootLabelNode m_params)
-       , llMatchNonRootLabelNodes =
+             (map hlMatchEntryLabelNode m_params)
+       , llMatchNonEntryLabelNodes =
            map
              (map getAIFromLabelNodeID)
-             (map hlMatchNonRootLabelNodes m_params)
+             (map hlMatchNonEntryLabelNodes m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
@@ -360,11 +346,8 @@ replaceIDWithArrayIndex ai_maps c =
 findAIFromOpNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIFromOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
 
-findAIFromDataNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromDataNodeID ai_maps = findArrayIndexInList (ai2DataNodeIDs ai_maps)
-
-findAIFromStateNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromStateNodeID ai_maps = findArrayIndexInList (ai2StateNodeIDs ai_maps)
+findAIFromEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIFromEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
 
 findAIFromLabelNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIFromLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
@@ -372,8 +355,7 @@ findAIFromLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
 findAIFromAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIFromAnyNodeID ai_maps nid =
   let lists = [ ai2OpNodeIDs ai_maps
-              , ai2DataNodeIDs ai_maps
-              , ai2StateNodeIDs ai_maps
+              , ai2EntityNodeIDs ai_maps
               , ai2LabelNodeIDs ai_maps
               ]
       matching_lists = filter (nid `elem`) lists

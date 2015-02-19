@@ -31,6 +31,7 @@ where
 import Language.InstSel.Constraints
 import qualified Language.InstSel.Graphs as G
   ( Graph
+  , NodeID
   , mkEmpty
   )
 import Language.InstSel.Utils.JSON
@@ -44,6 +45,7 @@ import Language.InstSel.Utils.JSON
 data OpStructure
   = OpStructure
       { osGraph :: G.Graph
+      , osEntryLabelNode :: Maybe G.NodeID
       , osConstraints :: [Constraint]
       }
   deriving (Show)
@@ -58,13 +60,15 @@ instance FromJSON OpStructure where
   parseJSON (Object v) =
     OpStructure
       <$> v .: "graph"
+      <*> v .: "entry-label-node"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
 instance ToJSON OpStructure where
   toJSON os =
-    object [ "graph"       .= (osGraph os)
-           , "constraints" .= (osConstraints os)
+    object [ "graph"            .= (osGraph os)
+           , "entry-label-node" .= (osEntryLabelNode os)
+           , "constraints"      .= (osConstraints os)
            ]
 
 
@@ -75,7 +79,11 @@ instance ToJSON OpStructure where
 
 -- | Creates an empty operation structure.
 mkEmpty :: OpStructure
-mkEmpty = OpStructure G.mkEmpty []
+mkEmpty = OpStructure
+            { osGraph = G.mkEmpty
+            , osEntryLabelNode = Nothing
+            , osConstraints = []
+            }
 
 addConstraint :: OpStructure -> Constraint -> OpStructure
 addConstraint os c = os { osConstraints = osConstraints os ++ [c] }

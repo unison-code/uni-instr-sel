@@ -130,24 +130,18 @@ mkFlowDAG model ms =
 addUseEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
 addUseEdgesToDAG model mid g0 =
   let ds = hlMatchParams model
-      pi_n = fromJust $ getNodeOfMatch g0 mid
+      match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      d_uses_of_pi = filter
-                       (`notElem` hlMatchDataNodesUsedByPhis match)
-                       (hlMatchDataNodesUsed match)
-      s_uses_of_pi = hlMatchStateNodesUsed match
-      ns_d_defs =
+      uses_of_m = filter
+                    (`notElem` hlMatchDataNodesUsedByPhis match)
+                    (hlMatchEntityNodesUsed match)
+      defs_of_m =
         map
-          (\(n, i) -> (n, hlMatchDataNodesDefined $ getHLMatchParams ds i))
+          (\(n, i) -> (n, hlMatchEntityNodesDefined $ getHLMatchParams ds i))
           ns
-      ns_s_defs =
-        map
-          (\(n, i) -> (n, hlMatchStateNodesDefined $ getHLMatchParams ds i))
-          ns
-      g1 = foldr (addUseEdgesToDAG' pi_n ns_d_defs) g0 d_uses_of_pi
-      g2 = foldr (addUseEdgesToDAG' pi_n ns_s_defs) g1 s_uses_of_pi
-  in g2
+      g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 uses_of_m
+  in g1
 
 addUseEdgesToDAG'
   :: I.Node
@@ -269,8 +263,8 @@ emitInstructionPart model _ _ (ASBBLabelOfLabelNode n) =
           "l?"
 emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
   let function = hlFunctionParams model
-      data_nodes = hlFunDataNodes function
-  in if n `elem` data_nodes
+      entity_nodes = hlFunEntityNodes function
+  in if n `elem` entity_nodes
      then let mid = fromJust $ findDefinerOfData model sol n
               l = lookup mid (hlSolBBAllocsForSelMatches sol)
           in if isJust l
@@ -296,7 +290,7 @@ findDefinerOfData model sol n =
       definers = map
                    hlMatchID
                    ( filter
-                       (\mid -> n `elem` hlMatchDataNodesDefined mid)
+                       (\mid -> n `elem` hlMatchEntityNodesDefined mid)
                        match
                    )
       selected = filter (`elem` (hlSolSelMatches sol)) definers

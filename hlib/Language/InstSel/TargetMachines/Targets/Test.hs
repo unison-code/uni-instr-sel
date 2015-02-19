@@ -76,7 +76,7 @@ tmTest =
              , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
              , ( 2, NodeLabel 2 (LabelNode $ BasicBlockLabel "") )
              , ( 3, NodeLabel 3 (LabelNode $ BasicBlockLabel "") )
-             , ( 4, NodeLabel 4 (ControlNode O.CondBranch) )
+             , ( 4, NodeLabel 4 (ControlNode O.CondBr) )
              ]
          )
          ( map
@@ -93,7 +93,7 @@ tmTest =
               Node
               [ ( 0, NodeLabel 0 (LabelNode $ BasicBlockLabel "") )
               , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
-              , ( 2, NodeLabel 2 (ControlNode O.Branch) )
+              , ( 2, NodeLabel 2 (ControlNode O.Br) )
               ]
           )
           ( map
@@ -119,17 +119,18 @@ tmTest =
               ]
           )
       init_def_pattern_os =
-        addBBAllocConstraints $ OpStructure init_def_pattern []
+        addBBAllocConstraints $ OpStructure init_def_pattern (Just 0) []
       add_pattern_os =
-        addBBAllocConstraints $ OpStructure add_pattern []
+        addBBAllocConstraints $ OpStructure add_pattern Nothing []
       bnz_pattern_os =
-        addBBAllocConstraints $ OpStructure  bnz_pattern []
+        addBBAllocConstraints $ OpStructure  bnz_pattern (Just 1) []
       br_pattern_os =
-        addBBAllocConstraints $ OpStructure br_pattern []
+        addBBAllocConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
         addBBAllocConstraints $
           OpStructure
             br_fallthrough_pattern
+            (Just 0)
             [ BoolExprConstraint $
                 EqExpr
                   ( DistanceBetweenMatchAndLabelExpr
@@ -143,7 +144,7 @@ tmTest =
                   )
             ]
       ret_pattern_os =
-        addBBAllocConstraints $ OpStructure ret_pattern []
+        addBBAllocConstraints $ OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
                   0
                   [ InstrPattern

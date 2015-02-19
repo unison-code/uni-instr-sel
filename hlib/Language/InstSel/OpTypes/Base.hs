@@ -141,9 +141,9 @@ data TypeConvOp
 
 data ControlOp
     -- | Unconditional branch (same as a jump).
-  = Branch
+  = Br
     -- | Conditional branch. Branching is done if the input value is not zero.
-  | CondBranch
+  | CondBr
     -- | Return.
   | Ret
   deriving (Eq)
@@ -202,9 +202,9 @@ instance Show TypeConvOp where
   show UInt2Float = "uitofp"
 
 instance Show ControlOp where
-  show Branch     = "br"
-  show CondBranch = "cbr"
-  show Ret        = "ret"
+  show Br     = "br"
+  show CondBr = "cbr"
+  show Ret    = "ret"
 
 
 
@@ -213,7 +213,8 @@ instance Show ControlOp where
 ------------------------------------------
 
 instance DebugShow CompOp where
-  dShow = show
+  dShow (CompArithOp op) = dShow op
+  dShow (CompTypeConvOp op) = dShow op
 
 instance DebugShow ArithOp where
   dShow = show . getArithOpType
@@ -225,7 +226,8 @@ instance DebugShow TypeConvOp where
   dShow = show
 
 instance DebugShow ControlOp where
-  dShow = show
+  dShow CondBr = "cond.br"
+  dShow c      = show c
 
 
 
@@ -271,7 +273,7 @@ instance ToJSON CompOp where
 instance FromJSON ControlOp where
   parseJSON (String v) =
     do let str = unpack v
-           ops = [ Branch, CondBranch, Ret ]
+           ops = [ Br, CondBr, Ret ]
            found = filter (\op -> show op == str) ops
        when (null found) mzero
        return $ head found

@@ -121,7 +121,7 @@ assignMissingExecFreqs f =
                  then (l, fromJust l_freq)
                  else let prec_n = getSourceNode
                                      cfg
-                                     (head $ getCFInEdges cfg n)
+                                     (head $ getCtrlFlowInEdges cfg n)
                           prec_l = bbLabel $ getNodeType prec_n
                           prec_freq = fromJust $ lookup prec_l freqs
                       in (l, prec_freq)

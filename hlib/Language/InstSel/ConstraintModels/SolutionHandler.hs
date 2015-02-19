@@ -35,7 +35,7 @@ raiseLowLevelSolution
 raiseLowLevelSolution sol ai_maps =
   let ai_match_id_maps = ai2MatchIDs ai_maps
       ai_label_node_id_maps = ai2LabelNodeIDs ai_maps
-      ai_data_node_id_maps = ai2DataNodeIDs ai_maps
+      ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
       ai_register_id_maps = ai2RegisterIDs ai_maps
       getNodeIDFromLabelAI ai = ai_label_node_id_maps !! (fromIntegral ai)
       getRegisterIDFromAI ai = ai_register_id_maps !! (fromIntegral ai)
@@ -66,7 +66,7 @@ raiseLowLevelSolution sol ai_maps =
               else Nothing
           )
           (llSolHasDataNodeRegister sol)
-          ai_data_node_id_maps
+          ai_entity_node_id_maps
           (llSolRegsSelectedForDataNodes sol)
       imm_values_of_data_nodes =
         catMaybes $
@@ -75,7 +75,7 @@ raiseLowLevelSolution sol ai_maps =
               if has_value then Just (nid, value) else Nothing
           )
           (llSolHasDataNodeImmValue sol)
-          ai_data_node_id_maps
+          ai_entity_node_id_maps
           (llSolImmValuesOfDataNodes sol)
   in HighLevelSolution
        { hlSolOrderOfBBs = order_of_bbs
