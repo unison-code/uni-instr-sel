@@ -73,7 +73,7 @@ data BuildState
   = BuildState
       { llvmModule :: LLVM.Module
         -- ^ The original LLVM module.
-      , osGraph :: OS.OpStructure
+      , opStruct :: OS.OpStructure
         -- ^ The current operation structure.
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched. This is used to
@@ -196,7 +196,7 @@ mkInitBuildState :: LLVM.Module -> BuildState
 mkInitBuildState m =
   BuildState
     { llvmModule = m
-    , osGraph = OS.mkEmpty
+    , opStruct = OS.mkEmpty
     , lastTouchedNode = Nothing
     , entryLabel = Nothing
     , currentLabel = Nothing
@@ -228,14 +228,17 @@ mkFunction m f@(LLVM.Function {}) =
   let st0 = mkInitBuildState m
       st1 = buildDfg st0 f
       st2 = buildCfg st1 f
-      st3 = addMissingLabelToEntityFlowEdges st2
-      st4 = addMissingDomEdges st3
-      st5 = addMissingPostDomEdges st4
+      st3 = updateOSEntryLabelNode
+              st2
+              (fromJust $ findLabelNodeWithID st2 (fromJust $ entryLabel st2))
+      st4 = addMissingLabelToEntityFlowEdges st3
+      st5 = addMissingDomEdges st4
+      st6 = addMissingPostDomEdges st5
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
-              , PM.functionOS = osGraph st5
-              , PM.functionInputs = map G.getNodeID (funcInputValues st5)
-              , PM.functionBBExecFreq = funcBBExecFreqs st5
+              , PM.functionOS = opStruct st6
+              , PM.functionInputs = map G.getNodeID (funcInputValues st6)
+              , PM.functionBBExecFreq = funcBBExecFreqs st6
               }
           )
 mkFunction _ _ = Nothing
@@ -246,13 +249,20 @@ toFunctionName (LLVM.UnName _) = Nothing
 
 -- | Gets the OS graph contained by the operation structure in a given state.
 getOSGraph :: BuildState -> G.Graph
-getOSGraph = OS.osGraph . osGraph
+getOSGraph = OS.osGraph . opStruct
 
 -- | Updates the OS graph contained by the operation structure in a given state.
 updateOSGraph :: BuildState -> G.Graph -> BuildState
 updateOSGraph st g =
-  let os = osGraph st
-  in st { osGraph = os { OS.osGraph = g } }
+  let os = opStruct st
+  in st { opStruct = os { OS.osGraph = g } }
+
+-- | Updates the OS entry label node contained by the operation structure in a
+-- given state.
+updateOSEntryLabelNode :: BuildState -> G.Node -> BuildState
+updateOSEntryLabelNode st n =
+  let os = opStruct st
+  in st { opStruct = os { OS.osEntryLabelNode = Just (G.getNodeID n) } }
 
 -- | Updates the last touched node information.
 touchNode :: BuildState -> G.Node -> BuildState
@@ -315,7 +325,7 @@ addNewEdgesManyDests st et src dsts =
 
 -- | Adds a new constraint into a given state.
 addOSConstraint :: BuildState -> C.Constraint -> BuildState
-addOSConstraint st c = st { osGraph = OS.addConstraint (osGraph st) c }
+addOSConstraint st c = st { opStruct = OS.addConstraint (opStruct st) c }
 
 -- | Adds a list of new constraints into a given state.
 addOSConstraints :: BuildState -> [C.Constraint] -> BuildState
