@@ -35,8 +35,8 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module Language.InstSel.Graphs.Base
-  ( Domset (..)
-  , PostDomset
+  ( DomSet (..)
+  , PostDomSet
   , DstNode
   , Edge (..)
   , EdgeLabel (..)
@@ -65,12 +65,12 @@ module Language.InstSel.Graphs.Base
   , addNewNode
   , areInEdgesEquivalent
   , areOutEdgesEquivalent
-  , computeDomsets
-  , computeIDomsets
-  , computePostDomsets
-  , computeIPostDomsets
-  , convertDomsetN2ID
-  , convertPostDomsetN2ID
+  , computeDomSets
+  , computeIDomSets
+  , computePostDomSets
+  , computeIPostDomSets
+  , convertDomSetN2ID
+  , convertPostDomSetN2ID
   , convertMappingN2ID
   , convertMatchN2ID
   , copyNodeLabel
@@ -301,8 +301,8 @@ newtype Match n
 
 -- | Represents a dominator set. If the set represents an immediate-dominator
 -- set, then only one node will appear in the set of dominated entities.
-data Domset t
-  = Domset
+data DomSet t
+  = DomSet
       { domNode :: t
         -- ^ The dominator entity.
       , domSet :: [t]
@@ -310,7 +310,7 @@ data Domset t
       }
   deriving (Show)
 
-type PostDomset = Domset
+type PostDomSet = DomSet
 
 
 
@@ -433,14 +433,14 @@ instance FromJSON EdgeNr where
 instance ToJSON EdgeNr where
   toJSON (EdgeNr nr) = toJSON nr
 
-instance FromJSON (Domset NodeID) where
+instance FromJSON (DomSet NodeID) where
   parseJSON (Object v) =
-    Domset
+    DomSet
       <$> v .: "node"
       <*> v .: "domset"
   parseJSON _ = mzero
 
-instance ToJSON (Domset NodeID) where
+instance ToJSON (DomSet NodeID) where
   toJSON d =
     object [ "node"   .= (domNode d)
            , "domset" .= (domSet d)
@@ -1013,16 +1013,16 @@ getTargetNode :: Graph -> Edge -> Node
 getTargetNode (Graph g) (Edge (_, n, _)) = fromJust $ getNodeWithIntNodeID g n
 
 -- | Converts a dominator set of nodes into a dominator set of node IDs.
-convertDomsetN2ID :: Domset Node -> Domset NodeID
-convertDomsetN2ID d =
-  Domset
+convertDomSetN2ID :: DomSet Node -> DomSet NodeID
+convertDomSetN2ID d =
+  DomSet
     { domNode = getNodeID $ domNode d
     , domSet = map getNodeID (domSet d)
     }
 
 -- | Converts a postdominator set of nodes into a postdominator set of node IDs.
-convertPostDomsetN2ID :: PostDomset Node -> PostDomset NodeID
-convertPostDomsetN2ID = convertDomsetN2ID
+convertPostDomSetN2ID :: PostDomSet Node -> PostDomSet NodeID
+convertPostDomSetN2ID = convertDomSetN2ID
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
@@ -1438,20 +1438,20 @@ findFNInMapping st pn =
      else Nothing
 
 -- | Computes the dominator sets for a given graph and root node.
-computeDomsets :: Graph -> Node -> [Domset Node]
-computeDomsets (Graph g) n =
+computeDomSets :: Graph -> Node -> [DomSet Node]
+computeDomSets (Graph g) n =
   let dom_sets = I.dom g (getIntNodeID n)
-      f (n1, ns2) = Domset
+      f (n1, ns2) = DomSet
                       { domNode = fromJust $ getNodeWithIntNodeID g n1
                       , domSet = map (fromJust . getNodeWithIntNodeID g) ns2
                       }
   in map f dom_sets
 
 -- | Computes the immediate-dominator sets for a given graph and root node.
-computeIDomsets :: Graph -> Node -> [PostDomset Node]
-computeIDomsets (Graph g) n =
+computeIDomSets :: Graph -> Node -> [PostDomSet Node]
+computeIDomSets (Graph g) n =
   let idom_maps = I.iDom g (getIntNodeID n)
-      f (n1, n2) = Domset
+      f (n1, n2) = DomSet
                      { domNode = fromJust $ getNodeWithIntNodeID g n1
                      , domSet = [fromJust $ getNodeWithIntNodeID g n2]
                      }
@@ -1467,12 +1467,12 @@ reverseAllEdges g =
   in mkGraph nodes new_edges
 
 -- | Computes the postdominator sets for a given graph and sink node.
-computePostDomsets :: Graph -> Node -> [PostDomset Node]
-computePostDomsets g n = computeDomsets (reverseAllEdges g) n
+computePostDomSets :: Graph -> Node -> [PostDomSet Node]
+computePostDomSets g n = computeDomSets (reverseAllEdges g) n
 
 -- | Computes the immediate-postdominator sets for a given graph and sink node.
-computeIPostDomsets :: Graph -> Node -> [Domset Node]
-computeIPostDomsets g n = computeIDomsets (reverseAllEdges g) n
+computeIPostDomSets :: Graph -> Node -> [DomSet Node]
+computeIPostDomSets g n = computeIDomSets (reverseAllEdges g) n
 
 -- | Extracts the control-flow graph from a graph. If there are no label nodes
 -- in the graph, an empty graph is returned.

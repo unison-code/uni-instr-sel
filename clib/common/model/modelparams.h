@@ -607,7 +607,7 @@ class ModelParams {
     /**
      * The dominator sets for each label node in the function graph.
      */
-    std::vector< std::list<ArrayIndex> > func_label_domsets_;
+    std::vector< std::list<ArrayIndex> > func_label_dom_sets_;
 
     /**
      * The postdominator sets for each label node in the function graph.

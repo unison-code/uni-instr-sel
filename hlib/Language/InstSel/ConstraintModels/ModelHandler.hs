@@ -25,12 +25,12 @@ import Language.InstSel.Constraints
 import Language.InstSel.Constraints.ConstraintReconstructor
 import Language.InstSel.Graphs
   hiding
-  ( computeDomsets
-  , computePostDomsets
+  ( computeDomSets
+  , computePostDomSets
   )
 import qualified Language.InstSel.Graphs as G
-  ( computeDomsets
-  , computePostDomsets
+  ( computeDomSets
+  , computePostDomSets
   )
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
@@ -96,8 +96,8 @@ mkHLFunctionParams function =
               )
           )
           (filter isPostDomEdge (getAllEdges graph))
-      domsets = computeDomsets graph entry_label
-      pdomsets = computePostDomsets graph
+      domsets = computeDomSets graph entry_label
+      pdomsets = computePostDomSets graph
       getExecFreq n =
         fromJust $
           lookup
@@ -108,8 +108,8 @@ mkHLFunctionParams function =
        , hlFunEntityNodes = nodeIDsByType isEntityNode
        , hlFunLabelNodes = nodeIDsByType isLabelNode
        , hlFunEntryLabelNode = entry_label
-       , hlFunLabelDomsets = map convertDomsetN2ID domsets
-       , hlFunLabelPostDomsets = map convertPostDomsetN2ID pdomsets
+       , hlFunLabelDomSets = map convertDomSetN2ID domsets
+       , hlFunLabelPostDomSets = map convertPostDomSetN2ID pdomsets
        , hlFunDomEdges = dom_edge_data
        , hlFunPostDomEdges = pdom_edge_data
        , hlFunBasicBlockParams =
@@ -254,19 +254,19 @@ lowerHighLevelModel model ai_maps =
        , llNumFunLabelNodes = toInteger $ length $ hlFunLabelNodes f_params
        , llFunEntryLabelNode =
            getAIFromLabelNodeID $ hlFunEntryLabelNode f_params
-       , llFunLabelDomsets =
+       , llFunLabelDomSets =
            map
              (\d -> map getAIFromLabelNodeID (domSet d))
              ( sortByAI
                  (getAIFromLabelNodeID . domNode)
-                 (hlFunLabelDomsets f_params)
+                 (hlFunLabelDomSets f_params)
              )
-       , llFunLabelPostDomsets =
+       , llFunLabelPostDomSets =
            map
              (\d -> map getAIFromLabelNodeID (domSet d))
              ( sortByAI
                  (getAIFromLabelNodeID . domNode)
-                 (hlFunLabelPostDomsets f_params)
+                 (hlFunLabelPostDomSets f_params)
              )
        , llFunLabelDomEdges =
            map
@@ -392,11 +392,11 @@ findArrayIndexInList ai_list nid =
      then Just $ toArrayIndex $ fromJust index
      else Nothing
 
-computeDomsets :: Graph -> NodeID -> [PostDomset Node]
-computeDomsets g root_id =
+computeDomSets :: Graph -> NodeID -> [PostDomSet Node]
+computeDomSets g root_id =
   let cfg = extractCFG g
       root_n = head $ findNodesWithNodeID cfg root_id
-  in G.computeDomsets cfg root_n
+  in G.computeDomSets cfg root_n
 
 -- | The postdominator sets are computed in two stages. In the first stage, a
 -- sink is added and a control-flow edge is added to it from every label node
@@ -411,23 +411,23 @@ computeDomsets g root_id =
 -- postdominator sets. Note that the new postdominator sets will not be complete
 -- for label nodes that appear in the infinite loops, but at least they will not
 -- be incorrect.
-computePostDomsets :: Graph -> [PostDomset Node]
-computePostDomsets g =
+computePostDomSets :: Graph -> [PostDomSet Node]
+computePostDomSets g =
   let cfg0 = extractCFG g
       lnodes_wo_succ = filter (not . hasAnySuccessors cfg0) (getAllNodes cfg0)
       (cfg1, sink) = addNewNode (LabelNode mkEmptyBBLabel) cfg0
       cfg2 = addNewCtrlFlowEdges (zip lnodes_wo_succ (repeat sink)) cfg1
-      pdomsets = G.computePostDomsets cfg2 sink
+      pdomsets = G.computePostDomSets cfg2 sink
       pdomsets_wo_sink = filter (\s -> sink `notElem` domSet s) pdomsets
   in if null pdomsets_wo_sink
-     then removeSinkFromPostDomsets pdomsets sink
+     then removeSinkFromPostDomSets pdomsets sink
      else let lnodes_wo_sink = map domNode pdomsets_wo_sink
               cfg3 = addNewCtrlFlowEdges (zip lnodes_wo_sink (repeat sink)) cfg2
-              new_pdomsets = G.computePostDomsets cfg3 sink
-          in removeSinkFromPostDomsets new_pdomsets sink
+              new_pdomsets = G.computePostDomSets cfg3 sink
+          in removeSinkFromPostDomSets new_pdomsets sink
 
-removeSinkFromPostDomsets :: [PostDomset Node] -> Node -> [PostDomset Node]
-removeSinkFromPostDomsets sets n =
+removeSinkFromPostDomSets :: [PostDomSet Node] -> Node -> [PostDomSet Node]
+removeSinkFromPostDomSets sets n =
   mapMaybe
     ( \set ->
       if domNode set == n

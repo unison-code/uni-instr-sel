@@ -278,7 +278,7 @@ ModelParams::getNonEntryLabelNodesInAllMatches(void) const {
 
 vector< list<ID> >
 ModelParams::getLabelDomsetsInF(void) const {
-    return func_label_domsets_;
+    return func_label_dom_sets_;
 }
 
 vector< list<ID> >
@@ -393,18 +393,18 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelDomsetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-domsets")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-dom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
         }
-        p.func_label_domsets_.push_back(domset);
+        p.func_label_dom_sets_.push_back(domset);
     }
 }
 
 void
 ModelParams::setLabelPostDomsetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-post-domsets")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-post-dom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
