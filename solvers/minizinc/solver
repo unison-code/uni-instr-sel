@@ -109,6 +109,7 @@ minizinc $(basename $MINIZINC_MODEL_FILE) \
 STATUS=$?
 cd $CURRENT_DIR
 if [ $STATUS -ne 0 ]; then
+    echoerr "Error: minizinc solver exited with failure"
     exit 1
 fi
 
