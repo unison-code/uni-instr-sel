@@ -283,7 +283,7 @@ ModelParams::getLabelDomsetsInF(void) const {
 
 vector< list<ID> >
 ModelParams::getLabelPostDomsetsInF(void) const {
-    return func_label_pdomsets_;
+    return func_label_postdom_sets_;
 }
 
 vector< list<ID> >
@@ -293,7 +293,7 @@ ModelParams::getLabelDomEdgesInF(void) const {
 
 vector< list<ID> >
 ModelParams::getLabelPostDomEdgesInF(void) const {
-    return func_label_pdom_edges_;
+    return func_label_postdom_edges_;
 }
 
 void
@@ -409,15 +409,15 @@ ModelParams::setLabelPostDomsetsInF(const Value& root, ModelParams& p) {
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
         }
-        p.func_label_pdomsets_.push_back(domset);
+        p.func_label_postdom_sets_.push_back(domset);
     }
 }
 
 void
 ModelParams::setLabelDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-label-dom-edges")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-dom-edges")) {
         list<ArrayIndex> entities;
-        if (!entry.isNull()) {
+        for (auto entry : jsonlist) {
             entities.push_back(toArrayIndex(entry));
         }
         p.func_label_dom_edges_.push_back(entities);
@@ -426,11 +426,11 @@ ModelParams::setLabelDomEdgesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelPostDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-label-postdom-edges")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-postdom-edges")) {
         list<ArrayIndex> entities;
-        if (!entry.isNull()) {
+        for (auto entry : jsonlist) {
             entities.push_back(toArrayIndex(entry));
         }
-        p.func_label_pdom_edges_.push_back(entities);
+        p.func_label_postdom_edges_.push_back(entities);
     }
 }

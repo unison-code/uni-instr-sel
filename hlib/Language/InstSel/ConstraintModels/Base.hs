@@ -501,7 +501,7 @@ instance ToJSON LowLevelModel where
            , "fun-label-dom-sets"          .= (llFunLabelDomSets m)
            , "fun-label-postdom-sets"      .= (llFunLabelPostDomSets m)
            , "fun-label-dom-edges"         .= (llFunLabelDomEdges m)
-           , "fun-label-dom-post-edges"    .= (llFunLabelPostDomEdges m)
+           , "fun-label-postdom-edges"     .= (llFunLabelPostDomEdges m)
            , "fun-bb-exec-freqs"           .= (llFunBBExecFreqs m)
            , "fun-essential-op-nodes"      .= (llFunEssentialOpNodes m)
            , "fun-constraints"             .= (llFunConstraints m)

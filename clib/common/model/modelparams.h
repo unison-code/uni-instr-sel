@@ -605,6 +605,11 @@ class ModelParams {
     size_t num_matches_;
 
     /**
+     * The label which indicates the entry point in the function graph.
+     */
+    ArrayIndex func_entry_label_;
+
+    /**
      * The dominator sets for each label node in the function graph.
      */
     std::vector< std::list<ArrayIndex> > func_label_dom_sets_;
@@ -612,12 +617,7 @@ class ModelParams {
     /**
      * The postdominator sets for each label node in the function graph.
      */
-    std::vector< std::list<ArrayIndex> > func_label_pdomsets_;
-
-    /**
-     * The label which indicates the entry point in the function graph.
-     */
-    ArrayIndex func_entry_label_;
+    std::vector< std::list<ArrayIndex> > func_label_postdom_sets_;
 
     /**
      * The entity nodes to which the respective label nodes have a dominance
@@ -629,7 +629,7 @@ class ModelParams {
      * The entity nodes to which the respective label nodes have a postdominance
      * edge.
      */
-    std::vector< std::list<ArrayIndex> > func_label_pdom_edges_;
+    std::vector< std::list<ArrayIndex> > func_label_postdom_edges_;
 
     /**
      * The essential operation nodes in the function graph, which must be
