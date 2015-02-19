@@ -375,9 +375,9 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "label-nodes"
       <*> v .: "entry-label"
       <*> v .: "label-dom-sets"
-      <*> v .: "label-post-dom-sets"
+      <*> v .: "label-postdom-sets"
       <*> v .: "dom-edges"
-      <*> v .: "post-dom-edges"
+      <*> v .: "postdom-edges"
       <*> v .: "bb-params"
       <*> v .: "essential-op-nodes"
       <*> v .: "constraints"
@@ -385,17 +385,17 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
-    object [ "operation-nodes"     .= (hlFunOpNodes d)
-           , "entity-nodes"        .= (hlFunEntityNodes d)
-           , "label-nodes"         .= (hlFunLabelNodes d)
-           , "label-dom-sets"      .= (hlFunLabelDomSets d)
-           , "label-post-dom-sets" .= (hlFunLabelPostDomSets d)
-           , "entry-label"         .= (hlFunEntryLabelNode d)
-           , "dom-edges"           .= (hlFunDomEdges d)
-           , "post-dom-edges"      .= (hlFunPostDomEdges d)
-           , "bb-params"           .= (hlFunBasicBlockParams d)
-           , "essential-op-nodes"  .= (hlFunEssentialOpNodes d)
-           , "constraints"         .= (hlFunConstraints d)
+    object [ "operation-nodes"    .= (hlFunOpNodes d)
+           , "entity-nodes"       .= (hlFunEntityNodes d)
+           , "label-nodes"        .= (hlFunLabelNodes d)
+           , "label-dom-sets"     .= (hlFunLabelDomSets d)
+           , "label-postdom-sets" .= (hlFunLabelPostDomSets d)
+           , "entry-label"        .= (hlFunEntryLabelNode d)
+           , "dom-edges"          .= (hlFunDomEdges d)
+           , "postdom-edges"      .= (hlFunPostDomEdges d)
+           , "bb-params"          .= (hlFunBasicBlockParams d)
+           , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
+           , "constraints"        .= (hlFunConstraints d)
            ]
 
 instance FromJSON HighLevelBasicBlockParams where
@@ -473,9 +473,9 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-label-nodes"
       <*> v .: "fun-entry-label-node"
       <*> v .: "fun-label-dom-sets"
-      <*> v .: "fun-label-post-dom-sets"
+      <*> v .: "fun-label-postdom-sets"
       <*> v .: "fun-label-dom-edges"
-      <*> v .: "fun-label-post-dom-edges"
+      <*> v .: "fun-label-postdom-edges"
       <*> v .: "fun-bb-exec-freqs"
       <*> v .: "fun-essential-op-nodes"
       <*> v .: "fun-constraints"
@@ -499,7 +499,7 @@ instance ToJSON LowLevelModel where
            , "fun-num-label-nodes"         .= (llNumFunLabelNodes m)
            , "fun-entry-label-node"        .= (llFunEntryLabelNode m)
            , "fun-label-dom-sets"          .= (llFunLabelDomSets m)
-           , "fun-label-post-dom-sets"     .= (llFunLabelPostDomSets m)
+           , "fun-label-postdom-sets"      .= (llFunLabelPostDomSets m)
            , "fun-label-dom-edges"         .= (llFunLabelDomEdges m)
            , "fun-label-dom-post-edges"    .= (llFunLabelPostDomEdges m)
            , "fun-bb-exec-freqs"           .= (llFunBBExecFreqs m)

@@ -404,7 +404,7 @@ ModelParams::setLabelDomsetsInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelPostDomsetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-post-dom-sets")) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-postdom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
@@ -426,7 +426,7 @@ ModelParams::setLabelDomEdgesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setLabelPostDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-label-post-dom-edges")) {
+    for (auto entry : getJsonValue(root, "fun-label-postdom-edges")) {
         list<ArrayIndex> entities;
         if (!entry.isNull()) {
             entities.push_back(toArrayIndex(entry));
