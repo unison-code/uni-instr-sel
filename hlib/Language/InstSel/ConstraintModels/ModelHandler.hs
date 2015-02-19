@@ -24,9 +24,19 @@ import Language.InstSel.ConstraintModels.IDs
 import Language.InstSel.Constraints
 import Language.InstSel.Constraints.ConstraintReconstructor
 import Language.InstSel.Graphs
+  hiding
+  ( computeDomsets
+  , computePostDomsets
+  )
+import qualified Language.InstSel.Graphs as G
+  ( computeDomsets
+  , computePostDomsets
+  )
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
-  ( Function (..) )
+  ( Function (..)
+  , mkEmptyBBLabel
+  )
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
@@ -38,6 +48,7 @@ import Data.List
 import Data.Maybe
   ( fromJust
   , isJust
+  , mapMaybe
   )
 
 
@@ -85,9 +96,8 @@ mkHLFunctionParams function =
               )
           )
           (filter isPostDomEdge (getAllEdges graph))
-      domsets = computeDomsets
-                  graph
-                  (head $ findNodesWithNodeID graph entry_label)
+      domsets = computeDomsets graph entry_label
+      pdomsets = computePostDomsets graph
       getExecFreq n =
         fromJust $
           lookup
@@ -99,7 +109,7 @@ mkHLFunctionParams function =
        , hlFunLabelNodes = nodeIDsByType isLabelNode
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomsets = map convertDomsetN2ID domsets
-       , hlFunLabelPostDomsets = [] -- TODO: implement
+       , hlFunLabelPostDomsets = map convertPostDomsetN2ID pdomsets
        , hlFunDomEdges = dom_edge_data
        , hlFunPostDomEdges = pdom_edge_data
        , hlFunBasicBlockParams =
@@ -380,3 +390,47 @@ findArrayIndexInList ai_list nid =
   in if isJust index
      then Just $ toArrayIndex $ fromJust index
      else Nothing
+
+computeDomsets :: Graph -> NodeID -> [PostDomset Node]
+computeDomsets g root_id =
+  let cfg = extractCFG g
+      root_n = head $ findNodesWithNodeID cfg root_id
+  in G.computeDomsets cfg root_n
+
+-- | The postdominator sets are computed in two stages. In the first stage, a
+-- sink is added and a control-flow edge is added to it from every label node
+-- with no successors. The postdominator set is then computed for this graph.
+-- If there are any label nodes which are not postdominated by the sink, a
+-- control-flow edge is added from every such label node to the sink, and the
+-- postdominator set is then recomputed on the new graph.
+--
+-- The reason for doing this is because infinite loops will always have
+-- successors and thus not get the first control-flow edge to the sink. The
+-- second stage is to detect such loops and ensure to fix the erroneous
+-- postdominator sets. Note that the new postdominator sets will not be complete
+-- for label nodes that appear in the infinite loops, but at least they will not
+-- be incorrect.
+computePostDomsets :: Graph -> [PostDomset Node]
+computePostDomsets g =
+  let cfg0 = extractCFG g
+      lnodes_wo_succ = filter (not . hasAnySuccessors cfg0) (getAllNodes cfg0)
+      (cfg1, sink) = addNewNode (LabelNode mkEmptyBBLabel) cfg0
+      cfg2 = addNewCtrlFlowEdges (zip lnodes_wo_succ (repeat sink)) cfg1
+      pdomsets = G.computePostDomsets cfg2 sink
+      pdomsets_wo_sink = filter (\s -> sink `notElem` domSet s) pdomsets
+  in if null pdomsets_wo_sink
+     then removeSinkFromPostDomsets pdomsets sink
+     else let lnodes_wo_sink = map domNode pdomsets_wo_sink
+              cfg3 = addNewCtrlFlowEdges (zip lnodes_wo_sink (repeat sink)) cfg2
+              new_pdomsets = G.computePostDomsets cfg3 sink
+          in removeSinkFromPostDomsets new_pdomsets sink
+
+removeSinkFromPostDomsets :: [PostDomset Node] -> Node -> [PostDomset Node]
+removeSinkFromPostDomsets sets n =
+  mapMaybe
+    ( \set ->
+      if domNode set == n
+      then Nothing
+      else Just set { domSet = [ i | i <- domSet set, i /= n ] }
+    )
+    sets
