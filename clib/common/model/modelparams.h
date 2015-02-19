@@ -62,20 +62,12 @@ class ModelParams {
     getNumOperationNodesInF(void) const;
 
     /**
-     * Gets the number of data nodes in the function graph.
+     * Gets the number of entity nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumDataNodesInF(void) const;
-
-    /**
-     * Gets the number of state nodes in the function graph.
-     *
-     * @returns Number of nodes.
-     */
-    size_t
-    getNumStateNodesInF(void) const;
+    getNumEntityNodesInF(void) const;
 
     /**
      * Gets the number of label nodes in the function graph.
@@ -104,36 +96,47 @@ class ModelParams {
     /**
      * Gets the list of dominators per given label node in the function graph.
      *
-     * @returns List of dominators.
+     * @returns List of label nodes that dominates a particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getDomsetForAllLabelNodesInF(void) const;
+    getLabelDomsetsInF(void) const;
 
     /**
-     * Gets the list of label nodes in which the respective data node in the
-     * function graph must be defined.
+     * Gets the list of postdominators per given label node in the function
+     * graph.
      *
-     * @returns List of label nodes.
+     * @returns List of label nodes that postdominates a particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelDefsForAllDataNodesInF(void) const;
+    getLabelPostDomsetsInF(void) const;
 
     /**
-     * Gets the list of label nodes in which the respective state node in the
-     * function graph must be defined.
+     * Gets the list of dominance edges per given label node in the function
+     * graph.
      *
-     * @returns List of label nodes.
+     * @returns List of entity nodes to which there is a dominance edge from a
+     * particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelDefsForAllStateNodesInF(void) const;
+    getLabelDomEdgesInF(void) const;
 
     /**
-     * Gets the root label in the function graph.
+     * Gets the list of postdominance edges per given label node in the function
+     * graph.
+     *
+     * @returns List of entity nodes to which there is a postdominance edge from
+     * a particular label node.
+     */
+    std::vector< std::list<ArrayIndex> >
+    getLabelPostDomEdgesInF(void) const;
+
+    /**
+     * Gets the entry label in the function graph.
      *
      * @returns Array index for a label node.
      */
     ArrayIndex
-    getRootLabelInF(void) const;
+    getEntryLabelInF(void) const;
 
     /**
      * Gets the essential operation nodes in the function, which must be
@@ -178,52 +181,36 @@ class ModelParams {
     getOperationNodesCoveredByAllMatches(void) const;
 
     /**
-     * Gets the function data nodes defined per match.
+     * Gets the function entity nodes defined per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getDataNodesDefinedByAllMatches(void) const;
+    getEntityNodesDefinedByAllMatches(void) const;
 
     /**
-     * Gets the function state nodes defined per match.
+     * Gets the function entity nodes used per match.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getStateNodesDefinedByAllMatches(void) const;
+    getEntityNodesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function data nodes used per match.
+     * Gets the function label nodes per match that are entries.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getDataNodesUsedByAllMatches(void) const;
+    getEntryLabelNodeOfAllMatches(void) const;
 
     /**
-     * Gets the function state nodes used per match.
+     * Gets the function label nodes per match that are not entries.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getStateNodesUsedByAllMatches(void) const;
-
-    /**
-     * Gets the function label nodes per match that are roots.
-     *
-     * @returns List of node IDs.
-     */
-    std::vector< std::list<ID> >
-    getRootLabelNodeOfAllMatches(void) const;
-
-    /**
-     * Gets the function label nodes per match that are not roots.
-     *
-     * @returns List of node IDs.
-     */
-    std::vector< std::list<ID> >
-    getNonRootLabelNodesInAllMatches(void) const;
+    getNonEntryLabelNodesInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
@@ -339,7 +326,7 @@ class ModelParams {
     toString(const Json::Value& value);
 
     /**
-     * Sets the root label for the function graph.
+     * Sets the entry label for the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -349,11 +336,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setRootLabelInF(const Json::Value& root, ModelParams& p);
+    setEntryLabelInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the label nodes in which the respective data nodes in the function
-     * graph must be defined.
+     * Sets the dominator sets for the label nodes in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -363,11 +349,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelDefsForDataNodesInF(const Json::Value& root, ModelParams& p);
+    setLabelDomsetsInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the label nodes in which the respective state nodes in the function
-     * graph must be defined.
+     * Sets the postdominator sets for the label nodes in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -377,10 +362,11 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelDefsForStateNodesInF(const Json::Value& root, ModelParams& p);
+    setLabelPostDomsetsInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the domsets for the label nodes in the function graph.
+     * Sets the dominance edges for the respective label nodes in the function
+     * graph.
      *
      * @param root
      *        The JSON root value.
@@ -390,7 +376,21 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setDomsetsForLabelNodesInF(const Json::Value& root, ModelParams& p);
+    setLabelDomEdgesInF(const Json::Value& root, ModelParams& p);
+
+    /**
+     * Sets the postdominance edges for the respective label nodes in the
+     * function graph.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setLabelPostDomEdgesInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the constraints of the function graph.
@@ -486,7 +486,7 @@ class ModelParams {
     setOperationNodesCoveredByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function data nodes defined by the respective match.
+     * Sets the function entity nodes defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -496,10 +496,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setDataNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
+    setEntityNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function state nodes defined by the respective match.
+     * Sets the function entity nodes used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -509,36 +509,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setStateNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
+    setEntityNodesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function data nodes used by the respective match.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    setDataNodesUsedByMatches(const Json::Value& root, ModelParams& p);
-
-    /**
-     * Sets the function state nodes used by the respective match.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p);
-
-    /**
-     * Sets the function label nodes that is the root label of each respective
+     * Sets the function label nodes that is the entry label of each respective
      * match.
      *
      * @param root
@@ -549,11 +523,11 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setRootLabelNodeOfMatches(const Json::Value& root, ModelParams& p);
+    setEntryLabelNodeOfMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the function label nodes that appear in the respective match but
-     * not as roots.
+     * not as entries.
      *
      * @param root
      *        The JSON root value.
@@ -563,7 +537,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setNonRootLabelNodesInMatches(const Json::Value& root, ModelParams& p);
+    setNonEntryLabelNodesInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -611,14 +585,9 @@ class ModelParams {
     size_t num_func_operation_nodes_;
 
     /**
-     * Numbers of data nodes in the function.
+     * Numbers of entity nodes in the function.
      */
-    size_t num_func_data_nodes_;
-
-    /**
-     * Numbers of state nodes in the function.
-     */
-    size_t num_func_state_nodes_;
+    size_t num_func_entity_nodes_;
 
     /**
      * Numbers of label nodes in the function.
@@ -641,19 +610,26 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > func_label_domsets_;
 
     /**
-     * The root label which indicates the entry point in the function graph.
+     * The postdominator sets for each label node in the function graph.
      */
-    ArrayIndex func_root_label_;
+    std::vector< std::list<ArrayIndex> > func_label_pdomsets_;
 
     /**
-     * The label nodes in which the respective data nodes must be defined.
+     * The label which indicates the entry point in the function graph.
      */
-    std::vector< std::list<ArrayIndex> > func_data_nodes_labels_defs_;
+    ArrayIndex func_entry_label_;
 
     /**
-     * The label nodes in which the respective state nodes must be defined.
+     * The entity nodes to which the respective label nodes have a dominance
+     * edge.
      */
-    std::vector< std::list<ArrayIndex> > func_state_nodes_labels_defs_;
+    std::vector< std::list<ArrayIndex> > func_label_dom_edges_;
+
+    /**
+     * The entity nodes to which the respective label nodes have a postdominance
+     * edge.
+     */
+    std::vector< std::list<ArrayIndex> > func_label_pdom_edges_;
 
     /**
      * The essential operation nodes in the function graph, which must be
@@ -690,35 +666,25 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_operations_covered_;
 
     /**
-     * The data nodes in the function graph which are defined by each match.
+     * The entity nodes in the function graph which are defined by each match.
      */
-    std::vector< std::list<ArrayIndex> > match_data_defined_;
+    std::vector< std::list<ArrayIndex> > match_entities_defined_;
 
     /**
-     * The data nodes in the function graph which are used by each match.
+     * The entity nodes in the function graph which are used by each match.
      */
-    std::vector< std::list<ArrayIndex> > match_data_used_;
+    std::vector< std::list<ArrayIndex> > match_entities_used_;
 
     /**
-     * The state nodes in the function graph which are defined by each match.
+     * The entry label, if any, for each match.
      */
-    std::vector< std::list<ArrayIndex> > match_states_defined_;
-
-    /**
-     * The state nodes in the function graph which are used by each match.
-     */
-    std::vector< std::list<ArrayIndex> > match_states_used_;
+    std::vector< std::list<ArrayIndex> > match_entry_label_;
 
     /**
      * The label nodes in the function graph which appear in each match but not
-     * as roots.
+     * as entries.
      */
-    std::vector< std::list<ArrayIndex> > match_non_root_labels_;
-
-    /**
-     * The root label, if any, for each match.
-     */
-    std::vector< std::list<ArrayIndex> > match_root_label_;
+    std::vector< std::list<ArrayIndex> > match_non_entry_labels_;
 
     /**
      * The constraints for each match. The constraints are destroyed when this

@@ -49,13 +49,8 @@ ModelParams::getNumOperationNodesInF(void) const {
 }
 
 size_t
-ModelParams::getNumDataNodesInF(void) const {
-    return num_func_data_nodes_;
-}
-
-size_t
-ModelParams::getNumStateNodesInF(void) const {
-    return num_func_state_nodes_;
+ModelParams::getNumEntityNodesInF(void) const {
+    return num_func_entity_nodes_;
 }
 
 size_t
@@ -74,8 +69,8 @@ ModelParams::getNumRegistersInM(void) const {
 }
 
 ID
-ModelParams::getRootLabelInF(void) const {
-    return func_root_label_;
+ModelParams::getEntryLabelInF(void) const {
+    return func_entry_label_;
 }
 
 void
@@ -87,10 +82,11 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     }
 
     setNumValues(root, p);
-    setRootLabelInF(root, p);
-    setLabelDefsForDataNodesInF(root, p);
-    setLabelDefsForStateNodesInF(root, p);
-    setDomsetsForLabelNodesInF(root, p);
+    setEntryLabelInF(root, p);
+    setLabelDomsetsInF(root, p);
+    setLabelPostDomsetsInF(root, p);
+    setLabelDomEdgesInF(root, p);
+    setLabelPostDomEdgesInF(root, p);
     setEssentialOpNodesInF(root, p);
     setExecFreqOfBBsInF(root, p);
     setConstraintsForF(root, p);
@@ -99,12 +95,10 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setConstraintsForMatches(root, p);
     setADDUCSettingsForMatches(root, p);
     setOperationNodesCoveredByMatches(root, p);
-    setDataNodesDefinedByMatches(root, p);
-    setDataNodesUsedByMatches(root, p);
-    setStateNodesDefinedByMatches(root, p);
-    setStateNodesUsedByMatches(root, p);
-    setRootLabelNodeOfMatches(root, p);
-    setNonRootLabelNodesInMatches(root, p);
+    setEntityNodesDefinedByMatches(root, p);
+    setEntityNodesUsedByMatches(root, p);
+    setEntryLabelNodeOfMatches(root, p);
+    setNonEntryLabelNodesInMatches(root, p);
 }
 
 bool
@@ -192,7 +186,7 @@ ModelParams::setOperationNodesCoveredByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-onodes-covered")) {
+    for (auto jsonlist : getJsonValue(root, "match-op-nodes-covered")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
@@ -202,82 +196,58 @@ ModelParams::setOperationNodesCoveredByMatches(
 }
 
 void
-ModelParams::setDataNodesDefinedByMatches(
+ModelParams::setEntityNodesDefinedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-dnodes-defined")) {
+    for (auto jsonlist : getJsonValue(root, "match-entity-nodes-defined")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.match_data_defined_.push_back(covers);
+        p.match_entities_defined_.push_back(covers);
     }
 }
 
 void
-ModelParams::setStateNodesDefinedByMatches(
+ModelParams::setEntityNodesUsedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-snodes-defined")) {
+    for (auto jsonlist : getJsonValue(root, "match-entity-nodes-used")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.match_states_defined_.push_back(covers);
+        p.match_entities_used_.push_back(covers);
     }
 }
 
 void
-ModelParams::setDataNodesUsedByMatches(const Json::Value& root, ModelParams& p)
-{
-    for (auto jsonlist : getJsonValue(root, "match-dnodes-used")) {
-        list<ArrayIndex> covers;
-        for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
-        }
-        p.match_data_used_.push_back(covers);
-    }
-}
-
-void
-ModelParams::setStateNodesUsedByMatches(const Json::Value& root, ModelParams& p)
-{
-    for (auto jsonlist : getJsonValue(root, "match-snodes-used")) {
-        list<ArrayIndex> covers;
-        for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
-        }
-        p.match_states_used_.push_back(covers);
-    }
-}
-
-void
-ModelParams::setRootLabelNodeOfMatches(
+ModelParams::setEntryLabelNodeOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-root-lnodes")) {
+    for (auto jsonlist : getJsonValue(root, "match-entry-label-nodes")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.match_root_label_.push_back(covers);
+        p.match_entry_label_.push_back(covers);
     }
 }
 
 void
-ModelParams::setNonRootLabelNodesInMatches(
+ModelParams::setNonEntryLabelNodesInMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-non-root-lnodes")) {
+    for (auto jsonlist : getJsonValue(root, "match-non-entry-label-nodes")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
         }
-        p.match_non_root_labels_.push_back(covers);
+        p.match_non_entry_labels_.push_back(covers);
     }
 }
 
@@ -287,48 +257,43 @@ ModelParams::getOperationNodesCoveredByAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getDataNodesDefinedByAllMatches(void) const {
-    return match_data_defined_;
+ModelParams::getEntityNodesDefinedByAllMatches(void) const {
+    return match_entities_defined_;
 }
 
 vector< list<ID> >
-ModelParams::getStateNodesDefinedByAllMatches(void) const {
-    return match_states_defined_;
+ModelParams::getEntityNodesUsedByAllMatches(void) const {
+    return match_entities_used_;
 }
 
 vector< list<ID> >
-ModelParams::getDataNodesUsedByAllMatches(void) const {
-    return match_data_used_;
+ModelParams::getEntryLabelNodeOfAllMatches(void) const {
+    return match_entry_label_;
 }
 
 vector< list<ID> >
-ModelParams::getStateNodesUsedByAllMatches(void) const {
-    return match_states_used_;
+ModelParams::getNonEntryLabelNodesInAllMatches(void) const {
+    return match_non_entry_labels_;
 }
 
 vector< list<ID> >
-ModelParams::getRootLabelNodeOfAllMatches(void) const {
-    return match_root_label_;
-}
-
-vector< list<ID> >
-ModelParams::getNonRootLabelNodesInAllMatches(void) const {
-    return match_non_root_labels_;
-}
-
-vector< list<ID> >
-ModelParams::getDomsetForAllLabelNodesInF(void) const {
+ModelParams::getLabelDomsetsInF(void) const {
     return func_label_domsets_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelDefsForAllDataNodesInF(void) const {
-    return func_data_nodes_labels_defs_;
+ModelParams::getLabelPostDomsetsInF(void) const {
+    return func_label_pdomsets_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelDefsForAllStateNodesInF(void) const {
-    return func_state_nodes_labels_defs_;
+ModelParams::getLabelDomEdgesInF(void) const {
+    return func_label_dom_edges_;
+}
+
+vector< list<ID> >
+ModelParams::getLabelPostDomEdgesInF(void) const {
+    return func_label_pdom_edges_;
 }
 
 void
@@ -411,22 +376,23 @@ ModelParams::setADDUCSettingsForMatches(
 }
 
 void
-ModelParams::setRootLabelInF(const Json::Value& root, ModelParams& p) {
-    p.func_root_label_ = toArrayIndex(getJsonValue(root, "fun-root-lnode"));
+ModelParams::setEntryLabelInF(const Json::Value& root, ModelParams& p) {
+    p.func_entry_label_ =
+        toArrayIndex(getJsonValue(root, "fun-entry-label-node"));
 }
 
 void
 ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
-    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "fun-num-onodes"));
-    p.num_func_data_nodes_ = toInt(getJsonValue(root, "fun-num-dnodes"));
-    p.num_func_state_nodes_ = toInt(getJsonValue(root, "fun-num-snodes"));
-    p.num_func_label_nodes_ = toInt(getJsonValue(root, "fun-num-lnodes"));
+    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "fun-num-op-nodes"));
+    p.num_func_entity_nodes_ =
+        toInt(getJsonValue(root, "fun-num-entity-nodes"));
+    p.num_func_label_nodes_ = toInt(getJsonValue(root, "fun-num-label-nodes"));
     p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }
 
 void
-ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
+ModelParams::setLabelDomsetsInF(const Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "fun-label-domsets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
@@ -437,23 +403,34 @@ ModelParams::setDomsetsForLabelNodesInF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setLabelDefsForDataNodesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-dnodes-label-defs")) {
-        list<ArrayIndex> labels;
-        if (!entry.isNull()) {
-            labels.push_back(toArrayIndex(entry));
+ModelParams::setLabelPostDomsetsInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-post-domsets")) {
+        list<ArrayIndex> domset;
+        for (auto entry : jsonlist) {
+            domset.push_back(toArrayIndex(entry));
         }
-        p.func_data_nodes_labels_defs_.push_back(labels);
+        p.func_label_pdomsets_.push_back(domset);
     }
 }
 
 void
-ModelParams::setLabelDefsForStateNodesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-snodes-label-defs")) {
-        list<ArrayIndex> labels;
+ModelParams::setLabelDomEdgesInF(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "fun-label-dom-edges")) {
+        list<ArrayIndex> entities;
         if (!entry.isNull()) {
-            labels.push_back(toArrayIndex(entry));
+            entities.push_back(toArrayIndex(entry));
         }
-        p.func_state_nodes_labels_defs_.push_back(labels);
+        p.func_label_dom_edges_.push_back(entities);
+    }
+}
+
+void
+ModelParams::setLabelPostDomEdgesInF(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "fun-label-post-dom-edges")) {
+        list<ArrayIndex> entities;
+        if (!entry.isNull()) {
+            entities.push_back(toArrayIndex(entry));
+        }
+        p.func_label_pdom_edges_.push_back(entities);
     }
 }

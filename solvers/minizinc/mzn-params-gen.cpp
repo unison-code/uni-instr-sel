@@ -168,20 +168,30 @@ generateModelFunctionParameters(
 ) {
     out << "% Function data" << endl;
 
-    out << "numOpsInFunction = " << params.getNumOperationNodesInF() << ";"
-         << endl;
-    out << "numDataInFunction = " << params.getNumDataNodesInF() << ";"
-         << endl;
-    out << "numStatesInFunction = " << params.getNumStateNodesInF() << ";"
-         << endl;
+    out << "numOperationsInFunction = "
+        << params.getNumOperationNodesInF()
+        << ";"
+        << endl;
+    out << "numEntitiesInFunction = " << params.getNumEntityNodesInF() << ";"
+        << endl;
     out << "numLabelsInFunction = " << params.getNumLabelNodesInF() << ";"
-         << endl;
+        << endl;
 
-    out << "rootLabelOfFunction = " << params.getRootLabelInF() << ";"
-         << endl;
+    out << "entryLabelOfFunction = " << params.getEntryLabelInF() << ";"
+        << endl;
 
     out << "domsetOfLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getDomsetForAllLabelNodesInF());
+    printMinizincValue(out, params.getLabelDomsetsInF());
+    out << ");" << endl;
+    out << "postDomsetOfLabelInFunction = array1d(allLabelsInFunction, ";
+    printMinizincValue(out, params.getLabelPostDomsetsInF());
+    out << ");" << endl;
+
+    out << "domEdgesOfLabelInFunction = array1d(allLabelsInFunction, ";
+    printMinizincValue(out, params.getLabelDomEdgesInF());
+    out << ");" << endl;
+    out << "postDomEdgesOfLabelInFunction = array1d(allLabelsInFunction, ";
+    printMinizincValue(out, params.getLabelPostDomEdgesInF());
     out << ");" << endl;
 
     out << "essentialOperationsInFunction = ";
@@ -190,16 +200,6 @@ generateModelFunctionParameters(
 
     out << "execFrequencyOfLabelInFunction = array1d(allLabelsInFunction, ";
     printMinizincValue(out, params.getExecFreqOfAllBBsInF());
-    out << ");" << endl;
-
-    out << "labelsWhereDataInFunctionMustBeDefined = "
-        << "array1d(allDataInFunction, ";
-    printMinizincValue(out, params.getLabelDefsForAllDataNodesInF());
-    out << ");" << endl;
-
-    out << "labelsWhereStatesInFunctionMustBeDefined = "
-        << "array1d(allStatesInFunction, ";
-    printMinizincValue(out, params.getLabelDefsForAllStateNodesInF());
     out << ");" << endl;
 }
 
@@ -224,32 +224,24 @@ generateModelMatchParameters(
     out << "numMatches = " << params.getNumMatches() << ";"
          << endl;
 
-    out << "opsCoveredByMatch = array1d(allMatches, ";
+    out << "operationsCoveredByMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getOperationNodesCoveredByAllMatches());
     out << ");" << endl;
 
-    out << "dataDefinedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getDataNodesDefinedByAllMatches());
+    out << "entitiesDefinedByMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getEntityNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "statesDefinedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getStateNodesDefinedByAllMatches());
+    out << "entitiesUsedInMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getEntityNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "dataUsedInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getDataNodesUsedByAllMatches());
+    out << "entryLabelOfMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getEntryLabelNodeOfAllMatches());
     out << ");" << endl;
 
-    out << "statesUsedInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getStateNodesUsedByAllMatches());
-    out << ");" << endl;
-
-    out << "rootLabelOfMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getRootLabelNodeOfAllMatches());
-    out << ");" << endl;
-
-    out << "nonRootLabelsInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getNonRootLabelNodesInAllMatches());
+    out << "nonEntryLabelsInMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getNonEntryLabelNodesInAllMatches());
     out << ");" << endl;
 
     out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";
@@ -264,7 +256,7 @@ generateModelMatchParameters(
         vector<int> mappings(num_matches * num_labels, -1);
         int index = 0;
         ArrayIndex pat_index = 0;
-        for (const auto& entries : params.getNonRootLabelNodesInAllMatches()) {
+        for (const auto& entries : params.getNonEntryLabelNodesInAllMatches()) {
             for (const ArrayIndex& node_index : entries) {
                 mappings[pat_index * num_labels + node_index] = index++;
             }
