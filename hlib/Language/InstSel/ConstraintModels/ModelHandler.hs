@@ -87,6 +87,7 @@ mkHLFunctionParams function =
   in HighLevelFunctionParams
        { hlFunOpNodes = nodeIDsByType isOperationNode
        , hlFunEntityNodes = nodeIDsByType isEntityNode
+       , hlFunStateNodes = nodeIDsByType isStateNode
        , hlFunLabelNodes = nodeIDsByType isLabelNode
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
@@ -211,10 +212,10 @@ replaceNodeIDsFromP2FInC match c =
 -- instance.
 lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
-  let getAIFromOpNodeID nid = fromJust $ findAIFromOpNodeID ai_maps nid
-      getAIFromEntityNodeID nid = fromJust $ findAIFromEntityNodeID ai_maps nid
-      getAIFromLabelNodeID nid = fromJust $ findAIFromLabelNodeID ai_maps nid
-      getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
+  let getAIForOpNodeID nid = fromJust $ findAIWithOpNodeID ai_maps nid
+      getAIForEntityNodeID nid = fromJust $ findAIWithEntityNodeID ai_maps nid
+      getAIForLabelNodeID nid = fromJust $ findAIWithLabelNodeID ai_maps nid
+      getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
       sortByAI get_ai_f nids =
         map snd
@@ -223,61 +224,62 @@ lowerHighLevelModel model ai_maps =
             )
       f_params = hlFunctionParams model
       tm_params = hlMachineParams model
-      m_params = sortByAI (getAIFromMatchID . hlMatchID) (hlMatchParams model)
+      m_params = sortByAI (getAIForMatchID . hlMatchID) (hlMatchParams model)
   in LowLevelModel
        { llNumFunOpNodes = toInteger $ length $ hlFunOpNodes f_params
        , llNumFunEntityNodes = toInteger $ length $ hlFunEntityNodes f_params
        , llNumFunLabelNodes = toInteger $ length $ hlFunLabelNodes f_params
+       , llFunStateNodes = map getAIForEntityNodeID (hlFunStateNodes f_params)
        , llFunEntryLabelNode =
-           getAIFromLabelNodeID $ hlFunEntryLabelNode f_params
+           getAIForLabelNodeID $ hlFunEntryLabelNode f_params
        , llFunLabelDomSets =
-           map (\d -> map getAIFromLabelNodeID (domSet d))
-               ( sortByAI (getAIFromLabelNodeID . domNode)
+           map (\d -> map getAIForLabelNodeID (domSet d))
+               ( sortByAI (getAIForLabelNodeID . domNode)
                           (hlFunLabelDomSets f_params)
                )
        , llFunLabelInvDomSets =
-           map (\d -> map getAIFromLabelNodeID (invDomSet d))
-               ( sortByAI (getAIFromLabelNodeID . domNode)
+           map (\d -> map getAIForLabelNodeID (invDomSet d))
+               ( sortByAI (getAIForLabelNodeID . domNode)
                           (hlFunLabelDomSets f_params)
                )
        , llFunLabelToEntityDomEdges =
            map ( \n ->
                  nub $
-                 map (getAIFromEntityNodeID . snd)
+                 map (getAIForEntityNodeID . snd)
                      (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
                )
                (sortByAI id (hlFunLabelNodes f_params))
        , llFunEntityToLabelDomEdges =
            map ( \n ->
                  nub $
-                 map (getAIFromEntityNodeID . fst)
+                 map (getAIForEntityNodeID . fst)
                      (filter (\(_, n') -> n == n') (hlFunDomEdges f_params))
                )
                (sortByAI id (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
            map hlBBExecFrequency
-               ( sortByAI (getAIFromLabelNodeID . hlBBLabelNode)
+               ( sortByAI (getAIForLabelNodeID . hlBBLabelNode)
                           (hlFunBasicBlockParams f_params)
                )
-       , llFunEssentialOpNodes = map getAIFromOpNodeID (hlFunOpNodes f_params)
+       , llFunEssentialOpNodes = map getAIForOpNodeID (hlFunOpNodes f_params)
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
        , llNumRegisters = toInteger $ length $ hlMachineRegisters tm_params
        , llNumMatches = toInteger $ length m_params
        , llMatchOpNodesCovered =
-           map (\m -> map getAIFromOpNodeID (hlMatchOpNodesCovered m))
+           map (\m -> map getAIForOpNodeID (hlMatchOpNodesCovered m))
                m_params
        , llMatchEntityNodesDefined =
-           map (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesDefined m))
+           map (\m -> map getAIForEntityNodeID (hlMatchEntityNodesDefined m))
                m_params
        , llMatchEntityNodesUsed =
-           map (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesUsed m))
+           map (\m -> map getAIForEntityNodeID (hlMatchEntityNodesUsed m))
                m_params
        , llMatchEntryLabelNode =
-           map (maybe Nothing (Just . getAIFromLabelNodeID))
+           map (maybe Nothing (Just . getAIForLabelNodeID))
                (map hlMatchEntryLabelNode m_params)
        , llMatchNonEntryLabelNodes =
-           map (map getAIFromLabelNodeID)
+           map (map getAIForLabelNodeID)
                (map hlMatchNonEntryLabelNodes m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
@@ -291,23 +293,23 @@ lowerHighLevelModel model ai_maps =
 -- index.
 replaceIDWithArrayIndex :: ArrayIndexMaplists -> Constraint -> Constraint
 replaceIDWithArrayIndex ai_maps c =
-  let getAIFromAnyNodeID nid = fromJust $ findAIFromAnyNodeID ai_maps nid
-      getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
-      getAIFromRegisterID rid = fromJust $ findAIFromRegisterID ai_maps rid
-      getAIFromInstructionID iid =
-        fromJust $ findAIFromInstructionID ai_maps iid
+  let getAIForAnyNodeID nid = fromJust $ findAIWithAnyNodeID ai_maps nid
+      getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
+      getAIForRegisterID rid = fromJust $ findAIWithRegisterID ai_maps rid
+      getAIForInstructionID iid =
+        fromJust $ findAIWithInstructionID ai_maps iid
       def_r = mkDefaultReconstructor
       mkNodeExpr _ (ANodeIDExpr nid) =
-        ANodeArrayIndexExpr $ getAIFromAnyNodeID nid
+        ANodeArrayIndexExpr $ getAIForAnyNodeID nid
       mkNodeExpr r expr = (mkNodeExprF def_r) r expr
       mkMatchExpr _ (AMatchIDExpr nid) =
-        AMatchArrayIndexExpr $ getAIFromMatchID nid
+        AMatchArrayIndexExpr $ getAIForMatchID nid
       mkMatchExpr r expr = (mkMatchExprF def_r) r expr
       mkRegisterExpr _ (ARegisterIDExpr nid) =
-        ARegisterArrayIndexExpr $ getAIFromRegisterID nid
+        ARegisterArrayIndexExpr $ getAIForRegisterID nid
       mkRegisterExpr r expr = (mkRegisterExprF def_r) r expr
       mkInstructionExpr _ (AnInstructionIDExpr nid) =
-        AnInstructionArrayIndexExpr $ getAIFromInstructionID nid
+        AnInstructionArrayIndexExpr $ getAIForInstructionID nid
       mkInstructionExpr r expr = (mkInstructionExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr
                     , mkMatchExprF = mkMatchExpr
@@ -316,17 +318,17 @@ replaceIDWithArrayIndex ai_maps c =
                     }
   in apply new_r c
 
-findAIFromOpNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
+findAIWithOpNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
 
-findAIFromEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
+findAIWithEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
 
-findAIFromLabelNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
+findAIWithLabelNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
 
-findAIFromAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIFromAnyNodeID ai_maps nid =
+findAIWithAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithAnyNodeID ai_maps nid =
   let lists = [ ai2OpNodeIDs ai_maps
               , ai2EntityNodeIDs ai_maps
               , ai2LabelNodeIDs ai_maps
@@ -334,17 +336,17 @@ findAIFromAnyNodeID ai_maps nid =
       matching_lists = filter (nid `elem`) lists
   in findArrayIndexInList (head matching_lists) nid
 
-findAIFromMatchID :: ArrayIndexMaplists -> MatchID -> Maybe ArrayIndex
-findAIFromMatchID ai_maps = findArrayIndexInList (ai2MatchIDs ai_maps)
+findAIWithMatchID :: ArrayIndexMaplists -> MatchID -> Maybe ArrayIndex
+findAIWithMatchID ai_maps = findArrayIndexInList (ai2MatchIDs ai_maps)
 
-findAIFromRegisterID :: ArrayIndexMaplists -> RegisterID -> Maybe ArrayIndex
-findAIFromRegisterID ai_maps = findArrayIndexInList (ai2RegisterIDs ai_maps)
+findAIWithRegisterID :: ArrayIndexMaplists -> RegisterID -> Maybe ArrayIndex
+findAIWithRegisterID ai_maps = findArrayIndexInList (ai2RegisterIDs ai_maps)
 
-findAIFromInstructionID
+findAIWithInstructionID
   :: ArrayIndexMaplists
   -> InstructionID
   -> Maybe ArrayIndex
-findAIFromInstructionID ai_maps =
+findAIWithInstructionID ai_maps =
   findArrayIndexInList (ai2InstructionIDs ai_maps)
 
 findArrayIndexInList :: (Eq a) => [a] -> a -> Maybe ArrayIndex

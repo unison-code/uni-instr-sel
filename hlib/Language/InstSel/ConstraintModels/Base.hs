@@ -82,6 +82,8 @@ data HighLevelFunctionParams
         -- ^ The operation nodes in the function graph.
       , hlFunEntityNodes :: [NodeID]
         -- ^ The entity nodes in the function graph.
+      , hlFunStateNodes :: [NodeID]
+        -- ^ The state nodes in the function graph.
       , hlFunLabelNodes :: [NodeID]
         -- ^ The label nodes in the function graph.
       , hlFunEntryLabelNode :: NodeID
@@ -183,6 +185,8 @@ data LowLevelModel
         -- ^ The number of entity nodes appearing in the function graph.
       , llNumFunLabelNodes :: Integer
         -- ^ The number of label nodes appearing in the function graph.
+      , llFunStateNodes :: [ArrayIndex]
+        -- ^ The entities that are state nodes of the function graph.
       , llFunEntryLabelNode :: ArrayIndex
         -- ^ The entry label node of the function graph.
       , llFunLabelDomSets :: [[ArrayIndex]]
@@ -368,6 +372,7 @@ instance FromJSON HighLevelFunctionParams where
     HighLevelFunctionParams
       <$> v .: "operation-nodes"
       <*> v .: "entity-nodes"
+      <*> v .: "state-nodes"
       <*> v .: "label-nodes"
       <*> v .: "entry-label"
       <*> v .: "label-dom-sets"
@@ -381,6 +386,7 @@ instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operation-nodes"    .= (hlFunOpNodes d)
            , "entity-nodes"       .= (hlFunEntityNodes d)
+           , "state-nodes"        .= (hlFunStateNodes d)
            , "label-nodes"        .= (hlFunLabelNodes d)
            , "entry-label"        .= (hlFunEntryLabelNode d)
            , "label-dom-sets"     .= (hlFunLabelDomSets d)
@@ -463,6 +469,7 @@ instance FromJSON LowLevelModel where
       <$> v .: "fun-num-op-nodes"
       <*> v .: "fun-num-entity-nodes"
       <*> v .: "fun-num-label-nodes"
+      <*> v .: "fun-state-nodes"
       <*> v .: "fun-entry-label-node"
       <*> v .: "fun-label-dom-sets"
       <*> v .: "fun-label-inv-dom-sets"
@@ -489,6 +496,7 @@ instance ToJSON LowLevelModel where
     object [ "fun-num-op-nodes"              .= (llNumFunOpNodes m)
            , "fun-num-entity-nodes"          .= (llNumFunEntityNodes m)
            , "fun-num-label-nodes"           .= (llNumFunLabelNodes m)
+           , "fun-state-nodes"               .= (llFunStateNodes m)
            , "fun-entry-label-node"          .= (llFunEntryLabelNode m)
            , "fun-label-dom-sets"            .= (llFunLabelDomSets m)
            , "fun-label-inv-dom-sets"        .= (llFunLabelInvDomSets m)

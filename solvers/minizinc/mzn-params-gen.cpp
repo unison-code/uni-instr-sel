@@ -194,6 +194,10 @@ generateModelFunctionParameters(
     printMinizincValue(out, params.getEntityToLabelDomEdgesInF());
     out << ");" << endl;
 
+    out << "stateEntitiesInFunction = ";
+    printMinizincValue(out, params.getAllStateEntitiesInF());
+    out << ";" << endl;
+
     out << "essentialOperationsInFunction = ";
     printMinizincValue(out, params.getAllEssentialOpNodesInF());
     out << ";" << endl;

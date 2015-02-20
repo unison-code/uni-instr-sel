@@ -82,6 +82,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     }
 
     setNumValues(root, p);
+    setStateEntitiesInF(root, p);
     setEntryLabelInF(root, p);
     setLabelDomSetsInF(root, p);
     setLabelInvDomSetsInF(root, p);
@@ -320,6 +321,13 @@ ModelParams::setEssentialOpNodesInF(const Value& root, ModelParams& p) {
 }
 
 void
+ModelParams::setStateEntitiesInF(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "fun-state-nodes")) {
+        p.func_state_entities_.push_back(toArrayIndex(entry));
+    }
+}
+
+void
 ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "fun-bb-exec-freqs")) {
         p.func_bb_exec_freq_.push_back(toInt(entry));
@@ -329,6 +337,11 @@ ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
 list<ArrayIndex>
 ModelParams::getAllEssentialOpNodesInF(void) const {
     return func_essential_op_nodes_;
+}
+
+list<ArrayIndex>
+ModelParams::getAllStateEntitiesInF(void) const {
+    return func_state_entities_;
 }
 
 vector<int>

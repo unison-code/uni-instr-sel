@@ -37,6 +37,7 @@ array[allLabelsInFunction] of set of int: domSetOfLabelInFunction;
 array[allLabelsInFunction] of set of int: invDomSetOfLabelInFunction;
 array[allLabelsInFunction] of set of int: domEdgesFromLabelInFunction;
 array[allLabelsInFunction] of set of int: domEdgesToLabelInFunction;
+array[int] of allEntitiesInFunction: stateEntitiesInFunction;
 array[int] of allOperationsInFunction: essentialOperationsInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
 
@@ -389,7 +390,14 @@ constraint
     )
   );
 
-% Constraint the immediate value for all data nodes which do not represent
+% Constrain the reg value for all entities that are state nodes.
+constraint
+  forall (e in stateEntitiesInFunction)
+  (
+    reg[e] = regValueForImm
+  );
+
+% Constrain the immediate value for all entities which do not represent
 % immediate values.
 constraint
   forall (e in allEntitiesInFunction)

@@ -149,6 +149,14 @@ class ModelParams {
     getAllEssentialOpNodesInF(void) const;
 
     /**
+     * Gets the entity nodes in the function that are state nodes.
+     *
+     * @returns List of array indices for entity nodes.
+     */
+    std::list<ArrayIndex>
+    getAllStateEntitiesInF(void) const;
+
+    /**
      * Gets execution frequencies per basic block (as identified by the label
      * nodes) in the function graph.
      *
@@ -436,6 +444,19 @@ class ModelParams {
     setEssentialOpNodesInF(const Json::Value& root, ModelParams& p);
 
     /**
+     * Sets the entity nodes in the function that are state nodes.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setStateEntitiesInF(const Json::Value& root, ModelParams& p);
+
+    /**
      * Sets the code size values of the matches.
      *
      * @param root
@@ -632,6 +653,11 @@ class ModelParams {
      * dominance edge.
      */
     std::vector< std::list<ArrayIndex> > func_entity_to_label_dom_edges_;
+
+    /**
+     * The entity nodes in the function graph that are state nodes.
+     */
+    std::list<ArrayIndex> func_state_entities_;
 
     /**
      * The essential operation nodes in the function graph, which must be
