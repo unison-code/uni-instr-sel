@@ -84,9 +84,9 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setNumValues(root, p);
     setEntryLabelInF(root, p);
     setLabelDomSetsInF(root, p);
-    setLabelPostDomSetsInF(root, p);
-    setLabelDomEdgesInF(root, p);
-    setLabelPostDomEdgesInF(root, p);
+    setLabelInvDomSetsInF(root, p);
+    setLabelToEntityDomEdgesInF(root, p);
+    setEntityToLabelDomEdgesInF(root, p);
     setEssentialOpNodesInF(root, p);
     setExecFreqOfBBsInF(root, p);
     setConstraintsForF(root, p);
@@ -282,18 +282,18 @@ ModelParams::getLabelDomSetsInF(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getLabelPostDomSetsInF(void) const {
-    return func_label_postdom_sets_;
+ModelParams::getLabelInvDomSetsInF(void) const {
+    return func_label_inv_dom_sets_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelDomEdgesInF(void) const {
-    return func_label_dom_edges_;
+ModelParams::getLabelToEntityDomEdgesInF(void) const {
+    return func_label_to_entity_dom_edges_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelPostDomEdgesInF(void) const {
-    return func_label_postdom_edges_;
+ModelParams::getEntityToLabelDomEdgesInF(void) const {
+    return func_entity_to_label_dom_edges_;
 }
 
 void
@@ -403,34 +403,34 @@ ModelParams::setLabelDomSetsInF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setLabelPostDomSetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-postdom-sets")) {
+ModelParams::setLabelInvDomSetsInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-inv-dom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
         }
-        p.func_label_postdom_sets_.push_back(domset);
+        p.func_label_inv_dom_sets_.push_back(domset);
     }
 }
 
 void
-ModelParams::setLabelDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-dom-edges")) {
+ModelParams::setLabelToEntityDomEdgesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-label-to-entity-dom-edges")) {
         list<ArrayIndex> entities;
         for (auto entry : jsonlist) {
             entities.push_back(toArrayIndex(entry));
         }
-        p.func_label_dom_edges_.push_back(entities);
+        p.func_label_to_entity_dom_edges_.push_back(entities);
     }
 }
 
 void
-ModelParams::setLabelPostDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-postdom-edges")) {
+ModelParams::setEntityToLabelDomEdgesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-entity-to-label-dom-edges")) {
         list<ArrayIndex> entities;
         for (auto entry : jsonlist) {
             entities.push_back(toArrayIndex(entry));
         }
-        p.func_label_postdom_edges_.push_back(entities);
+        p.func_entity_to_label_dom_edges_.push_back(entities);
     }
 }
