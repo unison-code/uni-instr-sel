@@ -29,31 +29,27 @@
 %=====================
 
 % Function data.
-int: numOpsInFunction;
-int: numDataInFunction;
-int: numStatesInFunction;
+int: numOperationsInFunction;
+int: numEntitiesInFunction;
 int: numLabelsInFunction;
-int: rootLabelOfFunction;
-array[allLabelsInFunction] of set of int: domsetOfLabelInFunction;
+int: entryLabelOfFunction;
+array[allLabelsInFunction] of set of int: domSetOfLabelInFunction;
+array[allLabelsInFunction] of set of int: invDomSetOfLabelInFunction;
+array[allLabelsInFunction] of set of int: domEdgesFromLabelInFunction;
+array[allLabelsInFunction] of set of int: domEdgesToLabelInFunction;
 array[int] of allOperationsInFunction: essentialOperationsInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
-array[allDataInFunction] of set of allLabelsInFunction:
-  labelsWhereDataInFunctionMustBeDefined;
-array[allStatesInFunction] of set of allLabelsInFunction:
-  labelsWhereStatesInFunctionMustBeDefined;
 
 % Target machine data.
 int: numRegisters;
 
 % Match data.
 int: numMatches;
-array[allMatches] of set of int: opsCoveredByMatch;
-array[allMatches] of set of int: dataDefinedByMatch;
-array[allMatches] of set of int: dataUsedInMatch;
-array[allMatches] of set of int: statesDefinedByMatch;
-array[allMatches] of set of int: statesUsedInMatch;
-array[allMatches] of set of int: rootLabelOfMatch;
-array[allMatches] of set of int: nonRootLabelsInMatch;
+array[allMatches] of set of int: operationsCoveredByMatch;
+array[allMatches] of set of int: entitiesDefinedByMatch;
+array[allMatches] of set of int: entitiesUsedByMatch;
+array[allMatches] of set of int: entryLabelOfMatch;
+array[allMatches] of set of int: nonEntryLabelsInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
@@ -110,9 +106,8 @@ array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
          );
 
 % Sets to be used as array ranges.
-set of int: allOperationsInFunction = 0..numOpsInFunction-1;
-set of int: allDataInFunction = 0..numDataInFunction-1;
-set of int: allStatesInFunction = 0..numStatesInFunction-1;
+set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
+set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
 set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
 set of int: allLabelsInFunctionPlusDummy = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
@@ -129,15 +124,11 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 % Operation node coverage.
 array[allOperationsInFunction] of var allMatchesPlusInactive: cov;
 
-% Data node definitions, register allocation, and immediate values.
-array[allDataInFunction] of var allMatchesPlusInactive: ddefm;
-array[allDataInFunction] of var set of allLabelsInFunctionPlusDummy: ddefbb;
-array[allDataInFunction] of var allRegValues: reg;
-array[allDataInFunction] of var int: cnst;
-
-% State node definitions.
-array[allStatesInFunction] of var allMatchesPlusInactive: sdefm;
-array[allStatesInFunction] of var set of allLabelsInFunctionPlusDummy: sdefbb;
+% Entity node definitions, register allocation, and immediate values.
+array[allEntitiesInFunction] of var allMatchesPlusInactive: defm;
+array[allEntitiesInFunction] of var allLabelsInFunctionPlusDummy: defbb;
+array[allEntitiesInFunction] of var allRegValues: reg;
+array[allEntitiesInFunction] of var int: cnst;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -181,20 +172,17 @@ constraint
   forall (m in allMatches)
   (
     forall ( o in allOperationsInFunction
-             where not (o in opsCoveredByMatch[m])
+             where not (o in operationsCoveredByMatch[m])
            )
     (
       cov[o] != m
     )
     /\
-    forall (e in allDataInFunction where not (e in dataDefinedByMatch[m]))
+    forall ( e in allEntitiesInFunction
+             where not (e in entitiesDefinedByMatch[m])
+           )
     (
-      ddefm[e] != m
-    )
-    /\
-    forall (e in allStatesInFunction where not (e in statesDefinedByMatch[m]))
-    (
-      sdefm[e] != m
+      defm[e] != m
     )
   );
 
@@ -204,7 +192,7 @@ constraint
   in forall (m in allMatches)
      (
        let { int: i = m + 1 }
-       in counts[i] == 0 \/ counts[i] == card(opsCoveredByMatch[m])
+       in counts[i] == 0 \/ counts[i] == card(operationsCoveredByMatch[m])
      )
      /\
      global_cardinality(cov, [ m | m in allMatches ], counts);
@@ -217,19 +205,14 @@ constraint
     sel[m]
     <->
     (
-      exists (o in opsCoveredByMatch[m])
+      exists (o in operationsCoveredByMatch[m])
       (
           cov[o] == m
       )
       \/
-      exists (e in dataDefinedByMatch[m])
+      exists (e in entitiesDefinedByMatch[m])
       (
-          ddefm[e] == m
-      )
-      \/
-      exists (e in statesDefinedByMatch[m])
-      (
-          sdefm[e] == m
+          defm[e] == m
       )
     )
   );
@@ -241,14 +224,9 @@ constraint
     sel[m]
     ->
     (
-      forall (e in dataDefinedByMatch[m])
+      forall (e in entitiesDefinedByMatch[m])
       (
-          ddefm[e] == m
-      )
-      /\
-      forall (e in statesDefinedByMatch[m])
-      (
-          sdefm[e] == m
+          defm[e] == m
       )
     )
   );
@@ -267,122 +245,66 @@ constraint
     not sel[m] <-> bb[m] == labelValueForDummy
   );
 
-% Selected matches which have a root label must be allocated in the basic block
+% Selected matches that have an entry label must be allocated in the basic block
 % of that label.
 constraint
   forall (m in allMatches)
   (
     % If a match has no root label, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
-    % root.
-    forall (r in rootLabelOfMatch[m])
+    % entry.
+    forall (r in entryLabelOfMatch[m])
     (
       sel[m] -> bb[m] == r
     )
   );
 
-% Entities defined by a selected match must be defined in the basic blocks
-% consisting of the union between the basic block to which the match is
-% allocated and the set of basic blocks that appear as label nodes in the
-% pattern. Due to the restrctions of Minizinc, however, we need to reformulate
-% this constraint a bit in order to achieve this effect.
+% Entities defined by a selected match must be defined in some basic block that
+% is dominated by the basic block in which the match is placed.
 constraint
   forall (m in allMatches)
   (
     sel[m]
     ->
-    ( forall (e in dataDefinedByMatch[m])
-      (
-        if (card(rootLabelOfMatch[m]) > 0)
-        then
-          let { set of allLabelsInFunction: labels_in_m =
-                  rootLabelOfMatch[m] union nonRootLabelsInMatch[m]
-              }
-          in ddefbb[e] == labels_in_m
-        else
-          bb[m] in ddefbb[e] /\ card(ddefbb[e]) == 1
-        endif
-      )
-    )
-    /\
-    ( forall (e in statesDefinedByMatch[m])
-      (
-        if (card(rootLabelOfMatch[m]) > 0)
-        then
-          let { set of allLabelsInFunction: labels_in_m =
-                  rootLabelOfMatch[m] union nonRootLabelsInMatch[m]
-              }
-          in ddefbb[e] == labels_in_m
-        else
-          bb[m] in ddefbb[e] /\ card(ddefbb[e]) == 1
-        endif
-      )
+    forall (e in entitiesDefinedByMatch[m])
+    (
+      defbb[e] in invDomSetOfLabelInFunction[bb[m]]
     )
   );
 
-% An entity with a definition placement edge to a label must be defined within
-% the basic block of that label.
+% An entity with a dominance edge to a label must be defined within some basic
+% block that dominates the basic block of the label that participates in the
+% edge.
 constraint
-  forall (e in allDataInFunction)
+  forall (l in allLabelsInFunction)
   (
-    forall (l in labelsWhereDataInFunctionMustBeDefined[e])
+    forall (e in domEdgesToLabelInFunction[l])
     (
-      l in ddefbb[e]
-    )
-  )
-  /\
-  forall (e in allStatesInFunction)
-  (
-    forall (l in labelsWhereStatesInFunctionMustBeDefined[e])
-    (
-      l in sdefbb[e]
+      l in domSetOfLabelInFunction[defbb[e]]
     )
   );
 
 % Inactive entities must not be defined by any match nor be defined in any
 % (real) basic block.
 constraint
-  forall (e in allDataInFunction)
+  forall (e in allEntitiesInFunction)
   (
-    ddefm[e] == matchValueForInactive
+    defm[e] == matchValueForInactive
     <->
-    ddefbb[e] == {labelValueForDummy}
-  )
-  /\
-  forall (e in allStatesInFunction)
-  (
-    sdefm[e] == matchValueForInactive
-    <->
-    sdefbb[e] == {labelValueForDummy}
+    defbb[e] == labelValueForDummy
   );
 
-% Enforce that all selected matches must be allocated to a basic block such that
-% every used data node is dominated by its data definition. Likewise for the
-% state nodes. These constraints should not be applied to the generic phi
-% patterns.
+% Enforce that, for every selected match, every use of an entity has a
+% definition such that the defintion dominates the use. These constraints shall
+% not be applied to the generic phi patterns.
 constraint
-  forall (m in allMatches where applyDefDomUseConstraintForMatch[m]) (
+  forall (m in allMatches where applyDefDomUseConstraintForMatch[m])
+  (
     sel[m]
     ->
+    forall (e in entitiesUsedByMatch[m])
     (
-      forall (e in dataUsedInMatch[m])
-      (
-        exists (l in allLabelsInFunctionPlusDummy)
-        (
-          l in ddefbb[e]
-          /\
-          l in domsetOfLabelInFunction[bb[m]]
-        )
-      )
-      /\
-      forall (e in statesUsedInMatch[m]) (
-        exists (l in allLabelsInFunctionPlusDummy)
-        (
-          l in ddefbb[e]
-          /\
-          l in domsetOfLabelInFunction[bb[m]]
-        )
-      )
+      defbb[e] in domSetOfLabelInFunction[bb[m]]
     )
   );
 
@@ -394,10 +316,10 @@ constraint
 constraint
   inverse(ord, ord_inv);
 
-% The root label (i.e. function entry point) must be placed as the first basic
+% The entry label (i.e. function entry point) must be placed as the first basic
 % block, and the dummy label must be placed as the last basic block.
 constraint
-  ord[rootLabelOfFunction] == 0;
+  ord[entryLabelOfFunction] == 0;
 constraint
   ord[labelValueForDummy] == numLabelValues - 1;
 
@@ -458,9 +380,9 @@ constraint
 % Constraint the immediate value for all data nodes which do not represent
 % immediate values.
 constraint
-  forall (n in allDataInFunction)
+  forall (e in allEntitiesInFunction)
   (
-    reg[n] != regValueForImm -> cnst[n] == 0
+    reg[e] != regValueForImm -> cnst[e] == 0
   );
 
 % Accumulate cost of selected patterns.
@@ -486,12 +408,10 @@ seq_search
 minimize cost;
 
 output [ "cov=", show(cov), "\n"
-       , "ddefm=", show(ddefm), "\n"
-       , "ddefbb=", show(ddefbb), "\n"
+       , "defm=", show(defm), "\n"
+       , "defbb=", show(defbb), "\n"
        , "reg=", show(reg), "\n"
        , "cnst=", show(cnst), "\n"
-       , "sdefm=", show(sdefm), "\n"
-       , "sdefbb=", show(sdefbb), "\n"
        , "sel=", show(sel), "\n"
        , "bb=", show(bb), "\n"
        , "ord=", show(ord), "\n"

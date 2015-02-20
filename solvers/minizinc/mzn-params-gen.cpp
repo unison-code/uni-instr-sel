@@ -232,7 +232,7 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getEntityNodesDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "entitiesUsedInMatch = array1d(allMatches, ";
+    out << "entitiesUsedByMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getEntityNodesUsedByAllMatches());
     out << ");" << endl;
 
