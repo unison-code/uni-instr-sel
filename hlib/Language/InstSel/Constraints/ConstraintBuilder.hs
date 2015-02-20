@@ -57,16 +57,15 @@ mkBBAllocConstraints :: Graph -> [Constraint]
 mkBBAllocConstraints g =
   let root_label = rootInCFG $ extractCFG g
   in if isJust root_label
-     then [ BoolExprConstraint $
-              EqExpr
-                ( Label2NumExpr $
-                    LabelOfLabelNodeExpr $
-                      ANodeIDExpr (getNodeID $ fromJust root_label)
-                )
-                ( Label2NumExpr $
-                    LabelAllocatedToMatchExpr $
-                      ThisMatchExpr
-                )
+     then [ BoolExprConstraint
+            $ EqExpr ( Label2NumExpr
+                       $ LabelOfLabelNodeExpr
+                       $ ANodeIDExpr (getNodeID $ fromJust root_label)
+                     )
+                     ( Label2NumExpr
+                       $ LabelAllocatedToMatchExpr
+                       $ ThisMatchExpr
+                     )
           ]
      else []
 
@@ -129,15 +128,14 @@ mkRegAllocConstraints
      -- ^ A data node.
   -> [Constraint]
 mkRegAllocConstraints regs d =
-  [ BoolExprConstraint $
-      InSetExpr
-        ( Register2SetElemExpr $
-            RegisterAllocatedToDataNodeExpr $
-              ANodeIDExpr d
-        )
-        ( RegisterClassExpr $
-            map ARegisterIDExpr regs
-        )
+  [ BoolExprConstraint
+    $ InSetExpr ( Register2SetElemExpr
+                  $ RegisterAllocatedToDataNodeExpr
+                  $ ANodeIDExpr d
+                )
+                ( RegisterClassExpr
+                  $ map ARegisterIDExpr regs
+                )
   ]
 
 -- | Creates integer constant constraints (see 'mkIntConstConstraints'), and
@@ -163,18 +161,17 @@ mkIntConstConstraints
      -- ^ A signed integer constant.
   -> [Constraint]
 mkIntConstConstraints d v =
-  [ BoolExprConstraint $
-      DataNodeIsAnIntConstantExpr $
-        ANodeIDExpr d
-  , BoolExprConstraint $
-      EqExpr
-        ( Int2NumExpr $
-            AnIntegerExpr v
-        )
-        ( Int2NumExpr $
-            IntConstValueOfDataNodeExpr $
-              ANodeIDExpr d
-        )
+  [ BoolExprConstraint
+    $ DataNodeIsAnIntConstantExpr
+    $ ANodeIDExpr d
+  , BoolExprConstraint
+    $ EqExpr ( Int2NumExpr
+               $ AnIntegerExpr v
+             )
+             ( Int2NumExpr
+               $ IntConstValueOfDataNodeExpr
+               $ ANodeIDExpr d
+             )
   ]
 
 -- | Creates integer value range constraints (see 'mkIntRangeConstraints'), and
@@ -200,29 +197,26 @@ mkIntRangeConstraints
      -- ^ An inclusive signed integer range.
   -> [Constraint]
 mkIntRangeConstraints d (Range { lowerBound = low_v, upperBound = up_v }) =
-  [ BoolExprConstraint $
-      DataNodeIsAnIntConstantExpr $
-        ANodeIDExpr d
-  , BoolExprConstraint $
-      AndExpr
-        ( LEExpr
-            ( Int2NumExpr $
-                AnIntegerExpr low_v
-            )
-            ( Int2NumExpr $
-                IntConstValueOfDataNodeExpr $
-                  ANodeIDExpr d
-            )
-        )
-        ( LEExpr
-            ( Int2NumExpr $
-                IntConstValueOfDataNodeExpr $
-                  ANodeIDExpr d
-            )
-            ( Int2NumExpr $
-                AnIntegerExpr up_v
-            )
-        )
+  [ BoolExprConstraint
+    $ DataNodeIsAnIntConstantExpr
+    $ ANodeIDExpr d
+  , BoolExprConstraint
+    $ AndExpr ( LEExpr ( Int2NumExpr
+                         $ AnIntegerExpr low_v
+                       )
+                       ( Int2NumExpr
+                         $ IntConstValueOfDataNodeExpr
+                         $ ANodeIDExpr d
+                       )
+              )
+              ( LEExpr ( Int2NumExpr
+                         $ IntConstValueOfDataNodeExpr
+                         $ ANodeIDExpr d
+                       )
+                       ( Int2NumExpr
+                         $ AnIntegerExpr up_v
+                       )
+              )
   ]
 
 -- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
@@ -239,15 +233,14 @@ mkFallthroughConstraints
      -- ^ A label node.
   -> [Constraint]
 mkFallthroughConstraints l =
-  [ BoolExprConstraint $
-      EqExpr
-        ( DistanceBetweenMatchAndLabelExpr
-            ThisMatchExpr
-            ( LabelOfLabelNodeExpr $
-                ANodeIDExpr l
-            )
-        )
-        ( Int2NumExpr $
-            AnIntegerExpr 0
-        )
+  [ BoolExprConstraint
+    $ EqExpr ( DistanceBetweenMatchAndLabelExpr
+                 ThisMatchExpr
+                 ( LabelOfLabelNodeExpr
+                   $ ANodeIDExpr l
+                 )
+             )
+             ( Int2NumExpr
+               $ AnIntegerExpr 0
+             )
   ]

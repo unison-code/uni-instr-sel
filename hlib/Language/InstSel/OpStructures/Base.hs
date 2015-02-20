@@ -79,11 +79,10 @@ instance ToJSON OpStructure where
 
 -- | Creates an empty operation structure.
 mkEmpty :: OpStructure
-mkEmpty = OpStructure
-            { osGraph = G.mkEmpty
-            , osEntryLabelNode = Nothing
-            , osConstraints = []
-            }
+mkEmpty = OpStructure { osGraph = G.mkEmpty
+                      , osEntryLabelNode = Nothing
+                      , osConstraints = []
+                      }
 
 addConstraint :: OpStructure -> Constraint -> OpStructure
 addConstraint os c = os { osConstraints = osConstraints os ++ [c] }

@@ -152,57 +152,49 @@ checkSemantics fg pg st c =
      &&
      -- Check that there are no existing matches for the in-edges from the
      -- function graph to be included in the mapping state
-     all
-       ( \pred_fn ->
+     all ( \pred_fn ->
            let already_matched_out_edges =
-                 filter
-                   (\e -> getTargetNode fg e `elem` all_f_nodes_in_st)
-                   (getOutEdges fg pred_fn)
-           in not $
-                any
-                  ( \e ->
-                      any (areOutEdgesEquivalent fg e) already_matched_out_edges
-                  )
-                  (getEdges fg pred_fn fn)
-       )
-       mapped_preds_to_fn
+                 filter (\e -> getTargetNode fg e `elem` all_f_nodes_in_st)
+                        (getOutEdges fg pred_fn)
+           in not $ any ( \e ->
+                          any (areOutEdgesEquivalent fg e)
+                              already_matched_out_edges
+                        )
+                        (getEdges fg pred_fn fn)
+         )
+         mapped_preds_to_fn
      &&
      -- Check that there are no existing matches for the out-edges from the
      -- function graph to be included in the mapping state
-     all
-       ( \succ_fn ->
+     all ( \succ_fn ->
            let already_matched_in_edges =
-                 filter
-                   (\e -> getSourceNode fg e `elem` all_f_nodes_in_st)
-                   (getInEdges fg succ_fn)
-           in not $
-                any
-                  ( \e ->
-                      any (areInEdgesEquivalent fg e) already_matched_in_edges
-                  )
-                  (getEdges fg fn succ_fn)
-       )
-       mapped_succs_to_fn
+                 filter (\e -> getSourceNode fg e `elem` all_f_nodes_in_st)
+                        (getInEdges fg succ_fn)
+           in not $ any ( \e ->
+                          any (areInEdgesEquivalent fg e)
+                              already_matched_in_edges
+                        )
+                        (getEdges fg fn succ_fn)
+         )
+         mapped_succs_to_fn
      &&
      -- Check that the new in-edge mappings are of matching type
-     all
-       ( \pred_pn -> doEdgeListsMatch
-                       fg
-                       pg
-                       (getEdges fg (getFNFromState st pred_pn) fn)
-                       (getEdges pg pred_pn pn)
-       )
-       mapped_preds_to_pn
+     all ( \pred_pn ->
+           doEdgeListsMatch fg
+                            pg
+                            (getEdges fg (getFNFromState st pred_pn) fn)
+                            (getEdges pg pred_pn pn)
+         )
+         mapped_preds_to_pn
      &&
      -- Check that the new out-edge mappings are of matching type
-     all
-       ( \succ_pn -> doEdgeListsMatch
-                       fg
-                       pg
-                       (getEdges fg fn (getFNFromState st succ_pn))
-                       (getEdges pg pn succ_pn)
-       )
-       mapped_succs_to_pn
+     all ( \succ_pn ->
+           doEdgeListsMatch fg
+                            pg
+                            (getEdges fg fn (getFNFromState st succ_pn))
+                            (getEdges pg pn succ_pn)
+         )
+         mapped_succs_to_pn
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
 -- equation 2 in the paper).
@@ -250,12 +242,10 @@ checkSyntaxPred fg pg st c =
       preds_fn = getPredecessors fg (fNode c)
       preds_pn = getPredecessors pg (pNode c)
       preds_pn_in_m = preds_pn `intersect` m_pg
-  in all
-       ( \pn -> any
-                (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
-                preds_fn
-       )
-       preds_pn_in_m
+  in all ( \pn -> any (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+                      preds_fn
+         )
+         preds_pn_in_m
 
 -- | Same as checkSyntaxPred but for the successors (modified version of
 -- equation 4 in the paper).
@@ -274,12 +264,10 @@ checkSyntaxSucc fg pg st c =
       succs_fn = getSuccessors fg (fNode c)
       succs_pn = getSuccessors pg (pNode c)
       succs_pn_in_m = succs_pn `intersect` m_pg
-  in all
-       ( \pn -> any
-                (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
-                succs_fn
-       )
-       succs_pn_in_m
+  in all ( \pn -> any (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
+                      succs_fn
+         )
+         succs_pn_in_m
 
 -- | Checks that there exists a sufficient number of unmapped predecessors left
 -- in the function graph to cover the unmapped predecessors left in the pattern

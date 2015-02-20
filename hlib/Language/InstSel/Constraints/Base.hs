@@ -283,15 +283,15 @@ instance FromLisp NumExpr where
     <|> struct "dist-match-to-lab" DistanceBetweenMatchAndLabelExpr e
 
 instance ToLisp NumExpr where
-  toLisp (PlusExpr  lhs rhs)         = mkStruct "+" [toLisp lhs, toLisp rhs]
-  toLisp (MinusExpr lhs rhs)         = mkStruct "-" [toLisp lhs, toLisp rhs]
-  toLisp (Int2NumExpr e)             = mkStruct "int-to-num" [toLisp e]
-  toLisp (Bool2NumExpr e)            = mkStruct "bool-to-num" [toLisp e]
-  toLisp (Node2NumExpr e)            = mkStruct "node-to-num" [toLisp e]
-  toLisp (Match2NumExpr e) = mkStruct "match-to-num" [toLisp e]
-  toLisp (Instruction2NumExpr e)     = mkStruct "instr-to-num" [toLisp e]
-  toLisp (Label2NumExpr e)           = mkStruct "lab-to-num" [toLisp e]
-  toLisp (Register2NumExpr e)        = mkStruct "reg-to-num" [toLisp e]
+  toLisp (PlusExpr  lhs rhs)     = mkStruct "+" [toLisp lhs, toLisp rhs]
+  toLisp (MinusExpr lhs rhs)     = mkStruct "-" [toLisp lhs, toLisp rhs]
+  toLisp (Int2NumExpr e)         = mkStruct "int-to-num" [toLisp e]
+  toLisp (Bool2NumExpr e)        = mkStruct "bool-to-num" [toLisp e]
+  toLisp (Node2NumExpr e)        = mkStruct "node-to-num" [toLisp e]
+  toLisp (Match2NumExpr e)       = mkStruct "match-to-num" [toLisp e]
+  toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
+  toLisp (Label2NumExpr e)       = mkStruct "lab-to-num" [toLisp e]
+  toLisp (Register2NumExpr e)    = mkStruct "reg-to-num" [toLisp e]
   toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
     mkStruct "dist-match-to-lab" [toLisp lhs, toLisp rhs]
 

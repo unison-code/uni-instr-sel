@@ -70,21 +70,18 @@ insertCopy g0 df_edge =
                           dom_edges = filter isDomEdge d_node_edges
                       in Just
                          $ head
-                         $ filter
-                             (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
-                             dom_edges
+                         $ filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
+                                  dom_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
-      (g2, new_d_node) = insertNewNodeAlongEdge
-                           (DataNode D.AnyType Nothing)
-                           (head $ getOutEdges g1 new_cp_node)
-                           g1
+      (g2, new_d_node) =
+        insertNewNodeAlongEdge (DataNode D.AnyType Nothing)
+                               (head $ getOutEdges g1 new_cp_node)
+                               g1
       g3 = if isJust dom_edge
            then let e = fromJust dom_edge
-                in fst $
-                     addNewDomEdge
-                     (new_d_node, getTargetNode g2 e)
-                     (delEdge e g2)
+                in fst $ addNewDomEdge (new_d_node, getTargetNode g2 e)
+                                       (delEdge e g2)
            else g2
   in g3
 
@@ -102,9 +99,8 @@ branchExtendWhen
  -> Graph
 branchExtendWhen f g =
   let c_nodes = filter isControlNode (getAllNodes g)
-      nodes = filter
-                    (\n -> (ctrlOp $ getNodeType n) == O.CondBr)
-                    c_nodes
+      nodes = filter (\n -> (ctrlOp $ getNodeType n) == O.CondBr)
+                     c_nodes
       edges = concatMap (getCtrlFlowOutEdges g) nodes
       filtered_edges = filter (f g) edges
   in foldl insertBranch g filtered_edges

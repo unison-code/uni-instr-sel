@@ -47,8 +47,9 @@ run MakeHighLevelCPModel function matchset =
   do let target = retrieveTargetMachine $ pmTarget matchset
      when (isNothing target) $
        reportError $ "Unrecognized target machine: " ++ (show $ fromJust target)
-     let model =
-           mkHighLevelModel function (fromJust target) (pmMatches matchset)
+     let model = mkHighLevelModel function
+                                  (fromJust target)
+                                  (pmMatches matchset)
      return [toOutputWithoutID $ toJson model]
 
 run _ _ _ = reportError "MakeCPModel: unsupported action"

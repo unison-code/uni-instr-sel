@@ -41,42 +41,38 @@ raiseLowLevelSolution sol ai_maps =
       getRegisterIDFromAI ai = ai_register_id_maps !! (fromIntegral ai)
       order_of_bbs = map getNodeIDFromLabelAI (llSolOrderOfBBs sol)
       sel_matches =
-        catMaybes $
-          zipWith
-            (\is_sel mid -> if is_sel then Just mid else Nothing)
-            (llSolIsMatchSelected sol)
-            ai_match_id_maps
+        catMaybes
+        $ zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
+                  (llSolIsMatchSelected sol)
+                  ai_match_id_maps
       bb_allocs_for_sel_matches =
-        catMaybes $
-          zipWith3
-          ( \is_sel mid ai ->
-              if is_sel
-              then Just (mid, getNodeIDFromLabelAI ai)
-              else Nothing
-          )
-          (llSolIsMatchSelected sol)
-          ai_match_id_maps
-          (llSolBBAllocsForMatches sol)
+        catMaybes $ zipWith3
+                    ( \is_sel mid ai ->
+                        if is_sel
+                        then Just (mid, getNodeIDFromLabelAI ai)
+                        else Nothing
+                    )
+                    (llSolIsMatchSelected sol)
+                    ai_match_id_maps
+                    (llSolBBAllocsForMatches sol)
       regs_of_data_nodes =
-        catMaybes $
-          zipWith3
-          ( \has_reg nid ai ->
-              if has_reg
-              then Just (nid, getRegisterIDFromAI ai)
-              else Nothing
-          )
-          (llSolHasDataNodeRegister sol)
-          ai_entity_node_id_maps
-          (llSolRegsSelectedForDataNodes sol)
+        catMaybes $ zipWith3
+                    ( \has_reg nid ai ->
+                        if has_reg
+                        then Just (nid, getRegisterIDFromAI ai)
+                        else Nothing
+                    )
+                    (llSolHasDataNodeRegister sol)
+                    ai_entity_node_id_maps
+                    (llSolRegsSelectedForDataNodes sol)
       imm_values_of_data_nodes =
-        catMaybes $
-          zipWith3
-          ( \has_value nid value ->
-              if has_value then Just (nid, value) else Nothing
-          )
-          (llSolHasDataNodeImmValue sol)
-          ai_entity_node_id_maps
-          (llSolImmValuesOfDataNodes sol)
+        catMaybes $ zipWith3
+                    ( \has_value nid value ->
+                        if has_value then Just (nid, value) else Nothing
+                    )
+                    (llSolHasDataNodeImmValue sol)
+                    ai_entity_node_id_maps
+                    (llSolImmValuesOfDataNodes sol)
   in HighLevelSolution
        { hlSolOrderOfBBs = order_of_bbs
        , hlSolSelMatches = sel_matches

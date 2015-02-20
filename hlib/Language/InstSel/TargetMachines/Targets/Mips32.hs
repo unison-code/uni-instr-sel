@@ -197,11 +197,10 @@ mkGenericSimpleRegRegCompInst
   -> Instruction
 mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
   let g = mkSimpleCompPattern op d1 d2 d3
-      cs = concatMap
-             ( \(r, nid) ->
-                 mkRegAllocConstraints (map regID r) nid
-             )
-             (zip [r1, r2, r3] [1, 2, 3])
+      cs = concatMap ( \(r, nid) ->
+                       mkRegAllocConstraints (map regID r) nid
+                     )
+                     (zip [r1, r2, r3] [1, 2, 3])
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
@@ -281,11 +280,10 @@ mkSimple32BitReg16BitImmCompInst
   -> Instruction
 mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
   let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
-      reg_cs = concatMap
-               ( \(r, nid) ->
-                   mkRegAllocConstraints (map regID r) nid
-               )
-               (zip [r1, r3] [1, 3])
+      reg_cs = concatMap ( \(r, nid) ->
+                           mkRegAllocConstraints (map regID r) nid
+                         )
+                         (zip [r1, r3] [1, 3])
       imm_cs = mkIntRangeConstraints 2 imm
       cs = reg_cs ++ imm_cs
       pat = InstrPattern

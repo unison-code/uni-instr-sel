@@ -71,22 +71,19 @@ mkHLFunctionParams function =
       entry_label = fromJust $ osEntryLabelNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
       essential_op_nodes =
-        filter
-          (\n -> isOperationNode n && (not $ isCopyNode n))
-          (getAllNodes graph)
+        filter (\n -> isOperationNode n && (not $ isCopyNode n))
+               (getAllNodes graph)
       dom_edges =
-        map
-          ( \e -> ( getNodeID $ getSourceNode graph e
-                  , getNodeID $ getTargetNode graph e
-                  )
-          )
-          (filter isDomEdge (getAllEdges graph))
+        map ( \e -> ( getNodeID $ getSourceNode graph e
+                    , getNodeID $ getTargetNode graph e
+                    )
+            )
+            (filter isDomEdge (getAllEdges graph))
       domsets = computeDomSets graph entry_label
       getExecFreq n =
-        fromJust $
-          lookup
-            (bbLabel $ getNodeType n)
-            (functionBBExecFreq function)
+        fromJust
+        $ lookup (bbLabel $ getNodeType n)
+                 (functionBBExecFreq function)
   in HighLevelFunctionParams
        { hlFunOpNodes = nodeIDsByType isOperationNode
        , hlFunEntityNodes = nodeIDsByType isEntityNode
@@ -95,14 +92,13 @@ mkHLFunctionParams function =
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
        , hlFunDomEdges = dom_edges
        , hlFunBasicBlockParams =
-           map
-             ( \n -> HighLevelBasicBlockParams
-                       { hlBBLabel = (bbLabel $ getNodeType n)
-                       , hlBBLabelNode = (getNodeID n)
-                       , hlBBExecFrequency = getExecFreq n
-                       }
-             )
-             (filter isLabelNode (getAllNodes graph))
+           map ( \n -> HighLevelBasicBlockParams
+                         { hlBBLabel = (bbLabel $ getNodeType n)
+                         , hlBBLabelNode = (getNodeID n)
+                         , hlBBExecFrequency = getExecFreq n
+                         }
+               )
+               (filter isLabelNode (getAllNodes graph))
        , hlFunEssentialOpNodes = map getNodeID essential_op_nodes
        , hlFunConstraints = osConstraints $ functionOS function
        }
@@ -119,10 +115,10 @@ mkHLMatchParamsList target matches = map (mkHLMatchParams target) matches
 
 mkHLMatchParams :: TargetMachine -> PatternMatch -> HighLevelMatchParams
 mkHLMatchParams target match =
-  let instr =
-        fromJust $ findInstruction (tmInstructions target) (pmInstrID match)
-      pattern =
-        fromJust $ findInstrPattern (instrPatterns instr) (pmPatternID match)
+  let instr = fromJust $ findInstruction (tmInstructions target)
+                                         (pmInstrID match)
+      pattern = fromJust $ findInstrPattern (instrPatterns instr)
+                                            (pmPatternID match)
   in processMatch instr pattern (pmMatch match) (pmMatchID match)
 
 processMatch
@@ -142,9 +138,8 @@ processMatch instr pattern match mid =
       e_def_ns = filter (hasAnyPredecessors graph) e_ns
       e_use_ns = filter (hasAnySuccessors graph) e_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
-      d_use_by_phi_ns = filter
-                          (\n -> any isPhiNode (getSuccessors graph n))
-                          d_use_ns
+      d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
+                               d_use_ns
       entry_l_node_id = osEntryLabelNode $ patOS pattern
       l_ref_ns = if isJust entry_l_node_id
                  then let nid = fromJust entry_l_node_id
@@ -159,8 +154,9 @@ processMatch instr pattern match mid =
        , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs a_ns)
        , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
        , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
-       , hlMatchEntryLabelNode =
-           maybe Nothing (findFNInMatch match) entry_l_node_id
+       , hlMatchEntryLabelNode = maybe Nothing
+                                       (findFNInMatch match)
+                                       entry_l_node_id
        , hlMatchNonEntryLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
            map
@@ -259,44 +255,36 @@ lowerHighLevelModel model ai_maps =
                )
                (sortByAI id (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
-           map
-             hlBBExecFrequency
-             ( sortByAI
-                 (getAIFromLabelNodeID . hlBBLabelNode)
-                 (hlFunBasicBlockParams f_params)
-             )
+           map hlBBExecFrequency
+               ( sortByAI (getAIFromLabelNodeID . hlBBLabelNode)
+                          (hlFunBasicBlockParams f_params)
+               )
        , llFunEssentialOpNodes = map getAIFromOpNodeID (hlFunOpNodes f_params)
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
        , llNumRegisters = toInteger $ length $ hlMachineRegisters tm_params
        , llNumMatches = toInteger $ length m_params
        , llMatchOpNodesCovered =
-           map
-             (\m -> map getAIFromOpNodeID (hlMatchOpNodesCovered m))
-             m_params
+           map (\m -> map getAIFromOpNodeID (hlMatchOpNodesCovered m))
+               m_params
        , llMatchEntityNodesDefined =
-           map
-             (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesDefined m))
-             m_params
+           map (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesDefined m))
+               m_params
        , llMatchEntityNodesUsed =
-           map
-             (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesUsed m))
-             m_params
+           map (\m -> map getAIFromEntityNodeID (hlMatchEntityNodesUsed m))
+               m_params
        , llMatchEntryLabelNode =
-           map
-             (maybe Nothing (Just . getAIFromLabelNodeID))
-             (map hlMatchEntryLabelNode m_params)
+           map (maybe Nothing (Just . getAIFromLabelNodeID))
+               (map hlMatchEntryLabelNode m_params)
        , llMatchNonEntryLabelNodes =
-           map
-             (map getAIFromLabelNodeID)
-             (map hlMatchNonEntryLabelNodes m_params)
+           map (map getAIFromLabelNodeID)
+               (map hlMatchNonEntryLabelNodes m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
        , llMatchConstraints =
-           map
-             (map (replaceIDWithArrayIndex ai_maps))
-             (map hlMatchConstraints m_params)
+           map (map (replaceIDWithArrayIndex ai_maps))
+               (map hlMatchConstraints m_params)
        }
 
 -- | Converts any ID appearing in a constraint with the corresponding array

@@ -71,15 +71,15 @@ generateCode
   -> [AssemblyCode]
 generateCode target model sol =
   concat $
-    map
-    ( \l_node ->
-        let matches = getMatchesAllocatedToBB sol l_node
-            sorted_matches = sortMatchesByFlow model matches
-            instrs = mapMaybe (emitInstruction model sol target) sorted_matches
-            bblabel = fromJust $ findBBLabelOfLabelNode model l_node
-        in (AsmBasicBlockLabel $ show bblabel):instrs
-    )
-    (hlSolOrderOfBBs sol)
+    map ( \l_node ->
+          let matches = getMatchesAllocatedToBB sol l_node
+              sorted_matches = sortMatchesByFlow model matches
+              instrs = mapMaybe (emitInstruction model sol target)
+                                sorted_matches
+              bblabel = fromJust $ findBBLabelOfLabelNode model l_node
+          in (AsmBasicBlockLabel $ show bblabel):instrs
+        )
+        (hlSolOrderOfBBs sol)
 
 -- | Gets the list of matches that has been allocated to a given basic block in
 -- the CP model solution. The basic block is identified using the node ID of its
@@ -133,13 +133,11 @@ addUseEdgesToDAG model mid g0 =
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      uses_of_m = filter
-                    (`notElem` hlMatchDataNodesUsedByPhis match)
-                    (hlMatchEntityNodesUsed match)
+      uses_of_m = filter (`notElem` hlMatchDataNodesUsedByPhis match)
+                         (hlMatchEntityNodesUsed match)
       defs_of_m =
-        map
-          (\(n, i) -> (n, hlMatchEntityNodesDefined $ getHLMatchParams ds i))
-          ns
+        map (\(n, i) -> (n, hlMatchEntityNodesDefined $ getHLMatchParams ds i))
+            ns
       g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 uses_of_m
   in g1
 
@@ -201,13 +199,12 @@ emitInstruction
   -> Maybe AssemblyCode
 emitInstruction model sol tm mid =
   let match = getHLMatchParams (hlMatchParams model) mid
-      pat_data = getInstrPattern
-                   (tmInstructions tm)
-                   (hlMatchInstructionID match)
-                   (hlMatchPatternID match)
-      instr_parts = updateNodeIDsInAsmStrParts
-                       (asmStrParts $ patAsmStrTemplate pat_data)
-                       (hlMatchAsmStrNodeMaplist match)
+      pat_data = getInstrPattern (tmInstructions tm)
+                                 (hlMatchInstructionID match)
+                                 (hlMatchPatternID match)
+      instr_parts =
+        updateNodeIDsInAsmStrParts (asmStrParts $ patAsmStrTemplate pat_data)
+                                   (hlMatchAsmStrNodeMaplist match)
   in if length instr_parts > 0
      then ( Just
           $ AsmInstruction
@@ -268,11 +265,10 @@ emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
      then let mid = fromJust $ findDefinerOfData model sol n
               l = lookup mid (hlSolBBAllocsForSelMatches sol)
           in if isJust l
-             then emitInstructionPart
-                    model
-                    sol
-                    m
-                    (ASBBLabelOfLabelNode $ fromJust l)
+             then emitInstructionPart model
+                                     sol
+                                     m
+                                     (ASBBLabelOfLabelNode $ fromJust l)
              else -- TODO: handle this case
                   "l?"
      else -- TODO: handle this case
@@ -287,12 +283,10 @@ findDefinerOfData
   -> Maybe MatchID
 findDefinerOfData model sol n =
   let match = hlMatchParams model
-      definers = map
-                   hlMatchID
-                   ( filter
-                       (\mid -> n `elem` hlMatchEntityNodesDefined mid)
-                       match
-                   )
+      definers = map hlMatchID
+                     ( filter (\mid -> n `elem` hlMatchEntityNodesDefined mid)
+                              match
+                     )
       selected = filter (`elem` (hlSolSelMatches sol)) definers
   in if length selected == 1
      then Just $ head selected

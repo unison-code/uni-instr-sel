@@ -62,16 +62,13 @@ run _ _ _ = reportError "PlotCoverGraph: unsupported action"
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =
-  do let hasMatch n =
-           any
-             (\m -> isJust $ findPNInMatch m (getNodeID n))
-             matches
+  do let hasMatch n = any (\m -> isJust $ findPNInMatch m (getNodeID n)) matches
          nf n = [ GV.style GV.filled,
                   if hasMatch n
                   then GV.fillColor GV.Green
                   else GV.fillColor GV.Red
                 ]
-         dot = (toDotStringWith nf noMoreEdgeAttr) $
-                 osGraph $
-                   functionOS function
+         dot = (toDotStringWith nf noMoreEdgeAttr)
+               $ osGraph
+               $ functionOS function
      return dot

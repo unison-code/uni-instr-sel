@@ -129,11 +129,10 @@ processInstrPattern function iid pattern =
       pg = osGraph $ patOS pattern
       matches = map convertMatchN2ID $ findMatches fg pg
   in map
-       ( \m -> PatternMatch
-                 { pmInstrID = iid
-                 , pmPatternID = patID pattern
-                 , pmMatchID = 0
-                 , pmMatch = m
-                 }
+       ( \m -> PatternMatch { pmInstrID = iid
+                            , pmPatternID = patID pattern
+                            , pmMatchID = 0
+                            , pmMatch = m
+                            }
        )
        matches

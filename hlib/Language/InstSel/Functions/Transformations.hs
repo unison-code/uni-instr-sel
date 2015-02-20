@@ -73,12 +73,11 @@ copyExtend f =
 branchExtend :: Function -> Function
 branchExtend =
   assignMissingExecFreqs . assignMissinBasicBlockLabels . extend
-  where
-  extend f =
-    let g = getGraph f
-        new_g = branchExtendWhen (\_ _ -> True) g
-        new_f = updateGraph new_g f
-    in new_f
+  where extend f =
+          let g = getGraph f
+              new_g = branchExtendWhen (\_ _ -> True) g
+              new_f = updateGraph new_g f
+          in new_f
 
 -- | Assigns a unique basic block label to every label node that currently has
 -- an empty label (which will be the case after branch extension).
@@ -86,21 +85,19 @@ assignMissinBasicBlockLabels :: Function -> Function
 assignMissinBasicBlockLabels f =
   let g = getGraph f
       nodes = filter isLabelNode (getAllNodes g)
-      label_node_pairs =
-        map
-          (\n -> (bbLabel (getNodeType n), n))
-          nodes
+      label_node_pairs = map (\n -> (bbLabel (getNodeType n), n)) nodes
       no_label_nodes = map snd (filter (isBBLabelEmpty . fst) label_node_pairs)
       existing_labels = map fst label_node_pairs
-      ok_labels =
-        filter
-          (`notElem` existing_labels)
-          (map (\i -> BasicBlockLabel $ "bb" ++ show i) ([0..] :: [Integer]))
-          -- ^ The type cast is to inhibit a compilation warning
-      new_g = foldl
-                (\g' (l, n) -> updateNodeType (LabelNode { bbLabel = l }) n g')
-                g
-                (zip ok_labels no_label_nodes)
+      ok_labels = filter (`notElem` existing_labels)
+                         ( map (\i -> BasicBlockLabel $ "bb" ++ show i)
+                               ([0..] :: [Integer])
+                                -- ^ The type cast is to inhibit a compilation
+                                -- warning
+                         )
+      new_g =
+        foldl (\g' (l, n) -> updateNodeType (LabelNode { bbLabel = l }) n g')
+              g
+              (zip ok_labels no_label_nodes)
   in updateGraph new_g f
 
 -- | Assigns an execution frequency to every basic block that currently does not
@@ -112,19 +109,17 @@ assignMissingExecFreqs f =
   let g = getGraph f
       cfg = extractCFG g
       new_freqs =
-        map
-          ( \n ->
-              let l = bbLabel $ getNodeType n
-                  freqs = functionBBExecFreq f
-                  l_freq = lookup l freqs
-              in if isJust l_freq
-                 then (l, fromJust l_freq)
-                 else let prec_n = getSourceNode
-                                     cfg
-                                     (head $ getCtrlFlowInEdges cfg n)
-                          prec_l = bbLabel $ getNodeType prec_n
-                          prec_freq = fromJust $ lookup prec_l freqs
-                      in (l, prec_freq)
-          )
-          (getAllNodes cfg)
+        map ( \n -> let l = bbLabel $ getNodeType n
+                        freqs = functionBBExecFreq f
+                        l_freq = lookup l freqs
+                    in if isJust l_freq
+                       then (l, fromJust l_freq)
+                       else let prec_n = getSourceNode
+                                           cfg
+                                           (head $ getCtrlFlowInEdges cfg n)
+                                prec_l = bbLabel $ getNodeType prec_n
+                                prec_freq = fromJust $ lookup prec_l freqs
+                            in (l, prec_freq)
+            )
+            (getAllNodes cfg)
   in (updateGraph g f) { functionBBExecFreq = new_freqs }

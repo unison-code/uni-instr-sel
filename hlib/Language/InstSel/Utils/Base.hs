@@ -75,8 +75,8 @@ instance Num Natural where
     x + y = toNatural (fromNatural x + fromNatural y)
     x - y = let r = fromNatural x - fromNatural y
             in if r < 0
-            then error "Subtraction yielded a negative value"
-            else toNatural r
+               then error "Subtraction yielded a negative value"
+               else toNatural r
     x * y = toNatural (fromNatural x * fromNatural y)
     abs x = x
     signum x = toNatural $ signum $ fromNatural x
@@ -136,15 +136,14 @@ computePosMapsOfPerm ::
 computePosMapsOfPerm ol pl =
   let addPosMap e (index_in_ol, ms) =
         let checkIndex i = i `notElem` ms && (pl !! i == e)
-            index_in_pl = until
-                          (\i -> maybe True checkIndex i)
-                          ( \(Just i) ->
-                             let next_i = i + 1
-                             in if next_i < length pl
-                                then Just next_i
-                                else Nothing
-                          )
-                          (Just 0)
+            index_in_pl = until (\i -> maybe True checkIndex i)
+                                ( \(Just i) ->
+                                  let next_i = i + 1
+                                  in if next_i < length pl
+                                     then Just next_i
+                                     else Nothing
+                                )
+                                (Just 0)
         in if isJust index_in_pl
            then (index_in_ol - 1, (fromJust index_in_pl):ms)
            else error ("computePosMapsOfPerm: the lists do not contain the "
@@ -182,8 +181,7 @@ groupBy :: (n -> n -> Bool) -> [n] -> [[n]]
 groupBy f es =
   foldr (gr f) [] es
   where gr _ e [] = [[e]]
-        gr f' e (p:ps) =
-          if belongs f' e p then (e:p):ps else p:(gr f' e ps)
+        gr f' e (p:ps) = if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
 
 -- | Replaces a substring with another substring.

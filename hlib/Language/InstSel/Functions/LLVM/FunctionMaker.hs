@@ -161,10 +161,10 @@ class ConstantFormable a where
   toConstant :: a -> Constant
 
 instance ConstantFormable LLVMC.Constant where
-  toConstant i@(LLVMC.Int b _) = IntConstant
-                                 { intBitWidth = fromIntegral b
-                                 , signedIntValue = LLVMC.signedIntegerValue i
-                                 }
+  toConstant i@(LLVMC.Int b _) =
+    IntConstant { intBitWidth = fromIntegral b
+                , signedIntValue = LLVMC.signedIntegerValue i
+                }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
 -- | Class for building the data flow graph.
@@ -198,20 +198,19 @@ class CfgBuildable a where
 -- | Creates an initial state.
 mkInitBuildState :: LLVM.Module -> BuildState
 mkInitBuildState m =
-  BuildState
-    { llvmModule = m
-    , opStruct = OS.mkEmpty
-    , lastTouchedNode = Nothing
-    , entryLabel = Nothing
-    , currentLabel = Nothing
-    , funcBBExecFreqs = []
-    , symMaps = []
-    , constMaps = []
-    , labelToEntityFlows = []
-    , labelToEntityDoms = []
-    , entityToLabelDoms = []
-    , funcInputValues = []
-    }
+  BuildState { llvmModule = m
+             , opStruct = OS.mkEmpty
+             , lastTouchedNode = Nothing
+             , entryLabel = Nothing
+             , currentLabel = Nothing
+             , funcBBExecFreqs = []
+             , symMaps = []
+             , constMaps = []
+             , labelToEntityFlows = []
+             , labelToEntityDoms = []
+             , entityToLabelDoms = []
+             , funcInputValues = []
+             }
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
@@ -403,9 +402,7 @@ buildOSFromConst st0 c =
   let node_for_c = mappedDataNodeFromConst (constMaps st0) c
   in if isJust node_for_c
      then touchNode st0 (fromJust node_for_c)
-     else let st1 = addNewNode
-                      st0
-                      (G.DataNode (toDataType c) (Just $ show c))
+     else let st1 = addNewNode st0 (G.DataNode (toDataType c) (Just $ show c))
               d_node = fromJust $ lastTouchedNode st1
               st2 = addConstMap st1 (d_node, c)
               st3 = addOSConstraints st2 (mkConstConstraints d_node c)
@@ -451,16 +448,14 @@ buildCfgFromControlOp st0 op operands =
       st1 = last sts
       st2 = addNewNode st1 (G.ControlNode op)
       op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge
-              st2
-              G.ControlFlowEdge
-              (fromJust $ findLabelNodeWithID st2 (fromJust $ currentLabel st2))
+      st3 = addNewEdge st2
+                       G.ControlFlowEdge
+                       ( fromJust $
+                           findLabelNodeWithID st2
+                                               (fromJust $ currentLabel st2)
+                       )
               op_node
-      st4 = addNewEdgesManySources
-              st3
-              G.DataFlowEdge
-              operand_ns
-              op_node
+      st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
   in st4
 
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
@@ -527,26 +522,23 @@ ensureLabelNodeExists st l =
 addMissingLabelToEntityFlowEdges :: BuildState -> BuildState
 addMissingLabelToEntityFlowEdges st =
   let g0 = getOSGraph st
-      deps =
-        map
-        ( \(l, n) ->
-            if G.isDataNode n
-            then (l, n, G.DataFlowEdge)
-            else if G.isStateNode n
-                 then (l, n, G.StateFlowEdge)
-                 else error ( "addMissingLabelToEntityFlowEdges: "
-                              ++ "This should never happen"
-                            )
-        )
-        (labelToEntityFlows st)
+      deps = map ( \(l, n) ->
+                   if G.isDataNode n
+                   then (l, n, G.DataFlowEdge)
+                   else if G.isStateNode n
+                        then (l, n, G.StateFlowEdge)
+                        else error ( "addMissingLabelToEntityFlowEdges: "
+                                     ++ "This should never happen"
+                                   )
+                 )
+                 (labelToEntityFlows st)
       g1 =
-        foldr
-        ( \(l, n, et) g ->
-            let pair = (fromJust $ findLabelNodeWithID st l, n)
-            in fst $ G.addNewEdge et pair g
-        )
-        g0
-        deps
+        foldr ( \(l, n, et) g ->
+                let pair = (fromJust $ findLabelNodeWithID st l, n)
+                in fst $ G.addNewEdge et pair g
+              )
+              g0
+              deps
   in updateOSGraph st g1
 
 -- | Adds the missing label-to-entity dominance edges, as described in the given
@@ -555,16 +547,15 @@ addMissingLabelToEntityDomEdges :: BuildState -> BuildState
 addMissingLabelToEntityDomEdges st =
   let g0 = getOSGraph st
       doms = labelToEntityDoms st
-      g1 = foldr
-             ( \(bb_id, dn, nr) g ->
-               let ln = fromJust $ findLabelNodeWithID st bb_id
-                   (g', new_e) = G.addNewDomEdge (ln, dn) g
-                   new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
-                   g'' = G.updateEdgeLabel new_el new_e g'
-               in g''
-             )
-             g0
-             doms
+      g1 = foldr ( \(bb_id, dn, nr) g ->
+                   let ln = fromJust $ findLabelNodeWithID st bb_id
+                       (g', new_e) = G.addNewDomEdge (ln, dn) g
+                       new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
+                       g'' = G.updateEdgeLabel new_el new_e g'
+                   in g''
+                 )
+                 g0
+                 doms
   in updateOSGraph st g1
 
 -- | Adds the missing entity-to-label dominance edges, as described in the given
@@ -573,16 +564,15 @@ addMissingEntityToLabelDomEdges :: BuildState -> BuildState
 addMissingEntityToLabelDomEdges st =
   let g0 = getOSGraph st
       doms = entityToLabelDoms st
-      g1 = foldr
-             ( \(dn, bb_id, nr) g ->
-               let ln = fromJust $ findLabelNodeWithID st bb_id
-                   (g', new_e) = G.addNewDomEdge (dn, ln) g
-                   new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
-                   g'' = G.updateEdgeLabel new_el new_e g'
-               in g''
-             )
-             g0
-             doms
+      g1 = foldr ( \(dn, bb_id, nr) g ->
+                   let ln = fromJust $ findLabelNodeWithID st bb_id
+                       (g', new_e) = G.addNewDomEdge (dn, ln) g
+                       new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
+                       g'' = G.updateEdgeLabel new_el new_e g'
+                   in g''
+                 )
+                 g0
+                 doms
   in updateOSGraph st g1
 
 -- | Extracts the block execution frequency from the metadata (which should be
@@ -629,13 +619,12 @@ retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
       isMetaDef (LLVM.MetadataNodeDefinition _ _) = True
       isMetaDef _ = False
       meta_defs = filter isMetaDef module_defs
-      sought_ops = mapMaybe
-                     ( \(LLVM.MetadataNodeDefinition mid' ops) ->
-                         if mid' == mid
-                         then Just ops
-                         else Nothing
-                     )
-                     meta_defs
+      sought_ops = mapMaybe ( \(LLVM.MetadataNodeDefinition mid' ops) ->
+                              if mid' == mid
+                              then Just ops
+                              else Nothing
+                            )
+                            meta_defs
   in if length sought_ops == 1
      then head sought_ops
      else let (LLVM.MetadataNodeID mid_value) = mid
@@ -680,10 +669,9 @@ instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
     let bb_label = PM.BasicBlockLabel str
         st1 = if isNothing $ entryLabel st0
-              then foldl
-                     (\st n -> addLabelToEntityFlow st (bb_label, n))
-                     (st0 { entryLabel = Just bb_label })
-                     (funcInputValues st0)
+              then foldl (\st n -> addLabelToEntityFlow st (bb_label, n))
+                         (st0 { entryLabel = Just bb_label })
+                         (funcInputValues st0)
               else st0
         st2 = st1 { currentLabel = Just bb_label }
         st3 = foldl buildDfg st2 insts
@@ -745,16 +733,15 @@ instance DfgBuildable LLVM.Instruction where
         st2 = addNewNode st1 G.PhiNode
         phi_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-        st4 = foldl
-                ( \st (n, bb_id) ->
-                  let g = getOSGraph st
-                      dfe = head
-                            $ filter G.isDataFlowEdge
-                            $ G.getEdges g n phi_node
-                  in addEntityToLabelDom st (n, bb_id, G.getOutEdgeNr dfe)
-                )
-                st3
-                (zip operand_ns bb_labels)
+        st4 = foldl ( \st (n, bb_id) ->
+                      let g = getOSGraph st
+                          dfe = head
+                                $ filter G.isDataFlowEdge
+                                $ G.getEdges g n phi_node
+                      in addEntityToLabelDom st (n, bb_id, G.getOutEdgeNr dfe)
+                    )
+                    st3
+                    (zip operand_ns bb_labels)
     in st4
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
@@ -786,9 +773,8 @@ instance CfgBuildable LLVM.BasicBlock where
     let bb_label = PM.BasicBlockLabel str
         term_inst = fromNamed named_term_inst
         bb_exec_freq = ( bb_label
-                       , extractExecFreq
-                           (llvmModule st0)
-                           (getTermMetadata term_inst)
+                       , extractExecFreq (llvmModule st0)
+                                         (getTermMetadata term_inst)
                        )
         st1 = if isNothing $ entryLabel st0
               then st1 { entryLabel = Just bb_label }
@@ -810,10 +796,11 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg st (LLVM.Ret op _) =
     buildCfgFromControlOp st Op.Ret (maybeToList op)
   buildCfg st0 (LLVM.Br (LLVM.Name dst) _) =
-    let st1 = buildCfgFromControlOp
-              st0
-              Op.Br
-              ([] :: [LLVM.Name]) -- The type signature is needed to please GHC
+    let st1 =
+          buildCfgFromControlOp st0
+                                Op.Br
+                                ([] :: [LLVM.Name]) -- The type signature is
+                                                    -- needed to please GHC
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel dst)
         dst_node = fromJust $ lastTouchedNode st2
@@ -826,11 +813,10 @@ instance CfgBuildable LLVM.Terminator where
         t_dst_node = fromJust $ lastTouchedNode st2
         st3 = ensureLabelNodeExists st2 (PM.BasicBlockLabel f_dst)
         f_dst_node = fromJust $ lastTouchedNode st3
-        st4 = addNewEdgesManyDests
-              st3
-              G.ControlFlowEdge
-              br_node
-              [t_dst_node, f_dst_node]
+        st4 = addNewEdgesManyDests st3
+                                   G.ControlFlowEdge
+                                   br_node
+                                   [t_dst_node, f_dst_node]
     in st4
   buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
