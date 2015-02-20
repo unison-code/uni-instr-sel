@@ -75,8 +75,8 @@ sn2nat sn =
      else toNatural int_value
 
 -- | Parses a JSON string into an entity.
-fromJson ::
-  FromJSON a
+fromJson
+  :: FromJSON a
   => String
   -> Either String a
      -- ^ The left field contains the error message (when parsing failed), and

@@ -415,8 +415,8 @@ mkConstConstraints n (IntConstant { signedIntValue = v }) =
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
-buildDfgFromCompOp ::
-  (DfgBuildable o)
+buildDfgFromCompOp
+  :: (DfgBuildable o)
   => BuildState
   -> Op.CompOp
      -- ^ The computational operation.
@@ -434,8 +434,8 @@ buildDfgFromCompOp st0 op operands =
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
-buildCfgFromControlOp ::
-  (CfgBuildable o)
+buildCfgFromControlOp
+  :: (CfgBuildable o)
   => BuildState
   -> Op.ControlOp
      -- ^ The control operation.

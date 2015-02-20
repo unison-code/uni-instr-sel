@@ -125,8 +125,8 @@ fromNatural (Natural i) = i
 -- returns a list of position mappings such that one list can be transformed
 -- into the other list just by rearranging the positions. If one list is not a
 -- permutation of the other, an error will occur.
-computePosMapsOfPerm ::
-  Eq a
+computePosMapsOfPerm
+  :: Eq a
   => [a]
      -- ^ A list.
   -> [a]

@@ -1285,8 +1285,8 @@ areOutEdgesEquivalent g e1 e2 =
   getOutEdgeNr e1 == getOutEdgeNr e2
 
 -- | Same as `findPNsInMapping`.
-findPNsInMatch ::
-  (Eq n)
+findPNsInMatch
+  :: (Eq n)
   => Match n
      -- ^ The match.
   -> [n]
@@ -1296,8 +1296,8 @@ findPNsInMatch ::
 findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
 
 -- | Same as `findFNsInMapping`.
-findFNsInMatch ::
-  (Eq n)
+findFNsInMatch
+  :: (Eq n)
   => Match n
      -- ^ The match.
   -> [n]
@@ -1307,8 +1307,8 @@ findFNsInMatch ::
 findFNsInMatch (Match m) = findFNsInMapping (S.toList m)
 
 -- | Same as `findPNInMapping`.
-findPNInMatch ::
-  (Eq n)
+findPNInMatch
+  :: (Eq n)
   => Match n
      -- ^ The current mapping state.
   -> n
@@ -1318,8 +1318,8 @@ findPNInMatch ::
 findPNInMatch (Match m) = findPNInMapping (S.toList m)
 
 -- | Same as `findFNInMapping`.
-findFNInMatch ::
-  (Eq n)
+findFNInMatch
+  :: (Eq n)
   => Match n
      -- ^ The current mapping state.
   -> n
@@ -1331,8 +1331,8 @@ findFNInMatch (Match m) = findFNInMapping (S.toList m)
 -- | From a match and a list of function nodes, get the list of corresponding
 -- pattern nodes for which there exists a mapping. The order of the list will be
 -- conserved.
-findPNsInMapping ::
-  (Eq n)
+findPNsInMapping
+  :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> [n]
@@ -1344,8 +1344,8 @@ findPNsInMapping m fns = mapMaybe (findPNInMapping m) fns
 -- | From a match and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping. The order of the list will
 -- be conserved.
-findFNsInMapping ::
-  (Eq n)
+findFNsInMapping
+  :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> [n]
@@ -1356,8 +1356,8 @@ findFNsInMapping m pns = mapMaybe (findFNInMapping m) pns
 
 -- | From a mapping state and a function node, get the corresponding pattern
 -- node if there exists a such a mapping.
-findPNInMapping ::
-  (Eq n)
+findPNInMapping
+  :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> n
@@ -1372,8 +1372,8 @@ findPNInMapping st fn =
 
 -- | From a mapping state and a pattern node, get the corresponding function
 -- node if there exists a such a mapping.
-findFNInMapping ::
-  (Eq n)
+findFNInMapping
+  :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> n

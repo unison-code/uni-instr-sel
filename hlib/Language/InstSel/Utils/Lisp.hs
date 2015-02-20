@@ -51,8 +51,8 @@ import Control.Monad
 -------------
 
 -- | Parses a lispian expression string into an entity.
-fromLispExprStr ::
-  FromLisp a
+fromLispExprStr
+  :: FromLisp a
   => String
   -> Either String a
      -- ^ The left field contains the error message (when parsing failed), and
