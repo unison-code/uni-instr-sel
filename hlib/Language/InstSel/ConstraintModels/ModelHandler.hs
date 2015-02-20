@@ -30,21 +30,19 @@ import qualified Language.InstSel.Graphs as G
   ( computeDomSets )
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
-  ( Function (..)
-  , mkEmptyBBLabel
-  )
+  ( Function (..) )
 import Language.InstSel.TargetMachines
 import Language.InstSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
 
 import Data.List
   ( elemIndex
+  , nub
   , sortBy
   )
 import Data.Maybe
   ( fromJust
   , isJust
-  , mapMaybe
   )
 
 
@@ -248,12 +246,14 @@ lowerHighLevelModel model ai_maps =
                )
        , llFunLabelToEntityDomEdges =
            map ( \n ->
+                 nub $
                  map (getAIFromEntityNodeID . snd)
                      (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
                )
                (sortByAI id (hlFunLabelNodes f_params))
        , llFunEntityToLabelDomEdges =
            map ( \n ->
+                 nub $
                  map (getAIFromEntityNodeID . fst)
                      (filter (\(_, n') -> n == n') (hlFunDomEdges f_params))
                )
