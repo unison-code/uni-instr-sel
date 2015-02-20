@@ -284,6 +284,18 @@ constraint
     )
   );
 
+% An entity with a dominance edge from a label must be defined within some basic
+% block that is dominated by the basic block of the label that participates in
+% the edge.
+constraint
+  forall (l in allLabelsInFunction)
+  (
+    forall (e in domEdgesFromLabelInFunction[l])
+    (
+      l in invDomSetOfLabelInFunction[defbb[e]]
+    )
+  );
+
 % Inactive entities must not be defined by any match nor be defined in any
 % (real) basic block.
 constraint
