@@ -49,14 +49,13 @@ import Language.InstSel.ConstraintModels.IDs
 
 import Language.InstSel.Constraints
 import Language.InstSel.Graphs
-  ( DomSet (..)
-  , PostDomSet
-  , MatchID (..)
-  , NodeID (..)
+  ( DomSet
+  , MatchID
+  , NodeID
   )
 import Language.InstSel.Functions
-  ( BasicBlockLabel (..)
-  , ExecFreq (..)
+  ( BasicBlockLabel
+  , ExecFreq
   )
 import Language.InstSel.TargetMachines.IDs
 import Language.InstSel.Utils.JSON
@@ -88,15 +87,10 @@ data HighLevelFunctionParams
       , hlFunEntryLabelNode :: NodeID
         -- ^ The label that is the entry point into the function.
       , hlFunLabelDomSets :: [DomSet NodeID]
-        -- ^ The dominator sets of the label nodes.
-      , hlFunLabelPostDomSets :: [PostDomSet NodeID]
-        -- ^ The postdominator sets of the label nodes.
+        -- ^ The dominator sets of the label nodes in the function graph.
       , hlFunDomEdges :: [(NodeID, NodeID)]
-        -- ^ The dominance edges, where the first element in the tuple is the
-        -- entity node and the second element is the label node.
-      , hlFunPostDomEdges :: [(NodeID, NodeID)]
-        -- ^ The postdominance edges, where the first element in the tuple is
-        -- the entity node and the second element is the label node.
+        -- ^ The dominance edges in the function graph. The first element is the
+        -- source node and the second element is the target node.
       , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
         -- ^ The basic block information.
       , hlFunEssentialOpNodes :: [NodeID]
@@ -192,21 +186,23 @@ data LowLevelModel
       , llFunEntryLabelNode :: ArrayIndex
         -- ^ The entry label node of the function graph.
       , llFunLabelDomSets :: [[ArrayIndex]]
-        -- ^ The list of dominators for each label node in the function graph.
+        -- ^ The dominator set for each label node in the function graph.
         -- An index into the outer list corresponds to the array index of a
         -- particular label node.
-      , llFunLabelPostDomSets :: [[ArrayIndex]]
-        -- ^ The list of postdominators for each label node in the function
-        -- graph. An index into the outer list corresponds to the array index of
-        -- a particular label node.
-      , llFunLabelDomEdges :: [[ArrayIndex]]
+      , llFunLabelInvDomSets :: [[ArrayIndex]]
+        -- ^ The inverse dominator set for each label node in the function
+        -- graph.  An index into the outer list corresponds to the array index
+        -- of a particular label node.
+      , llFunLabelToEntityDomEdges :: [[ArrayIndex]]
         -- ^ The list of entity nodes for each label node in the function graph
-        -- for which there is a dominance edge. An index into the outer list
-        -- corresponds to the array index of a particular label node.
-      , llFunLabelPostDomEdges :: [[ArrayIndex]]
+        -- where there is a dominance edges, with the label node as source. An
+        -- index into the outer list corresponds to the array index of a
+        -- particular label node.
+      , llFunEntityToLabelDomEdges :: [[ArrayIndex]]
         -- ^ The list of entity nodes for each label node in the function graph
-        -- for which there is a postdominance edge. An index into the outer
-        -- list corresponds to the array index of a particular label node.
+        -- where there is a dominance edges, with the label node as target. An
+        -- index into the outer list corresponds to the array index of a
+        -- particular label node.
       , llFunBBExecFreqs :: [ExecFreq]
         -- ^ The execution frequency of each basic block. An index into the list
         -- corresponds to the array index of a particular label node in the
@@ -375,9 +371,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "label-nodes"
       <*> v .: "entry-label"
       <*> v .: "label-dom-sets"
-      <*> v .: "label-postdom-sets"
       <*> v .: "dom-edges"
-      <*> v .: "postdom-edges"
       <*> v .: "bb-params"
       <*> v .: "essential-op-nodes"
       <*> v .: "constraints"
@@ -388,11 +382,9 @@ instance ToJSON HighLevelFunctionParams where
     object [ "operation-nodes"    .= (hlFunOpNodes d)
            , "entity-nodes"       .= (hlFunEntityNodes d)
            , "label-nodes"        .= (hlFunLabelNodes d)
-           , "label-dom-sets"     .= (hlFunLabelDomSets d)
-           , "label-postdom-sets" .= (hlFunLabelPostDomSets d)
            , "entry-label"        .= (hlFunEntryLabelNode d)
+           , "label-dom-sets"     .= (hlFunLabelDomSets d)
            , "dom-edges"          .= (hlFunDomEdges d)
-           , "postdom-edges"      .= (hlFunPostDomEdges d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
            , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
            , "constraints"        .= (hlFunConstraints d)
@@ -473,9 +465,9 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-label-nodes"
       <*> v .: "fun-entry-label-node"
       <*> v .: "fun-label-dom-sets"
-      <*> v .: "fun-label-postdom-sets"
-      <*> v .: "fun-label-dom-edges"
-      <*> v .: "fun-label-postdom-edges"
+      <*> v .: "fun-label-inv-dom-sets"
+      <*> v .: "fun-label-to-entity-dom-edges"
+      <*> v .: "fun-entity-to-label-edges"
       <*> v .: "fun-bb-exec-freqs"
       <*> v .: "fun-essential-op-nodes"
       <*> v .: "fun-constraints"
@@ -494,28 +486,28 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-op-nodes"            .= (llNumFunOpNodes m)
-           , "fun-num-entity-nodes"        .= (llNumFunEntityNodes m)
-           , "fun-num-label-nodes"         .= (llNumFunLabelNodes m)
-           , "fun-entry-label-node"        .= (llFunEntryLabelNode m)
-           , "fun-label-dom-sets"          .= (llFunLabelDomSets m)
-           , "fun-label-postdom-sets"      .= (llFunLabelPostDomSets m)
-           , "fun-label-dom-edges"         .= (llFunLabelDomEdges m)
-           , "fun-label-postdom-edges"     .= (llFunLabelPostDomEdges m)
-           , "fun-bb-exec-freqs"           .= (llFunBBExecFreqs m)
-           , "fun-essential-op-nodes"      .= (llFunEssentialOpNodes m)
-           , "fun-constraints"             .= (llFunConstraints m)
-           , "num-registers"               .= (llNumRegisters m)
-           , "num-matches"                 .= (llNumMatches m)
-           , "match-op-nodes-covered"      .= (llMatchOpNodesCovered m)
-           , "match-entity-nodes-defined"  .= (llMatchEntityNodesDefined m)
-           , "match-entity-nodes-used"     .= (llMatchEntityNodesUsed m)
-           , "match-entry-label-nodes"     .= (llMatchEntryLabelNode m)
-           , "match-non-entry-label-nodes" .= (llMatchNonEntryLabelNodes m)
-           , "match-code-sizes"            .= (llMatchCodeSizes m)
-           , "match-latencies"             .= (llMatchLatencies m)
-           , "match-adduc-settings"        .= (llMatchADDUCs m)
-           , "match-constraints"           .= (llMatchConstraints m)
+    object [ "fun-num-op-nodes"              .= (llNumFunOpNodes m)
+           , "fun-num-entity-nodes"          .= (llNumFunEntityNodes m)
+           , "fun-num-label-nodes"           .= (llNumFunLabelNodes m)
+           , "fun-entry-label-node"          .= (llFunEntryLabelNode m)
+           , "fun-label-dom-sets"            .= (llFunLabelDomSets m)
+           , "fun-label-inv-dom-sets"        .= (llFunLabelInvDomSets m)
+           , "fun-label-to-entity-dom-edges" .= (llFunLabelToEntityDomEdges m)
+           , "fun-entity-to-label-dom-edges" .= (llFunEntityToLabelDomEdges m)
+           , "fun-bb-exec-freqs"             .= (llFunBBExecFreqs m)
+           , "fun-essential-op-nodes"        .= (llFunEssentialOpNodes m)
+           , "fun-constraints"               .= (llFunConstraints m)
+           , "num-registers"                 .= (llNumRegisters m)
+           , "num-matches"                   .= (llNumMatches m)
+           , "match-op-nodes-covered"        .= (llMatchOpNodesCovered m)
+           , "match-entity-nodes-defined"    .= (llMatchEntityNodesDefined m)
+           , "match-entity-nodes-used"       .= (llMatchEntityNodesUsed m)
+           , "match-entry-label-nodes"       .= (llMatchEntryLabelNode m)
+           , "match-non-entry-label-nodes"   .= (llMatchNonEntryLabelNodes m)
+           , "match-code-sizes"              .= (llMatchCodeSizes m)
+           , "match-latencies"               .= (llMatchLatencies m)
+           , "match-adduc-settings"          .= (llMatchADDUCs m)
+           , "match-constraints"             .= (llMatchConstraints m)
            ]
 
 instance FromJSON HighLevelSolution where

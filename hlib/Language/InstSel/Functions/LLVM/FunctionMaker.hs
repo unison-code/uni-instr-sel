@@ -51,22 +51,26 @@ type SymToDataNodeMapping = (G.Node, Symbol)
 -- graph.
 type ConstToDataNodeMapping = (G.Node, Constant)
 
--- | Represents a data flow that goes from the label node, identified by a given
--- ID, to some given node. This is needed to draw the missing flow edges after
+-- | Represents a data flow that goes from a label node, identified by the given
+-- ID, to an entity node. This is needed to draw the missing flow edges after
 -- both the data flow graph and the control flow graph have been built.
 type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
 
--- | Represents a dominance condition, stating that the given node must be
--- defined in a basic block that dominates the basic block identified by the
--- given ID. This is needed to draw the missing dominance edges edges after both
--- the data flow graph and the control flow graph have been built. Since the
--- out-edge number of an data-flow edge must match that of the corresponding
--- dominance edge, the out-edge number of the data-flow edge is also included in
+-- | Represents a dominance that goes from a label node, identified by the given
+-- ID, an entity node. This is needed to draw the missing dominance edges after
+-- both the data flow graph and the control flow graph have been built. Since
+-- the in-edge number of an data-flow edge must match that of the corresponding
+-- dominance edge, the in-edge number of the data-flow edge is also included in
 -- the tuple.
-type DominanceCondition = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
+type LabelToEntityDom = (PM.BasicBlockLabel, G.Node, G.EdgeNr)
 
--- | Same as 'DominanceCondition' but for postdominance conditions.
-type PostDominanceCondition = DominanceCondition
+-- | Represents a dominance that goes from an entity node to a label node,
+-- identified by the given ID. This is needed to draw the missing dominance
+-- edges after both the data flow graph and the control flow graph have been
+-- built. Since the out-edge number of an data-flow edge must match that of the
+-- corresponding dominance edge, the out-edge number of the data-flow edge is
+-- also included in the tuple.
+type EntityToLabelDom = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -95,14 +99,14 @@ data BuildState
         -- mapping using the same symbol, then the last one occuring in the list
         -- should be picked.
       , labelToEntityFlows :: [LabelToEntityFlow]
-        -- ^ List of label-to-entity flow dependencies which are yet to be
+        -- ^ List of label-to-entity flow dependencies that are yet to be
         -- converted into edges.
-      , domConds :: [DominanceCondition]
-        -- ^ List of dominance conditions which are yet to be converted into
-        -- edges.
-      , postDomConds :: [PostDominanceCondition]
-        -- ^ List of postdominance conditions which are yet to be converted into
-        -- edges.
+      , labelToEntityDoms :: [LabelToEntityDom]
+        -- ^ List of label-to-entity dominances that are yet to be converted
+        -- into edges.
+      , entityToLabelDoms :: [EntityToLabelDom]
+        -- ^ List of entity-to-label dominances that are yet to be converted
+        -- into edges.
       , funcInputValues :: [G.Node]
         -- ^ The data nodes representing the function input arguments.
       }
@@ -204,8 +208,8 @@ mkInitBuildState m =
     , symMaps = []
     , constMaps = []
     , labelToEntityFlows = []
-    , domConds = []
-    , postDomConds = []
+    , labelToEntityDoms = []
+    , entityToLabelDoms = []
     , funcInputValues = []
     }
 
@@ -232,8 +236,8 @@ mkFunction m f@(LLVM.Function {}) =
               st2
               (fromJust $ findLabelNodeWithID st2 (fromJust $ entryLabel st2))
       st4 = addMissingLabelToEntityFlowEdges st3
-      st5 = addMissingDomEdges st4
-      st6 = addMissingPostDomEdges st5
+      st5 = addMissingLabelToEntityDomEdges st4
+      st6 = addMissingEntityToLabelDomEdges st5
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
               , PM.functionOS = opStruct st6
@@ -341,16 +345,18 @@ addConstMap st cm = st { constMaps = cm:(constMaps st) }
 
 -- | Adds label-to-entity flow to a given state.
 addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
-addLabelToEntityFlow st ef =
-  st { labelToEntityFlows = ef:(labelToEntityFlows st) }
+addLabelToEntityFlow st flow =
+  st { labelToEntityFlows = flow:(labelToEntityFlows st) }
 
--- | Add a new dominance condition to a given state.
-addDomCond :: BuildState -> DominanceCondition -> BuildState
-addDomCond st dom = st { domConds = dom:(domConds st) }
+-- | Adds label-to-entity dominance to a given state.
+addLabelToEntityDom :: BuildState -> LabelToEntityDom -> BuildState
+addLabelToEntityDom st dom =
+  st { labelToEntityDoms = dom:(labelToEntityDoms st) }
 
--- | Add a new postdominance condition to a given state.
-addPostDomCond :: BuildState -> PostDominanceCondition -> BuildState
-addPostDomCond st pdom = st { postDomConds = pdom:(postDomConds st) }
+-- | Adds entity-to-label dominance to a given state.
+addEntityToLabelDom :: BuildState -> EntityToLabelDom -> BuildState
+addEntityToLabelDom st dom =
+  st { entityToLabelDoms = dom:(entityToLabelDoms st) }
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
@@ -543,11 +549,30 @@ addMissingLabelToEntityFlowEdges st =
         deps
   in updateOSGraph st g1
 
--- | Adds the missing dominance edges, as described in the given build state.
-addMissingDomEdges :: BuildState -> BuildState
-addMissingDomEdges st =
+-- | Adds the missing label-to-entity dominance edges, as described in the given
+-- build state.
+addMissingLabelToEntityDomEdges :: BuildState -> BuildState
+addMissingLabelToEntityDomEdges st =
   let g0 = getOSGraph st
-      conds = domConds st
+      doms = labelToEntityDoms st
+      g1 = foldr
+             ( \(bb_id, dn, nr) g ->
+               let ln = fromJust $ findLabelNodeWithID st bb_id
+                   (g', new_e) = G.addNewDomEdge (ln, dn) g
+                   new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
+                   g'' = G.updateEdgeLabel new_el new_e g'
+               in g''
+             )
+             g0
+             doms
+  in updateOSGraph st g1
+
+-- | Adds the missing entity-to-label dominance edges, as described in the given
+-- build state.
+addMissingEntityToLabelDomEdges :: BuildState -> BuildState
+addMissingEntityToLabelDomEdges st =
+  let g0 = getOSGraph st
+      doms = entityToLabelDoms st
       g1 = foldr
              ( \(dn, bb_id, nr) g ->
                let ln = fromJust $ findLabelNodeWithID st bb_id
@@ -557,25 +582,7 @@ addMissingDomEdges st =
                in g''
              )
              g0
-             conds
-  in updateOSGraph st g1
-
--- | Adds the missing postdominance edges, as described in the given build
--- state.
-addMissingPostDomEdges :: BuildState -> BuildState
-addMissingPostDomEdges st =
-  let g0 = getOSGraph st
-      conds = postDomConds st
-      g1 = foldr
-             ( \(dn, bb_id, nr) g ->
-               let ln = fromJust $ findLabelNodeWithID st bb_id
-                   (g', new_e) = G.addNewPostDomEdge (ln, dn) g
-                   new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
-                   g'' = G.updateEdgeLabel new_el new_e g'
-               in g''
-             )
-             g0
-             conds
+             doms
   in updateOSGraph st g1
 
 -- | Extracts the block execution frequency from the metadata (which should be
@@ -651,7 +658,9 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
         st4 = if G.isPhiNode expr_node
-              then addPostDomCond st3 (dst_node, fromJust $ currentLabel st3, 0)
+              then addLabelToEntityDom
+                     st3
+                     (fromJust $ currentLabel st3, dst_node, 0)
                    -- ^ Since we've just created the data node and only added a
                    -- a single data-flow edge to it, we are guaranteed that
                    -- the in-edge number of that data-flow edge is 0.
@@ -742,7 +751,7 @@ instance DfgBuildable LLVM.Instruction where
                       dfe = head
                             $ filter G.isDataFlowEdge
                             $ G.getEdges g n phi_node
-                  in addDomCond st (n, bb_id, G.getOutEdgeNr dfe)
+                  in addEntityToLabelDom st (n, bb_id, G.getOutEdgeNr dfe)
                 )
                 st3
                 (zip operand_ns bb_labels)

@@ -36,7 +36,6 @@
 
 module Language.InstSel.Graphs.Base
   ( DomSet (..)
-  , PostDomSet
   , DstNode
   , Edge (..)
   , EdgeLabel (..)
@@ -58,19 +57,13 @@ module Language.InstSel.Graphs.Base
   , addNewDtFlowEdges
   , addNewDomEdge
   , addNewDomEdges
-  , addNewPostDomEdge
-  , addNewPostDomEdges
   , addNewStFlowEdge
   , addNewStFlowEdges
   , addNewNode
   , areInEdgesEquivalent
   , areOutEdgesEquivalent
   , computeDomSets
-  , computeIDomSets
-  , computePostDomSets
-  , computeIPostDomSets
   , convertDomSetN2ID
-  , convertPostDomSetN2ID
   , convertMappingN2ID
   , convertMatchN2ID
   , copyNodeLabel
@@ -99,8 +92,6 @@ module Language.InstSel.Graphs.Base
   , getDtFlowOutEdges
   , getDomInEdges
   , getDomOutEdges
-  , getPostDomInEdges
-  , getPostDomOutEdges
   , getStFlowInEdges
   , getStFlowOutEdges
   , getEdgeType
@@ -132,7 +123,6 @@ module Language.InstSel.Graphs.Base
   , isDataFlowEdge
   , isDataNode
   , isDomEdge
-  , isPostDomEdge
   , isEntityNode
   , isInGraph
   , isLabelNode
@@ -145,7 +135,6 @@ module Language.InstSel.Graphs.Base
   , isOfDataFlowEdgeType
   , isOfDataNodeType
   , isOfDomEdgeType
-  , isOfPostDomEdgeType
   , isOfLabelNodeType
   , isOfPhiNodeType
   , isOfStateFlowEdgeType
@@ -273,7 +262,6 @@ data EdgeType
   | DataFlowEdge
   | StateFlowEdge
   | DomEdge
-  | PostDomEdge
   deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
@@ -299,18 +287,17 @@ newtype Match n
   = Match (S.Set (Mapping n))
   deriving (Show, Eq)
 
--- | Represents a dominator set. If the set represents an immediate-dominator
--- set, then only one node will appear in the set of dominated entities.
+-- | Represents a dominator set.
 data DomSet t
   = DomSet
       { domNode :: t
-        -- ^ The dominator entity.
+        -- ^ The item that this dominator set concerns.
       , domSet :: [t]
-        -- ^ The dominated entities.
+        -- ^ The items that dominate this item.
+      , invDomSet :: [t]
+        -- ^ The items dominated by this item.
       }
   deriving (Show)
-
-type PostDomSet = DomSet
 
 
 
@@ -416,7 +403,6 @@ instance FromJSON EdgeType where
                 "data" -> return DataFlowEdge
                 "stat" -> return StateFlowEdge
                 "dom"  -> return DomEdge
-                "pdom" -> return PostDomEdge
                 _      -> mzero
   parseJSON _ = mzero
 
@@ -425,7 +411,6 @@ instance ToJSON EdgeType where
   toJSON DataFlowEdge    = "data"
   toJSON StateFlowEdge   = "stat"
   toJSON DomEdge         = "dom"
-  toJSON PostDomEdge     = "pdom"
 
 instance FromJSON EdgeNr where
   parseJSON v = EdgeNr <$> parseJSON v
@@ -437,13 +422,15 @@ instance FromJSON (DomSet NodeID) where
   parseJSON (Object v) =
     DomSet
       <$> v .: "node"
-      <*> v .: "domset"
+      <*> v .: "dom-set"
+      <*> v .: "dom-set-inv"
   parseJSON _ = mzero
 
 instance ToJSON (DomSet NodeID) where
   toJSON d =
-    object [ "node"   .= (domNode d)
-           , "domset" .= (domSet d)
+    object [ "node"        .= (domNode d)
+           , "dom-set"     .= (domSet d)
+           , "dom-set-inv" .= (invDomSet d)
            ]
 
 instance FromJSON (Match NodeID) where
@@ -563,9 +550,6 @@ isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
 isDomEdge :: Edge -> Bool
 isDomEdge = isOfDomEdgeType . getEdgeType
 
-isPostDomEdge :: Edge -> Bool
-isPostDomEdge = isOfPostDomEdgeType . getEdgeType
-
 isOfDataFlowEdgeType :: EdgeType -> Bool
 isOfDataFlowEdgeType DataFlowEdge = True
 isOfDataFlowEdgeType _ = False
@@ -581,10 +565,6 @@ isOfStateFlowEdgeType _ = False
 isOfDomEdgeType :: EdgeType -> Bool
 isOfDomEdgeType DomEdge = True
 isOfDomEdgeType _ = False
-
-isOfPostDomEdgeType :: EdgeType -> Bool
-isOfPostDomEdgeType PostDomEdge = True
-isOfPostDomEdgeType _ = False
 
 -- | Creates an empty graph.
 mkEmpty :: Graph
@@ -870,12 +850,6 @@ addNewDomEdge = addNewEdge DomEdge
 addNewDomEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewDomEdges = addNewEdges DomEdge
 
-addNewPostDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewPostDomEdge = addNewEdge PostDomEdge
-
-addNewPostDomEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
-addNewPostDomEdges = addNewEdges PostDomEdge
-
 -- | Inserts a new node along an existing edge in the graph, returning both the
 -- new graph and the new node. The existing edge will be split into two edges
 -- which will be connected to the new node. The edge numbers will be retained as
@@ -960,10 +934,6 @@ getStFlowInEdges g n = filter isStateFlowEdge $ getInEdges g n
 getDomInEdges :: Graph -> Node -> [Edge]
 getDomInEdges g n = filter isDomEdge $ getInEdges g n
 
--- | Gets all inbound postdominance edges to a particular node.
-getPostDomInEdges :: Graph -> Node -> [Edge]
-getPostDomInEdges g n = filter isPostDomEdge $ getInEdges g n
-
 -- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
 getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
@@ -983,10 +953,6 @@ getStFlowOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
 -- | Gets all outbound dominance edges to a particular node.
 getDomOutEdges :: Graph -> Node -> [Edge]
 getDomOutEdges g n = filter isDomEdge $ getOutEdges g n
-
--- | Gets all outbound postdominance edges to a particular node.
-getPostDomOutEdges :: Graph -> Node -> [Edge]
-getPostDomOutEdges g n = filter isPostDomEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
 getEdges :: Graph -> SrcNode -> DstNode -> [Edge]
@@ -1018,11 +984,8 @@ convertDomSetN2ID d =
   DomSet
     { domNode = getNodeID $ domNode d
     , domSet = map getNodeID (domSet d)
+    , invDomSet = map getNodeID (invDomSet d)
     }
-
--- | Converts a postdominator set of nodes into a postdominator set of node IDs.
-convertPostDomSetN2ID :: PostDomSet Node -> PostDomSet NodeID
-convertPostDomSetN2ID = convertDomSetN2ID
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
 convertMappingN2ID :: Mapping Node -> Mapping NodeID
@@ -1440,39 +1403,16 @@ findFNInMapping st pn =
 -- | Computes the dominator sets for a given graph and root node.
 computeDomSets :: Graph -> Node -> [DomSet Node]
 computeDomSets (Graph g) n =
-  let dom_sets = I.dom g (getIntNodeID n)
-      f (n1, ns2) = DomSet
-                      { domNode = fromJust $ getNodeWithIntNodeID g n1
-                      , domSet = map (fromJust . getNodeWithIntNodeID g) ns2
-                      }
-  in map f dom_sets
-
--- | Computes the immediate-dominator sets for a given graph and root node.
-computeIDomSets :: Graph -> Node -> [PostDomSet Node]
-computeIDomSets (Graph g) n =
-  let idom_maps = I.iDom g (getIntNodeID n)
-      f (n1, n2) = DomSet
-                     { domNode = fromJust $ getNodeWithIntNodeID g n1
-                     , domSet = [fromJust $ getNodeWithIntNodeID g n2]
-                     }
-  in map f idom_maps
-
--- | Reverses the direction of all edges in the given graph.
-reverseAllEdges :: Graph -> Graph
-reverseAllEdges g =
-  let nodes = getAllNodes g
-      old_edges = getAllEdges g
-      new_edges =
-        map (\(Edge (src, dst, label)) -> Edge (dst, src, label)) old_edges
-  in mkGraph nodes new_edges
-
--- | Computes the postdominator sets for a given graph and sink node.
-computePostDomSets :: Graph -> Node -> [PostDomSet Node]
-computePostDomSets g n = computeDomSets (reverseAllEdges g) n
-
--- | Computes the immediate-postdominator sets for a given graph and sink node.
-computeIPostDomSets :: Graph -> Node -> [DomSet Node]
-computeIPostDomSets g n = computeIDomSets (reverseAllEdges g) n
+  let toNode = fromJust . getNodeWithIntNodeID g
+      doms = map (\(n1, ns2) -> (toNode n1, map toNode ns2))
+                 (I.dom g (getIntNodeID n))
+      mkDomSet (dom_node, dom_set) =
+        DomSet { domNode = dom_node
+               , domSet = dom_set
+               , invDomSet =
+                   map fst $ filter (\(_, ns) -> dom_node `elem` ns) doms
+               }
+  in map mkDomSet doms
 
 -- | Extracts the control-flow graph from a graph. If there are no label nodes
 -- in the graph, an empty graph is returned.

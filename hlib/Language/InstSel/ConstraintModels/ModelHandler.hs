@@ -25,13 +25,9 @@ import Language.InstSel.Constraints
 import Language.InstSel.Constraints.ConstraintReconstructor
 import Language.InstSel.Graphs
   hiding
-  ( computeDomSets
-  , computePostDomSets
-  )
+  ( computeDomSets )
 import qualified Language.InstSel.Graphs as G
-  ( computeDomSets
-  , computePostDomSets
-  )
+  ( computeDomSets )
 import Language.InstSel.OpStructures
 import Language.InstSel.Functions
   ( Function (..)
@@ -80,24 +76,14 @@ mkHLFunctionParams function =
         filter
           (\n -> isOperationNode n && (not $ isCopyNode n))
           (getAllNodes graph)
-      dom_edge_data =
+      dom_edges =
         map
-          ( \e ->
-              ( getNodeID $ getSourceNode graph e
-              , getNodeID $ getTargetNode graph e
-              )
+          ( \e -> ( getNodeID $ getSourceNode graph e
+                  , getNodeID $ getTargetNode graph e
+                  )
           )
           (filter isDomEdge (getAllEdges graph))
-      pdom_edge_data =
-        map
-          ( \e ->
-              ( getNodeID $ getTargetNode graph e
-              , getNodeID $ getSourceNode graph e
-              )
-          )
-          (filter isPostDomEdge (getAllEdges graph))
       domsets = computeDomSets graph entry_label
-      pdomsets = computePostDomSets graph
       getExecFreq n =
         fromJust $
           lookup
@@ -109,9 +95,7 @@ mkHLFunctionParams function =
        , hlFunLabelNodes = nodeIDsByType isLabelNode
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
-       , hlFunLabelPostDomSets = map convertPostDomSetN2ID pdomsets
-       , hlFunDomEdges = dom_edge_data
-       , hlFunPostDomEdges = pdom_edge_data
+       , hlFunDomEdges = dom_edges
        , hlFunBasicBlockParams =
            map
              ( \n -> HighLevelBasicBlockParams
@@ -239,12 +223,10 @@ lowerHighLevelModel model ai_maps =
       getAIFromMatchID mid = fromJust $ findAIFromMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
       sortByAI get_ai_f nids =
-        map
-          snd
-          ( sortBy
-              (\(ai1, _) (ai2, _) -> compare ai1 ai2)
-              (pairWithAI get_ai_f nids)
-          )
+        map snd
+            ( sortBy (\(ai1, _) (ai2, _) -> compare ai1 ai2)
+                     (pairWithAI get_ai_f nids)
+            )
       f_params = hlFunctionParams model
       tm_params = hlMachineParams model
       m_params = sortByAI (getAIFromMatchID . hlMatchID) (hlMatchParams model)
@@ -255,35 +237,27 @@ lowerHighLevelModel model ai_maps =
        , llFunEntryLabelNode =
            getAIFromLabelNodeID $ hlFunEntryLabelNode f_params
        , llFunLabelDomSets =
-           map
-             (\d -> map getAIFromLabelNodeID (domSet d))
-             ( sortByAI
-                 (getAIFromLabelNodeID . domNode)
-                 (hlFunLabelDomSets f_params)
-             )
-       , llFunLabelPostDomSets =
-           map
-             (\d -> map getAIFromLabelNodeID (domSet d))
-             ( sortByAI
-                 (getAIFromLabelNodeID . domNode)
-                 (hlFunLabelPostDomSets f_params)
-             )
-       , llFunLabelDomEdges =
-           map
-             ( \n ->
-               map
-                 (getAIFromEntityNodeID . snd)
-                 (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
-             )
-             (sortByAI id (hlFunLabelNodes f_params))
-       , llFunLabelPostDomEdges =
-           map
-             ( \n ->
-               map
-                 (getAIFromEntityNodeID . snd)
-                 (filter (\(n', _) -> n == n') (hlFunPostDomEdges f_params))
-             )
-             (sortByAI id (hlFunLabelNodes f_params))
+           map (\d -> map getAIFromLabelNodeID (domSet d))
+               ( sortByAI (getAIFromLabelNodeID . domNode)
+                          (hlFunLabelDomSets f_params)
+               )
+       , llFunLabelInvDomSets =
+           map (\d -> map getAIFromLabelNodeID (invDomSet d))
+               ( sortByAI (getAIFromLabelNodeID . domNode)
+                          (hlFunLabelDomSets f_params)
+               )
+       , llFunLabelToEntityDomEdges =
+           map ( \n ->
+                 map (getAIFromEntityNodeID . snd)
+                     (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
+               )
+               (sortByAI id (hlFunLabelNodes f_params))
+       , llFunEntityToLabelDomEdges =
+           map ( \n ->
+                 map (getAIFromEntityNodeID . fst)
+                     (filter (\(_, n') -> n == n') (hlFunDomEdges f_params))
+               )
+               (sortByAI id (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
            map
              hlBBExecFrequency
@@ -392,46 +366,8 @@ findArrayIndexInList ai_list nid =
      then Just $ toArrayIndex $ fromJust index
      else Nothing
 
-computeDomSets :: Graph -> NodeID -> [PostDomSet Node]
+computeDomSets :: Graph -> NodeID -> [DomSet Node]
 computeDomSets g root_id =
   let cfg = extractCFG g
       root_n = head $ findNodesWithNodeID cfg root_id
   in G.computeDomSets cfg root_n
-
--- | The postdominator sets are computed in two stages. In the first stage, a
--- sink is added and a control-flow edge is added to it from every label node
--- with no successors. The postdominator set is then computed for this graph.
--- If there are any label nodes which are not postdominated by the sink, a
--- control-flow edge is added from every such label node to the sink, and the
--- postdominator set is then recomputed on the new graph.
---
--- The reason for doing this is because infinite loops will always have
--- successors and thus not get the first control-flow edge to the sink. The
--- second stage is to detect such loops and ensure to fix the erroneous
--- postdominator sets. Note that the new postdominator sets will not be complete
--- for label nodes that appear in the infinite loops, but at least they will not
--- be incorrect.
-computePostDomSets :: Graph -> [PostDomSet Node]
-computePostDomSets g =
-  let cfg0 = extractCFG g
-      lnodes_wo_succ = filter (not . hasAnySuccessors cfg0) (getAllNodes cfg0)
-      (cfg1, sink) = addNewNode (LabelNode mkEmptyBBLabel) cfg0
-      cfg2 = addNewCtrlFlowEdges (zip lnodes_wo_succ (repeat sink)) cfg1
-      pdomsets = G.computePostDomSets cfg2 sink
-      pdomsets_wo_sink = filter (\s -> sink `notElem` domSet s) pdomsets
-  in if null pdomsets_wo_sink
-     then removeSinkFromPostDomSets pdomsets sink
-     else let lnodes_wo_sink = map domNode pdomsets_wo_sink
-              cfg3 = addNewCtrlFlowEdges (zip lnodes_wo_sink (repeat sink)) cfg2
-              new_pdomsets = G.computePostDomSets cfg3 sink
-          in removeSinkFromPostDomSets new_pdomsets sink
-
-removeSinkFromPostDomSets :: [PostDomSet Node] -> Node -> [PostDomSet Node]
-removeSinkFromPostDomSets sets n =
-  mapMaybe
-    ( \set ->
-      if domNode set == n
-      then Nothing
-      else Just set { domSet = [ i | i <- domSet set, i /= n ] }
-    )
-    sets

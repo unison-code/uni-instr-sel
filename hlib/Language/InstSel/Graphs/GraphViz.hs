@@ -145,7 +145,6 @@ mkEdgeAttrByType ControlFlowEdge = mkControlFlowEdgeAttr
 mkEdgeAttrByType DataFlowEdge = mkDataFlowEdgeAttr
 mkEdgeAttrByType StateFlowEdge = mkStateFlowEdgeAttr
 mkEdgeAttrByType DomEdge = mkDomEdgeAttr
-mkEdgeAttrByType PostDomEdge = mkPostDomEdgeAttr
 
 mkControlFlowEdgeAttr :: GV.Attributes
 mkControlFlowEdgeAttr = [GV.style GV.solid, thickWidthAttr]
@@ -158,9 +157,6 @@ mkStateFlowEdgeAttr = [GV.style GV.solid]
 
 mkDomEdgeAttr :: GV.Attributes
 mkDomEdgeAttr = [GV.style GV.dotted]
-
-mkPostDomEdgeAttr :: GV.Attributes
-mkPostDomEdgeAttr = mkDomEdgeAttr
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
