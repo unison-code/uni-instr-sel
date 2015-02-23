@@ -127,7 +127,7 @@ array[allOperationsInFunction] of var allMatchesPlusInactive: cov;
 
 % Entity node definitions, register allocation, and immediate values.
 array[allEntitiesInFunction] of var allMatchesPlusInactive: defm;
-array[allEntitiesInFunction] of var allLabelsInFunctionPlusDummy: defbb;
+array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: defbb;
 array[allEntitiesInFunction] of var allRegValues: reg;
 array[allEntitiesInFunction] of var int: cnst;
 
@@ -260,8 +260,11 @@ constraint
     )
   );
 
-% Entities defined by a selected match must be defined in some basic block that
-% is dominated by the basic block in which the match is placed.
+% Entities defined by a selected match must be defined in the basic blocks
+% consisting of the union between the basic block to which the match is
+% allocated and the set of basic blocks that appear as label nodes in the
+% pattern. Due to the restrctions of Minizinc, however, we need to reformulate
+% this constraint a bit in order to achieve this effect.
 constraint
   forall (m in allMatches)
   (
@@ -269,7 +272,32 @@ constraint
     ->
     forall (e in entitiesDefinedByMatch[m])
     (
-      defbb[e] in invDomSetOfLabelInFunction[bb[m]]
+      if (card(entryLabelOfMatch[m]) > 0)
+      then
+        let { set of allLabelsInFunction: labels_in_m =
+                entryLabelOfMatch[m] union nonEntryLabelsInMatch[m]
+            }
+        in defbb[e] == labels_in_m
+      else
+        bb[m] in defbb[e] /\ card(defbb[e]) == 1
+      endif
+    )
+  );
+
+
+constraint
+  forall (e in allEntitiesInFunction)
+  (
+    forall (l in allLabelsInFunction)
+    (
+      l in defbb[e]
+      ->
+      exists (m in allMatches)
+      (
+        sel[m]
+        /\
+        (l == bb[m] \/ l in nonEntryLabelsInMatch[m])
+      )
     )
   );
 
@@ -281,7 +309,12 @@ constraint
   (
     forall (e in domEdgesToLabelInFunction[l])
     (
-      l in domSetOfLabelInFunction[defbb[e]]
+      exists (k in allLabelsInFunction)
+      (
+        k in defbb[e]
+        /\
+        k in domSetOfLabelInFunction[l]
+      )
     )
   );
 
@@ -293,7 +326,12 @@ constraint
   (
     forall (e in domEdgesFromLabelInFunction[l])
     (
-      l in invDomSetOfLabelInFunction[defbb[e]]
+      exists (k in allLabelsInFunction)
+      (
+        k in defbb[e]
+        /\
+        k in invDomSetOfLabelInFunction[l]
+      )
     )
   );
 
@@ -304,7 +342,7 @@ constraint
   (
     defm[e] == matchValueForInactive
     <->
-    defbb[e] == labelValueForDummy
+    defbb[e] == {labelValueForDummy}
   );
 
 % Enforce that, for every selected match, every use of an entity has a
@@ -317,7 +355,12 @@ constraint
     ->
     forall (e in entitiesUsedByMatch[m])
     (
-      defbb[e] in domSetOfLabelInFunction[bb[m]]
+      exists (l in allLabelsInFunctionPlusDummy)
+      (
+        l in defbb[e]
+        /\
+        l in domSetOfLabelInFunction[bb[m]]
+      )
     )
   );
 
@@ -423,7 +466,11 @@ constraint
 solve ::
 seq_search
   ( % Improves solving time.
-    [ int_search (cov, first_fail, indomain_min, complete) ]
+    [ int_search (ord, first_fail, indomain_min, complete)
+    , bool_search (sel, first_fail, indomain_min, complete)
+    , int_search (cov, first_fail, indomain_min, complete)
+    , int_search (bb, first_fail, indomain_min, complete)
+    ]
   )
 minimize cost;
 
