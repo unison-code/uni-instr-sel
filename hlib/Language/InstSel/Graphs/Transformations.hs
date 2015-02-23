@@ -40,8 +40,8 @@ import Data.Maybe
 -- edges to retain the same semantics of the original graph. This means that if
 -- there is a dominance edge $e$ that involves a data node used by a phi node,
 -- then upon copy extension $e$ will be moved to the new data node. Otherwise
--- $e$ will remain on the original data node. Note that postdominance edges are
--- not affected.
+-- $e$ will remain on the original data node. Note that dominance edges where
+-- the target is a data node are not affected.
 --
 -- The new data nodes will not have any origin, and will be of any data type.
 copyExtendWhen
@@ -60,7 +60,8 @@ copyExtendWhen f g =
 -- | Inserts a new copy and data node along a given data flow edge. If the data
 -- node is used by a phi node, and there is a dominance edge on that data node,
 -- then the dominance edge with matching out-edge number will be moved to the
--- new data node. Note that postdominance edges are not affected.
+-- new data node. Note that dominance edges where the target is a data node are
+-- not affected.
 insertCopy :: Graph -> Edge -> Graph
 insertCopy g0 df_edge =
   let orig_d_node = getSourceNode g0 df_edge
