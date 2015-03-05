@@ -68,7 +68,11 @@ include "params.mzn";
 
 % Number of indices in the match-to-destination label node mappings
 % (a negative value indicates absence of a valid index).
-int: numMatchLabelMappings = max([ i | i in indexOfMatchLabelMapping ]) + 1;
+int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
+                                  | i in allMatches
+                                  , j in allLabelsInFunction
+                                  ]
+                                ) + 1;
 
 % Total number of registers values (additional values will be needed for
 % representing certain settings, such as whether the value is an intermediate
@@ -196,7 +200,7 @@ constraint
        in counts[i] == 0 \/ counts[i] == card(operationsCoveredByMatch[m])
      )
      /\
-     global_cardinality(cov, [ m | m in allMatches ], counts);
+     global_cardinality(cov, allMatches, counts);
 
 % A match is selected if and only if some operation is covered by that match, or
 % if some entity is defined by that match.
