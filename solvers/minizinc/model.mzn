@@ -255,7 +255,7 @@ constraint
 constraint
   forall (m in allMatches)
   (
-    % If a match has no root label, then this set will be empty and hence there
+    % If a match has no entry label, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
     % entry.
     forall (r in entryLabelOfMatch[m])
