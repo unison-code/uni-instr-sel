@@ -6,9 +6,16 @@ Written by Gabriel Hjort Blindell <ghb@kth.se>
 = HOW TO INSTALL
 =================
 
-The Haskell code relies on the following packages:
+The Haskell code relies on the following packages that needs to be install
+manually using cabal:
 
- - llvm-general (3.4.*.*)
+ - aeson
+ - atto-lisp
+ - cmdargs
+ - graphviz
+ - llvm-general-3.4.4.2
+ - shelly
+ - split
 
 The 'llvm-general' package requires LLVM 3.4 to be installed. LLVM *must* be
 installed such that it can be invoked from any location or else the package will
@@ -24,7 +31,7 @@ To install LLVM 3.4, run the following commands:
    cd ../..
    mkdir build
    cd build
-   ../llvm/configure --enable-shared
+   ../llvm/configure --enable-shared --enable-optimized
    make
    sudo make install
 
