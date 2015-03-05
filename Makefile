@@ -30,26 +30,27 @@
 
 UNIPATH := uni-is
 SOLVERSPATH := solvers
+TOOLSPATH := tools
 
 
 #=======
 # RULES
 #=======
 
-.PHONY: uni-is
-uni-is:
+.PHONY: build
+build:
 	cd $(UNIPATH) && make
-
-.PHONY: solvers
-solvers:
 	cd $(SOLVERSPATH) && make
+	cd $(TOOLSPATH) && make
 
 .PHONY: clean
 clean:
 	cd $(UNIPATH) && make clean
 	cd $(SOLVERSPATH) && make clean
+	cd $(TOOLSPATH) && make clean
 
 .PHONY: distclean
 distclean:
 	cd $(UNIPATH) && make distclean
 	cd $(SOLVERSPATH) && make distclean
+	cd $(TOOLSPATH) && make distclean
