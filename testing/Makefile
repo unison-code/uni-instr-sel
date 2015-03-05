@@ -20,8 +20,7 @@ PRETTIFY := ../tools/prettify-json
 
 .PHONY: build-toolchain
 build-toolchain:
-	cd ../uni-is && make
-	cd ../solvers && make
+	cd .. && make
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
