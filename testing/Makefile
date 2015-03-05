@@ -25,8 +25,8 @@ TARGET := mips32
 
 .SECONDARY:
 
-.PHONY: build-toolchain
-build-toolchain:
+.PHONY: build
+build:
 	cd .. && make
 
 .PHONY: clean-toolchain
