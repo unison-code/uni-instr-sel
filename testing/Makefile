@@ -18,9 +18,10 @@ PRETTIFY := ../tools/prettify-json
 
 .SECONDARY:
 
-.PHONY: uni-is
-uni-is:
+.PHONY: build-toolchain
+build-toolchain:
 	cd ../uni-is && make
+	cd ../solvers && make
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
