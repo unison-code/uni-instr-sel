@@ -23,8 +23,8 @@ import qualified Language.InstrSel.Drivers.MakeAssemblyCode
   as MakeAssemblyCode
 import qualified Language.InstrSel.Drivers.MakeCPModel
   as MakeCPModel
-import qualified Language.InstrSel.Drivers.MakeFunctionFromLLVM
-  as MakeFunctionFromLLVM
+--import qualified Language.InstrSel.Drivers.MakeFunctionFromLLVM
+--  as MakeFunctionFromLLVM
 import qualified Language.InstrSel.Drivers.MakePatternMatchset
   as MakePatternMatchset
 
@@ -41,9 +41,9 @@ dispatch :: MakeAction -> Options -> IO [Output]
 dispatch a opts
   | a == MakeNothing =
       reportError "No make action provided."
-  | a `elem` [MakeFunctionGraphFromLLVM] =
-      do content <- loadFunctionFileContent opts
-         MakeFunctionFromLLVM.run a content
+--  | a `elem` [MakeFunctionGraphFromLLVM] =
+--      do content <- loadFunctionFileContent opts
+--         MakeFunctionFromLLVM.run a content
   | a `elem` [MakePatternMatchset] =
       do function <- loadFunctionFromJson opts
          tid <- getSelectedTargetMachineID opts
