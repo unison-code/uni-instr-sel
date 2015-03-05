@@ -24,13 +24,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-import Language.InstSel.Drivers
-import qualified Language.InstSel.Drivers.CheckDispatcher as Check
-import qualified Language.InstSel.Drivers.MakeDispatcher as Make
-import qualified Language.InstSel.Drivers.PlotDispatcher as Plot
-import qualified Language.InstSel.Drivers.TransformDispatcher as Transform
+import Language.InstrSel.Drivers
+import qualified Language.InstrSel.Drivers.CheckDispatcher as Check
+import qualified Language.InstrSel.Drivers.MakeDispatcher as Make
+import qualified Language.InstrSel.Drivers.PlotDispatcher as Plot
+import qualified Language.InstrSel.Drivers.TransformDispatcher as Transform
 
-import Language.InstSel.Utils
+import Language.InstrSel.Utils
   ( splitOn
   , toLower
   )
