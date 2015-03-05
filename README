@@ -2,28 +2,17 @@ Written by Gabriel Hjort Blindell <ghb@kth.se>
 
 
 
-=================
-= HOW TO INSTALL
-=================
+===============
+= HOW TO BUILD
+===============
 
-The Haskell code relies on the following packages that needs to be install
-manually using cabal:
+First, LLVM 3.4 needs to be installed on the machine. LLVM *must* be installed
+such that it can be invoked from any location or else a necessary Haskell
+package will fail to be installed. (I've tried to keep LLVM in the home
+directory, but no matter which flags I set to Cabal the package will just refuse
+to recognize that the correct version of LLVM is installed.)
 
- - aeson
- - atto-lisp
- - cmdargs
- - graphviz
- - llvm-general-3.4.4.2
- - shelly
- - split
-
-The 'llvm-general' package requires LLVM 3.4 to be installed. LLVM *must* be
-installed such that it can be invoked from any location or else the package will
-fail to be installed. (I've tried to keep LLVM in the home directory, but no
-matter which flags I set to Cabal the package will just refuse to recognize that
-the correct version of LLVM is installed.)
-
-To install LLVM 3.4, run the following commands:
+To download and install LLVM 3.4, run the following commands:
 
    svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_34/final llvm
    cd llvm/tools
@@ -35,6 +24,24 @@ To install LLVM 3.4, run the following commands:
    make
    sudo make install
 
-To install 'llvm-general', run the following commands:
+The last command installs the LLVM binaries in /usr/local.
 
-   sudo cabal install llvm-general
+Next you will need to install several Haskell packages using Cabal:
+
+ - aeson
+ - atto-lisp
+ - cmdargs
+ - graphviz
+ - llvm-general-3.4.4.2   (Take note of the explicit version!)
+ - shelly
+ - split
+
+To install a Haskell package with Cabal, run the following commands:
+
+   sudo cabal install <package>
+
+Now you will need to build the toolchain, which is done by running the following
+commands from the folder where this file is located:
+
+   make uni-is
+   make solvers
