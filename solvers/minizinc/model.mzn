@@ -288,7 +288,9 @@ constraint
     )
   );
 
-
+% For every label wherein an entity is defined, there must exist some selected
+% match such that it is either placed in that label or that label is part of
+% one of the labels that appear in the selected match.
 constraint
   forall (e in allEntitiesInFunction)
   (
