@@ -171,8 +171,8 @@ include "inverse.mzn";
 % CONSTRAINTS
 %============
 
-% Restrict the initial domains of 'cov', 'ddefm', and 'sdefm' such that matches
-% are not allowed to cover or define nodes which are not part of the match.
+% Restrict the initial domains of 'cov' and 'defm' such that matches are not
+% allowed to cover or define nodes which are not part of the match.
 constraint
   forall (m in allMatches)
   (
