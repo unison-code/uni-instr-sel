@@ -1,1 +1,838 @@
-{"inputs":[0],"name":"fact","op-struct":{"graph":{"edges":[[0,18,{"out-nr":1,"etype":"dom","in-nr":0}],[0,5,{"out-nr":1,"etype":"data","in-nr":1}],[0,2,{"out-nr":0,"etype":"data","in-nr":0}],[1,14,{"out-nr":1,"etype":"data","in-nr":1}],[1,2,{"out-nr":0,"etype":"data","in-nr":1}],[2,3,{"out-nr":0,"etype":"data","in-nr":0}],[3,19,{"out-nr":0,"etype":"data","in-nr":0}],[4,20,{"out-nr":0,"etype":"dom","in-nr":0}],[4,14,{"out-nr":1,"etype":"data","in-nr":0}],[4,5,{"out-nr":0,"etype":"data","in-nr":0}],[5,6,{"out-nr":0,"etype":"data","in-nr":0}],[6,13,{"out-nr":1,"etype":"data","in-nr":0}],[6,11,{"out-nr":0,"etype":"data","in-nr":0}],[7,20,{"out-nr":0,"etype":"dom","in-nr":1}],[7,20,{"out-nr":1,"etype":"dom","in-nr":2}],[7,16,{"out-nr":1,"etype":"data","in-nr":1}],[7,9,{"out-nr":0,"etype":"data","in-nr":0}],[8,18,{"out-nr":1,"etype":"dom","in-nr":2}],[8,18,{"out-nr":0,"etype":"dom","in-nr":1}],[8,16,{"out-nr":1,"etype":"data","in-nr":0}],[8,9,{"out-nr":0,"etype":"data","in-nr":1}],[9,10,{"out-nr":0,"etype":"data","in-nr":0}],[10,11,{"out-nr":0,"etype":"data","in-nr":1}],[11,7,{"out-nr":0,"etype":"data","in-nr":0}],[12,13,{"out-nr":0,"etype":"data","in-nr":1}],[13,4,{"out-nr":0,"etype":"data","in-nr":0}],[14,15,{"out-nr":0,"etype":"data","in-nr":0}],[15,22,{"out-nr":0,"etype":"data","in-nr":0}],[16,17,{"out-nr":0,"etype":"data","in-nr":0}],[17,23,{"out-nr":0,"etype":"data","in-nr":0}],[18,19,{"out-nr":0,"etype":"ctrl","in-nr":0}],[18,8,{"out-nr":2,"etype":"data","in-nr":0}],[18,1,{"out-nr":1,"etype":"data","in-nr":0}],[18,12,{"out-nr":3,"etype":"data","in-nr":0}],[18,0,{"out-nr":0,"etype":"data","in-nr":0}],[19,21,{"out-nr":1,"etype":"ctrl","in-nr":0}],[19,20,{"out-nr":0,"etype":"ctrl","in-nr":0}],[20,22,{"out-nr":0,"etype":"ctrl","in-nr":0}],[20,10,{"out-nr":1,"etype":"dom","in-nr":0}],[20,6,{"out-nr":0,"etype":"dom","in-nr":0}],[21,23,{"out-nr":0,"etype":"ctrl","in-nr":0}],[21,17,{"out-nr":0,"etype":"dom","in-nr":0}],[22,20,{"out-nr":0,"etype":"ctrl","in-nr":1}],[22,21,{"out-nr":1,"etype":"ctrl","in-nr":1}]],"nodes":[[0,{"id":0,"type":{"origin":"%n","dtype":"any","ntype":"data"}}],[1,{"id":1,"type":{"origin":"0","dtype":"i32","ntype":"data"}}],[2,{"id":2,"type":{"op":"si >","ntype":"comp"}}],[3,{"id":3,"type":{"origin":"%cmp4","dtype":"any","ntype":"data"}}],[4,{"id":4,"type":{"origin":"%dec","dtype":"any","ntype":"data"}}],[5,{"id":5,"type":{"ntype":"phi"}}],[6,{"id":6,"type":{"origin":"%i.06","dtype":"any","ntype":"data"}}],[7,{"id":7,"type":{"origin":"%mul","dtype":"any","ntype":"data"}}],[8,{"id":8,"type":{"origin":"1","dtype":"i32","ntype":"data"}}],[9,{"id":9,"type":{"ntype":"phi"}}],[10,{"id":10,"type":{"origin":"%res.05","dtype":"any","ntype":"data"}}],[11,{"id":11,"type":{"op":"i *","ntype":"comp"}}],[12,{"id":12,"type":{"origin":"-1","dtype":"i32","ntype":"data"}}],[13,{"id":13,"type":{"op":"i +","ntype":"comp"}}],[14,{"id":14,"type":{"op":"si >","ntype":"comp"}}],[15,{"id":15,"type":{"origin":"%cmp","dtype":"any","ntype":"data"}}],[16,{"id":16,"type":{"ntype":"phi"}}],[17,{"id":17,"type":{"origin":"%res.0.lcssa","dtype":"any","ntype":"data"}}],[18,{"id":18,"type":{"bb-label":"entry","ntype":"lab"}}],[19,{"id":19,"type":{"op":"cbr","ntype":"ctrl"}}],[20,{"id":20,"type":{"bb-label":"for.body","ntype":"lab"}}],[21,{"id":21,"type":{"bb-label":"for.end","ntype":"lab"}}],[22,{"id":22,"type":{"op":"cbr","ntype":"ctrl"}}],[23,{"id":23,"type":{"op":"ret","ntype":"ctrl"}}]]},"constraints":["(dnode-is-int-const (id 1))","(== (int-to-num (int 0)) (int-to-num (int-const-val-of-dnode (id 1))))","(dnode-is-int-const (id 8))","(== (int-to-num (int 1)) (int-to-num (int-const-val-of-dnode (id 8))))","(dnode-is-int-const (id 12))","(== (int-to-num (int -1)) (int-to-num (int-const-val-of-dnode (id 12))))"],"entry-label-node":18},"bb-exec-freqs":[["for.end",1],["for.body",20],["entry",1]]}
+
+{
+	"bb-exec-freqs" :
+	[
+		[ "for.end", 1 ],
+		[ "for.body", 20 ],
+		[ "entry", 1 ]
+	],
+	"inputs" : [ 0 ],
+	"name" : "fact",
+	"op-struct" :
+	{
+		"constraints" :
+		[
+			"(dnode-is-int-const (id 1))",
+			"(== (int-to-num (int 0)) (int-to-num (int-const-val-of-dnode (id 1))))",
+			"(dnode-is-int-const (id 8))",
+			"(== (int-to-num (int 1)) (int-to-num (int-const-val-of-dnode (id 8))))",
+			"(dnode-is-int-const (id 12))",
+			"(== (int-to-num (int -1)) (int-to-num (int-const-val-of-dnode (id 12))))"
+		],
+		"entry-label-node" : 18,
+		"graph" :
+		{
+			"edges" :
+			[
+
+				[
+					0,
+					18,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					0,
+					5,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					0,
+					2,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					1,
+					14,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					1,
+					2,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					2,
+					3,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					3,
+					19,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					4,
+					20,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					4,
+					14,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					4,
+					5,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					5,
+					6,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					6,
+					13,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					6,
+					11,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					7,
+					20,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					7,
+					20,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 2,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					7,
+					16,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					7,
+					9,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					8,
+					18,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 2,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					8,
+					18,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					8,
+					16,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					8,
+					9,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					9,
+					10,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					10,
+					11,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					11,
+					7,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					12,
+					13,
+
+					{
+						"etype" : "data",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					13,
+					4,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					14,
+					15,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					15,
+					22,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					16,
+					17,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					17,
+					23,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					18,
+					19,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					18,
+					8,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 2
+					}
+				],
+
+				[
+					18,
+					1,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					18,
+					12,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 3
+					}
+				],
+
+				[
+					18,
+					0,
+
+					{
+						"etype" : "data",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					19,
+					21,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					19,
+					20,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					20,
+					22,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					20,
+					10,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 0,
+						"out-nr" : 1
+					}
+				],
+
+				[
+					20,
+					6,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					21,
+					23,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					21,
+					17,
+
+					{
+						"etype" : "dom",
+						"in-nr" : 0,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					22,
+					20,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 1,
+						"out-nr" : 0
+					}
+				],
+
+				[
+					22,
+					21,
+
+					{
+						"etype" : "ctrl",
+						"in-nr" : 1,
+						"out-nr" : 1
+					}
+				]
+			],
+			"nodes" :
+			[
+
+				[
+					0,
+
+					{
+						"id" : 0,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%n"
+						}
+					}
+				],
+
+				[
+					1,
+
+					{
+						"id" : 1,
+						"type" :
+						{
+							"dtype" : "i32",
+							"ntype" : "data",
+							"origin" : "0"
+						}
+					}
+				],
+
+				[
+					2,
+
+					{
+						"id" : 2,
+						"type" :
+						{
+							"ntype" : "comp",
+							"op" : "si >"
+						}
+					}
+				],
+
+				[
+					3,
+
+					{
+						"id" : 3,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%cmp4"
+						}
+					}
+				],
+
+				[
+					4,
+
+					{
+						"id" : 4,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%dec"
+						}
+					}
+				],
+
+				[
+					5,
+
+					{
+						"id" : 5,
+						"type" :
+						{
+							"ntype" : "phi"
+						}
+					}
+				],
+
+				[
+					6,
+
+					{
+						"id" : 6,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%i.06"
+						}
+					}
+				],
+
+				[
+					7,
+
+					{
+						"id" : 7,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%mul"
+						}
+					}
+				],
+
+				[
+					8,
+
+					{
+						"id" : 8,
+						"type" :
+						{
+							"dtype" : "i32",
+							"ntype" : "data",
+							"origin" : "1"
+						}
+					}
+				],
+
+				[
+					9,
+
+					{
+						"id" : 9,
+						"type" :
+						{
+							"ntype" : "phi"
+						}
+					}
+				],
+
+				[
+					10,
+
+					{
+						"id" : 10,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%res.05"
+						}
+					}
+				],
+
+				[
+					11,
+
+					{
+						"id" : 11,
+						"type" :
+						{
+							"ntype" : "comp",
+							"op" : "i *"
+						}
+					}
+				],
+
+				[
+					12,
+
+					{
+						"id" : 12,
+						"type" :
+						{
+							"dtype" : "i32",
+							"ntype" : "data",
+							"origin" : "-1"
+						}
+					}
+				],
+
+				[
+					13,
+
+					{
+						"id" : 13,
+						"type" :
+						{
+							"ntype" : "comp",
+							"op" : "i +"
+						}
+					}
+				],
+
+				[
+					14,
+
+					{
+						"id" : 14,
+						"type" :
+						{
+							"ntype" : "comp",
+							"op" : "si >"
+						}
+					}
+				],
+
+				[
+					15,
+
+					{
+						"id" : 15,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%cmp"
+						}
+					}
+				],
+
+				[
+					16,
+
+					{
+						"id" : 16,
+						"type" :
+						{
+							"ntype" : "phi"
+						}
+					}
+				],
+
+				[
+					17,
+
+					{
+						"id" : 17,
+						"type" :
+						{
+							"dtype" : "any",
+							"ntype" : "data",
+							"origin" : "%res.0.lcssa"
+						}
+					}
+				],
+
+				[
+					18,
+
+					{
+						"id" : 18,
+						"type" :
+						{
+							"bb-label" : "entry",
+							"ntype" : "lab"
+						}
+					}
+				],
+
+				[
+					19,
+
+					{
+						"id" : 19,
+						"type" :
+						{
+							"ntype" : "ctrl",
+							"op" : "cbr"
+						}
+					}
+				],
+
+				[
+					20,
+
+					{
+						"id" : 20,
+						"type" :
+						{
+							"bb-label" : "for.body",
+							"ntype" : "lab"
+						}
+					}
+				],
+
+				[
+					21,
+
+					{
+						"id" : 21,
+						"type" :
+						{
+							"bb-label" : "for.end",
+							"ntype" : "lab"
+						}
+					}
+				],
+
+				[
+					22,
+
+					{
+						"id" : 22,
+						"type" :
+						{
+							"ntype" : "ctrl",
+							"op" : "cbr"
+						}
+					}
+				],
+
+				[
+					23,
+
+					{
+						"id" : 23,
+						"type" :
+						{
+							"ntype" : "ctrl",
+							"op" : "ret"
+						}
+					}
+				]
+			]
+		}
+	}
+}
+
