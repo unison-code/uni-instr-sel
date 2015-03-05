@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Gabriel Hjort Blindell <ghb@kth.se>
+# Copyright (c) 2013-2015, Gabriel Hjort Blindell <ghb@kth.se>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -201,15 +201,15 @@ endif
 
 .PHONY: clean
 clean:
-	-$(RM) $(all-unique-object-files)
+	$(RM) $(all-unique-object-files)
 
 .PHONY: clean-deps
 clean-deps:
-	-$(RM) $(all-unique-dep-files)
+	$(RM) $(all-unique-dep-files)
 
 .PHONY: distclean
 distclean: clean clean-deps
-	-$(RM) $(PROGRAMS)
+	$(RM) $(PROGRAMS)
 
 .PHONY: docs
 docs:
