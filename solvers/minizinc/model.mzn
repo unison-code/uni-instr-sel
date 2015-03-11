@@ -200,7 +200,7 @@ constraint
        in counts[i] == 0 \/ counts[i] == card(operationsCoveredByMatch[m])
      )
      /\
-     global_cardinality(cov, allMatches, counts);
+     global_cardinality(cov, [ m | m in allMatches ], counts);
 
 % A match is selected if and only if some operation is covered by that match, or
 % if some entity is defined by that match.
