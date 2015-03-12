@@ -7,6 +7,10 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
+CLANG    := /home/ghb/programs/llvm-3.4-build/Debug+Asserts/bin/clang
+LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
+OPT      := $(LLVMDIR)/bin/opt
+AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 UNI      := ../uni-is/uni-is
 SOLVER   := ../solvers/minizinc/solver
 PRETTIFY := ../tools/prettify-json
@@ -25,7 +29,13 @@ build-toolchain:
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
 
-%.f.json: %.ll
+%.ll: %.c
+	$(CLANG) -emit-llvm -S $< -o $@
+
+%.mll: %.ll
+	$(OPT) -load $(AEFMLIB) -mem2reg -attach-exec-freq-metadata -S $< -o $@
+
+%.f.json: %.mll
 	$(UNI) make --construct-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json

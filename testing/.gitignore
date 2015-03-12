@@ -5,6 +5,7 @@
 *.json
 *.s
 *.ll
+*.mll
 match-test
 test
 test-llvm
