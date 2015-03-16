@@ -151,19 +151,23 @@ print
 print "% Restrict node domains"
 init_node_doms = data["initial-node-domains"]
 for i in range(len(init_node_doms)):
+    node_set_str = "{" + ",".join([ str(n) for n in init_node_doms[i] ]) + "}"
     print "constraint"
-    print ( "  NP[" + str(i) + "] in {"
-          + ",".join([ str(n) for n in init_node_doms[i] ])
-          + "};"
+    print ( "  NP[" + str(i) + "] in " + node_set_str + "\n"
+          + "  /\\\n"
+          + "  card(" + node_set_str + ") > 0"
+          + ";"
           )
 print
 print "% Restrict edge domains"
 init_edge_doms = data["initial-edge-domains"]
 for i in range(len(init_edge_doms)):
+    edge_set_str = "{" + ",".join([ str(e) for e in init_edge_doms[i] ]) + "}"
     print "constraint"
-    print ( "  EP[" + str(i) + "] in {"
-          + ",".join([ str(e) for e in init_edge_doms[i] ])
-          + "};"
+    print ( "  EP[" + str(i) + "] in " + edge_set_str + "\n"
+          + "  /\\\n"
+          + "  card(" + edge_set_str + ") > 0"
+          + ";"
           )
 print
 print "% Restrict edge mappings involving alternative edges (if any)"
