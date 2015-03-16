@@ -659,6 +659,8 @@ mkInstructions =
     , ("blt", O.SIntOp O.LT, "bge", O.SIntOp O.GE)
     , ("bge", O.SIntOp O.GE, "blt", O.SIntOp O.LT)
     , ("ble", O.SIntOp O.LE, "bgt", O.SIntOp O.GT)
+    , ("beq", O.IntOp  O.Eq,  "bne", O.IntOp  O.NEq)
+    , ("bne", O.IntOp  O.NEq, "beq", O.IntOp  O.Eq)
     ]
   ++
   mkBrInstrs
