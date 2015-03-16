@@ -472,10 +472,9 @@ constraint
 solve ::
 seq_search
   ( % Improves solving time.
-    [ int_search (ord, first_fail, indomain_min, complete)
-    , bool_search (sel, first_fail, indomain_min, complete)
-    , int_search (cov, first_fail, indomain_min, complete)
+    [ bool_search (sel, first_fail, indomain_min, complete)
     , int_search (bb, first_fail, indomain_min, complete)
+    , int_search (ord, first_fail, indomain_min, complete)
     ]
   )
 minimize cost;
