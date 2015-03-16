@@ -103,6 +103,16 @@ parseArgs =
         &= explicit
         &= typ "TARGET"
         &= help "Name of a target machine."
+    , instructionID = def
+        &= name "instruction"
+        &= explicit
+        &= typ "ID"
+        &= help "ID of an instruction."
+    , patternID = def
+        &= name "pattern"
+        &= explicit
+        &= typ "ID"
+        &= help "ID of a pattern."
     , makeAction =
         enum [ MakeNothing
                  &= auto
@@ -186,6 +196,20 @@ parseArgs =
                  &= name "plot-fun-ssa-graph"
                  &= explicit
                  &= help "Plots the SSA graph (in DOT format) of a function."
+             , PlotPatternFullGraph
+                 &= name "plot-pat-full-graph"
+                 &= explicit
+                 &= help "Plots the full graph (in DOT format) of a pattern."
+             , PlotPatternControlFlowGraph
+                 &= name "plot-pat-cf-graph"
+                 &= explicit
+                 &= help ( "Plots the control flow graph (in DOT format) "
+                           ++ "of a pattern."
+                         )
+             , PlotPatternSSAGraph
+                 &= name "plot-pat-ssa-graph"
+                 &= explicit
+                 &= help "Plots the SSA graph (in DOT format) of a pattern."
              , PlotCoverAllMatches
                  &= name "plot-cover-all-matches"
                  &= explicit

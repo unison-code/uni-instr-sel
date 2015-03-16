@@ -51,4 +51,4 @@ run PlotFunctionControlFlowGraph fun = produceDotOutputWith extractCFG fun
 
 run PlotFunctionSSAGraph fun = produceDotOutputWith extractSSA fun
 
-run _ _ = reportError "PlotFunction: unsupported action"
+run _ _ = reportError "PlotFunctionGraphs: unsupported action"

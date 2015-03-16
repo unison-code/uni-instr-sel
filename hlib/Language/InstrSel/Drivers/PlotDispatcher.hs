@@ -47,8 +47,12 @@ dispatch a opts
              , PlotPatternControlFlowGraph
              , PlotPatternSSAGraph
              ] =
-      -- TODO: implement
-      undefined
+      do tmid <- getSelectedTargetMachineID opts
+         tm <- loadTargetMachine tmid
+         iid <- getSelectedInstructionID opts
+         pid <- getSelectedPatternID opts
+         pattern <- loadInstrPattern tm iid pid
+         PlotPatternGraphs.run a pattern
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts

@@ -45,6 +45,8 @@ data Options
       , arrayIndexMaplistsFile :: Maybe String
       , solutionFile :: Maybe String
       , targetName :: Maybe String
+      , instructionID :: Maybe Integer
+      , patternID :: Maybe Integer
       , outFile :: Maybe String
       , makeAction :: MakeAction
       , transformAction :: TransformAction

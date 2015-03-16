@@ -17,6 +17,8 @@ module Language.InstrSel.Drivers.DispatcherTools
   , module Language.InstrSel.Utils
   , module Language.InstrSel.Utils.IO
   , getSelectedTargetMachineID
+  , getSelectedInstructionID
+  , getSelectedPatternID
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
@@ -24,6 +26,7 @@ module Language.InstrSel.Drivers.DispatcherTools
   , loadPatternMatchsetFileContent
   , loadSolutionFileContent
   , loadTargetMachine
+  , loadInstrPattern
   , loadFromJson
   , loadFunctionFromJson
   , loadPatternMatchsetFromJson
@@ -34,9 +37,17 @@ import Language.InstrSel.Drivers.Base
 import Language.InstrSel.Functions
   ( Function )
 import Language.InstrSel.TargetMachines
-  ( TargetMachine
+  ( TargetMachine (..)
   , TargetMachineID
   , toTargetMachineID
+  , Instruction (..)
+  , InstructionID
+  , toInstructionID
+  , PatternID
+  , toPatternID
+  , InstrPattern
+  , findInstruction
+  , findInstrPattern
   )
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset )
@@ -108,10 +119,28 @@ loadSolutionFileContent =
 -- if no target is specified.
 getSelectedTargetMachineID :: Options -> IO TargetMachineID
 getSelectedTargetMachineID opts =
-  do let tid = targetName opts
-     when (isNothing tid) $
+  do let tmid = targetName opts
+     when (isNothing tmid) $
        reportError "No target machine provided."
-     return $ toTargetMachineID $ fromJust tid
+     return $ toTargetMachineID $ fromJust tmid
+
+-- | Returns the instruction ID specified on the command line. Reports error
+-- if no instruction is specified.
+getSelectedInstructionID :: Options -> IO InstructionID
+getSelectedInstructionID opts =
+  do let iid = instructionID opts
+     when (isNothing iid) $
+       reportError "No instruction ID provided."
+     return $ toInstructionID $ fromJust iid
+
+-- | Returns the pattern ID specified on the command line. Reports error
+-- if no pattern is specified.
+getSelectedPatternID :: Options -> IO PatternID
+getSelectedPatternID opts =
+  do let pid = patternID opts
+     when (isNothing pid) $
+       reportError "No pattern ID provided."
+     return $ toPatternID $ fromJust pid
 
 -- | Returns the target machine with given ID. Reports error if no such target
 -- machine exists.
@@ -121,6 +150,25 @@ loadTargetMachine tid =
      when (isNothing target) $
        reportError $ "Unrecognized target machine: " ++ (show tid)
      return $ fromJust target
+
+-- | Returns the instruction pattern with given ID. Reports error if no such
+-- instruction or pattern exists.
+loadInstrPattern
+  :: TargetMachine
+  -> InstructionID
+  -> PatternID
+  -> IO InstrPattern
+loadInstrPattern tm iid pid =
+  do let instr = findInstruction (tmInstructions tm) iid
+     when (isNothing instr) $
+       reportError $ "No instruction with ID '" ++ (show iid)
+                     ++ "' in target machine '" ++ (show $ tmID tm) ++ "'"
+     let pattern = findInstrPattern (instrPatterns $ fromJust instr) pid
+     when (isNothing pattern) $
+       reportError $ "No pattern with ID '" ++ (show pid)
+                     ++ "' in instruction '" ++ (show iid) ++ "'"
+                     ++ "' in target machine '" ++ (show $ tmID tm) ++ "'"
+     return $ fromJust pattern
 
 -- | Parses a given JSON string and loads its content. Reports error if this
 -- fails.
