@@ -83,6 +83,10 @@ build-toolchain:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
+%.all-cover-plots: %.f.json %.mips32.p.json
+	$(UNI) plot --plot-cover-per-match -f $< -p $*.mips32.p.json -o $*.mips32.cov.dot
+	for f in $*.mips32.cov.*.dot; do make $${f%.*}.pdf; done
+
 .PHONY: clean
 clean:
 	find . -name "*.hi" -type f -exec rm {} \;
