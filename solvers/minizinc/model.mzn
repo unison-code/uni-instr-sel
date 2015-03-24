@@ -94,13 +94,6 @@ int: regValueForNoReuse = numRegValues - 2;
 % Reference to use when a data node represents an immediate value.
 int: regValueForImm = numRegValues - 1;
 
-% Total number of match values (an additional value will be needed for
-% indicating that the match is inactive).
-int: numMatchValues = numMatches + 1;
-
-% Reference to the inactive-match value.
-int: matchValueForInactive = numMatchValues - 1;
-
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
 % of 0 for the dummy label.
 array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
@@ -116,7 +109,6 @@ set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
 set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
 set of int: allLabelsInFunctionPlusDummy = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
-set of int: allMatchesPlusInactive = 0..numMatchValues-1;
 set of int: allRegValues = 0..numRegValues-1;
 set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 
@@ -127,10 +119,9 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 %===========
 
 % Operation node coverage.
-array[allOperationsInFunction] of var allMatchesPlusInactive: cov;
+array[allOperationsInFunction] of var allMatches: cov;
 
 % Entity node definitions, register allocation, and immediate values.
-array[allEntitiesInFunction] of var allMatchesPlusInactive: defm;
 array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: defbb;
 array[allEntitiesInFunction] of var allRegValues: reg;
 array[allEntitiesInFunction] of var int: cnst;
@@ -171,23 +162,14 @@ include "inverse.mzn";
 % CONSTRAINTS
 %============
 
-% Restrict the initial domains of 'cov' and 'defm' such that matches are not
-% allowed to cover or define nodes which are not part of the match.
+% Restrict the initial domains of 'cov' such that matches are not allowed to
+% cover or define nodes which are not part of the match.
 constraint
-  forall (m in allMatches)
+  forall (o in allOperationsInFunction)
   (
-    forall ( o in allOperationsInFunction
-             where not (o in operationsCoveredByMatch[m])
-           )
+    forall (m in allMatches where not (o in operationsCoveredByMatch[m]))
     (
       cov[o] != m
-    )
-    /\
-    forall ( e in allEntitiesInFunction
-             where not (e in entitiesDefinedByMatch[m])
-           )
-    (
-      defm[e] != m
     )
   );
 
@@ -214,33 +196,7 @@ constraint
       (
           cov[o] == m
       )
-      \/
-      exists (e in entitiesDefinedByMatch[m])
-      (
-          defm[e] == m
-      )
     )
-  );
-
-% Selected matches must define all of its entities.
-constraint
-  forall (m in allMatches)
-  (
-    sel[m]
-    ->
-    (
-      forall (e in entitiesDefinedByMatch[m])
-      (
-          defm[e] == m
-      )
-    )
-  );
-
-% Essential operations must be covered by some match.
-constraint
-  forall (o in essentialOperationsInFunction)
-  (
-    cov[o] != matchValueForInactive
   );
 
 % Non-selected matches must be allocated to the dummy block.
@@ -339,16 +295,6 @@ constraint
         k in invDomSetOfLabelInFunction[l]
       )
     )
-  );
-
-% Inactive entities must not be defined by any match nor be defined in any
-% (real) basic block.
-constraint
-  forall (e in allEntitiesInFunction)
-  (
-    defm[e] == matchValueForInactive
-    <->
-    defbb[e] == {labelValueForDummy}
   );
 
 % Enforce that, for every selected match, every use of an entity has a
@@ -480,7 +426,6 @@ seq_search
 minimize cost;
 
 output [ "cov=", show(cov), "\n"
-       , "defm=", show(defm), "\n"
        , "defbb=", show(defbb), "\n"
        , "reg=", show(reg), "\n"
        , "cnst=", show(cnst), "\n"
