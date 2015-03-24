@@ -23,7 +23,7 @@ module Language.InstrSel.Constraints.Base
   , MatchExpr (..)
   , NodeExpr (..)
   , NumExpr (..)
-  , RegisterExpr (..)
+  , LocationExpr (..)
   , SetElemExpr (..)
   , SetExpr (..)
   , fromLispExpr
@@ -111,8 +111,8 @@ data NumExpr
   | Instruction2NumExpr InstructionExpr
     -- | Converts a pattern to a numerical expression.
   | Label2NumExpr LabelExpr
-    -- | Converts a register to a numerical expression.
-  | Register2NumExpr RegisterExpr
+    -- | Converts a location to a numerical expression.
+  | Location2NumExpr LocationExpr
     -- | Represents the distance between a match and a label. The distance
     -- starts from the end of the instruction represented by the pattern and
     -- stops at the beginning of the first instruction within the basic block
@@ -147,12 +147,6 @@ data MatchExpr
   | AMatchArrayIndexExpr ArrayIndex
     -- | Retrieves the match in which this expression appears.
   | ThisMatchExpr
-    -- | Retrieves the match which covers a certain operation node.
-  | CovererOfOperationNodeExpr NodeExpr
-    -- | Retrieves the match which defines a certain data node.
-  | DefinerOfDataNodeExpr NodeExpr
-    -- | Retrieves the match which defines a certain state node.
-  | DefinerOfStateNodeExpr NodeExpr
   deriving (Show)
 
 -- | Instruction expressions.
@@ -167,20 +161,20 @@ data InstructionExpr
 
 -- | Label expressions.
 data LabelExpr
-    -- | Retrieves the of the label to which a match has been allocated.
-  = LabelAllocatedToMatchExpr MatchExpr
+    -- | Retrieves the of the label to which a match has been moved.
+  = LabelToWhereMatchIsMovedExpr MatchExpr
     -- | Retrieves the label associated with a label node.
   | LabelOfLabelNodeExpr NodeExpr
   deriving (Show)
 
--- | Register expressions.
-data RegisterExpr
-    -- | Introduces the ID of a register.
-  = ARegisterIDExpr RegisterID
-    -- | Introduces the array index of a register.
-  | ARegisterArrayIndexExpr ArrayIndex
-    -- | Retrieves the of the register to which a data node has been allocated.
-  | RegisterAllocatedToDataNodeExpr NodeExpr
+-- | Location expressions.
+data LocationExpr
+    -- | Introduces the ID of a location.
+  = ALocationIDExpr LocationID
+    -- | Introduces the array index of a location.
+  | ALocationArrayIndexExpr ArrayIndex
+    -- | Retrieves the of the location of a data node.
+  | LocationOfDataNodeExpr NodeExpr
   deriving (Show)
 
 -- | Set construction expressions.
@@ -192,17 +186,17 @@ data SetExpr =
   | DiffSetExpr SetExpr SetExpr
     -- | Retrieves the dominator set of a label.
   | DomSetOfLabelExpr LabelExpr
-    -- | Retrieves a register class (which is expressed as a set of individual
-    -- registers belonging to that class).
-  | RegisterClassExpr [RegisterExpr]
+    -- | Retrieves a location class (which is expressed as a set of individual
+    -- locations belonging to that class).
+  | LocationClassExpr [LocationExpr]
   deriving (Show)
 
 -- | Set element expressions.
 data SetElemExpr
     -- | Converts a label to a set element expression.
   = Label2SetElemExpr LabelExpr
-    -- | Converts a register to a set element expression.
-  | Register2SetElemExpr RegisterExpr
+    -- | Converts a location to a set element expression.
+  | Location2SetElemExpr LocationExpr
   deriving (Show)
 
 
@@ -279,7 +273,7 @@ instance FromLisp NumExpr where
     <|> struct "match-to-num" Match2NumExpr e
     <|> struct "instr-to-num" Instruction2NumExpr e
     <|> struct "lab-to-num" Label2NumExpr e
-    <|> struct "reg-to-num" Register2NumExpr e
+    <|> struct "loc-to-num" Location2NumExpr e
     <|> struct "dist-match-to-lab" DistanceBetweenMatchAndLabelExpr e
 
 instance ToLisp NumExpr where
@@ -291,7 +285,7 @@ instance ToLisp NumExpr where
   toLisp (Match2NumExpr e)       = mkStruct "match-to-num" [toLisp e]
   toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
   toLisp (Label2NumExpr e)       = mkStruct "lab-to-num" [toLisp e]
-  toLisp (Register2NumExpr e)    = mkStruct "reg-to-num" [toLisp e]
+  toLisp (Location2NumExpr e)    = mkStruct "loc-to-num" [toLisp e]
   toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
     mkStruct "dist-match-to-lab" [toLisp lhs, toLisp rhs]
 
@@ -319,17 +313,11 @@ instance FromLisp MatchExpr where
   parseLisp e =
         struct "id" AMatchIDExpr e
     <|> struct "ai" AMatchArrayIndexExpr e
-    <|> struct "cov-of-onode" CovererOfOperationNodeExpr e
-    <|> struct "def-of-dnode" DefinerOfDataNodeExpr e
-    <|> struct "def-of-snode" DefinerOfStateNodeExpr e
 
 instance ToLisp MatchExpr where
   toLisp (AMatchIDExpr piid) = mkStruct "id" [toLisp piid]
   toLisp (AMatchArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
   toLisp ThisMatchExpr = Lisp.Symbol "this"
-  toLisp (CovererOfOperationNodeExpr e) = mkStruct "cov-of-onode" [toLisp e]
-  toLisp (DefinerOfDataNodeExpr e)  = mkStruct "def-of-dnode" [toLisp e]
-  toLisp (DefinerOfStateNodeExpr e) = mkStruct "def-of-snode" [toLisp e]
 
 instance FromLisp InstructionExpr where
   parseLisp e =
@@ -344,25 +332,25 @@ instance ToLisp InstructionExpr where
 
 instance FromLisp LabelExpr where
   parseLisp e =
-        struct "lab-alloc-to-match" LabelAllocatedToMatchExpr e
+        struct "lab-of-match" LabelToWhereMatchIsMovedExpr e
     <|> struct "lab-of-lnode" LabelOfLabelNodeExpr e
 
 instance ToLisp LabelExpr where
-  toLisp (LabelAllocatedToMatchExpr e) =
-    mkStruct "lab-alloc-to-match" [toLisp e]
+  toLisp (LabelToWhereMatchIsMovedExpr e) =
+    mkStruct "lab-of-match" [toLisp e]
   toLisp (LabelOfLabelNodeExpr e) = mkStruct "lab-of-lnode" [toLisp e]
 
-instance FromLisp RegisterExpr where
+instance FromLisp LocationExpr where
   parseLisp e =
-        struct "id" ARegisterIDExpr e
-    <|> struct "ai" ARegisterArrayIndexExpr e
-    <|> struct "reg-alloc-to-dnode" RegisterAllocatedToDataNodeExpr e
+        struct "id" ALocationIDExpr e
+    <|> struct "ai" ALocationArrayIndexExpr e
+    <|> struct "loc-of-dnode" LocationOfDataNodeExpr e
 
-instance ToLisp RegisterExpr where
-  toLisp (ARegisterIDExpr rid) = mkStruct "id" [toLisp rid]
-  toLisp (ARegisterArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
-  toLisp (RegisterAllocatedToDataNodeExpr e) =
-    mkStruct "reg-alloc-to-dnode" [toLisp e]
+instance ToLisp LocationExpr where
+  toLisp (ALocationIDExpr rid) = mkStruct "id" [toLisp rid]
+  toLisp (ALocationArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
+  toLisp (LocationOfDataNodeExpr e) =
+    mkStruct "loc-of-dnode" [toLisp e]
 
 instance FromLisp SetExpr where
   parseLisp e =
@@ -370,7 +358,7 @@ instance FromLisp SetExpr where
     <|> struct "intersect" IntersectSetExpr e
     <|> struct "diff" DiffSetExpr e
     <|> struct "domset-of-lab" DomSetOfLabelExpr e
-    <|> struct "reg-class" RegisterClassExpr e
+    <|> struct "loc-class" LocationClassExpr e
 
 instance ToLisp SetExpr where
   toLisp (UnionSetExpr lhs rhs) =
@@ -381,17 +369,17 @@ instance ToLisp SetExpr where
     mkStruct "diff" [toLisp lhs, toLisp rhs]
   toLisp (DomSetOfLabelExpr e) =
     mkStruct "domset-of-lab" [toLisp e]
-  toLisp (RegisterClassExpr es) =
-    mkStruct "reg-class" [Lisp.List (map toLisp es)]
+  toLisp (LocationClassExpr es) =
+    mkStruct "loc-class" [Lisp.List (map toLisp es)]
 
 instance FromLisp SetElemExpr where
   parseLisp e =
         struct "lab-to-set-elem" Label2SetElemExpr e
-    <|> struct "reg-to-set-elem" Register2SetElemExpr e
+    <|> struct "loc-to-set-elem" Location2SetElemExpr e
 
 instance ToLisp SetElemExpr where
   toLisp (Label2SetElemExpr e)    = mkStruct "lab-to-set-elem" [toLisp e]
-  toLisp (Register2SetElemExpr e) = mkStruct "reg-to-set-elem" [toLisp e]
+  toLisp (Location2SetElemExpr e) = mkStruct "loc-to-set-elem" [toLisp e]
 
 
 

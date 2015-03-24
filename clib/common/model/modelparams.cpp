@@ -64,8 +64,8 @@ ModelParams::getNumMatches(void) const {
 }
 
 size_t
-ModelParams::getNumRegistersInM(void) const {
-    return num_regs_;
+ModelParams::getNumLocationsInM(void) const {
+    return num_locations_;
 }
 
 ID
@@ -400,7 +400,7 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_entity_nodes_ =
         toInt(getJsonValue(root, "fun-num-entity-nodes"));
     p.num_func_label_nodes_ = toInt(getJsonValue(root, "fun-num-label-nodes"));
-    p.num_regs_ = toInt(getJsonValue(root, "num-registers"));
+    p.num_locations_ = toInt(getJsonValue(root, "num-locations"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }
 

@@ -190,9 +190,9 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseLabelExpr(str);
             expr = new LabelToNumExpr(e);
         }
-        else if (eatType<RegisterToNumExpr>(str)) {
-            auto e = parseRegisterExpr(str);
-            expr = new RegisterToNumExpr(e);
+        else if (eatType<LocationToNumExpr>(str)) {
+            auto e = parseLocationExpr(str);
+            expr = new LocationToNumExpr(e);
         }
         else if (eatType<DistanceBetweenMatchAndLabelExpr>(str)) {
             auto lhs = parseMatchExpr(str);
@@ -372,9 +372,9 @@ ConstraintParser::parseLabelExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<LabelAllocatedToMatchExpr>(str)) {
+        if (eatType<LabelToWhereMatchIsMovedExpr>(str)) {
             auto e = parseMatchExpr(str);
-            expr = new LabelAllocatedToMatchExpr(e);
+            expr = new LabelToWhereMatchIsMovedExpr(e);
         }
         else if (eatType<LabelOfLabelNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
@@ -397,24 +397,24 @@ ConstraintParser::parseLabelExpr(string& str) {
     return expr;
 }
 
-RegisterExpr*
-ConstraintParser::parseRegisterExpr(string& str) {
-    RegisterExpr* expr = NULL;
+LocationExpr*
+ConstraintParser::parseLocationExpr(string& str) {
+    LocationExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<ARegisterIDExpr>(str)) {
+        if (eatType<ALocationIDExpr>(str)) {
             ID id = eatID(str);
-            expr = new ARegisterIDExpr(id);
+            expr = new ALocationIDExpr(id);
         }
-        else if (eatType<ARegisterArrayIndexExpr>(str)) {
+        else if (eatType<ALocationArrayIndexExpr>(str)) {
             ArrayIndex i = eatArrayIndex(str);
-            expr = new ARegisterArrayIndexExpr(i);
+            expr = new ALocationArrayIndexExpr(i);
         }
-        else if (eatType<RegisterAllocatedToDataNodeExpr>(str)) {
+        else if (eatType<LocationOfDataNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
-            expr = new RegisterAllocatedToDataNodeExpr(e);
+            expr = new LocationOfDataNodeExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -433,15 +433,15 @@ ConstraintParser::parseRegisterExpr(string& str) {
     return expr;
 }
 
-list<const RegisterExpr*>
-ConstraintParser::parseListOfRegisterExpr(string& str) {
-    list<const RegisterExpr*> expr;
+list<const LocationExpr*>
+ConstraintParser::parseListOfLocationExpr(string& str) {
+    list<const LocationExpr*> expr;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         while (true) {
             eatWhitespace(str);
-            expr.push_back(parseRegisterExpr(str));
+            expr.push_back(parseLocationExpr(str));
             if (eat(" ", str)) continue;
             if (eat(")", str)) break;
         }
@@ -476,9 +476,9 @@ ConstraintParser::parseSetExpr(string& str) {
             auto e = parseLabelExpr(str);
             expr = new DomSetOfLabelExpr(e);
         }
-        else if (eatType<RegisterClassExpr>(str)) {
-            auto es = parseListOfRegisterExpr(str);
-            expr = new RegisterClassExpr(es);
+        else if (eatType<LocationClassExpr>(str)) {
+            auto es = parseListOfLocationExpr(str);
+            expr = new LocationClassExpr(es);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -508,9 +508,9 @@ ConstraintParser::parseSetElemExpr(string& str) {
             auto e = parseLabelExpr(str);
             expr = new LabelToSetElemExpr(e);
         }
-        else if (eatType<RegisterToSetElemExpr>(str)) {
-            auto e = parseRegisterExpr(str);
-            expr = new RegisterToSetElemExpr(e);
+        else if (eatType<LocationToSetElemExpr>(str)) {
+            auto e = parseLocationExpr(str);
+            expr = new LocationToSetElemExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");

@@ -78,12 +78,12 @@ class ModelParams {
     getNumLabelNodesInF(void) const;
 
     /**
-     * Gets the number of registers in the target machine.
+     * Gets the number of locations in the target machine.
      *
-     * @returns Number of registers.
+     * @returns Number of locations.
      */
     size_t
-    getNumRegistersInM(void) const;
+    getNumLocationsInM(void) const;
 
     /**
      * Gets the number of matches.
@@ -618,9 +618,9 @@ class ModelParams {
     size_t num_func_label_nodes_;
 
     /**
-     * Numbers of registers in the target machine.
+     * Numbers of locations in the target machine.
      */
-    size_t num_regs_;
+    size_t num_locations_;
 
     /**
      * Numbers of matches.

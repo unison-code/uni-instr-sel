@@ -87,7 +87,7 @@ InstructionExpr::~InstructionExpr(void) {}
 
 LabelExpr::~LabelExpr(void) {}
 
-RegisterExpr::~RegisterExpr(void) {}
+LocationExpr::~LocationExpr(void) {}
 
 SetElemExpr::~SetElemExpr(void) {}
 
@@ -253,11 +253,11 @@ LabelToNumExpr::LabelToNumExpr(const LabelExpr* expr)
 
 LabelToNumExpr::~LabelToNumExpr(void) {}
 
-RegisterToNumExpr::RegisterToNumExpr(const RegisterExpr* expr)
+LocationToNumExpr::LocationToNumExpr(const LocationExpr* expr)
     : UnaryExpr(expr)
 {}
 
-RegisterToNumExpr::~RegisterToNumExpr(void) {}
+LocationToNumExpr::~LocationToNumExpr(void) {}
 
 ANodeIDExpr::ANodeIDExpr(const ID& id)
     : id_(id)
@@ -323,19 +323,19 @@ AnInstructionArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
-ARegisterIDExpr::ARegisterIDExpr(const ID& id)
+ALocationIDExpr::ALocationIDExpr(const ID& id)
     : id_(id)
 {}
 
-ARegisterIDExpr::~ARegisterIDExpr(void) {}
+ALocationIDExpr::~ALocationIDExpr(void) {}
 
 ID
-ARegisterIDExpr::getID(void) const {
+ALocationIDExpr::getID(void) const {
     return id_;
 }
 
 string
-ARegisterIDExpr::toLisp(void) const {
+ALocationIDExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
 }
 
@@ -371,19 +371,19 @@ AMatchArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
-ARegisterArrayIndexExpr::ARegisterArrayIndexExpr(const ArrayIndex& i)
+ALocationArrayIndexExpr::ALocationArrayIndexExpr(const ArrayIndex& i)
     : i_(i)
 {}
 
-ARegisterArrayIndexExpr::~ARegisterArrayIndexExpr(void) {}
+ALocationArrayIndexExpr::~ALocationArrayIndexExpr(void) {}
 
 ArrayIndex
-ARegisterArrayIndexExpr::getArrayIndex(void) const {
+ALocationArrayIndexExpr::getArrayIndex(void) const {
     return i_;
 }
 
 string
-ARegisterArrayIndexExpr::toLisp(void) const {
+ALocationArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
@@ -420,12 +420,13 @@ InstructionOfMatchExpr::InstructionOfMatchExpr(const MatchExpr* expr)
 
 InstructionOfMatchExpr::~InstructionOfMatchExpr(void) {}
 
-LabelAllocatedToMatchExpr::LabelAllocatedToMatchExpr(const MatchExpr* expr)
-    : UnaryExpr(expr)
+LabelToWhereMatchIsMovedExpr::LabelToWhereMatchIsMovedExpr(
+    const MatchExpr* expr
+) : UnaryExpr(expr)
 {}
 
-LabelAllocatedToMatchExpr
-::~LabelAllocatedToMatchExpr(void) {}
+LabelToWhereMatchIsMovedExpr
+::~LabelToWhereMatchIsMovedExpr(void) {}
 
 LabelOfLabelNodeExpr::LabelOfLabelNodeExpr(const NodeExpr* expr)
     : UnaryExpr(expr)
@@ -433,12 +434,12 @@ LabelOfLabelNodeExpr::LabelOfLabelNodeExpr(const NodeExpr* expr)
 
 LabelOfLabelNodeExpr::~LabelOfLabelNodeExpr(void) {}
 
-RegisterAllocatedToDataNodeExpr::RegisterAllocatedToDataNodeExpr(
+LocationOfDataNodeExpr::LocationOfDataNodeExpr(
     const NodeExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-RegisterAllocatedToDataNodeExpr::~RegisterAllocatedToDataNodeExpr(void) {}
+LocationOfDataNodeExpr::~LocationOfDataNodeExpr(void) {}
 
 UnionSetExpr::UnionSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
@@ -464,23 +465,23 @@ DomSetOfLabelExpr::DomSetOfLabelExpr(const LabelExpr* expr)
 
 DomSetOfLabelExpr::~DomSetOfLabelExpr(void) {}
 
-RegisterClassExpr::RegisterClassExpr(const std::list<const RegisterExpr*>& expr)
+LocationClassExpr::LocationClassExpr(const std::list<const LocationExpr*>& expr)
     : expr_(expr)
 {}
 
-RegisterClassExpr::~RegisterClassExpr(void) {
+LocationClassExpr::~LocationClassExpr(void) {
     for (auto e : expr_) {
         delete e;
     }
 }
 
-const list<const RegisterExpr*>&
-RegisterClassExpr::getExprList(void) const {
+const list<const LocationExpr*>&
+LocationClassExpr::getExprList(void) const {
     return expr_;
 }
 
 string
-RegisterClassExpr::toLisp(void) const {
+LocationClassExpr::toLisp(void) const {
     string str;
     str += "(" + getStrName() + " ";
     str += "(";
@@ -500,11 +501,11 @@ LabelToSetElemExpr::LabelToSetElemExpr(const LabelExpr* expr)
 
 LabelToSetElemExpr::~LabelToSetElemExpr(void) {}
 
-RegisterToSetElemExpr::RegisterToSetElemExpr(const RegisterExpr* expr)
+LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
     : UnaryExpr(expr)
 {}
 
-RegisterToSetElemExpr::~RegisterToSetElemExpr(void) {}
+LocationToSetElemExpr::~LocationToSetElemExpr(void) {}
 
 DistanceBetweenMatchAndLabelExpr
 ::DistanceBetweenMatchAndLabelExpr(
@@ -543,28 +544,28 @@ const string NodeToNumExpr::STRNAME = "node-to-num";
 const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
 const string LabelToNumExpr::STRNAME = "lab-to-num";
-const string RegisterToNumExpr::STRNAME = "reg-to-num";
+const string LocationToNumExpr::STRNAME = "loc-to-num";
 const string DistanceBetweenMatchAndLabelExpr::STRNAME = "dist-match-to-lab";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";
-const string ARegisterIDExpr::STRNAME = "id";
+const string ALocationIDExpr::STRNAME = "id";
 const string ANodeArrayIndexExpr::STRNAME = "ai";
 const string AMatchArrayIndexExpr::STRNAME = "ai";
-const string ARegisterArrayIndexExpr::STRNAME = "ai";
+const string ALocationArrayIndexExpr::STRNAME = "ai";
 const string AnInstructionArrayIndexExpr::STRNAME = "ai";
 const string ThisMatchExpr::STRNAME = "this";
 const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
 const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
 const string InstructionOfMatchExpr::STRNAME = "instr-of-match";
-const string LabelAllocatedToMatchExpr::STRNAME = "lab-alloc-to-match";
+const string LabelToWhereMatchIsMovedExpr::STRNAME = "lab-of-match";
 const string LabelOfLabelNodeExpr::STRNAME = "lab-of-lnode";
-const string RegisterAllocatedToDataNodeExpr::STRNAME = "reg-alloc-to-dnode";
+const string LocationOfDataNodeExpr::STRNAME = "loc-of-dnode";
 const string UnionSetExpr::STRNAME = "union";
 const string IntersectSetExpr::STRNAME = "intersect";
 const string DiffSetExpr::STRNAME = "diff";
 const string DomSetOfLabelExpr::STRNAME = "domset-of-lab";
-const string RegisterClassExpr::STRNAME = "reg-class";
+const string LocationClassExpr::STRNAME = "loc-class";
 const string LabelToSetElemExpr::STRNAME = "lab-to-set-elem";
-const string RegisterToSetElemExpr::STRNAME = "reg-to-set-elem";
+const string LocationToSetElemExpr::STRNAME = "loc-to-set-elem";

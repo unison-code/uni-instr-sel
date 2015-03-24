@@ -42,7 +42,7 @@ array[int] of allOperationsInFunction: essentialOperationsInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
 
 % Target machine data.
-int: numRegisters;
+int: numLocations;
 
 % Match data.
 int: numMatches;
@@ -74,10 +74,10 @@ int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
                                   ]
                                 ) + 1;
 
-% Total number of registers values (additional values will be needed for
+% Total number of location values (additional values will be needed for
 % representing certain settings, such as whether the value is an intermediate
 % data value or an immediate).
-int: numRegValues = numRegisters + 2;
+int: numLocValues = numLocations + 2;
 
 % Total number of labels values (an additional value will be needed for
 % representing the dummy label, to which non-selected matches will be moved).
@@ -86,12 +86,12 @@ int: numLabelValues = numLabelsInFunction + 1;
 % Reference to the dummy-label value.
 int: labelValueForDummy = numLabelValues - 1;
 
-% Register values.
+% Location values.
 
 % Reference to use when a data node represents an no-reuse value.
-int: regValueForNoReuse = numRegValues - 2;
+int: locValueForNoReuse = numLocValues - 2;
 % Reference to use when a data node represents an immediate value.
-int: regValueForImm = numRegValues - 1;
+int: locValueForImm = numLocValues - 1;
 
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
 % of 0 for the dummy label.
@@ -108,7 +108,7 @@ set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
 set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
 set of int: allLabelsInFunctionPlusDummy = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
-set of int: allRegValues = 0..numRegValues-1;
+set of int: allLocValues = 0..numLocValues-1;
 set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 
 
@@ -117,9 +117,9 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 % VARIABLES
 %===========
 
-% Entity node definitions, register allocation, and immediate values.
+% Entity node definitions, locations, and immediate values.
 array[allEntitiesInFunction] of var allLabelsInFunctionPlusDummy: def;
-array[allEntitiesInFunction] of var allRegValues: reg;
+array[allEntitiesInFunction] of var allLocValues: loc;
 array[allEntitiesInFunction] of var int: cnst;
 
 % Match selection.
@@ -348,11 +348,11 @@ constraint
     )
   );
 
-% Constrain the reg value for all entities that are state nodes.
+% Constrain the loc value for all entities that are state nodes.
 constraint
   forall (e in stateEntitiesInFunction)
   (
-    reg[e] = regValueForImm
+    loc[e] = locValueForImm
   );
 
 % Constrain the immediate value for all entities which do not represent
@@ -360,7 +360,7 @@ constraint
 constraint
   forall (e in allEntitiesInFunction)
   (
-    reg[e] != regValueForImm -> cnst[e] == 0
+    loc[e] != locValueForImm -> cnst[e] == 0
   );
 
 % Accumulate cost of selected patterns.
@@ -390,13 +390,13 @@ minimize cost;
 
 output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
-       , "reg=", show(reg), "\n"
+       , "loc=", show(loc), "\n"
        , "cnst=", show(cnst), "\n"
        , "mov=", show(mov), "\n"
        , "ord=", show(ord), "\n"
        , "dist=", show(dist), "\n"
        , "label_value_for_dummy=", show(labelValueForDummy), "\n"
-       , "reg_value_for_no_reuse=", show(regValueForNoReuse), "\n"
-       , "reg_value_for_imm=", show(regValueForImm), "\n"
+       , "loc_value_for_no_reuse=", show(locValueForNoReuse), "\n"
+       , "loc_value_for_imm=", show(locValueForImm), "\n"
        , "cost=", show(cost), "\n"
        ];

@@ -119,15 +119,15 @@ tmTest =
               ]
           )
       init_def_pattern_os =
-        addBBAllocConstraints $ OpStructure init_def_pattern (Just 0) []
+        addBBMoveConstraints $ OpStructure init_def_pattern (Just 0) []
       add_pattern_os =
-        addBBAllocConstraints $ OpStructure add_pattern Nothing []
+        addBBMoveConstraints $ OpStructure add_pattern Nothing []
       bnz_pattern_os =
-        addBBAllocConstraints $ OpStructure  bnz_pattern (Just 1) []
+        addBBMoveConstraints $ OpStructure  bnz_pattern (Just 1) []
       br_pattern_os =
-        addBBAllocConstraints $ OpStructure br_pattern (Just 0) []
+        addBBMoveConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
-        addBBAllocConstraints $
+        addBBMoveConstraints $
           OpStructure
             br_fallthrough_pattern
             (Just 0)
@@ -144,7 +144,7 @@ tmTest =
                   )
             ]
       ret_pattern_os =
-        addBBAllocConstraints $ OpStructure ret_pattern (Just 1) []
+        addBBMoveConstraints $ OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
                   0
                   [ InstrPattern
@@ -164,11 +164,11 @@ tmTest =
                       True
                       ( AssemblyStringTemplate
                           [ ASVerbatim "add "
-                          , ASRegisterOfDataNode 3
+                          , ASLocationOfDataNode 3
                           , ASVerbatim ", "
-                          , ASRegisterOfDataNode 1
+                          , ASLocationOfDataNode 1
                           , ASVerbatim ", "
-                          , ASRegisterOfDataNode 2
+                          , ASLocationOfDataNode 2
                           ]
                       )
                   ]
@@ -182,7 +182,7 @@ tmTest =
                       True
                       ( AssemblyStringTemplate
                           [ ASVerbatim "bnz "
-                          , ASRegisterOfDataNode 0
+                          , ASLocationOfDataNode 0
                           , ASVerbatim ", "
                           , ASBBLabelOfLabelNode 2
                           , ASVerbatim ", "
@@ -224,7 +224,7 @@ tmTest =
                       True
                       ( AssemblyStringTemplate
                         [ ASVerbatim "ret "
-                        , ASRegisterOfDataNode 0
+                        , ASLocationOfDataNode 0
                         ]
                       )
                   ]
@@ -233,7 +233,7 @@ tmTest =
   in TargetMachine
        (toTargetMachineID "test")
        (fixInstrIDs $ insts ++ mkGenericPhiInstructions)
-       [ Register { regID = 0, regName = RegisterName "r0" }
-       , Register { regID = 1, regName = RegisterName "r1" }
-       , Register { regID = 2, regName = RegisterName "r2" }
+       [ Location { locID = 0, locName = LocationName "r0" }
+       , Location { locID = 1, locName = LocationName "r1" }
+       , Location { locID = 2, locName = LocationName "r2" }
        ]

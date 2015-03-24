@@ -14,18 +14,18 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addBBAllocConstraints
+  ( addBBMoveConstraints
   , addFallthroughConstraints
   , addIntConstConstraints
   , addIntRangeConstraints
   , addInterDataValConstraints
-  , addRegAllocConstraints
-  , mkBBAllocConstraints
+  , addDataLocConstraints
+  , mkBBMoveConstraints
   , mkFallthroughConstraints
   , mkIntConstConstraints
   , mkIntRangeConstraints
   , mkInterDataValConstraints
-  , mkRegAllocConstraints
+  , mkDataLocConstraints
   )
 where
 
@@ -33,7 +33,7 @@ import Language.InstrSel.Constraints.Base
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
 import Language.InstrSel.TargetMachines.IDs
-  ( RegisterID )
+  ( LocationID )
 import Language.InstrSel.Utils
   ( Range (..) )
 
@@ -45,25 +45,25 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates basic block allocation constraints (see `mkBBAllocConstraints`) and
+-- | Creates basic block movement constraints (see `mkBBMoveConstraints`) and
 -- adds these (if any) to the existing 'OpStructure'.
-addBBAllocConstraints :: OpStructure -> OpStructure
-addBBAllocConstraints os =
-  addConstraints os (mkBBAllocConstraints $ osGraph os)
+addBBMoveConstraints :: OpStructure -> OpStructure
+addBBMoveConstraints os =
+  addConstraints os (mkBBMoveConstraints $ osGraph os)
 
--- | Creates basic block allocation constraints for a pattern graph such that
--- the match must be allocated to the root label if there is such a node.
-mkBBAllocConstraints :: Graph -> [Constraint]
-mkBBAllocConstraints g =
-  let root_label = rootInCFG $ extractCFG g
-  in if isJust root_label
+-- | Creates basic block movement constraints for a pattern graph such that the
+-- match must be moved to the entry label if there is such a node.
+mkBBMoveConstraints :: Graph -> [Constraint]
+mkBBMoveConstraints g =
+  let entry_label = rootInCFG $ extractCFG g
+  in if isJust entry_label
      then [ BoolExprConstraint
             $ EqExpr ( Label2NumExpr
                        $ LabelOfLabelNodeExpr
-                       $ ANodeIDExpr (getNodeID $ fromJust root_label)
+                       $ ANodeIDExpr (getNodeID $ fromJust entry_label)
                      )
                      ( Label2NumExpr
-                       $ LabelAllocatedToMatchExpr
+                       $ LabelToWhereMatchIsMovedExpr
                        $ ThisMatchExpr
                      )
           ]
@@ -104,37 +104,37 @@ mkInterDataValConstraints g outs =
       makeC n = BoolExprConstraint $ DataNodeIsIntermediateExpr (ANodeIDExpr n)
   in map makeC inter_data_val_ns
 
--- | Creates register allocation constraints (see `mkRegAllocConstraints`) and
+-- | Creates location allocation constraints (see `mkDataLocConstraints`) and
 -- adds these (if any) are added to the existing 'OpStructure'.
-addRegAllocConstraints
+addDataLocConstraints
   :: OpStructure
      -- ^ The old structure.
-  -> [RegisterID]
-     -- ^ List of registers to which the data can be allocated.
+  -> [LocationID]
+     -- ^ List of locations to which the data can be allocated.
   -> NodeID
      -- ^ A data node.
   -> OpStructure
      -- ^ The new structure, with the produced constraints (may be the same
      -- structure).
-addRegAllocConstraints os regs d =
-  addConstraints os (mkRegAllocConstraints regs d)
+addDataLocConstraints os regs d =
+  addConstraints os (mkDataLocConstraints regs d)
 
--- | Creates register allocation constraints such that the data of a particular
--- data node must be allocated one of a particular set of registers.
-mkRegAllocConstraints
-  :: [RegisterID]
-     -- ^ List of registers to which the data can be allocated.
+-- | Creates location constraints such that the data of a particular data node
+-- must be in one of a particular set of locations.
+mkDataLocConstraints
+  :: [LocationID]
+     -- ^ List of locations to which the data can be allocated.
   -> NodeID
      -- ^ A data node.
   -> [Constraint]
-mkRegAllocConstraints regs d =
+mkDataLocConstraints regs d =
   [ BoolExprConstraint
-    $ InSetExpr ( Register2SetElemExpr
-                  $ RegisterAllocatedToDataNodeExpr
+    $ InSetExpr ( Location2SetElemExpr
+                  $ LocationOfDataNodeExpr
                   $ ANodeIDExpr d
                 )
-                ( RegisterClassExpr
-                  $ map ARegisterIDExpr regs
+                ( LocationClassExpr
+                  $ map ALocationIDExpr regs
                 )
   ]
 

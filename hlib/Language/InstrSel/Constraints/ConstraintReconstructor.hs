@@ -44,7 +44,7 @@ data Reconstructor
                            -> InstructionExpr
                            -> InstructionExpr
       , mkLabelExprF       :: Reconstructor -> LabelExpr -> LabelExpr
-      , mkRegisterExprF    :: Reconstructor -> RegisterExpr -> RegisterExpr
+      , mkLocationExprF    :: Reconstructor -> LocationExpr -> LocationExpr
       , mkSetExprF         :: Reconstructor -> SetExpr -> SetExpr
       , mkSetElemExprF     :: Reconstructor -> SetElemExpr -> SetElemExpr
       }
@@ -106,8 +106,8 @@ mkDefaultReconstructor =
         Instruction2NumExpr ((mkInstructionExprF r) r expr)
       mkNumExpr r (Label2NumExpr expr) =
         Label2NumExpr ((mkLabelExprF r) r expr)
-      mkNumExpr r (Register2NumExpr expr) =
-        Register2NumExpr ((mkRegisterExprF r) r expr)
+      mkNumExpr r (Location2NumExpr expr) =
+        Location2NumExpr ((mkLocationExprF r) r expr)
       mkNumExpr r (DistanceBetweenMatchAndLabelExpr match_expr label_expr) =
         DistanceBetweenMatchAndLabelExpr
           ((mkMatchExprF r) r match_expr)
@@ -126,28 +126,22 @@ mkDefaultReconstructor =
         expr
       mkMatchExpr _ expr@(ThisMatchExpr) =
         expr
-      mkMatchExpr r (CovererOfOperationNodeExpr expr) =
-        CovererOfOperationNodeExpr ((mkNodeExprF r) r expr)
-      mkMatchExpr r (DefinerOfDataNodeExpr expr) =
-        DefinerOfDataNodeExpr ((mkNodeExprF r) r expr)
-      mkMatchExpr r (DefinerOfStateNodeExpr expr) =
-        DefinerOfStateNodeExpr ((mkNodeExprF r) r expr)
       mkInstructionExpr _ expr@(AnInstructionIDExpr _) =
         expr
       mkInstructionExpr _ expr@(AnInstructionArrayIndexExpr _) =
         expr
       mkInstructionExpr r (InstructionOfMatchExpr expr) =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
-      mkLabelExpr r (LabelAllocatedToMatchExpr expr) =
-        LabelAllocatedToMatchExpr ((mkMatchExprF r) r expr)
+      mkLabelExpr r (LabelToWhereMatchIsMovedExpr expr) =
+        LabelToWhereMatchIsMovedExpr ((mkMatchExprF r) r expr)
       mkLabelExpr r (LabelOfLabelNodeExpr expr) =
         LabelOfLabelNodeExpr ((mkNodeExprF r) r expr)
-      mkRegisterExpr _ expr@(ARegisterIDExpr _) =
+      mkLocationExpr _ expr@(ALocationIDExpr _) =
         expr
-      mkRegisterExpr _ expr@(ARegisterArrayIndexExpr _) =
+      mkLocationExpr _ expr@(ALocationArrayIndexExpr _) =
         expr
-      mkRegisterExpr r (RegisterAllocatedToDataNodeExpr expr) =
-        RegisterAllocatedToDataNodeExpr ((mkNodeExprF r) r expr)
+      mkLocationExpr r (LocationOfDataNodeExpr expr) =
+        LocationOfDataNodeExpr ((mkNodeExprF r) r expr)
       mkSetExpr r (UnionSetExpr lhs rhs) =
         UnionSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (IntersectSetExpr lhs rhs) =
@@ -156,12 +150,12 @@ mkDefaultReconstructor =
         DiffSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (DomSetOfLabelExpr expr) =
         DomSetOfLabelExpr ((mkLabelExprF r) r expr)
-      mkSetExpr r (RegisterClassExpr exprs) =
-        RegisterClassExpr (map ((mkRegisterExprF r) r) exprs)
+      mkSetExpr r (LocationClassExpr exprs) =
+        LocationClassExpr (map ((mkLocationExprF r) r) exprs)
       mkSetElemExpr r (Label2SetElemExpr expr) =
         Label2SetElemExpr ((mkLabelExprF r) r expr)
-      mkSetElemExpr r (Register2SetElemExpr expr) =
-        Register2SetElemExpr ((mkRegisterExprF r) r expr)
+      mkSetElemExpr r (Location2SetElemExpr expr) =
+        Location2SetElemExpr ((mkLocationExprF r) r expr)
   in Reconstructor
        { mkConstraintF = mkConstraint
        , mkBoolExprF = mkBoolExpr
@@ -171,7 +165,7 @@ mkDefaultReconstructor =
        , mkMatchExprF = mkMatchExpr
        , mkInstructionExprF = mkInstructionExpr
        , mkLabelExprF = mkLabelExpr
-       , mkRegisterExprF = mkRegisterExpr
+       , mkLocationExprF = mkLocationExpr
        , mkSetExprF = mkSetExpr
        , mkSetElemExprF = mkSetElemExpr
        }

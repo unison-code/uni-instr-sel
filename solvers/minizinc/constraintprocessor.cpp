@@ -114,14 +114,14 @@ ConstraintProcessor::process(const BoolExpr* e) {
     else if (const DataNodeIsAnIntConstantExpr* de =
              dynamic_cast<const DataNodeIsAnIntConstantExpr*>(e))
     {
-        return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getRegValueForImm();
+        return getDataLocationVariableArrayName() + "[" + process(de->getExpr())
+            + "] == " + getLocValueForImm();
     }
     else if (const DataNodeIsIntermediateExpr* de =
              dynamic_cast<const DataNodeIsIntermediateExpr*>(e))
     {
-        return getDataRegisterVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getRegValueForNoReuse();
+        return getDataLocationVariableArrayName() + "[" + process(de->getExpr())
+            + "] == " + getLocValueForNoReuse();
     }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
@@ -164,8 +164,8 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const RegisterToNumExpr* de =
-             dynamic_cast<const RegisterToNumExpr*>(e))
+    else if (const LocationToNumExpr* de =
+             dynamic_cast<const LocationToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -251,8 +251,8 @@ ConstraintProcessor::process(const InstructionExpr* e) {
 
 string
 ConstraintProcessor::process(const LabelExpr* e) {
-    if (const LabelAllocatedToMatchExpr* de =
-        dynamic_cast<const LabelAllocatedToMatchExpr*>(e))
+    if (const LabelToWhereMatchIsMovedExpr* de =
+        dynamic_cast<const LabelToWhereMatchIsMovedExpr*>(e))
     {
         return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
@@ -268,23 +268,23 @@ ConstraintProcessor::process(const LabelExpr* e) {
 }
 
 string
-ConstraintProcessor::process(const RegisterExpr* e) {
-    if (const ARegisterArrayIndexExpr* de =
-        dynamic_cast<const ARegisterArrayIndexExpr*>(e))
+ConstraintProcessor::process(const LocationExpr* e) {
+    if (const ALocationArrayIndexExpr* de =
+        dynamic_cast<const ALocationArrayIndexExpr*>(e))
     {
         return Utils::toString(de->getArrayIndex());
     }
-    else if (dynamic_cast<const ARegisterIDExpr*>(e)) {
-        THROW(Exception, "ARegisterIDExpr is not allowed here");
+    else if (dynamic_cast<const ALocationIDExpr*>(e)) {
+        THROW(Exception, "ALocationIDExpr is not allowed here");
     }
-    else if (const RegisterAllocatedToDataNodeExpr* de =
-             dynamic_cast<const RegisterAllocatedToDataNodeExpr*>(e))
+    else if (const LocationOfDataNodeExpr* de =
+             dynamic_cast<const LocationOfDataNodeExpr*>(e))
     {
-        return getDataRegisterVariableArrayName()
+        return getDataLocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
-        THROW(Exception, "RegisterExpr is of unknown derived class");
+        THROW(Exception, "LocationExpr is of unknown derived class");
     }
 }
 
@@ -310,8 +310,8 @@ ConstraintProcessor::process(const SetExpr* e) {
         return getDomSetParameterArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
-    else if (const RegisterClassExpr* de =
-             dynamic_cast<const RegisterClassExpr*>(e))
+    else if (const LocationClassExpr* de =
+             dynamic_cast<const LocationClassExpr*>(e))
     {
         string result("{");
         list<string> subresults;
@@ -334,8 +334,8 @@ ConstraintProcessor::process(const SetElemExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const RegisterToSetElemExpr* de =
-        dynamic_cast<const RegisterToSetElemExpr*>(e))
+    else if (const LocationToSetElemExpr* de =
+        dynamic_cast<const LocationToSetElemExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -345,8 +345,8 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 }
 
 string
-ConstraintProcessor::getDataRegisterVariableArrayName(void) const {
-    return "reg";
+ConstraintProcessor::getDataLocationVariableArrayName(void) const {
+    return "loc";
 }
 
 string
@@ -380,11 +380,11 @@ ConstraintProcessor::getMatchAndLabelMappingsMatrixName(void) const {
 }
 
 string
-ConstraintProcessor::getRegValueForImm(void) const {
-    return "regValueForImm";
+ConstraintProcessor::getLocValueForImm(void) const {
+    return "locValueForImm";
 }
 
 string
-ConstraintProcessor::getRegValueForNoReuse(void) const {
-    return "regValueForNoReuse";
+ConstraintProcessor::getLocValueForNoReuse(void) const {
+    return "locValueForNoReuse";
 }

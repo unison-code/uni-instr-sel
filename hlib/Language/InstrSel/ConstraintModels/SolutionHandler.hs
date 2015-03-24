@@ -36,16 +36,16 @@ raiseLowLevelSolution sol ai_maps =
   let ai_match_id_maps = ai2MatchIDs ai_maps
       ai_label_node_id_maps = ai2LabelNodeIDs ai_maps
       ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
-      ai_register_id_maps = ai2RegisterIDs ai_maps
+      ai_location_id_maps = ai2LocationIDs ai_maps
       getNodeIDFromLabelAI ai = ai_label_node_id_maps !! (fromIntegral ai)
-      getRegisterIDFromAI ai = ai_register_id_maps !! (fromIntegral ai)
+      getLocationIDFromAI ai = ai_location_id_maps !! (fromIntegral ai)
       order_of_bbs = map getNodeIDFromLabelAI (llSolOrderOfBBs sol)
       sel_matches =
         catMaybes
         $ zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
                   (llSolIsMatchSelected sol)
                   ai_match_id_maps
-      bb_allocs_for_sel_matches =
+      bbs_of_sel_matches =
         catMaybes $ zipWith3
                     ( \is_sel mid ai ->
                         if is_sel
@@ -54,17 +54,17 @@ raiseLowLevelSolution sol ai_maps =
                     )
                     (llSolIsMatchSelected sol)
                     ai_match_id_maps
-                    (llSolBBAllocsForMatches sol)
-      regs_of_data_nodes =
+                    (llSolBBsOfMatches sol)
+      locs_of_data_nodes =
         catMaybes $ zipWith3
                     ( \has_reg nid ai ->
                         if has_reg
-                        then Just (nid, getRegisterIDFromAI ai)
+                        then Just (nid, getLocationIDFromAI ai)
                         else Nothing
                     )
-                    (llSolHasDataNodeRegister sol)
+                    (llSolHasDataNodeLocation sol)
                     ai_entity_node_id_maps
-                    (llSolRegsSelectedForDataNodes sol)
+                    (llSolLocsOfDataNodes sol)
       imm_values_of_data_nodes =
         catMaybes $ zipWith3
                     ( \has_value nid value ->
@@ -76,8 +76,8 @@ raiseLowLevelSolution sol ai_maps =
   in HighLevelSolution
        { hlSolOrderOfBBs = order_of_bbs
        , hlSolSelMatches = sel_matches
-       , hlSolBBAllocsForSelMatches = bb_allocs_for_sel_matches
-       , hlSolRegsOfDataNodes = regs_of_data_nodes
+       , hlSolBBsOfSelMatches = bbs_of_sel_matches
+       , hlSolLocsOfDataNodes = locs_of_data_nodes
        , hlSolImmValuesOfDataNodes = imm_values_of_data_nodes
        , hlSolCost = llSolCost sol
        }

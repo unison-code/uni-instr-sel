@@ -271,15 +271,15 @@ class LabelExpr : public Expr {
 };
 
 /**
- * Base class for a register expression.
+ * Base class for a location expression.
  */
-class RegisterExpr : public Expr {
+class LocationExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterExpr(void)
+    ~LocationExpr(void)
     =0;
 };
 
@@ -1080,22 +1080,22 @@ class LabelToNumExpr
 };
 
 /**
- * Converts a register into a numerical expression.
+ * Converts a location into a numerical expression.
  */
-class RegisterToNumExpr
-    : public UnaryExpr<NumExpr, RegisterToNumExpr, RegisterExpr>
+class LocationToNumExpr
+    : public UnaryExpr<NumExpr, LocationToNumExpr, LocationExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterToNumExpr(const RegisterExpr* expr);
+    LocationToNumExpr(const LocationExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterToNumExpr(void);
+    ~LocationToNumExpr(void);
 
   public:
     /**
@@ -1406,26 +1406,26 @@ class AnInstructionArrayIndexExpr
 };
 
 /**
- * Introduces the ID of a register to be part of an expression.
+ * Introduces the ID of a location to be part of an expression.
  */
-class ARegisterIDExpr : public WithStrName<RegisterExpr, ARegisterIDExpr> {
+class ALocationIDExpr : public WithStrName<LocationExpr, ALocationIDExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
      *
      * @param id
-     *        The register ID.
+     *        The location ID.
      */
-    ARegisterIDExpr(const ID& id);
+    ALocationIDExpr(const ID& id);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~ARegisterIDExpr(void);
+    ~ALocationIDExpr(void);
 
     /**
-     * Gets the register ID.
+     * Gets the location ID.
      *
      * @returns The ID.
      */
@@ -1449,28 +1449,28 @@ class ARegisterIDExpr : public WithStrName<RegisterExpr, ARegisterIDExpr> {
 };
 
 /**
- * Introduces the array index of a register to be part of an expression.
+ * Introduces the array index of a location to be part of an expression.
  */
-class ARegisterArrayIndexExpr
-    : public WithStrName<RegisterExpr, ARegisterArrayIndexExpr>
+class ALocationArrayIndexExpr
+    : public WithStrName<LocationExpr, ALocationArrayIndexExpr>
 {
   public:
     /**
      * \copydoc Expr::Expr()
      *
      * @param i
-     *        The register array index.
+     *        The location array index.
      */
-    ARegisterArrayIndexExpr(const ArrayIndex& i);
+    ALocationArrayIndexExpr(const ArrayIndex& i);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~ARegisterArrayIndexExpr(void);
+    ~ALocationArrayIndexExpr(void);
 
     /**
-     * Gets the register array index.
+     * Gets the location array index.
      *
      * @returns The array index.
      */
@@ -1625,22 +1625,22 @@ class InstructionOfMatchExpr
 };
 
 /**
- * Represents the label to which a match has been allocated.
+ * Represents the label to which a match has been moved.
  */
-class LabelAllocatedToMatchExpr
-    : public UnaryExpr<LabelExpr, LabelAllocatedToMatchExpr, MatchExpr>
+class LabelToWhereMatchIsMovedExpr
+    : public UnaryExpr<LabelExpr, LabelToWhereMatchIsMovedExpr, MatchExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelAllocatedToMatchExpr(const MatchExpr* expr);
+    LabelToWhereMatchIsMovedExpr(const MatchExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelAllocatedToMatchExpr(void);
+    ~LabelToWhereMatchIsMovedExpr(void);
 
   public:
     /**
@@ -1675,22 +1675,22 @@ class LabelOfLabelNodeExpr
 };
 
 /**
- * Represents the register to which a data node has been allocated.
+ * Represents the location of a data node.
  */
-class RegisterAllocatedToDataNodeExpr
-    : public UnaryExpr<RegisterExpr, RegisterAllocatedToDataNodeExpr, NodeExpr>
+class LocationOfDataNodeExpr
+    : public UnaryExpr<LocationExpr, LocationOfDataNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterAllocatedToDataNodeExpr(const NodeExpr* expr);
+    LocationOfDataNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterAllocatedToDataNodeExpr(void);
+    ~LocationOfDataNodeExpr(void);
 
   public:
     /**
@@ -1794,9 +1794,9 @@ class DomSetOfLabelExpr
 };
 
 /**
- * Register class expression.
+ * Location class expression.
  */
-class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
+class LocationClassExpr : public WithStrName<SetExpr, LocationClassExpr> {
   public:
     /**
      * \copydoc Expr::Expr()
@@ -1804,20 +1804,20 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
      * @param expr
      *        The list of expressions.
      */
-    RegisterClassExpr(const std::list<const RegisterExpr*>& expr);
+    LocationClassExpr(const std::list<const LocationExpr*>& expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterClassExpr(void);
+    ~LocationClassExpr(void);
 
     /**
      * Gets the list of expressions.
      *
      * @return The list of expressions.
      */
-    const std::list<const RegisterExpr*>&
+    const std::list<const LocationExpr*>&
     getExprList(void) const;
 
     /**
@@ -1827,7 +1827,7 @@ class RegisterClassExpr : public WithStrName<SetExpr, RegisterClassExpr> {
     toLisp(void) const;
 
   private:
-    std::list<const RegisterExpr*> expr_;
+    std::list<const LocationExpr*> expr_;
 
   public:
     /**
@@ -1862,22 +1862,22 @@ class LabelToSetElemExpr
 };
 
 /**
- * Converts a register into a set element expression.
+ * Converts a location into a set element expression.
  */
-class RegisterToSetElemExpr
-    : public UnaryExpr<SetElemExpr, RegisterToSetElemExpr, RegisterExpr>
+class LocationToSetElemExpr
+    : public UnaryExpr<SetElemExpr, LocationToSetElemExpr, LocationExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    RegisterToSetElemExpr(const RegisterExpr* expr);
+    LocationToSetElemExpr(const LocationExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~RegisterToSetElemExpr(void);
+    ~LocationToSetElemExpr(void);
 
   public:
     /**

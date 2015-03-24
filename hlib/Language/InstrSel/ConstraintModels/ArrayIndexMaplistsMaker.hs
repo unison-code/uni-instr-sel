@@ -45,12 +45,12 @@ mkArrayIndexMaplists function tm matches =
       e_nodes = filter isEntityNode nodes
       l_nodes = filter isLabelNode nodes
       match_ids = map pmMatchID (matches)
-      registers = tmRegisters tm
+      locations = tmLocations tm
       instructions = tmInstructions tm
   in ArrayIndexMaplists { ai2OpNodeIDs = map getNodeID o_nodes
                         , ai2EntityNodeIDs = map getNodeID e_nodes
                         , ai2LabelNodeIDs = map getNodeID l_nodes
                         , ai2MatchIDs = match_ids
-                        , ai2RegisterIDs = map regID registers
+                        , ai2LocationIDs = map locID locations
                         , ai2InstructionIDs = map instrID instructions
                         }

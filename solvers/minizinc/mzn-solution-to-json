@@ -149,31 +149,31 @@ if dummy_label < 0 or dummy_label >= len(ord_data):
 del ord_data[dummy_label]
 
 # Add 'has_d_imm' array to data
-reg_data = getRequiredDataByName(all_data, "reg")
-reg_for_imm_values = getRequiredDataByName(all_data, "reg_value_for_imm")
+loc_data = getRequiredDataByName(all_data, "loc")
+loc_for_imm_values = getRequiredDataByName(all_data, "loc_value_for_imm")
 has_d_imm_data = []
-for reg in reg_data:
-    has_d_imm_data.append(reg == reg_for_imm_values)
+for loc in loc_data:
+    has_d_imm_data.append(loc == loc_for_imm_values)
 all_data.append(["has_d_imm", has_d_imm_data])
 
-# Add 'has_d_reg' array to data
-reg_data = getRequiredDataByName(all_data, "reg")
-reg_for_no_reuse_values = \
-  getRequiredDataByName(all_data, "reg_value_for_no_reuse")
-has_d_reg_data = []
-for reg in reg_data:
-    has_d_reg_data.append(reg != reg_for_imm_values
+# Add 'has_d_loc' array to data
+loc_data = getRequiredDataByName(all_data, "loc")
+loc_for_no_reuse_values = \
+  getRequiredDataByName(all_data, "loc_value_for_no_reuse")
+has_d_loc_data = []
+for loc in loc_data:
+    has_d_loc_data.append(loc != loc_for_imm_values
                           and
-                          reg != reg_for_no_reuse_values)
-all_data.append(["has_d_reg", has_d_reg_data])
+                          loc != loc_for_no_reuse_values)
+all_data.append(["has_d_loc", has_d_loc_data])
 
 # Turn desirable data into JSON
-data_table = [ ["reg",       "reg-selected-for-dnode"]
-             , ["has_d_reg", "has-dnode-reg"]
+data_table = [ ["loc",       "loc-of-dnode"]
+             , ["has_d_loc", "has-dnode-loc"]
              , ["cnst",      "imm-value-of-dnode"]
              , ["has_d_imm", "has-dnode-imm-value"]
              , ["sel",       "is-match-selected"]
-             , ["mov",       "bb-allocated-for-match"]
+             , ["mov",       "bb-of-match"]
              , ["ord",       "order-of-bbs"]
              , ["cost",      "cost"]
              ]

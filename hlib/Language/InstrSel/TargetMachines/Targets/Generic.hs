@@ -14,7 +14,7 @@
 
 module Language.InstrSel.TargetMachines.Targets.Generic
   ( fixInstrIDs
-  , fixRegIDs
+  , fixLocIDs
   , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
   , mkGenericEntityDefInstructions
@@ -69,22 +69,22 @@ mkGenericPhiInstructions =
       cs = [ BoolExprConstraint $
                AndExpr
                  ( EqExpr
-                     ( Register2NumExpr $
-                         RegisterAllocatedToDataNodeExpr $
+                     ( Location2NumExpr $
+                         LocationOfDataNodeExpr $
                            ANodeIDExpr 1
                      )
-                     ( Register2NumExpr $
-                         RegisterAllocatedToDataNodeExpr $
+                     ( Location2NumExpr $
+                         LocationOfDataNodeExpr $
                            ANodeIDExpr 2
                      )
                  )
                  ( EqExpr
-                     ( Register2NumExpr $
-                         RegisterAllocatedToDataNodeExpr $
+                     ( Location2NumExpr $
+                         LocationOfDataNodeExpr $
                            ANodeIDExpr 2
                      )
-                     ( Register2NumExpr $
-                         RegisterAllocatedToDataNodeExpr $
+                     ( Location2NumExpr $
+                         LocationOfDataNodeExpr $
                            ANodeIDExpr 3
                      )
                  )
@@ -96,13 +96,13 @@ mkGenericPhiInstructions =
               , patADDUC = False
               , patAsmStrTemplate = ( AssemblyStringTemplate
                                         [ ASVerbatim "phi "
-                                        , ASRegisterOfDataNode 3
+                                        , ASLocationOfDataNode 3
                                         , ASVerbatim " ("
-                                        , ASRegisterOfDataNode 1
+                                        , ASLocationOfDataNode 1
                                         , ASVerbatim ", "
                                         , ASBBLabelOfDataNode 1
                                         , ASVerbatim ") ("
-                                        , ASRegisterOfDataNode 2
+                                        , ASLocationOfDataNode 2
                                         , ASVerbatim ", "
                                         , ASBBLabelOfDataNode 2
                                         , ASVerbatim ")"
@@ -137,7 +137,7 @@ mkGenericBrFallthroughInstructions =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      bb_alloc_cs = mkBBAllocConstraints g
+      bb_alloc_cs = mkBBMoveConstraints g
       fallthrough_cs = mkFallthroughConstraints 2
       cs = bb_alloc_cs ++ fallthrough_cs
       pat =
@@ -171,7 +171,7 @@ mkGenericEntityDefInstructions =
                 [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
-      cs = mkBBAllocConstraints g
+      cs = mkBBMoveConstraints g
       pat =
         InstrPattern
           { patID = 0
@@ -227,7 +227,7 @@ fixInstrIDs :: [Instruction] -> [Instruction]
 fixInstrIDs insts =
   map ( \(new_iid, inst) -> inst { instrID = new_iid } ) (zip [0..] insts)
 
--- | Same as 'fixInstrIDs' but for register IDs.
-fixRegIDs :: [Register] -> [Register]
-fixRegIDs regs =
-  map ( \(new_rid, r) -> r { regID = new_rid } ) (zip [0..] regs)
+-- | Same as 'fixInstrIDs' but for location IDs.
+fixLocIDs :: [Location] -> [Location]
+fixLocIDs regs =
+  map ( \(new_rid, r) -> r { locID = new_rid } ) (zip [0..] regs)

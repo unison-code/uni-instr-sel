@@ -134,24 +134,24 @@ class ConstraintParser {
     parseLabelExpr(std::string& str);
 
     /**
-     * Parses a register expression.
+     * Parses a location expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed expression.
      */
-    RegisterExpr*
-    parseRegisterExpr(std::string& str);
+    LocationExpr*
+    parseLocationExpr(std::string& str);
 
     /**
-     * Parses a list of register expression.
+     * Parses a list of location expression.
      *
      * @param str
      *        String to parse. This will be modified as part of parsing.
      * @returns Parsed list of expression.
      */
-    std::list<const RegisterExpr*>
-    parseListOfRegisterExpr(std::string& str);
+    std::list<const LocationExpr*>
+    parseListOfLocationExpr(std::string& str);
 
     /**
      * Parses a set expression.

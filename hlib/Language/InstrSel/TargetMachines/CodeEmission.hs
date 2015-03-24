@@ -72,7 +72,7 @@ generateCode
 generateCode target model sol =
   concat $
     map ( \l_node ->
-          let matches = getMatchesAllocatedToBB sol l_node
+          let matches = getMatchesMovedToBB sol l_node
               sorted_matches = sortMatchesByFlow model matches
               instrs = mapMaybe (emitInstruction model sol target)
                                 sorted_matches
@@ -84,9 +84,9 @@ generateCode target model sol =
 -- | Gets the list of matches that has been allocated to a given basic block in
 -- the CP model solution. The basic block is identified using the node ID of its
 -- corresponding label node.
-getMatchesAllocatedToBB :: HighLevelSolution -> NodeID -> [MatchID]
-getMatchesAllocatedToBB sol n =
-  map fst $ filter (\t -> snd t == n) $ hlSolBBAllocsForSelMatches sol
+getMatchesMovedToBB :: HighLevelSolution -> NodeID -> [MatchID]
+getMatchesMovedToBB sol n =
+  map fst $ filter (\t -> snd t == n) $ hlSolBBsOfSelMatches sol
 
 -- | Gets the basic block label for a given label node. If no such label can be
 -- found, @Nothing@ is returned.
@@ -225,7 +225,7 @@ updateNodeIDsInAsmStrParts
 updateNodeIDsInAsmStrParts asm maps =
   map f (zip asm maps)
   where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASRegisterOfDataNode _, Just n) = ASRegisterOfDataNode n
+        f (ASLocationOfDataNode _, Just n) = ASLocationOfDataNode n
         f (ASImmValueOfDataNode _, Just n) = ASImmValueOfDataNode n
         f (ASBBLabelOfLabelNode _, Just n) = ASBBLabelOfLabelNode n
         f (ASBBLabelOfDataNode  _, Just n) = ASBBLabelOfDataNode  n
@@ -245,11 +245,11 @@ emitInstructionPart _ sol _ (ASImmValueOfDataNode n) =
      then show $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart _ sol m (ASRegisterOfDataNode n) =
-  let reg_id = lookup n $ hlSolRegsOfDataNodes sol
+emitInstructionPart _ sol m (ASLocationOfDataNode n) =
+  let reg_id = lookup n $ hlSolLocsOfDataNodes sol
   in if isJust reg_id
-     then let reg = fromJust $ findRegister (tmRegisters m) (fromJust reg_id)
-          in show $ regName reg
+     then let reg = fromJust $ findLocation (tmLocations m) (fromJust reg_id)
+          in show $ locName reg
      else -- TODO: handle this case
           "r?"
 emitInstructionPart model _ _ (ASBBLabelOfLabelNode n) =
@@ -263,7 +263,7 @@ emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
       entity_nodes = hlFunEntityNodes function
   in if n `elem` entity_nodes
      then let mid = fromJust $ findDefinerOfData model sol n
-              l = lookup mid (hlSolBBAllocsForSelMatches sol)
+              l = lookup mid (hlSolBBsOfSelMatches sol)
           in if isJust l
              then emitInstructionPart model
                                      sol

@@ -13,7 +13,7 @@
 --
 -- There are two kinds of instances and solutions: high-level versions, and
 -- low-level versions. In a high-level version, all IDs (such as node IDs, match
--- IDs, register IDs, etc.) appearing the model are left intact. In a low-level
+-- IDs, location IDs, etc.) appearing the model are left intact. In a low-level
 -- version, these IDs are instead represented as array indices. The reason for
 -- having a low-level version is because this simplifies the implementation of
 -- the solver backend; an ID is often used to identify a specific domain
@@ -171,8 +171,8 @@ data HighLevelMachineParams
   = HighLevelMachineParams
       { hlMachineID :: TargetMachineID
         -- ^ The identifier of the target machine.
-      , hlMachineRegisters :: [RegisterID]
-        -- ^ The registers in the target machine.
+      , hlMachineLocations :: [LocationID]
+        -- ^ The locations in the target machine.
       }
   deriving (Show)
 
@@ -218,8 +218,8 @@ data LowLevelModel
       , llFunConstraints :: [Constraint]
         -- ^ The constraints of the function graph. No constraint in this list
         -- may use IDs.
-      , llNumRegisters :: Integer
-        -- ^ The number of registers available in the target machine.
+      , llNumLocations :: Integer
+        -- ^ The number of locations available in the target machine.
       , llNumMatches :: Integer
         -- ^ The number of matches.
       , llMatchOpNodesCovered :: [[ArrayIndex]]
@@ -265,14 +265,14 @@ data HighLevelSolution
         -- corresponding label node).
       , hlSolSelMatches :: [MatchID]
         -- ^ The selected matchs.
-      , hlSolBBAllocsForSelMatches :: [(MatchID, NodeID)]
+      , hlSolBBsOfSelMatches :: [(MatchID, NodeID)]
         -- ^ The basic block (represented by the node ID of the corresponding
-        -- label node) to which a particular match was allocated. A missing
-        -- entry means that the corresponding match ID was not selected and thus
-        -- not allocated to a valid basic block.
-      , hlSolRegsOfDataNodes :: [(NodeID, RegisterID)]
-        -- ^ The registers assigned for certain data nodes. A missing entry
-        -- means that no register was assigned to the corresponding data node.
+        -- label node) to which a particular match was moved. A missing entry
+        -- means that the corresponding match ID was not selected and thus not
+        -- moved to a valid basic block.
+      , hlSolLocsOfDataNodes :: [(NodeID, LocationID)]
+        -- ^ The locations assigned for certain data nodes. A missing entry
+        -- means that no location was assigned to the corresponding data node.
       , hlSolImmValuesOfDataNodes :: [(NodeID, Integer)]
         -- ^ The immediate values assigned for certain data nodes. A missing
         -- entry means that no immediate value was assigned to the corresponding
@@ -292,20 +292,20 @@ data LowLevelSolution
       , llSolIsMatchSelected :: [Bool]
         -- ^ Indicates whether a particular match was selected. An index into
         -- the list corresponds to the array index of a particular match.
-      , llSolBBAllocsForMatches :: [ArrayIndex]
+      , llSolBBsOfMatches :: [ArrayIndex]
         -- ^ The array index of the basic block to which a particular match was
-        -- allocated. An index into the list corresponds to the array index of a
+        -- moved. An index into the list corresponds to the array index of a
         -- particular match, but this value is only valid if the corresponding
         -- value in @llIsMatchSelected@ is set to @True@.
-      , llSolHasDataNodeRegister :: [Bool]
-        -- ^ Indicates whether a register has been selected for a particular
+      , llSolHasDataNodeLocation :: [Bool]
+        -- ^ Indicates whether a location has been selected for a particular
         -- data node. An index into the list corresponds to the array index of a
         -- particular data node.
-      , llSolRegsSelectedForDataNodes :: [ArrayIndex]
-        -- ^ Specifies the register selected for a particular data node. An
-        -- index into the list corresponds to the array index of a particular
-        -- data node, but this value is only valid if the corresponding value in
-        -- @llHasDataNodeRegister@ is set to @True@.
+      , llSolLocsOfDataNodes :: [ArrayIndex]
+        -- ^ Specifies the location of a particular data node. An index into the
+        -- list corresponds to the array index of a particular data node, but
+        -- this value is only valid if the corresponding value in
+        -- @llHasDataNodeLocation@ is set to @True@.
       , llSolHasDataNodeImmValue :: [Bool]
         -- ^ Indicates whether an immediate value has been assigned to a
         -- particular data node. An index into the list corresponds to the array
@@ -322,7 +322,7 @@ data LowLevelSolution
 
 -- | Contains mappings from an array index to some ID. This is used when
 -- generating the CP model instance, where we want all identifiers to be array
--- indices, which must be contiguous, instead of node IDs, match IDs, register
+-- indices, which must be contiguous, instead of node IDs, match IDs, location
 -- IDs, etc., which may be sparse.
 data ArrayIndexMaplists
   = ArrayIndexMaplists
@@ -338,9 +338,9 @@ data ArrayIndexMaplists
       , ai2MatchIDs :: [MatchID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to match IDs.
-      , ai2RegisterIDs :: [RegisterID]
+      , ai2LocationIDs :: [LocationID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to register IDs.
+        -- indices) to location IDs.
       , ai2InstructionIDs :: [InstructionID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to instruction IDs.
@@ -454,13 +454,13 @@ instance FromJSON HighLevelMachineParams where
   parseJSON (Object v) =
     HighLevelMachineParams
       <$> v .: "target-machine-id"
-      <*> v .: "registers"
+      <*> v .: "locations"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelMachineParams where
   toJSON d =
     object [ "target-machine-id" .= (hlMachineID d)
-           , "registers"         .= (hlMachineRegisters d)
+           , "locations"         .= (hlMachineLocations d)
            ]
 
 instance FromJSON LowLevelModel where
@@ -478,7 +478,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-bb-exec-freqs"
       <*> v .: "fun-essential-op-nodes"
       <*> v .: "fun-constraints"
-      <*> v .: "num-registers"
+      <*> v .: "num-locations"
       <*> v .: "num-matches"
       <*> v .: "match-op-nodes-covered"
       <*> v .: "match-entity-nodes-defined"
@@ -505,7 +505,7 @@ instance ToJSON LowLevelModel where
            , "fun-bb-exec-freqs"             .= (llFunBBExecFreqs m)
            , "fun-essential-op-nodes"        .= (llFunEssentialOpNodes m)
            , "fun-constraints"               .= (llFunConstraints m)
-           , "num-registers"                 .= (llNumRegisters m)
+           , "num-locations"                 .= (llNumLocations m)
            , "num-matches"                   .= (llNumMatches m)
            , "match-op-nodes-covered"        .= (llMatchOpNodesCovered m)
            , "match-entity-nodes-defined"    .= (llMatchEntityNodesDefined m)
@@ -523,20 +523,20 @@ instance FromJSON HighLevelSolution where
     HighLevelSolution
       <$> v .: "order-of-bbs"
       <*> v .: "selected-matches"
-      <*> v .: "bbs-allocated-for-sel-matches"
-      <*> v .: "regs-allocated-for-dnodes"
+      <*> v .: "bbs-of-sel-matches"
+      <*> v .: "locs-of-dnodes"
       <*> v .: "imm-values-of-dnodes"
       <*> v .: "cost"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelSolution where
   toJSON d =
-    object [ "order-of-bbs"                  .= (hlSolOrderOfBBs d)
-           , "selected-matches"              .= (hlSolSelMatches d)
-           , "bbs-allocated-for-sel-matches" .= (hlSolBBAllocsForSelMatches d)
-           , "regs-allocated-for-dnodes"     .= (hlSolRegsOfDataNodes d)
-           , "imm-values-of-dnodes"          .= (hlSolImmValuesOfDataNodes d)
-           , "cost"                          .= (hlSolCost d)
+    object [ "order-of-bbs"         .= (hlSolOrderOfBBs d)
+           , "selected-matches"     .= (hlSolSelMatches d)
+           , "bbs-of-sel-matches"   .= (hlSolBBsOfSelMatches d)
+           , "locs-of-dnodes"       .= (hlSolLocsOfDataNodes d)
+           , "imm-values-of-dnodes" .= (hlSolImmValuesOfDataNodes d)
+           , "cost"                 .= (hlSolCost d)
            ]
 
 instance FromJSON LowLevelSolution where
@@ -544,9 +544,9 @@ instance FromJSON LowLevelSolution where
     LowLevelSolution
       <$> v .: "order-of-bbs"
       <*> v .: "is-match-selected"
-      <*> v .: "bb-allocated-for-match"
-      <*> v .: "has-dnode-reg"
-      <*> v .: "reg-selected-for-dnode"
+      <*> v .: "bb-of-match"
+      <*> v .: "has-dnode-loc"
+      <*> v .: "loc-of-dnode"
       <*> v .: "has-dnode-imm-value"
       <*> v .: "imm-value-of-dnode"
       <*> v .: "cost"
@@ -558,7 +558,7 @@ instance ToJSON ArrayIndexMaplists where
            , "array-index-to-entity-node-id-maps" .= (ai2EntityNodeIDs d)
            , "array-index-to-label-node-id-maps"  .= (ai2LabelNodeIDs d)
            , "array-index-to-match-id-maps"       .= (ai2MatchIDs d)
-           , "array-index-to-register-id-maps"    .= (ai2RegisterIDs d)
+           , "array-index-to-location-id-maps"    .= (ai2LocationIDs d)
            , "array-index-to-instruction-id-maps" .= (ai2InstructionIDs d)
            ]
 
@@ -569,6 +569,6 @@ instance FromJSON ArrayIndexMaplists where
       <*> v .: "array-index-to-entity-node-id-maps"
       <*> v .: "array-index-to-label-node-id-maps"
       <*> v .: "array-index-to-match-id-maps"
-      <*> v .: "array-index-to-register-id-maps"
+      <*> v .: "array-index-to-location-id-maps"
       <*> v .: "array-index-to-instruction-id-maps"
   parseJSON _ = mzero

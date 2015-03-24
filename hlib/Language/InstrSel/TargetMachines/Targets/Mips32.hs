@@ -34,22 +34,22 @@ import Language.InstrSel.Utils
 -- Functions
 -------------
 
--- | Creates all register classes, but there are no guarantees that the register
+-- | Creates all location classes, but there are no guarantees that the location
 -- IDs will be correctly set!
-mkRegClasses :: [Register]
+mkRegClasses :: [Location]
 mkRegClasses = mkGPRegisters ++ mkHILORegisters
 
 regPrefix :: String
 regPrefix = "$"
 
 -- | Creates the list of general-purpose registers, but there are no guarantees
--- that the register IDs will be correctly set!
-mkGPRegisters :: [Register]
+-- that the location IDs will be correctly set!
+mkGPRegisters :: [Location]
 mkGPRegisters =
   map
-    ( \i -> Register
-              { regID = 0
-              , regName = RegisterName $ regPrefix ++ show i
+    ( \i -> Location
+              { locID = 0
+              , locName = LocationName $ regPrefix ++ show i
               }
     )
     ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
@@ -57,59 +57,59 @@ mkGPRegisters =
 -- | Creates the list of 'HILO' registers (which are actually memory
 -- locations). Note that there are no guarantees that the register IDs will be
 -- correctly set!
-mkHILORegisters :: [Register]
+mkHILORegisters :: [Location]
 mkHILORegisters =
-  [ Register { regID = 0, regName = RegisterName "HILO" }
+  [ Location { locID = 0, locName = LocationName "HILO" }
   , mkHIRegister
   , mkLORegister
   ]
 
 -- | Creates the list of 'HI' register (which is actually a memory
--- location). Note that there are no guarantees that the register IDs will be
+-- location). Note that there are no guarantees that the location IDs will be
 -- correctly set!
-mkHIRegister :: Register
-mkHIRegister = Register { regID = 0, regName = RegisterName "HI" }
+mkHIRegister :: Location
+mkHIRegister = Location { locID = 0, locName = LocationName "HI" }
 
 -- | Creates the list of 'LO' register (which is actually a memory
 -- location). Note that there are no guarantees that the register IDs will be
 -- correctly set!
-mkLORegister :: Register
-mkLORegister = Register { regID = 0, regName = RegisterName "LO" }
+mkLORegister :: Location
+mkLORegister = Location { locID = 0, locName = LocationName "LO" }
 
--- | Retrieves the register with a given register name. It is assumed that there
+-- | Retrieves the register with a given location name. It is assumed that there
 -- will exist exactly one such register.
-getRegisterByName :: RegisterName -> Register
+getRegisterByName :: LocationName -> Location
 getRegisterByName rname =
-  let regs = getAllRegisters
-      found = filter (\r -> rname == regName r) regs
+  let regs = getAllLocations
+      found = filter (\r -> rname == locName r) regs
   in head found
 
--- | Retrieves all registers, where the register IDs have been set such that
--- every register is given a unique ID.
-getAllRegisters :: [Register]
-getAllRegisters = fixRegIDs $ mkRegClasses
+-- | Retrieves all locations, where the location IDs have been set such that
+-- every location is given a unique ID.
+getAllLocations :: [Location]
+getAllLocations = fixLocIDs $ mkRegClasses
 
--- | Retrieves all general-purpose registers, where the register IDs have been
--- set such that every register is given a unique ID.
-getGPRegisters :: [Register]
+-- | Retrieves all general-purpose registers, where the location IDs have been
+-- set such that every location is given a unique ID.
+getGPRegisters :: [Location]
 getGPRegisters =
   map
-    (\i -> getRegisterByName $ RegisterName $ regPrefix ++ show i)
+    (\i -> getRegisterByName $ LocationName $ regPrefix ++ show i)
     ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
 
 
 -- | Retrieves the general-purpose register that serves as the return register.
--- The register ID will be correctly set.
-getRetRegister :: Register
-getRetRegister = getRegisterByName $ RegisterName $ regPrefix ++ "31"
+-- The location ID will be correctly set.
+getRetRegister :: Location
+getRetRegister = getRegisterByName $ LocationName $ regPrefix ++ "31"
 
--- | Retrieves the 'HI' register. The register ID will be correctly set.
-getHIRegister :: Register
-getHIRegister = getRegisterByName $ RegisterName "HI"
+-- | Retrieves the 'HI' register. The location ID will be correctly set.
+getHIRegister :: Location
+getHIRegister = getRegisterByName $ LocationName "HI"
 
--- | Retrieves the 'LO' register. The register ID will be correctly set.
-getLORegister :: Register
-getLORegister = getRegisterByName $ RegisterName "LO"
+-- | Retrieves the 'LO' register. The location ID will be correctly set.
+getLORegister :: Location
+getLORegister = getRegisterByName $ LocationName "LO"
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two data nodes as input, and produces another data node as output.
@@ -188,17 +188,17 @@ mkGenericSimpleRegRegCompInst
      -- ^ The data type of the second operand.
   -> D.DataType
      -- ^ The data type of the result.
-  -> [Register]
-     -- ^ The register class of the first operand.
-  -> [Register]
-     -- ^ The register class of the second.
-  -> [Register]
-     -- ^ The register class of the destination.
+  -> [Location]
+     -- ^ The location class of the first operand.
+  -> [Location]
+     -- ^ The location class of the second.
+  -> [Location]
+     -- ^ The location class of the destination.
   -> Instruction
 mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
   let g = mkSimpleCompPattern op d1 d2 d3
       cs = concatMap ( \(r, nid) ->
-                       mkRegAllocConstraints (map regID r) nid
+                       mkDataLocConstraints (map locID r) nid
                      )
                      (zip [r1, r2, r3] [1, 2, 3])
       pat = InstrPattern
@@ -208,11 +208,11 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patADDUC = True
               , patAsmStrTemplate = AssemblyStringTemplate
                                       [ ASVerbatim $ str ++ " "
-                                      , ASRegisterOfDataNode 0
+                                      , ASLocationOfDataNode 0
                                       , ASVerbatim ","
-                                      , ASRegisterOfDataNode 1
+                                      , ASLocationOfDataNode 1
                                       , ASVerbatim ","
-                                      , ASRegisterOfDataNode 2
+                                      , ASLocationOfDataNode 2
                                       ]
               }
   in Instruction
@@ -229,12 +229,12 @@ mkSimple32BitRegRegCompInst
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
-  -> [Register]
-     -- ^ The register class of the first operand.
-  -> [Register]
-     -- ^ The register class of the second.
-  -> [Register]
-     -- ^ The register class of the destination.
+  -> [Location]
+     -- ^ The location class of the first operand.
+  -> [Location]
+     -- ^ The location class of the second.
+  -> [Location]
+     -- ^ The location class of the destination.
   -> Instruction
 mkSimple32BitRegRegCompInst str op r1 r2 r3 =
   let dt = D.IntType 32
@@ -249,12 +249,12 @@ mkSimple32BitRegs1BitResultCompInst
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
-  -> [Register]
-     -- ^ The register class of the first operand.
-  -> [Register]
-     -- ^ The register class of the second.
-  -> [Register]
-     -- ^ The register class of the destination.
+  -> [Location]
+     -- ^ The location class of the first operand.
+  -> [Location]
+     -- ^ The location class of the second.
+  -> [Location]
+     -- ^ The location class of the destination.
   -> Instruction
 mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
   let dt32 = D.IntType 32
@@ -271,17 +271,17 @@ mkSimple32BitReg16BitImmCompInst
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
-  -> [Register]
-     -- ^ The register class of the first operand.
-  -> [Register]
-     -- ^ The register class of the destination.
+  -> [Location]
+     -- ^ The location class of the first operand.
+  -> [Location]
+     -- ^ The location class of the destination.
   -> Range Integer
      -- ^ The range of the immediate (which is the second operand).
   -> Instruction
 mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
   let g = mkSimpleCompPattern op (D.IntType 32) (D.IntType 16) (D.IntType 32)
       reg_cs = concatMap ( \(r, nid) ->
-                           mkRegAllocConstraints (map regID r) nid
+                           mkDataLocConstraints (map locID r) nid
                          )
                          (zip [r1, r3] [1, 3])
       imm_cs = mkIntRangeConstraints 2 imm
@@ -293,11 +293,11 @@ mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
               , patADDUC = True
               , patAsmStrTemplate = AssemblyStringTemplate
                                       [ ASVerbatim $ str ++ " "
-                                      , ASRegisterOfDataNode 3
+                                      , ASLocationOfDataNode 3
                                       , ASVerbatim ","
-                                      , ASRegisterOfDataNode 1
+                                      , ASLocationOfDataNode 1
                                       , ASVerbatim ","
-                                      , ASRegisterOfDataNode 2
+                                      , ASLocationOfDataNode 2
                                       ]
               }
   in Instruction
@@ -361,8 +361,8 @@ mkCondBrInstrs
 mkCondBrInstrs ord_str ord_op inv_str inv_op =
   let (ord_g, ord_entry) = mkCondBrPattern ord_op
       (inv_g, inv_entry) = mkCondBrPattern inv_op
-      ord_bb_alloc_cs = mkBBAllocConstraints ord_g
-      inv_bb_alloc_cs = mkBBAllocConstraints inv_g
+      ord_bb_alloc_cs = mkBBMoveConstraints ord_g
+      inv_bb_alloc_cs = mkBBMoveConstraints inv_g
       ord_fallthrough_cs = mkFallthroughConstraints 3
       inv_fallthrough_cs = mkFallthroughConstraints 2
       ord_cs = ord_bb_alloc_cs ++ ord_fallthrough_cs
@@ -375,9 +375,9 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim $ ord_str ++ " "
-                                  , ASRegisterOfDataNode 5
+                                  , ASLocationOfDataNode 5
                                   , ASVerbatim ","
-                                  , ASRegisterOfDataNode 6
+                                  , ASLocationOfDataNode 6
                                   , ASVerbatim ","
                                   , ASBBLabelOfLabelNode 2
                                   ]
@@ -390,9 +390,9 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim $ inv_str ++ " "
-                                  , ASRegisterOfDataNode 5
+                                  , ASLocationOfDataNode 5
                                   , ASVerbatim ","
-                                  , ASRegisterOfDataNode 6
+                                  , ASLocationOfDataNode 6
                                   , ASVerbatim ","
                                   , ASBBLabelOfLabelNode 3
                                   ]
@@ -421,7 +421,7 @@ mkBrInstrs =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      cs = mkBBAllocConstraints g
+      cs = mkBBMoveConstraints g
       pat =
         InstrPattern
           { patID = 0
@@ -457,8 +457,8 @@ mkRetInstrs =
                 , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
-      bb_cs = mkBBAllocConstraints g
-      reg_cs = mkRegAllocConstraints [regID getRetRegister] 2
+      bb_cs = mkBBMoveConstraints g
+      reg_cs = mkDataLocConstraints [locID getRetRegister] 2
       cs = bb_cs ++ reg_cs
       pat =
         InstrPattern
@@ -479,9 +479,9 @@ mkRetInstrs =
 mkMfhiInstrs :: [Instruction]
 mkMfhiInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkRegAllocConstraints [regID getHIRegister] 1
+      cs = mkDataLocConstraints [locID getHIRegister] 1
            ++
-           mkRegAllocConstraints (map regID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegisters) 2
       pat =
         InstrPattern
           { patID = 0
@@ -490,7 +490,7 @@ mkMfhiInstrs =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim "mfhi "
-                                  , ASRegisterOfDataNode 2
+                                  , ASLocationOfDataNode 2
                                   ]
           }
   in [ Instruction
@@ -504,9 +504,9 @@ mkMfhiInstrs =
 mkMfloInstrs :: [Instruction]
 mkMfloInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkRegAllocConstraints [regID getLORegister] 1
+      cs = mkDataLocConstraints [locID getLORegister] 1
            ++
-           mkRegAllocConstraints (map regID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegisters) 2
       pat =
         InstrPattern
           { patID = 0
@@ -515,7 +515,7 @@ mkMfloInstrs =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim "mflo "
-                                  , ASRegisterOfDataNode 2
+                                  , ASLocationOfDataNode 2
                                   ]
           }
   in [ Instruction
@@ -529,9 +529,9 @@ mkMfloInstrs =
 mkPseudoMoveInstrs :: [Instruction]
 mkPseudoMoveInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkRegAllocConstraints (map regID getGPRegisters) 1
+      cs = mkDataLocConstraints (map locID getGPRegisters) 1
            ++
-           mkRegAllocConstraints (map regID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegisters) 2
       pat =
         InstrPattern
           { patID = 0
@@ -540,9 +540,9 @@ mkPseudoMoveInstrs =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim "move "
-                                  , ASRegisterOfDataNode 1
+                                  , ASLocationOfDataNode 1
                                   , ASVerbatim ","
-                                  , ASRegisterOfDataNode 2
+                                  , ASLocationOfDataNode 2
                                   ]
           }
   in [ Instruction
@@ -628,7 +628,7 @@ mkInstructions =
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
-              [getRegisterByName $ RegisterName "LO"]
+              [getRegisterByName $ LocationName "LO"]
     )
     [ ("mult" , O.SIntOp O.Mul)
     , ("multu", O.UIntOp O.Mul)
@@ -674,5 +674,5 @@ tmMips32 :: TargetMachine
 tmMips32 = TargetMachine
              { tmID = toTargetMachineID "mips32"
              , tmInstructions = fixInstrIDs mkInstructions
-             , tmRegisters = getAllRegisters
+             , tmLocations = getAllLocations
              }

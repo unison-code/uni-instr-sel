@@ -18,17 +18,16 @@
 module Language.InstrSel.TargetMachines.IDs
   ( InstructionID (..)
   , PatternID (..)
-  , RegisterID (..)
-  , RegisterFlagName (..)
-  , RegisterName (..)
+  , LocationID (..)
+  , LocationName (..)
   , TargetMachineID (..)
   , fromInstructionID
   , fromPatternID
-  , fromRegisterID
+  , fromLocationID
   , fromTargetMachineID
   , toInstructionID
   , toPatternID
-  , toRegisterID
+  , toLocationID
   , toTargetMachineID
   )
 where
@@ -69,26 +68,19 @@ newtype PatternID
 instance Show PatternID where
   show (PatternID i) = show i
 
-newtype RegisterID
-  = RegisterID Natural
+newtype LocationID
+  = LocationID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show RegisterID where
-  show (RegisterID i) = show i
+instance Show LocationID where
+  show (LocationID i) = show i
 
-newtype RegisterName
-  = RegisterName String
+newtype LocationName
+  = LocationName String
   deriving (Eq)
 
-instance Show RegisterName where
-  show (RegisterName s) = s
-
-newtype RegisterFlagName
-  = RegisterFlagName String
-  deriving (Eq)
-
-instance Show RegisterFlagName where
-  show (RegisterFlagName s) = s
+instance Show LocationName where
+  show (LocationName s) = s
 
 newtype TargetMachineID
   = TargetMachineID String
@@ -114,12 +106,12 @@ instance FromJSON PatternID where
 instance ToJSON PatternID where
   toJSON pid = toJSON (fromPatternID pid)
 
-instance FromJSON RegisterID where
-  parseJSON (JSON.Number sn) = return $ toRegisterID $ sn2nat sn
+instance FromJSON LocationID where
+  parseJSON (JSON.Number sn) = return $ toLocationID $ sn2nat sn
   parseJSON _ = mzero
 
-instance ToJSON RegisterID where
-  toJSON rid = toJSON (fromRegisterID rid)
+instance ToJSON LocationID where
+  toJSON rid = toJSON (fromLocationID rid)
 
 instance FromJSON TargetMachineID where
   parseJSON (JSON.String s) = return $ toTargetMachineID $ unpack s
@@ -148,12 +140,12 @@ instance FromLisp PatternID where
 instance ToLisp PatternID where
   toLisp (PatternID nid) = Lisp.Number (I (fromNatural nid))
 
-instance FromLisp RegisterID where
-  parseLisp (Lisp.Number (I n)) = return $ toRegisterID n
+instance FromLisp LocationID where
+  parseLisp (Lisp.Number (I n)) = return $ toLocationID n
   parseLisp _ = mzero
 
-instance ToLisp RegisterID where
-  toLisp (RegisterID nid) = Lisp.Number (I (fromNatural nid))
+instance ToLisp LocationID where
+  toLisp (LocationID nid) = Lisp.Number (I (fromNatural nid))
 
 
 
@@ -167,11 +159,11 @@ fromPatternID (PatternID i) = i
 toPatternID :: (Integral i) => i -> PatternID
 toPatternID = PatternID . toNatural
 
-fromRegisterID :: RegisterID -> Natural
-fromRegisterID (RegisterID i) = i
+fromLocationID :: LocationID -> Natural
+fromLocationID (LocationID i) = i
 
-toRegisterID :: (Integral i) => i -> RegisterID
-toRegisterID = RegisterID . toNatural
+toLocationID :: (Integral i) => i -> LocationID
+toLocationID = LocationID . toNatural
 
 fromTargetMachineID :: TargetMachineID -> String
 fromTargetMachineID (TargetMachineID i) = i

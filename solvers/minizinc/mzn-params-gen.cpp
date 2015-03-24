@@ -214,7 +214,7 @@ generateModelTargetMachineParameters(
 ) {
     out << "% Target machine data" << endl;
 
-    out << "numRegisters = " << params.getNumRegistersInM() << ";"
+    out << "numLocations = " << params.getNumLocationsInM() << ";"
          << endl;
 }
 

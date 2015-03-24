@@ -79,12 +79,12 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * Gets the variable array for the data node register allocation.
+     * Gets the variable array for the data node locations.
      *
      * @returns Variable name.
      */
     std::string
-    getDataRegisterVariableArrayName(void) const;
+    getDataLocationVariableArrayName(void) const;
 
     /**
      * Gets the variable array for the data node immediate values.
@@ -137,22 +137,22 @@ class ConstraintProcessor {
     getMatchAndLabelMappingsMatrixName(void) const;
 
     /**
-     * Gets the register value used for indicating that a data node represents
+     * Gets the location value used for indicating that a data node represents
      * an immediate value.
      *
      * @returns Value name.
      */
     std::string
-    getRegValueForImm(void) const;
+    getLocValueForImm(void) const;
 
     /**
-     * Gets the register value used for indicating that a data node represents
+     * Gets the location value used for indicating that a data node represents
      * an intermediate data value, which cannot be reused by other matches.
      *
      * @returns Value name.
      */
     std::string
-    getRegValueForNoReuse(void) const;
+    getLocValueForNoReuse(void) const;
 
     /**
      * Converts a constraint into a Minizinc equivalent.
@@ -218,7 +218,7 @@ class ConstraintProcessor {
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::RegisterExpr* e);
+    process(const Model::LocationExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)

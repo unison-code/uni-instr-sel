@@ -108,7 +108,7 @@ mkHLMachineParams :: TargetMachine -> HighLevelMachineParams
 mkHLMachineParams target =
   HighLevelMachineParams
     { hlMachineID = tmID target
-    , hlMachineRegisters = map regID (tmRegisters target)
+    , hlMachineLocations = map locID (tmLocations target)
     }
 
 mkHLMatchParamsList :: TargetMachine -> [PatternMatch] -> [HighLevelMatchParams]
@@ -182,7 +182,7 @@ computeAsmStrNodeMaps
 computeAsmStrNodeMaps t m =
   map f (asmStrParts t)
   where f (ASVerbatim _) = Nothing
-        f (ASRegisterOfDataNode n) = findFNInMatch m n
+        f (ASLocationOfDataNode n) = findFNInMatch m n
         f (ASImmValueOfDataNode n) = findFNInMatch m n
         f (ASBBLabelOfLabelNode n) = findFNInMatch m n
         f (ASBBLabelOfDataNode  n) = findFNInMatch m n
@@ -264,7 +264,7 @@ lowerHighLevelModel model ai_maps =
        , llFunEssentialOpNodes = map getAIForOpNodeID (hlFunOpNodes f_params)
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
-       , llNumRegisters = toInteger $ length $ hlMachineRegisters tm_params
+       , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
        , llNumMatches = toInteger $ length m_params
        , llMatchOpNodesCovered =
            map (\m -> map getAIForOpNodeID (hlMatchOpNodesCovered m))
@@ -295,7 +295,7 @@ replaceIDWithArrayIndex :: ArrayIndexMaplists -> Constraint -> Constraint
 replaceIDWithArrayIndex ai_maps c =
   let getAIForAnyNodeID nid = fromJust $ findAIWithAnyNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
-      getAIForRegisterID rid = fromJust $ findAIWithRegisterID ai_maps rid
+      getAIForLocationID rid = fromJust $ findAIWithLocationID ai_maps rid
       getAIForInstructionID iid =
         fromJust $ findAIWithInstructionID ai_maps iid
       def_r = mkDefaultReconstructor
@@ -305,15 +305,15 @@ replaceIDWithArrayIndex ai_maps c =
       mkMatchExpr _ (AMatchIDExpr nid) =
         AMatchArrayIndexExpr $ getAIForMatchID nid
       mkMatchExpr r expr = (mkMatchExprF def_r) r expr
-      mkRegisterExpr _ (ARegisterIDExpr nid) =
-        ARegisterArrayIndexExpr $ getAIForRegisterID nid
-      mkRegisterExpr r expr = (mkRegisterExprF def_r) r expr
+      mkLocationExpr _ (ALocationIDExpr nid) =
+        ALocationArrayIndexExpr $ getAIForLocationID nid
+      mkLocationExpr r expr = (mkLocationExprF def_r) r expr
       mkInstructionExpr _ (AnInstructionIDExpr nid) =
         AnInstructionArrayIndexExpr $ getAIForInstructionID nid
       mkInstructionExpr r expr = (mkInstructionExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr
                     , mkMatchExprF = mkMatchExpr
-                    , mkRegisterExprF = mkRegisterExpr
+                    , mkLocationExprF = mkLocationExpr
                     , mkInstructionExprF = mkInstructionExpr
                     }
   in apply new_r c
@@ -339,8 +339,8 @@ findAIWithAnyNodeID ai_maps nid =
 findAIWithMatchID :: ArrayIndexMaplists -> MatchID -> Maybe ArrayIndex
 findAIWithMatchID ai_maps = findArrayIndexInList (ai2MatchIDs ai_maps)
 
-findAIWithRegisterID :: ArrayIndexMaplists -> RegisterID -> Maybe ArrayIndex
-findAIWithRegisterID ai_maps = findArrayIndexInList (ai2RegisterIDs ai_maps)
+findAIWithLocationID :: ArrayIndexMaplists -> LocationID -> Maybe ArrayIndex
+findAIWithLocationID ai_maps = findArrayIndexInList (ai2LocationIDs ai_maps)
 
 findAIWithInstructionID
   :: ArrayIndexMaplists

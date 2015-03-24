@@ -22,11 +22,11 @@ module Language.InstrSel.TargetMachines.Base
   , Instruction (..)
   , InstrPattern (..)
   , InstrProperties (..)
-  , Register (..)
+  , Location (..)
   , TargetMachine (..)
   , findInstruction
   , findInstrPattern
-  , findRegister
+  , findLocation
   )
 where
 
@@ -53,8 +53,8 @@ data AssemblyStringPart
   = ASVerbatim String
     -- | Denotes the immediate value of a given data node.
   | ASImmValueOfDataNode NodeID
-    -- | Denotes the register allocated to a given data node.
-  | ASRegisterOfDataNode NodeID
+    -- | Denotes the location of a given data node.
+  | ASLocationOfDataNode NodeID
     -- | Denotes the basic block label of a given label node.
   | ASBBLabelOfLabelNode NodeID
     -- | Denotes the basic block label of the basic block in which the definer
@@ -117,22 +117,22 @@ data TargetMachine
         -- ^ The identifier of the target machine.
       , tmInstructions :: [Instruction]
         -- ^ The set of assembly instructions supported by the target machine.
-      , tmRegisters :: [Register]
-        -- ^ The machine registers, given as pairs of register IDs and register
+      , tmLocations :: [Location]
+        -- ^ The machine locations, given as pairs of location IDs and location
         -- names (which are needed during instruction emission). Each must be
-        -- given a unique register ID, but not necessarily in a contiguous
+        -- given a unique location ID, but not necessarily in a contiguous
         -- order.
       }
   deriving (Show)
 
--- | Represents a machine register.
-data Register
-  = Register
-      { regID :: RegisterID
-        -- ^ The ID of this register. This must be unique for every register
+-- | Represents a machine location.
+data Location
+  = Location
+      { locID :: LocationID
+        -- ^ The ID of this location. This must be unique for every location
         -- within the same target machine.
-      , regName :: RegisterName
-        -- ^ The name of this register (as it shall appear in the assembly
+      , locName :: LocationName
+        -- ^ The name of this location (as it shall appear in the assembly
         -- string).
       }
   deriving (Show, Eq)
@@ -163,12 +163,12 @@ findInstrPattern ps pid =
      then Just $ head found
      else Nothing
 
--- | Given a list of registers, the function finds the 'Register' with matching
--- register ID. If there is more than one match, the first found is returned. If
+-- | Given a list of locations, the function finds the 'Location' with matching
+-- location ID. If there is more than one match, the first found is returned. If
 -- no such entity is found, 'Nothing' is returned.
-findRegister :: [Register] -> RegisterID -> Maybe Register
-findRegister rs rid =
-  let found = filter (\r -> regID r == rid) rs
+findLocation :: [Location] -> LocationID -> Maybe Location
+findLocation rs rid =
+  let found = filter (\r -> locID r == rid) rs
   in if length found > 0
      then Just $ head found
      else Nothing
