@@ -80,8 +80,7 @@ int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
 int: numRegValues = numRegisters + 2;
 
 % Total number of labels values (an additional value will be needed for
-% representing the dummy label, to which non-selected matches will be
-% allocated).
+% representing the dummy label, to which non-selected matches will be moved).
 int: numLabelValues = numLabelsInFunction + 1;
 
 % Reference to the dummy-label value.
@@ -126,8 +125,8 @@ array[allEntitiesInFunction] of var int: cnst;
 % Match selection.
 array[allMatches] of var bool: sel;
 
-% Basic block allocation of matches.
-array[allMatches] of var allLabelsInFunctionPlusDummy: bb;
+% Basic block to which the matches are moved.
+array[allMatches] of var allLabelsInFunctionPlusDummy: mov;
 
 % Basic block ordering. In the first variable (ord) each index represents a
 % position (and the value the label put at that position), and the second
@@ -173,15 +172,15 @@ constraint
     in exactly(1, matches, 1)
   );
 
-% Non-selected matches must be allocated to the dummy block.
+% Non-selected matches must be moved to the dummy block.
 constraint
   forall (m in allMatches)
   (
-    not sel[m] <-> bb[m] == labelValueForDummy
+    not sel[m] <-> mov[m] == labelValueForDummy
   );
 
-% Selected matches that have an entry label must be allocated in the basic block
-% of that label.
+% Selected matches that have an entry label must be moved in the basic block of
+% that label.
 constraint
   forall (m in allMatches)
   (
@@ -190,15 +189,15 @@ constraint
     % entry.
     forall (r in entryLabelOfMatch[m])
     (
-      sel[m] -> bb[m] == r
+      sel[m] -> mov[m] == r
     )
   );
 
 % Entities defined by a selected match must be defined in the basic blocks
-% consisting of the union between the basic block to which the match is
-% allocated and the set of basic blocks that appear as label nodes in the
-% pattern. Due to the restrctions of Minizinc, however, we need to reformulate
-% this constraint a bit in order to achieve this effect.
+% consisting of the union between the basic block to which the match is moved
+% and the set of basic blocks that appear as label nodes in the pattern. Due to
+% the restrctions of Minizinc, however, we need to reformulate this constraint a
+% bit in order to achieve this effect.
 constraint
   forall (m in allMatches)
   (
@@ -213,7 +212,7 @@ constraint
             }
         in def[e] == labels_in_m
       else
-        bb[m] in def[e] /\ card(def[e]) == 1
+        mov[m] in def[e] /\ card(def[e]) == 1
       endif
     )
   );
@@ -232,7 +231,7 @@ constraint
       (
         sel[m]
         /\
-        (l == bb[m] \/ l in nonEntryLabelsInMatch[m])
+        (l == mov[m] \/ l in nonEntryLabelsInMatch[m])
       )
     )
   );
@@ -285,7 +284,7 @@ constraint
       (
         l in def[e]
         /\
-        l in domSetOfLabelInFunction[bb[m]]
+        l in domSetOfLabelInFunction[mov[m]]
       )
     )
   );
@@ -324,11 +323,11 @@ constraint
           % the blocks between the source and the target label.
           sum (mm in allMatches)
           (
-            codeSizeOfMatch[mm] * bool2int (bb[mm] == i)
+            codeSizeOfMatch[mm] * bool2int (mov[mm] == i)
           )
           *
           bool2int
-            (  ord_inv[bb[m]] < ord_inv[i]
+            (  ord_inv[mov[m]] < ord_inv[i]
             /\ ord_inv[i] < ord_inv[l]
             )
         )
@@ -342,12 +341,12 @@ constraint
           % between the source and the target label.
           sum (mm in allMatches)
           (
-            codeSizeOfMatch[mm] * bool2int (bb[mm] == i)
+            codeSizeOfMatch[mm] * bool2int (mov[mm] == i)
           )
           *
           bool2int
             (  ord_inv[l] <= ord_inv[i]
-            /\ ord_inv[i] <= ord_inv[bb[m]]
+            /\ ord_inv[i] <= ord_inv[mov[m]]
             )
         )
     )
@@ -380,7 +379,7 @@ constraint
   cost = sum (m in allMatches)
          ( bool2int(sel[m])
          * latencyOfMatch[m]
-         * execFrequencyOfLabelsPlusDummy[bb[m]]
+         * execFrequencyOfLabelsPlusDummy[mov[m]]
          );
 
 
@@ -393,7 +392,7 @@ solve ::
 seq_search
   ( % Improves solving time.
     [ bool_search (sel, first_fail, indomain_min, complete)
-    , int_search (bb, first_fail, indomain_min, complete)
+    , int_search (mov, first_fail, indomain_min, complete)
     , int_search (ord, first_fail, indomain_min, complete)
     ]
   )
@@ -403,7 +402,7 @@ output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
        , "reg=", show(reg), "\n"
        , "cnst=", show(cnst), "\n"
-       , "bb=", show(bb), "\n"
+       , "mov=", show(mov), "\n"
        , "ord=", show(ord), "\n"
        , "dist=", show(dist), "\n"
        , "label_value_for_dummy=", show(labelValueForDummy), "\n"
