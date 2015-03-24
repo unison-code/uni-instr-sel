@@ -118,7 +118,7 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 %===========
 
 % Entity node definitions, register allocation, and immediate values.
-array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: def;
+array[allEntitiesInFunction] of var allLabelsInFunctionPlusDummy: def;
 array[allEntitiesInFunction] of var allRegValues: reg;
 array[allEntitiesInFunction] of var int: cnst;
 
@@ -193,11 +193,8 @@ constraint
     )
   );
 
-% Entities defined by a selected match must be defined in the basic blocks
-% consisting of the union between the basic block to which the match is moved
-% and the set of basic blocks that appear as label nodes in the pattern. Due to
-% the restrctions of Minizinc, however, we need to reformulate this constraint a
-% bit in order to achieve this effect.
+% Entities defined by a selected match must be defined in one of the basic
+% blocks that the selected match spans over.
 constraint
   forall (m in allMatches)
   (
@@ -210,9 +207,9 @@ constraint
         let { set of allLabelsInFunction: labels_in_m =
                 entryLabelOfMatch[m] union nonEntryLabelsInMatch[m]
             }
-        in def[e] == labels_in_m
+        in def[e] in labels_in_m
       else
-        mov[m] in def[e] /\ card(def[e]) == 1
+        def[e] == mov[m]
       endif
     )
   );
@@ -220,12 +217,15 @@ constraint
 % For every label wherein an entity is defined, there must exist some selected
 % match such that it is either placed in that label or that label is part of
 % one of the labels that appear in the selected match.
+%
+% I am not certain whether this is a strictly required or just an implied
+% constraint...
 constraint
   forall (e in allEntitiesInFunction)
   (
     forall (l in allLabelsInFunction)
     (
-      l in def[e]
+      l == def[e]
       ->
       exists (m in allMatches)
       (
@@ -244,12 +244,7 @@ constraint
   (
     forall (e in domEdgesToLabelInFunction[l])
     (
-      exists (k in allLabelsInFunction)
-      (
-        k in def[e]
-        /\
-        k in domSetOfLabelInFunction[l]
-      )
+      def[e] in domSetOfLabelInFunction[l]
     )
   );
 
@@ -261,12 +256,7 @@ constraint
   (
     forall (e in domEdgesFromLabelInFunction[l])
     (
-      exists (k in allLabelsInFunction)
-      (
-        k in def[e]
-        /\
-        k in invDomSetOfLabelInFunction[l]
-      )
+      def[e]in invDomSetOfLabelInFunction[l]
     )
   );
 
@@ -282,7 +272,7 @@ constraint
     (
       exists (l in allLabelsInFunctionPlusDummy)
       (
-        l in def[e]
+        l == def[e]
         /\
         l in domSetOfLabelInFunction[mov[m]]
       )
