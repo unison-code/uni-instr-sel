@@ -122,7 +122,7 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 array[allOperationsInFunction] of var allMatches: cov;
 
 % Entity node definitions, register allocation, and immediate values.
-array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: defbb;
+array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: mov;
 array[allEntitiesInFunction] of var allRegValues: reg;
 array[allEntitiesInFunction] of var int: cnst;
 
@@ -237,9 +237,9 @@ constraint
         let { set of allLabelsInFunction: labels_in_m =
                 entryLabelOfMatch[m] union nonEntryLabelsInMatch[m]
             }
-        in defbb[e] == labels_in_m
+        in mov[e] == labels_in_m
       else
-        bb[m] in defbb[e] /\ card(defbb[e]) == 1
+        bb[m] in mov[e] /\ card(mov[e]) == 1
       endif
     )
   );
@@ -252,7 +252,7 @@ constraint
   (
     forall (l in allLabelsInFunction)
     (
-      l in defbb[e]
+      l in mov[e]
       ->
       exists (m in allMatches)
       (
@@ -273,7 +273,7 @@ constraint
     (
       exists (k in allLabelsInFunction)
       (
-        k in defbb[e]
+        k in mov[e]
         /\
         k in domSetOfLabelInFunction[l]
       )
@@ -290,7 +290,7 @@ constraint
     (
       exists (k in allLabelsInFunction)
       (
-        k in defbb[e]
+        k in mov[e]
         /\
         k in invDomSetOfLabelInFunction[l]
       )
@@ -309,7 +309,7 @@ constraint
     (
       exists (l in allLabelsInFunctionPlusDummy)
       (
-        l in defbb[e]
+        l in mov[e]
         /\
         l in domSetOfLabelInFunction[bb[m]]
       )
@@ -426,7 +426,7 @@ seq_search
 minimize cost;
 
 output [ "cov=", show(cov), "\n"
-       , "defbb=", show(defbb), "\n"
+       , "mov=", show(mov), "\n"
        , "reg=", show(reg), "\n"
        , "cnst=", show(cnst), "\n"
        , "sel=", show(sel), "\n"
