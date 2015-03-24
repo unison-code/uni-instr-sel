@@ -79,22 +79,6 @@ class ConstraintProcessor {
 
   protected:
     /**
-     * Gets the variable array for the operation node coverage.
-     *
-     * @returns Variable name.
-     */
-    std::string
-    getOperationCovererVariableArrayName(void) const;
-
-    /**
-     * Gets the variable array for the data node definitions.
-     *
-     * @returns Variable name.
-     */
-    std::string
-    getDataDefinerVariableArrayName(void) const;
-
-    /**
      * Gets the variable array for the data node register allocation.
      *
      * @returns Variable name.
@@ -109,14 +93,6 @@ class ConstraintProcessor {
      */
     std::string
     getDataImmediateValuesVariableArrayName(void) const;
-
-    /**
-     * Gets the variable array for the state node definitions.
-     *
-     * @returns Variable name.
-     */
-    std::string
-    getStateDefinerVariableArrayName(void) const;
 
     /**
      * Gets the variable array for the match-to-basic block

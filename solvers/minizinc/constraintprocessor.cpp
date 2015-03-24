@@ -225,24 +225,6 @@ ConstraintProcessor::process(const MatchExpr* e) {
     else if (dynamic_cast<const ThisMatchExpr*>(e)) {
         THROW(Exception, "ThisMatchExpr is not allowed here");
     }
-    else if (const CovererOfOperationNodeExpr* de =
-             dynamic_cast<const CovererOfOperationNodeExpr*>(e))
-    {
-        return getOperationCovererVariableArrayName()
-            + "[" + process(de->getExpr()) + "]";
-    }
-    else if (const DefinerOfDataNodeExpr* de =
-             dynamic_cast<const DefinerOfDataNodeExpr*>(e))
-    {
-        return getDataDefinerVariableArrayName()
-            + "[" + process(de->getExpr()) + "]";
-    }
-    else if (const DefinerOfStateNodeExpr* de =
-             dynamic_cast<const DefinerOfStateNodeExpr*>(e))
-    {
-        return getStateDefinerVariableArrayName()
-            + "[" + process(de->getExpr()) + "]";
-    }
     else {
         THROW(Exception, "MatchExpr is of unknown derived class");
     }
@@ -363,16 +345,6 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 }
 
 string
-ConstraintProcessor::getOperationCovererVariableArrayName(void) const {
-    return "cov";
-}
-
-string
-ConstraintProcessor::getDataDefinerVariableArrayName(void) const {
-    return "ddefm";
-}
-
-string
 ConstraintProcessor::getDataRegisterVariableArrayName(void) const {
     return "reg";
 }
@@ -383,13 +355,8 @@ ConstraintProcessor::getDataImmediateValuesVariableArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getStateDefinerVariableArrayName(void) const {
-    return "sdefm";
-}
-
-string
 ConstraintProcessor::getBBAllocationVariableArrayName(void) const {
-    return "bb";
+    return "mov";
 }
 
 string
