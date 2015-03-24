@@ -118,9 +118,6 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 % VARIABLES
 %===========
 
-% Operation node coverage.
-array[allOperationsInFunction] of var allMatches: cov;
-
 % Entity node definitions, register allocation, and immediate values.
 array[allEntitiesInFunction] of var set of allLabelsInFunctionPlusDummy: mov;
 array[allEntitiesInFunction] of var allRegValues: reg;
@@ -153,7 +150,7 @@ var int: cost;
 %====================
 
 include "alldifferent.mzn";
-include "global_cardinality.mzn";
+include "exactly.mzn";
 include "inverse.mzn";
 
 
@@ -162,41 +159,18 @@ include "inverse.mzn";
 % CONSTRAINTS
 %============
 
-% Restrict the initial domains of 'cov' such that matches are not allowed to
-% cover or define nodes which are not part of the match.
+% Enforce that, for each operation, exactly one match must be selected such that
+% the operation is covered.
 constraint
   forall (o in allOperationsInFunction)
   (
-    forall (m in allMatches where not (o in operationsCoveredByMatch[m]))
-    (
-      cov[o] != m
-    )
-  );
-
-% Either all or none of the operations of match must be covered.
-constraint
-  let { array[1..numMatches] of var int: counts }
-  in forall (m in allMatches)
-     (
-       let { int: i = m + 1 }
-       in counts[i] == 0 \/ counts[i] == card(operationsCoveredByMatch[m])
-     )
-     /\
-     global_cardinality(cov, [ m | m in allMatches ], counts);
-
-% A match is selected if and only if some operation is covered by that match, or
-% if some entity is defined by that match.
-constraint
-  forall (m in allMatches)
-  (
-    sel[m]
-    <->
-    (
-      exists (o in operationsCoveredByMatch[m])
-      (
-          cov[o] == m
-      )
-    )
+    let {
+      array[int] of var bool:
+      matches = [ sel[m] | m in allMatches
+                           where o in operationsCoveredByMatch[m]
+                ]
+    }
+    in exactly(1, matches, 1)
   );
 
 % Non-selected matches must be allocated to the dummy block.
@@ -425,11 +399,10 @@ seq_search
   )
 minimize cost;
 
-output [ "cov=", show(cov), "\n"
+output [ "sel=", show(sel), "\n"
        , "mov=", show(mov), "\n"
        , "reg=", show(reg), "\n"
        , "cnst=", show(cnst), "\n"
-       , "sel=", show(sel), "\n"
        , "bb=", show(bb), "\n"
        , "ord=", show(ord), "\n"
        , "dist=", show(dist), "\n"
