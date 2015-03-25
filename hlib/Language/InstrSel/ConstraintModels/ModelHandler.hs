@@ -70,9 +70,6 @@ mkHLFunctionParams function =
   let graph = osGraph $ functionOS function
       entry_label = fromJust $ osEntryLabelNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
-      essential_op_nodes =
-        filter (\n -> isOperationNode n && (not $ isCopyNode n))
-               (getAllNodes graph)
       dom_edges =
         map ( \e -> ( getNodeID $ getSourceNode graph e
                     , getNodeID $ getTargetNode graph e
@@ -100,7 +97,6 @@ mkHLFunctionParams function =
                          }
                )
                (filter isLabelNode (getAllNodes graph))
-       , hlFunEssentialOpNodes = map getNodeID essential_op_nodes
        , hlFunConstraints = osConstraints $ functionOS function
        }
 
@@ -261,7 +257,6 @@ lowerHighLevelModel model ai_maps =
                ( sortByAI (getAIForLabelNodeID . hlBBLabelNode)
                           (hlFunBasicBlockParams f_params)
                )
-       , llFunEssentialOpNodes = map getAIForOpNodeID (hlFunOpNodes f_params)
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params

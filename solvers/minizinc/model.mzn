@@ -38,7 +38,6 @@ array[allLabelsInFunction] of set of int: invDomSetOfLabelInFunction;
 array[allLabelsInFunction] of set of int: domEdgesFromLabelInFunction;
 array[allLabelsInFunction] of set of int: domEdgesToLabelInFunction;
 array[int] of allEntitiesInFunction: stateEntitiesInFunction;
-array[int] of allOperationsInFunction: essentialOperationsInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
 
 % Target machine data.

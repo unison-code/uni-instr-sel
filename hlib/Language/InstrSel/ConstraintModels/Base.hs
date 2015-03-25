@@ -95,8 +95,6 @@ data HighLevelFunctionParams
         -- source node and the second element is the target node.
       , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
         -- ^ The basic block information.
-      , hlFunEssentialOpNodes :: [NodeID]
-        -- ^ Operation nodes that are essential, meaning they *must* be covered.
       , hlFunConstraints :: [Constraint]
         -- ^ The function constraints, if any. No constraint in this list may
         -- use array indices.
@@ -211,10 +209,6 @@ data LowLevelModel
         -- ^ The execution frequency of each basic block. An index into the list
         -- corresponds to the array index of a particular label node in the
         -- function graph.
-      , llFunEssentialOpNodes :: [ArrayIndex]
-        -- ^ Operation nodes that are essential, meaning they *must* be
-        -- covered. An index into the list corresponds to the array index of a
-        -- particular operation node in the function graph.
       , llFunConstraints :: [Constraint]
         -- ^ The constraints of the function graph. No constraint in this list
         -- may use IDs.
@@ -378,7 +372,6 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "label-dom-sets"
       <*> v .: "dom-edges"
       <*> v .: "bb-params"
-      <*> v .: "essential-op-nodes"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -392,7 +385,6 @@ instance ToJSON HighLevelFunctionParams where
            , "label-dom-sets"     .= (hlFunLabelDomSets d)
            , "dom-edges"          .= (hlFunDomEdges d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
-           , "essential-op-nodes" .= (hlFunEssentialOpNodes d)
            , "constraints"        .= (hlFunConstraints d)
            ]
 
@@ -476,7 +468,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-label-to-entity-dom-edges"
       <*> v .: "fun-entity-to-label-edges"
       <*> v .: "fun-bb-exec-freqs"
-      <*> v .: "fun-essential-op-nodes"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
       <*> v .: "num-matches"
@@ -503,7 +494,6 @@ instance ToJSON LowLevelModel where
            , "fun-label-to-entity-dom-edges" .= (llFunLabelToEntityDomEdges m)
            , "fun-entity-to-label-dom-edges" .= (llFunEntityToLabelDomEdges m)
            , "fun-bb-exec-freqs"             .= (llFunBBExecFreqs m)
-           , "fun-essential-op-nodes"        .= (llFunEssentialOpNodes m)
            , "fun-constraints"               .= (llFunConstraints m)
            , "num-locations"                 .= (llNumLocations m)
            , "num-matches"                   .= (llNumMatches m)

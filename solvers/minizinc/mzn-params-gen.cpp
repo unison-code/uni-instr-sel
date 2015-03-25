@@ -198,10 +198,6 @@ generateModelFunctionParameters(
     printMinizincValue(out, params.getAllStateEntitiesInF());
     out << ";" << endl;
 
-    out << "essentialOperationsInFunction = ";
-    printMinizincValue(out, params.getAllEssentialOpNodesInF());
-    out << ";" << endl;
-
     out << "execFrequencyOfLabelInFunction = array1d(allLabelsInFunction, ";
     printMinizincValue(out, params.getExecFreqOfAllBBsInF());
     out << ");" << endl;
