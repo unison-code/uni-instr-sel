@@ -80,11 +80,11 @@ int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
 int: numLocValues = numLocations + 2;
 
 % Total number of labels values (an additional value will be needed for
-% representing the dummy label, to which non-selected matches will be moved).
+% representing the null label, to which non-selected matches will be moved).
 int: numLabelValues = numLabelsInFunction + 1;
 
-% Reference to the dummy-label value.
-int: labelValueForDummy = numLabelValues - 1;
+% Reference to the null-label value.
+int: labelValueForNull = numLabelValues - 1;
 
 % Location values.
 
@@ -94,19 +94,19 @@ int: locValueForNoReuse = numLocValues - 2;
 int: locValueForImm = numLocValues - 1;
 
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
-% of 0 for the dummy label.
-array[allLabelsInFunctionPlusDummy] of int: execFrequencyOfLabelsPlusDummy =
-  array1d( allLabelsInFunctionPlusDummy
+% of 0 for the null label.
+array[allLabelsInFunctionPlusNull] of int: execFrequencyOfLabelsPlusNull =
+  array1d( allLabelsInFunctionPlusNull
          , execFrequencyOfLabelInFunction
            ++
-           array1d(labelValueForDummy..labelValueForDummy, [0])
+           array1d(labelValueForNull..labelValueForNull, [0])
          );
 
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
 set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
 set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
-set of int: allLabelsInFunctionPlusDummy = 0..numLabelValues-1;
+set of int: allLabelsInFunctionPlusNull = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
 set of int: allLocValues = 0..numLocValues-1;
 set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
@@ -118,7 +118,7 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 %===========
 
 % Entity node definitions, locations, and immediate values.
-array[allEntitiesInFunction] of var allLabelsInFunctionPlusDummy: def;
+array[allEntitiesInFunction] of var allLabelsInFunctionPlusNull: def;
 array[allEntitiesInFunction] of var allLocValues: loc;
 array[allEntitiesInFunction] of var int: cnst;
 
@@ -126,14 +126,14 @@ array[allEntitiesInFunction] of var int: cnst;
 array[allMatches] of var bool: sel;
 
 % Basic block to which the matches are moved.
-array[allMatches] of var allLabelsInFunctionPlusDummy: mov;
+array[allMatches] of var allLabelsInFunctionPlusNull: mov;
 
 % Basic block ordering. In the first variable (ord) each index represents a
 % position (and the value the label put at that position), and the second
 % variable (ord_inv) is the inverse of the first variable (that is, each
 % index represents a label, and a value its position).
-array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy: ord;
-array[allLabelsInFunctionPlusDummy] of var allLabelsInFunctionPlusDummy:
+array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: ord;
+array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull:
   ord_inv;
 
 % Branch-to-label distances.
@@ -172,11 +172,11 @@ constraint
     in exactly(1, matches, 1)
   );
 
-% Non-selected matches must be moved to the dummy block.
+% Non-selected matches must be moved to the null block.
 constraint
   forall (m in allMatches)
   (
-    not sel[m] <-> mov[m] == labelValueForDummy
+    not sel[m] <-> mov[m] == labelValueForNull
   );
 
 % Selected matches that have an entry label must be moved in the basic block of
@@ -270,7 +270,7 @@ constraint
     ->
     forall (e in entitiesUsedByMatch[m])
     (
-      exists (l in allLabelsInFunctionPlusDummy)
+      exists (l in allLabelsInFunctionPlusNull)
       (
         l == def[e]
         /\
@@ -288,11 +288,11 @@ constraint
   inverse(ord, ord_inv);
 
 % The entry label (i.e. function entry point) must be placed as the first basic
-% block, and the dummy label must be placed as the last basic block.
+% block, and the null label must be placed as the last basic block.
 constraint
   ord[entryLabelOfFunction] == 0;
 constraint
-  ord[labelValueForDummy] == numLabelValues - 1;
+  ord[labelValueForNull] == numLabelValues - 1;
 
 % Calculate distances between matches (where appropriate) and labels.
 constraint
@@ -369,7 +369,7 @@ constraint
   cost = sum (m in allMatches)
          ( bool2int(sel[m])
          * latencyOfMatch[m]
-         * execFrequencyOfLabelsPlusDummy[mov[m]]
+         * execFrequencyOfLabelsPlusNull[mov[m]]
          );
 
 
@@ -395,7 +395,7 @@ output [ "sel=", show(sel), "\n"
        , "mov=", show(mov), "\n"
        , "ord=", show(ord), "\n"
        , "dist=", show(dist), "\n"
-       , "label_value_for_dummy=", show(labelValueForDummy), "\n"
+       , "label_value_for_null=", show(labelValueForNull), "\n"
        , "loc_value_for_no_reuse=", show(locValueForNoReuse), "\n"
        , "loc_value_for_imm=", show(locValueForImm), "\n"
        , "cost=", show(cost), "\n"

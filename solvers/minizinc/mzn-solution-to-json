@@ -137,16 +137,16 @@ for i in range(len(content)):
 
 # Add, modify, or remove certain data in order to facilitate postprocessing
 
-# Remove the dummy label from bb-order
+# Remove the null label from bb-order
 ord_data = getRequiredDataByName(all_data, "ord")
-dummy_label = getRequiredDataByName(all_data, "label_value_for_dummy")
+null_label = getRequiredDataByName(all_data, "label_value_for_null")
 try:
-    dummy_label = int(dummy_label)
+    null_label = int(null_label)
 except ValueError:
-    error("Value of 'label_value_for_dummy' is not an int")
-if dummy_label < 0 or dummy_label >= len(ord_data):
-    error("Value of 'label_value_for_dummy' is out of bounds")
-del ord_data[dummy_label]
+    error("Value of 'label_value_for_null' is not an int")
+if null_label < 0 or null_label >= len(ord_data):
+    error("Value of 'label_value_for_null' is out of bounds")
+del ord_data[null_label]
 
 # Add 'has_d_imm' array to data
 loc_data = getRequiredDataByName(all_data, "loc")
