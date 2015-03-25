@@ -33,6 +33,7 @@ Next you will need to install several Haskell packages using Cabal:
  - cmdargs
  - graphviz
  - llvm-general-3.4.4.2   (Take note of the explicit version!)
+ - safe
  - shelly
  - split
 

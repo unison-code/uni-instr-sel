@@ -22,6 +22,7 @@ module Language.InstrSel.Utils.Base
   , groupBy
   , isLeft
   , isRight
+  , maybeRead
   , maybeToNatural
   , replace
   , splitOn
@@ -40,6 +41,8 @@ import qualified Data.Char as Char
   ( toLower
   , toUpper
   )
+import Safe
+  ( readMay )
 
 
 --------------
@@ -202,3 +205,6 @@ toLower = map Char.toLower
 -- | Converts a string to upper cases.
 toUpper :: String -> String
 toUpper = map Char.toUpper
+
+maybeRead :: Read a => String -> Maybe a
+maybeRead = readMay
