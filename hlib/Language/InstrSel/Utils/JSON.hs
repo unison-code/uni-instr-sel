@@ -28,6 +28,7 @@ where
 
 import Language.InstrSel.Utils
   ( Natural
+  , Range (..)
   , fromNatural
   , replace
   , toNatural
@@ -114,3 +115,10 @@ instance FromJSON Natural where
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
+
+instance FromJSON i => FromJSON (Range i) where
+  parseJSON v = do (lb, ub) <- parseJSON v
+                   return $ Range { lowerBound = lb, upperBound = ub }
+
+instance ToJSON i => ToJSON (Range i) where
+  toJSON r = toJSON (lowerBound r, upperBound r)
