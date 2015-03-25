@@ -118,7 +118,7 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 %===========
 
 % Entity node definitions, locations, and immediate values.
-array[allEntitiesInFunction] of var allLabelsInFunctionPlusNull: def;
+array[allEntitiesInFunction] of var allLabelsInFunction: def;
 array[allEntitiesInFunction] of var allLocValues: loc;
 array[allEntitiesInFunction] of var int: cnst;
 
