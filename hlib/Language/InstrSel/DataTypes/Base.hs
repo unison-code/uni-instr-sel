@@ -71,7 +71,9 @@ fromIntWidth w = IntType { intNumBits = toNatural w, intRange = Nothing }
 
 -- | Gets the data type of a corresponding integer value.
 fromIntValue :: (Integral a) => a -> DataType
-fromIntValue 0 = IntType { intNumBits = 1, intRange = Nothing }
+fromIntValue 0 = IntType { intNumBits = 1
+                         , intRange = Just $ rangeFromSingleton 0
+                         }
 fromIntValue i =
   let log2value = logBase 2 $ (fromIntegral $ abs i) :: Float
       numbits = (ceiling log2value) :: Integer
@@ -185,19 +187,20 @@ parseAnyTypeFromJson str =
 parseIntTypeFromJson :: String -> Maybe DataType
 parseIntTypeFromJson str =
   if head str == 'i'
-  then let parts = splitOn (tail str) " "
-           numbits = fromJust $
-                       do int <- maybeRead (head parts) :: Maybe Integer
-                          maybeToNatural int
+  then let parts = splitOn " " (tail str)
+           numbits = do int <- maybeRead (head parts) :: Maybe Integer
+                        maybeToNatural int
            range = parseRangeStr (last parts)
-       in case length parts of
-            1 -> Just $ IntType { intNumBits = numbits
-                                , intRange = Nothing
-                                }
-            2 -> Just $ IntType { intNumBits = numbits
-                                , intRange = range
-                                }
-            _ -> Nothing
+       in if isJust numbits
+          then case length parts of
+                 1 -> Just $ IntType { intNumBits = fromJust numbits
+                                     , intRange = Nothing
+                                     }
+                 2 -> Just $ IntType { intNumBits = fromJust numbits
+                                     , intRange = range
+                                     }
+                 _ -> Nothing
+          else Nothing
   else Nothing
 
 -- | Checks if the given data type represents a constant value.

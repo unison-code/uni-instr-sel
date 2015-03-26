@@ -28,7 +28,7 @@ where
 
 import Data.List
   ( intercalate )
-import Data.List.Split
+import qualified Data.List.Split as Split
   ( splitOn )
 import qualified Data.Char as Char
   ( toLower
@@ -73,6 +73,14 @@ groupBy f es =
   where gr _ e [] = [[e]]
         gr f' e (p:ps) = if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
+
+splitOn
+  :: String
+     -- ^ String to do the splitting with.
+  -> String
+     -- ^ String to be split.
+  -> [String]
+splitOn = Split.splitOn
 
 -- | Replaces a substring with another substring.
 replace
