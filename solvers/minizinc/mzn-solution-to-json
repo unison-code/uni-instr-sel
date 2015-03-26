@@ -148,30 +148,18 @@ if null_label < 0 or null_label >= len(ord_data):
     error("Value of 'label_value_for_null' is out of bounds")
 del ord_data[null_label]
 
-# Add 'has_d_imm' array to data
-loc_data = getRequiredDataByName(all_data, "loc")
-loc_for_imm_values = getRequiredDataByName(all_data, "loc_value_for_imm")
-has_d_imm_data = []
-for loc in loc_data:
-    has_d_imm_data.append(loc == loc_for_imm_values)
-all_data.append(["has_d_imm", has_d_imm_data])
-
 # Add 'has_d_loc' array to data
 loc_data = getRequiredDataByName(all_data, "loc")
-loc_for_no_reuse_values = \
-  getRequiredDataByName(all_data, "loc_value_for_no_reuse")
+loc_value_for_null = \
+  getRequiredDataByName(all_data, "loc_value_for_null")
 has_d_loc_data = []
 for loc in loc_data:
-    has_d_loc_data.append(loc != loc_for_imm_values
-                          and
-                          loc != loc_for_no_reuse_values)
+    has_d_loc_data.append(loc != loc_value_for_null)
 all_data.append(["has_d_loc", has_d_loc_data])
 
 # Turn desirable data into JSON
 data_table = [ ["loc",       "loc-of-dnode"]
              , ["has_d_loc", "has-dnode-loc"]
-             , ["cnst",      "imm-value-of-dnode"]
-             , ["has_d_imm", "has-dnode-imm-value"]
              , ["sel",       "is-match-selected"]
              , ["mov",       "bb-of-match"]
              , ["ord",       "order-of-bbs"]

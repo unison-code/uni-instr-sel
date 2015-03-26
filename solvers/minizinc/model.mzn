@@ -73,10 +73,10 @@ int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
                                   ]
                                 ) + 1;
 
-% Total number of location values (additional values will be needed for
-% representing certain settings, such as whether the value is an intermediate
-% data value or an immediate).
-int: numLocValues = numLocations + 2;
+% Total number of location values (an additional value will be needed for
+% representing the null location, for when the entity cannot be reused by other
+% matches).
+int: numLocValues = numLocations + 1;
 
 % Total number of labels values (an additional value will be needed for
 % representing the null label, to which non-selected matches will be moved).
@@ -85,12 +85,8 @@ int: numLabelValues = numLabelsInFunction + 1;
 % Reference to the null-label value.
 int: labelValueForNull = numLabelValues - 1;
 
-% Location values.
-
-% Reference to use when a data node represents an no-reuse value.
-int: locValueForNoReuse = numLocValues - 2;
-% Reference to use when a data node represents an immediate value.
-int: locValueForImm = numLocValues - 1;
+% Reference to to the null-location value.
+int: locValueForNull = numLocValues - 1;
 
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
 % of 0 for the null label.
@@ -116,10 +112,9 @@ set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 % VARIABLES
 %===========
 
-% Entity node definitions, locations, and immediate values.
+% Entity node definitions and locations.
 array[allEntitiesInFunction] of var allLabelsInFunction: def;
 array[allEntitiesInFunction] of var allLocValues: loc;
-array[allEntitiesInFunction] of var int: cnst;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -351,15 +346,7 @@ constraint
 constraint
   forall (e in stateEntitiesInFunction)
   (
-    loc[e] = locValueForImm
-  );
-
-% Constrain the immediate value for all entities which do not represent
-% immediate values.
-constraint
-  forall (e in allEntitiesInFunction)
-  (
-    loc[e] != locValueForImm -> cnst[e] == 0
+    loc[e] = locValueForNull
   );
 
 % Accumulate cost of selected patterns.
@@ -390,12 +377,10 @@ minimize cost;
 output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
-       , "cnst=", show(cnst), "\n"
        , "mov=", show(mov), "\n"
        , "ord=", show(ord), "\n"
        , "dist=", show(dist), "\n"
        , "label_value_for_null=", show(labelValueForNull), "\n"
-       , "loc_value_for_no_reuse=", show(locValueForNoReuse), "\n"
-       , "loc_value_for_imm=", show(locValueForImm), "\n"
+       , "loc_value_for_null=", show(locValueForNull), "\n"
        , "cost=", show(cost), "\n"
        ];
