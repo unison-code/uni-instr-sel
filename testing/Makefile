@@ -15,16 +15,27 @@ UNI      := ../uni-is/uni-is
 SOLVER   := ../solvers/minizinc/solver
 PRETTIFY := ../tools/prettify-json
 
+TARGET := mips32
 
-#===============
-# GENERIC RULES
-#===============
+
+
+#=================
+# TOOLCHAIN RULES
+#=================
 
 .SECONDARY:
 
 .PHONY: build-toolchain
 build-toolchain:
 	cd .. && make
+
+.PHONY: clean-toolchain
+clean-toolchain:
+	cd .. && make clean
+
+.PHONY: distclean-toolchain
+distclean-toolchain:
+	cd .. && make distclean
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
@@ -41,18 +52,18 @@ build-toolchain:
 %.ce.f.json: %.f.json
 	$(UNI) transform --copy-extend-fun -f $< -o $@
 
-%.be.f.json: %.f.json
+%.ce.be.f.json: %.ce.f.json
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
-%.mips32.p.json: %.f.json
-	$(UNI) make --compute-pattern-matchset -t mips32.ce -f $< -o $@
+%.p.json: %.ce.be.f.json
+	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.hl.model.json: %.f.json %.mips32.p.json
-	$(UNI) make --construct-hl-cp-model -f $*.f.json -p $*.mips32.p.json -o $@
+%.hl.model.json: %.ce.be.f.json %.p.json
+	$(UNI) make --construct-hl-cp-model -f $*.ce.be.f.json -p $*.p.json -o $@
 
-%.aimaps.json: %.f.json %.mips32.p.json
+%.aimaps.json: %.ce.be.f.json %.p.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.f.json -p $*.mips32.p.json -o $@
+      -f $*.ce.be.f.json -p $*.p.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
@@ -68,6 +79,17 @@ build-toolchain:
 %.s: %.hl.model.json %.hl.sol.json
 	$(UNI) make --generate-asm -m $*.hl.model.json -s $*.hl.sol.json -o $@
 
+.PHONY: clean
+clean:
+	$(RM) *.json
+	$(RM) *.s
+
+
+
+#============
+# PLOT RULES
+#============
+
 %.full-f.dot: %.f.json
 	$(UNI) plot --plot-fun-full-graph -f $< -o $@
 
@@ -77,52 +99,13 @@ build-toolchain:
 %.ssa-f.dot: %.f.json
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.mips32.cov.dot: %.f.json %.mips32.p.json
-	$(UNI) plot --plot-cover-all-matches -f $< -p $*.mips32.p.json -o $@
+%.cov.dot: %.ce.be.f.json %.p.json
+	$(UNI) plot --plot-cover-all-matches -f $*.ce.be.f.json -p $*.p.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.f.json %.mips32.p.json
-	$(UNI) plot --plot-cover-per-match -f $< -p $*.mips32.p.json -o $*.mips32.cov.dot
-	for f in $*.mips32.cov.*.dot; do make $${f%.*}.pdf; done
-
-.PHONY: clean
-clean:
-	find . -name "*.hi" -type f -exec rm {} \;
-	find . -name "*.o" -type f -exec rm {} \;
-
-.PHONY: veryclean
-veryclean: clean
-	-rm parser
-
-
-
-#=================
-# TEMPORARY RULES
-#=================
-
-.PHONY: param-test
-param-test:
-	$(GHC) $(GHCFLAGS) param-test.hs
-
-.PHONY: run-param-test
-run-param-test: param-test
-	./param-test
-
-.PHONY: match-test
-match-test:
-	$(GHC) $(GHCFLAGS) match-test.hs
-
-.PHONY: run-match-test
-run-match-test: match-test
-	./match-test
-
-.PHONY: test-frontend
-test-frontend:
-	$(GHC) $(GHCFLAGS) test-llvm.hs
-	./test-llvm test.ll
-	dot -Tpdf test.dot -o test.pdf
-
-parser:
-	$(GHC) $(GHCFLAGS) parser.hs
+%.all-cover-plots: %.f.json %.p.json
+	$(UNI) plot --plot-cover-per-match \
+      -f $*.ce.be.f.json -p $*.p.json -o $*.cov.dot
+	for f in $*.cov.*.dot; do make $${f%.*}.pdf; done
