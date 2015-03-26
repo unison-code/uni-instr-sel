@@ -20,11 +20,7 @@ module Language.InstrSel.ConstraintModels.IDs
   )
 where
 
-import Language.InstrSel.Utils
-  ( Natural
-  , fromNatural
-  , toNatural
-  )
+import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.Lisp
   hiding
   ( Lisp (..) )

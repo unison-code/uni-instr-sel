@@ -11,7 +11,12 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Utils
-  ( module Language.InstrSel.Utils.Base )
+  ( module Language.InstrSel.Utils.Base
+  , module Language.InstrSel.Utils.Natural
+  , module Language.InstrSel.Utils.Range
+  )
 where
 
 import Language.InstrSel.Utils.Base
+import Language.InstrSel.Utils.Natural
+import Language.InstrSel.Utils.Range

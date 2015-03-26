@@ -17,13 +17,11 @@ module Language.InstrSel.Constraints.ConstraintBuilder
   ( addBBMoveConstraints
   , addFallthroughConstraints
   , addIntConstConstraints
-  , addIntRangeConstraints
   , addInterDataValConstraints
   , addDataLocConstraints
   , mkBBMoveConstraints
   , mkFallthroughConstraints
   , mkIntConstConstraints
-  , mkIntRangeConstraints
   , mkInterDataValConstraints
   , mkDataLocConstraints
   )
@@ -34,8 +32,6 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
 import Language.InstrSel.TargetMachines.IDs
   ( LocationID )
-import Language.InstrSel.Utils
-  ( Range (..) )
 
 import Data.Maybe
 
@@ -172,51 +168,6 @@ mkIntConstConstraints d v =
                $ IntConstValueOfDataNodeExpr
                $ ANodeIDExpr d
              )
-  ]
-
--- | Creates integer value range constraints (see 'mkIntRangeConstraints'), and
--- adds (if any) these to the existing 'OpStructure'.
-addIntRangeConstraints
-  :: OpStructure
-     -- ^ The old structure.
-  -> NodeID
-     -- ^ A data node.
-  -> Range Integer
-     -- ^ An inclusive signed integer range.
-  -> OpStructure
-     -- ^ The new structure.
-addIntRangeConstraints os d v =
-  addConstraints os (mkIntRangeConstraints d v)
-
--- | Creates constraints such that the value of particular data node is an
--- integer value that is within a given range.
-mkIntRangeConstraints
-  :: NodeID
-     -- ^ A data node.
-  -> Range Integer
-     -- ^ An inclusive signed integer range.
-  -> [Constraint]
-mkIntRangeConstraints d (Range { lowerBound = low_v, upperBound = up_v }) =
-  [ BoolExprConstraint
-    $ DataNodeIsAnIntConstantExpr
-    $ ANodeIDExpr d
-  , BoolExprConstraint
-    $ AndExpr ( LEExpr ( Int2NumExpr
-                         $ AnIntegerExpr low_v
-                       )
-                       ( Int2NumExpr
-                         $ IntConstValueOfDataNodeExpr
-                         $ ANodeIDExpr d
-                       )
-              )
-              ( LEExpr ( Int2NumExpr
-                         $ IntConstValueOfDataNodeExpr
-                         $ ANodeIDExpr d
-                       )
-                       ( Int2NumExpr
-                         $ AnIntegerExpr up_v
-                       )
-              )
   ]
 
 -- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds

@@ -30,12 +30,15 @@ import Language.InstrSel.OpStructures
 -------------
 
 -- | Copy-extends the given graph along every eligable data flow edge, except
--- those edges where the data node has no definition (that is, no parents). The
--- data nodes of such edges represent the external input to the pattern, and
--- should therefore not be copy-extended.
+-- those edges where the data node has no definition (that is, no parents)
+-- unless the data node represents a constant value.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph =
-  copyExtendWhen (\g e -> length (getDtFlowInEdges g (getSourceNode g e)) > 0)
+  copyExtendWhen
+    ( \g e ->
+      let src = getSourceNode g e
+      in length (getDtFlowInEdges g src) > 0 || isDataNodeWithConstValue src
+    )
 
 -- | Copy-extends every instruction in the given target machine.
 copyExtend :: TargetMachine -> TargetMachine

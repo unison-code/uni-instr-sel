@@ -225,10 +225,10 @@ updateNodeIDsInAsmStrParts
 updateNodeIDsInAsmStrParts asm maps =
   map f (zip asm maps)
   where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASLocationOfDataNode _, Just n) = ASLocationOfDataNode n
-        f (ASImmValueOfDataNode _, Just n) = ASImmValueOfDataNode n
-        f (ASBBLabelOfLabelNode _, Just n) = ASBBLabelOfLabelNode n
-        f (ASBBLabelOfDataNode  _, Just n) = ASBBLabelOfDataNode  n
+        f (ASLocationOfDataNode    _, Just n) = ASLocationOfDataNode n
+        f (ASImmIntValueOfDataNode _, Just n) = ASImmIntValueOfDataNode n
+        f (ASBBLabelOfLabelNode    _, Just n) = ASBBLabelOfLabelNode n
+        f (ASBBLabelOfDataNode     _, Just n) = ASBBLabelOfDataNode  n
         f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
@@ -239,8 +239,8 @@ emitInstructionPart
   -> AssemblyStringPart
   -> String
 emitInstructionPart _ _ _ (ASVerbatim s) = s
-emitInstructionPart _ sol _ (ASImmValueOfDataNode n) =
-  let i = lookup n (hlSolImmValuesOfDataNodes sol)
+emitInstructionPart model _ _ (ASImmIntValueOfDataNode n) =
+  let i = lookup n (hlFunDataIntConstants $ hlFunctionParams model)
   in if isJust i
      then show $ fromJust i
      else -- TODO: handle this case

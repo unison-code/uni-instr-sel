@@ -65,19 +65,10 @@ raiseLowLevelSolution sol ai_maps =
                     (llSolHasDataNodeLocation sol)
                     ai_entity_node_id_maps
                     (llSolLocsOfDataNodes sol)
-      imm_values_of_data_nodes =
-        catMaybes $ zipWith3
-                    ( \has_value nid value ->
-                        if has_value then Just (nid, value) else Nothing
-                    )
-                    (llSolHasDataNodeImmValue sol)
-                    ai_entity_node_id_maps
-                    (llSolImmValuesOfDataNodes sol)
   in HighLevelSolution
        { hlSolOrderOfBBs = order_of_bbs
        , hlSolSelMatches = sel_matches
        , hlSolBBsOfSelMatches = bbs_of_sel_matches
        , hlSolLocsOfDataNodes = locs_of_data_nodes
-       , hlSolImmValuesOfDataNodes = imm_values_of_data_nodes
        , hlSolCost = llSolCost sol
        }

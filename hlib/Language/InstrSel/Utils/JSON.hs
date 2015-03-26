@@ -18,21 +18,16 @@ module Language.InstrSel.Utils.JSON
   ( module Data.Aeson
   , module Control.Applicative
   , module Control.Monad
+  , Scientific
   , fromJson
   , pack
-  , sn2nat
   , toJson
   , unpack
   )
 where
 
-import Language.InstrSel.Utils
-  ( Natural
-  , Range (..)
-  , fromNatural
-  , replace
-  , toNatural
-  )
+import Language.InstrSel.Utils.Base
+  ( replace )
 
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BS
@@ -66,15 +61,6 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Converts a scientific number to a natural number. If the number is not an
--- non-negative then an error occurs.
-sn2nat :: Scientific -> Natural
-sn2nat sn =
-  let int_value = round sn
-  in if fromInteger int_value /= sn
-     then error "not an integer"
-     else toNatural int_value
-
 -- | Parses a JSON string into an entity.
 fromJson
   :: FromJSON a
@@ -102,23 +88,3 @@ unpack = T.unpack
 -- | Converts a 'String' into 'Text'.
 pack :: String -> T.Text
 pack = T.pack
-
-
-
-------------------------
--- Type class instances
-------------------------
-
-instance FromJSON Natural where
-  parseJSON (Number sn) = return $ sn2nat sn
-  parseJSON _ = mzero
-
-instance ToJSON Natural where
-  toJSON i = toJSON (fromNatural i)
-
-instance FromJSON i => FromJSON (Range i) where
-  parseJSON v = do (lb, ub) <- parseJSON v
-                   return $ Range { lowerBound = lb, upperBound = ub }
-
-instance ToJSON i => ToJSON (Range i) where
-  toJSON r = toJSON (lowerBound r, upperBound r)

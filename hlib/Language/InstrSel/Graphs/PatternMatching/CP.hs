@@ -318,7 +318,7 @@ dumpParamsToJsonFile p file =
 readSolutionData :: T.Text -> Sh SolutionData
 readSolutionData t =
   do let result = decode (BS.pack $ T.unpack t)
-     if (isJust result)
+     if isJust result
      then return $ fromJust result
      else terror "failed to parse JSON"
 

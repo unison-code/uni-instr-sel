@@ -95,6 +95,8 @@ data HighLevelFunctionParams
         -- source node and the second element is the target node.
       , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
         -- ^ The basic block information.
+      , hlFunDataIntConstants :: [(NodeID, Integer)]
+        -- ^ The values of data nodes that represent constants.
       , hlFunConstraints :: [Constraint]
         -- ^ The function constraints, if any. No constraint in this list may
         -- use array indices.
@@ -267,10 +269,6 @@ data HighLevelSolution
       , hlSolLocsOfDataNodes :: [(NodeID, LocationID)]
         -- ^ The locations assigned for certain data nodes. A missing entry
         -- means that no location was assigned to the corresponding data node.
-      , hlSolImmValuesOfDataNodes :: [(NodeID, Integer)]
-        -- ^ The immediate values assigned for certain data nodes. A missing
-        -- entry means that no immediate value was assigned to the corresponding
-        -- data node.
       , hlSolCost :: Integer
         -- ^ The cost metric of the found solution.
       }
@@ -300,15 +298,6 @@ data LowLevelSolution
         -- list corresponds to the array index of a particular data node, but
         -- this value is only valid if the corresponding value in
         -- @llHasDataNodeLocation@ is set to @True@.
-      , llSolHasDataNodeImmValue :: [Bool]
-        -- ^ Indicates whether an immediate value has been assigned to a
-        -- particular data node. An index into the list corresponds to the array
-        -- index of a particular data node.
-      , llSolImmValuesOfDataNodes :: [Integer]
-        -- ^ Specifies the immediate value assigned to a particular data
-        -- node. An index into the list corresponds to the array index of a
-        -- particular data node, but this value is only valid if the
-        -- corresponding value in @llHasasDataNodeImmValue@ is set to @True@.
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
       }
@@ -372,6 +361,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "label-dom-sets"
       <*> v .: "dom-edges"
       <*> v .: "bb-params"
+      <*> v .: "data-int-constants"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -385,6 +375,7 @@ instance ToJSON HighLevelFunctionParams where
            , "label-dom-sets"     .= (hlFunLabelDomSets d)
            , "dom-edges"          .= (hlFunDomEdges d)
            , "bb-params"          .= (hlFunBasicBlockParams d)
+           , "data-int-constants" .= (hlFunDataIntConstants d)
            , "constraints"        .= (hlFunConstraints d)
            ]
 
@@ -515,7 +506,6 @@ instance FromJSON HighLevelSolution where
       <*> v .: "selected-matches"
       <*> v .: "bbs-of-sel-matches"
       <*> v .: "locs-of-dnodes"
-      <*> v .: "imm-values-of-dnodes"
       <*> v .: "cost"
   parseJSON _ = mzero
 
@@ -525,7 +515,6 @@ instance ToJSON HighLevelSolution where
            , "selected-matches"     .= (hlSolSelMatches d)
            , "bbs-of-sel-matches"   .= (hlSolBBsOfSelMatches d)
            , "locs-of-dnodes"       .= (hlSolLocsOfDataNodes d)
-           , "imm-values-of-dnodes" .= (hlSolImmValuesOfDataNodes d)
            , "cost"                 .= (hlSolCost d)
            ]
 
@@ -537,8 +526,6 @@ instance FromJSON LowLevelSolution where
       <*> v .: "bb-of-match"
       <*> v .: "has-dnode-loc"
       <*> v .: "loc-of-dnode"
-      <*> v .: "has-dnode-imm-value"
-      <*> v .: "imm-value-of-dnode"
       <*> v .: "cost"
   parseJSON _ = mzero
 

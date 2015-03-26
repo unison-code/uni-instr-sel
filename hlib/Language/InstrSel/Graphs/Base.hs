@@ -83,6 +83,7 @@ module Language.InstrSel.Graphs.Base
   , findPNInMatch
   , findPNsInMapping
   , findPNsInMatch
+  , findIntConstOfDataNode
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
@@ -122,6 +123,8 @@ module Language.InstrSel.Graphs.Base
   , isCopyNode
   , isDataFlowEdge
   , isDataNode
+  , isDataNodeWithConstValue
+  , isDataNodeWithIntConst
   , isDomEdge
   , isEntityNode
   , isInGraph
@@ -166,10 +169,8 @@ import Language.InstrSel.Functions.IDs
   ( BasicBlockLabel (..) )
 import Language.InstrSel.Graphs.IDs
 import qualified Language.InstrSel.OpTypes as O
-import Language.InstrSel.Utils
-  ( Natural
-  , toNatural
-  )
+import Language.InstrSel.Utils.Natural
+import Language.InstrSel.Utils.Range
 import Language.InstrSel.Utils.JSON
 
 import qualified Data.Graph.Inductive as I
@@ -199,10 +200,13 @@ newtype Graph
 -- | Represents a distinct node.
 newtype Node
   = Node (I.LNode NodeLabel)
-  deriving (Show, Eq)
+  deriving (Show)
 
 instance Ord Node where
   (Node (n1, _)) <= (Node (n2, _)) = n1 <= n2
+
+instance Eq Node where
+  (Node (n1, _)) == (Node (n2, _)) = n1 == n2
 
 -- | A synonym for indicating the source node of an edge.
 type SrcNode = Node
@@ -218,7 +222,7 @@ data NodeLabel
       { nodeID :: NodeID
       , nodeType :: NodeType
       }
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | The node type information.
 data NodeType
@@ -231,16 +235,16 @@ data NodeType
   | DataNode
       { dataType :: D.DataType
       , dataOrigin :: Maybe String
-        -- ^ If the data node represents a particular temporary, variable or
-        -- constant which is specified in the source code, then the name of that
-        -- entity can be given here as a string. This will only be used for
-        -- debugging and pretty-printing purposes.
+        -- ^ If the data node represents a particular temporary or variable or
+        -- which is specified in the source code, then the name of that item can
+        -- be given here as a string. This will only be used for debugging and
+        -- pretty-printing purposes.
       }
   | LabelNode { bbLabel :: BasicBlockLabel }
   | PhiNode
   | StateNode
   | CopyNode
-  deriving (Show, Eq)
+  deriving (Show)
 
 -- | Represents a distinct edge.
 newtype Edge
@@ -497,6 +501,27 @@ isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
 isDataNode :: Node -> Bool
 isDataNode n = isOfDataNodeType $ getNodeType n
 
+isDataNodeWithConstValue :: Node -> Bool
+isDataNodeWithConstValue = isDataNodeWithIntConst
+
+isDataNodeWithIntConst :: Node -> Bool
+isDataNodeWithIntConst = isJust . findIntConstOfDataNode
+
+-- | Finds the integer constant of a given data node, if the data node has such
+-- a value.
+findIntConstOfDataNode :: Node -> Maybe Integer
+findIntConstOfDataNode n =
+  if isDataNode n
+  then let dt = getDataTypeOfDataNode n
+           maybe_r = D.intRange dt
+       in if D.isIntType dt && isJust maybe_r
+          then let r = fromJust maybe_r
+               in if isRangeSingleton r
+                  then Just $ lowerBound r
+                  else Nothing
+          else Nothing
+  else Nothing
+
 isLabelNode :: Node -> Bool
 isLabelNode n = isOfLabelNodeType $ getNodeType n
 
@@ -596,6 +621,10 @@ getNodeLabel (Node (_, nl)) = nl
 -- | Gets the node type from a node.
 getNodeType :: Node -> NodeType
 getNodeType (Node (_, NodeLabel _ nt)) = nt
+
+-- | Gets the data type from a data node.
+getDataTypeOfDataNode :: Node -> D.DataType
+getDataTypeOfDataNode n = dataType $ getNodeType n
 
 -- | Gets the internal node ID from a node.
 getIntNodeID :: Node -> I.Node
@@ -1011,23 +1040,23 @@ doNodesMatch
      -- ^ A node from the pattern graph.
   -> Bool
 doNodesMatch fg pg fn pn =
-  areNodeTypesCompatible (getNodeType fn) (getNodeType pn)
+  (getNodeType pn) `isNodeTypeCompatibleWith` (getNodeType fn)
   &&
   doNumEdgesMatch fg pg fn pn
 
--- | Checks if two node types are compatible, which means that they will yield
--- assembly code that is semantically equivalent.
-areNodeTypesCompatible :: NodeType -> NodeType -> Bool
-areNodeTypesCompatible (ComputationNode op1) (ComputationNode op2) =
-  O.areCompOpsCompatible op1 op2
-areNodeTypesCompatible (ControlNode op1) (ControlNode op2) = op1 == op2
-areNodeTypesCompatible (DataNode d1 _) (DataNode d2 _) =
-  D.areDataTypesCompatible d1 d2
-areNodeTypesCompatible (LabelNode _) (LabelNode _) = True
-areNodeTypesCompatible PhiNode PhiNode = True
-areNodeTypesCompatible StateNode StateNode = True
-areNodeTypesCompatible CopyNode CopyNode = True
-areNodeTypesCompatible _ _ = False
+-- | Checks if a node type is compatible with another node type. Note that this
+-- function is not necessarily commutative.
+isNodeTypeCompatibleWith :: NodeType -> NodeType -> Bool
+isNodeTypeCompatibleWith (ComputationNode op1) (ComputationNode op2) =
+  op1 `O.isCompOpCompatibleWith` op2
+isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) = op1 == op2
+isNodeTypeCompatibleWith (DataNode d1 _) (DataNode d2 _) =
+  d1 `D.isDataTypeCompatibleWith` d2
+isNodeTypeCompatibleWith (LabelNode _) (LabelNode _) = True
+isNodeTypeCompatibleWith PhiNode PhiNode = True
+isNodeTypeCompatibleWith StateNode StateNode = True
+isNodeTypeCompatibleWith CopyNode CopyNode = True
+isNodeTypeCompatibleWith _ _ = False
 
 -- | Checks if a label node is an intermediate label node, meaning that it has
 -- at least one in-edge to a control node, and at least one out-edge to another
@@ -1264,7 +1293,7 @@ areInEdgesEquivalent
 areInEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2
   &&
-  getTargetNode g e1 == getTargetNode g e2
+  (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2)
   &&
   getInEdgeNr e1 == getInEdgeNr e2
 
@@ -1280,7 +1309,7 @@ areOutEdgesEquivalent
 areOutEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2
   &&
-  getSourceNode g e1 == getSourceNode g e2
+  (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2)
   &&
   getOutEdgeNr e1 == getOutEdgeNr e2
 

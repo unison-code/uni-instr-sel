@@ -33,10 +33,7 @@ import Language.InstrSel.Graphs
   ( NodeID )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions.IDs
-import Language.InstrSel.Utils
-  ( Natural
-  , toNatural
-  )
+import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.JSON
 
 

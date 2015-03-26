@@ -24,11 +24,7 @@ module Language.InstrSel.Graphs.IDs
   )
 where
 
-import Language.InstrSel.Utils
-  ( Natural
-  , fromNatural
-  , toNatural
-  )
+import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.Lisp
   hiding
   ( Lisp (..) )

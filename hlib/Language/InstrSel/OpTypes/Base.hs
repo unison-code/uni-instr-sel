@@ -329,31 +329,34 @@ numOperandsForArithOpType op
   | op `elem` [ Not, Sqrt ] = 1
   | otherwise = 2
 
--- | Checks if two computations are compatible, meaning that they are
--- semantically equivalent.
-areCompOpsCompatible :: CompOp -> CompOp -> Bool
-areCompOpsCompatible (CompArithOp op1) (CompArithOp op2) =
-  areArithOpsCompatible op1 op2
-areCompOpsCompatible (CompTypeConvOp op1) (CompTypeConvOp op2) =
-  areTypeConvOpsCompatible op1 op2
-areCompOpsCompatible _ _ = False
+-- | Checks if a computation is compatible with another, meaning that they are
+-- semantically equivalent. Note that this function is not necessarily
+-- commutative.
+isCompOpCompatibleWith :: CompOp -> CompOp -> Bool
+isCompOpCompatibleWith (CompArithOp op1) (CompArithOp op2) =
+  op1 `isArithOpCompatibleWith` op2
+isCompOpCompatibleWith (CompTypeConvOp op1) (CompTypeConvOp op2) =
+  op1 `isTypeConvOpCompatibleWith` op2
+isCompOpCompatibleWith _ _ = False
 
--- | Checks if two arithmetic operations are compatible, meaning that they are
--- semantically equivalent.
-areArithOpsCompatible :: ArithOp -> ArithOp -> Bool
-areArithOpsCompatible  ( IntOp op1)    ( IntOp op2) = op1 == op2
-areArithOpsCompatible  ( IntOp op1)    (UIntOp op2) = op1 == op2
-areArithOpsCompatible  ( IntOp op1)    (SIntOp op2) = op1 == op2
-areArithOpsCompatible  (UIntOp op1)    ( IntOp op2) = op1 == op2
-areArithOpsCompatible  (SIntOp op1)    ( IntOp op2) = op1 == op2
-areArithOpsCompatible ( FloatOp op1) ( FloatOp op2) = op1 == op2
-areArithOpsCompatible ( FloatOp op1) (OFloatOp op2) = op1 == op2
-areArithOpsCompatible ( FloatOp op1) (UFloatOp op2) = op1 == op2
-areArithOpsCompatible (UFloatOp op1) ( FloatOp op2) = op1 == op2
-areArithOpsCompatible (OFloatOp op1) ( FloatOp op2) = op1 == op2
-areArithOpsCompatible op1 op2                       = op1 == op2
+-- | Checks if an arithmetic operation is compatible another operation, meaning
+-- that they are semantically equivalent. Note that this function is not
+-- necessarily commutative.
+isArithOpCompatibleWith :: ArithOp -> ArithOp -> Bool
+isArithOpCompatibleWith  ( IntOp op1)    ( IntOp op2) = op1 == op2
+isArithOpCompatibleWith  ( IntOp op1)    (UIntOp op2) = op1 == op2
+isArithOpCompatibleWith  ( IntOp op1)    (SIntOp op2) = op1 == op2
+isArithOpCompatibleWith  (UIntOp op1)    ( IntOp op2) = op1 == op2
+isArithOpCompatibleWith  (SIntOp op1)    ( IntOp op2) = op1 == op2
+isArithOpCompatibleWith ( FloatOp op1) ( FloatOp op2) = op1 == op2
+isArithOpCompatibleWith ( FloatOp op1) (OFloatOp op2) = op1 == op2
+isArithOpCompatibleWith ( FloatOp op1) (UFloatOp op2) = op1 == op2
+isArithOpCompatibleWith (UFloatOp op1) ( FloatOp op2) = op1 == op2
+isArithOpCompatibleWith (OFloatOp op1) ( FloatOp op2) = op1 == op2
+isArithOpCompatibleWith op1 op2                       = op1 == op2
 
--- | Checks if two type conversion operations are compatible, meaning that they
--- are semantically equivalent.
-areTypeConvOpsCompatible :: TypeConvOp -> TypeConvOp -> Bool
-areTypeConvOpsCompatible = (==)
+-- | Checks if a type conversion operation is compatible with another operation,
+-- meaning that they are semantically equivalent. Note that this function is not
+-- necessarily commutative.
+isTypeConvOpCompatibleWith :: TypeConvOp -> TypeConvOp -> Bool
+isTypeConvOpCompatibleWith = (==)

@@ -20,15 +20,15 @@ module Language.InstrSel.Functions.LLVM.FunctionMaker
   )
 where
 
-import qualified Language.InstrSel.Constraints as C
-import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as Op
 import qualified Language.InstrSel.Functions as PM
 import Language.InstrSel.Utils
-  ( toNatural )
+  ( rangeFromSingleton
+  , toNatural
+  )
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
@@ -326,14 +326,6 @@ addNewEdgesManyDests st et src dsts =
       f g e = fst $ G.addNewEdge et e g
   in updateOSGraph st $ foldl f (getOSGraph st) es
 
--- | Adds a new constraint into a given state.
-addOSConstraint :: BuildState -> C.Constraint -> BuildState
-addOSConstraint st c = st { opStruct = OS.addConstraint (opStruct st) c }
-
--- | Adds a list of new constraints into a given state.
-addOSConstraints :: BuildState -> [C.Constraint] -> BuildState
-addOSConstraints st cs = foldl addOSConstraint st cs
-
 -- | Adds a new symbol-to-node mapping to a given state.
 addSymMap :: BuildState -> SymToDataNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = sm:(symMaps st) }
@@ -405,13 +397,8 @@ buildOSFromConst st0 c =
      else let st1 = addNewNode st0 (G.DataNode (toDataType c) (Just $ show c))
               d_node = fromJust $ lastTouchedNode st1
               st2 = addConstMap st1 (d_node, c)
-              st3 = addOSConstraints st2 (mkConstConstraints d_node c)
-              st4 = addLabelToEntityFlow st3 (fromJust $ entryLabel st3, d_node)
-          in st4
-
-mkConstConstraints :: G.Node -> Constant -> [C.Constraint]
-mkConstConstraints n (IntConstant { signedIntValue = v }) =
-  C.mkIntConstConstraints (G.getNodeID n) v
+              st3 = addLabelToEntityFlow st2 (fromJust $ entryLabel st2, d_node)
+          in st3
 
 -- | Inserts a new node representing a computational operation, and adds edges
 -- to that node from the given operands (which will also be processed).
@@ -493,7 +480,10 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Gets the corresponding DataType for a constant value.
 toDataType :: Constant -> D.DataType
-toDataType IntConstant { intBitWidth = w } = D.fromIWidth $ toNatural w
+toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
+  D.IntType { D.intNumBits = toNatural w
+            , D.intRange = Just $ rangeFromSingleton v
+            }
 toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 -- | Gets the label node with a particular name in the graph of the given state.

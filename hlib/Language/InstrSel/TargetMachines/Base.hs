@@ -51,8 +51,8 @@ data AssemblyStringTemplate
 data AssemblyStringPart
     -- | Denotes string which is meant to be output verbatim.
   = ASVerbatim String
-    -- | Denotes the immediate value of a given data node.
-  | ASImmValueOfDataNode NodeID
+    -- | Denotes the immediate integer value of a given data node.
+  | ASImmIntValueOfDataNode NodeID
     -- | Denotes the location of a given data node.
   | ASLocationOfDataNode NodeID
     -- | Denotes the basic block label of a given label node.

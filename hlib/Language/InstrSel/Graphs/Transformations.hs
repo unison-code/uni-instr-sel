@@ -47,7 +47,7 @@ import Data.Maybe
 copyExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to copy-extend the given
-     -- edge.
+     -- data edge.
   -> Graph
      -- ^ The graph to extend.
  -> Graph

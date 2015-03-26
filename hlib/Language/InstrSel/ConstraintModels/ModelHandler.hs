@@ -81,6 +81,23 @@ mkHLFunctionParams function =
         fromJust
         $ lookup (bbLabel $ getNodeType n)
                  (functionBBExecFreq function)
+      bb_params =
+        map ( \n -> HighLevelBasicBlockParams
+                      { hlBBLabel = (bbLabel $ getNodeType n)
+                      , hlBBLabelNode = (getNodeID n)
+                      , hlBBExecFrequency = getExecFreq n
+                      }
+            )
+            (filter isLabelNode (getAllNodes graph))
+      int_constants =
+        let ns = filter isDataNodeWithIntConst (getAllNodes graph)
+        in nub
+           $ map ( \n ->
+                   let nid = getNodeID n
+                       value = fromJust $ findIntConstOfDataNode n
+                   in (nid, value)
+                 )
+                 ns
   in HighLevelFunctionParams
        { hlFunOpNodes = nodeIDsByType isOperationNode
        , hlFunEntityNodes = nodeIDsByType isEntityNode
@@ -89,14 +106,8 @@ mkHLFunctionParams function =
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
        , hlFunDomEdges = dom_edges
-       , hlFunBasicBlockParams =
-           map ( \n -> HighLevelBasicBlockParams
-                         { hlBBLabel = (bbLabel $ getNodeType n)
-                         , hlBBLabelNode = (getNodeID n)
-                         , hlBBExecFrequency = getExecFreq n
-                         }
-               )
-               (filter isLabelNode (getAllNodes graph))
+       , hlFunBasicBlockParams = bb_params
+       , hlFunDataIntConstants = int_constants
        , hlFunConstraints = osConstraints $ functionOS function
        }
 
@@ -178,10 +189,10 @@ computeAsmStrNodeMaps
 computeAsmStrNodeMaps t m =
   map f (asmStrParts t)
   where f (ASVerbatim _) = Nothing
-        f (ASLocationOfDataNode n) = findFNInMatch m n
-        f (ASImmValueOfDataNode n) = findFNInMatch m n
-        f (ASBBLabelOfLabelNode n) = findFNInMatch m n
-        f (ASBBLabelOfDataNode  n) = findFNInMatch m n
+        f (ASLocationOfDataNode    n) = findFNInMatch m n
+        f (ASImmIntValueOfDataNode n) = findFNInMatch m n
+        f (ASBBLabelOfLabelNode    n) = findFNInMatch m n
+        f (ASBBLabelOfDataNode     n) = findFNInMatch m n
 
 -- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
 -- match ID.
