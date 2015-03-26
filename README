@@ -45,3 +45,5 @@ Now you will need to build the toolchain, which is done by running the following
 commands from the folder where this file is located:
 
    make
+
+You also need to install MiniZinc 2.0, if it is not already installed.
