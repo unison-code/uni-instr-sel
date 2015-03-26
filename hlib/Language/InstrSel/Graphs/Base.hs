@@ -513,7 +513,7 @@ findIntConstOfDataNode :: Node -> Maybe Integer
 findIntConstOfDataNode n =
   if isDataNode n
   then let dt = getDataTypeOfDataNode n
-           maybe_r = D.intRange dt
+           maybe_r = D.intValue dt
        in if D.isIntType dt && isJust maybe_r
           then let r = fromJust maybe_r
                in if isRangeSingleton r

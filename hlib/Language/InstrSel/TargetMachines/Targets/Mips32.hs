@@ -172,7 +172,7 @@ mkSimpleCopyPattern src dst =
 
 -- | Makes an 'IntType' with a given number of bits and no value range.
 mkIntType :: Natural -> D.DataType
-mkIntType n = D.IntType { D.intNumBits = n, D.intRange = Nothing }
+mkIntType n = D.IntType { D.intNumBits = n, D.intValue = Nothing }
 
 -- | Creates an instance of the simple copy pattern. All data are assumed to be
 -- 32 bits in size.
@@ -284,7 +284,7 @@ mkSimple32BitReg16BitImmCompInst
   -> Instruction
 mkSimple32BitReg16BitImmCompInst str op r1 r3 imm =
   let dt32 = mkIntType 32
-      dt16 = D.IntType { D.intNumBits = 16, D.intRange = Just imm }
+      dt16 = D.IntType { D.intNumBits = 16, D.intValue = Just imm }
       g = mkSimpleCompPattern op dt32 dt16 dt32
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid

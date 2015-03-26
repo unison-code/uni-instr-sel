@@ -482,7 +482,7 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 toDataType :: Constant -> D.DataType
 toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
   D.IntType { D.intNumBits = toNatural w
-            , D.intRange = Just $ rangeFromSingleton v
+            , D.intValue = Just $ rangeFromSingleton v
             }
 toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
