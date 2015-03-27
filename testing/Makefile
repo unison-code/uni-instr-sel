@@ -83,6 +83,8 @@ distclean-toolchain:
 clean:
 	$(RM) *.json
 	$(RM) *.s
+	$(RM) *.dot
+	$(RM) *.pdf
 
 
 
