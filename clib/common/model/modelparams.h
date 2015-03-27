@@ -102,34 +102,14 @@ class ModelParams {
     getLabelDomSetsInF(void) const;
 
     /**
-     * Gets the inverse dominator set per given label node in the function
+     * Gets the list of definition edges per given label node in the function
      * graph.
      *
-     * @returns List of label nodes that are dominated by a particular label
-     * node.
+     * @returns List of entity nodes between which there is a definition edge
+     * with a particular label node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelInvDomSetsInF(void) const;
-
-    /**
-     * Gets the list of label-to-entity dominance edges per given label node in
-     * the function graph.
-     *
-     * @returns List of entity nodes to which there is a dominance edge from a
-     * particular label node.
-     */
-    std::vector< std::list<ArrayIndex> >
-    getLabelToEntityDomEdgesInF(void) const;
-
-    /**
-     * Gets the list of entity-to-label edges per given label node in the
-     * function graph.
-     *
-     * @returns List of entity nodes from which there is a dominance edge to a
-     * particular label node.
-     */
-    std::vector< std::list<ArrayIndex> >
-    getEntityToLabelDomEdgesInF(void) const;
+    getDefEdgesInF(void) const;
 
     /**
      * Gets the entry label in the function graph.
@@ -352,7 +332,7 @@ class ModelParams {
     setLabelDomSetsInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the inverse dominator sets for the label nodes in the function
+     * Sets the definition edges for the respective label nodes in the function
      * graph.
      *
      * @param root
@@ -363,35 +343,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelInvDomSetsInF(const Json::Value& root, ModelParams& p);
-
-    /**
-     * Sets the label-to-entity dominance edges for the respective label nodes
-     * in the function graph.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    setLabelToEntityDomEdgesInF(const Json::Value& root, ModelParams& p);
-
-    /**
-     * Sets the entity-to-label dominance edges for the respective label nodes
-     * in the function graph.
-     *
-     * @param root
-     *        The JSON root value.
-     * @param p
-     *        Object to add the data to.
-     * @throws Exception
-     *         When an error occurs.
-     */
-    static void
-    setEntityToLabelDomEdgesInF(const Json::Value& root, ModelParams& p);
+    setDefEdgesInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the constraints of the function graph.
@@ -615,21 +567,10 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > func_label_dom_sets_;
 
     /**
-     * The inverse dominator sets for each label node in the function graph.
+     * The entity nodes between which there is a definition edge with the
+     * respective label node.
      */
-    std::vector< std::list<ArrayIndex> > func_label_inv_dom_sets_;
-
-    /**
-     * The entity nodes to which the respective label nodes have a dominance
-     * edge.
-     */
-    std::vector< std::list<ArrayIndex> > func_label_to_entity_dom_edges_;
-
-    /**
-     * The entity nodes from which the respective label nodes have a
-     * dominance edge.
-     */
-    std::vector< std::list<ArrayIndex> > func_entity_to_label_dom_edges_;
+    std::vector< std::list<ArrayIndex> > func_def_edges_;
 
     /**
      * The entity nodes in the function graph that are state nodes.

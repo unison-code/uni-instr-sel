@@ -70,12 +70,17 @@ mkHLFunctionParams function =
   let graph = osGraph $ functionOS function
       entry_label = fromJust $ osEntryLabelNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
-      dom_edges =
-        map ( \e -> ( getNodeID $ getSourceNode graph e
-                    , getNodeID $ getTargetNode graph e
-                    )
+      def_edges =
+        map ( \e ->
+              let src = getSourceNode graph e
+                  srcid = getNodeID src
+                  dst = getTargetNode graph e
+                  dstid = getNodeID dst
+              in if isLabelNode src
+                 then (srcid, dstid)
+                 else (dstid, srcid)
             )
-            (filter isDomEdge (getAllEdges graph))
+            (filter isDefEdge (getAllEdges graph))
       domsets = computeDomSets graph entry_label
       getExecFreq n =
         fromJust
@@ -105,7 +110,7 @@ mkHLFunctionParams function =
        , hlFunLabelNodes = nodeIDsByType isLabelNode
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
-       , hlFunDomEdges = dom_edges
+       , hlFunDefEdges = def_edges
        , hlFunBasicBlockParams = bb_params
        , hlFunDataIntConstants = int_constants
        , hlFunConstraints = osConstraints $ functionOS function
@@ -244,25 +249,13 @@ lowerHighLevelModel model ai_maps =
                ( sortByAI (getAIForLabelNodeID . domNode)
                           (hlFunLabelDomSets f_params)
                )
-       , llFunLabelInvDomSets =
-           map (\d -> map getAIForLabelNodeID (invDomSet d))
-               ( sortByAI (getAIForLabelNodeID . domNode)
-                          (hlFunLabelDomSets f_params)
-               )
-       , llFunLabelToEntityDomEdges =
+       , llFunDefEdges =
            map ( \n ->
                  nub $
                  map (getAIForEntityNodeID . snd)
-                     (filter (\(n', _) -> n == n') (hlFunDomEdges f_params))
+                     (filter (\(n', _) -> n == n') (hlFunDefEdges f_params))
                )
-               (sortByAI id (hlFunLabelNodes f_params))
-       , llFunEntityToLabelDomEdges =
-           map ( \n ->
-                 nub $
-                 map (getAIForEntityNodeID . fst)
-                     (filter (\(_, n') -> n == n') (hlFunDomEdges f_params))
-               )
-               (sortByAI id (hlFunLabelNodes f_params))
+               (sortByAI getAIForLabelNodeID (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
            map hlBBExecFrequency
                ( sortByAI (getAIForLabelNodeID . hlBBLabelNode)

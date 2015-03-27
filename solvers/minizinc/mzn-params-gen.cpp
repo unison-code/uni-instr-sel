@@ -183,15 +183,9 @@ generateModelFunctionParameters(
     out << "domSetOfLabelInFunction = array1d(allLabelsInFunction, ";
     printMinizincValue(out, params.getLabelDomSetsInF());
     out << ");" << endl;
-    out << "invDomSetOfLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getLabelInvDomSetsInF());
-    out << ");" << endl;
 
-    out << "domEdgesFromLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getLabelToEntityDomEdgesInF());
-    out << ");" << endl;
-    out << "domEdgesToLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getEntityToLabelDomEdgesInF());
+    out << "defEdgesForLabelInFunction = array1d(allLabelsInFunction, ";
+    printMinizincValue(out, params.getDefEdgesInF());
     out << ");" << endl;
 
     out << "stateEntitiesInFunction = ";

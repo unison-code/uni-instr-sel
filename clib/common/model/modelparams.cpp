@@ -85,9 +85,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setStateEntitiesInF(root, p);
     setEntryLabelInF(root, p);
     setLabelDomSetsInF(root, p);
-    setLabelInvDomSetsInF(root, p);
-    setLabelToEntityDomEdgesInF(root, p);
-    setEntityToLabelDomEdgesInF(root, p);
+    setDefEdgesInF(root, p);
     setExecFreqOfBBsInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
@@ -282,18 +280,8 @@ ModelParams::getLabelDomSetsInF(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getLabelInvDomSetsInF(void) const {
-    return func_label_inv_dom_sets_;
-}
-
-vector< list<ID> >
-ModelParams::getLabelToEntityDomEdgesInF(void) const {
-    return func_label_to_entity_dom_edges_;
-}
-
-vector< list<ID> >
-ModelParams::getEntityToLabelDomEdgesInF(void) const {
-    return func_entity_to_label_dom_edges_;
+ModelParams::getDefEdgesInF(void) const {
+    return func_def_edges_;
 }
 
 void
@@ -403,34 +391,12 @@ ModelParams::setLabelDomSetsInF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setLabelInvDomSetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-inv-dom-sets")) {
-        list<ArrayIndex> domset;
-        for (auto entry : jsonlist) {
-            domset.push_back(toArrayIndex(entry));
-        }
-        p.func_label_inv_dom_sets_.push_back(domset);
-    }
-}
-
-void
-ModelParams::setLabelToEntityDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-to-entity-dom-edges")) {
+ModelParams::setDefEdgesInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-def-edges")) {
         list<ArrayIndex> entities;
         for (auto entry : jsonlist) {
             entities.push_back(toArrayIndex(entry));
         }
-        p.func_label_to_entity_dom_edges_.push_back(entities);
-    }
-}
-
-void
-ModelParams::setEntityToLabelDomEdgesInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-entity-to-label-dom-edges")) {
-        list<ArrayIndex> entities;
-        for (auto entry : jsonlist) {
-            entities.push_back(toArrayIndex(entry));
-        }
-        p.func_entity_to_label_dom_edges_.push_back(entities);
+        p.func_def_edges_.push_back(entities);
     }
 }

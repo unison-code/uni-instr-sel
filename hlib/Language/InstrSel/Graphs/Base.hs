@@ -55,8 +55,8 @@ module Language.InstrSel.Graphs.Base
   , addNewCtrlFlowEdges
   , addNewDtFlowEdge
   , addNewDtFlowEdges
-  , addNewDomEdge
-  , addNewDomEdges
+  , addNewDefEdge
+  , addNewDefEdges
   , addNewStFlowEdge
   , addNewStFlowEdges
   , addNewNode
@@ -91,8 +91,8 @@ module Language.InstrSel.Graphs.Base
   , getCtrlFlowOutEdges
   , getDtFlowInEdges
   , getDtFlowOutEdges
-  , getDomInEdges
-  , getDomOutEdges
+  , getDefInEdges
+  , getDefOutEdges
   , getStFlowInEdges
   , getStFlowOutEdges
   , getEdgeType
@@ -125,7 +125,7 @@ module Language.InstrSel.Graphs.Base
   , isDataNode
   , isDataNodeWithConstValue
   , isDataNodeWithIntConst
-  , isDomEdge
+  , isDefEdge
   , isEntityNode
   , isInGraph
   , isLabelNode
@@ -137,7 +137,7 @@ module Language.InstrSel.Graphs.Base
   , isOfCopyNodeType
   , isOfDataFlowEdgeType
   , isOfDataNodeType
-  , isOfDomEdgeType
+  , isOfDefEdgeType
   , isOfLabelNodeType
   , isOfPhiNodeType
   , isOfStateFlowEdgeType
@@ -265,7 +265,7 @@ data EdgeType
   = ControlFlowEdge
   | DataFlowEdge
   | StateFlowEdge
-  | DomEdge
+  | DefEdge
   deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
@@ -298,8 +298,6 @@ data DomSet t
         -- ^ The item that this dominator set concerns.
       , domSet :: [t]
         -- ^ The items that dominate this item.
-      , invDomSet :: [t]
-        -- ^ The items dominated by this item.
       }
   deriving (Show)
 
@@ -406,7 +404,7 @@ instance FromJSON EdgeType where
     case str of "ctrl" -> return ControlFlowEdge
                 "data" -> return DataFlowEdge
                 "stat" -> return StateFlowEdge
-                "dom"  -> return DomEdge
+                "def"  -> return DefEdge
                 _      -> mzero
   parseJSON _ = mzero
 
@@ -414,7 +412,7 @@ instance ToJSON EdgeType where
   toJSON ControlFlowEdge = "ctrl"
   toJSON DataFlowEdge    = "data"
   toJSON StateFlowEdge   = "stat"
-  toJSON DomEdge         = "dom"
+  toJSON DefEdge         = "def"
 
 instance FromJSON EdgeNr where
   parseJSON v = EdgeNr <$> parseJSON v
@@ -427,14 +425,12 @@ instance FromJSON (DomSet NodeID) where
     DomSet
       <$> v .: "node"
       <*> v .: "dom-set"
-      <*> v .: "dom-set-inv"
   parseJSON _ = mzero
 
 instance ToJSON (DomSet NodeID) where
   toJSON d =
     object [ "node"        .= (domNode d)
            , "dom-set"     .= (domSet d)
-           , "dom-set-inv" .= (invDomSet d)
            ]
 
 instance FromJSON (Match NodeID) where
@@ -571,8 +567,8 @@ isStateFlowEdge = isOfStateFlowEdgeType . getEdgeType
 isControlFlowEdge :: Edge -> Bool
 isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
 
-isDomEdge :: Edge -> Bool
-isDomEdge = isOfDomEdgeType . getEdgeType
+isDefEdge :: Edge -> Bool
+isDefEdge = isOfDefEdgeType . getEdgeType
 
 isOfDataFlowEdgeType :: EdgeType -> Bool
 isOfDataFlowEdgeType DataFlowEdge = True
@@ -586,9 +582,9 @@ isOfStateFlowEdgeType :: EdgeType -> Bool
 isOfStateFlowEdgeType StateFlowEdge = True
 isOfStateFlowEdgeType _ = False
 
-isOfDomEdgeType :: EdgeType -> Bool
-isOfDomEdgeType DomEdge = True
-isOfDomEdgeType _ = False
+isOfDefEdgeType :: EdgeType -> Bool
+isOfDefEdgeType DefEdge = True
+isOfDefEdgeType _ = False
 
 -- | Creates an empty graph.
 mkEmpty :: Graph
@@ -869,11 +865,11 @@ addNewStFlowEdge = addNewEdge StateFlowEdge
 addNewStFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewStFlowEdges = addNewEdges StateFlowEdge
 
-addNewDomEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewDomEdge = addNewEdge DomEdge
+addNewDefEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
+addNewDefEdge = addNewEdge DefEdge
 
-addNewDomEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
-addNewDomEdges = addNewEdges DomEdge
+addNewDefEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
+addNewDefEdges = addNewEdges DefEdge
 
 -- | Inserts a new node along an existing edge in the graph, returning both the
 -- new graph and the new node. The existing edge will be split into two edges
@@ -955,9 +951,9 @@ getCtrlFlowInEdges g n = filter isControlFlowEdge $ getInEdges g n
 getStFlowInEdges :: Graph -> Node -> [Edge]
 getStFlowInEdges g n = filter isStateFlowEdge $ getInEdges g n
 
--- | Gets all inbound dominance edges to a particular node.
-getDomInEdges :: Graph -> Node -> [Edge]
-getDomInEdges g n = filter isDomEdge $ getInEdges g n
+-- | Gets all inbound definition edges to a particular node.
+getDefInEdges :: Graph -> Node -> [Edge]
+getDefInEdges g n = filter isDefEdge $ getInEdges g n
 
 -- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
@@ -975,9 +971,9 @@ getCtrlFlowOutEdges g n = filter isControlFlowEdge $ getOutEdges g n
 getStFlowOutEdges :: Graph -> Node -> [Edge]
 getStFlowOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
 
--- | Gets all outbound dominance edges to a particular node.
-getDomOutEdges :: Graph -> Node -> [Edge]
-getDomOutEdges g n = filter isDomEdge $ getOutEdges g n
+-- | Gets all outbound definition edges to a particular node.
+getDefOutEdges :: Graph -> Node -> [Edge]
+getDefOutEdges g n = filter isDefEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
 getEdges :: Graph -> SrcNode -> DstNode -> [Edge]
@@ -1007,7 +1003,6 @@ convertDomSetN2ID :: DomSet Node -> DomSet NodeID
 convertDomSetN2ID d =
   DomSet { domNode = getNodeID $ domNode d
          , domSet = map getNodeID (domSet d)
-         , invDomSet = map getNodeID (invDomSet d)
          }
 
 -- | Converts a mapping of nodes into a mapping of node IDs.
@@ -1419,15 +1414,13 @@ findFNInMapping st pn =
 computeDomSets :: Graph -> Node -> [DomSet Node]
 computeDomSets (Graph g) n =
   let toNode = fromJust . getNodeWithIntNodeID g
-      doms = map (\(n1, ns2) -> (toNode n1, map toNode ns2))
+      doms = map ( \(n1, ns2) ->
+                   DomSet { domNode = toNode n1
+                          , domSet = map toNode ns2
+                          }
+                 )
                  (I.dom g (getIntNodeID n))
-      mkDomSet (dom_node, dom_set) =
-        DomSet { domNode = dom_node
-               , domSet = dom_set
-               , invDomSet =
-                   map fst $ filter (\(_, ns) -> dom_node `elem` ns) doms
-               }
-  in map mkDomSet doms
+  in doms
 
 -- | Extracts the control-flow graph from a graph. If there are no label nodes
 -- in the graph, an empty graph is returned.

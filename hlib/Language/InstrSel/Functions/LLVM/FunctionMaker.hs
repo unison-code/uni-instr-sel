@@ -56,21 +56,21 @@ type ConstToDataNodeMapping = (G.Node, Constant)
 -- both the data flow graph and the control flow graph have been built.
 type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
 
--- | Represents a dominance that goes from a label node, identified by the given
--- ID, an entity node. This is needed to draw the missing dominance edges after
--- both the data flow graph and the control flow graph have been built. Since
--- the in-edge number of an data-flow edge must match that of the corresponding
--- dominance edge, the in-edge number of the data-flow edge is also included in
--- the tuple.
-type LabelToEntityDom = (PM.BasicBlockLabel, G.Node, G.EdgeNr)
+-- | Represents a definition that goes from a label node, identified by the
+-- given ID, an entity node. This is needed to draw the missing definition edges
+-- after both the data flow graph and the control flow graph have been
+-- built. Since the in-edge number of an data-flow edge must match that of the
+-- corresponding definition edge, the in-edge number of the data-flow edge is
+-- also included in the tuple.
+type LabelToEntityDef = (PM.BasicBlockLabel, G.Node, G.EdgeNr)
 
--- | Represents a dominance that goes from an entity node to a label node,
--- identified by the given ID. This is needed to draw the missing dominance
+-- | Represents a definition that goes from an entity node to a label node,
+-- identified by the given ID. This is needed to draw the missing definition
 -- edges after both the data flow graph and the control flow graph have been
 -- built. Since the out-edge number of an data-flow edge must match that of the
--- corresponding dominance edge, the out-edge number of the data-flow edge is
+-- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type EntityToLabelDom = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
+type EntityToLabelDef = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -101,11 +101,11 @@ data BuildState
       , labelToEntityFlows :: [LabelToEntityFlow]
         -- ^ List of label-to-entity flow dependencies that are yet to be
         -- converted into edges.
-      , labelToEntityDoms :: [LabelToEntityDom]
-        -- ^ List of label-to-entity dominances that are yet to be converted
+      , labelToEntityDefs :: [LabelToEntityDef]
+        -- ^ List of label-to-entity definitions that are yet to be converted
         -- into edges.
-      , entityToLabelDoms :: [EntityToLabelDom]
-        -- ^ List of entity-to-label dominances that are yet to be converted
+      , entityToLabelDefs :: [EntityToLabelDef]
+        -- ^ List of entity-to-label definitions that are yet to be converted
         -- into edges.
       , funcInputValues :: [G.Node]
         -- ^ The data nodes representing the function input arguments.
@@ -207,8 +207,8 @@ mkInitBuildState m =
              , symMaps = []
              , constMaps = []
              , labelToEntityFlows = []
-             , labelToEntityDoms = []
-             , entityToLabelDoms = []
+             , labelToEntityDefs = []
+             , entityToLabelDefs = []
              , funcInputValues = []
              }
 
@@ -235,8 +235,8 @@ mkFunction m f@(LLVM.Function {}) =
               st2
               (fromJust $ findLabelNodeWithID st2 (fromJust $ entryLabel st2))
       st4 = addMissingLabelToEntityFlowEdges st3
-      st5 = addMissingLabelToEntityDomEdges st4
-      st6 = addMissingEntityToLabelDomEdges st5
+      st5 = addMissingLabelToEntityDefEdges st4
+      st6 = addMissingEntityToLabelDefEdges st5
   in Just ( PM.Function
               { PM.functionName = toFunctionName $ LLVMG.name f
               , PM.functionOS = opStruct st6
@@ -339,15 +339,15 @@ addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
 addLabelToEntityFlow st flow =
   st { labelToEntityFlows = flow:(labelToEntityFlows st) }
 
--- | Adds label-to-entity dominance to a given state.
-addLabelToEntityDom :: BuildState -> LabelToEntityDom -> BuildState
-addLabelToEntityDom st dom =
-  st { labelToEntityDoms = dom:(labelToEntityDoms st) }
+-- | Adds label-to-entity definition to a given state.
+addLabelToEntityDef :: BuildState -> LabelToEntityDef -> BuildState
+addLabelToEntityDef st def =
+  st { labelToEntityDefs = def:(labelToEntityDefs st) }
 
--- | Adds entity-to-label dominance to a given state.
-addEntityToLabelDom :: BuildState -> EntityToLabelDom -> BuildState
-addEntityToLabelDom st dom =
-  st { entityToLabelDoms = dom:(entityToLabelDoms st) }
+-- | Adds entity-to-label definition to a given state.
+addEntityToLabelDef :: BuildState -> EntityToLabelDef -> BuildState
+addEntityToLabelDef st def =
+  st { entityToLabelDefs = def:(entityToLabelDefs st) }
 
 -- | Adds a data node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
@@ -531,38 +531,38 @@ addMissingLabelToEntityFlowEdges st =
               deps
   in updateOSGraph st g1
 
--- | Adds the missing label-to-entity dominance edges, as described in the given
--- build state.
-addMissingLabelToEntityDomEdges :: BuildState -> BuildState
-addMissingLabelToEntityDomEdges st =
+-- | Adds the missing label-to-entity definition edges, as described in the
+-- given build state.
+addMissingLabelToEntityDefEdges :: BuildState -> BuildState
+addMissingLabelToEntityDefEdges st =
   let g0 = getOSGraph st
-      doms = labelToEntityDoms st
+      defs = labelToEntityDefs st
       g1 = foldr ( \(bb_id, dn, nr) g ->
                    let ln = fromJust $ findLabelNodeWithID st bb_id
-                       (g', new_e) = G.addNewDomEdge (ln, dn) g
+                       (g', new_e) = G.addNewDefEdge (ln, dn) g
                        new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
                        g'' = G.updateEdgeLabel new_el new_e g'
                    in g''
                  )
                  g0
-                 doms
+                 defs
   in updateOSGraph st g1
 
--- | Adds the missing entity-to-label dominance edges, as described in the given
--- build state.
-addMissingEntityToLabelDomEdges :: BuildState -> BuildState
-addMissingEntityToLabelDomEdges st =
+-- | Adds the missing entity-to-label definition edges, as described in the
+-- given build state.
+addMissingEntityToLabelDefEdges :: BuildState -> BuildState
+addMissingEntityToLabelDefEdges st =
   let g0 = getOSGraph st
-      doms = entityToLabelDoms st
+      defs = entityToLabelDefs st
       g1 = foldr ( \(dn, bb_id, nr) g ->
                    let ln = fromJust $ findLabelNodeWithID st bb_id
-                       (g', new_e) = G.addNewDomEdge (dn, ln) g
+                       (g', new_e) = G.addNewDefEdge (dn, ln) g
                        new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
                        g'' = G.updateEdgeLabel new_el new_e g'
                    in g''
                  )
                  g0
-                 doms
+                 defs
   in updateOSGraph st g1
 
 -- | Extracts the block execution frequency from the metadata (which should be
@@ -637,7 +637,7 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
         st4 = if G.isPhiNode expr_node
-              then addLabelToEntityDom
+              then addLabelToEntityDef
                      st3
                      (fromJust $ currentLabel st3, dst_node, 0)
                    -- ^ Since we've just created the data node and only added a
@@ -728,7 +728,7 @@ instance DfgBuildable LLVM.Instruction where
                           dfe = head
                                 $ filter G.isDataFlowEdge
                                 $ G.getEdges g n phi_node
-                      in addEntityToLabelDom st (n, bb_id, G.getOutEdgeNr dfe)
+                      in addEntityToLabelDef st (n, bb_id, G.getOutEdgeNr dfe)
                     )
                     st3
                     (zip operand_ns bb_labels)

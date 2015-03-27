@@ -34,9 +34,7 @@ int: numEntitiesInFunction;
 int: numLabelsInFunction;
 int: entryLabelOfFunction;
 array[allLabelsInFunction] of set of int: domSetOfLabelInFunction;
-array[allLabelsInFunction] of set of int: invDomSetOfLabelInFunction;
-array[allLabelsInFunction] of set of int: domEdgesFromLabelInFunction;
-array[allLabelsInFunction] of set of int: domEdgesToLabelInFunction;
+array[allLabelsInFunction] of set of int: defEdgesForLabelInFunction;
 array[int] of allEntitiesInFunction: stateEntitiesInFunction;
 array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
 
@@ -230,27 +228,14 @@ constraint
     )
   );
 
-% An entity with a dominance edge to a label must be defined within some basic
-% block that dominates the basic block of the label that participates in the
-% edge.
+% An entity with a definition edge with a label must be defined in the basic
+% block of that label.
 constraint
   forall (l in allLabelsInFunction)
   (
-    forall (e in domEdgesToLabelInFunction[l])
+    forall (e in defEdgesForLabelInFunction[l])
     (
-      def[e] in domSetOfLabelInFunction[l]
-    )
-  );
-
-% An entity with a dominance edge from a label must be defined within some basic
-% block that is dominated by the basic block of the label that participates in
-% the edge.
-constraint
-  forall (l in allLabelsInFunction)
-  (
-    forall (e in domEdgesFromLabelInFunction[l])
-    (
-      def[e]in invDomSetOfLabelInFunction[l]
+      def[e] == l
     )
   );
 
