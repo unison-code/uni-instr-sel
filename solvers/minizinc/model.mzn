@@ -249,12 +249,7 @@ constraint
     ->
     forall (e in entitiesUsedByMatch[m])
     (
-      exists (l in allLabelsInFunctionPlusNull)
-      (
-        l == def[e]
-        /\
-        l in domSetOfLabelInFunction[mov[m]]
-      )
+      def[e] in domSetOfLabelInFunction[mov[m]]
     )
   );
 
