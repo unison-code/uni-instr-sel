@@ -89,6 +89,7 @@ module Language.InstrSel.Graphs.Base
   , getAllEdges
   , getCtrlFlowInEdges
   , getCtrlFlowOutEdges
+  , getDataTypeOfDataNode
   , getDtFlowInEdges
   , getDtFlowOutEdges
   , getDefInEdges
