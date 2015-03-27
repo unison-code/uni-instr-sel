@@ -194,6 +194,7 @@ mkGenericCopyInstructions =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 CopyNode )
+                  -- TOOD: fix to not make use of AnyType here
                 , ( 1, NodeLabel 1 mkGenericDataNodeType )
                 , ( 2, NodeLabel 2 mkGenericDataNodeType )
                 ]

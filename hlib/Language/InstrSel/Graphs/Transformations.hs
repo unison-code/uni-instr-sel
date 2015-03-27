@@ -75,8 +75,13 @@ insertCopy g0 df_edge =
                                   def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
+      new_dt = mkNewDataType $ getDataTypeOfDataNode orig_d_node
+               where mkNewDataType d@(D.IntType {}) =
+                       D.IntType { D.intNumBits = D.intNumBits d
+                                 , D.intValue = Nothing
+                                 }
       (g2, new_d_node) =
-        insertNewNodeAlongEdge (DataNode D.AnyType Nothing)
+        insertNewNodeAlongEdge (DataNode new_dt Nothing)
                                (head $ getOutEdges g1 new_cp_node)
                                g1
       g3 = if isJust def_edge

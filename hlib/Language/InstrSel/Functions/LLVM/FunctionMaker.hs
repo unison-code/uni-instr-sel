@@ -45,11 +45,11 @@ import Data.Maybe
 --------------
 
 -- | Represents a mapping from a symbol to a data node currently in the graph.
-type SymToDataNodeMapping = (G.Node, Symbol)
+type SymToDataNodeMapping = (Symbol, G.Node)
 
 -- | Represents a mapping from constant symbol to a data node currently in the
 -- graph.
-type ConstToDataNodeMapping = (G.Node, Constant)
+type ConstToDataNodeMapping = (Constant, G.Node)
 
 -- | Represents a data flow that goes from a label node, identified by the given
 -- ID, to an entity node. This is needed to draw the missing flow edges after
@@ -167,6 +167,29 @@ instance ConstantFormable LLVMC.Constant where
                 }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
+-- | Class for converting an LLVM entity into a 'DataType'.
+class DataTypeFormable a where
+  toDataType :: a -> D.DataType
+
+instance DataTypeFormable Constant where
+  toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
+    D.IntType { D.intNumBits = toNatural w
+              , D.intValue = Just $ rangeFromSingleton v
+              }
+  toDataType c = error $ "'toDataType' not implemented for " ++ show c
+
+instance DataTypeFormable LLVM.Type where
+  toDataType (LLVM.IntegerType bits) =
+    D.IntType { D.intNumBits = toNatural bits
+              , D.intValue = Nothing
+              }
+  toDataType t = error $ "'toDataType' not implemented for " ++ show t
+
+instance DataTypeFormable LLVM.Operand where
+  toDataType (LLVM.LocalReference t _) = toDataType t
+  toDataType (LLVM.ConstantOperand c) = toDataType (toConstant c)
+  toDataType o = error $ "'toDataType' not implemented for " ++ show o
+
 -- | Class for building the data flow graph.
 class DfgBuildable a where
   -- | Builds the corresponding data flow graph from a given LLVM element.
@@ -181,6 +204,8 @@ class DfgBuildable a where
 -- | Class for building the control flow graph.
 class CfgBuildable a where
   -- | Builds the corresponding control flow graph from a given LLVM element.
+  -- It is assumed that all data entities referred to in the resulting CFG are
+  -- already available in the current build state.
   buildCfg
     :: BuildState
       -- ^ The current build state.
@@ -354,70 +379,89 @@ addFuncInputValue :: BuildState -> G.Node -> BuildState
 addFuncInputValue st n =
   st { funcInputValues = n:(funcInputValues st) }
 
--- | Gets the node ID (if any) of the data node to which a symbol is mapped to.
-mappedDataNodeFromSym :: [SymToDataNodeMapping] -> Symbol -> Maybe G.Node
-mappedDataNodeFromSym ms sym =
-  let ns = filter (\m -> snd m == sym) ms
-  in if not $ null ns
-     then Just $ fst $ last ns
+-- | Finds the node ID (if any) of the data node to which a symbol is mapped.
+findDataNodeWithSym :: BuildState -> Symbol -> Maybe G.Node
+findDataNodeWithSym st sym = lookup sym (symMaps st)
+
+-- | Finds the node ID (if any) of the data node to which a constant is mapped.
+findDataNodeWithConst :: BuildState -> Constant -> Maybe G.Node
+findDataNodeWithConst st c = lookup c (constMaps st)
+
+-- | Gets the label node with a particular name in the graph of the given state.
+-- If no such node exists, `Nothing` is returned.
+findLabelNodeWithID :: BuildState -> PM.BasicBlockLabel -> Maybe G.Node
+findLabelNodeWithID st l =
+  let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
+      nodes_w_matching_labels =
+        filter (\n -> (G.bbLabel $ G.getNodeType n) == l) label_nodes
+  in if length nodes_w_matching_labels > 0
+     then Just (head nodes_w_matching_labels)
      else Nothing
 
--- | Gets the node ID (if any) of the data node to which a constant is mapped
--- to.
-mappedDataNodeFromConst :: [ConstToDataNodeMapping] -> Constant -> Maybe G.Node
-mappedDataNodeFromConst ms c =
-  let ns = filter (\m -> snd m == c) ms
-  in if not $ null ns
-     then Just $ fst $ last ns
-     else Nothing
-
--- | Builds the corresponding operation structure from a symbol. If a node
--- mapping for that symbol already exists, then the last touched node is updated
--- to reflect that node. If a mapping does not exist, then a new data node is
--- added.
-buildOSFromSym :: BuildState -> Symbol -> BuildState
-buildOSFromSym st0 sym =
-  let node_for_sym = mappedDataNodeFromSym (symMaps st0) sym
-  in if isJust node_for_sym
-     then touchNode st0 (fromJust node_for_sym)
+-- | Checks that a data node with a particular symbol exists in the graph of the
+-- given state. If it does then the last touched node is updated accordingly,
+-- otherwise a new 'AnyType' data node with the symbol is added. A corresponding
+-- mapping is also added.
+ensureDataNodeWithSymExists :: BuildState -> Symbol -> BuildState
+ensureDataNodeWithSymExists st0 sym =
+  let n = findDataNodeWithSym st0 sym
+  in if isJust n
+     then touchNode st0 (fromJust n)
      else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
-              d_node = fromJust $ lastTouchedNode st1
-              st2 = addSymMap st1 (d_node, sym)
+              new_n = fromJust $ lastTouchedNode st1
+              st2 = addSymMap st1 (sym, new_n)
           in st2
 
--- | Builds the corresponding operation structure from a constant value. If a
--- node mapping for that constant already exists, then the last touched node is
--- updated to reflect that node. If a mapping does not exist, then a new data
--- node is added.
-buildOSFromConst :: BuildState -> Constant -> BuildState
-buildOSFromConst st0 c =
-  let node_for_c = mappedDataNodeFromConst (constMaps st0) c
-  in if isJust node_for_c
-     then touchNode st0 (fromJust node_for_c)
-     else let st1 = addNewNode st0 (G.DataNode (toDataType c) (Just $ show c))
-              d_node = fromJust $ lastTouchedNode st1
-              st2 = addConstMap st1 (d_node, c)
-              st3 = addLabelToEntityFlow st2 (fromJust $ entryLabel st2, d_node)
+-- | Checks that a data node with a particular constant exists in the graph of
+-- the given state. If it does then the last touched node is updated
+-- accordingly, otherwise a new data node with the constant is added. A
+-- corresponding mapping and label-to-entity definition is also added.
+ensureDataNodeWithConstExists :: BuildState -> Constant -> BuildState
+ensureDataNodeWithConstExists st0 c =
+  let n = findDataNodeWithConst st0 c
+  in if isJust n
+     then touchNode st0 (fromJust n)
+     else let st1 = addNewNode st0 (G.DataNode (toDataType c) Nothing)
+              new_n = fromJust $ lastTouchedNode st1
+              st2 = addConstMap st1 (c, new_n)
+              st3 = addLabelToEntityFlow st2 (fromJust $ entryLabel st2, new_n)
           in st3
 
--- | Inserts a new node representing a computational operation, and adds edges
--- to that node from the given operands (which will also be processed).
+-- | Checks that a label node with a particular name exists in the graph of the
+-- given state. If it does then the last touched node is updated accordingly,
+-- otherwise then a new label node is added.
+ensureLabelNodeExists :: BuildState -> PM.BasicBlockLabel -> BuildState
+ensureLabelNodeExists st l =
+  let label_node = findLabelNodeWithID st l
+  in if isJust label_node
+     then touchNode st (fromJust label_node)
+     else addNewNode st (G.LabelNode l)
+
+-- | Inserts a new computation node representing the operation along with edges
+-- to that computation node from the given operands (which will also be
+-- processed). Lastly, a new data node representing the result will be added
+-- along with an edge to that data node from the computation node.
 buildDfgFromCompOp
   :: (DfgBuildable o)
   => BuildState
+  -> D.DataType
+     -- ^ The data type of the result.
   -> Op.CompOp
      -- ^ The computational operation.
   -> [o]
      -- ^ The operands.
   -> BuildState
-buildDfgFromCompOp st0 op operands =
+buildDfgFromCompOp st0 dt op operands =
   let sts = scanl buildDfg st0 operands
       operand_ns = map (fromJust . lastTouchedNode) (tail sts)
       st1 = last sts
       st2 = addNewNode st1 (G.ComputationNode op)
       op_node = fromJust $ lastTouchedNode st2
       st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-  in st3
+      st4 = addNewNode st3 (G.DataNode dt Nothing)
+      d_node = fromJust $ lastTouchedNode st4
+      st5 = addNewEdge st4 G.DataFlowEdge op_node d_node
+  in st5
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current label node and operands (which will also be processed).
@@ -477,35 +521,6 @@ fromLlvmFPred LLVMF.ULT = Op.CompArithOp $ Op.UFloatOp Op.LT
 fromLlvmFPred LLVMF.ULE = Op.CompArithOp $ Op.UFloatOp Op.LE
 fromLlvmFPred LLVMF.UNE = Op.CompArithOp $ Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
-
--- | Gets the corresponding DataType for a constant value.
-toDataType :: Constant -> D.DataType
-toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
-  D.IntType { D.intNumBits = toNatural w
-            , D.intValue = Just $ rangeFromSingleton v
-            }
-toDataType c = error $ "'toDataType' not implemented for " ++ show c
-
--- | Gets the label node with a particular name in the graph of the given state.
--- If no such node exists, `Nothing` is returned.
-findLabelNodeWithID :: BuildState -> PM.BasicBlockLabel -> Maybe G.Node
-findLabelNodeWithID st l =
-  let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
-      nodes_w_matching_labels =
-        filter (\n -> (G.bbLabel $ G.getNodeType n) == l) label_nodes
-  in if length nodes_w_matching_labels > 0
-     then Just (head nodes_w_matching_labels)
-     else Nothing
-
--- | Checks that a label node with a particular name exists in the graph of the
--- given state. If it does then the last touched node is updated to reflect the
--- label node in question. If not then a new label node is added.
-ensureLabelNodeExists :: BuildState -> PM.BasicBlockLabel -> BuildState
-ensureLabelNodeExists st l =
-  let label_node = findLabelNodeWithID st l
-  in if isJust label_node
-     then touchNode st (fromJust label_node)
-     else addNewNode st (G.LabelNode l)
 
 -- | Adds the missing data or state flow edges from label nodes to data or state
 -- nodes, as described in the given build state.
@@ -632,18 +647,20 @@ instance (DfgBuildable a) => DfgBuildable [a] where
 instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
   buildDfg st0 (name LLVM.:= expr) =
     let st1 = buildDfg st0 expr
-        expr_node = fromJust $ lastTouchedNode st1
-        st2 = buildDfg st1 name
-        dst_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge st2 G.DataFlowEdge expr_node dst_node
-        st4 = if G.isPhiNode expr_node
-              then addLabelToEntityDef
-                     st3
-                     (fromJust $ currentLabel st3, dst_node, 0)
-                   -- ^ Since we've just created the data node and only added a
-                   -- a single data-flow edge to it, we are guaranteed that
-                   -- the in-edge number of that data-flow edge is 0.
-              else st3
+        old_g = getOSGraph st1
+        old_d_node = fromJust $ lastTouchedNode st1
+        G.DataNode { G.dataType = dt } = G.getNodeType old_d_node
+        sym = toSymbol name
+        new_g = G.updateNodeType ( G.DataNode { G.dataType = dt
+                                              , G.dataOrigin = Just $ show sym
+                                              }
+                                 )
+                                 old_d_node
+                                 old_g
+        new_d_node = head $ G.findNodesWithNodeID new_g (G.getNodeID old_d_node)
+        st2 = updateOSGraph st1 new_g
+        st3 = touchNode st2 new_d_node
+        st4 = addSymMap st3 (sym, new_d_node)
     in st4
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
@@ -670,51 +687,121 @@ instance DfgBuildable LLVM.BasicBlock where
     error $ "'buildDfg' not supported for un-named basic blocks"
 
 instance DfgBuildable LLVM.Name where
-  buildDfg st name@(LLVM.Name _) = buildOSFromSym st (toSymbol name)
-  buildDfg st name@(LLVM.UnName _) = buildOSFromSym st (toSymbol name)
+  buildDfg st name@(LLVM.Name _) =
+    ensureDataNodeWithSymExists st (toSymbol name)
+  buildDfg st name@(LLVM.UnName _) =
+    ensureDataNodeWithSymExists st (toSymbol name)
 
 instance DfgBuildable LLVM.Instruction where
-  buildDfg st (LLVM.Add  _ _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Add) [op1, op2]
+  buildDfg st (LLVM.Add  nsw nuw op1 op2 _) =
+    -- TODO: make use of nsw and nuw?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.Add)
+                       [op1, op2]
   buildDfg st (LLVM.FAdd _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Add) [op1, op2]
-  buildDfg st (LLVM.Sub  _ _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Sub) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.FloatOp Op.Add)
+                       [op1, op2]
+  buildDfg st (LLVM.Sub  nsw nuw op1 op2 _) =
+    -- TODO: make use of nsw and nuw?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.Sub)
+                       [op1, op2]
   buildDfg st (LLVM.FSub _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Sub) [op1, op2]
-  buildDfg st (LLVM.Mul _ _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Mul) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.FloatOp Op.Sub)
+                       [op1, op2]
+  buildDfg st (LLVM.Mul nsw nuw op1 op2 _) =
+    -- TODO: make use of nsw and nuw?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.Mul)
+                       [op1, op2]
   buildDfg st (LLVM.FMul _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Mul) [op1, op2]
-  buildDfg st (LLVM.UDiv _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Div) [op1, op2]
-  buildDfg st (LLVM.SDiv _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Div) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.FloatOp Op.Mul)
+                       [op1, op2]
+  buildDfg st (LLVM.UDiv exact op1 op2 _) =
+    -- TODO: make use of exact?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.UIntOp Op.Div)
+                       [op1, op2]
+  buildDfg st (LLVM.SDiv exact op1 op2 _) =
+    -- TODO: make use of exact?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.SIntOp Op.Div)
+                       [op1, op2]
   buildDfg st (LLVM.FDiv _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Div) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.FloatOp Op.Div)
+                       [op1, op2]
   buildDfg st (LLVM.URem op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.UIntOp Op.Rem) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.UIntOp Op.Rem)
+                       [op1, op2]
   buildDfg st (LLVM.SRem op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.SIntOp Op.Rem) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.SIntOp Op.Rem)
+                       [op1, op2]
   buildDfg st (LLVM.FRem _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.FloatOp Op.Rem) [op1, op2]
-  buildDfg st (LLVM.Shl _ _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Shl) [op1, op2]
-  buildDfg st (LLVM.LShr _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.LShr) [op1, op2]
-  buildDfg st (LLVM.AShr _ op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.AShr) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.FloatOp Op.Rem)
+                       [op1, op2]
+  buildDfg st (LLVM.Shl nsw nuw op1 op2 _) =
+    -- TODO: make use of nsw and nuw?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.Shl)
+                       [op1, op2]
+  buildDfg st (LLVM.LShr exact op1 op2 _) =
+    -- TODO: make use of exact?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.LShr)
+                       [op1, op2]
+  buildDfg st (LLVM.AShr exact op1 op2 _) =
+    -- TODO: make use of exact?
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.AShr)
+                       [op1, op2]
   buildDfg st (LLVM.And op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.And) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.And)
+                       [op1, op2]
   buildDfg st (LLVM.Or op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.Or) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.Or)
+                       [op1, op2]
   buildDfg st (LLVM.Xor op1 op2 _) =
-    buildDfgFromCompOp st (Op.CompArithOp $ Op.IntOp Op.XOr) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompArithOp $ Op.IntOp Op.XOr)
+                       [op1, op2]
   buildDfg st (LLVM.ICmp p op1 op2 _) =
-    buildDfgFromCompOp st (fromLlvmIPred p) [op1, op2]
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (fromLlvmIPred p)
+                       [op1, op2]
   buildDfg st (LLVM.FCmp p op1 op2 _) =
-    buildDfgFromCompOp st (fromLlvmFPred p) [op1, op2]
-  buildDfg st0 (LLVM.Phi _ phi_operands _) =
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (fromLlvmFPred p)
+                       [op1, op2]
+  buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands
         bb_labels = map (\(LLVM.Name str) -> PM.BasicBlockLabel str) label_names
         operand_node_sts = scanl buildDfg st0 operands
@@ -732,14 +819,22 @@ instance DfgBuildable LLVM.Instruction where
                     )
                     st3
                     (zip operand_ns bb_labels)
-    in st4
+        st5 = addNewNode st4 (G.DataNode (toDataType t) Nothing)
+        d_node = fromJust $ lastTouchedNode st5
+        st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
+        st7 = addLabelToEntityDef st6 (fromJust $ currentLabel st6, d_node, 0)
+              -- ^ Since we've just created the data node and only added a
+              -- single data-flow edge to it, we are guaranteed that the in-edge
+              -- number of that data-flow edge is 0.
+    in st7
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
 instance DfgBuildable LLVM.Operand where
   buildDfg st (LLVM.LocalReference typ name) =
     -- TODO: make use of type?
     buildDfg st name
-  buildDfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
+  buildDfg st (LLVM.ConstantOperand c) =
+    ensureDataNodeWithConstExists st (toConstant c)
   buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
 
 instance DfgBuildable LLVM.Parameter where
@@ -814,9 +909,12 @@ instance CfgBuildable LLVM.Operand where
   buildCfg st (LLVM.LocalReference typ name) =
     -- TODO: make use of typ?
     buildCfg st name
-  buildCfg st (LLVM.ConstantOperand c) = buildOSFromConst st (toConstant c)
+  buildCfg st (LLVM.ConstantOperand c) =
+    ensureDataNodeWithConstExists st (toConstant c)
   buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
 
 instance CfgBuildable LLVM.Name where
-  buildCfg st name@(LLVM.Name _) = buildOSFromSym st (toSymbol name)
-  buildCfg st name@(LLVM.UnName _) = buildOSFromSym st (toSymbol name)
+  buildCfg st name@(LLVM.Name _) =
+    ensureDataNodeWithSymExists st (toSymbol name)
+  buildCfg st name@(LLVM.UnName _) =
+    ensureDataNodeWithSymExists st (toSymbol name)
