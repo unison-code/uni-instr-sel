@@ -55,15 +55,16 @@ distclean-toolchain:
 %.ce.be.f.json: %.ce.f.json
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
-%.p.json: %.ce.be.f.json
+%.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.hl.model.json: %.ce.be.f.json %.p.json
-	$(UNI) make --construct-hl-cp-model -f $*.ce.be.f.json -p $*.p.json -o $@
+%.hl.model.json: %.ce.be.f.json %.ce.be.p.json
+	$(UNI) make --construct-hl-cp-model \
+      -f $*.ce.be.f.json -p $*.ce.be.p.json -o $@
 
-%.aimaps.json: %.ce.be.f.json %.p.json
+%.aimaps.json: %.ce.be.f.json %.ce.be.p.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.ce.be.f.json -p $*.p.json -o $@
+      -f $*.ce.be.f.json -p $*.ce.be.p.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
@@ -109,5 +110,5 @@ clean:
 
 %.all-cover-plots: %.f.json %.p.json
 	$(UNI) plot --plot-cover-per-match \
-      -f $*.ce.be.f.json -p $*.p.json -o $*.cov.dot
+      -f $*.f.json -p $*.p.json -o $*.cov.dot
 	for f in $*.cov.*.dot; do make $${f%.*}.pdf; done
