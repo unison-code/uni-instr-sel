@@ -143,7 +143,7 @@ processMatch
 processMatch instr pattern match mid =
   let graph = osGraph $ patOS pattern
       ns = getAllNodes graph
-      a_ns = filter isOperationNode ns
+      o_ns = filter isOperationNode ns
       e_ns = filter isEntityNode ns
       d_ns = filter isDataNode ns
       l_ns = filter isLabelNode ns
@@ -164,7 +164,7 @@ processMatch instr pattern match mid =
        { hlMatchInstructionID = instrID instr
        , hlMatchPatternID = patID pattern
        , hlMatchID = mid
-       , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs a_ns)
+       , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs o_ns)
        , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
        , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
        , hlMatchEntryLabelNode = maybe Nothing
@@ -176,6 +176,8 @@ processMatch instr pattern match mid =
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
              (osConstraints $ patOS pattern)
        , hlMatchADDUC = patADDUC pattern
+       , hlMatchIsCopyInstruction =
+           length o_ns == 1 && isCopyNode (head o_ns)
        , hlMatchHasControlNodes = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
@@ -283,6 +285,9 @@ lowerHighLevelModel model ai_maps =
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
+       , llMatchAreCopyInstructions =
+           map (getAIForMatchID . hlMatchID)
+               (filter hlMatchIsCopyInstruction m_params)
        , llMatchConstraints =
            map (map (replaceIDWithArrayIndex ai_maps))
                (map hlMatchConstraints m_params)
