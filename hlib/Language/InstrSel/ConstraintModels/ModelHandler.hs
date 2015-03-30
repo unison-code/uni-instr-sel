@@ -285,7 +285,7 @@ lowerHighLevelModel model ai_maps =
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
-       , llMatchAreCopyInstructions =
+       , llMatchCopyInstructions =
            map (getAIForMatchID . hlMatchID)
                (filter hlMatchIsCopyInstruction m_params)
        , llMatchConstraints =

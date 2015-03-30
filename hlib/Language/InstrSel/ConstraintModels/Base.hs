@@ -238,7 +238,7 @@ data LowLevelModel
       , llMatchLatencies :: [Integer]
         -- ^ The latency of each match. An index into the list corresponds to
         -- the array index of a particular match.
-      , llMatchAreCopyInstructions :: [ArrayIndex]
+      , llMatchCopyInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to copy instructions.
       , llMatchADDUCs :: [Bool]
         -- ^ Whether to apply the def-dom-use constraint to some match. An index
@@ -465,7 +465,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-non-entry-label-nodes"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
-      <*> v .: "match-are-copy-instr"
+      <*> v .: "match-copy-instrs"
       <*> v .: "match-adduc-settings"
       <*> v .: "match-constraints"
   parseJSON _ = mzero
@@ -490,7 +490,7 @@ instance ToJSON LowLevelModel where
            , "match-non-entry-label-nodes" .= (llMatchNonEntryLabelNodes m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
-           , "match-are-copy-instr"        .= (llMatchAreCopyInstructions m)
+           , "match-copy-instrs"           .= (llMatchCopyInstructions m)
            , "match-adduc-settings"        .= (llMatchADDUCs m)
            , "match-constraints"           .= (llMatchConstraints m)
            ]
