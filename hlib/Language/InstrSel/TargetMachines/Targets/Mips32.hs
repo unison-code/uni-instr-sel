@@ -684,7 +684,10 @@ mkInstructions =
               (Range 0 32)
               5
     )
-    [ ("sll", O.IntOp O.Shl) ]
+    [ ("sll", O.IntOp O.Shl)
+    , ("srl", O.IntOp O.LShr)
+    , ("sra", O.IntOp O.AShr)
+    ]
   ++
   mkBrInstrs
   ++
