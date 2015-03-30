@@ -802,6 +802,11 @@ instance DfgBuildable LLVM.Instruction where
                        (toDataType op1)
                        (fromLlvmFPred p)
                        [op1, op2]
+  buildDfg st (LLVM.ZExt op1 t1 _) =
+    buildDfgFromCompOp st
+                       (toDataType t1)
+                       (Op.CompTypeConvOp Op.ZExt)
+                       [op1]
   buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands
         bb_labels = map (\(LLVM.Name str) -> PM.BasicBlockLabel str) label_names
