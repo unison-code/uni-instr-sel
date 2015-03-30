@@ -72,7 +72,7 @@ copyExtend f =
 -- TODO: update the def-placement edges when phi nodes are involved!
 branchExtend :: Function -> Function
 branchExtend =
-  assignMissingExecFreqs . assignMissinBasicBlockLabels . extend
+  assignMissingExecFreqs . assignMissingBasicBlockLabels . extend
   where extend f =
           let g = getGraph f
               new_g = branchExtendWhen (\_ _ -> True) g
@@ -81,8 +81,8 @@ branchExtend =
 
 -- | Assigns a unique basic block label to every label node that currently has
 -- an empty label (which will be the case after branch extension).
-assignMissinBasicBlockLabels :: Function -> Function
-assignMissinBasicBlockLabels f =
+assignMissingBasicBlockLabels :: Function -> Function
+assignMissingBasicBlockLabels f =
   let g = getGraph f
       nodes = filter isLabelNode (getAllNodes g)
       label_node_pairs = map (\n -> (bbLabel (getNodeType n), n)) nodes
