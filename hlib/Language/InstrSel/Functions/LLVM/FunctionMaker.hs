@@ -827,11 +827,17 @@ instance DfgBuildable LLVM.Instruction where
                        (toDataType t1)
                        (Op.CompTypeConvOp Op.SExt)
                        [op1]
+  -- TODO: replace the 'addEntityToLabelDef' with proper dependencies from/to
+  -- state nodes.
   buildDfg st (LLVM.Load _ op1 _ _ _) =
-    buildDfgFromCompOp st
-                       (toDataType op1)
-                       (Op.CompMemoryOp Op.Load)
-                       [op1]
+    let st1 = buildDfgFromCompOp st
+                        (toDataType op1)
+                        (Op.CompMemoryOp Op.Load)
+                        [op1]
+        n   = fromJust $ lastTouchedNode st1
+        bb  = fromJust $ currentLabel st1
+        st2 = addEntityToLabelDef st1 (n, bb, 0)
+    in st2
   buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands
         bb_labels = map (\(LLVM.Name str) -> PM.BasicBlockLabel str) label_names
