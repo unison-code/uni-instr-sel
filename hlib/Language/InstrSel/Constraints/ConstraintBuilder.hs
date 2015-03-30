@@ -16,12 +16,10 @@
 module Language.InstrSel.Constraints.ConstraintBuilder
   ( addBBMoveConstraints
   , addFallthroughConstraints
-  , addIntConstConstraints
   , addInterDataValConstraints
   , addDataLocConstraints
   , mkBBMoveConstraints
   , mkFallthroughConstraints
-  , mkIntConstConstraints
   , mkInterDataValConstraints
   , mkDataLocConstraints
   )
@@ -132,42 +130,6 @@ mkDataLocConstraints regs d =
                 ( LocationClassExpr
                   $ map ALocationIDExpr regs
                 )
-  ]
-
--- | Creates integer constant constraints (see 'mkIntConstConstraints'), and
--- adds (if any) these to the existing 'OpStructure'.
-addIntConstConstraints
-  :: OpStructure
-     -- ^ The old structure.
-  -> NodeID
-     -- ^ A data node.
-  -> Integer
-     -- ^ A signed integer constant.
-  -> OpStructure
-     -- ^ The new structure.
-addIntConstConstraints os d v =
-  addConstraints os (mkIntConstConstraints d v)
-
--- | Creates constraints such that the value of particular data node is a
--- constant integer value.
-mkIntConstConstraints
-  :: NodeID
-     -- ^ A data node.
-  -> Integer
-     -- ^ A signed integer constant.
-  -> [Constraint]
-mkIntConstConstraints d v =
-  [ BoolExprConstraint
-    $ DataNodeIsAnIntConstantExpr
-    $ ANodeIDExpr d
-  , BoolExprConstraint
-    $ EqExpr ( Int2NumExpr
-               $ AnIntegerExpr v
-             )
-             ( Int2NumExpr
-               $ IntConstValueOfDataNodeExpr
-               $ ANodeIDExpr d
-             )
   ]
 
 -- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
