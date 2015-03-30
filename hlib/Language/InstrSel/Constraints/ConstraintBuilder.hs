@@ -121,6 +121,16 @@ mkDataLocConstraints
   -> NodeID
      -- ^ A data node.
   -> [Constraint]
+mkDataLocConstraints [reg] d =
+  [ BoolExprConstraint
+    $ EqExpr ( Location2NumExpr
+               $ LocationOfDataNodeExpr
+               $ ANodeIDExpr d
+             )
+             ( Location2NumExpr
+               $ ALocationIDExpr reg
+             )
+  ]
 mkDataLocConstraints regs d =
   [ BoolExprConstraint
     $ InSetExpr ( Location2SetElemExpr
