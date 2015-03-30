@@ -120,18 +120,6 @@ ConstraintParser::parseBoolExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new InSetExpr(lhs, rhs);
         }
-        else if (eatType<DataNodeIsAnIntConstantExpr>(str)) {
-            auto e = parseNodeExpr(str);
-            expr = new DataNodeIsAnIntConstantExpr(e);
-        }
-        else if (eatType<DataNodeIsIntermediateExpr>(str)) {
-            auto e = parseNodeExpr(str);
-            expr = new DataNodeIsIntermediateExpr(e);
-        }
-        else if (eatType<MatchIsSelectedExpr>(str)) {
-            auto e = parseMatchExpr(str);
-            expr = new MatchIsSelectedExpr(e);
-        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }

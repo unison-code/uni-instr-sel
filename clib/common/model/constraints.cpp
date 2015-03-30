@@ -169,24 +169,6 @@ InSetExpr::InSetExpr(const SetElemExpr* lhs, const SetExpr* rhs)
 
 InSetExpr::~InSetExpr(void) {}
 
-DataNodeIsAnIntConstantExpr::DataNodeIsAnIntConstantExpr(const NodeExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-DataNodeIsAnIntConstantExpr::~DataNodeIsAnIntConstantExpr(void) {}
-
-DataNodeIsIntermediateExpr::DataNodeIsIntermediateExpr(const NodeExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-DataNodeIsIntermediateExpr::~DataNodeIsIntermediateExpr(void) {}
-
-MatchIsSelectedExpr::MatchIsSelectedExpr(const MatchExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-MatchIsSelectedExpr::~MatchIsSelectedExpr(void) {}
-
 PlusExpr::~PlusExpr(void) {}
 
 MinusExpr::MinusExpr(const NumExpr* lhs, const NumExpr* rhs)
@@ -540,9 +522,6 @@ const string AndExpr::STRNAME = "&&";
 const string OrExpr::STRNAME = "||";
 const string NotExpr::STRNAME = "!";
 const string InSetExpr::STRNAME = "in-set";
-const string DataNodeIsAnIntConstantExpr::STRNAME = "dnode-is-int-const";
-const string DataNodeIsIntermediateExpr::STRNAME = "dnode-is-intermediate";
-const string MatchIsSelectedExpr::STRNAME = "match-is-selected";
 const string PlusExpr::STRNAME = "+";
 const string MinusExpr::STRNAME = "-";
 const string IntToNumExpr::STRNAME = "int-to-num";

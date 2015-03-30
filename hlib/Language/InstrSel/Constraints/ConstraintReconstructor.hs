@@ -86,10 +86,6 @@ mkDefaultReconstructor =
         NotExpr ((mkBoolExprF r) r expr)
       mkBoolExpr r (InSetExpr lhs rhs) =
         InSetExpr ((mkSetElemExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkBoolExpr r (DataNodeIsAnIntConstantExpr expr) =
-        DataNodeIsAnIntConstantExpr ((mkNodeExprF r) r expr)
-      mkBoolExpr r (DataNodeIsIntermediateExpr expr) =
-        DataNodeIsIntermediateExpr ((mkNodeExprF r) r expr)
       mkNumExpr r (PlusExpr lhs rhs) =
         PlusExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkNumExpr r (MinusExpr lhs rhs) =

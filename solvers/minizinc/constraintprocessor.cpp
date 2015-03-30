@@ -111,18 +111,6 @@ ConstraintProcessor::process(const BoolExpr* e) {
         return string("(") + process(de->getLhs()) + " in "
             + process(de->getRhs()) + ")";
     }
-    else if (const DataNodeIsAnIntConstantExpr* de =
-             dynamic_cast<const DataNodeIsAnIntConstantExpr*>(e))
-    {
-        return getDataLocationVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getLocValueForImm();
-    }
-    else if (const DataNodeIsIntermediateExpr* de =
-             dynamic_cast<const DataNodeIsIntermediateExpr*>(e))
-    {
-        return getDataLocationVariableArrayName() + "[" + process(de->getExpr())
-            + "] == " + getLocValueForNoReuse();
-    }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
     }

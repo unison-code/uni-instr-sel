@@ -16,12 +16,10 @@
 module Language.InstrSel.Constraints.ConstraintBuilder
   ( addBBMoveConstraints
   , addFallthroughConstraints
-  , addInterDataValConstraints
   , addDataLocConstraints
   , addNoReuseConstraints
   , mkBBMoveConstraints
   , mkFallthroughConstraints
-  , mkInterDataValConstraints
   , mkDataLocConstraints
   , mkNoReuseConstraints
   )
@@ -64,41 +62,6 @@ mkBBMoveConstraints g =
                      )
           ]
      else []
-
--- | Creates intermediate data value constraints (see
--- `mkInterDataValConstraints`) and adds these (if any) are added to the
--- existing 'OpStructure'.
-addInterDataValConstraints
-  :: OpStructure
-     -- ^ The old structure.
-  -> [NodeID]
-     -- ^ List of data nodes which are specified as output.
-  -> OpStructure
-     -- ^ The new structure, with the produced constraints (may be the same
-     -- structure).
-addInterDataValConstraints os outs =
-  addConstraints os (mkInterDataValConstraints (osGraph os) outs)
-
--- | Creates intermediate data value constraints for a pattern graph which
--- contains data nodes which are both defined and used by the pattern but are
--- not specified as output nodes. Hence such data values are not accessible from
--- outside the pattern, and must be prevented from being used by other
--- patterns.
-mkInterDataValConstraints
-  :: Graph
-     -- ^ The pattern graph.
-  -> [NodeID]
-     -- ^ List of data nodes which are specified as output.
-  -> [Constraint]
-mkInterDataValConstraints g outs =
-  let d_ns = filter isDataNode $ getAllNodes g
-      d_use_def_ns = getNodeIDs $ [ n | n <- d_ns
-                                      , hasAnyPredecessors g n
-                                      , hasAnySuccessors g n
-                                  ]
-      inter_data_val_ns = filter (`notElem` outs) d_use_def_ns
-      makeC n = BoolExprConstraint $ DataNodeIsIntermediateExpr (ANodeIDExpr n)
-  in map makeC inter_data_val_ns
 
 -- | Creates location allocation constraints (see `mkDataLocConstraints`) and
 -- adds these (if any) are added to the existing 'OpStructure'.

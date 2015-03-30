@@ -84,13 +84,6 @@ data BoolExpr
   | EqvExpr BoolExpr BoolExpr
   | NotExpr BoolExpr
   | InSetExpr SetElemExpr SetExpr
-    -- | An expression indicating that a particular data node represents a
-    -- constant integer value.
-  | DataNodeIsAnIntConstantExpr NodeExpr
-    -- | An expression indicating that a particular data node represents an
-    -- intermediate data value, meaning that its value cannot be reused by
-    -- another match.
-  | DataNodeIsIntermediateExpr NodeExpr
   deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
@@ -244,8 +237,6 @@ instance FromLisp BoolExpr where
     <|> struct "<->" EqvExpr e
     <|> struct "!"   NotExpr e
     <|> struct "in-set" InSetExpr e
-    <|> struct "dnode-is-int-const" DataNodeIsAnIntConstantExpr e
-    <|> struct "dnode-is-intermediate" DataNodeIsIntermediateExpr e
 
 instance ToLisp BoolExpr where
   toLisp (EqExpr  lhs rhs) = mkStruct "==" [toLisp lhs, toLisp rhs]
@@ -260,10 +251,6 @@ instance ToLisp BoolExpr where
   toLisp (EqvExpr lhs rhs) = mkStruct "<->" [toLisp lhs, toLisp rhs]
   toLisp (NotExpr lhs) = mkStruct "!" [toLisp lhs]
   toLisp (InSetExpr lhs rhs) = mkStruct "in-set" [toLisp lhs, toLisp rhs]
-  toLisp (DataNodeIsAnIntConstantExpr e) =
-    mkStruct "dnode-is-int-const" [toLisp e]
-  toLisp (DataNodeIsIntermediateExpr e) =
-    mkStruct "dnode-is-intermediate" [toLisp e]
 
 instance FromLisp NumExpr where
   parseLisp e =
