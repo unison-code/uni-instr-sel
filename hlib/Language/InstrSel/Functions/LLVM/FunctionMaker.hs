@@ -792,8 +792,9 @@ instance DfgBuildable LLVM.Instruction where
                        (Op.CompArithOp $ Op.IntOp Op.XOr)
                        [op1, op2]
   buildDfg st (LLVM.ICmp p op1 op2 _) =
+    -- TODO: add support for vectorized icmp
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (D.IntType { D.intNumBits = 1, D.intValue = Nothing})
                        (fromLlvmIPred p)
                        [op1, op2]
   buildDfg st (LLVM.FCmp p op1 op2 _) =
