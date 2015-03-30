@@ -80,6 +80,7 @@ insertCopy g0 df_edge =
                        D.IntType { D.intNumBits = D.intNumBits d
                                  , D.intValue = Nothing
                                  }
+                     mkNewDataType D.AnyType = D.AnyType
       (g2, new_d_node) =
         insertNewNodeAlongEdge (DataNode new_dt Nothing)
                                (head $ getOutEdges g1 new_cp_node)
