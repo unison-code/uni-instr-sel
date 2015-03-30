@@ -288,7 +288,7 @@ generateSearchParameters(
             else            first_sel = false;
             out << "sel[" << m << "]";
         }
-        out << "], input_order, indomain_min, complete),";
+        out << "], input_order, indomain_max, complete),";
         out << " % non-copy instruction matches" << endl;
     }
     {
@@ -300,7 +300,7 @@ generateSearchParameters(
             else            first_sel = false;
             out << "sel[" << m << "]";
         }
-        out << "], input_order, indomain_min, complete),";
+        out << "], input_order, indomain_max, complete),";
         out << " % copy instruction matches" << endl;
     }
 
