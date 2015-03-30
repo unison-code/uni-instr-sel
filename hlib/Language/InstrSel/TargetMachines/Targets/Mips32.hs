@@ -601,6 +601,7 @@ mkInstructions =
     , ("subu", O.UIntOp O.Sub)
       -- | TODO: fix constraints of mul
     , ("mul" , O.SIntOp O.Mul)
+    , ("sllv", O.IntOp O.Shl)
     ]
   ++
   map
