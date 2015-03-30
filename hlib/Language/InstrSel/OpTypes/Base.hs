@@ -185,7 +185,7 @@ instance Show ArithOpType where
   show Rem       = "%"
   show Shl       = "<<"
   show LShr      = ">>"
-  show AShr      = ">>"
+  show AShr      = "a>>"
   show And       = "&&"
   show Or        = "||"
   show XOr       = "^"
