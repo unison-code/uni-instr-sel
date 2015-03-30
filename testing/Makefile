@@ -102,8 +102,8 @@ clean:
 %.ssa-f.dot: %.f.json
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.ce.be.f.json %.p.json
-	$(UNI) plot --plot-cover-all-matches -f $*.ce.be.f.json -p $*.p.json -o $@
+%.cov.dot: %.f.json %.p.json
+	$(UNI) plot --plot-cover-all-matches -f $*.f.json -p $*.p.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
