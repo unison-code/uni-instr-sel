@@ -195,7 +195,7 @@ mkGenericSimpleRegRegCompInst
   -> [Location]
      -- ^ The location class of the first operand.
   -> [Location]
-     -- ^ The location class of the second.
+     -- ^ The location class of the second operand.
   -> [Location]
      -- ^ The location class of the destination.
   -> Instruction
@@ -236,7 +236,7 @@ mkSimple32BitRegRegCompInst
   -> [Location]
      -- ^ The location class of the first operand.
   -> [Location]
-     -- ^ The location class of the second.
+     -- ^ The location class of the second operand.
   -> [Location]
      -- ^ The location class of the destination.
   -> Instruction
@@ -256,7 +256,7 @@ mkSimple32BitRegs1BitResultCompInst
   -> [Location]
      -- ^ The location class of the first operand.
   -> [Location]
-     -- ^ The location class of the second.
+     -- ^ The location class of the second operand.
   -> [Location]
      -- ^ The location class of the destination.
   -> Instruction
