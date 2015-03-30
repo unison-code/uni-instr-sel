@@ -802,10 +802,20 @@ instance DfgBuildable LLVM.Instruction where
                        (toDataType op1)
                        (fromLlvmFPred p)
                        [op1, op2]
+  buildDfg st (LLVM.Trunc op1 t1 _) =
+    buildDfgFromCompOp st
+                       (toDataType t1)
+                       (Op.CompTypeConvOp Op.Trunc)
+                       [op1]
   buildDfg st (LLVM.ZExt op1 t1 _) =
     buildDfgFromCompOp st
                        (toDataType t1)
                        (Op.CompTypeConvOp Op.ZExt)
+                       [op1]
+  buildDfg st (LLVM.SExt op1 t1 _) =
+    buildDfgFromCompOp st
+                       (toDataType t1)
+                       (Op.CompTypeConvOp Op.SExt)
                        [op1]
   buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands
