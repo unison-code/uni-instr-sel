@@ -29,6 +29,7 @@
 #include "common/model/modelparams.h"
 #include "common/model/types.h"
 #include "common/optionparser/optionparser.h"
+#include "common/utils/list.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -270,6 +271,46 @@ generateModelMatchParameters(
 }
 
 void
+generateSearchParameters(
+    const ModelParams& params,
+    ostream& out
+) {
+    out << "search_ann =" << endl;
+    out << "seq_search ([" << endl;
+
+    // The sel variables
+    {
+        out << "bool_search ([";
+        bool first_sel = true;
+        for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {
+            if (Utils::contains(params.getCopyInstrMatches(), m)) continue;
+            if (!first_sel) out << ", ";
+            else            first_sel = false;
+            out << "sel[" << m << "]";
+        }
+        out << "], input_order, indomain_min, complete),";
+        out << " % non-copy instruction matches" << endl;
+    }
+    {
+        out << "bool_search ([";
+        bool first_sel = true;
+        for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {
+            if (!Utils::contains(params.getCopyInstrMatches(), m)) continue;
+            if (!first_sel) out << ", ";
+            else            first_sel = false;
+            out << "sel[" << m << "]";
+        }
+        out << "], input_order, indomain_min, complete),";
+        out << " % copy instruction matches" << endl;
+    }
+
+    // Other variables
+    out << "int_search (mov, first_fail, indomain_min, complete)," << endl;
+    out << "int_search (ord, first_fail, indomain_min, complete)" << endl;
+    out << "]);" << endl;
+}
+
+void
 generateModelParameters(
     const ModelParams& params,
     ostream& out
@@ -279,6 +320,8 @@ generateModelParameters(
     generateModelTargetMachineParameters(params, out);
     out << endl;
     generateModelMatchParameters(params, out);
+    out << endl;
+    generateSearchParameters(params, out);
 }
 
 void
@@ -335,9 +378,9 @@ void outputModelParams(
          << endl
          << endl;
 
-    sout << "%==============================" << endl;
-    sout << "% PATTERN INSTANCE CONSTRAINTS" << endl;
-    sout << "%==============================" << endl;
+    sout << "%===================" << endl;
+    sout << "% MATCH CONSTRAINTS" << endl;
+    sout << "%===================" << endl;
     sout << endl;
     generateModelConstraintsForMatches(params, sout);
 

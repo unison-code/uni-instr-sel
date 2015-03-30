@@ -344,14 +344,10 @@ constraint
 % SOLVE AND OUTPUT
 %==================
 
-solve ::
-seq_search
-  ( % Improves solving time.
-    [ bool_search (sel, first_fail, indomain_min, complete)
-    , int_search (mov, first_fail, indomain_min, complete)
-    , int_search (ord, first_fail, indomain_min, complete)
-    ]
-  )
+% Provided as part of params.mzn
+ann: search_ann;
+
+solve :: search_ann
 minimize cost;
 
 output [ "sel=", show(sel), "\n"

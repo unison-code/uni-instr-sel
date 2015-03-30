@@ -28,7 +28,8 @@
 # MODULE PATH AND FILES
 #=======================
 
-CPP_FILES := string.cpp
+CPP_FILES := list.cpp \
+             string.cpp
 
 
 

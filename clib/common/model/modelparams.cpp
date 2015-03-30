@@ -90,6 +90,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
+    setCopyInstrMatches(root, p);
     setConstraintsForMatches(root, p);
     setADDUCSettingsForMatches(root, p);
     setOperationNodesCoveredByMatches(root, p);
@@ -155,6 +156,11 @@ ModelParams::getLatenciesForAllMatches(void) const {
     return match_latencies_;
 }
 
+list<ArrayIndex>
+ModelParams::getCopyInstrMatches(void) const {
+    return match_copy_instrs_;
+}
+
 void
 ModelParams::setCodeSizesForMatches(const Json::Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "match-code-sizes")) {
@@ -166,6 +172,13 @@ void
 ModelParams::setLatenciesForMatches(const Json::Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "match-latencies")) {
         p.match_latencies_.push_back(toInt(entry));
+    }
+}
+
+void
+ModelParams::setCopyInstrMatches(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "match-copy-instrs")) {
+        p.match_copy_instrs_.push_back(toArrayIndex(entry));
     }
 }
 
