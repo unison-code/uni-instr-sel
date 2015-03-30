@@ -18,6 +18,7 @@ module Language.InstrSel.TargetMachines.Transformations
 where
 
 import Language.InstrSel.TargetMachines.Base
+import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Transformations
 import Language.InstrSel.OpStructures
@@ -43,7 +44,16 @@ copyExtendGraph =
 -- | Copy-extends every instruction in the given target machine.
 copyExtend :: TargetMachine -> TargetMachine
 copyExtend tm =
-  let copyExtendOS os = os { osGraph = copyExtendGraph $ osGraph os }
+  let copyExtendOS os =
+        let old_g = osGraph os
+            old_data_ns = filter isDataNode $ getAllNodes old_g
+            new_g = copyExtendGraph old_g
+            new_data_ns = filter (\n -> isDataNode n && n `notElem` old_data_ns)
+                                 (getAllNodes old_g)
+            old_cs = osConstraints os
+            new_cs = old_cs ++ concatMap mkNoReuseConstraints
+                                         (map getNodeID new_data_ns)
+        in os { osGraph = new_g, osConstraints = new_cs }
       copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
       copyExtendInstr i = i { instrPatterns =
                                 map copyExtendPat (instrPatterns i)

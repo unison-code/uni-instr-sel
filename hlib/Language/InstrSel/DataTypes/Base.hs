@@ -56,6 +56,11 @@ data DataType
         -- ^ The value of the integer, if this is known.
       }
     -- | When the data type is unknown and does not matter.
+    -- | An (unknown) integer value.
+--  | IntValue { intNumBits :: Natural }
+--    -- | A (known) integer constant.
+--  | IntConstant { intConst :: Range Integer }
+--    -- | When the data type is unknown and does not matter.
   | AnyType
 
 

@@ -427,7 +427,12 @@ ConstraintParser::parseLocationExpr(string& str) {
         }
     }
     else {
-        THROW(Exception, "Invalid constraint expression (missing '(' char)");
+        if (eatType<TheNullLocationExpr>(str)) {
+            expr = new TheNullLocationExpr;
+        }
+        else {
+            THROW(Exception, "Invalid constraint expression (unknown keyword)");
+        }
     }
 
     return expr;

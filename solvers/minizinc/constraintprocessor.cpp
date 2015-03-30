@@ -283,6 +283,9 @@ ConstraintProcessor::process(const LocationExpr* e) {
         return getDataLocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
+    if (dynamic_cast<const TheNullLocationExpr*>(e)) {
+        return getLocValueForNull();
+    }
     else {
         THROW(Exception, "LocationExpr is of unknown derived class");
     }
@@ -387,4 +390,9 @@ ConstraintProcessor::getLocValueForImm(void) const {
 string
 ConstraintProcessor::getLocValueForNoReuse(void) const {
     return "locValueForNoReuse";
+}
+
+string
+ConstraintProcessor::getLocValueForNull(void) const {
+    return "locValueForNull";
 }

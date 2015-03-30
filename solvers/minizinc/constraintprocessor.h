@@ -155,6 +155,14 @@ class ConstraintProcessor {
     getLocValueForNoReuse(void) const;
 
     /**
+     * Gets the value used for the null location.
+     *
+     * @returns Value name.
+     */
+    std::string
+    getLocValueForNull(void) const;
+
+    /**
      * Converts a constraint into a Minizinc equivalent.
      *
      * @param c

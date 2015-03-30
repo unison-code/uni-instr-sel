@@ -18,10 +18,12 @@ module Language.InstrSel.Constraints.ConstraintBuilder
   , addFallthroughConstraints
   , addInterDataValConstraints
   , addDataLocConstraints
+  , addNoReuseConstraints
   , mkBBMoveConstraints
   , mkFallthroughConstraints
   , mkInterDataValConstraints
   , mkDataLocConstraints
+  , mkNoReuseConstraints
   )
 where
 
@@ -165,5 +167,25 @@ mkFallthroughConstraints l =
              )
              ( Int2NumExpr
                $ AnIntegerExpr 0
+             )
+  ]
+
+-- | Creates no-reuse constraints (see `mkNoReuseConstraints`) and adds these
+-- (if any) to the existing 'OpStructure'.
+addNoReuseConstraints :: OpStructure -> NodeID -> OpStructure
+addNoReuseConstraints os d =
+  addConstraints os (mkNoReuseConstraints d)
+
+-- | Creates no-reuse constraints for a pattern graph such that the location of
+-- the given data node must be in the null location.
+mkNoReuseConstraints :: NodeID -> [Constraint]
+mkNoReuseConstraints d =
+  [ BoolExprConstraint
+    $ EqExpr ( Location2NumExpr
+               $ LocationOfDataNodeExpr
+               $ ANodeIDExpr d
+             )
+             ( Location2NumExpr
+               $ TheNullLocationExpr
              )
   ]

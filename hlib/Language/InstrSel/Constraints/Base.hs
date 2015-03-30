@@ -175,6 +175,8 @@ data LocationExpr
   | ALocationArrayIndexExpr ArrayIndex
     -- | Retrieves the of the location of a data node.
   | LocationOfDataNodeExpr NodeExpr
+    -- | Denotes the null location.
+  | TheNullLocationExpr
   deriving (Show)
 
 -- | Set construction expressions.
@@ -341,12 +343,14 @@ instance ToLisp LabelExpr where
   toLisp (LabelOfLabelNodeExpr e) = mkStruct "lab-of-lnode" [toLisp e]
 
 instance FromLisp LocationExpr where
+  parseLisp (Lisp.Symbol "null") = return TheNullLocationExpr
   parseLisp e =
         struct "id" ALocationIDExpr e
     <|> struct "ai" ALocationArrayIndexExpr e
     <|> struct "loc-of-dnode" LocationOfDataNodeExpr e
 
 instance ToLisp LocationExpr where
+  toLisp TheNullLocationExpr = Lisp.Symbol "null"
   toLisp (ALocationIDExpr rid) = mkStruct "id" [toLisp rid]
   toLisp (ALocationArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
   toLisp (LocationOfDataNodeExpr e) =

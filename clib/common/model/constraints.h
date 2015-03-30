@@ -1494,6 +1494,37 @@ class ALocationArrayIndexExpr
 };
 
 /**
+ * Represents the null location.
+ */
+class TheNullLocationExpr
+    : public WithStrName<LocationExpr, TheNullLocationExpr>
+{
+  public:
+    /**
+     * \copydoc Expr::Expr()
+     */
+    TheNullLocationExpr(void);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~TheNullLocationExpr(void);
+
+    /**
+     * \copydoc Constraint::toLisp() const
+     */
+    virtual std::string
+    toLisp(void) const;
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+};
+
+/**
  * Represents the match where this is declared.
  */
 class ThisMatchExpr

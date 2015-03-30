@@ -387,6 +387,15 @@ ALocationArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
+TheNullLocationExpr::TheNullLocationExpr(void) {}
+
+TheNullLocationExpr::~TheNullLocationExpr(void) {}
+
+string
+TheNullLocationExpr::toLisp(void) const {
+    return getStrName();
+}
+
 ThisMatchExpr::ThisMatchExpr(void) {}
 
 ThisMatchExpr::~ThisMatchExpr(void) {}
@@ -554,6 +563,7 @@ const string ANodeArrayIndexExpr::STRNAME = "ai";
 const string AMatchArrayIndexExpr::STRNAME = "ai";
 const string ALocationArrayIndexExpr::STRNAME = "ai";
 const string AnInstructionArrayIndexExpr::STRNAME = "ai";
+const string TheNullLocationExpr::STRNAME = "null";
 const string ThisMatchExpr::STRNAME = "this";
 const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";

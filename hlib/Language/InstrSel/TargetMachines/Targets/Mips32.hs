@@ -365,12 +365,16 @@ mkCondBrInstrs
 mkCondBrInstrs ord_str ord_op inv_str inv_op =
   let (ord_g, ord_entry) = mkCondBrPattern ord_op
       (inv_g, inv_entry) = mkCondBrPattern inv_op
-      ord_bb_alloc_cs = mkBBMoveConstraints ord_g
-      inv_bb_alloc_cs = mkBBMoveConstraints inv_g
-      ord_fallthrough_cs = mkFallthroughConstraints 3
-      inv_fallthrough_cs = mkFallthroughConstraints 2
-      ord_cs = ord_bb_alloc_cs ++ ord_fallthrough_cs
-      inv_cs = inv_bb_alloc_cs ++ inv_fallthrough_cs
+      ord_cs = mkBBMoveConstraints ord_g
+               ++
+               mkNoReuseConstraints 7
+               ++
+               mkFallthroughConstraints 3
+      inv_cs = mkBBMoveConstraints inv_g
+               ++
+               mkNoReuseConstraints 7
+               ++
+               mkFallthroughConstraints 2
       ord_pat =
         InstrPattern
           { patID = 0

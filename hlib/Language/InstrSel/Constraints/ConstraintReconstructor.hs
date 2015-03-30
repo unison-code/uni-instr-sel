@@ -142,6 +142,8 @@ mkDefaultReconstructor =
         expr
       mkLocationExpr r (LocationOfDataNodeExpr expr) =
         LocationOfDataNodeExpr ((mkNodeExprF r) r expr)
+      mkLocationExpr _ expr@(TheNullLocationExpr) =
+        expr
       mkSetExpr r (UnionSetExpr lhs rhs) =
         UnionSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (IntersectSetExpr lhs rhs) =
