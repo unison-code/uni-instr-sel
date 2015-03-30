@@ -136,12 +136,15 @@ data Constant
       }
 
   | FloatConstant { floatValue :: Float }
+  | GlobalReferenceConstant { globalRefType :: D.DataType
+                            , globalRefName :: Symbol
+                            }
   deriving (Eq)
 
 instance Show Constant where
   show IntConstant { signedIntValue = v } = show v
   show FloatConstant { floatValue = v } = show v
-
+  show GlobalReferenceConstant { globalRefName = s } = show s
 
 
 ----------------
@@ -165,6 +168,10 @@ instance ConstantFormable LLVMC.Constant where
     IntConstant { intBitWidth = fromIntegral b
                 , signedIntValue = LLVMC.signedIntegerValue i
                 }
+  toConstant a@(LLVMC.GlobalReference t n) =
+    GlobalReferenceConstant { globalRefType = toDataType t
+                            , globalRefName = toSymbol n
+                            }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
 -- | Class for converting an LLVM entity into a 'DataType'.
@@ -176,6 +183,7 @@ instance DataTypeFormable Constant where
     D.IntType { D.intNumBits = toNatural w
               , D.intValue = Just $ rangeFromSingleton v
               }
+  toDataType GlobalReferenceConstant {} = D.AnyType
   toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 instance DataTypeFormable LLVM.Type where
@@ -183,6 +191,8 @@ instance DataTypeFormable LLVM.Type where
     D.IntType { D.intNumBits = toNatural bits
               , D.intValue = Nothing
               }
+  toDataType (LLVM.PointerType referent _) = D.AnyType
+
   toDataType t = error $ "'toDataType' not implemented for " ++ show t
 
 instance DataTypeFormable LLVM.Operand where
@@ -816,6 +826,11 @@ instance DfgBuildable LLVM.Instruction where
     buildDfgFromCompOp st
                        (toDataType t1)
                        (Op.CompTypeConvOp Op.SExt)
+                       [op1]
+  buildDfg st (LLVM.Load _ op1 _ _ _) =
+    buildDfgFromCompOp st
+                       (toDataType op1)
+                       (Op.CompMemoryOp Op.Load)
                        [op1]
   buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands

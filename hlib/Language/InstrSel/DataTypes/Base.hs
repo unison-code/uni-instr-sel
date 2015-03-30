@@ -62,6 +62,7 @@ data DataType
 --  | IntConstant { intConst :: Range Integer }
 --    -- | When the data type is unknown and does not matter.
   | AnyType
+  deriving Eq
 
 
 

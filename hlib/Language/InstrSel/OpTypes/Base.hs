@@ -43,6 +43,7 @@ import Prelude
 data CompOp
   = CompArithOp ArithOp
   | CompTypeConvOp TypeConvOp
+  | CompMemoryOp MemoryOp
   deriving (Eq)
 
 -- | Arithmetic operations.
@@ -139,6 +140,12 @@ data TypeConvOp
   | UInt2Float
   deriving (Eq)
 
+-- | Operations that define or use values by accessing memory.
+data MemoryOp
+    -- | Read from memory.
+  = Load
+  deriving (Eq)
+
 data ControlOp
     -- | Unconditional branch (same as a jump).
   = Br
@@ -155,8 +162,9 @@ data ControlOp
 -------------------------------------
 
 instance Show CompOp where
-  show (CompArithOp op) = show op
+  show (CompArithOp op)    = show op
   show (CompTypeConvOp op) = show op
+  show (CompMemoryOp op)   = show op
 
 instance Show ArithOp where
   show (IntOp op)      = "i "  ++ show op
@@ -201,11 +209,13 @@ instance Show TypeConvOp where
   show SInt2Float = "sitofp"
   show UInt2Float = "uitofp"
 
+instance Show MemoryOp where
+  show Load  = "load"
+
 instance Show ControlOp where
   show Br     = "br"
   show CondBr = "cbr"
   show Ret    = "ret"
-
 
 
 ------------------------------------------
@@ -215,6 +225,7 @@ instance Show ControlOp where
 instance DebugShow CompOp where
   dShow (CompArithOp op) = dShow op
   dShow (CompTypeConvOp op) = dShow op
+  dShow (CompMemoryOp op) = dShow op
 
 instance DebugShow ArithOp where
   dShow = show . getArithOpType
@@ -223,6 +234,9 @@ instance DebugShow ArithOpType where
   dShow = show
 
 instance DebugShow TypeConvOp where
+  dShow = show
+
+instance DebugShow MemoryOp where
   dShow = show
 
 instance DebugShow ControlOp where
@@ -258,12 +272,17 @@ instance FromJSON CompOp where
                  if isJust ari_op
                  then return $ CompArithOp $ fromJust ari_op
                  else mzero
-         1 -> do let ops = [ ZExt, SExt, Trunc
-                           , Float2SInt, Float2UInt, SInt2Float, UInt2Float
-                           ]
-                     found = filter (\op -> show op == str) ops
-                 when (null found) mzero
-                 return $ CompTypeConvOp $ head found
+         1 -> do let tcops   = [ ZExt, SExt, Trunc
+                               , Float2SInt, Float2UInt, SInt2Float, UInt2Float
+                               ]
+                     mops    = [ Load ]
+                     tcfound = filter (\op -> show op == str) tcops
+                     mfound  = filter (\op -> show op == str) mops
+                 when (null tcfound && null mfound) mzero
+                 case (null tcfound, null mfound) of
+                   (False, True) -> return $ CompTypeConvOp $ head tcfound
+                   (True, False) -> return $ CompMemoryOp $ head mfound
+                   _ -> mzero
          _ -> mzero
   parseJSON _ = mzero
 
@@ -303,6 +322,7 @@ getArithOpType (UFloatOp op)   = op
 isOpCommutative :: CompOp -> Bool
 isOpCommutative (CompArithOp op) = isArithOpCommutative op
 isOpCommutative (CompTypeConvOp _) = True
+isOpCommutative (CompMemoryOp Load) = True
 
 -- | Checks if an arithmetic operation is commutative.
 isArithOpCommutative :: ArithOp -> Bool
@@ -318,6 +338,7 @@ isArithOpTypeCommutative op =
 numOperandsForCompOp :: CompOp -> Natural
 numOperandsForCompOp (CompArithOp op) = numOperandsForArithOp op
 numOperandsForCompOp (CompTypeConvOp _) = 1
+numOperandsForCompOp (CompMemoryOp Load) = 1
 
 -- | Gets the number of operands required by a given arithmetic operation.
 numOperandsForArithOp :: ArithOp -> Natural
