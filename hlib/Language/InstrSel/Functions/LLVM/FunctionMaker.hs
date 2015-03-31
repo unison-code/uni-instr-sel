@@ -38,6 +38,9 @@ import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
 
+-- TODO: remove
+import Debug.Trace
+
 
 
 --------------
@@ -402,14 +405,19 @@ findLabelNodeWithID st l =
 
 -- | Checks that a data node with a particular symbol exists in the graph of the
 -- given state. If it does then the last touched node is updated accordingly,
--- otherwise a new 'AnyType' data node with the symbol is added. A corresponding
--- mapping is also added.
-ensureDataNodeWithSymExists :: BuildState -> Symbol -> BuildState
-ensureDataNodeWithSymExists st0 sym =
+-- otherwise a new data node with the symbol is added. A corresponding mapping
+-- is also added.
+ensureDataNodeWithSymExists
+  :: BuildState
+  -> Symbol
+  -> D.DataType
+     -- ^ Data type to use upon creation if such a data node does not exist.
+  -> BuildState
+ensureDataNodeWithSymExists st0 sym dt =
   let n = findDataNodeWithSym st0 sym
   in if isJust n
      then touchNode st0 (fromJust n)
-     else let st1 = addNewNode st0 (G.DataNode D.AnyType (Just $ show sym))
+     else let st1 = addNewNode st0 (G.DataNode dt (Just $ show sym))
               new_n = fromJust $ lastTouchedNode st1
               st2 = addSymMap st1 (sym, new_n)
           in st2
@@ -634,20 +642,18 @@ instance (DfgBuildable a) => DfgBuildable [a] where
 instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
   buildDfg st0 (name LLVM.:= expr) =
     let st1 = buildDfg st0 expr
-        old_g = getOSGraph st1
-        old_d_node = fromJust $ lastTouchedNode st1
-        G.DataNode { G.dataType = dt } = G.getNodeType old_d_node
         sym = toSymbol name
-        new_g = G.updateNodeType ( G.DataNode { G.dataType = dt
-                                              , G.dataOrigin = Just $ show sym
-                                              }
-                                 )
-                                 old_d_node
-                                 old_g
-        new_d_node = head $ G.findNodesWithNodeID new_g (G.getNodeID old_d_node)
-        st2 = updateOSGraph st1 new_g
-        st3 = touchNode st2 new_d_node
-        st4 = addSymMap st3 (sym, new_d_node)
+        res_n = fromJust $ lastTouchedNode st1
+        res_dt = G.getDataTypeOfDataNode res_n
+        st2 = ensureDataNodeWithSymExists st1 sym res_dt
+        sym_n = fromJust $ lastTouchedNode st2
+        st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
+        replaceNodeInDef old_n new_n (l, n, nr) =
+          if old_n == n then (l, new_n, nr) else (l, n, nr)
+        st4 = st3 { labelToEntityDefs =
+                       map (replaceNodeInDef res_n sym_n)
+                           (labelToEntityDefs st3)
+                  }
     in st4
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
@@ -672,12 +678,6 @@ instance DfgBuildable LLVM.BasicBlock where
     in st3
   buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
     error $ "'buildDfg' does not support unnamed basic blocks"
-
-instance DfgBuildable LLVM.Name where
-  buildDfg st name@(LLVM.Name _) =
-    ensureDataNodeWithSymExists st (toSymbol name)
-  buildDfg st name@(LLVM.UnName _) =
-    ensureDataNodeWithSymExists st (toSymbol name)
 
 instance DfgBuildable LLVM.Instruction where
   buildDfg st (LLVM.Add  nsw nuw op1 op2 _) =
@@ -844,16 +844,15 @@ instance DfgBuildable LLVM.Instruction where
   buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
 instance DfgBuildable LLVM.Operand where
-  buildDfg st (LLVM.LocalReference typ name) =
-    -- TODO: make use of type?
-    buildDfg st name
+  buildDfg st (LLVM.LocalReference t name) =
+    ensureDataNodeWithSymExists st (toSymbol name) (toDataType t)
   buildDfg st (LLVM.ConstantOperand c) =
     addNewDataNodeWithConstant st (toConstant c)
   buildDfg _ o = error $ "'buildDfg' not implemented for " ++ show o
 
 instance DfgBuildable LLVM.Parameter where
-  buildDfg st0 (LLVM.Parameter _ pname _) =
-    let st1 = buildDfg st0 pname
+  buildDfg st0 (LLVM.Parameter t name _) =
+    let st1 = ensureDataNodeWithSymExists st0 (toSymbol name) (toDataType t)
         n = fromJust $ lastTouchedNode st1
         st2 = addFuncInputValue st1 n
     in st2
@@ -895,11 +894,10 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg st (LLVM.Ret op _) =
     buildCfgFromControlOp st Op.Ret (maybeToList op)
   buildCfg st0 (LLVM.Br (LLVM.Name dst) _) =
-    let st1 =
-          buildCfgFromControlOp st0
-                                Op.Br
-                                ([] :: [LLVM.Name]) -- The type signature is
-                                                    -- needed to please GHC
+    let st1 = buildCfgFromControlOp st0
+                                    Op.Br
+                                    ([] :: [LLVM.Operand])
+                                    -- ^ Signature needed to please GHC...
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel dst)
         dst_node = fromJust $ lastTouchedNode st2
@@ -920,15 +918,8 @@ instance CfgBuildable LLVM.Terminator where
   buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
 instance CfgBuildable LLVM.Operand where
-  buildCfg st (LLVM.LocalReference typ name) =
-    -- TODO: make use of typ?
-    buildCfg st name
+  buildCfg st (LLVM.LocalReference t name) =
+    ensureDataNodeWithSymExists st (toSymbol name) (toDataType t)
   buildCfg st (LLVM.ConstantOperand c) =
     addNewDataNodeWithConstant st (toConstant c)
   buildCfg _ o = error $ "'buildCfg' not implemented for " ++ show o
-
-instance CfgBuildable LLVM.Name where
-  buildCfg st name@(LLVM.Name _) =
-    ensureDataNodeWithSymExists st (toSymbol name)
-  buildCfg st name@(LLVM.UnName _) =
-    ensureDataNodeWithSymExists st (toSymbol name)
