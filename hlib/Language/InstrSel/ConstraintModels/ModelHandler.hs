@@ -213,7 +213,7 @@ replaceThisMatchExprInC :: MatchID -> Constraint -> Constraint
 replaceThisMatchExprInC mid c =
   let def_r = mkDefaultReconstructor
       mkMatchExpr _ ThisMatchExpr = AMatchIDExpr mid
-      mkMatchExpr r expr = (mkMatchExprF r) r expr
+      mkMatchExpr r expr = (mkMatchExprF def_r) r expr
       new_r = def_r { mkMatchExprF = mkMatchExpr }
   in apply new_r c
 
@@ -224,7 +224,7 @@ replaceNodeIDsFromP2FInC match c =
   let def_r = mkDefaultReconstructor
       mkNodeExpr _ (ANodeIDExpr nid) =
         ANodeIDExpr (fromJust $ findFNInMatch match nid)
-      mkNodeExpr r expr = (mkNodeExprF r) r expr
+      mkNodeExpr r expr = (mkNodeExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr }
   in apply new_r c
 
