@@ -41,4 +41,8 @@ run BranchExtendFunctionGraph f =
   do let new_f = branchExtend f
      return [toOutputWithoutID $ toJson new_f]
 
+run CombineConstantsInFunctionGraph f =
+  do let new_f = combineConstants f
+     return [toOutputWithoutID $ toJson new_f]
+
 run _ _ = reportError "TransformFunctionGraph: unsupported action"

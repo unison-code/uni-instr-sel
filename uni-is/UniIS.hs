@@ -164,6 +164,12 @@ parseArgs =
                            ++ "branches alone every conditional control flow "
                            ++ "edge."
                          )
+             , CombineConstantsInFunctionGraph
+                 &= name "combine-consts-in-fun"
+                 &= explicit
+                 &= help ( "Combines data nodes in the given function that "
+                           ++ "represent the same constant."
+                         )
              , RaiseLowLevelCPSolution
                  &= name "raise-ll-cp-solution"
                  &= explicit

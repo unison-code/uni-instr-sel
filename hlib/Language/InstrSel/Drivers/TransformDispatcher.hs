@@ -37,7 +37,10 @@ dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =
       reportError "No transform action provided."
-  | a `elem` [CopyExtendFunctionGraph, BranchExtendFunctionGraph] =
+  | a `elem` [ CopyExtendFunctionGraph
+             , BranchExtendFunctionGraph
+             , CombineConstantsInFunctionGraph
+             ] =
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
          TransformFunctionGraph.run a function

@@ -78,6 +78,7 @@ data TransformAction
   = TransformNothing
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph
+  | CombineConstantsInFunctionGraph
   | RaiseLowLevelCPSolution
   | LowerHighLevelCPModel
   deriving (Eq, Typeable, Data)

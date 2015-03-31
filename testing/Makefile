@@ -52,19 +52,22 @@ distclean-toolchain:
 %.ce.f.json: %.f.json
 	$(UNI) transform --copy-extend-fun -f $< -o $@
 
-%.ce.be.f.json: %.ce.f.json
+%.ce.cc.f.json: %.ce.f.json
+	$(UNI) transform --combine-consts-in-fun -f $< -o $@
+
+%.ce.cc.be.f.json: %.ce.cc.f.json
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
 %.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.hl.model.json: %.ce.be.f.json %.ce.be.p.json
+%.hl.model.json: %.ce.cc.be.f.json %.ce.cc.be.p.json
 	$(UNI) make --construct-hl-cp-model \
-      -f $*.ce.be.f.json -p $*.ce.be.p.json -o $@
+      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
 
-%.aimaps.json: %.ce.be.f.json %.ce.be.p.json
+%.aimaps.json: %.ce.cc.be.f.json %.ce.cc.be.p.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.ce.be.f.json -p $*.ce.be.p.json -o $@
+      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \

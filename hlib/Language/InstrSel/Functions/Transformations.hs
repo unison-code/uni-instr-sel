@@ -15,21 +15,27 @@
 module Language.InstrSel.Functions.Transformations
   ( branchExtend
   , copyExtend
+  , combineConstants
   )
 where
 
 import Language.InstrSel.Functions.Base
 import Language.InstrSel.Functions.IDs
+import Language.InstrSel.Constraints
+import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Transformations
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
+import Language.InstrSel.Utils.Range
 
 import Data.Maybe
   ( fromJust
   , isJust
   )
+import Data.List
+  ( partition )
 
 
 
@@ -59,8 +65,10 @@ copyExtend f =
         then IntTempType { intTempNumBits = fromJust b }
         else error $ "copyExtend: 'IntConstType' cannot have 'Nothing' as "
                      ++ "'intConstNumBits'"
-      mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
-                                ++ "supported"
+      -- TODO: restore
+      mkNewDataType d = d
+      --mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
+      --                          ++ "supported"
       new_g = copyExtendWhen (\_ _ -> True) mkNewDataType g
       new_f = updateGraph new_g f
   in new_f
@@ -130,3 +138,65 @@ assignMissingExecFreqs f =
             )
             (getAllNodes cfg)
   in (updateGraph g f) { functionBBExecFreq = new_freqs }
+
+-- | Combines data nodes in the function graph that represent the same constant.
+combineConstants :: Function -> Function
+combineConstants f =
+  let g = getGraph f
+      const_ns = filter isDataNodeWithConstValue (getAllNodes g)
+      isSameConstant (IntConstType { intConstValue = r1 })
+                     (IntConstType { intConstValue = r2 }) =
+        isRangeSingleton r1 && isRangeSingleton r2 && r1 == r2
+      isSameConstant _ _ = False
+      haveSameConstants n1 n2 =
+        (getDataTypeOfDataNode n1) `isSameConstant` (getDataTypeOfDataNode n2)
+      partitionNodes [] = []
+      partitionNodes [n] = [[n]]
+      partitionNodes (n:ns) =
+        let (eq_n, neq_n) = partition (haveSameConstants n) ns
+        in [n:eq_n] ++ partitionNodes neq_n
+      partitioned_ns = partitionNodes const_ns
+  in foldl combineDataNodes f partitioned_ns
+
+combineDataNodes :: Function -> [Node] -> Function
+combineDataNodes f [_] = f
+combineDataNodes f ns =
+  let mkNewDataType IntConstType { intConstValue = r } =
+        IntConstType { intConstValue = r, intConstNumBits = Nothing }
+      mkNewDataType d = error $ "combineDataNodes: unsupported data type "
+                                ++ show d
+      g0 = getGraph f
+      nt = DataNode (mkNewDataType $ getDataTypeOfDataNode $ head ns) Nothing
+      (g1, new_n) = addNewNode nt g0
+      entry_node = head
+                   $ findNodesWithNodeID g1
+                   $ fromJust
+                   $ osEntryLabelNode
+                   $ functionOS f
+      (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
+  in foldr (replaceDataNode new_n) (updateGraph g2 f) ns
+
+-- | Replaces a data node in the function graph with another data node, but all
+-- inbound edges to the data node to be removed will be ignored (that is, these
+-- edges will disappear).
+replaceDataNode
+  :: Node
+     -- ^ The new node.
+  -> Node
+     -- ^ The old node.
+  -> Function
+  -> Function
+replaceDataNode new_n old_n f =
+  let old_os = functionOS f
+      old_g = osGraph old_os
+      new_g = delNode old_n $ redirectOutEdges new_n old_n old_g
+      def_recon = mkDefaultReconstructor
+      mkNodeExpr _ expr@(ANodeIDExpr n) =
+        if n == getNodeID old_n
+        then ANodeIDExpr $ getNodeID new_n
+        else expr
+      mkNodeExpr r expr = (mkNodeExprF def_recon) r expr
+      recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
+      new_cs = map (apply recon) (osConstraints old_os)
+      new_os = old_os { osGraph = new_g, osConstraints = new_cs }
+  in f { functionOS = new_os }
