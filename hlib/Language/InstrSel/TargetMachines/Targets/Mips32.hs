@@ -170,14 +170,15 @@ mkSimpleCopyPattern src dst =
            ]
        )
 
--- | Makes an 'IntType' with a given number of bits and no value range.
-mkIntType :: Natural -> D.DataType
-mkIntType n = D.IntType { D.intNumBits = n, D.intValue = Nothing }
+-- | Makes an 'IntTempType' with a given number of bits.
+mkIntTempType :: Natural -> D.DataType
+mkIntTempType n = D.IntTempType { D.intTempNumBits = n  }
 
 -- | Creates an instance of the simple copy pattern. All data are assumed to be
 -- 32 bits in size.
 mkSimpleCopy32Pattern :: Graph
-mkSimpleCopy32Pattern = mkSimpleCopyPattern (mkIntType 32) (mkIntType 32)
+mkSimpleCopy32Pattern =
+  mkSimpleCopyPattern (mkIntTempType 32) (mkIntTempType 32)
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
@@ -241,7 +242,7 @@ mkSimple32BitRegRegCompInst
      -- ^ The location class of the destination.
   -> Instruction
 mkSimple32BitRegRegCompInst str op r1 r2 r3 =
-  let dt = mkIntType 32
+  let dt = mkIntTempType 32
   in mkGenericSimpleRegRegCompInst str op dt dt dt r1 r2 r3
 
 -- | Creates an instruction that consists of only a single computation node,
@@ -261,8 +262,8 @@ mkSimple32BitRegs1BitResultCompInst
      -- ^ The location class of the destination.
   -> Instruction
 mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
-  let dt32 = mkIntType 32
-      dt1 = mkIntType 1
+  let dt32 = mkIntTempType 32
+      dt1 = mkIntTempType 1
   in mkGenericSimpleRegRegCompInst str op dt32 dt32 dt1 r1 r2 r3
 
 -- | Creates an instruction that consists of only a single computation node,
@@ -285,8 +286,10 @@ mkSimple32BitRegNBitImmCompInst
      -- ^ The number of bits of the immediate.
   -> Instruction
 mkSimple32BitRegNBitImmCompInst str op r1 r3 imm n =
-  let dt32 = mkIntType 32
-      dtN  = D.IntType { D.intNumBits = n, D.intValue = Just imm }
+  let dt32 = mkIntTempType 32
+      dtN  = D.IntConstType { D.intConstValue = imm
+                            , D.intConstNumBits = Just n
+                            }
       g = mkSimpleCompPattern op dt32 dtN dt32
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
@@ -321,7 +324,7 @@ mkCondBrPattern :: O.CompOp -> (Graph, NodeID)
 mkCondBrPattern op =
   let mkLabelNode = LabelNode $ BasicBlockLabel ""
       mkCompNode = ComputationNode { compOp = op }
-      mk32BitDataNode = DataNode (mkIntType 32) Nothing
+      mk32BitDataNode = DataNode (mkIntTempType 32) Nothing
   in ( mkGraph
          ( map
              Node
@@ -332,7 +335,7 @@ mkCondBrPattern op =
              , ( 4, NodeLabel 4 mkCompNode )
              , ( 5, NodeLabel 5 mk32BitDataNode )
              , ( 6, NodeLabel 6 mk32BitDataNode )
-             , ( 7, NodeLabel 7 (DataNode (mkIntType 1) Nothing) )
+             , ( 7, NodeLabel 7 (DataNode (mkIntTempType 1) Nothing) )
              ]
          )
          ( map
@@ -458,7 +461,7 @@ mkRetInstrs =
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
                 , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
-                , ( 2, NodeLabel 2 (DataNode (mkIntType 32) Nothing) )
+                , ( 2, NodeLabel 2 (DataNode (mkIntTempType 32) Nothing) )
                 ]
             )
             ( map

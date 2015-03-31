@@ -42,28 +42,31 @@ import Data.Maybe
 -- then upon copy extension $e$ will be moved to the new data node. Otherwise
 -- $e$ will remain on the original data node. Note that definition edges where
 -- the target is a data node are not affected.
---
--- The new data nodes will not have any origin, and will be of any data type.
 copyExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to copy-extend the given
      -- data edge.
+  -> (D.DataType -> D.DataType)
+     -- ^ Function for creating the data type of the new data node based on the
+     -- data type of the original data node (that is, the data node to be
+     -- copy-extended).
   -> Graph
      -- ^ The graph to extend.
  -> Graph
-copyExtendWhen f g =
+copyExtendWhen pf df g =
   let nodes = filter isDataNode (getAllNodes g)
       edges = concatMap (getDtFlowOutEdges g) nodes
-      filtered_edges = filter (f g) edges
-  in foldl insertCopy g filtered_edges
+      filtered_edges = filter (pf g) edges
+  in foldl (insertCopy df) g filtered_edges
 
--- | Inserts a new copy and data node along a given data flow edge. If the data
--- node is used by a phi node, and there is a definition edge on that data node,
--- then the definition edge with matching out-edge number will be moved to the
--- new data node. Note that definition edges where the target is a data node are
--- not affected.
-insertCopy :: Graph -> Edge -> Graph
-insertCopy g0 df_edge =
+-- | Inserts a new copy and data node (whose data type is decided using the
+-- provided function) along a given data flow edge. If the data node is used by
+-- a phi node, and there is a definition edge on that data node, then the
+-- definition edge with matching out-edge number will be moved to the new data
+-- node. Note that definition edges where the target is a data node are not
+-- affected.
+insertCopy :: (D.DataType -> D.DataType) -> Graph -> Edge -> Graph
+insertCopy df g0 df_edge =
   let orig_d_node = getSourceNode g0 df_edge
       orig_op_n = getTargetNode g0 df_edge
       def_edge = if isPhiNode orig_op_n
@@ -75,12 +78,7 @@ insertCopy g0 df_edge =
                                   def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
-      new_dt = mkNewDataType $ getDataTypeOfDataNode orig_d_node
-               where mkNewDataType d@(D.IntType {}) =
-                       D.IntType { D.intNumBits = D.intNumBits d
-                                 , D.intValue = Nothing
-                                 }
-                     mkNewDataType D.AnyType = D.AnyType
+      new_dt = df $ getDataTypeOfDataNode orig_d_node
       (g2, new_d_node) =
         insertNewNodeAlongEdge (DataNode new_dt Nothing)
                                (head $ getOutEdges g1 new_cp_node)
@@ -94,9 +92,9 @@ insertCopy g0 df_edge =
 
 -- | Inserts a new label node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
--- function.
+-- function. The new label nodes will all have empty basic block labels.
 --
--- The new label nodes will all have empty basic block labels.
+-- TODO: update the def-placement edges when phi nodes are involved!
 branchExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to branch-extend the

@@ -180,19 +180,20 @@ class DataTypeFormable a where
 
 instance DataTypeFormable Constant where
   toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
-    D.IntType { D.intNumBits = toNatural w
-              , D.intValue = Just $ rangeFromSingleton v
-              }
-  toDataType GlobalReferenceConstant {} = D.AnyType
+    D.IntConstType { D.intConstValue = rangeFromSingleton v
+                   , D.intConstNumBits = Just $ toNatural w
+                   }
+  toDataType GlobalReferenceConstant {} =
+    -- TODO: fix so that the correct data type is applied
+    D.AnyType
   toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 instance DataTypeFormable LLVM.Type where
   toDataType (LLVM.IntegerType bits) =
-    D.IntType { D.intNumBits = toNatural bits
-              , D.intValue = Nothing
-              }
-  toDataType (LLVM.PointerType referent _) = D.AnyType
-
+    D.IntTempType { D.intTempNumBits = toNatural bits }
+  toDataType (LLVM.PointerType _ _) =
+    -- TODO: fix so that the correct data type is applied
+    D.AnyType
   toDataType t = error $ "'toDataType' not implemented for " ++ show t
 
 instance DataTypeFormable LLVM.Operand where
@@ -804,7 +805,7 @@ instance DfgBuildable LLVM.Instruction where
   buildDfg st (LLVM.ICmp p op1 op2 _) =
     -- TODO: add support for vectorized icmp
     buildDfgFromCompOp st
-                       (D.IntType { D.intNumBits = 1, D.intValue = Nothing})
+                       (D.IntTempType { D.intTempNumBits = 1 })
                        (fromLlvmIPred p)
                        [op1, op2]
   buildDfg st (LLVM.FCmp p op1 op2 _) =

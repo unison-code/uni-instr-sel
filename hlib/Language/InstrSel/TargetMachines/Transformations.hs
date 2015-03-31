@@ -19,6 +19,7 @@ where
 
 import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.Constraints.ConstraintBuilder
+import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Transformations
 import Language.InstrSel.OpStructures
@@ -40,6 +41,7 @@ copyExtendGraph =
       let src = getSourceNode g e
       in length (getDtFlowInEdges g src) > 0 || isDataNodeWithConstValue src
     )
+    (\_ -> AnyType)
 
 -- | Copy-extends every instruction in the given target machine.
 copyExtend :: TargetMachine -> TargetMachine

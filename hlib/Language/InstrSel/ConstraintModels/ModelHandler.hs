@@ -23,6 +23,7 @@ import Language.InstrSel.ConstraintModels.IDs
 
 import Language.InstrSel.Constraints
 import Language.InstrSel.Constraints.ConstraintReconstructor
+import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
   hiding
   ( computeDomSets )
@@ -34,6 +35,7 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
+import Language.InstrSel.Utils.Range
 
 import Data.List
   ( elemIndex
@@ -43,6 +45,7 @@ import Data.List
 import Data.Maybe
   ( fromJust
   , isJust
+  , mapMaybe
   )
 
 
@@ -95,14 +98,17 @@ mkHLFunctionParams function =
             )
             (filter isLabelNode (getAllNodes graph))
       int_constants =
-        let ns = filter isDataNodeWithIntConst (getAllNodes graph)
+        let ns = filter isDataNodeWithConstValue (getAllNodes graph)
         in nub
-           $ map ( \n ->
-                   let nid = getNodeID n
-                       value = fromJust $ findIntConstOfDataNode n
-                   in (nid, value)
-                 )
-                 ns
+           $ mapMaybe ( \n ->
+                         let nid = getNodeID n
+                             dt = getDataTypeOfDataNode n
+                             r = intConstValue dt
+                         in if isIntConstType dt && isRangeSingleton r
+                            then Just (nid, lowerBound r)
+                            else Nothing
+                       )
+                       ns
   in HighLevelFunctionParams
        { hlFunOpNodes = nodeIDsByType isOperationNode
        , hlFunEntityNodes = nodeIDsByType isEntityNode

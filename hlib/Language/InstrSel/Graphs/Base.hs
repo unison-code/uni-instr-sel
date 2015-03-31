@@ -83,7 +83,6 @@ module Language.InstrSel.Graphs.Base
   , findPNInMatch
   , findPNsInMapping
   , findPNsInMatch
-  , findIntConstOfDataNode
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
@@ -125,7 +124,6 @@ module Language.InstrSel.Graphs.Base
   , isDataFlowEdge
   , isDataNode
   , isDataNodeWithConstValue
-  , isDataNodeWithIntConst
   , isDefEdge
   , isEntityNode
   , isInGraph
@@ -171,7 +169,6 @@ import Language.InstrSel.Functions.IDs
 import Language.InstrSel.Graphs.IDs
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.Utils.Natural
-import Language.InstrSel.Utils.Range
 import Language.InstrSel.Utils.JSON
 
 import qualified Data.Graph.Inductive as I
@@ -499,25 +496,10 @@ isDataNode :: Node -> Bool
 isDataNode n = isOfDataNodeType $ getNodeType n
 
 isDataNodeWithConstValue :: Node -> Bool
-isDataNodeWithConstValue = isDataNodeWithIntConst
-
-isDataNodeWithIntConst :: Node -> Bool
-isDataNodeWithIntConst = isJust . findIntConstOfDataNode
-
--- | Finds the integer constant of a given data node, if the data node has such
--- a value.
-findIntConstOfDataNode :: Node -> Maybe Integer
-findIntConstOfDataNode n =
+isDataNodeWithConstValue n =
   if isDataNode n
-  then let dt = getDataTypeOfDataNode n
-           maybe_r = D.intValue dt
-       in if D.isIntType dt && isJust maybe_r
-          then let r = fromJust maybe_r
-               in if isRangeSingleton r
-                  then Just $ lowerBound r
-                  else Nothing
-          else Nothing
-  else Nothing
+  then D.isTypeAConstValue $ getDataTypeOfDataNode n
+  else False
 
 isLabelNode :: Node -> Bool
 isLabelNode n = isOfLabelNodeType $ getNodeType n

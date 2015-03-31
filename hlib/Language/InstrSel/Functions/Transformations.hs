@@ -20,6 +20,7 @@ where
 
 import Language.InstrSel.Functions.Base
 import Language.InstrSel.Functions.IDs
+import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Transformations
 import Language.InstrSel.OpStructures
@@ -52,7 +53,15 @@ updateGraph new_g f =
 copyExtend :: Function -> Function
 copyExtend f =
   let g = getGraph f
-      new_g = copyExtendWhen (\_ _ -> True) g
+      mkNewDataType d@(IntTempType {}) = d
+      mkNewDataType (IntConstType { intConstNumBits = b }) =
+        if isJust b
+        then IntTempType { intTempNumBits = fromJust b }
+        else error $ "copyExtend: 'IntConstType' cannot have 'Nothing' as "
+                     ++ "'intConstNumBits'"
+      mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
+                                ++ "supported"
+      new_g = copyExtendWhen (\_ _ -> True) mkNewDataType g
       new_f = updateGraph new_g f
   in new_f
 
@@ -68,8 +77,6 @@ copyExtend f =
 -- frequency. These will be set to have the same frequency as its preceding
 -- label in the CFG (at this point we know for sure that each new label has only
 -- one preceding label).
---
--- TODO: update the def-placement edges when phi nodes are involved!
 branchExtend :: Function -> Function
 branchExtend =
   assignMissingExecFreqs . assignMissingBasicBlockLabels . extend

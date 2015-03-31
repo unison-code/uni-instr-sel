@@ -16,11 +16,10 @@
 
 module Language.InstrSel.DataTypes.Base
   ( DataType (..)
-  , fromIntWidth
-  , fromIntValue
+  , isIntTempType
+  , isIntConstType
   , isAnyType
-  , isIntType
-  , isDataTypeAConstValue
+  , isTypeAConstValue
   , isDataTypeCompatibleWith
   , parseDataTypeFromJson
   )
@@ -36,7 +35,8 @@ import Language.InstrSel.Utils.Range
 import Language.InstrSel.Utils.JSON
 
 import Data.Maybe
-  ( fromJust
+  ( catMaybes
+  , fromJust
   , isJust
   , isNothing
   )
@@ -48,63 +48,24 @@ import Data.Maybe
 --------------
 
 data DataType
-    -- | An integer data type.
-  = IntType
-      { intNumBits :: Natural
-        -- ^ Number of bits.
-      , intValue :: Maybe (Range Integer)
-        -- ^ The value of the integer, if this is known.
+    -- | Represents an integer value stored in a temporary.
+  = IntTempType
+      { intTempNumBits :: Natural
+        -- ^ Number of bits required for the temporary.
+      }
+    -- | Represents an integer constant.
+  | IntConstType
+      { intConstValue :: Range Integer
+        -- ^ The value range of the constant. If it is a singleton, the lower
+        -- and upper bound of the range should be the same.
+      , intConstNumBits :: Maybe Natural
+        -- ^ Number of bits required for the constant, if this is known. This is
+        -- really only necessary to be able to perform copy extension of the
+        -- program graph.
       }
     -- | When the data type does not matter.
   | AnyType
   deriving Eq
-
-
-
--------------
--- Functions
--------------
-
--- | Gets the data type of a corresponding integer of a certain number of bits.
-fromIntWidth :: (Integral a) => a -> DataType
-fromIntWidth w = IntType { intNumBits = toNatural w, intValue = Nothing }
-
--- | Gets the data type of a corresponding integer value.
-fromIntValue :: (Integral a) => a -> DataType
-fromIntValue 0 = IntType { intNumBits = 1
-                         , intValue = Just $ rangeFromSingleton 0
-                         }
-fromIntValue i =
-  let log2value = logBase 2 $ (fromIntegral $ abs i) :: Float
-      numbits = (ceiling log2value) :: Integer
-  in IntType { intNumBits = toNatural numbits
-             , intValue = Just $ rangeFromSingleton $ toInteger i
-             }
-
--- | Checks if a data type is compatible with another data type. A data type is
--- compatible with another data type if:
---    * both have the same number of bits, and
---    * either none have an integer value, or both has an integer value where
---      the range of the first type contains the range of the second type.
--- Note that this function is not necessarily commutative.
-isDataTypeCompatibleWith
-  :: DataType
-     -- ^ First type.
-  -> DataType
-     -- ^ Second type.
-  -> Bool
-isDataTypeCompatibleWith AnyType _ = True
-isDataTypeCompatibleWith _ AnyType = True
-isDataTypeCompatibleWith d1@(IntType {}) d2@(IntType {}) =
-  if intNumBits d1 == intNumBits d2
-  then let r1 = intValue d1
-           r2 = intValue d2
-       in if isNothing r1 && isNothing r2
-          then True
-          else if isJust r1 && isJust r2
-               then (fromJust r1) `contains` (fromJust r2)
-               else False
-  else False
 
 
 
@@ -113,10 +74,11 @@ isDataTypeCompatibleWith d1@(IntType {}) d2@(IntType {}) =
 -------------------------------------
 
 instance Show DataType where
-  show d@(IntType {}) =
-    let r = intValue d
-    in "i" ++ show (intNumBits d) ++
-       if isJust r then " " ++ (show $ fromJust r) else ""
+  show d@(IntTempType {}) = "i" ++ show (intTempNumBits d)
+  show d@(IntConstType {}) =
+    let b = intConstNumBits d
+    in show (intConstValue d) ++
+       if isJust b then " " ++ (show $ fromJust b) else ""
   show AnyType = "any"
 
 
@@ -126,7 +88,8 @@ instance Show DataType where
 ------------------------------------------
 
 instance DebugShow DataType where
-  dShow t@(IntType {}) = show t
+  dShow d@(IntTempType {}) = show d
+  dShow d@(IntConstType {}) = show $ intConstValue d
   dShow AnyType = ""
 
 
@@ -152,27 +115,79 @@ instance ToJSON DataType where
 -- Functions
 -------------
 
+-- | Checks if a given data type is 'IntTempType'.
+isIntTempType :: DataType -> Bool
+isIntTempType IntTempType {} = True
+isIntTempType _ = False
+
+-- | Checks if a given data type is 'IntConstType'.
+isIntConstType :: DataType -> Bool
+isIntConstType IntConstType {} = True
+isIntConstType _ = False
+
 -- | Checks if a given data type is 'AnyType'.
 isAnyType :: DataType -> Bool
 isAnyType AnyType = True
 isAnyType _ = False
 
--- | Checks if a given data type is 'IntType'.
-isIntType :: DataType -> Bool
-isIntType IntType {} = True
-isIntType _ = False
+-- | Checks if a data type is compatible with another data type. Note that this
+-- function is not necessarily commutative.
+isDataTypeCompatibleWith
+  :: DataType
+     -- ^ First type.
+  -> DataType
+     -- ^ Second type.
+  -> Bool
+isDataTypeCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
+  intTempNumBits d1 == intTempNumBits d2
+isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
+  (intConstValue d1) `contains` (intConstValue d2)
+isDataTypeCompatibleWith AnyType _ = True
+isDataTypeCompatibleWith _ AnyType = True
+isDataTypeCompatibleWith _ _ = False
+
 
 -- | Parses a data type from a JSON string. If parsing fails, 'Nothing' is
 -- returned.
 parseDataTypeFromJson :: String -> Maybe DataType
 parseDataTypeFromJson str =
-  let res1 = parseAnyTypeFromJson str
-      res2 = parseIntTypeFromJson str
-  in if isJust res1
-     then res1
-     else if isJust res2
-          then res2
+  let res = catMaybes [ parseIntTempTypeFromJson str
+                      , parseIntConstTypeFromJson str
+                      , parseAnyTypeFromJson str
+                      ]
+  in if length res > 0
+     then Just $ head res
+     else Nothing
+
+-- | Parses an 'IntTempType' from a JSON string. If parsing fails, 'Nothing' is
+-- returned.
+parseIntTempTypeFromJson :: String -> Maybe DataType
+parseIntTempTypeFromJson str =
+  if head str == 'i'
+  then let numbits = do int <- maybeRead (tail str) :: Maybe Integer
+                        maybeToNatural int
+       in if isJust numbits
+          then Just $ IntTempType { intTempNumBits = fromJust numbits }
           else Nothing
+  else Nothing
+
+-- | Parses an 'IntConstType' from a JSON string. If parsing fails, 'Nothing' is
+-- returned.
+parseIntConstTypeFromJson :: String -> Maybe DataType
+parseIntConstTypeFromJson str =
+  let parts = splitOn " " str
+  in if length parts == 1 || length parts == 2
+     then let value = parseRangeStr (head parts)
+              numbits = if length parts == 2
+                        then do int <- maybeRead (last parts) :: Maybe Integer
+                                maybeToNatural int
+                        else Nothing
+          in if isJust value && (not (length parts == 2) || isJust numbits)
+             then Just $ IntConstType { intConstValue = fromJust value
+                                      , intConstNumBits = numbits
+                                      }
+             else Nothing
+     else Nothing
 
 -- | Parses an 'AnyType' from a JSON string. If parsing fails, 'Nothing' is
 -- returned.
@@ -182,29 +197,6 @@ parseAnyTypeFromJson str =
   then Just AnyType
   else Nothing
 
--- | Parses an 'IntType' from a JSON string. If parsing fails, 'Nothing' is
--- returned.
-parseIntTypeFromJson :: String -> Maybe DataType
-parseIntTypeFromJson str =
-  if head str == 'i'
-  then let parts = splitOn " " (tail str)
-           numbits = do int <- maybeRead (head parts) :: Maybe Integer
-                        maybeToNatural int
-           range = parseRangeStr (last parts)
-       in if isJust numbits
-          then case length parts of
-                 1 -> Just $ IntType { intNumBits = fromJust numbits
-                                     , intValue = Nothing
-                                     }
-                 2 -> Just $ IntType { intNumBits = fromJust numbits
-                                     , intValue = range
-                                     }
-                 _ -> Nothing
-          else Nothing
-  else Nothing
-
--- | Checks if the given data type represents a constant value.
-isDataTypeAConstValue :: DataType -> Bool
-isDataTypeAConstValue IntType { intValue = r } =
-  isJust r && isRangeSingleton (fromJust r)
-isDataTypeAConstValue _ = False
+-- | Checks if a given data type represents a constant value.
+isTypeAConstValue :: DataType -> Bool
+isTypeAConstValue = isIntConstType
