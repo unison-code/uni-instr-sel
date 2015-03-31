@@ -47,10 +47,6 @@ import Data.Maybe
 -- | Represents a mapping from a symbol to a data node currently in the graph.
 type SymToDataNodeMapping = (Symbol, G.Node)
 
--- | Represents a mapping from constant symbol to a data node currently in the
--- graph.
-type ConstToDataNodeMapping = (Constant, G.Node)
-
 -- | Represents a data flow that goes from a label node, identified by the given
 -- ID, to an entity node. This is needed to draw the missing flow edges after
 -- both the data flow graph and the control flow graph have been built.
@@ -94,10 +90,6 @@ data BuildState
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
         -- be picked.
-      , constMaps :: [ConstToDataNodeMapping]
-        -- ^ List of constant-to-node mappings. If there are more than one
-        -- mapping using the same symbol, then the last one occuring in the list
-        -- should be picked.
       , labelToEntityFlows :: [LabelToEntityFlow]
         -- ^ List of label-to-entity flow dependencies that are yet to be
         -- converted into edges.
@@ -241,7 +233,6 @@ mkInitBuildState m =
              , currentLabel = Nothing
              , funcBBExecFreqs = []
              , symMaps = []
-             , constMaps = []
              , labelToEntityFlows = []
              , labelToEntityDefs = []
              , entityToLabelDefs = []
@@ -315,6 +306,14 @@ addNewNode st0 nt =
       st2 = touchNode st1 new_n
   in st2
 
+-- | Adds a new data node representing a particular constant to a given state.
+addNewDataNodeWithConstant :: BuildState -> Constant -> BuildState
+addNewDataNodeWithConstant st0 c =
+  let st1 = addNewNode st0 (G.DataNode (toDataType c) Nothing)
+      new_n = fromJust $ lastTouchedNode st1
+      st2 = addLabelToEntityFlow st1 (fromJust $ entryLabel st1, new_n)
+  in st2
+
 -- | Adds a new edge into a given state.
 addNewEdge
   :: BuildState
@@ -366,10 +365,6 @@ addNewEdgesManyDests st et src dsts =
 addSymMap :: BuildState -> SymToDataNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = sm:(symMaps st) }
 
--- | Adds a new constant-to-node mapping to a given state.
-addConstMap :: BuildState -> ConstToDataNodeMapping -> BuildState
-addConstMap st cm = st { constMaps = cm:(constMaps st) }
-
 -- | Adds label-to-entity flow to a given state.
 addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
 addLabelToEntityFlow st flow =
@@ -393,10 +388,6 @@ addFuncInputValue st n =
 -- | Finds the node ID (if any) of the data node to which a symbol is mapped.
 findDataNodeWithSym :: BuildState -> Symbol -> Maybe G.Node
 findDataNodeWithSym st sym = lookup sym (symMaps st)
-
--- | Finds the node ID (if any) of the data node to which a constant is mapped.
-findDataNodeWithConst :: BuildState -> Constant -> Maybe G.Node
-findDataNodeWithConst st c = lookup c (constMaps st)
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
@@ -422,21 +413,6 @@ ensureDataNodeWithSymExists st0 sym =
               new_n = fromJust $ lastTouchedNode st1
               st2 = addSymMap st1 (sym, new_n)
           in st2
-
--- | Checks that a data node with a particular constant exists in the graph of
--- the given state. If it does then the last touched node is updated
--- accordingly, otherwise a new data node with the constant is added. A
--- corresponding mapping and label-to-entity definition is also added.
-ensureDataNodeWithConstExists :: BuildState -> Constant -> BuildState
-ensureDataNodeWithConstExists st0 c =
-  let n = findDataNodeWithConst st0 c
-  in if isJust n
-     then touchNode st0 (fromJust n)
-     else let st1 = addNewNode st0 (G.DataNode (toDataType c) Nothing)
-              new_n = fromJust $ lastTouchedNode st1
-              st2 = addConstMap st1 (c, new_n)
-              st3 = addLabelToEntityFlow st2 (fromJust $ entryLabel st2, new_n)
-          in st3
 
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated accordingly,
@@ -872,7 +848,7 @@ instance DfgBuildable LLVM.Operand where
     -- TODO: make use of type?
     buildDfg st name
   buildDfg st (LLVM.ConstantOperand c) =
-    ensureDataNodeWithConstExists st (toConstant c)
+    addNewDataNodeWithConstant st (toConstant c)
   buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
 
 instance DfgBuildable LLVM.Parameter where
@@ -948,7 +924,7 @@ instance CfgBuildable LLVM.Operand where
     -- TODO: make use of typ?
     buildCfg st name
   buildCfg st (LLVM.ConstantOperand c) =
-    ensureDataNodeWithConstExists st (toConstant c)
+    addNewDataNodeWithConstant st (toConstant c)
   buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
 
 instance CfgBuildable LLVM.Name where
