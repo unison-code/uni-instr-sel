@@ -657,7 +657,7 @@ instance DfgBuildable LLVM.Global where
         st1 = buildDfg st0 params
         st2 = buildDfg st1 $ LLVMG.basicBlocks f
     in st2
-  buildDfg _ l = error $ "'buildDfg' not supported for " ++ show l
+  buildDfg _ l = error $ "'buildDfg' not implemented for " ++ show l
 
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
@@ -671,7 +671,7 @@ instance DfgBuildable LLVM.BasicBlock where
         st3 = foldl buildDfg st2 insts
     in st3
   buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'buildDfg' not supported for un-named basic blocks"
+    error $ "'buildDfg' does not support unnamed basic blocks"
 
 instance DfgBuildable LLVM.Name where
   buildDfg st name@(LLVM.Name _) =
@@ -849,7 +849,7 @@ instance DfgBuildable LLVM.Operand where
     buildDfg st name
   buildDfg st (LLVM.ConstantOperand c) =
     addNewDataNodeWithConstant st (toConstant c)
-  buildDfg _ o = error $ "'buildDfg' not supported for " ++ show o
+  buildDfg _ o = error $ "'buildDfg' not implemented for " ++ show o
 
 instance DfgBuildable LLVM.Parameter where
   buildDfg st0 (LLVM.Parameter _ pname _) =
@@ -884,12 +884,12 @@ instance CfgBuildable LLVM.BasicBlock where
         st5 = buildCfg st4 term_inst
     in st5
   buildCfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'buildCfg' not supported for un-named basic blocks"
+    error $ "'buildCfg' does not support unnamed basic blocks"
 
 instance CfgBuildable LLVM.Global where
   buildCfg st f@(LLVM.Function {}) =
     buildCfg st $ LLVMG.basicBlocks f
-  buildCfg _ l = error $ "'buildCfg' not supported for " ++ show l
+  buildCfg _ l = error $ "'buildCfg' not implemented for " ++ show l
 
 instance CfgBuildable LLVM.Terminator where
   buildCfg st (LLVM.Ret op _) =
@@ -925,7 +925,7 @@ instance CfgBuildable LLVM.Operand where
     buildCfg st name
   buildCfg st (LLVM.ConstantOperand c) =
     addNewDataNodeWithConstant st (toConstant c)
-  buildCfg _ o = error $ "'buildCfg' not supported for " ++ show o
+  buildCfg _ o = error $ "'buildCfg' not implemented for " ++ show o
 
 instance CfgBuildable LLVM.Name where
   buildCfg st name@(LLVM.Name _) =
