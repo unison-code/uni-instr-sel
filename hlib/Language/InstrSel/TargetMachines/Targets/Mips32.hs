@@ -800,15 +800,17 @@ mkInstructions =
     )
     [ ("sra", O.IntOp O.AShr) ]
   ++
-    [ mkSimpleNBitRegMBitImmCompInst
+  map
+    ( \n -> mkSimpleNBitRegMBitImmCompInst
               "norz"
               (O.CompArithOp $ O.IntOp O.XOr)
               getGPRegisters
               getGPRegisters
               (Range (-1) (-1))
-              8
+              n
               16
-    ]
+    )
+    [ 8, 32 ]
   ++
     [ mkSimpleNBitRegMBitFirstImmCompInst
               "subuz"
