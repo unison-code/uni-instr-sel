@@ -87,11 +87,11 @@ mkHLFunctionParams function =
       domsets = computeDomSets graph entry_label
       getExecFreq n =
         fromJust
-        $ lookup (blockName $ getNodeType n)
+        $ lookup (blockOfLabel $ getNodeType n)
                  (functionBBExecFreq function)
       bb_params =
         map ( \n -> HighLevelBlockParams
-                      { hlBlockName = (blockName $ getNodeType n)
+                      { hlBlockName = (blockOfLabel $ getNodeType n)
                       , hlBlockLabelNode = (getNodeID n)
                       , hlBlockExecFrequency = getExecFreq n
                       }

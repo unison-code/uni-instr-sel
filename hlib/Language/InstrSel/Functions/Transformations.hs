@@ -100,7 +100,7 @@ assignMissingBlockNames :: Function -> Function
 assignMissingBlockNames f =
   let g = getGraph f
       nodes = filter isLabelNode (getAllNodes g)
-      label_node_pairs = map (\n -> (blockName (getNodeType n), n)) nodes
+      label_node_pairs = map (\n -> (blockOfLabel (getNodeType n), n)) nodes
       no_label_nodes = map snd (filter (isBBLabelEmpty . fst) label_node_pairs)
       existing_labels = map fst label_node_pairs
       ok_labels = filter (`notElem` existing_labels)
@@ -110,7 +110,9 @@ assignMissingBlockNames f =
                                 -- warning
                          )
       new_g =
-        foldl (\g' (l, n) -> updateNodeType (LabelNode { blockName = l }) n g')
+        foldl ( \g' (l, n) ->
+                updateNodeType (LabelNode { blockOfLabel = l }) n g'
+              )
               g
               (zip ok_labels no_label_nodes)
   in updateGraph new_g f
@@ -124,7 +126,7 @@ assignMissingBlockExecFreqs f =
   let g = getGraph f
       cfg = extractCFG g
       new_freqs =
-        map ( \n -> let l = blockName $ getNodeType n
+        map ( \n -> let l = blockOfLabel $ getNodeType n
                         freqs = functionBBExecFreq f
                         l_freq = lookup l freqs
                     in if isJust l_freq
@@ -132,7 +134,7 @@ assignMissingBlockExecFreqs f =
                        else let prec_n = getSourceNode
                                            cfg
                                            (head $ getCtrlFlowInEdges cfg n)
-                                prec_l = blockName $ getNodeType prec_n
+                                prec_l = blockOfLabel $ getNodeType prec_n
                                 prec_freq = fromJust $ lookup prec_l freqs
                             in (l, prec_freq)
             )

@@ -410,7 +410,7 @@ findLabelNodeWithID :: BuildState -> F.BlockName -> Maybe G.Node
 findLabelNodeWithID st l =
   let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
       nodes_w_matching_labels =
-        filter (\n -> (G.blockName $ G.getNodeType n) == l) label_nodes
+        filter (\n -> (G.blockOfLabel $ G.getNodeType n) == l) label_nodes
   in if length nodes_w_matching_labels > 0
      then Just (head nodes_w_matching_labels)
      else Nothing

@@ -238,7 +238,7 @@ data NodeType
         -- be given here as a string. This will only be used for debugging and
         -- pretty-printing purposes.
       }
-  | LabelNode { blockName :: BlockName }
+  | LabelNode { blockOfLabel :: BlockName }
   | PhiNode
   | StateNode
   | CopyNode
@@ -373,7 +373,7 @@ instance ToJSON NodeType where
            ]
   toJSON n@(LabelNode {}) =
     object [ "ntype"    .= String "lab"
-           , "block-name" .= toJSON (blockName n)
+           , "block-name" .= toJSON (blockOfLabel n)
            ]
   toJSON (PhiNode {}) =
     object [ "ntype" .= String "phi" ]
