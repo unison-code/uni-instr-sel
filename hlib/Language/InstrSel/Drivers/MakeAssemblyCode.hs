@@ -49,5 +49,5 @@ run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"
 
 -- | Flattens the assembly code into a string.
 showCode :: AssemblyCode -> String
-showCode (AsmBasicBlockLabel str) = str ++ ":"
+showCode (AsmBlock str) = str ++ ":"
 showCode (AsmInstruction str) = "  " ++ str

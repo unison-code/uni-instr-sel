@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Functions.IDs
-  ( BasicBlockLabel (..)
+  ( BlockName (..)
   , mkEmptyBBLabel
   , isBBLabelEmpty
   )
@@ -28,15 +28,15 @@ import Language.InstrSel.Utils.JSON
 -- Data types
 --------------
 
--- | Represents a basic block label identifier.
-newtype BasicBlockLabel
-  = BasicBlockLabel String
+-- | Represents a block name.
+newtype BlockName
+  = BlockName String
   deriving (Eq)
 
-instance Show BasicBlockLabel where
-  show (BasicBlockLabel str) = str
+instance Show BlockName where
+  show (BlockName str) = str
 
-instance DebugShow BasicBlockLabel where
+instance DebugShow BlockName where
   dShow = show
 
 
@@ -45,12 +45,12 @@ instance DebugShow BasicBlockLabel where
 -- JSON-related instances
 --------------------------
 
-instance FromJSON BasicBlockLabel where
-  parseJSON (String s) = return $ (BasicBlockLabel $ unpack s)
+instance FromJSON BlockName where
+  parseJSON (String s) = return $ (BlockName $ unpack s)
   parseJSON _ = mzero
 
-instance ToJSON BasicBlockLabel where
-  toJSON (BasicBlockLabel s) = toJSON s
+instance ToJSON BlockName where
+  toJSON (BlockName s) = toJSON s
 
 
 
@@ -58,10 +58,10 @@ instance ToJSON BasicBlockLabel where
 -- Functions
 -------------
 
--- | Creates a basic block label that is essentially empty.
-mkEmptyBBLabel :: BasicBlockLabel
-mkEmptyBBLabel = BasicBlockLabel ""
+-- | Creates an empty block name.
+mkEmptyBBLabel :: BlockName
+mkEmptyBBLabel = BlockName ""
 
--- | Checks if a basic block label is empty.
-isBBLabelEmpty :: BasicBlockLabel -> Bool
-isBBLabelEmpty (BasicBlockLabel str) = str == ""
+-- | Checks if block name is empty.
+isBBLabelEmpty :: BlockName -> Bool
+isBBLabelEmpty (BlockName str) = str == ""

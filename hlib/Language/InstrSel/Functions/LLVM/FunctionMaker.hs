@@ -24,7 +24,7 @@ import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as Op
-import qualified Language.InstrSel.Functions as PM
+import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
   , toNatural
@@ -53,7 +53,7 @@ type SymToDataNodeMapping = (Symbol, G.Node)
 -- | Represents a data flow that goes from a label node, identified by the given
 -- ID, to an entity node. This is needed to draw the missing flow edges after
 -- both the data flow graph and the control flow graph have been built.
-type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
+type LabelToEntityFlow = (F.BlockName, G.Node)
 
 -- | Represents a definition that goes from a label node, identified by the
 -- given ID, an entity node. This is needed to draw the missing definition edges
@@ -61,7 +61,7 @@ type LabelToEntityFlow = (PM.BasicBlockLabel, G.Node)
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
-type LabelToEntityDef = (PM.BasicBlockLabel, G.Node, G.EdgeNr)
+type LabelToEntityDef = (F.BlockName, G.Node, G.EdgeNr)
 
 -- | Represents a definition that goes from an entity node to a label node,
 -- identified by the given ID. This is needed to draw the missing definition
@@ -69,7 +69,7 @@ type LabelToEntityDef = (PM.BasicBlockLabel, G.Node, G.EdgeNr)
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type EntityToLabelDef = (G.Node, PM.BasicBlockLabel, G.EdgeNr)
+type EntityToLabelDef = (G.Node, F.BlockName, G.EdgeNr)
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -81,13 +81,13 @@ data BuildState
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched. This is used to
         -- simplifying edge insertion.
-      , entryLabel :: Maybe PM.BasicBlockLabel
+      , entryLabel :: Maybe F.BlockName
         -- ^ The label of the function entry point. A 'Nothing' value means that
         -- this value has not yet been assigned.
-      , currentLabel :: Maybe PM.BasicBlockLabel
+      , currentLabel :: Maybe F.BlockName
         -- ^ The label of the basic block currently being processed. A 'Nothing'
         -- value means that no basic block has yet been processed.
-      , funcBBExecFreqs :: [(PM.BasicBlockLabel, PM.ExecFreq)]
+      , funcBBExecFreqs :: [(F.BlockName, F.ExecFreq)]
         -- ^ The execution frequencies of the respective basic blocks.
       , symMaps :: [SymToDataNodeMapping]
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
@@ -256,19 +256,19 @@ mkInitBuildState m =
 
 -- | Builds a list of functions from an LLVM module. If the module does not
 -- contain any globally defined functions, an empty list is returned.
-mkFunctionsFromLlvmModule :: LLVM.Module -> [PM.Function]
+mkFunctionsFromLlvmModule :: LLVM.Module -> [F.Function]
 mkFunctionsFromLlvmModule m =
   mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
 
 -- | Builds a function from an LLVM AST definition. If the definition is not
 -- global, `Nothing` is returned.
-mkFunctionFromGlobalDef :: LLVM.Module -> LLVM.Definition -> Maybe PM.Function
+mkFunctionFromGlobalDef :: LLVM.Module -> LLVM.Definition -> Maybe F.Function
 mkFunctionFromGlobalDef m (LLVM.GlobalDefinition g) = mkFunction m g
 mkFunctionFromGlobalDef _ _ = Nothing
 
 -- | Builds a function from a global LLVM AST definition. If the definition is
 -- not a function, `Nothing` is returned.
-mkFunction :: LLVM.Module -> LLVM.Global -> Maybe PM.Function
+mkFunction :: LLVM.Module -> LLVM.Global -> Maybe F.Function
 mkFunction m f@(LLVM.Function {}) =
   let st0 = mkInitBuildState m
       st1 = buildDfg st0 f
@@ -279,11 +279,11 @@ mkFunction m f@(LLVM.Function {}) =
       st4 = addMissingLabelToEntityFlowEdges st3
       st5 = addMissingLabelToEntityDefEdges st4
       st6 = addMissingEntityToLabelDefEdges st5
-  in Just ( PM.Function
-              { PM.functionName = toFunctionName $ LLVMG.name f
-              , PM.functionOS = opStruct st6
-              , PM.functionInputs = map G.getNodeID (funcInputValues st6)
-              , PM.functionBBExecFreq = funcBBExecFreqs st6
+  in Just ( F.Function
+              { F.functionName = toFunctionName $ LLVMG.name f
+              , F.functionOS = opStruct st6
+              , F.functionInputs = map G.getNodeID (funcInputValues st6)
+              , F.functionBBExecFreq = funcBBExecFreqs st6
               }
           )
 mkFunction _ _ = Nothing
@@ -406,11 +406,11 @@ findDataNodeWithSym st sym = lookup sym (symMaps st)
 
 -- | Gets the label node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
-findLabelNodeWithID :: BuildState -> PM.BasicBlockLabel -> Maybe G.Node
+findLabelNodeWithID :: BuildState -> F.BlockName -> Maybe G.Node
 findLabelNodeWithID st l =
   let label_nodes = filter G.isLabelNode $ G.getAllNodes $ getOSGraph st
       nodes_w_matching_labels =
-        filter (\n -> (G.bbLabel $ G.getNodeType n) == l) label_nodes
+        filter (\n -> (G.blockName $ G.getNodeType n) == l) label_nodes
   in if length nodes_w_matching_labels > 0
      then Just (head nodes_w_matching_labels)
      else Nothing
@@ -437,7 +437,7 @@ ensureDataNodeWithSymExists st0 sym dt =
 -- | Checks that a label node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated accordingly,
 -- otherwise then a new label node is added.
-ensureLabelNodeExists :: BuildState -> PM.BasicBlockLabel -> BuildState
+ensureLabelNodeExists :: BuildState -> F.BlockName -> BuildState
 ensureLabelNodeExists st l =
   let label_node = findLabelNodeWithID st l
   in if isJust label_node
@@ -589,7 +589,7 @@ addMissingEntityToLabelDefEdges st =
 
 -- | Extracts the block execution frequency from the metadata (which should be
 -- attached to the terminator instruction of the corresponding basic block).
-extractExecFreq :: LLVM.Module -> LLVM.InstructionMetadata -> PM.ExecFreq
+extractExecFreq :: LLVM.Module -> LLVM.InstructionMetadata -> F.ExecFreq
 extractExecFreq m im =
   mkExecFreq $ head $ checkNumOps $ getOps $ head $ checkNumNodes $ findNodes im
   where soughtMetaName = "exec_freq"
@@ -610,7 +610,7 @@ extractExecFreq m im =
                             error "Multiple operands in metadata!"
                         | otherwise = ops
         mkExecFreq (LLVM.ConstantOperand (LLVMC.Int _ freq)) =
-          PM.toExecFreq freq
+          F.toExecFreq freq
         mkExecFreq _ = error "Invalid execution frequency value!"
 
 -- | Gets the metadata of a given LLVM terminator instruction.
@@ -685,7 +685,7 @@ instance DfgBuildable LLVM.Global where
 
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let bb_label = PM.BasicBlockLabel str
+    let bb_label = F.BlockName str
         st1 = if isNothing $ entryLabel st0
               then foldl (\st n -> addLabelToEntityFlow st (bb_label, n))
                          (st0 { entryLabel = Just bb_label })
@@ -846,7 +846,7 @@ instance DfgBuildable LLVM.Instruction where
     in st1
   buildDfg st0 (LLVM.Phi t phi_operands _) =
     let (operands, label_names) = unzip phi_operands
-        bb_labels = map (\(LLVM.Name str) -> PM.BasicBlockLabel str) label_names
+        bb_labels = map (\(LLVM.Name str) -> F.BlockName str) label_names
         operand_node_sts = scanl buildDfg st0 operands
         operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
         st1 = last operand_node_sts
@@ -897,7 +897,7 @@ instance (CfgBuildable a) => CfgBuildable [a] where
 
 instance CfgBuildable LLVM.BasicBlock where
   buildCfg st0 (LLVM.BasicBlock (LLVM.Name str) _ named_term_inst) =
-    let bb_label = PM.BasicBlockLabel str
+    let bb_label = F.BlockName str
         term_inst = fromNamed named_term_inst
         bb_exec_freq = ( bb_label
                        , extractExecFreq (llvmModule st0)
@@ -928,16 +928,16 @@ instance CfgBuildable LLVM.Terminator where
                                     ([] :: [LLVM.Operand])
                                     -- ^ Signature needed to please GHC...
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel dst)
+        st2 = ensureLabelNodeExists st1 (F.BlockName dst)
         dst_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
     in st3
   buildCfg st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
     let st1 = buildCfgFromControlOp st0 Op.CondBr [op]
         br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureLabelNodeExists st1 (PM.BasicBlockLabel t_dst)
+        st2 = ensureLabelNodeExists st1 (F.BlockName t_dst)
         t_dst_node = fromJust $ lastTouchedNode st2
-        st3 = ensureLabelNodeExists st2 (PM.BasicBlockLabel f_dst)
+        st3 = ensureLabelNodeExists st2 (F.BlockName f_dst)
         f_dst_node = fromJust $ lastTouchedNode st3
         st4 = addNewEdgesManyDests st3
                                    G.ControlFlowEdge

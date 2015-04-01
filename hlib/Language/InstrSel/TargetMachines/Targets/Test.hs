@@ -38,7 +38,7 @@ tmTest =
         mkGraph
         ( map
             Node
-            [ ( 0, NodeLabel 0 (LabelNode $ BasicBlockLabel "start") )
+            [ ( 0, NodeLabel 0 (LabelNode $ BlockName "start") )
             , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
             ]
         )
@@ -72,9 +72,9 @@ tmTest =
          ( map
              Node
              [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-             , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
-             , ( 2, NodeLabel 2 (LabelNode $ BasicBlockLabel "") )
-             , ( 3, NodeLabel 3 (LabelNode $ BasicBlockLabel "") )
+             , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
+             , ( 2, NodeLabel 2 (LabelNode $ BlockName "") )
+             , ( 3, NodeLabel 3 (LabelNode $ BlockName "") )
              , ( 4, NodeLabel 4 (ControlNode O.CondBr) )
              ]
          )
@@ -90,8 +90,8 @@ tmTest =
         mkGraph
           ( map
               Node
-              [ ( 0, NodeLabel 0 (LabelNode $ BasicBlockLabel "") )
-              , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
+              [ ( 0, NodeLabel 0 (LabelNode $ BlockName "") )
+              , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
               , ( 2, NodeLabel 2 (ControlNode O.Br) )
               ]
           )
@@ -107,7 +107,7 @@ tmTest =
           ( map
               Node
               [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-              , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
+              , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
               , ( 2, NodeLabel 2 (ControlNode O.Ret) )
               ]
           )
@@ -172,9 +172,9 @@ tmTest =
                           [ ASVerbatim "bnz "
                           , ASLocationOfDataNode 0
                           , ASVerbatim ", "
-                          , ASBBLabelOfLabelNode 2
+                          , ASBlockOfLabelNode 2
                           , ASVerbatim ", "
-                          , ASBBLabelOfLabelNode 3
+                          , ASBlockOfLabelNode 3
                           ]
                       )
                   ]
@@ -188,7 +188,7 @@ tmTest =
                       True
                       ( AssemblyStringTemplate
                           [ ASVerbatim "br "
-                          , ASBBLabelOfLabelNode 1
+                          , ASBlockOfLabelNode 1
                           ]
                       )
                   ]

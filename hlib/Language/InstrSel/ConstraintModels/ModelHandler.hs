@@ -87,13 +87,13 @@ mkHLFunctionParams function =
       domsets = computeDomSets graph entry_label
       getExecFreq n =
         fromJust
-        $ lookup (bbLabel $ getNodeType n)
+        $ lookup (blockName $ getNodeType n)
                  (functionBBExecFreq function)
       bb_params =
-        map ( \n -> HighLevelBasicBlockParams
-                      { hlBBLabel = (bbLabel $ getNodeType n)
-                      , hlBBLabelNode = (getNodeID n)
-                      , hlBBExecFrequency = getExecFreq n
+        map ( \n -> HighLevelBlockParams
+                      { hlBlockName = (blockName $ getNodeType n)
+                      , hlBlockLabelNode = (getNodeID n)
+                      , hlBlockExecFrequency = getExecFreq n
                       }
             )
             (filter isLabelNode (getAllNodes graph))
@@ -117,7 +117,7 @@ mkHLFunctionParams function =
        , hlFunEntryLabelNode = entry_label
        , hlFunLabelDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
-       , hlFunBasicBlockParams = bb_params
+       , hlFunBlockParams = bb_params
        , hlFunDataIntConstants = int_constants
        , hlFunConstraints = osConstraints $ functionOS function
        }
@@ -204,8 +204,8 @@ computeAsmStrNodeMaps t m =
   where f (ASVerbatim _) = Nothing
         f (ASLocationOfDataNode    n) = findFNInMatch m n
         f (ASImmIntValueOfDataNode n) = findFNInMatch m n
-        f (ASBBLabelOfLabelNode    n) = findFNInMatch m n
-        f (ASBBLabelOfDataNode     n) = findFNInMatch m n
+        f (ASBlockOfLabelNode      n) = findFNInMatch m n
+        f (ASBlockOfDataNode       n) = findFNInMatch m n
 
 -- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
 -- match ID.
@@ -265,9 +265,9 @@ lowerHighLevelModel model ai_maps =
                )
                (sortByAI getAIForLabelNodeID (hlFunLabelNodes f_params))
        , llFunBBExecFreqs =
-           map hlBBExecFrequency
-               ( sortByAI (getAIForLabelNodeID . hlBBLabelNode)
-                          (hlFunBasicBlockParams f_params)
+           map hlBlockExecFrequency
+               ( sortByAI (getAIForLabelNodeID . hlBlockLabelNode)
+                          (hlFunBlockParams f_params)
                )
        , llFunConstraints =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)

@@ -42,7 +42,7 @@ import Language.InstrSel.Utils.JSON
 -- Data types
 --------------
 
--- | Represents the execution frequency of a basic block.
+-- | Represents the execution frequency of a block.
 newtype ExecFreq
   = ExecFreq Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
@@ -62,8 +62,8 @@ data Function
         -- represent the function input arguments. The order of the list is the
         -- same as the order specified in the original code from which the
         -- semantics have been derived.
-      , functionBBExecFreq :: [(BasicBlockLabel, ExecFreq)]
-        -- ^ The execution frequency of the basic blocks.
+      , functionBBExecFreq :: [(BlockName, ExecFreq)]
+        -- ^ The execution frequency of the blocks.
       }
   deriving (Show)
 

@@ -22,7 +22,7 @@ import Language.InstrSel.ConstraintModels
 import Language.InstrSel.Graphs.IDs
   ( MatchID )
 import Language.InstrSel.Functions
-  ( BasicBlockLabel )
+  ( BlockName )
 import Language.InstrSel.TargetMachines
 
 import qualified Data.Graph.Inductive as I
@@ -39,10 +39,10 @@ import Data.Maybe
 -- Data types
 --------------
 
--- | Represents a piece of assembly code, which is either a basic block label or
--- an assembly instruction.
+-- | Represents a piece of assembly code, which is either a block or an assembly
+-- instruction.
 data AssemblyCode
-  = AsmBasicBlockLabel String
+  = AsmBlock String
   | AsmInstruction String
   deriving (Show)
 
@@ -72,30 +72,30 @@ generateCode
 generateCode target model sol =
   concat $
     map ( \l_node ->
-          let matches = getMatchesMovedToBB sol l_node
+          let matches = getMatchesMovedToBlock sol l_node
               sorted_matches = sortMatchesByFlow model matches
               instrs = mapMaybe (emitInstruction model sol target)
                                 sorted_matches
-              bblabel = fromJust $ findBBLabelOfLabelNode model l_node
-          in (AsmBasicBlockLabel $ show bblabel):instrs
+              bblabel = fromJust $ findBlockOfLabelNode model l_node
+          in (AsmBlock $ show bblabel):instrs
         )
         (hlSolOrderOfBBs sol)
 
--- | Gets the list of matches that has been allocated to a given basic block in
--- the CP model solution. The basic block is identified using the node ID of its
+-- | Gets the list of matches that has been allocated to a given block in the CP
+-- model solution. The block is identified using the node ID of its
 -- corresponding label node.
-getMatchesMovedToBB :: HighLevelSolution -> NodeID -> [MatchID]
-getMatchesMovedToBB sol n =
+getMatchesMovedToBlock :: HighLevelSolution -> NodeID -> [MatchID]
+getMatchesMovedToBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBBsOfSelMatches sol
 
--- | Gets the basic block label for a given label node. If no such label can be
--- found, @Nothing@ is returned.
-findBBLabelOfLabelNode :: HighLevelModel -> NodeID -> Maybe BasicBlockLabel
-findBBLabelOfLabelNode model n =
-  let bb_params = hlFunBasicBlockParams $ hlFunctionParams model
-      found_bbs = filter (\m -> hlBBLabelNode m == n) bb_params
+-- | Gets the block name for a given label node. If no such block can be found,
+-- @Nothing@ is returned.
+findBlockOfLabelNode :: HighLevelModel -> NodeID -> Maybe BlockName
+findBlockOfLabelNode model n =
+  let bb_params = hlFunBlockParams $ hlFunctionParams model
+      found_bbs = filter (\m -> hlBlockLabelNode m == n) bb_params
   in if length found_bbs > 0
-     then Just $ hlBBLabel $ head found_bbs
+     then Just $ hlBlockName $ head found_bbs
      else Nothing
 
 -- | Sorts a list of matches according to their flow dependencies. This is done
@@ -165,7 +165,7 @@ getNodeOfMatch g mid =
 -- | If the given match ID represents a pattern that has one or more control
 -- nodes, then an edge will be added to the node of that match ID from every
 -- other node. This is to ensure that the instruction of that pattern appears
--- last in the basic block.
+-- last in the block.
 addControlEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
 addControlEdgesToDAG model mid g =
   let match = getHLMatchParams (hlMatchParams model) mid
@@ -227,8 +227,8 @@ updateNodeIDsInAsmStrParts asm maps =
   where f (ASVerbatim str, _) = ASVerbatim str
         f (ASLocationOfDataNode    _, Just n) = ASLocationOfDataNode n
         f (ASImmIntValueOfDataNode _, Just n) = ASImmIntValueOfDataNode n
-        f (ASBBLabelOfLabelNode    _, Just n) = ASBBLabelOfLabelNode n
-        f (ASBBLabelOfDataNode     _, Just n) = ASBBLabelOfDataNode  n
+        f (ASBlockOfLabelNode      _, Just n) = ASBlockOfLabelNode n
+        f (ASBlockOfDataNode       _, Just n) = ASBlockOfDataNode  n
         f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
@@ -252,13 +252,13 @@ emitInstructionPart _ sol m (ASLocationOfDataNode n) =
           in show $ locName reg
      else -- TODO: handle this case
           "r?"
-emitInstructionPart model _ _ (ASBBLabelOfLabelNode n) =
-  let l = findBBLabelOfLabelNode model n
+emitInstructionPart model _ _ (ASBlockOfLabelNode n) =
+  let l = findBlockOfLabelNode model n
   in if isJust l
      then show $ fromJust l
      else -- TODO: handle this case
           "l?"
-emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
+emitInstructionPart model sol m (ASBlockOfDataNode n) =
   let function = hlFunctionParams model
       entity_nodes = hlFunEntityNodes function
   in if n `elem` entity_nodes
@@ -268,7 +268,7 @@ emitInstructionPart model sol m (ASBBLabelOfDataNode n) =
              then emitInstructionPart model
                                      sol
                                      m
-                                     (ASBBLabelOfLabelNode $ fromJust l)
+                                     (ASBlockOfLabelNode $ fromJust l)
              else -- TODO: handle this case
                   "l?"
      else -- TODO: handle this case

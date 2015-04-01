@@ -194,7 +194,7 @@ generateModelFunctionParameters(
     out << ";" << endl;
 
     out << "execFrequencyOfLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getExecFreqOfAllBBsInF());
+    printMinizincValue(out, params.getExecFreqOfAllBlocksInF());
     out << ");" << endl;
 }
 

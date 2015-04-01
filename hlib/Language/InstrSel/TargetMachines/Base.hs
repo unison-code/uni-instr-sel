@@ -55,11 +55,11 @@ data AssemblyStringPart
   | ASImmIntValueOfDataNode NodeID
     -- | Denotes the location of a given data node.
   | ASLocationOfDataNode NodeID
-    -- | Denotes the basic block label of a given label node.
-  | ASBBLabelOfLabelNode NodeID
-    -- | Denotes the basic block label of the basic block in which the definer
-    -- of a given data node has been placed.
-  | ASBBLabelOfDataNode NodeID
+    -- | Denotes the block of a given label node.
+  | ASBlockOfLabelNode NodeID
+    -- | Denotes the block in which the definer of a given data node has been
+    -- placed.
+  | ASBlockOfDataNode NodeID
   deriving (Show)
 
 -- | Defines a machine instruction.

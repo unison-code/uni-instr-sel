@@ -43,7 +43,7 @@ mkGenericDataNodeType = DataNode { dataType = AnyType, dataOrigin = Nothing }
 
 -- | Creates a generic label node type.
 mkGenericLabelNodeType :: NodeType
-mkGenericLabelNodeType = LabelNode $ BasicBlockLabel ""
+mkGenericLabelNodeType = LabelNode $ BlockName ""
 
 -- | Creates a set of instructions for handling the generic cases where
 -- 'PhiNode's appear. The instruction IDs of all instructions will be
@@ -100,11 +100,11 @@ mkGenericPhiInstructions =
                                         , ASVerbatim " ("
                                         , ASLocationOfDataNode 1
                                         , ASVerbatim ", "
-                                        , ASBBLabelOfDataNode 1
+                                        , ASBlockOfDataNode 1
                                         , ASVerbatim ") ("
                                         , ASLocationOfDataNode 2
                                         , ASVerbatim ", "
-                                        , ASBBLabelOfDataNode 2
+                                        , ASBlockOfDataNode 2
                                         , ASVerbatim ")"
                                         ]
                                     )
@@ -118,8 +118,8 @@ mkGenericPhiInstructions =
      ]
 
 -- | Creates a set of instructions for handling unconditional branching to the
--- immediately following basic block (that is, fallthroughs). The instruction
--- IDs of all instructions will be (incorrectly) set to 0, meaning they must be
+-- immediately following block (that is, fallthroughs). The instruction IDs of
+-- all instructions will be (incorrectly) set to 0, meaning they must be
 -- reassigned afterwards.
 mkGenericBrFallthroughInstructions :: [Instruction]
 mkGenericBrFallthroughInstructions =

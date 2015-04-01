@@ -92,7 +92,7 @@ insertCopy df g0 df_edge =
 
 -- | Inserts a new label node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
--- function. The new label nodes will all have empty basic block labels.
+-- function. The new label nodes will all have empty block name.
 --
 -- TODO: update the def-placement edges when phi nodes are involved!
 branchExtendWhen

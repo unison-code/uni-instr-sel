@@ -20,4 +20,4 @@ where
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.IDs
 import Language.InstrSel.Functions.IDs
-  ( BasicBlockLabel (..) )
+  ( BlockName (..) )

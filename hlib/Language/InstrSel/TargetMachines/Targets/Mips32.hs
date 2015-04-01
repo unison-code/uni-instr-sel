@@ -381,7 +381,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
 -- entry label node.
 mkCondBrPattern :: O.CompOp -> (Graph, NodeID)
 mkCondBrPattern op =
-  let mkLabelNode = LabelNode $ BasicBlockLabel ""
+  let mkLabelNode = LabelNode $ BlockName ""
       mkCompNode = ComputationNode { compOp = op }
       mk32BitDataNode = DataNode (mkIntTempType 32) Nothing
   in ( mkGraph
@@ -415,7 +415,7 @@ mkCondBrPattern op =
 -- and its inverse branch instruction. The inverse is achieved by inverting the
 -- comparison, and swapping the branch labels, which means both instructions
 -- carry the same semantics. Both are needed to handle cases where a comparison
--- needs to be inverted in order to achieve a valid basic block ordering.
+-- needs to be inverted in order to achieve a valid block ordering.
 mkCondBrInstrs
   :: String
      -- ^ The assembly string corresponding to this instruction.
@@ -451,7 +451,7 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
                                   , ASVerbatim ","
                                   , ASLocationOfDataNode 6
                                   , ASVerbatim ","
-                                  , ASBBLabelOfLabelNode 2
+                                  , ASBlockOfLabelNode 2
                                   ]
           }
       inv_pat =
@@ -466,7 +466,7 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
                                   , ASVerbatim ","
                                   , ASLocationOfDataNode 6
                                   , ASVerbatim ","
-                                  , ASBBLabelOfLabelNode 3
+                                  , ASBlockOfLabelNode 3
                                   ]
           }
   in Instruction
@@ -478,7 +478,7 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
 mkBrInstrs =
-  let mkLabelNode = LabelNode $ BasicBlockLabel ""
+  let mkLabelNode = LabelNode $ BlockName ""
       g = mkGraph
             ( map
                 Node
@@ -502,7 +502,7 @@ mkBrInstrs =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim "j "
-                                  , ASBBLabelOfLabelNode 2
+                                  , ASBlockOfLabelNode 2
                                   ]
           }
   in [ Instruction
@@ -519,7 +519,7 @@ mkRetInstrs =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
-                , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
+                , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
                 , ( 2, NodeLabel 2 (DataNode (mkIntTempType n) Nothing) )
                 ]
             )

@@ -87,44 +87,44 @@ copyExtend f =
 -- one preceding label).
 branchExtend :: Function -> Function
 branchExtend =
-  assignMissingExecFreqs . assignMissingBasicBlockLabels . extend
+  assignMissingBlockExecFreqs . assignMissingBlockNames . extend
   where extend f =
           let g = getGraph f
               new_g = branchExtendWhen (\_ _ -> True) g
               new_f = updateGraph new_g f
           in new_f
 
--- | Assigns a unique basic block label to every label node that currently has
--- an empty label (which will be the case after branch extension).
-assignMissingBasicBlockLabels :: Function -> Function
-assignMissingBasicBlockLabels f =
+-- | Assigns a unique block name to every label node that currently has an empty
+-- block name (which will be the case after branch extension).
+assignMissingBlockNames :: Function -> Function
+assignMissingBlockNames f =
   let g = getGraph f
       nodes = filter isLabelNode (getAllNodes g)
-      label_node_pairs = map (\n -> (bbLabel (getNodeType n), n)) nodes
+      label_node_pairs = map (\n -> (blockName (getNodeType n), n)) nodes
       no_label_nodes = map snd (filter (isBBLabelEmpty . fst) label_node_pairs)
       existing_labels = map fst label_node_pairs
       ok_labels = filter (`notElem` existing_labels)
-                         ( map (\i -> BasicBlockLabel $ "bb" ++ show i)
+                         ( map (\i -> BlockName $ "bb" ++ show i)
                                ([0..] :: [Integer])
                                 -- ^ The type cast is to inhibit a compilation
                                 -- warning
                          )
       new_g =
-        foldl (\g' (l, n) -> updateNodeType (LabelNode { bbLabel = l }) n g')
+        foldl (\g' (l, n) -> updateNodeType (LabelNode { blockName = l }) n g')
               g
               (zip ok_labels no_label_nodes)
   in updateGraph new_g f
 
--- | Assigns an execution frequency to every basic block that currently does not
--- have one (which will be the case after branch extension). These labels will
--- be set to have the same frequency as its preceding label in the CFG (we know
--- at this point that each new label has exactly one preceding label).
-assignMissingExecFreqs :: Function -> Function
-assignMissingExecFreqs f =
+-- | Assigns an execution frequency to every block that currently does not have
+-- one (which will be the case after branch extension). These labels will be set
+-- to have the same frequency as its preceding label in the CFG (we know at this
+-- point that each new label has exactly one preceding label).
+assignMissingBlockExecFreqs :: Function -> Function
+assignMissingBlockExecFreqs f =
   let g = getGraph f
       cfg = extractCFG g
       new_freqs =
-        map ( \n -> let l = bbLabel $ getNodeType n
+        map ( \n -> let l = blockName $ getNodeType n
                         freqs = functionBBExecFreq f
                         l_freq = lookup l freqs
                     in if isJust l_freq
@@ -132,7 +132,7 @@ assignMissingExecFreqs f =
                        else let prec_n = getSourceNode
                                            cfg
                                            (head $ getCtrlFlowInEdges cfg n)
-                                prec_l = bbLabel $ getNodeType prec_n
+                                prec_l = blockName $ getNodeType prec_n
                                 prec_freq = fromJust $ lookup prec_l freqs
                             in (l, prec_freq)
             )

@@ -86,7 +86,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setEntryLabelInF(root, p);
     setLabelDomSetsInF(root, p);
     setDefEdgesInF(root, p);
-    setExecFreqOfBBsInF(root, p);
+    setExecFreqOfBlocksInF(root, p);
     setConstraintsForF(root, p);
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
@@ -321,9 +321,9 @@ ModelParams::setStateEntitiesInF(const Value& root, ModelParams& p) {
 }
 
 void
-ModelParams::setExecFreqOfBBsInF(const Value& root, ModelParams& p) {
+ModelParams::setExecFreqOfBlocksInF(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "fun-bb-exec-freqs")) {
-        p.func_bb_exec_freq_.push_back(toInt(entry));
+        p.func_block_exec_freq_.push_back(toInt(entry));
     }
 }
 
@@ -333,8 +333,8 @@ ModelParams::getAllStateEntitiesInF(void) const {
 }
 
 vector<int>
-ModelParams::getExecFreqOfAllBBsInF(void) const {
-    return func_bb_exec_freq_;
+ModelParams::getExecFreqOfAllBlocksInF(void) const {
+    return func_block_exec_freq_;
 }
 
 void

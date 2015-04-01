@@ -39,14 +39,14 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates basic block movement constraints (see `mkBBMoveConstraints`) and
--- adds these (if any) to the existing 'OpStructure'.
+-- | Creates block movement constraints (see `mkBBMoveConstraints`) and adds
+-- these (if any) to the existing 'OpStructure'.
 addBBMoveConstraints :: OpStructure -> OpStructure
 addBBMoveConstraints os =
   addConstraints os (mkBBMoveConstraints $ osGraph os)
 
--- | Creates basic block movement constraints for a pattern graph such that the
--- match must be moved to the entry label if there is such a node.
+-- | Creates block movement constraints for a pattern graph such that the match
+-- must be moved to the entry label if there is such a node.
 mkBBMoveConstraints :: Graph -> [Constraint]
 mkBBMoveConstraints g =
   let entry_label = rootInCFG $ extractCFG g
@@ -114,8 +114,8 @@ addFallthroughConstraints l os =
   addConstraints os (mkFallthroughConstraints l)
 
 -- | Creates constraints for enforcing branch fallthrough, meaning that the
--- distance between the basic block to which to jump and the basic block from
--- which to jump must be zero.
+-- distance between the block to which to jump and the block from which to jump
+-- must be zero.
 mkFallthroughConstraints
   :: NodeID
      -- ^ A label node.

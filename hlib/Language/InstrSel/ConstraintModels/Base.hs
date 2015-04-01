@@ -35,7 +35,7 @@
 module Language.InstrSel.ConstraintModels.Base
   ( ArrayIndexMaplists (..)
   , HighLevelModel (..)
-  , HighLevelBasicBlockParams (..)
+  , HighLevelBlockParams (..)
   , HighLevelFunctionParams (..)
   , HighLevelMachineParams (..)
   , HighLevelMatchParams (..)
@@ -54,7 +54,7 @@ import Language.InstrSel.Graphs
   , NodeID
   )
 import Language.InstrSel.Functions
-  ( BasicBlockLabel
+  ( BlockName
   , ExecFreq
   )
 import Language.InstrSel.TargetMachines.IDs
@@ -94,8 +94,8 @@ data HighLevelFunctionParams
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a label node and the second element is assumed
         -- to always be an entity node.
-      , hlFunBasicBlockParams :: [HighLevelBasicBlockParams]
-        -- ^ The basic block information.
+      , hlFunBlockParams :: [HighLevelBlockParams]
+        -- ^ The block information.
       , hlFunDataIntConstants :: [(NodeID, Integer)]
         -- ^ The values of data nodes that represent constants.
       , hlFunConstraints :: [Constraint]
@@ -104,15 +104,15 @@ data HighLevelFunctionParams
       }
   deriving (Show)
 
--- | Contains the high-level basic block information.
-data HighLevelBasicBlockParams
-  = HighLevelBasicBlockParams
-      { hlBBLabel :: BasicBlockLabel
-        -- ^ The label of this basic block.
-      , hlBBLabelNode :: NodeID
-        -- ^ The node ID of the label node that represents this basic block.
-      , hlBBExecFrequency :: ExecFreq
-        -- ^ The execution frequency of this basic block.
+-- | Contains the high-level block information.
+data HighLevelBlockParams
+  = HighLevelBlockParams
+      { hlBlockName :: BlockName
+        -- ^ The label of this block.
+      , hlBlockLabelNode :: NodeID
+        -- ^ The node ID of the label node that represents this block.
+      , hlBlockExecFrequency :: ExecFreq
+        -- ^ The execution frequency of this block.
       }
   deriving (Show)
 
@@ -202,7 +202,7 @@ data LowLevelModel
         -- between which there is a definition edge. An index into the outer
         -- list corresponds to the array index of a particular label node.
       , llFunBBExecFreqs :: [ExecFreq]
-        -- ^ The execution frequency of each basic block. An index into the list
+        -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular label node in the
         -- function graph.
       , llFunConstraints :: [Constraint]
@@ -253,15 +253,15 @@ data LowLevelModel
 data HighLevelSolution
   = HighLevelSolution
       { hlSolOrderOfBBs :: [NodeID]
-        -- ^ The order of basic blocks (represented by the node ID of the
+        -- ^ The order of blocks (represented by the node ID of the
         -- corresponding label node).
       , hlSolSelMatches :: [MatchID]
         -- ^ The selected matchs.
       , hlSolBBsOfSelMatches :: [(MatchID, NodeID)]
-        -- ^ The basic block (represented by the node ID of the corresponding
+        -- ^ The block (represented by the node ID of the corresponding
         -- label node) to which a particular match was moved. A missing entry
         -- means that the corresponding match ID was not selected and thus not
-        -- moved to a valid basic block.
+        -- moved to a valid block.
       , hlSolLocsOfDataNodes :: [(NodeID, LocationID)]
         -- ^ The locations assigned for certain data nodes. A missing entry
         -- means that no location was assigned to the corresponding data node.
@@ -274,14 +274,14 @@ data HighLevelSolution
 data LowLevelSolution
   = LowLevelSolution
       { llSolOrderOfBBs :: [ArrayIndex]
-        -- ^ The order of basic blocks. An index into the list corresponds to
+        -- ^ The order of blocks. An index into the list corresponds to
         -- the array index of the label node in the function graph which
-        -- represents a particular basic block.
+        -- represents a particular block.
       , llSolIsMatchSelected :: [Bool]
         -- ^ Indicates whether a particular match was selected. An index into
         -- the list corresponds to the array index of a particular match.
       , llSolBBsOfMatches :: [ArrayIndex]
-        -- ^ The array index of the basic block to which a particular match was
+        -- ^ The array index of the block to which a particular match was
         -- moved. An index into the list corresponds to the array index of a
         -- particular match, but this value is only valid if the corresponding
         -- value in @llIsMatchSelected@ is set to @True@.
@@ -370,24 +370,24 @@ instance ToJSON HighLevelFunctionParams where
            , "entry-label"        .= (hlFunEntryLabelNode d)
            , "label-dom-sets"     .= (hlFunLabelDomSets d)
            , "def-edges"          .= (hlFunDefEdges d)
-           , "bb-params"          .= (hlFunBasicBlockParams d)
+           , "bb-params"          .= (hlFunBlockParams d)
            , "data-int-constants" .= (hlFunDataIntConstants d)
            , "constraints"        .= (hlFunConstraints d)
            ]
 
-instance FromJSON HighLevelBasicBlockParams where
+instance FromJSON HighLevelBlockParams where
   parseJSON (Object v) =
-    HighLevelBasicBlockParams
-      <$> v .: "label"
+    HighLevelBlockParams
+      <$> v .: "block-name"
       <*> v .: "label-node"
       <*> v .: "exec-frequency"
   parseJSON _ = mzero
 
-instance ToJSON HighLevelBasicBlockParams where
+instance ToJSON HighLevelBlockParams where
   toJSON d =
-    object [ "label"          .= (hlBBLabel d)
-           , "label-node"     .= (hlBBLabelNode d)
-           , "exec-frequency" .= (hlBBExecFrequency d)
+    object [ "block-name"     .= (hlBlockName d)
+           , "label-node"     .= (hlBlockLabelNode d)
+           , "exec-frequency" .= (hlBlockExecFrequency d)
            ]
 
 instance FromJSON HighLevelMatchParams where

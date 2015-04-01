@@ -128,13 +128,13 @@ class ModelParams {
     getAllStateEntitiesInF(void) const;
 
     /**
-     * Gets execution frequencies per basic block (as identified by the label
-     * nodes) in the function graph.
+     * Gets execution frequencies per block (as identified by the label nodes)
+     * in the function graph.
      *
      * @returns The execution frequencies.
      */
     std::vector<int>
-    getExecFreqOfAllBBsInF(void) const;
+    getExecFreqOfAllBlocksInF(void) const;
 
     /**
      * Gets code sizes per match.
@@ -367,8 +367,8 @@ class ModelParams {
     setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the execution frequencies of the basic blocks (as identified by the
-     * label nodes) in the function graph.
+     * Sets the execution frequencies of the blocks (as identified by the label
+     * nodes) in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -378,7 +378,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setExecFreqOfBBsInF(const Json::Value& root, ModelParams& p);
+    setExecFreqOfBlocksInF(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the entity nodes in the function that are state nodes.
@@ -599,10 +599,10 @@ class ModelParams {
     std::list<ArrayIndex> func_state_entities_;
 
     /**
-     * The execution frequency per basic block (as identified by the label
-     * nodes) in the function graph.
+     * The execution frequency per block (as identified by the label nodes) in
+     * the function graph.
      */
-    std::vector<int> func_bb_exec_freq_;
+    std::vector<int> func_block_exec_freq_;
 
     /**
      * The constraints for the function graph. The constraints are destroyed

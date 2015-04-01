@@ -165,7 +165,7 @@ where
 
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Functions.IDs
-  ( BasicBlockLabel (..) )
+  ( BlockName (..) )
 import Language.InstrSel.Graphs.IDs
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.Utils.Natural
@@ -238,7 +238,7 @@ data NodeType
         -- be given here as a string. This will only be used for debugging and
         -- pretty-printing purposes.
       }
-  | LabelNode { bbLabel :: BasicBlockLabel }
+  | LabelNode { blockName :: BlockName }
   | PhiNode
   | StateNode
   | CopyNode
@@ -350,7 +350,7 @@ instance FromJSON NodeType where
                                <$> v .: "dtype"
                                <*> v .: "origin"
                    "lab"  -> LabelNode
-                               <$> v .: "bb-label"
+                               <$> v .: "block-name"
                    "phi"  -> return PhiNode
                    "stat" -> return StateNode
                    "copy" -> return CopyNode
@@ -373,7 +373,7 @@ instance ToJSON NodeType where
            ]
   toJSON n@(LabelNode {}) =
     object [ "ntype"    .= String "lab"
-           , "bb-label" .= toJSON (bbLabel n)
+           , "block-name" .= toJSON (blockName n)
            ]
   toJSON (PhiNode {}) =
     object [ "ntype" .= String "phi" ]
