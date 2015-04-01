@@ -144,6 +144,8 @@ data TypeConvOp
 data MemoryOp
     -- | Read from memory.
   = Load
+    -- | Store to memory.
+  | Store
   deriving (Eq)
 
 data ControlOp
@@ -211,6 +213,7 @@ instance Show TypeConvOp where
 
 instance Show MemoryOp where
   show Load  = "load"
+  show Store = "store"
 
 instance Show ControlOp where
   show Br     = "br"
@@ -275,7 +278,7 @@ instance FromJSON CompOp where
          1 -> do let tcops   = [ ZExt, SExt, Trunc
                                , Float2SInt, Float2UInt, SInt2Float, UInt2Float
                                ]
-                     mops    = [ Load ]
+                     mops    = [ Load, Store ]
                      tcfound = filter (\op -> show op == str) tcops
                      mfound  = filter (\op -> show op == str) mops
                  when (null tcfound && null mfound) mzero
@@ -323,6 +326,7 @@ isOpCommutative :: CompOp -> Bool
 isOpCommutative (CompArithOp op) = isArithOpCommutative op
 isOpCommutative (CompTypeConvOp _) = True
 isOpCommutative (CompMemoryOp Load) = True
+isOpCommutative (CompMemoryOp Store) = False
 
 -- | Checks if an arithmetic operation is commutative.
 isArithOpCommutative :: ArithOp -> Bool
@@ -339,6 +343,7 @@ numOperandsForCompOp :: CompOp -> Natural
 numOperandsForCompOp (CompArithOp op) = numOperandsForArithOp op
 numOperandsForCompOp (CompTypeConvOp _) = 1
 numOperandsForCompOp (CompMemoryOp Load) = 1
+numOperandsForCompOp (CompMemoryOp Store) = 2
 
 -- | Gets the number of operands required by a given arithmetic operation.
 numOperandsForArithOp :: ArithOp -> Natural
