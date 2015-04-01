@@ -38,6 +38,9 @@ import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
 
+-- TODO: remove
+import Debug.Trace
+
 
 
 --------------
@@ -657,13 +660,19 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         st2 = ensureDataNodeWithSymExists st1 sym res_dt
         sym_n = fromJust $ lastTouchedNode st2
         st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
-        replaceNodeInDef old_n new_n (l, n, nr) =
+        replaceNodeInLEDef old_n new_n (l, n, nr) =
           if old_n == n then (l, new_n, nr) else (l, n, nr)
         st4 = st3 { labelToEntityDefs =
-                       map (replaceNodeInDef res_n sym_n)
+                       map (replaceNodeInLEDef res_n sym_n)
                            (labelToEntityDefs st3)
                   }
-    in st4
+        replaceNodeInELDef old_n new_n (n, l, nr) =
+          if old_n == n then (new_n, l, nr) else (n, l, nr)
+        st5 = st4 { entityToLabelDefs =
+                       map (replaceNodeInELDef res_n sym_n)
+                           (entityToLabelDefs st4)
+                  }
+    in st5
   buildDfg st (LLVM.Do expr) = buildDfg st expr
 
 instance DfgBuildable LLVM.Global where
@@ -815,9 +824,9 @@ instance DfgBuildable LLVM.Instruction where
                        [op1]
   -- TODO: replace the 'addEntityToLabelDef' with proper dependencies from/to
   -- state nodes.
-  buildDfg st (LLVM.Load _ op1 _ _ _) =
-    let st1 = buildDfgFromCompOp st
-                        (toTempDataType op1)
+  buildDfg st0 (LLVM.Load _ op1 _ _ _) =
+    let st1 = buildDfgFromCompOp st0
+                        (toDataType op1)
                         (Op.CompMemoryOp Op.Load)
                         [op1]
         n   = fromJust $ lastTouchedNode st1
