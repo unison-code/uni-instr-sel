@@ -602,6 +602,7 @@ mkInstructions =
     , ("sub" , O.SIntOp O.Sub)
     , ("subu", O.UIntOp O.Sub)
     , ("sllv", O.IntOp O.Shl)
+    , ("srlv", O.IntOp O.LShr)
     ]
   ++
   [ mkSimple32BitRegRegCompInst
