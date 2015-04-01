@@ -271,7 +271,7 @@ mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
 -- The first input operand and result are assumed to reside in one of the 32
 -- general-purpose registers, and the second input operand is assumed to be a
 -- N-bit immediate of a given range.
-mkSimple32BitRegNBitImmCompInst
+mkSimpleNBitRegMBitImmCompInst
   :: String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
@@ -283,14 +283,16 @@ mkSimple32BitRegNBitImmCompInst
   -> Range Integer
      -- ^ The range of the immediate (which is the second operand).
   -> Natural
+     -- ^ The number of bits of the first operand and the destination.
+  -> Natural
      -- ^ The number of bits of the immediate.
   -> Instruction
-mkSimple32BitRegNBitImmCompInst str op r1 r3 imm n =
-  let dt32 = mkIntTempType 32
-      dtN  = D.IntConstType { D.intConstValue = imm
-                            , D.intConstNumBits = Just n
+mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
+  let dtN = mkIntTempType n
+      dtM  = D.IntConstType { D.intConstValue = imm
+                            , D.intConstNumBits = Just m
                             }
-      g = mkSimpleCompPattern op dt32 dtN dt32
+      g = mkSimpleCompPattern op dtN dtM dtN
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
                      )
@@ -625,23 +627,25 @@ mkInstructions =
     ]
   ++
   map
-    ( \a -> mkSimple32BitRegNBitImmCompInst
+    ( \a -> mkSimpleNBitRegMBitImmCompInst
               (fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               (Range (-32768) 32767)
+              32
               16
     )
     [ ("addi", O.SIntOp O.Add) ]
   ++
   map
-    ( \a -> mkSimple32BitRegNBitImmCompInst
+    ( \a -> mkSimpleNBitRegMBitImmCompInst
               (fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               (Range 0 65535)
+              32
               16
     )
     [ ("addiu", O.UIntOp O.Add) ]
@@ -688,17 +692,31 @@ mkInstructions =
     ]
   ++
   map
-    ( \a -> mkSimple32BitRegNBitImmCompInst
+    ( \a -> mkSimpleNBitRegMBitImmCompInst
               (fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
               (Range 0 32)
+              32
               5
     )
     [ ("sll", O.IntOp O.Shl)
     , ("srl", O.IntOp O.LShr)
     , ("sra", O.IntOp O.AShr)
+    ]
+  ++
+  map
+    ( \a -> mkSimpleNBitRegMBitImmCompInst
+              (fst a)
+              (O.CompArithOp $ snd a)
+              getGPRegisters
+              getGPRegisters
+              (Range 0 65535)
+              8
+              16
+    )
+    [ ("xori", O.IntOp O.XOr)
     ]
   ++
   mkBrInstrs
