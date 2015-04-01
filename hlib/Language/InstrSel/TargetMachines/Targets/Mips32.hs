@@ -317,6 +317,57 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
        , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
        }
 
+-- | Creates an instruction that consists of only a single computation node,
+-- that takes two data nodes as input, and produces another data node as output.
+-- The second input operand and result are assumed to reside in one of the 32
+-- general-purpose registers, and the first input operand is assumed to be a
+-- N-bit immediate of a given range.
+mkSimpleNBitRegMBitFirstImmCompInst
+  :: String
+     -- ^ The assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The operation corresponding to this instruction.
+  -> [Location]
+     -- ^ The location class of the second operand.
+  -> [Location]
+     -- ^ The location class of the destination.
+  -> Range Integer
+     -- ^ The range of the immediate (which is the first operand).
+  -> Natural
+     -- ^ The number of bits of the second operand and the destination.
+  -> Natural
+     -- ^ The number of bits of the immediate.
+  -> Instruction
+mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
+  let dtN = mkIntTempType n
+      dtM  = D.IntConstType { D.intConstValue = imm
+                            , D.intConstNumBits = Just m
+                            }
+      g = mkSimpleCompPattern op dtM dtN dtN
+      cs = concatMap ( \(r, nid) ->
+                       mkDataLocConstraints (map locID r) nid
+                     )
+                     (zip [r2, r3] [2, 3])
+      pat = InstrPattern
+              { patID = 0
+              , patOS = OS.OpStructure g Nothing cs
+              , patOutputDataNodes = [3]
+              , patADDUC = True
+              , patAsmStrTemplate = AssemblyStringTemplate
+                                      [ ASVerbatim $ str ++ " "
+                                      , ASLocationOfDataNode 3
+                                      , ASVerbatim ","
+                                      , ASLocationOfDataNode 1
+                                      , ASVerbatim ","
+                                      , ASLocationOfDataNode 2
+                                      ]
+              }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+       }
+
 -- | Creates a conditional branch pattern for a given comparison operator. The
 -- first and second operands are the (32-bit) data nodes with IDs 5 and 6,
 -- respectively, and the 'true' and 'false' labels are the label node with IDs 2
@@ -740,6 +791,16 @@ mkInstructions =
               getGPRegisters
               (Range (-1) (-1))
               8
+              16
+    ]
+  ++
+    [ mkSimpleNBitRegMBitFirstImmCompInst
+              "subuz"
+              (O.CompArithOp $ O.UIntOp O.Sub)
+              getGPRegisters
+              getGPRegisters
+              (Range 0 0)
+              16
               16
     ]
   ++
