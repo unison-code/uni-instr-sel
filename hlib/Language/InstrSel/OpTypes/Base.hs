@@ -358,6 +358,8 @@ isCompOpCompatibleWith (CompArithOp op1) (CompArithOp op2) =
   op1 `isArithOpCompatibleWith` op2
 isCompOpCompatibleWith (CompTypeConvOp op1) (CompTypeConvOp op2) =
   op1 `isTypeConvOpCompatibleWith` op2
+isCompOpCompatibleWith (CompMemoryOp op1) (CompMemoryOp op2) =
+  op1 `isMemoryOpCompatibleWith` op2
 isCompOpCompatibleWith _ _ = False
 
 -- | Checks if an arithmetic operation is compatible another operation, meaning
@@ -381,3 +383,9 @@ isArithOpCompatibleWith op1 op2                       = op1 == op2
 -- necessarily commutative.
 isTypeConvOpCompatibleWith :: TypeConvOp -> TypeConvOp -> Bool
 isTypeConvOpCompatibleWith = (==)
+
+-- | Checks if a memory operation is compatible with another operation, meaning
+-- that they are semantically equivalent. Note that this function is not
+-- necessarily commutative.
+isMemoryOpCompatibleWith :: MemoryOp -> MemoryOp -> Bool
+isMemoryOpCompatibleWith = (==)
