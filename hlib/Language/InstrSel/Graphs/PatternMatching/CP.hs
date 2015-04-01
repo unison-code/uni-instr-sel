@@ -164,9 +164,11 @@ findMatches
      -- ^ Found matches.
 findMatches fg pg =
   let params = computeParameters fg pg
-      sol = unsafePerformIO (invokeMatcher params)
-      matches = makeMatchesFromSolutionData params sol
-  in nub matches
+  in if not $ hasParamsEmptyDomains params
+     then let sol = unsafePerformIO (invokeMatcher params)
+              matches = makeMatchesFromSolutionData params sol
+          in nub matches
+     else []
 
 computeParameters
   :: Graph
@@ -223,6 +225,14 @@ computeParameters fg pg =
                 , initialEdgeDomains = pe_init_doms
                 , alternativeEdges = fg_alt_edges
                 }
+
+-- | Checks if the given parameters has any field that is an empty domain.
+hasParamsEmptyDomains :: Parameters -> Bool
+hasParamsEmptyDomains p =
+  let domains = [ initialNodeDomains p
+                , initialEdgeDomains p
+                ]
+  in any null domains
 
 -- | Finds and aggregates the edges that are alternatives to one another,
 -- meaning at most one of them may be matched per pattern.
