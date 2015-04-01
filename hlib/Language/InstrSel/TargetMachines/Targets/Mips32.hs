@@ -606,14 +606,6 @@ mkInstructions =
     ]
   ++
   [ mkSimple32BitRegRegCompInst
-              "mul"
-              (O.CompArithOp $ O.SIntOp O.Mul)
-              getGPRegisters
-              getGPRegisters
-              [getLORegister]
-  ]
-  ++
-  [ mkSimple32BitRegRegCompInst
               "rem"
               (O.CompArithOp $ O.SIntOp O.Rem)
               getGPRegisters
