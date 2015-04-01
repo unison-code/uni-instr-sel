@@ -228,9 +228,11 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
--- All data are assumed to be 32 bits in size.
-mkSimple32BitRegRegCompInst
-  :: String
+-- All data are assumed to be N bits in size.
+mkSimpleNBitRegRegCompInst
+  :: Natural
+     -- ^ The width of the data
+  -> String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
@@ -241,9 +243,13 @@ mkSimple32BitRegRegCompInst
   -> [Location]
      -- ^ The location class of the destination.
   -> Instruction
-mkSimple32BitRegRegCompInst str op r1 r2 r3 =
-  let dt = mkIntTempType 32
+mkSimpleNBitRegRegCompInst n str op r1 r2 r3 =
+  let dt = mkIntTempType n
   in mkGenericSimpleRegRegCompInst str op dt dt dt r1 r2 r3
+
+mkSimple32BitRegRegCompInst :: String -> O.CompOp -> [Location] -> [Location] ->
+                               [Location] -> Instruction
+mkSimple32BitRegRegCompInst = mkSimpleNBitRegRegCompInst 32
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
@@ -509,12 +515,12 @@ mkBrInstrs =
 -- | Makes the return instructions.
 mkRetInstrs :: [Instruction]
 mkRetInstrs =
-  let g = mkGraph
+  let g n = mkGraph
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
                 , ( 1, NodeLabel 1 (LabelNode $ BasicBlockLabel "") )
-                , ( 2, NodeLabel 2 (DataNode (mkIntTempType 32) Nothing) )
+                , ( 2, NodeLabel 2 (DataNode (mkIntTempType n) Nothing) )
                 ]
             )
             ( map
@@ -523,20 +529,21 @@ mkRetInstrs =
                 , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
-      bb_cs = mkBBMoveConstraints g
-      reg_cs = mkDataLocConstraints [locID getRetRegister] 2
-      cs = bb_cs ++ reg_cs
-      pat =
+      bb_cs n = mkBBMoveConstraints (g n)
+      reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
+      pat n =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g (Just 1) cs
+          , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
+           -- TODO: model 16-bits ret, properly, sometimes shifts are needed
+           -- (see gsm.add.gsm_abs)
+         , instrPatterns = [pat 16, pat 32]
          , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
          }
      ]
@@ -656,6 +663,15 @@ mkInstructions =
     , ("srlv", O.IntOp O.LShr)
     , ("srav", O.IntOp O.AShr)
     ]
+  ++ [
+      mkSimpleNBitRegRegCompInst
+              1
+              "and"
+              (O.CompArithOp $ O.IntOp O.And)
+              getGPRegisters
+              getGPRegisters
+              getGPRegisters
+     ]
   ++
   [ mkSimple32BitRegRegCompInst
               "rem"
