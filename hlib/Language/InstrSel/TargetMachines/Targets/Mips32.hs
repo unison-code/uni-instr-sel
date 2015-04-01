@@ -604,6 +604,14 @@ mkInstructions =
     , ("sllv", O.IntOp O.Shl)
     ]
   ++
+  [ mkSimple32BitRegRegCompInst
+              "rem"
+              (O.CompArithOp $ O.SIntOp O.Rem)
+              getGPRegisters
+              getGPRegisters
+              [getHIRegister]
+  ]
+  ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
