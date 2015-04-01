@@ -66,16 +66,16 @@ mkBBMoveConstraints g =
 -- | Creates location allocation constraints (see `mkDataLocConstraints`) and
 -- adds these (if any) are added to the existing 'OpStructure'.
 addDataLocConstraints
-  :: OpStructure
-     -- ^ The old structure.
-  -> [LocationID]
+  :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
   -> NodeID
      -- ^ A data node.
   -> OpStructure
+     -- ^ The old structure.
+  -> OpStructure
      -- ^ The new structure, with the produced constraints (may be the same
      -- structure).
-addDataLocConstraints os regs d =
+addDataLocConstraints regs d os =
   addConstraints os (mkDataLocConstraints regs d)
 
 -- | Creates location constraints such that the data of a particular data node
@@ -109,8 +109,8 @@ mkDataLocConstraints regs d =
 
 -- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
 -- these (if any) to the existing 'OpStructure'.
-addFallthroughConstraints :: OpStructure -> NodeID -> OpStructure
-addFallthroughConstraints os l =
+addFallthroughConstraints :: NodeID -> OpStructure -> OpStructure
+addFallthroughConstraints l os =
   addConstraints os (mkFallthroughConstraints l)
 
 -- | Creates constraints for enforcing branch fallthrough, meaning that the
@@ -135,8 +135,8 @@ mkFallthroughConstraints l =
 
 -- | Creates no-reuse constraints (see `mkNoReuseConstraints`) and adds these
 -- (if any) to the existing 'OpStructure'.
-addNoReuseConstraints :: OpStructure -> NodeID -> OpStructure
-addNoReuseConstraints os d =
+addNoReuseConstraints :: NodeID -> OpStructure -> OpStructure
+addNoReuseConstraints d os =
   addConstraints os (mkNoReuseConstraints d)
 
 -- | Creates no-reuse constraints for a pattern graph such that the location of

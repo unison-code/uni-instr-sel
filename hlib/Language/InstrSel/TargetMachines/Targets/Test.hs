@@ -18,7 +18,6 @@ module Language.InstrSel.TargetMachines.Targets.Test
   ( tmTest )
 where
 
-import Language.InstrSel.Constraints
 import Language.InstrSel.Constraints.ConstraintBuilder
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Graphs
@@ -127,22 +126,11 @@ tmTest =
       br_pattern_os =
         addBBMoveConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
-        addBBMoveConstraints $
-          OpStructure
-            br_fallthrough_pattern
-            (Just 0)
-            [ BoolExprConstraint $
-                EqExpr
-                  ( DistanceBetweenMatchAndLabelExpr
-                      ThisMatchExpr
-                      ( LabelOfLabelNodeExpr $
-                        ANodeIDExpr 1
-                      )
-                  )
-                  ( Int2NumExpr $
-                      AnIntegerExpr 0
-                  )
-            ]
+        addBBMoveConstraints
+        $ addFallthroughConstraints 1
+        $ OpStructure br_fallthrough_pattern
+                      (Just 0)
+                      []
       ret_pattern_os =
         addBBMoveConstraints $ OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
