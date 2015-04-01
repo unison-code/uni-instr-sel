@@ -601,10 +601,16 @@ mkInstructions =
     , ("addu", O.UIntOp O.Add)
     , ("sub" , O.SIntOp O.Sub)
     , ("subu", O.UIntOp O.Sub)
-      -- | TODO: fix constraints of mul
-    , ("mul" , O.SIntOp O.Mul)
     , ("sllv", O.IntOp O.Shl)
     ]
+  ++
+  [ mkSimple32BitRegRegCompInst
+              "mul"
+              (O.CompArithOp $ O.SIntOp O.Mul)
+              getGPRegisters
+              getGPRegisters
+              [getLORegister]
+  ]
   ++
   [ mkSimple32BitRegRegCompInst
               "rem"
