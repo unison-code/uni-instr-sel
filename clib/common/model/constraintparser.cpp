@@ -460,10 +460,6 @@ ConstraintParser::parseSetExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new DiffSetExpr(lhs, rhs);
         }
-        else if (eatType<DomSetOfLabelExpr>(str)) {
-            auto e = parseLabelExpr(str);
-            expr = new DomSetOfLabelExpr(e);
-        }
         else if (eatType<LocationClassExpr>(str)) {
             auto es = parseListOfLocationExpr(str);
             expr = new LocationClassExpr(es);

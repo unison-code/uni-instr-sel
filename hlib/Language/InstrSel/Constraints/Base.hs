@@ -171,9 +171,6 @@ data SetExpr =
     -- @B@.
   | DiffSetExpr SetExpr SetExpr
     -- | Retrieves the dominator set of a label.
-  | DomSetOfLabelExpr LabelExpr
-    -- | Retrieves a location class (which is expressed as a set of individual
-    -- locations belonging to that class).
   | LocationClassExpr [LocationExpr]
   deriving (Show)
 
@@ -335,7 +332,6 @@ instance FromLisp SetExpr where
         struct "union" UnionSetExpr e
     <|> struct "intersect" IntersectSetExpr e
     <|> struct "diff" DiffSetExpr e
-    <|> struct "domset-of-lab" DomSetOfLabelExpr e
     <|> struct "loc-class" LocationClassExpr e
 
 instance ToLisp SetExpr where
@@ -345,8 +341,6 @@ instance ToLisp SetExpr where
     mkStruct "intersect" [toLisp lhs, toLisp rhs]
   toLisp (DiffSetExpr lhs rhs) =
     mkStruct "diff" [toLisp lhs, toLisp rhs]
-  toLisp (DomSetOfLabelExpr e) =
-    mkStruct "domset-of-lab" [toLisp e]
   toLisp (LocationClassExpr es) =
     mkStruct "loc-class" [Lisp.List (map toLisp es)]
 

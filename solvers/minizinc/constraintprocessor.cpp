@@ -288,12 +288,6 @@ ConstraintProcessor::process(const SetExpr* e) {
         return string("(") + process(de->getLhs()) + " diff "
             + process(de->getRhs()) + ")";
     }
-    else if (const DomSetOfLabelExpr* de =
-             dynamic_cast<const DomSetOfLabelExpr*>(e))
-    {
-        return getDomSetParameterArrayName()
-            + "[" + process(de->getExpr()) + "]";
-    }
     else if (const LocationClassExpr* de =
              dynamic_cast<const LocationClassExpr*>(e))
     {

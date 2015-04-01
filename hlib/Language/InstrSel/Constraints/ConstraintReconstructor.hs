@@ -142,8 +142,6 @@ mkDefaultReconstructor =
         IntersectSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (DiffSetExpr lhs rhs) =
         DiffSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkSetExpr r (DomSetOfLabelExpr expr) =
-        DomSetOfLabelExpr ((mkLabelExprF r) r expr)
       mkSetExpr r (LocationClassExpr exprs) =
         LocationClassExpr (map ((mkLocationExprF r) r) exprs)
       mkSetElemExpr r (Label2SetElemExpr expr) =

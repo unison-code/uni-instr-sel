@@ -1675,31 +1675,6 @@ class DiffSetExpr : public BinaryExpr<SetExpr, DiffSetExpr, SetExpr> {
 };
 
 /**
- * Label dominator set expression.
- */
-class DomSetOfLabelExpr
-    : public UnaryExpr<SetExpr, DomSetOfLabelExpr, LabelExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    DomSetOfLabelExpr(const LabelExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~DomSetOfLabelExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Location class expression.
  */
 class LocationClassExpr : public WithStrName<SetExpr, LocationClassExpr> {

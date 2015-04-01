@@ -444,12 +444,6 @@ DiffSetExpr::DiffSetExpr(const SetExpr* lhs, const SetExpr* rhs)
 
 DiffSetExpr::~DiffSetExpr(void) {}
 
-DomSetOfLabelExpr::DomSetOfLabelExpr(const LabelExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-DomSetOfLabelExpr::~DomSetOfLabelExpr(void) {}
-
 LocationClassExpr::LocationClassExpr(const std::list<const LocationExpr*>& expr)
     : expr_(expr)
 {}
@@ -545,7 +539,6 @@ const string LocationOfDataNodeExpr::STRNAME = "loc-of-dnode";
 const string UnionSetExpr::STRNAME = "union";
 const string IntersectSetExpr::STRNAME = "intersect";
 const string DiffSetExpr::STRNAME = "diff";
-const string DomSetOfLabelExpr::STRNAME = "domset-of-lab";
 const string LocationClassExpr::STRNAME = "loc-class";
 const string LabelToSetElemExpr::STRNAME = "lab-to-set-elem";
 const string LocationToSetElemExpr::STRNAME = "loc-to-set-elem";
