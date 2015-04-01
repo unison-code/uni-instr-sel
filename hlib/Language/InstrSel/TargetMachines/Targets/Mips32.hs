@@ -648,7 +648,10 @@ mkInstructions =
               32
               16
     )
-    [ ("addiu", O.UIntOp O.Add) ]
+    [ ("addiu", O.UIntOp O.Add),
+      ("andi",  O.IntOp O.And),
+      ("ori",   O.IntOp O.Or)
+    ]
   ++
   map
     ( \a -> mkSimple32BitRegRegCompInst
