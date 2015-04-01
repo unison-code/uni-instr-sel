@@ -26,7 +26,18 @@ To download and install LLVM 3.4, run the following commands:
 
 The last command installs the LLVM binaries in /usr/local.
 
-Next you will need to install several Haskell packages using Cabal:
+Next you will need to install several Haskell packages using Cabal. To keep the
+installation clean and avoid conflicts with other Haskell packages, 'cabal
+sandbox' can be used (supported starting from version 1.18 of Cabal) as
+follows. Before installing the packages, run (from the directory where the
+README is located):
+
+$ cabal sandbox init (first time only)
+
+$ cabal exec bash (creates a new environment where ghc and all the other Haskell
+tools are also sandboxed)
+
+The packages to be installed are:
 
  - aeson
  - atto-lisp
