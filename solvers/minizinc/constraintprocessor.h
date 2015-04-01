@@ -87,14 +87,6 @@ class ConstraintProcessor {
     getDataLocationVariableArrayName(void) const;
 
     /**
-     * Gets the variable array for the data node immediate values.
-     *
-     * @returns Variable name.
-     */
-    std::string
-    getDataImmediateValuesVariableArrayName(void) const;
-
-    /**
      * Gets the variable array for the match-to-basic block
      * allocation.
      *

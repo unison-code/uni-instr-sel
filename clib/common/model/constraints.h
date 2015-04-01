@@ -841,32 +841,6 @@ class AnIntegerExpr : public WithStrName<IntExpr, AnIntegerExpr> {
 };
 
 /**
- * Retrieves the value of a data node which represents an integer constant. This
- * expression *must* be used together with #DataNodeIsIntConstantConstraint!
- */
-class IntConstValueOfDataNodeExpr
-    : public UnaryExpr<IntExpr, IntConstValueOfDataNodeExpr, NodeExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    IntConstValueOfDataNodeExpr(const NodeExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~IntConstValueOfDataNodeExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Converts a Boolean into a numerical expression.
  */
 class BoolToNumExpr : public UnaryExpr<NumExpr, BoolToNumExpr, BoolExpr> {

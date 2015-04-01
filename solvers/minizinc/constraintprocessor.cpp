@@ -189,12 +189,6 @@ ConstraintProcessor::process(const IntExpr* e) {
     if (const AnIntegerExpr* de = dynamic_cast<const AnIntegerExpr*>(e)) {
         return Utils::toString(de->getValue());
     }
-    else if (const IntConstValueOfDataNodeExpr* de =
-             dynamic_cast<const IntConstValueOfDataNodeExpr*>(e))
-    {
-        return getDataImmediateValuesVariableArrayName() + "["
-            + process(de->getExpr()) + "]";
-    }
     else {
         THROW(Exception, "IntExpr is of unknown derived class");
     }
@@ -338,11 +332,6 @@ ConstraintProcessor::process(const SetElemExpr* e) {
 string
 ConstraintProcessor::getDataLocationVariableArrayName(void) const {
     return "loc";
-}
-
-string
-ConstraintProcessor::getDataImmediateValuesVariableArrayName(void) const {
-    return "cnst";
 }
 
 string

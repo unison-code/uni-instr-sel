@@ -193,12 +193,6 @@ AnIntegerExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
-IntConstValueOfDataNodeExpr::IntConstValueOfDataNodeExpr(const NodeExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-IntConstValueOfDataNodeExpr::~IntConstValueOfDataNodeExpr(void) {}
-
 IntToNumExpr::IntToNumExpr(const IntExpr* expr)
     : UnaryExpr(expr)
 {}
@@ -526,7 +520,6 @@ const string PlusExpr::STRNAME = "+";
 const string MinusExpr::STRNAME = "-";
 const string IntToNumExpr::STRNAME = "int-to-num";
 const string AnIntegerExpr::STRNAME = "int";
-const string IntConstValueOfDataNodeExpr::STRNAME = "int-const-val-of-dnode";
 const string BoolToNumExpr::STRNAME = "bool-to-num";
 const string NodeToNumExpr::STRNAME = "node-to-num";
 const string MatchToNumExpr::STRNAME = "match-to-num";

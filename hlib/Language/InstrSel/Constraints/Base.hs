@@ -118,10 +118,6 @@ data NumExpr
 data IntExpr
     -- | Introduces an integer value.
   = AnIntegerExpr Integer
-    -- | Retrieves the value of a data node which represents an integer
-    -- constant. This expression *must* be used together with
-    -- 'DataNodeIsIntConstantConstraint'!
-  | IntConstValueOfDataNodeExpr NodeExpr
   deriving (Show)
 
 -- | Node expressions.
@@ -281,12 +277,9 @@ instance ToLisp NumExpr where
 instance FromLisp IntExpr where
   parseLisp e =
         struct "int" AnIntegerExpr e
-    <|> struct "int-const-val-of-dnode" IntConstValueOfDataNodeExpr e
 
 instance ToLisp IntExpr where
   toLisp (AnIntegerExpr i) = mkStruct "int" [toLisp i]
-  toLisp (IntConstValueOfDataNodeExpr e) =
-    mkStruct "int-const-val-of-dnode" [toLisp e]
 
 instance FromLisp NodeExpr where
   parseLisp e =

@@ -215,10 +215,6 @@ ConstraintParser::parseIntExpr(string& str) {
             int num = eatInt(str);
             expr = new AnIntegerExpr(num);
         }
-        else if (eatType<IntConstValueOfDataNodeExpr>(str)) {
-            auto e = parseNodeExpr(str);
-            expr = new IntConstValueOfDataNodeExpr(e);
-        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }

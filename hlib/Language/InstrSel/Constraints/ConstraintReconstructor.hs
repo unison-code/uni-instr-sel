@@ -110,8 +110,6 @@ mkDefaultReconstructor =
           ((mkLabelExprF r) r label_expr)
       mkIntExpr _ expr@(AnIntegerExpr _) =
         expr
-      mkIntExpr r (IntConstValueOfDataNodeExpr expr) =
-        IntConstValueOfDataNodeExpr ((mkNodeExprF r) r expr)
       mkNodeExpr _ expr@(ANodeIDExpr _) =
         expr
       mkNodeExpr _ expr@(ANodeArrayIndexExpr _) =
