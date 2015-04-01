@@ -603,6 +603,7 @@ mkInstructions =
     , ("subu", O.UIntOp O.Sub)
     , ("sllv", O.IntOp O.Shl)
     , ("srlv", O.IntOp O.LShr)
+    , ("srav", O.IntOp O.AShr)
     ]
   ++
   [ mkSimple32BitRegRegCompInst
@@ -718,8 +719,19 @@ mkInstructions =
               8
               16
     )
-    [ ("xori", O.IntOp O.XOr)
-    ]
+    [ ("xori", O.IntOp O.XOr) ]
+  ++
+  map
+    ( \a -> mkSimpleNBitRegMBitImmCompInst
+              (fst a)
+              (O.CompArithOp $ snd a)
+              getGPRegisters
+              getGPRegisters
+              (Range 0 65535)
+              16
+              16
+    )
+    [ ("sra", O.IntOp O.AShr) ]
   ++
     [ mkSimpleNBitRegMBitImmCompInst
               "norz"
