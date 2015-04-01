@@ -112,13 +112,12 @@ class ConstraintProcessor {
     getDomSetParameterArrayName(void) const;
 
     /**
-     * Gets the variable array for the distances between certain matches and
-     * basic block labels.
+     * Gets the variable array for the label positions.
      *
      * @returns Variable name.
      */
     std::string
-    getMatchLabelDistsVariableArrayName(void) const;
+    getLabelPositionVariableArrayName(void) const;
 
     /**
      * Gets the parameter matrix for the match and label mappings.

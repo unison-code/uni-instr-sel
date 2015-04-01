@@ -122,14 +122,17 @@ mkFallthroughConstraints
   -> [Constraint]
 mkFallthroughConstraints l =
   [ BoolExprConstraint
-    $ EqExpr ( DistanceBetweenMatchAndLabelExpr
-                 ThisMatchExpr
-                 ( LabelOfLabelNodeExpr
-                   $ ANodeIDExpr l
-                 )
+    $ EqExpr ( PlusExpr ( PositionOfLabelExpr
+                          $ LabelToWhereMatchIsMovedExpr
+                          $ ThisMatchExpr
+                        )
+                        ( Int2NumExpr
+                          $ AnIntegerExpr 1
+                        )
              )
-             ( Int2NumExpr
-               $ AnIntegerExpr 0
+             ( PositionOfLabelExpr
+               $ LabelOfLabelNodeExpr
+               $ ANodeIDExpr l
              )
   ]
 

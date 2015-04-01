@@ -492,15 +492,13 @@ LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
 
 LocationToSetElemExpr::~LocationToSetElemExpr(void) {}
 
-DistanceBetweenMatchAndLabelExpr
-::DistanceBetweenMatchAndLabelExpr(
-    const MatchExpr* lhs,
-    const LabelExpr* rhs
-) : BinaryExpr(lhs, rhs)
+PositionOfLabelExpr
+::PositionOfLabelExpr(const LabelExpr* expr)
+    : UnaryExpr(expr)
 {}
 
-DistanceBetweenMatchAndLabelExpr
-::~DistanceBetweenMatchAndLabelExpr(void)
+PositionOfLabelExpr
+::~PositionOfLabelExpr(void)
 {}
 
 const string BoolExprConstraint::STRNAME = "";
@@ -526,7 +524,7 @@ const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
 const string LabelToNumExpr::STRNAME = "lab-to-num";
 const string LocationToNumExpr::STRNAME = "loc-to-num";
-const string DistanceBetweenMatchAndLabelExpr::STRNAME = "dist-match-to-lab";
+const string PositionOfLabelExpr::STRNAME = "lab-pos";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";

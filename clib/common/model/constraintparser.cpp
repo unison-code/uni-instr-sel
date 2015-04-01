@@ -182,10 +182,9 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseLocationExpr(str);
             expr = new LocationToNumExpr(e);
         }
-        else if (eatType<DistanceBetweenMatchAndLabelExpr>(str)) {
-            auto lhs = parseMatchExpr(str);
-            auto rhs = parseLabelExpr(str);
-            expr = new DistanceBetweenMatchAndLabelExpr(lhs, rhs);
+        else if (eatType<PositionOfLabelExpr>(str)) {
+            auto e = parseLabelExpr(str);
+            expr = new PositionOfLabelExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");

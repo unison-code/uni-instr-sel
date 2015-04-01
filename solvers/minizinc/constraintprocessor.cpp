@@ -157,12 +157,11 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const DistanceBetweenMatchAndLabelExpr* de =
-             dynamic_cast<const DistanceBetweenMatchAndLabelExpr*>(e))
+    else if (const PositionOfLabelExpr* de =
+             dynamic_cast<const PositionOfLabelExpr*>(e))
     {
-        return getMatchLabelDistsVariableArrayName()
-            + "[" + getMatchAndLabelMappingsMatrixName() + "["
-            + process(de->getLhs()) + "," + process(de->getRhs()) + "]]";
+        return getLabelPositionVariableArrayName()
+            + "[" + process(de->getExpr()) + "]";
     }
     else {
         THROW(Exception, "NumExpr is of unknown derived class");
@@ -350,8 +349,8 @@ ConstraintProcessor::getMatchSelectedVariableArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getMatchLabelDistsVariableArrayName(void) const {
-    return "dist";
+ConstraintProcessor::getLabelPositionVariableArrayName(void) const {
+    return "ord";
 }
 
 string

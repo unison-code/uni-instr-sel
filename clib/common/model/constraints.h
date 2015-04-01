@@ -988,30 +988,22 @@ class LocationToNumExpr
 };
 
 /**
- * Represents the distance between a match and a label. The distance starts from
- * the end of the instruction represented by the match and stops at the
- * beginning of the first instruction within the basic block represented by the
- * label. The distance is negative if the label appears before the match.
+ * Represents the position of a label in the generated code.
  */
-class DistanceBetweenMatchAndLabelExpr
-    : public BinaryExpr<NumExpr,
-                        DistanceBetweenMatchAndLabelExpr,
-                        MatchExpr,
-                        LabelExpr>
+class PositionOfLabelExpr
+    : public UnaryExpr<NumExpr, PositionOfLabelExpr, LabelExpr>
 {
   public:
     /**
-     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
+     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    DistanceBetweenMatchAndLabelExpr(const MatchExpr* lhs,
-                                               const LabelExpr* rhs);
-
+    PositionOfLabelExpr(const LabelExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~DistanceBetweenMatchAndLabelExpr(void);
+    ~PositionOfLabelExpr(void);
 
   public:
     /**

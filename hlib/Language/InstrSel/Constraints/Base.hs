@@ -105,12 +105,8 @@ data NumExpr
   | Label2NumExpr LabelExpr
     -- | Converts a location to a numerical expression.
   | Location2NumExpr LocationExpr
-    -- | Represents the distance between a match and a label. The distance
-    -- starts from the end of the instruction represented by the pattern and
-    -- stops at the beginning of the first instruction within the basic block
-    -- represented by the label. The distance is negative if the label appears
-    -- before the pattern.
-  | DistanceBetweenMatchAndLabelExpr MatchExpr LabelExpr
+    -- | Represents the position of a label in the generated code.
+  | PositionOfLabelExpr LabelExpr
   deriving (Show)
 
 -- | Integer value expressions.
@@ -258,7 +254,7 @@ instance FromLisp NumExpr where
     <|> struct "instr-to-num" Instruction2NumExpr e
     <|> struct "lab-to-num" Label2NumExpr e
     <|> struct "loc-to-num" Location2NumExpr e
-    <|> struct "dist-match-to-lab" DistanceBetweenMatchAndLabelExpr e
+    <|> struct "lab-pos" PositionOfLabelExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)     = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -270,8 +266,7 @@ instance ToLisp NumExpr where
   toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
   toLisp (Label2NumExpr e)       = mkStruct "lab-to-num" [toLisp e]
   toLisp (Location2NumExpr e)    = mkStruct "loc-to-num" [toLisp e]
-  toLisp (DistanceBetweenMatchAndLabelExpr lhs rhs) =
-    mkStruct "dist-match-to-lab" [toLisp lhs, toLisp rhs]
+  toLisp (PositionOfLabelExpr e) = mkStruct "lab-pos" [toLisp e]
 
 instance FromLisp IntExpr where
   parseLisp e =

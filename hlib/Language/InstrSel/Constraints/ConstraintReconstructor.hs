@@ -104,10 +104,8 @@ mkDefaultReconstructor =
         Label2NumExpr ((mkLabelExprF r) r expr)
       mkNumExpr r (Location2NumExpr expr) =
         Location2NumExpr ((mkLocationExprF r) r expr)
-      mkNumExpr r (DistanceBetweenMatchAndLabelExpr match_expr label_expr) =
-        DistanceBetweenMatchAndLabelExpr
-          ((mkMatchExprF r) r match_expr)
-          ((mkLabelExprF r) r label_expr)
+      mkNumExpr r (PositionOfLabelExpr expr) =
+        PositionOfLabelExpr ((mkLabelExprF r) r expr)
       mkIntExpr _ expr@(AnIntegerExpr _) =
         expr
       mkNodeExpr _ expr@(ANodeIDExpr _) =
