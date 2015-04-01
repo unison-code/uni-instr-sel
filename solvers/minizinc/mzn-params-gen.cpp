@@ -243,24 +243,6 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getADDUCSettingForAllMatches());
     out << ");" << endl;
 
-    out << "indexOfMatchLabelMapping = "
-         << "array2d(allMatches, allLabelsInFunction, ";
-    {
-        size_t num_matches = params.getNumMatches();
-        size_t num_labels = params.getNumLabelNodesInF();
-        vector<int> mappings(num_matches * num_labels, -1);
-        int index = 0;
-        ArrayIndex pat_index = 0;
-        for (const auto& entries : params.getNonEntryLabelNodesInAllMatches()) {
-            for (const ArrayIndex& node_index : entries) {
-                mappings[pat_index * num_labels + node_index] = index++;
-            }
-            pat_index++;
-        }
-        printMinizincValue(out, mappings);
-    }
-    out << ");" << endl;
-
     out << "codeSizeOfMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getCodeSizesForAllMatches());
     out << ");" << endl;

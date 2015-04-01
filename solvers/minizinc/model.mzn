@@ -51,7 +51,6 @@ array[allMatches] of set of int: nonEntryLabelsInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
-array[allMatches, allLabelsInFunction] of int: indexOfMatchLabelMapping;
 
 
 
@@ -62,14 +61,6 @@ include "params.mzn";
 %=====================
 % INTERNAL PARAMETERS
 %=====================
-
-% Number of indices in the match-to-destination label node mappings
-% (a negative value indicates absence of a valid index).
-int: numMatchLabelMappings = max( [ indexOfMatchLabelMapping[i,j]
-                                  | i in allMatches
-                                  , j in allLabelsInFunction
-                                  ]
-                                ) + 1;
 
 % Total number of location values (an additional value will be needed for
 % representing the null location, for when the entity cannot be reused by other
@@ -102,7 +93,6 @@ set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
 set of int: allLabelsInFunctionPlusNull = 0..numLabelValues-1;
 set of int: allMatches = 0..numMatches-1;
 set of int: allLocValues = 0..numLocValues-1;
-set of int: allIndicesInMatchLabelMappings = 0..numMatchLabelMappings-1;
 
 
 
@@ -127,9 +117,6 @@ array[allMatches] of var allLabelsInFunctionPlusNull: mov;
 array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: ord;
 array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull:
   ord_inv;
-
-% Branch-to-label distances.
-array[allIndicesInMatchLabelMappings] of var int: dist;
 
 % Cost.
 var int: cost;
@@ -268,60 +255,6 @@ constraint
 constraint
   ord[labelValueForNull] == numLabelValues - 1;
 
-% Calculate distances between matches (where appropriate) and labels.
-constraint
-  forall ( m in allMatches
-         , l in allLabelsInFunction
-           where indexOfMatchLabelMapping[m, l] >= 0
-         )
-  (
-    (
-      sel[m]
-      ->
-      dist[indexOfMatchLabelMapping[m, l]] =
-        % When the label appears after the branch.
-        sum (i in allLabelsInFunction)
-        (
-          % Assuming the branch always appears as the last instruction within
-          % the block, which means that we only need to consider the size of
-          % the blocks between the source and the target label.
-          sum (mm in allMatches)
-          (
-            codeSizeOfMatch[mm] * bool2int (mov[mm] == i)
-          )
-          *
-          bool2int
-            (  ord_inv[mov[m]] < ord_inv[i]
-            /\ ord_inv[i] < ord_inv[l]
-            )
-        )
-        -
-        % When the label appears before the branch.
-        sum (i in allLabelsInFunction)
-        (
-          % Assuming the branch always appears as the last instruction within
-          % the block, which means that we consider all instructions in the
-          % block wherein the branch appears as well as the size of the blocks
-          % between the source and the target label.
-          sum (mm in allMatches)
-          (
-            codeSizeOfMatch[mm] * bool2int (mov[mm] == i)
-          )
-          *
-          bool2int
-            (  ord_inv[l] <= ord_inv[i]
-            /\ ord_inv[i] <= ord_inv[mov[m]]
-            )
-        )
-    )
-    /\
-    (
-      not sel[m]
-      ->
-      dist[indexOfMatchLabelMapping[m, l]] = 0
-    )
-  );
-
 % Constrain the loc value for all entities that are state nodes.
 constraint
   forall (e in stateEntitiesInFunction)
@@ -355,7 +288,6 @@ output [ "sel=", show(sel), "\n"
        , "loc=", show(loc), "\n"
        , "mov=", show(mov), "\n"
        , "ord=", show(ord), "\n"
-       , "dist=", show(dist), "\n"
        , "label_value_for_null=", show(labelValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "cost=", show(cost), "\n"
