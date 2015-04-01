@@ -88,7 +88,6 @@ data BoolExpr
 
 -- | Numerical expressions. For binary operations the first argument is always
 -- the left-hand side and the second argument is always the right-hand side.
-
 data NumExpr
   = PlusExpr  NumExpr NumExpr
   | MinusExpr NumExpr NumExpr
