@@ -223,6 +223,18 @@ class CfgBuildable a where
 -- Functions
 -------------
 
+-- | Converts an argument into a temporary-oriented data type.
+toTempDataType :: (DataTypeFormable t) => t -> D.DataType
+toTempDataType a =
+  conv $ toDataType a
+  where conv d@(D.IntTempType {}) = d
+        conv (D.IntConstType { D.intConstNumBits = b }) =
+          if isJust b
+          then D.IntTempType { D.intTempNumBits = fromJust b }
+          else error $ "toTempDataType: IntConstType has 'intTempNumBits' "
+                       ++ "set to 'Nothing'"
+        conv d = error $ "toTempDataType: unexpected data type " ++ show d
+
 -- | Creates an initial state.
 mkInitBuildState :: LLVM.Module -> BuildState
 mkInitBuildState m =
@@ -680,99 +692,99 @@ instance DfgBuildable LLVM.Instruction where
   buildDfg st (LLVM.Add  nsw nuw op1 op2 _) =
     -- TODO: make use of nsw and nuw?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.Add)
                        [op1, op2]
   buildDfg st (LLVM.FAdd _ op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.FloatOp Op.Add)
                        [op1, op2]
   buildDfg st (LLVM.Sub  nsw nuw op1 op2 _) =
     -- TODO: make use of nsw and nuw?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.Sub)
                        [op1, op2]
   buildDfg st (LLVM.FSub _ op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.FloatOp Op.Sub)
                        [op1, op2]
   buildDfg st (LLVM.Mul nsw nuw op1 op2 _) =
     -- TODO: make use of nsw and nuw?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.Mul)
                        [op1, op2]
   buildDfg st (LLVM.FMul _ op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.FloatOp Op.Mul)
                        [op1, op2]
   buildDfg st (LLVM.UDiv exact op1 op2 _) =
     -- TODO: make use of exact?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.UIntOp Op.Div)
                        [op1, op2]
   buildDfg st (LLVM.SDiv exact op1 op2 _) =
     -- TODO: make use of exact?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.SIntOp Op.Div)
                        [op1, op2]
   buildDfg st (LLVM.FDiv _ op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.FloatOp Op.Div)
                        [op1, op2]
   buildDfg st (LLVM.URem op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.UIntOp Op.Rem)
                        [op1, op2]
   buildDfg st (LLVM.SRem op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.SIntOp Op.Rem)
                        [op1, op2]
   buildDfg st (LLVM.FRem _ op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.FloatOp Op.Rem)
                        [op1, op2]
   buildDfg st (LLVM.Shl nsw nuw op1 op2 _) =
     -- TODO: make use of nsw and nuw?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.Shl)
                        [op1, op2]
   buildDfg st (LLVM.LShr exact op1 op2 _) =
     -- TODO: make use of exact?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.LShr)
                        [op1, op2]
   buildDfg st (LLVM.AShr exact op1 op2 _) =
     -- TODO: make use of exact?
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.AShr)
                        [op1, op2]
   buildDfg st (LLVM.And op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.And)
                        [op1, op2]
   buildDfg st (LLVM.Or op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.Or)
                        [op1, op2]
   buildDfg st (LLVM.Xor op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (Op.CompArithOp $ Op.IntOp Op.XOr)
                        [op1, op2]
   buildDfg st (LLVM.ICmp p op1 op2 _) =
@@ -783,7 +795,7 @@ instance DfgBuildable LLVM.Instruction where
                        [op1, op2]
   buildDfg st (LLVM.FCmp p op1 op2 _) =
     buildDfgFromCompOp st
-                       (toDataType op1)
+                       (toTempDataType op1)
                        (fromLlvmFPred p)
                        [op1, op2]
   buildDfg st (LLVM.Trunc op1 t1 _) =
@@ -805,7 +817,7 @@ instance DfgBuildable LLVM.Instruction where
   -- state nodes.
   buildDfg st (LLVM.Load _ op1 _ _ _) =
     let st1 = buildDfgFromCompOp st
-                        (toDataType op1)
+                        (toTempDataType op1)
                         (Op.CompMemoryOp Op.Load)
                         [op1]
         n   = fromJust $ lastTouchedNode st1
