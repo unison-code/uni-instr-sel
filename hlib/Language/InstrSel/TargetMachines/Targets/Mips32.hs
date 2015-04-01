@@ -729,6 +729,16 @@ mkInstructions =
     [ ("xori", O.IntOp O.XOr)
     ]
   ++
+    [ mkSimpleNBitRegMBitImmCompInst
+              "norz"
+              (O.CompArithOp $ O.IntOp O.XOr)
+              getGPRegisters
+              getGPRegisters
+              (Range (-1) (-1))
+              8
+              16
+    ]
+  ++
   mkBrInstrs
   ++
   mkRetInstrs
