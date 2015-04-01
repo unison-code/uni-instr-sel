@@ -39,7 +39,9 @@ import Language.InstrSel.TargetMachines.Base
 
 -- | Creates a generic data node type.
 mkGenericDataNodeType :: NodeType
-mkGenericDataNodeType = DataNode { dataType = AnyType, dataOrigin = Nothing }
+mkGenericDataNodeType = DataNode { typeOfData = AnyType
+                                 , originOfData = Nothing
+                                 }
 
 -- | Creates a generic label node type.
 mkGenericLabelNodeType :: NodeType

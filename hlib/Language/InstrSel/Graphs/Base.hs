@@ -231,8 +231,8 @@ data NodeType
     -- are all represented as data nodes. What distinguishes one from another
     -- are the constraints applied to it.
   | DataNode
-      { dataType :: D.DataType
-      , dataOrigin :: Maybe String
+      { typeOfData :: D.DataType
+      , originOfData :: Maybe String
         -- ^ If the data node represents a particular temporary or variable or
         -- which is specified in the source code, then the name of that item can
         -- be given here as a string. This will only be used for debugging and
@@ -368,8 +368,8 @@ instance ToJSON NodeType where
            ]
   toJSON n@(DataNode {}) =
     object [ "ntype"   .= String "data"
-           , "dtype"   .= toJSON (dataType n)
-           , "origin"  .= toJSON (dataOrigin n)
+           , "dtype"   .= toJSON (typeOfData n)
+           , "origin"  .= toJSON (originOfData n)
            ]
   toJSON n@(LabelNode {}) =
     object [ "ntype"    .= String "lab"
@@ -603,7 +603,7 @@ getNodeType (Node (_, NodeLabel _ nt)) = nt
 
 -- | Gets the data type from a data node.
 getDataTypeOfDataNode :: Node -> D.DataType
-getDataTypeOfDataNode n = dataType $ getNodeType n
+getDataTypeOfDataNode n = typeOfData $ getNodeType n
 
 -- | Gets the internal node ID from a node.
 getIntNodeID :: Node -> I.Node

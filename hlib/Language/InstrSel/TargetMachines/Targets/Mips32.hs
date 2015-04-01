@@ -127,7 +127,7 @@ mkSimpleCompPattern
   -> Graph
 mkSimpleCompPattern op src1 src2 dst =
   let mkCompNode = ComputationNode { compOp = op }
-      mkDataNode dt = DataNode { dataType = dt, dataOrigin = Nothing }
+      mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
   in mkGraph
        ( map
            Node
@@ -154,7 +154,7 @@ mkSimpleCopyPattern
      -- ^ The data type of the result.
   -> Graph
 mkSimpleCopyPattern src dst =
-  let mkDataNode dt = DataNode { dataType = dt, dataOrigin = Nothing }
+  let mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
   in mkGraph
        ( map
            Node
