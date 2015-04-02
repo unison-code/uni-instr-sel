@@ -43,13 +43,18 @@ while [ -h "$SOURCE" ]; do # Resolve $SOURCE until the file is no longer a
 done
 THIS_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-MINIZINC_PARAMS_FILE="$THIS_DIR/params.mzn"
-MINIZINC_OUTPUT_FILE="$THIS_DIR/model.sol.mzn"
-MINIZINC_MODEL_FILE="$THIS_DIR/model.mzn"
+MINIZINC_PARAMS_FILENAME="params.mzn"
+MINIZINC_OUTPUT_FILENAME="model.sol.mzn"
+MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
+MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
 
 # These will be set after parsing command-line arguments
-MODEL_PARAMS_FILE=""
-OUTPUT_FILE=""
+MODEL_PARAMS_FILEPATH=""
+JSON_OUTPUT_FILEPATH=""
+TMP_DIR=""
+MINIZINC_PARAMS_FILEPATH=""
+MINIZINC_FULL_MODEL_FILEPATH=""
+MINIZINC_OUTPUT_FILEPATH=""
 
 
 
@@ -61,8 +66,15 @@ function echoerr {
     echo "$@" 1>&2
 }
 
-function checkStatus {
+function exitIfFailed {
     if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
+
+function ensureFileExists {
+    if [ ! -f "$@" ]; then
+        echoerr "Required file \"$@\" does not exist"
         exit 1
     fi
 }
@@ -83,37 +95,58 @@ if [ "$1" == "-o" ]; then
         echoerr "'-o' requires an argument"
         exit 1
     fi
-    OUTPUT_FILE=$2
+    JSON_OUTPUT_FILEPATH=$2
     if [ -z "$3" ]; then
         echoerr "No model params file provided"
         exit 1
     fi
-    MODEL_PARAMS_FILE=$3
+    MODEL_PARAMS_FILEPATH=$3
 else
     echoerr "No '-o' option provided (must be first)"
     exit 1
 fi
 
-# Generate params to MiniZinc model
-echo "Generating MiniZinc parameter file..."
-$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILE > $MINIZINC_PARAMS_FILE
-checkStatus
+# Create temporary directory
+TMP_DIR=`mktemp -d`
+if [ ! -d "$TMP_DIR" ]; then
+    echoerr "Failed to create temporary directory"
+fi
 
-# Run MiniZinc solver
+# Set filepath variables
+MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
+MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
+MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
+
+echo "Generating MiniZinc parameter file..."
+$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH > $MINIZINC_PARAMS_FILEPATH
+exitIfFailed
+
+echo "Creating MiniZinc model file..."
+ensureFileExists $MINIZINC_PARAMS_FILEPATH
+cat "$MINIZINC_BASE_MODEL_FILEPATH" > "$MINIZINC_FULL_MODEL_FILEPATH"
+exitIfFailed
+ensureFileExists $MINIZINC_FULL_MODEL_FILEPATH
+echo >> $MINIZINC_FULL_MODEL_FILEPATH
+echo >> $MINIZINC_FULL_MODEL_FILEPATH
+echo >> $MINIZINC_FULL_MODEL_FILEPATH
+cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH
+exitIfFailed
+
 echo "Running MiniZinc solver..."
-CURRENT_DIR=`pwd`
-cd $THIS_DIR
-minizinc $(basename $MINIZINC_MODEL_FILE) \
-  > $(basename $MINIZINC_OUTPUT_FILE) \
+minizinc $MINIZINC_FULL_MODEL_FILEPATH > $MINIZINC_OUTPUT_FILEPATH \
   2> /dev/null
 STATUS=$?
-cd $CURRENT_DIR
 if [ $STATUS -ne 0 ]; then
-    echoerr "Error: minizinc solver exited with failure"
+    echoerr "minizinc exited with failure"
     exit 1
 fi
 
-# Convert solution into JSON format
 echo "Converting MiniZinc solution to JSON format..."
-$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $OUTPUT_FILE
-checkStatus
+ensureFileExists $MINIZINC_OUTPUT_FILEPATH
+$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH > $JSON_OUTPUT_FILEPATH
+exitIfFailed
+ensureFileExists $JSON_OUTPUT_FILEPATH
+
+echo "Cleaning up temporary files..."
+rm -rf $TMP_DIR
+exitIfFailed
