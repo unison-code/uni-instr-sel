@@ -642,16 +642,15 @@ mkPseudoMoveInstrs =
          }
      ]
 
--- | Implements the load of a zero immediate (free in mips32: just read $0).
+-- | Implements the load of immediates.
 mkLoadZeroInstr :: [Instruction]
 mkLoadZeroInstr =
-  let g = mkSimpleCopyPattern (mkIntConstType (Range 0 0) 32) (mkIntTempType 32)
-      -- TODO: the location of the destination is in particular $0
-      cs = mkDataLocConstraints (map locID getGPRegisters) 2
-      pat =
+  let g r   = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType 32)
+      cs    = mkDataLocConstraints (map locID getGPRegisters) 2
+      pat r =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g Nothing cs
+          , patOS = OS.OpStructure (g r) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
@@ -661,13 +660,19 @@ mkLoadZeroInstr =
                                   , ASLocationOfDataNode 2
                                   ]
           }
-  in [ Instruction
+  in [
+    -- Zero immediate (free in mips32)
+    -- TODO: the location of the destination could be $0
+    Instruction
          { instrID = 0
-         , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
-                                        , instrIsNonCopy = False
-                                        }
+         , instrPatterns = [pat (Range 0 0)]
+         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         },
+    -- Arbitrary immediates (implemented with lui + ori)
+    Instruction
+         { instrID = 0
+         , instrPatterns = [pat (Range (-2147483648) 2147483647)]
+         , instrProps = InstrProperties { instrCodeSize = 8, instrLatency = 2 }
          }
      ]
 
