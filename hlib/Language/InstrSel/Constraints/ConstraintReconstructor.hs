@@ -86,6 +86,9 @@ mkDefaultReconstructor =
         NotExpr ((mkBoolExprF r) r expr)
       mkBoolExpr r (InSetExpr lhs rhs) =
         InSetExpr ((mkSetElemExprF r) r lhs) ((mkSetExprF r) r rhs)
+      mkBoolExpr r (FallThroughFromMatchToBlockExpr lhs rhs) =
+        FallThroughFromMatchToBlockExpr ((mkMatchExprF r) r lhs)
+                                        ((mkBlockExprF r) r rhs)
       mkNumExpr r (PlusExpr lhs rhs) =
         PlusExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkNumExpr r (MinusExpr lhs rhs) =
@@ -104,8 +107,6 @@ mkDefaultReconstructor =
         Block2NumExpr ((mkBlockExprF r) r expr)
       mkNumExpr r (Location2NumExpr expr) =
         Location2NumExpr ((mkLocationExprF r) r expr)
-      mkNumExpr r (PositionOfBlockExpr expr) =
-        PositionOfBlockExpr ((mkBlockExprF r) r expr)
       mkIntExpr _ expr@(AnIntegerExpr _) =
         expr
       mkNodeExpr _ expr@(ANodeIDExpr _) =

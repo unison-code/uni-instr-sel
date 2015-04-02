@@ -127,7 +127,7 @@ tmTest =
         addBBMoveConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
         addBBMoveConstraints
-        $ addFallthroughConstraints 1
+        $ addFallThroughConstraints 1
         $ OpStructure br_fallthrough_pattern
                       (Just 0)
                       []

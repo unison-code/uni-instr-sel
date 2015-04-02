@@ -729,6 +729,34 @@ class InSetExpr : public BinaryExpr<BoolExpr, InSetExpr, SetElemExpr, SetExpr> {
 };
 
 /**
+ * Fall-through expression.
+ */
+class FallThroughFromMatchToBlockExpr
+    : public BinaryExpr<BoolExpr,
+                        FallThroughFromMatchToBlockExpr,
+                        MatchExpr,
+                        BlockExpr>
+{
+  public:
+    /**
+     * \copydoc BinaryExpr::BinaryExpr(const Arg1*, const Arg2*)
+     */
+    FallThroughFromMatchToBlockExpr(const MatchExpr* lhs, const BlockExpr* rhs);
+
+    /**
+     * \copydoc ~Expr::Expr()
+     */
+    virtual
+    ~FallThroughFromMatchToBlockExpr(void);
+
+  public:
+    /**
+     * @see WithStrName::getStrName() const
+     */
+    static const std::string STRNAME;
+};
+
+/**
  * Plus expression.
  */
 class PlusExpr : public BinaryExpr<NumExpr, PlusExpr, NumExpr> {
@@ -979,31 +1007,6 @@ class LocationToNumExpr
      */
     virtual
     ~LocationToNumExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
- * Represents the position of a block in the generated code.
- */
-class PositionOfBlockExpr
-    : public UnaryExpr<NumExpr, PositionOfBlockExpr, BlockExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    PositionOfBlockExpr(const BlockExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~PositionOfBlockExpr(void);
 
   public:
     /**

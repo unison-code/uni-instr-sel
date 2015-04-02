@@ -15,7 +15,7 @@
 module Language.InstrSel.TargetMachines.Targets.Generic
   ( fixInstrIDs
   , fixLocIDs
-  , mkGenericBrFallthroughInstructions
+  , mkGenericBrFallThroughInstructions
   , mkGenericPhiInstructions
   , mkGenericEntityDefInstructions
   , mkGenericCopyInstructions
@@ -123,8 +123,8 @@ mkGenericPhiInstructions =
 -- immediately following block (that is, fallthroughs). The instruction IDs of
 -- all instructions will be (incorrectly) set to 0, meaning they must be
 -- reassigned afterwards.
-mkGenericBrFallthroughInstructions :: [Instruction]
-mkGenericBrFallthroughInstructions =
+mkGenericBrFallThroughInstructions :: [Instruction]
+mkGenericBrFallThroughInstructions =
   let g = mkGraph
             ( map
                 Node
@@ -140,7 +140,7 @@ mkGenericBrFallthroughInstructions =
                 ]
             )
       bb_alloc_cs = mkBBMoveConstraints g
-      fallthrough_cs = mkFallthroughConstraints 2
+      fallthrough_cs = mkFallThroughConstraints 2
       cs = bb_alloc_cs ++ fallthrough_cs
       pat =
         InstrPattern

@@ -84,6 +84,10 @@ data BoolExpr
   | EqvExpr BoolExpr BoolExpr
   | NotExpr BoolExpr
   | InSetExpr SetElemExpr SetExpr
+    -- | Denotes a fall-through constraint between a given match and a given
+    -- block. In other words, the block to which the match is moved must be
+    -- appear immediately before the other block of the generated code.
+  | FallThroughFromMatchToBlockExpr MatchExpr BlockExpr
   deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
@@ -105,8 +109,6 @@ data NumExpr
   | Block2NumExpr BlockExpr
     -- | Converts a location to a numerical expression.
   | Location2NumExpr LocationExpr
-    -- | Represents the position of a block in the generated code.
-  | PositionOfBlockExpr BlockExpr
   deriving (Show)
 
 -- | Integer value expressions.
@@ -225,6 +227,7 @@ instance FromLisp BoolExpr where
     <|> struct "<->" EqvExpr e
     <|> struct "!"   NotExpr e
     <|> struct "in-set" InSetExpr e
+    <|> struct "fall-through" FallThroughFromMatchToBlockExpr e
 
 instance ToLisp BoolExpr where
   toLisp (EqExpr  lhs rhs) = mkStruct "==" [toLisp lhs, toLisp rhs]
@@ -239,6 +242,8 @@ instance ToLisp BoolExpr where
   toLisp (EqvExpr lhs rhs) = mkStruct "<->" [toLisp lhs, toLisp rhs]
   toLisp (NotExpr lhs) = mkStruct "!" [toLisp lhs]
   toLisp (InSetExpr lhs rhs) = mkStruct "in-set" [toLisp lhs, toLisp rhs]
+  toLisp (FallThroughFromMatchToBlockExpr lhs rhs) =
+    mkStruct "fall-through" [toLisp lhs, toLisp rhs]
 
 instance FromLisp NumExpr where
   parseLisp e =
@@ -251,7 +256,6 @@ instance FromLisp NumExpr where
     <|> struct "instr-to-num" Instruction2NumExpr e
     <|> struct "block-to-num" Block2NumExpr e
     <|> struct "loc-to-num" Location2NumExpr e
-    <|> struct "block-pos" PositionOfBlockExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)     = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -263,7 +267,6 @@ instance ToLisp NumExpr where
   toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
   toLisp (Block2NumExpr e)       = mkStruct "block-to-num" [toLisp e]
   toLisp (Location2NumExpr e)    = mkStruct "loc-to-num" [toLisp e]
-  toLisp (PositionOfBlockExpr e) = mkStruct "block-pos" [toLisp e]
 
 instance FromLisp IntExpr where
   parseLisp e =

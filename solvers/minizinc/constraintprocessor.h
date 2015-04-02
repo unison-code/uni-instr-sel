@@ -112,12 +112,12 @@ class ConstraintProcessor {
     getDomSetParameterArrayName(void) const;
 
     /**
-     * Gets the variable array for the block positions.
+     * Gets the name of the fall-through predicate.
      *
-     * @returns Variable name.
+     * @returns Predicate name.
      */
     std::string
-    getBlockPositionVariableArrayName(void) const;
+    getFallThroughPredicateName(void) const;
 
     /**
      * Gets the location value used for indicating that a data node represents

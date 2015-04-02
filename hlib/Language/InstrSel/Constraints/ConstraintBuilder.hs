@@ -15,11 +15,11 @@
 
 module Language.InstrSel.Constraints.ConstraintBuilder
   ( addBBMoveConstraints
-  , addFallthroughConstraints
+  , addFallThroughConstraints
   , addDataLocConstraints
   , addNoReuseConstraints
   , mkBBMoveConstraints
-  , mkFallthroughConstraints
+  , mkFallThroughConstraints
   , mkDataLocConstraints
   , mkNoReuseConstraints
   )
@@ -109,31 +109,21 @@ mkDataLocConstraints regs d =
 
 -- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
 -- these (if any) to the existing 'OpStructure'.
-addFallthroughConstraints :: NodeID -> OpStructure -> OpStructure
-addFallthroughConstraints l os =
-  addConstraints os (mkFallthroughConstraints l)
+addFallThroughConstraints :: NodeID -> OpStructure -> OpStructure
+addFallThroughConstraints l os =
+  addConstraints os (mkFallThroughConstraints l)
 
--- | Creates constraints for enforcing branch fallthrough, meaning that the
--- distance between the block to which to jump and the block from which to jump
--- must be zero.
-mkFallthroughConstraints
+-- | Creates constraints for enforcing a fall-through from a match to a block.
+mkFallThroughConstraints
   :: NodeID
      -- ^ A label node.
   -> [Constraint]
-mkFallthroughConstraints l =
+mkFallThroughConstraints l =
   [ BoolExprConstraint
-    $ EqExpr ( PlusExpr ( PositionOfBlockExpr
-                          $ BlockToWhereMatchIsMovedExpr
-                          $ ThisMatchExpr
-                        )
-                        ( Int2NumExpr
-                          $ AnIntegerExpr 1
-                        )
-             )
-             ( PositionOfBlockExpr
-               $ BlockOfLabelNodeExpr
-               $ ANodeIDExpr l
-             )
+    $ FallThroughFromMatchToBlockExpr ThisMatchExpr
+                                      ( BlockOfLabelNodeExpr
+                                        $ ANodeIDExpr l
+                                      )
   ]
 
 -- | Creates no-reuse constraints (see `mkNoReuseConstraints`) and adds these

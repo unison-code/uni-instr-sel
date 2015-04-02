@@ -127,6 +127,19 @@ include "exactly.mzn";
 
 
 
+%===========
+% PREDICATES
+%===========
+
+% Fall-through constraint: the block to which match m is moved must be
+% immediately followed by block b.
+predicate fall_through(int: m, int: b) =
+(
+  ord[mov[m]] + 1 == ord[b]
+);
+
+
+
 %============
 % CONSTRAINTS
 %============

@@ -120,6 +120,11 @@ ConstraintParser::parseBoolExpr(string& str) {
             auto rhs = parseSetExpr(str);
             expr = new InSetExpr(lhs, rhs);
         }
+        else if (eatType<FallThroughFromMatchToBlockExpr>(str)) {
+            auto lhs = parseMatchExpr(str);
+            auto rhs = parseBlockExpr(str);
+            expr = new FallThroughFromMatchToBlockExpr(lhs, rhs);
+        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -181,10 +186,6 @@ ConstraintParser::parseNumExpr(string& str) {
         else if (eatType<LocationToNumExpr>(str)) {
             auto e = parseLocationExpr(str);
             expr = new LocationToNumExpr(e);
-        }
-        else if (eatType<PositionOfBlockExpr>(str)) {
-            auto e = parseBlockExpr(str);
-            expr = new PositionOfBlockExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");

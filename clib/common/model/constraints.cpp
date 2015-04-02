@@ -169,6 +169,14 @@ InSetExpr::InSetExpr(const SetElemExpr* lhs, const SetExpr* rhs)
 
 InSetExpr::~InSetExpr(void) {}
 
+FallThroughFromMatchToBlockExpr::FallThroughFromMatchToBlockExpr(
+    const MatchExpr* lhs,
+    const BlockExpr* rhs
+) : BinaryExpr(lhs, rhs)
+{}
+
+FallThroughFromMatchToBlockExpr::~FallThroughFromMatchToBlockExpr(void) {}
+
 PlusExpr::~PlusExpr(void) {}
 
 MinusExpr::MinusExpr(const NumExpr* lhs, const NumExpr* rhs)
@@ -486,15 +494,6 @@ LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
 
 LocationToSetElemExpr::~LocationToSetElemExpr(void) {}
 
-PositionOfBlockExpr
-::PositionOfBlockExpr(const BlockExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-PositionOfBlockExpr
-::~PositionOfBlockExpr(void)
-{}
-
 const string BoolExprConstraint::STRNAME = "";
 const string EqExpr::STRNAME = "==";
 const string NeqExpr::STRNAME = "!=";
@@ -508,6 +507,7 @@ const string AndExpr::STRNAME = "&&";
 const string OrExpr::STRNAME = "||";
 const string NotExpr::STRNAME = "!";
 const string InSetExpr::STRNAME = "in-set";
+const string FallThroughFromMatchToBlockExpr::STRNAME = "fall-through";
 const string PlusExpr::STRNAME = "+";
 const string MinusExpr::STRNAME = "-";
 const string IntToNumExpr::STRNAME = "int-to-num";
@@ -518,7 +518,6 @@ const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
 const string BlockToNumExpr::STRNAME = "block-to-num";
 const string LocationToNumExpr::STRNAME = "loc-to-num";
-const string PositionOfBlockExpr::STRNAME = "block-pos";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";

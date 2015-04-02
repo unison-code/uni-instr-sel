@@ -111,6 +111,12 @@ ConstraintProcessor::process(const BoolExpr* e) {
         return string("(") + process(de->getLhs()) + " in "
             + process(de->getRhs()) + ")";
     }
+    else if (const FallThroughFromMatchToBlockExpr* de =
+             dynamic_cast<const FallThroughFromMatchToBlockExpr*>(e))
+    {
+        return getFallThroughPredicateName()
+            + "(" + process(de->getLhs()) + ", " + process(de->getRhs()) + ")";
+    }
     else {
         THROW(Exception, "BoolExpr is of unknown derived class");
     }
@@ -156,12 +162,6 @@ ConstraintProcessor::process(const NumExpr* e) {
              dynamic_cast<const LocationToNumExpr*>(e))
     {
         return process(de->getExpr());
-    }
-    else if (const PositionOfBlockExpr* de =
-             dynamic_cast<const PositionOfBlockExpr*>(e))
-    {
-        return getBlockPositionVariableArrayName()
-            + "[" + process(de->getExpr()) + "]";
     }
     else {
         THROW(Exception, "NumExpr is of unknown derived class");
@@ -343,8 +343,8 @@ ConstraintProcessor::getMatchSelectedVariableArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getBlockPositionVariableArrayName(void) const {
-    return "ord";
+ConstraintProcessor::getFallThroughPredicateName(void) const {
+    return "fall_through";
 }
 
 string

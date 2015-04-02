@@ -433,12 +433,12 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
                ++
                mkNoReuseConstraints 7
                ++
-               mkFallthroughConstraints 3
+               mkFallThroughConstraints 3
       inv_cs = mkBBMoveConstraints inv_g
                ++
                mkNoReuseConstraints 7
                ++
-               mkFallthroughConstraints 2
+               mkFallThroughConstraints 2
       ord_pat =
         InstrPattern
           { patID = 0
@@ -641,7 +641,7 @@ mkInstructions :: [Instruction]
 mkInstructions =
   mkGenericPhiInstructions
   ++
-  mkGenericBrFallthroughInstructions
+  mkGenericBrFallThroughInstructions
   ++
   mkGenericEntityDefInstructions
   ++
