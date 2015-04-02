@@ -40,10 +40,6 @@ array[allEdgesInF, 0..1] of int: edgesInF;
 
 
 
-include "params.mzn";
-
-
-
 %=====================
 % INTERNAL PARAMETERS
 %=====================

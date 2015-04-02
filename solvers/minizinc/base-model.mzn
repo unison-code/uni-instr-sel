@@ -55,10 +55,6 @@ set of allMatches: nonCopyMatches;
 
 
 
-include "params.mzn";
-
-
-
 %=====================
 % INTERNAL PARAMETERS
 %=====================
