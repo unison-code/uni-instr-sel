@@ -174,17 +174,17 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseInstructionExpr(str);
             expr = new InstructionToNumExpr(e);
         }
-        else if (eatType<LabelToNumExpr>(str)) {
-            auto e = parseLabelExpr(str);
-            expr = new LabelToNumExpr(e);
+        else if (eatType<BlockToNumExpr>(str)) {
+            auto e = parseBlockExpr(str);
+            expr = new BlockToNumExpr(e);
         }
         else if (eatType<LocationToNumExpr>(str)) {
             auto e = parseLocationExpr(str);
             expr = new LocationToNumExpr(e);
         }
-        else if (eatType<PositionOfLabelExpr>(str)) {
-            auto e = parseLabelExpr(str);
-            expr = new PositionOfLabelExpr(e);
+        else if (eatType<PositionOfBlockExpr>(str)) {
+            auto e = parseBlockExpr(str);
+            expr = new PositionOfBlockExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -348,20 +348,20 @@ ConstraintParser::parseInstructionExpr(string& str) {
     return expr;
 }
 
-LabelExpr*
-ConstraintParser::parseLabelExpr(string& str) {
-    LabelExpr* expr = NULL;
+BlockExpr*
+ConstraintParser::parseBlockExpr(string& str) {
+    BlockExpr* expr = NULL;
 
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<LabelToWhereMatchIsMovedExpr>(str)) {
+        if (eatType<BlockToWhereMatchIsMovedExpr>(str)) {
             auto e = parseMatchExpr(str);
-            expr = new LabelToWhereMatchIsMovedExpr(e);
+            expr = new BlockToWhereMatchIsMovedExpr(e);
         }
-        else if (eatType<LabelOfLabelNodeExpr>(str)) {
+        else if (eatType<BlockOfLabelNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
-            expr = new LabelOfLabelNodeExpr(e);
+            expr = new BlockOfLabelNodeExpr(e);
         }
         else {
             THROW(Exception, str + " Invalid constraint expression (unknown keyword)");
@@ -488,9 +488,9 @@ ConstraintParser::parseSetElemExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<LabelToSetElemExpr>(str)) {
-            auto e = parseLabelExpr(str);
-            expr = new LabelToSetElemExpr(e);
+        if (eatType<BlockToSetElemExpr>(str)) {
+            auto e = parseBlockExpr(str);
+            expr = new BlockToSetElemExpr(e);
         }
         else if (eatType<LocationToSetElemExpr>(str)) {
             auto e = parseLocationExpr(str);

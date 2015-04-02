@@ -85,7 +85,7 @@ MatchExpr::~MatchExpr(void) {}
 
 InstructionExpr::~InstructionExpr(void) {}
 
-LabelExpr::~LabelExpr(void) {}
+BlockExpr::~BlockExpr(void) {}
 
 LocationExpr::~LocationExpr(void) {}
 
@@ -223,11 +223,11 @@ InstructionToNumExpr::InstructionToNumExpr(const InstructionExpr* expr)
 
 InstructionToNumExpr::~InstructionToNumExpr(void) {}
 
-LabelToNumExpr::LabelToNumExpr(const LabelExpr* expr)
+BlockToNumExpr::BlockToNumExpr(const BlockExpr* expr)
     : UnaryExpr(expr)
 {}
 
-LabelToNumExpr::~LabelToNumExpr(void) {}
+BlockToNumExpr::~BlockToNumExpr(void) {}
 
 LocationToNumExpr::LocationToNumExpr(const LocationExpr* expr)
     : UnaryExpr(expr)
@@ -405,19 +405,19 @@ InstructionOfMatchExpr::InstructionOfMatchExpr(const MatchExpr* expr)
 
 InstructionOfMatchExpr::~InstructionOfMatchExpr(void) {}
 
-LabelToWhereMatchIsMovedExpr::LabelToWhereMatchIsMovedExpr(
+BlockToWhereMatchIsMovedExpr::BlockToWhereMatchIsMovedExpr(
     const MatchExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-LabelToWhereMatchIsMovedExpr
-::~LabelToWhereMatchIsMovedExpr(void) {}
+BlockToWhereMatchIsMovedExpr
+::~BlockToWhereMatchIsMovedExpr(void) {}
 
-LabelOfLabelNodeExpr::LabelOfLabelNodeExpr(const NodeExpr* expr)
+BlockOfLabelNodeExpr::BlockOfLabelNodeExpr(const NodeExpr* expr)
     : UnaryExpr(expr)
 {}
 
-LabelOfLabelNodeExpr::~LabelOfLabelNodeExpr(void) {}
+BlockOfLabelNodeExpr::~BlockOfLabelNodeExpr(void) {}
 
 LocationOfDataNodeExpr::LocationOfDataNodeExpr(
     const NodeExpr* expr
@@ -474,11 +474,11 @@ LocationClassExpr::toLisp(void) const {
     return str;
 }
 
-LabelToSetElemExpr::LabelToSetElemExpr(const LabelExpr* expr)
+BlockToSetElemExpr::BlockToSetElemExpr(const BlockExpr* expr)
     : UnaryExpr(expr)
 {}
 
-LabelToSetElemExpr::~LabelToSetElemExpr(void) {}
+BlockToSetElemExpr::~BlockToSetElemExpr(void) {}
 
 LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
     : UnaryExpr(expr)
@@ -486,13 +486,13 @@ LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
 
 LocationToSetElemExpr::~LocationToSetElemExpr(void) {}
 
-PositionOfLabelExpr
-::PositionOfLabelExpr(const LabelExpr* expr)
+PositionOfBlockExpr
+::PositionOfBlockExpr(const BlockExpr* expr)
     : UnaryExpr(expr)
 {}
 
-PositionOfLabelExpr
-::~PositionOfLabelExpr(void)
+PositionOfBlockExpr
+::~PositionOfBlockExpr(void)
 {}
 
 const string BoolExprConstraint::STRNAME = "";
@@ -516,9 +516,9 @@ const string BoolToNumExpr::STRNAME = "bool-to-num";
 const string NodeToNumExpr::STRNAME = "node-to-num";
 const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
-const string LabelToNumExpr::STRNAME = "lab-to-num";
+const string BlockToNumExpr::STRNAME = "block-to-num";
 const string LocationToNumExpr::STRNAME = "loc-to-num";
-const string PositionOfLabelExpr::STRNAME = "lab-pos";
+const string PositionOfBlockExpr::STRNAME = "block-pos";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";
@@ -533,12 +533,12 @@ const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
 const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
 const string InstructionOfMatchExpr::STRNAME = "instr-of-match";
-const string LabelToWhereMatchIsMovedExpr::STRNAME = "lab-of-match";
-const string LabelOfLabelNodeExpr::STRNAME = "lab-of-lnode";
+const string BlockToWhereMatchIsMovedExpr::STRNAME = "block-of-match";
+const string BlockOfLabelNodeExpr::STRNAME = "block-of-lnode";
 const string LocationOfDataNodeExpr::STRNAME = "loc-of-dnode";
 const string UnionSetExpr::STRNAME = "union";
 const string IntersectSetExpr::STRNAME = "intersect";
 const string DiffSetExpr::STRNAME = "diff";
 const string LocationClassExpr::STRNAME = "loc-class";
-const string LabelToSetElemExpr::STRNAME = "lab-to-set-elem";
+const string BlockToSetElemExpr::STRNAME = "block-to-set-elem";
 const string LocationToSetElemExpr::STRNAME = "loc-to-set-elem";

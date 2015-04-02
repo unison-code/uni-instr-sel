@@ -46,18 +46,18 @@ addBBMoveConstraints os =
   addConstraints os (mkBBMoveConstraints $ osGraph os)
 
 -- | Creates block movement constraints for a pattern graph such that the match
--- must be moved to the entry label if there is such a node.
+-- must be moved to the block of the entry label node (if there is such a node).
 mkBBMoveConstraints :: Graph -> [Constraint]
 mkBBMoveConstraints g =
   let entry_label = rootInCFG $ extractCFG g
   in if isJust entry_label
      then [ BoolExprConstraint
-            $ EqExpr ( Label2NumExpr
-                       $ LabelOfLabelNodeExpr
+            $ EqExpr ( Block2NumExpr
+                       $ BlockOfLabelNodeExpr
                        $ ANodeIDExpr (getNodeID $ fromJust entry_label)
                      )
-                     ( Label2NumExpr
-                       $ LabelToWhereMatchIsMovedExpr
+                     ( Block2NumExpr
+                       $ BlockToWhereMatchIsMovedExpr
                        $ ThisMatchExpr
                      )
           ]
@@ -122,16 +122,16 @@ mkFallthroughConstraints
   -> [Constraint]
 mkFallthroughConstraints l =
   [ BoolExprConstraint
-    $ EqExpr ( PlusExpr ( PositionOfLabelExpr
-                          $ LabelToWhereMatchIsMovedExpr
+    $ EqExpr ( PlusExpr ( PositionOfBlockExpr
+                          $ BlockToWhereMatchIsMovedExpr
                           $ ThisMatchExpr
                         )
                         ( Int2NumExpr
                           $ AnIntegerExpr 1
                         )
              )
-             ( PositionOfLabelExpr
-               $ LabelOfLabelNodeExpr
+             ( PositionOfBlockExpr
+               $ BlockOfLabelNodeExpr
                $ ANodeIDExpr l
              )
   ]

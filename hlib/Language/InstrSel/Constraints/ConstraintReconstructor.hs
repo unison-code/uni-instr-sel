@@ -43,7 +43,7 @@ data Reconstructor
       , mkInstructionExprF :: Reconstructor
                            -> InstructionExpr
                            -> InstructionExpr
-      , mkLabelExprF       :: Reconstructor -> LabelExpr -> LabelExpr
+      , mkBlockExprF       :: Reconstructor -> BlockExpr -> BlockExpr
       , mkLocationExprF    :: Reconstructor -> LocationExpr -> LocationExpr
       , mkSetExprF         :: Reconstructor -> SetExpr -> SetExpr
       , mkSetElemExprF     :: Reconstructor -> SetElemExpr -> SetElemExpr
@@ -100,12 +100,12 @@ mkDefaultReconstructor =
         Match2NumExpr ((mkMatchExprF r) r expr)
       mkNumExpr r (Instruction2NumExpr expr) =
         Instruction2NumExpr ((mkInstructionExprF r) r expr)
-      mkNumExpr r (Label2NumExpr expr) =
-        Label2NumExpr ((mkLabelExprF r) r expr)
+      mkNumExpr r (Block2NumExpr expr) =
+        Block2NumExpr ((mkBlockExprF r) r expr)
       mkNumExpr r (Location2NumExpr expr) =
         Location2NumExpr ((mkLocationExprF r) r expr)
-      mkNumExpr r (PositionOfLabelExpr expr) =
-        PositionOfLabelExpr ((mkLabelExprF r) r expr)
+      mkNumExpr r (PositionOfBlockExpr expr) =
+        PositionOfBlockExpr ((mkBlockExprF r) r expr)
       mkIntExpr _ expr@(AnIntegerExpr _) =
         expr
       mkNodeExpr _ expr@(ANodeIDExpr _) =
@@ -124,10 +124,10 @@ mkDefaultReconstructor =
         expr
       mkInstructionExpr r (InstructionOfMatchExpr expr) =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
-      mkLabelExpr r (LabelToWhereMatchIsMovedExpr expr) =
-        LabelToWhereMatchIsMovedExpr ((mkMatchExprF r) r expr)
-      mkLabelExpr r (LabelOfLabelNodeExpr expr) =
-        LabelOfLabelNodeExpr ((mkNodeExprF r) r expr)
+      mkBlockExpr r (BlockToWhereMatchIsMovedExpr expr) =
+        BlockToWhereMatchIsMovedExpr ((mkMatchExprF r) r expr)
+      mkBlockExpr r (BlockOfLabelNodeExpr expr) =
+        BlockOfLabelNodeExpr ((mkNodeExprF r) r expr)
       mkLocationExpr _ expr@(ALocationIDExpr _) =
         expr
       mkLocationExpr _ expr@(ALocationArrayIndexExpr _) =
@@ -144,8 +144,8 @@ mkDefaultReconstructor =
         DiffSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (LocationClassExpr exprs) =
         LocationClassExpr (map ((mkLocationExprF r) r) exprs)
-      mkSetElemExpr r (Label2SetElemExpr expr) =
-        Label2SetElemExpr ((mkLabelExprF r) r expr)
+      mkSetElemExpr r (Block2SetElemExpr expr) =
+        Block2SetElemExpr ((mkBlockExprF r) r expr)
       mkSetElemExpr r (Location2SetElemExpr expr) =
         Location2SetElemExpr ((mkLocationExprF r) r expr)
   in Reconstructor
@@ -156,7 +156,7 @@ mkDefaultReconstructor =
        , mkNodeExprF = mkNodeExpr
        , mkMatchExprF = mkMatchExpr
        , mkInstructionExprF = mkInstructionExpr
-       , mkLabelExprF = mkLabelExpr
+       , mkBlockExprF = mkBlockExpr
        , mkLocationExprF = mkLocationExpr
        , mkSetExprF = mkSetExpr
        , mkSetElemExprF = mkSetElemExpr

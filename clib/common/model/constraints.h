@@ -258,15 +258,15 @@ class InstructionExpr : public Expr {
 };
 
 /**
- * Base class for a label expression.
+ * Base class for a block expression.
  */
-class LabelExpr : public Expr {
+class BlockExpr : public Expr {
   public:
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelExpr(void)
+    ~BlockExpr(void)
     =0;
 };
 
@@ -938,22 +938,22 @@ class InstructionToNumExpr
 };
 
 /**
- * Converts a label into a numerical expression.
+ * Converts a block into a numerical expression.
  */
-class LabelToNumExpr
-    : public UnaryExpr<NumExpr, LabelToNumExpr, LabelExpr>
+class BlockToNumExpr
+    : public UnaryExpr<NumExpr, BlockToNumExpr, BlockExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelToNumExpr(const LabelExpr* expr);
+    BlockToNumExpr(const BlockExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelToNumExpr(void);
+    ~BlockToNumExpr(void);
 
   public:
     /**
@@ -988,22 +988,22 @@ class LocationToNumExpr
 };
 
 /**
- * Represents the position of a label in the generated code.
+ * Represents the position of a block in the generated code.
  */
-class PositionOfLabelExpr
-    : public UnaryExpr<NumExpr, PositionOfLabelExpr, LabelExpr>
+class PositionOfBlockExpr
+    : public UnaryExpr<NumExpr, PositionOfBlockExpr, BlockExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    PositionOfLabelExpr(const LabelExpr* expr);
+    PositionOfBlockExpr(const BlockExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~PositionOfLabelExpr(void);
+    ~PositionOfBlockExpr(void);
 
   public:
     /**
@@ -1531,22 +1531,22 @@ class InstructionOfMatchExpr
 };
 
 /**
- * Represents the label to which a match has been moved.
+ * Represents the block to which a match has been moved.
  */
-class LabelToWhereMatchIsMovedExpr
-    : public UnaryExpr<LabelExpr, LabelToWhereMatchIsMovedExpr, MatchExpr>
+class BlockToWhereMatchIsMovedExpr
+    : public UnaryExpr<BlockExpr, BlockToWhereMatchIsMovedExpr, MatchExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelToWhereMatchIsMovedExpr(const MatchExpr* expr);
+    BlockToWhereMatchIsMovedExpr(const MatchExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelToWhereMatchIsMovedExpr(void);
+    ~BlockToWhereMatchIsMovedExpr(void);
 
   public:
     /**
@@ -1556,22 +1556,22 @@ class LabelToWhereMatchIsMovedExpr
 };
 
 /**
- * Represents the label associated with a label node.
+ * Represents the block associated with a label node.
  */
-class LabelOfLabelNodeExpr
-    : public UnaryExpr<LabelExpr, LabelOfLabelNodeExpr, NodeExpr>
+class BlockOfLabelNodeExpr
+    : public UnaryExpr<BlockExpr, BlockOfLabelNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelOfLabelNodeExpr(const NodeExpr* expr);
+    BlockOfLabelNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelOfLabelNodeExpr(void);
+    ~BlockOfLabelNodeExpr(void);
 
   public:
     /**
@@ -1718,22 +1718,22 @@ class LocationClassExpr : public WithStrName<SetExpr, LocationClassExpr> {
 };
 
 /**
- * Converts a label into a set element expression.
+ * Converts a block into a set element expression.
  */
-class LabelToSetElemExpr
-    : public UnaryExpr<SetElemExpr, LabelToSetElemExpr, LabelExpr>
+class BlockToSetElemExpr
+    : public UnaryExpr<SetElemExpr, BlockToSetElemExpr, BlockExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    LabelToSetElemExpr(const LabelExpr* expr);
+    BlockToSetElemExpr(const BlockExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~LabelToSetElemExpr(void);
+    ~BlockToSetElemExpr(void);
 
   public:
     /**

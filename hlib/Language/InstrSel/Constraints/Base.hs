@@ -19,7 +19,7 @@ module Language.InstrSel.Constraints.Base
   , Constraint (..)
   , InstructionExpr (..)
   , IntExpr (..)
-  , LabelExpr (..)
+  , BlockExpr (..)
   , MatchExpr (..)
   , NodeExpr (..)
   , NumExpr (..)
@@ -101,12 +101,12 @@ data NumExpr
   | Match2NumExpr MatchExpr
     -- | Converts an instruction to a numerical expression.
   | Instruction2NumExpr InstructionExpr
-    -- | Converts a pattern to a numerical expression.
-  | Label2NumExpr LabelExpr
+    -- | Converts a block to a numerical expression.
+  | Block2NumExpr BlockExpr
     -- | Converts a location to a numerical expression.
   | Location2NumExpr LocationExpr
-    -- | Represents the position of a label in the generated code.
-  | PositionOfLabelExpr LabelExpr
+    -- | Represents the position of a block in the generated code.
+  | PositionOfBlockExpr BlockExpr
   deriving (Show)
 
 -- | Integer value expressions.
@@ -143,12 +143,12 @@ data InstructionExpr
   | InstructionOfMatchExpr MatchExpr
   deriving (Show)
 
--- | Label expressions.
-data LabelExpr
-    -- | Retrieves the of the label to which a match has been moved.
-  = LabelToWhereMatchIsMovedExpr MatchExpr
-    -- | Retrieves the label associated with a label node.
-  | LabelOfLabelNodeExpr NodeExpr
+-- | Block expressions.
+data BlockExpr
+    -- | Retrieves the of the block to which a match has been moved.
+  = BlockToWhereMatchIsMovedExpr MatchExpr
+    -- | Retrieves the block associated with a label node.
+  | BlockOfLabelNodeExpr NodeExpr
   deriving (Show)
 
 -- | Location expressions.
@@ -170,14 +170,14 @@ data SetExpr =
     -- | @A@ `diff` @B@. The first field represents @A@ and the second field
     -- @B@.
   | DiffSetExpr SetExpr SetExpr
-    -- | Retrieves the dominator set of a label.
+    -- | Converts a list of locations into a set.
   | LocationClassExpr [LocationExpr]
   deriving (Show)
 
 -- | Set element expressions.
 data SetElemExpr
-    -- | Converts a label to a set element expression.
-  = Label2SetElemExpr LabelExpr
+    -- | Converts a block to a set element expression.
+  = Block2SetElemExpr BlockExpr
     -- | Converts a location to a set element expression.
   | Location2SetElemExpr LocationExpr
   deriving (Show)
@@ -249,9 +249,9 @@ instance FromLisp NumExpr where
     <|> struct "node-to-num" Node2NumExpr e
     <|> struct "match-to-num" Match2NumExpr e
     <|> struct "instr-to-num" Instruction2NumExpr e
-    <|> struct "lab-to-num" Label2NumExpr e
+    <|> struct "block-to-num" Block2NumExpr e
     <|> struct "loc-to-num" Location2NumExpr e
-    <|> struct "lab-pos" PositionOfLabelExpr e
+    <|> struct "block-pos" PositionOfBlockExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)     = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -261,9 +261,9 @@ instance ToLisp NumExpr where
   toLisp (Node2NumExpr e)        = mkStruct "node-to-num" [toLisp e]
   toLisp (Match2NumExpr e)       = mkStruct "match-to-num" [toLisp e]
   toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
-  toLisp (Label2NumExpr e)       = mkStruct "lab-to-num" [toLisp e]
+  toLisp (Block2NumExpr e)       = mkStruct "block-to-num" [toLisp e]
   toLisp (Location2NumExpr e)    = mkStruct "loc-to-num" [toLisp e]
-  toLisp (PositionOfLabelExpr e) = mkStruct "lab-pos" [toLisp e]
+  toLisp (PositionOfBlockExpr e) = mkStruct "block-pos" [toLisp e]
 
 instance FromLisp IntExpr where
   parseLisp e =
@@ -303,15 +303,15 @@ instance ToLisp InstructionExpr where
   toLisp (AnInstructionArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
   toLisp (InstructionOfMatchExpr e) = mkStruct "instr-of-match" [toLisp e]
 
-instance FromLisp LabelExpr where
+instance FromLisp BlockExpr where
   parseLisp e =
-        struct "lab-of-match" LabelToWhereMatchIsMovedExpr e
-    <|> struct "lab-of-lnode" LabelOfLabelNodeExpr e
+        struct "block-of-match" BlockToWhereMatchIsMovedExpr e
+    <|> struct "block-of-lnode" BlockOfLabelNodeExpr e
 
-instance ToLisp LabelExpr where
-  toLisp (LabelToWhereMatchIsMovedExpr e) =
-    mkStruct "lab-of-match" [toLisp e]
-  toLisp (LabelOfLabelNodeExpr e) = mkStruct "lab-of-lnode" [toLisp e]
+instance ToLisp BlockExpr where
+  toLisp (BlockToWhereMatchIsMovedExpr e) =
+    mkStruct "block-of-match" [toLisp e]
+  toLisp (BlockOfLabelNodeExpr e) = mkStruct "block-of-lnode" [toLisp e]
 
 instance FromLisp LocationExpr where
   parseLisp (Lisp.Symbol "null") = return TheNullLocationExpr
@@ -346,11 +346,11 @@ instance ToLisp SetExpr where
 
 instance FromLisp SetElemExpr where
   parseLisp e =
-        struct "lab-to-set-elem" Label2SetElemExpr e
+        struct "block-to-set-elem" Block2SetElemExpr e
     <|> struct "loc-to-set-elem" Location2SetElemExpr e
 
 instance ToLisp SetElemExpr where
-  toLisp (Label2SetElemExpr e)    = mkStruct "lab-to-set-elem" [toLisp e]
+  toLisp (Block2SetElemExpr e)    = mkStruct "block-to-set-elem" [toLisp e]
   toLisp (Location2SetElemExpr e) = mkStruct "loc-to-set-elem" [toLisp e]
 
 

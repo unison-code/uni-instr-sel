@@ -147,8 +147,8 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const LabelToNumExpr* de =
-             dynamic_cast<const LabelToNumExpr*>(e))
+    else if (const BlockToNumExpr* de =
+             dynamic_cast<const BlockToNumExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -157,10 +157,10 @@ ConstraintProcessor::process(const NumExpr* e) {
     {
         return process(de->getExpr());
     }
-    else if (const PositionOfLabelExpr* de =
-             dynamic_cast<const PositionOfLabelExpr*>(e))
+    else if (const PositionOfBlockExpr* de =
+             dynamic_cast<const PositionOfBlockExpr*>(e))
     {
-        return getLabelPositionVariableArrayName()
+        return getBlockPositionVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else {
@@ -231,20 +231,20 @@ ConstraintProcessor::process(const InstructionExpr* e) {
 }
 
 string
-ConstraintProcessor::process(const LabelExpr* e) {
-    if (const LabelToWhereMatchIsMovedExpr* de =
-        dynamic_cast<const LabelToWhereMatchIsMovedExpr*>(e))
+ConstraintProcessor::process(const BlockExpr* e) {
+    if (const BlockToWhereMatchIsMovedExpr* de =
+        dynamic_cast<const BlockToWhereMatchIsMovedExpr*>(e))
     {
         return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
-    else if (const LabelOfLabelNodeExpr* de =
-             dynamic_cast<const LabelOfLabelNodeExpr*>(e))
+    else if (const BlockOfLabelNodeExpr* de =
+             dynamic_cast<const BlockOfLabelNodeExpr*>(e))
     {
         return process(de->getExpr());
     }
     else {
-        THROW(Exception, "LabelExpr is of unknown derived class");
+        THROW(Exception, "BlockExpr is of unknown derived class");
     }
 }
 
@@ -307,8 +307,8 @@ ConstraintProcessor::process(const SetExpr* e) {
 
 string
 ConstraintProcessor::process(const SetElemExpr* e) {
-    if (const LabelToSetElemExpr* de =
-        dynamic_cast<const LabelToSetElemExpr*>(e))
+    if (const BlockToSetElemExpr* de =
+        dynamic_cast<const BlockToSetElemExpr*>(e))
     {
         return process(de->getExpr());
     }
@@ -334,7 +334,7 @@ ConstraintProcessor::getBBAllocationVariableArrayName(void) const {
 
 string
 ConstraintProcessor::getDomSetParameterArrayName(void) const {
-    return "domsetOfLabelInFunction";
+    return "domsetOfBlockInFunction";
 }
 
 string
@@ -343,13 +343,8 @@ ConstraintProcessor::getMatchSelectedVariableArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getLabelPositionVariableArrayName(void) const {
+ConstraintProcessor::getBlockPositionVariableArrayName(void) const {
     return "ord";
-}
-
-string
-ConstraintProcessor::getMatchAndLabelMappingsMatrixName(void) const {
-    return "indexOfMatchLabelMapping";
 }
 
 string

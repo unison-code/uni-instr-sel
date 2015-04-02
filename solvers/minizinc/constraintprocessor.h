@@ -112,20 +112,12 @@ class ConstraintProcessor {
     getDomSetParameterArrayName(void) const;
 
     /**
-     * Gets the variable array for the label positions.
+     * Gets the variable array for the block positions.
      *
      * @returns Variable name.
      */
     std::string
-    getLabelPositionVariableArrayName(void) const;
-
-    /**
-     * Gets the parameter matrix for the match and label mappings.
-     *
-     * @returns Parameter name.
-     */
-    std::string
-    getMatchAndLabelMappingsMatrixName(void) const;
+    getBlockPositionVariableArrayName(void) const;
 
     /**
      * Gets the location value used for indicating that a data node represents
@@ -211,7 +203,7 @@ class ConstraintProcessor {
      * \copydoc process(const Model::BoolExpr*)
      */
     std::string
-    process(const Model::LabelExpr* e);
+    process(const Model::BlockExpr* e);
 
     /**
      * \copydoc process(const Model::BoolExpr*)
