@@ -256,7 +256,7 @@ mkGenericCopyInstructions =
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat 8, pat 16, pat 32]
+         , instrPatterns = [pat 1, pat 8, pat 16, pat 32]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = False

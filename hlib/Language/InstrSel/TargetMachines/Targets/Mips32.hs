@@ -479,6 +479,53 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
                                       }
        }
 
+-- | Makes a predicated branch instruction (compares equal to $0).
+mkPredBrInstr :: Instruction
+mkPredBrInstr =
+  let mkLabelNode = LabelNode $ BlockName ""
+      g = mkGraph
+         ( map
+             Node
+             [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
+             , ( 1, NodeLabel 1 mkLabelNode )
+             , ( 2, NodeLabel 2 mkLabelNode )
+             , ( 3, NodeLabel 3 mkLabelNode )
+             , ( 4, NodeLabel 4 (DataNode (mkIntTempType 1) Nothing) )
+             ]
+         )
+         ( map
+             Edge
+             [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+             , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+             , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
+             , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
+             ]
+         )
+      cs = mkMatchToBlockMovementConstraints g
+                ++
+           mkFallThroughConstraints 3
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g (Just 1) cs
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim $ "beqz "
+                                  , ASLocationOfDataNode 4
+                                  , ASVerbatim ","
+                                  , ASBlockOfLabelNode 2
+                                  ]
+          }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 2
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
 mkBrInstrs =
@@ -911,6 +958,8 @@ mkInstructions =
               16
               16
     ]
+  ++
+  [mkPredBrInstr]
   ++
   mkBrInstrs
   ++
