@@ -263,13 +263,18 @@ findAlternativeOutEdges g n =
   in filter (\p -> length p > 1) groups
 
 invokeMatcher :: Parameters -> IO SolutionData
-invokeMatcher p = shelly (invokeMatcherShell p)
+invokeMatcher p = shelly (withTmpDir $ invokeMatcherShell p)
 
-invokeMatcherShell :: Parameters -> Sh SolutionData
-invokeMatcherShell p =
-  do prepareSystem
-     json_input_file <- queryJsonInputFilePath
-     json_output_file <- queryJsonOutputFilePath
+invokeMatcherShell
+  :: Parameters
+     -- ^ Data for the pattern matcher.
+  -> FilePath
+     -- ^ Path to the directory wherein intermediate files can be stored. The
+     -- path will be destroyed afterwards.
+  -> Sh SolutionData
+invokeMatcherShell p dir =
+  do json_input_file <- queryJsonInputFilePath dir
+     json_output_file <- queryJsonOutputFilePath dir
      dumpParamsToJsonFile p json_input_file
      abs_json_input_file <- absPath json_input_file
      abs_json_output_file <- absPath json_output_file
@@ -296,29 +301,23 @@ toJsonParamData p =
     , jsonAlternativeEdges = alternativeEdges p
     }
 
-queryDataDirPath :: Sh FilePath
-queryDataDirPath = return ".PatMatchData"
+queryJsonInputFilePath
+  :: FilePath
+     -- ^ Path to directory wherein the input file will be available.
+  -> Sh FilePath
+queryJsonInputFilePath dir =
+  return $ dir </> "pat-match-data.json"
 
-queryJsonInputFilePath :: Sh FilePath
-queryJsonInputFilePath =
-  do dir <- queryDataDirPath
-     return $ dir </> "pat-match-data.json"
-
-queryJsonOutputFilePath :: Sh FilePath
-queryJsonOutputFilePath =
-  do dir <- queryDataDirPath
-     return $ dir </> "solutions.json"
+queryJsonOutputFilePath
+  :: FilePath
+     -- ^ Path to directory wherein the output file will be available.
+  -> Sh FilePath
+queryJsonOutputFilePath dir =
+  return $ dir </> "solutions.json"
 
 queryScriptPath :: Sh FilePath
 queryScriptPath =
   do return "./pattern-matcher"
-
--- | Sets up necessary directories and files.
-prepareSystem :: Sh ()
-prepareSystem =
-  do dir <-queryDataDirPath
-     does_dir_exist <- test_d dir
-     when (not does_dir_exist) (mkdir dir)
 
 dumpParamsToJsonFile :: Parameters -> FilePath -> Sh ()
 dumpParamsToJsonFile p file =
