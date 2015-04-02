@@ -190,6 +190,15 @@ constraint
        endif
   );
 
+% Implied: The total number of entities defined by the selected matches must be
+% equal to the number of entities in the function graph (Mats calls this
+% "minimal effect").
+constraint
+  sum (m in allMatches)
+  (
+    card(entitiesDefinedByMatch[m]) * bool2int(sel[m])
+  ) = numEntitiesInFunction;
+
 % Selected matches must not be moved to the null block.
 constraint
   forall (m in allMatches)
