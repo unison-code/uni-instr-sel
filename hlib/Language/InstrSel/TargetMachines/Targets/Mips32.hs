@@ -374,15 +374,15 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
        }
 
 -- | Creates a conditional branch pattern for a given comparison operator. The
--- first and second operands are the (32-bit) data nodes with IDs 5 and 6,
+-- first and second operands are the (n-bit) data nodes with IDs 5 and 6,
 -- respectively, and the 'true' and 'false' labels are the label node with IDs 2
 -- and 3, respectively. The returned value contains the graph and the ID of the
 -- entry label node.
-mkCondBrPattern :: O.CompOp -> (Graph, NodeID)
-mkCondBrPattern op =
+mkCondBrPattern :: Natural -> O.CompOp -> (Graph, NodeID)
+mkCondBrPattern n op =
   let mkLabelNode = LabelNode $ BlockName ""
       mkCompNode = ComputationNode { compOp = op }
-      mk32BitDataNode = DataNode (mkIntTempType 32) Nothing
+      mkNBitDataNode = DataNode (mkIntTempType n) Nothing
   in ( mkGraph
          ( map
              Node
@@ -391,8 +391,8 @@ mkCondBrPattern op =
              , ( 2, NodeLabel 2 mkLabelNode )
              , ( 3, NodeLabel 3 mkLabelNode )
              , ( 4, NodeLabel 4 mkCompNode )
-             , ( 5, NodeLabel 5 mk32BitDataNode )
-             , ( 6, NodeLabel 6 mk32BitDataNode )
+             , ( 5, NodeLabel 5 mkNBitDataNode )
+             , ( 6, NodeLabel 6 mkNBitDataNode )
              , ( 7, NodeLabel 7 (DataNode (mkIntTempType 1) Nothing) )
              ]
          )
@@ -416,7 +416,9 @@ mkCondBrPattern op =
 -- carry the same semantics. Both are needed to handle cases where a comparison
 -- needs to be inverted in order to achieve a valid block ordering.
 mkCondBrInstrs
-  :: String
+  :: Natural
+     -- ^ The width of the comparison operands.
+  -> String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
      -- ^ The comparison corresponding to this instruction.
@@ -425,9 +427,9 @@ mkCondBrInstrs
   -> O.CompOp
      -- ^ The inverse comparison corresponding to this instruction.
   -> Instruction
-mkCondBrInstrs ord_str ord_op inv_str inv_op =
-  let (ord_g, ord_entry) = mkCondBrPattern ord_op
-      (inv_g, inv_entry) = mkCondBrPattern inv_op
+mkCondBrInstrs n ord_str ord_op inv_str inv_op =
+  let (ord_g, ord_entry) = mkCondBrPattern n ord_op
+      (inv_g, inv_entry) = mkCondBrPattern n inv_op
       ord_cs = mkMatchToBlockMovementConstraints ord_g
                ++
                mkNoDataReuseConstraints 7
@@ -824,12 +826,21 @@ mkInstructions =
     , ("slt", O.IntOp O.LT)
     ]
   ++
-  map
-    ( \(s1, op1, s2, op2) -> mkCondBrInstrs
+  concatMap
+    ( \(s1, op1, s2, op2) -> [
+                               mkCondBrInstrs
+                               16
                                s1
                                (O.CompArithOp op1)
                                s2
                                (O.CompArithOp op2)
+                             , mkCondBrInstrs
+                               16
+                               s1
+                               (O.CompArithOp op1)
+                               s2
+                               (O.CompArithOp op2)
+                             ]
     )
     [ ("bgt", O.SIntOp O.GT, "ble", O.SIntOp O.LE)
     , ("blt", O.SIntOp O.LT, "bge", O.SIntOp O.GE)
