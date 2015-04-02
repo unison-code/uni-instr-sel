@@ -220,8 +220,6 @@ constraint
 constraint
   forall (m in allMatches)
   (
-    sel[m]
-    ->
     forall (e in entitiesDefinedByMatch[m])
     (
       if (card(entryLabelOfMatch[m]) > 0)
@@ -229,9 +227,9 @@ constraint
         let { set of allLabelsInFunction: labels_in_m =
                 entryLabelOfMatch[m] union nonEntryLabelsInMatch[m]
             }
-        in def[e] in labels_in_m
+        in sel[m] -> def[e] in labels_in_m
       else
-        def[e] = mov[m]
+        sel[m] -> def[e] = mov[m]
       endif
     )
   );
