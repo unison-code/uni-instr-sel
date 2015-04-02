@@ -79,6 +79,10 @@ function ensureFileExists {
     fi
 }
 
+function reportNewFile {
+    echo "  File created: $@"
+}
+
 
 
 #=============
@@ -120,6 +124,7 @@ MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
 echo "Generating MiniZinc parameter file..."
 $THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH > $MINIZINC_PARAMS_FILEPATH
 exitIfFailed
+reportNewFile $MINIZINC_PARAMS_FILEPATH
 
 echo "Creating MiniZinc model file..."
 ensureFileExists $MINIZINC_PARAMS_FILEPATH
@@ -131,6 +136,7 @@ echo >> $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH
 exitIfFailed
+reportNewFile $MINIZINC_FULL_MODEL_FILEPATH
 
 echo "Running MiniZinc solver..."
 minizinc $MINIZINC_FULL_MODEL_FILEPATH > $MINIZINC_OUTPUT_FILEPATH \
@@ -140,12 +146,14 @@ if [ $STATUS -ne 0 ]; then
     echoerr "minizinc exited with failure"
     exit 1
 fi
+reportNewFile $MINIZINC_OUTPUT_FILEPATH
 
 echo "Converting MiniZinc solution to JSON format..."
 ensureFileExists $MINIZINC_OUTPUT_FILEPATH
 $THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH > $JSON_OUTPUT_FILEPATH
 exitIfFailed
 ensureFileExists $JSON_OUTPUT_FILEPATH
+reportNewFile $JSON_OUTPUT_FILEPATH
 
 echo "Cleaning up temporary files..."
 rm -rf $TMP_DIR
