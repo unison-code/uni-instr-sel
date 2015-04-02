@@ -429,14 +429,14 @@ mkCondBrInstrs
 mkCondBrInstrs ord_str ord_op inv_str inv_op =
   let (ord_g, ord_entry) = mkCondBrPattern ord_op
       (inv_g, inv_entry) = mkCondBrPattern inv_op
-      ord_cs = mkBBMoveConstraints ord_g
+      ord_cs = mkMatchToBlockMovementConstraints ord_g
                ++
-               mkNoReuseConstraints 7
+               mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      inv_cs = mkBBMoveConstraints inv_g
+      inv_cs = mkMatchToBlockMovementConstraints inv_g
                ++
-               mkNoReuseConstraints 7
+               mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 2
       ord_pat =
@@ -493,7 +493,7 @@ mkBrInstrs =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      cs = mkBBMoveConstraints g
+      cs = mkMatchToBlockMovementConstraints g
       pat =
         InstrPattern
           { patID = 0
@@ -529,7 +529,7 @@ mkRetInstrs =
                 , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
-      bb_cs n = mkBBMoveConstraints (g n)
+      bb_cs n = mkMatchToBlockMovementConstraints (g n)
       reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
       pat n =
         InstrPattern

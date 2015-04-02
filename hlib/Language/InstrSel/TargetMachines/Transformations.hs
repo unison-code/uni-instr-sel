@@ -53,7 +53,7 @@ copyExtend tm =
             new_data_ns = filter (\n -> isDataNode n && n `notElem` old_data_ns)
                                  (getAllNodes old_g)
             old_cs = osConstraints os
-            new_cs = old_cs ++ concatMap mkNoReuseConstraints
+            new_cs = old_cs ++ concatMap mkNoDataReuseConstraints
                                          (map getNodeID new_data_ns)
         in os { osGraph = new_g, osConstraints = new_cs }
       copyExtendPat p = p { patOS = copyExtendOS $ patOS p }

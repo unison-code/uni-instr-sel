@@ -118,21 +118,24 @@ tmTest =
               ]
           )
       init_def_pattern_os =
-        addBBMoveConstraints $ OpStructure init_def_pattern (Just 0) []
+        addMatchToBlockMovementConstraints
+        $ OpStructure init_def_pattern (Just 0) []
       add_pattern_os =
-        addBBMoveConstraints $ OpStructure add_pattern Nothing []
+        addMatchToBlockMovementConstraints
+        $ OpStructure add_pattern Nothing []
       bnz_pattern_os =
-        addBBMoveConstraints $ OpStructure  bnz_pattern (Just 1) []
+        addMatchToBlockMovementConstraints
+        $ OpStructure  bnz_pattern (Just 1) []
       br_pattern_os =
-        addBBMoveConstraints $ OpStructure br_pattern (Just 0) []
+        addMatchToBlockMovementConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
-        addBBMoveConstraints
+        addMatchToBlockMovementConstraints
         $ addFallThroughConstraints 1
         $ OpStructure br_fallthrough_pattern
                       (Just 0)
                       []
       ret_pattern_os =
-        addBBMoveConstraints $ OpStructure ret_pattern (Just 1) []
+        addMatchToBlockMovementConstraints $ OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
                   0
                   [ InstrPattern

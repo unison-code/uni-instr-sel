@@ -14,14 +14,14 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addBBMoveConstraints
+  ( addMatchToBlockMovementConstraints
   , addFallThroughConstraints
   , addDataLocConstraints
-  , addNoReuseConstraints
-  , mkBBMoveConstraints
+  , addNoDataReuseConstraints
+  , mkMatchToBlockMovementConstraints
   , mkFallThroughConstraints
   , mkDataLocConstraints
-  , mkNoReuseConstraints
+  , mkNoDataReuseConstraints
   )
 where
 
@@ -39,16 +39,16 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates block movement constraints (see `mkBBMoveConstraints`) and adds
--- these (if any) to the existing 'OpStructure'.
-addBBMoveConstraints :: OpStructure -> OpStructure
-addBBMoveConstraints os =
-  addConstraints os (mkBBMoveConstraints $ osGraph os)
+-- | Creates constraints using 'mkMatchToBlockMovementConstraints' and adds
+-- these (if any) to the given 'OpStructure'.
+addMatchToBlockMovementConstraints :: OpStructure -> OpStructure
+addMatchToBlockMovementConstraints os =
+  addConstraints os (mkMatchToBlockMovementConstraints $ osGraph os)
 
 -- | Creates block movement constraints for a pattern graph such that the match
 -- must be moved to the block of the entry label node (if there is such a node).
-mkBBMoveConstraints :: Graph -> [Constraint]
-mkBBMoveConstraints g =
+mkMatchToBlockMovementConstraints :: Graph -> [Constraint]
+mkMatchToBlockMovementConstraints g =
   let entry_label = rootInCFG $ extractCFG g
   in if isJust entry_label
      then [ BoolExprConstraint
@@ -63,8 +63,8 @@ mkBBMoveConstraints g =
           ]
      else []
 
--- | Creates location allocation constraints (see `mkDataLocConstraints`) and
--- adds these (if any) are added to the existing 'OpStructure'.
+-- | Creates constraints using 'mkDataLocConstraints' and adds these (if any)
+-- are added to the given 'OpStructure'.
 addDataLocConstraints
   :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
@@ -107,8 +107,8 @@ mkDataLocConstraints regs d =
                 )
   ]
 
--- | Creates fallthrough constraints (see `mkFallThroughConstraints`) and adds
--- these (if any) to the existing 'OpStructure'.
+-- | Creates constraints using 'mkFallThroughConstraints' and adds these (if
+-- any) to the given 'OpStructure'.
 addFallThroughConstraints :: NodeID -> OpStructure -> OpStructure
 addFallThroughConstraints l os =
   addConstraints os (mkFallThroughConstraints l)
@@ -126,16 +126,16 @@ mkFallThroughConstraints l =
                                       )
   ]
 
--- | Creates no-reuse constraints (see `mkNoReuseConstraints`) and adds these
--- (if any) to the existing 'OpStructure'.
-addNoReuseConstraints :: NodeID -> OpStructure -> OpStructure
-addNoReuseConstraints d os =
-  addConstraints os (mkNoReuseConstraints d)
+-- | Creates constraints using 'mkNoDataReuseConstraints' and adds these (if
+-- any) to the given 'OpStructure'.
+addNoDataReuseConstraints :: NodeID -> OpStructure -> OpStructure
+addNoDataReuseConstraints d os =
+  addConstraints os (mkNoDataReuseConstraints d)
 
 -- | Creates no-reuse constraints for a pattern graph such that the location of
 -- the given data node must be in the null location.
-mkNoReuseConstraints :: NodeID -> [Constraint]
-mkNoReuseConstraints d =
+mkNoDataReuseConstraints :: NodeID -> [Constraint]
+mkNoDataReuseConstraints d =
   [ BoolExprConstraint
     $ EqExpr ( Location2NumExpr
                $ LocationOfDataNodeExpr
