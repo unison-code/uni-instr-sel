@@ -94,13 +94,13 @@ else
     exit 1
 fi
 
-# Generate params to Minizinc model
-echo "Generating Minizinc params..."
+# Generate params to MiniZinc model
+echo "Generating MiniZinc parameter file..."
 $THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILE > $MINIZINC_PARAMS_FILE
 checkStatus
 
-# Run Minizinc solver
-echo "Running Minizinc solver..."
+# Run MiniZinc solver
+echo "Running MiniZinc solver..."
 CURRENT_DIR=`pwd`
 cd $THIS_DIR
 minizinc -a $(basename $MINIZINC_MODEL_FILE) \
@@ -113,6 +113,6 @@ if [ $STATUS -ne 0 ]; then
 fi
 
 # Convert solution into JSON format
-echo "Converting Minizinc solution to JSON format..."
+echo "Converting MiniZinc solution to JSON format..."
 $THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILE > $OUTPUT_FILE
 checkStatus
