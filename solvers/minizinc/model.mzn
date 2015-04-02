@@ -110,13 +110,8 @@ array[allMatches] of var bool: sel;
 % Basic block to which the matches are moved.
 array[allMatches] of var allLabelsInFunctionPlusNull: mov;
 
-% Basic block ordering. In the first variable (ord) each index represents a
-% position (and the value the label put at that position), and the second
-% variable (ord_inv) is the inverse of the first variable (that is, each
-% index represents a label, and a value its position).
+% Block ordering.
 array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: ord;
-array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull:
-  ord_inv;
 
 % Cost.
 var int: cost;
@@ -129,7 +124,6 @@ var int: cost;
 
 include "alldifferent.mzn";
 include "exactly.mzn";
-include "inverse.mzn";
 
 
 
@@ -243,10 +237,6 @@ constraint
 % The basic blocks must be serialized in some order.
 constraint
   alldifferent(ord);
-
-% Apply the channel constraint between 'ord' and 'ord_inv'.
-constraint
-  inverse(ord, ord_inv);
 
 % The entry label (i.e. function entry point) must be placed as the first basic
 % block, and the null label must be placed as the last basic block.
