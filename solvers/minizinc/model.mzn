@@ -276,7 +276,7 @@ constraint
     )
   );
 
-% Ensure that succ forms a circuit.
+% Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
 constraint
   circuit(succ) :: domain;
 
