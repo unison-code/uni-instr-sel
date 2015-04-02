@@ -835,7 +835,7 @@ mkInstructions =
                                s2
                                (O.CompArithOp op2)
                              , mkCondBrInstrs
-                               16
+                               32
                                s1
                                (O.CompArithOp op1)
                                s2
