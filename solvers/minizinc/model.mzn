@@ -51,6 +51,7 @@ array[allMatches] of set of int: nonEntryLabelsInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
+set of allMatches: nonCopyMatches;
 
 
 
@@ -152,7 +153,7 @@ constraint
     let {
       array[int] of var bool:
       matches = [ sel[m] | m in allMatches
-                           where o in operationsCoveredByMatch[m]
+                                where o in operationsCoveredByMatch[m]
                 ]
     }
     in exactly(1, matches, 1)
@@ -280,10 +281,28 @@ constraint
 % SOLVE AND OUTPUT
 %==================
 
-% Provided as part of params.mzn
-ann: search_ann;
-
-solve :: search_ann
+solve ::
+  seq_search(
+    [ bool_search([ sel[m] | m in nonCopyMatches
+                                  where card(operationsCoveredByMatch[m])
+                                        +
+                                        card(entitiesDefinedByMatch[m])
+                                        > 2
+                  ], input_order, indomain_max, complete)
+    , bool_search([ sel[m] | m in nonCopyMatches
+                                  where card(operationsCoveredByMatch[m])
+                                        +
+                                        card(entitiesDefinedByMatch[m])
+                                        = 2
+				  ], input_order, indomain_max, complete)
+    , bool_search([ sel[m] | m in nonCopyMatches
+                                  where card(operationsCoveredByMatch[m])
+                                        +
+                                        card(entitiesDefinedByMatch[m])
+                                        = 1
+				  ], input_order, indomain_max, complete)
+	]
+  )
 minimize cost;
 
 output [ "sel=", show(sel), "\n"

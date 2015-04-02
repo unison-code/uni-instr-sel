@@ -153,12 +153,12 @@ class ModelParams {
     getLatenciesForAllMatches(void) const;
 
     /**
-     * Gets the matches that have been derived from copy instructions.
+     * Gets the matches that have been derived from non-copy instructions.
      *
      * @returns List of array indices for matches.
      */
     std::list<ArrayIndex>
-    getCopyInstrMatches(void) const;
+    getNonCopyInstrMatches(void) const;
 
     /**
      * Gets the function operation nodes covered per matches.
@@ -420,7 +420,7 @@ class ModelParams {
     setLatenciesForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the matches that have been derived from copy instructions.
+     * Sets the matches that have been derived from non-copy instructions.
      *
      * @param root
      *        The JSON root value.
@@ -430,7 +430,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setCopyInstrMatches(const Json::Value& root, ModelParams& p);
+    setNonCopyInstrMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the apply-def-dom-use-constraint settings for the matches.
@@ -648,9 +648,9 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_non_entry_labels_;
 
     /**
-     * The matches that have been derived from copy instructions.
+     * The matches that have been derived from non-copy instructions.
      */
-    std::list<ArrayIndex> match_copy_instrs_;
+    std::list<ArrayIndex> match_non_copy_instrs_;
 
     /**
      * The constraints for each match. The constraints are destroyed when this

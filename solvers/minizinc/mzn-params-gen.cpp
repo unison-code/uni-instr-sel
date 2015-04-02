@@ -250,46 +250,10 @@ generateModelMatchParameters(
     out << "latencyOfMatch = array1d(allMatches, ";
     printMinizincValue(out, params.getLatenciesForAllMatches());
     out << ");" << endl;
-}
 
-void
-generateSearchParameters(
-    const ModelParams& params,
-    ostream& out
-) {
-    out << "search_ann =" << endl;
-    out << "seq_search ([" << endl;
-
-    // The sel variables
-    {
-        out << "bool_search ([";
-        bool first_sel = true;
-        for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {
-            if (Utils::contains(params.getCopyInstrMatches(), m)) continue;
-            if (!first_sel) out << ", ";
-            else            first_sel = false;
-            out << "sel[" << m << "]";
-        }
-        out << "], input_order, indomain_max, complete),";
-        out << " % non-copy instruction matches" << endl;
-    }
-    {
-        out << "bool_search ([";
-        bool first_sel = true;
-        for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {
-            if (!Utils::contains(params.getCopyInstrMatches(), m)) continue;
-            if (!first_sel) out << ", ";
-            else            first_sel = false;
-            out << "sel[" << m << "]";
-        }
-        out << "], input_order, indomain_max, complete),";
-        out << " % copy instruction matches" << endl;
-    }
-
-    // Other variables
-    out << "int_search (mov, first_fail, indomain_min, complete)," << endl;
-    out << "int_search (ord, first_fail, indomain_min, complete)" << endl;
-    out << "]);" << endl;
+    out << "nonCopyMatches = ";
+    printMinizincList(out, params.getNonCopyInstrMatches(), "{", "}");
+    out << ";" << endl;
 }
 
 void
@@ -302,8 +266,6 @@ generateModelParameters(
     generateModelTargetMachineParameters(params, out);
     out << endl;
     generateModelMatchParameters(params, out);
-    out << endl;
-    generateSearchParameters(params, out);
 }
 
 void

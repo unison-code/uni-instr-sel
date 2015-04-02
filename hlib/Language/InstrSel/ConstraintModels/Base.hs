@@ -151,8 +151,8 @@ data HighLevelMatchParams
         -- ^ Whether to apply the def-dom-use constraint to this match. This
         -- will typically always be set to 'True' for all matches except those
         -- of the generic phi patterns.
-      , hlMatchIsCopyInstruction :: Bool
-        -- ^ Whether the corresponding instruction is a copy instruction.
+      , hlMatchIsNonCopyInstruction :: Bool
+        -- ^ Whether the corresponding instruction is a non-copy instruction.
       , hlMatchHasControlNodes :: Bool
         -- ^ Whether the corresponding pattern contains one or more
         -- control nodes.
@@ -238,8 +238,8 @@ data LowLevelModel
       , llMatchLatencies :: [Integer]
         -- ^ The latency of each match. An index into the list corresponds to
         -- the array index of a particular match.
-      , llMatchCopyInstructions :: [ArrayIndex]
-        -- ^ The matches that correspond to copy instructions.
+      , llMatchNonCopyInstructions :: [ArrayIndex]
+        -- ^ The matches that correspond to non-copy instructions.
       , llMatchADDUCs :: [Bool]
         -- ^ Whether to apply the def-dom-use constraint to some match. An index
         -- into the list corresponds to the array index of a particular match.
@@ -405,7 +405,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "latency"
       <*> v .: "constraints"
       <*> v .: "apply-def-dom-use-constraint"
-      <*> v .: "is-copy-instr"
+      <*> v .: "is-non-copy-instr"
       <*> v .: "has-control-nodes"
       <*> v .: "data-nodes-used-by-phis"
       <*> v .: "asm-str-node-maps"
@@ -425,7 +425,7 @@ instance ToJSON HighLevelMatchParams where
            , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
-           , "is-copy-instr"                .= (hlMatchIsCopyInstruction d)
+           , "is-non-copy-instr"            .= (hlMatchIsNonCopyInstruction d)
            , "has-control-nodes"            .= (hlMatchHasControlNodes d)
            , "data-nodes-used-by-phis"      .= (hlMatchDataNodesUsedByPhis d)
            , "asm-str-node-maps"            .= (hlMatchAsmStrNodeMaplist d)
@@ -465,7 +465,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-non-entry-label-nodes"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
-      <*> v .: "match-copy-instrs"
+      <*> v .: "match-non-copy-instrs"
       <*> v .: "match-adduc-settings"
       <*> v .: "match-constraints"
   parseJSON _ = mzero
@@ -490,7 +490,7 @@ instance ToJSON LowLevelModel where
            , "match-non-entry-label-nodes" .= (llMatchNonEntryLabelNodes m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
-           , "match-copy-instrs"           .= (llMatchCopyInstructions m)
+           , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)
            , "match-adduc-settings"        .= (llMatchADDUCs m)
            , "match-constraints"           .= (llMatchConstraints m)
            ]
