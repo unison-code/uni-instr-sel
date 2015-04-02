@@ -301,8 +301,7 @@ constraint
 % TODO: make this part generic
 constraint
   cost = sum (m in allMatches)
-         ( bool2int(sel[m])
-         * latencyOfMatch[m]
+         ( latencyOfMatch[m]
          * execFrequencyOfLabelsPlusNull[mov[m]]
          );
 
