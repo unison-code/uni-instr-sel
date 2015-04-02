@@ -289,9 +289,7 @@ mkSimpleNBitRegMBitImmCompInst
   -> Instruction
 mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
   let dtN = mkIntTempType n
-      dtM  = D.IntConstType { D.intConstValue = imm
-                            , D.intConstNumBits = Just m
-                            }
+      dtM = mkIntConstType imm m
       g = mkSimpleCompPattern op dtN dtM dtN
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
@@ -340,9 +338,7 @@ mkSimpleNBitRegMBitFirstImmCompInst
   -> Instruction
 mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
   let dtN = mkIntTempType n
-      dtM  = D.IntConstType { D.intConstValue = imm
-                            , D.intConstNumBits = Just m
-                            }
+      dtM = mkIntConstType imm m
       g = mkSimpleCompPattern op dtM dtN dtN
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
@@ -619,6 +615,32 @@ mkPseudoMoveInstrs =
          }
      ]
 
+-- | Implements the load of a zero immediate (free in mips32: just read $0).
+mkLoadZeroInstr :: [Instruction]
+mkLoadZeroInstr =
+  let g = mkSimpleCopyPattern (mkIntConstType (Range 0 0) 32) (mkIntTempType 32)
+      -- TODO: the location of the destination is in particular $0
+      cs = mkDataLocConstraints (map locID getGPRegisters) 2
+      pat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure g Nothing cs
+          , patOutputDataNodes = [2]
+          , patADDUC = True
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "load-zero "
+                                  , ASLocationOfDataNode 1
+                                  , ASVerbatim ","
+                                  , ASLocationOfDataNode 2
+                                  ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat]
+         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         }
+     ]
+
 -- | Makes the various move instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkMoveInstrs :: [Instruction]
@@ -628,6 +650,8 @@ mkMoveInstrs =
   mkMfloInstrs
   ++
   mkPseudoMoveInstrs
+  ++
+  mkLoadZeroInstr
 
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.

@@ -17,6 +17,7 @@ module Language.InstrSel.TargetMachines.Targets.Generic
   , fixLocIDs
   , mkDataNode
   , mkIntTempType
+  , mkIntConstType
   , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
   , mkGenericEntityDefInstructions
@@ -33,7 +34,9 @@ import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.Utils
-  ( Natural )
+  ( Natural
+  , Range (..)
+  )
 
 
 
@@ -54,6 +57,12 @@ mkGenericDataNodeType = DataNode { typeOfData = AnyType
 -- | Creates an 'IntTempType' with a given number of bits.
 mkIntTempType :: Natural -> DataType
 mkIntTempType n = IntTempType { intTempNumBits = n  }
+
+-- | Creates an 'IntConstType' with a given range and number of bits.
+mkIntConstType :: Range Integer -> Natural -> DataType
+mkIntConstType r n = IntConstType { intConstValue = r
+                                  , intConstNumBits = Just n
+                                  }
 
 -- | Creates a generic label node type.
 mkGenericLabelNodeType :: NodeType
