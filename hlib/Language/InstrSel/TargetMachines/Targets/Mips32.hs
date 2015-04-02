@@ -645,16 +645,17 @@ mkPseudoMoveInstrs =
 -- | Implements the load of immediates.
 mkLoadZeroInstr :: [Instruction]
 mkLoadZeroInstr =
-  let g r   = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType 32)
-      cs    = mkDataLocConstraints (map locID getGPRegisters) 2
-      pat r =
+  let g w r     = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType w)
+      cs        = mkDataLocConstraints (map locID getGPRegisters) 2
+      pat w r s =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure (g r) Nothing cs
+          , patOS = OS.OpStructure (g w r) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim "load-zero "
+                                -- TODO: name!
+                                  [ ASVerbatim $ s ++ " "
                                   , ASLocationOfDataNode 1
                                   , ASVerbatim ","
                                   , ASLocationOfDataNode 2
@@ -665,14 +666,38 @@ mkLoadZeroInstr =
     -- TODO: the location of the destination could be $0
     Instruction
          { instrID = 0
-         , instrPatterns = [pat (Range 0 0)]
-         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
-         },
-    -- Arbitrary immediates (implemented with lui + ori)
-    Instruction
+         , instrPatterns = [
+                             pat 16 (Range 0 0) "load-zero16"
+                           , pat 32 (Range 0 0) "load-zero32"
+                           ]
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
+                                        , instrIsNonCopy = False
+                                        }
+         }
+     , Instruction
+       -- 16-bits immediates (implemented with ori)
          { instrID = 0
-         , instrPatterns = [pat (Range (-2147483648) 2147483647)]
-         , instrProps = InstrProperties { instrCodeSize = 8, instrLatency = 2 }
+         , instrPatterns = [
+                             pat 16 (Range (-32768) 32767) "load-half16"
+                           , pat 32 (Range (-32768) 32767) "load-half32"
+                           ]
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 1
+                                        , instrIsNonCopy = False
+                                        }
+         }
+     , Instruction
+       -- Arbitrary immediates (implemented with lui + ori)
+         { instrID = 0
+         , instrPatterns = [
+                             pat 16 (Range (-2147483648) 2147483647) "load-full16"
+                           , pat 32 (Range (-2147483648) 2147483647) "load-full32"
+                           ]
+         , instrProps = InstrProperties { instrCodeSize = 8
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = False
+                                        }
          }
      ]
 
