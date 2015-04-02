@@ -194,11 +194,11 @@ constraint
        endif
   );
 
-% Non-selected matches must be moved to the null block.
+% Selected matches must not be moved to the null block.
 constraint
   forall (m in allMatches)
   (
-    not sel[m] <-> mov[m] == labelValueForNull
+    sel[m] <-> mov[m] != labelValueForNull
   );
 
 % Selected matches that have an entry label must be moved in the basic block of
