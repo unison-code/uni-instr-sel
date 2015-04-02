@@ -692,8 +692,8 @@ mkPseudoMoveInstrs =
      ]
 
 -- | Implements the load of immediates.
-mkLoadZeroInstr :: [Instruction]
-mkLoadZeroInstr =
+mkLoadImmInstr :: [Instruction]
+mkLoadImmInstr =
   let g w r     = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType w)
       cs        = mkDataLocConstraints (map locID getGPRegisters) 2
       pat w r s =
@@ -760,7 +760,49 @@ mkMoveInstrs =
   ++
   mkPseudoMoveInstrs
   ++
-  mkLoadZeroInstr
+  mkLoadImmInstr
+
+-- | Makes sign/zero extension instructions.
+mkExtInstrs :: [Instruction]
+mkExtInstrs =
+  let mkCompNode op = ComputationNode { compOp = op }
+      g t n = mkGraph
+       ( map
+           Node
+           [ ( 0, NodeLabel 0 (mkCompNode $ O.CompTypeConvOp t) )
+           , ( 1, NodeLabel 1 (mkDataNode (mkIntTempType n)) )
+           , ( 2, NodeLabel 2 (mkDataNode (mkIntTempType 32)) )
+           ]
+       )
+       ( map
+           Edge
+           [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+           , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+           ]
+       )
+      cs  = mkDataLocConstraints (map locID getGPRegisters) 1
+            ++
+            mkDataLocConstraints (map locID getGPRegisters) 2
+      pat t n s =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure (g t n) Nothing cs
+          , patOutputDataNodes = [2]
+          , patADDUC = True
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim $ s ++ " "
+                                  , ASLocationOfDataNode 2
+                                  ]
+          }
+  in [ Instruction
+         { instrID = 0
+         , instrPatterns = [pat O.SExt 16 "sext", pat O.ZExt 8 "zext"]
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 1
+                                        , instrIsNonCopy = True
+                                        }
+         }
+     ]
 
 -- | Makes a "set if equal to" comparison. The actual implementation does a
 -- bitwise 'and' on the result of two 'slt' instructions.
@@ -1002,6 +1044,8 @@ mkInstructions =
   mkRetInstrs
   ++
   mkMoveInstrs
+  ++
+  mkExtInstrs
 
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine
