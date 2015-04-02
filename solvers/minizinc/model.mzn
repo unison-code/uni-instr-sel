@@ -241,18 +241,13 @@ constraint
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
 constraint
-  forall (e in allEntitiesInFunction)
+  forall (e in allEntitiesInFunction, l in allLabelsInFunction)
   (
-    forall (l in allLabelsInFunction)
+    l = def[e]
+    ->
+    exists (m in allMatches)
     (
-      l = def[e]
-      ->
-      exists (m in allMatches)
-      (
-        sel[m]
-        /\
-        (l = mov[m] \/ l in nonEntryLabelsInMatch[m])
-      )
+      l = mov[m] \/ (sel[m] /\ l in nonEntryLabelsInMatch[m])
     )
   );
 
