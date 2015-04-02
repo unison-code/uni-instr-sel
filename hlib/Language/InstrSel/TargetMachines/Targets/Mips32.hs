@@ -824,6 +824,7 @@ mkInstructions =
     , ("or" , O.IntOp O.Or)
     , ("xor", O.IntOp O.XOr)
     , ("slt", O.IntOp O.LT)
+    , ("sltu", O.UIntOp O.GT)
     ]
   ++
   concatMap
