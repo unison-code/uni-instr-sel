@@ -167,6 +167,33 @@ constraint
        endif
   );
 
+% Enforce that, for each entity, exactly one match must be selected such that
+% the entity is defined.
+%
+% This is an implied constraint, but it also enforces that the patterns for
+% defining the function input and constants are selected. Such patterns do not
+% cover any operations, they are not entailed in the above constraint for
+% exactly covering each operation.
+constraint
+  forall (e in allEntitiesInFunction)
+  (
+    let {
+      set of int: mset = { m | m in allMatches
+                                    where e in entitiesDefinedByMatch[m]
+                         }
+    }
+    in if card(mset) = 1
+       then sel[min(mset)]
+       else if card(mset) = 2
+            then sel[min(mset)] xor sel[max(mset)]
+            else sum (m in mset)
+                 (
+                   bool2int(sel[m])
+                 ) = 1
+            endif
+       endif
+  );
+
 % Non-selected matches must be moved to the null block.
 constraint
   forall (m in allMatches)
