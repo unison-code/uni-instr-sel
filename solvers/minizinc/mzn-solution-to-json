@@ -137,16 +137,19 @@ for i in range(len(content)):
 
 # Add, modify, or remove certain data in order to facilitate postprocessing
 
-# Remove the null label from bb-order
-ord_data = getRequiredDataByName(all_data, "ord")
+# Construct block order data from block successor data
+succ_data = getRequiredDataByName(all_data, "succ")
 null_label = getRequiredDataByName(all_data, "label_value_for_null")
 try:
     null_label = int(null_label)
 except ValueError:
     error("Value of 'label_value_for_null' is not an int")
-if null_label < 0 or null_label >= len(ord_data):
+if null_label < 0 or null_label >= len(succ_data):
     error("Value of 'label_value_for_null' is out of bounds")
-del ord_data[null_label]
+ord_data = [succ_data[null_label]]
+while succ_data[ord_data[-1]] != null_label:
+    ord_data.append(succ_data[ord_data[-1]])
+all_data.append(["ord", ord_data])
 
 # Add 'has_d_loc' array to data
 loc_data = getRequiredDataByName(all_data, "loc")
