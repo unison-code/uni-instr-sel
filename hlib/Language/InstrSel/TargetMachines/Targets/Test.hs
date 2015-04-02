@@ -145,7 +145,7 @@ tmTest =
                       True
                       (AssemblyStringTemplate [])
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               , Instruction
                   1
                   [ InstrPattern
@@ -163,7 +163,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               , Instruction
                   2
                   [ InstrPattern
@@ -181,7 +181,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               , Instruction
                   3
                   [ InstrPattern
@@ -195,7 +195,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               , Instruction
                   4
                   [ InstrPattern
@@ -205,7 +205,7 @@ tmTest =
                       True
                       (AssemblyStringTemplate [])
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               , Instruction
                   5
                   [ InstrPattern
@@ -219,7 +219,7 @@ tmTest =
                         ]
                       )
                   ]
-                  (InstrProperties 1 1)
+                  (InstrProperties 1 1 True)
               ]
   in TargetMachine
        (toTargetMachineID "test")

@@ -217,7 +217,10 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
   in Instruction
        { instrID = 0
        , instrPatterns = [pat]
-       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
        }
 
 -- | Creates an instruction that consists of only a single computation node,
@@ -312,7 +315,10 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
   in Instruction
        { instrID = 0
        , instrPatterns = [pat]
-       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
        }
 
 -- | Creates an instruction that consists of only a single computation node,
@@ -361,7 +367,10 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
   in Instruction
        { instrID = 0
        , instrPatterns = [pat]
-       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
        }
 
 -- | Creates a conditional branch pattern for a given comparison operator. The
@@ -462,7 +471,10 @@ mkCondBrInstrs ord_str ord_op inv_str inv_op =
   in Instruction
        { instrID = 0
        , instrPatterns = [ord_pat, inv_pat]
-       , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 2
+                                      , instrIsNonCopy = True
+                                      }
        }
 
 -- | Makes the unconditional branch instructions.
@@ -498,7 +510,10 @@ mkBrInstrs =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -534,7 +549,10 @@ mkRetInstrs =
            -- TODO: model 16-bits ret, properly, sometimes shifts are needed
            -- (see gsm.add.gsm_abs)
          , instrPatterns = [pat 16, pat 32]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -559,7 +577,10 @@ mkMfhiInstrs =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -584,7 +605,10 @@ mkMfloInstrs =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 2 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -611,7 +635,10 @@ mkPseudoMoveInstrs =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 4, instrLatency = 1 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = False
+                                        }
          }
      ]
 
@@ -637,7 +664,10 @@ mkLoadZeroInstr =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 2
+                                        , instrIsNonCopy = False
+                                        }
          }
      ]
 

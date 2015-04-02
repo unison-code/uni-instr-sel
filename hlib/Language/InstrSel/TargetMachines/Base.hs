@@ -86,6 +86,8 @@ data InstrProperties
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
+      , instrIsNonCopy :: Bool
+        -- ^ Whether the instruction is a non-copy instruction.
       }
   deriving (Show)
 

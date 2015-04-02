@@ -57,8 +57,10 @@ copyExtend tm =
                                          (map getNodeID new_data_ns)
         in os { osGraph = new_g, osConstraints = new_cs }
       copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
-      copyExtendInstr i = i { instrPatterns =
-                                map copyExtendPat (instrPatterns i)
-                            }
+      copyExtendInstr i =
+        let is_non_copy = instrIsNonCopy $ instrProps i
+        in if is_non_copy
+           then i { instrPatterns = map copyExtendPat (instrPatterns i) }
+           else i
       new_instrs = map copyExtendInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }

@@ -135,8 +135,10 @@ mkGenericPhiInstructions =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps =
-             ( InstrProperties { instrCodeSize = 0, instrLatency = 0 } )
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -174,7 +176,10 @@ mkGenericBrFallThroughInstructions =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -206,7 +211,10 @@ mkGenericEntityDefInstructions =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
+                                        , instrIsNonCopy = True
+                                        }
          }
      ]
 
@@ -249,7 +257,10 @@ mkGenericCopyInstructions =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat 8, pat 16, pat 32]
-         , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
+                                        , instrIsNonCopy = False
+                                        }
          }
      ]
 
