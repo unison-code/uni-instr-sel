@@ -124,7 +124,6 @@ var int: cost;
 % Global constraints
 %====================
 
-include "exactly.mzn";
 include "circuit.mzn";
 
 
@@ -152,12 +151,20 @@ constraint
   forall (o in allOperationsInFunction)
   (
     let {
-      array[int] of var bool:
-      matches = [ sel[m] | m in allMatches
-                                where o in operationsCoveredByMatch[m]
-                ]
+      set of int: mset = { m | m in allMatches
+                                    where o in operationsCoveredByMatch[m]
+                         }
     }
-    in exactly(1, matches, 1)
+    in if card(mset) = 1
+       then sel[min(mset)]
+       else if card(mset) = 2
+            then sel[min(mset)] xor sel[max(mset)]
+            else sum (m in mset)
+                 (
+                   bool2int(sel[m])
+                 ) = 1
+            endif
+       endif
   );
 
 % Non-selected matches must be moved to the null block.
@@ -177,7 +184,7 @@ constraint
     % entry.
     forall (r in entryLabelOfMatch[m])
     (
-      sel[m] -> mov[m] == r
+      sel[m] -> mov[m] = r
     )
   );
 
@@ -197,7 +204,7 @@ constraint
             }
         in def[e] in labels_in_m
       else
-        def[e] == mov[m]
+        def[e] = mov[m]
       endif
     )
   );
@@ -213,13 +220,13 @@ constraint
   (
     forall (l in allLabelsInFunction)
     (
-      l == def[e]
+      l = def[e]
       ->
       exists (m in allMatches)
       (
         sel[m]
         /\
-        (l == mov[m] \/ l in nonEntryLabelsInMatch[m])
+        (l = mov[m] \/ l in nonEntryLabelsInMatch[m])
       )
     )
   );
@@ -231,7 +238,7 @@ constraint
   (
     forall (e in defEdgesForLabelInFunction[l])
     (
-      def[e] == l
+      def[e] = l
     )
   );
 
@@ -256,7 +263,7 @@ constraint
 % The block of the entry label (i.e. function entry point) must be placed as the
 % first block, and the block of the null label must be placed as the last block.
 constraint
-  succ[labelValueForNull] == entryLabelOfFunction;
+  succ[labelValueForNull] = entryLabelOfFunction;
 
 % Constrain the loc value for all entities that are state nodes.
 constraint
