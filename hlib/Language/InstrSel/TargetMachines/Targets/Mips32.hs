@@ -762,6 +762,40 @@ mkMoveInstrs =
   ++
   mkLoadZeroInstr
 
+-- | Makes a "set if equal to" comparison. The actual implementation does a
+-- bitwise 'and' on the result of two 'slt' instructions.
+mkEqComparison :: Instruction
+mkEqComparison =
+  let dt16 = mkIntTempType 16
+      dt1  = mkIntTempType 1
+      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.Eq) dt16 dt16 dt1
+      cs   = concatMap ( \(r, nid) ->
+                          mkDataLocConstraints (map locID r) nid
+                       )
+             (zip (replicate 3 getGPRegisters) [1, 2, 3])
+      pat = InstrPattern
+              { patID = 0
+              , patOS = OS.OpStructure g Nothing cs
+              , patOutputDataNodes = [3]
+              , patADDUC = True
+              , patAsmStrTemplate = AssemblyStringTemplate
+                                      [ ASVerbatim $ "seq "
+                                      , ASLocationOfDataNode 0
+                                      , ASVerbatim ","
+                                      , ASLocationOfDataNode 1
+                                      , ASVerbatim ","
+                                      , ASLocationOfDataNode 2
+                                      ]
+              }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 12
+                                      , instrLatency = 3
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -873,6 +907,8 @@ mkInstructions =
     , ("slt", O.IntOp O.LT)
     , ("sltu", O.UIntOp O.GT)
     ]
+  ++
+  [ mkEqComparison ]
   ++
   concatMap
     ( \(s1, op1, s2, op2) -> [
