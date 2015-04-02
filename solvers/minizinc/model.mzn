@@ -111,8 +111,9 @@ array[allMatches] of var bool: sel;
 % Basic block to which the matches are moved.
 array[allMatches] of var allLabelsInFunctionPlusNull: mov;
 
-% Block ordering.
-array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: ord;
+% Block ordering (succ[b] is the block appearing immeditely after block b in the
+% generated code).
+array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: succ;
 
 % Cost.
 var int: cost;
@@ -123,8 +124,8 @@ var int: cost;
 % Global constraints
 %====================
 
-include "alldifferent.mzn";
 include "exactly.mzn";
+include "circuit.mzn";
 
 
 
@@ -136,7 +137,7 @@ include "exactly.mzn";
 % immediately followed by block b.
 predicate fall_through(int: m, int: b) =
 (
-  ord[mov[m]] + 1 == ord[b]
+  succ[mov[m]] = b
 );
 
 
@@ -248,16 +249,14 @@ constraint
     )
   );
 
-% The basic blocks must be serialized in some order.
+% Ensure that succ forms a circuit.
 constraint
-  alldifferent(ord);
+  circuit(succ) :: domain;
 
-% The entry label (i.e. function entry point) must be placed as the first basic
-% block, and the null label must be placed as the last basic block.
+% The block of the entry label (i.e. function entry point) must be placed as the
+% first block, and the block of the null label must be placed as the last block.
 constraint
-  ord[entryLabelOfFunction] == 0;
-constraint
-  ord[labelValueForNull] == numLabelValues - 1;
+  succ[labelValueForNull] == entryLabelOfFunction;
 
 % Constrain the loc value for all entities that are state nodes.
 constraint
@@ -309,7 +308,7 @@ output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
        , "mov=", show(mov), "\n"
-       , "ord=", show(ord), "\n"
+       , "succ=", show(succ), "\n"
        , "label_value_for_null=", show(labelValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "cost=", show(cost), "\n"
