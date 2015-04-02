@@ -15,7 +15,9 @@
 module Language.InstrSel.TargetMachines.Targets.Generic
   ( fixInstrIDs
   , fixLocIDs
-  , mkGenericBrFallThroughInstructions
+  , mkDataNode
+  , mkIntTempType
+  , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
   , mkGenericEntityDefInstructions
   , mkGenericCopyInstructions
@@ -30,6 +32,8 @@ import Language.InstrSel.Graphs
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.TargetMachines.Base
+import Language.InstrSel.Utils
+  ( Natural )
 
 
 
@@ -37,11 +41,19 @@ import Language.InstrSel.TargetMachines.Base
 -- Functions
 -------------
 
+-- | Creates a data node without specified origin.
+mkDataNode :: DataType -> NodeType
+mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
+
 -- | Creates a generic data node type.
 mkGenericDataNodeType :: NodeType
 mkGenericDataNodeType = DataNode { typeOfData = AnyType
                                  , originOfData = Nothing
                                  }
+
+-- | Creates an 'IntTempType' with a given number of bits.
+mkIntTempType :: Natural -> DataType
+mkIntTempType n = IntTempType { intTempNumBits = n  }
 
 -- | Creates a generic label node type.
 mkGenericLabelNodeType :: NodeType
@@ -192,12 +204,12 @@ mkGenericEntityDefInstructions =
 -- | Creates a set of instructions for handling null-copy operations.
 mkGenericCopyInstructions :: [Instruction]
 mkGenericCopyInstructions =
-  let g = mkGraph
+  let g w = mkGraph
             ( map
                 Node
                 [ ( 0, NodeLabel 0 CopyNode )
-                , ( 1, NodeLabel 1 mkGenericDataNodeType )
-                , ( 2, NodeLabel 2 mkGenericDataNodeType )
+                , ( 1, NodeLabel 1 $ mkDataNode $ mkIntTempType w)
+                , ( 2, NodeLabel 2 $ mkDataNode $ mkIntTempType w)
                 ]
             )
             ( map
@@ -217,17 +229,17 @@ mkGenericCopyInstructions =
                        ANodeIDExpr 2
                  )
            ]
-      pat =
+      pat w =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g Nothing cs
+          , patOS = OS.OpStructure (g w) Nothing cs
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate []
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
+         , instrPatterns = [pat 8, pat 16, pat 32]
          , instrProps = InstrProperties { instrCodeSize = 0, instrLatency = 0 }
          }
      ]

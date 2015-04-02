@@ -127,7 +127,6 @@ mkSimpleCompPattern
   -> Graph
 mkSimpleCompPattern op src1 src2 dst =
   let mkCompNode = ComputationNode { compOp = op }
-      mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
   in mkGraph
        ( map
            Node
@@ -154,8 +153,7 @@ mkSimpleCopyPattern
      -- ^ The data type of the result.
   -> Graph
 mkSimpleCopyPattern src dst =
-  let mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
-  in mkGraph
+  mkGraph
        ( map
            Node
            [ ( 0, NodeLabel 0 CopyNode )
@@ -169,10 +167,6 @@ mkSimpleCopyPattern src dst =
            , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
            ]
        )
-
--- | Makes an 'IntTempType' with a given number of bits.
-mkIntTempType :: Natural -> D.DataType
-mkIntTempType n = D.IntTempType { D.intTempNumBits = n  }
 
 -- | Creates an instance of the simple copy pattern. All data are assumed to be
 -- 32 bits in size.
