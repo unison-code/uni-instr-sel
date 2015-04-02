@@ -595,11 +595,20 @@ mkRetInstrs =
           }
   in [ Instruction
          { instrID = 0
-           -- TODO: model 16-bits ret, properly, sometimes shifts are needed
-           -- (see gsm.add.gsm_abs)
-         , instrPatterns = [pat 16, pat 32]
+         , instrPatterns = [pat 32]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 2
+                                        , instrIsNonCopy = True
+                                        }
+         }
+       ,
+       Instruction
+         { instrID = 0
+           -- The 16-bits returns truncate the result value by shifting 16 bits
+           -- to the left and 16 bits to the right "arithmetically".
+         , instrPatterns = [pat 16]
+         , instrProps = InstrProperties { instrCodeSize = 12
+                                        , instrLatency = 4
                                         , instrIsNonCopy = True
                                         }
          }
@@ -762,16 +771,16 @@ mkMoveInstrs =
   ++
   mkLoadImmInstr
 
--- | Makes sign/zero extension instructions.
-mkExtInstrs :: [Instruction]
-mkExtInstrs =
+-- | Makes type conversion instructions.
+mkTypeConvInstrs :: [Instruction]
+mkTypeConvInstrs =
   let mkCompNode op = ComputationNode { compOp = op }
-      g t n = mkGraph
+      g t (n, m) = mkGraph
        ( map
            Node
            [ ( 0, NodeLabel 0 (mkCompNode $ O.CompTypeConvOp t) )
            , ( 1, NodeLabel 1 (mkDataNode (mkIntTempType n)) )
-           , ( 2, NodeLabel 2 (mkDataNode (mkIntTempType 32)) )
+           , ( 2, NodeLabel 2 (mkDataNode (mkIntTempType m)) )
            ]
        )
        ( map
@@ -783,10 +792,10 @@ mkExtInstrs =
       cs  = mkDataLocConstraints (map locID getGPRegisters) 1
             ++
             mkDataLocConstraints (map locID getGPRegisters) 2
-      pat t n s =
+      pat t (n, m) s =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure (g t n) Nothing cs
+          , patOS = OS.OpStructure (g t (n, m)) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
@@ -796,9 +805,12 @@ mkExtInstrs =
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat O.SExt 16 "sext", pat O.ZExt 8 "zext"]
-         , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 1
+         , instrPatterns = [ pat O.SExt  (16, 32) "sext"
+                           , pat O.ZExt  (8, 32)  "zext"
+                           , pat O.Trunc (32, 16) "trunc"
+                           ]
+         , instrProps = InstrProperties { instrCodeSize = 0
+                                        , instrLatency = 0
                                         , instrIsNonCopy = True
                                         }
          }
@@ -1045,7 +1057,7 @@ mkInstructions =
   ++
   mkMoveInstrs
   ++
-  mkExtInstrs
+  mkTypeConvInstrs
 
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine
