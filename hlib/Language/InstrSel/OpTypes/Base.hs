@@ -231,7 +231,7 @@ instance DebugShow CompOp where
   dShow (CompMemoryOp op) = dShow op
 
 instance DebugShow ArithOp where
-  dShow = show . getArithOpType
+  dShow = show
 
 instance DebugShow ArithOpType where
   dShow = show
