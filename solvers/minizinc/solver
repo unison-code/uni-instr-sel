@@ -56,14 +56,17 @@ MINIZINC_PARAMS_FILEPATH=""
 MINIZINC_FULL_MODEL_FILEPATH=""
 MINIZINC_OUTPUT_FILEPATH=""
 
-
-
 #================
 # HELP FUNCTIONS
 #================
 
 function echoerr {
     echo "$@" 1>&2
+}
+
+function exe {
+    echo "  Executing: $@";
+    eval "$@";
 }
 
 function exitIfFailed {
@@ -79,8 +82,8 @@ function ensureFileExists {
     fi
 }
 
-function reportNewFile {
-    echo "  File created: $@"
+function reportNewEntity {
+    echo "  Created: $@"
 }
 
 
@@ -110,51 +113,53 @@ else
     exit 1
 fi
 
-# Create temporary directory
+echo "* Creating temporary directory..."
 TMP_DIR=`mktemp -d`
 if [ ! -d "$TMP_DIR" ]; then
     echoerr "Failed to create temporary directory"
 fi
+reportNewEntity $TMP_DIR
 
 # Set filepath variables
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
 MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
 
-echo "Generating MiniZinc parameter file..."
-$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH > $MINIZINC_PARAMS_FILEPATH
+echo "* Generating MiniZinc parameter file..."
+exe "$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
 exitIfFailed
-reportNewFile $MINIZINC_PARAMS_FILEPATH
+reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
-echo "Creating MiniZinc model file..."
+echo "* Creating MiniZinc model file..."
 ensureFileExists $MINIZINC_PARAMS_FILEPATH
-cat "$MINIZINC_BASE_MODEL_FILEPATH" > "$MINIZINC_FULL_MODEL_FILEPATH"
+exe "cat $MINIZINC_BASE_MODEL_FILEPATH > $MINIZINC_FULL_MODEL_FILEPATH"
 exitIfFailed
 ensureFileExists $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
-cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH
+exe "cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH"
 exitIfFailed
-reportNewFile $MINIZINC_FULL_MODEL_FILEPATH
+reportNewEntity $MINIZINC_FULL_MODEL_FILEPATH
 
-echo "Running MiniZinc solver..."
-minizinc $MINIZINC_FULL_MODEL_FILEPATH > $MINIZINC_OUTPUT_FILEPATH \
-  2> /dev/null
+echo "* Running MiniZinc solver..."
+exe "minizinc $MINIZINC_FULL_MODEL_FILEPATH > $MINIZINC_OUTPUT_FILEPATH" \
+    "  2> /dev/null"
 STATUS=$?
 if [ $STATUS -ne 0 ]; then
     echoerr "minizinc exited with failure"
     exit 1
 fi
-reportNewFile $MINIZINC_OUTPUT_FILEPATH
+reportNewEntity $MINIZINC_OUTPUT_FILEPATH
 
-echo "Converting MiniZinc solution to JSON format..."
+echo "* Converting MiniZinc solution to JSON format..."
 ensureFileExists $MINIZINC_OUTPUT_FILEPATH
-$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH > $JSON_OUTPUT_FILEPATH
+exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH" \
+    "  > $JSON_OUTPUT_FILEPATH"
 exitIfFailed
 ensureFileExists $JSON_OUTPUT_FILEPATH
-reportNewFile $JSON_OUTPUT_FILEPATH
+reportNewEntity $JSON_OUTPUT_FILEPATH
 
-echo "Cleaning up temporary files..."
-rm -rf $TMP_DIR
+echo "* Cleaning up temporary files..."
+exe "rm -rf $TMP_DIR"
 exitIfFailed
