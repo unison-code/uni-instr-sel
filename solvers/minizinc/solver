@@ -146,13 +146,16 @@ exitIfFailed
 reportNewEntity $MINIZINC_FULL_MODEL_FILEPATH
 
 echo "* Running MiniZinc solver..."
-exe "minizinc $MINIZINC_FULL_MODEL_FILEPATH > $MINIZINC_OUTPUT_FILEPATH" \
+WORKING_DIR=`pwd`
+cd $TMP_DIR
+exe "minizinc $MINIZINC_FULL_MODEL_FILENAME > $MINIZINC_OUTPUT_FILEPATH" \
     "  2> /dev/null"
 STATUS=$?
 if [ $STATUS -ne 0 ]; then
     echoerr "minizinc exited with failure"
     exit 1
 fi
+cd $WORKING_DIR
 reportNewEntity $MINIZINC_OUTPUT_FILEPATH
 
 echo "* Converting MiniZinc solution to JSON format..."
