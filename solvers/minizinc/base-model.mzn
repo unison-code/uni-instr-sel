@@ -53,6 +53,9 @@ array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
 
+% These variables will be set by concatenating the definitions to the end of
+% this file.
+
 
 
 %=====================
