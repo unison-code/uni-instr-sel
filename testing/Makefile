@@ -85,7 +85,11 @@ distclean-toolchain:
 
 .PHONY: clean
 clean:
-	$(RM) *.json
+	$(RM) *.ce.*.json
+	$(RM) *.p.json
+	$(RM) *.model.json
+	$(RM) *.aimaps.json
+	$(RM) *.sol.json
 	$(RM) *.s
 	$(RM) *.dot
 	$(RM) *.pdf
