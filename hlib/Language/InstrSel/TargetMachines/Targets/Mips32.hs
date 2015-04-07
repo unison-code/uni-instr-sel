@@ -583,6 +583,17 @@ mkRetInstrs =
                 , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
+      vg = mkGraph
+           ( map
+                Node
+                [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
+                , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 ) ]
+            )
       bb_cs n = mkMatchToBlockMovementConstraints (g n)
       reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
       pat n =
@@ -593,9 +604,18 @@ mkRetInstrs =
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
           }
+      vpat =
+        InstrPattern
+          { patID = 0
+          , patOS = OS.OpStructure (vg) (Just 1)
+                    (mkMatchToBlockMovementConstraints vg)
+          , patOutputDataNodes = []
+          , patADDUC = True
+          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
+          }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat 32]
+         , instrPatterns = [pat 32, vpat]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 2
                                         , instrIsNonCopy = True
