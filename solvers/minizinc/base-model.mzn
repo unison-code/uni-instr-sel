@@ -121,6 +121,7 @@ var int: cost;
 %====================
 
 include "circuit.mzn";
+include "table.mzn";
 
 
 
@@ -270,15 +271,40 @@ constraint
 % Enforce that, for every selected match, every use of an entity has a
 % definition such that the defintion dominates the use. These constraints shall
 % not be applied to the generic phi patterns.
-constraint
-  forall (m in allMatches where applyDefDomUseConstraintForMatch[m])
+%
+% The constraint below is essentially a more efficient implementation of:
+%     constraint
+%       forall (m in allMatches where applyDefDomUseConstraintForMatch[m])
+%       (
+%         sel[m]
+%         ->
+%         forall (e in entitiesUsedByMatch[m])
+%         (
+%           def[e] in domSetOfLabelInFunction[mov[m]]
+%         )
+%       );
+int: DomRelSize =
+  sum (l in allLabelsInFunction)
   (
-    sel[m]
-    ->
-    forall (e in entitiesUsedByMatch[m])
-    (
-      def[e] in domSetOfLabelInFunction[mov[m]]
-    )
+    card(domSetOfLabelInFunction[l])
+  ) + numLabelsInFunction;
+array[1..DomRelSize, 1..2] of allLabelsInFunctionPlusNull: DomRel =
+  array2d(1..DomRelSize, 1..2,
+    [ if k=1 then i else j endif | i in allLabelsInFunction,
+                                   j in domSetOfLabelInFunction[i],
+                                   k in 1..2
+    ]
+    ++
+	[ if k=1 then labelValueForNull else j endif | j in allLabelsInFunction,
+                                                   k in 1..2
+    ]);
+
+constraint
+  forall ( m in allMatches, e in entitiesUsedByMatch[m]
+           where applyDefDomUseConstraintForMatch[m]
+         )
+  (
+    table([mov[m], def[e]], DomRel)
   );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
