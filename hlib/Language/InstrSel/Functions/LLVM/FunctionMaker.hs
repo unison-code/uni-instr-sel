@@ -38,9 +38,6 @@ import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
 
--- TODO: remove
-import Debug.Trace
-
 
 
 --------------
