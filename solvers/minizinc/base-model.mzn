@@ -77,6 +77,16 @@ int: labelValueForNull = numLabelValues - 1;
 % Reference to to the null-location value.
 int: locValueForNull = numLocValues - 1;
 
+% Extends the external parameter 'domSetOfLabelInFunction' with a value
+% for the null label (which is assumed to be dominated by all labels).
+array[allLabelsInFunctionPlusNull] of set of int:
+  domSetOfLabelInFunctionPlusNull =
+    array1d( allLabelsInFunctionPlusNull
+           , domSetOfLabelInFunction
+             ++
+             array1d(labelValueForNull..labelValueForNull, [allLabelsInFunction])
+           );
+
 % Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
 % of 0 for the null label.
 array[allLabelsInFunctionPlusNull] of int: execFrequencyOfLabelsPlusNull =
@@ -271,20 +281,17 @@ constraint
     )
   );
 
-% Enforce that, for every selected match, every use of an entity has a
-% definition such that the defintion dominates the use. These constraints shall
-% not be applied to the generic phi patterns.
+% Enforce that every entity is defined in a block such that the block dominates
+% all blocks wherein the entity is used. This constraint shall not be applied to
+% the generic phi patterns.
 %
-% The constraint below is essentially a more efficient implementation of:
+% The code below is essentially a more efficient implementation of:
 %     constraint
-%       forall (m in allMatches where applyDefDomUseConstraintForMatch[m])
+%       forall ( m in allMatches, e in entitiesUsedByMatch[m]
+%                     where applyDefDomUseConstraintForMatch[m]
+%              )
 %       (
-%         sel[m]
-%         ->
-%         forall (e in entitiesUsedByMatch[m])
-%         (
-%           def[e] in domSetOfLabelInFunction[mov[m]]
-%         )
+%         def[e] in domSetOfLabelInFunctionPlusNull[mov[m]]
 %       );
 int: DomRelSize =
   sum (l in allLabelsInFunction)
@@ -293,18 +300,13 @@ int: DomRelSize =
   ) + numLabelsInFunction;
 array[1..DomRelSize, 1..2] of allLabelsInFunctionPlusNull: DomRel =
   array2d(1..DomRelSize, 1..2,
-    [ if k=1 then i else j endif | i in allLabelsInFunction,
-                                   j in domSetOfLabelInFunction[i],
+    [ if k=1 then i else j endif | i in allLabelsInFunctionPlusNull,
+                                   j in domSetOfLabelInFunctionPlusNull[i],
                                    k in 1..2
-    ]
-    ++
-	[ if k=1 then labelValueForNull else j endif | j in allLabelsInFunction,
-                                                   k in 1..2
     ]);
-
 constraint
   forall ( m in allMatches, e in entitiesUsedByMatch[m]
-           where applyDefDomUseConstraintForMatch[m]
+                where applyDefDomUseConstraintForMatch[m]
          )
   (
     table([mov[m], def[e]], DomRel)
