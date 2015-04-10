@@ -47,6 +47,7 @@ MINIZINC_PARAMS_FILENAME="params.mzn"
 MINIZINC_OUTPUT_FILENAME="model.sol.mzn"
 MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
 MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
+MINIZINC_ERROR_FILENAME="error.log"
 
 # These will be set after parsing command-line arguments
 MODEL_PARAMS_FILEPATH=""
@@ -55,6 +56,7 @@ TMP_DIR=""
 MINIZINC_PARAMS_FILEPATH=""
 MINIZINC_FULL_MODEL_FILEPATH=""
 MINIZINC_OUTPUT_FILEPATH=""
+MINIZINC_ERROR_FILEPATH=""
 
 
 
@@ -115,7 +117,7 @@ else
     exit 1
 fi
 
-# Create temporary directory
+echo "* Creating temporary directory..."
 TMP_DIR=`mktemp -d`
 if [ ! -d "$TMP_DIR" ]; then
     echoerr "Failed to create temporary directory"
@@ -126,6 +128,7 @@ reportNewEntity $TMP_DIR
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
 MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
+MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 
 echo "* Generating MiniZinc parameter file..."
 exe "$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH" \
@@ -149,11 +152,11 @@ echo "* Running MiniZinc solver..."
 WORKING_DIR=`pwd`
 cd $TMP_DIR
 exe "minizinc -a $MINIZINC_FULL_MODEL_FILENAME" \
-    "  > $MINIZINC_OUTPUT_FILEPATH" \
-    "  2> /dev/null"
+    "  > $MINIZINC_OUTPUT_FILEPATH 2> $MINIZINC_ERROR_FILEPATH"
 STATUS=$?
 if [ $STATUS -ne 0 ]; then
     echoerr "minizinc exited with failure"
+    cat $MINIZINC_ERROR_FILEPATH
     exit 1
 fi
 cd $WORKING_DIR
