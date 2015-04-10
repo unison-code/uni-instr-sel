@@ -34,7 +34,7 @@ raiseLowLevelSolution
   -> HighLevelSolution
 raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
   let ai_match_id_maps = ai2MatchIDs ai_maps
-      ai_label_node_id_maps = ai2LabelNodeIDs ai_maps
+      ai_label_node_id_maps = ai2BlockNodeIDs ai_maps
       ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
       ai_location_id_maps = ai2LocationIDs ai_maps
       getNodeIDFromLabelAI ai = ai_label_node_id_maps !! (fromIntegral ai)
@@ -62,14 +62,14 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
                         then Just (nid, getLocationIDFromAI ai)
                         else Nothing
                     )
-                    (llSolHasDataNodeLocation sol)
+                    (llSolHasValueNodeLocation sol)
                     ai_entity_node_id_maps
-                    (llSolLocsOfDataNodes sol)
+                    (llSolLocsOfValueNodes sol)
   in HighLevelSolution
        { hlSolOrderOfBBs = order_of_bbs
        , hlSolSelMatches = sel_matches
        , hlSolBBsOfSelMatches = bbs_of_sel_matches
-       , hlSolLocsOfDataNodes = locs_of_data_nodes
+       , hlSolLocsOfValueNodes = locs_of_data_nodes
        , hlSolCost = llSolCost sol
        , hlIsOptimal = llIsOptimal sol
        }

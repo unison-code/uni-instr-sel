@@ -15,7 +15,7 @@
 module Language.InstrSel.TargetMachines.Targets.Generic
   ( fixInstrIDs
   , fixLocIDs
-  , mkDataNode
+  , mkValueNode
   , mkIntTempType
   , mkIntConstType
   , mkGenericBrFallthroughInstructions
@@ -29,6 +29,8 @@ import Language.InstrSel.Constraints
 import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.DataTypes
   ( DataType (..) )
+import Language.InstrSel.Functions
+  ( mkEmptyBBLabel )
 import Language.InstrSel.Graphs
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
@@ -44,15 +46,15 @@ import Language.InstrSel.Utils
 -- Functions
 -------------
 
--- | Creates a data node without specified origin.
-mkDataNode :: DataType -> NodeType
-mkDataNode dt = DataNode { typeOfData = dt, originOfData = Nothing }
+-- | Creates a value node without specified origin.
+mkValueNode :: DataType -> NodeType
+mkValueNode dt = ValueNode { typeOfValue = dt, originOfValue = Nothing }
 
--- | Creates a generic data node type.
-mkGenericDataNodeType :: NodeType
-mkGenericDataNodeType = DataNode { typeOfData = AnyType
-                                 , originOfData = Nothing
-                                 }
+-- | Creates a generic value node type.
+mkGenericValueNodeType :: NodeType
+mkGenericValueNodeType = ValueNode { typeOfValue = AnyType
+                                   , originOfValue = Nothing
+                                   }
 
 -- | Creates an 'IntTempType' with a given number of bits.
 mkIntTempType :: Natural -> DataType
@@ -65,8 +67,8 @@ mkIntConstType r n = IntConstType { intConstValue = r
                                   }
 
 -- | Creates a generic label node type.
-mkGenericLabelNodeType :: NodeType
-mkGenericLabelNodeType = LabelNode $ BlockName ""
+mkGenericBlockNodeType :: NodeType
+mkGenericBlockNodeType = BlockNode mkEmptyBBLabel
 
 -- | Creates a set of instructions for handling the generic cases where
 -- 'PhiNode's appear. The instruction IDs of all instructions will be
@@ -77,9 +79,9 @@ mkGenericPhiInstructions =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 PhiNode )
-                , ( 1, NodeLabel 1 mkGenericDataNodeType )
-                , ( 2, NodeLabel 2 mkGenericDataNodeType )
-                , ( 3, NodeLabel 3 mkGenericDataNodeType )
+                , ( 1, NodeLabel 1 mkGenericValueNodeType )
+                , ( 2, NodeLabel 2 mkGenericValueNodeType )
+                , ( 3, NodeLabel 3 mkGenericValueNodeType )
                 ]
             )
             ( map
@@ -93,21 +95,21 @@ mkGenericPhiInstructions =
                AndExpr
                  ( EqExpr
                      ( Location2NumExpr $
-                         LocationOfDataNodeExpr $
+                         LocationOfValueNodeExpr $
                            ANodeIDExpr 1
                      )
                      ( Location2NumExpr $
-                         LocationOfDataNodeExpr $
+                         LocationOfValueNodeExpr $
                            ANodeIDExpr 2
                      )
                  )
                  ( EqExpr
                      ( Location2NumExpr $
-                         LocationOfDataNodeExpr $
+                         LocationOfValueNodeExpr $
                            ANodeIDExpr 2
                      )
                      ( Location2NumExpr $
-                         LocationOfDataNodeExpr $
+                         LocationOfValueNodeExpr $
                            ANodeIDExpr 3
                      )
                  )
@@ -115,7 +117,7 @@ mkGenericPhiInstructions =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputDataNodes = [3]
+              , patOutputValueNodes = [3]
               , patADDUC = False
               , patAsmStrTemplate = ( ASSTemplate
                                         [ ASLocationOfDataNode 3
@@ -150,8 +152,8 @@ mkGenericBrFallThroughInstructions =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Br) )
-                , ( 1, NodeLabel 1 mkGenericLabelNodeType )
-                , ( 2, NodeLabel 2 mkGenericLabelNodeType )
+                , ( 1, NodeLabel 1 mkGenericBlockNodeType )
+                , ( 2, NodeLabel 2 mkGenericBlockNodeType )
                 ]
             )
             ( map
@@ -167,7 +169,7 @@ mkGenericBrFallThroughInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -188,8 +190,8 @@ mkGenericEntityDefInstructions =
   let g = mkGraph
             ( map
                 Node
-                [ ( 0, NodeLabel 0 mkGenericLabelNodeType )
-                , ( 1, NodeLabel 1 mkGenericDataNodeType )
+                [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
+                , ( 1, NodeLabel 1 mkGenericValueNodeType )
                 ]
             )
             ( map
@@ -202,7 +204,7 @@ mkGenericEntityDefInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 0) cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -223,8 +225,8 @@ mkGenericCopyInstructions =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 CopyNode )
-                , ( 1, NodeLabel 1 $ mkDataNode $ mkIntTempType w)
-                , ( 2, NodeLabel 2 $ mkDataNode $ mkIntTempType w)
+                , ( 1, NodeLabel 1 $ mkValueNode $ mkIntTempType w)
+                , ( 2, NodeLabel 2 $ mkValueNode $ mkIntTempType w)
                 ]
             )
             ( map
@@ -236,11 +238,11 @@ mkGenericCopyInstructions =
       cs = [ BoolExprConstraint $
                EqExpr
                  ( Location2NumExpr $
-                     LocationOfDataNodeExpr $
+                     LocationOfValueNodeExpr $
                        ANodeIDExpr 1
                  )
                  ( Location2NumExpr $
-                     LocationOfDataNodeExpr $
+                     LocationOfValueNodeExpr $
                        ANodeIDExpr 2
                  )
            ]
@@ -248,7 +250,7 @@ mkGenericCopyInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g w) Nothing cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }

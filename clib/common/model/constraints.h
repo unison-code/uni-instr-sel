@@ -1559,22 +1559,22 @@ class BlockToWhereMatchIsMovedExpr
 };
 
 /**
- * Represents the block associated with a label node.
+ * Represents the block associated with a block node.
  */
-class BlockOfLabelNodeExpr
-    : public UnaryExpr<BlockExpr, BlockOfLabelNodeExpr, NodeExpr>
+class BlockOfBlockNodeExpr
+    : public UnaryExpr<BlockExpr, BlockOfBlockNodeExpr, NodeExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    BlockOfLabelNodeExpr(const NodeExpr* expr);
+    BlockOfBlockNodeExpr(const NodeExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BlockOfLabelNodeExpr(void);
+    ~BlockOfBlockNodeExpr(void);
 
   public:
     /**

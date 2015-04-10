@@ -38,8 +38,8 @@ tmTest =
         mkGraph
         ( map
             Node
-            [ ( 0, NodeLabel 0 (LabelNode $ BlockName "start") )
-            , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
+            [ ( 0, NodeLabel 0 (BlockNode $ BlockName "start") )
+            , ( 1, NodeLabel 1 (ValueNode D.AnyType Nothing) )
             ]
         )
         ( map
@@ -55,9 +55,9 @@ tmTest =
                                    (O.CompArithOp $ O.UIntOp O.Add)
                                )
               )
-            , ( 1, NodeLabel 1 (DataNode D.AnyType Nothing) )
-            , ( 2, NodeLabel 2 (DataNode D.AnyType Nothing) )
-            , ( 3, NodeLabel 3 (DataNode D.AnyType Nothing) )
+            , ( 1, NodeLabel 1 (ValueNode D.AnyType Nothing) )
+            , ( 2, NodeLabel 2 (ValueNode D.AnyType Nothing) )
+            , ( 3, NodeLabel 3 (ValueNode D.AnyType Nothing) )
             ]
         )
         ( map
@@ -71,10 +71,10 @@ tmTest =
         mkGraph
          ( map
              Node
-             [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-             , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
-             , ( 2, NodeLabel 2 (LabelNode $ BlockName "") )
-             , ( 3, NodeLabel 3 (LabelNode $ BlockName "") )
+             [ ( 0, NodeLabel 0 (ValueNode D.AnyType Nothing) )
+             , ( 1, NodeLabel 1 (BlockNode $ BlockName "") )
+             , ( 2, NodeLabel 2 (BlockNode $ BlockName "") )
+             , ( 3, NodeLabel 3 (BlockNode $ BlockName "") )
              , ( 4, NodeLabel 4 (ControlNode O.CondBr) )
              ]
          )
@@ -90,8 +90,8 @@ tmTest =
         mkGraph
           ( map
               Node
-              [ ( 0, NodeLabel 0 (LabelNode $ BlockName "") )
-              , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
+              [ ( 0, NodeLabel 0 (BlockNode $ BlockName "") )
+              , ( 1, NodeLabel 1 (BlockNode $ BlockName "") )
               , ( 2, NodeLabel 2 (ControlNode O.Br) )
               ]
           )
@@ -106,8 +106,8 @@ tmTest =
         mkGraph
           ( map
               Node
-              [ ( 0, NodeLabel 0 (DataNode D.AnyType Nothing) )
-              , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
+              [ ( 0, NodeLabel 0 (ValueNode D.AnyType Nothing) )
+              , ( 1, NodeLabel 1 (BlockNode $ BlockName "") )
               , ( 2, NodeLabel 2 (ControlNode O.Ret) )
               ]
           )
@@ -155,11 +155,11 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "add "
-                          , ASLocationOfDataNode 3
+                          , ASLocationOfValueNode 3
                           , ASVerbatim ", "
-                          , ASLocationOfDataNode 1
+                          , ASLocationOfValueNode 1
                           , ASVerbatim ", "
-                          , ASLocationOfDataNode 2
+                          , ASLocationOfValueNode 2
                           ]
                       )
                   ]
@@ -173,11 +173,11 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "bnz "
-                          , ASLocationOfDataNode 0
+                          , ASLocationOfValueNode 0
                           , ASVerbatim ", "
-                          , ASBlockOfLabelNode 2
+                          , ASNameOfBlockNode 2
                           , ASVerbatim ", "
-                          , ASBlockOfLabelNode 3
+                          , ASNameOfBlockNode 3
                           ]
                       )
                   ]
@@ -191,7 +191,7 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "br "
-                          , ASBlockOfLabelNode 1
+                          , ASNameOfBlockNode 1
                           ]
                       )
                   ]
@@ -215,7 +215,7 @@ tmTest =
                       True
                       ( ASSTemplate
                         [ ASVerbatim "ret "
-                        , ASLocationOfDataNode 0
+                        , ASLocationOfValueNode 0
                         ]
                       )
                   ]

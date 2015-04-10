@@ -152,15 +152,15 @@ all_data.append(["optimal", found_optimal])
 
 # Construct block order data from block successor data
 succ_data = getRequiredDataByName(all_data, "succ")
-null_label = getRequiredDataByName(all_data, "label_value_for_null")
+null_block = getRequiredDataByName(all_data, "block_value_for_null")
 try:
-    null_label = int(null_label)
+    null_block = int(null_block)
 except ValueError:
-    error("Value of 'label_value_for_null' is not an int")
-if null_label < 0 or null_label >= len(succ_data):
-    error("Value of 'label_value_for_null' is out of bounds")
-ord_data = [succ_data[null_label]]
-while succ_data[ord_data[-1]] != null_label:
+    error("Value of 'block_value_for_null' is not an int")
+if null_block < 0 or null_block >= len(succ_data):
+    error("Value of 'block_value_for_null' is out of bounds")
+ord_data = [succ_data[null_block]]
+while succ_data[ord_data[-1]] != null_block:
     ord_data.append(succ_data[ord_data[-1]])
 all_data.append(["ord", ord_data])
 

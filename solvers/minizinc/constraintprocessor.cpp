@@ -238,8 +238,8 @@ ConstraintProcessor::process(const BlockExpr* e) {
         return getBBAllocationVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
-    else if (const BlockOfLabelNodeExpr* de =
-             dynamic_cast<const BlockOfLabelNodeExpr*>(e))
+    else if (const BlockOfBlockNodeExpr* de =
+             dynamic_cast<const BlockOfBlockNodeExpr*>(e))
     {
         return process(de->getExpr());
     }

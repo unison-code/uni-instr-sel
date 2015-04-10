@@ -88,7 +88,7 @@ module Language.InstrSel.Graphs.Base
   , getAllEdges
   , getCtrlFlowInEdges
   , getCtrlFlowOutEdges
-  , getDataTypeOfDataNode
+  , getDataTypeOfValueNode
   , getDtFlowInEdges
   , getDtFlowOutEdges
   , getDefInEdges
@@ -122,22 +122,22 @@ module Language.InstrSel.Graphs.Base
   , isControlNode
   , isCopyNode
   , isDataFlowEdge
-  , isDataNode
-  , isDataNodeWithConstValue
+  , isValueNode
+  , isValueNodeWithConstValue
   , isDefEdge
   , isEntityNode
   , isInGraph
-  , isLabelNode
-  , isLabelNodeAndIntermediate
+  , isBlockNode
+  , isBlockNodeAndIntermediate
   , isStateFlowEdge
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
   , isOfControlNodeType
   , isOfCopyNodeType
   , isOfDataFlowEdgeType
-  , isOfDataNodeType
+  , isOfValueNodeType
   , isOfDefEdgeType
-  , isOfLabelNodeType
+  , isOfBlockNodeType
   , isOfPhiNodeType
   , isOfStateFlowEdgeType
   , isOfStateNodeType
@@ -228,17 +228,17 @@ data NodeType
   | ControlNode { ctrlOp :: O.ControlOp }
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
-    -- are all represented as data nodes. What distinguishes one from another
+    -- are all represented as value nodes. What distinguishes one from another
     -- are the constraints applied to it.
-  | DataNode
-      { typeOfData :: D.DataType
-      , originOfData :: Maybe String
-        -- ^ If the data node represents a particular temporary or variable or
+  | ValueNode
+      { typeOfValue :: D.DataType
+      , originOfValue :: Maybe String
+        -- ^ If the value node represents a particular temporary or variable or
         -- which is specified in the source code, then the name of that item can
         -- be given here as a string. This will only be used for debugging and
         -- pretty-printing purposes.
       }
-  | LabelNode { blockOfLabel :: BlockName }
+  | BlockNode { nameOfBlock :: BlockName }
   | PhiNode
   | StateNode
   | CopyNode
@@ -346,10 +346,10 @@ instance FromJSON NodeType where
                                <$> v .: "op"
                    "ctrl" -> ControlNode
                                <$> v .: "op"
-                   "data" -> DataNode
+                   "data" -> ValueNode
                                <$> v .: "dtype"
                                <*> v .: "origin"
-                   "lab"  -> LabelNode
+                   "lab"  -> BlockNode
                                <$> v .: "block-name"
                    "phi"  -> return PhiNode
                    "stat" -> return StateNode
@@ -366,14 +366,14 @@ instance ToJSON NodeType where
     object [ "ntype" .= String "ctrl"
            , "op"    .= toJSON (ctrlOp n)
            ]
-  toJSON n@(DataNode {}) =
+  toJSON n@(ValueNode {}) =
     object [ "ntype"   .= String "data"
-           , "dtype"   .= toJSON (typeOfData n)
-           , "origin"  .= toJSON (originOfData n)
+           , "dtype"   .= toJSON (typeOfValue n)
+           , "origin"  .= toJSON (originOfValue n)
            ]
-  toJSON n@(LabelNode {}) =
+  toJSON n@(BlockNode {}) =
     object [ "ntype"    .= String "lab"
-           , "block-name" .= toJSON (blockOfLabel n)
+           , "block-name" .= toJSON (nameOfBlock n)
            ]
   toJSON (PhiNode {}) =
     object [ "ntype" .= String "phi" ]
@@ -480,7 +480,7 @@ isOperationNode n =
 
 isEntityNode :: Node -> Bool
 isEntityNode n =
-     isDataNode n
+     isValueNode n
   || isStateNode n
 
 isComputationNode :: Node -> Bool
@@ -492,17 +492,17 @@ isControlNode n = isOfControlNodeType $ getNodeType n
 isRetControlNode :: Node -> Bool
 isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
 
-isDataNode :: Node -> Bool
-isDataNode n = isOfDataNodeType $ getNodeType n
+isValueNode :: Node -> Bool
+isValueNode n = isOfValueNodeType $ getNodeType n
 
-isDataNodeWithConstValue :: Node -> Bool
-isDataNodeWithConstValue n =
-  if isDataNode n
-  then D.isTypeAConstValue $ getDataTypeOfDataNode n
+isValueNodeWithConstValue :: Node -> Bool
+isValueNodeWithConstValue n =
+  if isValueNode n
+  then D.isTypeAConstValue $ getDataTypeOfValueNode n
   else False
 
-isLabelNode :: Node -> Bool
-isLabelNode n = isOfLabelNodeType $ getNodeType n
+isBlockNode :: Node -> Bool
+isBlockNode n = isOfBlockNodeType $ getNodeType n
 
 isPhiNode :: Node -> Bool
 isPhiNode n = isOfPhiNodeType $ getNodeType n
@@ -521,13 +521,13 @@ isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
 isOfControlNodeType _ = False
 
-isOfDataNodeType :: NodeType -> Bool
-isOfDataNodeType (DataNode _ _) = True
-isOfDataNodeType _ = False
+isOfValueNodeType :: NodeType -> Bool
+isOfValueNodeType (ValueNode _ _) = True
+isOfValueNodeType _ = False
 
-isOfLabelNodeType :: NodeType -> Bool
-isOfLabelNodeType (LabelNode _) = True
-isOfLabelNodeType _ = False
+isOfBlockNodeType :: NodeType -> Bool
+isOfBlockNodeType (BlockNode _) = True
+isOfBlockNodeType _ = False
 
 isOfPhiNodeType :: NodeType -> Bool
 isOfPhiNodeType PhiNode = True
@@ -601,9 +601,9 @@ getNodeLabel (Node (_, nl)) = nl
 getNodeType :: Node -> NodeType
 getNodeType (Node (_, NodeLabel _ nt)) = nt
 
--- | Gets the data type from a data node.
-getDataTypeOfDataNode :: Node -> D.DataType
-getDataTypeOfDataNode n = typeOfData $ getNodeType n
+-- | Gets the data type from a value node.
+getDataTypeOfValueNode :: Node -> D.DataType
+getDataTypeOfValueNode n = typeOfValue $ getNodeType n
 
 -- | Gets the internal node ID from a node.
 getIntNodeID :: Node -> I.Node
@@ -1028,20 +1028,20 @@ isNodeTypeCompatibleWith :: NodeType -> NodeType -> Bool
 isNodeTypeCompatibleWith (ComputationNode op1) (ComputationNode op2) =
   op1 `O.isCompOpCompatibleWith` op2
 isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) = op1 == op2
-isNodeTypeCompatibleWith (DataNode d1 _) (DataNode d2 _) =
+isNodeTypeCompatibleWith (ValueNode d1 _) (ValueNode d2 _) =
   d1 `D.isDataTypeCompatibleWith` d2
-isNodeTypeCompatibleWith (LabelNode _) (LabelNode _) = True
+isNodeTypeCompatibleWith (BlockNode _) (BlockNode _) = True
 isNodeTypeCompatibleWith PhiNode PhiNode = True
 isNodeTypeCompatibleWith StateNode StateNode = True
 isNodeTypeCompatibleWith CopyNode CopyNode = True
 isNodeTypeCompatibleWith _ _ = False
 
--- | Checks if a label node is an intermediate label node, meaning that it has
+-- | Checks if a block node is an intermediate block node, meaning that it has
 -- at least one in-edge to a control node, and at least one out-edge to another
 -- control node.
-isLabelNodeAndIntermediate :: Graph -> Node -> Bool
-isLabelNodeAndIntermediate g n
-  | ( isLabelNode n
+isBlockNodeAndIntermediate :: Graph -> Node -> Bool
+isBlockNodeAndIntermediate g n
+  | ( isBlockNode n
       &&
       (length $ filter isControlFlowEdge $ getInEdges g n) > 0
       &&
@@ -1098,7 +1098,7 @@ doesNumCFInEdgesMatter :: Graph -> Node -> Bool
 doesNumCFInEdgesMatter g n
   | isComputationNode n = True
   | isControlNode n = True
-  | isLabelNodeAndIntermediate g n = True
+  | isBlockNodeAndIntermediate g n = True
   | otherwise = False
 
 -- | Checks if the number of control flow out-edges matters for a given pattern
@@ -1223,7 +1223,7 @@ doOutEdgeListsMatch _ pg fes pes =
 -- node.
 doesOrderCFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderCFInEdgesMatter g n
-  | isLabelNodeAndIntermediate g n = True
+  | isBlockNodeAndIntermediate g n = True
   | otherwise = False
 
 -- | Checks if the order of control flow out-edges matters for a given pattern
@@ -1405,11 +1405,11 @@ computeDomSets (Graph g) n =
                  (I.dom g (getIntNodeID n))
   in doms
 
--- | Extracts the control-flow graph from a graph. If there are no label nodes
+-- | Extracts the control-flow graph from a graph. If there are no block nodes
 -- in the graph, an empty graph is returned.
 extractCFG :: Graph -> Graph
 extractCFG g =
-  let nodes_to_remove = filter (\n -> not (isLabelNode n || isControlNode n))
+  let nodes_to_remove = filter (\n -> not (isBlockNode n || isControlNode n))
                                (getAllNodes g)
       cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
       cfg = foldl delNodeKeepEdges

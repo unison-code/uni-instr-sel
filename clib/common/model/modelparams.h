@@ -70,12 +70,12 @@ class ModelParams {
     getNumEntityNodesInF(void) const;
 
     /**
-     * Gets the number of label nodes in the function graph.
+     * Gets the number of block nodes in the function graph.
      *
      * @returns Number of nodes.
      */
     size_t
-    getNumLabelNodesInF(void) const;
+    getNumBlockNodesInF(void) const;
 
     /**
      * Gets the number of locations in the target machine.
@@ -94,30 +94,30 @@ class ModelParams {
     getNumMatches(void) const;
 
     /**
-     * Gets the dominator set per given label node in the function graph.
+     * Gets the dominator set per given block node in the function graph.
      *
-     * @returns List of label nodes that dominates a particular label node.
+     * @returns List of block nodes that dominates a particular block node.
      */
     std::vector< std::list<ArrayIndex> >
-    getLabelDomSetsInF(void) const;
+    getBlockDomSetsInF(void) const;
 
     /**
-     * Gets the list of definition edges per given label node in the function
+     * Gets the list of definition edges per given block node in the function
      * graph.
      *
      * @returns List of entity nodes between which there is a definition edge
-     * with a particular label node.
+     * with a particular block node.
      */
     std::vector< std::list<ArrayIndex> >
     getDefEdgesInF(void) const;
 
     /**
-     * Gets the entry label in the function graph.
+     * Gets the entry block in the function graph.
      *
-     * @returns Array index for a label node.
+     * @returns Array index for a block node.
      */
     ArrayIndex
-    getEntryLabelInF(void) const;
+    getEntryBlockInF(void) const;
 
     /**
      * Gets the entity nodes in the function that are state nodes.
@@ -128,7 +128,7 @@ class ModelParams {
     getAllStateEntitiesInF(void) const;
 
     /**
-     * Gets execution frequencies per block (as identified by the label nodes)
+     * Gets execution frequencies per block (as identified by the block nodes)
      * in the function graph.
      *
      * @returns The execution frequencies.
@@ -185,20 +185,20 @@ class ModelParams {
     getEntityNodesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function label nodes per match that are entries.
+     * Gets the function block nodes per match that are entries.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getEntryLabelNodeOfAllMatches(void) const;
+    getEntryBlockNodeOfAllMatches(void) const;
 
     /**
-     * Gets the function label nodes per match that are not entries.
+     * Gets the function block nodes per match that are not entries.
      *
      * @returns List of node IDs.
      */
     std::vector< std::list<ID> >
-    getNonEntryLabelNodesInAllMatches(void) const;
+    getNonEntryBlockNodesInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
@@ -314,7 +314,7 @@ class ModelParams {
     toString(const Json::Value& value);
 
     /**
-     * Sets the entry label for the function graph.
+     * Sets the entry block for the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -324,10 +324,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setEntryLabelInF(const Json::Value& root, ModelParams& p);
+    setEntryBlockInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the dominator sets for the label nodes in the function graph.
+     * Sets the dominator sets for the block nodes in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -337,10 +337,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setLabelDomSetsInF(const Json::Value& root, ModelParams& p);
+    setBlockDomSetsInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the definition edges for the respective label nodes in the function
+     * Sets the definition edges for the respective block nodes in the function
      * graph.
      *
      * @param root
@@ -367,7 +367,7 @@ class ModelParams {
     setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the execution frequencies of the blocks (as identified by the label
+     * Sets the execution frequencies of the blocks (as identified by the block
      * nodes) in the function graph.
      *
      * @param root
@@ -485,7 +485,7 @@ class ModelParams {
     setEntityNodesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function label nodes that is the entry label of each respective
+     * Sets the function block nodes that is the entry block of each respective
      * match.
      *
      * @param root
@@ -496,10 +496,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setEntryLabelNodeOfMatches(const Json::Value& root, ModelParams& p);
+    setEntryBlockNodeOfMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function label nodes that appear in the respective match but
+     * Sets the function block nodes that appear in the respective match but
      * not as entries.
      *
      * @param root
@@ -510,7 +510,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setNonEntryLabelNodesInMatches(const Json::Value& root, ModelParams& p);
+    setNonEntryBlockNodesInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -563,9 +563,9 @@ class ModelParams {
     size_t num_func_entity_nodes_;
 
     /**
-     * Numbers of label nodes in the function.
+     * Numbers of block nodes in the function.
      */
-    size_t num_func_label_nodes_;
+    size_t num_func_block_nodes_;
 
     /**
      * Numbers of locations in the target machine.
@@ -578,18 +578,18 @@ class ModelParams {
     size_t num_matches_;
 
     /**
-     * The label which indicates the entry point in the function graph.
+     * The block which indicates the entry point in the function graph.
      */
-    ArrayIndex func_entry_label_;
+    ArrayIndex func_entry_block_;
 
     /**
-     * The dominator sets for each label node in the function graph.
+     * The dominator sets for each block node in the function graph.
      */
-    std::vector< std::list<ArrayIndex> > func_label_dom_sets_;
+    std::vector< std::list<ArrayIndex> > func_block_dom_sets_;
 
     /**
      * The entity nodes between which there is a definition edge with the
-     * respective label node.
+     * respective block node.
      */
     std::vector< std::list<ArrayIndex> > func_def_edges_;
 
@@ -599,7 +599,7 @@ class ModelParams {
     std::list<ArrayIndex> func_state_entities_;
 
     /**
-     * The execution frequency per block (as identified by the label nodes) in
+     * The execution frequency per block (as identified by the block nodes) in
      * the function graph.
      */
     std::vector<int> func_block_exec_freq_;
@@ -637,15 +637,15 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_entities_used_;
 
     /**
-     * The entry label, if any, for each match.
+     * The entry block, if any, for each match.
      */
-    std::vector< std::list<ArrayIndex> > match_entry_label_;
+    std::vector< std::list<ArrayIndex> > match_entry_block_;
 
     /**
-     * The label nodes in the function graph which appear in each match but not
+     * The block nodes in the function graph which appear in each match but not
      * as entries.
      */
-    std::vector< std::list<ArrayIndex> > match_non_entry_labels_;
+    std::vector< std::list<ArrayIndex> > match_non_entry_blocks_;
 
     /**
      * The matches that have been derived from non-copy instructions.

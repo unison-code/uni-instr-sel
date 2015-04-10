@@ -360,9 +360,9 @@ ConstraintParser::parseBlockExpr(string& str) {
             auto e = parseMatchExpr(str);
             expr = new BlockToWhereMatchIsMovedExpr(e);
         }
-        else if (eatType<BlockOfLabelNodeExpr>(str)) {
+        else if (eatType<BlockOfBlockNodeExpr>(str)) {
             auto e = parseNodeExpr(str);
-            expr = new BlockOfLabelNodeExpr(e);
+            expr = new BlockOfBlockNodeExpr(e);
         }
         else {
             THROW(Exception, str + " Invalid constraint expression (unknown keyword)");

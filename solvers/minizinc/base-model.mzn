@@ -31,12 +31,12 @@
 % Function data.
 int: numOperationsInFunction;
 int: numEntitiesInFunction;
-int: numLabelsInFunction;
-int: entryLabelOfFunction;
-array[allLabelsInFunction] of set of int: domSetOfLabelInFunction;
-array[allLabelsInFunction] of set of int: defEdgesForLabelInFunction;
+int: numBlocksInFunction;
+int: entryBlockOfFunction;
+array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
+array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
 array[int] of allEntitiesInFunction: stateEntitiesInFunction;
-array[allLabelsInFunction] of int: execFrequencyOfLabelInFunction;
+array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.
 int: numLocations;
@@ -46,8 +46,8 @@ int: numMatches;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: entitiesDefinedByMatch;
 array[allMatches] of set of int: entitiesUsedByMatch;
-array[allMatches] of set of int: entryLabelOfMatch;
-array[allMatches] of set of int: nonEntryLabelsInMatch;
+array[allMatches] of set of int: entryBlockOfMatch;
+array[allMatches] of set of int: nonEntryBlocksInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
@@ -67,40 +67,40 @@ set of allMatches: nonCopyMatches;
 % matches).
 int: numLocValues = numLocations + 1;
 
-% Total number of labels values (an additional value will be needed for
-% representing the null label, to which non-selected matches will be moved).
-int: numLabelValues = numLabelsInFunction + 1;
+% Total number of blocks values (an additional value will be needed for
+% representing the null block, to which non-selected matches will be moved).
+int: numBlockValues = numBlocksInFunction + 1;
 
-% Reference to the null-label value.
-int: labelValueForNull = numLabelValues - 1;
+% Reference to the null-block value.
+int: blockValueForNull = numBlockValues - 1;
 
 % Reference to to the null-location value.
 int: locValueForNull = numLocValues - 1;
 
-% Extends the external parameter 'domSetOfLabelInFunction' with a value
-% for the null label (which is assumed to be dominated by all labels).
-array[allLabelsInFunctionPlusNull] of set of int:
-  domSetOfLabelInFunctionPlusNull =
-    array1d( allLabelsInFunctionPlusNull
-           , domSetOfLabelInFunction
+% Extends the external parameter 'domSetOfBlockInFunction' with a value
+% for the null block (which is assumed to be dominated by all blocks).
+array[allBlocksInFunctionPlusNull] of set of int:
+  domSetOfBlockInFunctionPlusNull =
+    array1d( allBlocksInFunctionPlusNull
+           , domSetOfBlockInFunction
              ++
-             array1d(labelValueForNull..labelValueForNull, [allLabelsInFunction])
+             array1d(blockValueForNull..blockValueForNull, [allBlocksInFunction])
            );
 
-% Extends the external parameter 'execFrequencyOfLabelInFunction' with a value
-% of 0 for the null label.
-array[allLabelsInFunctionPlusNull] of int: execFrequencyOfLabelsPlusNull =
-  array1d( allLabelsInFunctionPlusNull
-         , execFrequencyOfLabelInFunction
+% Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
+% of 0 for the null block.
+array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
+  array1d( allBlocksInFunctionPlusNull
+         , execFrequencyOfBlockInFunction
            ++
-           array1d(labelValueForNull..labelValueForNull, [0])
+           array1d(blockValueForNull..blockValueForNull, [0])
          );
 
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
 set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
-set of int: allLabelsInFunction = 0..numLabelsInFunction-1;
-set of int: allLabelsInFunctionPlusNull = 0..numLabelValues-1;
+set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
+set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
 set of int: allMatches = 0..numMatches-1;
 set of int: allLocValues = 0..numLocValues-1;
 
@@ -111,18 +111,18 @@ set of int: allLocValues = 0..numLocValues-1;
 %===========
 
 % Entity node definitions and locations.
-array[allEntitiesInFunction] of var allLabelsInFunction: def;
+array[allEntitiesInFunction] of var allBlocksInFunction: def;
 array[allEntitiesInFunction] of var allLocValues: loc;
 
 % Match selection.
 array[allMatches] of var bool: sel;
 
 % Basic block to which the matches are moved.
-array[allMatches] of var allLabelsInFunctionPlusNull: mov;
+array[allMatches] of var allBlocksInFunctionPlusNull: mov;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
-array[allLabelsInFunctionPlusNull] of var allLabelsInFunctionPlusNull: succ;
+array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 
 % Cost.
 var int: cost;
@@ -217,18 +217,18 @@ constraint
 constraint
   forall (m in allMatches)
   (
-    sel[m] <-> mov[m] != labelValueForNull
+    sel[m] <-> mov[m] != blockValueForNull
   );
 
-% Selected matches that have an entry label must be moved in the basic block of
-% that label.
+% Selected matches that have an entry block must be moved in the basic block of
+% that block.
 constraint
   forall (m in allMatches)
   (
-    % If a match has no entry label, then this set will be empty and hence there
+    % If a match has no entry block, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
     % entry.
-    forall (r in entryLabelOfMatch[m])
+    forall (r in entryBlockOfMatch[m])
     (
       sel[m] -> mov[m] = r
     )
@@ -241,41 +241,41 @@ constraint
   (
     forall (e in entitiesDefinedByMatch[m])
     (
-      if (card(entryLabelOfMatch[m]) > 0)
+      if (card(entryBlockOfMatch[m]) > 0)
       then
-        let { set of allLabelsInFunction: labels_in_m =
-                entryLabelOfMatch[m] union nonEntryLabelsInMatch[m]
+        let { set of allBlocksInFunction: blocks_in_m =
+                entryBlockOfMatch[m] union nonEntryBlocksInMatch[m]
             }
-        in sel[m] -> def[e] in labels_in_m
+        in sel[m] -> def[e] in blocks_in_m
       else
         sel[m] -> def[e] = mov[m]
       endif
     )
   );
 
-% For every label wherein an entity is defined, there must exist some selected
-% match such that it is either placed in that label or that label is part of
-% one of the labels that appear in the selected match.
+% For every block wherein an entity is defined, there must exist some selected
+% match such that it is either placed in that block or that block is part of
+% one of the blocks that appear in the selected match.
 %
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
 constraint
-  forall (e in allEntitiesInFunction, l in allLabelsInFunction)
+  forall (e in allEntitiesInFunction, l in allBlocksInFunction)
   (
     l = def[e]
     ->
     exists (m in allMatches)
     (
-      l = mov[m] \/ (sel[m] /\ l in nonEntryLabelsInMatch[m])
+      l = mov[m] \/ (sel[m] /\ l in nonEntryBlocksInMatch[m])
     )
   );
 
-% An entity with a definition edge with a label must be defined in the basic
-% block of that label.
+% An entity with a definition edge with a block must be defined in the basic
+% block of that block.
 constraint
-  forall (l in allLabelsInFunction)
+  forall (l in allBlocksInFunction)
   (
-    forall (e in defEdgesForLabelInFunction[l])
+    forall (e in defEdgesForBlockInFunction[l])
     (
       def[e] = l
     )
@@ -291,17 +291,17 @@ constraint
 %                     where applyDefDomUseConstraintForMatch[m]
 %              )
 %       (
-%         def[e] in domSetOfLabelInFunctionPlusNull[mov[m]]
+%         def[e] in domSetOfBlockInFunctionPlusNull[mov[m]]
 %       );
 int: DomRelSize =
-  sum (l in allLabelsInFunction)
+  sum (l in allBlocksInFunction)
   (
-    card(domSetOfLabelInFunction[l])
-  ) + numLabelsInFunction;
-array[1..DomRelSize, 1..2] of allLabelsInFunctionPlusNull: DomRel =
+    card(domSetOfBlockInFunction[l])
+  ) + numBlocksInFunction;
+array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
   array2d(1..DomRelSize, 1..2,
-    [ if k=1 then i else j endif | i in allLabelsInFunctionPlusNull,
-                                   j in domSetOfLabelInFunctionPlusNull[i],
+    [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
+                                   j in domSetOfBlockInFunctionPlusNull[i],
                                    k in 1..2
     ]);
 constraint
@@ -316,10 +316,10 @@ constraint
 constraint
   circuit(succ) :: domain;
 
-% The block of the entry label (i.e. function entry point) must be placed as the
-% first block, and the block of the null label must be placed as the last block.
+% The block of the entry block (i.e. function entry point) must be placed as the
+% first block, and the block of the null block must be placed as the last block.
 constraint
-  succ[labelValueForNull] = entryLabelOfFunction;
+  succ[blockValueForNull] = entryBlockOfFunction;
 
 % Constrain the loc value for all entities that are state nodes.
 constraint
@@ -333,7 +333,7 @@ constraint
 constraint
   cost = sum (m in allMatches)
          ( latencyOfMatch[m]
-         * execFrequencyOfLabelsPlusNull[mov[m]]
+         * execFrequencyOfBlocksPlusNull[mov[m]]
          );
 
 
@@ -371,7 +371,7 @@ output [ "sel=", show(sel), "\n"
        , "loc=", show(loc), "\n"
        , "mov=", show(mov), "\n"
        , "succ=", show(succ), "\n"
-       , "label_value_for_null=", show(labelValueForNull), "\n"
+       , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "cost=", show(cost), "\n"
        ];

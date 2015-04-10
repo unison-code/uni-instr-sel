@@ -72,9 +72,9 @@ generateCode target model sol@(HighLevelSolution {}) =
     map ( \l_node ->
           let matches = getMatchesMovedToBlock sol l_node
               sorted_matches = sortMatchesByFlow model matches
-              instrs = concatMap (emitInstructions model sol target)
-                       sorted_matches
-              bblabel = fromJust $ findBlockOfLabelNode model l_node
+              instrs = mapMaybe (emitInstruction model sol target)
+                                sorted_matches
+              bblabel = fromJust $ findNameOfBlockNode model l_node
           in (AsmBlock $ show bblabel):instrs
         )
         (hlSolOrderOfBBs sol)
@@ -90,10 +90,10 @@ getMatchesMovedToBlock sol n =
 
 -- | Gets the block name for a given label node. If no such block can be found,
 -- @Nothing@ is returned.
-findBlockOfLabelNode :: HighLevelModel -> NodeID -> Maybe BlockName
-findBlockOfLabelNode model n =
+findNameOfBlockNode :: HighLevelModel -> NodeID -> Maybe BlockName
+findNameOfBlockNode model n =
   let bb_params = hlFunBlockParams $ hlFunctionParams model
-      found_bbs = filter (\m -> hlBlockLabelNode m == n) bb_params
+      found_bbs = filter (\m -> hlBlockNode m == n) bb_params
   in if length found_bbs > 0
      then Just $ hlBlockName $ head found_bbs
      else Nothing
@@ -133,7 +133,7 @@ addUseEdgesToDAG model mid g0 =
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      uses_of_m = filter (`notElem` hlMatchDataNodesUsedByPhis match)
+      uses_of_m = filter (`notElem` hlMatchValueNodesUsedByPhis match)
                          (hlMatchEntityNodesUsed match)
       defs_of_m =
         map (\(n, i) -> (n, hlMatchEntityNodesDefined $ getHLMatchParams ds i))
@@ -220,10 +220,10 @@ updateNodeIDsInAsmStrParts
 updateNodeIDsInAsmStrParts asm maps =
   map f (zip asm maps)
   where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASLocationOfDataNode    _, Just n) = ASLocationOfDataNode n
-        f (ASImmIntValueOfDataNode _, Just n) = ASImmIntValueOfDataNode n
-        f (ASBlockOfLabelNode      _, Just n) = ASBlockOfLabelNode n
-        f (ASBlockOfDataNode       _, Just n) = ASBlockOfDataNode  n
+        f (ASLocationOfValueNode    _, Just n) = ASLocationOfValueNode n
+        f (ASImmIntValueOfValueNode _, Just n) = ASImmIntValueOfValueNode n
+        f (ASNameOfBlockNode        _, Just n) = ASNameOfBlockNode n
+        f (ASBlockOfValueNode       _, Just n) = ASBlockOfValueNode  n
         f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
@@ -234,26 +234,26 @@ emitInstructionPart
   -> AssemblyStringPart
   -> String
 emitInstructionPart _ _ _ (ASVerbatim s) = s
-emitInstructionPart model _ _ (ASImmIntValueOfDataNode n) =
-  let i = lookup n (hlFunDataIntConstants $ hlFunctionParams model)
+emitInstructionPart model _ _ (ASImmIntValueOfValueNode n) =
+  let i = lookup n (hlFunIntConstData $ hlFunctionParams model)
   in if isJust i
      then show $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart _ sol m (ASLocationOfDataNode n) =
-  let reg_id = lookup n $ hlSolLocsOfDataNodes sol
+emitInstructionPart _ sol m (ASLocationOfValueNode n) =
+  let reg_id = lookup n $ hlSolLocsOfValueNodes sol
   in if isJust reg_id
      then let reg = fromJust $ findLocation (tmLocations m) (fromJust reg_id)
           in show $ locName reg
      else -- TODO: handle this case
           "r?"
-emitInstructionPart model _ _ (ASBlockOfLabelNode n) =
-  let l = findBlockOfLabelNode model n
+emitInstructionPart model _ _ (ASNameOfBlockNode n) =
+  let l = findNameOfBlockNode model n
   in if isJust l
      then show $ fromJust l
      else -- TODO: handle this case
           "l?"
-emitInstructionPart model sol m (ASBlockOfDataNode n) =
+emitInstructionPart model sol m (ASBlockOfValueNode n) =
   let function = hlFunctionParams model
       entity_nodes = hlFunEntityNodes function
   in if n `elem` entity_nodes
@@ -263,7 +263,7 @@ emitInstructionPart model sol m (ASBlockOfDataNode n) =
              then emitInstructionPart model
                                      sol
                                      m
-                                     (ASBlockOfLabelNode $ fromJust l)
+                                     (ASNameOfBlockNode $ fromJust l)
              else -- TODO: handle this case
                   "l?"
      else -- TODO: handle this case

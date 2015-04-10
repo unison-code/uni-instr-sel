@@ -127,14 +127,14 @@ mkDefaultReconstructor =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
       mkBlockExpr r (BlockToWhereMatchIsMovedExpr expr) =
         BlockToWhereMatchIsMovedExpr ((mkMatchExprF r) r expr)
-      mkBlockExpr r (BlockOfLabelNodeExpr expr) =
-        BlockOfLabelNodeExpr ((mkNodeExprF r) r expr)
+      mkBlockExpr r (BlockOfBlockNodeExpr expr) =
+        BlockOfBlockNodeExpr ((mkNodeExprF r) r expr)
       mkLocationExpr _ expr@(ALocationIDExpr _) =
         expr
       mkLocationExpr _ expr@(ALocationArrayIndexExpr _) =
         expr
-      mkLocationExpr r (LocationOfDataNodeExpr expr) =
-        LocationOfDataNodeExpr ((mkNodeExprF r) r expr)
+      mkLocationExpr r (LocationOfValueNodeExpr expr) =
+        LocationOfValueNodeExpr ((mkNodeExprF r) r expr)
       mkLocationExpr _ expr@(TheNullLocationExpr) =
         expr
       mkSetExpr r (UnionSetExpr lhs rhs) =

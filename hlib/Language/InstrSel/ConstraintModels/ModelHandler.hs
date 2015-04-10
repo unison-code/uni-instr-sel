@@ -71,7 +71,7 @@ mkHighLevelModel function target matches =
 mkHLFunctionParams :: Function -> HighLevelFunctionParams
 mkHLFunctionParams function =
   let graph = osGraph $ functionOS function
-      entry_label = fromJust $ osEntryLabelNode $ functionOS function
+      entry_block = fromJust $ osEntryBlockNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
       def_edges =
         map ( \e ->
@@ -79,30 +79,30 @@ mkHLFunctionParams function =
                   srcid = getNodeID src
                   dst = getTargetNode graph e
                   dstid = getNodeID dst
-              in if isLabelNode src
+              in if isBlockNode src
                  then (srcid, dstid)
                  else (dstid, srcid)
             )
             (filter isDefEdge (getAllEdges graph))
-      domsets = computeDomSets graph entry_label
+      domsets = computeDomSets graph entry_block
       getExecFreq n =
         fromJust
-        $ lookup (blockOfLabel $ getNodeType n)
+        $ lookup (nameOfBlock $ getNodeType n)
                  (functionBBExecFreq function)
       bb_params =
         map ( \n -> HighLevelBlockParams
-                      { hlBlockName = (blockOfLabel $ getNodeType n)
-                      , hlBlockLabelNode = (getNodeID n)
+                      { hlBlockName = (nameOfBlock $ getNodeType n)
+                      , hlBlockNode = (getNodeID n)
                       , hlBlockExecFrequency = getExecFreq n
                       }
             )
-            (filter isLabelNode (getAllNodes graph))
-      int_constants =
-        let ns = filter isDataNodeWithConstValue (getAllNodes graph)
+            (filter isBlockNode (getAllNodes graph))
+      int_const_data =
+        let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub
            $ mapMaybe ( \n ->
                          let nid = getNodeID n
-                             dt = getDataTypeOfDataNode n
+                             dt = getDataTypeOfValueNode n
                              r = intConstValue dt
                          in if isIntConstType dt && isRangeSingleton r
                             then Just (nid, lowerBound r)
@@ -113,12 +113,12 @@ mkHLFunctionParams function =
        { hlFunOpNodes = nodeIDsByType isOperationNode
        , hlFunEntityNodes = nodeIDsByType isEntityNode
        , hlFunStateNodes = nodeIDsByType isStateNode
-       , hlFunLabelNodes = nodeIDsByType isLabelNode
-       , hlFunEntryLabelNode = entry_label
-       , hlFunLabelDomSets = map convertDomSetN2ID domsets
+       , hlFunBlockNodes = nodeIDsByType isBlockNode
+       , hlFunEntryBlockNode = entry_block
+       , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
        , hlFunBlockParams = bb_params
-       , hlFunDataIntConstants = int_constants
+       , hlFunIntConstData = int_const_data
        , hlFunConstraints = osConstraints $ functionOS function
        }
 
@@ -151,15 +151,15 @@ processMatch instr pattern match mid =
       ns = getAllNodes graph
       o_ns = filter isOperationNode ns
       e_ns = filter isEntityNode ns
-      d_ns = filter isDataNode ns
-      l_ns = filter isLabelNode ns
+      d_ns = filter isValueNode ns
+      l_ns = filter isBlockNode ns
       c_ns = filter isControlNode ns
       e_def_ns = filter (hasAnyPredecessors graph) e_ns
       e_use_ns = filter (hasAnySuccessors graph) e_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
-      entry_l_node_id = osEntryLabelNode $ patOS pattern
+      entry_l_node_id = osEntryBlockNode $ patOS pattern
       l_ref_ns = if isJust entry_l_node_id
                  then let nid = fromJust entry_l_node_id
                       in filter (\n -> getNodeID n /= nid) l_ns
@@ -173,10 +173,10 @@ processMatch instr pattern match mid =
        , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs o_ns)
        , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
        , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
-       , hlMatchEntryLabelNode = maybe Nothing
+       , hlMatchEntryBlockNode = maybe Nothing
                                        (findFNInMatch match)
                                        entry_l_node_id
-       , hlMatchNonEntryLabelNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
+       , hlMatchNonEntryBlockNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
@@ -187,7 +187,7 @@ processMatch instr pattern match mid =
        , hlMatchHasControlNodes = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
-       , hlMatchDataNodesUsedByPhis =
+       , hlMatchValueNodesUsedByPhis =
            findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
        , hlMatchAsmStrNodeMaplist = asm_maps
        }
@@ -202,10 +202,10 @@ computeAsmStrNodeMaps
 computeAsmStrNodeMaps t m =
   map f (concat $ flatAsmStrParts t)
   where f (ASVerbatim _) = Nothing
-        f (ASLocationOfDataNode    n) = findFNInMatch m n
-        f (ASImmIntValueOfDataNode n) = findFNInMatch m n
-        f (ASBlockOfLabelNode      n) = findFNInMatch m n
-        f (ASBlockOfDataNode       n) = findFNInMatch m n
+        f (ASLocationOfValueNode    n) = findFNInMatch m n
+        f (ASImmIntValueOfValueNode n) = findFNInMatch m n
+        f (ASNameOfBlockNode        n) = findFNInMatch m n
+        f (ASBlockOfValueNode       n) = findFNInMatch m n
 
 -- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
 -- match ID.
@@ -234,7 +234,7 @@ lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
   let getAIForOpNodeID nid = fromJust $ findAIWithOpNodeID ai_maps nid
       getAIForEntityNodeID nid = fromJust $ findAIWithEntityNodeID ai_maps nid
-      getAIForLabelNodeID nid = fromJust $ findAIWithLabelNodeID ai_maps nid
+      getAIForBlockNodeID nid = fromJust $ findAIWithBlockNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
       sortByAI get_ai_f nids =
@@ -248,14 +248,14 @@ lowerHighLevelModel model ai_maps =
   in LowLevelModel
        { llNumFunOpNodes = toInteger $ length $ hlFunOpNodes f_params
        , llNumFunEntityNodes = toInteger $ length $ hlFunEntityNodes f_params
-       , llNumFunLabelNodes = toInteger $ length $ hlFunLabelNodes f_params
+       , llNumFunBlockNodes = toInteger $ length $ hlFunBlockNodes f_params
        , llFunStateNodes = map getAIForEntityNodeID (hlFunStateNodes f_params)
-       , llFunEntryLabelNode =
-           getAIForLabelNodeID $ hlFunEntryLabelNode f_params
-       , llFunLabelDomSets =
-           map (\d -> map getAIForLabelNodeID (domSet d))
-               ( sortByAI (getAIForLabelNodeID . domNode)
-                          (hlFunLabelDomSets f_params)
+       , llFunEntryBlockNode =
+           getAIForBlockNodeID $ hlFunEntryBlockNode f_params
+       , llFunBlockDomSets =
+           map (\d -> map getAIForBlockNodeID (domSet d))
+               ( sortByAI (getAIForBlockNodeID . domNode)
+                          (hlFunBlockDomSets f_params)
                )
        , llFunDefEdges =
            map ( \n ->
@@ -263,10 +263,10 @@ lowerHighLevelModel model ai_maps =
                  map (getAIForEntityNodeID . snd)
                      (filter (\(n', _) -> n == n') (hlFunDefEdges f_params))
                )
-               (sortByAI getAIForLabelNodeID (hlFunLabelNodes f_params))
+               (sortByAI getAIForBlockNodeID (hlFunBlockNodes f_params))
        , llFunBBExecFreqs =
            map hlBlockExecFrequency
-               ( sortByAI (getAIForLabelNodeID . hlBlockLabelNode)
+               ( sortByAI (getAIForBlockNodeID . hlBlockNode)
                           (hlFunBlockParams f_params)
                )
        , llFunConstraints =
@@ -282,12 +282,12 @@ lowerHighLevelModel model ai_maps =
        , llMatchEntityNodesUsed =
            map (\m -> map getAIForEntityNodeID (hlMatchEntityNodesUsed m))
                m_params
-       , llMatchEntryLabelNode =
-           map (maybe Nothing (Just . getAIForLabelNodeID))
-               (map hlMatchEntryLabelNode m_params)
-       , llMatchNonEntryLabelNodes =
-           map (map getAIForLabelNodeID)
-               (map hlMatchNonEntryLabelNodes m_params)
+       , llMatchEntryBlockNode =
+           map (maybe Nothing (Just . getAIForBlockNodeID))
+               (map hlMatchEntryBlockNode m_params)
+       , llMatchNonEntryBlockNodes =
+           map (map getAIForBlockNodeID)
+               (map hlMatchNonEntryBlockNodes m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
@@ -334,14 +334,14 @@ findAIWithOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
 findAIWithEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
 
-findAIWithLabelNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIWithLabelNodeID ai_maps = findArrayIndexInList (ai2LabelNodeIDs ai_maps)
+findAIWithBlockNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithBlockNodeID ai_maps = findArrayIndexInList (ai2BlockNodeIDs ai_maps)
 
 findAIWithAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithAnyNodeID ai_maps nid =
   let lists = [ ai2OpNodeIDs ai_maps
               , ai2EntityNodeIDs ai_maps
-              , ai2LabelNodeIDs ai_maps
+              , ai2BlockNodeIDs ai_maps
               ]
       matching_lists = filter (nid `elem`) lists
   in findArrayIndexInList (head matching_lists) nid

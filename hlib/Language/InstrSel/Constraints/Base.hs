@@ -149,8 +149,8 @@ data InstructionExpr
 data BlockExpr
     -- | Retrieves the of the block to which a match has been moved.
   = BlockToWhereMatchIsMovedExpr MatchExpr
-    -- | Retrieves the block associated with a label node.
-  | BlockOfLabelNodeExpr NodeExpr
+    -- | Retrieves the block associated with a block node.
+  | BlockOfBlockNodeExpr NodeExpr
   deriving (Show)
 
 -- | Location expressions.
@@ -159,8 +159,8 @@ data LocationExpr
   = ALocationIDExpr LocationID
     -- | Introduces the array index of a location.
   | ALocationArrayIndexExpr ArrayIndex
-    -- | Retrieves the of the location of a data node.
-  | LocationOfDataNodeExpr NodeExpr
+    -- | Retrieves the of the location of a value node.
+  | LocationOfValueNodeExpr NodeExpr
     -- | Denotes the null location.
   | TheNullLocationExpr
   deriving (Show)
@@ -309,25 +309,25 @@ instance ToLisp InstructionExpr where
 instance FromLisp BlockExpr where
   parseLisp e =
         struct "block-of-match" BlockToWhereMatchIsMovedExpr e
-    <|> struct "block-of-lnode" BlockOfLabelNodeExpr e
+    <|> struct "block-of-bnode" BlockOfBlockNodeExpr e
 
 instance ToLisp BlockExpr where
   toLisp (BlockToWhereMatchIsMovedExpr e) =
     mkStruct "block-of-match" [toLisp e]
-  toLisp (BlockOfLabelNodeExpr e) = mkStruct "block-of-lnode" [toLisp e]
+  toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
 instance FromLisp LocationExpr where
   parseLisp (Lisp.Symbol "null") = return TheNullLocationExpr
   parseLisp e =
         struct "id" ALocationIDExpr e
     <|> struct "ai" ALocationArrayIndexExpr e
-    <|> struct "loc-of-dnode" LocationOfDataNodeExpr e
+    <|> struct "loc-of-dnode" LocationOfValueNodeExpr e
 
 instance ToLisp LocationExpr where
   toLisp TheNullLocationExpr = Lisp.Symbol "null"
   toLisp (ALocationIDExpr rid) = mkStruct "id" [toLisp rid]
   toLisp (ALocationArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
-  toLisp (LocationOfDataNodeExpr e) =
+  toLisp (LocationOfValueNodeExpr e) =
     mkStruct "loc-of-dnode" [toLisp e]
 
 instance FromLisp SetExpr where

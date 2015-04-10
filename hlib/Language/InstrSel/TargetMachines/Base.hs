@@ -53,15 +53,15 @@ data AssemblyStringTemplate
 data AssemblyStringPart
     -- | Denotes string which is meant to be output verbatim.
   = ASVerbatim String
-    -- | Denotes the immediate integer value of a given data node.
-  | ASImmIntValueOfDataNode NodeID
-    -- | Denotes the location of a given data node.
-  | ASLocationOfDataNode NodeID
-    -- | Denotes the block of a given label node.
-  | ASBlockOfLabelNode NodeID
-    -- | Denotes the block in which the definer of a given data node has been
+    -- | Denotes the immediate integer value of a given value node.
+  | ASImmIntValueOfValueNode NodeID
+    -- | Denotes the location of a given value node.
+  | ASLocationOfValueNode NodeID
+    -- | Denotes the name a given block node.
+  | ASNameOfBlockNode NodeID
+    -- | Denotes the block in which the definer of a given value node has been
     -- placed.
-  | ASBlockOfDataNode NodeID
+  | ASBlockOfValueNode NodeID
   deriving (Show)
 
 -- | Defines a machine instruction.
@@ -101,8 +101,8 @@ data InstrPattern
         -- instruction, but not necessarily contiguous.
       , patOS :: OpStructure
         -- ^ The operation structure of the pattern.
-      , patOutputDataNodes :: [NodeID]
-        -- ^ Specifies the data nodes within the 'OpStructure' which represent
+      , patOutputValueNodes :: [NodeID]
+        -- ^ Specifies the value nodes within the 'OpStructure' which represent
         -- the output that can be observed from outside the pattern.
       , patADDUC :: Bool
         -- ^ Indicates whether the def-dom-use constraints apply to this

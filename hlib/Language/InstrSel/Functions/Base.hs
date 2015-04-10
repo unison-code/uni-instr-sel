@@ -58,7 +58,7 @@ data Function
       , functionOS :: OpStructure
         -- ^ The semantics of the function.
       , functionInputs :: [NodeID]
-        -- ^ The IDs of the data nodes in the operation structure which
+        -- ^ The IDs of the value nodes in the operation structure which
         -- represent the function input arguments. The order of the list is the
         -- same as the order specified in the original code from which the
         -- semantics have been derived.

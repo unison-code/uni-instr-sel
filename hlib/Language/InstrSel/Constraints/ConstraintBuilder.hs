@@ -46,15 +46,15 @@ addMatchToBlockMovementConstraints os =
   addConstraints os (mkMatchToBlockMovementConstraints $ osGraph os)
 
 -- | Creates block movement constraints for a pattern graph such that the match
--- must be moved to the block of the entry label node (if there is such a node).
+-- must be moved to the block of the entry block node (if there is such a node).
 mkMatchToBlockMovementConstraints :: Graph -> [Constraint]
 mkMatchToBlockMovementConstraints g =
-  let entry_label = rootInCFG $ extractCFG g
-  in if isJust entry_label
+  let entry_block = rootInCFG $ extractCFG g
+  in if isJust entry_block
      then [ BoolExprConstraint
             $ EqExpr ( Block2NumExpr
-                       $ BlockOfLabelNodeExpr
-                       $ ANodeIDExpr (getNodeID $ fromJust entry_label)
+                       $ BlockOfBlockNodeExpr
+                       $ ANodeIDExpr (getNodeID $ fromJust entry_block)
                      )
                      ( Block2NumExpr
                        $ BlockToWhereMatchIsMovedExpr
@@ -69,7 +69,7 @@ addDataLocConstraints
   :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
   -> NodeID
-     -- ^ A data node.
+     -- ^ A value node.
   -> OpStructure
      -- ^ The old structure.
   -> OpStructure
@@ -78,18 +78,18 @@ addDataLocConstraints
 addDataLocConstraints regs d os =
   addConstraints os (mkDataLocConstraints regs d)
 
--- | Creates location constraints such that the data of a particular data node
+-- | Creates location constraints such that the data of a particular value node
 -- must be in one of a particular set of locations.
 mkDataLocConstraints
   :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
   -> NodeID
-     -- ^ A data node.
+     -- ^ A value node.
   -> [Constraint]
 mkDataLocConstraints [reg] d =
   [ BoolExprConstraint
     $ EqExpr ( Location2NumExpr
-               $ LocationOfDataNodeExpr
+               $ LocationOfValueNodeExpr
                $ ANodeIDExpr d
              )
              ( Location2NumExpr
@@ -99,7 +99,7 @@ mkDataLocConstraints [reg] d =
 mkDataLocConstraints regs d =
   [ BoolExprConstraint
     $ InSetExpr ( Location2SetElemExpr
-                  $ LocationOfDataNodeExpr
+                  $ LocationOfValueNodeExpr
                   $ ANodeIDExpr d
                 )
                 ( LocationClassExpr
@@ -116,12 +116,12 @@ addFallThroughConstraints l os =
 -- | Creates constraints for enforcing a fall-through from a match to a block.
 mkFallThroughConstraints
   :: NodeID
-     -- ^ A label node.
+     -- ^ A block node.
   -> [Constraint]
 mkFallThroughConstraints l =
   [ BoolExprConstraint
     $ FallThroughFromMatchToBlockExpr ThisMatchExpr
-                                      ( BlockOfLabelNodeExpr
+                                      ( BlockOfBlockNodeExpr
                                         $ ANodeIDExpr l
                                       )
   ]
@@ -133,12 +133,12 @@ addNoDataReuseConstraints d os =
   addConstraints os (mkNoDataReuseConstraints d)
 
 -- | Creates no-reuse constraints for a pattern graph such that the location of
--- the given data node must be in the null location.
+-- the given value node must be in the null location.
 mkNoDataReuseConstraints :: NodeID -> [Constraint]
 mkNoDataReuseConstraints d =
   [ BoolExprConstraint
     $ EqExpr ( Location2NumExpr
-               $ LocationOfDataNodeExpr
+               $ LocationOfValueNodeExpr
                $ ANodeIDExpr d
              )
              ( Location2NumExpr

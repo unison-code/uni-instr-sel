@@ -119,7 +119,7 @@ getLORegister :: Location
 getLORegister = getRegisterByName $ LocationName "LO"
 
 -- | Creates a simple pattern that consists of a single computation node, which
--- takes two data nodes as input, and produces another data node as output.
+-- takes two value nodes as input, and produces another value node as output.
 mkSimpleCompPattern
   :: O.CompOp
      -- ^ The computation operation.
@@ -136,9 +136,9 @@ mkSimpleCompPattern op src1 src2 dst =
        ( map
            Node
            [ ( 0, NodeLabel 0 mkCompNode )
-           , ( 1, NodeLabel 1 (mkDataNode src1) )
-           , ( 2, NodeLabel 2 (mkDataNode src2) )
-           , ( 3, NodeLabel 3 (mkDataNode  dst) )
+           , ( 1, NodeLabel 1 (mkValueNode src1) )
+           , ( 2, NodeLabel 2 (mkValueNode src2) )
+           , ( 3, NodeLabel 3 (mkValueNode  dst) )
            ]
        )
        ( map
@@ -150,7 +150,7 @@ mkSimpleCompPattern op src1 src2 dst =
        )
 
 -- | Creates a simple pattern that consists of a single copy node, which takes a
--- data node as input, and produces another data node as output.
+-- value node as input, and produces another value node as output.
 mkSimpleCopyPattern
   :: D.DataType
      -- ^ The data type of the operand.
@@ -162,8 +162,8 @@ mkSimpleCopyPattern src dst =
        ( map
            Node
            [ ( 0, NodeLabel 0 CopyNode )
-           , ( 1, NodeLabel 1 (mkDataNode src) )
-           , ( 2, NodeLabel 2 (mkDataNode dst) )
+           , ( 1, NodeLabel 1 (mkValueNode src) )
+           , ( 2, NodeLabel 2 (mkValueNode dst) )
            ]
        )
        ( map
@@ -180,7 +180,8 @@ mkSimpleCopy32Pattern =
   mkSimpleCopyPattern (mkIntTempType 32) (mkIntTempType 32)
 
 -- | Creates an instruction that consists of only a single computation node,
--- that takes two data nodes as input, and produces another data node as output.
+-- that takes two value nodes as input, and produces another value node as
+-- output.
 mkGenericSimpleRegRegCompInst
   :: String
      -- ^ The assembly string corresponding to this instruction.
@@ -208,7 +209,7 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputDataNodes = [3]
+              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
                                       [ ASLocationOfDataNode 3
@@ -229,11 +230,11 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
        }
 
 -- | Creates an instruction that consists of only a single computation node,
--- that takes two data nodes as input, and produces another data node as output.
--- All data are assumed to be N bits in size.
+-- that takes two value nodes as input, and produces another value node as
+-- output.  All values are assumed to be N bits in size.
 mkSimpleNBitRegRegCompInst
   :: Natural
-     -- ^ The width of the data
+     -- ^ The width of the data.
   -> String
      -- ^ The assembly string corresponding to this instruction.
   -> O.CompOp
@@ -254,9 +255,9 @@ mkSimple32BitRegRegCompInst :: String -> O.CompOp -> [Location] -> [Location] ->
 mkSimple32BitRegRegCompInst = mkSimpleNBitRegRegCompInst 32
 
 -- | Creates an instruction that consists of only a single computation node,
--- that takes two data nodes as input, and produces another data node as output.
--- The input operands are assumed to be 32 bits in size, and the result is
--- assumed to be 1 bit in size.
+-- that takes two value nodes as input, and produces another value node as
+-- output.  The input operands are assumed to be 32 bits in size, and the result
+-- is assumed to be 1 bit in size.
 mkSimple32BitRegs1BitResultCompInst
   :: String
      -- ^ The assembly string corresponding to this instruction.
@@ -285,10 +286,10 @@ mkDataImmDataAsmStr str =
     ]
 
 -- | Creates an instruction that consists of only a single computation node,
--- that takes two data nodes as input, and produces another data node as output.
--- The first input operand and result are assumed to reside in one of the 32
--- general-purpose registers, and the second input operand is assumed to be a
--- N-bit immediate of a given range.
+-- that takes two value nodes as input, and produces another value node as
+-- output.  The first input operand and result are assumed to reside in one of
+-- the 32 general-purpose registers, and the second input operand is assumed to
+-- be a N-bit immediate of a given range.
 mkSimpleNBitRegMBitImmCompInst
   :: [AssemblyStringPart]
      -- ^ The assembly string parts of the instruction.
@@ -316,7 +317,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputDataNodes = [3]
+              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate str
               }
@@ -330,10 +331,10 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
        }
 
 -- | Creates an instruction that consists of only a single computation node,
--- that takes two data nodes as input, and produces another data node as output.
--- The second input operand and result are assumed to reside in one of the 32
--- general-purpose registers, and the first input operand is assumed to be a
--- N-bit immediate of a given range.
+-- that takes two value nodes as input, and produces another value node as
+-- output.  The second input operand and result are assumed to reside in one of
+-- the 32 general-purpose registers, and the first input operand is assumed to
+-- be a N-bit immediate of a given range.
 mkSimpleNBitRegMBitFirstImmCompInst
   :: [AssemblyStringPart]
      -- ^ The assembly string parts of the instruction.
@@ -361,7 +362,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputDataNodes = [3]
+              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate str
               }
@@ -375,26 +376,26 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
        }
 
 -- | Creates a conditional branch pattern for a given comparison operator. The
--- first and second operands are the (n-bit) data nodes with IDs 5 and 6,
+-- first and second operands are the (n-bit) value nodes with IDs 5 and 6,
 -- respectively, and the 'true' and 'false' labels are the label node with IDs 2
 -- and 3, respectively. The returned value contains the graph and the ID of the
 -- entry label node.
 mkCondBrPattern :: Natural -> O.CompOp -> (Graph, NodeID)
 mkCondBrPattern n op =
-  let mkLabelNode = LabelNode $ BlockName ""
+  let mkBlockNode = BlockNode $ BlockName ""
       mkCompNode = ComputationNode { compOp = op }
-      mkNBitDataNode = DataNode (mkIntTempType n) Nothing
+      mkNBitValueNode = ValueNode (mkIntTempType n) Nothing
   in ( mkGraph
          ( map
              Node
              [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
-             , ( 1, NodeLabel 1 mkLabelNode )
-             , ( 2, NodeLabel 2 mkLabelNode )
-             , ( 3, NodeLabel 3 mkLabelNode )
+             , ( 1, NodeLabel 1 mkBlockNode )
+             , ( 2, NodeLabel 2 mkBlockNode )
+             , ( 3, NodeLabel 3 mkBlockNode )
              , ( 4, NodeLabel 4 mkCompNode )
-             , ( 5, NodeLabel 5 mkNBitDataNode )
-             , ( 6, NodeLabel 6 mkNBitDataNode )
-             , ( 7, NodeLabel 7 (DataNode (mkIntTempType 1) Nothing) )
+             , ( 5, NodeLabel 5 mkNBitValueNode )
+             , ( 6, NodeLabel 6 mkNBitValueNode )
+             , ( 7, NodeLabel 7 (ValueNode (mkIntTempType 1) Nothing) )
              ]
          )
          ( map
@@ -445,7 +446,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure ord_g (Just ord_entry) ord_cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ ord_str ++ " "
@@ -460,7 +461,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
         InstrPattern
           { patID = 1
           , patOS = OS.OpStructure inv_g (Just inv_entry) inv_cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ inv_str ++ " "
@@ -483,15 +484,15 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
 -- | Makes a predicated branch instruction (compares equal to $0).
 mkPredBrInstr :: Instruction
 mkPredBrInstr =
-  let mkLabelNode = LabelNode $ BlockName ""
+  let mkBlockNode = BlockNode $ BlockName ""
       g = mkGraph
          ( map
              Node
              [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
-             , ( 1, NodeLabel 1 mkLabelNode )
-             , ( 2, NodeLabel 2 mkLabelNode )
-             , ( 3, NodeLabel 3 mkLabelNode )
-             , ( 4, NodeLabel 4 (DataNode (mkIntTempType 1) Nothing) )
+             , ( 1, NodeLabel 1 mkBlockNode )
+             , ( 2, NodeLabel 2 mkBlockNode )
+             , ( 3, NodeLabel 3 mkBlockNode )
+             , ( 4, NodeLabel 4 (ValueNode (mkIntTempType 1) Nothing) )
              ]
          )
          ( map
@@ -509,7 +510,7 @@ mkPredBrInstr =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ "BEQ "
@@ -532,13 +533,13 @@ mkPredBrInstr =
 -- | Makes the unconditional branch instructions.
 mkBrInstrs :: [Instruction]
 mkBrInstrs =
-  let mkLabelNode = LabelNode $ BlockName ""
+  let mkBlockNode = BlockNode $ BlockName ""
       g = mkGraph
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Br) )
-                , ( 1, NodeLabel 1 mkLabelNode )
-                , ( 2, NodeLabel 2 mkLabelNode )
+                , ( 1, NodeLabel 1 mkBlockNode )
+                , ( 2, NodeLabel 2 mkBlockNode )
                 ]
             )
             ( map
@@ -552,7 +553,7 @@ mkBrInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "B "
@@ -576,8 +577,8 @@ mkRetInstrs =
             ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
-                , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
-                , ( 2, NodeLabel 2 (DataNode (mkIntTempType n) Nothing) )
+                , ( 1, NodeLabel 1 (BlockNode $ BlockName "") )
+                , ( 2, NodeLabel 2 (ValueNode (mkIntTempType n) Nothing) )
                 ]
             )
             ( map
@@ -590,7 +591,7 @@ mkRetInstrs =
            ( map
                 Node
                 [ ( 0, NodeLabel 0 (ControlNode O.Ret) )
-                , ( 1, NodeLabel 1 (LabelNode $ BlockName "") )
+                , ( 1, NodeLabel 1 (BlockNode $ BlockName "") )
                 ]
             )
             ( map
@@ -603,7 +604,7 @@ mkRetInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = str
           }
@@ -612,7 +613,7 @@ mkRetInstrs =
           { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1)
                     (mkMatchToBlockMovementConstraints vg)
-          , patOutputDataNodes = []
+          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
           }
@@ -662,7 +663,7 @@ mkMfhiInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputDataNodes = [2]
+          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASLocationOfDataNode 2
@@ -691,7 +692,7 @@ mkMfloInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputDataNodes = [2]
+          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASLocationOfDataNode 2
@@ -720,7 +721,7 @@ mkPseudoMoveInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputDataNodes = [2]
+          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "move "
@@ -748,7 +749,7 @@ mkLoadImmInstr =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g w r) Nothing cs
-          , patOutputDataNodes = [2]
+          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate a
           }
@@ -822,8 +823,8 @@ mkTypeConvInstrs =
        ( map
            Node
            [ ( 0, NodeLabel 0 (mkCompNode $ O.CompTypeConvOp t) )
-           , ( 1, NodeLabel 1 (mkDataNode (mkIntTempType n)) )
-           , ( 2, NodeLabel 2 (mkDataNode (mkIntTempType m)) )
+           , ( 1, NodeLabel 1 (mkValueNode (mkIntTempType n)) )
+           , ( 2, NodeLabel 2 (mkValueNode (mkIntTempType m)) )
            ]
        )
        ( map
@@ -839,7 +840,7 @@ mkTypeConvInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g t (n, m)) Nothing cs
-          , patOutputDataNodes = [2]
+          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -870,7 +871,7 @@ mkEqComparison =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputDataNodes = [3]
+              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
                                       [ ASVerbatim $ "seq "

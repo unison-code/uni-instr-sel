@@ -36,34 +36,34 @@ import Data.Maybe
 -------------
 
 -- | Inserts a copy node along every data flow edge that involves a use of a
--- data node and passes the predicate function. This also updates the definition
--- edges to retain the same semantics of the original graph. This means that if
--- there is a definition edge $e$ that involves a data node used by a phi node,
--- then upon copy extension $e$ will be moved to the new data node. Otherwise
--- $e$ will remain on the original data node. Note that definition edges where
--- the target is a data node are not affected.
+-- value node and passes the predicate function. This also updates the
+-- definition edges to retain the same semantics of the original graph. This
+-- means that if there is a definition edge $e$ that involves a value node used
+-- by a phi node, then upon copy extension $e$ will be moved to the new value
+-- node. Otherwise $e$ will remain on the original value node. Note that
+-- definition edges where the target is a value node are not affected.
 copyExtendWhen
   :: (Graph -> Edge -> Bool)
      -- ^ The predicate function, which checks whether to copy-extend the given
-     -- data edge.
+     -- data-flow edge.
   -> (D.DataType -> D.DataType)
-     -- ^ Function for creating the data type of the new data node based on the
-     -- data type of the original data node (that is, the data node to be
+     -- ^ Function for creating the data type of the new value node based on the
+     -- data type of the original value node (that is, the value node to be
      -- copy-extended).
   -> Graph
      -- ^ The graph to extend.
  -> Graph
 copyExtendWhen pf df g =
-  let nodes = filter isDataNode (getAllNodes g)
+  let nodes = filter isValueNode (getAllNodes g)
       edges = concatMap (getDtFlowOutEdges g) nodes
       filtered_edges = filter (pf g) edges
   in foldl (insertCopy df) g filtered_edges
 
--- | Inserts a new copy and data node (whose data type is decided using the
--- provided function) along a given data flow edge. If the data node is used by
--- a phi node, and there is a definition edge on that data node, then the
+-- | Inserts a new copy and value node (whose data type is decided using the
+-- provided function) along a given data flow edge. If the value node is used by
+-- a phi node, and there is a definition edge on that value node, then the
 -- definition edge with matching out-edge number will be moved to the new data
--- node. Note that definition edges where the target is a data node are not
+-- node. Note that definition edges where the target is a value node are not
 -- affected.
 insertCopy :: (D.DataType -> D.DataType) -> Graph -> Edge -> Graph
 insertCopy df g0 df_edge =
@@ -78,9 +78,9 @@ insertCopy df g0 df_edge =
                                   def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
-      new_dt = df $ getDataTypeOfDataNode orig_d_node
+      new_dt = df $ getDataTypeOfValueNode orig_d_node
       (g2, new_d_node) =
-        insertNewNodeAlongEdge (DataNode new_dt Nothing)
+        insertNewNodeAlongEdge (ValueNode new_dt Nothing)
                                (head $ getOutEdges g1 new_cp_node)
                                g1
       g3 = if isJust def_edge
@@ -90,9 +90,9 @@ insertCopy df g0 df_edge =
            else g2
   in g3
 
--- | Inserts a new label node and jump control node along each outbound control
+-- | Inserts a new block node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
--- function. The new label nodes will all have empty block name.
+-- function. The new block nodes will all have empty block name.
 --
 -- TODO: update the def-placement edges when phi nodes are involved!
 branchExtendWhen
@@ -110,11 +110,11 @@ branchExtendWhen f g =
       filtered_edges = filter (f g) edges
   in foldl insertBranch g filtered_edges
 
--- | Inserts a new label node and jump control node along the given control flow
+-- | Inserts a new block node and jump control node along the given control flow
 -- edge.
 insertBranch :: Graph -> Edge -> Graph
 insertBranch g0 e =
-  let (g1, l) = insertNewNodeAlongEdge (LabelNode mkEmptyBBLabel) e g0
+  let (g1, l) = insertNewNodeAlongEdge (BlockNode mkEmptyBBLabel) e g0
       new_e = head $ getCtrlFlowOutEdges g1 l
       (g2, _) = insertNewNodeAlongEdge (ControlNode O.Br) new_e g1
   in g2

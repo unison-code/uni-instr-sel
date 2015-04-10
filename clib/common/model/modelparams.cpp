@@ -54,8 +54,8 @@ ModelParams::getNumEntityNodesInF(void) const {
 }
 
 size_t
-ModelParams::getNumLabelNodesInF(void) const {
-    return num_func_label_nodes_;
+ModelParams::getNumBlockNodesInF(void) const {
+    return num_func_block_nodes_;
 }
 
 size_t
@@ -69,8 +69,8 @@ ModelParams::getNumLocationsInM(void) const {
 }
 
 ID
-ModelParams::getEntryLabelInF(void) const {
-    return func_entry_label_;
+ModelParams::getEntryBlockInF(void) const {
+    return func_entry_block_;
 }
 
 void
@@ -83,8 +83,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
 
     setNumValues(root, p);
     setStateEntitiesInF(root, p);
-    setEntryLabelInF(root, p);
-    setLabelDomSetsInF(root, p);
+    setEntryBlockInF(root, p);
+    setBlockDomSetsInF(root, p);
     setDefEdgesInF(root, p);
     setExecFreqOfBlocksInF(root, p);
     setConstraintsForF(root, p);
@@ -96,8 +96,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setOperationNodesCoveredByMatches(root, p);
     setEntityNodesDefinedByMatches(root, p);
     setEntityNodesUsedByMatches(root, p);
-    setEntryLabelNodeOfMatches(root, p);
-    setNonEntryLabelNodesInMatches(root, p);
+    setEntryBlockNodeOfMatches(root, p);
+    setNonEntryBlockNodesInMatches(root, p);
 }
 
 bool
@@ -235,28 +235,28 @@ ModelParams::setEntityNodesUsedByMatches(
 }
 
 void
-ModelParams::setEntryLabelNodeOfMatches(
+ModelParams::setEntryBlockNodeOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto entry : getJsonValue(root, "match-entry-label-nodes")) {
+    for (auto entry : getJsonValue(root, "match-entry-block-nodes")) {
         list<ArrayIndex> block;
         if (!entry.isNull()) block.push_back(toArrayIndex(entry));
-        p.match_entry_label_.push_back(block);
+        p.match_entry_block_.push_back(block);
     }
 }
 
 void
-ModelParams::setNonEntryLabelNodesInMatches(
+ModelParams::setNonEntryBlockNodesInMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-non-entry-label-nodes")) {
+    for (auto jsonlist : getJsonValue(root, "match-non-entry-block-nodes")) {
         list<ArrayIndex> blocks;
         for (auto entry : jsonlist) {
             blocks.push_back(toArrayIndex(entry));
         }
-        p.match_non_entry_labels_.push_back(blocks);
+        p.match_non_entry_blocks_.push_back(blocks);
     }
 }
 
@@ -276,18 +276,18 @@ ModelParams::getEntityNodesUsedByAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getEntryLabelNodeOfAllMatches(void) const {
-    return match_entry_label_;
+ModelParams::getEntryBlockNodeOfAllMatches(void) const {
+    return match_entry_block_;
 }
 
 vector< list<ID> >
-ModelParams::getNonEntryLabelNodesInAllMatches(void) const {
-    return match_non_entry_labels_;
+ModelParams::getNonEntryBlockNodesInAllMatches(void) const {
+    return match_non_entry_blocks_;
 }
 
 vector< list<ID> >
-ModelParams::getLabelDomSetsInF(void) const {
-    return func_label_dom_sets_;
+ModelParams::getBlockDomSetsInF(void) const {
+    return func_block_dom_sets_;
 }
 
 vector< list<ID> >
@@ -375,9 +375,9 @@ ModelParams::setADDUCSettingsForMatches(
 }
 
 void
-ModelParams::setEntryLabelInF(const Json::Value& root, ModelParams& p) {
-    p.func_entry_label_ =
-        toArrayIndex(getJsonValue(root, "fun-entry-label-node"));
+ModelParams::setEntryBlockInF(const Json::Value& root, ModelParams& p) {
+    p.func_entry_block_ =
+        toArrayIndex(getJsonValue(root, "fun-entry-block-node"));
 }
 
 void
@@ -385,19 +385,19 @@ ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_operation_nodes_ = toInt(getJsonValue(root, "fun-num-op-nodes"));
     p.num_func_entity_nodes_ =
         toInt(getJsonValue(root, "fun-num-entity-nodes"));
-    p.num_func_label_nodes_ = toInt(getJsonValue(root, "fun-num-label-nodes"));
+    p.num_func_block_nodes_ = toInt(getJsonValue(root, "fun-num-block-nodes"));
     p.num_locations_ = toInt(getJsonValue(root, "num-locations"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }
 
 void
-ModelParams::setLabelDomSetsInF(const Value& root, ModelParams& p) {
-    for (auto jsonlist : getJsonValue(root, "fun-label-dom-sets")) {
+ModelParams::setBlockDomSetsInF(const Value& root, ModelParams& p) {
+    for (auto jsonlist : getJsonValue(root, "fun-block-dom-sets")) {
         list<ArrayIndex> domset;
         for (auto entry : jsonlist) {
             domset.push_back(toArrayIndex(entry));
         }
-        p.func_label_dom_sets_.push_back(domset);
+        p.func_block_dom_sets_.push_back(domset);
     }
 }
 

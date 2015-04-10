@@ -175,17 +175,17 @@ generateModelFunctionParameters(
         << endl;
     out << "numEntitiesInFunction = " << params.getNumEntityNodesInF() << ";"
         << endl;
-    out << "numLabelsInFunction = " << params.getNumLabelNodesInF() << ";"
+    out << "numBlocksInFunction = " << params.getNumBlockNodesInF() << ";"
         << endl;
 
-    out << "entryLabelOfFunction = " << params.getEntryLabelInF() << ";"
+    out << "entryBlockOfFunction = " << params.getEntryBlockInF() << ";"
         << endl;
 
-    out << "domSetOfLabelInFunction = array1d(allLabelsInFunction, ";
-    printMinizincValue(out, params.getLabelDomSetsInF());
+    out << "domSetOfBlockInFunction = array1d(allBlocksInFunction, ";
+    printMinizincValue(out, params.getBlockDomSetsInF());
     out << ");" << endl;
 
-    out << "defEdgesForLabelInFunction = array1d(allLabelsInFunction, ";
+    out << "defEdgesForBlockInFunction = array1d(allBlocksInFunction, ";
     printMinizincValue(out, params.getDefEdgesInF());
     out << ");" << endl;
 
@@ -193,7 +193,7 @@ generateModelFunctionParameters(
     printMinizincValue(out, params.getAllStateEntitiesInF());
     out << ";" << endl;
 
-    out << "execFrequencyOfLabelInFunction = array1d(allLabelsInFunction, ";
+    out << "execFrequencyOfBlockInFunction = array1d(allBlocksInFunction, ";
     printMinizincValue(out, params.getExecFreqOfAllBlocksInF());
     out << ");" << endl;
 }
@@ -231,12 +231,12 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getEntityNodesUsedByAllMatches());
     out << ");" << endl;
 
-    out << "entryLabelOfMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntryLabelNodeOfAllMatches());
+    out << "entryBlockOfMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getEntryBlockNodeOfAllMatches());
     out << ");" << endl;
 
-    out << "nonEntryLabelsInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getNonEntryLabelNodesInAllMatches());
+    out << "nonEntryBlocksInMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getNonEntryBlockNodesInAllMatches());
     out << ");" << endl;
 
     out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";

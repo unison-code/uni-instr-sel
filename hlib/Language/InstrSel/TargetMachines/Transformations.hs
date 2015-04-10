@@ -32,14 +32,14 @@ import Language.InstrSel.OpStructures
 -------------
 
 -- | Copy-extends the given graph along every eligable data flow edge, except
--- those edges where the data node has no definition (that is, no parents)
--- unless the data node represents a constant value.
+-- those edges where the value node has no definition (that is, no parents)
+-- unless the value node represents a constant value.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph =
   copyExtendWhen
     ( \g e ->
       let src = getSourceNode g e
-      in length (getDtFlowInEdges g src) > 0 || isDataNodeWithConstValue src
+      in length (getDtFlowInEdges g src) > 0 || isValueNodeWithConstValue src
     )
     (\_ -> AnyType)
 
@@ -48,13 +48,13 @@ copyExtend :: TargetMachine -> TargetMachine
 copyExtend tm =
   let copyExtendOS os =
         let old_g = osGraph os
-            old_data_ns = filter isDataNode $ getAllNodes old_g
+            old_v_ns = filter isValueNode $ getAllNodes old_g
             new_g = copyExtendGraph old_g
-            new_data_ns = filter (\n -> isDataNode n && n `notElem` old_data_ns)
-                                 (getAllNodes old_g)
+            new_v_ns = filter (\n -> isValueNode n && n `notElem` old_v_ns)
+                              (getAllNodes old_g)
             old_cs = osConstraints os
             new_cs = old_cs ++ concatMap mkNoDataReuseConstraints
-                                         (map getNodeID new_data_ns)
+                                         (map getNodeID new_v_ns)
         in os { osGraph = new_g, osConstraints = new_cs }
       copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
       copyExtendInstr i =

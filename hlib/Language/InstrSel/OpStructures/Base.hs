@@ -13,7 +13,7 @@
 --
 -- Both constants and immediate symbols are mapped to a constant node on which a
 -- 'ConstantValueConstraint' applies to restrict the value. The same goes for
--- temporaries (which will later be allocated to a register) and data nodes
+-- temporaries (which will later be allocated to a register) and value nodes
 -- whose value must be allocated to a specific register.
 --
 --------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ import Language.InstrSel.Utils.JSON
 data OpStructure
   = OpStructure
       { osGraph :: G.Graph
-      , osEntryLabelNode :: Maybe G.NodeID
+      , osEntryBlockNode :: Maybe G.NodeID
       , osConstraints :: [Constraint]
       }
   deriving (Show)
@@ -60,14 +60,14 @@ instance FromJSON OpStructure where
   parseJSON (Object v) =
     OpStructure
       <$> v .: "graph"
-      <*> v .: "entry-label-node"
+      <*> v .: "entry-block-node"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
 instance ToJSON OpStructure where
   toJSON os =
     object [ "graph"            .= (osGraph os)
-           , "entry-label-node" .= (osEntryLabelNode os)
+           , "entry-block-node" .= (osEntryBlockNode os)
            , "constraints"      .= (osConstraints os)
            ]
 
@@ -80,7 +80,7 @@ instance ToJSON OpStructure where
 -- | Creates an empty operation structure.
 mkEmpty :: OpStructure
 mkEmpty = OpStructure { osGraph = G.mkEmpty
-                      , osEntryLabelNode = Nothing
+                      , osEntryBlockNode = Nothing
                       , osConstraints = []
                       }
 
