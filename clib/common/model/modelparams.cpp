@@ -212,11 +212,11 @@ ModelParams::setEntityNodesDefinedByMatches(
     ModelParams& p
 ) {
     for (auto jsonlist : getJsonValue(root, "match-entity-nodes-defined")) {
-        list<ArrayIndex> covers;
+        list<ArrayIndex> defs;
         for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
+            defs.push_back(toArrayIndex(entry));
         }
-        p.match_entities_defined_.push_back(covers);
+        p.match_entities_defined_.push_back(defs);
     }
 }
 
@@ -226,11 +226,11 @@ ModelParams::setEntityNodesUsedByMatches(
     ModelParams& p
 ) {
     for (auto jsonlist : getJsonValue(root, "match-entity-nodes-used")) {
-        list<ArrayIndex> covers;
+        list<ArrayIndex> uses;
         for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
+            uses.push_back(toArrayIndex(entry));
         }
-        p.match_entities_used_.push_back(covers);
+        p.match_entities_used_.push_back(uses);
     }
 }
 
@@ -239,12 +239,10 @@ ModelParams::setEntryLabelNodeOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-entry-label-nodes")) {
-        list<ArrayIndex> covers;
-        for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
-        }
-        p.match_entry_label_.push_back(covers);
+    for (auto entry : getJsonValue(root, "match-entry-label-nodes")) {
+        list<ArrayIndex> block;
+        if (!entry.isNull()) block.push_back(toArrayIndex(entry));
+        p.match_entry_label_.push_back(block);
     }
 }
 
@@ -254,11 +252,11 @@ ModelParams::setNonEntryLabelNodesInMatches(
     ModelParams& p
 ) {
     for (auto jsonlist : getJsonValue(root, "match-non-entry-label-nodes")) {
-        list<ArrayIndex> covers;
+        list<ArrayIndex> blocks;
         for (auto entry : jsonlist) {
-            covers.push_back(toArrayIndex(entry));
+            blocks.push_back(toArrayIndex(entry));
         }
-        p.match_non_entry_labels_.push_back(covers);
+        p.match_non_entry_labels_.push_back(blocks);
     }
 }
 
