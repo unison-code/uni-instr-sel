@@ -602,7 +602,7 @@ mkRetInstrs =
           , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
+          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "RetRA (with return value)" ]
           }
       vpat =
         InstrPattern
@@ -611,13 +611,13 @@ mkRetInstrs =
                     (mkMatchToBlockMovementConstraints vg)
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "jr $31" ]
+          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "RetRA" ]
           }
   in [ Instruction
          { instrID = 0
          , instrPatterns = [pat 32, vpat]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 0
                                         , instrIsNonCopy = True
                                         }
          }
@@ -628,7 +628,7 @@ mkRetInstrs =
            -- to the left and 16 bits to the right "arithmetically".
          , instrPatterns = [pat 16]
          , instrProps = InstrProperties { instrCodeSize = 12
-                                        , instrLatency = 4
+                                        , instrLatency = 2
                                         , instrIsNonCopy = True
                                         }
          }
