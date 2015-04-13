@@ -230,7 +230,7 @@ constraint
     % entry.
     forall (r in entryBlockOfMatch[m])
     (
-      sel[m] -> place[m] = r
+      place[m] in {r, blockValueForNull}
     )
   );
 
@@ -267,11 +267,11 @@ constraint
 constraint
   forall (e in allDataInFunction, l in allBlocksInFunction)
   (
-    l = def[e]
+    def[e] = l
     ->
     exists (m in allMatches)
     (
-      l = place[m] \/ (sel[m] /\ l in spannedBlocksInMatch[m])
+      place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m])
     )
   );
 
