@@ -479,7 +479,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
        { instrID = 0
        , instrPatterns = [ord_pat, inv_pat]
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 2
+                                      , instrLatency = 1
                                       , instrIsNonCopy = True
                                       }
        }
@@ -565,7 +565,7 @@ mkBrInstrs =
          { instrID = 0
          , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 1
                                         , instrIsNonCopy = True
                                         }
          }
@@ -719,7 +719,7 @@ mkPseudoMoveInstrs =
          { instrID = 0
          , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 1
                                         , instrIsNonCopy = False
                                         }
          }
@@ -988,11 +988,11 @@ mkInstructions =
               getGPRegisters
               getGPRegisters
     )
-    [ ("and", O.IntOp O.And)
-    , ("or" , O.IntOp O.Or)
-    , ("xor", O.IntOp O.XOr)
-    , ("slt", O.IntOp O.LT)
-    , ("sltu", O.UIntOp O.GT)
+    [ ("AND", O.IntOp O.And)
+    , ("OR" , O.IntOp O.Or)
+    , ("XOR", O.IntOp O.XOr)
+    , ("SLT", O.IntOp O.LT)
+    , ("SLTu", O.UIntOp O.GT)
     ]
   ++
   [ mkEqComparison ]
@@ -1013,12 +1013,12 @@ mkInstructions =
                                (O.CompArithOp op2)
                              ]
     )
-    [ ("bgt", O.SIntOp O.GT, "ble", O.SIntOp O.LE)
-    , ("blt", O.SIntOp O.LT, "bge", O.SIntOp O.GE)
-    , ("bge", O.SIntOp O.GE, "blt", O.SIntOp O.LT)
-    , ("ble", O.SIntOp O.LE, "bgt", O.SIntOp O.GT)
-    , ("beq", O.IntOp  O.Eq,  "bne", O.IntOp  O.NEq)
-    , ("bne", O.IntOp  O.NEq, "beq", O.IntOp  O.Eq)
+    [ ("BGT", O.SIntOp O.GT, "BLE", O.SIntOp O.LE)
+    , ("BLT", O.SIntOp O.LT, "BGE", O.SIntOp O.GE)
+    , ("BGE", O.SIntOp O.GE, "BLT", O.SIntOp O.LT)
+    , ("BLE", O.SIntOp O.LE, "BGT", O.SIntOp O.GT)
+    , ("BEQ", O.IntOp  O.Eq,  "BNE", O.IntOp  O.NEq)
+    , ("BNE", O.IntOp  O.NEq, "BEQ", O.IntOp  O.Eq)
     ]
   ++
   map
@@ -1031,9 +1031,9 @@ mkInstructions =
               32
               5
     )
-    [ ("sll", O.IntOp O.Shl)
-    , ("srl", O.IntOp O.LShr)
-    , ("sra", O.IntOp O.AShr)
+    [ ("SLL", O.IntOp O.Shl)
+    , ("SRL", O.IntOp O.LShr)
+    , ("SRA", O.IntOp O.AShr)
     ]
   ++
   map
@@ -1058,7 +1058,7 @@ mkInstructions =
               16
               16
     )
-    [ ("sra", O.IntOp O.AShr) ]
+    [ ("SRA", O.IntOp O.AShr) ]
   ++
   map
     ( \n -> mkSimpleNBitRegMBitImmCompInst
