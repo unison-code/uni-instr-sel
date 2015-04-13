@@ -913,12 +913,14 @@ mkInstructions =
               getGPRegisters
      ]
   ++
-  [ mkSimple32BitRegRegCompInst
-              "rem"
+  [ let i =
+            mkSimple32BitRegRegCompInst
+              "PseudoSDIV"
               (O.CompArithOp $ O.SIntOp O.Rem)
               getGPRegisters
               getGPRegisters
               [getHIRegister]
+    in updateLatency 38 i
   ]
   ++
   [ mkSimple32BitRegRegCompInst
