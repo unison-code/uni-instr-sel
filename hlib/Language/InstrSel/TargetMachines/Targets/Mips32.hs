@@ -44,6 +44,11 @@ mkRegClasses = mkGPRegisters ++ mkHILORegisters
 regPrefix :: String
 regPrefix = "$"
 
+updateLatency :: Integer -> Instruction -> Instruction
+updateLatency l i =
+    let p = instrProps i
+    in i {instrProps = p { instrLatency = l } }
+
 -- | Creates the list of general-purpose registers, but there are no guarantees
 -- that the location IDs will be correctly set!
 mkGPRegisters :: [Location]
@@ -648,7 +653,7 @@ mkMfhiInstrs =
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim "mfhi "
+                                  [ ASVerbatim "PseudoMFHI "
                                   , ASLocationOfDataNode 2
                                   ]
           }
@@ -656,7 +661,7 @@ mkMfhiInstrs =
          { instrID = 0
          , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 1
                                         , instrIsNonCopy = True
                                         }
          }
@@ -676,7 +681,7 @@ mkMfloInstrs =
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim "mflo "
+                                  [ ASVerbatim "PseudoMFLO "
                                   , ASLocationOfDataNode 2
                                   ]
           }
@@ -684,7 +689,7 @@ mkMfloInstrs =
          { instrID = 0
          , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 1
                                         , instrIsNonCopy = True
                                         }
          }
@@ -890,13 +895,13 @@ mkInstructions =
               getGPRegisters
               getGPRegisters
     )
-    [ ("add" , O.SIntOp O.Add)
-    , ("addu", O.UIntOp O.Add)
-    , ("sub" , O.SIntOp O.Sub)
-    , ("subu", O.UIntOp O.Sub)
-    , ("sllv", O.IntOp O.Shl)
-    , ("srlv", O.IntOp O.LShr)
-    , ("srav", O.IntOp O.AShr)
+    [ ("ADD" , O.SIntOp O.Add)
+    , ("ADDu", O.UIntOp O.Add)
+    , ("SUB" , O.SIntOp O.Sub)
+    , ("SUBu", O.UIntOp O.Sub)
+    , ("SLLV", O.IntOp O.Shl)
+    , ("SRLV", O.IntOp O.LShr)
+    , ("SRAV", O.IntOp O.AShr)
     ]
   ++ [
       mkSimpleNBitRegRegCompInst
@@ -916,17 +921,23 @@ mkInstructions =
               [getHIRegister]
   ]
   ++
-  map
-    ( \a -> mkSimple32BitRegRegCompInst
-              (fst a)
-              (O.CompArithOp $ snd a)
+  [ mkSimple32BitRegRegCompInst
+              "mul"
+              (O.CompArithOp $ O.SIntOp O.Mul)
               getGPRegisters
               getGPRegisters
               [getLORegister]
-    )
-    [ ("mul" , O.SIntOp O.Mul)
-    , ("div" , O.SIntOp O.Div)
-    ]
+  ]
+  ++
+  [ let i =
+            mkSimple32BitRegRegCompInst
+              "PseudoSDIV"
+              (O.CompArithOp $ O.SIntOp O.Div)
+              getGPRegisters
+              getGPRegisters
+              [getLORegister]
+    in updateLatency 38 i
+  ]
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
@@ -938,7 +949,7 @@ mkInstructions =
               32
               16
     )
-    [ ("addi", O.SIntOp O.Add) ]
+    [ ("ADDi", O.SIntOp O.Add) ]
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
@@ -950,9 +961,9 @@ mkInstructions =
               32
               16
     )
-    [ ("addiu", O.UIntOp O.Add),
-      ("andi",  O.IntOp O.And),
-      ("ori",   O.IntOp O.Or)
+    [ ("ADDiu", O.UIntOp O.Add),
+      ("ANDi",  O.IntOp O.And),
+      ("ORi",   O.IntOp O.Or)
     ]
   ++
   map
