@@ -606,7 +606,7 @@ mkRetInstrs =
           }
       vpat =
         InstrPattern
-          { patID = 0
+          { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1)
                     (mkMatchToBlockMovementConstraints vg)
           , patOutputDataNodes = []
