@@ -12,8 +12,8 @@ LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
 OPT      := $(LLVMDIR)/bin/opt
 AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 UNI      := ../uni-is/uni-is
-MINIZINC_SOLVER  := minizinc
-SOLVER_SCRIPT    := ../solvers/minizinc/solver -s $(MINIZINC_SOLVER)
+MINIZINC_BACKEND := minizinc
+SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
 PRETTIFY := ../tools/prettify-json
 
@@ -76,7 +76,7 @@ distclean-toolchain:
       -m $*.hl.model.json -a $*.aimaps.json -o $@
 
 %.ll.sol.json: %.ll.model.json
-	$(SOLVER_SCRIPT) -t $(SOLVER_TIMELIMIT) -o $@ $<
+	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
 %.hl.sol.json: %.ll.sol.json %.aimaps.json
 	$(UNI) transform --raise-ll-cp-solution \
