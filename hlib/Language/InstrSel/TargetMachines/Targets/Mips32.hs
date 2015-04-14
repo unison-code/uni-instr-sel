@@ -335,8 +335,8 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
 -- general-purpose registers, and the first input operand is assumed to be a
 -- N-bit immediate of a given range.
 mkSimpleNBitRegMBitFirstImmCompInst
-  :: String
-     -- ^ The assembly string corresponding to this instruction.
+  :: [AssemblyStringPart]
+     -- ^ The assembly string parts of the instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -363,14 +363,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate
-                                      [ ASLocationOfDataNode 3
-                                      , ASVerbatim " = "
-                                      , ASVerbatim $ str ++ " "
-                                      , ASImmIntValueOfDataNode 1
-                                      , ASVerbatim ", "
-                                      , ASLocationOfDataNode 2
-                                      ]
+              , patAsmStrTemplate = AssemblyStringTemplate str
               }
   in Instruction
        { instrID = 0
@@ -1088,7 +1081,13 @@ mkInstructions =
     [ 8, 32 ]
   ++
     [ mkSimpleNBitRegMBitFirstImmCompInst
-              "subuz"
+              [ ASLocationOfDataNode 3
+              , ASVerbatim " = "
+              , ASVerbatim "SUBu "
+              , ASVerbatim "%ZERO"
+              , ASVerbatim ", "
+              , ASLocationOfDataNode 2
+              ]
               (O.CompArithOp $ O.UIntOp O.Sub)
               getGPRegisters
               getGPRegisters
