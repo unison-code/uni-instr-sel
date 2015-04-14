@@ -268,6 +268,7 @@ data HighLevelSolution
       , hlSolCost :: Integer
         -- ^ The cost metric of the found solution.
       }
+  | NoHighLevelSolution
   deriving (Show)
 
 -- | Contains a solution to a low-level CP model instance.
@@ -297,6 +298,7 @@ data LowLevelSolution
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
       }
+  | NoLowLevelSolution
   deriving (Show)
 
 -- | Contains mappings from an array index to some ID. This is used when
@@ -497,32 +499,41 @@ instance ToJSON LowLevelModel where
 
 instance FromJSON HighLevelSolution where
   parseJSON (Object v) =
-    HighLevelSolution
-      <$> v .: "order-of-bbs"
-      <*> v .: "selected-matches"
-      <*> v .: "bbs-of-sel-matches"
-      <*> v .: "locs-of-dnodes"
-      <*> v .: "cost"
+    do has_solution <- v .: "has-solution"
+       if has_solution
+       then HighLevelSolution
+              <$> v .: "order-of-bbs"
+              <*> v .: "selected-matches"
+              <*> v .: "bbs-of-sel-matches"
+              <*> v .: "locs-of-dnodes"
+              <*> v .: "cost"
+       else return NoHighLevelSolution
   parseJSON _ = mzero
 
 instance ToJSON HighLevelSolution where
-  toJSON d =
+  toJSON d@(HighLevelSolution {}) =
     object [ "order-of-bbs"         .= (hlSolOrderOfBBs d)
            , "selected-matches"     .= (hlSolSelMatches d)
            , "bbs-of-sel-matches"   .= (hlSolBBsOfSelMatches d)
            , "locs-of-dnodes"       .= (hlSolLocsOfDataNodes d)
            , "cost"                 .= (hlSolCost d)
+           , "has-solution"         .= True
            ]
+  toJSON NoHighLevelSolution =
+    object [ "has-solution" .= False ]
 
 instance FromJSON LowLevelSolution where
   parseJSON (Object v) =
-    LowLevelSolution
-      <$> v .: "order-of-bbs"
-      <*> v .: "is-match-selected"
-      <*> v .: "bb-of-match"
-      <*> v .: "has-dnode-loc"
-      <*> v .: "loc-of-dnode"
-      <*> v .: "cost"
+    do has_solution <- v .: "has-solution"
+       if has_solution
+       then LowLevelSolution
+              <$> v .: "order-of-bbs"
+              <*> v .: "is-match-selected"
+              <*> v .: "bb-of-match"
+              <*> v .: "has-dnode-loc"
+              <*> v .: "loc-of-dnode"
+              <*> v .: "cost"
+       else return NoLowLevelSolution
   parseJSON _ = mzero
 
 instance ToJSON ArrayIndexMaplists where

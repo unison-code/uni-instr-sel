@@ -32,7 +32,7 @@ raiseLowLevelSolution
   :: LowLevelSolution
   -> ArrayIndexMaplists
   -> HighLevelSolution
-raiseLowLevelSolution sol ai_maps =
+raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
   let ai_match_id_maps = ai2MatchIDs ai_maps
       ai_label_node_id_maps = ai2LabelNodeIDs ai_maps
       ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
@@ -72,3 +72,4 @@ raiseLowLevelSolution sol ai_maps =
        , hlSolLocsOfDataNodes = locs_of_data_nodes
        , hlSolCost = llSolCost sol
        }
+raiseLowLevelSolution NoLowLevelSolution _ = NoHighLevelSolution

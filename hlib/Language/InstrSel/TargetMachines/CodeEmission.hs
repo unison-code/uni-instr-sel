@@ -69,7 +69,7 @@ generateCode
   -> HighLevelModel
   -> HighLevelSolution
   -> [AssemblyCode]
-generateCode target model sol =
+generateCode target model sol@(HighLevelSolution {}) =
   concat $
     map ( \l_node ->
           let matches = getMatchesMovedToBlock sol l_node
@@ -80,6 +80,8 @@ generateCode target model sol =
           in (AsmBlock $ show bblabel):instrs
         )
         (hlSolOrderOfBBs sol)
+generateCode _ _ NoHighLevelSolution =
+  error "generateCode: cannot generate code from no solution"
 
 -- | Gets the list of matches that has been allocated to a given block in the CP
 -- model solution. The block is identified using the node ID of its
