@@ -114,18 +114,26 @@ content = []
 with open(solution_file, 'r') as file:
     content = file.readlines()
 
-# Check if solver reported that the model was unsatisfiable
-for l in content:
-    if l.strip() == "=====UNSATISFIABLE=====":
-        print json.dumps({"has-solution": False})
-        sys.exit(0)
+# Report error if the model was unsatisfiable
+first_line = content[0].strip()
+if first_line == "=====UNSATISFIABLE=====":
+    error("No solution found because model was reported as unsatisfiable")
+
+# Check if no solution was found
+if first_line == "=====UNBOUNDED=====" or first_line == "=====UNKNOWN=====":
+    print json.dumps({"has-solution": False})
+    sys.exit(0)
 
 # Extract data
 all_data = []
+found_optimal=False
 for i in range(len(content)):
     linenr = str(i + 1)
     line = content[i].strip()
-    if len(line) == 0 or consistsOnlyOf(line, '-') or consistsOnlyOf(line, '='):
+    if len(line) == 0 or consistsOnlyOf(line, '-'):
+        continue
+    if consistsOnlyOf(line, '='):
+        found_optimal=True
         continue
     try:
         name, data = extractData(line)
@@ -134,6 +142,7 @@ for i in range(len(content)):
     if getDataByName(all_data, name) != None:
         error("Line " + linenr + ": Duplicate entries with name '" + name + "'")
     all_data.append([name, data])
+all_data.append(["optimal", found_optimal])
 
 # Add, modify, or remove certain data in order to facilitate postprocessing
 
@@ -161,12 +170,13 @@ for loc in loc_data:
 all_data.append(["has_d_loc", has_d_loc_data])
 
 # Turn desirable data into JSON
-data_table = [ ["loc",       "loc-of-dnode"]
-             , ["has_d_loc", "has-dnode-loc"]
-             , ["sel",       "is-match-selected"]
-             , ["mov",       "bb-of-match"]
-             , ["ord",       "order-of-bbs"]
-             , ["cost",      "cost"]
+data_table = [ ["loc",        "loc-of-dnode"]
+             , ["has_d_loc",  "has-dnode-loc"]
+             , ["sel",        "is-match-selected"]
+             , ["mov",        "bb-of-match"]
+             , ["ord",        "order-of-bbs"]
+             , ["cost",       "cost"]
+             , ["optimal",    "is-solution-optimal"]
              ]
 keep_table = [ d[0] for d in data_table ]
 replace_table = [ d[1] for d in data_table ]
