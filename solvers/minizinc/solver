@@ -52,6 +52,7 @@ MINIZINC_ERROR_FILENAME="error.log"
 # These will be set after parsing command-line arguments
 JSON_INPUT_FILEPATH=""
 JSON_OUTPUT_FILEPATH=""
+STATS_OUTPUT_FILEPATH=""
 TMP_DIR=""
 MINIZINC_PARAMS_FILEPATH=""
 MINIZINC_FULL_MODEL_FILEPATH=""
@@ -109,6 +110,16 @@ function flattenModelFile {
     reportNewEntity ${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn
 }
 
+function purgeIntermediateSolutions {
+    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
+    reportTask "Purging intermediate solutions"
+    exe "$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH" \
+        " > $tmp_file"
+    exitIfFailed ""
+    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
+    exitIfFailed ""
+}
+
 function inflateSolutionFile {
     # It is assumed that the working directory is where the FZN and OZN files
     # are
@@ -138,6 +149,9 @@ function executeSolver {
         command="timeout ${MINIZINC_TIMELIMIT}s"
     fi
     command="$command $MINIZINC_SOLVER_BIN -s"
+    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
+        command="$command -a"
+    fi
     if [[ $MINIZINC_SOLVER_BIN == fzn* ]]; then
         command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     else
@@ -153,6 +167,8 @@ function executeSolver {
     error_msg=`cat $MINIZINC_ERROR_FILEPATH`
     exitIfFailed $error_msg
     reportNewEntity $MINIZINC_SOLUTION_FILEPATH
+
+    purgeIntermediateSolutions
 
     # Inflate solution, if necessary
     if [[ $MINIZINC_SOLVER_BIN == fzn* ]]; then
@@ -228,6 +244,7 @@ MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
 MINIZINC_SOLUTION_FILEPATH="$TMP_DIR/$MINIZINC_SOLUTION_FILENAME"
 MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
+STATS_OUTPUT_FILEPATH="${JSON_OUTPUT_FILEPATH%.*}.stats"
 
 reportTask "Generating MiniZinc parameter file"
 exe "$THIS_DIR/mzn-params-gen $JSON_INPUT_FILEPATH" \
@@ -235,7 +252,7 @@ exe "$THIS_DIR/mzn-params-gen $JSON_INPUT_FILEPATH" \
 exitIfFailed ""
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
-reportTask "Creating MiniZinc model file"
+reportTask "Generating MiniZinc model file"
 exe "cat $MINIZINC_BASE_MODEL_FILEPATH > $MINIZINC_FULL_MODEL_FILEPATH"
 exitIfFailed ""
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
@@ -252,6 +269,11 @@ exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
     " > $JSON_OUTPUT_FILEPATH"
 exitIfFailed ""
 reportNewEntity $JSON_OUTPUT_FILEPATH
+
+reportTask "Generating MiniZinc stats file"
+exe "sed -n -e '/^%/p' $MINIZINC_SOLUTION_FILEPATH > $STATS_OUTPUT_FILEPATH"
+exitIfFailed ""
+reportNewEntity $STATS_OUTPUT_FILEPATH
 
 reportTask "Cleaning up temporary files"
 exe "rm -rf $TMP_DIR"
