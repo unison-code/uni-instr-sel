@@ -130,6 +130,8 @@ found_optimal=False
 for i in range(len(content)):
     linenr = str(i + 1)
     line = content[i].strip()
+    if line[0] == '%':
+        continue
     if len(line) == 0 or consistsOnlyOf(line, '-'):
         continue
     if consistsOnlyOf(line, '='):
