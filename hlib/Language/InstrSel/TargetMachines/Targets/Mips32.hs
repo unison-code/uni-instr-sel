@@ -314,7 +314,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
                                       , ASVerbatim ","
                                       , ASLocationOfDataNode 1
                                       , ASVerbatim ","
-                                      , ASLocationOfDataNode 2
+                                      , ASImmIntValueOfDataNode 2
                                       ]
               }
   in Instruction
@@ -364,7 +364,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
                                       [ ASVerbatim $ str ++ " "
                                       , ASLocationOfDataNode 3
                                       , ASVerbatim ","
-                                      , ASLocationOfDataNode 1
+                                      , ASImmIntValueOfDataNode 1
                                       , ASVerbatim ","
                                       , ASLocationOfDataNode 2
                                       ]
@@ -730,28 +730,26 @@ mkLoadImmInstr :: [Instruction]
 mkLoadImmInstr =
   let g w r     = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType w)
       cs        = mkDataLocConstraints (map locID getGPRegisters) 2
-      pat w r s =
+      pat w r a =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g w r) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
-                                -- TODO: name!
-                                  [ ASVerbatim $ s ++ " "
-                                  , ASLocationOfDataNode 1
-                                  , ASVerbatim ","
-                                  , ASLocationOfDataNode 2
-                                  ]
+          , patAsmStrTemplate = AssemblyStringTemplate a
           }
-  in [
-    -- Zero immediate (free in mips32)
-    -- TODO: the location of the destination could be $0
-    Instruction
+      asm s = [ ASVerbatim $ s ++ " "
+              , ASImmIntValueOfDataNode 1
+              , ASVerbatim ","
+              , ASLocationOfDataNode 2
+              ]
+  in [ Instruction
+       -- Zero immediate (free in mips32)
+       -- TODO: the location of the destination could be $0
          { instrID = 0
          , instrPatterns = [
-                             pat 16 (Range 0 0) "load-zero16"
-                           , pat 32 (Range 0 0) "load-zero32"
+                             pat 16 (Range 0 0) []
+                           , pat 32 (Range 0 0) []
                            ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
@@ -762,8 +760,8 @@ mkLoadImmInstr =
        -- 16-bits immediates (implemented with ori)
          { instrID = 0
          , instrPatterns = [
-                             pat 16 (Range (-32768) 32767) "load-half16"
-                           , pat 32 (Range (-32768) 32767) "load-half32"
+                             pat 16 (Range (-32768) 32767) (asm "load-half16")
+                           , pat 32 (Range (-32768) 32767) (asm "load-half32")
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
@@ -774,8 +772,10 @@ mkLoadImmInstr =
        -- Arbitrary immediates (implemented with lui + ori)
          { instrID = 0
          , instrPatterns = [
-                             pat 16 (Range (-2147483648) 2147483647) "load-full16"
-                           , pat 32 (Range (-2147483648) 2147483647) "load-full32"
+                             pat 16 (Range (-2147483648) 2147483647)
+                                     (asm "load-full16")
+                           , pat 32 (Range (-2147483648) 2147483647)
+                                     (asm "load-full32")
                            ]
          , instrProps = InstrProperties { instrCodeSize = 8
                                         , instrLatency = 2
