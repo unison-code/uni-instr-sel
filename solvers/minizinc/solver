@@ -111,7 +111,8 @@ function flattenModelFile {
 }
 
 function inflateSolutionFile {
-    # It is assumed that the working directory is where the FZN and OZN files are
+    # It is assumed that the working directory is where the FZN and OZN files
+    # are
     szn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.szn"
     ozn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
     tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
