@@ -215,7 +215,7 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
                                       , ASVerbatim $ " = "
                                       , ASVerbatim $ str ++ " "
                                       , ASLocationOfDataNode 1
-                                      , ASVerbatim ","
+                                      , ASVerbatim ", "
                                       , ASLocationOfDataNode 2
                                       ]
               }
@@ -274,14 +274,24 @@ mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
       dt1 = mkIntTempType 1
   in mkGenericSimpleRegRegCompInst str op dt32 dt32 dt1 r1 r2 r3
 
+mkDataImmDataAsmStr :: String -> [AssemblyStringPart]
+mkDataImmDataAsmStr str =
+    [ ASLocationOfDataNode 3
+    , ASVerbatim $ " = "
+    , ASVerbatim $ str ++ " "
+    , ASLocationOfDataNode 1
+    , ASVerbatim ", "
+    , ASImmIntValueOfDataNode 2
+    ]
+
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two data nodes as input, and produces another data node as output.
 -- The first input operand and result are assumed to reside in one of the 32
 -- general-purpose registers, and the second input operand is assumed to be a
 -- N-bit immediate of a given range.
 mkSimpleNBitRegMBitImmCompInst
-  :: String
-     -- ^ The assembly string corresponding to this instruction.
+  :: [AssemblyStringPart]
+     -- ^ The assembly string parts of the instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -308,14 +318,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate
-                                      [ ASLocationOfDataNode 3
-                                      , ASVerbatim $ " = "
-                                      , ASVerbatim $ str ++ " "
-                                      , ASLocationOfDataNode 1
-                                      , ASVerbatim ","
-                                      , ASImmIntValueOfDataNode 2
-                                      ]
+              , patAsmStrTemplate = AssemblyStringTemplate str
               }
   in Instruction
        { instrID = 0
@@ -361,11 +364,11 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
               , patOutputDataNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = AssemblyStringTemplate
-                                      [ ASVerbatim $ str ++ " "
-                                      , ASLocationOfDataNode 3
-                                      , ASVerbatim ","
+                                      [ ASLocationOfDataNode 3
+                                      , ASVerbatim " = "
+                                      , ASVerbatim $ str ++ " "
                                       , ASImmIntValueOfDataNode 1
-                                      , ASVerbatim ","
+                                      , ASVerbatim ", "
                                       , ASLocationOfDataNode 2
                                       ]
               }
@@ -454,9 +457,9 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim $ ord_str ++ " "
                                   , ASLocationOfDataNode 5
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASLocationOfDataNode 6
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASBlockOfLabelNode 2
                                   ]
           }
@@ -469,9 +472,9 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim $ inv_str ++ " "
                                   , ASLocationOfDataNode 5
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASLocationOfDataNode 6
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASBlockOfLabelNode 3
                                   ]
           }
@@ -516,10 +519,12 @@ mkPredBrInstr =
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim $ "beqz "
+                                  [ ASVerbatim $ "BEQ "
                                   , ASLocationOfDataNode 4
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASBlockOfLabelNode 2
+                                  , ASVerbatim ", "
+                                  , ASVerbatim "%ZERO"
                                   ]
           }
   in Instruction
@@ -557,7 +562,7 @@ mkBrInstrs =
           , patOutputDataNodes = []
           , patADDUC = True
           , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim "j "
+                                  [ ASVerbatim "B "
                                   , ASBlockOfLabelNode 2
                                   ]
           }
@@ -714,7 +719,7 @@ mkPseudoMoveInstrs =
           , patAsmStrTemplate = AssemblyStringTemplate
                                   [ ASVerbatim "move "
                                   , ASLocationOfDataNode 1
-                                  , ASVerbatim ","
+                                  , ASVerbatim ", "
                                   , ASLocationOfDataNode 2
                                   ]
           }
@@ -743,7 +748,7 @@ mkLoadImmInstr =
           }
       asm s = [ ASVerbatim $ s ++ " "
               , ASImmIntValueOfDataNode 1
-              , ASVerbatim ","
+              , ASVerbatim ", "
               , ASLocationOfDataNode 2
               ]
   in [ Instruction
@@ -760,10 +765,14 @@ mkLoadImmInstr =
                                         }
          }
      , Instruction
-       -- 16-bits immediates (implemented with ori)
+       -- 16-bits immediates (implemented with ADDiu)
          { instrID = 0
          , instrPatterns = [
-                             pat 16 (Range (-32768) 32767) (asm "load-half16")
+                             pat 16 (Range (-32768) 32767) [ ASLocationOfDataNode 2
+                                                           , ASVerbatim " = "
+                                                           , ASVerbatim "ADDiu %ZERO, "
+                                                           , ASImmIntValueOfDataNode 1
+                                                           ]
                            , pat 32 (Range (-32768) 32767) (asm "load-half32")
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
@@ -820,22 +829,19 @@ mkTypeConvInstrs =
       cs  = mkDataLocConstraints (map locID getGPRegisters) 1
             ++
             mkDataLocConstraints (map locID getGPRegisters) 2
-      pat t (n, m) s =
+      pat t (n, m) =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g t (n, m)) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim $ s ++ " "
-                                  , ASLocationOfDataNode 2
-                                  ]
+          , patAsmStrTemplate = AssemblyStringTemplate []
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [ pat O.SExt  (16, 32) "sext"
-                           , pat O.ZExt  (8, 32)  "zext"
-                           , pat O.Trunc (32, 16) "trunc"
+         , instrPatterns = [ pat O.SExt  (16, 32)
+                           , pat O.ZExt  (8, 32)
+                           , pat O.Trunc (32, 16)
                            ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
@@ -863,9 +869,9 @@ mkEqComparison =
               , patAsmStrTemplate = AssemblyStringTemplate
                                       [ ASVerbatim $ "seq "
                                       , ASLocationOfDataNode 0
-                                      , ASVerbatim ","
+                                      , ASVerbatim ", "
                                       , ASLocationOfDataNode 1
-                                      , ASVerbatim ","
+                                      , ASVerbatim ", "
                                       , ASLocationOfDataNode 2
                                       ]
               }
@@ -946,7 +952,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (fst a)
+              (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
@@ -958,7 +964,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (fst a)
+              (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
@@ -1026,7 +1032,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (fst a)
+              (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
@@ -1041,7 +1047,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (fst a)
+              (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
@@ -1053,7 +1059,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (fst a)
+              (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegisters
               getGPRegisters
@@ -1065,7 +1071,13 @@ mkInstructions =
   ++
   map
     ( \n -> mkSimpleNBitRegMBitImmCompInst
-              "norz"
+              [ ASLocationOfDataNode 3
+              , ASVerbatim $ " = "
+              , ASVerbatim $ "NOR "
+              , ASLocationOfDataNode 1
+              , ASVerbatim ", "
+              , ASVerbatim "%ZERO"
+              ]
               (O.CompArithOp $ O.IntOp O.XOr)
               getGPRegisters
               getGPRegisters

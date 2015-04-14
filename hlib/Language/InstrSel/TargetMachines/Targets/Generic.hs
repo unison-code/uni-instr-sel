@@ -123,7 +123,7 @@ mkGenericPhiInstructions =
                                         , ASLocationOfDataNode 1
                                         , ASVerbatim ", "
                                         , ASBlockOfDataNode 1
-                                        , ASVerbatim ","
+                                        , ASVerbatim ", "
                                         , ASLocationOfDataNode 2
                                         , ASVerbatim ", "
                                         , ASBlockOfDataNode 2
