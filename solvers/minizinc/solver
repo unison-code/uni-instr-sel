@@ -44,19 +44,21 @@ done
 THIS_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 MINIZINC_PARAMS_FILENAME="params.mzn"
-MINIZINC_OUTPUT_FILENAME="model.sol.mzn"
 MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
+MINIZINC_SOLUTION_FILENAME="full-model.szn"
 MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
 MINIZINC_ERROR_FILENAME="error.log"
 
 # These will be set after parsing command-line arguments
-MODEL_PARAMS_FILEPATH=""
+JSON_INPUT_FILEPATH=""
 JSON_OUTPUT_FILEPATH=""
 TMP_DIR=""
 MINIZINC_PARAMS_FILEPATH=""
 MINIZINC_FULL_MODEL_FILEPATH=""
-MINIZINC_OUTPUT_FILEPATH=""
+MINIZINC_SOLUTION_FILEPATH=""
 MINIZINC_ERROR_FILEPATH=""
+MINIZINC_SOLVER_BIN=""
+MINIZINC_TIMELIMIT=""
 
 
 
@@ -65,7 +67,7 @@ MINIZINC_ERROR_FILEPATH=""
 #================
 
 function echoerr {
-    echo "$@" 1>&2
+    echo "ERROR: $@" 1>&2
 }
 
 function exe {
@@ -75,6 +77,9 @@ function exe {
 
 function exitIfFailed {
     if [ $? -ne 0 ]; then
+        if [ ! -z "$@" ]; then
+            echoerr "$@"
+        fi
         exit 1
     fi
 }
@@ -86,8 +91,114 @@ function ensureFileExists {
     fi
 }
 
+function reportTask {
+    echo "* $@..."
+}
+
+
 function reportNewEntity {
     echo "  Created: $@"
+}
+
+function flattenModelFile {
+    # It is assumed that the working directory is where the MZN file is
+    fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
+    reportTask "Flattening MiniZinc model file"
+    exe "mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    exitIfFailed ""
+    reportNewEntity $fzn_filepath
+    reportNewEntity ${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn
+}
+
+function inflateSolutionFile {
+    # It is assumed that the working directory is where the FZN and OZN files are
+    szn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.szn"
+    ozn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
+    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
+    reportTask "Inflating MiniZinc solution file"
+    exe "solns2out ${ozn_filepath##*/} ${szn_filepath##*/} > $tmp_file"
+    exitIfFailed ""
+    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
+    exitIfFailed ""
+    reportNewEntity $MINIZINC_SOLUTION_FILEPATH
+}
+
+function executeMinizinc {
+    # It is assumed that the working directory is where the MZN file is
+    command="$MINIZINC_SOLVER_BIN"
+    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
+        echoerr "Timeout not supported by $MINIZINC_SOLVER_BIN"
+        exit 1
+    fi
+    command="$command $MINIZINC_FULL_MODEL_FILENAME"
+    command="$command > $MINIZINC_SOLUTION_FILEPATH"
+    command="$command 2> $MINIZINC_ERROR_FILEPATH"
+    exe "$command"
+    SOLVER_EXIT_STATUS=$?
+}
+
+function executeMznGecode {
+    executeMinizinc
+}
+
+function executeMznCpx {
+    # TODO: implement
+    echoerr "$MINIZINC_SOLVER_BIN not yet supported"
+    exit 1
+    SOLVER_EXIT_STATUS=$?
+}
+
+function executeFznGecode {
+    # It is assumed that the working directory is where the MZN file is
+    fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
+    command="$MINIZINC_SOLVER_BIN"
+    command="$command -time $MINIZINC_TIMELIMIT"
+    command="$command $fzn_filepath"
+    command="$command > $MINIZINC_SOLUTION_FILEPATH"
+    command="$command 2> $MINIZINC_ERROR_FILEPATH"
+    exe "$command"
+    SOLVER_EXIT_STATUS=$?
+}
+
+function executeSolver {
+    working_dir=`pwd`
+    cd $TMP_DIR
+
+    # Flatten model, if necessary
+    case $MINIZINC_SOLVER_BIN in
+        fzn-gecode)
+            flattenModelFile
+        ;;
+    esac
+
+    reportTask "Running solver"
+    case $MINIZINC_SOLVER_BIN in
+        minizinc)
+            executeMinizinc
+        ;;
+        mzn-gecode)
+            executeMznGecode
+        ;;
+        mzn-cpx)
+            executeMznCpx
+        ;;
+        fzn-gecode)
+            executeFznGecode
+        ;;
+    esac
+    error_msg=`cat $MINIZINC_ERROR_FILEPATH`
+    $(exit $SOLVER_EXIT_STATUS)
+    exitIfFailed $error_msg
+    reportNewEntity $MINIZINC_SOLUTION_FILEPATH
+
+    # Inflate solution, if necessary
+    case $MINIZINC_SOLVER_BIN in
+        fzn-gecode)
+            inflateSolutionFile
+        ;;
+    esac
+
+    cd $working_dir
 }
 
 
@@ -96,28 +207,55 @@ function reportNewEntity {
 # MAIN SCRIPT
 #=============
 
+# Parse arguments
+while [[ $# > 1 ]]
+do
+    key="$1"
+
+    case $key in
+        -o|--output)
+            JSON_OUTPUT_FILEPATH="$2"
+            shift
+        ;;
+        -s|--solver)
+            MINIZINC_SOLVER_BIN="$2"
+            shift
+        ;;
+        -t|--timelimit)
+            MINIZINC_TIMELIMIT="$2"
+            shift
+        ;;
+        *)
+            echoerr "Unknown argument switch '$1'"
+            exit 1
+        ;;
+    esac
+    shift
+done
+if [[ $# == 1 ]]; then
+    JSON_INPUT_FILEPATH="$1"
+fi
+if [ -z $MINIZINC_TIMELIMIT ]; then
+    MINIZINC_TIMELIMIT=0
+fi
+
 # Check arguments
-if [ $# -gt 3 ]; then
-    echoerr "Too many input arguments"
+if [ -z $JSON_INPUT_FILEPATH ]; then
+    echoerr "No JSON input file provided (must be last argument)"
+    exit 1
+else
+    ensureFileExists $JSON_INPUT_FILEPATH
+fi
+if [ -z $JSON_OUTPUT_FILEPATH ]; then
+    echoerr "No JSON output file provided (use -o or --output switch)"
     exit 1
 fi
-if [ "$1" == "-o" ]; then
-    if [ -z "$2" ]; then
-        echoerr "'-o' requires an argument"
-        exit 1
-    fi
-    JSON_OUTPUT_FILEPATH=$2
-    if [ -z "$3" ]; then
-        echoerr "No model params file provided"
-        exit 1
-    fi
-    MODEL_PARAMS_FILEPATH=$3
-else
-    echoerr "No '-o' option provided (must be first)"
+if [ -z $MINIZINC_SOLVER_BIN ]; then
+    echoerr "No solver specified (use -s or --solver switch)"
     exit 1
 fi
 
-echo "* Creating temporary directory..."
+reportTask "Creating temporary directory"
 TMP_DIR=`mktemp -d`
 if [ ! -d "$TMP_DIR" ]; then
     echoerr "Failed to create temporary directory"
@@ -127,49 +265,33 @@ reportNewEntity $TMP_DIR
 # Set filepath variables
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
-MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
+MINIZINC_SOLUTION_FILEPATH="$TMP_DIR/$MINIZINC_SOLUTION_FILENAME"
 MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 
-echo "* Generating MiniZinc parameter file..."
-exe "$THIS_DIR/mzn-params-gen $MODEL_PARAMS_FILEPATH" \
-    "  > $MINIZINC_PARAMS_FILEPATH"
-exitIfFailed
+reportTask "Generating MiniZinc parameter file"
+exe "$THIS_DIR/mzn-params-gen $JSON_INPUT_FILEPATH" \
+    " > $MINIZINC_PARAMS_FILEPATH"
+exitIfFailed ""
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
-echo "* Creating MiniZinc model file..."
-ensureFileExists $MINIZINC_PARAMS_FILEPATH
+reportTask "Creating MiniZinc model file"
 exe "cat $MINIZINC_BASE_MODEL_FILEPATH > $MINIZINC_FULL_MODEL_FILEPATH"
-exitIfFailed
-ensureFileExists $MINIZINC_FULL_MODEL_FILEPATH
+exitIfFailed ""
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 echo >> $MINIZINC_FULL_MODEL_FILEPATH
 exe "cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH"
-exitIfFailed
+exitIfFailed ""
 reportNewEntity $MINIZINC_FULL_MODEL_FILEPATH
 
-echo "* Running MiniZinc solver..."
-WORKING_DIR=`pwd`
-cd $TMP_DIR
-exe "minizinc $MINIZINC_FULL_MODEL_FILENAME" \
-    "  > $MINIZINC_OUTPUT_FILEPATH 2> $MINIZINC_ERROR_FILEPATH"
-STATUS=$?
-if [ $STATUS -ne 0 ]; then
-    echoerr "minizinc exited with failure"
-    cat $MINIZINC_ERROR_FILEPATH
-    exit 1
-fi
-cd $WORKING_DIR
-reportNewEntity $MINIZINC_OUTPUT_FILEPATH
+executeSolver
 
-echo "* Converting MiniZinc solution to JSON format..."
-ensureFileExists $MINIZINC_OUTPUT_FILEPATH
-exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH" \
-    "  > $JSON_OUTPUT_FILEPATH"
-exitIfFailed
-ensureFileExists $JSON_OUTPUT_FILEPATH
+reportTask "Converting MiniZinc solution to JSON format"
+exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
+    " > $JSON_OUTPUT_FILEPATH"
+exitIfFailed ""
 reportNewEntity $JSON_OUTPUT_FILEPATH
 
-echo "* Cleaning up temporary files..."
+reportTask "Cleaning up temporary files"
 exe "rm -rf $TMP_DIR"
-exitIfFailed
+exitIfFailed ""

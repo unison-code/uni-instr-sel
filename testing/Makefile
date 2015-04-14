@@ -14,6 +14,9 @@ AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 UNI      := ../uni-is/uni-is
 SOLVER   := ../solvers/minizinc/solver
 PRETTIFY := ../tools/prettify-json
+MINIZINC_SOLVER  := fzn-gecode
+SOLVER_SCRIPT    := ../solvers/minizinc/solver -s $(MINIZINC_SOLVER)
+SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
 
 TARGET := mips32
 
@@ -74,7 +77,7 @@ distclean-toolchain:
       -m $*.hl.model.json -a $*.aimaps.json -o $@
 
 %.ll.sol.json: %.ll.model.json
-	$(SOLVER) -o $@ $<
+	$(SOLVER_SCRIPT) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
 %.hl.sol.json: %.ll.sol.json %.aimaps.json
 	$(UNI) transform --raise-ll-cp-solution \
