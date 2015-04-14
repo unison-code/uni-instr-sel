@@ -6,8 +6,4 @@
 *.s
 *.ll
 *.mll
-match-test
-test
-test-llvm
-param-test
-pattern-matcher
+*.stats
