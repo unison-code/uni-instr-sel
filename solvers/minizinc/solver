@@ -76,7 +76,7 @@ function exe {
 }
 
 function exitIfFailed {
-    if [ $? -ne 0 ]; then
+    if [[ $? != 0 ]]; then
         if [ ! -z "$@" ]; then
             echoerr "$@"
         fi
@@ -94,7 +94,6 @@ function ensureFileExists {
 function reportTask {
     echo "* $@..."
 }
-
 
 function reportNewEntity {
     echo "  Created: $@"
@@ -124,80 +123,41 @@ function inflateSolutionFile {
     reportNewEntity $MINIZINC_SOLUTION_FILEPATH
 }
 
-function executeMinizinc {
-    # It is assumed that the working directory is where the MZN file is
-    command="$MINIZINC_SOLVER_BIN"
-    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
-        echoerr "Timeout not supported by $MINIZINC_SOLVER_BIN"
-        exit 1
-    fi
-    command="$command $MINIZINC_FULL_MODEL_FILENAME"
-    command="$command > $MINIZINC_SOLUTION_FILEPATH"
-    command="$command 2> $MINIZINC_ERROR_FILEPATH"
-    exe "$command"
-    SOLVER_EXIT_STATUS=$?
-}
-
-function executeMznGecode {
-    executeMinizinc
-}
-
-function executeMznCpx {
-    # TODO: implement
-    echoerr "$MINIZINC_SOLVER_BIN not yet supported"
-    exit 1
-    SOLVER_EXIT_STATUS=$?
-}
-
-function executeFznGecode {
-    # It is assumed that the working directory is where the MZN file is
-    fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
-    command="$MINIZINC_SOLVER_BIN"
-    command="$command -time $MINIZINC_TIMELIMIT"
-    command="$command $fzn_filepath"
-    command="$command > $MINIZINC_SOLUTION_FILEPATH"
-    command="$command 2> $MINIZINC_ERROR_FILEPATH"
-    exe "$command"
-    SOLVER_EXIT_STATUS=$?
-}
-
 function executeSolver {
     working_dir=`pwd`
     cd $TMP_DIR
 
     # Flatten model, if necessary
-    case $MINIZINC_SOLVER_BIN in
-        fzn-gecode)
-            flattenModelFile
-        ;;
-    esac
+    if [[ $MINIZINC_SOLVER_BIN == fzn* ]]; then
+        flattenModelFile
+    fi
 
     reportTask "Running solver"
-    case $MINIZINC_SOLVER_BIN in
-        minizinc)
-            executeMinizinc
-        ;;
-        mzn-gecode)
-            executeMznGecode
-        ;;
-        mzn-cpx)
-            executeMznCpx
-        ;;
-        fzn-gecode)
-            executeFznGecode
-        ;;
-    esac
+    command=""
+    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
+        command="timeout ${MINIZINC_TIMELIMIT}s"
+    fi
+    command="$command $MINIZINC_SOLVER_BIN -s"
+    if [[ $MINIZINC_SOLVER_BIN == fzn* ]]; then
+        command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
+    else
+        command="$command $MINIZINC_FULL_MODEL_FILENAME"
+    fi
+    command="$command > $MINIZINC_SOLUTION_FILEPATH"
+    command="$command 2> $MINIZINC_ERROR_FILEPATH"
+    exe "$command"
+    if [[ $? == 124 ]]; then
+        # Solver timed out
+        $( exit 0 )
+    fi
     error_msg=`cat $MINIZINC_ERROR_FILEPATH`
-    $(exit $SOLVER_EXIT_STATUS)
     exitIfFailed $error_msg
     reportNewEntity $MINIZINC_SOLUTION_FILEPATH
 
     # Inflate solution, if necessary
-    case $MINIZINC_SOLVER_BIN in
-        fzn-gecode)
-            inflateSolutionFile
-        ;;
-    esac
+    if [[ $MINIZINC_SOLVER_BIN == fzn* ]]; then
+        inflateSolutionFile
+    fi
 
     cd $working_dir
 }

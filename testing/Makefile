@@ -12,11 +12,10 @@ LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
 OPT      := $(LLVMDIR)/bin/opt
 AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 UNI      := ../uni-is/uni-is
-SOLVER   := ../solvers/minizinc/solver
-PRETTIFY := ../tools/prettify-json
-MINIZINC_SOLVER  := fzn-gecode
+MINIZINC_SOLVER  := minizinc
 SOLVER_SCRIPT    := ../solvers/minizinc/solver -s $(MINIZINC_SOLVER)
 SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
+PRETTIFY := ../tools/prettify-json
 
 TARGET := mips32
 
