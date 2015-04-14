@@ -211,9 +211,9 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patOutputDataNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = AssemblyStringTemplate
-                                      [ ASVerbatim $ str ++ " "
-                                      , ASLocationOfDataNode 0
-                                      , ASVerbatim ","
+                                      [ ASLocationOfDataNode 3
+                                      , ASVerbatim $ " = "
+                                      , ASVerbatim $ str ++ " "
                                       , ASLocationOfDataNode 1
                                       , ASVerbatim ","
                                       , ASLocationOfDataNode 2
@@ -309,9 +309,9 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
               , patOutputDataNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = AssemblyStringTemplate
-                                      [ ASVerbatim $ str ++ " "
-                                      , ASLocationOfDataNode 3
-                                      , ASVerbatim ","
+                                      [ ASLocationOfDataNode 3
+                                      , ASVerbatim $ " = "
+                                      , ASVerbatim $ str ++ " "
                                       , ASLocationOfDataNode 1
                                       , ASVerbatim ","
                                       , ASImmIntValueOfDataNode 2
@@ -607,7 +607,10 @@ mkRetInstrs =
           , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "RetRA (with return value)" ]
+          , patAsmStrTemplate = AssemblyStringTemplate
+                                  [ ASVerbatim "RetRA "
+                                  , ASLocationOfDataNode 2
+                                  ]
           }
       vpat =
         InstrPattern

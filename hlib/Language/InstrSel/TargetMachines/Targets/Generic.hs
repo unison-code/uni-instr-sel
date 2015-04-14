@@ -118,17 +118,15 @@ mkGenericPhiInstructions =
               , patOutputDataNodes = [3]
               , patADDUC = False
               , patAsmStrTemplate = ( AssemblyStringTemplate
-                                        [ ASVerbatim "phi "
-                                        , ASLocationOfDataNode 3
-                                        , ASVerbatim " ("
+                                        [ ASLocationOfDataNode 3
+                                        , ASVerbatim " = PHI "
                                         , ASLocationOfDataNode 1
                                         , ASVerbatim ", "
                                         , ASBlockOfDataNode 1
-                                        , ASVerbatim ") ("
+                                        , ASVerbatim ","
                                         , ASLocationOfDataNode 2
                                         , ASVerbatim ", "
                                         , ASBlockOfDataNode 2
-                                        , ASVerbatim ")"
                                         ]
                                     )
               }
