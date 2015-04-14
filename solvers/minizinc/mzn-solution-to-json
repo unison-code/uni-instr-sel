@@ -76,6 +76,8 @@ def toValue(s):
             return s
 
 def consistsOnlyOf(s, ch):
+    if len(s) == 0:
+        return False
     for c in s:
         if c != ch:
             return False
@@ -128,13 +130,11 @@ if content[0].strip() == "=====UNSATISFIABLE=====":
 
 # Extract data
 all_data = []
-found_optimal=False
+found_optimal = False
 for i in range(len(content)):
     linenr = str(i + 1)
     line = content[i].strip()
-    if line[0] == '%':
-        continue
-    if len(line) == 0 or consistsOnlyOf(line, '-'):
+    if len(line) == 0 or line[0] == '%' or consistsOnlyOf(line, '-'):
         continue
     if consistsOnlyOf(line, '='):
         found_optimal=True
