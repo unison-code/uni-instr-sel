@@ -267,6 +267,8 @@ data HighLevelSolution
         -- means that no location was assigned to the corresponding data node.
       , hlSolCost :: Integer
         -- ^ The cost metric of the found solution.
+      , hlIsOptimal :: Bool
+        -- ^ Whether this solution is optimal.
       }
   | NoHighLevelSolution
   deriving (Show)
@@ -297,6 +299,8 @@ data LowLevelSolution
         -- @llHasDataNodeLocation@ is set to @True@.
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
+      , llIsOptimal :: Bool
+        -- ^ Whether this solution is optimal.
       }
   | NoLowLevelSolution
   deriving (Show)
@@ -507,6 +511,7 @@ instance FromJSON HighLevelSolution where
               <*> v .: "bbs-of-sel-matches"
               <*> v .: "locs-of-dnodes"
               <*> v .: "cost"
+              <*> v .: "is-solution-optimal"
        else return NoHighLevelSolution
   parseJSON _ = mzero
 
@@ -518,6 +523,7 @@ instance ToJSON HighLevelSolution where
            , "locs-of-dnodes"       .= (hlSolLocsOfDataNodes d)
            , "cost"                 .= (hlSolCost d)
            , "has-solution"         .= True
+           , "is-solution-optimal"  .= (hlIsOptimal d)
            ]
   toJSON NoHighLevelSolution =
     object [ "has-solution" .= False ]
@@ -533,6 +539,7 @@ instance FromJSON LowLevelSolution where
               <*> v .: "has-dnode-loc"
               <*> v .: "loc-of-dnode"
               <*> v .: "cost"
+              <*> v .: "is-solution-optimal"
        else return NoLowLevelSolution
   parseJSON _ = mzero
 

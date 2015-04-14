@@ -71,5 +71,6 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
        , hlSolBBsOfSelMatches = bbs_of_sel_matches
        , hlSolLocsOfDataNodes = locs_of_data_nodes
        , hlSolCost = llSolCost sol
+       , hlIsOptimal = llIsOptimal sol
        }
 raiseLowLevelSolution NoLowLevelSolution _ = NoHighLevelSolution
