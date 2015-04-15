@@ -160,12 +160,14 @@ function executeSolver {
     command="$command > $MINIZINC_SOLUTION_FILEPATH"
     command="$command 2> $MINIZINC_ERROR_FILEPATH"
     exe "$command"
+    solver_exit_status=$?
     if [[ $? == 124 ]]; then
         # Solver timed out
-        $( exit 0 )
+        solver_exit_status=0
     fi
     error_msg=`cat $MINIZINC_ERROR_FILEPATH`
-    exitIfFailed $error_msg
+    $( exit $solver_exit_status ) # Restore $? to exit status of the solver
+    exitIfFailed "$error_msg"
     reportNewEntity $MINIZINC_SOLUTION_FILEPATH
 
     purgeIntermediateSolutions
