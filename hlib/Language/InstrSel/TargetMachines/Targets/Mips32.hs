@@ -49,18 +49,27 @@ updateLatency l i =
     let p = instrProps i
     in i {instrProps = p { instrLatency = l } }
 
+-- | The name of the zero register.
+getZeroRegName :: String
+getZeroRegName = "%ZERO"
+
 -- | Creates the list of general-purpose registers, but there are no guarantees
 -- that the location IDs will be correctly set!
 mkGPRegisters :: [Location]
 mkGPRegisters =
+  [ Location { locID = 0
+             , locName = LocationName getZeroRegName
+             , locIsAValue = True
+             }
+  ]
+  ++
   map
-    ( \i -> Location
-              { locID = 0
-              , locName = LocationName $ regPrefix ++ show i
-              , locIsAValue = if i == 0 then True else False
-              }
+    ( \i -> Location { locID = 0
+                     , locName = LocationName $ regPrefix ++ show i
+                     , locIsAValue = False
+                     }
     )
-    ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
+    ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
 
 -- | Creates the list of 'HILO' registers (which are actually memory
 -- locations). Note that there are no guarantees that the register IDs will be
@@ -99,21 +108,30 @@ getRegisterByName :: LocationName -> Location
 getRegisterByName rname =
   let regs = getAllLocations
       found = filter (\r -> rname == locName r) regs
-  in head found
+  in trace (show rname ++ "   " ++ show found) $ head found
 
 -- | Retrieves all locations, where the location IDs have been set such that
 -- every location is given a unique ID.
 getAllLocations :: [Location]
 getAllLocations = fixLocIDs $ mkRegClasses
 
--- | Retrieves all general-purpose registers, where the location IDs have been
--- set such that every location is given a unique ID.
-getGPRegisters :: [Location]
-getGPRegisters =
+-- | Retrieves all general-purpose registers, includeing the zero register,
+-- where the location IDs have been set such that every location is given a
+-- unique ID.
+getGPRegistersInclZero :: [Location]
+getGPRegistersInclZero = getGPRegistersWithoutZero ++ [getZeroRegister]
+
+-- | Same as 'getGPRegistersInclZero' but without the zero register.
+getGPRegistersWithoutZero :: [Location]
+getGPRegistersWithoutZero =
   map
     (\i -> getRegisterByName $ LocationName $ regPrefix ++ show i)
-    ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
+    ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
 
+-- | Retrieves the zero register, which always contains the value 0.  The
+-- location ID will be correctly set.
+getZeroRegister :: Location
+getZeroRegister = getRegisterByName $ LocationName getZeroRegName
 
 -- | Retrieves the general-purpose register that serves as the return register.
 -- The location ID will be correctly set.
@@ -528,7 +546,7 @@ mkPredBrInstr =
                                   , ASVerbatim ", "
                                   , ASBlockOfLabelNode 2
                                   , ASVerbatim ", "
-                                  , ASVerbatim "%ZERO"
+                                  , ASVerbatim getZeroRegName
                                   ]
           }
   in Instruction
@@ -668,7 +686,7 @@ mkMfhiInstrs =
   let g = mkSimpleCopy32Pattern
       cs = mkDataLocConstraints [locID getHIRegister] 1
            ++
-           mkDataLocConstraints (map locID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -697,7 +715,7 @@ mkMfloInstrs =
   let g = mkSimpleCopy32Pattern
       cs = mkDataLocConstraints [locID getLORegister] 1
            ++
-           mkDataLocConstraints (map locID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -724,9 +742,9 @@ mkMfloInstrs =
 mkPseudoMoveInstrs :: [Instruction]
 mkPseudoMoveInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkDataLocConstraints (map locID getGPRegisters) 1
+      cs = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
            ++
-           mkDataLocConstraints (map locID getGPRegisters) 2
+           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -754,11 +772,11 @@ mkPseudoMoveInstrs =
 mkLoadImmInstr :: [Instruction]
 mkLoadImmInstr =
   let g w r     = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType w)
-      cs        = mkDataLocConstraints (map locID getGPRegisters) 2
-      pat w r a =
+      cs ls     = mkDataLocConstraints (map locID ls) 2
+      pat w r ls a =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure (g w r) Nothing cs
+          , patOS = OS.OpStructure (g w r) Nothing (cs ls)
           , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate a
@@ -770,11 +788,9 @@ mkLoadImmInstr =
               ]
   in [ Instruction
        -- Zero immediate (free in mips32)
-       -- TODO: the location of the destination could be $0
          { instrID = 0
-         , instrPatterns = [
-                             pat 16 (Range 0 0) []
-                           , pat 32 (Range 0 0) []
+         , instrPatterns = [ pat 16 (Range 0 0) [getZeroRegister] []
+                           , pat 32 (Range 0 0) [getZeroRegister] []
                            ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
@@ -784,13 +800,19 @@ mkLoadImmInstr =
      , Instruction
        -- 16-bits immediates (implemented with ADDiu)
          { instrID = 0
-         , instrPatterns = [
-                             pat 16 (Range (-32768) 32767) [ ASLocationOfDataNode 2
-                                                           , ASVerbatim " = "
-                                                           , ASVerbatim "ADDiu %ZERO, "
-                                                           , ASImmIntValueOfDataNode 1
-                                                           ]
-                           , pat 32 (Range (-32768) 32767) (asm "load-half32")
+         , instrPatterns = [ pat 16
+                                 (Range (-32768) 32767)
+                                 getGPRegistersWithoutZero
+                                 [ ASReferenceToValueNode 2
+                                 , ASVerbatim " = "
+                                 , ASVerbatim
+                                   $ "ADDiu " ++ getZeroRegName ++ ", "
+                                 , ASIntConstOfValueNode 1
+                                 ]
+                           , pat 32
+                                 (Range (-32768) 32767)
+                                 getGPRegistersWithoutZero
+                                 (asm "load-half32")
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
@@ -801,10 +823,14 @@ mkLoadImmInstr =
        -- Arbitrary immediates (implemented with lui + ori)
          { instrID = 0
          , instrPatterns = [
-                             pat 16 (Range (-2147483648) 2147483647)
-                                     (asm "load-full16")
-                           , pat 32 (Range (-2147483648) 2147483647)
-                                     (asm "load-full32")
+                             pat 16
+                                 (Range (-2147483648) 2147483647)
+                                 getGPRegistersWithoutZero
+                                 (asm "load-full16")
+                           , pat 32
+                                 (Range (-2147483648) 2147483647)
+                                 getGPRegistersWithoutZero
+                                 (asm "load-full32")
                            ]
          , instrProps = InstrProperties { instrCodeSize = 8
                                         , instrLatency = 2
@@ -843,9 +869,9 @@ mkTypeConvInstrs =
            , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
            ]
        )
-      cs  = mkDataLocConstraints (map locID getGPRegisters) 1
+      cs  = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
             ++
-            mkDataLocConstraints (map locID getGPRegisters) 2
+            mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat t (n, m) =
         InstrPattern
           { patID = 0
@@ -877,7 +903,7 @@ mkEqComparison =
       cs   = concatMap ( \(r, nid) ->
                           mkDataLocConstraints (map locID r) nid
                        )
-             (zip (replicate 3 getGPRegisters) [1, 2, 3])
+             (zip (replicate 3 getGPRegistersWithoutZero) [1, 2, 3])
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
@@ -917,9 +943,9 @@ mkInstructions =
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
     )
     [ ("ADD" , O.SIntOp O.Add)
     , ("ADDu", O.UIntOp O.Add)
@@ -934,17 +960,17 @@ mkInstructions =
               1
               "AND"
               (O.CompArithOp $ O.IntOp O.And)
-              getGPRegisters
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
      ]
   ++
   [ let i =
             mkSimple32BitRegRegCompInst
               "PseudoSDIV"
               (O.CompArithOp $ O.SIntOp O.Rem)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
               [getHIRegister]
     in updateLatency 38 i
   ]
@@ -952,8 +978,8 @@ mkInstructions =
   [ mkSimple32BitRegRegCompInst
               "MUL"
               (O.CompArithOp $ O.SIntOp O.Mul)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
               [getLORegister]
   ]
   ++
@@ -961,8 +987,8 @@ mkInstructions =
             mkSimple32BitRegRegCompInst
               "PseudoSDIV"
               (O.CompArithOp $ O.SIntOp O.Div)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
               [getLORegister]
     in updateLatency 38 i
   ]
@@ -971,8 +997,8 @@ mkInstructions =
     ( \a -> mkSimpleNBitRegMBitImmCompInst
               (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range (-32768) 32767)
               32
               16
@@ -983,8 +1009,8 @@ mkInstructions =
     ( \a -> mkSimpleNBitRegMBitImmCompInst
               (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range 0 65535)
               32
               16
@@ -998,9 +1024,9 @@ mkInstructions =
     ( \a -> mkSimple32BitRegRegCompInst
               (fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
-              [getRegisterByName $ LocationName "LO"]
+              getGPRegistersInclZero
+              getGPRegistersInclZero
+              [getLORegister]
     )
     [ ("mult" , O.SIntOp O.Mul)
     , ("multu", O.UIntOp O.Mul)
@@ -1010,9 +1036,9 @@ mkInstructions =
     ( \a -> mkSimple32BitRegs1BitResultCompInst
               (fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
     )
     [ ("AND", O.IntOp O.And)
     , ("OR" , O.IntOp O.Or)
@@ -1051,8 +1077,8 @@ mkInstructions =
     ( \a -> mkSimpleNBitRegMBitImmCompInst
               (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range 0 32)
               32
               5
@@ -1066,8 +1092,8 @@ mkInstructions =
     ( \a -> mkSimpleNBitRegMBitImmCompInst
               (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range 0 65535)
               8
               16
@@ -1078,8 +1104,8 @@ mkInstructions =
     ( \a -> mkSimpleNBitRegMBitImmCompInst
               (mkDataImmDataAsmStr $ fst a)
               (O.CompArithOp $ snd a)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range 0 65535)
               16
               16
@@ -1093,11 +1119,11 @@ mkInstructions =
               , ASVerbatim $ "NOR "
               , ASLocationOfDataNode 1
               , ASVerbatim ", "
-              , ASVerbatim "%ZERO"
+              , ASVerbatim getZeroRegName
               ]
               (O.CompArithOp $ O.IntOp O.XOr)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range (-1) (-1))
               n
               16
@@ -1108,13 +1134,13 @@ mkInstructions =
               [ ASLocationOfDataNode 3
               , ASVerbatim " = "
               , ASVerbatim "SUBu "
-              , ASVerbatim "%ZERO"
+              , ASVerbatim getZeroRegName
               , ASVerbatim ", "
               , ASLocationOfDataNode 2
               ]
               (O.CompArithOp $ O.UIntOp O.Sub)
-              getGPRegisters
-              getGPRegisters
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
               (Range 0 0)
               16
               16
