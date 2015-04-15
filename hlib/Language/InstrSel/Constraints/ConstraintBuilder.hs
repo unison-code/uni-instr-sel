@@ -18,7 +18,7 @@ module Language.InstrSel.Constraints.ConstraintBuilder
   , addFallThroughConstraints
   , addDataLocConstraints
   , addNoDataReuseConstraints
-  , mkMatchToBlockMovementConstraints
+  , mkMatchPlacementConstraints
   , mkFallThroughConstraints
   , mkDataLocConstraints
   , mkNoDataReuseConstraints
@@ -39,16 +39,16 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates constraints using 'mkMatchToBlockMovementConstraints' and adds
+-- | Creates constraints using 'mkMatchPlacementConstraints' and adds
 -- these (if any) to the given 'OpStructure'.
 addMatchToBlockMovementConstraints :: OpStructure -> OpStructure
 addMatchToBlockMovementConstraints os =
-  addConstraints os (mkMatchToBlockMovementConstraints $ osGraph os)
+  addConstraints os (mkMatchPlacementConstraints $ osGraph os)
 
--- | Creates block movement constraints for a pattern graph such that the match
--- must be moved to the block of the entry block node (if there is such a node).
-mkMatchToBlockMovementConstraints :: Graph -> [Constraint]
-mkMatchToBlockMovementConstraints g =
+-- | Creates constraints for a pattern graph such that the match must be placed
+-- in entry block of the pattern graph (if it has such a block).
+mkMatchPlacementConstraints :: Graph -> [Constraint]
+mkMatchPlacementConstraints g =
   let entry_block = rootInCFG $ extractCFG g
   in if isJust entry_block
      then [ BoolExprConstraint
@@ -57,7 +57,7 @@ mkMatchToBlockMovementConstraints g =
                        $ ANodeIDExpr (getNodeID $ fromJust entry_block)
                      )
                      ( Block2NumExpr
-                       $ BlockToWhereMatchIsMovedExpr
+                       $ BlockWhereinMatchIsPlacedExpr
                        $ ThisMatchExpr
                      )
           ]

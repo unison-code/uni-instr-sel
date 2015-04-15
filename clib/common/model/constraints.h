@@ -1534,22 +1534,22 @@ class InstructionOfMatchExpr
 };
 
 /**
- * Represents the block to which a match has been moved.
+ * Represents the block in which a match has been placed.
  */
-class BlockToWhereMatchIsMovedExpr
-    : public UnaryExpr<BlockExpr, BlockToWhereMatchIsMovedExpr, MatchExpr>
+class BlockWhereinMatchIsPlacedExpr
+    : public UnaryExpr<BlockExpr, BlockWhereinMatchIsPlacedExpr, MatchExpr>
 {
   public:
     /**
      * \copydoc UnaryExpr::UnaryExpr(const Arg*)
      */
-    BlockToWhereMatchIsMovedExpr(const MatchExpr* expr);
+    BlockWhereinMatchIsPlacedExpr(const MatchExpr* expr);
 
     /**
      * \copydoc ~Expr::Expr()
      */
     virtual
-    ~BlockToWhereMatchIsMovedExpr(void);
+    ~BlockWhereinMatchIsPlacedExpr(void);
 
   public:
     /**

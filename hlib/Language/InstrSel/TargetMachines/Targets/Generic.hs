@@ -162,7 +162,7 @@ mkGenericBrFallThroughInstructions =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      bb_alloc_cs = mkMatchToBlockMovementConstraints g
+      bb_alloc_cs = mkMatchPlacementConstraints g
       fallthrough_cs = mkFallThroughConstraints 2
       cs = bb_alloc_cs ++ fallthrough_cs
       pat =
@@ -199,7 +199,7 @@ mkGenericEntityDefInstructions =
                 [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 )
                 ]
             )
-      cs = mkMatchToBlockMovementConstraints g
+      cs = mkMatchPlacementConstraints g
       pat =
         InstrPattern
           { patID = 0

@@ -413,13 +413,13 @@ InstructionOfMatchExpr::InstructionOfMatchExpr(const MatchExpr* expr)
 
 InstructionOfMatchExpr::~InstructionOfMatchExpr(void) {}
 
-BlockToWhereMatchIsMovedExpr::BlockToWhereMatchIsMovedExpr(
+BlockWhereinMatchIsPlacedExpr::BlockWhereinMatchIsPlacedExpr(
     const MatchExpr* expr
 ) : UnaryExpr(expr)
 {}
 
-BlockToWhereMatchIsMovedExpr
-::~BlockToWhereMatchIsMovedExpr(void) {}
+BlockWhereinMatchIsPlacedExpr
+::~BlockWhereinMatchIsPlacedExpr(void) {}
 
 BlockOfBlockNodeExpr::BlockOfBlockNodeExpr(const NodeExpr* expr)
     : UnaryExpr(expr)
@@ -532,7 +532,8 @@ const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
 const string DefinerOfStateNodeExpr::STRNAME = "def-of-snode";
 const string InstructionOfMatchExpr::STRNAME = "instr-of-match";
-const string BlockToWhereMatchIsMovedExpr::STRNAME = "block-of-match";
+const string BlockWhereinMatchIsPlacedExpr::STRNAME =
+  "block-wherein-match-is-placed";
 const string BlockOfBlockNodeExpr::STRNAME = "block-of-bnode";
 const string LocationOfDataNodeExpr::STRNAME = "loc-of-dnode";
 const string UnionSetExpr::STRNAME = "union";

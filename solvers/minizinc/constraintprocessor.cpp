@@ -232,10 +232,10 @@ ConstraintProcessor::process(const InstructionExpr* e) {
 
 string
 ConstraintProcessor::process(const BlockExpr* e) {
-    if (const BlockToWhereMatchIsMovedExpr* de =
-        dynamic_cast<const BlockToWhereMatchIsMovedExpr*>(e))
+    if (const BlockWhereinMatchIsPlacedExpr* de =
+        dynamic_cast<const BlockWhereinMatchIsPlacedExpr*>(e))
     {
-        return getBBAllocationVariableArrayName()
+        return getMatchInBlockPlacementVariableArrayName()
             + "[" + process(de->getExpr()) + "]";
     }
     else if (const BlockOfBlockNodeExpr* de =
@@ -328,8 +328,8 @@ ConstraintProcessor::getDataLocationVariableArrayName(void) const {
 }
 
 string
-ConstraintProcessor::getBBAllocationVariableArrayName(void) const {
-    return "mov";
+ConstraintProcessor::getMatchInBlockPlacementVariableArrayName(void) const {
+    return "place";
 }
 
 string

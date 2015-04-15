@@ -177,7 +177,7 @@ all_data.append(["has_d_loc", has_d_loc_data])
 data_table = [ ["loc",        "loc-of-dnode"]
              , ["has_d_loc",  "has-dnode-loc"]
              , ["sel",        "is-match-selected"]
-             , ["mov",        "bb-of-match"]
+             , ["place",      "block-of-match"]
              , ["ord",        "order-of-bbs"]
              , ["cost",       "cost"]
              , ["optimal",    "is-solution-optimal"]

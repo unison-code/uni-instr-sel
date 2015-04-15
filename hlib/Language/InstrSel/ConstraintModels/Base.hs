@@ -535,7 +535,7 @@ instance FromJSON LowLevelSolution where
        then LowLevelSolution
               <$> v .: "order-of-bbs"
               <*> v .: "is-match-selected"
-              <*> v .: "bb-of-match"
+              <*> v .: "block-of-match"
               <*> v .: "has-dnode-loc"
               <*> v .: "loc-of-dnode"
               <*> v .: "cost"

@@ -356,9 +356,9 @@ ConstraintParser::parseBlockExpr(string& str) {
     eatWhitespace(str);
     if (eat("(", str)) {
         eatWhitespace(str);
-        if (eatType<BlockToWhereMatchIsMovedExpr>(str)) {
+        if (eatType<BlockWhereinMatchIsPlacedExpr>(str)) {
             auto e = parseMatchExpr(str);
-            expr = new BlockToWhereMatchIsMovedExpr(e);
+            expr = new BlockWhereinMatchIsPlacedExpr(e);
         }
         else if (eatType<BlockOfBlockNodeExpr>(str)) {
             auto e = parseNodeExpr(str);

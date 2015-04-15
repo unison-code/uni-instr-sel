@@ -85,7 +85,7 @@ data BoolExpr
   | NotExpr BoolExpr
   | InSetExpr SetElemExpr SetExpr
     -- | Denotes a fall-through constraint between a given match and a given
-    -- block. In other words, the block to which the match is moved must be
+    -- block. In other words, the block in which the match is placed must be
     -- appear immediately before the other block of the generated code.
   | FallThroughFromMatchToBlockExpr MatchExpr BlockExpr
   deriving (Show)
@@ -147,8 +147,8 @@ data InstructionExpr
 
 -- | Block expressions.
 data BlockExpr
-    -- | Retrieves the of the block to which a match has been moved.
-  = BlockToWhereMatchIsMovedExpr MatchExpr
+    -- | Retrieves the of the block in which a match has been placed.
+  = BlockWhereinMatchIsPlacedExpr MatchExpr
     -- | Retrieves the block associated with a block node.
   | BlockOfBlockNodeExpr NodeExpr
   deriving (Show)
@@ -308,12 +308,12 @@ instance ToLisp InstructionExpr where
 
 instance FromLisp BlockExpr where
   parseLisp e =
-        struct "block-of-match" BlockToWhereMatchIsMovedExpr e
+        struct "block-where-match-is-placed" BlockWhereinMatchIsPlacedExpr e
     <|> struct "block-of-bnode" BlockOfBlockNodeExpr e
 
 instance ToLisp BlockExpr where
-  toLisp (BlockToWhereMatchIsMovedExpr e) =
-    mkStruct "block-of-match" [toLisp e]
+  toLisp (BlockWhereinMatchIsPlacedExpr e) =
+    mkStruct "block-where-match-is-placed" [toLisp e]
   toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
 instance FromLisp LocationExpr where

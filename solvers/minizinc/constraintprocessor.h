@@ -87,13 +87,12 @@ class ConstraintProcessor {
     getDataLocationVariableArrayName(void) const;
 
     /**
-     * Gets the variable array for the match-to-basic block
-     * allocation.
+     * Gets the variable array for the match-in-block placements.
      *
      * @returns Variable name.
      */
     std::string
-    getBBAllocationVariableArrayName(void) const;
+    getMatchInBlockPlacementVariableArrayName(void) const;
 
     /**
      * Gets the variable array for the match selection.

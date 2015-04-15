@@ -68,7 +68,7 @@ set of allMatches: nonCopyMatches;
 int: numLocValues = numLocations + 1;
 
 % Total number of blocks values (an additional value will be needed for
-% representing the null block, to which non-selected matches will be moved).
+% representing the null block, to which non-selected matches will be placed).
 int: numBlockValues = numBlocksInFunction + 1;
 
 % Reference to the null-block value.
@@ -117,8 +117,8 @@ array[allEntitiesInFunction] of var allLocValues: loc;
 % Match selection.
 array[allMatches] of var bool: sel;
 
-% Basic block to which the matches are moved.
-array[allMatches] of var allBlocksInFunctionPlusNull: mov;
+% Blocks wherein the matches are placed.
+array[allMatches] of var allBlocksInFunctionPlusNull: place;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
@@ -142,11 +142,11 @@ include "table.mzn";
 % PREDICATES
 %===========
 
-% Fall-through constraint: the block to which match m is moved must be
+% Fall-through constraint: the block wherein match m is placed must be
 % immediately followed by block b.
 predicate fall_through(int: m, int: b) =
 (
-  succ[mov[m]] = b
+  succ[place[m]] = b
 );
 
 
@@ -213,14 +213,14 @@ constraint
     card(entitiesDefinedByMatch[m]) * bool2int(sel[m])
   ) = numEntitiesInFunction;
 
-% Selected matches must not be moved to the null block.
+% Selected matches must not be placed in the null block.
 constraint
   forall (m in allMatches)
   (
-    sel[m] <-> mov[m] != blockValueForNull
+    sel[m] <-> place[m] != blockValueForNull
   );
 
-% Selected matches that have an entry block must be moved in the basic block of
+% Selected matches that have an entry block must be placed in the basic block of
 % that block.
 constraint
   forall (m in allMatches)
@@ -230,7 +230,7 @@ constraint
     % entry.
     forall (r in entryBlockOfMatch[m])
     (
-      sel[m] -> mov[m] = r
+      sel[m] -> place[m] = r
     )
   );
 
@@ -248,7 +248,7 @@ constraint
             }
         in sel[m] -> def[e] in blocks_in_m
       else
-        sel[m] -> def[e] = mov[m]
+        sel[m] -> def[e] = place[m]
       endif
     )
   );
@@ -266,7 +266,7 @@ constraint
     ->
     exists (m in allMatches)
     (
-      l = mov[m] \/ (sel[m] /\ l in nonEntryBlocksInMatch[m])
+      l = place[m] \/ (sel[m] /\ l in nonEntryBlocksInMatch[m])
     )
   );
 
@@ -291,7 +291,7 @@ constraint
 %                     where applyDefDomUseConstraintForMatch[m]
 %              )
 %       (
-%         def[e] in domSetOfBlockInFunctionPlusNull[mov[m]]
+%         def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
 %       );
 int: DomRelSize =
   sum (l in allBlocksInFunction)
@@ -309,7 +309,7 @@ constraint
                 where applyDefDomUseConstraintForMatch[m]
          )
   (
-    table([mov[m], def[e]], DomRel)
+    table([place[m], def[e]], DomRel)
   );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
@@ -333,7 +333,7 @@ constraint
 constraint
   cost = sum (m in allMatches)
          ( latencyOfMatch[m]
-         * execFrequencyOfBlocksPlusNull[mov[m]]
+         * execFrequencyOfBlocksPlusNull[place[m]]
          );
 
 
@@ -369,7 +369,7 @@ minimize cost;
 output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
-       , "mov=", show(mov), "\n"
+       , "place=", show(place), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"

@@ -432,12 +432,12 @@ mkCondBrInstrs
 mkCondBrInstrs n ord_str ord_op inv_str inv_op =
   let (ord_g, ord_entry) = mkCondBrPattern n ord_op
       (inv_g, inv_entry) = mkCondBrPattern n inv_op
-      ord_cs = mkMatchToBlockMovementConstraints ord_g
+      ord_cs = mkMatchPlacementConstraints ord_g
                ++
                mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      inv_cs = mkMatchToBlockMovementConstraints inv_g
+      inv_cs = mkMatchPlacementConstraints inv_g
                ++
                mkNoDataReuseConstraints 7
                ++
@@ -503,7 +503,7 @@ mkPredBrInstr =
              , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
              ]
          )
-      cs = mkMatchToBlockMovementConstraints g
+      cs = mkMatchPlacementConstraints g
                 ++
            mkFallThroughConstraints 3
       pat =
@@ -548,7 +548,7 @@ mkBrInstrs =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      cs = mkMatchToBlockMovementConstraints g
+      cs = mkMatchPlacementConstraints g
       pat =
         InstrPattern
           { patID = 0
@@ -598,7 +598,7 @@ mkRetInstrs =
                 Edge
                 [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 ) ]
             )
-      bb_cs n = mkMatchToBlockMovementConstraints (g n)
+      bb_cs n = mkMatchPlacementConstraints (g n)
       reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
       pat n str =
         InstrPattern
@@ -612,7 +612,7 @@ mkRetInstrs =
         InstrPattern
           { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1)
-                    (mkMatchToBlockMovementConstraints vg)
+                    (mkMatchPlacementConstraints vg)
           , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
