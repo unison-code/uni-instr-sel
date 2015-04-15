@@ -48,6 +48,7 @@ array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedByMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
+array[allMatches] of set of int: consumedBlocksInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
@@ -247,6 +248,14 @@ constraint
         sel[m] -> def[e] = place[m]
       endif
     )
+  );
+
+% No selected matches may be placed in a block which is consumed by some
+% selected match.
+constraint
+  forall (m, mm in allMatches, b in consumedBlocksInMatch[m])
+  (
+    sel[m] -> place[mm] != b
   );
 
 % For every block wherein a datum is defined, there must exist some selected

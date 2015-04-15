@@ -191,12 +191,20 @@ class ModelParams {
     getEntryBlockOfAllMatches(void) const;
 
     /**
-     * Gets the function blocks per match that are not entries.
+     * Gets the function blocks that are spanned by the respective match.
      *
      * @returns Vector of list of block array indices.
      */
     std::vector< std::list<ArrayIndex> >
     getSpannedBlocksInAllMatches(void) const;
+
+    /**
+     * Gets the function blocks that are consumed by the respective match.
+     *
+     * @returns Vector of list of block array indices.
+     */
+    std::vector< std::list<ArrayIndex> >
+    getConsumedBlocksInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
@@ -496,8 +504,7 @@ class ModelParams {
     setEntryBlockOfMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function blocks that appear in the respective match but
-     * not as entries.
+     * Sets the function blocks that are spanned by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -508,6 +515,19 @@ class ModelParams {
      */
     static void
     setSpannedBlocksInMatches(const Json::Value& root, ModelParams& p);
+
+    /**
+     * Sets the function blocks that are consumed by the respective match.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setConsumedBlocksInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -641,6 +661,11 @@ class ModelParams {
      * The blocks in the function graph spanned by each match.
      */
     std::vector< std::list<ArrayIndex> > match_spanned_blocks_;
+
+    /**
+     * The blocks in the function graph consumed by each match.
+     */
+    std::vector< std::list<ArrayIndex> > match_consumed_blocks_;
 
     /**
      * The matches that have been derived from non-copy instructions.

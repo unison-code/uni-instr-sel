@@ -141,6 +141,8 @@ data HighLevelMatchParams
         -- (if there is such a block) of this match.
       , hlMatchSpannedBlocks :: [NodeID]
         -- ^ Block in the function graph spanned by this match.
+      , hlMatchConsumedBlocks :: [NodeID]
+        -- ^ Block in the function graph consumed by this match.
       , hlMatchCodeSize :: Integer
         -- ^ The size of the instruction associated with this match.
       , hlMatchLatency :: Integer
@@ -231,6 +233,9 @@ data LowLevelModel
         -- of a particular match.
       , llMatchSpannedBlocks :: [[ArrayIndex]]
         -- ^ Block in the function graph spanned by this match. An index into
+        -- the outer list corresponds to the array index of a particular match.
+      , llMatchConsumedBlocks :: [[ArrayIndex]]
+        -- ^ Block in the function graph consumed by this match. An index into
         -- the outer list corresponds to the array index of a particular match.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
@@ -409,6 +414,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "data-used"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
+      <*> v .: "consumed-blocks"
       <*> v .: "code-size"
       <*> v .: "latency"
       <*> v .: "constraints"
@@ -429,6 +435,7 @@ instance ToJSON HighLevelMatchParams where
            , "data-used"                    .= (hlMatchDataUsed d)
            , "entry-block"                  .= (hlMatchEntryBlock d)
            , "spanned-blocks"               .= (hlMatchSpannedBlocks d)
+           , "consumed-blocks"              .= (hlMatchConsumedBlocks d)
            , "code-size"                    .= (hlMatchCodeSize d)
            , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
@@ -471,6 +478,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-data-used"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
+      <*> v .: "match-consumed-blocks"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-non-copy-instrs"
@@ -496,6 +504,7 @@ instance ToJSON LowLevelModel where
            , "match-data-used"             .= (llMatchDataUsed m)
            , "match-entry-blocks"          .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"        .= (llMatchSpannedBlocks m)
+           , "match-consumed-blocks"       .= (llMatchConsumedBlocks m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
            , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)

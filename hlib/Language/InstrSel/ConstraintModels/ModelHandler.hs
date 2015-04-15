@@ -171,6 +171,11 @@ processMatch instr pattern match mid =
       o_ns = filter isNodeAnOperation ns
       d_ns = filter isNodeADatum ns
       b_ns = filter isBlockNode ns
+      b_ns_consumed = filter ( \n -> hasAnyPredecessors graph n
+                                     &&
+                                     hasAnySuccessors graph n
+                             )
+                             b_ns
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
@@ -188,6 +193,7 @@ processMatch instr pattern match mid =
        , hlMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
        , hlMatchEntryBlock = maybe Nothing (findFNInMatch match) entry_b_node_id
        , hlMatchSpannedBlocks = findFNsInMatch match (getNodeIDs b_ns)
+       , hlMatchConsumedBlocks = findFNsInMatch match (getNodeIDs b_ns_consumed)
        , hlMatchConstraints =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
@@ -296,6 +302,8 @@ lowerHighLevelModel model ai_maps =
                (map hlMatchEntryBlock m_params)
        , llMatchSpannedBlocks = map (map getAIForBlockNodeID)
                                     (map hlMatchSpannedBlocks m_params)
+       , llMatchConsumedBlocks = map (map getAIForBlockNodeID)
+                                    (map hlMatchConsumedBlocks m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params

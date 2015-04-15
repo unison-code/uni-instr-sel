@@ -98,6 +98,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setDataUsedByMatches(root, p);
     setEntryBlockOfMatches(root, p);
     setSpannedBlocksInMatches(root, p);
+    setConsumedBlocksInMatches(root, p);
 }
 
 bool
@@ -260,6 +261,20 @@ ModelParams::setSpannedBlocksInMatches(
     }
 }
 
+void
+ModelParams::setConsumedBlocksInMatches(
+    const Json::Value& root,
+    ModelParams& p
+) {
+    for (auto jsonlist : getJsonValue(root, "match-consumed-blocks")) {
+        list<ArrayIndex> blocks;
+        for (auto entry : jsonlist) {
+            blocks.push_back(toArrayIndex(entry));
+        }
+        p.match_consumed_blocks_.push_back(blocks);
+    }
+}
+
 vector< list<ID> >
 ModelParams::getOperationsCoveredByAllMatches(void) const {
     return match_operations_covered_;
@@ -283,6 +298,11 @@ ModelParams::getEntryBlockOfAllMatches(void) const {
 vector< list<ID> >
 ModelParams::getSpannedBlocksInAllMatches(void) const {
     return match_spanned_blocks_;
+}
+
+vector< list<ID> >
+ModelParams::getConsumedBlocksInAllMatches(void) const {
+    return match_consumed_blocks_;
 }
 
 vector< list<ID> >
