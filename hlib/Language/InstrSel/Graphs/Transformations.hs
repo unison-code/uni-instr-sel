@@ -67,10 +67,11 @@ copyExtendWhen pf df g =
 -- affected.
 insertCopy :: (D.DataType -> D.DataType) -> Graph -> Edge -> Graph
 insertCopy df g0 df_edge =
-  let orig_d_node = getSourceNode g0 df_edge
-      orig_op_n = getTargetNode g0 df_edge
-      def_edge = if isPhiNode orig_op_n
-                 then let d_node_edges = getOutEdges g0 orig_d_node
+  let old_d_node = getSourceNode g0 df_edge
+      old_d_origin = originOfValue $ getNodeType old_d_node
+      old_op_n = getTargetNode g0 df_edge
+      def_edge = if isPhiNode old_op_n
+                 then let d_node_edges = getOutEdges g0 old_d_node
                           def_edges = filter isDefEdge d_node_edges
                       in Just
                          $ head
@@ -78,9 +79,9 @@ insertCopy df g0 df_edge =
                                   def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
-      new_dt = df $ getDataTypeOfValueNode orig_d_node
+      new_dt = df $ getDataTypeOfValueNode old_d_node
       (g2, new_d_node) =
-        insertNewNodeAlongEdge (ValueNode new_dt Nothing)
+        insertNewNodeAlongEdge (ValueNode new_dt old_d_origin)
                                (head $ getOutEdges g1 new_cp_node)
                                g1
       g3 = if isJust def_edge

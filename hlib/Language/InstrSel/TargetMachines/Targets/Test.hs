@@ -155,11 +155,11 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "add "
-                          , ASLocationOfValueNode 3
+                          , ASReferenceToValueNode 3
                           , ASVerbatim ", "
-                          , ASLocationOfValueNode 1
+                          , ASReferenceToValueNode 1
                           , ASVerbatim ", "
-                          , ASLocationOfValueNode 2
+                          , ASReferenceToValueNode 2
                           ]
                       )
                   ]
@@ -173,7 +173,7 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "bnz "
-                          , ASLocationOfValueNode 0
+                          , ASReferenceToValueNode 0
                           , ASVerbatim ", "
                           , ASNameOfBlockNode 2
                           , ASVerbatim ", "
@@ -215,7 +215,7 @@ tmTest =
                       True
                       ( ASSTemplate
                         [ ASVerbatim "ret "
-                        , ASLocationOfValueNode 0
+                        , ASReferenceToValueNode 0
                         ]
                       )
                   ]
@@ -224,7 +224,16 @@ tmTest =
   in TargetMachine
        (toTargetMachineID "test")
        (fixInstrIDs $ insts ++ mkGenericPhiInstructions)
-       [ Location { locID = 0, locName = LocationName "r0" }
-       , Location { locID = 1, locName = LocationName "r1" }
-       , Location { locID = 2, locName = LocationName "r2" }
+       [ Location { locID = 0
+                  , locName = LocationName "r0"
+                  , locIsAValue = False
+                  }
+       , Location { locID = 1
+                  , locName = LocationName "r1"
+                  , locIsAValue = False
+                  }
+       , Location { locID = 2
+                  , locName = LocationName "r2"
+                  , locIsAValue = False
+                  }
        ]

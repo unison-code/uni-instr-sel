@@ -57,6 +57,7 @@ mkGPRegisters =
     ( \i -> Location
               { locID = 0
               , locName = LocationName $ regPrefix ++ show i
+              , locIsAValue = if i == 0 then True else False
               }
     )
     ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
@@ -66,7 +67,10 @@ mkGPRegisters =
 -- correctly set!
 mkHILORegisters :: [Location]
 mkHILORegisters =
-  [ Location { locID = 0, locName = LocationName "HILO" }
+  [ Location { locID = 0
+             , locName = LocationName "HILO"
+             , locIsAValue = False
+             }
   , mkHIRegister
   , mkLORegister
   ]
@@ -75,13 +79,19 @@ mkHILORegisters =
 -- location). Note that there are no guarantees that the location IDs will be
 -- correctly set!
 mkHIRegister :: Location
-mkHIRegister = Location { locID = 0, locName = LocationName "HI" }
+mkHIRegister = Location { locID = 0
+                        , locName = LocationName "HI"
+                        , locIsAValue = False
+                        }
 
 -- | Creates the list of 'LO' register (which is actually a memory
 -- location). Note that there are no guarantees that the register IDs will be
 -- correctly set!
 mkLORegister :: Location
-mkLORegister = Location { locID = 0, locName = LocationName "LO" }
+mkLORegister = Location { locID = 0
+                        , locName = LocationName "LO"
+                        , locIsAValue = False
+                        }
 
 -- | Retrieves the register with a given location name. It is assumed that there
 -- will exist exactly one such register.

@@ -123,6 +123,7 @@ module Language.InstrSel.Graphs.Base
   , isDataFlowEdge
   , isValueNode
   , isValueNodeWithConstValue
+  , isValueNodeWithOrigin
   , isDefEdge
   , isInGraph
   , isBlockNode
@@ -499,6 +500,12 @@ isValueNodeWithConstValue :: Node -> Bool
 isValueNodeWithConstValue n =
   if isValueNode n
   then D.isTypeAConstValue $ getDataTypeOfValueNode n
+  else False
+
+isValueNodeWithOrigin :: Node -> Bool
+isValueNodeWithOrigin n =
+  if isValueNode n
+  then isJust $ originOfValue $ getNodeType n
   else False
 
 isBlockNode :: Node -> Bool

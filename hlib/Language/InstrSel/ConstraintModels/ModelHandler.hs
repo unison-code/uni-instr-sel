@@ -101,14 +101,18 @@ mkHLFunctionParams function =
         let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub
            $ mapMaybe ( \n ->
-                         let nid = getNodeID n
-                             dt = getDataTypeOfValueNode n
-                             r = intConstValue dt
-                         in if isIntConstType dt && isRangeSingleton r
-                            then Just (nid, lowerBound r)
-                            else Nothing
+                        let nid = getNodeID n
+                            dt = getDataTypeOfValueNode n
+                            r = intConstValue dt
+                        in if isIntConstType dt && isRangeSingleton r
+                           then Just (nid, lowerBound r)
+                           else Nothing
                        )
                        ns
+      value_origin_data =
+        let ns = filter isValueNodeWithOrigin (getAllNodes graph)
+        in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
+               ns
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isNodeAnOperation
        , hlFunData = nodeIDsByType isNodeADatum
@@ -118,7 +122,8 @@ mkHLFunctionParams function =
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
        , hlFunBlockParams = bb_params
-       , hlFunIntConstData = int_const_data
+       , hlFunValueIntConstData = int_const_data
+       , hlFunValueOriginData = value_origin_data
        , hlFunConstraints = osConstraints $ functionOS function
        }
 
@@ -194,10 +199,10 @@ computeAsmStrNodeMaps
 computeAsmStrNodeMaps t m =
   map f (concat $ flatAsmStrParts t)
   where f (ASVerbatim _) = Nothing
-        f (ASLocationOfValueNode    n) = findFNInMatch m n
-        f (ASImmIntValueOfValueNode n) = findFNInMatch m n
-        f (ASNameOfBlockNode        n) = findFNInMatch m n
-        f (ASBlockOfValueNode       n) = findFNInMatch m n
+        f (ASReferenceToValueNode n) = findFNInMatch m n
+        f (ASIntConstOfValueNode  n) = findFNInMatch m n
+        f (ASNameOfBlockNode      n) = findFNInMatch m n
+        f (ASBlockOfValueNode     n) = findFNInMatch m n
 
 -- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
 -- match ID.

@@ -96,8 +96,12 @@ data HighLevelFunctionParams
         -- to always be a node denoting a datum.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
-      , hlFunIntConstData :: [(NodeID, Integer)]
-        -- ^ The value nodes representing integer constants and their values.
+      , hlFunValueIntConstData :: [(NodeID, Integer)]
+        -- ^ The value nodes which represent integer constants together with
+        -- their values.
+      , hlFunValueOriginData :: [(NodeID, String)]
+        -- ^ The value nodes whose value has an origin, together with their
+        -- origins.
       , hlFunConstraints :: [Constraint]
         -- ^ The function constraints, if any. No constraint in this list may
         -- use array indices.
@@ -360,6 +364,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "def-edges"
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
+      <*> v .: "value-origin-data"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -373,7 +378,8 @@ instance ToJSON HighLevelFunctionParams where
            , "block-dom-sets"    .= (hlFunBlockDomSets d)
            , "def-edges"         .= (hlFunDefEdges d)
            , "block-params"      .= (hlFunBlockParams d)
-           , "int-constant-data" .= (hlFunIntConstData d)
+           , "int-constant-data" .= (hlFunValueIntConstData d)
+           , "value-origin-data" .= (hlFunValueOriginData d)
            , "constraints"       .= (hlFunConstraints d)
            ]
 

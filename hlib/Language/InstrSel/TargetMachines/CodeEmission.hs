@@ -220,10 +220,10 @@ updateNodeIDsInAsmStrParts
 updateNodeIDsInAsmStrParts asm maps =
   map f (zip asm maps)
   where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASLocationOfValueNode    _, Just n) = ASLocationOfValueNode n
-        f (ASImmIntValueOfValueNode _, Just n) = ASImmIntValueOfValueNode n
-        f (ASNameOfBlockNode        _, Just n) = ASNameOfBlockNode n
-        f (ASBlockOfValueNode       _, Just n) = ASBlockOfValueNode  n
+        f (ASReferenceToValueNode _, Just n) = ASReferenceToValueNode n
+        f (ASIntConstOfValueNode  _, Just n) = ASIntConstOfValueNode n
+        f (ASNameOfBlockNode      _, Just n) = ASNameOfBlockNode n
+        f (ASBlockOfValueNode     _, Just n) = ASBlockOfValueNode  n
         f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
@@ -234,17 +234,23 @@ emitInstructionPart
   -> AssemblyStringPart
   -> String
 emitInstructionPart _ _ _ (ASVerbatim s) = s
-emitInstructionPart model _ _ (ASImmIntValueOfValueNode n) =
-  let i = lookup n (hlFunIntConstData $ hlFunctionParams model)
+emitInstructionPart model _ _ (ASIntConstOfValueNode n) =
+  let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
      then show $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart _ sol m (ASLocationOfValueNode n) =
+emitInstructionPart model sol tm (ASReferenceToValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
-     then let reg = fromJust $ findLocation (tmLocations m) (fromJust reg_id)
-          in show $ locName reg
+     then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
+              origin = lookup n (hlFunValueOriginData $ hlFunctionParams model)
+          in if locIsAValue reg
+             then show $ locName reg
+             else if isJust origin
+                  then fromJust origin
+                  else -- TODO: handle this case
+                       "o?"
      else -- TODO: handle this case
           "r?"
 emitInstructionPart model _ _ (ASNameOfBlockNode n) =

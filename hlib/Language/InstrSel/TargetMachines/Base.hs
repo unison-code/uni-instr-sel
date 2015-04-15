@@ -53,10 +53,10 @@ data AssemblyStringTemplate
 data AssemblyStringPart
     -- | Denotes string which is meant to be output verbatim.
   = ASVerbatim String
-    -- | Denotes the immediate integer value of a given value node.
-  | ASImmIntValueOfValueNode NodeID
-    -- | Denotes the location of a given value node.
-  | ASLocationOfValueNode NodeID
+    -- | Denotes the integer constant of a given value node.
+  | ASIntConstOfValueNode NodeID
+    -- | Denotes a reference a given value node.
+  | ASReferenceToValueNode NodeID
     -- | Denotes the name a given block node.
   | ASNameOfBlockNode NodeID
     -- | Denotes the block in which the definer of a given value node has been
@@ -138,6 +138,9 @@ data Location
       , locName :: LocationName
         -- ^ The name of this location (as it shall appear in the assembly
         -- string).
+      , locIsAValue :: Bool
+        -- ^ Whether this location actually represents a value (such as a
+        -- register that always contains the value zero).
       }
   deriving (Show, Eq)
 
