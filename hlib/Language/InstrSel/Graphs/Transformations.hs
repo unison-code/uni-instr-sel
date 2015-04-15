@@ -21,7 +21,7 @@ where
 import Language.InstrSel.Graphs.Base
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Functions
-  ( mkEmptyBBLabel )
+  ( mkEmptyBlockName )
 import qualified Language.InstrSel.OpTypes as O
 
 import Data.Maybe
@@ -114,7 +114,7 @@ branchExtendWhen f g =
 -- edge.
 insertBranch :: Graph -> Edge -> Graph
 insertBranch g0 e =
-  let (g1, l) = insertNewNodeAlongEdge (BlockNode mkEmptyBBLabel) e g0
+  let (g1, l) = insertNewNodeAlongEdge (BlockNode mkEmptyBlockName) e g0
       new_e = head $ getCtrlFlowOutEdges g1 l
       (g2, _) = insertNewNodeAlongEdge (ControlNode O.Br) new_e g1
   in g2

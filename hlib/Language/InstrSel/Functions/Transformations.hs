@@ -101,7 +101,8 @@ assignMissingBlockNames f =
   let g = getGraph f
       nodes = filter isBlockNode (getAllNodes g)
       block_node_pairs = map (\n -> (nameOfBlock (getNodeType n), n)) nodes
-      no_block_nodes = map snd (filter (isBBLabelEmpty . fst) block_node_pairs)
+      no_block_nodes =
+        map snd (filter (isBlockNameEmpty . fst) block_node_pairs)
       existing_names = map fst block_node_pairs
       ok_names = filter (`notElem` existing_names)
                          ( map (\i -> BlockName $ "bb" ++ show i)

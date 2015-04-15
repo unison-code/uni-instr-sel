@@ -14,8 +14,8 @@
 
 module Language.InstrSel.Functions.IDs
   ( BlockName (..)
-  , mkEmptyBBLabel
-  , isBBLabelEmpty
+  , mkEmptyBlockName
+  , isBlockNameEmpty
   )
 where
 
@@ -59,9 +59,9 @@ instance ToJSON BlockName where
 -------------
 
 -- | Creates an empty block name.
-mkEmptyBBLabel :: BlockName
-mkEmptyBBLabel = BlockName ""
+mkEmptyBlockName :: BlockName
+mkEmptyBlockName = BlockName ""
 
 -- | Checks if block name is empty.
-isBBLabelEmpty :: BlockName -> Bool
-isBBLabelEmpty (BlockName str) = str == ""
+isBlockNameEmpty :: BlockName -> Bool
+isBlockNameEmpty (BlockName str) = str == ""

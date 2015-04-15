@@ -30,7 +30,7 @@ import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.DataTypes
   ( DataType (..) )
 import Language.InstrSel.Functions
-  ( mkEmptyBBLabel )
+  ( mkEmptyBlockName )
 import Language.InstrSel.Graphs
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
@@ -68,7 +68,7 @@ mkIntConstType r n = IntConstType { intConstValue = r
 
 -- | Creates a generic block node type.
 mkGenericBlockNodeType :: NodeType
-mkGenericBlockNodeType = BlockNode mkEmptyBBLabel
+mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 
 -- | Creates a set of instructions for handling the generic cases where
 -- 'PhiNode's appear. The instruction IDs of all instructions will be
