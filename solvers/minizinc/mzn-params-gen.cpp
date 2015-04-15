@@ -233,8 +233,8 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getEntryBlockOfAllMatches());
     out << ");" << endl;
 
-    out << "nonEntryBlocksInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getNonEntryBlocksInAllMatches());
+    out << "spannedBlocksInMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getSpannedBlocksInAllMatches());
     out << ");" << endl;
 
     out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";

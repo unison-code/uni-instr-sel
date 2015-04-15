@@ -151,17 +151,13 @@ processMatch instr pattern match mid =
       ns = getAllNodes graph
       o_ns = filter isNodeAnOperation ns
       d_ns = filter isNodeADatum ns
-      l_ns = filter isBlockNode ns
+      b_ns = filter isBlockNode ns
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
       entry_b_node_id = osEntryBlockNode $ patOS pattern
-      l_ref_ns = if isJust entry_b_node_id
-                 then let nid = fromJust entry_b_node_id
-                      in filter (\n -> getNodeID n /= nid) l_ns
-                 else l_ns
       i_props = instrProps instr
       asm_maps = computeAsmStrNodeMaps (patAsmStrTemplate pattern) match
   in HighLevelMatchParams
@@ -172,7 +168,7 @@ processMatch instr pattern match mid =
        , hlMatchDataDefined = findFNsInMatch match (getNodeIDs d_def_ns)
        , hlMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
        , hlMatchEntryBlock = maybe Nothing (findFNInMatch match) entry_b_node_id
-       , hlMatchNonEntryBlocks = findFNsInMatch match (getNodeIDs l_ref_ns)
+       , hlMatchSpannedBlocks = findFNsInMatch match (getNodeIDs b_ns)
        , hlMatchConstraints =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
@@ -279,9 +275,8 @@ lowerHighLevelModel model ai_maps =
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID))
                (map hlMatchEntryBlock m_params)
-       , llMatchNonEntryBlocks =
-           map (map getAIForBlockNodeID)
-               (map hlMatchNonEntryBlocks m_params)
+       , llMatchSpannedBlocks = map (map getAIForBlockNodeID)
+                                    (map hlMatchSpannedBlocks m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params

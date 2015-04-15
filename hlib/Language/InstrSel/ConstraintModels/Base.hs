@@ -135,9 +135,8 @@ data HighLevelMatchParams
       , hlMatchEntryBlock :: Maybe NodeID
         -- ^ A block in the function graph that appears as entry block
         -- (if there is such a block) of this match.
-      , hlMatchNonEntryBlocks :: [NodeID]
-        -- ^ The block in the function graph that appears in this match but not
-        -- as entries.
+      , hlMatchSpannedBlocks :: [NodeID]
+        -- ^ Block in the function graph spanned by this match.
       , hlMatchCodeSize :: Integer
         -- ^ The size of the instruction associated with this match.
       , hlMatchLatency :: Integer
@@ -226,10 +225,9 @@ data LowLevelModel
         -- ^ The block in the function graph which is the entry block (if any)
         -- of each match. An index into the list corresponds to the array index
         -- of a particular match.
-      , llMatchNonEntryBlocks :: [[ArrayIndex]]
-        -- ^ The block in the function graph that are non-entry blocks of each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
+      , llMatchSpannedBlocks :: [[ArrayIndex]]
+        -- ^ Block in the function graph spanned by this match. An index into
+        -- the outer list corresponds to the array index of a particular match.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
         -- the array index of a particular match.
@@ -404,7 +402,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "data-defined"
       <*> v .: "data-used"
       <*> v .: "entry-block"
-      <*> v .: "non-entry-blocks"
+      <*> v .: "spanned-blocks"
       <*> v .: "code-size"
       <*> v .: "latency"
       <*> v .: "constraints"
@@ -424,7 +422,7 @@ instance ToJSON HighLevelMatchParams where
            , "data-defined"                 .= (hlMatchDataDefined d)
            , "data-used"                    .= (hlMatchDataUsed d)
            , "entry-block"                  .= (hlMatchEntryBlock d)
-           , "non-entry-blocks"             .= (hlMatchNonEntryBlocks d)
+           , "spanned-blocks"               .= (hlMatchSpannedBlocks d)
            , "code-size"                    .= (hlMatchCodeSize d)
            , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
@@ -466,7 +464,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-data-defined"
       <*> v .: "match-data-used"
       <*> v .: "match-entry-blocks"
-      <*> v .: "match-non-entry-blocks"
+      <*> v .: "match-spanned-blocks"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-non-copy-instrs"
@@ -491,7 +489,7 @@ instance ToJSON LowLevelModel where
            , "match-data-defined"          .= (llMatchDataDefined m)
            , "match-data-used"             .= (llMatchDataUsed m)
            , "match-entry-blocks"          .= (llMatchEntryBlocks m)
-           , "match-non-entry-blocks"      .= (llMatchNonEntryBlocks m)
+           , "match-spanned-blocks"        .= (llMatchSpannedBlocks m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
            , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)

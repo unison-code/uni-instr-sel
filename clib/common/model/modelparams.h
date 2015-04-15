@@ -196,7 +196,7 @@ class ModelParams {
      * @returns Vector of list of block array indices.
      */
     std::vector< std::list<ArrayIndex> >
-    getNonEntryBlocksInAllMatches(void) const;
+    getSpannedBlocksInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
@@ -507,7 +507,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setNonEntryBlocksInMatches(const Json::Value& root, ModelParams& p);
+    setSpannedBlocksInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -638,10 +638,9 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_entry_block_;
 
     /**
-     * The blocks in the function graph which appear in each match but not as
-     * entries.
+     * The blocks in the function graph spanned by each match.
      */
-    std::vector< std::list<ArrayIndex> > match_non_entry_blocks_;
+    std::vector< std::list<ArrayIndex> > match_spanned_blocks_;
 
     /**
      * The matches that have been derived from non-copy instructions.

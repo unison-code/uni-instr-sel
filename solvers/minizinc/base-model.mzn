@@ -47,7 +47,7 @@ array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedByMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
-array[allMatches] of set of int: nonEntryBlocksInMatch;
+array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
@@ -233,19 +233,16 @@ constraint
     )
   );
 
-% Data defined by a selected match must be defined in one of the blocks that the
-% selected match spans.
+% Data defined by a selected match must be defined in either the block wherein
+% the match is placed or in one of the blocks spanned by the match.
 constraint
   forall (m in allMatches)
   (
     forall (e in dataDefinedByMatch[m])
     (
-      if (card(entryBlockOfMatch[m]) > 0)
+      if (card(spannedBlocksInMatch[m]) > 0)
       then
-        let { set of allBlocksInFunction: blocks_in_m =
-                entryBlockOfMatch[m] union nonEntryBlocksInMatch[m]
-            }
-        in sel[m] -> def[e] in blocks_in_m
+        sel[m] -> def[e] in spannedBlocksInMatch[m]
       else
         sel[m] -> def[e] = place[m]
       endif
@@ -265,7 +262,7 @@ constraint
     ->
     exists (m in allMatches)
     (
-      l = place[m] \/ (sel[m] /\ l in nonEntryBlocksInMatch[m])
+      l = place[m] \/ (sel[m] /\ l in spannedBlocksInMatch[m])
     )
   );
 

@@ -97,7 +97,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setDataDefinedByMatches(root, p);
     setDataUsedByMatches(root, p);
     setEntryBlockOfMatches(root, p);
-    setNonEntryBlocksInMatches(root, p);
+    setSpannedBlocksInMatches(root, p);
 }
 
 bool
@@ -247,16 +247,16 @@ ModelParams::setEntryBlockOfMatches(
 }
 
 void
-ModelParams::setNonEntryBlocksInMatches(
+ModelParams::setSpannedBlocksInMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-non-entry-blocks")) {
+    for (auto jsonlist : getJsonValue(root, "match-spanned-blocks")) {
         list<ArrayIndex> blocks;
         for (auto entry : jsonlist) {
             blocks.push_back(toArrayIndex(entry));
         }
-        p.match_non_entry_blocks_.push_back(blocks);
+        p.match_spanned_blocks_.push_back(blocks);
     }
 }
 
@@ -281,8 +281,8 @@ ModelParams::getEntryBlockOfAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getNonEntryBlocksInAllMatches(void) const {
-    return match_non_entry_blocks_;
+ModelParams::getSpannedBlocksInAllMatches(void) const {
+    return match_spanned_blocks_;
 }
 
 vector< list<ID> >
