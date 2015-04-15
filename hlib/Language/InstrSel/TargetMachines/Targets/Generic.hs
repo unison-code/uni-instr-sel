@@ -117,7 +117,7 @@ mkGenericPhiInstructions =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = False
-              , patAsmStrTemplate = ( AssemblyStringTemplate
+              , patAsmStrTemplate = ( ASSTemplate
                                         [ ASLocationOfDataNode 3
                                         , ASVerbatim " = PHI "
                                         , ASLocationOfDataNode 1
@@ -169,7 +169,7 @@ mkGenericBrFallThroughInstructions =
           , patOS = OS.OpStructure g (Just 1) cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate []
+          , patAsmStrTemplate = ASSTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -204,7 +204,7 @@ mkGenericEntityDefInstructions =
           , patOS = OS.OpStructure g (Just 0) cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate []
+          , patAsmStrTemplate = ASSTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -250,7 +250,7 @@ mkGenericCopyInstructions =
           , patOS = OS.OpStructure (g w) Nothing cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate []
+          , patAsmStrTemplate = ASSTemplate []
           }
   in [ Instruction
          { instrID = 0

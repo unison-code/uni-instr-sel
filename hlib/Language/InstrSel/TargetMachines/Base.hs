@@ -27,6 +27,7 @@ module Language.InstrSel.TargetMachines.Base
   , findInstruction
   , findInstrPattern
   , findLocation
+  , flatAsmStrParts
   )
 where
 
@@ -44,7 +45,8 @@ import Language.InstrSel.TargetMachines.IDs
 -- | Represents the assembly string template, which are used to produce the
 -- assembly instructions during code emission.
 data AssemblyStringTemplate
-  = AssemblyStringTemplate { asmStrParts :: [AssemblyStringPart] }
+  = ASSTemplate { asmStrParts :: [AssemblyStringPart] }
+  | ASSMultiTemplate { asmStrTemplates :: [AssemblyStringTemplate] }
   deriving (Show)
 
 -- | Represents parts of the assembly string template.
@@ -174,3 +176,8 @@ findLocation rs rid =
   in if length found > 0
      then Just $ head found
      else Nothing
+
+flatAsmStrParts :: AssemblyStringTemplate -> [[AssemblyStringPart]]
+flatAsmStrParts (ASSTemplate []) = []
+flatAsmStrParts (ASSTemplate asps) = [asps]
+flatAsmStrParts (ASSMultiTemplate ats) = map (head . flatAsmStrParts) ats

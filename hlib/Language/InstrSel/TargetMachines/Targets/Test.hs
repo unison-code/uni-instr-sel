@@ -143,7 +143,7 @@ tmTest =
                       init_def_pattern_os
                       []
                       True
-                      (AssemblyStringTemplate [])
+                      (ASSTemplate [])
                   ]
                   (InstrProperties 1 1 True)
               , Instruction
@@ -153,7 +153,7 @@ tmTest =
                       add_pattern_os
                       [3]
                       True
-                      ( AssemblyStringTemplate
+                      ( ASSTemplate
                           [ ASVerbatim "add "
                           , ASLocationOfDataNode 3
                           , ASVerbatim ", "
@@ -171,7 +171,7 @@ tmTest =
                       bnz_pattern_os
                       []
                       True
-                      ( AssemblyStringTemplate
+                      ( ASSTemplate
                           [ ASVerbatim "bnz "
                           , ASLocationOfDataNode 0
                           , ASVerbatim ", "
@@ -189,7 +189,7 @@ tmTest =
                       br_pattern_os
                       []
                       True
-                      ( AssemblyStringTemplate
+                      ( ASSTemplate
                           [ ASVerbatim "br "
                           , ASBlockOfLabelNode 1
                           ]
@@ -203,7 +203,7 @@ tmTest =
                       br_fallthrough_pattern_os
                       []
                       True
-                      (AssemblyStringTemplate [])
+                      (ASSTemplate [])
                   ]
                   (InstrProperties 1 1 True)
               , Instruction
@@ -213,7 +213,7 @@ tmTest =
                       ret_pattern_os
                       []
                       True
-                      ( AssemblyStringTemplate
+                      ( ASSTemplate
                         [ ASVerbatim "ret "
                         , ASLocationOfDataNode 0
                         ]

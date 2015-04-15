@@ -30,9 +30,7 @@ import qualified Data.Graph.Inductive as I
 import Data.Maybe
   ( fromJust
   , isJust
-  , mapMaybe
   )
-
 
 
 --------------
@@ -74,8 +72,8 @@ generateCode target model sol@(HighLevelSolution {}) =
     map ( \l_node ->
           let matches = getMatchesMovedToBlock sol l_node
               sorted_matches = sortMatchesByFlow model matches
-              instrs = mapMaybe (emitInstruction model sol target)
-                                sorted_matches
+              instrs = concatMap (emitInstructions model sol target)
+                       sorted_matches
               bblabel = fromJust $ findBlockOfLabelNode model l_node
           in (AsmBlock $ show bblabel):instrs
         )
@@ -191,30 +189,25 @@ getInstrPattern is iid pid =
       pat = findInstrPattern (instrPatterns $ fromJust instr) pid
   in fromJust pat
 
--- | Emits the assembly instruction corresponding to a given match. If that
--- match does not produce an actual assembly instruction, @Nothing@ is returned.
-emitInstruction
+-- | Emits the assembly instruction(s) corresponding to a given match.
+emitInstructions
   :: HighLevelModel
   -> HighLevelSolution
   -> TargetMachine
   -> MatchID
-  -> Maybe AssemblyCode
-emitInstruction model sol tm mid =
+  -> [AssemblyCode]
+emitInstructions model sol tm mid =
   let match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern (tmInstructions tm)
                                  (hlMatchInstructionID match)
                                  (hlMatchPatternID match)
-      instr_parts =
-        updateNodeIDsInAsmStrParts (asmStrParts $ patAsmStrTemplate pat_data)
-                                   (hlMatchAsmStrNodeMaplist match)
-  in if length instr_parts > 0
-     then ( Just
-          $ AsmInstruction
-          $ concatMap
-              (emitInstructionPart model sol tm)
-              instr_parts
-          )
-     else Nothing
+      instr_parts = map
+                    (\ips -> updateNodeIDsInAsmStrParts ips
+                             (hlMatchAsmStrNodeMaplist match))
+                    (flatAsmStrParts $ patAsmStrTemplate pat_data)
+  in map
+     (\ip -> AsmInstruction $ concatMap (emitInstructionPart model sol tm) ip)
+     instr_parts
 
 -- | Updates the pattern graph node IDs appearing in the assembly string parts
 -- with the corresponding function graph node IDs.

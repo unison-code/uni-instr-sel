@@ -210,7 +210,7 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate
+              , patAsmStrTemplate = ASSTemplate
                                       [ ASLocationOfDataNode 3
                                       , ASVerbatim $ " = "
                                       , ASVerbatim $ str ++ " "
@@ -318,7 +318,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate str
+              , patAsmStrTemplate = ASSTemplate str
               }
   in Instruction
        { instrID = 0
@@ -363,7 +363,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate str
+              , patAsmStrTemplate = ASSTemplate str
               }
   in Instruction
        { instrID = 0
@@ -447,7 +447,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patOS = OS.OpStructure ord_g (Just ord_entry) ord_cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ ord_str ++ " "
                                   , ASLocationOfDataNode 5
                                   , ASVerbatim ", "
@@ -462,7 +462,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patOS = OS.OpStructure inv_g (Just inv_entry) inv_cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ inv_str ++ " "
                                   , ASLocationOfDataNode 5
                                   , ASVerbatim ", "
@@ -511,7 +511,7 @@ mkPredBrInstr =
           , patOS = OS.OpStructure g (Just 1) cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ "BEQ "
                                   , ASLocationOfDataNode 4
                                   , ASVerbatim ", "
@@ -554,7 +554,7 @@ mkBrInstrs =
           , patOS = OS.OpStructure g (Just 1) cs
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "B "
                                   , ASBlockOfLabelNode 2
                                   ]
@@ -599,16 +599,13 @@ mkRetInstrs =
             )
       bb_cs n = mkMatchToBlockMovementConstraints (g n)
       reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
-      pat n =
+      pat n str =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
-                                  [ ASVerbatim "RetRA "
-                                  , ASLocationOfDataNode 2
-                                  ]
+          , patAsmStrTemplate = str
           }
       vpat =
         InstrPattern
@@ -617,11 +614,15 @@ mkRetInstrs =
                     (mkMatchToBlockMovementConstraints vg)
           , patOutputDataNodes = []
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate [ ASVerbatim "RetRA" ]
+          , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat 32, vpat]
+         , instrPatterns = [pat 32 (ASSTemplate
+                                    [ ASVerbatim "RetRA "
+                                    , ASLocationOfDataNode 2
+                                    ])
+                           , vpat]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
@@ -632,7 +633,17 @@ mkRetInstrs =
          { instrID = 0
            -- The 16-bits returns truncate the result value by shifting 16 bits
            -- to the left and 16 bits to the right "arithmetically".
-         , instrPatterns = [pat 16]
+         , instrPatterns = [pat 16 (ASSMultiTemplate
+                                    [
+                                     ASSTemplate
+                                     [ ASVerbatim "%temp1 = SLL "
+                                     , ASLocationOfDataNode 2
+                                     , ASVerbatim ", 16"
+                                     ],
+                                     ASSTemplate [ ASVerbatim
+                                                   "%temp2 = SRA %temp1, 16" ],
+                                     ASSTemplate [ ASVerbatim "RetRA %temp2" ]
+                                    ])]
          , instrProps = InstrProperties { instrCodeSize = 12
                                         , instrLatency = 2
                                         , instrIsNonCopy = True
@@ -653,7 +664,7 @@ mkMfhiInstrs =
           , patOS = OS.OpStructure g Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "PseudoMFHI "
                                   , ASLocationOfDataNode 2
                                   ]
@@ -681,7 +692,7 @@ mkMfloInstrs =
           , patOS = OS.OpStructure g Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "PseudoMFLO "
                                   , ASLocationOfDataNode 2
                                   ]
@@ -709,7 +720,7 @@ mkPseudoMoveInstrs =
           , patOS = OS.OpStructure g Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate
+          , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "move "
                                   , ASLocationOfDataNode 1
                                   , ASVerbatim ", "
@@ -737,7 +748,7 @@ mkLoadImmInstr =
           , patOS = OS.OpStructure (g w r) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate a
+          , patAsmStrTemplate = ASSTemplate a
           }
       asm s = [ ASVerbatim $ s ++ " "
               , ASImmIntValueOfDataNode 1
@@ -828,7 +839,7 @@ mkTypeConvInstrs =
           , patOS = OS.OpStructure (g t (n, m)) Nothing cs
           , patOutputDataNodes = [2]
           , patADDUC = True
-          , patAsmStrTemplate = AssemblyStringTemplate []
+          , patAsmStrTemplate = ASSTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -859,7 +870,7 @@ mkEqComparison =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputDataNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = AssemblyStringTemplate
+              , patAsmStrTemplate = ASSTemplate
                                       [ ASVerbatim $ "seq "
                                       , ASLocationOfDataNode 0
                                       , ASVerbatim ", "

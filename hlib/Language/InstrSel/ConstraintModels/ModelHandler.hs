@@ -200,7 +200,7 @@ computeAsmStrNodeMaps
   -> Match NodeID
   -> [Maybe NodeID]
 computeAsmStrNodeMaps t m =
-  map f (asmStrParts t)
+  map f (concat $ flatAsmStrParts t)
   where f (ASVerbatim _) = Nothing
         f (ASLocationOfDataNode    n) = findFNInMatch m n
         f (ASImmIntValueOfDataNode n) = findFNInMatch m n
