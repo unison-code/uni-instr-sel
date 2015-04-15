@@ -14,7 +14,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addMatchToBlockMovementConstraints
+  ( addMatchPlacementConstraints
   , addFallThroughConstraints
   , addDataLocConstraints
   , addNoDataReuseConstraints
@@ -41,8 +41,8 @@ import Data.Maybe
 
 -- | Creates constraints using 'mkMatchPlacementConstraints' and adds
 -- these (if any) to the given 'OpStructure'.
-addMatchToBlockMovementConstraints :: OpStructure -> OpStructure
-addMatchToBlockMovementConstraints os =
+addMatchPlacementConstraints :: OpStructure -> OpStructure
+addMatchPlacementConstraints os =
   addConstraints os (mkMatchPlacementConstraints $ osGraph os)
 
 -- | Creates constraints for a pattern graph such that the match must be placed
