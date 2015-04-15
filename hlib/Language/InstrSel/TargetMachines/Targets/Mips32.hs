@@ -665,8 +665,9 @@ mkMfhiInstrs =
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim "PseudoMFHI "
-                                  , ASLocationOfDataNode 2
+                                  [ ASLocationOfDataNode 2
+                                  , ASVerbatim " = PseudoMFHI "
+                                  , ASLocationOfDataNode 1
                                   ]
           }
   in [ Instruction
@@ -693,8 +694,9 @@ mkMfloInstrs =
           , patOutputDataNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim "PseudoMFLO "
-                                  , ASLocationOfDataNode 2
+                                  [ ASLocationOfDataNode 2
+                                  , ASVerbatim " = PseudoMFLO "
+                                  , ASLocationOfDataNode 1
                                   ]
           }
   in [ Instruction
