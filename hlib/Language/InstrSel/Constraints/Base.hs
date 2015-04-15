@@ -308,12 +308,12 @@ instance ToLisp InstructionExpr where
 
 instance FromLisp BlockExpr where
   parseLisp e =
-        struct "block-where-match-is-placed" BlockWhereinMatchIsPlacedExpr e
+        struct "block-wherein-match-is-placed" BlockWhereinMatchIsPlacedExpr e
     <|> struct "block-of-bnode" BlockOfBlockNodeExpr e
 
 instance ToLisp BlockExpr where
   toLisp (BlockWhereinMatchIsPlacedExpr e) =
-    mkStruct "block-where-match-is-placed" [toLisp e]
+    mkStruct "block-wherein-match-is-placed" [toLisp e]
   toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
 instance FromLisp LocationExpr where
