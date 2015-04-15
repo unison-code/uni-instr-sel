@@ -922,11 +922,11 @@ getAllEdges (Graph g) = map toEdge $ I.labEdges g
 getInEdges :: Graph -> Node -> [Edge]
 getInEdges (Graph g) n = map toEdge $ I.inn g (getIntNodeID n)
 
--- | Gets all inbound data flow edges to a particular node.
+-- | Gets all inbound data-flow edges to a particular node.
 getDtFlowInEdges :: Graph -> Node -> [Edge]
 getDtFlowInEdges g n = filter isDataFlowEdge $ getInEdges g n
 
--- | Gets all inbound control flow edges to a particular node.
+-- | Gets all inbound control-flow edges to a particular node.
 getCtrlFlowInEdges :: Graph -> Node -> [Edge]
 getCtrlFlowInEdges g n = filter isControlFlowEdge $ getInEdges g n
 
@@ -942,11 +942,11 @@ getDefInEdges g n = filter isDefEdge $ getInEdges g n
 getOutEdges :: Graph -> Node -> [Edge]
 getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
 
--- | Gets all outbound data flow edges to a particular node.
+-- | Gets all outbound data-flow edges to a particular node.
 getDtFlowOutEdges :: Graph -> Node -> [Edge]
 getDtFlowOutEdges g n = filter isDataFlowEdge $ getOutEdges g n
 
--- | Gets all outbound control flow edges to a particular node.
+-- | Gets all outbound control-flow edges to a particular node.
 getCtrlFlowOutEdges :: Graph -> Node -> [Edge]
 getCtrlFlowOutEdges g n = filter isControlFlowEdge $ getOutEdges g n
 
@@ -1092,7 +1092,7 @@ doNumEdgesMatch fg pg fn pn =
                 f_out_es
                 p_out_es
 
--- | Checks if the number of control flow in-edges matters for a given pattern
+-- | Checks if the number of control-flow in-edges matters for a given pattern
 -- node.
 doesNumCFInEdgesMatter :: Graph -> Node -> Bool
 doesNumCFInEdgesMatter g n
@@ -1101,7 +1101,7 @@ doesNumCFInEdgesMatter g n
   | isBlockNodeAndIntermediate g n = True
   | otherwise = False
 
--- | Checks if the number of control flow out-edges matters for a given pattern
+-- | Checks if the number of control-flow out-edges matters for a given pattern
 -- node.
 doesNumCFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumCFOutEdgesMatter _ n
@@ -1109,7 +1109,7 @@ doesNumCFOutEdgesMatter _ n
   | isControlNode n = True
   | otherwise = False
 
--- | Checks if the number of data flow in-edges matters for a given pattern
+-- | Checks if the number of data-flow in-edges matters for a given pattern
 -- node.
 doesNumDFInEdgesMatter :: Graph -> Node -> Bool
 doesNumDFInEdgesMatter _ n
@@ -1117,7 +1117,7 @@ doesNumDFInEdgesMatter _ n
   | isControlNode n = True
   | otherwise = False
 
--- | Checks if the number of data flow out-edges matters for a given pattern
+-- | Checks if the number of data-flow out-edges matters for a given pattern
 -- node.
 doesNumDFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumDFOutEdgesMatter _ n
@@ -1219,21 +1219,21 @@ doOutEdgeListsMatch _ pg fes pes =
      &&
      ((not $ doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
--- | Checks if the order of control flow in-edges matters for a given pattern
+-- | Checks if the order of control-flow in-edges matters for a given pattern
 -- node.
 doesOrderCFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderCFInEdgesMatter g n
   | isBlockNodeAndIntermediate g n = True
   | otherwise = False
 
--- | Checks if the order of control flow out-edges matters for a given pattern
+-- | Checks if the order of control-flow out-edges matters for a given pattern
 -- node.
 doesOrderCFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderCFOutEdgesMatter _ n
   | isControlNode n = True
   | otherwise = False
 
--- | Checks if the order of data flow in-edges matters for a given pattern
+-- | Checks if the order of data-flow in-edges matters for a given pattern
 -- node.
 doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFInEdgesMatter _ n
@@ -1242,7 +1242,7 @@ doesOrderDFInEdgesMatter _ n
   | isPhiNode n = True
   | otherwise = False
 
--- | Checks if the order of data flow out-edges matters for a given pattern
+-- | Checks if the order of data-flow out-edges matters for a given pattern
 -- node.
 doesOrderDFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFOutEdgesMatter _ n

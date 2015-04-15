@@ -55,7 +55,7 @@ updateGraph new_g f =
       new_f = f { functionOS = new_os }
   in new_f
 
--- | Copy-extends the given graph along every eligable data flow edge.
+-- | Copy-extends the given graph along every eligable data-flow edge.
 copyExtend :: Function -> Function
 copyExtend f =
   let g = getGraph f

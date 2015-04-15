@@ -49,12 +49,12 @@ type SymToValueNodeMapping = (Symbol, G.Node)
 
 -- | Represents a data flow that goes from a block node, identified by the given
 -- ID, to an entity node. This is needed to draw the missing flow edges after
--- both the data flow graph and the control flow graph have been built.
+-- both the data-flow graph and the control-flow graph have been built.
 type BlockToEntityFlow = (F.BlockName, G.Node)
 
 -- | Represents a definition that goes from a block node, identified by the
 -- given ID, an entity node. This is needed to draw the missing definition edges
--- after both the data flow graph and the control flow graph have been
+-- after both the data-flow graph and the control-flow graph have been
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
@@ -62,7 +62,7 @@ type BlockToEntityDef = (F.BlockName, G.Node, G.EdgeNr)
 
 -- | Represents a definition that goes from an entity node to a block node,
 -- identified by the given ID. This is needed to draw the missing definition
--- edges after both the data flow graph and the control flow graph have been
+-- edges after both the data-flow graph and the control-flow graph have been
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
@@ -193,9 +193,9 @@ instance DataTypeFormable LLVM.Operand where
   toDataType (LLVM.ConstantOperand c) = toDataType (toConstant c)
   toDataType o = error $ "'toDataType' not implemented for " ++ show o
 
--- | Class for building the data flow graph.
+-- | Class for building the data-flow graph.
 class DfgBuildable a where
-  -- | Builds the corresponding data flow graph from a given LLVM element.
+  -- | Builds the corresponding data-flow graph from a given LLVM element.
   buildDfg
     :: BuildState
       -- ^ The current build state.
@@ -204,9 +204,9 @@ class DfgBuildable a where
     -> BuildState
        -- ^ The new build state.
 
--- | Class for building the control flow graph.
+-- | Class for building the control-flow graph.
 class CfgBuildable a where
-  -- | Builds the corresponding control flow graph from a given LLVM element.
+  -- | Builds the corresponding control-flow graph from a given LLVM element.
   -- It is assumed that all data entities referred to in the resulting CFG are
   -- already available in the current build state.
   buildCfg

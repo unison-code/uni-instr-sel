@@ -31,7 +31,7 @@ import Language.InstrSel.OpStructures
 -- Functions
 -------------
 
--- | Copy-extends the given graph along every eligable data flow edge, except
+-- | Copy-extends the given graph along every eligable data-flow edge, except
 -- those edges where the value node has no definition (that is, no parents)
 -- unless the value node represents a constant value.
 copyExtendGraph :: Graph -> Graph

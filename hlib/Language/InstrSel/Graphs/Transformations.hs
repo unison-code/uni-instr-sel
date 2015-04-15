@@ -35,7 +35,7 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Inserts a copy node along every data flow edge that involves a use of a
+-- | Inserts a copy node along every data-flow edge that involves a use of a
 -- value node and passes the predicate function. This also updates the
 -- definition edges to retain the same semantics of the original graph. This
 -- means that if there is a definition edge $e$ that involves a value node used
@@ -60,7 +60,7 @@ copyExtendWhen pf df g =
   in foldl (insertCopy df) g filtered_edges
 
 -- | Inserts a new copy and value node (whose data type is decided using the
--- provided function) along a given data flow edge. If the value node is used by
+-- provided function) along a given data-flow edge. If the value node is used by
 -- a phi node, and there is a definition edge on that value node, then the
 -- definition edge with matching out-edge number will be moved to the new data
 -- node. Note that definition edges where the target is a value node are not
@@ -110,7 +110,7 @@ branchExtendWhen f g =
       filtered_edges = filter (f g) edges
   in foldl insertBranch g filtered_edges
 
--- | Inserts a new block node and jump control node along the given control flow
+-- | Inserts a new block node and jump control node along the given control-flow
 -- edge.
 insertBranch :: Graph -> Edge -> Graph
 insertBranch g0 e =
