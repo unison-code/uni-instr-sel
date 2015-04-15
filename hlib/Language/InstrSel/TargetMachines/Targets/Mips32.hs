@@ -108,7 +108,7 @@ getRegisterByName :: LocationName -> Location
 getRegisterByName rname =
   let regs = getAllLocations
       found = filter (\r -> rname == locName r) regs
-  in trace (show rname ++ "   " ++ show found) $ head found
+  in head found
 
 -- | Retrieves all locations, where the location IDs have been set such that
 -- every location is given a unique ID.
