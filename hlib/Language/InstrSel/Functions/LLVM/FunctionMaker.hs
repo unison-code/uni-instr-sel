@@ -318,10 +318,16 @@ addNewNode st0 nt =
       st2 = touchNode st1 new_n
   in st2
 
+mkVarNameForConst :: Constant -> String
+mkVarNameForConst c = "%const." ++ (show c)
+
 -- | Adds a new value node representing a particular constant to a given state.
 addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
 addNewValueNodeWithConstant st0 c =
-  let st1 = addNewNode st0 (G.ValueNode (toDataType c) Nothing)
+  -- TODO: fix so that each constant gets a unique variable name
+  let st1 = addNewNode st0 ( G.ValueNode (toDataType c)
+                                         (Just $ mkVarNameForConst c)
+                           )
       new_n = fromJust $ lastTouchedNode st1
       st2 = addBlockToDatumDataFlow st1 (fromJust $ entryBlock st1, new_n)
   in st2
