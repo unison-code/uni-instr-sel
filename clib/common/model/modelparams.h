@@ -54,28 +54,28 @@ class ModelParams {
     ~ModelParams(void);
 
     /**
-     * Gets the number of operation nodes in the function graph.
+     * Gets the number of operations in the function graph.
      *
-     * @returns Number of nodes.
+     * @returns Number of operations.
      */
     size_t
-    getNumOperationNodesInF(void) const;
+    getNumOperationsInF(void) const;
 
     /**
-     * Gets the number of entity nodes in the function graph.
+     * Gets the number of entities in the function graph.
      *
-     * @returns Number of nodes.
+     * @returns Number of entities.
      */
     size_t
-    getNumEntityNodesInF(void) const;
+    getNumEntitiesInF(void) const;
 
     /**
-     * Gets the number of block nodes in the function graph.
+     * Gets the number of blocks in the function graph.
      *
-     * @returns Number of nodes.
+     * @returns Number of blocks.
      */
     size_t
-    getNumBlockNodesInF(void) const;
+    getNumBlocksInF(void) const;
 
     /**
      * Gets the number of locations in the target machine.
@@ -94,19 +94,18 @@ class ModelParams {
     getNumMatches(void) const;
 
     /**
-     * Gets the dominator set per given block node in the function graph.
+     * Gets the dominator set per given block in the function graph.
      *
-     * @returns List of block nodes that dominates a particular block node.
+     * @returns List of blocks that dominates a particular block.
      */
     std::vector< std::list<ArrayIndex> >
     getBlockDomSetsInF(void) const;
 
     /**
-     * Gets the list of definition edges per given block node in the function
-     * graph.
+     * Gets the list of definition edges per given block in the function graph.
      *
-     * @returns List of entity nodes between which there is a definition edge
-     * with a particular block node.
+     * @returns List of entities between which there is a definition edge with a
+     * particular block.
      */
     std::vector< std::list<ArrayIndex> >
     getDefEdgesInF(void) const;
@@ -114,22 +113,21 @@ class ModelParams {
     /**
      * Gets the entry block in the function graph.
      *
-     * @returns Array index for a block node.
+     * @returns Array index for a block.
      */
     ArrayIndex
     getEntryBlockInF(void) const;
 
     /**
-     * Gets the entity nodes in the function that are state nodes.
+     * Gets the entities in the function that are states.
      *
-     * @returns List of array indices for entity nodes.
+     * @returns List of entity array indices.
      */
     std::list<ArrayIndex>
     getAllStateEntitiesInF(void) const;
 
     /**
-     * Gets execution frequencies per block (as identified by the block nodes)
-     * in the function graph.
+     * Gets execution frequencies per block the function graph.
      *
      * @returns The execution frequencies.
      */
@@ -155,55 +153,55 @@ class ModelParams {
     /**
      * Gets the matches that have been derived from non-copy instructions.
      *
-     * @returns List of array indices for matches.
+     * @returns List of match array indices.
      */
     std::list<ArrayIndex>
     getNonCopyInstrMatches(void) const;
 
     /**
-     * Gets the function operation nodes covered per matches.
+     * Gets the function operations covered per matches.
      *
-     * @returns List of node IDs.
+     * @returns Vector of list of operation array indices.
      */
-    std::vector< std::list<ID> >
-    getOperationNodesCoveredByAllMatches(void) const;
+    std::vector< std::list<ArrayIndex> >
+    getOperationsCoveredByAllMatches(void) const;
 
     /**
-     * Gets the function entity nodes defined per match.
+     * Gets the function entities defined per match.
      *
-     * @returns List of node IDs.
+     * @returns Vector of list of entity array indices.
      */
-    std::vector< std::list<ID> >
-    getEntityNodesDefinedByAllMatches(void) const;
+    std::vector< std::list<ArrayIndex> >
+    getEntitiesDefinedByAllMatches(void) const;
 
     /**
-     * Gets the function entity nodes used per match.
+     * Gets the function entities used per match.
      *
-     * @returns List of node IDs.
+     * @returns Vector of list of entity array indices.
      */
-    std::vector< std::list<ID> >
-    getEntityNodesUsedByAllMatches(void) const;
+    std::vector< std::list<ArrayIndex> >
+    getEntitiesUsedByAllMatches(void) const;
 
     /**
-     * Gets the function block nodes per match that are entries.
+     * Gets the function blocks per match that are entries.
      *
-     * @returns List of node IDs.
+     * @returns Vector of list of block array indices.
      */
-    std::vector< std::list<ID> >
-    getEntryBlockNodeOfAllMatches(void) const;
+    std::vector< std::list<ArrayIndex> >
+    getEntryBlockOfAllMatches(void) const;
 
     /**
-     * Gets the function block nodes per match that are not entries.
+     * Gets the function blocks per match that are not entries.
      *
-     * @returns List of node IDs.
+     * @returns Vector of list of block array indices.
      */
-    std::vector< std::list<ID> >
-    getNonEntryBlockNodesInAllMatches(void) const;
+    std::vector< std::list<ArrayIndex> >
+    getNonEntryBlocksInAllMatches(void) const;
 
     /**
      * Gets the apply-def-dom-use-constraint settings per match.
      *
-     * @returns Boolean.
+     * @returns Vector of booleans.
      */
     std::vector<bool>
     getADDUCSettingForAllMatches(void) const;
@@ -327,7 +325,7 @@ class ModelParams {
     setEntryBlockInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the dominator sets for the block nodes in the function graph.
+     * Sets the dominator sets for the blocks in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -340,7 +338,7 @@ class ModelParams {
     setBlockDomSetsInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the definition edges for the respective block nodes in the function
+     * Sets the definition edges for the respective blocks in the function
      * graph.
      *
      * @param root
@@ -367,8 +365,7 @@ class ModelParams {
     setConstraintsForF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the execution frequencies of the blocks (as identified by the block
-     * nodes) in the function graph.
+     * Sets the execution frequencies of the blocks in the function graph.
      *
      * @param root
      *        The JSON root value.
@@ -381,7 +378,7 @@ class ModelParams {
     setExecFreqOfBlocksInF(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the entity nodes in the function that are state nodes.
+     * Sets the entities in the function that are states.
      *
      * @param root
      *        The JSON root value.
@@ -446,7 +443,7 @@ class ModelParams {
     setADDUCSettingsForMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function operation nodes covered by the respective match.
+     * Sets the function operations covered by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -456,10 +453,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setOperationNodesCoveredByMatches(const Json::Value& root, ModelParams& p);
+    setOperationsCoveredByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function entity nodes defined by the respective match.
+     * Sets the function entities defined by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -469,10 +466,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setEntityNodesDefinedByMatches(const Json::Value& root, ModelParams& p);
+    setEntitiesDefinedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function entity nodes used by the respective match.
+     * Sets the function entities used by the respective match.
      *
      * @param root
      *        The JSON root value.
@@ -482,10 +479,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setEntityNodesUsedByMatches(const Json::Value& root, ModelParams& p);
+    setEntitiesUsedByMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function block nodes that is the entry block of each respective
+     * Sets the function blocks that is the entry block of each respective
      * match.
      *
      * @param root
@@ -496,10 +493,10 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setEntryBlockNodeOfMatches(const Json::Value& root, ModelParams& p);
+    setEntryBlockOfMatches(const Json::Value& root, ModelParams& p);
 
     /**
-     * Sets the function block nodes that appear in the respective match but
+     * Sets the function blocks that appear in the respective match but
      * not as entries.
      *
      * @param root
@@ -510,7 +507,7 @@ class ModelParams {
      *         When an error occurs.
      */
     static void
-    setNonEntryBlockNodesInMatches(const Json::Value& root, ModelParams& p);
+    setNonEntryBlocksInMatches(const Json::Value& root, ModelParams& p);
 
     /**
      * Sets the pattern constraints.
@@ -553,19 +550,19 @@ class ModelParams {
   protected:
 
     /**
-     * Numbers of operation nodes in the function.
+     * Numbers of operations in the function.
      */
-    size_t num_func_operation_nodes_;
+    size_t num_func_operations_;
 
     /**
-     * Numbers of entity nodes in the function.
+     * Numbers of entities in the function.
      */
-    size_t num_func_entity_nodes_;
+    size_t num_func_entities_;
 
     /**
-     * Numbers of block nodes in the function.
+     * Numbers of blocks in the function.
      */
-    size_t num_func_block_nodes_;
+    size_t num_func_blocks_;
 
     /**
      * Numbers of locations in the target machine.
@@ -583,24 +580,24 @@ class ModelParams {
     ArrayIndex func_entry_block_;
 
     /**
-     * The dominator sets for each block node in the function graph.
+     * The dominator sets for each block in the function graph.
      */
     std::vector< std::list<ArrayIndex> > func_block_dom_sets_;
 
     /**
-     * The entity nodes between which there is a definition edge with the
-     * respective block node.
+     * The entities between which there is a definition edge with the respective
+     * block.
      */
     std::vector< std::list<ArrayIndex> > func_def_edges_;
 
     /**
-     * The entity nodes in the function graph that are state nodes.
+     * The entities in the function graph that are states.
      */
     std::list<ArrayIndex> func_state_entities_;
 
     /**
-     * The execution frequency per block (as identified by the block nodes) in
-     * the function graph.
+     * The execution frequency per block (as identified by the blocks) in the
+     * function graph.
      */
     std::vector<int> func_block_exec_freq_;
 
@@ -621,18 +618,17 @@ class ModelParams {
     std::vector<int> match_latencies_;
 
     /**
-     * The operation nodes in the function graph which are covered by each
-     * match.
+     * The operations in the function graph which are covered by each match.
      */
     std::vector< std::list<ArrayIndex> > match_operations_covered_;
 
     /**
-     * The entity nodes in the function graph which are defined by each match.
+     * The entities in the function graph which are defined by each match.
      */
     std::vector< std::list<ArrayIndex> > match_entities_defined_;
 
     /**
-     * The entity nodes in the function graph which are used by each match.
+     * The entities in the function graph which are used by each match.
      */
     std::vector< std::list<ArrayIndex> > match_entities_used_;
 
@@ -642,8 +638,8 @@ class ModelParams {
     std::vector< std::list<ArrayIndex> > match_entry_block_;
 
     /**
-     * The block nodes in the function graph which appear in each match but not
-     * as entries.
+     * The blocks in the function graph which appear in each match but not as
+     * entries.
      */
     std::vector< std::list<ArrayIndex> > match_non_entry_blocks_;
 

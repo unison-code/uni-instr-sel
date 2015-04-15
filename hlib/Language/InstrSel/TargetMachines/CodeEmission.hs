@@ -77,7 +77,7 @@ generateCode target model sol@(HighLevelSolution {}) =
               block_name = fromJust $ findNameOfBlockNode model b_node
           in (AsmBlock $ show block_name):instrs
         )
-        (hlSolOrderOfBBs sol)
+        (hlSolOrderOfBlocks sol)
 generateCode _ _ NoHighLevelSolution =
   error "generateCode: cannot generate code from no solution"
 
@@ -86,7 +86,7 @@ generateCode _ _ NoHighLevelSolution =
 -- corresponding block node.
 getMatchesPlacedInBlock :: HighLevelSolution -> NodeID -> [MatchID]
 getMatchesPlacedInBlock sol n =
-  map fst $ filter (\t -> snd t == n) $ hlSolBBsOfSelMatches sol
+  map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
 
 -- | Gets the block name for a given block node. If no such block can be found,
 -- @Nothing@ is returned.
@@ -133,10 +133,10 @@ addUseEdgesToDAG model mid g0 =
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      uses_of_m = filter (`notElem` hlMatchValueNodesUsedByPhis match)
-                         (hlMatchEntityNodesUsed match)
+      uses_of_m = filter (`notElem` hlMatchDataUsedByPhis match)
+                         (hlMatchEntitiesUsed match)
       defs_of_m =
-        map (\(n, i) -> (n, hlMatchEntityNodesDefined $ getHLMatchParams ds i))
+        map (\(n, i) -> (n, hlMatchEntitiesDefined $ getHLMatchParams ds i))
             ns
       g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 uses_of_m
   in g1
@@ -169,7 +169,7 @@ getNodeOfMatch g mid =
 addControlEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
 addControlEdgesToDAG model mid g =
   let match = getHLMatchParams (hlMatchParams model) mid
-  in if hlMatchHasControlNodes match
+  in if hlMatchHasControlFlow match
      then let ns = I.labNodes g
               pi_n = fst $ head $ filter (\(_, i) -> i == mid) ns
               other_ns = map fst $ filter (\(_, i) -> i /= mid) ns
@@ -241,7 +241,7 @@ emitInstructionPart model _ _ (ASImmIntValueOfValueNode n) =
      else -- TODO: handle this case
           "i?"
 emitInstructionPart _ sol m (ASLocationOfValueNode n) =
-  let reg_id = lookup n $ hlSolLocsOfValueNodes sol
+  let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
      then let reg = fromJust $ findLocation (tmLocations m) (fromJust reg_id)
           in show $ locName reg
@@ -255,10 +255,10 @@ emitInstructionPart model _ _ (ASNameOfBlockNode n) =
           "l?"
 emitInstructionPart model sol m (ASBlockOfValueNode n) =
   let function = hlFunctionParams model
-      entity_nodes = hlFunEntityNodes function
+      entity_nodes = hlFunEntities function
   in if n `elem` entity_nodes
      then let mid = fromJust $ findDefinerOfData model sol n
-              l = lookup mid (hlSolBBsOfSelMatches sol)
+              l = lookup mid (hlSolBlocksOfSelMatches sol)
           in if isJust l
              then emitInstructionPart model
                                      sol
@@ -279,7 +279,7 @@ findDefinerOfData
 findDefinerOfData model sol n =
   let match = hlMatchParams model
       definers = map hlMatchID
-                     ( filter (\mid -> n `elem` hlMatchEntityNodesDefined mid)
+                     ( filter (\mid -> n `elem` hlMatchEntitiesDefined mid)
                               match
                      )
       selected = filter (`elem` (hlSolSelMatches sol)) definers

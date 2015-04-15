@@ -110,11 +110,11 @@ mkHLFunctionParams function =
                        )
                        ns
   in HighLevelFunctionParams
-       { hlFunOpNodes = nodeIDsByType isOperationNode
-       , hlFunEntityNodes = nodeIDsByType isEntityNode
-       , hlFunStateNodes = nodeIDsByType isStateNode
-       , hlFunBlockNodes = nodeIDsByType isBlockNode
-       , hlFunEntryBlockNode = entry_block
+       { hlFunOperations = nodeIDsByType isOperationNode
+       , hlFunEntities = nodeIDsByType isEntityNode
+       , hlFunStates = nodeIDsByType isStateNode
+       , hlFunBlocks = nodeIDsByType isBlockNode
+       , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
        , hlFunBlockParams = bb_params
@@ -159,9 +159,9 @@ processMatch instr pattern match mid =
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
-      entry_l_node_id = osEntryBlockNode $ patOS pattern
-      l_ref_ns = if isJust entry_l_node_id
-                 then let nid = fromJust entry_l_node_id
+      entry_b_node_id = osEntryBlockNode $ patOS pattern
+      l_ref_ns = if isJust entry_b_node_id
+                 then let nid = fromJust entry_b_node_id
                       in filter (\n -> getNodeID n /= nid) l_ns
                  else l_ns
       i_props = instrProps instr
@@ -170,13 +170,11 @@ processMatch instr pattern match mid =
        { hlMatchInstructionID = instrID instr
        , hlMatchPatternID = patID pattern
        , hlMatchID = mid
-       , hlMatchOpNodesCovered = findFNsInMatch match (getNodeIDs o_ns)
-       , hlMatchEntityNodesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
-       , hlMatchEntityNodesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
-       , hlMatchEntryBlockNode = maybe Nothing
-                                       (findFNInMatch match)
-                                       entry_l_node_id
-       , hlMatchNonEntryBlockNodes = findFNsInMatch match (getNodeIDs l_ref_ns)
+       , hlMatchOperationsCovered = findFNsInMatch match (getNodeIDs o_ns)
+       , hlMatchEntitiesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
+       , hlMatchEntitiesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
+       , hlMatchEntryBlock = maybe Nothing (findFNInMatch match) entry_b_node_id
+       , hlMatchNonEntryBlocks = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
@@ -184,10 +182,10 @@ processMatch instr pattern match mid =
        , hlMatchADDUC = patADDUC pattern
        , hlMatchIsNonCopyInstruction =
            not $ length o_ns == 1 && isCopyNode (head o_ns)
-       , hlMatchHasControlNodes = length c_ns > 0
+       , hlMatchHasControlFlow = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
-       , hlMatchValueNodesUsedByPhis =
+       , hlMatchDataUsedByPhis =
            findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
        , hlMatchAsmStrNodeMaplist = asm_maps
        }
@@ -232,7 +230,8 @@ replaceNodeIDsFromP2FInC match c =
 -- instance.
 lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
-  let getAIForOpNodeID nid = fromJust $ findAIWithOpNodeID ai_maps nid
+  let getAIForOperationNodeID nid =
+        fromJust $ findAIWithOperationNodeID ai_maps nid
       getAIForEntityNodeID nid = fromJust $ findAIWithEntityNodeID ai_maps nid
       getAIForBlockNodeID nid = fromJust $ findAIWithBlockNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
@@ -246,12 +245,11 @@ lowerHighLevelModel model ai_maps =
       tm_params = hlMachineParams model
       m_params = sortByAI (getAIForMatchID . hlMatchID) (hlMatchParams model)
   in LowLevelModel
-       { llNumFunOpNodes = toInteger $ length $ hlFunOpNodes f_params
-       , llNumFunEntityNodes = toInteger $ length $ hlFunEntityNodes f_params
-       , llNumFunBlockNodes = toInteger $ length $ hlFunBlockNodes f_params
-       , llFunStateNodes = map getAIForEntityNodeID (hlFunStateNodes f_params)
-       , llFunEntryBlockNode =
-           getAIForBlockNodeID $ hlFunEntryBlockNode f_params
+       { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
+       , llFunNumEntities = toInteger $ length $ hlFunEntities f_params
+       , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
+       , llFunStates = map getAIForEntityNodeID (hlFunStates f_params)
+       , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
                ( sortByAI (getAIForBlockNodeID . domNode)
@@ -263,7 +261,7 @@ lowerHighLevelModel model ai_maps =
                  map (getAIForEntityNodeID . snd)
                      (filter (\(n', _) -> n == n') (hlFunDefEdges f_params))
                )
-               (sortByAI getAIForBlockNodeID (hlFunBlockNodes f_params))
+               (sortByAI getAIForBlockNodeID (hlFunBlocks f_params))
        , llFunBBExecFreqs =
            map hlBlockExecFrequency
                ( sortByAI (getAIForBlockNodeID . hlBlockNode)
@@ -273,21 +271,21 @@ lowerHighLevelModel model ai_maps =
            map (replaceIDWithArrayIndex ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
        , llNumMatches = toInteger $ length m_params
-       , llMatchOpNodesCovered =
-           map (\m -> map getAIForOpNodeID (hlMatchOpNodesCovered m))
+       , llMatchOperationsCovered =
+           map (\m -> map getAIForOperationNodeID (hlMatchOperationsCovered m))
                m_params
-       , llMatchEntityNodesDefined =
-           map (\m -> map getAIForEntityNodeID (hlMatchEntityNodesDefined m))
+       , llMatchEntitiesDefined =
+           map (\m -> map getAIForEntityNodeID (hlMatchEntitiesDefined m))
                m_params
-       , llMatchEntityNodesUsed =
-           map (\m -> map getAIForEntityNodeID (hlMatchEntityNodesUsed m))
+       , llMatchEntitiesUsed =
+           map (\m -> map getAIForEntityNodeID (hlMatchEntitiesUsed m))
                m_params
-       , llMatchEntryBlockNode =
+       , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID))
-               (map hlMatchEntryBlockNode m_params)
-       , llMatchNonEntryBlockNodes =
+               (map hlMatchEntryBlock m_params)
+       , llMatchNonEntryBlocks =
            map (map getAIForBlockNodeID)
-               (map hlMatchNonEntryBlockNodes m_params)
+               (map hlMatchNonEntryBlocks m_params)
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
@@ -328,8 +326,9 @@ replaceIDWithArrayIndex ai_maps c =
                     }
   in apply new_r c
 
-findAIWithOpNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIWithOpNodeID ai_maps = findArrayIndexInList (ai2OpNodeIDs ai_maps)
+findAIWithOperationNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithOperationNodeID ai_maps =
+  findArrayIndexInList (ai2OperationNodeIDs ai_maps)
 
 findAIWithEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
@@ -339,7 +338,7 @@ findAIWithBlockNodeID ai_maps = findArrayIndexInList (ai2BlockNodeIDs ai_maps)
 
 findAIWithAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithAnyNodeID ai_maps nid =
-  let lists = [ ai2OpNodeIDs ai_maps
+  let lists = [ ai2OperationNodeIDs ai_maps
               , ai2EntityNodeIDs ai_maps
               , ai2BlockNodeIDs ai_maps
               ]

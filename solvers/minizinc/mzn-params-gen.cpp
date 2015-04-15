@@ -169,13 +169,11 @@ generateModelFunctionParameters(
 ) {
     out << "% Function data" << endl;
 
-    out << "numOperationsInFunction = "
-        << params.getNumOperationNodesInF()
-        << ";"
+    out << "numOperationsInFunction = " << params.getNumOperationsInF() << ";"
         << endl;
-    out << "numEntitiesInFunction = " << params.getNumEntityNodesInF() << ";"
+    out << "numEntitiesInFunction = " << params.getNumEntitiesInF() << ";"
         << endl;
-    out << "numBlocksInFunction = " << params.getNumBlockNodesInF() << ";"
+    out << "numBlocksInFunction = " << params.getNumBlocksInF() << ";"
         << endl;
 
     out << "entryBlockOfFunction = " << params.getEntryBlockInF() << ";"
@@ -220,23 +218,23 @@ generateModelMatchParameters(
          << endl;
 
     out << "operationsCoveredByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getOperationNodesCoveredByAllMatches());
+    printMinizincValue(out, params.getOperationsCoveredByAllMatches());
     out << ");" << endl;
 
     out << "entitiesDefinedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntityNodesDefinedByAllMatches());
+    printMinizincValue(out, params.getEntitiesDefinedByAllMatches());
     out << ");" << endl;
 
     out << "entitiesUsedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntityNodesUsedByAllMatches());
+    printMinizincValue(out, params.getEntitiesUsedByAllMatches());
     out << ");" << endl;
 
     out << "entryBlockOfMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntryBlockNodeOfAllMatches());
+    printMinizincValue(out, params.getEntryBlockOfAllMatches());
     out << ");" << endl;
 
     out << "nonEntryBlocksInMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getNonEntryBlockNodesInAllMatches());
+    printMinizincValue(out, params.getNonEntryBlocksInAllMatches());
     out << ");" << endl;
 
     out << "applyDefDomUseConstraintForMatch = array1d(allMatches, ";

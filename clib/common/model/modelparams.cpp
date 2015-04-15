@@ -44,18 +44,18 @@ ModelParams::~ModelParams(void) {
 }
 
 size_t
-ModelParams::getNumOperationNodesInF(void) const {
-    return num_func_operation_nodes_;
+ModelParams::getNumOperationsInF(void) const {
+    return num_func_operations_;
 }
 
 size_t
-ModelParams::getNumEntityNodesInF(void) const {
-    return num_func_entity_nodes_;
+ModelParams::getNumEntitiesInF(void) const {
+    return num_func_entities_;
 }
 
 size_t
-ModelParams::getNumBlockNodesInF(void) const {
-    return num_func_block_nodes_;
+ModelParams::getNumBlocksInF(void) const {
+    return num_func_blocks_;
 }
 
 size_t
@@ -93,11 +93,11 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setNonCopyInstrMatches(root, p);
     setConstraintsForMatches(root, p);
     setADDUCSettingsForMatches(root, p);
-    setOperationNodesCoveredByMatches(root, p);
-    setEntityNodesDefinedByMatches(root, p);
-    setEntityNodesUsedByMatches(root, p);
-    setEntryBlockNodeOfMatches(root, p);
-    setNonEntryBlockNodesInMatches(root, p);
+    setOperationsCoveredByMatches(root, p);
+    setEntitiesDefinedByMatches(root, p);
+    setEntitiesUsedByMatches(root, p);
+    setEntryBlockOfMatches(root, p);
+    setNonEntryBlocksInMatches(root, p);
 }
 
 bool
@@ -193,11 +193,11 @@ ModelParams::getConstraintsForAllMatches(void) const {
 }
 
 void
-ModelParams::setOperationNodesCoveredByMatches(
+ModelParams::setOperationsCoveredByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-op-nodes-covered")) {
+    for (auto jsonlist : getJsonValue(root, "match-operations-covered")) {
         list<ArrayIndex> covers;
         for (auto entry : jsonlist) {
             covers.push_back(toArrayIndex(entry));
@@ -207,11 +207,11 @@ ModelParams::setOperationNodesCoveredByMatches(
 }
 
 void
-ModelParams::setEntityNodesDefinedByMatches(
+ModelParams::setEntitiesDefinedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-entity-nodes-defined")) {
+    for (auto jsonlist : getJsonValue(root, "match-entities-defined")) {
         list<ArrayIndex> defs;
         for (auto entry : jsonlist) {
             defs.push_back(toArrayIndex(entry));
@@ -221,11 +221,11 @@ ModelParams::setEntityNodesDefinedByMatches(
 }
 
 void
-ModelParams::setEntityNodesUsedByMatches(
+ModelParams::setEntitiesUsedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-entity-nodes-used")) {
+    for (auto jsonlist : getJsonValue(root, "match-entities-used")) {
         list<ArrayIndex> uses;
         for (auto entry : jsonlist) {
             uses.push_back(toArrayIndex(entry));
@@ -235,11 +235,11 @@ ModelParams::setEntityNodesUsedByMatches(
 }
 
 void
-ModelParams::setEntryBlockNodeOfMatches(
+ModelParams::setEntryBlockOfMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto entry : getJsonValue(root, "match-entry-block-nodes")) {
+    for (auto entry : getJsonValue(root, "match-entry-blocks")) {
         list<ArrayIndex> block;
         if (!entry.isNull()) block.push_back(toArrayIndex(entry));
         p.match_entry_block_.push_back(block);
@@ -247,11 +247,11 @@ ModelParams::setEntryBlockNodeOfMatches(
 }
 
 void
-ModelParams::setNonEntryBlockNodesInMatches(
+ModelParams::setNonEntryBlocksInMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-non-entry-block-nodes")) {
+    for (auto jsonlist : getJsonValue(root, "match-non-entry-blocks")) {
         list<ArrayIndex> blocks;
         for (auto entry : jsonlist) {
             blocks.push_back(toArrayIndex(entry));
@@ -261,27 +261,27 @@ ModelParams::setNonEntryBlockNodesInMatches(
 }
 
 vector< list<ID> >
-ModelParams::getOperationNodesCoveredByAllMatches(void) const {
+ModelParams::getOperationsCoveredByAllMatches(void) const {
     return match_operations_covered_;
 }
 
 vector< list<ID> >
-ModelParams::getEntityNodesDefinedByAllMatches(void) const {
+ModelParams::getEntitiesDefinedByAllMatches(void) const {
     return match_entities_defined_;
 }
 
 vector< list<ID> >
-ModelParams::getEntityNodesUsedByAllMatches(void) const {
+ModelParams::getEntitiesUsedByAllMatches(void) const {
     return match_entities_used_;
 }
 
 vector< list<ID> >
-ModelParams::getEntryBlockNodeOfAllMatches(void) const {
+ModelParams::getEntryBlockOfAllMatches(void) const {
     return match_entry_block_;
 }
 
 vector< list<ID> >
-ModelParams::getNonEntryBlockNodesInAllMatches(void) const {
+ModelParams::getNonEntryBlocksInAllMatches(void) const {
     return match_non_entry_blocks_;
 }
 
@@ -313,7 +313,7 @@ ModelParams::destroyConstraintsForMatches(void) {
 
 void
 ModelParams::setStateEntitiesInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-state-nodes")) {
+    for (auto entry : getJsonValue(root, "fun-states")) {
         p.func_state_entities_.push_back(toArrayIndex(entry));
     }
 }
@@ -376,16 +376,14 @@ ModelParams::setADDUCSettingsForMatches(
 
 void
 ModelParams::setEntryBlockInF(const Json::Value& root, ModelParams& p) {
-    p.func_entry_block_ =
-        toArrayIndex(getJsonValue(root, "fun-entry-block-node"));
+    p.func_entry_block_ = toArrayIndex(getJsonValue(root, "fun-entry-block"));
 }
 
 void
 ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
-    p.num_func_operation_nodes_ = toInt(getJsonValue(root, "fun-num-op-nodes"));
-    p.num_func_entity_nodes_ =
-        toInt(getJsonValue(root, "fun-num-entity-nodes"));
-    p.num_func_block_nodes_ = toInt(getJsonValue(root, "fun-num-block-nodes"));
+    p.num_func_operations_ = toInt(getJsonValue(root, "fun-num-operations"));
+    p.num_func_entities_ = toInt(getJsonValue(root, "fun-num-entities"));
+    p.num_func_blocks_ = toInt(getJsonValue(root, "fun-num-blocks"));
     p.num_locations_ = toInt(getJsonValue(root, "num-locations"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
 }

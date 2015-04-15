@@ -78,18 +78,18 @@ data HighLevelModel
 -- | Contains the high-level function graph parameters.
 data HighLevelFunctionParams
   = HighLevelFunctionParams
-      { hlFunOpNodes :: [NodeID]
-        -- ^ The operation nodes in the function graph.
-      , hlFunEntityNodes :: [NodeID]
-        -- ^ The entity nodes in the function graph.
-      , hlFunStateNodes :: [NodeID]
+      { hlFunOperations :: [NodeID]
+        -- ^ The operations in the function graph.
+      , hlFunEntities :: [NodeID]
+        -- ^ The entities in the function graph.
+      , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
-      , hlFunBlockNodes :: [NodeID]
+      , hlFunBlocks :: [NodeID]
         -- ^ The block nodes in the function graph.
-      , hlFunEntryBlockNode :: NodeID
-        -- ^ The block that is the entry point into the function.
+      , hlFunEntryBlock :: NodeID
+        -- ^ The entry block of the function graph.
       , hlFunBlockDomSets :: [DomSet NodeID]
-        -- ^ The dominator sets of the block nodes in the function graph.
+        -- ^ The dominator sets of the block in the function graph.
       , hlFunDefEdges :: [(NodeID, NodeID)]
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
@@ -110,7 +110,7 @@ data HighLevelBlockParams
       { hlBlockName :: BlockName
         -- ^ The name of this block.
       , hlBlockNode :: NodeID
-        -- ^ The node ID of the block node that represents this block.
+        -- ^ The ID of the node representing this block.
       , hlBlockExecFrequency :: ExecFreq
         -- ^ The execution frequency of this block.
       }
@@ -125,20 +125,20 @@ data HighLevelMatchParams
         -- ^ The pattern ID of this match.
       , hlMatchID :: MatchID
         -- ^ The matchset ID of this match.
-      , hlMatchOpNodesCovered :: [NodeID]
+      , hlMatchOperationsCovered :: [NodeID]
         -- ^ The operations in the function graph which are covered by this
         -- match.
-      , hlMatchEntityNodesDefined :: [NodeID]
+      , hlMatchEntitiesDefined :: [NodeID]
         -- ^ The entities in the function graph which are defined by this match.
-      , hlMatchEntityNodesUsed :: [NodeID]
+      , hlMatchEntitiesUsed :: [NodeID]
         -- ^ The entities in the function graph which are used by this
         -- match.
-      , hlMatchEntryBlockNode :: Maybe NodeID
-        -- ^ The block node in the function graph that appears as entry block
-        -- (if there is such a node) in this match.
-      , hlMatchNonEntryBlockNodes :: [NodeID]
-        -- ^ The block nodes in the function graph that appears in this match
-        -- but not as entries.
+      , hlMatchEntryBlock :: Maybe NodeID
+        -- ^ A block in the function graph that appears as entry block
+        -- (if there is such a block) of this match.
+      , hlMatchNonEntryBlocks :: [NodeID]
+        -- ^ The block in the function graph that appears in this match but not
+        -- as entries.
       , hlMatchCodeSize :: Integer
         -- ^ The size of the instruction associated with this match.
       , hlMatchLatency :: Integer
@@ -153,11 +153,10 @@ data HighLevelMatchParams
         -- of the generic phi patterns.
       , hlMatchIsNonCopyInstruction :: Bool
         -- ^ Whether the corresponding instruction is a non-copy instruction.
-      , hlMatchHasControlNodes :: Bool
-        -- ^ Whether the corresponding pattern contains one or more
-        -- control nodes.
-      , hlMatchValueNodesUsedByPhis :: [NodeID]
-        -- ^ The value nodes in the function graph which are used by phi nodes
+      , hlMatchHasControlFlow :: Bool
+        -- ^ Whether the corresponding pattern contains any control flow.
+      , hlMatchDataUsedByPhis :: [NodeID]
+        -- ^ The data in the function graph which are used by phi nodes
         -- appearing this match. This information is required during instruction
         -- emission in order to break cyclic data dependencies.
       , hlMatchAsmStrNodeMaplist :: [Maybe NodeID]
@@ -183,28 +182,28 @@ data HighLevelMachineParams
 -- | Contains a low-level CP model.
 data LowLevelModel
   = LowLevelModel
-      { llNumFunOpNodes :: Integer
-        -- ^ The number of operation nodes appearing in the function graph.
-      , llNumFunEntityNodes :: Integer
-        -- ^ The number of entity nodes appearing in the function graph.
-      , llNumFunBlockNodes :: Integer
-        -- ^ The number of block nodes appearing in the function graph.
-      , llFunStateNodes :: [ArrayIndex]
-        -- ^ The entities that are state nodes of the function graph.
-      , llFunEntryBlockNode :: ArrayIndex
-        -- ^ The entry block node of the function graph.
+      { llFunNumOperations :: Integer
+        -- ^ The number of operations in the function graph.
+      , llFunNumEntities :: Integer
+        -- ^ The number of entities in the function graph.
+      , llFunNumBlocks :: Integer
+        -- ^ The number of blocks in the function graph.
+      , llFunStates :: [ArrayIndex]
+        -- ^ The entities that are states of the function graph.
+      , llFunEntryBlock :: ArrayIndex
+        -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
-        -- ^ The dominator set for each block node in the function graph.
-        -- An index into the outer list corresponds to the array index of a
-        -- particular block node.
+        -- ^ The dominator set for each block in the function graph. An index
+        -- into the outer list corresponds to the array index of a particular
+        -- block.
       , llFunDefEdges :: [[ArrayIndex]]
-        -- ^ The list of entity nodes for each block node in the function graph
-        -- between which there is a definition edge. An index into the outer
-        -- list corresponds to the array index of a particular block node.
+        -- ^ The list of entities for each block in the function graph between
+        -- which there is a definition edge. An index into the outer list
+        -- corresponds to the array index of a particular block.
       , llFunBBExecFreqs :: [ExecFreq]
         -- ^ The execution frequency of each block. An index into the list
-        -- corresponds to the array index of a particular block node in the
-        -- function graph.
+        -- corresponds to the array index of a particular block in the function
+        -- graph.
       , llFunConstraints :: [Constraint]
         -- ^ The constraints of the function graph. No constraint in this list
         -- may use IDs.
@@ -212,26 +211,26 @@ data LowLevelModel
         -- ^ The number of locations available in the target machine.
       , llNumMatches :: Integer
         -- ^ The number of matches.
-      , llMatchOpNodesCovered :: [[ArrayIndex]]
-        -- ^ The list of operation nodes in the function graph that are covered
-        -- by each match. An index into the outer list corresponds to the array
-        -- index of a particular match.
-      , llMatchEntityNodesDefined :: [[ArrayIndex]]
-        -- ^ The list of entity nodes in the function graph that are defined by
+      , llMatchOperationsCovered :: [[ArrayIndex]]
+        -- ^ The list of operation in the function graph that are covered by
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchEntityNodesUsed :: [[ArrayIndex]]
-        -- ^ The list of entity nodes in the function graph that are used by
-        -- each match. An index into the outer list corresponds to the array
-        -- index of a particular match.
-      , llMatchEntryBlockNode :: [Maybe ArrayIndex]
-        -- ^ The block node in the function graph that is the entry block (if
-        -- any) of each match. An index into the list corresponds to the array
-        -- index of a particular match.
-      , llMatchNonEntryBlockNodes :: [[ArrayIndex]]
-        -- ^ The block nodes in the function graph that are non-entry blocks of
-        -- each match. An index into the outer list corresponds to the array
-        -- index of a particular match.
+      , llMatchEntitiesDefined :: [[ArrayIndex]]
+        -- ^ The list of entities in the function graph that are defined by each
+        -- match. An index into the outer list corresponds to the array index of
+        -- a particular match.
+      , llMatchEntitiesUsed :: [[ArrayIndex]]
+        -- ^ The list of entities in the function graph that are used by each
+        -- match. An index into the outer list corresponds to the array index of
+        -- a particular match.
+      , llMatchEntryBlocks :: [Maybe ArrayIndex]
+        -- ^ The block in the function graph which is the entry block (if any)
+        -- of each match. An index into the list corresponds to the array index
+        -- of a particular match.
+      , llMatchNonEntryBlocks :: [[ArrayIndex]]
+        -- ^ The block in the function graph that are non-entry blocks of each
+        -- match. An index into the outer list corresponds to the array index of
+        -- a particular match.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
         -- the array index of a particular match.
@@ -252,19 +251,19 @@ data LowLevelModel
 -- | Contains a solution to a high-level CP model instance.
 data HighLevelSolution
   = HighLevelSolution
-      { hlSolOrderOfBBs :: [NodeID]
+      { hlSolOrderOfBlocks :: [NodeID]
         -- ^ The order of blocks (represented by the node ID of the
-        -- corresponding block node).
+        -- corresponding block).
       , hlSolSelMatches :: [MatchID]
         -- ^ The selected matchs.
-      , hlSolBBsOfSelMatches :: [(MatchID, NodeID)]
-        -- ^ The block (represented by the node ID of the corresponding
-        -- block node) to which a particular match was moved. A missing entry
-        -- means that the corresponding match ID was not selected and thus not
-        -- moved to a valid block.
-      , hlSolLocsOfValueNodes :: [(NodeID, LocationID)]
-        -- ^ The locations assigned for certain value nodes. A missing entry
-        -- means that no location was assigned to the corresponding value node.
+      , hlSolBlocksOfSelMatches :: [(MatchID, NodeID)]
+        -- ^ The block (represented by the node ID of the corresponding block)
+        -- to which a particular match was moved. A missing entry means that the
+        -- corresponding match ID was not selected and thus not moved to a valid
+        -- block.
+      , hlSolLocationsOfData :: [(NodeID, LocationID)]
+        -- ^ The locations assigned for certain datum. A missing entry means
+        -- that no location was assigned to the corresponding datum.
       , hlSolCost :: Integer
         -- ^ The cost metric of the found solution.
       , hlIsOptimal :: Bool
@@ -276,27 +275,27 @@ data HighLevelSolution
 -- | Contains a solution to a low-level CP model instance.
 data LowLevelSolution
   = LowLevelSolution
-      { llSolOrderOfBBs :: [ArrayIndex]
-        -- ^ The order of blocks. An index into the list corresponds to
-        -- the array index of the block node in the function graph which
-        -- represents a particular block.
+      { llSolOrderOfBlocks :: [ArrayIndex]
+        -- ^ The order of blocks. An index into the list corresponds to the
+        -- array index of the node in the function graph which represents a
+        -- particular block.
       , llSolIsMatchSelected :: [Bool]
         -- ^ Indicates whether a particular match was selected. An index into
         -- the list corresponds to the array index of a particular match.
-      , llSolBBsOfMatches :: [ArrayIndex]
-        -- ^ The array index of the block to which a particular match was
-        -- moved. An index into the list corresponds to the array index of a
-        -- particular match, but this value is only valid if the corresponding
-        -- value in @llIsMatchSelected@ is set to @True@.
-      , llSolHasValueNodeLocation :: [Bool]
+      , llSolBlocksOfMatches :: [ArrayIndex]
+        -- ^ The array index of the block wherein a particular match was
+        -- placed. An index into the list corresponds to the array index of a
+        -- particular match, but this datum is only valid if the corresponding
+        -- datum in @llIsMatchSelected@ is set to @True@.
+      , llSolHasDatumLocation :: [Bool]
         -- ^ Indicates whether a location has been selected for a particular
-        -- value node. An index into the list corresponds to the array index of
-        -- a particular value node.
-      , llSolLocsOfValueNodes :: [ArrayIndex]
-        -- ^ Specifies the location of a particular value node. An index into
-        -- the list corresponds to the array index of a particular value node,
-        -- but this value is only valid if the corresponding value in
-        -- @llHasValueNodeLocation@ is set to @True@.
+        -- datum. An index into the list corresponds to the array index of a
+        -- particular datum.
+      , llSolLocationsOfData :: [ArrayIndex]
+        -- ^ Specifies the location of a particular datum. An index into the
+        -- list corresponds to the array index of a particular datum, but this
+        -- datum is only valid if the corresponding datum in
+        -- @llHasDatumLocation@ is set to @True@.
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool
@@ -311,15 +310,15 @@ data LowLevelSolution
 -- IDs, etc., which may be sparse.
 data ArrayIndexMaplists
   = ArrayIndexMaplists
-      { ai2OpNodeIDs :: [NodeID]
+      { ai2OperationNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of operation nodes.
+        -- indices) to the node IDs of operations.
       , ai2EntityNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of entity nodes.
+        -- indices) to the node IDs of entities.
       , ai2BlockNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of block nodes.
+        -- indices) to the node IDs of blocks.
       , ai2MatchIDs :: [MatchID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to match IDs.
@@ -355,10 +354,10 @@ instance ToJSON HighLevelModel where
 instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
-      <$> v .: "operation-nodes"
-      <*> v .: "entity-nodes"
-      <*> v .: "state-nodes"
-      <*> v .: "block-nodes"
+      <$> v .: "operations"
+      <*> v .: "entities"
+      <*> v .: "states"
+      <*> v .: "blocks"
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
@@ -369,14 +368,14 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
-    object [ "operation-nodes"   .= (hlFunOpNodes d)
-           , "entity-nodes"      .= (hlFunEntityNodes d)
-           , "state-nodes"       .= (hlFunStateNodes d)
-           , "block-nodes"       .= (hlFunBlockNodes d)
-           , "entry-block"       .= (hlFunEntryBlockNode d)
+    object [ "operations"        .= (hlFunOperations d)
+           , "entities"          .= (hlFunEntities d)
+           , "states"            .= (hlFunStates d)
+           , "blocks"            .= (hlFunBlocks d)
+           , "entry-block"       .= (hlFunEntryBlock d)
            , "block-dom-sets"    .= (hlFunBlockDomSets d)
            , "def-edges"         .= (hlFunDefEdges d)
-           , "block-params"         .= (hlFunBlockParams d)
+           , "block-params"      .= (hlFunBlockParams d)
            , "int-constant-data" .= (hlFunIntConstData d)
            , "constraints"       .= (hlFunConstraints d)
            ]
@@ -402,18 +401,18 @@ instance FromJSON HighLevelMatchParams where
       <$> v .: "instruction-id"
       <*> v .: "pattern-id"
       <*> v .: "match-id"
-      <*> v .: "operation-nodes-covered"
-      <*> v .: "entity-nodes-defined"
-      <*> v .: "entity-nodes-used"
-      <*> v .: "entry-block-node"
-      <*> v .: "non-entry-block-nodes"
+      <*> v .: "operations-covered"
+      <*> v .: "entities-defined"
+      <*> v .: "entities-used"
+      <*> v .: "entry-block"
+      <*> v .: "non-entry-blocks"
       <*> v .: "code-size"
       <*> v .: "latency"
       <*> v .: "constraints"
       <*> v .: "apply-def-dom-use-constraint"
       <*> v .: "is-non-copy-instr"
-      <*> v .: "has-control-nodes"
-      <*> v .: "value-nodes-used-by-phis"
+      <*> v .: "has-control-flow"
+      <*> v .: "data-used-by-phis"
       <*> v .: "asm-str-node-maps"
   parseJSON _ = mzero
 
@@ -422,18 +421,18 @@ instance ToJSON HighLevelMatchParams where
     object [ "instruction-id"               .= (hlMatchInstructionID d)
            , "pattern-id"                   .= (hlMatchPatternID d)
            , "match-id"                     .= (hlMatchID d)
-           , "operation-nodes-covered"      .= (hlMatchOpNodesCovered d)
-           , "entity-nodes-defined"         .= (hlMatchEntityNodesDefined d)
-           , "entity-nodes-used"            .= (hlMatchEntityNodesUsed d)
-           , "entry-block-node"             .= (hlMatchEntryBlockNode d)
-           , "non-entry-block-nodes"        .= (hlMatchNonEntryBlockNodes d)
+           , "operations-covered"           .= (hlMatchOperationsCovered d)
+           , "entities-defined"             .= (hlMatchEntitiesDefined d)
+           , "entities-used"                .= (hlMatchEntitiesUsed d)
+           , "entry-block"                  .= (hlMatchEntryBlock d)
+           , "non-entry-blocks"             .= (hlMatchNonEntryBlocks d)
            , "code-size"                    .= (hlMatchCodeSize d)
            , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
            , "is-non-copy-instr"            .= (hlMatchIsNonCopyInstruction d)
-           , "has-control-nodes"            .= (hlMatchHasControlNodes d)
-           , "value-nodes-used-by-phis"     .= (hlMatchValueNodesUsedByPhis d)
+           , "has-control-flow"             .= (hlMatchHasControlFlow d)
+           , "data-used-by-phis"            .= (hlMatchDataUsedByPhis d)
            , "asm-str-node-maps"            .= (hlMatchAsmStrNodeMaplist d)
            ]
 
@@ -453,22 +452,22 @@ instance ToJSON HighLevelMachineParams where
 instance FromJSON LowLevelModel where
   parseJSON (Object v) =
     LowLevelModel
-      <$> v .: "fun-num-op-nodes"
-      <*> v .: "fun-num-entity-nodes"
-      <*> v .: "fun-num-block-nodes"
-      <*> v .: "fun-state-nodes"
-      <*> v .: "fun-entry-block-node"
+      <$> v .: "fun-num-operations"
+      <*> v .: "fun-num-entities"
+      <*> v .: "fun-num-blocks"
+      <*> v .: "fun-states"
+      <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-def-edges"
       <*> v .: "fun-block-exec-freqs"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
       <*> v .: "num-matches"
-      <*> v .: "match-op-nodes-covered"
-      <*> v .: "match-entity-nodes-defined"
-      <*> v .: "match-entity-nodes-used"
-      <*> v .: "match-entry-block-nodes"
-      <*> v .: "match-non-entry-block-nodes"
+      <*> v .: "match-operations-covered"
+      <*> v .: "match-entities-defined"
+      <*> v .: "match-entities-used"
+      <*> v .: "match-entry-blocks"
+      <*> v .: "match-non-entry-blocks"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-non-copy-instrs"
@@ -478,22 +477,22 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-op-nodes"            .= (llNumFunOpNodes m)
-           , "fun-num-entity-nodes"        .= (llNumFunEntityNodes m)
-           , "fun-num-block-nodes"         .= (llNumFunBlockNodes m)
-           , "fun-state-nodes"             .= (llFunStateNodes m)
-           , "fun-entry-block-node"        .= (llFunEntryBlockNode m)
+    object [ "fun-num-operations"          .= (llFunNumOperations m)
+           , "fun-num-entities"            .= (llFunNumEntities m)
+           , "fun-num-blocks"              .= (llFunNumBlocks m)
+           , "fun-states"                  .= (llFunStates m)
+           , "fun-entry-block"             .= (llFunEntryBlock m)
            , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
            , "fun-def-edges"               .= (llFunDefEdges m)
            , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
            , "fun-constraints"             .= (llFunConstraints m)
            , "num-locations"               .= (llNumLocations m)
            , "num-matches"                 .= (llNumMatches m)
-           , "match-op-nodes-covered"      .= (llMatchOpNodesCovered m)
-           , "match-entity-nodes-defined"  .= (llMatchEntityNodesDefined m)
-           , "match-entity-nodes-used"     .= (llMatchEntityNodesUsed m)
-           , "match-entry-block-nodes"     .= (llMatchEntryBlockNode m)
-           , "match-non-entry-block-nodes" .= (llMatchNonEntryBlockNodes m)
+           , "match-operations-covered"    .= (llMatchOperationsCovered m)
+           , "match-entities-defined"      .= (llMatchEntitiesDefined m)
+           , "match-entities-used"         .= (llMatchEntitiesUsed m)
+           , "match-entry-blocks"          .= (llMatchEntryBlocks m)
+           , "match-non-entry-blocks"      .= (llMatchNonEntryBlocks m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
            , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)
@@ -506,10 +505,10 @@ instance FromJSON HighLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then HighLevelSolution
-              <$> v .: "order-of-bbs"
+              <$> v .: "order-of-blocks"
               <*> v .: "selected-matches"
-              <*> v .: "bbs-of-sel-matches"
-              <*> v .: "locs-of-dnodes"
+              <*> v .: "blocks-of-sel-matches"
+              <*> v .: "locs-of-data"
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
        else return NoHighLevelSolution
@@ -517,13 +516,13 @@ instance FromJSON HighLevelSolution where
 
 instance ToJSON HighLevelSolution where
   toJSON d@(HighLevelSolution {}) =
-    object [ "order-of-bbs"         .= (hlSolOrderOfBBs d)
-           , "selected-matches"     .= (hlSolSelMatches d)
-           , "bbs-of-sel-matches"   .= (hlSolBBsOfSelMatches d)
-           , "locs-of-dnodes"       .= (hlSolLocsOfValueNodes d)
-           , "cost"                 .= (hlSolCost d)
-           , "has-solution"         .= True
-           , "is-solution-optimal"  .= (hlIsOptimal d)
+    object [ "order-of-blocks"       .= (hlSolOrderOfBlocks d)
+           , "selected-matches"      .= (hlSolSelMatches d)
+           , "blocks-of-sel-matches" .= (hlSolBlocksOfSelMatches d)
+           , "locs-of-data"          .= (hlSolLocationsOfData d)
+           , "cost"                  .= (hlSolCost d)
+           , "has-solution"          .= True
+           , "is-solution-optimal"   .= (hlIsOptimal d)
            ]
   toJSON NoHighLevelSolution =
     object [ "has-solution" .= False ]
@@ -533,11 +532,11 @@ instance FromJSON LowLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then LowLevelSolution
-              <$> v .: "order-of-bbs"
+              <$> v .: "order-of-blocks"
               <*> v .: "is-match-selected"
               <*> v .: "block-of-match"
-              <*> v .: "has-dnode-loc"
-              <*> v .: "loc-of-dnode"
+              <*> v .: "has-datum-loc"
+              <*> v .: "loc-of-datum"
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
        else return NoLowLevelSolution
@@ -545,7 +544,7 @@ instance FromJSON LowLevelSolution where
 
 instance ToJSON ArrayIndexMaplists where
   toJSON d =
-    object [ "array-index-to-op-node-id-maps"     .= (ai2OpNodeIDs d)
+    object [ "array-index-to-op-node-id-maps"     .= (ai2OperationNodeIDs d)
            , "array-index-to-entity-node-id-maps" .= (ai2EntityNodeIDs d)
            , "array-index-to-block-node-id-maps"  .= (ai2BlockNodeIDs d)
            , "array-index-to-match-id-maps"       .= (ai2MatchIDs d)

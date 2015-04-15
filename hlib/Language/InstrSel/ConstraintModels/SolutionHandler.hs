@@ -33,19 +33,19 @@ raiseLowLevelSolution
   -> ArrayIndexMaplists
   -> HighLevelSolution
 raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
-  let ai_match_id_maps = ai2MatchIDs ai_maps
-      ai_block_node_id_maps = ai2BlockNodeIDs ai_maps
-      ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
-      ai_location_id_maps = ai2LocationIDs ai_maps
-      getNodeIDFromBlockAI ai = ai_block_node_id_maps !! (fromIntegral ai)
-      getLocationIDFromAI ai = ai_location_id_maps !! (fromIntegral ai)
-      order_of_bbs = map getNodeIDFromBlockAI (llSolOrderOfBBs sol)
+  let ai_maps_for_matches = ai2MatchIDs ai_maps
+      ai_maps_for_blocks = ai2BlockNodeIDs ai_maps
+      ai_maps_for_entities = ai2EntityNodeIDs ai_maps
+      ai_maps_for_locations = ai2LocationIDs ai_maps
+      getNodeIDFromBlockAI ai = ai_maps_for_blocks !! (fromIntegral ai)
+      getLocationIDFromAI ai = ai_maps_for_locations !! (fromIntegral ai)
+      order_of_blocks = map getNodeIDFromBlockAI (llSolOrderOfBlocks sol)
       sel_matches =
         catMaybes
         $ zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
                   (llSolIsMatchSelected sol)
-                  ai_match_id_maps
-      bbs_of_sel_matches =
+                  ai_maps_for_matches
+      blocks_of_sel_matches =
         catMaybes $ zipWith3
                     ( \is_sel mid ai ->
                         if is_sel
@@ -53,23 +53,23 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
                         else Nothing
                     )
                     (llSolIsMatchSelected sol)
-                    ai_match_id_maps
-                    (llSolBBsOfMatches sol)
-      locs_of_data_nodes =
+                    ai_maps_for_matches
+                    (llSolBlocksOfMatches sol)
+      locs_of_data =
         catMaybes $ zipWith3
                     ( \has_reg nid ai ->
                         if has_reg
                         then Just (nid, getLocationIDFromAI ai)
                         else Nothing
                     )
-                    (llSolHasValueNodeLocation sol)
-                    ai_entity_node_id_maps
-                    (llSolLocsOfValueNodes sol)
+                    (llSolHasDatumLocation sol)
+                    ai_maps_for_entities
+                    (llSolLocationsOfData sol)
   in HighLevelSolution
-       { hlSolOrderOfBBs = order_of_bbs
+       { hlSolOrderOfBlocks = order_of_blocks
        , hlSolSelMatches = sel_matches
-       , hlSolBBsOfSelMatches = bbs_of_sel_matches
-       , hlSolLocsOfValueNodes = locs_of_data_nodes
+       , hlSolBlocksOfSelMatches = blocks_of_sel_matches
+       , hlSolLocationsOfData = locs_of_data
        , hlSolCost = llSolCost sol
        , hlIsOptimal = llIsOptimal sol
        }

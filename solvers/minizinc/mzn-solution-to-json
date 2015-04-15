@@ -174,11 +174,11 @@ for loc in loc_data:
 all_data.append(["has_d_loc", has_d_loc_data])
 
 # Turn desirable data into JSON
-data_table = [ ["loc",        "loc-of-dnode"]
-             , ["has_d_loc",  "has-dnode-loc"]
+data_table = [ ["loc",        "loc-of-datum"]
+             , ["has_d_loc",  "has-datum-loc"]
              , ["sel",        "is-match-selected"]
              , ["place",      "block-of-match"]
-             , ["ord",        "order-of-bbs"]
+             , ["ord",        "order-of-blocks"]
              , ["cost",       "cost"]
              , ["optimal",    "is-solution-optimal"]
              ]
