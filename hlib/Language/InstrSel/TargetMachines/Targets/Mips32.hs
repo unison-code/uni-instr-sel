@@ -921,7 +921,7 @@ mkInstructions =
   ++ [
       mkSimpleNBitRegRegCompInst
               1
-              "and"
+              "AND"
               (O.CompArithOp $ O.IntOp O.And)
               getGPRegisters
               getGPRegisters
@@ -939,7 +939,7 @@ mkInstructions =
   ]
   ++
   [ mkSimple32BitRegRegCompInst
-              "mul"
+              "MUL"
               (O.CompArithOp $ O.SIntOp O.Mul)
               getGPRegisters
               getGPRegisters
