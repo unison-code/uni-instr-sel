@@ -54,6 +54,14 @@ array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
 
+% Arrays that encode constraints
+array[int,int] of int: sameLoc;
+array[int,int] of int: inBlockSucc;
+array[int,int] of int: inBlock;
+array[int,int] of int: locDomain;
+
+set of allMatches: Dominated;
+
 % These variables will be set by concatenating the definitions to the end of
 % this file.
 
@@ -131,7 +139,7 @@ var int: cost;
 
 
 %====================
-% Global constraints
+% GLOBAL CONSTRAINTS
 %====================
 
 include "circuit.mzn";
@@ -139,22 +147,9 @@ include "table.mzn";
 
 
 
-%===========
-% PREDICATES
-%===========
-
-% Fall-through constraint: the block wherein match m is placed must be
-% immediately followed by block b.
-predicate fall_through(int: m, int: b) =
-(
-  succ[place[m]] = b
-);
-
-
-
-%============
+%=============
 % CONSTRAINTS
-%============
+%=============
 
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
@@ -162,7 +157,7 @@ constraint
   forall (o in allOperationsInFunction)
   (
     let {
-      set of int: mset = { m | m in allMatches
+      set of int: mset = { m | m in allMatches diff Dominated
                                     where o in operationsCoveredByMatch[m]
                          }
     }
@@ -189,7 +184,7 @@ constraint
   forall (e in allDataInFunction)
   (
     let {
-      set of int: mset = { m | m in allMatches
+      set of int: mset = { m | m in allMatches diff Dominated
                                     where e in dataDefinedByMatch[m]
                          }
     }
@@ -209,7 +204,7 @@ constraint
 % equal to the number of data in the function graph (Mats calls this
 % "minimal effect").
 constraint
-  sum (m in allMatches)
+  sum (m in allMatches diff Dominated)
   (
     card(dataDefinedByMatch[m]) * bool2int(sel[m])
   ) = numDataInFunction;
@@ -223,7 +218,7 @@ constraint
 
 % Selected matches that have an entry block must be placed in entry block.
 constraint
-  forall (m in allMatches)
+  forall (m in allMatches diff Dominated)
   (
     % If a match has no entry block, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
@@ -237,7 +232,7 @@ constraint
 % Data defined by a selected match must be defined in either the block wherein
 % the match is placed or in one of the blocks spanned by the match.
 constraint
-  forall (m in allMatches)
+  forall (m in allMatches diff Dominated)
   (
     forall (e in dataDefinedByMatch[m])
     (
@@ -269,7 +264,7 @@ constraint
   (
     def[e] = l
     ->
-    exists (m in allMatches)
+    exists (m in allMatches diff Dominated)
     (
       place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m])
     )
@@ -309,8 +304,9 @@ array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
                                    j in domSetOfBlockInFunctionPlusNull[i],
                                    k in 1..2
     ]);
+
 constraint
-  forall ( m in allMatches, e in dataUsedByMatch[m]
+  forall ( m in allMatches diff Dominated, e in dataUsedByMatch[m]
                 where applyDefDomUseConstraintForMatch[m]
          )
   (
@@ -336,12 +332,131 @@ constraint
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-  cost = sum (m in allMatches)
+  cost = sum (m in allMatches diff Dominated)
          ( latencyOfMatch[m]
          * execFrequencyOfBlocksPlusNull[place[m]]
          );
 
+%==========================
+% PARAMETERIZED CONSTRAINTS
+%==========================
 
+constraint
+  forall(i in index_set_1of2(sameLoc))(
+    let {int: m = sameLoc[i,1],
+         int: p = sameLoc[i,2],
+         int: q = sameLoc[i,3]} in
+	sel[m] -> loc[p] = loc[q]
+  );
+
+constraint
+  forall(i in index_set_1of2(inBlockSucc))(
+    let {int: m = inBlockSucc[i,1],
+         int: p = inBlockSucc[i,2],
+         int: q = inBlockSucc[i,3]} in
+	mov[m] in {p,labelValueForNull} /\
+	(sel[m] -> succ[p] = q)
+  );
+
+constraint
+  forall(i in index_set_1of2(inBlock))(
+    let {int: m = inBlock[i,1],
+         int: p = inBlock[i,2]} in
+	mov[m] in {p,labelValueForNull}
+  );
+
+constraint
+  forall(i in index_set_1of2(locDomain))(
+    let {int: m = locDomain[i,1],
+         int: l = locDomain[i,2]} in
+	sel[m] -> loc[l] in locDomain[i,3]..locDomain[i,4]
+  );
+
+%=====================================
+% IMPLIED BY PARAMETERIZED CONSTRAINTS
+%=====================================
+
+% Two matches can't both be selected, if they imply conflicting successor blocks
+constraint
+  forall(i in index_set_1of2(inBlockSucc), j in index_set_1of2(inBlockSucc) where i<j)(
+    let {int: mi = inBlockSucc[i,1],
+         int: pi = inBlockSucc[i,2],
+         int: qi = inBlockSucc[i,3],
+	 int: mj = inBlockSucc[j,1],
+         int: pj = inBlockSucc[j,2],
+         int: qj = inBlockSucc[j,3]} in
+	(pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj])
+  );
+
+% Two matches can't both be selected, if the first implies that two locations are equal,
+% and the second implies that the intersection of their domains is empty
+constraint
+  forall(i in index_set_1of2(sameLoc))(
+    let {int: m1 = sameLoc[i,1],
+         int: p = sameLoc[i,2],
+         int: q = sameLoc[i,3]} in 
+    forall(j1 in index_set_1of2(locDomain) where locDomain[j1,2]=p)(
+      forall(j2 in index_set_1of2(locDomain) where locDomain[j2,1]=locDomain[j1,1] /\
+                                                   locDomain[j2,2]=q)(
+        let {int: m2 = locDomain[j1,1]} in
+	    card((locDomain[j1,3]..locDomain[j1,4]) intersect (locDomain[j2,3]..locDomain[j2,4]))=0 ->
+            not sel[m1] \/ not sel[m2]
+      )
+    )
+  );
+
+% Detect symmetry among location values 0..31
+constraint
+  forall(i in index_set_1of2(locDomain))(
+    let {int: lo = locDomain[i,3],
+         int: hi = locDomain[i,4]} in
+	lo<=31 -> hi=31
+  ) ->
+  forall(i in allEntitiesInFunction)(loc[i] in 31..numLocValues-1);
+
+%==================================================
+% DOMINATION DERIVED FROM PARAMETERIZED CONSTRAINTS
+%==================================================
+
+% Match m1 dominates match m2 if:
+% - neither match occurs in sameLoc, inBlock, inBlockSucc (relax later?)
+% - [latencyOfMatch[m1], m1] lex_lt [latencyOfMatch[m2], m2]
+% - operationsCoveredByMatch is the same for both matches
+% - entitiesDefinedByMatch   is the same for both matches
+% - entitiesUsedByMatch      is the same for both matches
+% - entryLabelOfMatch        is the same for both matches
+% - nonEntryLabelsInMatch    is the same for both matches
+% - applyDefDomUseConstraintForMatch    is the same for both matches
+% - if m1 defines any side-constraints in locDomain,
+%   then m2 defines side-constraints that are at least as strong
+test is_dominated(int: m2) =
+  let {set of allMatches: exclude = {sameLoc[i,1] | i in index_set_1of2(sameLoc)} % relax later
+                              union {inBlock[i,1] | i in index_set_1of2(inBlock)}
+			      union {inBlockSucc[i,1] | i in index_set_1of2(inBlockSucc)}} in 
+  exists(m1 in allMatches where not (m1=m2 \/ m1 in exclude \/ m2 in exclude))(
+    ((latencyOfMatch[m1] < latencyOfMatch[m2]) \/
+     (latencyOfMatch[m1] = latencyOfMatch[m2] /\ m1 < m2)) /\
+    operationsCoveredByMatch[m1] = operationsCoveredByMatch[m2] /\
+    entitiesDefinedByMatch[m1] = entitiesDefinedByMatch[m2] /\
+    entitiesUsedByMatch[m1] = entitiesUsedByMatch[m2] /\
+    entryLabelOfMatch[m1] = entryLabelOfMatch[m2] /\
+    nonEntryLabelsInMatch[m1] = nonEntryLabelsInMatch[m2] /\
+    applyDefDomUseConstraintForMatch[m1] = applyDefDomUseConstraintForMatch[m2] /\
+    forall(i in index_set_1of2(locDomain) where locDomain[i,1] = m1)(
+      exists(j in index_set_1of2(locDomain) 
+             where locDomain[j,1] = m2
+                /\ locDomain[j,2] = locDomain[i,2])(
+	(locDomain[j,3]..locDomain[j,4]) subset (locDomain[i,3]..locDomain[i,4])
+      )
+    )
+  );
+
+Dominated = {m | m in allMatches where is_dominated(m)};
+
+constraint
+  trace("% Dominated = "++show(Dominated)++"\n",
+    forall(d in Dominated)(not sel[d])
+  );
 
 %==================
 % SOLVE AND OUTPUT
@@ -349,19 +464,19 @@ constraint
 
 solve ::
   seq_search(
-    [ bool_search([ sel[m] | m in nonCopyMatches
+    [ bool_search([ sel[m] | m in nonCopyMatches diff Dominated
                                   where card(operationsCoveredByMatch[m])
                                         +
                                         card(dataDefinedByMatch[m])
                                         > 2
                   ], input_order, indomain_max, complete)
-    , bool_search([ sel[m] | m in nonCopyMatches
+    , bool_search([ sel[m] | m in nonCopyMatches diff Dominated
                                   where card(operationsCoveredByMatch[m])
                                         +
                                         card(dataDefinedByMatch[m])
                                         = 2
 				  ], input_order, indomain_max, complete)
-    , bool_search([ sel[m] | m in nonCopyMatches
+    , bool_search([ sel[m] | m in nonCopyMatches diff Dominated
                                   where card(operationsCoveredByMatch[m])
                                         +
                                         card(dataDefinedByMatch[m])
