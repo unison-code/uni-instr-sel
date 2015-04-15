@@ -377,9 +377,9 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
 
 -- | Creates a conditional branch pattern for a given comparison operator. The
 -- first and second operands are the (n-bit) value nodes with IDs 5 and 6,
--- respectively, and the 'true' and 'false' labels are the label node with IDs 2
--- and 3, respectively. The returned value contains the graph and the ID of the
--- entry label node.
+-- respectively, and 'true' and 'false' blocks are the block node with IDs 2 and
+-- 3, respectively. The returned value contains the graph and the ID of the
+-- entry block node.
 mkCondBrPattern :: Natural -> O.CompOp -> (Graph, NodeID)
 mkCondBrPattern n op =
   let mkBlockNode = BlockNode $ BlockName ""
@@ -414,7 +414,7 @@ mkCondBrPattern n op =
 
 -- | Makes two conditional branch instructions: an ordinary branch instruction,
 -- and its inverse branch instruction. The inverse is achieved by inverting the
--- comparison, and swapping the branch labels, which means both instructions
+-- comparison, and swapping the branch blocks, which means both instructions
 -- carry the same semantics. Both are needed to handle cases where a comparison
 -- needs to be inverted in order to achieve a valid block ordering.
 mkCondBrInstrs

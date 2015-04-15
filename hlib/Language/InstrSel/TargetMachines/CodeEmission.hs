@@ -69,13 +69,13 @@ generateCode
   -> [AssemblyCode]
 generateCode target model sol@(HighLevelSolution {}) =
   concat $
-    map ( \l_node ->
-          let matches = getMatchesMovedToBlock sol l_node
+    map ( \b_node ->
+          let matches = getMatchesPlacedInBlock sol b_node
               sorted_matches = sortMatchesByFlow model matches
               instrs = mapMaybe (emitInstruction model sol target)
                                 sorted_matches
-              bblabel = fromJust $ findNameOfBlockNode model l_node
-          in (AsmBlock $ show bblabel):instrs
+              block_name = fromJust $ findNameOfBlockNode model b_node
+          in (AsmBlock $ show block_name):instrs
         )
         (hlSolOrderOfBBs sol)
 generateCode _ _ NoHighLevelSolution =
@@ -83,12 +83,12 @@ generateCode _ _ NoHighLevelSolution =
 
 -- | Gets the list of matches that has been allocated to a given block in the CP
 -- model solution. The block is identified using the node ID of its
--- corresponding label node.
-getMatchesMovedToBlock :: HighLevelSolution -> NodeID -> [MatchID]
-getMatchesMovedToBlock sol n =
+-- corresponding block node.
+getMatchesPlacedInBlock :: HighLevelSolution -> NodeID -> [MatchID]
+getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBBsOfSelMatches sol
 
--- | Gets the block name for a given label node. If no such block can be found,
+-- | Gets the block name for a given block node. If no such block can be found,
 -- @Nothing@ is returned.
 findNameOfBlockNode :: HighLevelModel -> NodeID -> Maybe BlockName
 findNameOfBlockNode model n =
@@ -154,7 +154,7 @@ addUseEdgesToDAG' n def_maps use g =
   in foldr (\n' g' -> I.insEdge (n', n, ()) g') g ns
 
 -- | Gets the internal node ID (if any) of the node with a given match ID as its
--- label. It is assumed that there is always at most one such node in the graph.
+-- block. It is assumed that there is always at most one such node in the graph.
 getNodeOfMatch :: IFlowDAG -> MatchID -> Maybe I.Node
 getNodeOfMatch g mid =
   let ns = filter (\n -> snd n == mid) $ I.labNodes g

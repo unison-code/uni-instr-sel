@@ -47,26 +47,26 @@ import Data.Maybe
 -- | Represents a mapping from a symbol to a value node currently in the graph.
 type SymToValueNodeMapping = (Symbol, G.Node)
 
--- | Represents a data flow that goes from a label node, identified by the given
+-- | Represents a data flow that goes from a block node, identified by the given
 -- ID, to an entity node. This is needed to draw the missing flow edges after
 -- both the data flow graph and the control flow graph have been built.
-type LabelToEntityFlow = (F.BlockName, G.Node)
+type BlockToEntityFlow = (F.BlockName, G.Node)
 
--- | Represents a definition that goes from a label node, identified by the
+-- | Represents a definition that goes from a block node, identified by the
 -- given ID, an entity node. This is needed to draw the missing definition edges
 -- after both the data flow graph and the control flow graph have been
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
-type LabelToEntityDef = (F.BlockName, G.Node, G.EdgeNr)
+type BlockToEntityDef = (F.BlockName, G.Node, G.EdgeNr)
 
--- | Represents a definition that goes from an entity node to a label node,
+-- | Represents a definition that goes from an entity node to a block node,
 -- identified by the given ID. This is needed to draw the missing definition
 -- edges after both the data flow graph and the control flow graph have been
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type EntityToLabelDef = (G.Node, F.BlockName, G.EdgeNr)
+type EntityToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -78,11 +78,11 @@ data BuildState
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched. This is used to
         -- simplifying edge insertion.
-      , entryLabel :: Maybe F.BlockName
-        -- ^ The label of the function entry point. A 'Nothing' value means that
+      , entryBlock :: Maybe F.BlockName
+        -- ^ The block of the function entry point. A 'Nothing' value means that
         -- this value has not yet been assigned.
-      , currentLabel :: Maybe F.BlockName
-        -- ^ The label of the basic block currently being processed. A 'Nothing'
+      , currentBlock :: Maybe F.BlockName
+        -- ^ The block of the basic block currently being processed. A 'Nothing'
         -- value means that no basic block has yet been processed.
       , funcBBExecFreqs :: [(F.BlockName, F.ExecFreq)]
         -- ^ The execution frequencies of the respective basic blocks.
@@ -90,14 +90,14 @@ data BuildState
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
         -- be picked.
-      , labelToEntityFlows :: [LabelToEntityFlow]
-        -- ^ List of label-to-entity flow dependencies that are yet to be
+      , blockToEntityFlows :: [BlockToEntityFlow]
+        -- ^ List of block-to-entity flow dependencies that are yet to be
         -- converted into edges.
-      , labelToEntityDefs :: [LabelToEntityDef]
-        -- ^ List of label-to-entity definitions that are yet to be converted
+      , blockToEntityDefs :: [BlockToEntityDef]
+        -- ^ List of block-to-entity definitions that are yet to be converted
         -- into edges.
-      , entityToLabelDefs :: [EntityToLabelDef]
-        -- ^ List of entity-to-label definitions that are yet to be converted
+      , entityToBlockDefs :: [EntityToBlockDef]
+        -- ^ List of entity-to-block definitions that are yet to be converted
         -- into edges.
       , funcInputValues :: [G.Node]
         -- ^ The value nodes representing the function input arguments.
@@ -241,13 +241,13 @@ mkInitBuildState m =
   BuildState { llvmModule = m
              , opStruct = OS.mkEmpty
              , lastTouchedNode = Nothing
-             , entryLabel = Nothing
-             , currentLabel = Nothing
+             , entryBlock = Nothing
+             , currentBlock = Nothing
              , funcBBExecFreqs = []
              , symMaps = []
-             , labelToEntityFlows = []
-             , labelToEntityDefs = []
-             , entityToLabelDefs = []
+             , blockToEntityFlows = []
+             , blockToEntityDefs = []
+             , entityToBlockDefs = []
              , funcInputValues = []
              }
 
@@ -272,10 +272,10 @@ mkFunction m f@(LLVM.Function {}) =
       st2 = buildCfg st1 f
       st3 = updateOSEntryBlockNode
               st2
-              (fromJust $ findBlockNodeWithID st2 (fromJust $ entryLabel st2))
-      st4 = addMissingLabelToEntityFlowEdges st3
-      st5 = addMissingLabelToEntityDefEdges st4
-      st6 = addMissingEntityToLabelDefEdges st5
+              (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
+      st4 = addMissingBlockToEntityFlowEdges st3
+      st5 = addMissingBlockToEntityDefEdges st4
+      st6 = addMissingEntityToBlockDefEdges st5
   in Just ( F.Function
               { F.functionName = toFunctionName $ LLVMG.name f
               , F.functionOS = opStruct st6
@@ -299,7 +299,7 @@ updateOSGraph st g =
   let os = opStruct st
   in st { opStruct = os { OS.osGraph = g } }
 
--- | Updates the OS entry label node contained by the operation structure in a
+-- | Updates the OS entry block node contained by the operation structure in a
 -- given state.
 updateOSEntryBlockNode :: BuildState -> G.Node -> BuildState
 updateOSEntryBlockNode st n =
@@ -323,7 +323,7 @@ addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
 addNewValueNodeWithConstant st0 c =
   let st1 = addNewNode st0 (G.ValueNode (toDataType c) Nothing)
       new_n = fromJust $ lastTouchedNode st1
-      st2 = addLabelToEntityFlow st1 (fromJust $ entryLabel st1, new_n)
+      st2 = addBlockToEntityFlow st1 (fromJust $ entryBlock st1, new_n)
   in st2
 
 -- | Adds a new edge into a given state.
@@ -377,20 +377,20 @@ addNewEdgesManyDests st et src dsts =
 addSymMap :: BuildState -> SymToValueNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = sm:(symMaps st) }
 
--- | Adds label-to-entity flow to a given state.
-addLabelToEntityFlow :: BuildState -> LabelToEntityFlow -> BuildState
-addLabelToEntityFlow st flow =
-  st { labelToEntityFlows = flow:(labelToEntityFlows st) }
+-- | Adds block-to-entity flow to a given state.
+addBlockToEntityFlow :: BuildState -> BlockToEntityFlow -> BuildState
+addBlockToEntityFlow st flow =
+  st { blockToEntityFlows = flow:(blockToEntityFlows st) }
 
--- | Adds label-to-entity definition to a given state.
-addLabelToEntityDef :: BuildState -> LabelToEntityDef -> BuildState
-addLabelToEntityDef st def =
-  st { labelToEntityDefs = def:(labelToEntityDefs st) }
+-- | Adds block-to-entity definition to a given state.
+addBlockToEntityDef :: BuildState -> BlockToEntityDef -> BuildState
+addBlockToEntityDef st def =
+  st { blockToEntityDefs = def:(blockToEntityDefs st) }
 
--- | Adds entity-to-label definition to a given state.
-addEntityToLabelDef :: BuildState -> EntityToLabelDef -> BuildState
-addEntityToLabelDef st def =
-  st { entityToLabelDefs = def:(entityToLabelDefs st) }
+-- | Adds entity-to-block definition to a given state.
+addEntityToBlockDef :: BuildState -> EntityToBlockDef -> BuildState
+addEntityToBlockDef st def =
+  st { entityToBlockDefs = def:(entityToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
@@ -401,15 +401,15 @@ addFuncInputValue st n =
 findValueNodeWithSym :: BuildState -> Symbol -> Maybe G.Node
 findValueNodeWithSym st sym = lookup sym (symMaps st)
 
--- | Gets the label node with a particular name in the graph of the given state.
+-- | Gets the block node with a particular name in the graph of the given state.
 -- If no such node exists, `Nothing` is returned.
 findBlockNodeWithID :: BuildState -> F.BlockName -> Maybe G.Node
 findBlockNodeWithID st l =
   let block_nodes = filter G.isBlockNode $ G.getAllNodes $ getOSGraph st
-      nodes_w_matching_labels =
+      nodes_w_matching_blocks =
         filter (\n -> (G.nameOfBlock $ G.getNodeType n) == l) block_nodes
-  in if length nodes_w_matching_labels > 0
-     then Just (head nodes_w_matching_labels)
+  in if length nodes_w_matching_blocks > 0
+     then Just (head nodes_w_matching_blocks)
      else Nothing
 
 -- | Checks that a value node with a particular symbol exists in the graph of
@@ -431,9 +431,9 @@ ensureValueNodeWithSymExists st0 sym dt =
               st2 = addSymMap st1 (sym, new_n)
           in st2
 
--- | Checks that a label node with a particular name exists in the graph of the
+-- | Checks that a block node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated accordingly,
--- otherwise then a new label node is added.
+-- otherwise then a new block node is added.
 ensureBlockNodeExists :: BuildState -> F.BlockName -> BuildState
 ensureBlockNodeExists st l =
   let block_node = findBlockNodeWithID st l
@@ -468,7 +468,7 @@ buildDfgFromCompOp st0 dt op operands =
   in st5
 
 -- | Inserts a new node representing a control operation, and adds edges to that
--- node from the current label node and operands (which will also be processed).
+-- node from the current block node and operands (which will also be processed).
 buildCfgFromControlOp
   :: (CfgBuildable o)
   => BuildState
@@ -487,7 +487,7 @@ buildCfgFromControlOp st0 op operands =
                        G.ControlFlowEdge
                        ( fromJust $
                            findBlockNodeWithID st2
-                                               (fromJust $ currentLabel st2)
+                                               (fromJust $ currentBlock st2)
                        )
               op_node
       st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
@@ -526,21 +526,21 @@ fromLlvmFPred LLVMF.ULE = Op.CompArithOp $ Op.UFloatOp Op.LE
 fromLlvmFPred LLVMF.UNE = Op.CompArithOp $ Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
--- | Adds the missing data or state flow edges from label nodes to data or state
+-- | Adds the missing data or state flow edges from block nodes to data or state
 -- nodes, as described in the given build state.
-addMissingLabelToEntityFlowEdges :: BuildState -> BuildState
-addMissingLabelToEntityFlowEdges st =
+addMissingBlockToEntityFlowEdges :: BuildState -> BuildState
+addMissingBlockToEntityFlowEdges st =
   let g0 = getOSGraph st
       deps = map ( \(l, n) ->
                    if G.isValueNode n
                    then (l, n, G.DataFlowEdge)
                    else if G.isStateNode n
                         then (l, n, G.StateFlowEdge)
-                        else error ( "addMissingLabelToEntityFlowEdges: "
+                        else error ( "addMissingBlockToEntityFlowEdges: "
                                      ++ "This should never happen"
                                    )
                  )
-                 (labelToEntityFlows st)
+                 (blockToEntityFlows st)
       g1 =
         foldr ( \(l, n, et) g ->
                 let pair = (fromJust $ findBlockNodeWithID st l, n)
@@ -550,14 +550,14 @@ addMissingLabelToEntityFlowEdges st =
               deps
   in updateOSGraph st g1
 
--- | Adds the missing label-to-entity definition edges, as described in the
+-- | Adds the missing block-to-entity definition edges, as described in the
 -- given build state.
-addMissingLabelToEntityDefEdges :: BuildState -> BuildState
-addMissingLabelToEntityDefEdges st =
+addMissingBlockToEntityDefEdges :: BuildState -> BuildState
+addMissingBlockToEntityDefEdges st =
   let g0 = getOSGraph st
-      defs = labelToEntityDefs st
-      g1 = foldr ( \(bb_id, dn, nr) g ->
-                   let ln = fromJust $ findBlockNodeWithID st bb_id
+      defs = blockToEntityDefs st
+      g1 = foldr ( \(block_id, dn, nr) g ->
+                   let ln = fromJust $ findBlockNodeWithID st block_id
                        (g', new_e) = G.addNewDefEdge (ln, dn) g
                        new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
                        g'' = G.updateEdgeLabel new_el new_e g'
@@ -567,14 +567,14 @@ addMissingLabelToEntityDefEdges st =
                  defs
   in updateOSGraph st g1
 
--- | Adds the missing entity-to-label definition edges, as described in the
+-- | Adds the missing entity-to-block definition edges, as described in the
 -- given build state.
-addMissingEntityToLabelDefEdges :: BuildState -> BuildState
-addMissingEntityToLabelDefEdges st =
+addMissingEntityToBlockDefEdges :: BuildState -> BuildState
+addMissingEntityToBlockDefEdges st =
   let g0 = getOSGraph st
-      defs = entityToLabelDefs st
-      g1 = foldr ( \(dn, bb_id, nr) g ->
-                   let ln = fromJust $ findBlockNodeWithID st bb_id
+      defs = entityToBlockDefs st
+      g1 = foldr ( \(dn, block_id, nr) g ->
+                   let ln = fromJust $ findBlockNodeWithID st block_id
                        (g', new_e) = G.addNewDefEdge (dn, ln) g
                        new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
                        g'' = G.updateEdgeLabel new_el new_e g'
@@ -659,15 +659,15 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
         replaceNodeInLEDef old_n new_n (l, n, nr) =
           if old_n == n then (l, new_n, nr) else (l, n, nr)
-        st4 = st3 { labelToEntityDefs =
+        st4 = st3 { blockToEntityDefs =
                        map (replaceNodeInLEDef res_n sym_n)
-                           (labelToEntityDefs st3)
+                           (blockToEntityDefs st3)
                   }
         replaceNodeInELDef old_n new_n (n, l, nr) =
           if old_n == n then (new_n, l, nr) else (n, l, nr)
-        st5 = st4 { entityToLabelDefs =
+        st5 = st4 { entityToBlockDefs =
                        map (replaceNodeInELDef res_n sym_n)
-                           (entityToLabelDefs st4)
+                           (entityToBlockDefs st4)
                   }
     in st5
   buildDfg st (LLVM.Do expr) = buildDfg st expr
@@ -682,13 +682,13 @@ instance DfgBuildable LLVM.Global where
 
 instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let bb_label = F.BlockName str
-        st1 = if isNothing $ entryLabel st0
-              then foldl (\st n -> addLabelToEntityFlow st (bb_label, n))
-                         (st0 { entryLabel = Just bb_label })
+    let block_name = F.BlockName str
+        st1 = if isNothing $ entryBlock st0
+              then foldl (\st n -> addBlockToEntityFlow st (block_name, n))
+                         (st0 { entryBlock = Just block_name })
                          (funcInputValues st0)
               else st0
-        st2 = st1 { currentLabel = Just bb_label }
+        st2 = st1 { currentBlock = Just block_name }
         st3 = foldl buildDfg st2 insts
     in st3
   buildDfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
@@ -819,7 +819,7 @@ instance DfgBuildable LLVM.Instruction where
                        (toDataType t1)
                        (Op.CompTypeConvOp Op.SExt)
                        [op1]
-  -- TODO: replace the 'addEntityToLabelDef' with proper dependencies from/to
+  -- TODO: replace the 'addEntityToBlockDef' with proper dependencies from/to
   -- state nodes.
   buildDfg st0 (LLVM.Load _ op1 _ _ _) =
     let st1 = buildDfgFromCompOp st0
@@ -827,10 +827,10 @@ instance DfgBuildable LLVM.Instruction where
                         (Op.CompMemoryOp Op.Load)
                         [op1]
         n   = fromJust $ lastTouchedNode st1
-        bb  = fromJust $ currentLabel st1
-        st2 = addEntityToLabelDef st1 (n, bb, 0)
+        bb  = fromJust $ currentBlock st1
+        st2 = addEntityToBlockDef st1 (n, bb, 0)
     in st2
-  -- TODO: replace the 'addEntityToLabelDef' with proper dependencies from/to
+  -- TODO: replace the 'addEntityToBlockDef' with proper dependencies from/to
   -- state nodes.
   buildDfg st0 (LLVM.Store _ op1 op2 _ _ _) =
     let st1 = buildDfgFromCompOp st0
@@ -842,27 +842,28 @@ instance DfgBuildable LLVM.Instruction where
         n   = fromJust $ lastTouchedNode st1
     in st1
   buildDfg st0 (LLVM.Phi t phi_operands _) =
-    let (operands, block_names) = unzip phi_operands
-        bb_labels = map (\(LLVM.Name str) -> F.BlockName str) block_names
+    let (operands, blocks) = unzip phi_operands
+        block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
         operand_node_sts = scanl buildDfg st0 operands
         operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
         st1 = last operand_node_sts
         st2 = addNewNode st1 G.PhiNode
         phi_node = fromJust $ lastTouchedNode st2
         st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-        st4 = foldl ( \st (n, bb_id) ->
+        st4 = foldl ( \st (n, block_id) ->
                       let g = getOSGraph st
                           dfe = head
                                 $ filter G.isDataFlowEdge
                                 $ G.getEdges g n phi_node
-                      in addEntityToLabelDef st (n, bb_id, G.getOutEdgeNr dfe)
+                      in addEntityToBlockDef st
+                                             (n, block_id, G.getOutEdgeNr dfe)
                     )
                     st3
-                    (zip operand_ns bb_labels)
+                    (zip operand_ns block_names)
         st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
         d_node = fromJust $ lastTouchedNode st5
         st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
-        st7 = addLabelToEntityDef st6 (fromJust $ currentLabel st6, d_node, 0)
+        st7 = addBlockToEntityDef st6 (fromJust $ currentBlock st6, d_node, 0)
               -- ^ Since we've just created the value node and only added a
               -- single data-flow edge to it, we are guaranteed that the in-edge
               -- number of that data-flow edge is 0.
@@ -894,18 +895,18 @@ instance (CfgBuildable a) => CfgBuildable [a] where
 
 instance CfgBuildable LLVM.BasicBlock where
   buildCfg st0 (LLVM.BasicBlock (LLVM.Name str) _ named_term_inst) =
-    let bb_label = F.BlockName str
+    let block_name = F.BlockName str
         term_inst = fromNamed named_term_inst
-        bb_exec_freq = ( bb_label
+        block_exec_freq = ( block_name
                        , extractExecFreq (llvmModule st0)
                                          (getTermMetadata term_inst)
                        )
-        st1 = if isNothing $ entryLabel st0
-              then st1 { entryLabel = Just bb_label }
+        st1 = if isNothing $ entryBlock st0
+              then st1 { entryBlock = Just block_name }
               else st0
-        st2 = ensureBlockNodeExists st1 bb_label
-        st3 = st2 { currentLabel = Just bb_label }
-        st4 = st3 { funcBBExecFreqs = bb_exec_freq:(funcBBExecFreqs st3) }
+        st2 = ensureBlockNodeExists st1 block_name
+        st3 = st2 { currentBlock = Just block_name }
+        st4 = st3 { funcBBExecFreqs = block_exec_freq:(funcBBExecFreqs st3) }
         st5 = buildCfg st4 term_inst
     in st5
   buildCfg _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =

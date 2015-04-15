@@ -34,12 +34,12 @@ raiseLowLevelSolution
   -> HighLevelSolution
 raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
   let ai_match_id_maps = ai2MatchIDs ai_maps
-      ai_label_node_id_maps = ai2BlockNodeIDs ai_maps
+      ai_block_node_id_maps = ai2BlockNodeIDs ai_maps
       ai_entity_node_id_maps = ai2EntityNodeIDs ai_maps
       ai_location_id_maps = ai2LocationIDs ai_maps
-      getNodeIDFromLabelAI ai = ai_label_node_id_maps !! (fromIntegral ai)
+      getNodeIDFromBlockAI ai = ai_block_node_id_maps !! (fromIntegral ai)
       getLocationIDFromAI ai = ai_location_id_maps !! (fromIntegral ai)
-      order_of_bbs = map getNodeIDFromLabelAI (llSolOrderOfBBs sol)
+      order_of_bbs = map getNodeIDFromBlockAI (llSolOrderOfBBs sol)
       sel_matches =
         catMaybes
         $ zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
@@ -49,7 +49,7 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
         catMaybes $ zipWith3
                     ( \is_sel mid ai ->
                         if is_sel
-                        then Just (mid, getNodeIDFromLabelAI ai)
+                        then Just (mid, getNodeIDFromBlockAI ai)
                         else Nothing
                     )
                     (llSolIsMatchSelected sol)

@@ -66,7 +66,7 @@ mkIntConstType r n = IntConstType { intConstValue = r
                                   , intConstNumBits = Just n
                                   }
 
--- | Creates a generic label node type.
+-- | Creates a generic block node type.
 mkGenericBlockNodeType :: NodeType
 mkGenericBlockNodeType = BlockNode mkEmptyBBLabel
 
