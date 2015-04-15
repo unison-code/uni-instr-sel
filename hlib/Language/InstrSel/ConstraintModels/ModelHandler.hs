@@ -22,6 +22,7 @@ import Language.InstrSel.ConstraintModels.Base
 import Language.InstrSel.ConstraintModels.IDs
 
 import Language.InstrSel.Constraints
+import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
@@ -63,13 +64,13 @@ mkHighLevelModel
   -> HighLevelModel
 mkHighLevelModel function target matches =
   HighLevelModel
-    { hlFunctionParams = mkHLFunctionParams function
+    { hlFunctionParams = mkHLFunctionParams function target
     , hlMachineParams = mkHLMachineParams target
     , hlMatchParams = mkHLMatchParamsList target matches
     }
 
-mkHLFunctionParams :: Function -> HighLevelFunctionParams
-mkHLFunctionParams function =
+mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
+mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
       entry_block = fromJust $ osEntryBlockNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
@@ -113,6 +114,17 @@ mkHLFunctionParams function =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
                ns
+      mkCallingConventionConstraints =
+        -- TODO: do a proper implemention. Right now it's just a quick hack to
+        -- prevent the input arguments from being located in a zero-value
+        -- register
+        let okay_locs = map locID
+                        $ filter (not . locIsAValue)
+                        $ tmLocations target
+        in concatMap ( \n ->
+                       mkDataLocConstraints okay_locs n
+                     )
+                     (functionInputs function)
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isNodeAnOperation
        , hlFunData = nodeIDsByType isNodeADatum
@@ -124,7 +136,9 @@ mkHLFunctionParams function =
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
-       , hlFunConstraints = osConstraints $ functionOS function
+       , hlFunConstraints = (osConstraints $ functionOS function)
+                            ++
+                            mkCallingConventionConstraints
        }
 
 mkHLMachineParams :: TargetMachine -> HighLevelMachineParams
