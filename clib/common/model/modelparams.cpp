@@ -320,7 +320,7 @@ ModelParams::setStateEntitiesInF(const Value& root, ModelParams& p) {
 
 void
 ModelParams::setExecFreqOfBlocksInF(const Value& root, ModelParams& p) {
-    for (auto entry : getJsonValue(root, "fun-bb-exec-freqs")) {
+    for (auto entry : getJsonValue(root, "fun-block-exec-freqs")) {
         p.func_block_exec_freq_.push_back(toInt(entry));
     }
 }

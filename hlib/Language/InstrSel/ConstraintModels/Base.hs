@@ -362,7 +362,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
-      <*> v .: "bb-params"
+      <*> v .: "block-params"
       <*> v .: "int-constant-data"
       <*> v .: "constraints"
   parseJSON _ = mzero
@@ -376,7 +376,7 @@ instance ToJSON HighLevelFunctionParams where
            , "entry-block"       .= (hlFunEntryBlockNode d)
            , "block-dom-sets"    .= (hlFunBlockDomSets d)
            , "def-edges"         .= (hlFunDefEdges d)
-           , "bb-params"         .= (hlFunBlockParams d)
+           , "block-params"         .= (hlFunBlockParams d)
            , "int-constant-data" .= (hlFunIntConstData d)
            , "constraints"       .= (hlFunConstraints d)
            ]
@@ -460,7 +460,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-entry-block-node"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-def-edges"
-      <*> v .: "fun-bb-exec-freqs"
+      <*> v .: "fun-block-exec-freqs"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
       <*> v .: "num-matches"
@@ -485,7 +485,7 @@ instance ToJSON LowLevelModel where
            , "fun-entry-block-node"        .= (llFunEntryBlockNode m)
            , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
            , "fun-def-edges"               .= (llFunDefEdges m)
-           , "fun-bb-exec-freqs"           .= (llFunBBExecFreqs m)
+           , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
            , "fun-constraints"             .= (llFunConstraints m)
            , "num-locations"               .= (llNumLocations m)
            , "num-matches"                 .= (llNumMatches m)
