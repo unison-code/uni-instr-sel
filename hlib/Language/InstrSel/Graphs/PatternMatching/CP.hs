@@ -205,7 +205,7 @@ computeParameters fg pg =
             pg_node_index_maps
       pg_ops_indices =
         map fst
-            (filter (isOperationNode . snd) (zip [0..] pg_node_index_maps))
+            (filter (isNodeAnOperation . snd) (zip [0..] pg_node_index_maps))
       pe_init_doms =
         map ( \pe ->
               [ fi | (fi, fe) <- zip [0..] fg_edge_index_maps

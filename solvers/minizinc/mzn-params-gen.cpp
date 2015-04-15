@@ -171,7 +171,7 @@ generateModelFunctionParameters(
 
     out << "numOperationsInFunction = " << params.getNumOperationsInF() << ";"
         << endl;
-    out << "numEntitiesInFunction = " << params.getNumEntitiesInF() << ";"
+    out << "numDataInFunction = " << params.getNumDataInF() << ";"
         << endl;
     out << "numBlocksInFunction = " << params.getNumBlocksInF() << ";"
         << endl;
@@ -187,8 +187,8 @@ generateModelFunctionParameters(
     printMinizincValue(out, params.getDefEdgesInF());
     out << ");" << endl;
 
-    out << "stateEntitiesInFunction = ";
-    printMinizincValue(out, params.getAllStateEntitiesInF());
+    out << "statesInFunction = ";
+    printMinizincValue(out, params.getAllStateDataInF());
     out << ";" << endl;
 
     out << "execFrequencyOfBlockInFunction = array1d(allBlocksInFunction, ";
@@ -221,12 +221,12 @@ generateModelMatchParameters(
     printMinizincValue(out, params.getOperationsCoveredByAllMatches());
     out << ");" << endl;
 
-    out << "entitiesDefinedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntitiesDefinedByAllMatches());
+    out << "dataDefinedByMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getDataDefinedByAllMatches());
     out << ");" << endl;
 
-    out << "entitiesUsedByMatch = array1d(allMatches, ";
-    printMinizincValue(out, params.getEntitiesUsedByAllMatches());
+    out << "dataUsedByMatch = array1d(allMatches, ";
+    printMinizincValue(out, params.getDataUsedByAllMatches());
     out << ");" << endl;
 
     out << "entryBlockOfMatch = array1d(allMatches, ";

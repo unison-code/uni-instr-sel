@@ -116,7 +116,6 @@ module Language.InstrSel.Graphs.Base
   , hasAnyPredecessors
   , hasAnySuccessors
   , insertNewNodeAlongEdge
-  , isOperationNode
   , isComputationNode
   , isControlFlowEdge
   , isControlNode
@@ -125,10 +124,11 @@ module Language.InstrSel.Graphs.Base
   , isValueNode
   , isValueNodeWithConstValue
   , isDefEdge
-  , isEntityNode
   , isInGraph
   , isBlockNode
   , isBlockNodeAndIntermediate
+  , isNodeADatum
+  , isNodeAnOperation
   , isStateFlowEdge
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
@@ -471,15 +471,15 @@ toEdgeNr = EdgeNr . toNatural
 fromEdgeNr :: EdgeNr -> Natural
 fromEdgeNr (EdgeNr n) = n
 
-isOperationNode :: Node -> Bool
-isOperationNode n =
+isNodeAnOperation :: Node -> Bool
+isNodeAnOperation n =
      isComputationNode n
   || isControlNode n
   || isPhiNode n
   || isCopyNode n
 
-isEntityNode :: Node -> Bool
-isEntityNode n =
+isNodeADatum :: Node -> Bool
+isNodeADatum n =
      isValueNode n
   || isStateNode n
 
@@ -1417,14 +1417,15 @@ extractCFG g =
                   (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
   in cfg
 
--- | Extracts the SSA graph (including entity nodes) from a graph. If there are
--- no operation nodes in the graph, an empty graph is returned.
+-- | Extracts the SSA graph (including nodes which represent data) from a
+-- graph. If there are no operation nodes in the graph, an empty graph is
+-- returned.
 extractSSA :: Graph -> Graph
 extractSSA g =
   let nodes_to_remove =
         filter
-          ( \n -> not (  isOperationNode n
-                      || isEntityNode n
+          ( \n -> not (  isNodeAnOperation n
+                      || isNodeADatum n
                       )
                   ||
                   (isControlNode n && not (isRetControlNode n))

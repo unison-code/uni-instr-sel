@@ -48,25 +48,25 @@ import Data.Maybe
 type SymToValueNodeMapping = (Symbol, G.Node)
 
 -- | Represents a data flow that goes from a block node, identified by the given
--- ID, to an entity node. This is needed to draw the missing flow edges after
+-- ID, to an datum node. This is needed to draw the missing flow edges after
 -- both the data-flow graph and the control-flow graph have been built.
-type BlockToEntityFlow = (F.BlockName, G.Node)
+type BlockToDatumDataFlow = (F.BlockName, G.Node)
 
 -- | Represents a definition that goes from a block node, identified by the
--- given ID, an entity node. This is needed to draw the missing definition edges
+-- given ID, an datum node. This is needed to draw the missing definition edges
 -- after both the data-flow graph and the control-flow graph have been
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
-type BlockToEntityDef = (F.BlockName, G.Node, G.EdgeNr)
+type BlockToDatumDef = (F.BlockName, G.Node, G.EdgeNr)
 
--- | Represents a definition that goes from an entity node to a block node,
+-- | Represents a definition that goes from an datum node to a block node,
 -- identified by the given ID. This is needed to draw the missing definition
 -- edges after both the data-flow graph and the control-flow graph have been
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type EntityToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
+type DatumToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -90,14 +90,14 @@ data BuildState
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
         -- be picked.
-      , blockToEntityFlows :: [BlockToEntityFlow]
-        -- ^ List of block-to-entity flow dependencies that are yet to be
+      , blockToDatumDataFlows :: [BlockToDatumDataFlow]
+        -- ^ List of block-to-datum flow dependencies that are yet to be
         -- converted into edges.
-      , blockToEntityDefs :: [BlockToEntityDef]
-        -- ^ List of block-to-entity definitions that are yet to be converted
+      , blockToDatumDefs :: [BlockToDatumDef]
+        -- ^ List of block-to-datum definitions that are yet to be converted
         -- into edges.
-      , entityToBlockDefs :: [EntityToBlockDef]
-        -- ^ List of entity-to-block definitions that are yet to be converted
+      , datumToBlockDefs :: [DatumToBlockDef]
+        -- ^ List of datum-to-block definitions that are yet to be converted
         -- into edges.
       , funcInputValues :: [G.Node]
         -- ^ The value nodes representing the function input arguments.
@@ -143,7 +143,7 @@ instance Show Constant where
 -- Type classes
 ----------------
 
--- | Class for converting an LLVM symbol entity into a `Symbol`.
+-- | Class for converting an LLVM symbol datum into a `Symbol`.
 class SymbolFormable a where
   toSymbol :: a -> Symbol
 
@@ -151,7 +151,7 @@ instance SymbolFormable LLVM.Name where
   toSymbol (LLVM.Name str) = LocalStringSymbol str
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
--- | Class for converting an LLVM constant entity into a `Constant`.
+-- | Class for converting an LLVM constant datum into a `Constant`.
 class ConstantFormable a where
   toConstant :: a -> Constant
 
@@ -166,7 +166,7 @@ instance ConstantFormable LLVMC.Constant where
                             }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
--- | Class for converting an LLVM entity into a 'DataType'.
+-- | Class for converting an LLVM datum into a 'DataType'.
 class DataTypeFormable a where
   toDataType :: a -> D.DataType
 
@@ -207,8 +207,8 @@ class DfgBuildable a where
 -- | Class for building the control-flow graph.
 class CfgBuildable a where
   -- | Builds the corresponding control-flow graph from a given LLVM element.
-  -- It is assumed that all data entities referred to in the resulting CFG are
-  -- already available in the current build state.
+  -- It is assumed that all data referred to in the resulting CFG are already
+  -- available in the current build state.
   buildCfg
     :: BuildState
       -- ^ The current build state.
@@ -245,9 +245,9 @@ mkInitBuildState m =
              , currentBlock = Nothing
              , funcBBExecFreqs = []
              , symMaps = []
-             , blockToEntityFlows = []
-             , blockToEntityDefs = []
-             , entityToBlockDefs = []
+             , blockToDatumDataFlows = []
+             , blockToDatumDefs = []
+             , datumToBlockDefs = []
              , funcInputValues = []
              }
 
@@ -273,9 +273,9 @@ mkFunction m f@(LLVM.Function {}) =
       st3 = updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
-      st4 = addMissingBlockToEntityFlowEdges st3
-      st5 = addMissingBlockToEntityDefEdges st4
-      st6 = addMissingEntityToBlockDefEdges st5
+      st4 = addMissingBlockToDatumDataFlowEdges st3
+      st5 = addMissingBlockToDatumDefEdges st4
+      st6 = addMissingDatumToBlockDefEdges st5
   in Just ( F.Function
               { F.functionName = toFunctionName $ LLVMG.name f
               , F.functionOS = opStruct st6
@@ -323,7 +323,7 @@ addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
 addNewValueNodeWithConstant st0 c =
   let st1 = addNewNode st0 (G.ValueNode (toDataType c) Nothing)
       new_n = fromJust $ lastTouchedNode st1
-      st2 = addBlockToEntityFlow st1 (fromJust $ entryBlock st1, new_n)
+      st2 = addBlockToDatumDataFlow st1 (fromJust $ entryBlock st1, new_n)
   in st2
 
 -- | Adds a new edge into a given state.
@@ -377,20 +377,20 @@ addNewEdgesManyDests st et src dsts =
 addSymMap :: BuildState -> SymToValueNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = sm:(symMaps st) }
 
--- | Adds block-to-entity flow to a given state.
-addBlockToEntityFlow :: BuildState -> BlockToEntityFlow -> BuildState
-addBlockToEntityFlow st flow =
-  st { blockToEntityFlows = flow:(blockToEntityFlows st) }
+-- | Adds block-to-datum flow to a given state.
+addBlockToDatumDataFlow :: BuildState -> BlockToDatumDataFlow -> BuildState
+addBlockToDatumDataFlow st flow =
+  st { blockToDatumDataFlows = flow:(blockToDatumDataFlows st) }
 
--- | Adds block-to-entity definition to a given state.
-addBlockToEntityDef :: BuildState -> BlockToEntityDef -> BuildState
-addBlockToEntityDef st def =
-  st { blockToEntityDefs = def:(blockToEntityDefs st) }
+-- | Adds block-to-datum definition to a given state.
+addBlockToDatumDef :: BuildState -> BlockToDatumDef -> BuildState
+addBlockToDatumDef st def =
+  st { blockToDatumDefs = def:(blockToDatumDefs st) }
 
--- | Adds entity-to-block definition to a given state.
-addEntityToBlockDef :: BuildState -> EntityToBlockDef -> BuildState
-addEntityToBlockDef st def =
-  st { entityToBlockDefs = def:(entityToBlockDefs st) }
+-- | Adds datum-to-block definition to a given state.
+addDatumToBlockDef :: BuildState -> DatumToBlockDef -> BuildState
+addDatumToBlockDef st def =
+  st { datumToBlockDefs = def:(datumToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.Node -> BuildState
@@ -528,19 +528,19 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Adds the missing data or state flow edges from block nodes to data or state
 -- nodes, as described in the given build state.
-addMissingBlockToEntityFlowEdges :: BuildState -> BuildState
-addMissingBlockToEntityFlowEdges st =
+addMissingBlockToDatumDataFlowEdges :: BuildState -> BuildState
+addMissingBlockToDatumDataFlowEdges st =
   let g0 = getOSGraph st
       deps = map ( \(l, n) ->
                    if G.isValueNode n
                    then (l, n, G.DataFlowEdge)
                    else if G.isStateNode n
                         then (l, n, G.StateFlowEdge)
-                        else error ( "addMissingBlockToEntityFlowEdges: "
+                        else error ( "addMissingBlockToDatumDataFlowEdges: "
                                      ++ "This should never happen"
                                    )
                  )
-                 (blockToEntityFlows st)
+                 (blockToDatumDataFlows st)
       g1 =
         foldr ( \(l, n, et) g ->
                 let pair = (fromJust $ findBlockNodeWithID st l, n)
@@ -550,12 +550,12 @@ addMissingBlockToEntityFlowEdges st =
               deps
   in updateOSGraph st g1
 
--- | Adds the missing block-to-entity definition edges, as described in the
+-- | Adds the missing block-to-datum definition edges, as described in the
 -- given build state.
-addMissingBlockToEntityDefEdges :: BuildState -> BuildState
-addMissingBlockToEntityDefEdges st =
+addMissingBlockToDatumDefEdges :: BuildState -> BuildState
+addMissingBlockToDatumDefEdges st =
   let g0 = getOSGraph st
-      defs = blockToEntityDefs st
+      defs = blockToDatumDefs st
       g1 = foldr ( \(block_id, dn, nr) g ->
                    let ln = fromJust $ findBlockNodeWithID st block_id
                        (g', new_e) = G.addNewDefEdge (ln, dn) g
@@ -567,12 +567,12 @@ addMissingBlockToEntityDefEdges st =
                  defs
   in updateOSGraph st g1
 
--- | Adds the missing entity-to-block definition edges, as described in the
+-- | Adds the missing datum-to-block definition edges, as described in the
 -- given build state.
-addMissingEntityToBlockDefEdges :: BuildState -> BuildState
-addMissingEntityToBlockDefEdges st =
+addMissingDatumToBlockDefEdges :: BuildState -> BuildState
+addMissingDatumToBlockDefEdges st =
   let g0 = getOSGraph st
-      defs = entityToBlockDefs st
+      defs = datumToBlockDefs st
       g1 = foldr ( \(dn, block_id, nr) g ->
                    let ln = fromJust $ findBlockNodeWithID st block_id
                        (g', new_e) = G.addNewDefEdge (dn, ln) g
@@ -659,15 +659,15 @@ instance (DfgBuildable n) => DfgBuildable (LLVM.Named n) where
         st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
         replaceNodeInLEDef old_n new_n (l, n, nr) =
           if old_n == n then (l, new_n, nr) else (l, n, nr)
-        st4 = st3 { blockToEntityDefs =
+        st4 = st3 { blockToDatumDefs =
                        map (replaceNodeInLEDef res_n sym_n)
-                           (blockToEntityDefs st3)
+                           (blockToDatumDefs st3)
                   }
         replaceNodeInELDef old_n new_n (n, l, nr) =
           if old_n == n then (new_n, l, nr) else (n, l, nr)
-        st5 = st4 { entityToBlockDefs =
+        st5 = st4 { datumToBlockDefs =
                        map (replaceNodeInELDef res_n sym_n)
-                           (entityToBlockDefs st4)
+                           (datumToBlockDefs st4)
                   }
     in st5
   buildDfg st (LLVM.Do expr) = buildDfg st expr
@@ -684,7 +684,7 @@ instance DfgBuildable LLVM.BasicBlock where
   buildDfg st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
     let block_name = F.BlockName str
         st1 = if isNothing $ entryBlock st0
-              then foldl (\st n -> addBlockToEntityFlow st (block_name, n))
+              then foldl (\st n -> addBlockToDatumDataFlow st (block_name, n))
                          (st0 { entryBlock = Just block_name })
                          (funcInputValues st0)
               else st0
@@ -819,7 +819,7 @@ instance DfgBuildable LLVM.Instruction where
                        (toDataType t1)
                        (Op.CompTypeConvOp Op.SExt)
                        [op1]
-  -- TODO: replace the 'addEntityToBlockDef' with proper dependencies from/to
+  -- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
   -- state nodes.
   buildDfg st0 (LLVM.Load _ op1 _ _ _) =
     let st1 = buildDfgFromCompOp st0
@@ -828,9 +828,9 @@ instance DfgBuildable LLVM.Instruction where
                         [op1]
         n   = fromJust $ lastTouchedNode st1
         bb  = fromJust $ currentBlock st1
-        st2 = addEntityToBlockDef st1 (n, bb, 0)
+        st2 = addDatumToBlockDef st1 (n, bb, 0)
     in st2
-  -- TODO: replace the 'addEntityToBlockDef' with proper dependencies from/to
+  -- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
   -- state nodes.
   buildDfg st0 (LLVM.Store _ op1 op2 _ _ _) =
     let st1 = buildDfgFromCompOp st0
@@ -855,7 +855,7 @@ instance DfgBuildable LLVM.Instruction where
                           dfe = head
                                 $ filter G.isDataFlowEdge
                                 $ G.getEdges g n phi_node
-                      in addEntityToBlockDef st
+                      in addDatumToBlockDef st
                                              (n, block_id, G.getOutEdgeNr dfe)
                     )
                     st3
@@ -863,7 +863,7 @@ instance DfgBuildable LLVM.Instruction where
         st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
         d_node = fromJust $ lastTouchedNode st5
         st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
-        st7 = addBlockToEntityDef st6 (fromJust $ currentBlock st6, d_node, 0)
+        st7 = addBlockToDatumDef st6 (fromJust $ currentBlock st6, d_node, 0)
               -- ^ Since we've just created the value node and only added a
               -- single data-flow edge to it, we are guaranteed that the in-edge
               -- number of that data-flow edge is 0.

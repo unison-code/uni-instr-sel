@@ -899,7 +899,7 @@ mkInstructions =
   ++
   mkGenericBrFallThroughInstructions
   ++
-  mkGenericEntityDefInstructions
+  mkGenericDataDefInstructions
   ++
   mkGenericCopyInstructions
   ++

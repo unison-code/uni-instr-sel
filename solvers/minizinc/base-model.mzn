@@ -30,12 +30,12 @@
 
 % Function data.
 int: numOperationsInFunction;
-int: numEntitiesInFunction;
+int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
-array[int] of allEntitiesInFunction: stateEntitiesInFunction;
+array[int] of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.
@@ -44,8 +44,8 @@ int: numLocations;
 % Match data.
 int: numMatches;
 array[allMatches] of set of int: operationsCoveredByMatch;
-array[allMatches] of set of int: entitiesDefinedByMatch;
-array[allMatches] of set of int: entitiesUsedByMatch;
+array[allMatches] of set of int: dataDefinedByMatch;
+array[allMatches] of set of int: dataUsedByMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: nonEntryBlocksInMatch;
 array[allMatches] of int: codeSizeOfMatch;
@@ -63,7 +63,7 @@ set of allMatches: nonCopyMatches;
 %=====================
 
 % Total number of location values (an additional value will be needed for
-% representing the null location, for when the entity cannot be reused by other
+% representing the null location, for when the datum cannot be reused by other
 % matches).
 int: numLocValues = numLocations + 1;
 
@@ -98,7 +98,7 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
 
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
-set of int: allEntitiesInFunction = 0..numEntitiesInFunction-1;
+set of int: allDataInFunction = 0..numDataInFunction-1;
 set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
 set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
 set of int: allMatches = 0..numMatches-1;
@@ -110,9 +110,9 @@ set of int: allLocValues = 0..numLocValues-1;
 % VARIABLES
 %===========
 
-% Entity node definitions and locations.
-array[allEntitiesInFunction] of var allBlocksInFunction: def;
-array[allEntitiesInFunction] of var allLocValues: loc;
+% Data definitions and locations.
+array[allDataInFunction] of var allBlocksInFunction: def;
+array[allDataInFunction] of var allLocValues: loc;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -177,19 +177,19 @@ constraint
        endif
   );
 
-% Enforce that, for each entity, exactly one match must be selected such that
-% the entity is defined.
+% Enforce that, for each datum, exactly one match must be selected such that
+% the datum is defined.
 %
 % This is an implied constraint, but it also enforces that the patterns for
 % defining the function input and constants are selected. Such patterns do not
 % cover any operations, they are not entailed in the above constraint for
 % exactly covering each operation.
 constraint
-  forall (e in allEntitiesInFunction)
+  forall (e in allDataInFunction)
   (
     let {
       set of int: mset = { m | m in allMatches
-                                    where e in entitiesDefinedByMatch[m]
+                                    where e in dataDefinedByMatch[m]
                          }
     }
     in if card(mset) = 1
@@ -204,14 +204,14 @@ constraint
        endif
   );
 
-% Implied: The total number of entities defined by the selected matches must be
-% equal to the number of entities in the function graph (Mats calls this
+% Implied: The total number of data defined by the selected matches must be
+% equal to the number of data in the function graph (Mats calls this
 % "minimal effect").
 constraint
   sum (m in allMatches)
   (
-    card(entitiesDefinedByMatch[m]) * bool2int(sel[m])
-  ) = numEntitiesInFunction;
+    card(dataDefinedByMatch[m]) * bool2int(sel[m])
+  ) = numDataInFunction;
 
 % Selected matches must not be placed in the null block.
 constraint
@@ -220,8 +220,7 @@ constraint
     sel[m] <-> place[m] != blockValueForNull
   );
 
-% Selected matches that have an entry block must be placed in the basic block of
-% that block.
+% Selected matches that have an entry block must be placed in entry block.
 constraint
   forall (m in allMatches)
   (
@@ -234,12 +233,12 @@ constraint
     )
   );
 
-% Entities defined by a selected match must be defined in one of the basic
-% blocks that the selected match spans over.
+% Data defined by a selected match must be defined in one of the blocks that the
+% selected match spans.
 constraint
   forall (m in allMatches)
   (
-    forall (e in entitiesDefinedByMatch[m])
+    forall (e in dataDefinedByMatch[m])
     (
       if (card(entryBlockOfMatch[m]) > 0)
       then
@@ -253,14 +252,14 @@ constraint
     )
   );
 
-% For every block wherein an entity is defined, there must exist some selected
+% For every block wherein a datum is defined, there must exist some selected
 % match such that it is either placed in that block or that block is part of
 % one of the blocks that appear in the selected match.
 %
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
 constraint
-  forall (e in allEntitiesInFunction, l in allBlocksInFunction)
+  forall (e in allDataInFunction, l in allBlocksInFunction)
   (
     l = def[e]
     ->
@@ -270,8 +269,8 @@ constraint
     )
   );
 
-% An entity with a definition edge with a block must be defined in the basic
-% block of that block.
+% A datum with a definition edge with a block must be defined in the block of
+% that block.
 constraint
   forall (l in allBlocksInFunction)
   (
@@ -281,13 +280,13 @@ constraint
     )
   );
 
-% Enforce that every entity is defined in a block such that the block dominates
-% all blocks wherein the entity is used. This constraint shall not be applied to
+% Enforce that every datum is defined in a block such that the block dominates
+% all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
 %
 % The code below is essentially a more efficient implementation of:
 %     constraint
-%       forall ( m in allMatches, e in entitiesUsedByMatch[m]
+%       forall ( m in allMatches, e in dataUsedByMatch[m]
 %                     where applyDefDomUseConstraintForMatch[m]
 %              )
 %       (
@@ -305,7 +304,7 @@ array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
                                    k in 1..2
     ]);
 constraint
-  forall ( m in allMatches, e in entitiesUsedByMatch[m]
+  forall ( m in allMatches, e in dataUsedByMatch[m]
                 where applyDefDomUseConstraintForMatch[m]
          )
   (
@@ -321,9 +320,9 @@ constraint
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
 
-% Constrain the loc value for all entities that are state nodes.
+% Constrain the loc value for all data that are states.
 constraint
-  forall (e in stateEntitiesInFunction)
+  forall (e in statesInFunction)
   (
     loc[e] = locValueForNull
   );
@@ -347,19 +346,19 @@ solve ::
     [ bool_search([ sel[m] | m in nonCopyMatches
                                   where card(operationsCoveredByMatch[m])
                                         +
-                                        card(entitiesDefinedByMatch[m])
+                                        card(dataDefinedByMatch[m])
                                         > 2
                   ], input_order, indomain_max, complete)
     , bool_search([ sel[m] | m in nonCopyMatches
                                   where card(operationsCoveredByMatch[m])
                                         +
-                                        card(entitiesDefinedByMatch[m])
+                                        card(dataDefinedByMatch[m])
                                         = 2
 				  ], input_order, indomain_max, complete)
     , bool_search([ sel[m] | m in nonCopyMatches
                                   where card(operationsCoveredByMatch[m])
                                         +
-                                        card(entitiesDefinedByMatch[m])
+                                        card(dataDefinedByMatch[m])
                                         = 1
 				  ], input_order, indomain_max, complete)
 	]

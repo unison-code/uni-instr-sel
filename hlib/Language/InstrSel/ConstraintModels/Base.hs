@@ -80,8 +80,8 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOperations :: [NodeID]
         -- ^ The operations in the function graph.
-      , hlFunEntities :: [NodeID]
-        -- ^ The entities in the function graph.
+      , hlFunData :: [NodeID]
+        -- ^ The data in the function graph.
       , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
       , hlFunBlocks :: [NodeID]
@@ -93,7 +93,7 @@ data HighLevelFunctionParams
       , hlFunDefEdges :: [(NodeID, NodeID)]
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
-        -- to always be an entity node.
+        -- to always be a node denoting a datum.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunIntConstData :: [(NodeID, Integer)]
@@ -128,11 +128,10 @@ data HighLevelMatchParams
       , hlMatchOperationsCovered :: [NodeID]
         -- ^ The operations in the function graph which are covered by this
         -- match.
-      , hlMatchEntitiesDefined :: [NodeID]
-        -- ^ The entities in the function graph which are defined by this match.
-      , hlMatchEntitiesUsed :: [NodeID]
-        -- ^ The entities in the function graph which are used by this
-        -- match.
+      , hlMatchDataDefined :: [NodeID]
+        -- ^ The data in the function graph which are defined by this match.
+      , hlMatchDataUsed :: [NodeID]
+        -- ^ The data in the function graph which are used by this match.
       , hlMatchEntryBlock :: Maybe NodeID
         -- ^ A block in the function graph that appears as entry block
         -- (if there is such a block) of this match.
@@ -184,12 +183,12 @@ data LowLevelModel
   = LowLevelModel
       { llFunNumOperations :: Integer
         -- ^ The number of operations in the function graph.
-      , llFunNumEntities :: Integer
-        -- ^ The number of entities in the function graph.
+      , llFunNumData :: Integer
+        -- ^ The number of data in the function graph.
       , llFunNumBlocks :: Integer
         -- ^ The number of blocks in the function graph.
       , llFunStates :: [ArrayIndex]
-        -- ^ The entities that are states of the function graph.
+        -- ^ The data that are states of the function graph.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -197,9 +196,9 @@ data LowLevelModel
         -- into the outer list corresponds to the array index of a particular
         -- block.
       , llFunDefEdges :: [[ArrayIndex]]
-        -- ^ The list of entities for each block in the function graph between
-        -- which there is a definition edge. An index into the outer list
-        -- corresponds to the array index of a particular block.
+        -- ^ The list of data for each block in the function graph between which
+        -- there is a definition edge. An index into the outer list corresponds
+        -- to the array index of a particular block.
       , llFunBBExecFreqs :: [ExecFreq]
         -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular block in the function
@@ -215,12 +214,12 @@ data LowLevelModel
         -- ^ The list of operation in the function graph that are covered by
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchEntitiesDefined :: [[ArrayIndex]]
-        -- ^ The list of entities in the function graph that are defined by each
+      , llMatchDataDefined :: [[ArrayIndex]]
+        -- ^ The list of data in the function graph that are defined by each
         -- match. An index into the outer list corresponds to the array index of
         -- a particular match.
-      , llMatchEntitiesUsed :: [[ArrayIndex]]
-        -- ^ The list of entities in the function graph that are used by each
+      , llMatchDataUsed :: [[ArrayIndex]]
+        -- ^ The list of data in the function graph that are used by each
         -- match. An index into the outer list corresponds to the array index of
         -- a particular match.
       , llMatchEntryBlocks :: [Maybe ArrayIndex]
@@ -313,9 +312,9 @@ data ArrayIndexMaplists
       { ai2OperationNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of operations.
-      , ai2EntityNodeIDs :: [NodeID]
+      , ai2DatumNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
-        -- indices) to the node IDs of entities.
+        -- indices) to the node IDs of data.
       , ai2BlockNodeIDs :: [NodeID]
         -- ^ The list of mappings from array indices (represented as list
         -- indices) to the node IDs of blocks.
@@ -355,7 +354,7 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operations"
-      <*> v .: "entities"
+      <*> v .: "data"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
@@ -369,7 +368,7 @@ instance FromJSON HighLevelFunctionParams where
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operations"        .= (hlFunOperations d)
-           , "entities"          .= (hlFunEntities d)
+           , "data"              .= (hlFunData d)
            , "states"            .= (hlFunStates d)
            , "blocks"            .= (hlFunBlocks d)
            , "entry-block"       .= (hlFunEntryBlock d)
@@ -402,8 +401,8 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "pattern-id"
       <*> v .: "match-id"
       <*> v .: "operations-covered"
-      <*> v .: "entities-defined"
-      <*> v .: "entities-used"
+      <*> v .: "data-defined"
+      <*> v .: "data-used"
       <*> v .: "entry-block"
       <*> v .: "non-entry-blocks"
       <*> v .: "code-size"
@@ -422,8 +421,8 @@ instance ToJSON HighLevelMatchParams where
            , "pattern-id"                   .= (hlMatchPatternID d)
            , "match-id"                     .= (hlMatchID d)
            , "operations-covered"           .= (hlMatchOperationsCovered d)
-           , "entities-defined"             .= (hlMatchEntitiesDefined d)
-           , "entities-used"                .= (hlMatchEntitiesUsed d)
+           , "data-defined"                 .= (hlMatchDataDefined d)
+           , "data-used"                    .= (hlMatchDataUsed d)
            , "entry-block"                  .= (hlMatchEntryBlock d)
            , "non-entry-blocks"             .= (hlMatchNonEntryBlocks d)
            , "code-size"                    .= (hlMatchCodeSize d)
@@ -453,7 +452,7 @@ instance FromJSON LowLevelModel where
   parseJSON (Object v) =
     LowLevelModel
       <$> v .: "fun-num-operations"
-      <*> v .: "fun-num-entities"
+      <*> v .: "fun-num-data"
       <*> v .: "fun-num-blocks"
       <*> v .: "fun-states"
       <*> v .: "fun-entry-block"
@@ -464,8 +463,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "num-locations"
       <*> v .: "num-matches"
       <*> v .: "match-operations-covered"
-      <*> v .: "match-entities-defined"
-      <*> v .: "match-entities-used"
+      <*> v .: "match-data-defined"
+      <*> v .: "match-data-used"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-non-entry-blocks"
       <*> v .: "match-code-sizes"
@@ -478,7 +477,7 @@ instance FromJSON LowLevelModel where
 instance ToJSON LowLevelModel where
   toJSON m =
     object [ "fun-num-operations"          .= (llFunNumOperations m)
-           , "fun-num-entities"            .= (llFunNumEntities m)
+           , "fun-num-data"                .= (llFunNumData m)
            , "fun-num-blocks"              .= (llFunNumBlocks m)
            , "fun-states"                  .= (llFunStates m)
            , "fun-entry-block"             .= (llFunEntryBlock m)
@@ -489,8 +488,8 @@ instance ToJSON LowLevelModel where
            , "num-locations"               .= (llNumLocations m)
            , "num-matches"                 .= (llNumMatches m)
            , "match-operations-covered"    .= (llMatchOperationsCovered m)
-           , "match-entities-defined"      .= (llMatchEntitiesDefined m)
-           , "match-entities-used"         .= (llMatchEntitiesUsed m)
+           , "match-data-defined"          .= (llMatchDataDefined m)
+           , "match-data-used"             .= (llMatchDataUsed m)
            , "match-entry-blocks"          .= (llMatchEntryBlocks m)
            , "match-non-entry-blocks"      .= (llMatchNonEntryBlocks m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
@@ -545,7 +544,7 @@ instance FromJSON LowLevelSolution where
 instance ToJSON ArrayIndexMaplists where
   toJSON d =
     object [ "array-index-to-op-node-id-maps"     .= (ai2OperationNodeIDs d)
-           , "array-index-to-entity-node-id-maps" .= (ai2EntityNodeIDs d)
+           , "array-index-to-datum-node-id-maps"  .= (ai2DatumNodeIDs d)
            , "array-index-to-block-node-id-maps"  .= (ai2BlockNodeIDs d)
            , "array-index-to-match-id-maps"       .= (ai2MatchIDs d)
            , "array-index-to-location-id-maps"    .= (ai2LocationIDs d)
@@ -556,7 +555,7 @@ instance FromJSON ArrayIndexMaplists where
   parseJSON (Object v) =
     ArrayIndexMaplists
       <$> v .: "array-index-to-op-node-id-maps"
-      <*> v .: "array-index-to-entity-node-id-maps"
+      <*> v .: "array-index-to-datum-node-id-maps"
       <*> v .: "array-index-to-block-node-id-maps"
       <*> v .: "array-index-to-match-id-maps"
       <*> v .: "array-index-to-location-id-maps"

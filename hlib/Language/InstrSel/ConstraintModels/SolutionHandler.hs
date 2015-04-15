@@ -35,7 +35,7 @@ raiseLowLevelSolution
 raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
   let ai_maps_for_matches = ai2MatchIDs ai_maps
       ai_maps_for_blocks = ai2BlockNodeIDs ai_maps
-      ai_maps_for_entities = ai2EntityNodeIDs ai_maps
+      ai_maps_for_data = ai2DatumNodeIDs ai_maps
       ai_maps_for_locations = ai2LocationIDs ai_maps
       getNodeIDFromBlockAI ai = ai_maps_for_blocks !! (fromIntegral ai)
       getLocationIDFromAI ai = ai_maps_for_locations !! (fromIntegral ai)
@@ -63,7 +63,7 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
                         else Nothing
                     )
                     (llSolHasDatumLocation sol)
-                    ai_maps_for_entities
+                    ai_maps_for_data
                     (llSolLocationsOfData sol)
   in HighLevelSolution
        { hlSolOrderOfBlocks = order_of_blocks

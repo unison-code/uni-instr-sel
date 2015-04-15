@@ -134,9 +134,9 @@ addUseEdgesToDAG model mid g0 =
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
       uses_of_m = filter (`notElem` hlMatchDataUsedByPhis match)
-                         (hlMatchEntitiesUsed match)
+                         (hlMatchDataUsed match)
       defs_of_m =
-        map (\(n, i) -> (n, hlMatchEntitiesDefined $ getHLMatchParams ds i))
+        map (\(n, i) -> (n, hlMatchDataDefined $ getHLMatchParams ds i))
             ns
       g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 uses_of_m
   in g1
@@ -255,8 +255,8 @@ emitInstructionPart model _ _ (ASNameOfBlockNode n) =
           "l?"
 emitInstructionPart model sol m (ASBlockOfValueNode n) =
   let function = hlFunctionParams model
-      entity_nodes = hlFunEntities function
-  in if n `elem` entity_nodes
+      data_nodes = hlFunData function
+  in if n `elem` data_nodes
      then let mid = fromJust $ findDefinerOfData model sol n
               l = lookup mid (hlSolBlocksOfSelMatches sol)
           in if isJust l
@@ -269,8 +269,8 @@ emitInstructionPart model sol m (ASBlockOfValueNode n) =
      else -- TODO: handle this case
           "l?"
 
--- | Takes the node ID of an entity, and returns the selected match that defines
--- that entity. If no such match can be found, @Nothing@ is returned.
+-- | Takes the node ID of a datum, and returns the selected match that defines
+-- that datum. If no such match can be found, @Nothing@ is returned.
 findDefinerOfData
   :: HighLevelModel
   -> HighLevelSolution
@@ -279,7 +279,7 @@ findDefinerOfData
 findDefinerOfData model sol n =
   let match = hlMatchParams model
       definers = map hlMatchID
-                     ( filter (\mid -> n `elem` hlMatchEntitiesDefined mid)
+                     ( filter (\mid -> n `elem` hlMatchDataDefined mid)
                               match
                      )
       selected = filter (`elem` (hlSolSelMatches sol)) definers

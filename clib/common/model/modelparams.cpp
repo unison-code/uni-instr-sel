@@ -49,8 +49,8 @@ ModelParams::getNumOperationsInF(void) const {
 }
 
 size_t
-ModelParams::getNumEntitiesInF(void) const {
-    return num_func_entities_;
+ModelParams::getNumDataInF(void) const {
+    return num_func_data_;
 }
 
 size_t
@@ -82,7 +82,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     }
 
     setNumValues(root, p);
-    setStateEntitiesInF(root, p);
+    setStateDataInF(root, p);
     setEntryBlockInF(root, p);
     setBlockDomSetsInF(root, p);
     setDefEdgesInF(root, p);
@@ -94,8 +94,8 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setConstraintsForMatches(root, p);
     setADDUCSettingsForMatches(root, p);
     setOperationsCoveredByMatches(root, p);
-    setEntitiesDefinedByMatches(root, p);
-    setEntitiesUsedByMatches(root, p);
+    setDataDefinedByMatches(root, p);
+    setDataUsedByMatches(root, p);
     setEntryBlockOfMatches(root, p);
     setNonEntryBlocksInMatches(root, p);
 }
@@ -207,30 +207,30 @@ ModelParams::setOperationsCoveredByMatches(
 }
 
 void
-ModelParams::setEntitiesDefinedByMatches(
+ModelParams::setDataDefinedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-entities-defined")) {
+    for (auto jsonlist : getJsonValue(root, "match-data-defined")) {
         list<ArrayIndex> defs;
         for (auto entry : jsonlist) {
             defs.push_back(toArrayIndex(entry));
         }
-        p.match_entities_defined_.push_back(defs);
+        p.match_data_defined_.push_back(defs);
     }
 }
 
 void
-ModelParams::setEntitiesUsedByMatches(
+ModelParams::setDataUsedByMatches(
     const Json::Value& root,
     ModelParams& p
 ) {
-    for (auto jsonlist : getJsonValue(root, "match-entities-used")) {
+    for (auto jsonlist : getJsonValue(root, "match-data-used")) {
         list<ArrayIndex> uses;
         for (auto entry : jsonlist) {
             uses.push_back(toArrayIndex(entry));
         }
-        p.match_entities_used_.push_back(uses);
+        p.match_data_used_.push_back(uses);
     }
 }
 
@@ -266,13 +266,13 @@ ModelParams::getOperationsCoveredByAllMatches(void) const {
 }
 
 vector< list<ID> >
-ModelParams::getEntitiesDefinedByAllMatches(void) const {
-    return match_entities_defined_;
+ModelParams::getDataDefinedByAllMatches(void) const {
+    return match_data_defined_;
 }
 
 vector< list<ID> >
-ModelParams::getEntitiesUsedByAllMatches(void) const {
-    return match_entities_used_;
+ModelParams::getDataUsedByAllMatches(void) const {
+    return match_data_used_;
 }
 
 vector< list<ID> >
@@ -312,9 +312,9 @@ ModelParams::destroyConstraintsForMatches(void) {
 }
 
 void
-ModelParams::setStateEntitiesInF(const Value& root, ModelParams& p) {
+ModelParams::setStateDataInF(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "fun-states")) {
-        p.func_state_entities_.push_back(toArrayIndex(entry));
+        p.func_states_.push_back(toArrayIndex(entry));
     }
 }
 
@@ -326,8 +326,8 @@ ModelParams::setExecFreqOfBlocksInF(const Value& root, ModelParams& p) {
 }
 
 list<ArrayIndex>
-ModelParams::getAllStateEntitiesInF(void) const {
-    return func_state_entities_;
+ModelParams::getAllStateDataInF(void) const {
+    return func_states_;
 }
 
 vector<int>
@@ -382,7 +382,7 @@ ModelParams::setEntryBlockInF(const Json::Value& root, ModelParams& p) {
 void
 ModelParams::setNumValues(const Json::Value& root, ModelParams& p) {
     p.num_func_operations_ = toInt(getJsonValue(root, "fun-num-operations"));
-    p.num_func_entities_ = toInt(getJsonValue(root, "fun-num-entities"));
+    p.num_func_data_ = toInt(getJsonValue(root, "fun-num-data"));
     p.num_func_blocks_ = toInt(getJsonValue(root, "fun-num-blocks"));
     p.num_locations_ = toInt(getJsonValue(root, "num-locations"));
     p.num_matches_ = toInt(getJsonValue(root, "num-matches"));
@@ -402,10 +402,10 @@ ModelParams::setBlockDomSetsInF(const Value& root, ModelParams& p) {
 void
 ModelParams::setDefEdgesInF(const Value& root, ModelParams& p) {
     for (auto jsonlist : getJsonValue(root, "fun-def-edges")) {
-        list<ArrayIndex> entities;
+        list<ArrayIndex> data;
         for (auto entry : jsonlist) {
-            entities.push_back(toArrayIndex(entry));
+            data.push_back(toArrayIndex(entry));
         }
-        p.func_def_edges_.push_back(entities);
+        p.func_def_edges_.push_back(data);
     }
 }

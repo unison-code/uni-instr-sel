@@ -20,7 +20,7 @@ module Language.InstrSel.TargetMachines.Targets.Generic
   , mkIntConstType
   , mkGenericBrFallthroughInstructions
   , mkGenericPhiInstructions
-  , mkGenericEntityDefInstructions
+  , mkGenericDataDefInstructions
   , mkGenericCopyInstructions
   )
 where
@@ -183,26 +183,26 @@ mkGenericBrFallThroughInstructions =
          }
      ]
 
--- | Creates a set of instructions for handling definition of entities that
+-- | Creates a set of instructions for handling definition of data that
 -- represent constants and function arguments.
-mkGenericEntityDefInstructions :: [Instruction]
-mkGenericEntityDefInstructions =
-  let g = mkGraph
-            ( map
-                Node
-                [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
-                , ( 1, NodeLabel 1 mkGenericValueNodeType )
-                ]
-            )
-            ( map
-                Edge
-                [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 )
-                ]
-            )
-      cs = mkMatchPlacementConstraints g
-      pat =
+mkGenericDataDefInstructions :: [Instruction]
+mkGenericDataDefInstructions =
+  let mkPatternGraph datum =
+        mkGraph ( map Node
+                      [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
+                      , ( 1, NodeLabel 1 datum )
+                      ]
+                )
+                ( map Edge
+                      [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 ) ]
+                )
+      g1 = mkPatternGraph mkGenericValueNodeType
+      g2 = mkPatternGraph StateNode
+      cs1 = mkMatchPlacementConstraints g1
+      cs2 = mkMatchPlacementConstraints g2
+      mkInstrPattern pid g cs =
         InstrPattern
-          { patID = 0
+          { patID = pid
           , patOS = OS.OpStructure g (Just 0) cs
           , patOutputValueNodes = []
           , patADDUC = True
@@ -210,7 +210,9 @@ mkGenericEntityDefInstructions =
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
+         , instrPatterns = [ mkInstrPattern 0 g1 cs1
+                           , mkInstrPattern 1 g2 cs2
+                           ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True

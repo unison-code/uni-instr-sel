@@ -110,8 +110,8 @@ mkHLFunctionParams function =
                        )
                        ns
   in HighLevelFunctionParams
-       { hlFunOperations = nodeIDsByType isOperationNode
-       , hlFunEntities = nodeIDsByType isEntityNode
+       { hlFunOperations = nodeIDsByType isNodeAnOperation
+       , hlFunData = nodeIDsByType isNodeADatum
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
@@ -149,13 +149,11 @@ processMatch
 processMatch instr pattern match mid =
   let graph = osGraph $ patOS pattern
       ns = getAllNodes graph
-      o_ns = filter isOperationNode ns
-      e_ns = filter isEntityNode ns
-      d_ns = filter isValueNode ns
+      o_ns = filter isNodeAnOperation ns
+      d_ns = filter isNodeADatum ns
       l_ns = filter isBlockNode ns
       c_ns = filter isControlNode ns
-      e_def_ns = filter (hasAnyPredecessors graph) e_ns
-      e_use_ns = filter (hasAnySuccessors graph) e_ns
+      d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
@@ -171,8 +169,8 @@ processMatch instr pattern match mid =
        , hlMatchPatternID = patID pattern
        , hlMatchID = mid
        , hlMatchOperationsCovered = findFNsInMatch match (getNodeIDs o_ns)
-       , hlMatchEntitiesDefined = findFNsInMatch match (getNodeIDs e_def_ns)
-       , hlMatchEntitiesUsed = findFNsInMatch match (getNodeIDs e_use_ns)
+       , hlMatchDataDefined = findFNsInMatch match (getNodeIDs d_def_ns)
+       , hlMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
        , hlMatchEntryBlock = maybe Nothing (findFNInMatch match) entry_b_node_id
        , hlMatchNonEntryBlocks = findFNsInMatch match (getNodeIDs l_ref_ns)
        , hlMatchConstraints =
@@ -232,7 +230,7 @@ lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
   let getAIForOperationNodeID nid =
         fromJust $ findAIWithOperationNodeID ai_maps nid
-      getAIForEntityNodeID nid = fromJust $ findAIWithEntityNodeID ai_maps nid
+      getAIForDatumNodeID nid = fromJust $ findAIWithDatumNodeID ai_maps nid
       getAIForBlockNodeID nid = fromJust $ findAIWithBlockNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
@@ -246,9 +244,9 @@ lowerHighLevelModel model ai_maps =
       m_params = sortByAI (getAIForMatchID . hlMatchID) (hlMatchParams model)
   in LowLevelModel
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
-       , llFunNumEntities = toInteger $ length $ hlFunEntities f_params
+       , llFunNumData = toInteger $ length $ hlFunData f_params
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
-       , llFunStates = map getAIForEntityNodeID (hlFunStates f_params)
+       , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
@@ -258,7 +256,7 @@ lowerHighLevelModel model ai_maps =
        , llFunDefEdges =
            map ( \n ->
                  nub $
-                 map (getAIForEntityNodeID . snd)
+                 map (getAIForDatumNodeID . snd)
                      (filter (\(n', _) -> n == n') (hlFunDefEdges f_params))
                )
                (sortByAI getAIForBlockNodeID (hlFunBlocks f_params))
@@ -274,12 +272,10 @@ lowerHighLevelModel model ai_maps =
        , llMatchOperationsCovered =
            map (\m -> map getAIForOperationNodeID (hlMatchOperationsCovered m))
                m_params
-       , llMatchEntitiesDefined =
-           map (\m -> map getAIForEntityNodeID (hlMatchEntitiesDefined m))
-               m_params
-       , llMatchEntitiesUsed =
-           map (\m -> map getAIForEntityNodeID (hlMatchEntitiesUsed m))
-               m_params
+       , llMatchDataDefined =
+           map (\m -> map getAIForDatumNodeID (hlMatchDataDefined m)) m_params
+       , llMatchDataUsed =
+           map (\m -> map getAIForDatumNodeID (hlMatchDataUsed m)) m_params
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID))
                (map hlMatchEntryBlock m_params)
@@ -330,8 +326,8 @@ findAIWithOperationNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithOperationNodeID ai_maps =
   findArrayIndexInList (ai2OperationNodeIDs ai_maps)
 
-findAIWithEntityNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
-findAIWithEntityNodeID ai_maps = findArrayIndexInList (ai2EntityNodeIDs ai_maps)
+findAIWithDatumNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
+findAIWithDatumNodeID ai_maps = findArrayIndexInList (ai2DatumNodeIDs ai_maps)
 
 findAIWithBlockNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithBlockNodeID ai_maps = findArrayIndexInList (ai2BlockNodeIDs ai_maps)
@@ -339,7 +335,7 @@ findAIWithBlockNodeID ai_maps = findArrayIndexInList (ai2BlockNodeIDs ai_maps)
 findAIWithAnyNodeID :: ArrayIndexMaplists -> NodeID -> Maybe ArrayIndex
 findAIWithAnyNodeID ai_maps nid =
   let lists = [ ai2OperationNodeIDs ai_maps
-              , ai2EntityNodeIDs ai_maps
+              , ai2DatumNodeIDs ai_maps
               , ai2BlockNodeIDs ai_maps
               ]
       matching_lists = filter (nid `elem`) lists
