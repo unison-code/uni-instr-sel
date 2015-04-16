@@ -119,9 +119,9 @@ distclean-toolchain:
 
 
 
-###############
+#==============
 # MISC TARGETS
-###############
+#==============
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
