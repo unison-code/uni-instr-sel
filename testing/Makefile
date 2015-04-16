@@ -32,17 +32,6 @@ TARGET := mips32
 build:
 	cd .. && make
 
-.PHONY: clean-toolchain
-clean-toolchain:
-	cd .. && make clean
-
-.PHONY: distclean-toolchain
-distclean-toolchain:
-	cd .. && make distclean
-
-%.pretty.json: %.json
-	$(PRETTIFY) $< > $@
-
 %.ll: %.c
 	$(CLANG) -emit-llvm -S $< -o $@
 
@@ -95,6 +84,14 @@ clean:
 	$(RM) *.dot
 	$(RM) *.pdf
 
+.PHONY: clean-toolchain
+clean-toolchain:
+	cd .. && make clean
+
+.PHONY: distclean-toolchain
+distclean-toolchain:
+	cd .. && make distclean
+
 
 
 #============
@@ -120,3 +117,12 @@ clean:
 	$(UNI) plot --plot-cover-per-match \
       -f $*.f.json -p $*.p.json -o $*.cov.dot
 	for f in $*.cov.*.dot; do make $${f%.*}.pdf; done
+
+
+
+###############
+# MISC TARGETS
+###############
+
+%.pretty.json: %.json
+	$(PRETTIFY) $< > $@
