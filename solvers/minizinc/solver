@@ -77,11 +77,12 @@ function exe {
 }
 
 function exitIfFailed {
-    if [[ $? != 0 ]]; then
+    status=$?
+    if [[ $status != 0 ]]; then
         if [ ! -z "$@" ]; then
-            echoerr "$@ (exit status $?)"
+            echoerr "$@ (exit status $status)"
         else
-            echoerr "Terminated with exit status $?"
+            echoerr "Terminated with exit status $status"
         fi
         exit 1
     fi
@@ -167,7 +168,7 @@ function executeSolver {
     command="$command 2> $MINIZINC_ERROR_FILEPATH"
     exe "$command"
     solver_exit_status=$?
-    if [[ $? == 124 ]]; then
+    if [[ $solver_exit_status == 124 ]]; then
         # Solver timed out
         solver_exit_status=0
     fi
@@ -175,7 +176,7 @@ function executeSolver {
     $( exit $solver_exit_status ) # Restore $? to exit status of the solver
     exitIfFailed "$error_msg"
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
-    reportNewEntity "$stats_file"
+    reportNewEntity "$stats_filepath"
 
     purgeIntermediateSolutions
 
