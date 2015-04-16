@@ -155,7 +155,7 @@ for i in range(len(init_node_doms)):
     print "constraint"
     print ( "  NP[" + str(i) + "] in " + node_set_str + "\n"
           + "  /\\\n"
-          + "  card(" + node_set_str + ") > 0"
+          + "  card(" + node_set_str + ") > 0 % Fixes bug in minizinc 2.0"
           + ";"
           )
 print
@@ -166,7 +166,7 @@ for i in range(len(init_edge_doms)):
     print "constraint"
     print ( "  EP[" + str(i) + "] in " + edge_set_str + "\n"
           + "  /\\\n"
-          + "  card(" + edge_set_str + ") > 0"
+          + "  card(" + edge_set_str + ") > 0 % Fixes bug in minizinc 2.0"
           + ";"
           )
 print
