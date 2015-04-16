@@ -144,9 +144,11 @@ function executeSolver {
     fi
 
     reportTask "Running solver"
-    command=""
+    stats_filepath="$working_dir/$STATS_OUTPUT_FILEPATH"
+    echo "SOLVING TIME (in seconds):" > $stats_filepath
+    command="`which time` -ap -o $stats_filepath"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
-        command="timeout ${MINIZINC_TIMELIMIT}s"
+        command="$command timeout ${MINIZINC_TIMELIMIT}s"
     fi
     command="$command $MINIZINC_SOLVER_BIN -s"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
@@ -272,10 +274,11 @@ exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
 exitIfFailed ""
 reportNewEntity $JSON_OUTPUT_FILEPATH
 
-reportTask "Generating MiniZinc stats file"
-exe "sed -n -e '/^%/p' $MINIZINC_SOLUTION_FILEPATH > $STATS_OUTPUT_FILEPATH"
+reportTask "Extracting MiniZinc statistics"
+echo >> $STATS_OUTPUT_FILEPATH
+echo "SOLVING STATISTICS:" >> $STATS_OUTPUT_FILEPATH
+exe "sed -n -e '/^%/p' $MINIZINC_SOLUTION_FILEPATH >> $STATS_OUTPUT_FILEPATH"
 exitIfFailed ""
-reportNewEntity $STATS_OUTPUT_FILEPATH
 
 reportTask "Cleaning up temporary files"
 exe "rm -rf $TMP_DIR"
