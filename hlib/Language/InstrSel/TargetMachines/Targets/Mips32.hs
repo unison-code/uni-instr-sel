@@ -577,10 +577,10 @@ mkRegImmCondBrInstr n imm_r str op =
                                   ]
           }
       ord_pat = mkInstrPattern 0 ord_g ord_cs
-      swapped_pat = mkInstrPattern 0 swapped_g swapped_cs
+      swapped_pat = mkInstrPattern 1 swapped_g swapped_cs
       pats = if O.isOpCommutative op
-             then [ord_pat, swapped_pat]
-             else [ord_pat]
+             then [ord_pat]
+             else [ord_pat, swapped_pat]
   in Instruction
        { instrID = 0
        , instrPatterns = pats
