@@ -11,7 +11,8 @@ CLANG    := /home/ghb/programs/llvm-3.4-build/Debug+Asserts/bin/clang
 LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
 OPT      := $(LLVMDIR)/bin/opt
 AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
-UNI      := ../uni-is/uni-is
+
+UNI              := ../uni-is/uni-is
 MINIZINC_BACKEND := minizinc
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
