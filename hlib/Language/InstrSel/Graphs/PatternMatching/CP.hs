@@ -232,7 +232,7 @@ hasParamsEmptyDomains p =
   let domains = [ initialNodeDomains p
                 , initialEdgeDomains p
                 ]
-  in any null domains
+  in any (any null) domains
 
 -- | Finds and aggregates the edges that are alternatives to one another,
 -- meaning at most one of them may be matched per pattern.
