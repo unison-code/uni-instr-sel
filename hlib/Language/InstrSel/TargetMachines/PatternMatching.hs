@@ -34,7 +34,8 @@ import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils.JSON
-
+import Control.DeepSeq
+  ( NFData, rnf )
 
 
 --------------
@@ -47,8 +48,12 @@ data PatternMatchset
   = PatternMatchset
       { pmTarget :: TargetMachineID
       , pmMatches :: [PatternMatch]
+      , pmTime :: Maybe Double
       }
   deriving (Show)
+
+instance NFData PatternMatchset where
+    rnf (PatternMatchset a b c ) = rnf a `seq` rnf b `seq` rnf c
 
 -- | Contains the information needed to identify which instruction and pattern a
 -- given match originates from. Each match is also given a 'MatchID' that must
@@ -63,7 +68,8 @@ data PatternMatch
       }
   deriving (Show)
 
-
+instance NFData PatternMatch where
+    rnf (PatternMatch a b c d) = rnf a `seq` rnf b `seq` rnf c `seq` rnf d
 
 --------------------------------
 -- JSON-related class instances
@@ -74,12 +80,14 @@ instance FromJSON PatternMatchset where
     PatternMatchset
       <$> v .: "target-machine-id"
       <*> v .: "match-data"
+      <*> v .: "time"
   parseJSON _ = mzero
 
 instance ToJSON PatternMatchset where
   toJSON m =
     object [ "target-machine-id" .= (pmTarget m)
            , "match-data"        .= (pmMatches m)
+           , "time"              .= (pmTime m)
            ]
 
 instance FromJSON PatternMatch where
@@ -111,7 +119,7 @@ mkPatternMatchset function target =
   let matches = concatMap (processInstr function) (tmInstructions target)
       proper_matches =
         map (\(m, mid) -> m { pmMatchID = mid }) $ zip matches [0..]
-  in PatternMatchset { pmTarget = tmID target, pmMatches = proper_matches }
+  in PatternMatchset { pmTarget = tmID target, pmMatches = proper_matches, pmTime = Nothing }
 
 processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =

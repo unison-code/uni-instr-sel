@@ -182,7 +182,8 @@ import Data.List
 import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Vector as V
-
+import Control.DeepSeq
+  ( NFData, rnf )
 
 
 --------------
@@ -285,10 +286,16 @@ data Mapping n
       }
   deriving (Show, Eq, Ord)
 
+instance NFData n => NFData (Mapping n) where
+    rnf (Mapping a b) = rnf a `seq` rnf b
+
 -- | Represents a match between two graphs.
 newtype Match n
   = Match (S.Set (Mapping n))
   deriving (Show, Eq)
+
+instance NFData n => NFData (Match n) where
+    rnf (Match a) = rnf a
 
 -- | Represents a dominator set.
 data DomSet t

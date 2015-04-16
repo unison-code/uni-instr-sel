@@ -43,7 +43,8 @@ import Language.InstrSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstrSel.Utils.JSON as JSON
   ( Value (..) )
-
+import Control.DeepSeq
+  ( NFData, rnf )
 
 
 --------------
@@ -57,12 +58,18 @@ newtype InstructionID
 instance Show InstructionID where
   show (InstructionID i) = show i
 
+instance NFData InstructionID where
+    rnf (InstructionID a) = rnf a
+
 newtype PatternID
   = PatternID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show PatternID where
   show (PatternID i) = show i
+
+instance NFData PatternID where
+    rnf (PatternID a) = rnf a
 
 newtype LocationID
   = LocationID Natural
@@ -82,6 +89,8 @@ newtype TargetMachineID
   = TargetMachineID String
   deriving (Eq, Show)
 
+instance NFData TargetMachineID where
+    rnf (TargetMachineID a) = rnf a
 
 
 -------------------------------------

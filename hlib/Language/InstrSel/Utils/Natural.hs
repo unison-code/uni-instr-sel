@@ -17,7 +17,8 @@ module Language.InstrSel.Utils.Natural where
 import Language.InstrSel.Utils.JSON
 import Data.Maybe
 
-
+import Control.DeepSeq
+  ( NFData, rnf )
 
 --------------
 -- Data types
@@ -62,7 +63,8 @@ instance Integral Natural where
     )
   toInteger (Natural i) = i
 
-
+instance NFData Natural where
+    rnf (Natural a) = rnf a
 
 -------------------------------------
 -- JSON-related type class instances

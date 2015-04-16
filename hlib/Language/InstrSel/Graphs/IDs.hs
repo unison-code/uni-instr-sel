@@ -35,6 +35,8 @@ import Language.InstrSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstrSel.Utils.JSON as JSON
   ( Value (..) )
+import Control.DeepSeq
+  ( NFData, rnf )
 
 
 
@@ -49,6 +51,9 @@ newtype MatchID
 instance Show MatchID where
   show (MatchID i) = show i
 
+instance NFData MatchID where
+    rnf (MatchID a) = rnf a
+
 newtype NodeID
   = NodeID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
@@ -56,7 +61,8 @@ newtype NodeID
 instance Show NodeID where
   show (NodeID i) = show i
 
-
+instance NFData NodeID where
+    rnf (NodeID a) = rnf a
 
 -------------------------------------
 -- JSON-related type class instances
