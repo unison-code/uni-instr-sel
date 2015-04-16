@@ -20,6 +20,8 @@ where
 
 import Language.InstrSel.Constraints.ConstraintBuilder
 import qualified Language.InstrSel.DataTypes as D
+import Language.InstrSel.Functions
+  ( mkEmptyBlockName )
 import Language.InstrSel.Graphs
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
@@ -403,12 +405,11 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
                                       }
        }
 
--- | Makes two conditional branch instructions: an ordinary branch instruction,
--- and its inverse branch instruction. The inverse is achieved by inverting the
--- comparison, and swapping the branch blocks, which means both instructions
--- carry the same semantics. Both are needed to handle cases where a comparison
--- needs to be inverted in order to achieve a valid block ordering.
-mkCondBrInstrs
+-- | Makes two conditional branch instructions - an ordinary branch instruction
+-- and its inverse branch instruction - that takes two registers as input. The
+-- inverse is achieved by inverting the comparison, and swapping the branch
+-- blocks, which means both instructions carry the same semantics.
+mkRegRegCondBrInstrs
   :: Natural
      -- ^ The width of the comparison operands.
   -> String
@@ -420,8 +421,8 @@ mkCondBrInstrs
   -> O.CompOp
      -- ^ The inverse comparison corresponding to this instruction.
   -> Instruction
-mkCondBrInstrs n ord_str ord_op inv_str inv_op =
-  let mkBlockNode = BlockNode $ BlockName ""
+mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
+  let mkBlockNode = BlockNode mkEmptyBlockName
       mkPatternGraph op =
         mkGraph ( map Node
                       [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
@@ -489,6 +490,100 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
   in Instruction
        { instrID = 0
        , instrPatterns = [ord_pat, inv_pat]
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
+-- | Makes a conditional branch instruction that takes a register and an
+-- immediate as input.
+mkRegImmCondBrInstr
+  :: Natural
+     -- ^ The width of the first comparison operand.
+  -> Range Integer
+     -- ^ The range of the integer immediate.
+  -> String
+     -- ^ The assembly string corresponding to this instruction.
+  -> O.CompOp
+     -- ^ The comparison corresponding to this instruction.
+  -> Instruction
+mkRegImmCondBrInstr n imm_r str op =
+  let mkBlockNode = BlockNode mkEmptyBlockName
+      mkPatternGraph swap_ops =
+        mkGraph ( map Node
+                      [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
+                      , ( 1, NodeLabel 1 mkBlockNode )
+                      , ( 2, NodeLabel 2 mkBlockNode )
+                      , ( 3, NodeLabel 3 mkBlockNode )
+                      , ( 4, NodeLabel 4 ( ComputationNode
+                                             { compOp = if not swap_ops
+                                                        then op
+                                                        else O.swapComparison op
+                                             }
+                                         )
+                        )
+                      , ( 5, NodeLabel 5 ( ValueNode (mkIntTempType n)
+                                                     Nothing
+                                         )
+                        )
+                      , ( 6, NodeLabel 6 ( ValueNode (mkIntConstType imm_r n)
+                                                     Nothing
+                                         )
+                        )
+                      , ( 7, NodeLabel 7 (ValueNode (mkIntTempType 1) Nothing) )
+                      ]
+                )
+                ( map Edge
+                      ( [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+                        , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+                        , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
+                        , ( 7, 0, EdgeLabel DataFlowEdge 0 0 )
+                        , ( 4, 7, EdgeLabel DataFlowEdge 0 0 )
+                        ]
+                        ++
+                        if not swap_ops
+                        then [ ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
+                             , ( 6, 4, EdgeLabel DataFlowEdge 0 1 )
+                             ]
+                        else [ ( 5, 4, EdgeLabel DataFlowEdge 0 1 )
+                             , ( 6, 4, EdgeLabel DataFlowEdge 0 0 )
+                             ]
+                      )
+                )
+      ord_g = mkPatternGraph False
+      swapped_g = mkPatternGraph True
+      ord_cs = mkMatchPlacementConstraints ord_g
+               ++
+               mkNoDataReuseConstraints 7
+               ++
+               mkFallThroughConstraints 3
+      swapped_cs = mkMatchPlacementConstraints swapped_g
+                   ++
+                   mkNoDataReuseConstraints 7
+                   ++
+                   mkFallThroughConstraints 3
+      mkInstrPattern pid g cs =
+        InstrPattern
+          { patID = pid
+          , patOS = OS.OpStructure g (Just 1) cs
+          , patOutputValueNodes = []
+          , patADDUC = True
+          , patAsmStrTemplate = ASSTemplate
+                                  [ ASVerbatim $ str ++ " "
+                                  , ASReferenceToValueNode 5
+                                  , ASVerbatim ", "
+                                  , ASNameOfBlockNode 2
+                                  ]
+          }
+      ord_pat = mkInstrPattern 0 ord_g ord_cs
+      swapped_pat = mkInstrPattern 0 swapped_g swapped_cs
+      pats = if O.isOpCommutative op
+             then [ord_pat, swapped_pat]
+             else [ord_pat]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
@@ -1036,19 +1131,16 @@ mkInstructions =
   [ mkEqComparison ]
   ++
   concatMap
-    ( \(s1, op1, s2, op2) -> [
-                               mkCondBrInstrs
-                               16
-                               s1
-                               (O.CompArithOp op1)
-                               s2
-                               (O.CompArithOp op2)
-                             , mkCondBrInstrs
-                               32
-                               s1
-                               (O.CompArithOp op1)
-                               s2
-                               (O.CompArithOp op2)
+    ( \(s1, op1, s2, op2) -> [ mkRegRegCondBrInstrs 16
+                                                    s1
+                                                    (O.CompArithOp op1)
+                                                    s2
+                                                    (O.CompArithOp op2)
+                             , mkRegRegCondBrInstrs 32
+                                                    s1
+                                                    (O.CompArithOp op1)
+                                                    s2
+                                                    (O.CompArithOp op2)
                              ]
     )
     [ ("BGT", O.SIntOp O.GT, "BLE", O.SIntOp O.LE)
@@ -1057,6 +1149,19 @@ mkInstructions =
     , ("BLE", O.SIntOp O.LE, "BGT", O.SIntOp O.GT)
     , ("BEQ", O.IntOp  O.Eq,  "BNE", O.IntOp  O.NEq)
     , ("BNE", O.IntOp  O.NEq, "BEQ", O.IntOp  O.Eq)
+    ]
+  ++
+  concatMap
+    ( \(r, s, op) -> [ mkRegImmCondBrInstr 16 r s (O.CompArithOp op)
+                     , mkRegImmCondBrInstr 32 r s (O.CompArithOp op)
+                     ]
+    )
+    [ ((Range 0 0), "BLEZ", O.SIntOp O.LE)
+    , ((Range 1 1), "BLEZ", O.SIntOp O.LT)
+    , ((Range 0 0), "BGEZ", O.SIntOp O.GE)
+    , ((Range 1 1), "BGEZ", O.SIntOp O.GT)
+    , ((Range 0 0), "BGTZ", O.SIntOp O.GT)
+    , ((Range 0 0), "BLTZ", O.SIntOp O.LT)
     ]
   ++
   map

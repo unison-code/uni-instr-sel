@@ -394,3 +394,56 @@ isTypeConvOpCompatibleWith = (==)
 -- necessarily commutative.
 isMemoryOpCompatibleWith :: MemoryOp -> MemoryOp -> Bool
 isMemoryOpCompatibleWith = (==)
+
+-- | Updates the operation type inside an 'ArithOp'.
+updateArithOpType :: ArithOp -> ArithOpType -> ArithOp
+updateArithOpType ( IntOp _)     op =  IntOp op
+updateArithOpType (UIntOp _)     op = UIntOp op
+updateArithOpType (SIntOp _)     op = SIntOp op
+updateArithOpType (FixpointOp _) op = FixpointOp op
+updateArithOpType ( FloatOp _)   op =  FloatOp op
+updateArithOpType (OFloatOp _)   op = OFloatOp op
+updateArithOpType (UFloatOp _)   op = UFloatOp op
+
+-- | Inverts a given comparision. For example, '>' returns '<='.
+invertArithComparison :: ArithOp -> ArithOp
+invertArithComparison op =
+  let op_type = getArithOpType op
+  in updateArithOpType op (invertArithOpComparisonType op_type)
+
+-- | Inverts a given comparision. For example, '>' returns '<='.
+invertArithOpComparisonType :: ArithOpType -> ArithOpType
+invertArithOpComparisonType Eq  = NEq
+invertArithOpComparisonType NEq = Eq
+invertArithOpComparisonType GT  = LE
+invertArithOpComparisonType GE  = LT
+invertArithOpComparisonType LT  = GE
+invertArithOpComparisonType LE  = GT
+invertArithOpComparisonType op = error ( "Cannot invert " ++ show op ++
+                                       " because it is not a comparison"
+                                     )
+
+-- | Swaps a given comparision. For example, '>' returns '<'.
+swapComparison :: CompOp -> CompOp
+swapComparison (CompArithOp op) = CompArithOp $ swapArithComparison op
+swapComparison op = error ( "Cannot swap " ++ show op ++
+                            " because it is not an arithmetic operation"
+                          )
+
+-- | Swaps a given comparision. For example, '>' returns '<'.
+swapArithComparison :: ArithOp -> ArithOp
+swapArithComparison op =
+  let op_type = getArithOpType op
+  in updateArithOpType op (swapArithOpComparisonType op_type)
+
+-- | Swaps a given comparision. For example, '>' returns '<='.
+swapArithOpComparisonType :: ArithOpType -> ArithOpType
+swapArithOpComparisonType Eq  = Eq
+swapArithOpComparisonType NEq = NEq
+swapArithOpComparisonType GT  = LT
+swapArithOpComparisonType GE  = LE
+swapArithOpComparisonType LT  = GT
+swapArithOpComparisonType LE  = GE
+swapArithOpComparisonType op = error ( "Cannot swap " ++ show op ++
+                                       " because it is not a comparison"
+                                     )
