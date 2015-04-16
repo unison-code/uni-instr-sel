@@ -126,6 +126,10 @@ distclean-toolchain:
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
 
+fetch-test-cases:
+	cp ../experiments/mediabench/selected/*.ll .
+	rename 's/\.ll$$/.mll/' *.ll
+
 
 
 #=================
