@@ -140,7 +140,7 @@ function inflateSolutionFile {
 
 function executeSolver {
     working_dir=`pwd`
-    cd $TMP_DIR
+    cd "$TMP_DIR"
 
     # Flatten model, if necessary
     if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
@@ -185,7 +185,7 @@ function executeSolver {
         inflateSolutionFile
     fi
 
-    cd $working_dir
+    cd "$working_dir"
 }
 
 
