@@ -100,16 +100,19 @@ def getRequiredDataByName(data, name):
 # MAIN SCRIPT
 #=============
 
-# Check solution file
-if len(sys.argv) < 2:
-    sys.stderr.write("No solution file\n")
+# Check files
+if len(sys.argv) < 3:
+    sys.stderr.write("Not enough arguments\n")
     sys.exit(1)
-if len(sys.argv) > 2:
+if len(sys.argv) > 3:
     sys.stderr.write("Too many arguments\n")
     sys.exit(1)
 solution_file = sys.argv[1]
+stats_file = sys.argv[2]
 if not os.path.isfile(solution_file):
     error("Solution file '" + solution_file +"' not found")
+if not os.path.isfile(stats_file):
+    error("Stats file '" + stats_file +"' not found")
 
 # Read solution file
 content = []
@@ -173,6 +176,17 @@ for loc in loc_data:
     has_d_loc_data.append(loc != loc_value_for_null)
 all_data.append(["has_d_loc", has_d_loc_data])
 
+# Read stats file
+content = []
+with open(stats_file, 'r') as file:
+    content = file.readlines()
+
+for l in content:
+    line = l.strip().split(' ')
+    if line[0] == "real":
+        time = float(line[1])
+        break
+
 # Turn desirable data into JSON
 data_table = [ ["loc",        "loc-of-datum"]
              , ["has_d_loc",  "has-datum-loc"]
@@ -196,6 +210,9 @@ for d in all_data:
 
 # Add additional field indicating that this is a solution
 json_data["has-solution"] = True
+
+# Add additional field with the solving time in seconds
+json_data["time"] = time
 
 if len(keep_table) > 0:
     error("Required data '" + keep_table[0] + "' not found")

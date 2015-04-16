@@ -275,7 +275,7 @@ reportNewEntity "$MINIZINC_FULL_MODEL_FILEPATH"
 executeSolver
 
 reportTask "Converting MiniZinc solution to JSON format"
-exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
+exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH $STATS_OUTPUT_FILEPATH" \
     " > $JSON_OUTPUT_FILEPATH"
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
