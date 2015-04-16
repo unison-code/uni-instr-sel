@@ -275,13 +275,16 @@ invokeMatcherShell
 invokeMatcherShell p dir =
   do json_input_file <- queryJsonInputFilePath dir
      json_output_file <- queryJsonOutputFilePath dir
+     minizinc_backend <- queryMinizincBackend
      dumpParamsToJsonFile p json_input_file
      abs_json_input_file <- absPath json_input_file
      abs_json_output_file <- absPath json_output_file
      script <- queryScriptPath
      print_stdout
        False
-       ( run_ script [ "-o"
+       ( run_ script [ "-s"
+                     , minizinc_backend
+                     , "-o"
                      , toTextIgnore abs_json_output_file
                      , toTextIgnore abs_json_input_file
                      ]
@@ -318,6 +321,13 @@ queryJsonOutputFilePath dir =
 queryScriptPath :: Sh FilePath
 queryScriptPath =
   do return "./pattern-matcher"
+
+queryMinizincBackend :: Sh T.Text
+queryMinizincBackend =
+  do backend <- get_env "MINIZINC_BACKEND"
+     if isJust backend
+     then return $ fromJust backend
+     else terror "Environment variable MINIZINC_BACKEND not set"
 
 dumpParamsToJsonFile :: Parameters -> FilePath -> Sh ()
 dumpParamsToJsonFile p file =
