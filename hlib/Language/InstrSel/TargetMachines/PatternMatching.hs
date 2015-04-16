@@ -49,6 +49,7 @@ data PatternMatchset
       { pmTarget :: TargetMachineID
       , pmMatches :: [PatternMatch]
       , pmTime :: Maybe Double
+        -- ^ Number of seconds it took to find this pattern matchset.
       }
   deriving (Show)
 

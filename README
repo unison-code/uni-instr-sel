@@ -21,6 +21,7 @@ The packages to be installed are:
 
  - aeson
  - atto-lisp
+ - clock
  - cmdargs
  - graphviz
  - safe
