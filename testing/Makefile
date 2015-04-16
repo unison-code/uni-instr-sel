@@ -125,3 +125,28 @@ distclean-toolchain:
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
+
+
+
+#=================
+# AUTO-COMPLETION
+#=================
+
+C_FILES              := $(wildcard *.c)
+LL_FILES             := $(wildcard *.ll)
+MLL_FILES            := $(wildcard *.mll)
+F_JSON_FILES         := $(wildcard *.f.json)
+
+C_TARGETS            := $(C_FILES)
+LL_TARGETS           := $(LL_FILES) \
+                        $(addsuffix .ll, $(basename $(C_TARGETS)))
+MLL_TARGETS          := $(MLL_FILES) \
+                        $(addsuffix .mll, $(basename $(LL_TARGETS)))
+F_JSON_TARGETS       := $(F_JSON_FILES) \
+                        $(addsuffix .f.json, $(basename $(MLL_TARGETS)))
+FUNCTION_NAMES       := $(basename $(basename $(F_JSON_TARGETS)))
+FUNCTION_COV_TARGETS := $(addsuffix .ce.cc.be.cov.pdf, $(FUNCTION_NAMES))
+FUNCTION_ASM_TARGETS := $(addsuffix .s, $(FUNCTION_NAMES))
+
+$(FUNCTION_ASM_TARGETS):
+$(FUNCTION_COV_TARGETS):
