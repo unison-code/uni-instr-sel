@@ -77,7 +77,6 @@ build:
 
 .PHONY: clean
 clean:
-	$(RM) *.mll
 	$(RM) *.json
 	$(RM) *.s
 	$(RM) *.stats
