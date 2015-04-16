@@ -678,27 +678,44 @@ mkPredBrInstr =
              , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
              ]
          )
-      cs = mkMatchPlacementConstraints g
-                ++
-           mkFallThroughConstraints 3
-      pat =
-        InstrPattern
-          { patID = 0
-          , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputValueNodes = []
-          , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim $ "BEQ "
-                                  , ASLocationOfDataNode 4
-                                  , ASVerbatim ", "
-                                  , ASBlockOfLabelNode 2
-                                  , ASVerbatim ", "
-                                  , ASVerbatim getZeroRegName
-                                  ]
-          }
+      ord_cs = mkMatchPlacementConstraints g
+               ++
+               mkFallThroughConstraints 3
+      inv_cs = mkMatchPlacementConstraints g
+               ++
+               mkFallThroughConstraints 2
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure g (Just 1) ord_cs
+                 , patOutputValueNodes = []
+                 , patADDUC = True
+                 , patAsmStrTemplate = ASSTemplate
+                                       [ ASVerbatim $ "BEQ "
+                                       , ASReferenceToValueNode 4
+                                       , ASVerbatim ", "
+                                       , ASNameOfBlockNode 2
+                                       , ASVerbatim ", "
+                                       , ASVerbatim getZeroRegName
+                                       ]
+                 }
+             , InstrPattern
+                 { patID = 1
+                 , patOS = OS.OpStructure g (Just 1) inv_cs
+                 , patOutputValueNodes = []
+                 , patADDUC = True
+                 , patAsmStrTemplate = ASSTemplate
+                                       [ ASVerbatim $ "BNE "
+                                       , ASReferenceToValueNode 4
+                                       , ASVerbatim ", "
+                                       , ASNameOfBlockNode 3
+                                       , ASVerbatim ", "
+                                       , ASVerbatim getZeroRegName
+                                       ]
+                 }
+             ]
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat]
+       , instrPatterns = pats
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
