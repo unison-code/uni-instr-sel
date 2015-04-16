@@ -405,14 +405,28 @@ constraint
     )
   );
 
-% Detect symmetry among location values 0..31
+% Ad hoc: detect symmetry among location values 1..31
 constraint
+  forall(i in index_set_1of2(funLocDomain))(
+    let {int: lo = funLocDomain[i,2],
+         int: hi = funLocDomain[i,3]} in
+	lo<=31 -> hi>=31 \/ hi=0
+  ) /\
   forall(i in index_set_1of2(locDomain))(
     let {int: lo = locDomain[i,3],
          int: hi = locDomain[i,4]} in
-	lo<=31 -> hi=31
+	lo<=31 -> hi>=31 \/ hi=0
   ) ->
-  forall(i in allEntitiesInFunction)(loc[i] in 31..numLocValues-1);
+  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
+
+% INVALID IDEA, since the stretch beginning with the entry block has a fixed position
+% Detect dynamic symmetries among succ[.]
+% constraint
+%   forall(b1 in allBlocksInFunction, b2 in allBlocksInFunction where b1<b2)(
+%     exists(i in index_set_1of2(inBlockSucc) 
+%            where inBlockSucc[i,2] = b1 \/ inBlockSucc[i,2] = b2)(sel[inBlockSucc[i,1]]) \/
+%     succ[b1] < succ[b2]
+%   );
 
 %==================================================
 % DOMINATION DERIVED FROM PARAMETERIZED CONSTRAINTS

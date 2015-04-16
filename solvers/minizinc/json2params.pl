@@ -37,6 +37,8 @@ convert(array1d(IndexSet,set), Name, List) :- !,
 convert(array1d(IndexSet,singleton), Name, List) :- !,
 	list_to_singletons(List, Sings),
 	format('~w = array1d(~w, ~w);\n\n', [Name,IndexSet,Sings]).
+convert(array2d(asis), Name, []) :- !,
+	format('~w = [| |];\n\n', [Name]).
 convert(array2d(asis), Name, Value) :- !,
 	write(Name),
 	write(' = ['),
