@@ -403,43 +403,6 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
                                       }
        }
 
--- | Creates a conditional branch pattern for a given comparison operator. The
--- first and second operands are the (n-bit) value nodes with IDs 5 and 6,
--- respectively, and 'true' and 'false' blocks are the block node with IDs 2 and
--- 3, respectively. The returned value contains the graph and the ID of the
--- entry block node.
-mkCondBrPattern :: Natural -> O.CompOp -> (Graph, NodeID)
-mkCondBrPattern n op =
-  let mkBlockNode = BlockNode $ BlockName ""
-      mkCompNode = ComputationNode { compOp = op }
-      mkNBitValueNode = ValueNode (mkIntTempType n) Nothing
-  in ( mkGraph
-         ( map
-             Node
-             [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
-             , ( 1, NodeLabel 1 mkBlockNode )
-             , ( 2, NodeLabel 2 mkBlockNode )
-             , ( 3, NodeLabel 3 mkBlockNode )
-             , ( 4, NodeLabel 4 mkCompNode )
-             , ( 5, NodeLabel 5 mkNBitValueNode )
-             , ( 6, NodeLabel 6 mkNBitValueNode )
-             , ( 7, NodeLabel 7 (ValueNode (mkIntTempType 1) Nothing) )
-             ]
-         )
-         ( map
-             Edge
-             [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
-             , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
-             , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
-             , ( 7, 0, EdgeLabel DataFlowEdge 0 0 )
-             , ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
-             , ( 6, 4, EdgeLabel DataFlowEdge 0 1 )
-             , ( 4, 7, EdgeLabel DataFlowEdge 0 0 )
-             ]
-         )
-     , 1
-     )
-
 -- | Makes two conditional branch instructions: an ordinary branch instruction,
 -- and its inverse branch instruction. The inverse is achieved by inverting the
 -- comparison, and swapping the branch blocks, which means both instructions
@@ -458,8 +421,31 @@ mkCondBrInstrs
      -- ^ The inverse comparison corresponding to this instruction.
   -> Instruction
 mkCondBrInstrs n ord_str ord_op inv_str inv_op =
-  let (ord_g, ord_entry) = mkCondBrPattern n ord_op
-      (inv_g, inv_entry) = mkCondBrPattern n inv_op
+  let mkBlockNode = BlockNode $ BlockName ""
+      mkPatternGraph op =
+        mkGraph ( map Node
+                      [ ( 0, NodeLabel 0 (ControlNode O.CondBr) )
+                      , ( 1, NodeLabel 1 mkBlockNode )
+                      , ( 2, NodeLabel 2 mkBlockNode )
+                      , ( 3, NodeLabel 3 mkBlockNode )
+                      , ( 4, NodeLabel 4 (ComputationNode { compOp = op }) )
+                      , ( 5, NodeLabel 5 (ValueNode (mkIntTempType n) Nothing) )
+                      , ( 6, NodeLabel 6 (ValueNode (mkIntTempType n) Nothing) )
+                      , ( 7, NodeLabel 7 (ValueNode (mkIntTempType 1) Nothing) )
+                      ]
+                )
+                ( map Edge
+                      [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 )
+                      , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
+                      , ( 0, 3, EdgeLabel ControlFlowEdge 1 0 )
+                      , ( 7, 0, EdgeLabel DataFlowEdge 0 0 )
+                      , ( 5, 4, EdgeLabel DataFlowEdge 0 0 )
+                      , ( 6, 4, EdgeLabel DataFlowEdge 0 1 )
+                      , ( 4, 7, EdgeLabel DataFlowEdge 0 0 )
+                      ]
+                )
+      ord_g = mkPatternGraph ord_op
+      inv_g = mkPatternGraph inv_op
       ord_cs = mkMatchPlacementConstraints ord_g
                ++
                mkNoDataReuseConstraints 7
@@ -473,7 +459,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
       ord_pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure ord_g (Just ord_entry) ord_cs
+          , patOS = OS.OpStructure ord_g (Just 1) ord_cs
           , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
@@ -488,7 +474,7 @@ mkCondBrInstrs n ord_str ord_op inv_str inv_op =
       inv_pat =
         InstrPattern
           { patID = 1
-          , patOS = OS.OpStructure inv_g (Just inv_entry) inv_cs
+          , patOS = OS.OpStructure inv_g (Just 1) inv_cs
           , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
