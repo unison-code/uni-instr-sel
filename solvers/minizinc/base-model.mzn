@@ -134,6 +134,12 @@ array[allMatches] of var allBlocksInFunctionPlusNull: place;
 % generated code).
 array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 
+% [MC] pop[b] <-> block b is populated by some code
+array[allBlocksInFunctionPlusNull] of var bool: pop;
+
+% [MC] fwd[b] = the first populated block in the b's successor chain
+array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: fwd;
+
 % Cost.
 var int: cost;
 
@@ -323,6 +329,18 @@ constraint
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
 
+% [MC] pop[b] <-> block b is populated by some code
+constraint
+  forall(b in allBlocksInFunctionPlusNull)(
+    pop[b] <-> exists(m in allMatches diff Dominated where codeSizeOfMatch[m]>0)(place[m]=b)
+  );
+
+% [MC] fwd[b] = the first populated block in the b's successor chain
+constraint
+  forall(b in allBlocksInFunctionPlusNull)(
+    fwd[b] = array1d(0..1, [fwd[succ[b]], b])[bool2int(pop[b])]
+  );
+
 % Constrain the loc value for all data that are states.
 constraint
   forall (e in statesInFunction)
@@ -356,7 +374,7 @@ constraint
          int: p = inBlockSucc[i,2],
          int: q = inBlockSucc[i,3]} in
 	place[m] in {p,blockValueForNull} /\
-	(sel[m] -> succ[p] = q)
+	(sel[m] -> fwd[succ[p]] = fwd[q])
   );
 
 constraint
@@ -383,17 +401,21 @@ constraint
 % IMPLIED BY PARAMETERIZED CONSTRAINTS
 %=====================================
 
-% Two matches can't both be selected, if they imply conflicting successor blocks
-constraint
-  forall(i in index_set_1of2(inBlockSucc), j in index_set_1of2(inBlockSucc) where i<j)(
-    let {int: mi = inBlockSucc[i,1],
-         int: pi = inBlockSucc[i,2],
-         int: qi = inBlockSucc[i,3],
-	 int: mj = inBlockSucc[j,1],
-         int: pj = inBlockSucc[j,2],
-         int: qj = inBlockSucc[j,3]} in
-	(pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj])
-  );
+% Two matches can't both be selected, if they imply conflicting successor blocks.
+% The original form of this had
+% 	(pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj])
+% but that is INVALID in the context of long fall through.
+% The variant below sometimes helps, sometimes not.
+% constraint
+%   forall(i in index_set_1of2(inBlockSucc), j in index_set_1of2(inBlockSucc) where i<j)(
+%     let {int: mi = inBlockSucc[i,1],
+%          int: pi = inBlockSucc[i,2],
+%          int: qi = inBlockSucc[i,3],
+% 	 int: mj = inBlockSucc[j,1],
+%          int: pj = inBlockSucc[j,2],
+%          int: qj = inBlockSucc[j,3]} in
+% 	(pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj] \/ not pop[succ[pi]] \/ not pop[succ[pj]])
+%   );
 
 % Two matches can't both be selected, if the first implies that two locations are equal,
 % and the second implies that the intersection of their domains is empty
