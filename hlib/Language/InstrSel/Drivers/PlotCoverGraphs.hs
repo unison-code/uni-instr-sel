@@ -49,11 +49,11 @@ run PlotCoverPerMatch function matchset =
      mapM
        ( \m ->
           do dot <- mkCoveragePlot function [pmMatch m]
-             let oid = show (pmInstrID m)
+             let oid = "m" ++ show (pmMatchID m)
                        ++ "-" ++
-                       show (pmPatternID m)
+                       "i" ++ show (pmInstrID m)
                        ++ "-" ++
-                       show (pmMatchID m)
+                       "p" ++ show (pmPatternID m)
              return $ toOutput oid dot
        )
        matches
