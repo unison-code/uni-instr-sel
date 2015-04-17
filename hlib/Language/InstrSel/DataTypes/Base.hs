@@ -78,7 +78,7 @@ instance Show DataType where
   show d@(IntConstType {}) =
     let b = intConstNumBits d
     in show (intConstValue d) ++
-       if isJust b then " " ++ (show $ fromJust b) else ""
+       if isJust b then " i" ++ (show $ fromJust b) else ""
   show AnyType = "any"
 
 
@@ -178,8 +178,10 @@ parseIntConstTypeFromJson str =
   let parts = splitOn " " str
   in if length parts == 1 || length parts == 2
      then let value = parseRangeStr (head parts)
-              numbits = if length parts == 2
-                        then do int <- maybeRead (last parts) :: Maybe Integer
+              numbits_str = last parts
+              numbits = if length parts == 2 && (head numbits_str == 'i')
+                        then do int <- maybeRead (tail numbits_str) :: Maybe
+                                                                       Integer
                                 maybeToNatural int
                         else Nothing
           in if isJust value && (not (length parts == 2) || isJust numbits)
