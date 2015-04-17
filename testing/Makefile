@@ -110,9 +110,9 @@ distclean-toolchain:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.f.json %.p.json
+%.all-cover-plots: %.ce.cc.be.f.json %.ce.cc.be.p.json
 	$(UNI) plot --plot-cover-per-match \
-      -f $*.f.json -p $*.p.json -o $*.cov.dot
+      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
 	  make $${f%.*}.pdf;      \
 	  $(RM) $${f%.*}.dot;     \
