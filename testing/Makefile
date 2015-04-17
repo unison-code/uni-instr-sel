@@ -104,7 +104,8 @@ distclean-toolchain:
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
 %.cov.dot: %.ce.cc.be.f.json %.ce.cc.be.p.json
-	$(UNI) plot --plot-cover-all-matches -f $*.f.json -p $*.p.json -o $@
+	$(UNI) plot --plot-cover-all-matches \
+      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
