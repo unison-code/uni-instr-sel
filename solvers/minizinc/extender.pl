@@ -11,7 +11,8 @@
  "match-non-copy-instrs": ...,
  "match-code-sizes": ...,
  "fun-num-label-nodes":7,
- "fun-constraints":[],
+ "fun-constraints":["(in-set (loc-to-set-elem (loc-of-dnode (ai 0)))
+                     (loc-class ((ai 1) (ai 2) (ai 3) (ai 4) (ai 5) (ai 6) (ai 7) (ai 8) (ai 9) (ai 10) (ai 11) (ai 12) (ai 13) (ai 14) (ai 15) (ai 16) (ai 17) (ai 18) (ai 19) (ai 20) (ai 21) (ai 22) (ai 23) (ai 24) (ai 25) (ai 26) (ai 27) (ai 28) (ai 29) (ai 30) (ai 31) (ai 32) (ai 33) (ai 34))))"],
  "fun-state-nodes":[],
  "match-entity-nodes-used": ...,
  "fun-label-dom-sets": ...,
@@ -26,14 +27,14 @@
  "match-constraints":
    [["(&& (== (loc-to-num (loc-of-dnode (ai 8))) (loc-to-num (loc-of-dnode (ai 13)))) (== (loc-to-num (loc-of-dnode (ai 13))) (loc-to-num (loc-of-dnode (ai 4)))))"],
     ["(&& (== (loc-to-num (loc-of-dnode (ai 9))) (loc-to-num (loc-of-dnode (ai 10)))) (== (loc-to-num (loc-of-dnode (ai 10))) (loc-to-num (loc-of-dnode (ai 2)))))"],
-    ["(== (block-to-num (block-of-lnode (ai 6))) (block-to-num (block-of-match (ai 2))))","(fall-through (ai 2) (block-of-lnode (ai 2)))"],
-    ["(== (block-to-num (block-of-lnode (ai 5))) (block-to-num (block-of-match (ai 3))))","(fall-through (ai 3) (block-of-lnode (ai 3)))"],
-    ["(== (block-to-num (block-of-lnode (ai 4))) (block-to-num (block-of-match (ai 4))))","(fall-through (ai 4) (block-of-lnode (ai 1)))"],
-    ["(== (block-to-num (block-of-lnode (ai 2))) (block-to-num (block-of-match (ai 5))))","(fall-through (ai 5) (block-of-lnode (ai 4)))"],
-    ["(== (block-to-num (block-of-lnode (ai 0))) (block-to-num (block-of-match (ai 6))))","(fall-through (ai 6) (block-of-lnode (ai 1)))"],
-    ["(== (block-to-num (block-of-lnode (ai 0))) (block-to-num (block-of-match (ai 7))))"],
-    ["(== (block-to-num (block-of-lnode (ai 0))) (block-to-num (block-of-match (ai 8))))"],
-    ["(== (block-to-num (block-of-lnode (ai 0))) (block-to-num (block-of-match (ai 9))))"],
+    ["(== (block-to-num (block-of-bnode (ai 6))) (block-to-num (block-wherein-match-is-placed (ai 2))))","(fall-through (ai 2) (block-of-bnode (ai 2)))"],
+    ["(== (block-to-num (block-of-bnode (ai 5))) (block-to-num (block-wherein-match-is-placed (ai 3))))","(fall-through (ai 3) (block-of-bnode (ai 3)))"],
+    ["(== (block-to-num (block-of-bnode (ai 4))) (block-to-num (block-wherein-match-is-placed (ai 4))))","(fall-through (ai 4) (block-of-bnode (ai 1)))"],
+    ["(== (block-to-num (block-of-bnode (ai 2))) (block-to-num (block-wherein-match-is-placed (ai 5))))","(fall-through (ai 5) (block-of-bnode (ai 4)))"],
+    ["(== (block-to-num (block-of-bnode (ai 0))) (block-to-num (block-wherein-match-is-placed (ai 6))))","(fall-through (ai 6) (block-of-bnode (ai 1)))"],
+    ["(== (block-to-num (block-of-bnode (ai 0))) (block-to-num (block-wherein-match-is-placed (ai 7))))"],
+    ["(== (block-to-num (block-of-bnode (ai 0))) (block-to-num (block-wherein-match-is-placed (ai 8))))"],
+    ["(== (block-to-num (block-of-bnode (ai 0))) (block-to-num (block-wherein-match-is-placed (ai 9))))"],
     ["(== (loc-to-num (loc-of-dnode (ai 6))) (loc-to-num (loc-of-dnode (ai 18))))"],
     ["(== (loc-to-num (loc-of-dnode (ai 4))) (loc-to-num (loc-of-dnode (ai 16))))"],
     ["(== (loc-to-num (loc-of-dnode (ai 4))) (loc-to-num (loc-of-dnode (ai 15))))"],
@@ -102,20 +103,20 @@
      "(in-set (loc-to-set-elem (loc-of-dnode (ai 15))) 
               (loc-class ((ai 0) (ai 1) (ai 2) (ai 3) (ai 4) (ai 5) (ai 6) (ai 7) (ai 8) (ai 9) (ai 10) (ai 11) (ai 12) (ai 13) (ai 14) (ai 15) (ai 16) (ai 17) (ai 18) (ai 19) (ai 20) (ai 21) (ai 22) (ai 23) (ai 24) (ai 25) (ai 26) (ai 27) (ai 28) (ai 29) (ai 30) (ai 31))))",
      "(== (loc-to-num (loc-of-dnode (ai 1))) (loc-to-num (ai 34)))"],
-    ["(== (block-to-num (block-of-lnode (ai 1))) (block-to-num (block-of-match (ai 31))))",
+    ["(== (block-to-num (block-of-bnode (ai 1))) (block-to-num (block-wherein-match-is-placed (ai 31))))",
      "(== (loc-to-num (loc-of-dnode (ai 6))) (loc-to-num null))",
-     "(fall-through (ai 31) (block-of-lnode (ai 5)))"],
-    ["(== (block-to-num (block-of-lnode (ai 1))) (block-to-num (block-of-match (ai 32))))",
+     "(fall-through (ai 31) (block-of-bnode (ai 5)))"],
+    ["(== (block-to-num (block-of-bnode (ai 1))) (block-to-num (block-wherein-match-is-placed (ai 32))))",
      "(== (loc-to-num (loc-of-dnode (ai 6))) (loc-to-num null))",
-     "(fall-through (ai 32) (block-of-lnode (ai 6)))"],
-    ["(== (block-to-num (block-of-lnode (ai 1))) (block-to-num (block-of-match (ai 33))))",
-     "(fall-through (ai 33) (block-of-lnode (ai 5)))"],
-    ["(== (block-to-num (block-of-lnode (ai 6))) (block-to-num (block-of-match (ai 34))))"],
-    ["(== (block-to-num (block-of-lnode (ai 5))) (block-to-num (block-of-match (ai 35))))"],
-    ["(== (block-to-num (block-of-lnode (ai 4))) (block-to-num (block-of-match (ai 36))))"],
-    ["(== (block-to-num (block-of-lnode (ai 2))) (block-to-num (block-of-match (ai 37))))"],
-    ["(== (block-to-num (block-of-lnode (ai 0))) (block-to-num (block-of-match (ai 38))))"],
-    ["(== (block-to-num (block-of-lnode (ai 3))) (block-to-num (block-of-match (ai 39))))",
+     "(fall-through (ai 32) (block-of-bnode (ai 6)))"],
+    ["(== (block-to-num (block-of-bnode (ai 1))) (block-to-num (block-wherein-match-is-placed (ai 33))))",
+     "(fall-through (ai 33) (block-of-bnode (ai 5)))"],
+    ["(== (block-to-num (block-of-bnode (ai 6))) (block-to-num (block-wherein-match-is-placed (ai 34))))"],
+    ["(== (block-to-num (block-of-bnode (ai 5))) (block-to-num (block-wherein-match-is-placed (ai 35))))"],
+    ["(== (block-to-num (block-of-bnode (ai 4))) (block-to-num (block-wherein-match-is-placed (ai 36))))"],
+    ["(== (block-to-num (block-of-bnode (ai 2))) (block-to-num (block-wherein-match-is-placed (ai 37))))"],
+    ["(== (block-to-num (block-of-bnode (ai 0))) (block-to-num (block-wherein-match-is-placed (ai 38))))"],
+    ["(== (block-to-num (block-of-bnode (ai 3))) (block-to-num (block-wherein-match-is-placed (ai 39))))",
      "(== (loc-to-num (loc-of-dnode (ai 12))) (loc-to-num (ai 31)))"],
     ["(== (loc-to-num (loc-of-dnode (ai 4))) (loc-to-num (ai 33)))",
      "(in-set (loc-to-set-elem (loc-of-dnode (ai 16))) 
@@ -220,11 +221,17 @@
  "num-matches":71
 }
 
+The "fun-constraints" element should be replaced by:
+
+ "fun-constraints": [],
+
+ "fun-loc-domain": [[0, 1, 34]],
+
 The "match-constraints" element should be replaced by:
 
  "match-constraints": [[], ..., []],
 
-"same-loc": [[0, 8, 13], [0, 13, 4], [1, 9, 10], [1, 10, 2],
+ "same-loc": [[0, 8, 13], [0, 13, 4], [1, 9, 10], [1, 10, 2],
               [10, 6, 18], [11, 4, 16], [12, 4, 15], [13, 4, 14],
 	      [14, 3, 13], [15, 2, 12], [16, 2, 11], [17, 1, 10], [18, 0, 9], [19, 0, 8]],
 
@@ -287,8 +294,8 @@ The "match-constraints" element should be replaced by:
 :- use_module(library(codesio)).
 
 test :-
-	see('fact.ll.model.json'),
-	tell('fact.ll.model.ext.json'),
+	see('../../testing/fact.ll.model.json'),
+	tell('../../testing/fact.ll.model.ext.json'),
 	extend,
 	told,
 	seen.
@@ -299,14 +306,22 @@ extend_and_halt :-
 	halt(-1).
 
 extend :-
-	json2avl(AVL1),
-	avl_fetch('match-constraints', AVL1, MatchConstraints1),
+	json2avl(AVL0),
+	avl_fetch('fun-constraints', AVL0, FunConstraints1),
+	convert([FunConstraints1], [FunConstraints2], [], [], [], FunLocDomain4),
+	(   foreach([0,A,B,C],FunLocDomain4),
+	    foreach([A,B,C],FunLocDomain)
+	do  true
+	),
+	avl_fetch('match-constraints', AVL0, MatchConstraints1),
 	convert(MatchConstraints1, MatchConstraints2, SameLoc, InBlockSucc, InBlock, LocDomain),
+	avl_store('fun-constraints', AVL0, FunConstraints2, AVL1),
 	avl_store('match-constraints', AVL1, MatchConstraints2, AVL2),
 	avl_store('same-loc', AVL2, SameLoc, AVL3),
 	avl_store('in-block-succ', AVL3, InBlockSucc, AVL4),
 	avl_store('in-block', AVL4, InBlock, AVL5),
-	avl_store('loc-domain', AVL5, LocDomain, AVLn),
+	avl_store('loc-domain', AVL5, LocDomain, AVL6),
+	avl_store('fun-loc-domain', AVL6, FunLocDomain, AVLn),
 	avl2json(AVLn).
 
 convert(MC1, MC2, SameLoc, InBlockSucc, InBlock, LocDomain) :-
@@ -353,9 +368,9 @@ convert(MC1, MC2, SameLoc, InBlockSucc, InBlock, LocDomain) :-
 split(&&(X,Y), M) --> !, split(X, M), split(Y, M).
 split(('loc-to-num'('loc-of-dnode'(ai(A)))=='loc-to-num'('loc-of-dnode'(ai(B)))), M) --> !, 
 	[same_loc(M,A,B)].
-split(('block-to-num'('block-of-lnode'(ai(A)))=='block-to-num'('block-of-match'(ai(M)))), M) --> !, 
+split(('block-to-num'('block-of-bnode'(ai(A)))=='block-to-num'('block-wherein-match-is-placed'(ai(M)))), M) --> !, 
 	[in_block(M,A)].
-split('fall-through'(ai(M),'block-of-lnode'(ai(S))), M) --> !,
+split('fall-through'(ai(M),'block-of-bnode'(ai(S))), M) --> !,
 	[fall_through(M,S)].
 split('in-set'('loc-to-set-elem'('loc-of-dnode'(ai(A))),'loc-class'(Range)), M) --> !,
 	[loc_domain(M,A,Min,Max)],

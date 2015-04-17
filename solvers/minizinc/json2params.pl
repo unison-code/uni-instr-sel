@@ -4,8 +4,8 @@
 :- use_module(library(codesio)).
 
 test :-
-	see('fact.ll.model.ext.json'),
-	tell('params.mzn'),
+	see('../../testing/fact.ll.model.ext.json'),
+	tell('../../testing/params.mzn'),
 	convert,
 	told,
 	seen.
@@ -71,28 +71,30 @@ list_to_singletons(List, Singletons) :-
 	do  (L=null -> S={} ; S={L})
 	).
 
-classify('fun-bb-exec-freqs', array1d(allLabelsInFunction,asis), execFrequencyOfLabelInFunction).
+classify('fun-block-dom-sets', array1d(allBlocksInFunction,set), domSetOfBlockInFunction).
+classify('fun-block-exec-freqs', array1d(allBlocksInFunction,asis), execFrequencyOfBlockInFunction).
 classify('fun-constraints', void, void).
-classify('fun-def-edges', array1d(allLabelsInFunction,set), defEdgesForLabelInFunction).
-classify('fun-entry-label-node', asis, entryLabelOfFunction).
-classify('fun-label-dom-sets', array1d(allLabelsInFunction,set), domSetOfLabelInFunction).
-classify('fun-num-entity-nodes', asis, numEntitiesInFunction).
-classify('fun-num-label-nodes', asis, numLabelsInFunction).
-classify('fun-num-op-nodes', asis, numOperationsInFunction).
-classify('fun-state-nodes', asis, stateEntitiesInFunction).
+classify('fun-def-edges', array1d(allBlocksInFunction,set), defEdgesForBlockInFunction).
+classify('fun-entry-block', asis, entryBlockOfFunction).
+classify('fun-loc-domain', array2d(asis), funLocDomain).
+classify('fun-num-blocks', asis, numBlocksInFunction).
+classify('fun-num-data', asis, numDataInFunction).
+classify('fun-num-operations', asis, numOperationsInFunction).
+classify('fun-states', asis, statesInFunction).
 classify('in-block', array2d(asis), inBlock).
 classify('in-block-succ', array2d(asis), inBlockSucc).
 classify('loc-domain', array2d(asis), locDomain).
 classify('match-adduc-settings', array1d(allMatches,asis), applyDefDomUseConstraintForMatch).
 classify('match-code-sizes', array1d(allMatches,asis), codeSizeOfMatch).
 classify('match-constraints', void, void).
-classify('match-entity-nodes-defined', array1d(allMatches,set), entitiesDefinedByMatch).
-classify('match-entity-nodes-used', array1d(allMatches,set), entitiesUsedByMatch).
-classify('match-entry-label-nodes', array1d(allMatches,singleton), entryLabelOfMatch).
+classify('match-consumed-blocks', array1d(allMatches,set), consumedBlocksInMatch).
+classify('match-data-defined', array1d(allMatches,set), dataDefinedByMatch).
+classify('match-data-used', array1d(allMatches,set), dataUsedByMatch).
+classify('match-entry-blocks', array1d(allMatches,singleton), entryBlockOfMatch).
 classify('match-latencies', array1d(allMatches,asis), latencyOfMatch).
 classify('match-non-copy-instrs', set, nonCopyMatches).
-classify('match-non-entry-label-nodes', array1d(allMatches,set), nonEntryLabelsInMatch).
-classify('match-op-nodes-covered', array1d(allMatches,set), operationsCoveredByMatch).
+classify('match-operations-covered', array1d(allMatches,set), operationsCoveredByMatch).
+classify('match-spanned-blocks', array1d(allMatches,set), spannedBlocksInMatch).
 classify('num-locations', asis, numLocations).
 classify('num-matches', asis, numMatches).
 classify('same-loc', array2d(asis), sameLoc).

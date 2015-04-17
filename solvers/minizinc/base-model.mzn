@@ -59,6 +59,7 @@ array[int,int] of int: sameLoc;
 array[int,int] of int: inBlockSucc;
 array[int,int] of int: inBlock;
 array[int,int] of int: locDomain;
+array[int,int] of int: funLocDomain;
 
 set of allMatches: Dominated;
 
@@ -139,7 +140,7 @@ var int: cost;
 
 
 %====================
-% GLOBAL CONSTRAINTS
+% Global constraints
 %====================
 
 include "circuit.mzn";
@@ -147,9 +148,9 @@ include "table.mzn";
 
 
 
-%=============
+%============
 % CONSTRAINTS
-%=============
+%============
 
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
@@ -225,7 +226,7 @@ constraint
     % entry.
     forall (r in entryBlockOfMatch[m])
     (
-      place[m] in {r, blockValueForNull}
+      place[m] in {r,blockValueForNull}
     )
   );
 
@@ -354,7 +355,7 @@ constraint
     let {int: m = inBlockSucc[i,1],
          int: p = inBlockSucc[i,2],
          int: q = inBlockSucc[i,3]} in
-	mov[m] in {p,labelValueForNull} /\
+	place[m] in {p,blockValueForNull} /\
 	(sel[m] -> succ[p] = q)
   );
 
@@ -362,7 +363,7 @@ constraint
   forall(i in index_set_1of2(inBlock))(
     let {int: m = inBlock[i,1],
          int: p = inBlock[i,2]} in
-	mov[m] in {p,labelValueForNull}
+	place[m] in {p,blockValueForNull}
   );
 
 constraint
@@ -370,6 +371,12 @@ constraint
     let {int: m = locDomain[i,1],
          int: l = locDomain[i,2]} in
 	sel[m] -> loc[l] in locDomain[i,3]..locDomain[i,4]
+  );
+
+constraint
+  forall(i in index_set_1of2(funLocDomain))(
+    let {int: l = funLocDomain[i,1]} in
+	loc[l] in funLocDomain[i,2]..funLocDomain[i,3]
   );
 
 %=====================================
@@ -436,10 +443,10 @@ constraint
 % - neither match occurs in sameLoc, inBlock, inBlockSucc (relax later?)
 % - [latencyOfMatch[m1], m1] lex_lt [latencyOfMatch[m2], m2]
 % - operationsCoveredByMatch is the same for both matches
-% - entitiesDefinedByMatch   is the same for both matches
-% - entitiesUsedByMatch      is the same for both matches
-% - entryLabelOfMatch        is the same for both matches
-% - nonEntryLabelsInMatch    is the same for both matches
+% - dataDefinedByMatch   is the same for both matches
+% - dataUsedByMatch      is the same for both matches
+% - entryBlockOfMatch        is the same for both matches
+% - spannedBlocksInMatch    is the same for both matches
 % - applyDefDomUseConstraintForMatch    is the same for both matches
 % - if m1 defines any side-constraints in locDomain,
 %   then m2 defines side-constraints that are at least as strong
@@ -451,10 +458,10 @@ test is_dominated(int: m2) =
     ((latencyOfMatch[m1] < latencyOfMatch[m2]) \/
      (latencyOfMatch[m1] = latencyOfMatch[m2] /\ m1 < m2)) /\
     operationsCoveredByMatch[m1] = operationsCoveredByMatch[m2] /\
-    entitiesDefinedByMatch[m1] = entitiesDefinedByMatch[m2] /\
-    entitiesUsedByMatch[m1] = entitiesUsedByMatch[m2] /\
-    entryLabelOfMatch[m1] = entryLabelOfMatch[m2] /\
-    nonEntryLabelsInMatch[m1] = nonEntryLabelsInMatch[m2] /\
+    dataDefinedByMatch[m1] = dataDefinedByMatch[m2] /\
+    dataUsedByMatch[m1] = dataUsedByMatch[m2] /\
+    entryBlockOfMatch[m1] = entryBlockOfMatch[m2] /\
+    spannedBlocksInMatch[m1] = spannedBlocksInMatch[m2] /\
     applyDefDomUseConstraintForMatch[m1] = applyDefDomUseConstraintForMatch[m2] /\
     forall(i in index_set_1of2(locDomain) where locDomain[i,1] = m1)(
       exists(j in index_set_1of2(locDomain) 

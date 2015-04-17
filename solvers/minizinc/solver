@@ -260,7 +260,7 @@ STATS_OUTPUT_FILEPATH="${JSON_OUTPUT_FILEPATH%.*}.stats"
 
 reportTask "Extending low-level model"
 exe "sicstus -f --nologo --noinfo --goal extend_and_halt." \
-    " -l $THIS_DIR/extender.pl < $MODEL_PARAMS_FILEPATH" \
+    " -l $THIS_DIR/extender.pl < $JSON_INPUT_FILEPATH" \
     " > $MINIZINC_EXT_FILEPATH"
 exitIfFailed
 reportNewEntity $MINIZINC_EXT_FILEPATH
