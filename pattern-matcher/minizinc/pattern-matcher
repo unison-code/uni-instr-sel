@@ -132,10 +132,7 @@ function executeSolver {
 
     echo "* Running MiniZinc solver..."
     command=""
-    command="$command $MINIZINC_SOLVER_BIN -s"
-    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
-        command="$command -a"
-    fi
+    command="$command $MINIZINC_SOLVER_BIN -s -a"
     if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
         command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     else
