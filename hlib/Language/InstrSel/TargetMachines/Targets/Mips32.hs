@@ -964,11 +964,33 @@ mkTypeConvInstrs =
   in [ Instruction
          { instrID = 0
          , instrPatterns = [ pat O.SExt  (16, 32)
-                           , pat O.ZExt  (8, 32)
                            , pat O.Trunc (32, 16)
                            ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
+                                        , instrIsNonCopy = True
+                                        }
+         }
+     ]
+     ++
+     [ Instruction
+         { instrID = 0
+         , instrPatterns =
+             [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure (g O.ZExt (8, 32)) Nothing cs
+                 , patOutputValueNodes = [2]
+                 , patADDUC = True
+                 , patAsmStrTemplate = ASSTemplate
+                                         [ ASReferenceToValueNode 2
+                                         , ASVerbatim $ " = ANDi "
+                                         , ASReferenceToValueNode 1
+                                         , ASVerbatim ", 255"
+                                         ]
+                 }
+             ]
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 1
                                         , instrIsNonCopy = True
                                         }
          }
