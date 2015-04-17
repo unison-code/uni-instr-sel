@@ -1178,12 +1178,12 @@ mkInstructions =
                      , mkRegImmCondBrInstr 32 r s (O.CompArithOp op)
                      ]
     )
-    [ ((Range 0 0), "BLEZ", O.SIntOp O.LE)
-    , ((Range 1 1), "BLEZ", O.SIntOp O.LT)
-    , ((Range 0 0), "BGEZ", O.SIntOp O.GE)
-    , ((Range 1 1), "BGEZ", O.SIntOp O.GT)
-    , ((Range 0 0), "BGTZ", O.SIntOp O.GT)
-    , ((Range 0 0), "BLTZ", O.SIntOp O.LT)
+    [ ((Range    0   0 ), "BLEZ", O.SIntOp O.LE)
+    , ((Range    1   1 ), "BLEZ", O.SIntOp O.LT)
+      -- The BLEZ patterns subsumes cases for BGEZ
+    , ((Range   0    0 ), "BLTZ", O.SIntOp O.LT)
+    , ((Range (-1) (-1)), "BLTZ", O.SIntOp O.LE)
+      -- The BLTZ patterns subsumes cases for BGTZ
     ]
   ++
   map
