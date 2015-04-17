@@ -47,8 +47,8 @@ MINIZINC_EXT_FILENAME="ll.model.ext.json"
 MINIZINC_PARAMS_FILENAME="params.mzn"
 MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
 MINIZINC_SOLUTION_FILENAME="full-model.szn"
-MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
 MINIZINC_ERROR_FILENAME="error.log"
+MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
 
 # These will be set after parsing command-line arguments
 JSON_INPUT_FILEPATH=""
@@ -115,16 +115,6 @@ function flattenModelFile {
     reportNewEntity "${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
 }
 
-function purgeIntermediateSolutions {
-    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
-    reportTask "Purging intermediate solutions"
-    exe "$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH" \
-        " > $tmp_file"
-    exitIfFailed ""
-    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
-    exitIfFailed ""
-}
-
 function inflateSolutionFile {
     # It is assumed that the working directory is where the FZN and OZN files
     # are
@@ -137,6 +127,16 @@ function inflateSolutionFile {
     exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
     exitIfFailed ""
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
+}
+
+function purgeIntermediateSolutions {
+    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
+    reportTask "Purging intermediate solutions"
+    exe "$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH" \
+        " > $tmp_file"
+    exitIfFailed ""
+    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
+    exitIfFailed ""
 }
 
 function executeSolver {
