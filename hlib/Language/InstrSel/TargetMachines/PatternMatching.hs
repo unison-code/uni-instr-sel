@@ -18,6 +18,7 @@ module Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..)
   , PatternMatchset (..)
   , mkPatternMatchset
+  , findPatternMatchesWithMatchID
   )
 where
 
@@ -114,13 +115,23 @@ instance ToJSON PatternMatch where
 -- Functions
 -------------
 
+-- | Finds the pattern matches in a given pattern matchset with a given match
+-- ID.
+findPatternMatchesWithMatchID :: PatternMatchset -> MatchID -> [PatternMatch]
+findPatternMatchesWithMatchID pms mid =
+  let matches = pmMatches pms
+  in filter ((mid ==) . pmMatchID) matches
+
 -- | Produces the pattern matchset for a given function and target machine.
 mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
 mkPatternMatchset function target =
   let matches = concatMap (processInstr function) (tmInstructions target)
       proper_matches =
         map (\(m, mid) -> m { pmMatchID = mid }) $ zip matches [0..]
-  in PatternMatchset { pmTarget = tmID target, pmMatches = proper_matches, pmTime = Nothing }
+  in PatternMatchset { pmTarget = tmID target
+                     , pmMatches = proper_matches
+                     , pmTime = Nothing
+                     }
 
 processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =

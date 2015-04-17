@@ -135,6 +135,12 @@ parseArgs =
                  &= help ( "Computes the array index maplists from "
                            ++ "the given function graph and pattern matchset. "
                          )
+             , MakeDumpFromArrayIndexMaplists
+                 &= name "dump-array-index-maplists-info"
+                 &= explicit
+                 &= help ( "Dumps information for each array index in the "
+                           ++ "given array index maplists."
+                         )
              , MakeHighLevelCPModel
                  &= name "construct-hl-cp-model"
                  &= explicit

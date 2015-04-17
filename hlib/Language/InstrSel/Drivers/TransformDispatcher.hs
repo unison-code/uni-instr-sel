@@ -46,8 +46,7 @@ dispatch a opts
          TransformFunctionGraph.run a function
   | a `elem` [LowerHighLevelCPModel] =
       do m_content <- loadModelFileContent opts
-         ai_content <- loadArrayIndexMaplistsFileContent opts
-         ai_maps <- loadFromJson ai_content
+         ai_maps <- loadArrayIndexMaplistsFromJson opts
          TransformCPModel.run a m_content ai_maps
   | a `elem` [RaiseLowLevelCPSolution] =
       do sol_content <- loadSolutionFileContent opts

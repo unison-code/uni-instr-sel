@@ -70,6 +70,7 @@ data MakeAction
   | MakeFunctionGraphFromLLVM
   | MakePatternMatchset
   | MakeArrayIndexMaplists
+  | MakeDumpFromArrayIndexMaplists
   | MakeHighLevelCPModel
   | MakeAssemblyCode
   deriving (Eq, Typeable, Data)

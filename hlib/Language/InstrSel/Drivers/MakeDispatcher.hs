@@ -27,6 +27,8 @@ import qualified Language.InstrSel.Drivers.MakeFunctionFromLLVM
   as MakeFunctionFromLLVM
 import qualified Language.InstrSel.Drivers.MakePatternMatchset
   as MakePatternMatchset
+import qualified Language.InstrSel.Drivers.MakeDumpFromArrayIndexMaplists
+  as MakeDumpFromArrayIndexMaplists
 
 
 
@@ -53,6 +55,11 @@ dispatch a opts
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          MakeArrayIndexMaplists.run a function matchset
+  | a `elem` [MakeDumpFromArrayIndexMaplists] =
+      do function <- loadFunctionFromJson opts
+         matchset <- loadPatternMatchsetFromJson opts
+         ai_maps <- loadArrayIndexMaplistsFromJson opts
+         MakeDumpFromArrayIndexMaplists.run a function matchset ai_maps
   | a `elem` [MakeHighLevelCPModel] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts

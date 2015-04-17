@@ -81,6 +81,7 @@ clean:
 	$(RM) *.json
 	$(RM) *.s
 	$(RM) *.stats
+	$(RM) *.modeldump
 	$(RM) *.dot
 	$(RM) *.pdf
 
@@ -94,9 +95,9 @@ distclean-toolchain:
 
 
 
-#============
-# PLOT RULES
-#============
+#=====================
+# PLOT AND DUMP RULES
+#=====================
 
 %.full-f.dot: %.f.json
 	$(UNI) plot --plot-fun-full-graph -f $< -o $@
@@ -107,7 +108,7 @@ distclean-toolchain:
 %.ssa-f.dot: %.f.json
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.f.json %.p.json
+%.cov.dot: %.ce.cc.be.f.json %.ce.cc.be.p.json
 	$(UNI) plot --plot-cover-all-matches -f $*.f.json -p $*.p.json -o $@
 
 %.pdf: %.dot
@@ -116,7 +117,14 @@ distclean-toolchain:
 %.all-cover-plots: %.f.json %.p.json
 	$(UNI) plot --plot-cover-per-match \
       -f $*.f.json -p $*.p.json -o $*.cov.dot
-	for f in $*.cov.*.dot; do make $${f%.*}.pdf; done
+	for f in $*.cov.*.dot; do \
+	  make $${f%.*}.pdf;      \
+	  $(RM) $${f%.*}.dot;     \
+    done
+
+%.dump: %.ce.cc.be.f.json %.ce.cc.be.p.json %.aimaps.json
+	$(UNI) make --dump-array-index-maplists-info \
+      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -a $*.aimaps.json -o $@
 
 
 
@@ -137,21 +145,20 @@ fetch-test-cases:
 # AUTO-COMPLETION
 #=================
 
-C_FILES              := $(wildcard *.c)
-LL_FILES             := $(wildcard *.ll)
-MLL_FILES            := $(wildcard *.mll)
-F_JSON_FILES         := $(wildcard *.f.json)
+C_TARGETS         := $(wildcard *.c)
+LL_TARGETS        := $(wildcard *.ll) \
+                     $(addsuffix .ll, $(basename $(C_TARGETS)))
+MLL_TARGETS       := $(wildcard *.mll) \
+                     $(addsuffix .mll, $(basename $(LL_TARGETS)))
+F_JSON_TARGETS    := $(wildcard *.f.json) \
+                     $(addsuffix .f.json, $(basename $(MLL_TARGETS)))
+FUN_NAMES         := $(basename $(basename $(F_JSON_TARGETS)))
 
-C_TARGETS            := $(C_FILES)
-LL_TARGETS           := $(LL_FILES) \
-                        $(addsuffix .ll, $(basename $(C_TARGETS)))
-MLL_TARGETS          := $(MLL_FILES) \
-                        $(addsuffix .mll, $(basename $(LL_TARGETS)))
-F_JSON_TARGETS       := $(F_JSON_FILES) \
-                        $(addsuffix .f.json, $(basename $(MLL_TARGETS)))
-FUNCTION_NAMES       := $(basename $(basename $(F_JSON_TARGETS)))
-FUNCTION_COV_TARGETS := $(addsuffix .ce.cc.be.cov.pdf, $(FUNCTION_NAMES))
-FUNCTION_ASM_TARGETS := $(addsuffix .s, $(FUNCTION_NAMES))
+FUN_ASM_TARGETS   := $(addsuffix .s, $(FUN_NAMES))
+FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
+                          $(addsuffix .all-cover-plots, $(FUN_NAMES))
+FUN_MDUMP_TARGETS := $(addsuffix .modeldump, $(FUN_NAMES))
 
-$(FUNCTION_ASM_TARGETS):
-$(FUNCTION_COV_TARGETS):
+$(FUN_ASM_TARGETS):
+$(FUN_PLOTS_TARGETS):
+$(FUN_MDUMP_TARGETS):

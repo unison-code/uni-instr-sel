@@ -30,10 +30,13 @@ module Language.InstrSel.Drivers.DispatcherTools
   , loadFromJson
   , loadFunctionFromJson
   , loadPatternMatchsetFromJson
+  , loadArrayIndexMaplistsFromJson
   )
 where
 
 import Language.InstrSel.Drivers.Base
+import Language.InstrSel.ConstraintModels
+  ( ArrayIndexMaplists )
 import Language.InstrSel.Functions
   ( Function )
 import Language.InstrSel.TargetMachines
@@ -187,4 +190,9 @@ loadFunctionFromJson opts =
 loadPatternMatchsetFromJson :: Options -> IO PatternMatchset
 loadPatternMatchsetFromJson opts =
   do content <- loadPatternMatchsetFileContent opts
+     loadFromJson content
+
+loadArrayIndexMaplistsFromJson :: Options -> IO ArrayIndexMaplists
+loadArrayIndexMaplistsFromJson opts =
+  do content <- loadArrayIndexMaplistsFileContent opts
      loadFromJson content
