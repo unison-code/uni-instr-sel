@@ -44,10 +44,10 @@ done
 THIS_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 MINIZINC_PARAMS_FILENAME="params.mzn"
-MINIZINC_OUTPUT_FILENAME="model.sol.mzn"
 MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
-MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
+MINIZINC_SOLUTION_FILENAME="full-model.szn"
 MINIZINC_ERROR_FILENAME="error.log"
+MINIZINC_BASE_MODEL_FILEPATH="$THIS_DIR/base-model.mzn"
 
 # These will be set after parsing command-line arguments
 JSON_INPUT_FILEPATH=""
@@ -55,7 +55,7 @@ JSON_OUTPUT_FILEPATH=""
 TMP_DIR=""
 MINIZINC_PARAMS_FILEPATH=""
 MINIZINC_FULL_MODEL_FILEPATH=""
-MINIZINC_OUTPUT_FILEPATH=""
+MINIZINC_SOLUTION_FILEPATH=""
 MINIZINC_ERROR_FILEPATH=""
 MINIZINC_SOLVER_BIN=""
 
@@ -95,6 +95,67 @@ function ensureFileExists {
 
 function reportNewEntity {
     echo "  Created: $@"
+}
+
+function flattenModelFile {
+    # It is assumed that the working directory is where the MZN file is
+    fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
+    reportTask "Flattening MiniZinc model file"
+    exe "mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    exitIfFailed ""
+    reportNewEntity "$fzn_filepath"
+    reportNewEntity "${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
+}
+
+function inflateSolutionFile {
+    # It is assumed that the working directory is where the FZN and OZN files
+    # are
+    szn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.szn"
+    ozn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
+    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
+    reportTask "Inflating MiniZinc solution file"
+    exe "solns2out ${ozn_filepath##*/} ${szn_filepath##*/} > $tmp_file"
+    exitIfFailed ""
+    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
+    exitIfFailed ""
+    reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
+}
+
+function executeSolver {
+    working_dir=`pwd`
+    cd "$TMP_DIR"
+
+    # Flatten model, if necessary
+    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
+        flattenModelFile
+    fi
+
+    echo "* Running MiniZinc solver..."
+    command=""
+    command="$command $MINIZINC_SOLVER_BIN -s"
+    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
+        command="$command -a"
+    fi
+    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
+        command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
+    else
+        command="$command $MINIZINC_FULL_MODEL_FILENAME"
+    fi
+    command="$command > $MINIZINC_SOLUTION_FILEPATH"
+    command="$command 2> $MINIZINC_ERROR_FILEPATH"
+    exe "$command"
+    solver_exit_status=$?
+    error_msg=`cat $MINIZINC_ERROR_FILEPATH`
+    $( exit $solver_exit_status ) # Restore $? to exit status of the solver
+    exitIfFailed "$error_msg"
+    reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
+
+    # Inflate solution, if necessary
+    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
+        inflateSolutionFile
+    fi
+
+    cd "$working_dir"
 }
 
 
@@ -154,7 +215,7 @@ reportNewEntity "$TMP_DIR"
 # Set filepath variables
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
-MINIZINC_OUTPUT_FILEPATH="$TMP_DIR/$MINIZINC_OUTPUT_FILENAME"
+MINIZINC_SOLUTION_FILEPATH="$TMP_DIR/$MINIZINC_SOLUTION_FILENAME"
 MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 
 echo "* Generating MiniZinc parameter file..."
@@ -173,20 +234,10 @@ exe "cat $MINIZINC_PARAMS_FILEPATH >> $MINIZINC_FULL_MODEL_FILEPATH"
 exitIfFailed ""
 reportNewEntity "$MINIZINC_FULL_MODEL_FILEPATH"
 
-echo "* Running MiniZinc solver..."
-WORKING_DIR=`pwd`
-cd "$TMP_DIR"
-exe "$MINIZINC_SOLVER_BIN -a $MINIZINC_FULL_MODEL_FILENAME" \
-    " > $MINIZINC_OUTPUT_FILEPATH 2> $MINIZINC_ERROR_FILEPATH"
-solver_exit_status=$?
-error_msg=`cat $MINIZINC_ERROR_FILEPATH`
-$( exit $solver_exit_status ) # Restore $? to exit status of the solver
-exitIfFailed "$error_msg"
-cd "$WORKING_DIR"
-reportNewEntity "$MINIZINC_OUTPUT_FILEPATH"
+executeSolver
 
 echo "* Converting MiniZinc solution to JSON format..."
-exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_OUTPUT_FILEPATH" \
+exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
     " > $JSON_OUTPUT_FILEPATH"
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
