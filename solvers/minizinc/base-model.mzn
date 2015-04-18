@@ -94,7 +94,9 @@ array[allBlocksInFunctionPlusNull] of set of int:
     array1d( allBlocksInFunctionPlusNull
            , domSetOfBlockInFunction
              ++
-             array1d(blockValueForNull..blockValueForNull, [allBlocksInFunction])
+             array1d( blockValueForNull..blockValueForNull,
+                      [allBlocksInFunction]
+                    )
            );
 
 % Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
@@ -146,7 +148,7 @@ var int: cost;
 
 
 %====================
-% Global constraints
+% GLOBAL CONSTRAINTS
 %====================
 
 include "circuit.mzn";
@@ -232,7 +234,7 @@ constraint
     % entry.
     forall (r in entryBlockOfMatch[m])
     (
-      place[m] in {r,blockValueForNull}
+      place[m] in {r, blockValueForNull}
     )
   );
 
@@ -356,9 +358,11 @@ constraint
          * execFrequencyOfBlocksPlusNull[place[m]]
          );
 
-%==========================
+
+
+%===========================
 % PARAMETERIZED CONSTRAINTS
-%==========================
+%===========================
 
 constraint
   forall(i in index_set_1of2(sameLoc))(
@@ -397,9 +401,11 @@ constraint
 	loc[l] in funLocDomain[i,2]..funLocDomain[i,3]
   );
 
-%=====================================
+
+
+%======================================
 % IMPLIED BY PARAMETERIZED CONSTRAINTS
-%=====================================
+%======================================
 
 % Two matches can't both be selected, if they imply conflicting successor blocks.
 % The original form of this had
@@ -417,13 +423,14 @@ constraint
 % 	(pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj] \/ not pop[succ[pi]] \/ not pop[succ[pj]])
 %   );
 
-% Two matches can't both be selected, if the first implies that two locations are equal,
-% and the second implies that the intersection of their domains is empty
+% Two matches can't both be selected, if the first implies that two locations
+% are equal, and the second implies that the intersection of their domains is
+% empty
 constraint
   forall(i in index_set_1of2(sameLoc))(
     let {int: m1 = sameLoc[i,1],
          int: p = sameLoc[i,2],
-         int: q = sameLoc[i,3]} in 
+         int: q = sameLoc[i,3]} in
     forall(j1 in index_set_1of2(locDomain) where locDomain[j1,2]=p)(
       forall(j2 in index_set_1of2(locDomain) where locDomain[j2,1]=locDomain[j1,1] /\
                                                    locDomain[j2,2]=q)(
@@ -448,18 +455,11 @@ constraint
   ) ->
   forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
 
-% INVALID IDEA, since the stretch beginning with the entry block has a fixed position
-% Detect dynamic symmetries among succ[.]
-% constraint
-%   forall(b1 in allBlocksInFunction, b2 in allBlocksInFunction where b1<b2)(
-%     exists(i in index_set_1of2(inBlockSucc) 
-%            where inBlockSucc[i,2] = b1 \/ inBlockSucc[i,2] = b2)(sel[inBlockSucc[i,1]]) \/
-%     succ[b1] < succ[b2]
-%   );
 
-%==================================================
+
+%===================================================
 % DOMINATION DERIVED FROM PARAMETERIZED CONSTRAINTS
-%==================================================
+%===================================================
 
 % Match m1 dominates match m2 if:
 % - neither match occurs in sameLoc, inBlock, inBlockSucc (relax later?)
@@ -475,7 +475,7 @@ constraint
 test is_dominated(int: m2) =
   let {set of allMatches: exclude = {sameLoc[i,1] | i in index_set_1of2(sameLoc)} % relax later
                               union {inBlock[i,1] | i in index_set_1of2(inBlock)}
-			      union {inBlockSucc[i,1] | i in index_set_1of2(inBlockSucc)}} in 
+			      union {inBlockSucc[i,1] | i in index_set_1of2(inBlockSucc)}} in
   exists(m1 in allMatches where not (m1=m2 \/ m1 in exclude \/ m2 in exclude))(
     ((latencyOfMatch[m1] < latencyOfMatch[m2]) \/
      (latencyOfMatch[m1] = latencyOfMatch[m2] /\ m1 < m2)) /\
@@ -486,7 +486,7 @@ test is_dominated(int: m2) =
     spannedBlocksInMatch[m1] = spannedBlocksInMatch[m2] /\
     applyDefDomUseConstraintForMatch[m1] = applyDefDomUseConstraintForMatch[m2] /\
     forall(i in index_set_1of2(locDomain) where locDomain[i,1] = m1)(
-      exists(j in index_set_1of2(locDomain) 
+      exists(j in index_set_1of2(locDomain)
              where locDomain[j,1] = m2
                 /\ locDomain[j,2] = locDomain[i,2])(
 	(locDomain[j,3]..locDomain[j,4]) subset (locDomain[i,3]..locDomain[i,4])
