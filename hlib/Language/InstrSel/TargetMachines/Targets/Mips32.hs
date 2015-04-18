@@ -548,7 +548,7 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
                              { patID = 3 }
                          ]
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 2
+                                      , instrLatency = 1
                                       , instrIsNonCopy = True
                                       }
        }
@@ -651,7 +651,7 @@ mkRegImmCondBrInstr n imm_r str op =
        { instrID = 0
        , instrPatterns = pats
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 2
+                                      , instrLatency = 1
                                       , instrIsNonCopy = True
                                       }
        }
@@ -742,7 +742,7 @@ mkBrInstrs =
                                { patID = 1 }
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 2
+                                        , instrLatency = 1
                                         , instrIsNonCopy = True
                                         }
          }
