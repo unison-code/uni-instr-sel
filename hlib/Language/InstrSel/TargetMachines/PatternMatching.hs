@@ -28,7 +28,7 @@ import Language.InstrSel.Graphs
   )
 import Language.InstrSel.Graphs
   ( convertMatchN2ID )
-import Language.InstrSel.Graphs.PatternMatching.CP
+import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.Functions

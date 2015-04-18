@@ -28,6 +28,7 @@ module Language.InstrSel.TargetMachines.Base
   , findInstrPattern
   , findLocation
   , flatAsmStrParts
+  , updateNodeInAsmStrTemplate
   )
 where
 
@@ -184,3 +185,26 @@ flatAsmStrParts :: AssemblyStringTemplate -> [[AssemblyStringPart]]
 flatAsmStrParts (ASSTemplate []) = []
 flatAsmStrParts (ASSTemplate asps) = [asps]
 flatAsmStrParts (ASSMultiTemplate ats) = map (head . flatAsmStrParts) ats
+
+-- | Replaces a node reference used in the template with another reference.
+updateNodeInAsmStrTemplate
+  :: NodeID
+     -- The new node ID.
+  -> NodeID
+     -- The old node ID to be replaced.
+  -> AssemblyStringTemplate
+  -> AssemblyStringTemplate
+updateNodeInAsmStrTemplate new_n old_n (ASSMultiTemplate ts) =
+  ASSMultiTemplate (map (updateNodeInAsmStrTemplate new_n old_n) ts)
+updateNodeInAsmStrTemplate new_n old_n (ASSTemplate parts) =
+  ASSTemplate (map update parts)
+  where checkAndReplace nid = if nid == old_n then new_n else nid
+        update (ASIntConstOfValueNode n) =
+          ASIntConstOfValueNode (checkAndReplace n)
+        update (ASReferenceToValueNode n) =
+          ASReferenceToValueNode (checkAndReplace n)
+        update (ASNameOfBlockNode n) =
+          ASNameOfBlockNode (checkAndReplace n)
+        update (ASBlockOfValueNode n) =
+          ASBlockOfValueNode (checkAndReplace n)
+        update p = p

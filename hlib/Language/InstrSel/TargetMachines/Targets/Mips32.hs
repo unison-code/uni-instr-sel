@@ -18,7 +18,10 @@ module Language.InstrSel.TargetMachines.Targets.Mips32
   ( tmMips32 )
 where
 
+import Language.InstrSel.Constraints
+  ( NodeExpr (..) )
 import Language.InstrSel.Constraints.ConstraintBuilder
+import Language.InstrSel.Constraints.ConstraintReconstructor
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Functions
   ( mkEmptyBlockName )
@@ -30,6 +33,11 @@ import Language.InstrSel.TargetMachines.Targets.Generic
 import Language.InstrSel.Utils
   ( Natural
   , Range (..)
+  )
+
+import Data.Maybe
+  ( fromJust
+  , isJust
   )
 
 
@@ -405,6 +413,49 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
                                       }
        }
 
+-- | Merges two nodes in a given instruction pattern, and updates the referred
+-- node IDs accordingly.
+combineNodesInInstrPattern
+  :: InstrPattern
+  -> NodeID
+     -- ^ Node to merge with (will be kept).
+  -> NodeID
+     -- ^ Node to merge with (will be discarded).
+  -> InstrPattern
+combineNodesInInstrPattern ip keep_n disc_n =
+  let checkAndReplace nid = if nid == disc_n then keep_n else nid
+      -- Old data
+      old_os = patOS ip
+      old_g = OS.osGraph old_os
+      old_entry = OS.osEntryBlockNode old_os
+      old_cs = OS.osConstraints old_os
+      old_output = patOutputValueNodes ip
+      old_template = patAsmStrTemplate ip
+      -- New data
+      new_g = mergeNodes (head $ findNodesWithNodeID old_g keep_n)
+                         (head $ findNodesWithNodeID old_g disc_n)
+                         old_g
+      replaceNodeInCs cs =
+        let def_r = mkDefaultReconstructor
+            mkNodeExpr _ (ANodeIDExpr nid) = ANodeIDExpr (checkAndReplace nid)
+            mkNodeExpr r expr = (mkNodeExprF def_r) r expr
+            new_r = def_r { mkNodeExprF = mkNodeExpr }
+        in map (apply new_r) cs
+      new_cs = replaceNodeInCs old_cs
+      new_entry = if isJust old_entry
+                  then Just (checkAndReplace $ fromJust old_entry)
+                  else Nothing
+      new_os = OS.OpStructure { OS.osGraph = new_g
+                              , OS.osEntryBlockNode = new_entry
+                              , OS.osConstraints = new_cs
+                              }
+      new_output = map checkAndReplace old_output
+      new_template = updateNodeInAsmStrTemplate keep_n disc_n old_template
+  in ip { patOS = new_os
+        , patOutputValueNodes = new_output
+        , patAsmStrTemplate = new_template
+        }
+
 -- | Makes two conditional branch instructions - an ordinary branch instruction
 -- and its inverse branch instruction - that takes two registers as input. The
 -- inverse is achieved by inverting the comparison, and swapping the branch
@@ -489,9 +540,15 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
           }
   in Instruction
        { instrID = 0
-       , instrPatterns = [ord_pat, inv_pat]
+       , instrPatterns = [ ord_pat
+                         , inv_pat
+                         , (combineNodesInInstrPattern ord_pat 1 2)
+                             { patID = 2 }
+                         , (combineNodesInInstrPattern inv_pat 1 3)
+                             { patID = 3 }
+                         ]
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 1
+                                      , instrLatency = 2
                                       , instrIsNonCopy = True
                                       }
        }
@@ -579,13 +636,22 @@ mkRegImmCondBrInstr n imm_r str op =
       ord_pat = mkInstrPattern 0 ord_g ord_cs
       swapped_pat = mkInstrPattern 1 swapped_g swapped_cs
       pats = if O.isOpCommutative op
-             then [ord_pat]
-             else [ord_pat, swapped_pat]
+             then [ ord_pat
+                  , (combineNodesInInstrPattern ord_pat 1 2)
+                      { patID = 1 }
+                  ]
+             else [ ord_pat
+                  , swapped_pat
+                  , (combineNodesInInstrPattern ord_pat 1 2)
+                      { patID = 2 }
+                  , (combineNodesInInstrPattern swapped_pat 1 2)
+                      { patID = 3 }
+                  ]
   in Instruction
        { instrID = 0
        , instrPatterns = pats
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 1
+                                      , instrLatency = 2
                                       , instrIsNonCopy = True
                                       }
        }
@@ -671,9 +737,12 @@ mkBrInstrs =
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
+         , instrPatterns = [ pat
+                           , (combineNodesInInstrPattern pat 1 2)
+                               { patID = 1 }
+                           ]
          , instrProps = InstrProperties { instrCodeSize = 4
-                                        , instrLatency = 1
+                                        , instrLatency = 2
                                         , instrIsNonCopy = True
                                         }
          }
