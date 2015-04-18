@@ -1116,6 +1116,40 @@ mkEqComparison =
                                       }
        }
 
+-- | Makes a "set if less than to" comparison with an immediate.
+mkSLTIComparison :: Instruction
+mkSLTIComparison =
+  let dt16 = mkIntTempType 16
+      imm  = mkIntConstType (Range (-32768) 32767) 16
+      dt1  = mkIntTempType 1
+      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.LT) dt16 imm dt1
+      cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+             ++
+             mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
+      pat = InstrPattern
+              { patID = 0
+              , patOS = OS.OpStructure g Nothing cs
+              , patOutputValueNodes = [3]
+              , patADDUC = True
+              , patAsmStrTemplate = ASSTemplate
+                                      [ ASReferenceToValueNode 3
+                                      , ASVerbatim " = SLTi"
+                                      , ASReferenceToValueNode 1
+                                      , ASVerbatim ", "
+                                      , ASReferenceToValueNode 2
+                                      ]
+              }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 4
+                                      , instrLatency = 0
+                                                       -- Should be 1, but LLVM
+                                                       -- uses 0 (TODO: fix)
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1354,6 +1388,8 @@ mkInstructions =
   mkMoveInstrs
   ++
   mkTypeConvInstrs
+  ++
+  [mkSLTIComparison]
 
 -- | Constructs the target machine data.
 tmMips32 :: TargetMachine
