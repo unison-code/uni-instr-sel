@@ -1119,10 +1119,10 @@ mkEqComparison =
 -- | Makes a "set if less than to" comparison with an immediate.
 mkSLTIComparison :: Instruction
 mkSLTIComparison =
-  let dt16 = mkIntTempType 16
+  let dt32 = mkIntTempType 32
       imm  = mkIntConstType (Range (-32768) 32767) 16
       dt1  = mkIntTempType 1
-      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.LT) dt16 imm dt1
+      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.LT) dt32 imm dt1
       cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
              ++
              mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
@@ -1133,10 +1133,10 @@ mkSLTIComparison =
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
                                       [ ASReferenceToValueNode 3
-                                      , ASVerbatim " = SLTi"
+                                      , ASVerbatim " = SLTi "
                                       , ASReferenceToValueNode 1
                                       , ASVerbatim ", "
-                                      , ASReferenceToValueNode 2
+                                      , ASIntConstOfValueNode 2
                                       ]
               }
   in Instruction
