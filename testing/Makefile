@@ -7,6 +7,11 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
+CLANG    := /home/ghb/programs/llvm-3.4-build/Debug+Asserts/bin/clang
+LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
+OPT      := $(LLVMDIR)/bin/opt
+AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
+
 export MINIZINC_BACKEND := mzn-cpx
 
 UNI              := ../uni-is/uni-is
