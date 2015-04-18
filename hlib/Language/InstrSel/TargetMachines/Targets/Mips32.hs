@@ -700,7 +700,7 @@ mkPredBrInstr =
        { instrID = 0
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 4
-                                      , instrLatency = 2
+                                      , instrLatency = 1
                                       , instrIsNonCopy = True
                                       }
        }
