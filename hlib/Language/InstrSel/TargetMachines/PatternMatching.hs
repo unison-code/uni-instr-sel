@@ -23,11 +23,16 @@ module Language.InstrSel.TargetMachines.PatternMatching
 where
 
 import Language.InstrSel.Graphs
-  ( MatchID
-  , Match
+  ( Graph
+  , Mapping (..)
+  , MatchID
+  , Match (..)
+  , Node
+  , convertMatchN2ID
+  , extractSSA
+  , fromMatch
+  , isNodeInGraph
   )
-import Language.InstrSel.Graphs
-  ( convertMatchN2ID )
 import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
@@ -129,10 +134,10 @@ findPatternMatchesWithMatchID pms mid =
 mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
 mkPatternMatchset function target =
   let matches = concatMap (processInstr function) (tmInstructions target)
-      proper_matches =
+      matches_with_IDs =
         map (\(m, mid) -> m { pmMatchID = mid }) $ zip matches [0..]
   in PatternMatchset { pmTarget = tmID target
-                     , pmMatches = proper_matches
+                     , pmMatches = matches_with_IDs
                      , pmTime = Nothing
                      }
 
@@ -150,7 +155,8 @@ processInstrPattern
 processInstrPattern function iid pattern =
   let fg = osGraph $ functionOS function
       pg = osGraph $ patOS pattern
-      matches = map convertMatchN2ID $ findMatches fg pg
+      matches = findMatches fg pg
+      okay_matches = filter (not . hasCyclicDataDependency fg) matches
   in map
        ( \m -> PatternMatch { pmInstrID = iid
                             , pmPatternID = patID pattern
@@ -158,4 +164,16 @@ processInstrPattern function iid pattern =
                             , pmMatch = m
                             }
        )
-       matches
+       (map convertMatchN2ID okay_matches)
+
+-- | Checks if a given match will result in a cyclic data dependency in the
+-- function graph.
+-- TODO: explain how it is done
+hasCyclicDataDependency :: Graph -> Match Node -> Bool
+hasCyclicDataDependency fg m =
+  let f_ns = map fNode (fromMatch m)
+      ssa_fg = extractSSA fg
+      ssa_f_ns = filter (isNodeInGraph ssa_fg) f_ns
+-- TODO: finish implementation
+--    (new_g, super_ns) = 
+  in False

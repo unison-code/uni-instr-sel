@@ -130,6 +130,7 @@ module Language.InstrSel.Graphs.Base
   , isBlockNodeAndIntermediate
   , isNodeADatum
   , isNodeAnOperation
+  , isNodeInGraph
   , isStateFlowEdge
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
@@ -154,6 +155,7 @@ module Language.InstrSel.Graphs.Base
   , rootInCFG
   , sortByEdgeNr
   , toEdgeNr
+  , fromMatch
   , toMatch
   , updateEdgeLabel
   , updateEdgeSource
@@ -490,6 +492,9 @@ isNodeADatum :: Node -> Bool
 isNodeADatum n =
      isValueNode n
   || isStateNode n
+
+isNodeInGraph :: Graph -> Node -> Bool
+isNodeInGraph g n = n `elem` getAllNodes g
 
 isComputationNode :: Node -> Bool
 isComputationNode n = isOfComputationNodeType $ getNodeType n
@@ -1482,3 +1487,7 @@ hasAnySuccessors g n = length (getSuccessors g n) > 0
 -- | Converts a list of mappings to a match.
 toMatch :: Ord n => [Mapping n] -> Match n
 toMatch m = Match (S.fromList m)
+
+-- | Converts a match to a list of mappings.
+fromMatch :: Ord n => Match n -> [Mapping n]
+fromMatch (Match s) = S.toList s
