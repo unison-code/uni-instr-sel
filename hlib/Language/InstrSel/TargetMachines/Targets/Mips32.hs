@@ -184,6 +184,9 @@ getSimdOutRegisters = map getRegisterByName
 mkSimpleCompPattern
   :: O.CompOp
      -- ^ The computation operation.
+  -> Bool
+     -- ^ Whether to swap the order of the input operands. This does not affect
+     -- the node IDs.
   -> D.DataType
      -- ^ The data type of the first operand.
   -> D.DataType
@@ -191,23 +194,27 @@ mkSimpleCompPattern
   -> D.DataType
      -- ^ The data type of the result.
   -> Graph
-mkSimpleCompPattern op src1 src2 dst =
+mkSimpleCompPattern op swap_ops src1 src2 dst =
   let mkCompNode = ComputationNode { compOp = op }
   in mkGraph
-       ( map
-           Node
-           [ ( 0, NodeLabel 0 mkCompNode )
-           , ( 1, NodeLabel 1 (mkValueNode src1) )
-           , ( 2, NodeLabel 2 (mkValueNode src2) )
-           , ( 3, NodeLabel 3 (mkValueNode  dst) )
-           ]
+       ( map Node
+             [ ( 0, NodeLabel 0 mkCompNode )
+             , ( 1, NodeLabel 1 (mkValueNode src1) )
+             , ( 2, NodeLabel 2 (mkValueNode src2) )
+             , ( 3, NodeLabel 3 (mkValueNode  dst) )
+             ]
        )
-       ( map
-           Edge
-           [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-           , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
-           , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
-           ]
+       ( map Edge
+             ( [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 ) ]
+               ++
+               if not swap_ops
+               then [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                    , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
+                    ]
+               else [ ( 1, 0, EdgeLabel DataFlowEdge 0 1 )
+                    , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
+                    ]
+             )
        )
 
 -- | Creates a simple pattern that consists of a single copy node, which takes a
@@ -220,18 +227,16 @@ mkSimpleCopyPattern
   -> Graph
 mkSimpleCopyPattern src dst =
   mkGraph
-       ( map
-           Node
-           [ ( 0, NodeLabel 0 CopyNode )
-           , ( 1, NodeLabel 1 (mkValueNode src) )
-           , ( 2, NodeLabel 2 (mkValueNode dst) )
-           ]
+       ( map Node
+             [ ( 0, NodeLabel 0 CopyNode )
+             , ( 1, NodeLabel 1 (mkValueNode src) )
+             , ( 2, NodeLabel 2 (mkValueNode dst) )
+             ]
        )
-       ( map
-           Edge
-           [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-           , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
-           ]
+       ( map Edge
+             [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+             , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+             ]
        )
 
 -- | Creates an instance of the simple copy pattern. All data are assumed to be
@@ -262,7 +267,7 @@ mkGenericSimpleRegRegCompInst
      -- ^ The location class of the destination.
   -> Instruction
 mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
-  let g = mkSimpleCompPattern op d1 d2 d3
+  let g = mkSimpleCompPattern op False d1 d2 d3
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
                      )
@@ -348,9 +353,10 @@ mkDataImmDataAsmStr str =
 
 -- | Creates an instruction that consists of only a single computation node,
 -- that takes two value nodes as input, and produces another value node as
--- output.  The first input operand and result are assumed to reside in one of
+-- output. The first input operand and result are assumed to reside in one of
 -- the 32 general-purpose registers, and the second input operand is assumed to
--- be a N-bit immediate of a given range.
+-- be a N-bit immediate of a given range. If the computation is a commutative
+-- operation, then two instruction patterns will be created.
 mkSimpleNBitRegMBitImmCompInst
   :: [AssemblyStringPart]
      -- ^ The assembly string parts of the instruction.
@@ -370,21 +376,34 @@ mkSimpleNBitRegMBitImmCompInst
 mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
   let dtN = mkIntTempType n
       dtM = mkIntConstType imm m
-      g = mkSimpleCompPattern op dtN dtM dtN
+      ord_g = mkSimpleCompPattern op False dtN dtM dtN
+      swapped_g = mkSimpleCompPattern op True dtN dtM dtN
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
                      )
                      (zip [r1, r3] [1, 3])
-      pat = InstrPattern
-              { patID = 0
-              , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
-              , patADDUC = True
-              , patAsmStrTemplate = ASSTemplate str
-              }
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure ord_g Nothing cs
+                 , patOutputValueNodes = [3]
+                 , patADDUC = True
+                 , patAsmStrTemplate = ASSTemplate parts
+                 }
+             ]
+             ++
+             if O.isOpCommutative op
+             then [ InstrPattern
+                      { patID = 1
+                      , patOS = OS.OpStructure swapped_g Nothing cs
+                      , patOutputValueNodes = [3]
+                      , patADDUC = True
+                      , patAsmStrTemplate = ASSTemplate parts
+                      }
+                  ]
+             else []
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat]
+       , instrPatterns = pats
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
@@ -415,7 +434,7 @@ mkSimpleNBitRegMBitFirstImmCompInst
 mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
   let dtN = mkIntTempType n
       dtM = mkIntConstType imm m
-      g = mkSimpleCompPattern op dtM dtN dtN
+      g = mkSimpleCompPattern op False dtM dtN dtN
       cs = concatMap ( \(r, nid) ->
                        mkDataLocConstraints (map locID r) nid
                      )
@@ -1111,7 +1130,11 @@ mkEqComparison :: Instruction
 mkEqComparison =
   let dt16 = mkIntTempType 16
       dt1  = mkIntTempType 1
-      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.Eq) dt16 dt16 dt1
+      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.Eq)
+                                 False
+                                 dt16
+                                 dt16
+                                 dt1
       cs   = concatMap ( \(r, nid) ->
                           mkDataLocConstraints (map locID r) nid
                        )
@@ -1145,7 +1168,11 @@ mkSLTIComparison =
   let dt32 = mkIntTempType 32
       imm  = mkIntConstType (Range (-32768) 32767) 16
       dt1  = mkIntTempType 1
-      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.LT) dt32 imm dt1
+      g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.LT)
+                                 False
+                                 dt32
+                                 imm
+                                 dt1
       cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
              ++
              mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
