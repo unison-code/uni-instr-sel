@@ -120,9 +120,9 @@ with open(solution_file, 'r') as file:
     content = file.readlines()
 
 # Clean up solution data
-old_content = content
+orig_content = content
 content = []
-for l in content:
+for l in orig_content:
     line = l.strip()
     if len(line) > 0 and line[0] != '%':
         content.append(line)
