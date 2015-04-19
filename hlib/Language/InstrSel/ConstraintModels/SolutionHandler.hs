@@ -72,5 +72,6 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) ai_maps =
        , hlSolLocationsOfData = locs_of_data
        , hlSolCost = llSolCost sol
        , hlIsOptimal = llIsOptimal sol
+       , hlSolTime = llSolTime sol
        }
 raiseLowLevelSolution NoLowLevelSolution _ = NoHighLevelSolution

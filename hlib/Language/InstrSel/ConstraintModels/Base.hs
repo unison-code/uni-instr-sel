@@ -274,6 +274,8 @@ data HighLevelSolution
         -- ^ The cost metric of the found solution.
       , hlIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
+      , hlSolTime :: Double
+        -- ^ Time to compute the solution.
       }
   | NoHighLevelSolution
   deriving (Show)
@@ -306,6 +308,8 @@ data LowLevelSolution
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
+      , llSolTime :: Double
+        -- ^ Time to compute the solution.
       }
   | NoLowLevelSolution
   deriving (Show)
@@ -523,6 +527,7 @@ instance FromJSON HighLevelSolution where
               <*> v .: "locs-of-data"
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
+              <*> v .: "time"
        else return NoHighLevelSolution
   parseJSON _ = mzero
 
@@ -535,6 +540,7 @@ instance ToJSON HighLevelSolution where
            , "cost"                  .= (hlSolCost d)
            , "has-solution"          .= True
            , "is-solution-optimal"   .= (hlIsOptimal d)
+           , "time"                  .= (hlSolTime d)
            ]
   toJSON NoHighLevelSolution =
     object [ "has-solution" .= False ]
@@ -551,6 +557,7 @@ instance FromJSON LowLevelSolution where
               <*> v .: "loc-of-datum"
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
+              <*> v .: "time"
        else return NoLowLevelSolution
   parseJSON _ = mzero
 
