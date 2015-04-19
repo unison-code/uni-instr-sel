@@ -1251,7 +1251,7 @@ doesOrderCFOutEdgesMatter _ n
 -- node.
 doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFInEdgesMatter _ n
-  | isComputationNode n = not $ O.isOpCommutative $ compOp $ getNodeType n
+  | isComputationNode n = True
   | isControlNode n = True
   | isPhiNode n = True
   | otherwise = False
