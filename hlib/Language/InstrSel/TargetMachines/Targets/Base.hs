@@ -32,8 +32,10 @@ import Language.InstrSel.TargetMachines.Targets.Test
 -- such an identifier, 'Nothing' is returned.
 retrieveTargetMachine :: TargetMachineID -> Maybe TargetMachine
 retrieveTargetMachine tmid =
-  do tm <- case fromTargetMachineID tmid of
-             "mips32" -> Just tmMips32
-             "test"   -> Just tmTest
-             _        -> Nothing
+  do let machines = map (\t -> (tmID t, t))
+                        [ tmMips32
+                        , tmFancyMips32
+                        , tmTest
+                        ]
+     tm <- lookup tmid machines
      return $ copyExtend tm

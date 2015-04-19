@@ -15,7 +15,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstrSel.TargetMachines.Targets.Mips32
-  ( tmMips32 )
+  ( tmMips32
+  , tmFancyMips32
+  )
 where
 
 import Language.InstrSel.Constraints
@@ -124,6 +126,13 @@ getRegisterByName rname =
 -- every location is given a unique ID.
 getAllLocations :: [Location]
 getAllLocations = fixLocIDs $ mkRegClasses
+
+-- | Retrieves all locations, including those used by fancy instructions, where
+-- the location IDs have been set such that every location is given a unique ID.
+getAllLocationsInclFancy :: [Location]
+getAllLocationsInclFancy =
+  -- TODO: implement
+  undefined
 
 -- | Retrieves all general-purpose registers, includeing the zero register,
 -- where the location IDs have been set such that every location is given a
@@ -1372,10 +1381,25 @@ mkInstructions =
   ++
   [mkSLTIComparison]
 
--- | Constructs the target machine data.
+-- | Creates the list of MIPS instructions, including the fancy onces. Note that
+-- the instruction ID will be (incorrectly) set to 0 for all instructions.
+mkInstructionsInclFancy :: [Instruction]
+mkInstructionsInclFancy =
+  -- TODO: implement
+  undefined
+
+-- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
 tmMips32 = TargetMachine
              { tmID = toTargetMachineID "mips32"
              , tmInstructions = fixInstrIDs mkInstructions
              , tmLocations = getAllLocations
              }
+
+-- | Constructs the target machine data for fancy MIPS.
+tmFancyMips32 :: TargetMachine
+tmFancyMips32 = TargetMachine
+                  { tmID = toTargetMachineID "fmips32"
+                  , tmInstructions = fixInstrIDs mkInstructionsInclFancy
+                  , tmLocations = getAllLocationsInclFancy
+                  }
