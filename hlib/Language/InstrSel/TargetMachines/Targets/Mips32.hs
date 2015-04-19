@@ -1177,6 +1177,7 @@ mkInstructions =
     , ("SLLV", O.IntOp O.Shl)
     , ("SRLV", O.IntOp O.LShr)
     , ("SRAV", O.IntOp O.AShr)
+    , ("MUL",  O.SIntOp O.Mul)
     ]
   ++ [
       mkSimpleNBitRegRegCompInst
@@ -1196,14 +1197,6 @@ mkInstructions =
               getGPRegistersInclZero
               [getHIRegister]
     in updateLatency 38 i
-  ]
-  ++
-  [ mkSimple32BitRegRegCompInst
-              "MUL"
-              (O.CompArithOp $ O.SIntOp O.Mul)
-              getGPRegistersInclZero
-              getGPRegistersInclZero
-              [getLORegister]
   ]
   ++
   [ let i =
@@ -1241,18 +1234,6 @@ mkInstructions =
     [ ("ADDiu", O.UIntOp O.Add),
       ("ANDi",  O.IntOp O.And),
       ("ORi",   O.IntOp O.Or)
-    ]
-  ++
-  map
-    ( \a -> mkSimple32BitRegRegCompInst
-              (fst a)
-              (O.CompArithOp $ snd a)
-              getGPRegistersInclZero
-              getGPRegistersInclZero
-              [getLORegister]
-    )
-    [ ("mult" , O.SIntOp O.Mul)
-    , ("multu", O.UIntOp O.Mul)
     ]
   ++
   map
