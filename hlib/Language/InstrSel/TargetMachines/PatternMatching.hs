@@ -36,7 +36,10 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils.JSON
 import Control.DeepSeq
-  ( NFData, rnf )
+  ( NFData
+  , rnf
+  )
+
 
 
 --------------
