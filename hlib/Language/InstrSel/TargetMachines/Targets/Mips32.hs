@@ -48,13 +48,11 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates all location classes, but there are no guarantees that the location
--- IDs will be correctly set!
-mkRegClasses :: [Location]
-mkRegClasses = mkGPRegisters ++ mkHILORegisters
-
 regPrefix :: String
 regPrefix = "$"
+
+simdRegPrefix :: String
+simdRegPrefix = "$v"
 
 updateLatency :: Integer -> Instruction -> Instruction
 updateLatency l i =
@@ -65,36 +63,24 @@ updateLatency l i =
 getZeroRegName :: String
 getZeroRegName = "%ZERO"
 
--- | Creates the list of general-purpose registers, but there are no guarantees
--- that the location IDs will be correctly set!
-mkGPRegisters :: [Location]
-mkGPRegisters =
-  [ Location { locID = 0
-             , locName = LocationName getZeroRegName
-             , locIsAValue = True
-             }
-  ]
-  ++
-  map
-    ( \i -> Location { locID = 0
-                     , locName = LocationName $ regPrefix ++ show i
-                     , locIsAValue = False
-                     }
-    )
-    ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
+-- | Creates the zero register. Note that there are no guarantees that the
+-- location IDs will be correctly set!
+mkZeroRegister :: Location
+mkZeroRegister = Location { locID = 0
+                          , locName = LocationName getZeroRegName
+                          , locIsAValue = True
+                          }
 
--- | Creates the list of 'HILO' registers (which are actually memory
--- locations). Note that there are no guarantees that the register IDs will be
--- correctly set!
-mkHILORegisters :: [Location]
-mkHILORegisters =
-  [ Location { locID = 0
-             , locName = LocationName "HILO"
-             , locIsAValue = False
-             }
-  , mkHIRegister
-  , mkLORegister
-  ]
+-- | Creates the list of general-purpose registers, excluding the zero register,
+-- but there are no guarantees that the location IDs will be correctly set!
+mkGPRegistersWithoutZero :: [Location]
+mkGPRegistersWithoutZero =
+  map ( \i -> Location { locID = 0
+                       , locName = LocationName $ regPrefix ++ show i
+                       , locIsAValue = False
+                       }
+      )
+      ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
 
 -- | Creates the list of 'HI' register (which is actually a memory
 -- location). Note that there are no guarantees that the location IDs will be
@@ -114,25 +100,43 @@ mkLORegister = Location { locID = 0
                         , locIsAValue = False
                         }
 
+-- | Creates the list of registers that can be used by the SIMD
+-- instructions. Note that there are no guarantees that the register IDs will be
+-- correctly set!
+mkSimdRegisters :: [Location]
+mkSimdRegisters =
+  map ( \i -> Location { locID = 0
+                       , locName = LocationName $ simdRegPrefix ++ show i
+                       , locIsAValue = False
+                       }
+      )
+      ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
+
 -- | Retrieves the register with a given location name. It is assumed that there
 -- will exist exactly one such register.
 getRegisterByName :: LocationName -> Location
 getRegisterByName rname =
-  let regs = getAllLocations
+  let regs = getAllLocationsInclFancy
       found = filter (\r -> rname == locName r) regs
   in head found
 
 -- | Retrieves all locations, where the location IDs have been set such that
 -- every location is given a unique ID.
 getAllLocations :: [Location]
-getAllLocations = fixLocIDs $ mkRegClasses
+getAllLocations = fixLocIDs $ [mkZeroRegister]
+                              ++
+                              mkGPRegistersWithoutZero
+                              ++
+                              [ mkHIRegister
+                              , mkLORegister
+                              ]
 
 -- | Retrieves all locations, including those used by fancy instructions, where
 -- the location IDs have been set such that every location is given a unique ID.
 getAllLocationsInclFancy :: [Location]
-getAllLocationsInclFancy =
-  -- TODO: implement
-  undefined
+getAllLocationsInclFancy = fixLocIDs $ getAllLocations
+                                       ++
+                                       mkSimdRegisters
 
 -- | Retrieves all general-purpose registers, includeing the zero register,
 -- where the location IDs have been set such that every location is given a
@@ -142,10 +146,8 @@ getGPRegistersInclZero = getGPRegistersWithoutZero ++ [getZeroRegister]
 
 -- | Same as 'getGPRegistersInclZero' but without the zero register.
 getGPRegistersWithoutZero :: [Location]
-getGPRegistersWithoutZero =
-  map
-    (\i -> getRegisterByName $ LocationName $ regPrefix ++ show i)
-    ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
+getGPRegistersWithoutZero = map getRegisterByName
+                                (map locName mkGPRegistersWithoutZero)
 
 -- | Retrieves the zero register, which always contains the value 0.  The
 -- location ID will be correctly set.
@@ -159,11 +161,23 @@ getRetRegister = getRegisterByName $ LocationName $ regPrefix ++ "31"
 
 -- | Retrieves the 'HI' register. The location ID will be correctly set.
 getHIRegister :: Location
-getHIRegister = getRegisterByName $ LocationName "HI"
+getHIRegister = getRegisterByName $ locName mkHIRegister
 
 -- | Retrieves the 'LO' register. The location ID will be correctly set.
 getLORegister :: Location
-getLORegister = getRegisterByName $ LocationName "LO"
+getLORegister = getRegisterByName $ locName mkLORegister
+
+-- | Retrieves all SIMD input registers, where the location IDs have been set
+-- such that every location is given a unique ID.
+getSimdInRegisters :: [Location]
+getSimdInRegisters = map getRegisterByName
+                         (map locName mkSimdRegisters)
+
+-- | Retrieves all SIMD output registers, where the location IDs have been set
+-- such that every location is given a unique ID.
+getSimdOutRegisters :: [Location]
+getSimdOutRegisters = map getRegisterByName
+                          (map locName mkSimdRegisters)
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two value nodes as input, and produces another value node as output.
@@ -1159,6 +1173,101 @@ mkSLTIComparison =
                                       }
        }
 
+-- | Creates a vectorized add3 instruction.
+mkSimdAddInstruction :: Instruction
+mkSimdAddInstruction =
+  let mkAddGraph off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, (ComputationNode $ O.CompArithOp $ O.SIntOp O.Add))
+                , (off + 1, (mkValueNode (mkIntTempType 32)))
+                , (off + 2, (mkValueNode (mkIntTempType 32)))
+                , (off + 3, (mkValueNode (mkIntTempType 32)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off + 2, off    , 0, 1)
+              , (off    , off + 3, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      add2_g = combineGraphs (mkAddGraph 0) (mkAddGraph 4)
+      add3_g = combineGraphs (mkAddGraph 8) add2_g
+      add2_input = [1, 2, 5, 6]
+      add3_input = add2_input ++ [9, 10]
+      add2_output = [3, 7]
+      add3_output = add2_output ++ [11]
+      add2_cs = concatMap (mkDataLocConstraints (map locID getSimdInRegisters))
+                          add2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getSimdOutRegisters))
+                          add2_output
+      add3_cs = concatMap (mkDataLocConstraints (map locID getSimdInRegisters))
+                          add3_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getSimdOutRegisters))
+                          add3_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure add3_g Nothing add3_cs
+                 , patOutputValueNodes = add3_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 11
+                                 , ASVerbatim " = ADD3 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 9
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 10
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             , InstrPattern
+                 { patID = 1
+                 , patOS = OS.OpStructure add2_g Nothing add2_cs
+                 , patOutputValueNodes = add2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = ADD3 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim ") ()"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1385,8 +1494,9 @@ mkInstructions =
 -- the instruction ID will be (incorrectly) set to 0 for all instructions.
 mkInstructionsInclFancy :: [Instruction]
 mkInstructionsInclFancy =
-  -- TODO: implement
-  undefined
+--  mkInstructions
+--  ++
+  [mkSimdAddInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
