@@ -49,9 +49,10 @@ dispatch a opts
          ai_maps <- loadArrayIndexMaplistsFromJson opts
          TransformCPModel.run a m_content ai_maps
   | a `elem` [RaiseLowLevelCPSolution] =
-      do sol_content <- loadSolutionFileContent opts
+      do m_content <- loadModelFileContent opts
+         sol_content <- loadSolutionFileContent opts
          ai_content <- loadArrayIndexMaplistsFileContent opts
          ai_maps <- loadFromJson ai_content
-         TransformCPSolution.run a sol_content ai_maps
+         TransformCPSolution.run a sol_content m_content ai_maps
   | otherwise =
       reportError "TransformDispatcher: unsupported action"

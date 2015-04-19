@@ -37,12 +37,15 @@ run
   :: TransformAction
   -> String
      -- ^ The content of the (low-level or high-level) CP solution file.
+  -> String
+     -- ^ The content of the high-level CP model file.
   -> ArrayIndexMaplists
   -> IO [Output]
 
-run RaiseLowLevelCPSolution str ai_maps =
+run RaiseLowLevelCPSolution str mstr ai_maps =
   do sol <- loadFromJson str
-     let new_sol = raiseLowLevelSolution sol ai_maps
+     model <- loadFromJson mstr
+     let new_sol = raiseLowLevelSolution sol model ai_maps
      return [toOutputWithoutID $ toJson new_sol]
 
-run _ _ _ = reportError "TransformCPSolution: unsupported action"
+run _ _ _ _ = reportError "TransformCPSolution: unsupported action"

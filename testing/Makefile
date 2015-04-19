@@ -69,9 +69,9 @@ build:
 %.ll.sol.json: %.ll.model.json
 	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
-%.hl.sol.json: %.ll.sol.json %.aimaps.json
+%.hl.sol.json: %.hl.model.json %.ll.sol.json %.aimaps.json
 	$(UNI) transform --raise-ll-cp-solution \
-      -s $*.ll.sol.json -a $*.aimaps.json -o $@
+      -m $*.hl.model.json -s $*.ll.sol.json -a $*.aimaps.json -o $@
 
 %.s: %.hl.model.json %.hl.sol.json
 	$(UNI) make --generate-asm -m $*.hl.model.json -s $*.hl.sol.json -o $@
