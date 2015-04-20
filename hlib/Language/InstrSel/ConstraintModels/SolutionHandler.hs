@@ -79,6 +79,7 @@ raiseLowLevelSolution sol@(LowLevelSolution {}) model tm ai_maps =
                , hlSolCost = llSolCost sol
                , hlIsOptimal = llIsOptimal sol
                , hlSolTime = llSolTime sol
+               , hlCoreSolTime = llCoreSolTime sol
                }
       hl_sol' = deleteExplicitFallthroughs model tm hl_sol
   in hl_sol'

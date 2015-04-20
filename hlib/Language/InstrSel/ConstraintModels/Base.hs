@@ -276,6 +276,8 @@ data HighLevelSolution
         -- ^ Whether this solution is optimal.
       , hlSolTime :: Double
         -- ^ Time to compute the solution.
+      , hlCoreSolTime :: Double
+        -- ^ Time to compute the solution within the core constraint solver.
       }
   | NoHighLevelSolution
   deriving (Show)
@@ -310,6 +312,8 @@ data LowLevelSolution
         -- ^ Whether this solution is optimal.
       , llSolTime :: Double
         -- ^ Time to compute the solution.
+      , llCoreSolTime :: Double
+        -- ^ Time to compute the solution within the core constraint solver.
       }
   | NoLowLevelSolution
   deriving (Show)
@@ -528,6 +532,7 @@ instance FromJSON HighLevelSolution where
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
               <*> v .: "time"
+              <*> v .: "core-time"
        else return NoHighLevelSolution
   parseJSON _ = mzero
 
@@ -541,6 +546,7 @@ instance ToJSON HighLevelSolution where
            , "has-solution"          .= True
            , "is-solution-optimal"   .= (hlIsOptimal d)
            , "time"                  .= (hlSolTime d)
+           , "core-time"             .= (hlCoreSolTime d)
            ]
   toJSON NoHighLevelSolution =
     object [ "has-solution" .= False ]
@@ -558,6 +564,7 @@ instance FromJSON LowLevelSolution where
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
               <*> v .: "time"
+              <*> v .: "core-time"
        else return NoLowLevelSolution
   parseJSON _ = mzero
 
