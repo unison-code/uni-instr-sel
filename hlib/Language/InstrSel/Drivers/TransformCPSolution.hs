@@ -18,7 +18,8 @@ where
 
 import Language.InstrSel.Drivers.Base
 import Language.InstrSel.Drivers.DispatcherTools
-  ( loadFromJson )
+  ( loadFromJson
+  , loadTargetMachine)
 import Language.InstrSel.ConstraintModels
 import Language.InstrSel.ConstraintModels.SolutionHandler
 import Language.InstrSel.Utils.JSON
@@ -45,7 +46,8 @@ run
 run RaiseLowLevelCPSolution str mstr ai_maps =
   do sol <- loadFromJson str
      model <- loadFromJson mstr
-     let new_sol = raiseLowLevelSolution sol model ai_maps
+     target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
+     let new_sol = raiseLowLevelSolution sol model target ai_maps
      return [toOutputWithoutID $ toJson new_sol]
 
 run _ _ _ _ = reportError "TransformCPSolution: unsupported action"
