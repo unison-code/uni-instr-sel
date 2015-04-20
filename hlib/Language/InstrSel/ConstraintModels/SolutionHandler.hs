@@ -19,7 +19,10 @@ where
 import Language.InstrSel.ConstraintModels.Base
 
 import Language.InstrSel.Graphs
+import Language.InstrSel.Functions
+import Language.InstrSel.Utils
 import Data.Maybe
+import Data.List
 import Language.InstrSel.TargetMachines
 
 import Language.InstrSel.OpStructures
@@ -91,67 +94,16 @@ deleteExplicitFallthroughs
     -> HighLevelSolution
     -> HighLevelSolution
 
-{-
-
-TODO: handle these cases (as examples):
-
-gsm.add.gsm_mult:
-
-entry:
-  %const.32767 = ADDiu %ZERO, 32767
-  %const.-32768 = ADDiu %ZERO, -32768
-  seq r?, %b, %const.-32768
-  %const.-32768 = ADDiu %ZERO, -32768
-  seq r?, %a, %const.-32768
-  %or.cond = AND %cmp, %cmp3
-  BEQ %or.cond, bb1, %ZERO
-bb0:
-if.else:
-  %mul = MUL %conv, %conv6
-  %shr10 = SRL %mul, 15
-  B return
-bb1:
-return:
-  %retval.0 = PHI %conv7, if.else, %const.32767, entry
-  %temp1 = SLL %retval.0, 16
-  %temp2 = SRA %temp1, 16
-  RetRA %temp2
-
-
-gsm.add.gsm_sub:
-
-entry:
-  %sub = SUB %conv, %conv1
-  %cmp = SLTi %sub, -32768
-  %const.-32768 = ADDiu %ZERO, -32768
-  BEQ %cmp, bb1, %ZERO
-bb0:
-cond.false:
-  %const.32767 = ADDiu %ZERO, 32767
-  BGT %sub, %const.32767, bb3
-bb2:
-cond.false.selectcont:
-  %phitmp = PHI %const.32767, cond.false.selecttrue, t0, cond.false
-  B cond.end7
-bb1:
-cond.end7:
-  %cond8 = PHI %const.-32768, entry, %phitmp, cond.false.selectcont
-  %temp1 = SLL %cond8, 16
-  %temp2 = SRA %temp1, 16
-  RetRA %temp2
-bb3:
-cond.false.selecttrue:
-  %const.32767 = ADDiu %ZERO, 32767
-  B cond.false.selectcont
--}
-
 deleteExplicitFallthroughs model tm sol@(HighLevelSolution {}) =
     let matches  = hlSolSelMatches sol
         brs      = filter (isUnconditionalBranch model tm) matches
         brs'     = filter (isExplicitFallthrough sol model) brs
     in case brs' of
          []   -> sol
-         brs'' -> deleteExplicitFallthroughs model tm (removeMatches brs'' sol)
+         brs'' ->
+             let sol' = foldl (removeMatch model) sol brs''
+             in deleteExplicitFallthroughs model tm sol'
+
 deleteExplicitFallthroughs _ _ NoHighLevelSolution = NoHighLevelSolution
 
 isUnconditionalBranch :: HighLevelModel -> TargetMachine -> MatchID -> Bool
@@ -177,24 +129,34 @@ isExplicitFallthrough sol model match =
         [s, d] = hlMatchSpannedBlocks mp
         bs = hlSolOrderOfBlocks sol
         between = takeWhile (\b -> b /= d) $ tail $ dropWhile (\b -> b /= s) bs
-    in all (isEmptyBlock sol) between
+    in precedes s d bs && all (isEmptyBlock sol) between
 
 isEmptyBlock :: HighLevelSolution -> NodeID -> Bool
 isEmptyBlock sol b = length (getMatchesPlacedInBlock sol b) == 1
 
-removeMatches :: [MatchID] -> HighLevelSolution -> HighLevelSolution
-removeMatches matches sol = foldl removeMatch sol matches
+precedes :: Eq a => a -> a -> [a] -> Bool
+precedes p s l =
+    let l' = dropWhile (\e -> e /= p) l
+    in s `elem` l'
 
-removeMatch :: HighLevelSolution -> MatchID -> HighLevelSolution
-removeMatch sol match =
-    let sol' = sol {
-                   hlSolSelMatches =
-                     filter (\m -> m /= match) (hlSolSelMatches sol)
-                 , hlSolBlocksOfSelMatches =
-                     filter (\(m, _) -> m /= match) (hlSolBlocksOfSelMatches sol)
-               , hlSolCost =
-                   -- TODO!
-                     hlSolCost sol
+removeMatch :: HighLevelModel -> HighLevelSolution -> MatchID ->
+               HighLevelSolution
+removeMatch model sol match =
+    let
+        mps  = getHLMatchParams (hlMatchParams model) match
+        b    = fromJust $ hlMatchEntryBlock mps
+        -- TODO: replace when optimizing for code size
+        l    = hlMatchLatency mps
+        bps  = hlFunBlockParams $ hlFunctionParams model
+        f    = hlBlockExecFrequency $ fromJust $
+               find (\bp -> hlBlockNode bp == b) bps
+        mc   = l * (fromNatural $ fromExecFreq f)
+        sol' = sol { hlSolSelMatches =
+                         filter (\m -> m /= match) (hlSolSelMatches sol)
+                   , hlSolBlocksOfSelMatches =
+                       filter (\(m, _) -> m /= match)
+                                  (hlSolBlocksOfSelMatches sol)
+                   , hlSolCost = hlSolCost sol - mc
                    }
     in sol'
 
