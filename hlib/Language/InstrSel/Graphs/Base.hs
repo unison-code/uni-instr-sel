@@ -157,6 +157,9 @@ module Language.InstrSel.Graphs.Base
   , toEdgeNr
   , fromMatch
   , toMatch
+  , subGraph
+  , componentsOf
+  , isReachableComponent
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
@@ -175,6 +178,7 @@ import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.JSON
 
 import qualified Data.Graph.Inductive as I
+import qualified Data.Graph.Analysis.Algorithms.Common as GA
 
 import Data.List
   ( nub
@@ -1491,3 +1495,30 @@ toMatch m = Match (S.fromList m)
 -- | Converts a match to a list of mappings.
 fromMatch :: Ord n => Match n -> [Mapping n]
 fromMatch (Match s) = S.toList s
+
+-- | Gives the subgraph induced by a given list of nodes
+subGraph :: Graph -> [Node] -> Graph
+subGraph g ns =
+    let sns = filter (\n -> n `elem` ns) $ getAllNodes g
+        ses = filter (\e -> getSourceNode g e `elem` ns &&
+                            getTargetNode g e `elem` ns) $
+              getAllEdges g
+    in mkGraph sns ses
+
+-- | Gives the connected components of the given node.
+componentsOf :: Graph -> [Graph]
+componentsOf (Graph g) =
+    let gs = GA.componentsOf g
+    in map Graph gs
+
+-- | Tests whether there is a path in g from a node in c1 to a node in c2
+isReachableComponent :: Graph -> Graph -> Graph -> Bool
+isReachableComponent g c1 c2 =
+    or [isReachable g n1 n2 | n1 <- getAllNodes c1, n2 <- getAllNodes c2,
+                                    n1 /= n2]
+
+-- | Tests whether there is a path in g from a node n1 to a node n2
+isReachable :: Graph -> Node -> Node -> Bool
+isReachable (Graph g) n1 n2 =
+    let rns = I.reachable (getIntNodeID n1) g
+    in getIntNodeID n2 `elem` rns

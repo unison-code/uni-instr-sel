@@ -31,7 +31,10 @@ import Language.InstrSel.Graphs
   , convertMatchN2ID
   , extractSSA
   , fromMatch
-  , isNodeInGraph
+  , subGraph
+  , componentsOf
+  , getAllNodes
+  , isReachableComponent
   )
 import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
@@ -171,9 +174,13 @@ processInstrPattern function iid pattern =
 -- TODO: explain how it is done
 hasCyclicDataDependency :: Graph -> Match Node -> Bool
 hasCyclicDataDependency fg m =
-  let f_ns = map fNode (fromMatch m)
-      ssa_fg = extractSSA fg
-      ssa_f_ns = filter (isNodeInGraph ssa_fg) f_ns
--- TODO: finish implementation
---    (new_g, super_ns) = 
-  in False
+  let f_ns    = map fNode (fromMatch m)
+      -- SSA graph originated from the function graph
+      ssa_fg  = extractSSA fg
+      -- TODO: should PHI operations not covered by m be removed from ssa_fg?
+      ssa_fg' = subGraph ssa_fg f_ns
+      -- components of the match in the SSA graph
+      mcs     = componentsOf ssa_fg'
+      cdd     = or [isReachableComponent ssa_fg c1 c2 | c1 <- mcs, c2 <- mcs,
+                    getAllNodes c1 /= getAllNodes c2]
+  in cdd
