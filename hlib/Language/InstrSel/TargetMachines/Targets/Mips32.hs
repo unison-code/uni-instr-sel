@@ -1368,7 +1368,7 @@ mkSimdAndiInstruction =
                                  , ASReferenceToValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
-                                 , ASVerbatim ") ()"
+                                 , ASVerbatim ")"
                                  ]
                  }
              ]
@@ -1421,7 +1421,7 @@ mkSimdSlrlInstruction =
                      ASSTemplate [ ASReferenceToValueNode 3
                                  , ASVerbatim ", "
                                  , ASReferenceToValueNode 7
-                                 , ASVerbatim " = Slrl2 ("
+                                 , ASVerbatim " = SLRL2 ("
                                  , ASReferenceToValueNode 1
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
@@ -1429,6 +1429,64 @@ mkSimdSlrlInstruction =
                                  , ASReferenceToValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
+-- | Creates a vectorized (sll, srl) instruction from single constant.
+mkSimdSlrlConstantInstruction :: Instruction
+mkSimdSlrlConstantInstruction =
+  let slrl_g = mkGraph
+               [
+                Node (0, NodeLabel (toNodeID (0 :: Integer)) (ComputationNode $ O.CompArithOp $ O.IntOp O.Shl)),
+                Node (1, NodeLabel (toNodeID (1 :: Integer)) (ComputationNode $ O.CompArithOp $ O.IntOp O.LShr)),
+                Node (2, NodeLabel (toNodeID (2 :: Integer)) (mkValueNode (mkIntConstType (Range 0 32) 5))),
+                Node (3, NodeLabel (toNodeID (3 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (4, NodeLabel (toNodeID (4 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (5, NodeLabel (toNodeID (5 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (6, NodeLabel (toNodeID (6 :: Integer)) (mkValueNode (mkIntTempType 32)))
+               ]
+               [
+                Edge (3, 0, EdgeLabel DataFlowEdge 0 0),
+                Edge (2, 0, EdgeLabel DataFlowEdge 0 1),
+                Edge (4, 1, EdgeLabel DataFlowEdge 0 0),
+                Edge (2, 1, EdgeLabel DataFlowEdge 0 1),
+                Edge (0, 5, EdgeLabel DataFlowEdge 0 0),
+                Edge (1, 6, EdgeLabel DataFlowEdge 0 0)
+               ]
+      slrl_input  = [3, 4]
+      slrl_output = [5, 6]
+      slrl_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          slrl_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          slrl_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure slrl_g Nothing slrl_cs
+                 , patOutputValueNodes = slrl_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim " = SLRL2 ("
+                                 , ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 4
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
                                  , ASVerbatim ")"
                                  ]
                  }
@@ -1548,6 +1606,67 @@ mkSimdNorInstruction =
                                  , ASReferenceToValueNode 4
                                  , ASVerbatim ", "
                                  , ASVerbatim getZeroRegName
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
+-- | Creates vectorized srl instruction.
+mkSimdSrlInstruction :: Instruction
+mkSimdSrlInstruction =
+  let mkSrlGraph off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, (ComputationNode $ O.CompArithOp $ O.IntOp O.LShr))
+                , (off + 1, (mkValueNode (mkIntTempType 32)))
+                , (off + 2, (mkValueNode (mkIntConstType (Range 0 32) 5)))
+                , (off + 3, (mkValueNode (mkIntTempType 32)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off + 2, off    , 0, 1)
+              , (off    , off + 3, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      srl2_g = combineGraphs (mkSrlGraph 0) (mkSrlGraph 4)
+      srl2_input = [1, 5]
+      srl2_output = [3, 7]
+      srl2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          srl2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          srl2_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure srl2_g Nothing srl2_cs
+                 , patOutputValueNodes = srl2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = SRL2 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 6
                                  , ASVerbatim ")"
                                  ]
                  }
@@ -1798,6 +1917,10 @@ mkInstructionsInclFancy =
   [mkSimdSllvInstruction]
   ++
   [mkSimdNorInstruction]
+  ++
+  [mkSimdSrlInstruction]
+  ++
+  [mkSimdSlrlConstantInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
