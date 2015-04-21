@@ -1680,6 +1680,62 @@ mkSimdSrlInstruction =
                                       }
        }
 
+-- | Creates vectorized addiu instruction to load 16-bits immediates.
+
+mkSimdLoad16ImmInstruction :: Natural -> Instruction
+mkSimdLoad16ImmInstruction w =
+  let mkLiGraph off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, CopyNode)
+                , (off + 1, (mkValueNode (mkIntConstType (Range (-32768) 32767) 16)))
+                , (off + 2, (mkValueNode (mkIntTempType w)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off    , off + 2, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      li2_g = combineGraphs (mkLiGraph 0) (mkLiGraph 3)
+      li2_output = [2, 5]
+      li2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          li2_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure li2_g Nothing li2_cs
+                 , patOutputValueNodes = li2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = ADDiu2 ("
+                                 , ASVerbatim getZeroRegName
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASVerbatim getZeroRegName
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 6
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = False
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1842,7 +1898,7 @@ mkInstructions =
               8
               16
     )
-    [ ("xori", O.IntOp O.XOr) ]
+    [ ("XORi", O.IntOp O.XOr) ]
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
@@ -1921,6 +1977,14 @@ mkInstructionsInclFancy =
   [mkSimdSrlInstruction]
   ++
   [mkSimdSlrlConstantInstruction]
+  {-
+    TODO: if we activate these, no solution is found for g721.g72x.reconstruct
+    TODO: extend to 3- and 4-way SIMD
+  ++
+  [ mkSimdLoad16ImmInstruction 16
+  , mkSimdLoad16ImmInstruction 32
+  ]
+  -}
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
