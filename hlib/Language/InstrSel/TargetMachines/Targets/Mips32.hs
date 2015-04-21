@@ -1286,6 +1286,101 @@ mkSimdAddInstruction =
                                       }
        }
 
+-- | Creates vectorized andi2 and andi3 instructions.
+mkSimdAndiInstruction :: Instruction
+mkSimdAndiInstruction =
+  let mkAndGraph off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, (ComputationNode $ O.CompArithOp $ O.IntOp O.And))
+                , (off + 1, (mkValueNode (mkIntTempType 32)))
+                , (off + 2, (mkValueNode (mkIntConstType (Range 0 65535) 16)))
+                , (off + 3, (mkValueNode (mkIntTempType 32)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off + 2, off    , 0, 1)
+              , (off    , off + 3, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      and2_g = combineGraphs (mkAndGraph 0) (mkAndGraph 4)
+      and3_g = combineGraphs (mkAndGraph 8) and2_g
+      and2_input = [1, 5]
+      and3_input = and2_input ++ [9]
+      and2_output = [3, 7]
+      and3_output = and2_output ++ [11]
+      and2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          and2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          and2_output
+      and3_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          and3_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          and3_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure and3_g Nothing and3_cs
+                 , patOutputValueNodes = and3_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 11
+                                 , ASVerbatim " = ANDi3 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 6
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 9
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 10
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             , InstrPattern
+                 { patID = 1
+                 , patOS = OS.OpStructure and2_g Nothing and2_cs
+                 , patOutputValueNodes = and2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = ANDi2 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim ") ()"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1513,8 +1608,10 @@ mkInstructions =
 mkInstructionsInclFancy :: [Instruction]
 mkInstructionsInclFancy =
   mkInstructions
-   ++
+  ++
   [mkSimdAddInstruction]
+  ++
+  [mkSimdAndiInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
