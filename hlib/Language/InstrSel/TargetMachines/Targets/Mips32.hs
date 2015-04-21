@@ -51,9 +51,6 @@ import Data.Maybe
 regPrefix :: String
 regPrefix = "$"
 
-simdRegPrefix :: String
-simdRegPrefix = "$v"
-
 updateLatency :: Integer -> Instruction -> Instruction
 updateLatency l i =
     let p = instrProps i
@@ -100,23 +97,11 @@ mkLORegister = Location { locID = 0
                         , locIsAValue = False
                         }
 
--- | Creates the list of registers that can be used by the SIMD
--- instructions. Note that there are no guarantees that the register IDs will be
--- correctly set!
-mkSimdRegisters :: [Location]
-mkSimdRegisters =
-  map ( \i -> Location { locID = 0
-                       , locName = LocationName $ simdRegPrefix ++ show i
-                       , locIsAValue = False
-                       }
-      )
-      ([0..31] :: [Integer]) -- Cast needed to prevent compilation warning
-
 -- | Retrieves the register with a given location name. It is assumed that there
 -- will exist exactly one such register.
 getRegisterByName :: LocationName -> Location
 getRegisterByName rname =
-  let regs = getAllLocationsInclFancy
+  let regs = getAllLocations
       found = filter (\r -> rname == locName r) regs
   in head found
 
@@ -130,13 +115,6 @@ getAllLocations = fixLocIDs $ [mkZeroRegister]
                               [ mkHIRegister
                               , mkLORegister
                               ]
-
--- | Retrieves all locations, including those used by fancy instructions, where
--- the location IDs have been set such that every location is given a unique ID.
-getAllLocationsInclFancy :: [Location]
-getAllLocationsInclFancy = fixLocIDs $ getAllLocations
-                                       ++
-                                       mkSimdRegisters
 
 -- | Retrieves all general-purpose registers, includeing the zero register,
 -- where the location IDs have been set such that every location is given a
@@ -166,18 +144,6 @@ getHIRegister = getRegisterByName $ locName mkHIRegister
 -- | Retrieves the 'LO' register. The location ID will be correctly set.
 getLORegister :: Location
 getLORegister = getRegisterByName $ locName mkLORegister
-
--- | Retrieves all SIMD input registers, where the location IDs have been set
--- such that every location is given a unique ID.
-getSimdInRegisters :: [Location]
-getSimdInRegisters = map getRegisterByName
-                         (map locName mkSimdRegisters)
-
--- | Retrieves all SIMD output registers, where the location IDs have been set
--- such that every location is given a unique ID.
-getSimdOutRegisters :: [Location]
-getSimdOutRegisters = map getRegisterByName
-                          (map locName mkSimdRegisters)
 
 -- | Creates a simple pattern that consists of a single computation node, which
 -- takes two value nodes as input, and produces another value node as output.
@@ -1254,15 +1220,15 @@ mkSimdAddInstruction =
       add3_input = add2_input ++ [9, 10]
       add2_output = [3, 7]
       add3_output = add2_output ++ [11]
-      add2_cs = concatMap (mkDataLocConstraints (map locID getSimdInRegisters))
+      add2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
                           add2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getSimdOutRegisters))
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
                           add2_output
-      add3_cs = concatMap (mkDataLocConstraints (map locID getSimdInRegisters))
+      add3_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
                           add3_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getSimdOutRegisters))
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
                           add3_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1546,8 +1512,8 @@ mkInstructions =
 -- the instruction ID will be (incorrectly) set to 0 for all instructions.
 mkInstructionsInclFancy :: [Instruction]
 mkInstructionsInclFancy =
---  mkInstructions
---  ++
+  mkInstructions
+   ++
   [mkSimdAddInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
@@ -1563,5 +1529,5 @@ tmFancyMips32 :: TargetMachine
 tmFancyMips32 = TargetMachine
                   { tmID = toTargetMachineID "fmips32"
                   , tmInstructions = fixInstrIDs mkInstructionsInclFancy
-                  , tmLocations = getAllLocationsInclFancy
+                  , tmLocations = getAllLocations
                   }
