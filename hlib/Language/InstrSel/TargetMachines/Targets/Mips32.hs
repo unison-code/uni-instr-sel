@@ -1054,6 +1054,23 @@ mkLoadImmInstr =
                                         , instrIsNonCopy = False
                                         }
          }
+     , Instruction
+       -- Immediate -2147483648 (implemented with lui only)
+         { instrID = 0
+         , instrPatterns = [ pat 32
+                                 (Range (-2147483648) (-2147483648))
+                                 getGPRegistersWithoutZero
+                                 [ ASReferenceToValueNode 2
+                                 , ASVerbatim " = "
+                                 , ASVerbatim "LUi "
+                                 , ASIntConstOfValueNode 1
+                                 ]
+                           ]
+         , instrProps = InstrProperties { instrCodeSize = 4
+                                        , instrLatency = 1
+                                        , instrIsNonCopy = False
+                                        }
+         }
      ]
 
 -- | Makes the various move instructions. Note that the instruction ID will be
