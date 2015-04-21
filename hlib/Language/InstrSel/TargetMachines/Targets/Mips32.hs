@@ -1503,6 +1503,64 @@ mkSimdSllvInstruction =
                                       }
        }
 
+-- | Creates a vectorized nor instruction.
+mkSimdNorInstruction :: Instruction
+mkSimdNorInstruction =
+  let xor2_g = mkGraph
+               [
+                Node (0, NodeLabel (toNodeID (0 :: Integer)) (ComputationNode $ O.CompArithOp $ O.IntOp O.XOr)),
+                Node (1, NodeLabel (toNodeID (1 :: Integer)) (ComputationNode $ O.CompArithOp $ O.IntOp O.XOr)),
+                Node (2, NodeLabel (toNodeID (2 :: Integer)) (mkValueNode (mkIntConstType (Range (-1) (-1)) 16))),
+                Node (3, NodeLabel (toNodeID (3 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (4, NodeLabel (toNodeID (4 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (5, NodeLabel (toNodeID (5 :: Integer)) (mkValueNode (mkIntTempType 32))),
+                Node (6, NodeLabel (toNodeID (6 :: Integer)) (mkValueNode (mkIntTempType 32)))
+               ]
+               [
+                Edge (3, 0, EdgeLabel DataFlowEdge 0 0),
+                Edge (2, 0, EdgeLabel DataFlowEdge 0 1),
+                Edge (4, 1, EdgeLabel DataFlowEdge 0 0),
+                Edge (2, 1, EdgeLabel DataFlowEdge 0 1),
+                Edge (0, 5, EdgeLabel DataFlowEdge 0 0),
+                Edge (1, 6, EdgeLabel DataFlowEdge 0 0)
+               ]
+      xor2_input  = [3, 4]
+      xor2_output = [5, 6]
+      xor2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          xor2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          xor2_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure xor2_g Nothing xor2_cs
+                 , patOutputValueNodes = xor2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim " = NOR2 ("
+                                 , ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASVerbatim getZeroRegName
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 4
+                                 , ASVerbatim ", "
+                                 , ASVerbatim getZeroRegName
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1738,6 +1796,8 @@ mkInstructionsInclFancy =
   [mkSimdSlrlInstruction]
   ++
   [mkSimdSllvInstruction]
+  ++
+  [mkSimdNorInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
