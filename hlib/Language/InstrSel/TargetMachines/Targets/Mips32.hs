@@ -1442,6 +1442,67 @@ mkSimdSlrlInstruction =
                                       }
        }
 
+-- | Creates a vectorized sllv2 instruction.
+mkSimdSllvInstruction :: Instruction
+mkSimdSllvInstruction =
+  let mkSllvGraph off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, (ComputationNode $ O.CompArithOp $ O.IntOp O.Shl))
+                , (off + 1, (mkValueNode (mkIntTempType 32)))
+                , (off + 2, (mkValueNode (mkIntTempType 32)))
+                , (off + 3, (mkValueNode (mkIntTempType 32)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off + 2, off    , 0, 1)
+              , (off    , off + 3, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      sllv2_g = combineGraphs (mkSllvGraph 0) (mkSllvGraph 4)
+      sllv2_input = [1, 2, 5, 6]
+      sllv2_output = [3, 7]
+      sllv2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          sllv2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          sllv2_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure sllv2_g Nothing sllv2_cs
+                 , patOutputValueNodes = sllv2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = SLLV2 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 6
+                                 , ASVerbatim ")"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
 -- | Creates the list of MIPS instructions. Note that the instruction ID will be
 -- (incorrectly) set to 0 for all instructions.
 mkInstructions :: [Instruction]
@@ -1675,6 +1736,8 @@ mkInstructionsInclFancy =
   [mkSimdAndiInstruction]
   ++
   [mkSimdSlrlInstruction]
+  ++
+  [mkSimdSllvInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
