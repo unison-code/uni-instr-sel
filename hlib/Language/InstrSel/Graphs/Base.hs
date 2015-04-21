@@ -178,7 +178,6 @@ import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.JSON
 
 import qualified Data.Graph.Inductive as I
-import qualified Data.Graph.Analysis.Algorithms.Common as GA
 
 import Data.List
   ( nub
@@ -191,6 +190,8 @@ import qualified Data.Vector as V
 import Control.DeepSeq
   ( NFData, rnf )
 
+import Control.Arrow ( first )
+import Data.List( unfoldr, foldl' )
 
 --------------
 -- Data types
@@ -1508,8 +1509,41 @@ subGraph g ns =
 -- | Gives the connected components of the given node.
 componentsOf :: Graph -> [Graph]
 componentsOf (Graph g) =
-    let gs = GA.componentsOf g
+    let gs = componentsOf' g
     in map Graph gs
+
+-- TODO: this is taken from Graphalyze
+
+-- | Find all connected components of a graph.
+componentsOf' :: (I.DynGraph g) => g a b -> [g a b]
+componentsOf' = unfoldr splitComponent
+
+-- | Find the next component and split it off from the graph.
+splitComponent :: (I.DynGraph g) => g a b -> Maybe (g a b, g a b)
+splitComponent g
+    | I.isEmpty g = Nothing
+    | otherwise = Just .          -- Get the type right
+                  first I.buildGr . -- Create the subgraph
+                  extractNode .   -- Extract components of subgraph
+                  first Just .    -- Getting the types right
+                  I.matchAny $ g    -- Choose an arbitrary node to begin with
+
+-- | Extract the given node and all nodes it is transitively
+--   connected to from the graph.
+extractNode :: (I.DynGraph g) => I.Decomp g a b -> ([I.Context a b], g a b)
+extractNode (Nothing,gr) = ([],gr)
+extractNode (Just ctxt, gr)
+    | I.isEmpty gr = ([ctxt], I.empty)
+    | otherwise  = first (ctxt:) $ foldl' nodeExtractor ([],gr) nbrs
+    where
+      nbrs = I.neighbors' ctxt
+
+-- | Helper function for 'extractNode' above.
+nodeExtractor :: (I.DynGraph g) => ([I.Context a b], g a b) -> I.Node
+              -> ([I.Context a b], g a b)
+nodeExtractor cg@(cs,g) n
+    | I.gelem n g = first (++ cs) . extractNode $ I.match n g
+    | otherwise = cg
 
 -- | Tests whether there is a path in g from a node in c1 to a node in c2
 isReachableComponent :: Graph -> Graph -> Graph -> Bool

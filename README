@@ -27,7 +27,6 @@ The packages to be installed are:
  - safe
  - shelly
  - split
- - Graphalyze
 
 To install a Haskell package with Cabal, run the following commands:
 
