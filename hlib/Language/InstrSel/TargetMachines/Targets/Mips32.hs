@@ -990,11 +990,6 @@ mkLoadImmInstr =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate a
           }
-      asm s = [ ASVerbatim $ s ++ " "
-              , ASImmIntValueOfDataNode 1
-              , ASVerbatim ", "
-              , ASLocationOfDataNode 2
-              ]
   in [ Instruction
        -- Zero immediate (free in mips32)
          { instrID = 0
@@ -1021,7 +1016,12 @@ mkLoadImmInstr =
                            , pat 32
                                  (Range (-32768) 32767)
                                  getGPRegistersWithoutZero
-                                 (asm "load-half32")
+                                 [ ASReferenceToValueNode 2
+                                 , ASVerbatim " = "
+                                 , ASVerbatim
+                                   $ "ADDiu " ++ getZeroRegName ++ ", "
+                                 , ASIntConstOfValueNode 1
+                                 ]
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
@@ -1035,11 +1035,19 @@ mkLoadImmInstr =
                              pat 16
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 (asm "load-full16")
+                                 [ ASReferenceToValueNode 2
+                                 , ASVerbatim " = "
+                                 , ASVerbatim "LUi+ORi "
+                                 , ASIntConstOfValueNode 1
+                                 ]
                            , pat 32
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 (asm "load-full32")
+                                 [ ASReferenceToValueNode 2
+                                 , ASVerbatim " = "
+                                 , ASVerbatim "LUi+ORi "
+                                 , ASIntConstOfValueNode 1
+                                 ]
                            ]
          , instrProps = InstrProperties { instrCodeSize = 8
                                         , instrLatency = 2
