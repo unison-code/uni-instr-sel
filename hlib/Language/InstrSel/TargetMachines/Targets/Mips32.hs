@@ -1363,12 +1363,73 @@ mkSimdAndiInstruction =
                                  , ASVerbatim " = ANDi2 ("
                                  , ASReferenceToValueNode 1
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 2
+                                 , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
                                  , ASReferenceToValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASIntConstOfValueNode 6
                                  , ASVerbatim ") ()"
+                                 ]
+                 }
+             ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = pats
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 1
+                                      , instrIsNonCopy = True
+                                      }
+       }
+
+-- | Creates vectorized (sll, srl) instruction.
+mkSimdSlrlInstruction :: Instruction
+mkSimdSlrlInstruction =
+  let mkSlrlGraph op off =
+        mkGraph
+          ( map (\(n, l) -> Node (n, NodeLabel (toNodeID n) l))
+                [ (off + 0, (ComputationNode $ O.CompArithOp $ O.IntOp op))
+                , (off + 1, (mkValueNode (mkIntTempType 32)))
+                , (off + 2, (mkValueNode (mkIntConstType (Range 0 32) 5)))
+                , (off + 3, (mkValueNode (mkIntTempType 32)))
+                ]
+          )
+          ( map ( \(n1, n2, out_nr, in_nr) ->
+                  Edge (n1, n2, EdgeLabel DataFlowEdge out_nr in_nr)
+                )
+              [ (off + 1, off    , 0, 0)
+              , (off + 2, off    , 0, 1)
+              , (off    , off + 3, 0, 0)
+              ]
+          )
+      combineGraphs g1 g2 =
+        mkGraph (getAllNodes g1 ++ getAllNodes g2)
+                (getAllEdges g1 ++ getAllEdges g2)
+      slrl2_g = combineGraphs (mkSlrlGraph O.Shl 0) (mkSlrlGraph O.LShr 4)
+      slrl2_input = [1, 5]
+      slrl2_output = [3, 7]
+      slrl2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+                          slrl2_input
+                ++
+                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                          slrl2_output
+      pats = [ InstrPattern
+                 { patID = 0
+                 , patOS = OS.OpStructure slrl2_g Nothing slrl2_cs
+                 , patOutputValueNodes = slrl2_output
+                 , patADDUC = True
+                 , patAsmStrTemplate =
+                     ASSTemplate [ ASReferenceToValueNode 3
+                                 , ASVerbatim ", "
+                                 , ASReferenceToValueNode 7
+                                 , ASVerbatim " = Slrl2 ("
+                                 , ASReferenceToValueNode 1
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 2
+                                 , ASVerbatim ") ("
+                                 , ASReferenceToValueNode 5
+                                 , ASVerbatim ", "
+                                 , ASIntConstOfValueNode 6
+                                 , ASVerbatim ")"
                                  ]
                  }
              ]
@@ -1612,6 +1673,8 @@ mkInstructionsInclFancy =
   [mkSimdAddInstruction]
   ++
   [mkSimdAndiInstruction]
+  ++
+  [mkSimdSlrlInstruction]
 
 -- | Constructs the target machine data for ordinary MIPS.
 tmMips32 :: TargetMachine
