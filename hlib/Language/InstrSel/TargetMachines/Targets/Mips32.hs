@@ -1116,28 +1116,29 @@ mkTypeConvInstrs =
      ]
 
 -- | Makes a "set if equal to" comparison. The actual implementation does a
--- bitwise 'and' on the result of two 'slt' instructions.
+-- 'result = (slt $ZERO, (XOR input imm))'. See
+-- https://gcc.gnu.org/ml/gcc-patches/2012-05/msg00867.html .
 mkEqComparison :: Instruction
 mkEqComparison =
   let dt16 = mkIntTempType 16
+      imm  = mkIntConstType (Range (-32768) 32767) 16
       dt1  = mkIntTempType 1
       g    = mkSimpleCompPattern (O.CompArithOp $ O.IntOp O.Eq)
                                  False
                                  dt16
-                                 dt16
+                                 imm
                                  dt1
-      cs   = concatMap ( \(r, nid) ->
-                          mkDataLocConstraints (map locID r) nid
-                       )
-             (zip (replicate 3 getGPRegistersWithoutZero) [1, 2, 3])
+      cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+             ++
+             mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
               , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
-                                      [ ASVerbatim $ "seq "
-                                      , ASLocationOfDataNode 0
+                                      [ ASVerbatim $ "SEQ "
+                                      , ASReferenceToValueNode 0
                                       , ASVerbatim ", "
                                       , ASLocationOfDataNode 1
                                       , ASVerbatim ", "
@@ -1147,8 +1148,8 @@ mkEqComparison =
   in Instruction
        { instrID = 0
        , instrPatterns = [pat]
-       , instrProps = InstrProperties { instrCodeSize = 12
-                                      , instrLatency = 3
+       , instrProps = InstrProperties { instrCodeSize = 8
+                                      , instrLatency = 2
                                       , instrIsNonCopy = True
                                       }
        }
