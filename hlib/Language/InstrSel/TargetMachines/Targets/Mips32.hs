@@ -51,6 +51,10 @@ import Data.Maybe
 regPrefix :: String
 regPrefix = "$"
 
+updateAsmStrTemplate :: AssemblyStringTemplate -> Instruction -> Instruction
+updateAsmStrTemplate t i @ Instruction { instrPatterns = pats } =
+    i {instrPatterns = map (\pat -> pat { patAsmStrTemplate = t }) pats }
+
 updateLatency :: Integer -> Instruction -> Instruction
 updateLatency l i =
     let p = instrProps i
@@ -1892,6 +1896,27 @@ mkInstructions =
     , ((Range (-1) (-1)), "BLTZ", O.SIntOp O.LE)
       -- The BLTZ patterns subsumes cases for BGTZ
     ]
+  ++
+    -- Implements a BGT as a SLTi + BEQ (LLVM gives SLTi latency 0)
+  [ let i = mkRegImmCondBrInstr 32 (Range (-32768) 32766) "BEQLT"
+            (O.CompArithOp $ O.SIntOp O.GT)
+    in updateAsmStrTemplate
+       (ASSMultiTemplate
+        [ ASSTemplate
+          [ ASVerbatim $ "%temp1 = SLTi "
+          , ASReferenceToValueNode 5
+          , ASVerbatim ", "
+          , ASIntConstOfValueNode 6
+          ]
+        , ASSTemplate
+          [ ASVerbatim $ "BEQ "
+          , ASVerbatim "%temp1, "
+          , ASVerbatim "%ZERO, "
+          , ASNameOfBlockNode 2
+          ]
+        ]
+       ) i
+  ]
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
