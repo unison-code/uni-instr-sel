@@ -1763,8 +1763,17 @@ mkInstructions =
     , ("SLLV", O.IntOp O.Shl)
     , ("SRLV", O.IntOp O.LShr)
     , ("SRAV", O.IntOp O.AShr)
-    , ("MUL",  O.SIntOp O.Mul)
     ]
+  ++
+  [ let i =
+            mkSimple32BitRegRegCompInst
+              "MUL"
+              (O.CompArithOp $ O.SIntOp O.Mul)
+              getGPRegistersInclZero
+              getGPRegistersInclZero
+              getGPRegistersWithoutZero
+    in updateLatency 17 i
+  ]
   ++ [
       mkSimpleNBitRegRegCompInst
               1
