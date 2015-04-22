@@ -1136,14 +1136,24 @@ mkEqComparison =
               , patOS = OS.OpStructure g Nothing cs
               , patOutputValueNodes = [3]
               , patADDUC = True
-              , patAsmStrTemplate = ASSTemplate
-                                      [ ASVerbatim $ "SEQ "
-                                      , ASReferenceToValueNode 0
+              , patAsmStrTemplate = ASSMultiTemplate
+                                    [ ASSTemplate
+                                      [ ASVerbatim "%temp1 = "
+                                      , ASVerbatim "XOR "
+                                      -- TODO: looks lite ASSTemplate must have
+                                      -- a certain number of elements to work,
+                                      -- otherwise we get
+                                      -- "updateNodeIDsInAsmStrParts: Invalid
+                                      -- arguments".
+                                      , ASVerbatim ""
+                                      , ASReferenceToValueNode 1
                                       , ASVerbatim ", "
-                                      , ASLocationOfDataNode 1
-                                      , ASVerbatim ", "
-                                      , ASLocationOfDataNode 2
+                                      , ASIntConstOfValueNode 2
                                       ]
+                                    , ASSTemplate
+                                      [ ASVerbatim $
+                                        "%cmp = SLT " ++ getZeroRegName ++ ", %temp1" ]
+                                    ]
               }
   in Instruction
        { instrID = 0
