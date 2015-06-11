@@ -1139,6 +1139,7 @@ doesNumDFInEdgesMatter :: Graph -> Node -> Bool
 doesNumDFInEdgesMatter _ n
   | isComputationNode n = True
   | isControlNode n = True
+  | isPhiNode n = True
   | otherwise = False
 
 -- | Checks if the number of data-flow out-edges matters for a given pattern
