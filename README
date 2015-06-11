@@ -12,10 +12,10 @@ sandbox' can be used (supported starting from version 1.18 of Cabal) as
 follows. Before installing the packages, run (from the directory where the
 README is located):
 
-$ cabal sandbox init (first time only)
+   cabal sandbox init   (first time only)
 
-$ cabal exec bash (creates a new environment where ghc and all the other Haskell
-tools are also sandboxed)
+   cabal exec bash      (creates a new environment where ghc and all the other
+                         Haskell tools are also sandboxed)
 
 The packages to be installed are:
 
@@ -30,7 +30,7 @@ The packages to be installed are:
 
 To install a Haskell package with Cabal, run the following commands:
 
-   sudo cabal install <package>
+   cabal install <package>
 
 Now you will need to build the toolchain, which is done by running the following
 commands from the folder where this file is located:
