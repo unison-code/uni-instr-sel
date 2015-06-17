@@ -23,6 +23,8 @@ The packages to be installed are:
  - atto-lisp
  - clock
  - cmdargs
+ - fgl
+ - llvm-general-3.4
  - graphviz
  - safe
  - shelly
