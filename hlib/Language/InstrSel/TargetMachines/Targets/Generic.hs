@@ -40,6 +40,9 @@ import Language.InstrSel.Utils
   , Range (..)
   )
 
+import Data.List
+  ( intersperse )
+
 
 
 -------------
@@ -75,66 +78,78 @@ mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
 mkGenericPhiInstructions :: [Instruction]
 mkGenericPhiInstructions =
-  let g = mkGraph
-            ( map
-                Node
-                [ ( 0, NodeLabel 0 PhiNode )
-                , ( 1, NodeLabel 1 mkGenericValueNodeType )
-                , ( 2, NodeLabel 2 mkGenericValueNodeType )
-                , ( 3, NodeLabel 3 mkGenericValueNodeType )
-                ]
-            )
-            ( map
-                Edge
-                [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-                , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
-                , ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
-                ]
-            )
-      cs = [ BoolExprConstraint $
-               AndExpr
-                 ( EqExpr
-                     ( Location2NumExpr $
-                         LocationOfValueNodeExpr $
-                           ANodeIDExpr 1
+  let mkPat n =
+        let g = mkGraph
+                  ( map
+                      Node
+                      ( [ ( 0, NodeLabel 0 PhiNode )
+                        , ( 1, NodeLabel 1 mkGenericValueNodeType )
+                        ]
+                        ++
+                        map ( \n' ->
+                              ( fromIntegral n'
+                              , NodeLabel (toNodeID n') mkGenericValueNodeType
+                              )
+                            )
+                            [2..n+1]
+                      )
+                  )
+                  ( map
+                      Edge
+                      ( [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 ) ]
+                        ++
+                        map ( \n' ->
+                              ( fromIntegral n'
+                              , 0
+                              , EdgeLabel DataFlowEdge 0 ((toEdgeNr n)-2)
+                              )
+                            )
+                            [2..n+1]
+                      )
+                  )
+            cs = map ( \n' ->
+                        BoolExprConstraint $
+                          EqExpr
+                            ( Location2NumExpr $
+                                LocationOfValueNodeExpr $
+                                  ANodeIDExpr n'
+                            )
+                            ( Location2NumExpr $
+                                LocationOfValueNodeExpr $
+                                  ANodeIDExpr (n'+1)
+                            )
                      )
-                     ( Location2NumExpr $
-                         LocationOfValueNodeExpr $
-                           ANodeIDExpr 2
+                     [1..n]
+        in InstrPattern
+             { patID = (toPatternID $ n-2)
+             , patOS = OS.OpStructure g Nothing cs
+             , patOutputValueNodes = [1]
+             , patADDUC = False
+             , patAsmStrTemplate =
+                 ( ASSTemplate
+                   $[ ASReferenceToValueNode 1
+                     , ASVerbatim " = PHI "
+                     ]
+                     ++
+                     ( concat
+                       $ intersperse
+                           [ASVerbatim " "]
+                           ( map ( \n' ->
+                                   [ ASVerbatim "("
+                                   , ASReferenceToValueNode (toNodeID n')
+                                   , ASVerbatim ", "
+                                   , ASBlockOfValueNode (toNodeID n')
+                                   , ASVerbatim ")"
+                                   ]
+                                 )
+                                 [2..n+1]
+                           )
                      )
                  )
-                 ( EqExpr
-                     ( Location2NumExpr $
-                         LocationOfValueNodeExpr $
-                           ANodeIDExpr 2
-                     )
-                     ( Location2NumExpr $
-                         LocationOfValueNodeExpr $
-                           ANodeIDExpr 3
-                     )
-                 )
-           ]
-      pat = InstrPattern
-              { patID = 0
-              , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
-              , patADDUC = False
-              , patAsmStrTemplate = ( ASSTemplate
-                                        [ ASLocationOfDataNode 3
-                                        , ASVerbatim " = PHI "
-                                        , ASLocationOfDataNode 1
-                                        , ASVerbatim ", "
-                                        , ASBlockOfDataNode 1
-                                        , ASVerbatim ", "
-                                        , ASLocationOfDataNode 2
-                                        , ASVerbatim ", "
-                                        , ASBlockOfDataNode 2
-                                        ]
-                                    )
-              }
+             }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat]
+         , instrPatterns = map mkPat [2..10]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
