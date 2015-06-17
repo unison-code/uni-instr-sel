@@ -19,13 +19,13 @@ README is located):
 
 The packages to be installed are:
 
- - aeson
+ - aeson-0.8.0.2          (take note of the explicit version!)
  - atto-lisp
  - clock
  - cmdargs
  - fgl
- - llvm-general-3.4
  - graphviz
+ - llvm-general-3.4.5.2   (take note of the explicit version!)
  - safe
  - shelly
  - split
