@@ -1,0 +1,2 @@
+The null-copy pattern should constrain that the input datum must be defined in
+the same block as the output datum.
