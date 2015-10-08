@@ -474,10 +474,10 @@ test is_dominated(int: m2) =
 
 Dominated = {m | m in allMatches where is_dominated(m)};
 
-constraint
-  trace("% Dominated = "++show(Dominated)++"\n",
-    forall(d in Dominated)(not sel[d])
-  );
+% constraint
+%   trace("% Dominated = "++show(Dominated)++"\n",
+%     forall(d in Dominated)(not sel[d])
+%   );
 
 %==================
 % SOLVE AND OUTPUT
@@ -485,7 +485,9 @@ constraint
 
 solve ::
   seq_search(
-    [ bool_search([ sel[m] | m in nonCopyMatches diff Dominated
+    [ % This could result in an empty array, which causes most solvers to
+      % return an error. If that happens, remove the first bool_search
+      bool_search([ sel[m] | m in nonCopyMatches diff Dominated
                                   where card(operationsCoveredByMatch[m])
                                         +
                                         card(dataDefinedByMatch[m])
