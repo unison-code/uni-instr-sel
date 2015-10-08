@@ -28,7 +28,7 @@
 # SETTINGS
 #==========
 
-UNIPATH := uni-is
+UNIDISTPATH := dist
 SOLVERSPATH := solvers
 TOOLSPATH := tools
 
@@ -39,18 +39,18 @@ TOOLSPATH := tools
 
 .PHONY: build
 build:
-	cd $(UNIPATH) && make
+	cabal install
 	cd $(SOLVERSPATH) && make
 	cd $(TOOLSPATH) && make
 
 .PHONY: clean
 clean:
-	cd $(UNIPATH) && make clean
+	$(RM) -rf $(UNIDISTPATH)
 	cd $(SOLVERSPATH) && make clean
 	cd $(TOOLSPATH) && make clean
 
 .PHONY: distclean
 distclean:
-	cd $(UNIPATH) && make distclean
+	$(RM) -rf $(UNIDISTPATH)
 	cd $(SOLVERSPATH) && make distclean
 	cd $(TOOLSPATH) && make distclean
