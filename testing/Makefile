@@ -14,7 +14,7 @@ AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 
 export MINIZINC_BACKEND := mzn-cpx
 
-UNI              := ../uni-is/uni-is
+UNI              := uni-is
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
 PRETTIFY := ../tools/prettify-json
