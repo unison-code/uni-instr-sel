@@ -261,12 +261,12 @@ MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 STATS_OUTPUT_FILEPATH="${JSON_OUTPUT_FILEPATH%.*}.stats"
 
 reportTask "Extending low-level model"
-exe "sicstus -f --nologo --noinfo --goal extend_and_halt." \
-    " -l $THIS_DIR/extender.pl < $JSON_INPUT_FILEPATH" \
-    " > $JSON_EXT_FILEPATH"
+exe "$THIS_DIR/size-extender $JSON_INPUT_FILEPATH > $JSON_EXT_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT_FILEPATH
-exe "$THIS_DIR/size-extender $JSON_EXT_FILEPATH > $JSON_EXT2_FILEPATH"
+exe "sicstus -f --nologo --noinfo --goal extend_and_halt." \
+    " -l $THIS_DIR/extender.pl < $JSON_EXT_FILEPATH" \
+    " > $JSON_EXT2_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT2_FILEPATH
 
@@ -301,6 +301,6 @@ exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
 
-# reportTask "Cleaning up temporary files"
-# exe "rm -rf $TMP_DIR"
-# exitIfFailed ""
+reportTask "Cleaning up temporary files"
+exe "rm -rf $TMP_DIR"
+exitIfFailed ""
