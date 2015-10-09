@@ -30,23 +30,29 @@
 #include "common/model/types.h"
 #include "common/optionparser/optionparser.h"
 #include "common/utils/list.h"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace Model;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::get;
 using std::ifstream;
 using std::list;
+using std::make_tuple;
 using std::ofstream;
 using std::ostream;
+using std::sort;
 using std::string;
 using std::stringstream;
+using std::tuple;
 using std::vector;
 
 
@@ -256,6 +262,29 @@ generateModelMatchParameters(
     out << "nonCopyMatches = ";
     printMinizincList(out, params.getNonCopyInstrMatches(), "{", "}");
     out << ";" << endl;
+
+    out << "allMatchesBySize = array1d(allMatches, ";
+    vector< tuple<ArrayIndex, int> > matches;
+    for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {
+        matches.push_back(
+            make_tuple(
+                m,
+                params.getOperationsCoveredByAllMatches()[m].size() +
+                    params.getDataDefinedByAllMatches()[m].size()
+            )
+        );
+    }
+    // Place largest matches first
+    sort(matches.begin(),
+         matches.end(),
+         [](const tuple<ArrayIndex, int>& a, const tuple<ArrayIndex, int>& b) {
+             return get<1>(a) > get<1>(b);
+         }
+        );
+    vector<ArrayIndex> match_indices;
+    for (const auto& t : matches) match_indices.push_back(get<0>(t));
+    printMinizincValue(out, match_indices);
+    out << ");" << endl;
 }
 
 void

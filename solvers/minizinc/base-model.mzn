@@ -53,6 +53,7 @@ array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
+array[allMatches] of allMatches: allMatchesBySize;
 
 % Arrays that encode constraints
 array[int,int] of int: sameLoc;
@@ -479,32 +480,18 @@ Dominated = {m | m in allMatches where is_dominated(m)};
 %     forall(d in Dominated)(not sel[d])
 %   );
 
+
+
 %==================
 % SOLVE AND OUTPUT
 %==================
 
 solve ::
   seq_search(
-    [ % This could result in an empty array, which causes most solvers to
-      % return an error. If that happens, remove the first bool_search
-      bool_search([ sel[m] | m in nonCopyMatches diff Dominated
-                                  where card(operationsCoveredByMatch[m])
-                                        +
-                                        card(dataDefinedByMatch[m])
-                                        > 2
+    [ bool_search([ sel[m]
+                  | m in allMatchesBySize
+                    where m in nonCopyMatches diff Dominated
                   ], input_order, indomain_max, complete)
-    , bool_search([ sel[m] | m in nonCopyMatches diff Dominated
-                                  where card(operationsCoveredByMatch[m])
-                                        +
-                                        card(dataDefinedByMatch[m])
-                                        = 2
-				  ], input_order, indomain_max, complete)
-    , bool_search([ sel[m] | m in nonCopyMatches diff Dominated
-                                  where card(operationsCoveredByMatch[m])
-                                        +
-                                        card(dataDefinedByMatch[m])
-                                        = 1
-				  ], input_order, indomain_max, complete)
 	]
   )
 minimize cost;

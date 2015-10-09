@@ -43,7 +43,8 @@ while [ -h "$SOURCE" ]; do # Resolve $SOURCE until the file is no longer a
 done
 THIS_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-MINIZINC_EXT_FILENAME="ll.model.ext.json"
+JSON_EXT_FILENAME="input.ll.model.ext.json"
+JSON_EXT2_FILENAME="input.ll.model.ext2.json"
 MINIZINC_PARAMS_FILENAME="params.mzn"
 MINIZINC_FULL_MODEL_FILENAME="full-model.mzn"
 MINIZINC_SOLUTION_FILENAME="full-model.szn"
@@ -251,7 +252,8 @@ fi
 reportNewEntity "$TMP_DIR"
 
 # Set filepath variables
-MINIZINC_EXT_FILEPATH="$TMP_DIR/$MINIZINC_EXT_FILENAME"
+JSON_EXT_FILEPATH="$TMP_DIR/$JSON_EXT_FILENAME"
+JSON_EXT2_FILEPATH="$TMP_DIR/$JSON_EXT2_FILENAME"
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
 MINIZINC_FULL_MODEL_FILEPATH="$TMP_DIR/$MINIZINC_FULL_MODEL_FILENAME"
 MINIZINC_SOLUTION_FILEPATH="$TMP_DIR/$MINIZINC_SOLUTION_FILENAME"
@@ -261,13 +263,16 @@ STATS_OUTPUT_FILEPATH="${JSON_OUTPUT_FILEPATH%.*}.stats"
 reportTask "Extending low-level model"
 exe "sicstus -f --nologo --noinfo --goal extend_and_halt." \
     " -l $THIS_DIR/extender.pl < $JSON_INPUT_FILEPATH" \
-    " > $MINIZINC_EXT_FILEPATH"
+    " > $JSON_EXT_FILEPATH"
 exitIfFailed
-reportNewEntity $MINIZINC_EXT_FILEPATH
+reportNewEntity $JSON_EXT_FILEPATH
+exe "$THIS_DIR/size-extender $JSON_EXT_FILEPATH > $JSON_EXT2_FILEPATH"
+exitIfFailed
+reportNewEntity $JSON_EXT2_FILEPATH
 
 reportTask "Generating MiniZinc parameter file"
 exe "sicstus -f --nologo --noinfo --goal convert_and_halt." \
-    " -l $THIS_DIR/json2params.pl < $MINIZINC_EXT_FILEPATH" \
+    " -l $THIS_DIR/json2params.pl < $JSON_EXT2_FILEPATH" \
     " > $MINIZINC_PARAMS_FILEPATH"
 exitIfFailed
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
@@ -296,6 +301,6 @@ exe "$THIS_DIR/mzn-solution-to-json $MINIZINC_SOLUTION_FILEPATH" \
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
 
-reportTask "Cleaning up temporary files"
-exe "rm -rf $TMP_DIR"
-exitIfFailed ""
+# reportTask "Cleaning up temporary files"
+# exe "rm -rf $TMP_DIR"
+# exitIfFailed ""

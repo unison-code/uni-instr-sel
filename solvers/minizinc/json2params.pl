@@ -98,6 +98,7 @@ classify('match-spanned-blocks', array1d(allMatches,set), spannedBlocksInMatch).
 classify('num-locations', asis, numLocations).
 classify('num-matches', asis, numMatches).
 classify('same-loc', array2d(asis), sameLoc).
+classify('matches-by-size', array1d(allMatches,asis), allMatchesBySize).
 
 
 
