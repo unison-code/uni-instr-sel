@@ -145,7 +145,7 @@ tmTest =
                       True
                       (ASSTemplate [])
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               , Instruction
                   1
                   [ InstrPattern
@@ -163,7 +163,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               , Instruction
                   2
                   [ InstrPattern
@@ -181,7 +181,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               , Instruction
                   3
                   [ InstrPattern
@@ -195,7 +195,7 @@ tmTest =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               , Instruction
                   4
                   [ InstrPattern
@@ -205,7 +205,7 @@ tmTest =
                       True
                       (ASSTemplate [])
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               , Instruction
                   5
                   [ InstrPattern
@@ -219,7 +219,7 @@ tmTest =
                         ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1 True False)
               ]
   in TargetMachine
        (toTargetMachineID "test")

@@ -91,6 +91,8 @@ data InstrProperties
         -- ^ Instruction latency (in cycles).
       , instrIsNonCopy :: Bool
         -- ^ Whether the instruction is a non-copy instruction.
+      , instrIsNullCopy :: Bool
+        -- ^ Whether the instruction is a null-copy instruction.
       }
   deriving (Show)
 

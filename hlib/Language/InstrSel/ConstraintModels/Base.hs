@@ -157,6 +157,8 @@ data HighLevelMatchParams
         -- of the generic phi patterns.
       , hlMatchIsNonCopyInstruction :: Bool
         -- ^ Whether the corresponding instruction is a non-copy instruction.
+      , hlMatchIsNullCopyInstruction :: Bool
+        -- ^ Whether the corresponding instruction is a null-copy instruction.
       , hlMatchHasControlFlow :: Bool
         -- ^ Whether the corresponding pattern contains any control flow.
       , hlMatchDataUsedByPhis :: [NodeID]
@@ -245,6 +247,8 @@ data LowLevelModel
         -- the array index of a particular match.
       , llMatchNonCopyInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to non-copy instructions.
+      , llMatchNullCopyInstructions :: [ArrayIndex]
+        -- ^ The matches that correspond to null-copy instructions.
       , llMatchADDUCs :: [Bool]
         -- ^ Whether to apply the def-dom-use constraint to some match. An index
         -- into the list corresponds to the array index of a particular match.
@@ -428,6 +432,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "constraints"
       <*> v .: "apply-def-dom-use-constraint"
       <*> v .: "is-non-copy-instr"
+      <*> v .: "is-null-copy-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
       <*> v .: "asm-str-node-maps"
@@ -449,6 +454,7 @@ instance ToJSON HighLevelMatchParams where
            , "constraints"                  .= (hlMatchConstraints d)
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
            , "is-non-copy-instr"            .= (hlMatchIsNonCopyInstruction d)
+           , "is-null-copy-instr"           .= (hlMatchIsNullCopyInstruction d)
            , "has-control-flow"             .= (hlMatchHasControlFlow d)
            , "data-used-by-phis"            .= (hlMatchDataUsedByPhis d)
            , "asm-str-node-maps"            .= (hlMatchAsmStrNodeMaplist d)
@@ -490,6 +496,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-non-copy-instrs"
+      <*> v .: "match-null-copy-instrs"
       <*> v .: "match-adduc-settings"
       <*> v .: "match-constraints"
   parseJSON _ = mzero
@@ -516,6 +523,7 @@ instance ToJSON LowLevelModel where
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
            , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)
+           , "match-null-copy-instrs"      .= (llMatchNullCopyInstructions m)
            , "match-adduc-settings"        .= (llMatchADDUCs m)
            , "match-constraints"           .= (llMatchConstraints m)
            ]
