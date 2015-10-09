@@ -101,7 +101,7 @@ mkGenericPhiInstructions =
                         map ( \n' ->
                               ( fromIntegral n'
                               , 0
-                              , EdgeLabel DataFlowEdge 0 ((toEdgeNr n)-2)
+                              , EdgeLabel DataFlowEdge 0 ((toEdgeNr n')-2)
                               )
                             )
                             [2..n+1]
