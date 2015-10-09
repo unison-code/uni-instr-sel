@@ -159,6 +159,14 @@ class ModelParams {
     getNonCopyInstrMatches(void) const;
 
     /**
+     * Gets the matches that have been derived from null-copy instructions.
+     *
+     * @returns List of match array indices.
+     */
+    std::list<ArrayIndex>
+    getNullCopyInstrMatches(void) const;
+
+    /**
      * Gets the function operations covered per matches.
      *
      * @returns Vector of list of operation array indices.
@@ -438,6 +446,19 @@ class ModelParams {
     setNonCopyInstrMatches(const Json::Value& root, ModelParams& p);
 
     /**
+     * Sets the matches that have been derived from null-copy instructions.
+     *
+     * @param root
+     *        The JSON root value.
+     * @param p
+     *        Object to add the data to.
+     * @throws Exception
+     *         When an error occurs.
+     */
+    static void
+    setNullCopyInstrMatches(const Json::Value& root, ModelParams& p);
+
+    /**
      * Sets the apply-def-dom-use-constraint settings for the matches.
      *
      * @param root
@@ -671,6 +692,11 @@ class ModelParams {
      * The matches that have been derived from non-copy instructions.
      */
     std::list<ArrayIndex> match_non_copy_instrs_;
+
+    /**
+     * The matches that have been derived from null-copy instructions.
+     */
+    std::list<ArrayIndex> match_null_copy_instrs_;
 
     /**
      * The constraints for each match. The constraints are destroyed when this

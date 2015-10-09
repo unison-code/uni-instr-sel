@@ -91,6 +91,7 @@ ModelParams::parseJson(const string& str, ModelParams& p) {
     setCodeSizesForMatches(root, p);
     setLatenciesForMatches(root, p);
     setNonCopyInstrMatches(root, p);
+    setNullCopyInstrMatches(root, p);
     setConstraintsForMatches(root, p);
     setADDUCSettingsForMatches(root, p);
     setOperationsCoveredByMatches(root, p);
@@ -162,6 +163,11 @@ ModelParams::getNonCopyInstrMatches(void) const {
     return match_non_copy_instrs_;
 }
 
+list<ArrayIndex>
+ModelParams::getNullCopyInstrMatches(void) const {
+    return match_null_copy_instrs_;
+}
+
 void
 ModelParams::setCodeSizesForMatches(const Json::Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "match-code-sizes")) {
@@ -180,6 +186,13 @@ void
 ModelParams::setNonCopyInstrMatches(const Value& root, ModelParams& p) {
     for (auto entry : getJsonValue(root, "match-non-copy-instrs")) {
         p.match_non_copy_instrs_.push_back(toArrayIndex(entry));
+    }
+}
+
+void
+ModelParams::setNullCopyInstrMatches(const Value& root, ModelParams& p) {
+    for (auto entry : getJsonValue(root, "match-null-copy-instrs")) {
+        p.match_null_copy_instrs_.push_back(toArrayIndex(entry));
     }
 }
 

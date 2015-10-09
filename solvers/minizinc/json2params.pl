@@ -93,6 +93,7 @@ classify('match-data-used', array1d(allMatches,set), dataUsedByMatch).
 classify('match-entry-blocks', array1d(allMatches,singleton), entryBlockOfMatch).
 classify('match-latencies', array1d(allMatches,asis), latencyOfMatch).
 classify('match-non-copy-instrs', set, nonCopyMatches).
+classify('match-null-copy-instrs', set, nullCopyMatches).
 classify('match-operations-covered', array1d(allMatches,set), operationsCoveredByMatch).
 classify('match-spanned-blocks', array1d(allMatches,set), spannedBlocksInMatch).
 classify('num-locations', asis, numLocations).

@@ -263,6 +263,10 @@ generateModelMatchParameters(
     printMinizincList(out, params.getNonCopyInstrMatches(), "{", "}");
     out << ";" << endl;
 
+    out << "nullCopyMatches = ";
+    printMinizincList(out, params.getNullCopyInstrMatches(), "{", "}");
+    out << ";" << endl;
+
     out << "allMatchesBySize = array1d(allMatches, ";
     vector< tuple<ArrayIndex, int> > matches;
     for (ArrayIndex m = 0; m < params.getNumMatches(); m++) {

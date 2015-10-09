@@ -53,6 +53,7 @@ array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
+set of allMatches: nullCopyMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
 % Arrays that encode constraints
