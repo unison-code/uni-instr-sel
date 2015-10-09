@@ -309,13 +309,23 @@ array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
                                    j in domSetOfBlockInFunctionPlusNull[i],
                                    k in 1..2
     ]);
-
 constraint
   forall ( m in allMatches diff Dominated, e in dataUsedByMatch[m]
                 where applyDefDomUseConstraintForMatch[m]
          )
   (
     table([place[m], def[e]], DomRel)
+  );
+
+% If a null-copy match is selected, then the data used by the null-copy must be
+% defined in the same block as the null-copy match.
+constraint
+  forall (m in nullCopyMatches)
+  (
+    forall (e in dataUsedByMatch[m])
+    (
+      sel[m] -> def[e] = place[m]
+    )
   );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
