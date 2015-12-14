@@ -70,7 +70,11 @@ MINIZINC_TIMELIMIT=""
 #================
 
 function echoerr {
-    echo "ERROR: $@" 1>&2
+    echo "$@" 1>&2
+}
+
+function echowarn {
+    echoerr "$@"
 }
 
 function exe {
@@ -82,9 +86,9 @@ function exitIfFailed {
     status=$?
     if [[ $status != 0 ]]; then
         if [ ! -z "$@" ]; then
-            echoerr "$@ (exit status $status)"
+            reportError "$@ (exit status $status)"
         else
-            echoerr "Terminated with exit status $status"
+            reportError "Terminated with exit status $status"
         fi
         exit 1
     fi
@@ -92,9 +96,17 @@ function exitIfFailed {
 
 function ensureFileExists {
     if [ ! -f "$@" ]; then
-        echoerr "Required file \"$@\" does not exist"
+        reportError "Required file \"$@\" does not exist"
         exit 1
     fi
+}
+
+function reportError {
+    echoerr "*** ERROR: $@"
+}
+
+function reportWarning {
+    echowarn "*** WARNING: $@"
 }
 
 function reportTask {
@@ -140,6 +152,17 @@ function purgeIntermediateSolutions {
     exitIfFailed ""
 }
 
+function warnAboutPotentialErrors {
+    error_word_count=`wc -w < $MINIZINC_ERROR_FILEPATH`
+    if [[ $error_word_count > 0 ]]; then
+        msg=`cat $MINIZINC_ERROR_FILEPATH`
+        echowarn
+        reportWarning "Potential problems were reported during solving:"
+        echowarn "$msg"
+        echowarn
+    fi
+}
+
 function executeSolver {
     working_dir=`pwd`
     cd "$TMP_DIR"
@@ -177,6 +200,7 @@ function executeSolver {
     error_msg=`cat $MINIZINC_ERROR_FILEPATH`
     $( exit $solver_exit_status ) # Restore $? to exit status of the solver
     exitIfFailed "$error_msg"
+    warnAboutPotentialErrors
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
     reportNewEntity "$stats_filepath"
 
@@ -215,7 +239,7 @@ do
             shift
         ;;
         *)
-            echoerr "Unknown argument switch '$1'"
+            reportError "Unknown argument switch '$1'"
             exit 1
         ;;
     esac
@@ -230,24 +254,24 @@ fi
 
 # Check arguments
 if [ -z "$JSON_INPUT_FILEPATH" ]; then
-    echoerr "No JSON input file provided (must be last argument)"
+    reportError "No JSON input file provided (must be last argument)"
     exit 1
 else
     ensureFileExists "$JSON_INPUT_FILEPATH"
 fi
 if [ -z "$JSON_OUTPUT_FILEPATH" ]; then
-    echoerr "No JSON output file provided (use -o or --output switch)"
+    reportError "No JSON output file provided (use -o or --output switch)"
     exit 1
 fi
 if [ -z "$MINIZINC_SOLVER_BIN" ]; then
-    echoerr "No solver specified (use -s or --solver switch)"
+    reportError "No solver specified (use -s or --solver switch)"
     exit 1
 fi
 
 reportTask "Creating temporary directory"
 TMP_DIR=`mktemp -d`
 if [ ! -d "$TMP_DIR" ]; then
-    echoerr "Failed to create temporary directory"
+    reportError "Failed to create temporary directory"
 fi
 reportNewEntity "$TMP_DIR"
 
