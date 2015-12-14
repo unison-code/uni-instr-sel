@@ -870,7 +870,7 @@ instance DfgBuildable LLVM.Instruction where
         d_node = fromJust $ lastTouchedNode st5
         st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
         st7 = addBlockToDatumDef st6 (fromJust $ currentBlock st6, d_node, 0)
-              -- ^ Since we've just created the value node and only added a
+              -- Since we've just created the value node and only added a
               -- single data-flow edge to it, we are guaranteed that the in-edge
               -- number of that data-flow edge is 0.
     in st7
@@ -930,7 +930,7 @@ instance CfgBuildable LLVM.Terminator where
     let st1 = buildCfgFromControlOp st0
                                     Op.Br
                                     ([] :: [LLVM.Operand])
-                                    -- ^ Signature needed to please GHC...
+                                    -- Signature needed to please GHC...
         br_node = fromJust $ lastTouchedNode st1
         st2 = ensureBlockNodeExists st1 (F.BlockName dst)
         dst_node = fromJust $ lastTouchedNode st2

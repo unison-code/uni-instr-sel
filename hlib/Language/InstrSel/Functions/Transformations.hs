@@ -107,7 +107,7 @@ assignMissingBlockNames f =
       ok_names = filter (`notElem` existing_names)
                          ( map (\i -> BlockName $ "bb" ++ show i)
                                ([0..] :: [Integer])
-                                -- ^ The type cast is to inhibit a compilation
+                                -- The type cast is to inhibit a compilation
                                 -- warning
                          )
       new_g =

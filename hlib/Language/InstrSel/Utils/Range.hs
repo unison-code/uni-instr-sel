@@ -33,9 +33,9 @@ import Data.Maybe
 data Range t
   = Range
       { lowerBound :: t
-        -- | Smallest possible value (i.e. inclusive).
+        -- ^ Smallest possible value (i.e. inclusive).
       , upperBound :: t
-        -- | Largest possible value (i.e. inclusive).
+        -- ^ Largest possible value (i.e. inclusive).
       }
   deriving (Eq)
 
