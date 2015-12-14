@@ -40,12 +40,8 @@ TOOLSPATH := tools
 .PHONY: build
 build: uni-is uni-patgen
 
-.PHONY: uni-patgen
-uni-patgen:
-	$(RM) *.cabal
-	ln -s uni-patgen.cabal.package uni-patgen.cabal
-	cabal install
-	rm uni-patgen.cabal
+.PHONY: docs
+docs: uni-is-doc uni-patgen-doc
 
 .PHONY: uni-is
 uni-is:
@@ -55,6 +51,29 @@ uni-is:
 	rm uni-is.cabal
 	cd $(SOLVERSPATH) && make
 	cd $(TOOLSPATH) && make
+
+.PHONY: uni-is-doc
+uni-is-doc:
+	$(RM) *.cabal
+	ln -s uni-is.cabal.package uni-is.cabal
+	cabal configure
+	cabal haddock --executables
+	rm uni-is.cabal
+
+.PHONY: uni-patgen
+uni-patgen:
+	$(RM) *.cabal
+	ln -s uni-patgen.cabal.package uni-patgen.cabal
+	cabal install
+	rm uni-patgen.cabal
+
+.PHONY: uni-patgen-doc
+uni-patgen-doc:
+	$(RM) *.cabal
+	ln -s uni-patgen.cabal.package uni-patgen.cabal
+	cabal configure
+	cabal haddock --executables
+	rm uni-patgen.cabal
 
 .PHONY: clean
 clean:
