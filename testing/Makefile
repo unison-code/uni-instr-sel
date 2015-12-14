@@ -81,7 +81,7 @@ clean:
 	$(RM) *.json
 	$(RM) *.s
 	$(RM) *.stats
-	$(RM) *.modeldump
+	$(RM) *.dump
 	$(RM) *.dot
 	$(RM) *.pdf
 
@@ -158,7 +158,7 @@ FUN_NAMES         := $(basename $(basename $(F_JSON_TARGETS)))
 FUN_ASM_TARGETS   := $(addsuffix .s, $(FUN_NAMES))
 FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
                           $(addsuffix .all-cover-plots, $(FUN_NAMES))
-FUN_MDUMP_TARGETS := $(addsuffix .modeldump, $(FUN_NAMES))
+FUN_MDUMP_TARGETS := $(addsuffix .dump, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
 $(FUN_PLOTS_TARGETS):
