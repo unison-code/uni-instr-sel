@@ -152,6 +152,15 @@ function purgeIntermediateSolutions {
     exitIfFailed ""
 }
 
+function cleanupErrorFile {
+    touch "$MINIZINC_ERROR_FILEPATH"
+    mv "$MINIZINC_ERROR_FILEPATH" "$MINIZINC_ERROR_FILEPATH.tmp"
+    cat "$MINIZINC_ERROR_FILEPATH.tmp" \
+      | grep -v "Opturion CPX(tm)" \
+      | grep -v "Academic license" \
+      > "$MINIZINC_ERROR_FILEPATH"
+}
+
 function warnAboutPotentialErrors {
     error_word_count=`wc -w < $MINIZINC_ERROR_FILEPATH`
     if [[ $error_word_count > 0 ]]; then
@@ -197,6 +206,7 @@ function executeSolver {
         # Solver timed out
         solver_exit_status=0
     fi
+    cleanupErrorFile
     error_msg=`cat $MINIZINC_ERROR_FILEPATH`
     $( exit $solver_exit_status ) # Restore $? to exit status of the solver
     exitIfFailed "$error_msg"
