@@ -38,8 +38,21 @@ TOOLSPATH := tools
 #=======
 
 .PHONY: build
-build:
+build: uni-is uni-patgen
+
+.PHONY: uni-patgen
+uni-patgen:
+	$(RM) *.cabal
+	ln -s uni-patgen.cabal.package uni-patgen.cabal
 	cabal install
+	rm uni-patgen.cabal
+
+.PHONY: uni-is
+uni-is:
+	$(RM) *.cabal
+	ln -s uni-is.cabal.package uni-is.cabal
+	cabal install
+	rm uni-is.cabal
 	cd $(SOLVERSPATH) && make
 	cd $(TOOLSPATH) && make
 
