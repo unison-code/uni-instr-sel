@@ -78,7 +78,7 @@ parseArgs =
                ]
     &= versionArg [ ignore ]
     &= program "uni-patgen"
-    &= summary ( "Unison (instruction selection) tool\n"
+    &= summary ( "Unison (pattern generator) tool\n"
                  ++
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
