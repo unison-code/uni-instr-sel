@@ -55,9 +55,9 @@ data Reconstructor
 -- Functions
 -------------
 
--- | Creates a @Reconstructor@ that traverses all parts of a constraint, but
+-- | Creates a 'Reconstructor' that traverses all parts of a constraint, but
 -- reconstructs the exact same constraint. In other words, it essentially
--- applies @id@ on every part.
+-- applies 'id' on every part.
 mkDefaultReconstructor :: Reconstructor
 mkDefaultReconstructor =
   let mkConstraint r (BoolExprConstraint expr) =

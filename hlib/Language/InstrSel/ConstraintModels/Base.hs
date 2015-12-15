@@ -300,7 +300,7 @@ data LowLevelSolution
         -- ^ The array index of the block wherein a particular match was
         -- placed. An index into the list corresponds to the array index of a
         -- particular match, but this datum is only valid if the corresponding
-        -- datum in @llIsMatchSelected@ is set to @True@.
+        -- datum in 'llIsMatchSelected' is set to 'True'.
       , llSolHasDatumLocation :: [Bool]
         -- ^ Indicates whether a location has been selected for a particular
         -- datum. An index into the list corresponds to the array index of a
@@ -309,7 +309,7 @@ data LowLevelSolution
         -- ^ Specifies the location of a particular datum. An index into the
         -- list corresponds to the array index of a particular datum, but this
         -- datum is only valid if the corresponding datum in
-        -- @llHasDatumLocation@ is set to @True@.
+        -- 'llHasDatumLocation' is set to 'True'.
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool

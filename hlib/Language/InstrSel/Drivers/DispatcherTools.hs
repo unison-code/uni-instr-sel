@@ -78,7 +78,7 @@ import Data.Maybe
 -- | Loads the content of a file.
 loadFileContent
   :: String
-     -- ^ Error message when the file path is @Nothing@.
+     -- ^ Error message when the file path is 'Nothing'.
   -> Maybe FilePath
      -- ^ The file to load.
   -> IO String

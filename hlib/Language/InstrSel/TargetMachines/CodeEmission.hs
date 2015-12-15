@@ -89,7 +89,7 @@ getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
 
 -- | Gets the block name for a given block node. If no such block can be found,
--- @Nothing@ is returned.
+-- 'Nothing' is returned.
 findNameOfBlockNode :: HighLevelModel -> NodeID -> Maybe BlockName
 findNameOfBlockNode model n =
   let bb_params = hlFunBlockParams $ hlFunctionParams model
@@ -99,7 +99,7 @@ findNameOfBlockNode model n =
      else Nothing
 
 -- | Sorts a list of matches according to their flow dependencies. This is done
--- by first constructing the corresponding @FlowGraph@ for the matches, and then
+-- by first constructing the corresponding 'FlowDAG' for the matches, and then
 -- performing a topological sort on that DAG.
 sortMatchesByFlow :: HighLevelModel -> [MatchID] -> [MatchID]
 sortMatchesByFlow model ms =
@@ -176,7 +176,7 @@ addControlEdgesToDAG model mid g =
           in foldr (\n' g' -> I.insEdge (n', pi_n, ()) g') g other_ns
      else g
 
--- | Retrieves the @HighLevelMatchParams@ entity with matching match ID. It is
+-- | Retrieves the 'HighLevelMatchParams' entity with matching match ID. It is
 -- assumed that exactly one such entity always exists in the given list.
 getHLMatchParams :: [HighLevelMatchParams] -> MatchID -> HighLevelMatchParams
 getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
@@ -276,7 +276,7 @@ emitInstructionPart model sol m (ASBlockOfValueNode n) =
           "l?"
 
 -- | Takes the node ID of a datum, and returns the selected match that defines
--- that datum. If no such match can be found, @Nothing@ is returned.
+-- that datum. If no such match can be found, 'Nothing' is returned.
 findDefinerOfData
   :: HighLevelModel
   -> HighLevelSolution

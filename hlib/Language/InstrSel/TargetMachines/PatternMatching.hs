@@ -71,7 +71,7 @@ instance NFData PatternMatchset where
 -- | Contains the information needed to identify which instruction and pattern a
 -- given match originates from. Each match is also given a 'MatchID' that must
 -- be unique (although not necessarily continuous) for every match within a list
--- of @PatternMatch@.
+-- of 'PatternMatch'.
 data PatternMatch
   = PatternMatch
       { pmInstrID :: InstructionID

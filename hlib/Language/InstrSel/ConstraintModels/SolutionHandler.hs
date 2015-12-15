@@ -171,7 +171,7 @@ getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
 
 
--- | Retrieves the @HighLevelMatchParams@ entity with matching match ID. It is
+-- | Retrieves the 'HighLevelMatchParams' entity with matching match ID. It is
 -- assumed that exactly one such entity always exists in the given list.
 getHLMatchParams :: [HighLevelMatchParams] -> MatchID -> HighLevelMatchParams
 getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps

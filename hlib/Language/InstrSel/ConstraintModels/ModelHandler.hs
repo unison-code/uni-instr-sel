@@ -211,7 +211,7 @@ processMatch instr pattern match mid =
 
 -- | Computes the assembly string node ID mappings, which is done as follows: if
 -- the assembly string part contains a node ID, take the node ID from the
--- corresponding node in the function graph. Otherwise use @Nothing@.
+-- corresponding node in the function graph. Otherwise use 'Nothing'.
 computeAsmStrNodeMaps
   :: AssemblyStringTemplate
   -> Match NodeID
@@ -224,7 +224,7 @@ computeAsmStrNodeMaps t m =
         f (ASNameOfBlockNode      n) = findFNInMatch m n
         f (ASBlockOfValueNode     n) = findFNInMatch m n
 
--- | Replaces occurrences of @ThisMatchExpr@ in a constraint with the given
+-- | Replaces occurrences of 'ThisMatchExpr' in a constraint with the given
 -- match ID.
 replaceThisMatchExprInC :: MatchID -> Constraint -> Constraint
 replaceThisMatchExprInC mid c =

@@ -283,7 +283,7 @@ newtype EdgeNr
 instance Show EdgeNr where
   show (EdgeNr i) = show i
 
--- | Represents a mapping between two entities (typically @Node@s or @NodeID@s).
+-- | Represents a mapping between two entities (typically 'Node's or 'NodeID's).
 data Mapping n
   = Mapping
       { fNode :: n
@@ -1471,7 +1471,7 @@ delNodeKeepEdges g n =
      then mergeNodes (head preds) n g
      else delNode n g
 
--- | Gets the root from a control-flow graph. If there is no root, @Nothing@ is
+-- | Gets the root from a control-flow graph. If there is no root, 'Nothing' is
 -- returned. If there is more than one root, an error is produced.
 rootInCFG :: Graph -> Maybe Node
 rootInCFG g =
