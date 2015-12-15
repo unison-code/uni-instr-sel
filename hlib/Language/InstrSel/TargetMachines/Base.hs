@@ -27,7 +27,7 @@ module Language.InstrSel.TargetMachines.Base
   , findInstruction
   , findInstrPattern
   , findLocation
-  , flatAsmStrParts
+  , flattenAsmStrParts
   , updateNodeInAsmStrTemplate
   )
 where
@@ -183,17 +183,18 @@ findLocation rs rid =
      then Just $ head found
      else Nothing
 
-flatAsmStrParts :: AssemblyStringTemplate -> [[AssemblyStringPart]]
-flatAsmStrParts (ASSTemplate []) = []
-flatAsmStrParts (ASSTemplate asps) = [asps]
-flatAsmStrParts (ASSMultiTemplate ats) = map (head . flatAsmStrParts) ats
+-- | Flattens a (potentially multi-level) 'AssemblyStringTemplate'.
+flattenAsmStrParts :: AssemblyStringTemplate -> [[AssemblyStringPart]]
+flattenAsmStrParts (ASSTemplate []) = []
+flattenAsmStrParts (ASSTemplate asps) = [asps]
+flattenAsmStrParts (ASSMultiTemplate ats) = map (head . flattenAsmStrParts) ats
 
 -- | Replaces a node reference used in the template with another reference.
 updateNodeInAsmStrTemplate
   :: NodeID
-     -- The new node ID.
+     -- ^ The new node ID.
   -> NodeID
-     -- The old node ID to be replaced.
+     -- ^ The old node ID to be replaced.
   -> AssemblyStringTemplate
   -> AssemblyStringTemplate
 updateNodeInAsmStrTemplate new_n old_n (ASSMultiTemplate ts) =

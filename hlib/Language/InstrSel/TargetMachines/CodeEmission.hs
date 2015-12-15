@@ -204,7 +204,7 @@ emitInstructions model sol tm mid =
       instr_parts = map
                     (\ips -> updateNodeIDsInAsmStrParts ips
                              (hlMatchAsmStrNodeMaplist match))
-                    (flatAsmStrParts $ patAsmStrTemplate pat_data)
+                    (flattenAsmStrParts $ patAsmStrTemplate pat_data)
   in map
      (\ip -> AsmInstruction $ concatMap (emitInstructionPart model sol tm) ip)
      instr_parts

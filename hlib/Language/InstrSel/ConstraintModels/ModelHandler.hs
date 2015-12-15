@@ -217,7 +217,7 @@ computeAsmStrNodeMaps
   -> Match NodeID
   -> [Maybe NodeID]
 computeAsmStrNodeMaps t m =
-  map f (concat $ flatAsmStrParts t)
+  map f (concat $ flattenAsmStrParts t)
   where f (ASVerbatim _) = Nothing
         f (ASReferenceToValueNode n) = findFNInMatch m n
         f (ASIntConstOfValueNode  n) = findFNInMatch m n
