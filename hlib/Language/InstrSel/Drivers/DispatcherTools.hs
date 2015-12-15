@@ -68,21 +68,12 @@ import Data.Maybe
   ( fromJust
   , isNothing
   )
-import System.Directory
-  ( doesFileExist )
 
 
 
 -------------
 -- Functions
 -------------
-
-readFileContent :: FilePath -> IO String
-readFileContent file =
-  do exists_file <- doesFileExist file
-     when (not exists_file) $
-       reportError $ "File " ++ show file ++ " does not exist."
-     readFile file
 
 -- | Loads the content of a file.
 loadFileContent

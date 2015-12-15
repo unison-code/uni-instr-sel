@@ -14,6 +14,12 @@
 
 module Language.InstrSel.Utils.IO where
 
+import Control.Monad
+  ( when )
+
+import qualified System.Directory as D
+  ( doesFileExist )
+
 import System.Exit
   ( exitFailure )
 
@@ -29,3 +35,16 @@ reportError :: String -> IO a
 reportError str =
   do putStrLn str
      exitFailure
+
+-- | Checks if a given file exists.
+doesFileExist :: FilePath -> IO Bool
+doesFileExist = D.doesFileExist
+
+-- | Reads the content of a given file. If the file does not exist an error is
+-- reported and then the program fails.
+readFileContent :: FilePath -> IO String
+readFileContent file =
+  do exists_file <- doesFileExist file
+     when (not exists_file) $
+       reportError $ "File " ++ show file ++ " does not exist."
+     readFile file
