@@ -12,7 +12,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Utils.IO where
+module Language.InstrSel.Utils.IO
+  ( reportError
+  , doesFileExist
+  , readFileContent
+  , when
+  )
+where
+
+
 
 import Control.Monad
   ( when )
