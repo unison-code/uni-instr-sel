@@ -38,10 +38,10 @@ TOOLSPATH := tools
 #=======
 
 .PHONY: build
-build: uni-is uni-patgen
+build: uni-is uni-targen
 
 .PHONY: docs
-docs: uni-is-doc uni-patgen-doc
+docs: uni-is-doc uni-targen-doc
 
 .PHONY: uni-is
 uni-is:
@@ -60,20 +60,20 @@ uni-is-doc:
 	cabal haddock --executables
 	rm uni-is.cabal
 
-.PHONY: uni-patgen
-uni-patgen:
+.PHONY: uni-targen
+uni-targen:
 	$(RM) *.cabal
-	ln -s uni-patgen.cabal.package uni-patgen.cabal
+	ln -s uni-targen.cabal.package uni-targen.cabal
 	cabal install
-	rm uni-patgen.cabal
+	rm uni-targen.cabal
 
-.PHONY: uni-patgen-doc
-uni-patgen-doc:
+.PHONY: uni-targen-doc
+uni-targen-doc:
 	$(RM) *.cabal
-	ln -s uni-patgen.cabal.package uni-patgen.cabal
+	ln -s uni-targen.cabal.package uni-targen.cabal
 	cabal configure
 	cabal haddock --executables
-	rm uni-patgen.cabal
+	rm uni-targen.cabal
 
 .PHONY: clean
 clean:

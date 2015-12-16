@@ -26,14 +26,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {-# LANGUAGE DeriveDataTypeable #-}
 
-import System.Console.CmdArgs
-import System.Console.CmdArgs.Text
+import Language.InstrSel.Utils.IO
 
 import Data.Maybe
   ( fromJust
   , isJust
   , isNothing
   )
+
+import System.Console.CmdArgs
+import System.Console.CmdArgs.Text
 
 
 
@@ -77,11 +79,29 @@ parseArgs =
                , groupname "Other flags"
                ]
     &= versionArg [ ignore ]
-    &= program "uni-patgen"
-    &= summary ( "Unison (pattern generator) tool\n"
+    &= program "uni-targen"
+    &= summary ( "Unison (target machine generator) tool\n"
                  ++
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
+
+-- | Loads the content of the machine description file specified on the command
+-- line. Reports error if no file is specified.
+loadMachDescFile :: Options -> IO FilePath
+loadMachDescFile opts =
+  do let f = machDescFile opts
+     when (isNothing f) $
+       reportError "No machine description provided."
+     readFileContent $ fromJust f
+
+-- | Returns output directory specified on the command line. Reports error if no
+-- directory is specified.
+getOutDir :: Options -> IO FilePath
+getOutDir opts =
+  do let d = outDir opts
+     when (isNothing d) $
+       reportError "No output directory provided."
+     return $ fromJust d
 
 
 
@@ -92,4 +112,5 @@ parseArgs =
 main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
-     putStrLn "TODO: implement"
+     m <- loadMachDescFile opts
+     putStr m
