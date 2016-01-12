@@ -23,7 +23,7 @@ import Language.InstrSel.Utils.JSON
   ( toJson )
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -45,4 +45,4 @@ run CombineConstantsInFunctionGraph f =
   do let new_f = combineConstants f
      return [toOutputWithoutID $ toJson new_f]
 
-run _ _ = reportError "TransformFunctionGraph: unsupported action"
+run _ _ = reportErrorAndExit "TransformFunctionGraph: unsupported action"

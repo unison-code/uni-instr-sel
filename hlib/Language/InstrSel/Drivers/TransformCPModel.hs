@@ -25,7 +25,7 @@ import Language.InstrSel.Utils.JSON
   ( toJson )
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -45,4 +45,4 @@ run LowerHighLevelCPModel str ai_maps =
      let new_model = lowerHighLevelModel model ai_maps
      return [toOutputWithoutID $ toJson new_model]
 
-run _ _ _ = reportError "TransformCPModel: unsupported action"
+run _ _ _ = reportErrorAndExit "TransformCPModel: unsupported action"

@@ -29,7 +29,7 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.Graphs.GraphViz
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -52,4 +52,4 @@ run PlotPatternControlFlowGraph p = produceDotOutputWith extractCFG p
 
 run PlotPatternSSAGraph p = produceDotOutputWith extractSSA p
 
-run _ _ = reportError "PlotPatternGraphs: unsupported action"
+run _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"

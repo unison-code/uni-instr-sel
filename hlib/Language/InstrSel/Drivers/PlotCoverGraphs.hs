@@ -26,7 +26,7 @@ import Language.InstrSel.Graphs.GraphViz
 import qualified Data.GraphViz as GV
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 import Data.Maybe
   ( isJust )
@@ -58,7 +58,7 @@ run PlotCoverPerMatch function matchset =
        )
        matches
 
-run _ _ _ = reportError "PlotCoverGraph: unsupported action"
+run _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =

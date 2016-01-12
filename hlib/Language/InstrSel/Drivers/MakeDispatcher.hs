@@ -42,7 +42,7 @@ run opts = dispatch (makeAction opts) opts
 dispatch :: MakeAction -> Options -> IO [Output]
 dispatch a opts
   | a == MakeNothing =
-      reportError "No make action provided."
+      reportErrorAndExit "No make action provided."
   | a `elem` [MakeFunctionGraphFromLLVM] =
       do content <- loadFunctionFileContent opts
          MakeFunctionFromLLVM.run a content
@@ -71,4 +71,4 @@ dispatch a opts
          sol <- loadFromJson sol_content
          MakeAssemblyCode.run a model sol
   | otherwise =
-      reportError "MakeDispatcher: unsupported action"
+      reportErrorAndExit "MakeDispatcher: unsupported action"

@@ -29,7 +29,7 @@ import Language.InstrSel.ConstraintModels
 import Language.InstrSel.TargetMachines.CodeEmission
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -45,7 +45,7 @@ run MakeAssemblyCode model sol =
          code_str = concat $ map (\c -> showCode c ++ "\n") code
      return [toOutputWithoutID code_str]
 
-run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"
+run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"
 
 -- | Flattens the assembly code into a string.
 showCode :: AssemblyCode -> String

@@ -30,6 +30,6 @@ run opts = dispatch (checkAction opts) opts
 dispatch :: CheckAction -> Options -> IO [Output]
 dispatch a opts
   | a == CheckNothing =
-      reportError "No check action provided."
+      reportErrorAndExit "No check action provided."
   | otherwise =
-      reportError "CheckDispatcher: unsupported action"
+      reportErrorAndExit "CheckDispatcher: unsupported action"

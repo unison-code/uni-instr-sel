@@ -36,7 +36,7 @@ run opts = dispatch (transformAction opts) opts
 dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =
-      reportError "No transform action provided."
+      reportErrorAndExit "No transform action provided."
   | a `elem` [ CopyExtendFunctionGraph
              , BranchExtendFunctionGraph
              , CombineConstantsInFunctionGraph
@@ -55,4 +55,4 @@ dispatch a opts
          ai_maps <- loadFromJson ai_content
          TransformCPSolution.run a sol_content m_content ai_maps
   | otherwise =
-      reportError "TransformDispatcher: unsupported action"
+      reportErrorAndExit "TransformDispatcher: unsupported action"

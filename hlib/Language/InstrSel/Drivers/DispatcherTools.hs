@@ -85,7 +85,7 @@ loadFileContent
      -- ^ The file content.
 loadFileContent err file =
   do when (isNothing file) $
-       reportError err
+       reportErrorAndExit err
      readFileContent $ fromJust file
 
 loadArrayIndexMaplistsFileContent :: Options -> IO String
@@ -115,7 +115,7 @@ getSelectedTargetMachineID :: Options -> IO TargetMachineID
 getSelectedTargetMachineID opts =
   do let tmid = targetName opts
      when (isNothing tmid) $
-       reportError "No target machine provided."
+       reportErrorAndExit "No target machine provided."
      return $ toTargetMachineID $ fromJust tmid
 
 -- | Returns the instruction ID specified on the command line. Reports error
@@ -124,7 +124,7 @@ getSelectedInstructionID :: Options -> IO InstructionID
 getSelectedInstructionID opts =
   do let iid = instructionID opts
      when (isNothing iid) $
-       reportError "No instruction ID provided."
+       reportErrorAndExit "No instruction ID provided."
      return $ toInstructionID $ fromJust iid
 
 -- | Returns the pattern ID specified on the command line. Reports error
@@ -133,7 +133,7 @@ getSelectedPatternID :: Options -> IO PatternID
 getSelectedPatternID opts =
   do let pid = patternID opts
      when (isNothing pid) $
-       reportError "No pattern ID provided."
+       reportErrorAndExit "No pattern ID provided."
      return $ toPatternID $ fromJust pid
 
 -- | Returns the target machine with given ID. Reports error if no such target
@@ -142,7 +142,7 @@ loadTargetMachine :: TargetMachineID -> IO TargetMachine
 loadTargetMachine tid =
   do let target = retrieveTargetMachine tid
      when (isNothing target) $
-       reportError $ "Unrecognized target machine: " ++ (show tid)
+       reportErrorAndExit $ "Unrecognized target machine: " ++ (show tid)
      return $ fromJust target
 
 -- | Returns the instruction pattern with given ID. Reports error if no such
@@ -155,13 +155,15 @@ loadInstrPattern
 loadInstrPattern tm iid pid =
   do let instr = findInstruction (tmInstructions tm) iid
      when (isNothing instr) $
-       reportError $ "No instruction with ID '" ++ (show iid)
-                     ++ "' in target machine '" ++ (show $ tmID tm) ++ "'"
+       reportErrorAndExit $ "No instruction with ID '" ++ (show iid)
+                            ++ "' in target machine '" ++ (show $ tmID tm)
+                            ++ "'"
      let pattern = findInstrPattern (instrPatterns $ fromJust instr) pid
      when (isNothing pattern) $
-       reportError $ "No pattern with ID '" ++ (show pid)
-                     ++ "' in instruction '" ++ (show iid) ++ "'"
-                     ++ "' in target machine '" ++ (show $ tmID tm) ++ "'"
+       reportErrorAndExit $ "No pattern with ID '" ++ (show pid)
+                            ++ "' in instruction '" ++ (show iid) ++ "'"
+                            ++ "' in target machine '" ++ (show $ tmID tm)
+                            ++ "'"
      return $ fromJust pattern
 
 -- | Parses a given JSON string and loads its content. Reports error if this
@@ -170,7 +172,7 @@ loadFromJson :: (FromJSON a) => String -> IO a
 loadFromJson str =
   do let res = fromJson str
      when (isLeft res) $
-       reportError $ fromLeft res
+       reportErrorAndExit $ fromLeft res
      return $ fromRight res
 
 loadFunctionFromJson :: Options -> IO Function

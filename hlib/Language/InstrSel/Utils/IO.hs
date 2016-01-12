@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Utils.IO
-  ( reportError
+  ( reportErrorAndExit
   , doesFileExist
   , readFileContent
   , when
@@ -39,8 +39,8 @@ import System.Exit
 
 -- | Reports an error, and then terminates the program with an appropriate exit
 -- code.
-reportError :: String -> IO a
-reportError str =
+reportErrorAndExit :: String -> IO a
+reportErrorAndExit str =
   do putStrLn str
      exitFailure
 
@@ -54,5 +54,5 @@ readFileContent :: FilePath -> IO String
 readFileContent file =
   do exists_file <- doesFileExist file
      when (not exists_file) $
-       reportError $ "File " ++ show file ++ " does not exist."
+       reportErrorAndExit $ "File " ++ show file ++ " does not exist."
      readFile file

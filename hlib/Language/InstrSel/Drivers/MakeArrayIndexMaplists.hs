@@ -28,7 +28,7 @@ import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils.JSON
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -43,4 +43,4 @@ run MakeArrayIndexMaplists function matchset =
      let mapset = mkArrayIndexMaplists function tm (pmMatches matchset)
      return [toOutputWithoutID $ toJson mapset]
 
-run _ _ _ = reportError "MakeArrayIndexMaplists: unsupported action"
+run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"

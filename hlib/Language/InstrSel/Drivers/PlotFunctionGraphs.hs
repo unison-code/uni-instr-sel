@@ -28,7 +28,7 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.Graphs.GraphViz
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -51,4 +51,4 @@ run PlotFunctionControlFlowGraph fun = produceDotOutputWith extractCFG fun
 
 run PlotFunctionSSAGraph fun = produceDotOutputWith extractSSA fun
 
-run _ _ = reportError "PlotFunctionGraphs: unsupported action"
+run _ _ = reportErrorAndExit "PlotFunctionGraphs: unsupported action"

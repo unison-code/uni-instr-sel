@@ -27,7 +27,7 @@ import Language.InstrSel.Utils
   , isLeft
   )
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 import LLVM.General
 import LLVM.General.Context
@@ -53,11 +53,11 @@ run MakeFunctionGraphFromLLVM str =
              runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft llvm_module_result) $
-       reportError $ fromLeft $ fromLeft llvm_module_result
+       reportErrorAndExit $ fromLeft $ fromLeft llvm_module_result
      let llvm_module = fromRight llvm_module_result
      let functions = mkFunctionsFromLlvmModule llvm_module
      when (length functions > 1) $
-       reportError "Only supports one function per module."
+       reportErrorAndExit "Only supports one function per module."
      return [toOutputWithoutID $ toJson $ head functions]
 
-run _ _ = reportError "MakeFunctionFromLLVM: unsupported action"
+run _ _ = reportErrorAndExit "MakeFunctionFromLLVM: unsupported action"

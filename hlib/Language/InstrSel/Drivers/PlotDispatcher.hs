@@ -36,7 +36,7 @@ run opts = dispatch (plotAction opts) opts
 dispatch :: PlotAction -> Options -> IO [Output]
 dispatch a opts
   | a == PlotNothing =
-      reportError "No plot action provided."
+      reportErrorAndExit "No plot action provided."
   | a `elem` [ PlotFunctionFullGraph
              , PlotFunctionControlFlowGraph
              , PlotFunctionSSAGraph
@@ -58,4 +58,4 @@ dispatch a opts
          matchset <- loadPatternMatchsetFromJson opts
          PlotCoverGraphs.run a function matchset
   | otherwise =
-      reportError "PlotDispatcher: unsupported action"
+      reportErrorAndExit "PlotDispatcher: unsupported action"

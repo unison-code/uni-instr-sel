@@ -28,7 +28,7 @@ import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils.JSON
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 import Data.Maybe
   ( fromJust
@@ -46,10 +46,11 @@ run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 run MakeHighLevelCPModel function matchset =
   do let target = retrieveTargetMachine $ pmTarget matchset
      when (isNothing target) $
-       reportError $ "Unrecognized target machine: " ++ (show $ fromJust target)
+       reportErrorAndExit $ "Unrecognized target machine: "
+                            ++ (show $ fromJust target)
      let model = mkHighLevelModel function
                                   (fromJust target)
                                   (pmMatches matchset)
      return [toOutputWithoutID $ toJson model]
 
-run _ _ _ = reportError "MakeCPModel: unsupported action"
+run _ _ _ = reportErrorAndExit "MakeCPModel: unsupported action"

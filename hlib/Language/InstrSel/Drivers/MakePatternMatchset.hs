@@ -28,7 +28,7 @@ import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils.JSON
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 import System.Clock
   ( TimeSpec, getTime, Clock(..), sec, nsec )
@@ -51,7 +51,7 @@ run MakePatternMatchset function target =
          matches' = matches {pmTime = Just time}
      return [toOutputWithoutID $ toJson matches']
 
-run _ _ _ = reportError "MakePatternMatchset: unsupported action"
+run _ _ _ = reportErrorAndExit "MakePatternMatchset: unsupported action"
 
 seconds ::  TimeSpec -> TimeSpec -> Double
 seconds start end =

@@ -41,7 +41,7 @@ import Data.Maybe
   ( fromJust )
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -110,4 +110,5 @@ run MakeDumpFromArrayIndexMaplists function matchset ai_maps =
                    (dumpInstructions $ ai2InstructionIDs ai_maps)
                ]
 
-run _ _ _ _ = reportError "MakeDumpFromArrayIndexMaplists: unsupported action"
+run _ _ _ _ =
+  reportErrorAndExit "MakeDumpFromArrayIndexMaplists: unsupported action"

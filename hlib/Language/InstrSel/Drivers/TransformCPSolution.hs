@@ -26,7 +26,7 @@ import Language.InstrSel.Utils.JSON
   ( toJson )
 
 import Language.InstrSel.Utils.IO
-  ( reportError )
+  ( reportErrorAndExit )
 
 
 
@@ -50,4 +50,4 @@ run RaiseLowLevelCPSolution str mstr ai_maps =
      let new_sol = raiseLowLevelSolution sol model target ai_maps
      return [toOutputWithoutID $ toJson new_sol]
 
-run _ _ _ _ = reportError "TransformCPSolution: unsupported action"
+run _ _ _ _ = reportErrorAndExit "TransformCPSolution: unsupported action"
