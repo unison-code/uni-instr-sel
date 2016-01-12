@@ -24,11 +24,11 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-import Language.InstrSel.Drivers
-import qualified Language.InstrSel.Drivers.CheckDispatcher as Check
-import qualified Language.InstrSel.Drivers.MakeDispatcher as Make
-import qualified Language.InstrSel.Drivers.PlotDispatcher as Plot
-import qualified Language.InstrSel.Drivers.TransformDispatcher as Transform
+import UniIS.Drivers
+import qualified UniIS.Drivers.CheckDispatcher as Check
+import qualified UniIS.Drivers.MakeDispatcher as Make
+import qualified UniIS.Drivers.PlotDispatcher as Plot
+import qualified UniIS.Drivers.TransformDispatcher as Transform
 
 import Language.InstrSel.Utils
   ( splitOn
@@ -40,11 +40,8 @@ import System.Console.CmdArgs.Text
 
 import Data.Maybe
   ( fromJust
-  , isJust
   , isNothing
   )
-import System.FilePath.Posix
-  ( splitExtension )
 
 
 
@@ -279,29 +276,15 @@ parseArgs =
          )
 
 -- | If an output file is given as part of the options, then the returned
--- function will emit all data to the output file with the output ID suffixed to
--- the output file name (this may mean that several output files are
--- produced). Otherwise the data will be emitted to 'STDOUT'.
+-- function will emit all data to the output file with the output ID suffixed
+-- to the output file name (this may mean that several output files are
+-- produced). Otherwise the data will be emit to 'STDOUT'.
 mkEmitFunction :: Options -> IO (Output -> IO ())
 mkEmitFunction opts =
   do let file = outFile opts
      if isNothing file
      then return emitToStdout
      else return $ emitToFile (fromJust file)
-
--- | A function that emits output to 'STDOUT'.
-emitToStdout :: Output -> IO ()
-emitToStdout = putStrLn . oData
-
--- | A function that emits output to a file of a given name and the output ID
--- suffixed.
-emitToFile :: FilePath -> Output -> IO ()
-emitToFile fp o =
-  let (fname, ext) = splitExtension fp
-      oid = oID o
-      filename =
-        fname ++ (if isJust oid then "." ++ fromJust oid else "") ++ ext
-  in writeFile filename (oData o)
 
 
 

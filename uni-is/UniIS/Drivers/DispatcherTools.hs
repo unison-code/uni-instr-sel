@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.DispatcherTools
+-- Module      : UniIS.Drivers.DispatcherTools
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,8 +12,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.DispatcherTools
-  ( module Language.InstrSel.Drivers.Base
+module UniIS.Drivers.DispatcherTools
+  ( module UniIS.Drivers.Base
   , module Language.InstrSel.Utils
   , module Language.InstrSel.Utils.IO
   , getSelectedTargetMachineID
@@ -34,7 +34,7 @@ module Language.InstrSel.Drivers.DispatcherTools
   )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.ConstraintModels
   ( ArrayIndexMaplists )
 import Language.InstrSel.Functions

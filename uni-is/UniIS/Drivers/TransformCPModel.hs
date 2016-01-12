@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.TransformCPModel
+-- Module      : UniIS.Drivers.TransformCPModel
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,12 +12,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.TransformCPModel
+module UniIS.Drivers.TransformCPModel
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
-import Language.InstrSel.Drivers.DispatcherTools
+import UniIS.Drivers.Base
+import UniIS.Drivers.DispatcherTools
   ( loadFromJson )
 import Language.InstrSel.ConstraintModels
 import Language.InstrSel.ConstraintModels.ModelHandler

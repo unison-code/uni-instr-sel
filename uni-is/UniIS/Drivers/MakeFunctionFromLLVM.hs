@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeFunctionFromLLVM
+-- Module      : UniIS.Drivers.MakeFunctionFromLLVM
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,11 +12,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeFunctionFromLLVM
+module UniIS.Drivers.MakeFunctionFromLLVM
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.Functions.LLVM
   ( mkFunctionsFromLlvmModule )
 import Language.InstrSel.Utils.JSON

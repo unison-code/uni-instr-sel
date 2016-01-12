@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeArrayIndexMaplists
+-- Module      : UniIS.Drivers.MakeArrayIndexMaplists
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -13,12 +13,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeArrayIndexMaplists
+module UniIS.Drivers.MakeArrayIndexMaplists
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
-import Language.InstrSel.Drivers.DispatcherTools
+import UniIS.Drivers.Base
+import UniIS.Drivers.DispatcherTools
   ( loadTargetMachine )
 import Language.InstrSel.ConstraintModels.ArrayIndexMaplistsMaker
 import Language.InstrSel.Functions

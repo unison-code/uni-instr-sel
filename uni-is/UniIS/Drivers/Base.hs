@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.Base
+-- Module      : UniIS.Drivers.Base
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,22 +14,33 @@
 
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Language.InstrSel.Drivers.Base
+module UniIS.Drivers.Base
   ( CheckAction (..)
   , MakeAction (..)
   , PlotAction (..)
   , TransformAction (..)
   , Options (..)
   , Output (..)
+  , emitToStdout
+  , emitToFile
   , toOutput
   , toOutputWithoutID
   )
 where
 
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
+
 import System.Console.CmdArgs
   ( Data
   , Typeable
   )
+
+import System.FilePath.Posix
+  ( splitExtension )
+
 
 
 --------------
@@ -125,3 +136,16 @@ toOutput oid s = toOutput' (Just oid) s
 
 toOutput' :: Maybe String -> String -> Output
 toOutput' oid s = Output { oID = oid, oData = s }
+
+-- | Emits output to 'STDOUT'.
+emitToStdout :: Output -> IO ()
+emitToStdout = putStrLn . oData
+
+-- | Emits output to a file of a given name and the output ID suffixed.
+emitToFile :: FilePath -> Output -> IO ()
+emitToFile fp o =
+  let (fname, ext) = splitExtension fp
+      oid = oID o
+      filename =
+        fname ++ (if isJust oid then "." ++ fromJust oid else "") ++ ext
+  in writeFile filename (oData o)

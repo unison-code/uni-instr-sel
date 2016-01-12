@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.PlotPatternGraphs
+-- Module      : UniIS.Drivers.PlotFunctionGraphs
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -8,22 +8,21 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Used for plotting various information about a pattern graph.
+-- Used for plotting various information about a function graph.
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.PlotPatternGraphs
+module UniIS.Drivers.PlotFunctionGraphs
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.Graphs
   ( Graph
   , extractCFG
   , extractSSA
   )
-import Language.InstrSel.TargetMachines
-  ( InstrPattern (..) )
+import Language.InstrSel.Functions
 import Language.InstrSel.OpStructures
 
 import Language.InstrSel.Graphs.GraphViz
@@ -38,18 +37,18 @@ import Language.InstrSel.Utils.IO
 -------------
 
 -- | Produces DOT data as output by applying a given graph-to-graph function on
--- the given 'InstrPattern'.
-produceDotOutputWith :: (Graph -> Graph) -> InstrPattern -> IO [Output]
-produceDotOutputWith f p =
-  do let dot = toDotString $ f $ osGraph $ patOS p
+-- the given 'Function'.
+produceDotOutputWith :: (Graph -> Graph) -> Function -> IO [Output]
+produceDotOutputWith f fun =
+  do let dot = toDotString $ f $ osGraph $ functionOS fun
      return [toOutputWithoutID dot]
 
-run :: PlotAction -> InstrPattern -> IO [Output]
+run :: PlotAction -> Function -> IO [Output]
 
-run PlotPatternFullGraph p = produceDotOutputWith id p
+run PlotFunctionFullGraph fun = produceDotOutputWith id fun
 
-run PlotPatternControlFlowGraph p = produceDotOutputWith extractCFG p
+run PlotFunctionControlFlowGraph fun = produceDotOutputWith extractCFG fun
 
-run PlotPatternSSAGraph p = produceDotOutputWith extractSSA p
+run PlotFunctionSSAGraph fun = produceDotOutputWith extractSSA fun
 
-run _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"
+run _ _ = reportErrorAndExit "PlotFunctionGraphs: unsupported action"

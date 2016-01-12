@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.TransformDispatcher
+-- Module      : UniIS.Drivers.TransformDispatcher
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,16 +12,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.TransformDispatcher
+module UniIS.Drivers.TransformDispatcher
   ( run )
 where
 
-import Language.InstrSel.Drivers.DispatcherTools
-import qualified Language.InstrSel.Drivers.TransformFunctionGraph
+import UniIS.Drivers.DispatcherTools
+import qualified UniIS.Drivers.TransformFunctionGraph
   as TransformFunctionGraph
-import qualified Language.InstrSel.Drivers.TransformCPModel
+import qualified UniIS.Drivers.TransformCPModel
   as TransformCPModel
-import qualified Language.InstrSel.Drivers.TransformCPSolution
+import qualified UniIS.Drivers.TransformCPSolution
   as TransformCPSolution
 
 

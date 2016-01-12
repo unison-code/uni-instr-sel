@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeDispatcher
+-- Module      : UniIS.Drivers.MakeDispatcher
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,22 +12,22 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeDispatcher
+module UniIS.Drivers.MakeDispatcher
   ( run )
 where
 
-import Language.InstrSel.Drivers.DispatcherTools
-import qualified Language.InstrSel.Drivers.MakeArrayIndexMaplists
+import UniIS.Drivers.DispatcherTools
+import qualified UniIS.Drivers.MakeArrayIndexMaplists
   as MakeArrayIndexMaplists
-import qualified Language.InstrSel.Drivers.MakeAssemblyCode
+import qualified UniIS.Drivers.MakeAssemblyCode
   as MakeAssemblyCode
-import qualified Language.InstrSel.Drivers.MakeCPModel
+import qualified UniIS.Drivers.MakeCPModel
   as MakeCPModel
-import qualified Language.InstrSel.Drivers.MakeFunctionFromLLVM
+import qualified UniIS.Drivers.MakeFunctionFromLLVM
   as MakeFunctionFromLLVM
-import qualified Language.InstrSel.Drivers.MakePatternMatchset
+import qualified UniIS.Drivers.MakePatternMatchset
   as MakePatternMatchset
-import qualified Language.InstrSel.Drivers.MakeDumpFromArrayIndexMaplists
+import qualified UniIS.Drivers.MakeDumpFromArrayIndexMaplists
   as MakeDumpFromArrayIndexMaplists
 
 

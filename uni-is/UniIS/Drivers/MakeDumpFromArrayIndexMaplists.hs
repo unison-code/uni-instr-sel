@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeDumpFromArrayIndexMaplists
+-- Module      : UniIS.Drivers.MakeDumpFromArrayIndexMaplists
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -13,11 +13,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeDumpFromArrayIndexMaplists
+module UniIS.Drivers.MakeDumpFromArrayIndexMaplists
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.ConstraintModels
   ( ArrayIndexMaplists (..) )
 import Language.InstrSel.Functions

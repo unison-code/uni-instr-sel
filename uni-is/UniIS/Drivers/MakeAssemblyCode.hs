@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeAssemblyCode
+-- Module      : UniIS.Drivers.MakeAssemblyCode
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -13,12 +13,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeAssemblyCode
+module UniIS.Drivers.MakeAssemblyCode
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
-import Language.InstrSel.Drivers.DispatcherTools
+import UniIS.Drivers.Base
+import UniIS.Drivers.DispatcherTools
   ( loadTargetMachine )
 
 import Language.InstrSel.ConstraintModels

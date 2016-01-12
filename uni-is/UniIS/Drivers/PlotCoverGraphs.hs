@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.PlotCoverGraphs
+-- Module      : UniIS.Drivers.PlotCoverGraphs
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,11 +12,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.PlotCoverGraphs
+module UniIS.Drivers.PlotCoverGraphs
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.Functions
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers
+-- Module      : UniIS.Drivers
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers
-  ( module Language.InstrSel.Drivers.Base )
+module UniIS.Drivers
+  ( module UniIS.Drivers.Base )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base

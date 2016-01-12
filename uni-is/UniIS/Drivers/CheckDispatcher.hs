@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.CheckDispatcher
+-- Module      : UniIS.Drivers.CheckDispatcher
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,11 +12,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.CheckDispatcher
+module UniIS.Drivers.CheckDispatcher
   ( run )
 where
 
-import Language.InstrSel.Drivers.DispatcherTools
+import UniIS.Drivers.DispatcherTools
 
 
 

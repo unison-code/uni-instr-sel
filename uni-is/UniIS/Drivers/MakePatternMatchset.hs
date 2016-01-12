@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakePatternMatchset
+-- Module      : UniIS.Drivers.MakePatternMatchset
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -14,11 +14,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakePatternMatchset
+module UniIS.Drivers.MakePatternMatchset
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.Functions
   ( Function )
 import Language.InstrSel.TargetMachines

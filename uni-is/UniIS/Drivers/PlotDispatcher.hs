@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.PlotDispatcher
+-- Module      : UniIS.Drivers.PlotDispatcher
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -12,16 +12,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.PlotDispatcher
+module UniIS.Drivers.PlotDispatcher
   ( run )
 where
 
-import Language.InstrSel.Drivers.DispatcherTools
-import qualified Language.InstrSel.Drivers.PlotCoverGraphs
+import UniIS.Drivers.DispatcherTools
+import qualified UniIS.Drivers.PlotCoverGraphs
   as PlotCoverGraphs
-import qualified Language.InstrSel.Drivers.PlotFunctionGraphs
+import qualified UniIS.Drivers.PlotFunctionGraphs
   as PlotFunctionGraphs
-import qualified Language.InstrSel.Drivers.PlotPatternGraphs
+import qualified UniIS.Drivers.PlotPatternGraphs
   as PlotPatternGraphs
 
 

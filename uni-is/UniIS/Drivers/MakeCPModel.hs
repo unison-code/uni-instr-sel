@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.Drivers.MakeCPModel
+-- Module      : UniIS.Drivers.MakeCPModel
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -13,11 +13,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.Drivers.MakeCPModel
+module UniIS.Drivers.MakeCPModel
   ( run )
 where
 
-import Language.InstrSel.Drivers.Base
+import UniIS.Drivers.Base
 import Language.InstrSel.ConstraintModels.ModelHandler
 import Language.InstrSel.Functions
   ( Function )
