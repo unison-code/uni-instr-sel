@@ -18,9 +18,6 @@ import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils
   ( Range )
 
--- TODO: remove
-import Debug.Trace
-
 
 
 --------------
