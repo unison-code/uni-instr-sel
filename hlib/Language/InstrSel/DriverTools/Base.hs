@@ -73,7 +73,7 @@ toOutput oid s = toOutput' (Just oid) s
 toOutput' :: Maybe String -> String -> Output
 toOutput' oid s = Output { oID = oid, oData = s }
 
--- | Emits output to 'STDOUT'.
+-- | Emits output to @STDOUT@.
 emitToStdout :: Output -> IO ()
 emitToStdout = putStrLn . oData
 

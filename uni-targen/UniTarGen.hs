@@ -85,7 +85,7 @@ getOutDir opts =
 -- | If an output file is given as part of the options, then the returned
 -- function will emit all data to the output file with the output ID suffixed
 -- to the output file name (this may mean that several output files are
--- produced). Otherwise the data will be emit to 'STDOUT'.
+-- produced). Otherwise the data will be emit to @STDOUT@.
 mkEmitFunction :: Options -> IO (Output -> IO ())
 mkEmitFunction opts =
   do dir <- getOutDir opts
