@@ -78,7 +78,7 @@ getOutDir opts =
   do let d = outDir opts
      when (isNothing d) $
        reportErrorAndExit "No output directory provided."
-     return $ fromJust d
+     return $ (fromJust d) ++ "/"
 
 -- | If an output file is given as part of the options, then the returned
 -- function will emit all data to the output file with the output ID suffixed

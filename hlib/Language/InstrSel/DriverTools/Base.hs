@@ -26,8 +26,11 @@ import Data.Maybe
   , isJust
   )
 
-import System.FilePath.Posix
-  ( splitExtension )
+import System.FilePath
+  ( splitExtension
+  , takeDirectory
+  , takeFileName
+  )
 
 
 
@@ -39,8 +42,7 @@ import System.FilePath.Posix
 data Output
   = Output
       { oID :: Maybe String
-        -- ^ A unique string that identifies this output. If the output is to be
-        -- written to file, the ID will be suffixed to the file name.
+        -- ^ A unique string that identifies this output.
       , oData :: String
         -- ^ The produced output.
       }
@@ -75,11 +77,19 @@ toOutput' oid s = Output { oID = oid, oData = s }
 emitToStdout :: Output -> IO ()
 emitToStdout = putStrLn . oData
 
--- | Emits output to a file of a given name and the output ID suffixed.
+-- | Emits output to a file of a given name and the output ID suffixed to the
+-- file name before the file extension of the path. If the path has no file
+-- extension, then the ID is simply appended to the path.
 emitToFile :: FilePath -> Output -> IO ()
 emitToFile fp o =
-  let (fname, ext) = splitExtension fp
+  let dname = takeDirectory fp
+      (fname, ext) = splitExtension $ takeFileName fp
       oid = oID o
       filename =
-        fname ++ (if isJust oid then "." ++ fromJust oid else "") ++ ext
+        dname ++ (if length dname > 0 then "/" else "")
+              ++ fname
+              ++ ( if isJust oid
+                   then (if length fname > 0 then "." else "") ++ fromJust oid
+                   else "")
+              ++ ext
   in writeFile filename (oData o)

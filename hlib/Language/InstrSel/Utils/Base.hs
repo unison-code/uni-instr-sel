@@ -23,6 +23,7 @@ module Language.InstrSel.Utils.Base
   , splitOn
   , toLower
   , toUpper
+  , capitalize
   )
 where
 
@@ -93,13 +94,19 @@ replace
   -> String
 replace old new = intercalate new . splitOn old
 
--- | Converts a string to lower cases.
+-- | Converts a string to lowercase.
 toLower :: String -> String
 toLower = map Char.toLower
 
--- | Converts a string to upper cases.
+-- | Converts a string to uppercase.
 toUpper :: String -> String
 toUpper = map Char.toUpper
+
+-- | Converts a string such that the first character is in uppercase and all
+-- other characters are in lowercase.
+capitalize :: String -> String
+capitalize [] = []
+capitalize (c:cs) = (Char.toUpper c:map Char.toLower cs)
 
 maybeRead :: Read a => String -> Maybe a
 maybeRead = readMay

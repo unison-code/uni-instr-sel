@@ -27,7 +27,9 @@ import Language.InstrSel.Utils
 -- | Contains a machine description.
 data MachineDescription
   = MachineDescription
-      { mdInstructions :: [Instruction]
+      { mdID :: String
+        -- ^ The ID of the target machine.
+      , mdInstructions :: [Instruction]
         -- ^ The instructions available on the target machine.
       , mdLocations :: [Location]
         -- ^ The locations available on the target machine.
@@ -97,7 +99,8 @@ data InstrSemantics
 instance FromJSON MachineDescription where
   parseJSON (Object v) =
     MachineDescription
-      <$> v .: "instructions"
+      <$> v .: "id"
+      <*> v .: "instructions"
       <*> v .: "locations"
   parseJSON _ = mzero
 

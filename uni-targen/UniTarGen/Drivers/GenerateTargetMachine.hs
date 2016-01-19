@@ -19,9 +19,11 @@ where
 
 import UniTarGen.Drivers.Base
 import Language.InstrSel.TargetMachines
-  ( TargetMachine )
-import Language.InstrSel.TargetMachines.Generators.LLVM
-  ( MachineDescription )
+  ( TargetMachine (tmID) )
+import Language.InstrSel.TargetMachines.IDs
+  ( fromTargetMachineID )
+import Language.InstrSel.TargetMachines.Generators.LLVM.Generator
+import Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator
 import Language.InstrSel.Utils.Base
   ( isLeft
   , fromLeft
@@ -53,7 +55,7 @@ run opts =
      let m = fromRight m_str
      let tm = generateTargetMachine m
          code = generateHaskellCode tm
-     return [toOutputWithoutID code]
+     return [toOutput ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.
@@ -63,11 +65,3 @@ loadMachDescFile opts =
      when (isNothing f) $
        reportErrorAndExit "No machine description provided."
      readFileContent $ fromJust f
-
--- | Takes a 'MachineDescription' and generates corresponding 'TargetMachine'.
-generateTargetMachine :: MachineDescription -> TargetMachine
-generateTargetMachine = undefined
-
--- | Takes a 'TargetMachine' and generates corresponding Haskell code.
-generateHaskellCode :: TargetMachine -> String
-generateHaskellCode = undefined
