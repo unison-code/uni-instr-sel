@@ -24,31 +24,17 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-{-# LANGUAGE DeriveDataTypeable #-}
-
+import UniTarGen.Drivers
+import qualified UniTarGen.Drivers.GenerateTargetMachine as GenerateTM
+import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils.IO
 
 import Data.Maybe
   ( fromJust
-  , isJust
   , isNothing
   )
 
 import System.Console.CmdArgs
-import System.Console.CmdArgs.Text
-
-
-
---------------
--- Data types
---------------
-
-data Options
-  = Options
-      { machDescFile :: Maybe String
-      , outDir :: Maybe String
-      }
-  deriving (Data, Typeable)
 
 
 
@@ -85,23 +71,23 @@ parseArgs =
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
 
--- | Loads the content of the machine description file specified on the command
--- line. Reports error if no file is specified.
-loadMachDescFile :: Options -> IO FilePath
-loadMachDescFile opts =
-  do let f = machDescFile opts
-     when (isNothing f) $
-       reportError "No machine description provided."
-     readFileContent $ fromJust f
-
 -- | Returns output directory specified on the command line. Reports error if no
 -- directory is specified.
 getOutDir :: Options -> IO FilePath
 getOutDir opts =
   do let d = outDir opts
      when (isNothing d) $
-       reportError "No output directory provided."
+       reportErrorAndExit "No output directory provided."
      return $ fromJust d
+
+-- | If an output file is given as part of the options, then the returned
+-- function will emit all data to the output file with the output ID suffixed
+-- to the output file name (this may mean that several output files are
+-- produced). Otherwise the data will be emit to 'STDOUT'.
+mkEmitFunction :: Options -> IO (Output -> IO ())
+mkEmitFunction opts =
+  do dir <- getOutDir opts
+     return $ emitToFile dir
 
 
 
@@ -112,5 +98,6 @@ getOutDir opts =
 main :: IO ()
 main =
   do opts <- cmdArgs parseArgs
-     m <- loadMachDescFile opts
-     putStr m
+     output <- GenerateTM.run opts
+     emit <- mkEmitFunction opts
+     mapM_ emit output
