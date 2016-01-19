@@ -18,7 +18,7 @@ module UniIS.Drivers.MakePatternMatchset
   ( run )
 where
 
-import UniIS.Drivers.Base
+import UniIS.Drivers
 import Language.InstrSel.Functions
   ( Function )
 import Language.InstrSel.TargetMachines

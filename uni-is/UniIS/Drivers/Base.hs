@@ -20,26 +20,16 @@ module UniIS.Drivers.Base
   , PlotAction (..)
   , TransformAction (..)
   , Options (..)
-  , Output (..)
-  , emitToStdout
-  , emitToFile
-  , toOutput
-  , toOutputWithoutID
+  , module Language.InstrSel.DriverTools
   )
 where
-
-import Data.Maybe
-  ( fromJust
-  , isJust
-  )
 
 import System.Console.CmdArgs
   ( Data
   , Typeable
   )
 
-import System.FilePath.Posix
-  ( splitExtension )
+import Language.InstrSel.DriverTools
 
 
 
@@ -65,16 +55,6 @@ data Options
       , checkAction :: CheckAction
       }
   deriving (Data, Typeable)
-
--- | A representation of the output produced by the drivers.
-data Output
-  = Output
-      { oID :: Maybe String
-        -- ^ A unique string that identifies this output. If the output is to be
-        -- written to file, the ID will be suffixed to the file name.
-      , oData :: String
-        -- ^ The produced output.
-      }
 
 data MakeAction
   = MakeNothing
@@ -110,42 +90,3 @@ data PlotAction
 data CheckAction
   = CheckNothing
   deriving (Eq, Typeable, Data)
-
-
-
--------------
--- Functions
--------------
-
--- | Creates an output that has no ID. This is useful when there is exactly one
--- output produced.
-toOutputWithoutID
-  :: String
-     -- ^ The output string.
-  -> Output
-toOutputWithoutID = toOutput' Nothing
-
--- | Creates an output.
-toOutput
-  :: String
-     -- ^ The ID.
-  -> String
-     -- ^ The output string.
-  -> Output
-toOutput oid s = toOutput' (Just oid) s
-
-toOutput' :: Maybe String -> String -> Output
-toOutput' oid s = Output { oID = oid, oData = s }
-
--- | Emits output to 'STDOUT'.
-emitToStdout :: Output -> IO ()
-emitToStdout = putStrLn . oData
-
--- | Emits output to a file of a given name and the output ID suffixed.
-emitToFile :: FilePath -> Output -> IO ()
-emitToFile fp o =
-  let (fname, ext) = splitExtension fp
-      oid = oID o
-      filename =
-        fname ++ (if isJust oid then "." ++ fromJust oid else "") ++ ext
-  in writeFile filename (oData o)
