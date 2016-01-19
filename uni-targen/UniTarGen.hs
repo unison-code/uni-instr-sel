@@ -35,6 +35,8 @@ import Data.Maybe
   )
 
 import System.Console.CmdArgs
+import System.Directory
+  ( createDirectoryIfMissing )
 
 
 
@@ -87,7 +89,8 @@ getOutDir opts =
 mkEmitFunction :: Options -> IO (Output -> IO ())
 mkEmitFunction opts =
   do dir <- getOutDir opts
-     return $ emitToFile dir
+     return $ (\o -> do createDirectoryIfMissing True (dir ++ "/")
+                        emitToFile dir o)
 
 
 
