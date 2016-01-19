@@ -107,6 +107,7 @@ module Language.InstrSel.Graphs.Base
   , getNodeLabel
   , getNodeType
   , getNumNodes
+  , getOriginOfValueNode
   , getOutEdgeNr
   , getOutEdges
   , getPredecessors
@@ -524,6 +525,9 @@ isValueNodeWithOrigin n =
   if isValueNode n
   then isJust $ originOfValue $ getNodeType n
   else False
+
+getOriginOfValueNode :: Node -> Maybe String
+getOriginOfValueNode = originOfValue . getNodeType
 
 isBlockNode :: Node -> Bool
 isBlockNode n = isOfBlockNodeType $ getNodeType n
