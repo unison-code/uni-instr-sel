@@ -47,6 +47,8 @@ data Instruction
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
       , instrOperands :: [InstrOperand]
+        -- ^ The operands used in the instruction. The order is /NOT/ necesarily
+        -- the same as that given in the assembly string.
       , instrSemantics :: [InstrSemantics]
         -- ^ The semantics of this instruction, expressed in LLVM IR.
       }
