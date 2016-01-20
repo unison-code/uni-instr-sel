@@ -66,8 +66,6 @@ mkInstrPatterns i =
               tmpl = mkAsmStrTemplate os (LLVM.instrAssemblyString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
-                             , TM.patOutputValueNodes = -- TODO: fix
-                                                        []
                              , TM.patADDUC = True
                              , TM.patAsmStrTemplate = tmpl
                              }
