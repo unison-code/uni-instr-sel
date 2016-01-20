@@ -24,10 +24,12 @@ module Language.InstrSel.TargetMachines.IDs
   , fromInstructionID
   , fromPatternID
   , fromLocationID
+  , fromLocationName
   , fromTargetMachineID
   , toInstructionID
   , toPatternID
   , toLocationID
+  , toLocationName
   , toTargetMachineID
   )
 where
@@ -195,3 +197,9 @@ fromInstructionID (InstructionID i) = i
 
 toInstructionID :: (Integral i) => i -> InstructionID
 toInstructionID = InstructionID . toNatural
+
+fromLocationName :: LocationName -> String
+fromLocationName (LocationName s) = s
+
+toLocationName :: String -> LocationName
+toLocationName = LocationName
