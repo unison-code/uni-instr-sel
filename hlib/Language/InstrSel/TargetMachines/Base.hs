@@ -104,9 +104,6 @@ data InstrPattern
         -- instruction, but not necessarily contiguous.
       , patOS :: OpStructure
         -- ^ The operation structure of the pattern.
-      , patOutputValueNodes :: [NodeID]
-        -- ^ Specifies the value nodes within the 'OpStructure' which represent
-        -- the output that can be observed from outside the pattern.
       , patADDUC :: Bool
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns

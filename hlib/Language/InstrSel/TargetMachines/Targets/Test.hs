@@ -141,7 +141,6 @@ tmTest =
                   [ InstrPattern
                       0
                       init_def_pattern_os
-                      []
                       True
                       (ASSTemplate [])
                   ]
@@ -151,7 +150,6 @@ tmTest =
                   [ InstrPattern
                       0
                       add_pattern_os
-                      [3]
                       True
                       ( ASSTemplate
                           [ ASVerbatim "add "
@@ -169,7 +167,6 @@ tmTest =
                   [ InstrPattern
                       0
                       bnz_pattern_os
-                      []
                       True
                       ( ASSTemplate
                           [ ASVerbatim "bnz "
@@ -187,7 +184,6 @@ tmTest =
                   [ InstrPattern
                       0
                       br_pattern_os
-                      []
                       True
                       ( ASSTemplate
                           [ ASVerbatim "br "
@@ -201,7 +197,6 @@ tmTest =
                   [ InstrPattern
                       0
                       br_fallthrough_pattern_os
-                      []
                       True
                       (ASSTemplate [])
                   ]
@@ -211,7 +206,6 @@ tmTest =
                   [ InstrPattern
                       0
                       ret_pattern_os
-                      []
                       True
                       ( ASSTemplate
                         [ ASVerbatim "ret "

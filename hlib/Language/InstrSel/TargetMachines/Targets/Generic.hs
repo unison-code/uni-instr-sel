@@ -123,7 +123,6 @@ mkGenericPhiInstructions =
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OS.OpStructure g Nothing cs
-             , patOutputValueNodes = [1]
              , patADDUC = False
              , patAsmStrTemplate =
                  ( ASSTemplate
@@ -185,7 +184,6 @@ mkGenericBrFallThroughInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -221,7 +219,6 @@ mkGenericDataDefInstructions =
         InstrPattern
           { patID = pid
           , patOS = OS.OpStructure g (Just 0) cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -270,7 +267,6 @@ mkGenericCopyInstructions =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g w) Nothing cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }

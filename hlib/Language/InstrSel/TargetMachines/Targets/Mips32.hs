@@ -245,7 +245,6 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
                                       [ ASLocationOfDataNode 3
@@ -356,7 +355,6 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure ord_g Nothing cs
-                 , patOutputValueNodes = [3]
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate parts
                  }
@@ -366,7 +364,6 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
              then [ InstrPattern
                       { patID = 1
                       , patOS = OS.OpStructure swapped_g Nothing cs
-                      , patOutputValueNodes = [3]
                       , patADDUC = True
                       , patAsmStrTemplate = ASSTemplate parts
                       }
@@ -414,7 +411,6 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate str
               }
@@ -444,7 +440,6 @@ combineNodesInInstrPattern ip keep_n disc_n =
       old_g = OS.osGraph old_os
       old_entry = OS.osEntryBlockNode old_os
       old_cs = OS.osConstraints old_os
-      old_output = patOutputValueNodes ip
       old_template = patAsmStrTemplate ip
       -- New data
       new_g = mergeNodes (head $ findNodesWithNodeID old_g keep_n)
@@ -464,10 +459,8 @@ combineNodesInInstrPattern ip keep_n disc_n =
                               , OS.osEntryBlockNode = new_entry
                               , OS.osConstraints = new_cs
                               }
-      new_output = map checkAndReplace old_output
       new_template = updateNodeInAsmStrTemplate keep_n disc_n old_template
   in ip { patOS = new_os
-        , patOutputValueNodes = new_output
         , patAsmStrTemplate = new_template
         }
 
@@ -527,7 +520,6 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure ord_g (Just 1) ord_cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ ord_str ++ " "
@@ -542,7 +534,6 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
         InstrPattern
           { patID = 1
           , patOS = OS.OpStructure inv_g (Just 1) inv_cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ inv_str ++ " "
@@ -640,7 +631,6 @@ mkRegImmCondBrInstr n imm_r str op =
         InstrPattern
           { patID = pid
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ str ++ " "
@@ -704,7 +694,6 @@ mkPredBrInstr =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure g (Just 1) ord_cs
-                 , patOutputValueNodes = []
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
                                        [ ASVerbatim $ "BEQ "
@@ -718,7 +707,6 @@ mkPredBrInstr =
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure g (Just 1) inv_cs
-                 , patOutputValueNodes = []
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
                                        [ ASVerbatim $ "BNE "
@@ -763,7 +751,6 @@ mkBrInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "B "
@@ -818,7 +805,6 @@ mkRetInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = str
           }
@@ -827,7 +813,6 @@ mkRetInstrs =
           { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1)
                     (mkMatchPlacementConstraints vg)
-          , patOutputValueNodes = []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
           }
@@ -879,7 +864,6 @@ mkMfhiInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASLocationOfDataNode 2
@@ -909,7 +893,6 @@ mkMfloInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASLocationOfDataNode 2
@@ -939,7 +922,6 @@ mkPseudoMoveInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
-          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "move "
@@ -968,7 +950,6 @@ mkLoadImmInstr =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g w r) Nothing (cs ls)
-          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate a
           }
@@ -1096,7 +1077,6 @@ mkTypeConvInstrs =
         InstrPattern
           { patID = 0
           , patOS = OS.OpStructure (g t (n, m)) Nothing cs
-          , patOutputValueNodes = [2]
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
@@ -1119,7 +1099,6 @@ mkTypeConvInstrs =
              [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure (g O.ZExt (8, 32)) Nothing cs
-                 , patOutputValueNodes = [2]
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
                                          [ ASReferenceToValueNode 2
@@ -1156,7 +1135,6 @@ mkEqComparison =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSMultiTemplate
                                     [ ASSTemplate
@@ -1204,7 +1182,6 @@ mkSLTIComparison =
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
-              , patOutputValueNodes = [3]
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
                                       [ ASReferenceToValueNode 3
@@ -1268,7 +1245,6 @@ mkSimdAddInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure add3_g Nothing add3_cs
-                 , patOutputValueNodes = add3_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1294,7 +1270,6 @@ mkSimdAddInstruction =
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure add2_g Nothing add2_cs
-                 , patOutputValueNodes = add2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1364,7 +1339,6 @@ mkSimdAndiInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure and3_g Nothing and3_cs
-                 , patOutputValueNodes = and3_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1390,7 +1364,6 @@ mkSimdAndiInstruction =
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure and2_g Nothing and2_cs
-                 , patOutputValueNodes = and2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1452,7 +1425,6 @@ mkSimdSlrlInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure slrl2_g Nothing slrl2_cs
-                 , patOutputValueNodes = slrl2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1511,7 +1483,6 @@ mkSimdSlrlConstantInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure slrl_g Nothing slrl_cs
-                 , patOutputValueNodes = slrl_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 5
@@ -1573,7 +1544,6 @@ mkSimdSllvInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure sllv2_g Nothing sllv2_cs
-                 , patOutputValueNodes = sllv2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1632,7 +1602,6 @@ mkSimdNorInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure xor2_g Nothing xor2_cs
-                 , patOutputValueNodes = xor2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 5
@@ -1694,7 +1663,6 @@ mkSimdSrlInstruction =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure srl2_g Nothing srl2_cs
-                 , patOutputValueNodes = srl2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
@@ -1751,7 +1719,6 @@ mkSimdLoad16ImmInstruction w =
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure li2_g Nothing li2_cs
-                 , patOutputValueNodes = li2_output
                  , patADDUC = True
                  , patAsmStrTemplate =
                      ASSTemplate [ ASReferenceToValueNode 3
