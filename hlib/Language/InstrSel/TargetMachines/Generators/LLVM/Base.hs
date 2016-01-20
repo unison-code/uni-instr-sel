@@ -72,7 +72,7 @@ data InstrOperand
       { regOpName :: String
         -- ^ Name of this register operand.
       , regOpClass :: [String]
-        -- ^ Register class, denoted as a list of register names.
+        -- ^ Register class, denoted as a list of register operand names.
       }
 
     -- | Represents an immediate operand.
