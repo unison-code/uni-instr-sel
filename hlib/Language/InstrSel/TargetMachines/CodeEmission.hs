@@ -245,7 +245,7 @@ emitInstructionPart model sol tm (ASReferenceToValueNode n) =
   in if isJust reg_id
      then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
               origin = lookup n (hlFunValueOriginData $ hlFunctionParams model)
-          in if (isJust $ locHasValue reg)
+          in if (isJust $ locValue reg)
              then show $ locName reg
              else if isJust origin
                   then fromJust origin

@@ -120,7 +120,7 @@ mkHLFunctionParams function target =
         -- prevent the input arguments from being located in a zero-value
         -- register
         let okay_locs = map locID
-                        $ filter (isNothing . locHasValue)
+                        $ filter (isNothing . locValue)
                         $ tmLocations target
         in concatMap ( \n ->
                        mkDataLocConstraints okay_locs n

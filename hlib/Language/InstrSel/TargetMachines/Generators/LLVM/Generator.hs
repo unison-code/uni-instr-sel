@@ -22,9 +22,6 @@ import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
   ( capitalize )
 
-import Data.Maybe
-  ( isJust )
-
 
 
 -------------
@@ -47,7 +44,7 @@ mkLocations m =
   where processLoc (i, LLVM.RegLocation name value) =
           TM.Location { TM.locID = toLocationID i
                       , TM.locName = TM.toLocationName name
-                      , TM.locIsAValue = isJust value
+                      , TM.locValue = value
                       }
 
 mkInstructions :: LLVM.MachineDescription -> [TM.Location] -> [TM.Instruction]
