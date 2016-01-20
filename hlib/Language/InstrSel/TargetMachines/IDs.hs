@@ -43,8 +43,11 @@ import Language.InstrSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstrSel.Utils.JSON as JSON
   ( Value (..) )
+
 import Control.DeepSeq
-  ( NFData, rnf )
+  ( NFData
+  , rnf
+  )
 
 
 --------------
@@ -58,18 +61,12 @@ newtype InstructionID
 instance Show InstructionID where
   show (InstructionID i) = show i
 
-instance NFData InstructionID where
-    rnf (InstructionID a) = rnf a
-
 newtype PatternID
   = PatternID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show PatternID where
   show (PatternID i) = show i
-
-instance NFData PatternID where
-    rnf (PatternID a) = rnf a
 
 newtype LocationID
   = LocationID Natural
@@ -89,8 +86,6 @@ newtype TargetMachineID
   = TargetMachineID String
   deriving (Eq, Show)
 
-instance NFData TargetMachineID where
-    rnf (TargetMachineID a) = rnf a
 
 
 -------------------------------------
@@ -151,6 +146,25 @@ instance FromLisp LocationID where
 
 instance ToLisp LocationID where
   toLisp (LocationID nid) = Lisp.Number (I (fromNatural nid))
+
+
+
+----------------------------------------
+-- DeepSeq-related type class instances
+--
+-- These are needed to be able to time
+-- how long it takes to produce the
+-- matchsets
+----------------------------------------
+
+instance NFData InstructionID where
+  rnf (InstructionID a) = rnf a
+
+instance NFData PatternID where
+  rnf (PatternID a) = rnf a
+
+instance NFData TargetMachineID where
+  rnf (TargetMachineID a) = rnf a
 
 
 

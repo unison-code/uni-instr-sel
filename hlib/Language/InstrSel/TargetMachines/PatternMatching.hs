@@ -65,9 +65,6 @@ data PatternMatchset
       }
   deriving (Show)
 
-instance NFData PatternMatchset where
-    rnf (PatternMatchset a b c ) = rnf a `seq` rnf b `seq` rnf c
-
 -- | Contains the information needed to identify which instruction and pattern a
 -- given match originates from. Each match is also given a 'MatchID' that must
 -- be unique (although not necessarily continuous) for every match within a list
@@ -81,8 +78,7 @@ data PatternMatch
       }
   deriving (Show)
 
-instance NFData PatternMatch where
-    rnf (PatternMatch a b c d) = rnf a `seq` rnf b `seq` rnf c `seq` rnf d
+
 
 --------------------------------
 -- JSON-related class instances
@@ -119,6 +115,22 @@ instance ToJSON PatternMatch where
            , "match-id"   .= (pmMatchID m)
            , "match"      .= (pmMatch m)
            ]
+
+
+
+----------------------------------------
+-- DeepSeq-related type class instances
+--
+-- These are needed to be able to time
+-- how long it takes to produce the
+-- matchsets
+----------------------------------------
+
+instance NFData PatternMatchset where
+  rnf (PatternMatchset a b c) = rnf a `seq` rnf b `seq` rnf c
+
+instance NFData PatternMatch where
+  rnf (PatternMatch a b c d) = rnf a `seq` rnf b `seq` rnf c `seq` rnf d
 
 
 

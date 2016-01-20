@@ -35,8 +35,11 @@ import Language.InstrSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstrSel.Utils.JSON as JSON
   ( Value (..) )
+
 import Control.DeepSeq
-  ( NFData, rnf )
+  ( NFData
+  , rnf
+  )
 
 
 
@@ -51,18 +54,12 @@ newtype MatchID
 instance Show MatchID where
   show (MatchID i) = show i
 
-instance NFData MatchID where
-    rnf (MatchID a) = rnf a
-
 newtype NodeID
   = NodeID Natural
   deriving (Eq, Ord, Num, Enum, Real, Integral)
 
 instance Show NodeID where
   show (NodeID i) = show i
-
-instance NFData NodeID where
-    rnf (NodeID a) = rnf a
 
 -------------------------------------
 -- JSON-related type class instances
@@ -102,6 +99,21 @@ instance FromLisp MatchID where
 instance ToLisp MatchID where
   toLisp (MatchID nid) = Lisp.Number (I (fromNatural nid))
 
+
+
+----------------------------------------
+-- DeepSeq-related type class instances
+--
+-- These are needed to be able to time
+-- how long it takes to produce the
+-- matchsets
+----------------------------------------
+
+instance NFData MatchID where
+  rnf (MatchID a) = rnf a
+
+instance NFData NodeID where
+  rnf (NodeID a) = rnf a
 
 
 

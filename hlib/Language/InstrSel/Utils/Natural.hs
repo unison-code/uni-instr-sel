@@ -18,7 +18,11 @@ import Language.InstrSel.Utils.JSON
 import Data.Maybe
 
 import Control.DeepSeq
-  ( NFData, rnf )
+  ( NFData
+  , rnf
+  )
+
+
 
 --------------
 -- Data types
@@ -63,8 +67,7 @@ instance Integral Natural where
     )
   toInteger (Natural i) = i
 
-instance NFData Natural where
-    rnf (Natural a) = rnf a
+
 
 -------------------------------------
 -- JSON-related type class instances
@@ -76,6 +79,19 @@ instance FromJSON Natural where
 
 instance ToJSON Natural where
   toJSON i = toJSON (fromNatural i)
+
+
+
+----------------------------------------
+-- DeepSeq-related type class instances
+--
+-- These are needed to be able to time
+-- how long it takes to produce the
+-- matchsets
+----------------------------------------
+
+instance NFData Natural where
+  rnf (Natural a) = rnf a
 
 
 

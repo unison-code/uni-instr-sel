@@ -46,6 +46,8 @@ run :: MakeAction -> Function -> TargetMachine -> IO [Output]
 run MakePatternMatchset function target =
   do start <- getTime Realtime
      let matches = mkPatternMatchset function target
+     -- In order to use 'deepseq', all data types used within @matches@ must
+     -- be an instance of the 'Control.DeepSeq.NFData' type class
      end <- matches `deepseq` getTime Realtime
      let time = seconds start end
          matches' = matches {pmTime = Just time}
