@@ -226,14 +226,14 @@ tmTest =
        (fixInstrIDs $ insts ++ mkGenericPhiInstructions)
        [ Location { locID = 0
                   , locName = LocationName "r0"
-                  , locIsAValue = False
+                  , locHasValue = Nothing
                   }
        , Location { locID = 1
                   , locName = LocationName "r1"
-                  , locIsAValue = False
+                  , locHasValue = Nothing
                   }
        , Location { locID = 2
                   , locName = LocationName "r2"
-                  , locIsAValue = False
+                  , locHasValue = Nothing
                   }
        ]

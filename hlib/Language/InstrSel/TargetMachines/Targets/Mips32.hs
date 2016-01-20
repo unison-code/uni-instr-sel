@@ -69,7 +69,7 @@ getZeroRegName = "%ZERO"
 mkZeroRegister :: Location
 mkZeroRegister = Location { locID = 0
                           , locName = LocationName getZeroRegName
-                          , locIsAValue = True
+                          , locHasValue = Just 0
                           }
 
 -- | Creates the list of general-purpose registers, excluding the zero register,
@@ -78,7 +78,7 @@ mkGPRegistersWithoutZero :: [Location]
 mkGPRegistersWithoutZero =
   map ( \i -> Location { locID = 0
                        , locName = LocationName $ regPrefix ++ show i
-                       , locIsAValue = False
+                       , locHasValue = Nothing
                        }
       )
       ([1..31] :: [Integer]) -- Cast needed to prevent compilation warning
@@ -89,7 +89,7 @@ mkGPRegistersWithoutZero =
 mkHIRegister :: Location
 mkHIRegister = Location { locID = 0
                         , locName = LocationName "HI"
-                        , locIsAValue = False
+                        , locHasValue = Nothing
                         }
 
 -- | Creates the list of 'LO' register (which is actually a memory
@@ -98,7 +98,7 @@ mkHIRegister = Location { locID = 0
 mkLORegister :: Location
 mkLORegister = Location { locID = 0
                         , locName = LocationName "LO"
-                        , locIsAValue = False
+                        , locHasValue = Nothing
                         }
 
 -- | Retrieves the register with a given location name. It is assumed that there

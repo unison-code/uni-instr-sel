@@ -141,7 +141,7 @@ data Location
       , locName :: LocationName
         -- ^ The name of this location (as it shall appear in the assembly
         -- string).
-      , locIsAValue :: Bool
+      , locHasValue :: Maybe Integer
         -- ^ Whether this location actually represents a value (such as a
         -- register that always contains the value zero).
       }

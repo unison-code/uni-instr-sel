@@ -46,6 +46,7 @@ import Data.List
 import Data.Maybe
   ( fromJust
   , isJust
+  , isNothing
   , mapMaybe
   )
 
@@ -119,7 +120,7 @@ mkHLFunctionParams function target =
         -- prevent the input arguments from being located in a zero-value
         -- register
         let okay_locs = map locID
-                        $ filter (not . locIsAValue)
+                        $ filter (isNothing . locHasValue)
                         $ tmLocations target
         in concatMap ( \n ->
                        mkDataLocConstraints okay_locs n
