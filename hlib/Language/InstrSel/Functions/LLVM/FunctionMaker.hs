@@ -20,22 +20,14 @@ module Language.InstrSel.Functions.LLVM.FunctionMaker
   )
 where
 
-import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
 import Language.InstrSel.OpStructures.LLVM.OSMaker
-import qualified Language.InstrSel.OpTypes as Op
 import qualified Language.InstrSel.Functions as F
-import Language.InstrSel.Utils
-  ( rangeFromSingleton
-  , toNatural
-  )
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
-import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
 import qualified LLVM.General.AST.Global as LLVMG
-import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
 
@@ -108,6 +100,7 @@ extractBBExecFreqs m f@(LLVM.Function {}) =
           ( F.BlockName name
           , extractExecFreq m (LLVM.metadata' $ fromNamed term_inst)
           )
+        processBB _ = error "extractBBExecFreqs: not an expected BasicBlock"
         fromNamed (_ LLVM.:= i) = i
         fromNamed (LLVM.Do i) = i
 extractBBExecFreqs _ _ = error "extractBBExecFreqs: not a Function"
