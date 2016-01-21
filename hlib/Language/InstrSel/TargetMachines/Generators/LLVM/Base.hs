@@ -18,6 +18,9 @@ import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils
   ( Range )
 
+import LLVM.General.AST
+  ( Module )
+
 
 
 --------------
@@ -84,10 +87,11 @@ data InstrOperand
       }
   deriving (Show)
 
--- | Contains the information regarding the semantics of an instruction.
+-- | Contains the information regarding the semantics of an instruction. The
+-- IR can either be in unparsed 'String' format, or in parsed 'Module' format.
 data InstrSemantics
   = InstrSemantics
-      { instrSemIR :: String
+      { instrSemIR :: Either String Module
         -- ^ The LLVM IR code.
       }
   deriving (Show)
@@ -140,5 +144,5 @@ instance FromJSON InstrOperand where
   parseJSON _ = mzero
 
 instance FromJSON InstrSemantics where
-  parseJSON (String s) = return $ InstrSemantics $ unpack s
+  parseJSON (String s) = return $ InstrSemantics $ Left $ unpack s
   parseJSON _ = mzero
