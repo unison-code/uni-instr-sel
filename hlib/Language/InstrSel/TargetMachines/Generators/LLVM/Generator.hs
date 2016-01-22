@@ -23,6 +23,17 @@ import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
   ( capitalize )
 
+import qualified LLVM.General.AST as LLVM
+  ( Module (..)
+  , Definition (..)
+  )
+import qualified LLVM.General.AST.Global as LLVM
+  ( Global (..) )
+import qualified LLVM.General.AST.Name as LLVM
+
+import Data.Maybe
+  ( mapMaybe )
+
 
 
 -------------
@@ -63,6 +74,7 @@ mkInstrPatterns i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = mkOpStructure p
+              -- TODO: add missing constraints
               tmpl = mkAsmStrTemplate os (LLVM.instrAssemblyString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
@@ -71,14 +83,26 @@ mkInstrPatterns i =
                              }
 
 mkOpStructure :: LLVM.InstrSemantics -> OpStructure
-mkOpStructure s =
-  -- TODO: implement
-  undefined
+mkOpStructure (LLVM.InstrSemantics (Right m)) =
+  let m_defs = LLVM.moduleDefinitions m
+      getFunction d =
+        case d of (LLVM.GlobalDefinition f@(LLVM.Function {})) -> Just f
+                  _ -> Nothing
+      isSemanticsFunction f =
+        case (LLVM.name f) of (LLVM.Name name) -> name == "@semantics"
+                              _ -> False
+      fs = mapMaybe getFunction m_defs
+      sem_f = filter isSemanticsFunction fs
+  in if length sem_f == 1
+     then mkFromFunction $ head sem_f
+     else error "mkOpStructure: no @semantics function found"
+mkOpStructure (LLVM.InstrSemantics (Left _)) =
+  error "mkOpStructure: instruction semantics has not been parsed"
 
 mkAsmStrTemplate :: OpStructure -> String -> TM.AssemblyStringTemplate
 mkAsmStrTemplate os str =
   -- TODO: implement
-  undefined
+  TM.ASSTemplate []
 
 mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
 mkInstrProps i =

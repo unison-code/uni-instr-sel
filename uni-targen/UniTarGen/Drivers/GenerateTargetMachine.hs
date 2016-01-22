@@ -101,5 +101,5 @@ parseSemantics str =
              runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft res)
-        $ reportErrorAndExit $ fromLeft $ fromLeft res
+        $ reportErrorAndExit $ show $ fromLeft res
      return $ fromRight res
