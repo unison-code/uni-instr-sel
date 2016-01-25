@@ -26,4 +26,4 @@ import Language.InstrSel.TargetMachines.Base
 generateHaskellCode :: TargetMachine -> String
 generateHaskellCode tm =
   -- TODO: implement
-  undefined
+  show tm

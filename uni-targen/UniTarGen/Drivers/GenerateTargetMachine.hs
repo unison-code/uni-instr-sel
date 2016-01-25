@@ -40,6 +40,7 @@ import Language.InstrSel.Utils.IO
   ( reportError
   , reportErrorAndExit
   , readFileContent
+  , mapMaybeM
   )
 
 import LLVM.General
@@ -50,8 +51,7 @@ import Control.Monad.Except
   ( runExceptT )
 
 import Data.Maybe
-  ( catMaybes
-  , isNothing
+  ( isNothing
   , fromJust
   )
 
@@ -88,22 +88,24 @@ parseSemanticsInMD
   :: MachineDescription
   -> IO MachineDescription
 parseSemanticsInMD m =
-  do new_is <- mapM processInstr $ mdInstructions m
+  do new_is <- mapMaybeM processInstr $ mdInstructions m
      return $ m { mdInstructions = new_is }
   where processInstr i =
           do res <- mapM processSem $ instrSemantics i
-             new_sem <- mapM ( \r -> if isRight r
-                                     then return $ Just $ fromRight r
-                                     else do reportError $
-                                               "--- ERROR found in semantics "
-                                               ++ "of instruction '"
-                                               ++ (instrAssemblyString i)
-                                               ++ "':\n" ++ (fromLeft r) ++ "\n"
-                                               ++ "Skipping to next semantics."
-                                               ++ "\n"
-                                             return Nothing
-                             ) res
-             return $ i { instrSemantics = catMaybes new_sem }
+             new_sem <- mapMaybeM
+                          ( \r -> if isRight r
+                                  then return $ Just $ fromRight r
+                                  else do reportError $
+                                            "--- ERROR found in semantics "
+                                            ++ "of instruction '"
+                                            ++ (instrAssemblyString i)
+                                            ++ "':\n" ++ (fromLeft r) ++ "\n"
+                                            ++ "Skipping to next semantics.\n"
+                                          return Nothing
+                          ) res
+             return $ if length new_sem > 0 || (length $ instrSemantics i) == 0
+                      then Just $ i { instrSemantics = new_sem }
+                      else Nothing
         processSem (InstrSemantics (Left str)) =
           do res <- parseSemantics str
              if isRight res

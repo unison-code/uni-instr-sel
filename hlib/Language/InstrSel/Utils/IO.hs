@@ -18,6 +18,7 @@ module Language.InstrSel.Utils.IO
   , doesFileExist
   , readFileContent
   , when
+  , mapMaybeM
   )
 where
 
@@ -37,6 +38,9 @@ import qualified System.Directory as D
 import System.Exit
   ( exitFailure )
 
+import Data.Maybe
+  ( catMaybes )
+
 
 
 -------------
@@ -49,7 +53,7 @@ reportError msg =
   hPutStrLn stderr msg
 
 -- | Reports an error, and then terminates the program with an appropriate exit
--- code.
+-- code. For how the error messages is written, see 'reportError'.
 reportErrorAndExit :: String -> IO a
 reportErrorAndExit msg =
   do reportError msg
@@ -67,3 +71,10 @@ readFileContent file =
      when (not exists_file) $
        reportErrorAndExit $ "File " ++ show file ++ " does not exist."
      readFile file
+
+-- | Same as 'mapM' but also throws away elements which have been evaluted to
+-- 'Nothing'.
+mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
+mapMaybeM f as =
+  do bs <- mapM f as
+     return $ catMaybes bs
