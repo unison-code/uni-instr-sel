@@ -34,6 +34,9 @@ import qualified LLVM.General.AST.Name as LLVM
 import Data.Maybe
   ( mapMaybe )
 
+-- TODO: remove
+import Debug.Trace
+
 
 
 -------------
@@ -89,13 +92,15 @@ mkOpStructure (LLVM.InstrSemantics (Right m)) =
         case d of (LLVM.GlobalDefinition f@(LLVM.Function {})) -> Just f
                   _ -> Nothing
       isSemanticsFunction f =
-        case (LLVM.name f) of (LLVM.Name name) -> name == "@semantics"
+        case (LLVM.name f) of (LLVM.Name name) -> name == "semantics"
                               _ -> False
       fs = mapMaybe getFunction m_defs
       sem_f = filter isSemanticsFunction fs
   in if length sem_f == 1
      then mkFromFunction $ head sem_f
-     else error "mkOpStructure: no @semantics function found"
+     else if length sem_f == 0
+          then error "mkOpStructure: no semantics function found"
+          else error "mkOpStructure: multiple semantics function found"
 mkOpStructure (LLVM.InstrSemantics (Left _)) =
   error "mkOpStructure: instruction semantics has not been parsed"
 
