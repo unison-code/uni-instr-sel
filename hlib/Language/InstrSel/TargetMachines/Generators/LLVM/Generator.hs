@@ -34,9 +34,6 @@ import qualified LLVM.General.AST.Name as LLVM
 import Data.Maybe
   ( mapMaybe )
 
--- TODO: remove
-import Debug.Trace
-
 
 
 -------------
