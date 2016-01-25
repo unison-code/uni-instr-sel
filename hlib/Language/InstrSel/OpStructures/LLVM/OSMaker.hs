@@ -13,7 +13,8 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.OpStructures.LLVM.OSMaker
-  ( mkFromFunction
+  ( mkFunctionOS
+  , mkPatternOS
   , toSymbolString
   )
 where
@@ -223,10 +224,10 @@ class CfgBuildable a where
 toSymbolString :: (SymbolFormable s) => s -> String
 toSymbolString = show . toSymbol
 
--- | Builds an 'OpStructure' from a global LLVM function. If the definition is
--- not a 'Function', an error is produced.
-mkFromFunction :: LLVM.Global -> OS.OpStructure
-mkFromFunction f@(LLVM.Function {}) =
+-- | Builds an 'OpStructure' from a function to be compiled. If the definition
+-- is not a 'Function', an error is produced.
+mkFunctionOS :: LLVM.Global -> OS.OpStructure
+mkFunctionOS f@(LLVM.Function {}) =
   let st0 = mkInitBuildState
       st1 = buildDfg st0 f
       st2 = buildCfg st1 f
@@ -237,7 +238,22 @@ mkFromFunction f@(LLVM.Function {}) =
       st5 = addMissingBlockToDatumDefEdges st4
       st6 = addMissingDatumToBlockDefEdges st5
   in opStruct st6
-mkFromFunction _ = error "mkOpStructureFromGlobal: not a Function"
+mkFunctionOS _ = error "mkFunctionOS: not a Function"
+
+-- | Builds an 'OpStructure' from an instruction pattern. If the definition is
+-- not a 'Function', an error is produced.
+mkPatternOS :: LLVM.Global -> OS.OpStructure
+mkPatternOS f@(LLVM.Function {}) =
+  let st0 = mkInitBuildState
+      st1 = buildDfg st0 f
+      st2 = buildCfg st1 f
+      st3 = updateOSEntryBlockNode
+              st2
+              (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
+      st4 = addMissingBlockToDatumDefEdges st3
+      st5 = addMissingDatumToBlockDefEdges st4
+  in opStruct st5
+mkPatternOS _ = error "mkPattern: not a Function"
 
 -- | Creates an initial state.
 mkInitBuildState :: BuildState

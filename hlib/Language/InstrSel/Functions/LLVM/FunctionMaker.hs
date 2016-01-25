@@ -53,7 +53,7 @@ mkFunctionFromGlobalDef _ _ = Nothing
 -- not a 'Function', 'Nothing' is returned.
 mkFunction :: LLVM.Module -> LLVM.Global -> Maybe F.Function
 mkFunction m f@(LLVM.Function {}) =
-  let os = mkFromFunction f
+  let os = mkFunctionOS f
       (params, _) = LLVMG.parameters f
       input_nodes = map (extractFunctionInputNodeID os) params
       exec_freqs = extractBBExecFreqs m f

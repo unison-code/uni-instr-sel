@@ -97,7 +97,7 @@ mkOpStructure (LLVM.InstrSemantics (Right m)) =
       fs = mapMaybe getFunction m_defs
       sem_f = filter isSemanticsFunction fs
   in if length sem_f == 1
-     then mkFromFunction $ head sem_f
+     then mkPatternOS $ head sem_f
      else if length sem_f == 0
           then error "mkOpStructure: no semantics function found"
           else error "mkOpStructure: multiple semantics function found"
