@@ -13,7 +13,8 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Utils.IO
-  ( reportErrorAndExit
+  ( reportError
+  , reportErrorAndExit
   , doesFileExist
   , readFileContent
   , when
@@ -24,6 +25,11 @@ where
 
 import Control.Monad
   ( when )
+
+import System.IO
+  ( hPutStrLn
+  , stderr
+  )
 
 import qualified System.Directory as D
   ( doesFileExist )
@@ -37,11 +43,16 @@ import System.Exit
 -- Functions
 -------------
 
+-- | Writes a message and a newline to @STDERR@.
+reportError :: String -> IO ()
+reportError msg =
+  hPutStrLn stderr msg
+
 -- | Reports an error, and then terminates the program with an appropriate exit
 -- code.
 reportErrorAndExit :: String -> IO a
-reportErrorAndExit str =
-  do putStrLn str
+reportErrorAndExit msg =
+  do reportError msg
      exitFailure
 
 -- | Checks if a given file exists.
