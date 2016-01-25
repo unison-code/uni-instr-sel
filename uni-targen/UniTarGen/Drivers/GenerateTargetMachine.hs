@@ -31,12 +31,14 @@ import Language.InstrSel.TargetMachines.Generators.LLVM.Generator
 import Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator
 import Language.InstrSel.Utils.Base
   ( isLeft
+  , isRight
   , fromLeft
   , fromRight
   )
 import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit
+  ( reportError
+  , reportErrorAndExit
   , readFileContent
   )
 
@@ -48,7 +50,8 @@ import Control.Monad.Except
   ( runExceptT )
 
 import Data.Maybe
-  ( isNothing
+  ( catMaybes
+  , isNothing
   , fromJust
   )
 
@@ -81,25 +84,43 @@ loadMachDescFile opts =
 
 -- | Parses the semantic strings in the 'MachineDescription' into LLVM IR
 -- modules.
-parseSemanticsInMD :: MachineDescription -> IO MachineDescription
+parseSemanticsInMD
+  :: MachineDescription
+  -> IO MachineDescription
 parseSemanticsInMD m =
   do new_is <- mapM processInstr $ mdInstructions m
      return $ m { mdInstructions = new_is }
   where processInstr i =
-          do new_sem <- mapM processSem $ instrSemantics i
-             return $ i { instrSemantics = new_sem }
+          do res <- mapM processSem $ instrSemantics i
+             new_sem <- mapM ( \r -> if isRight r
+                                     then return $ Just $ fromRight r
+                                     else do reportError $
+                                               "--- ERROR found in semantics "
+                                               ++ "of instruction '"
+                                               ++ (instrAssemblyString i)
+                                               ++ "':\n" ++ (fromLeft r) ++ "\n"
+                                               ++ "Skipping to next semantics."
+                                               ++ "\n"
+                                             return Nothing
+                             ) res
+             return $ i { instrSemantics = catMaybes new_sem }
         processSem (InstrSemantics (Left str)) =
-          do ast <- parseSemantics str
-             return $ InstrSemantics $ Right ast
-        processSem s@(InstrSemantics (Right {})) = return s
+          do res <- parseSemantics str
+             if isRight res
+             then return $ Right $ InstrSemantics $ Right $ fromRight res
+             else return $ Left $ fromLeft res
+        processSem s@(InstrSemantics (Right {})) = return $ Right s
 
-parseSemantics :: String -> IO AST.Module
+parseSemantics :: String -> IO (Either String AST.Module)
 parseSemantics str =
   do res <-
        withContext
          ( \context ->
              runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
-     when (isLeft res)
-        $ reportErrorAndExit $ show $ fromLeft res
-     return $ fromRight res
+     if isRight res
+     then return $ Right $ fromRight res
+     else let err = fromLeft res
+          in if isLeft err
+             then return $ Left $ fromLeft err
+             else return $ Left $ show $ fromRight err
