@@ -650,7 +650,7 @@ instance DFGBuildable LLVM.Global where
         st1 = buildFunctionDFG st0 params
         st2 = buildFunctionDFG st1 $ LLVMG.basicBlocks f
     in st2
-  buildFunctionDFG _ l = error $ "'buildFunctionDFG' not implemented for "
+  buildFunctionDFG _ l = error $ "buildFunctionDFG: not implemented for "
                                  ++ show l
 
   buildPatternDFG = buildFunctionDFG
@@ -667,7 +667,7 @@ instance DFGBuildable LLVM.BasicBlock where
         st3 = foldl buildFunctionDFG st2 insts
     in st3
   buildFunctionDFG _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'buildFunctionDFG' does not support unnamed basic blocks"
+    error $ "buildFunctionDFG: does not support unnamed basic blocks"
 
   buildPatternDFG = buildFunctionDFG
 
@@ -845,7 +845,7 @@ instance DFGBuildable LLVM.Instruction where
               -- single data-flow edge to it, we are guaranteed that the in-edge
               -- number of that data-flow edge is 0.
     in st7
-  buildFunctionDFG _ l = error $ "'buildFunctionDFG' not implemented for "
+  buildFunctionDFG _ l = error $ "buildFunctionDFG: not implemented for "
                                  ++ show l
 
   buildPatternDFG st0 i@(LLVM.Call {}) =
@@ -858,7 +858,7 @@ instance DFGBuildable LLVM.Operand where
     ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
   buildFunctionDFG st (LLVM.ConstantOperand c) =
     addNewValueNodeWithConstant st (toConstant c)
-  buildFunctionDFG _ o = error $ "'buildFunctionDFG' not implemented for "
+  buildFunctionDFG _ o = error $ "buildFunctionDFG: not implemented for "
                                  ++ show o
 
   buildPatternDFG = buildFunctionDFG
@@ -894,14 +894,14 @@ instance CFGBuildable LLVM.BasicBlock where
         st4 = buildFunctionCFG st3 term_inst
     in st4
   buildFunctionCFG _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "'buildFunctionCFG' does not support unnamed basic blocks"
+    error $ "buildFunctionCFG: does not support unnamed basic blocks"
 
   buildPatternCFG = buildFunctionCFG
 
 instance CFGBuildable LLVM.Global where
   buildFunctionCFG st f@(LLVM.Function {}) =
     buildFunctionCFG st $ LLVMG.basicBlocks f
-  buildFunctionCFG _ l = error $ "'buildFunctionCFG' not implemented for "
+  buildFunctionCFG _ l = error $ "buildFunctionCFG: not implemented for "
                                  ++ show l
 
   buildPatternCFG = buildFunctionCFG
@@ -931,7 +931,7 @@ instance CFGBuildable LLVM.Terminator where
                                    br_node
                                    [t_dst_node, f_dst_node]
     in st4
-  buildFunctionCFG _ l = error $ "'buildFunctionCFG' not implemented for "
+  buildFunctionCFG _ l = error $ "buildFunctionCFG: not implemented for "
                                  ++ show l
 
   buildPatternCFG = buildFunctionCFG
@@ -941,7 +941,7 @@ instance CFGBuildable LLVM.Operand where
     ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
   buildFunctionCFG st (LLVM.ConstantOperand c) =
     addNewValueNodeWithConstant st (toConstant c)
-  buildFunctionCFG _ o = error $ "'buildFunctionCFG' not implemented for "
+  buildFunctionCFG _ o = error $ "buildFunctionCFG: not implemented for "
                                  ++ show o
 
   buildPatternCFG = buildFunctionCFG
