@@ -848,7 +848,10 @@ instance DFGBuildable LLVM.Instruction where
   buildFunctionDFG _ l = error $ "'buildFunctionDFG' not implemented for "
                                  ++ show l
 
-  buildPatternDFG = buildFunctionDFG
+  buildPatternDFG st0 i@(LLVM.Call {}) =
+    -- TODO: implement
+    undefined
+  buildPatternDFG st i = buildFunctionDFG st i
 
 instance DFGBuildable LLVM.Operand where
   buildFunctionDFG st (LLVM.LocalReference t name) =
