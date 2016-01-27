@@ -29,6 +29,8 @@ import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
   , toNatural
+  , isRight
+  , fromRight
   )
 
 import qualified LLVM.General.AST as LLVM
@@ -353,14 +355,26 @@ mkFunctionCFGBuilder =
 -- | Constructs a 'Builder' that will construct a pattern data-flow graph.
 mkPatternDFGBuilder :: Builder
 mkPatternDFGBuilder =
-  -- TODO: implement
-  mkFunctionDFGBuilder
+  mkFunctionDFGBuilder { mkFromInstruction = newMk }
+  where newMk b st i@(LLVM.Call {}) =
+          let call_op = LLVM.function i
+          in if isRight call_op
+             then case fromRight call_op
+                  of (LLVM.ConstantOperand
+                       (LLVMC.GlobalReference _ (LLVM.Name name)))
+                       -> case name
+                          of "setreg" -> mkPatternDFGFromSetregCall b st i
+                             "param" -> mkPatternDFGFromParamCall b st i
+                             _ -> -- Let the default builder handle it
+                                  mkFunctionDFGFromInstruction b st i
+                     _ -> -- Let the default builder handle it
+                          mkFunctionDFGFromInstruction b st i
+             else error "mkPatternDFGBuilder: CallableOperand is not an Operand"
+        newMk b st i = mkFunctionDFGFromInstruction b st i
 
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
 mkPatternCFGBuilder :: Builder
-mkPatternCFGBuilder =
-  -- TODO: implement
-  mkFunctionCFGBuilder
+mkPatternCFGBuilder = mkFunctionCFGBuilder
 
 mkFunctionDFGFromGlobal
   :: Builder
@@ -679,6 +693,53 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
       n = fromJust $ lastTouchedNode st1
       st2 = addFuncInputValue st1 n
   in st2
+
+mkPatternDFGFromSetregCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternDFGFromSetregCall b st0 i@(LLVM.Call {}) =
+  ensureValueNodeWithSymExists st0 (LocalStringSymbol "test") D.AnyType
+
+--  let call_op = LLVM.function i
+--          in if isRight call_op
+--             then case fromRight call_op
+--                  of (LLVM.ConstantOperand
+--                       (LLVMC.GlobalReference _ (LLVM.Name name)))
+--                       -> case name
+--                          of "setreg" -> mkPatternDFGFromSetregCall b st i
+--                             "param" -> mkPatternDFGFromParamCall b st i
+--                             _ -> -- Let the default builder handle it
+--                                  mkFunctionDFGFromInstruction b st i
+--                     _ -> -- Let the default builder handle it
+--                          mkFunctionDFGFromInstruction b st i
+--             else error "mkPatternDFGBuilder: CallableOperand is not an Operand"
+--        newMk b st i = mkFunctionDFGFromInstruction b st i
+--
+--
+--
+--
+--
+--
+--
+--  ensureValueNodeWithSymExists st0 (toSymbol name) (toDataType t)
+--
+--
+--
+--
+--  -- TODO: implement
+--  undefined
+
+mkPatternDFGFromParamCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternDFGFromParamCall b st0 i@(LLVM.Call {}) =
+  -- TODO: implement
+  error $ show i
+
 
 mkFunctionCFGFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
 mkFunctionCFGFromGlobal b st f@(LLVM.Function {}) =
