@@ -12,6 +12,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE RankNTypes #-}
+
 module Language.InstrSel.OpStructures.LLVM.OSMaker
   ( mkFunctionOS
   , mkPatternOS
@@ -32,7 +34,8 @@ import Language.InstrSel.Utils
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
-import qualified LLVM.General.AST.Global as LLVMG
+import qualified LLVM.General.AST.Global as LLVM
+  ( Global (..) )
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
@@ -67,38 +70,6 @@ type BlockToDatumDef = (F.BlockName, G.Node, G.EdgeNr)
 -- also included in the tuple.
 type DatumToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
 
--- | Represents the intermediate build data.
-data BuildState
-  = BuildState
-      { opStruct :: OS.OpStructure
-        -- ^ The current operation structure.
-      , lastTouchedNode :: Maybe G.Node
-        -- ^ The last node (if any) that was touched. This is used to
-        -- simplifying edge insertion.
-      , entryBlock :: Maybe F.BlockName
-        -- ^ The block of the function entry point. A 'Nothing' value means that
-        -- this value has not yet been assigned.
-      , currentBlock :: Maybe F.BlockName
-        -- ^ The block of the basic block currently being processed. A 'Nothing'
-        -- value means that no basic block has yet been processed.
-      , symMaps :: [SymToValueNodeMapping]
-        -- ^ List of symbol-to-node mappings. If there are more than one mapping
-        -- using the same symbol, then the last one occuring in the list should
-        -- be picked.
-      , blockToDatumDataFlows :: [BlockToDatumDataFlow]
-        -- ^ List of block-to-datum flow dependencies that are yet to be
-        -- converted into edges.
-      , blockToDatumDefs :: [BlockToDatumDef]
-        -- ^ List of block-to-datum definitions that are yet to be converted
-        -- into edges.
-      , datumToBlockDefs :: [DatumToBlockDef]
-        -- ^ List of datum-to-block definitions that are yet to be converted
-        -- into edges.
-      , funcInputValues :: [G.Node]
-        -- ^ The value nodes representing the function input arguments.
-      }
-  deriving (Show)
-
 -- | Retains various symbol names.
 data Symbol
   = LocalStringSymbol String
@@ -132,6 +103,72 @@ instance Show Constant where
   show IntConstant { signedIntValue = v } = show v
   show FloatConstant { floatValue = v } = show v
   show GlobalReferenceConstant { globalRefName = s } = show s
+
+-- | Represents the intermediate build data.
+data BuildState
+  = BuildState
+      { opStruct :: OS.OpStructure
+        -- ^ The current operation structure.
+      , lastTouchedNode :: Maybe G.Node
+        -- ^ The last node (if any) that was touched. This is used to
+        -- simplifying edge insertion.
+      , entryBlock :: Maybe F.BlockName
+        -- ^ The block of the function entry point. A 'Nothing' value means that
+        -- this value has not yet been assigned.
+      , currentBlock :: Maybe F.BlockName
+        -- ^ The block of the basic block currently being processed. A 'Nothing'
+        -- value means that no basic block has yet been processed.
+      , symMaps :: [SymToValueNodeMapping]
+        -- ^ List of symbol-to-node mappings. If there are more than one mapping
+        -- using the same symbol, then the last one occuring in the list should
+        -- be picked.
+      , blockToDatumDataFlows :: [BlockToDatumDataFlow]
+        -- ^ List of block-to-datum flow dependencies that are yet to be
+        -- converted into edges.
+      , blockToDatumDefs :: [BlockToDatumDef]
+        -- ^ List of block-to-datum definitions that are yet to be converted
+        -- into edges.
+      , datumToBlockDefs :: [DatumToBlockDef]
+        -- ^ List of datum-to-block definitions that are yet to be converted
+        -- into edges.
+      , funcInputValues :: [G.Node]
+        -- ^ The value nodes representing the function input arguments.
+      }
+  deriving (Show)
+
+-- | Contains all the functions for building an 'OpStructure' from an AST
+-- (represented as a 'LLVM.Global'). The idea is that each function will
+-- recursively call the appropriate building function on every argument of the
+-- part, thus traversing the entire AST and building the 'OpStructure' from the
+-- bottom up.
+data Builder
+  = Builder
+      { mkFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
+      , mkFromBasicBlock :: Builder
+                         -> BuildState
+                         -> LLVM.BasicBlock
+                         -> BuildState
+      , mkFromNamed :: (Buildable n, Show n)
+                    => Builder
+                    -> BuildState
+                    -> LLVM.Named n
+                    -> BuildState
+      , mkFromInstruction :: Builder
+                          -> BuildState
+                          -> LLVM.Instruction
+                          -> BuildState
+      , mkFromTerminator :: Builder
+                         -> BuildState
+                         -> LLVM.Terminator
+                         -> BuildState
+      , mkFromOperand :: Builder -> BuildState -> LLVM.Operand -> BuildState
+      , mkFromParameter :: Builder
+                        -> BuildState
+                        -> LLVM.Parameter
+                        -> BuildState
+      }
+
+
 
 
 ----------------
@@ -188,70 +225,62 @@ instance DataTypeFormable LLVM.Operand where
   toDataType (LLVM.ConstantOperand c) = toDataType (toConstant c)
   toDataType o = error $ "'toDataType' not implemented for " ++ show o
 
--- | Class for building the data-flow graph.
-class DFGBuildable e where
+-- | Type class for helping a 'Builder' to traverse the AST. The idea is that
+-- 'build' will be invoked on the current AST element, and then the element will
+-- invoke the appropriate build function within the 'Builder', using itself as
+-- argument. The main advantage of this is that processing lists of AST elements
+-- becomes simpler as all such lists can be handled exactly the same way
+-- (otherwise we require one function for processing a list of
+-- 'LLVM.Instruction's and another for processing a list of 'LLVM.Parameter's).
+class Buildable e where
   -- | Builds the corresponding function data-flow graph from a given LLVM
   -- element.
-  buildFunctionDFG
-    :: BuildState
+  build
+    :: Builder
+    -> BuildState
       -- ^ The current build state.
     -> e
-       -- ^ The LLVM element to process.
+       -- ^ The AST element to be processed.
     -> BuildState
        -- ^ The new build state.
 
-  -- | Builds the corresponding pattern data-flow graph from a given LLVM
-  -- element. In most cases, this will be the same as 'buildFunctionDFG'.
-  buildPatternDFG
-    :: BuildState
-      -- ^ The current build state.
-    -> e
-       -- ^ The LLVM element to process.
-    -> BuildState
-       -- ^ The new build state.
+instance (Buildable e) => Buildable [e] where
+  build b st e = foldl (build b) st e
 
--- | Class for building the control-flow graph.
-class CFGBuildable e where
-  -- | Builds the corresponding function control-flow graph from a given LLVM
-  -- element. It is assumed that all data referred to in the resulting CFG are
-  -- already available in the current build state.
-  buildFunctionCFG
-    :: BuildState
-      -- ^ The current build state.
-    -> e
-       -- ^ The LLVM element to process.
-    -> BuildState
-       -- ^ The new build state.
+instance Buildable LLVM.Global where
+  build b st e = (mkFromGlobal b) b st e
 
-  -- | Builds the corresponding pattern control-flow graph from a given LLVM
-  -- element. In most cases, this will be the same as 'buildFunctionCFG'.
-  buildPatternCFG
-    :: BuildState
-      -- ^ The current build state.
-    -> e
-       -- ^ The LLVM element to process.
-    -> BuildState
-       -- ^ The new build state.
+instance Buildable LLVM.BasicBlock where
+  build b st e = (mkFromBasicBlock b) b st e
+
+instance (Buildable n, Show n) => Buildable (LLVM.Named n) where
+  build b st e = (mkFromNamed b) b st e
+
+instance Buildable LLVM.Instruction where
+  build b st e = (mkFromInstruction b) b st e
+
+instance Buildable LLVM.Terminator where
+  build b st e = (mkFromTerminator b) b st e
+
+instance Buildable LLVM.Operand where
+  build b st e = (mkFromOperand b) b st e
+
+instance Buildable LLVM.Parameter where
+  build b st e = (mkFromParameter b) b st e
 
 
 
--------------
--- Functions
--------------
-
--- | Converts a 'SymbolFormable' entity into a string. This is typically used
--- when referring to nodes whose name or origin is based on an LLVM entity (such
--- as a temporary or a variable).
-toSymbolString :: (SymbolFormable s) => s -> String
-toSymbolString = show . toSymbol
+-------------------
+-- Build functions
+-------------------
 
 -- | Builds an 'OpStructure' from a function to be compiled. If the definition
 -- is not a 'Function', an error is produced.
 mkFunctionOS :: LLVM.Global -> OS.OpStructure
 mkFunctionOS f@(LLVM.Function {}) =
   let st0 = mkInitBuildState
-      st1 = buildFunctionDFG st0 f
-      st2 = buildFunctionCFG st1 f
+      st1 = build mkFunctionDFGBuilder st0 f
+      st2 = build mkFunctionCFGBuilder st1 f
       st3 = updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
@@ -266,8 +295,8 @@ mkFunctionOS _ = error "mkFunctionOS: not a Function"
 mkPatternOS :: LLVM.Global -> OS.OpStructure
 mkPatternOS f@(LLVM.Function {}) =
   let st0 = mkInitBuildState
-      st1 = buildPatternDFG st0 f
-      st2 = buildPatternCFG st1 f
+      st1 = build mkPatternDFGBuilder st0 f
+      st2 = build mkPatternCFGBuilder st1 f
       st3 = updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
@@ -276,7 +305,7 @@ mkPatternOS f@(LLVM.Function {}) =
   in opStruct st5
 mkPatternOS _ = error "mkPattern: not a Function"
 
--- | Creates an initial state.
+-- | Creates an initial 'BuildState'.
 mkInitBuildState :: BuildState
 mkInitBuildState =
   BuildState { opStruct = OS.mkEmpty
@@ -289,6 +318,475 @@ mkInitBuildState =
              , datumToBlockDefs = []
              , funcInputValues = []
              }
+
+-- | Constructs a 'Builder' that will construct a function data-flow graph.
+mkFunctionDFGBuilder :: Builder
+mkFunctionDFGBuilder =
+  Builder { mkFromGlobal     = mkFunctionDFGFromGlobal
+          , mkFromBasicBlock = mkFunctionDFGFromBasicBlock
+          , mkFromNamed      = mkFunctionDFGFromNamed
+          , mkFromInstruction = mkFunctionDFGFromInstruction
+          , mkFromTerminator =
+              \_ _ t -> error $ "mkFromTerminator: not implemented for "
+                                ++ show t
+          , mkFromOperand    = mkFunctionDFGFromOperand
+          , mkFromParameter  = mkFunctionDFGFromParameter
+          }
+
+-- | Constructs a 'Builder' that will construct a function control-flow graph.
+mkFunctionCFGBuilder :: Builder
+mkFunctionCFGBuilder =
+  Builder { mkFromGlobal     = mkFunctionCFGFromGlobal
+          , mkFromBasicBlock = mkFunctionCFGFromBasicBlock
+          , mkFromNamed      =
+              \_ _ n -> error $ "mkFromNamed: not implemented for " ++ show n
+          , mkFromInstruction =
+              \_ _ i -> error $ "mkFromInstruction: not implemented for "
+                                ++ show i
+          , mkFromTerminator = mkFunctionCFGFromTerminator
+          , mkFromOperand    = mkFunctionCFGFromOperand
+          , mkFromParameter  =
+              \_ _ p -> error $ "mkFromParameter: not implemented for "
+                                ++ show p
+          }
+
+-- | Constructs a 'Builder' that will construct a pattern data-flow graph.
+mkPatternDFGBuilder :: Builder
+mkPatternDFGBuilder =
+  -- TODO: implement
+  mkFunctionDFGBuilder
+
+-- | Constructs a 'Builder' that will construct a pattern control-flow graph.
+mkPatternCFGBuilder :: Builder
+mkPatternCFGBuilder =
+  -- TODO: implement
+  mkFunctionCFGBuilder
+
+mkFunctionDFGFromGlobal
+  :: Builder
+  -> BuildState
+  -> LLVM.Global
+  -> BuildState
+mkFunctionDFGFromGlobal b st0 f@(LLVM.Function {}) =
+  let (params, _) = LLVM.parameters f
+      st1 = build b st0 params
+      st2 = build b st1 (LLVM.basicBlocks f)
+  in st2
+mkFunctionDFGFromGlobal _ _ g =
+  error $ "mkFunctionDFGFromGlobal: not implemented for " ++ show g
+
+mkFunctionDFGFromBasicBlock
+  :: Builder
+  -> BuildState
+  -> LLVM.BasicBlock
+  -> BuildState
+mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
+  let block_name = F.BlockName str
+      st1 = if isNothing $ entryBlock st0
+            then foldl (\st n -> addBlockToDatumDataFlow st (block_name, n))
+                       (st0 { entryBlock = Just block_name })
+                       (funcInputValues st0)
+            else st0
+      st2 = st1 { currentBlock = Just block_name }
+      st3 = foldl (build b) st2 insts
+  in st3
+mkFunctionDFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+    error $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
+
+mkFunctionDFGFromNamed
+  :: (Buildable n)
+  => Builder
+  -> BuildState
+  -> (LLVM.Named n)
+  -> BuildState
+mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
+  let st1 = build b st0 expr
+      sym = toSymbol name
+      res_n = fromJust $ lastTouchedNode st1
+      res_dt = G.getDataTypeOfValueNode res_n
+      st2 = ensureValueNodeWithSymExists st1 sym res_dt
+      sym_n = fromJust $ lastTouchedNode st2
+      st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
+      replaceNodeInLEDef old_n new_n (l, n, nr) =
+        if old_n == n then (l, new_n, nr) else (l, n, nr)
+      st4 = st3 { blockToDatumDefs =
+                     map (replaceNodeInLEDef res_n sym_n)
+                         (blockToDatumDefs st3)
+                }
+      replaceNodeInELDef old_n new_n (n, l, nr) =
+        if old_n == n then (new_n, l, nr) else (n, l, nr)
+      st5 = st4 { datumToBlockDefs =
+                     map (replaceNodeInELDef res_n sym_n)
+                         (datumToBlockDefs st4)
+                }
+  in st5
+mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
+
+mkFunctionDFGFromInstruction
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkFunctionDFGFromInstruction b st (LLVM.Add  nsw nuw op1 op2 _) =
+  -- TODO: make use of nsw and nuw?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.Add)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FAdd _ op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.FloatOp Op.Add)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Sub  nsw nuw op1 op2 _) =
+  -- TODO: make use of nsw and nuw?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.Sub)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FSub _ op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.FloatOp Op.Sub)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Mul nsw nuw op1 op2 _) =
+  -- TODO: make use of nsw and nuw?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.Mul)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FMul _ op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.FloatOp Op.Mul)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.UDiv exact op1 op2 _) =
+  -- TODO: make use of exact?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.UIntOp Op.Div)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.SDiv exact op1 op2 _) =
+  -- TODO: make use of exact?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.SIntOp Op.Div)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FDiv _ op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.FloatOp Op.Div)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.URem op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.UIntOp Op.Rem)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.SRem op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.SIntOp Op.Rem)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FRem _ op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.FloatOp Op.Rem)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Shl nsw nuw op1 op2 _) =
+  -- TODO: make use of nsw and nuw?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.Shl)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.LShr exact op1 op2 _) =
+  -- TODO: make use of exact?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.LShr)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.AShr exact op1 op2 _) =
+  -- TODO: make use of exact?
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.AShr)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.And op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.And)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Or op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.Or)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Xor op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (Op.CompArithOp $ Op.IntOp Op.XOr)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
+  -- TODO: add support for vectorized icmp
+  mkFunctionDFGFromCompOp b
+                          st
+                          (D.IntTempType { D.intTempNumBits = 1 })
+                          (fromLlvmIPred p)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.FCmp p op1 op2 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toTempDataType op1)
+                          (fromLlvmFPred p)
+                          [op1, op2]
+mkFunctionDFGFromInstruction b st (LLVM.Trunc op1 t1 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toDataType t1)
+                          (Op.CompTypeConvOp Op.Trunc)
+                          [op1]
+mkFunctionDFGFromInstruction b st (LLVM.ZExt op1 t1 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toDataType t1)
+                          (Op.CompTypeConvOp Op.ZExt)
+                          [op1]
+mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
+  mkFunctionDFGFromCompOp b
+                          st
+                          (toDataType t1)
+                          (Op.CompTypeConvOp Op.SExt)
+                          [op1]
+-- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
+-- state nodes.
+mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
+  let st1 = mkFunctionDFGFromCompOp b
+                                    st0
+                                    (toDataType op1)
+                                    (Op.CompMemoryOp Op.Load)
+                                    [op1]
+      n = fromJust $ lastTouchedNode st1
+      bb = fromJust $ currentBlock st1
+      st2 = addDatumToBlockDef st1 (n, bb, 0)
+  in st2
+-- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
+-- state nodes.
+mkFunctionDFGFromInstruction b st0 (LLVM.Store _ op1 op2 _ _ _) =
+  let st1 = mkFunctionDFGFromCompOp b
+                                    st0
+                                    D.AnyType -- This doesn't matter since the
+                                              -- result node will be removed
+                                              -- directly afterwards
+                                    (Op.CompMemoryOp Op.Store)
+                                    [op1, op2] -- TODO: check the order that
+                                               -- it's correct TODO: remove the
+                                               -- node below
+      n = fromJust $ lastTouchedNode st1
+  in st1
+mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
+  let (operands, blocks) = unzip phi_operands
+      block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
+      operand_node_sts = scanl (build b) st0 operands
+      operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
+      st1 = last operand_node_sts
+      st2 = addNewNode st1 G.PhiNode
+      phi_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
+      st4 = foldl ( \st (n, block_id) ->
+                    let g = getOSGraph st
+                        dfe = head
+                              $ filter G.isDataFlowEdge
+                              $ G.getEdges g n phi_node
+                    in addDatumToBlockDef st
+                                           (n, block_id, G.getOutEdgeNr dfe)
+                  )
+                  st3
+                  (zip operand_ns block_names)
+      st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
+      d_node = fromJust $ lastTouchedNode st5
+      st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
+      st7 = addBlockToDatumDef st6 (fromJust $ currentBlock st6, d_node, 0)
+            -- Since we've just created the value node and only added a
+            -- single data-flow edge to it, we are guaranteed that the in-edge
+            -- number of that data-flow edge is 0.
+  in st7
+mkFunctionDFGFromInstruction _ _ i =
+  error $ "mkFunctionDFGFromInstruction: not implemented for " ++ show i
+
+-- | Inserts a new computation node representing the operation along with edges
+-- to that computation node from the given operands (which will also be
+-- processed). Lastly, a new value node representing the result will be added
+-- along with an edge to that value node from the computation node.
+mkFunctionDFGFromCompOp
+  :: (Buildable o)
+  => Builder
+  -> BuildState
+  -> D.DataType
+     -- ^ The data type of the result.
+  -> Op.CompOp
+     -- ^ The computational operation.
+  -> [o]
+     -- ^ The operands.
+  -> BuildState
+mkFunctionDFGFromCompOp b st0 dt op operands =
+  let sts = scanl (build b) st0 operands
+      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+      st1 = last sts
+      st2 = addNewNode st1 (G.ComputationNode op)
+      op_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+      st4 = addNewNode st3 (G.ValueNode dt Nothing)
+      d_node = fromJust $ lastTouchedNode st4
+      st5 = addNewEdge st4 G.DataFlowEdge op_node d_node
+  in st5
+
+mkFunctionDFGFromOperand
+  :: Builder
+  -> BuildState
+  -> LLVM.Operand
+  -> BuildState
+mkFunctionDFGFromOperand _ st (LLVM.LocalReference t name) =
+  ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
+mkFunctionDFGFromOperand _ st (LLVM.ConstantOperand c) =
+  addNewValueNodeWithConstant st (toConstant c)
+mkFunctionDFGFromOperand _ _ o =
+  error $ "mkFunctionDFGFromOperand: not implemented for " ++ show o
+
+mkFunctionDFGFromParameter
+  :: Builder
+  -> BuildState
+  -> LLVM.Parameter
+  -> BuildState
+mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
+  let st1 = ensureValueNodeWithSymExists st0 (toSymbol name) (toDataType t)
+      n = fromJust $ lastTouchedNode st1
+      st2 = addFuncInputValue st1 n
+  in st2
+
+mkFunctionCFGFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
+mkFunctionCFGFromGlobal b st f@(LLVM.Function {}) =
+  build b st (LLVM.basicBlocks f)
+mkFunctionCFGFromGlobal _ _ g =
+  error $ "mkFunctionCFGFromGlobal: not implemented for " ++ show g
+
+mkFunctionCFGFromBasicBlock
+  :: Builder
+  -> BuildState
+  -> LLVM.BasicBlock
+  -> BuildState
+mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
+                                                    _
+                                                    named_term_inst
+                                  ) =
+  let block_name = F.BlockName str
+      term_inst = fromNamed named_term_inst
+      st1 = if isNothing $ entryBlock st0
+            then st1 { entryBlock = Just block_name }
+            else st0
+      st2 = ensureBlockNodeExists st1 block_name
+      st3 = st2 { currentBlock = Just block_name }
+      st4 = build b st3 term_inst
+    in st4
+mkFunctionCFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
+  error $ "mkFunctionCFGFromBasicBlock: does not support unnamed basic blocks"
+
+mkFunctionCFGFromTerminator
+  :: Builder
+  -> BuildState
+  -> LLVM.Terminator
+  -> BuildState
+mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
+    mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
+mkFunctionCFGFromTerminator b st0 (LLVM.Br (LLVM.Name dst) _) =
+  let st1 = mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
+            -- Signature on last argument needed to please GHC...
+      br_node = fromJust $ lastTouchedNode st1
+      st2 = ensureBlockNodeExists st1 (F.BlockName dst)
+      dst_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
+  in st3
+mkFunctionCFGFromTerminator b st0 ( LLVM.CondBr op
+                                                (LLVM.Name t_dst)
+                                                (LLVM.Name f_dst)
+                                                _
+                                  ) =
+  let st1 = mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
+      br_node = fromJust $ lastTouchedNode st1
+      st2 = ensureBlockNodeExists st1 (F.BlockName t_dst)
+      t_dst_node = fromJust $ lastTouchedNode st2
+      st3 = ensureBlockNodeExists st2 (F.BlockName f_dst)
+      f_dst_node = fromJust $ lastTouchedNode st3
+      st4 = addNewEdgesManyDests st3
+                                 G.ControlFlowEdge
+                                 br_node
+                                 [t_dst_node, f_dst_node]
+  in st4
+mkFunctionCFGFromTerminator _ _ t =
+  error $ "mkFunctionCFGFromTerminator: not implemented for " ++ show t
+
+-- | Inserts a new node representing a control operation, and adds edges to that
+-- node from the current block node and operands (which will also be processed).
+mkFunctionCFGFromControlOp
+  :: (Buildable o)
+  => Builder
+  -> BuildState
+  -> Op.ControlOp
+     -- ^ The control operations.
+  -> [o]
+     -- ^ The operands.
+  -> BuildState
+mkFunctionCFGFromControlOp b st0 op operands =
+  let sts = scanl (build b) st0 operands
+      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+      st1 = last sts
+      st2 = addNewNode st1 (G.ControlNode op)
+      op_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdge st2
+                       G.ControlFlowEdge
+                       ( fromJust $
+                           findBlockNodeWithID st2
+                                               (fromJust $ currentBlock st2)
+                       )
+              op_node
+      st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
+  in st4
+
+mkFunctionCFGFromOperand :: Builder -> BuildState -> LLVM.Operand -> BuildState
+mkFunctionCFGFromOperand _ st (LLVM.LocalReference t name) =
+  ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
+mkFunctionCFGFromOperand _ st (LLVM.ConstantOperand c) =
+  addNewValueNodeWithConstant st (toConstant c)
+mkFunctionCFGFromOperand _ _ o =
+  error $ "mkFunctionCFGFromOperand: not implemented for " ++ show o
+
+
+
+------------------
+-- Help functions
+------------------
+
+-- | Converts a 'SymbolFormable' entity into a string. This is typically used
+-- when referring to nodes whose name or origin is based on an LLVM entity (such
+-- as a temporary or a variable).
+toSymbolString :: (SymbolFormable s) => s -> String
+toSymbolString = show . toSymbol
 
 -- | Converts an argument into a temporary-oriented data type.
 toTempDataType :: (DataTypeFormable t) => t -> D.DataType
@@ -460,58 +958,6 @@ ensureBlockNodeExists st l =
      then touchNode st (fromJust block_node)
      else addNewNode st (G.BlockNode l)
 
--- | Inserts a new computation node representing the operation along with edges
--- to that computation node from the given operands (which will also be
--- processed). Lastly, a new value node representing the result will be added
--- along with an edge to that value node from the computation node.
-buildFunctionDFGFromCompOp
-  :: (DFGBuildable o)
-  => BuildState
-  -> D.DataType
-     -- ^ The data type of the result.
-  -> Op.CompOp
-     -- ^ The computational operation.
-  -> [o]
-     -- ^ The operands.
-  -> BuildState
-buildFunctionDFGFromCompOp st0 dt op operands =
-  let sts = scanl buildFunctionDFG st0 operands
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      st2 = addNewNode st1 (G.ComputationNode op)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-      st4 = addNewNode st3 (G.ValueNode dt Nothing)
-      d_node = fromJust $ lastTouchedNode st4
-      st5 = addNewEdge st4 G.DataFlowEdge op_node d_node
-  in st5
-
--- | Inserts a new node representing a control operation, and adds edges to that
--- node from the current block node and operands (which will also be processed).
-buildFunctionCFGFromControlOp
-  :: (CFGBuildable o)
-  => BuildState
-  -> Op.ControlOp
-     -- ^ The control operation.
-  -> [o]
-     -- ^ The operands.
-  -> BuildState
-buildFunctionCFGFromControlOp st0 op operands =
-  let sts = scanl buildFunctionCFG st0 operands
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      st2 = addNewNode st1 (G.ControlNode op)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge st2
-                       G.ControlFlowEdge
-                       ( fromJust $
-                           findBlockNodeWithID st2
-                                               (fromJust $ currentBlock st2)
-                       )
-              op_node
-      st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
-  in st4
-
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
@@ -607,341 +1053,3 @@ addMissingDatumToBlockDefEdges st =
 fromNamed :: LLVM.Named i -> i
 fromNamed (_ LLVM.:= i) = i
 fromNamed (LLVM.Do i) = i
-
-
-
----------------------------------------------
--- DFGBuildable-related type class instances
----------------------------------------------
-
-instance (DFGBuildable a) => DFGBuildable [a] where
-  buildFunctionDFG = foldl buildFunctionDFG
-  buildPatternDFG = foldl buildPatternDFG
-
-instance (DFGBuildable n) => DFGBuildable (LLVM.Named n) where
-  buildFunctionDFG st0 (name LLVM.:= expr) =
-    let st1 = buildFunctionDFG st0 expr
-        sym = toSymbol name
-        res_n = fromJust $ lastTouchedNode st1
-        res_dt = G.getDataTypeOfValueNode res_n
-        st2 = ensureValueNodeWithSymExists st1 sym res_dt
-        sym_n = fromJust $ lastTouchedNode st2
-        st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
-        replaceNodeInLEDef old_n new_n (l, n, nr) =
-          if old_n == n then (l, new_n, nr) else (l, n, nr)
-        st4 = st3 { blockToDatumDefs =
-                       map (replaceNodeInLEDef res_n sym_n)
-                           (blockToDatumDefs st3)
-                  }
-        replaceNodeInELDef old_n new_n (n, l, nr) =
-          if old_n == n then (new_n, l, nr) else (n, l, nr)
-        st5 = st4 { datumToBlockDefs =
-                       map (replaceNodeInELDef res_n sym_n)
-                           (datumToBlockDefs st4)
-                  }
-    in st5
-  buildFunctionDFG st (LLVM.Do expr) = buildFunctionDFG st expr
-
-  buildPatternDFG = buildFunctionDFG
-
-instance DFGBuildable LLVM.Global where
-  buildFunctionDFG st0 f@(LLVM.Function {}) =
-    let (params, _) = LLVMG.parameters f
-        st1 = buildFunctionDFG st0 params
-        st2 = buildFunctionDFG st1 $ LLVMG.basicBlocks f
-    in st2
-  buildFunctionDFG _ l = error $ "buildFunctionDFG: not implemented for "
-                                 ++ show l
-
-  buildPatternDFG = buildFunctionDFG
-
-instance DFGBuildable LLVM.BasicBlock where
-  buildFunctionDFG st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-    let block_name = F.BlockName str
-        st1 = if isNothing $ entryBlock st0
-              then foldl (\st n -> addBlockToDatumDataFlow st (block_name, n))
-                         (st0 { entryBlock = Just block_name })
-                         (funcInputValues st0)
-              else st0
-        st2 = st1 { currentBlock = Just block_name }
-        st3 = foldl buildFunctionDFG st2 insts
-    in st3
-  buildFunctionDFG _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "buildFunctionDFG: does not support unnamed basic blocks"
-
-  buildPatternDFG = buildFunctionDFG
-
-instance DFGBuildable LLVM.Instruction where
-  buildFunctionDFG st (LLVM.Add  nsw nuw op1 op2 _) =
-    -- TODO: make use of nsw and nuw?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.Add)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FAdd _ op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.FloatOp Op.Add)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Sub  nsw nuw op1 op2 _) =
-    -- TODO: make use of nsw and nuw?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.Sub)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FSub _ op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.FloatOp Op.Sub)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Mul nsw nuw op1 op2 _) =
-    -- TODO: make use of nsw and nuw?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.Mul)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FMul _ op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.FloatOp Op.Mul)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.UDiv exact op1 op2 _) =
-    -- TODO: make use of exact?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.UIntOp Op.Div)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.SDiv exact op1 op2 _) =
-    -- TODO: make use of exact?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.SIntOp Op.Div)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FDiv _ op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.FloatOp Op.Div)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.URem op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.UIntOp Op.Rem)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.SRem op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.SIntOp Op.Rem)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FRem _ op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.FloatOp Op.Rem)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Shl nsw nuw op1 op2 _) =
-    -- TODO: make use of nsw and nuw?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.Shl)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.LShr exact op1 op2 _) =
-    -- TODO: make use of exact?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.LShr)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.AShr exact op1 op2 _) =
-    -- TODO: make use of exact?
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.AShr)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.And op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.And)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Or op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.Or)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Xor op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (Op.CompArithOp $ Op.IntOp Op.XOr)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.ICmp p op1 op2 _) =
-    -- TODO: add support for vectorized icmp
-    buildFunctionDFGFromCompOp st
-                       (D.IntTempType { D.intTempNumBits = 1 })
-                       (fromLlvmIPred p)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.FCmp p op1 op2 _) =
-    buildFunctionDFGFromCompOp st
-                       (toTempDataType op1)
-                       (fromLlvmFPred p)
-                       [op1, op2]
-  buildFunctionDFG st (LLVM.Trunc op1 t1 _) =
-    buildFunctionDFGFromCompOp st
-                       (toDataType t1)
-                       (Op.CompTypeConvOp Op.Trunc)
-                       [op1]
-  buildFunctionDFG st (LLVM.ZExt op1 t1 _) =
-    buildFunctionDFGFromCompOp st
-                       (toDataType t1)
-                       (Op.CompTypeConvOp Op.ZExt)
-                       [op1]
-  buildFunctionDFG st (LLVM.SExt op1 t1 _) =
-    buildFunctionDFGFromCompOp st
-                       (toDataType t1)
-                       (Op.CompTypeConvOp Op.SExt)
-                       [op1]
-  -- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
-  -- state nodes.
-  buildFunctionDFG st0 (LLVM.Load _ op1 _ _ _) =
-    let st1 = buildFunctionDFGFromCompOp st0
-                        (toDataType op1)
-                        (Op.CompMemoryOp Op.Load)
-                        [op1]
-        n   = fromJust $ lastTouchedNode st1
-        bb  = fromJust $ currentBlock st1
-        st2 = addDatumToBlockDef st1 (n, bb, 0)
-    in st2
-  -- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
-  -- state nodes.
-  buildFunctionDFG st0 (LLVM.Store _ op1 op2 _ _ _) =
-    let st1 = buildFunctionDFGFromCompOp st0
-                        D.AnyType -- This doesn't matter since the result node
-                                  -- will be removed directly afterwards
-                        (Op.CompMemoryOp Op.Store)
-                        [op1, op2] -- TODO: check the order that it's correct
-        -- TODO: remove the node below
-        n   = fromJust $ lastTouchedNode st1
-    in st1
-  buildFunctionDFG st0 (LLVM.Phi t phi_operands _) =
-    let (operands, blocks) = unzip phi_operands
-        block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
-        operand_node_sts = scanl buildFunctionDFG st0 operands
-        operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
-        st1 = last operand_node_sts
-        st2 = addNewNode st1 G.PhiNode
-        phi_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-        st4 = foldl ( \st (n, block_id) ->
-                      let g = getOSGraph st
-                          dfe = head
-                                $ filter G.isDataFlowEdge
-                                $ G.getEdges g n phi_node
-                      in addDatumToBlockDef st
-                                             (n, block_id, G.getOutEdgeNr dfe)
-                    )
-                    st3
-                    (zip operand_ns block_names)
-        st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
-        d_node = fromJust $ lastTouchedNode st5
-        st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
-        st7 = addBlockToDatumDef st6 (fromJust $ currentBlock st6, d_node, 0)
-              -- Since we've just created the value node and only added a
-              -- single data-flow edge to it, we are guaranteed that the in-edge
-              -- number of that data-flow edge is 0.
-    in st7
-  buildFunctionDFG _ l = error $ "buildFunctionDFG: not implemented for "
-                                 ++ show l
-
-  buildPatternDFG st0 i@(LLVM.Call {}) =
-    -- TODO: implement
-    undefined
-  buildPatternDFG st i = buildFunctionDFG st i
-
-instance DFGBuildable LLVM.Operand where
-  buildFunctionDFG st (LLVM.LocalReference t name) =
-    ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
-  buildFunctionDFG st (LLVM.ConstantOperand c) =
-    addNewValueNodeWithConstant st (toConstant c)
-  buildFunctionDFG _ o = error $ "buildFunctionDFG: not implemented for "
-                                 ++ show o
-
-  buildPatternDFG = buildFunctionDFG
-
-instance DFGBuildable LLVM.Parameter where
-  buildFunctionDFG st0 (LLVM.Parameter t name _) =
-    let st1 = ensureValueNodeWithSymExists st0 (toSymbol name) (toDataType t)
-        n = fromJust $ lastTouchedNode st1
-        st2 = addFuncInputValue st1 n
-    in st2
-
-  buildPatternDFG = buildFunctionDFG
-
-
-
----------------------------------------------
--- CFGBuildable-related type class instances
----------------------------------------------
-
-instance (CFGBuildable a) => CFGBuildable [a] where
-  buildFunctionCFG = foldl buildFunctionCFG
-  buildPatternCFG = foldl buildPatternCFG
-
-instance CFGBuildable LLVM.BasicBlock where
-  buildFunctionCFG st0 (LLVM.BasicBlock (LLVM.Name str) _ named_term_inst) =
-    let block_name = F.BlockName str
-        term_inst = fromNamed named_term_inst
-        st1 = if isNothing $ entryBlock st0
-              then st1 { entryBlock = Just block_name }
-              else st0
-        st2 = ensureBlockNodeExists st1 block_name
-        st3 = st2 { currentBlock = Just block_name }
-        st4 = buildFunctionCFG st3 term_inst
-    in st4
-  buildFunctionCFG _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "buildFunctionCFG: does not support unnamed basic blocks"
-
-  buildPatternCFG = buildFunctionCFG
-
-instance CFGBuildable LLVM.Global where
-  buildFunctionCFG st f@(LLVM.Function {}) =
-    buildFunctionCFG st $ LLVMG.basicBlocks f
-  buildFunctionCFG _ l = error $ "buildFunctionCFG: not implemented for "
-                                 ++ show l
-
-  buildPatternCFG = buildFunctionCFG
-
-instance CFGBuildable LLVM.Terminator where
-  buildFunctionCFG st (LLVM.Ret op _) =
-    buildFunctionCFGFromControlOp st Op.Ret (maybeToList op)
-  buildFunctionCFG st0 (LLVM.Br (LLVM.Name dst) _) =
-    let st1 = buildFunctionCFGFromControlOp st0
-                                            Op.Br
-                                            ([] :: [LLVM.Operand])
-                                            -- Signature needed to please GHC...
-        br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureBlockNodeExists st1 (F.BlockName dst)
-        dst_node = fromJust $ lastTouchedNode st2
-        st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
-    in st3
-  buildFunctionCFG st0 (LLVM.CondBr op (LLVM.Name t_dst) (LLVM.Name f_dst) _) =
-    let st1 = buildFunctionCFGFromControlOp st0 Op.CondBr [op]
-        br_node = fromJust $ lastTouchedNode st1
-        st2 = ensureBlockNodeExists st1 (F.BlockName t_dst)
-        t_dst_node = fromJust $ lastTouchedNode st2
-        st3 = ensureBlockNodeExists st2 (F.BlockName f_dst)
-        f_dst_node = fromJust $ lastTouchedNode st3
-        st4 = addNewEdgesManyDests st3
-                                   G.ControlFlowEdge
-                                   br_node
-                                   [t_dst_node, f_dst_node]
-    in st4
-  buildFunctionCFG _ l = error $ "buildFunctionCFG: not implemented for "
-                                 ++ show l
-
-  buildPatternCFG = buildFunctionCFG
-
-instance CFGBuildable LLVM.Operand where
-  buildFunctionCFG st (LLVM.LocalReference t name) =
-    ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
-  buildFunctionCFG st (LLVM.ConstantOperand c) =
-    addNewValueNodeWithConstant st (toConstant c)
-  buildFunctionCFG _ o = error $ "buildFunctionCFG: not implemented for "
-                                 ++ show o
-
-  buildPatternCFG = buildFunctionCFG
