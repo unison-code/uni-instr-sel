@@ -123,7 +123,7 @@ mkHLFunctionParams function target =
                         $ filter (isNothing . locValue)
                         $ tmLocations target
         in concatMap ( \n ->
-                       mkDataLocConstraints okay_locs n
+                       mkNewDataLocConstraints okay_locs n
                      )
                      (functionInputs function)
   in HighLevelFunctionParams

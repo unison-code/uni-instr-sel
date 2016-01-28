@@ -16,11 +16,13 @@
 module Language.InstrSel.Constraints.ConstraintBuilder
   ( addMatchPlacementConstraints
   , addFallThroughConstraints
-  , addDataLocConstraints
+  , addNewDataLocConstraints
+  , addSameDataLocConstraints
   , addNoDataReuseConstraints
   , mkMatchPlacementConstraints
   , mkFallThroughConstraints
-  , mkDataLocConstraints
+  , mkNewDataLocConstraints
+  , mkSameDataLocConstraints
   , mkNoDataReuseConstraints
   )
 where
@@ -63,9 +65,9 @@ mkMatchPlacementConstraints g =
           ]
      else []
 
--- | Creates constraints using 'mkDataLocConstraints' and adds these (if any)
--- are added to the given 'OpStructure'.
-addDataLocConstraints
+-- | Creates constraints using 'mkNewDataLocConstraints' and adds these (if any)
+--  to the given 'OpStructure'.
+addNewDataLocConstraints
   :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
   -> NodeID
@@ -75,18 +77,18 @@ addDataLocConstraints
   -> OpStructure
      -- ^ The new structure, with the produced constraints (may be the same
      -- structure).
-addDataLocConstraints regs d os =
-  addConstraints os (mkDataLocConstraints regs d)
+addNewDataLocConstraints regs d os =
+  addConstraints os (mkNewDataLocConstraints regs d)
 
 -- | Creates location constraints such that the data of a particular value node
 -- must be in one of a particular set of locations.
-mkDataLocConstraints
+mkNewDataLocConstraints
   :: [LocationID]
      -- ^ List of locations to which the data can be allocated.
   -> NodeID
      -- ^ A value node.
   -> [Constraint]
-mkDataLocConstraints [reg] d =
+mkNewDataLocConstraints [reg] d =
   [ BoolExprConstraint
     $ EqExpr ( Location2NumExpr
                $ LocationOfValueNodeExpr
@@ -96,7 +98,7 @@ mkDataLocConstraints [reg] d =
                $ ALocationIDExpr reg
              )
   ]
-mkDataLocConstraints regs d =
+mkNewDataLocConstraints regs d =
   [ BoolExprConstraint
     $ InSetExpr ( Location2SetElemExpr
                   $ LocationOfValueNodeExpr
@@ -143,5 +145,27 @@ mkNoDataReuseConstraints d =
              )
              ( Location2NumExpr
                $ TheNullLocationExpr
+             )
+  ]
+
+-- | Creates constraints, using 'mkSameDataLocConstraints', that force the
+-- locations of two value nodes to be the same, and adds these to the given
+-- 'OpStructure'.
+addSameDataLocConstraints :: NodeID -> NodeID -> OpStructure -> OpStructure
+addSameDataLocConstraints n1 n2 os =
+  addConstraints os (mkSameDataLocConstraints n1 n2)
+
+-- | Creates constraints that force the locations of two value nodes to be the
+-- same.
+mkSameDataLocConstraints :: NodeID -> NodeID -> [Constraint]
+mkSameDataLocConstraints n1 n2 =
+  [ BoolExprConstraint
+    $ EqExpr ( Location2NumExpr
+               $ LocationOfValueNodeExpr
+               $ ANodeIDExpr n1
+             )
+             ( Location2NumExpr
+               $ LocationOfValueNodeExpr
+               $ ANodeIDExpr n2
              )
   ]

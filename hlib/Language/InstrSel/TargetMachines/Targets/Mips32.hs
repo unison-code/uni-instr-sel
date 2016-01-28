@@ -239,7 +239,7 @@ mkGenericSimpleRegRegCompInst
 mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
   let g = mkSimpleCompPattern op False d1 d2 d3
       cs = concatMap ( \(r, nid) ->
-                       mkDataLocConstraints (map locID r) nid
+                       mkNewDataLocConstraints (map locID r) nid
                      )
                      (zip [r1, r2, r3] [1, 2, 3])
       pat = InstrPattern
@@ -349,7 +349,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
       ord_g = mkSimpleCompPattern op False dtN dtM dtN
       swapped_g = mkSimpleCompPattern op True dtN dtM dtN
       cs = concatMap ( \(r, nid) ->
-                       mkDataLocConstraints (map locID r) nid
+                       mkNewDataLocConstraints (map locID r) nid
                      )
                      (zip [r1, r3] [1, 3])
       pats = [ InstrPattern
@@ -405,7 +405,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
       dtM = mkIntConstType imm m
       g = mkSimpleCompPattern op False dtM dtN dtN
       cs = concatMap ( \(r, nid) ->
-                       mkDataLocConstraints (map locID r) nid
+                       mkNewDataLocConstraints (map locID r) nid
                      )
                      (zip [r2, r3] [2, 3])
       pat = InstrPattern
@@ -800,7 +800,7 @@ mkRetInstrs =
                 [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 ) ]
             )
       bb_cs n = mkMatchPlacementConstraints (g n)
-      reg_cs  = mkDataLocConstraints [locID getRetRegister] 2
+      reg_cs  = mkNewDataLocConstraints [locID getRetRegister] 2
       pat n str =
         InstrPattern
           { patID = 0
@@ -857,9 +857,9 @@ mkRetInstrs =
 mkMfhiInstrs :: [Instruction]
 mkMfhiInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkDataLocConstraints [locID getHIRegister] 1
+      cs = mkNewDataLocConstraints [locID getHIRegister] 1
            ++
-           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
+           mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -886,9 +886,9 @@ mkMfhiInstrs =
 mkMfloInstrs :: [Instruction]
 mkMfloInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkDataLocConstraints [locID getLORegister] 1
+      cs = mkNewDataLocConstraints [locID getLORegister] 1
            ++
-           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
+           mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -915,9 +915,9 @@ mkMfloInstrs =
 mkPseudoMoveInstrs :: [Instruction]
 mkPseudoMoveInstrs =
   let g = mkSimpleCopy32Pattern
-      cs = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+      cs = mkNewDataLocConstraints (map locID getGPRegistersInclZero) 1
            ++
-           mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
+           mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat =
         InstrPattern
           { patID = 0
@@ -945,7 +945,7 @@ mkPseudoMoveInstrs =
 mkLoadImmInstr :: [Instruction]
 mkLoadImmInstr =
   let g w r     = mkSimpleCopyPattern (mkIntConstType r 32) (mkIntTempType w)
-      cs ls     = mkDataLocConstraints (map locID ls) 2
+      cs ls     = mkNewDataLocConstraints (map locID ls) 2
       pat w r ls a =
         InstrPattern
           { patID = 0
@@ -1070,9 +1070,9 @@ mkTypeConvInstrs =
            , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
            ]
        )
-      cs  = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+      cs  = mkNewDataLocConstraints (map locID getGPRegistersInclZero) 1
             ++
-            mkDataLocConstraints (map locID getGPRegistersWithoutZero) 2
+            mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 2
       pat t (n, m) =
         InstrPattern
           { patID = 0
@@ -1129,9 +1129,9 @@ mkEqComparison =
                                  dt16
                                  imm
                                  dt1
-      cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+      cs   = mkNewDataLocConstraints (map locID getGPRegistersInclZero) 1
              ++
-             mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
+             mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 3
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
@@ -1176,9 +1176,9 @@ mkSLTIComparison =
                                  dt32
                                  imm
                                  dt1
-      cs   = mkDataLocConstraints (map locID getGPRegistersInclZero) 1
+      cs   = mkNewDataLocConstraints (map locID getGPRegistersInclZero) 1
              ++
-             mkDataLocConstraints (map locID getGPRegistersWithoutZero) 3
+             mkNewDataLocConstraints (map locID getGPRegistersWithoutZero) 3
       pat = InstrPattern
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
@@ -1232,15 +1232,15 @@ mkSimdAddInstruction =
       add3_input = add2_input ++ [9, 10]
       add2_output = [3, 7]
       add3_output = add2_output ++ [11]
-      add2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      add2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           add2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           add2_output
-      add3_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      add3_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           add3_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           add3_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1326,15 +1326,15 @@ mkSimdAndiInstruction =
       and3_input = and2_input ++ [9]
       and2_output = [3, 7]
       and3_output = and2_output ++ [11]
-      and2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      and2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           and2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           and2_output
-      and3_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      and3_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           and3_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           and3_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1417,10 +1417,10 @@ mkSimdSlrlInstruction =
       slrl2_g = combineGraphs (mkSlrlGraph O.Shl 0) (mkSlrlGraph O.LShr 4)
       slrl2_input = [1, 5]
       slrl2_output = [3, 7]
-      slrl2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      slrl2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           slrl2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           slrl2_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1475,10 +1475,10 @@ mkSimdSlrlConstantInstruction =
                ]
       slrl_input  = [3, 4]
       slrl_output = [5, 6]
-      slrl_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      slrl_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           slrl_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           slrl_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1536,10 +1536,10 @@ mkSimdSllvInstruction =
       sllv2_g = combineGraphs (mkSllvGraph 0) (mkSllvGraph 4)
       sllv2_input = [1, 2, 5, 6]
       sllv2_output = [3, 7]
-      sllv2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      sllv2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           sllv2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           sllv2_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1594,10 +1594,10 @@ mkSimdNorInstruction =
                ]
       xor2_input  = [3, 4]
       xor2_output = [5, 6]
-      xor2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      xor2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           xor2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           xor2_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1655,10 +1655,10 @@ mkSimdSrlInstruction =
       srl2_g = combineGraphs (mkSrlGraph 0) (mkSrlGraph 4)
       srl2_input = [1, 5]
       srl2_output = [3, 7]
-      srl2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersInclZero))
+      srl2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersInclZero))
                           srl2_input
                 ++
-                concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+                concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           srl2_output
       pats = [ InstrPattern
                  { patID = 0
@@ -1714,7 +1714,7 @@ mkSimdLoad16ImmInstruction w =
                 (getAllEdges g1 ++ getAllEdges g2)
       li2_g = combineGraphs (mkLiGraph 0) (mkLiGraph 3)
       li2_output = [2, 5]
-      li2_cs = concatMap (mkDataLocConstraints (map locID getGPRegistersWithoutZero))
+      li2_cs = concatMap (mkNewDataLocConstraints (map locID getGPRegistersWithoutZero))
                           li2_output
       pats = [ InstrPattern
                  { patID = 0
