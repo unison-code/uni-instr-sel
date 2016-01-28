@@ -22,7 +22,6 @@
 
 module Language.InstrSel.OpStructures.Base
   ( OpStructure (..)
-  , addConstraint
   , addConstraints
   , mkEmpty
   )
@@ -84,8 +83,5 @@ mkEmpty = OpStructure { osGraph = G.mkEmpty
                       , osConstraints = []
                       }
 
-addConstraint :: OpStructure -> Constraint -> OpStructure
-addConstraint os c = os { osConstraints = osConstraints os ++ [c] }
-
 addConstraints :: OpStructure -> [Constraint] -> OpStructure
-addConstraints = foldl addConstraint
+addConstraints os cs = os { osConstraints = osConstraints os ++ cs }
