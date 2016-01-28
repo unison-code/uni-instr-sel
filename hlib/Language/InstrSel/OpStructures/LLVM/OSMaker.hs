@@ -41,7 +41,6 @@ import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
 import qualified LLVM.General.AST.Global as LLVM
   ( Global (..) )
-import qualified LLVM.General.AST.Type as LLVM
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
