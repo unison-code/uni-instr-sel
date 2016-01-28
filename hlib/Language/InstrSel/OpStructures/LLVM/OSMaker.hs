@@ -21,6 +21,9 @@ module Language.InstrSel.OpStructures.LLVM.OSMaker
   )
 where
 
+import qualified Language.InstrSel.Constraints as C
+  ( Constraint )
+import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
@@ -38,6 +41,7 @@ import qualified LLVM.General.AST.Constant as LLVMC
 import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
 import qualified LLVM.General.AST.Global as LLVM
   ( Global (..) )
+import qualified LLVM.General.AST.Type as LLVM
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
@@ -694,52 +698,40 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
       st2 = addFuncInputValue st1 n
   in st2
 
+-- | Adds a constraint that forces the two value nodes in the function call to
+-- have the same data location.
 mkPatternDFGFromSetregCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkPatternDFGFromSetregCall b st0 i@(LLVM.Call {}) =
-  ensureValueNodeWithSymExists st0 (LocalStringSymbol "test") D.AnyType
+mkPatternDFGFromSetregCall b st i@(LLVM.Call {}) =
+  let args = map fst (LLVM.arguments i)
+      nodes = map ( \(LLVM.LocalReference _ n) -> G.getNodeID
+                                                  $ fromJust
+                                                  $ findValueNodeWithSym st
+                                                  $ toSymbol n
+                  ) args
+  in addConstraints st $ C.mkSameDataLocConstraints nodes
+mkPatternDFGFromSetregCall _ _ i =
+  error $ "mkPatternDFGFromSetregCall: not implemented for " ++ show i
 
---  let call_op = LLVM.function i
---          in if isRight call_op
---             then case fromRight call_op
---                  of (LLVM.ConstantOperand
---                       (LLVMC.GlobalReference _ (LLVM.Name name)))
---                       -> case name
---                          of "setreg" -> mkPatternDFGFromSetregCall b st i
---                             "param" -> mkPatternDFGFromParamCall b st i
---                             _ -> -- Let the default builder handle it
---                                  mkFunctionDFGFromInstruction b st i
---                     _ -> -- Let the default builder handle it
---                          mkFunctionDFGFromInstruction b st i
---             else error "mkPatternDFGBuilder: CallableOperand is not an Operand"
---        newMk b st i = mkFunctionDFGFromInstruction b st i
---
---
---
---
---
---
---
---  ensureValueNodeWithSymExists st0 (toSymbol name) (toDataType t)
---
---
---
---
---  -- TODO: implement
---  undefined
-
+-- | Adds a new unnamed node with the same data type as the return type of the
+-- function call.
 mkPatternDFGFromParamCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkPatternDFGFromParamCall b st0 i@(LLVM.Call {}) =
-  -- TODO: implement
-  error $ show i
-
+mkPatternDFGFromParamCall b st i@(LLVM.Call {}) =
+  let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
+        fromRight $ LLVM.function i
+      (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
+      (LLVM.FunctionType { LLVM.resultType = rt }) = pt
+      dt = toDataType rt
+  in addNewNode st (G.ValueNode dt Nothing)
+mkPatternDFGFromParamCall _ _ i =
+  error $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
 
 mkFunctionCFGFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
 mkFunctionCFGFromGlobal b st f@(LLVM.Function {}) =
@@ -889,6 +881,13 @@ addNewNode st0 nt =
       st1 = updateOSGraph st0 new_g
       st2 = touchNode st1 new_n
   in st2
+
+-- | Adds a list of constraints to the 'OpStructure' in the given 'BuildState'.
+addConstraints :: BuildState -> [C.Constraint] -> BuildState
+addConstraints st cs =
+  let os = opStruct st
+      new_os = OS.addConstraints os cs
+  in st { opStruct = new_os }
 
 mkVarNameForConst :: Constant -> String
 mkVarNameForConst c = "%const." ++ (show c)

@@ -149,23 +149,25 @@ mkNoDataReuseConstraints d =
   ]
 
 -- | Creates constraints, using 'mkSameDataLocConstraints', that force the
--- locations of two value nodes to be the same, and adds these to the given
--- 'OpStructure'.
-addSameDataLocConstraints :: NodeID -> NodeID -> OpStructure -> OpStructure
-addSameDataLocConstraints n1 n2 os =
-  addConstraints os (mkSameDataLocConstraints n1 n2)
+-- locations of a given list of value nodes to be the same, and adds these
+-- constraints to the given 'OpStructure'.
+addSameDataLocConstraints :: [NodeID] -> OpStructure -> OpStructure
+addSameDataLocConstraints ns os =
+  addConstraints os (mkSameDataLocConstraints ns)
 
--- | Creates constraints that force the locations of two value nodes to be the
--- same.
-mkSameDataLocConstraints :: NodeID -> NodeID -> [Constraint]
-mkSameDataLocConstraints n1 n2 =
-  [ BoolExprConstraint
-    $ EqExpr ( Location2NumExpr
-               $ LocationOfValueNodeExpr
-               $ ANodeIDExpr n1
-             )
-             ( Location2NumExpr
-               $ LocationOfValueNodeExpr
-               $ ANodeIDExpr n2
-             )
-  ]
+-- | Creates constraints that force the locations of a list of value nodes to be
+-- the same.
+mkSameDataLocConstraints :: [NodeID] -> [Constraint]
+mkSameDataLocConstraints [] = []
+mkSameDataLocConstraints [_] = []
+mkSameDataLocConstraints ns =
+  map (mkC $ head ns) (tail ns)
+  where mkC n1 n2 = BoolExprConstraint
+                    $ EqExpr ( Location2NumExpr
+                                $ LocationOfValueNodeExpr
+                                $ ANodeIDExpr n1
+                              )
+                              ( Location2NumExpr
+                                $ LocationOfValueNodeExpr
+                                $ ANodeIDExpr n2
+                              )
