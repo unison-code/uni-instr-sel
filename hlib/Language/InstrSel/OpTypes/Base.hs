@@ -419,16 +419,16 @@ invertArithOpComparisonType GT  = LE
 invertArithOpComparisonType GE  = LT
 invertArithOpComparisonType LT  = GE
 invertArithOpComparisonType LE  = GT
-invertArithOpComparisonType op = error ( "Cannot invert " ++ show op ++
-                                       " because it is not a comparison"
-                                     )
+invertArithOpComparisonType op =
+  error $ "invertArithOpComparisonType: cannot invert " ++ show op
+          ++ " because it is not a comparison"
 
 -- | Swaps a given comparision. For example, '>' returns '<'.
 swapComparison :: CompOp -> CompOp
 swapComparison (CompArithOp op) = CompArithOp $ swapArithComparison op
-swapComparison op = error ( "Cannot swap " ++ show op ++
-                            " because it is not an arithmetic operation"
-                          )
+swapComparison op =
+  error $ "swapComparison: cannot swap " ++ show op
+          ++ " because it is not an arithmetic operation"
 
 -- | Swaps a given comparision. For example, '>' returns '<'.
 swapArithComparison :: ArithOp -> ArithOp
@@ -444,6 +444,6 @@ swapArithOpComparisonType GT  = LT
 swapArithOpComparisonType GE  = LE
 swapArithOpComparisonType LT  = GT
 swapArithOpComparisonType LE  = GE
-swapArithOpComparisonType op = error ( "Cannot swap " ++ show op ++
-                                       " because it is not a comparison"
-                                     )
+swapArithOpComparisonType op =
+  error $ "swapArithOpComparisonType: cannot swap " ++ show op
+          ++ " because it is not a comparison"
