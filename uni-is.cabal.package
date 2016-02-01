@@ -18,7 +18,10 @@ cabal-version:       >=1.10
 executable uni-is
   main-is:             UniIS.hs
   -- other-modules:
-  other-extensions:    OverloadedStrings, FlexibleInstances, GeneralizedNewtypeDeriving, ExtendedDefaultRules, DeriveDataTypeable, RecordWildCards
+  other-extensions:    DeriveDataTypeable,
+                       FlexibleInstances,
+                       GeneralizedNewtypeDeriving,
+                       OverloadedStrings
   build-depends:       base >=4.5 && <4.6,
                        aeson >=0.8 && <0.9,
                        atto-lisp >=0.2 && <0.3,
