@@ -14,6 +14,7 @@
 
 module Language.InstrSel.Utils.Natural where
 
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.JSON
 import Data.Maybe
 
@@ -31,7 +32,7 @@ import Control.DeepSeq
 -- | A data type that allows numbers from 0 to positive infinity.
 newtype Natural
   = Natural Integer
-  deriving (Eq, Ord)
+  deriving (Show, Eq, Ord)
 
 
 
@@ -39,8 +40,8 @@ newtype Natural
 -- Natural-related type class instances
 ----------------------------------------
 
-instance Show Natural where
-  show (Natural i) = show i
+instance PrettyShow Natural where
+  pShow (Natural i) = pShow i
 
 instance Num Natural where
     fromInteger = toNatural

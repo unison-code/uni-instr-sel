@@ -14,7 +14,7 @@
 
 module Language.InstrSel.Utils.Range where
 
-import Language.InstrSel.DebugShow
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.Base
   ( maybeRead )
 import Language.InstrSel.Utils.JSON
@@ -37,28 +37,19 @@ data Range t
       , upperBound :: t
         -- ^ Largest possible value (i.e. inclusive).
       }
-  deriving (Eq)
+  deriving (Show, Eq)
 
 
 
--------------------------------------
--- Show-related type class instances
--------------------------------------
+------------------------------------------
+-- PrettyShow-related type class instances
+------------------------------------------
 
-instance (Show t, Eq t) => Show (Range t) where
-  show r
-    | lowerBound r == upperBound r = show $ lowerBound r
+instance (PrettyShow t, Eq t) => PrettyShow (Range t) where
+  pShow r
+    | lowerBound r == upperBound r = pShow $ lowerBound r
     | otherwise = let tuple = (lowerBound r, upperBound r)
-                  in show tuple
-
-
-
-------------------------------------------
--- DebugShow-related type class instances
-------------------------------------------
-
-instance (Show t, Eq t) => DebugShow (Range t) where
-  dShow = show
+                  in pShow tuple
 
 
 

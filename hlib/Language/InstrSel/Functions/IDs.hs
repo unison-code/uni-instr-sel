@@ -19,7 +19,7 @@ module Language.InstrSel.Functions.IDs
   )
 where
 
-import Language.InstrSel.DebugShow
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.JSON
 
 
@@ -31,13 +31,10 @@ import Language.InstrSel.Utils.JSON
 -- | Represents a block name.
 newtype BlockName
   = BlockName String
-  deriving (Eq)
+  deriving (Show, Eq)
 
-instance Show BlockName where
-  show (BlockName str) = str
-
-instance DebugShow BlockName where
-  dShow = show
+instance PrettyShow BlockName where
+  pShow (BlockName str) = str
 
 
 

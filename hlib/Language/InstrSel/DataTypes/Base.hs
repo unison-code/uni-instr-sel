@@ -25,7 +25,7 @@ module Language.InstrSel.DataTypes.Base
   )
 where
 
-import Language.InstrSel.DebugShow
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils
   ( maybeRead
   , splitOn
@@ -65,32 +65,21 @@ data DataType
       }
     -- | When the data type does not matter.
   | AnyType
-  deriving Eq
+  deriving (Show, Eq)
 
 
 
 -------------------------------------
--- Show-related type class instances
+-- PrettyShow-related type class instances
 -------------------------------------
 
-instance Show DataType where
-  show d@(IntTempType {}) = "i" ++ show (intTempNumBits d)
-  show d@(IntConstType {}) =
+instance PrettyShow DataType where
+  pShow d@(IntTempType {}) = "i" ++ pShow (intTempNumBits d)
+  pShow d@(IntConstType {}) =
     let b = intConstNumBits d
-    in show (intConstValue d) ++
-       if isJust b then " i" ++ (show $ fromJust b) else ""
-  show AnyType = "any"
-
-
-
-------------------------------------------
--- DebugShow-related type class instances
-------------------------------------------
-
-instance DebugShow DataType where
-  dShow d@(IntTempType {}) = show d
-  dShow d@(IntConstType {}) = show $ intConstValue d
-  dShow AnyType = ""
+    in pShow (intConstValue d) ++
+       if isJust b then " i" ++ (pShow $ fromJust b) else ""
+  pShow AnyType = "any"
 
 
 
@@ -107,7 +96,7 @@ instance FromJSON DataType where
   parseJSON _ = mzero
 
 instance ToJSON DataType where
-  toJSON t = String $ pack $ show t
+  toJSON t = String $ pack $ pShow t
 
 
 
@@ -195,7 +184,7 @@ parseIntConstTypeFromJson str =
 -- returned.
 parseAnyTypeFromJson :: String -> Maybe DataType
 parseAnyTypeFromJson str =
-  if str == show AnyType
+  if str == pShow AnyType
   then Just AnyType
   else Nothing
 

@@ -21,7 +21,7 @@ module Language.InstrSel.Graphs.GraphViz
   )
 where
 
-import Language.InstrSel.DebugShow
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
@@ -112,10 +112,10 @@ mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
 mkNodeLabelAttr nid nt =
   [GV.toLabel s]
   where s = f nt ++ "\n" ++ show nid
-        f (ComputationNode op) = dShow op
-        f (ControlNode op) = dShow op
-        f (ValueNode dt src) = dShow dt ++ maybe "" (" " ++) src
-        f (BlockNode l) = dShow l
+        f (ComputationNode op) = pShow op
+        f (ControlNode op) = pShow op
+        f (ValueNode dt src) = pShow dt ++ maybe "" (" " ++) src
+        f (BlockNode l) = pShow l
         f PhiNode = "phi"
         f StateNode = ""
         f CopyNode = "cp"

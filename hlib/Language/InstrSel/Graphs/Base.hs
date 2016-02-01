@@ -170,6 +170,7 @@ module Language.InstrSel.Graphs.Base
   )
 where
 
+import Language.InstrSel.PrettyShow
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Functions.IDs
   ( BlockName (..) )
@@ -288,10 +289,10 @@ data EdgeType
 -- | Edge number, used for ordering edges.
 newtype EdgeNr
   = EdgeNr Natural
-  deriving (Eq, Ord, Num, Enum)
+  deriving (Show, Eq, Ord, Num, Enum)
 
-instance Show EdgeNr where
-  show (EdgeNr i) = show i
+instance PrettyShow EdgeNr where
+  pShow (EdgeNr i) = pShow i
 
 -- | Represents a mapping between two entities (typically 'Node's or 'NodeID's).
 data Mapping n

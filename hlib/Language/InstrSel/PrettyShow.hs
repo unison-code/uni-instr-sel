@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : Language.InstrSel.DebugShow
+-- Module      : Language.InstrSel.PrettyShow
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -10,8 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
-module Language.InstrSel.DebugShow
-  ( module Language.InstrSel.DebugShow.Base )
+module Language.InstrSel.PrettyShow
+  ( module Language.InstrSel.PrettyShow.Base )
 where
 
-import Language.InstrSel.DebugShow.Base
+import Language.InstrSel.PrettyShow.Base

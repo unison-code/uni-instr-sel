@@ -16,7 +16,7 @@
 
 module Language.InstrSel.OpTypes.Base where
 
-import Language.InstrSel.DebugShow
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils
   ( Natural
   , splitOn
@@ -44,7 +44,7 @@ data CompOp
   = CompArithOp ArithOp
   | CompTypeConvOp TypeConvOp
   | CompMemoryOp MemoryOp
-  deriving (Eq)
+  deriving (Show, Eq)
 
 -- | Arithmetic operations.
 data ArithOp
@@ -62,7 +62,7 @@ data ArithOp
   | OFloatOp ArithOpType
     -- | An unordered floating-point operation.
   | UFloatOp ArithOpType
-  deriving (Eq)
+  deriving (Show, Eq)
 
 -- | Arithmetic operation types.
 data ArithOpType
@@ -120,7 +120,7 @@ data ArithOpType
   | Ordered
     -- | Checks if either floating point value is unordered.
   | Unordered
-  deriving (Eq)
+  deriving (Show, Eq)
 
 -- | Operations that convert values of one type to another type.
 data TypeConvOp
@@ -138,7 +138,7 @@ data TypeConvOp
   | SInt2Float
     -- | Unsigned integer to floating-point.
   | UInt2Float
-  deriving (Eq)
+  deriving (Show, Eq)
 
 -- | Operations that define or use values by accessing memory.
 data MemoryOp
@@ -146,7 +146,7 @@ data MemoryOp
   = Load
     -- | Store to memory.
   | Store
-  deriving (Eq)
+  deriving (Show, Eq)
 
 data ControlOp
     -- | Unconditional branch (same as a jump).
@@ -155,96 +155,70 @@ data ControlOp
   | CondBr
     -- | Return.
   | Ret
-  deriving (Eq)
+  deriving (Show, Eq)
 
 
 
 -------------------------------------
--- Show-related type class instances
+-- PrettyShow-related type class instances
 -------------------------------------
 
-instance Show CompOp where
-  show (CompArithOp op)    = show op
-  show (CompTypeConvOp op) = show op
-  show (CompMemoryOp op)   = show op
+instance PrettyShow CompOp where
+  pShow (CompArithOp op)    = pShow op
+  pShow (CompTypeConvOp op) = pShow op
+  pShow (CompMemoryOp op)   = pShow op
 
-instance Show ArithOp where
-  show (IntOp op)      = "i "  ++ show op
-  show (UIntOp op)     = "ui " ++ show op
-  show (SIntOp op)     = "si " ++ show op
-  show (FixpointOp op) = "fix "++ show op
-  show (FloatOp op)    = "f "  ++ show op
-  show (OFloatOp op)   = "of " ++ show op
-  show (UFloatOp op)   = "uf " ++ show op
+instance PrettyShow ArithOp where
+  pShow (IntOp op)      = "i "  ++ pShow op
+  pShow (UIntOp op)     = "ui " ++ pShow op
+  pShow (SIntOp op)     = "si " ++ pShow op
+  pShow (FixpointOp op) = "fix "++ pShow op
+  pShow (FloatOp op)    = "f "  ++ pShow op
+  pShow (OFloatOp op)   = "of " ++ pShow op
+  pShow (UFloatOp op)   = "uf " ++ pShow op
 
-instance Show ArithOpType where
-  show Add       = "+"
-  show SatAdd    = "+"
-  show Sub       = "-"
-  show SatSub    = "-"
-  show Mul       = "*"
-  show Div       = "/"
-  show Rem       = "%"
-  show Shl       = "<<"
-  show LShr      = ">>"
-  show AShr      = "a>>"
-  show And       = "&&"
-  show Or        = "||"
-  show XOr       = "^"
-  show Not       = "!"
-  show Eq        = "=="
-  show NEq       = "!="
-  show GT        = ">"
-  show GE        = ">="
-  show LT        = "<"
-  show LE        = "<="
-  show Sqrt      = "sqrt"
-  show Ordered   = "ord"
-  show Unordered = "uno"
+instance PrettyShow ArithOpType where
+  pShow Add       = "+"
+  pShow SatAdd    = "+"
+  pShow Sub       = "-"
+  pShow SatSub    = "-"
+  pShow Mul       = "*"
+  pShow Div       = "/"
+  pShow Rem       = "%"
+  pShow Shl       = "<<"
+  pShow LShr      = ">>"
+  pShow AShr      = "a>>"
+  pShow And       = "&&"
+  pShow Or        = "||"
+  pShow XOr       = "^"
+  pShow Not       = "!"
+  pShow Eq        = "=="
+  pShow NEq       = "!="
+  pShow GT        = ">"
+  pShow GE        = ">="
+  pShow LT        = "<"
+  pShow LE        = "<="
+  pShow Sqrt      = "sqrt"
+  pShow Ordered   = "ord"
+  pShow Unordered = "uno"
 
-instance Show TypeConvOp where
-  show ZExt  = "zext"
-  show SExt  = "sext"
-  show Trunc = "trunc"
-  show Float2SInt = "fptosi"
-  show Float2UInt = "fptoui"
-  show SInt2Float = "sitofp"
-  show UInt2Float = "uitofp"
+instance PrettyShow TypeConvOp where
+  pShow ZExt  = "zext"
+  pShow SExt  = "sext"
+  pShow Trunc = "trunc"
+  pShow Float2SInt = "fptosi"
+  pShow Float2UInt = "fptoui"
+  pShow SInt2Float = "sitofp"
+  pShow UInt2Float = "uitofp"
 
-instance Show MemoryOp where
-  show Load  = "load"
-  show Store = "store"
+instance PrettyShow MemoryOp where
+  pShow Load  = "load"
+  pShow Store = "store"
 
-instance Show ControlOp where
-  show Br     = "br"
-  show CondBr = "cbr"
-  show Ret    = "ret"
-
-
-------------------------------------------
--- DebugShow-related type class instances
-------------------------------------------
-
-instance DebugShow CompOp where
-  dShow (CompArithOp op) = dShow op
-  dShow (CompTypeConvOp op) = dShow op
-  dShow (CompMemoryOp op) = dShow op
-
-instance DebugShow ArithOp where
-  dShow = show
-
-instance DebugShow ArithOpType where
-  dShow = show
-
-instance DebugShow TypeConvOp where
-  dShow = show
-
-instance DebugShow MemoryOp where
-  dShow = show
-
-instance DebugShow ControlOp where
-  dShow CondBr = "cond.br"
-  dShow c      = show c
+instance PrettyShow ControlOp where
+  pShow Br     = "br"
+  pShow CondBr = "cbr"
+  pShow Ret    = "ret"
 
 
 
@@ -262,7 +236,7 @@ instance FromJSON CompOp where
                            , Sqrt, Ordered, Unordered
                            ]
                      [kind, op_str] = split
-                     found = filter (\op -> show op == op_str) ops
+                     found = filter (\op -> pShow op == op_str) ops
                  when (null found) mzero
                  let the_op = head found
                      ari_op = case kind of "i"  -> Just $ IntOp the_op
@@ -279,8 +253,8 @@ instance FromJSON CompOp where
                                , Float2SInt, Float2UInt, SInt2Float, UInt2Float
                                ]
                      mops    = [ Load, Store ]
-                     tcfound = filter (\op -> show op == str) tcops
-                     mfound  = filter (\op -> show op == str) mops
+                     tcfound = filter (\op -> pShow op == str) tcops
+                     mfound  = filter (\op -> pShow op == str) mops
                  when (null tcfound && null mfound) mzero
                  case (null tcfound, null mfound) of
                    (False, True) -> return $ CompTypeConvOp $ head tcfound
@@ -290,19 +264,19 @@ instance FromJSON CompOp where
   parseJSON _ = mzero
 
 instance ToJSON CompOp where
-  toJSON op = String $ pack $ show op
+  toJSON op = String $ pack $ pShow op
 
 instance FromJSON ControlOp where
   parseJSON (String v) =
     do let str = unpack v
            ops = [ Br, CondBr, Ret ]
-           found = filter (\op -> show op == str) ops
+           found = filter (\op -> pShow op == str) ops
        when (null found) mzero
        return $ head found
   parseJSON _ = mzero
 
 instance ToJSON ControlOp where
-  toJSON op = String $ pack $ show op
+  toJSON op = String $ pack $ pShow op
 
 
 
