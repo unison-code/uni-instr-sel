@@ -107,19 +107,7 @@ mkGenericPhiInstructions =
                             [2..n+1]
                       )
                   )
-            cs = map ( \n' ->
-                        BoolExprConstraint $
-                          EqExpr
-                            ( Location2NumExpr $
-                                LocationOfValueNodeExpr $
-                                  ANodeIDExpr n'
-                            )
-                            ( Location2NumExpr $
-                                LocationOfValueNodeExpr $
-                                  ANodeIDExpr (n'+1)
-                            )
-                     )
-                     [1..n]
+            cs = mkSameDataLocConstraints [1..n]
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OS.OpStructure g Nothing cs

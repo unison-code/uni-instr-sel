@@ -70,7 +70,7 @@ run opts =
      let m = fromRight m_str
      parsed_m <- parseSemanticsInMD m
      let tm = generateTargetMachine parsed_m
-         code = generateHaskellCode tm
+         code = generateModule tm
      return [toOutput ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
