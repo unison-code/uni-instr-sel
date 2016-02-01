@@ -17,8 +17,9 @@ module Language.InstrSel.TargetMachines.Generators.LLVM.Generator where
 
 import Language.InstrSel.OpStructures.Base
 import Language.InstrSel.OpStructures.LLVM.OSMaker
-import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import qualified Language.InstrSel.TargetMachines.Base as TM
+import Language.InstrSel.TargetMachines.Generators.GenericInstructions
+import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
   ( capitalize )
@@ -34,6 +35,9 @@ import qualified LLVM.General.AST.Name as LLVM
 import Data.Maybe
   ( mapMaybe )
 
+import Data.List
+  ( intersperse )
+
 
 
 -------------
@@ -42,11 +46,39 @@ import Data.Maybe
 
 generateTargetMachine :: LLVM.MachineDescription -> TM.TargetMachine
 generateTargetMachine m =
-  let locs = mkLocations m
+  let mkPhiInstrAss arg_ids ret_id =
+        ( TM.ASSTemplate
+          $ [ TM.ASReferenceToValueNode ret_id
+            , TM.ASVerbatim " = PHI "
+            ]
+            ++ ( concat
+                 $ intersperse
+                     [TM.ASVerbatim " "]
+                     ( map ( \n ->
+                             [ TM.ASVerbatim "("
+                             , TM.ASReferenceToValueNode n
+                             , TM.ASVerbatim ", "
+                             , TM.ASBlockOfValueNode n
+                             , TM.ASVerbatim ")"
+                             ]
+                           )
+                           arg_ids
+                     )
+               )
+        )
+      locs = mkLocations m
       instrs = mkInstructions m locs
+      generic_instrs = mkBrFallThroughInstructions
+                       ++ mkPhiInstructions mkPhiInstrAss
+                       ++ mkDataDefInstructions
+                       ++ mkNullCopyInstructions
+      all_instrs = instrs
+                   ++
+                   reassignInstrIDs (toInstructionID $ length instrs)
+                                    generic_instrs
   in TM.TargetMachine
        { TM.tmID = toTargetMachineID $ capitalize $ LLVM.mdID m
-       , TM.tmInstructions = instrs
+       , TM.tmInstructions = all_instrs
        , TM.tmLocations = locs
        }
 
@@ -64,12 +96,12 @@ mkInstructions m locs =
   map processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
   where processInstr (i_id, i) =
           TM.Instruction { TM.instrID = TM.toInstructionID i_id
-                         , TM.instrPatterns = mkInstrPatterns i
+                         , TM.instrPatterns = mkInstrPatterns locs i
                          , TM.instrProps = mkInstrProps i
                          }
 
-mkInstrPatterns :: LLVM.Instruction -> [TM.InstrPattern]
-mkInstrPatterns i =
+mkInstrPatterns :: [TM.Location] -> LLVM.Instruction -> [TM.InstrPattern]
+mkInstrPatterns locs i =
   map processSemantics $ zip ([0..] :: [Integer]) (LLVM.instrSemantics i)
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
