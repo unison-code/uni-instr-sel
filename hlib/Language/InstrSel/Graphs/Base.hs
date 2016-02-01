@@ -876,7 +876,7 @@ addNewEdge et (from_n, to_n) (Graph g) =
 -- inserted in the order of the list, and the edge numberings will be set
 -- accordingly.
 addNewEdges :: EdgeType -> [(SrcNode, DstNode)] -> Graph -> Graph
-addNewEdges et pairs g = foldl (\g' p -> fst $ addNewEdge et p g') g pairs
+addNewEdges et ps g = foldl (\g' p -> fst $ addNewEdge et p g') g ps
 
 addNewDtFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewDtFlowEdge = addNewEdge DataFlowEdge
