@@ -32,6 +32,7 @@ where
 import Language.InstrSel.Graphs
   ( NodeID )
 import Language.InstrSel.OpStructures
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Functions.IDs
 import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.JSON
@@ -45,10 +46,10 @@ import Language.InstrSel.Utils.JSON
 -- | Represents the execution frequency of a block.
 newtype ExecFreq
   = ExecFreq Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show ExecFreq where
-  show (ExecFreq i) = show i
+instance PrettyShow ExecFreq where
+  pShow (ExecFreq i) = pShow i
 
 -- | The record of representing a program function.
 data Function

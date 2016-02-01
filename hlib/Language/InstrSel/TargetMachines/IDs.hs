@@ -34,6 +34,7 @@ module Language.InstrSel.TargetMachines.IDs
   )
 where
 
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.Lisp
   hiding
@@ -58,35 +59,35 @@ import Control.DeepSeq
 
 newtype InstructionID
   = InstructionID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show InstructionID where
-  show (InstructionID i) = show i
+instance PrettyShow InstructionID where
+  pShow (InstructionID i) = pShow i
 
 newtype PatternID
   = PatternID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show PatternID where
-  show (PatternID i) = show i
+instance PrettyShow PatternID where
+  pShow (PatternID i) = pShow i
 
 newtype LocationID
   = LocationID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show LocationID where
-  show (LocationID i) = show i
+instance PrettyShow LocationID where
+  pShow (LocationID i) = pShow i
 
 newtype LocationName
   = LocationName String
-  deriving (Eq)
+  deriving (Show, Eq)
 
-instance Show LocationName where
-  show (LocationName s) = s
+instance PrettyShow LocationName where
+  pShow (LocationName s) = s
 
 newtype TargetMachineID
   = TargetMachineID String
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 
 
 

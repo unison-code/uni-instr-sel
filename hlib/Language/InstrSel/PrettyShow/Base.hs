@@ -38,6 +38,9 @@ class PrettyShow a where
 instance PrettyShow Integer where
   pShow = show
 
+instance PrettyShow Float where
+  pShow = show
+
 instance (PrettyShow a, PrettyShow b) => PrettyShow ((,) a b) where
   pShow (a, b) = "(" ++ pShow a ++ ", " ++ pShow b ++ ")"
 

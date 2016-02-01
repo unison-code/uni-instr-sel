@@ -20,6 +20,7 @@ module Language.InstrSel.ConstraintModels.IDs
   )
 where
 
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.Lisp
   hiding
@@ -40,10 +41,10 @@ import qualified Language.InstrSel.Utils.JSON as JSON
 
 newtype ArrayIndex
   = ArrayIndex Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show ArrayIndex where
-  show (ArrayIndex i) = show i
+instance PrettyShow ArrayIndex where
+  pShow (ArrayIndex i) = pShow i
 
 
 

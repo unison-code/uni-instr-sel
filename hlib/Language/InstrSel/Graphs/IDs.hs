@@ -24,6 +24,7 @@ module Language.InstrSel.Graphs.IDs
   )
 where
 
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.Lisp
   hiding
@@ -49,17 +50,17 @@ import Control.DeepSeq
 
 newtype MatchID
   = MatchID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show MatchID where
-  show (MatchID i) = show i
+instance PrettyShow MatchID where
+  pShow (MatchID i) = pShow i
 
 newtype NodeID
   = NodeID Natural
-  deriving (Eq, Ord, Num, Enum, Real, Integral)
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
 
-instance Show NodeID where
-  show (NodeID i) = show i
+instance PrettyShow NodeID where
+  pShow (NodeID i) = pShow i
 
 -------------------------------------
 -- JSON-related type class instances
