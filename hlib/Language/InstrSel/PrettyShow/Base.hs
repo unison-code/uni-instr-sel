@@ -9,7 +9,7 @@
 -- Portability : portable
 --
 -- The convention applied within this project is that the default implementation
--- of 'Show' type class is *never* overridden (this is to ensure that valid
+-- of 'Show' type class is NEVER overridden (this is to ensure that valid
 -- Haskell source code can always be generated). Instead, a type class called
 -- 'PrettyShow' is used for printing data types, either for debugging purposes
 -- or for later parsing.
