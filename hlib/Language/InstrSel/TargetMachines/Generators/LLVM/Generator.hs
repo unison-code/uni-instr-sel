@@ -105,14 +105,22 @@ mkInstrPatterns locs i =
   map processSemantics $ zip ([0..] :: [Integer]) (LLVM.instrSemantics i)
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
-              os = mkOpStructure p
-              -- TODO: add missing constraints
+              os = addPatternConstraints locs i $ mkOpStructure p
               tmpl = mkAsmStrTemplate os (LLVM.instrAssemblyString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patADDUC = True
                              , TM.patAsmStrTemplate = tmpl
                              }
+
+addPatternConstraints
+  :: [TM.Location]
+  -> LLVM.Instruction
+  -> OpStructure
+  -> OpStructure
+addPatternConstraints locs i os =
+  -- TODO: implement
+  os
 
 mkOpStructure :: LLVM.InstrSemantics -> OpStructure
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
