@@ -111,7 +111,7 @@ mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
 mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
 mkNodeLabelAttr nid nt =
   [GV.toLabel s]
-  where s = f nt ++ "\n" ++ show nid
+  where s = f nt ++ "\n" ++ pShow nid
         f (ComputationNode op) = pShow op
         f (ControlNode op) = pShow op
         f (ValueNode dt src) = pShow dt ++ maybe "" (" " ++) src
@@ -134,8 +134,8 @@ mkDefaultEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
 -- | Constructs attributes for the edge numbers.
 mkEdgeNrAttributes :: (I.LEdge EdgeLabel) -> GV.Attributes
 mkEdgeNrAttributes e =
-  [ GVA.TailLabel (GV.toLabelValue $ show $ getOutEdgeNr (Edge e))
-  , GVA.HeadLabel (GV.toLabelValue $ show $ getInEdgeNr (Edge e))
+  [ GVA.TailLabel (GV.toLabelValue $ pShow $ getOutEdgeNr (Edge e))
+  , GVA.HeadLabel (GV.toLabelValue $ pShow $ getInEdgeNr (Edge e))
   , GVA.LabelDistance 2.0
   ]
 

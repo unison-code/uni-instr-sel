@@ -28,6 +28,7 @@ import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as Op
+import Language.InstrSel.PrettyShow
 import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
@@ -80,12 +81,12 @@ data Symbol
   = LocalStringSymbol String
   | GlobalStringSymbol String
   | TemporarySymbol Integer
-  deriving (Eq)
+  deriving (Show, Eq)
 
-instance Show Symbol where
-  show (LocalStringSymbol str) = "%" ++ str
-  show (GlobalStringSymbol str) = "@" ++ str
-  show (TemporarySymbol int) = "t" ++ show int
+instance PrettyShow Symbol where
+  pShow (LocalStringSymbol str) = "%" ++ str
+  pShow (GlobalStringSymbol str) = "@" ++ str
+  pShow (TemporarySymbol int) = "t" ++ show int
 
 -- | Retains various constant values.
 data Constant
@@ -102,12 +103,12 @@ data Constant
   | GlobalReferenceConstant { globalRefType :: D.DataType
                             , globalRefName :: Symbol
                             }
-  deriving (Eq)
+  deriving (Show, Eq)
 
-instance Show Constant where
-  show IntConstant { signedIntValue = v } = show v
-  show FloatConstant { floatValue = v } = show v
-  show GlobalReferenceConstant { globalRefName = s } = show s
+instance PrettyShow Constant where
+  pShow IntConstant { signedIntValue = v } = pShow v
+  pShow FloatConstant { floatValue = v } = pShow v
+  pShow GlobalReferenceConstant { globalRefName = s } = pShow s
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -838,7 +839,7 @@ mkFunctionCFGFromOperand _ _ o =
 -- when referring to nodes whose name or origin is based on an LLVM entity (such
 -- as a temporary or a variable).
 toSymbolString :: (SymbolFormable s) => s -> String
-toSymbolString = show . toSymbol
+toSymbolString = pShow . toSymbol
 
 -- | Converts an argument into a temporary-oriented data type.
 toTempDataType :: (DataTypeFormable t) => t -> D.DataType
@@ -889,7 +890,7 @@ addConstraints st cs =
   in st { opStruct = new_os }
 
 mkVarNameForConst :: Constant -> String
-mkVarNameForConst c = "%const." ++ (show c)
+mkVarNameForConst c = "%const." ++ (pShow c)
 
 -- | Adds a new value node representing a particular constant to a given state.
 addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
@@ -1002,7 +1003,7 @@ ensureValueNodeWithSymExists st0 sym dt =
   let n = findValueNodeWithSym st0 sym
   in if isJust n
      then touchNode st0 (fromJust n)
-     else let st1 = addNewNode st0 (G.ValueNode dt (Just $ show sym))
+     else let st1 = addNewNode st0 (G.ValueNode dt (Just $ pShow sym))
               new_n = fromJust $ lastTouchedNode st1
               st2 = addSymMap st1 (sym, new_n)
           in st2

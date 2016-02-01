@@ -23,6 +23,7 @@ import Language.InstrSel.Graphs.IDs
   ( MatchID )
 import Language.InstrSel.Functions
   ( BlockName )
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
 import qualified Data.Graph.Inductive as I
@@ -75,7 +76,7 @@ generateCode target model sol@(HighLevelSolution {}) =
               instrs = mapMaybe (emitInstruction model sol target)
                                 sorted_matches
               block_name = fromJust $ findNameOfBlockNode model b_node
-          in (AsmBlock $ show block_name):instrs
+          in (AsmBlock $ pShow block_name):instrs
         )
         (hlSolOrderOfBlocks sol)
 generateCode _ _ NoHighLevelSolution =
@@ -237,7 +238,7 @@ emitInstructionPart _ _ _ (ASVerbatim s) = s
 emitInstructionPart model _ _ (ASIntConstOfValueNode n) =
   let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
-     then show $ fromJust i
+     then pShow $ fromJust i
      else -- TODO: handle this case
           "i?"
 emitInstructionPart model sol tm (ASReferenceToValueNode n) =
@@ -246,7 +247,7 @@ emitInstructionPart model sol tm (ASReferenceToValueNode n) =
      then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
               origin = lookup n (hlFunValueOriginData $ hlFunctionParams model)
           in if (isJust $ locValue reg)
-             then show $ locName reg
+             then pShow $ locName reg
              else if isJust origin
                   then fromJust origin
                   else -- TODO: handle this case
@@ -256,7 +257,7 @@ emitInstructionPart model sol tm (ASReferenceToValueNode n) =
 emitInstructionPart model _ _ (ASNameOfBlockNode n) =
   let l = findNameOfBlockNode model n
   in if isJust l
-     then show $ fromJust l
+     then pShow $ fromJust l
      else -- TODO: handle this case
           "l?"
 emitInstructionPart model sol m (ASBlockOfValueNode n) =
