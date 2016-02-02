@@ -59,7 +59,7 @@ mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 
 -- | Creates an 'IntTempType' with a given number of bits.
 mkIntTempType :: Natural -> DataType
-mkIntTempType n = IntTempType { intTempNumBits = n  }
+mkIntTempType n = IntTempType { intNumBits = n }
 
 -- | Creates a set of instructions for handling the generic cases where
 -- 'PhiNode's appear. Note that the 'InstructionID's of all instructions will be

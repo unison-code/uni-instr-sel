@@ -211,7 +211,7 @@ class DataTypeFormable a where
 instance DataTypeFormable Constant where
   toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
     D.IntConstType { D.intConstValue = rangeFromSingleton v
-                   , D.intConstNumBits = Just $ toNatural w
+                   , D.intNumBits = toNatural w
                    }
   toDataType GlobalReferenceConstant {} =
     -- TODO: fix so that the correct data type is applied
@@ -220,7 +220,7 @@ instance DataTypeFormable Constant where
 
 instance DataTypeFormable LLVM.Type where
   toDataType (LLVM.IntegerType bits) =
-    D.IntTempType { D.intTempNumBits = toNatural bits }
+    D.IntTempType { D.intNumBits = toNatural bits }
   toDataType (LLVM.PointerType _ _) =
     -- TODO: fix so that the correct data type is applied
     D.AnyType
@@ -565,7 +565,7 @@ mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
   -- TODO: add support for vectorized icmp
   mkFunctionDFGFromCompOp b
                           st
-                          (D.IntTempType { D.intTempNumBits = 1 })
+                          (D.IntTempType { D.intNumBits = 1 })
                           (fromLlvmIPred p)
                           [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FCmp p op1 op2 _) =
@@ -846,11 +846,8 @@ toTempDataType :: (DataTypeFormable t) => t -> D.DataType
 toTempDataType a =
   conv $ toDataType a
   where conv d@(D.IntTempType {}) = d
-        conv (D.IntConstType { D.intConstNumBits = b }) =
-          if isJust b
-          then D.IntTempType { D.intTempNumBits = fromJust b }
-          else error $ "toTempDataType: IntConstType has 'intTempNumBits' "
-                       ++ "set to 'Nothing'"
+        conv (D.IntConstType { D.intNumBits = b }) =
+          D.IntTempType { D.intNumBits = b }
         conv d = error $ "toTempDataType: unexpected data type " ++ show d
 
 -- | Gets the OS graph contained by the operation structure in a given state.

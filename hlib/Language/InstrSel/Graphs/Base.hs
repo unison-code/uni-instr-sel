@@ -162,6 +162,7 @@ module Language.InstrSel.Graphs.Base
   , subGraph
   , componentsOf
   , isReachableComponent
+  , updateDataTypeOfValueNode
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
@@ -685,8 +686,17 @@ findValueNodesWithOrigin g o =
   let vs = filter isValueNodeWithOrigin $ getAllNodes g
   in filter (\n -> (fromJust $ getOriginOfValueNode n) == o) vs
 
+-- | Updates the data type of an already existing value node.
+updateDataTypeOfValueNode :: D.DataType -> Node -> Graph -> Graph
+updateDataTypeOfValueNode new_dt n g =
+  let nt = getNodeType n
+      new_nt = nt { typeOfValue = new_dt }
+  in case nt of (ValueNode {}) -> updateNodeType new_nt n g
+                _ -> error $ "updateDataTypeOfValueNode: node " ++ show n
+                             ++ " is not a value node"
+
 -- | Updates the node label of an already existing node.
-updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph
+updateNodeLabel :: NodeLabel -> Node -> Graph -> Graph
 updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (getAllNodes g)
       new_n = Node (getIntNodeID n, new_label)

@@ -50,7 +50,7 @@ import Data.Maybe
 data DataType
     -- | Represents an integer value stored in a temporary.
   = IntTempType
-      { intTempNumBits :: Natural
+      { intNumBits :: Natural
         -- ^ Number of bits required for the temporary.
       }
     -- | Represents an integer constant.
@@ -58,10 +58,11 @@ data DataType
       { intConstValue :: Range Integer
         -- ^ The value range of the constant. If it is a singleton, the lower
         -- and upper bound of the range should be the same.
-      , intConstNumBits :: Maybe Natural
-        -- ^ Number of bits required for the constant, if this is known. This is
-        -- really only necessary to be able to perform copy extension of the
-        -- program graph.
+      , intNumBits :: Natural
+        -- ^ Number of bits required for the constant, if this is known. If it
+        -- is not known, the number of bits will be set to 0. This is really
+        -- only necessary to be able to perform copy extension of the program
+        -- graph.
       }
     -- | When the data type does not matter.
   | AnyType
@@ -74,11 +75,11 @@ data DataType
 -------------------------------------
 
 instance PrettyShow DataType where
-  pShow d@(IntTempType {}) = "i" ++ pShow (intTempNumBits d)
+  pShow d@(IntTempType {}) = "i" ++ pShow (intNumBits d)
   pShow d@(IntConstType {}) =
-    let b = intConstNumBits d
+    let b = intNumBits d
     in pShow (intConstValue d) ++
-       if isJust b then " i" ++ (pShow $ fromJust b) else ""
+       if b > 0 then " i" ++ (pShow b) else ""
   pShow AnyType = "any"
 
 
@@ -128,7 +129,7 @@ isDataTypeCompatibleWith
      -- ^ Second type.
   -> Bool
 isDataTypeCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
-  intTempNumBits d1 == intTempNumBits d2
+  intNumBits d1 == intNumBits d2
 isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
 isDataTypeCompatibleWith AnyType _ = True
@@ -156,7 +157,7 @@ parseIntTempTypeFromJson str =
   then let numbits = do int <- maybeRead (tail str) :: Maybe Integer
                         maybeToNatural int
        in if isJust numbits
-          then Just $ IntTempType { intTempNumBits = fromJust numbits }
+          then Just $ IntTempType { intNumBits = fromJust numbits }
           else Nothing
   else Nothing
 
@@ -168,14 +169,15 @@ parseIntConstTypeFromJson str =
   in if length parts == 1 || length parts == 2
      then let value = parseRangeStr (head parts)
               numbits_str = last parts
-              numbits = if length parts == 2 && (head numbits_str == 'i')
-                        then do int <- maybeRead (tail numbits_str) :: Maybe
-                                                                       Integer
-                                maybeToNatural int
-                        else Nothing
-          in if isJust value && (not (length parts == 2) || isJust numbits)
+              m_numbits = if length parts == 2 && (head numbits_str == 'i')
+                          then do int <- maybeRead (tail numbits_str) :: Maybe
+                                                                         Integer
+                                  maybeToNatural int
+                          else Nothing
+              numbits = if isJust m_numbits then fromJust m_numbits else 0
+          in if isJust value && (not (length parts == 2) || isJust m_numbits)
              then Just $ IntConstType { intConstValue = fromJust value
-                                      , intConstNumBits = numbits
+                                      , intNumBits = numbits
                                       }
              else Nothing
      else Nothing
