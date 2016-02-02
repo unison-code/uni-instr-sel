@@ -69,10 +69,9 @@ data Location
 
 -- | Contains the information regarding an instruction operand.
 data InstrOperand
-
   -- | Represents a register operand.
   = RegInstrOperand
-      { regOpName :: String
+      { opName :: String
         -- ^ Name of this register operand.
       , regOpClass :: [String]
         -- ^ Register class, denoted as a list of register operand names.
@@ -80,7 +79,7 @@ data InstrOperand
 
     -- | Represents an immediate operand.
   | ImmInstrOperand
-      { immOpName :: String
+      { opName :: String
         -- ^ Name of this immediate operand.
       , immOpRange :: Range Integer
         -- ^ Integer range of this immediate operand.
