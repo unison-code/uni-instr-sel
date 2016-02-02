@@ -15,6 +15,7 @@
 
 module Language.InstrSel.TargetMachines.Generators.LLVM.Generator where
 
+import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures.Base
 import Language.InstrSel.OpStructures.LLVM.OSMaker
 import qualified Language.InstrSel.TargetMachines.Base as TM
@@ -22,7 +23,9 @@ import Language.InstrSel.TargetMachines.Generators.GenericInstructions
 import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
-  ( capitalize )
+  ( capitalize
+  , splitStartingOn
+  )
 
 import qualified LLVM.General.AST as LLVM
   ( Module (..)
@@ -33,7 +36,10 @@ import qualified LLVM.General.AST.Global as LLVM
 import qualified LLVM.General.AST.Name as LLVM
 
 import Data.Maybe
-  ( mapMaybe )
+  ( isJust
+  , fromJust
+  , mapMaybe
+  )
 
 import Data.List
   ( intersperse )
@@ -106,7 +112,7 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addPatternConstraints locs i $ mkOpStructure p
-              tmpl = mkAsmStrTemplate os (LLVM.instrAssemblyString i)
+              tmpl = mkAsmStrTemplate i os (LLVM.instrAssemblyString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patADDUC = True
@@ -141,10 +147,36 @@ mkOpStructure (LLVM.InstrSemantics (Right m)) =
 mkOpStructure (LLVM.InstrSemantics (Left _)) =
   error "mkOpStructure: instruction semantics has not been parsed"
 
-mkAsmStrTemplate :: OpStructure -> String -> TM.AssemblyStringTemplate
-mkAsmStrTemplate os str =
-  -- TODO: implement
-  TM.ASSTemplate []
+mkAsmStrTemplate
+  :: LLVM.Instruction
+  -> OpStructure
+  -> String
+  -> TM.AssemblyStringTemplate
+mkAsmStrTemplate i os str =
+  TM.ASSTemplate $ map f $ splitStartingOn "%," str
+  where f s = if head s == '%'
+              then let g = osGraph os
+                       n = findValueNodesWithOrigin g s
+                   in if length n == 1
+                      then let op = getInstrOperand i s
+                           in if isJust op
+                              then case (fromJust op)
+                                   of (LLVM.RegInstrOperand {}) ->
+                                        TM.ASLocationOfValueNode
+                                        $ getNodeID
+                                        $ head n
+                                      (LLVM.ImmInstrOperand {}) ->
+                                        TM.ASIntConstOfValueNode
+                                        $ getNodeID
+                                        $ head n
+                              else error $ "mkAsmStrTemplate: no operand with "
+                                        ++ "name '" ++ s ++ "'"
+                      else if length n > 0
+                           then error $ "mkAsmStrTemplate: no value node with "
+                                        ++ "origin '" ++ s ++ "'"
+                           else error $ "mkAsmStrTemplate: multiple value nodes"
+                                        ++ " with origin '" ++ s ++ "'"
+              else TM.ASVerbatim s
 
 mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
 mkInstrProps i =
@@ -154,3 +186,12 @@ mkInstrProps i =
                                            True
                      , TM.instrIsNullCopy = False
                      }
+
+-- | Gets the operand with a given name of a given instruction. If no such
+-- operand is found, 'Nothing' is returned.
+getInstrOperand :: LLVM.Instruction -> String -> Maybe LLVM.InstrOperand
+getInstrOperand i name =
+  let op = filter (\o -> LLVM.opName o == name) $ LLVM.instrOperands i
+  in if length op > 0
+     then Just $ head op
+     else Nothing
