@@ -2,41 +2,31 @@ Written by Gabriel Hjort Blindell <ghb@kth.se>
 
 
 
-===============
-= HOW TO BUILD
-===============
+===========================
+= HOW TO BUILD AND INSTALL
+===========================
 
-You will first need to install several Haskell packages using Cabal. To keep the
-installation clean and avoid conflicts with other Haskell packages, 'cabal
-sandbox' can be used (supported starting from version 1.18 of Cabal) as
-follows. Before installing the packages, run (from the directory where the
-README is located):
+First, LLVM 3.4 needs to be installed on the machine. LLVM *must* be installed
+such that it can be invoked from any location or else a necessary Haskell
+package will fail to be installed. (I've tried to keep LLVM in the home
+directory, but no matter which flags I set to Cabal the package will just refuse
+to recognize that the correct version of LLVM is installed.)
 
-   cabal sandbox init   (first time only)
+To download and install LLVM 3.4, run the following commands:
 
-   cabal exec bash      (creates a new environment where ghc and all the other
-                         Haskell tools are also sandboxed)
+   svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_34/final llvm
+   cd llvm/tools
+   svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_34/final clang
+   cd ../..
+   mkdir build
+   cd build
+   ../llvm/configure --enable-shared --enable-optimized
+   make
+   sudo make install
 
-The packages to be installed are:
-
- - aeson-0.8.0.2          (take note of the explicit version!)
- - atto-lisp
- - clock
- - cmdargs
- - fgl
- - graphviz
- - llvm-general-3.4.5.2   (take note of the explicit version!)
- - safe
- - shelly
- - split
-
-To install a Haskell package with Cabal, run the following commands:
-
-   cabal install <package>
+The last command installs the LLVM binaries in /usr/local.
 
 Now you will need to build the toolchain, which is done by running the following
 commands from the folder where this file is located:
 
    make
-
-You also need to install MiniZinc 2.0, if it is not already installed.

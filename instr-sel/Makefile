@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2015, Gabriel Hjort Blindell <ghb@kth.se>
+# Copyright (c) 2013-2016, Gabriel Hjort Blindell <ghb@kth.se>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,66 +24,26 @@
 
 
 
-#==========
-# SETTINGS
-#==========
-
-INSTR_SEL_PATH  := instr-sel
-UNI_IS_PATH     := uni-is
-UNI_TARGEN_PATH := uni-targen
-SOLVERS_PATH    := solvers
-TOOLS_PATH      := tools
-
-
-
 #=======
 # RULES
 #=======
 
 .PHONY: build
-build: instr-sel uni-is uni-targen
+build:
+	cabal install
 
 .PHONY: docs
-docs: instr-sel uni-is-doc uni-targen-doc
+docs:
+	cabal configure
+	cabal haddock --executables
 
-.PHONY: instr-sel
-instr-sel:
-	cd $(INSTR_SEL_PATH) && make
-
-.PHONY: instr-sel-doc
-instr-sel-doc:
-	cd $(INSTR_SEL_PATH) && make docs
-
-.PHONY: uni-is
-uni-is:
-	cd $(UNI_IS_PATH) && make
-	cd $(SOLVERS_PATH) && make
-	cd $(TOOLS_PATH) && make
-
-.PHONY: uni-is-doc
-uni-is-doc:
-	cd $(UNI_IS_PATH) && make docs
-
-.PHONY: uni-targen
-uni-targen:
-	cd $(UNI_TARGEN_PATH) && make
-
-.PHONY: uni-targen-doc
-uni-targen-doc:
-	cd $(UNI_TARGEN_PATH) && make docs
+.PHONY: warnings
+warnings:
+	cabal build --ghc-options="-fforce-recomp -fno-code"
 
 .PHONY: clean
 clean:
-	cd $(INSTR_SEL_PATH) && make clean
-	cd $(UNI_IS_PATH) && make clean
-	cd $(UNI_TARGEN_PATH) && make clean
-	cd $(SOLVERS_PATH) && make clean
-	cd $(TOOLS_PATH) && make clean
+	$(RM) -r dist
 
 .PHONY: distclean
-distclean:
-	cd $(INSTR_SEL_PATH) && make distclean
-	cd $(UNI_IS_PATH) && make distclean
-	cd $(UNI_TARGEN_PATH) && make distclean
-	cd $(SOLVERS_PATH) && make distclean
-	cd $(TOOLS_PATH) && make distclean
+distclean: clean
