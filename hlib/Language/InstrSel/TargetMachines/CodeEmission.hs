@@ -221,10 +221,10 @@ updateNodeIDsInAsmStrParts
 updateNodeIDsInAsmStrParts asm maps =
   map f (zip asm maps)
   where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASReferenceToValueNode _, Just n) = ASReferenceToValueNode n
-        f (ASIntConstOfValueNode  _, Just n) = ASIntConstOfValueNode n
-        f (ASNameOfBlockNode      _, Just n) = ASNameOfBlockNode n
-        f (ASBlockOfValueNode     _, Just n) = ASBlockOfValueNode  n
+        f (ASLocationOfValueNode _, Just n) = ASLocationOfValueNode n
+        f (ASIntConstOfValueNode _, Just n) = ASIntConstOfValueNode n
+        f (ASNameOfBlockNode     _, Just n) = ASNameOfBlockNode n
+        f (ASBlockOfValueNode    _, Just n) = ASBlockOfValueNode  n
         f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
@@ -241,7 +241,7 @@ emitInstructionPart model _ _ (ASIntConstOfValueNode n) =
      then pShow $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart model sol tm (ASReferenceToValueNode n) =
+emitInstructionPart model sol tm (ASLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
      then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)

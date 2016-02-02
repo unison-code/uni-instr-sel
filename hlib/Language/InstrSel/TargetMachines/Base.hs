@@ -56,8 +56,8 @@ data AssemblyStringPart
   = ASVerbatim String
     -- | Denotes the integer constant of a given value node.
   | ASIntConstOfValueNode NodeID
-    -- | Denotes a reference a given value node.
-  | ASReferenceToValueNode NodeID
+    -- | Denotes the location assigned to a given value node.
+  | ASLocationOfValueNode NodeID
     -- | Denotes the name a given block node.
   | ASNameOfBlockNode NodeID
     -- | Denotes the block in which the definer of a given value node has been
@@ -201,8 +201,8 @@ updateNodeInAsmStrTemplate new_n old_n (ASSTemplate parts) =
   where checkAndReplace nid = if nid == old_n then new_n else nid
         update (ASIntConstOfValueNode n) =
           ASIntConstOfValueNode (checkAndReplace n)
-        update (ASReferenceToValueNode n) =
-          ASReferenceToValueNode (checkAndReplace n)
+        update (ASLocationOfValueNode n) =
+          ASLocationOfValueNode (checkAndReplace n)
         update (ASNameOfBlockNode n) =
           ASNameOfBlockNode (checkAndReplace n)
         update (ASBlockOfValueNode n) =

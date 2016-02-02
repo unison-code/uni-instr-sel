@@ -220,10 +220,10 @@ computeAsmStrNodeMaps
 computeAsmStrNodeMaps t m =
   map f (concat $ flattenAsmStrParts t)
   where f (ASVerbatim _) = Nothing
-        f (ASReferenceToValueNode n) = findFNInMatch m n
-        f (ASIntConstOfValueNode  n) = findFNInMatch m n
-        f (ASNameOfBlockNode      n) = findFNInMatch m n
-        f (ASBlockOfValueNode     n) = findFNInMatch m n
+        f (ASLocationOfValueNode n) = findFNInMatch m n
+        f (ASIntConstOfValueNode n) = findFNInMatch m n
+        f (ASNameOfBlockNode     n) = findFNInMatch m n
+        f (ASBlockOfValueNode    n) = findFNInMatch m n
 
 -- | Replaces occurrences of 'ThisMatchExpr' in a constraint with the given
 -- match ID.

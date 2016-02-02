@@ -153,11 +153,11 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "add "
-                          , ASReferenceToValueNode 3
+                          , ASLocationOfValueNode 3
                           , ASVerbatim ", "
-                          , ASReferenceToValueNode 1
+                          , ASLocationOfValueNode 1
                           , ASVerbatim ", "
-                          , ASReferenceToValueNode 2
+                          , ASLocationOfValueNode 2
                           ]
                       )
                   ]
@@ -170,7 +170,7 @@ tmTest =
                       True
                       ( ASSTemplate
                           [ ASVerbatim "bnz "
-                          , ASReferenceToValueNode 0
+                          , ASLocationOfValueNode 0
                           , ASVerbatim ", "
                           , ASNameOfBlockNode 2
                           , ASVerbatim ", "
@@ -209,7 +209,7 @@ tmTest =
                       True
                       ( ASSTemplate
                         [ ASVerbatim "ret "
-                        , ASReferenceToValueNode 0
+                        , ASLocationOfValueNode 0
                         ]
                       )
                   ]

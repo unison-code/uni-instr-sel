@@ -83,6 +83,7 @@ module Language.InstrSel.Graphs.Base
   , findPNInMatch
   , findPNsInMapping
   , findPNsInMatch
+  , findValueNodesWithOrigin
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
@@ -677,6 +678,12 @@ delEdge (Edge e) (Graph g) = Graph (I.delLEdge e g)
 -- | Gets a list of nodes with the same node ID.
 findNodesWithNodeID :: Graph -> NodeID -> [Node]
 findNodesWithNodeID g i = filter ((i ==) . getNodeID) $ getAllNodes g
+
+-- | Gets a list of value nodes with the same origin.
+findValueNodesWithOrigin :: Graph -> String -> [Node]
+findValueNodesWithOrigin g o =
+  let vs = filter isValueNodeWithOrigin $ getAllNodes g
+  in filter (\n -> (fromJust $ getOriginOfValueNode n) == o) vs
 
 -- | Updates the node label of an already existing node.
 updateNodeLabel ::  NodeLabel -> Node -> Graph -> Graph

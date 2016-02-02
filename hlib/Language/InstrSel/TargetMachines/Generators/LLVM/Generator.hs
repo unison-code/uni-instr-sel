@@ -48,7 +48,7 @@ generateTargetMachine :: LLVM.MachineDescription -> TM.TargetMachine
 generateTargetMachine m =
   let mkPhiInstrAss arg_ids ret_id =
         ( TM.ASSTemplate
-          $ [ TM.ASReferenceToValueNode ret_id
+          $ [ TM.ASLocationOfValueNode ret_id
             , TM.ASVerbatim " = PHI "
             ]
             ++ ( concat
@@ -56,7 +56,7 @@ generateTargetMachine m =
                      [TM.ASVerbatim " "]
                      ( map ( \n ->
                              [ TM.ASVerbatim "("
-                             , TM.ASReferenceToValueNode n
+                             , TM.ASLocationOfValueNode n
                              , TM.ASVerbatim ", "
                              , TM.ASBlockOfValueNode n
                              , TM.ASVerbatim ")"

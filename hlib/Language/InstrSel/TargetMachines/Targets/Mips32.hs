@@ -247,12 +247,12 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
-                                      [ ASLocationOfDataNode 3
+                                      [ ASLocationOfValueNode 3
                                       , ASVerbatim $ " = "
                                       , ASVerbatim $ str ++ " "
-                                      , ASLocationOfDataNode 1
+                                      , ASLocationOfValueNode 1
                                       , ASVerbatim ", "
-                                      , ASLocationOfDataNode 2
+                                      , ASLocationOfValueNode 2
                                       ]
               }
   in Instruction
@@ -313,10 +313,10 @@ mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
 
 mkDataImmDataAsmStr :: String -> [AssemblyStringPart]
 mkDataImmDataAsmStr str =
-    [ ASLocationOfDataNode 3
+    [ ASLocationOfValueNode 3
     , ASVerbatim $ " = "
     , ASVerbatim $ str ++ " "
-    , ASLocationOfDataNode 1
+    , ASLocationOfValueNode 1
     , ASVerbatim ", "
     , ASImmIntValueOfDataNode 2
     ]
@@ -523,9 +523,9 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ ord_str ++ " "
-                                  , ASLocationOfDataNode 5
+                                  , ASLocationOfValueNode 5
                                   , ASVerbatim ", "
-                                  , ASLocationOfDataNode 6
+                                  , ASLocationOfValueNode 6
                                   , ASVerbatim ", "
                                   , ASBlockOfLabelNode 2
                                   ]
@@ -537,9 +537,9 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ inv_str ++ " "
-                                  , ASLocationOfDataNode 5
+                                  , ASLocationOfValueNode 5
                                   , ASVerbatim ", "
-                                  , ASLocationOfDataNode 6
+                                  , ASLocationOfValueNode 6
                                   , ASVerbatim ", "
                                   , ASBlockOfLabelNode 3
                                   ]
@@ -634,7 +634,7 @@ mkRegImmCondBrInstr n imm_r str op =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim $ str ++ " "
-                                  , ASReferenceToValueNode 5
+                                  , ASLocationOfValueNode 5
                                   , ASVerbatim ", "
                                   , ASNameOfBlockNode 2
                                   ]
@@ -697,7 +697,7 @@ mkPredBrInstr =
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
                                        [ ASVerbatim $ "BEQ "
-                                       , ASReferenceToValueNode 4
+                                       , ASLocationOfValueNode 4
                                        , ASVerbatim ", "
                                        , ASNameOfBlockNode 2
                                        , ASVerbatim ", "
@@ -710,7 +710,7 @@ mkPredBrInstr =
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
                                        [ ASVerbatim $ "BNE "
-                                       , ASReferenceToValueNode 4
+                                       , ASLocationOfValueNode 4
                                        , ASVerbatim ", "
                                        , ASNameOfBlockNode 3
                                        , ASVerbatim ", "
@@ -820,7 +820,7 @@ mkRetInstrs =
          { instrID = 0
          , instrPatterns = [pat 32 (ASSTemplate
                                     [ ASVerbatim "RetRA "
-                                    , ASLocationOfDataNode 2
+                                    , ASLocationOfValueNode 2
                                     ])
                            , vpat]
          , instrProps = InstrProperties { instrCodeSize = 4
@@ -838,7 +838,7 @@ mkRetInstrs =
                                     [
                                      ASSTemplate
                                      [ ASVerbatim "%temp1 = SLL "
-                                     , ASLocationOfDataNode 2
+                                     , ASLocationOfValueNode 2
                                      , ASVerbatim ", 16"
                                      ],
                                      ASSTemplate [ ASVerbatim
@@ -866,9 +866,9 @@ mkMfhiInstrs =
           , patOS = OS.OpStructure g Nothing cs
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
-                                  [ ASLocationOfDataNode 2
+                                  [ ASLocationOfValueNode 2
                                   , ASVerbatim " = PseudoMFHI "
-                                  , ASLocationOfDataNode 1
+                                  , ASLocationOfValueNode 1
                                   ]
           }
   in [ Instruction
@@ -895,9 +895,9 @@ mkMfloInstrs =
           , patOS = OS.OpStructure g Nothing cs
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
-                                  [ ASLocationOfDataNode 2
+                                  [ ASLocationOfValueNode 2
                                   , ASVerbatim " = PseudoMFLO "
-                                  , ASLocationOfDataNode 1
+                                  , ASLocationOfValueNode 1
                                   ]
           }
   in [ Instruction
@@ -925,9 +925,9 @@ mkPseudoMoveInstrs =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "move "
-                                  , ASLocationOfDataNode 1
+                                  , ASLocationOfValueNode 1
                                   , ASVerbatim ", "
-                                  , ASLocationOfDataNode 2
+                                  , ASLocationOfValueNode 2
                                   ]
           }
   in [ Instruction
@@ -971,7 +971,7 @@ mkLoadImmInstr =
          , instrPatterns = [ pat 16
                                  (Range (-32768) 32767)
                                  getGPRegistersWithoutZero
-                                 [ ASReferenceToValueNode 2
+                                 [ ASLocationOfValueNode 2
                                  , ASVerbatim " = "
                                  , ASVerbatim
                                    $ "ADDiu " ++ getZeroRegName ++ ", "
@@ -980,7 +980,7 @@ mkLoadImmInstr =
                            , pat 32
                                  (Range (-32768) 32767)
                                  getGPRegistersWithoutZero
-                                 [ ASReferenceToValueNode 2
+                                 [ ASLocationOfValueNode 2
                                  , ASVerbatim " = "
                                  , ASVerbatim
                                    $ "ADDiu " ++ getZeroRegName ++ ", "
@@ -1000,7 +1000,7 @@ mkLoadImmInstr =
                              pat 16
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 [ ASReferenceToValueNode 2
+                                 [ ASLocationOfValueNode 2
                                  , ASVerbatim " = "
                                  , ASVerbatim "LUi+ORi "
                                  , ASIntConstOfValueNode 1
@@ -1008,7 +1008,7 @@ mkLoadImmInstr =
                            , pat 32
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 [ ASReferenceToValueNode 2
+                                 [ ASLocationOfValueNode 2
                                  , ASVerbatim " = "
                                  , ASVerbatim "LUi+ORi "
                                  , ASIntConstOfValueNode 1
@@ -1026,7 +1026,7 @@ mkLoadImmInstr =
          , instrPatterns = [ pat 32
                                  (Range (-2147483648) (-2147483648))
                                  getGPRegistersWithoutZero
-                                 [ ASReferenceToValueNode 2
+                                 [ ASLocationOfValueNode 2
                                  , ASVerbatim " = "
                                  , ASVerbatim "LUi "
                                  , ASIntConstOfValueNode 1
@@ -1101,9 +1101,9 @@ mkTypeConvInstrs =
                  , patOS = OS.OpStructure (g O.ZExt (8, 32)) Nothing cs
                  , patADDUC = True
                  , patAsmStrTemplate = ASSTemplate
-                                         [ ASReferenceToValueNode 2
+                                         [ ASLocationOfValueNode 2
                                          , ASVerbatim $ " = ANDi "
-                                         , ASReferenceToValueNode 1
+                                         , ASLocationOfValueNode 1
                                          , ASVerbatim ", 255"
                                          ]
                  }
@@ -1146,7 +1146,7 @@ mkEqComparison =
                                       -- "updateNodeIDsInAsmStrParts: Invalid
                                       -- arguments".
                                       , ASVerbatim ""
-                                      , ASReferenceToValueNode 1
+                                      , ASLocationOfValueNode 1
                                       , ASVerbatim ", "
                                       , ASIntConstOfValueNode 2
                                       ]
@@ -1184,9 +1184,9 @@ mkSLTIComparison =
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
               , patAsmStrTemplate = ASSTemplate
-                                      [ ASReferenceToValueNode 3
+                                      [ ASLocationOfValueNode 3
                                       , ASVerbatim " = SLTi "
-                                      , ASReferenceToValueNode 1
+                                      , ASLocationOfValueNode 1
                                       , ASVerbatim ", "
                                       , ASIntConstOfValueNode 2
                                       ]
@@ -1247,23 +1247,23 @@ mkSimdAddInstruction =
                  , patOS = OS.OpStructure add3_g Nothing add3_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 11
+                                 , ASLocationOfValueNode 11
                                  , ASVerbatim " = ADD3 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 2
+                                 , ASLocationOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASLocationOfValueNode 6
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 9
+                                 , ASLocationOfValueNode 9
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 10
+                                 , ASLocationOfValueNode 10
                                  , ASVerbatim ")"
                                  ]
                  }
@@ -1272,17 +1272,17 @@ mkSimdAddInstruction =
                  , patOS = OS.OpStructure add2_g Nothing add2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = ADD3 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 2
+                                 , ASLocationOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASLocationOfValueNode 6
                                  , ASVerbatim ") ()"
                                  ]
                  }
@@ -1341,21 +1341,21 @@ mkSimdAndiInstruction =
                  , patOS = OS.OpStructure and3_g Nothing and3_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 11
+                                 , ASLocationOfValueNode 11
                                  , ASVerbatim " = ANDi3 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 9
+                                 , ASLocationOfValueNode 9
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 10
                                  , ASVerbatim ")"
@@ -1366,15 +1366,15 @@ mkSimdAndiInstruction =
                  , patOS = OS.OpStructure and2_g Nothing and2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = ANDi2 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
                                  , ASVerbatim ")"
@@ -1427,15 +1427,15 @@ mkSimdSlrlInstruction =
                  , patOS = OS.OpStructure slrl2_g Nothing slrl2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = SLRL2 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
                                  , ASVerbatim ")"
@@ -1485,15 +1485,15 @@ mkSimdSlrlConstantInstruction =
                  , patOS = OS.OpStructure slrl_g Nothing slrl_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 5
+                     ASSTemplate [ ASLocationOfValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASLocationOfValueNode 6
                                  , ASVerbatim " = SLRL2 ("
-                                 , ASReferenceToValueNode 3
+                                 , ASLocationOfValueNode 3
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 4
+                                 , ASLocationOfValueNode 4
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ")"
@@ -1546,17 +1546,17 @@ mkSimdSllvInstruction =
                  , patOS = OS.OpStructure sllv2_g Nothing sllv2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = SLLV2 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 2
+                                 , ASLocationOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASLocationOfValueNode 6
                                  , ASVerbatim ")"
                                  ]
                  }
@@ -1604,15 +1604,15 @@ mkSimdNorInstruction =
                  , patOS = OS.OpStructure xor2_g Nothing xor2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 5
+                     ASSTemplate [ ASLocationOfValueNode 5
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 6
+                                 , ASLocationOfValueNode 6
                                  , ASVerbatim " = NOR2 ("
-                                 , ASReferenceToValueNode 3
+                                 , ASLocationOfValueNode 3
                                  , ASVerbatim ", "
                                  , ASVerbatim getZeroRegName
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 4
+                                 , ASLocationOfValueNode 4
                                  , ASVerbatim ", "
                                  , ASVerbatim getZeroRegName
                                  , ASVerbatim ")"
@@ -1665,15 +1665,15 @@ mkSimdSrlInstruction =
                  , patOS = OS.OpStructure srl2_g Nothing srl2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = SRL2 ("
-                                 , ASReferenceToValueNode 1
+                                 , ASLocationOfValueNode 1
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 2
                                  , ASVerbatim ") ("
-                                 , ASReferenceToValueNode 5
+                                 , ASLocationOfValueNode 5
                                  , ASVerbatim ", "
                                  , ASIntConstOfValueNode 6
                                  , ASVerbatim ")"
@@ -1721,9 +1721,9 @@ mkSimdLoad16ImmInstruction w =
                  , patOS = OS.OpStructure li2_g Nothing li2_cs
                  , patADDUC = True
                  , patAsmStrTemplate =
-                     ASSTemplate [ ASReferenceToValueNode 3
+                     ASSTemplate [ ASLocationOfValueNode 3
                                  , ASVerbatim ", "
-                                 , ASReferenceToValueNode 7
+                                 , ASLocationOfValueNode 7
                                  , ASVerbatim " = ADDiu2 ("
                                  , ASVerbatim getZeroRegName
                                  , ASVerbatim ", "
@@ -1899,7 +1899,7 @@ mkInstructions =
        (ASSMultiTemplate
         [ ASSTemplate
           [ ASVerbatim $ "%temp1 = SLTi "
-          , ASReferenceToValueNode 5
+          , ASLocationOfValueNode 5
           , ASVerbatim ", "
           , ASIntConstOfValueNode 6
           ]
@@ -1954,10 +1954,10 @@ mkInstructions =
   ++
   map
     ( \n -> mkSimpleNBitRegMBitImmCompInst
-              [ ASLocationOfDataNode 3
+              [ ASLocationOfValueNode 3
               , ASVerbatim $ " = "
               , ASVerbatim $ "NOR "
-              , ASLocationOfDataNode 1
+              , ASLocationOfValueNode 1
               , ASVerbatim ", "
               , ASVerbatim getZeroRegName
               ]
@@ -1971,12 +1971,12 @@ mkInstructions =
     [ 8, 32 ]
   ++
     [ mkSimpleNBitRegMBitFirstImmCompInst
-              [ ASLocationOfDataNode 3
+              [ ASLocationOfValueNode 3
               , ASVerbatim " = "
               , ASVerbatim "SUBu "
               , ASVerbatim getZeroRegName
               , ASVerbatim ", "
-              , ASLocationOfDataNode 2
+              , ASLocationOfValueNode 2
               ]
               (O.CompArithOp $ O.UIntOp O.Sub)
               getGPRegistersInclZero

@@ -21,6 +21,7 @@ module Language.InstrSel.Utils.Base
   , maybeRead
   , replace
   , splitOn
+  , splitStartingOn
   , toLower
   , toUpper
   , capitalize
@@ -30,7 +31,6 @@ where
 import Data.List
   ( intercalate )
 import qualified Data.List.Split as Split
-  ( splitOn )
 import qualified Data.Char as Char
   ( toLower
   , toUpper
@@ -75,13 +75,33 @@ groupBy f es =
         gr f' e (p:ps) = if belongs f' e p then (e:p):ps else p:(gr f' e ps)
         belongs f'' e' es' = any (f'' e') es'
 
+-- | Splits a given list into a list of sublists at points where a given
+-- delimiter is found (the delimiters themselves are removed from the resulting
+-- list). For example:
+--
+-- > splitOn ".." "a..b....c" == ["a", "b", "", "c"]
 splitOn
-  :: String
-     -- ^ String to do the splitting with.
-  -> String
-     -- ^ String to be split.
-  -> [String]
+  :: Eq a
+  => [a]
+     -- ^ The delimiter.
+  -> [a]
+     -- ^ List to be split.
+  -> [[a]]
 splitOn = Split.splitOn
+
+-- | Splits a given list into a list of sublists at points where any of the
+-- given delimiters are found. For example:
+--
+-- > splitStartingOn "['A'..'Z'] "AStringToBeSplit" == ["A", "String", "To",
+-- "Be", "Split"]
+splitStartingOn
+  :: Eq a
+  => [a]
+     -- ^ List of delimiters.
+  -> [a]
+     -- ^ List to be split.
+  -> [[a]]
+splitStartingOn = Split.split . Split.startsWithOneOf
 
 -- | Replaces a substring with another substring.
 replace
@@ -103,7 +123,9 @@ toUpper :: String -> String
 toUpper = map Char.toUpper
 
 -- | Converts a string such that the first character is in uppercase and all
--- other characters are in lowercase.
+-- other characters are in lowercase. For example:
+--
+-- > capitalize "tEsT STRing" == "Test string"
 capitalize :: String -> String
 capitalize [] = []
 capitalize (c:cs) = (Char.toUpper c:map Char.toLower cs)

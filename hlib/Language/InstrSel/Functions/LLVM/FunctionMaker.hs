@@ -76,13 +76,10 @@ extractFunctionInputNodeID :: OS.OpStructure -> LLVM.Parameter -> G.NodeID
 extractFunctionInputNodeID os (LLVM.Parameter _ name _) =
   let sym = toSymbolString name
       g = OS.osGraph os
-      v_nodes = filter G.isValueNodeWithOrigin $ G.getAllNodes g
-      sought_v_node = filter
-                        (\n -> (fromJust $ G.getOriginOfValueNode n) == sym)
-                        v_nodes
-  in if length sought_v_node == 1
-     then G.getNodeID $ head sought_v_node
-     else if length sought_v_node == 0
+      ns = G.findValueNodesWithOrigin g sym
+  in if length ns == 1
+     then G.getNodeID $ head ns
+     else if length ns == 0
           then error ( "extractFunctionInputNodeID: no value node with origin "
                        ++ sym ++ "'")
           else error ( "extractFunctionInputNodeID: more than one value node "

@@ -114,7 +114,7 @@ mkGenericPhiInstructions =
              , patADDUC = False
              , patAsmStrTemplate =
                  ( ASSTemplate
-                   $[ ASReferenceToValueNode 1
+                   $[ ASLocationOfValueNode 1
                      , ASVerbatim " = PHI "
                      ]
                      ++
@@ -123,7 +123,7 @@ mkGenericPhiInstructions =
                            [ASVerbatim " "]
                            ( map ( \n' ->
                                    [ ASVerbatim "("
-                                   , ASReferenceToValueNode (toNodeID n')
+                                   , ASLocationOfValueNode (toNodeID n')
                                    , ASVerbatim ", "
                                    , ASBlockOfValueNode (toNodeID n')
                                    , ASVerbatim ")"
