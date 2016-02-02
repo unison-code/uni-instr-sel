@@ -15,6 +15,8 @@
 
 module Language.InstrSel.TargetMachines.Generators.LLVM.Generator where
 
+import Language.InstrSel.Constraints.ConstraintBuilder
+import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures.Base
 import Language.InstrSel.OpStructures.LLVM.OSMaker
@@ -111,7 +113,7 @@ mkInstrPatterns locs i =
   map processSemantics $ zip ([0..] :: [Integer]) (LLVM.instrSemantics i)
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
-              os = addPatternConstraints locs i $ mkOpStructure p
+              os = addOperandConstraints i locs $ mkOpStructure p
               tmpl = mkAsmStrTemplate i os (LLVM.instrAssemblyString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
@@ -119,14 +121,42 @@ mkInstrPatterns locs i =
                              , TM.patAsmStrTemplate = tmpl
                              }
 
-addPatternConstraints
-  :: [TM.Location]
-  -> LLVM.Instruction
+addOperandConstraints
+  :: LLVM.Instruction
+  -> [TM.Location]
   -> OpStructure
   -> OpStructure
-addPatternConstraints locs i os =
-  -- TODO: implement
-  os
+addOperandConstraints i all_locs os =
+  foldr f os (LLVM.instrOperands i)
+  where f (LLVM.RegInstrOperand op_name reg_names) os' =
+          let locs = map getIDOfLocWithName reg_names
+              n = getValueNode op_name
+          in addNewDataLocConstraints locs (getNodeID n) os'
+        f (LLVM.ImmInstrOperand op_name range) os' =
+          let n = getValueNode op_name
+              old_dt = getDataTypeOfValueNode n
+              new_dt = D.IntConstType range (D.intNumBits old_dt)
+              new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
+          in os' { osGraph = new_g }
+        getValueNode origin =
+          let n = findValueNodesWithOrigin (osGraph os) origin
+          in if length n == 1
+             then head n
+             else if length n > 0
+                  then error $ "addOperandConstraints: multiple value nodes "
+                               ++ "with origin '" ++ origin ++ "'"
+                  else error $ "addOperandConstraints: no value node with "
+                               ++ "origin '" ++ origin ++ "'"
+        getIDOfLocWithName name =
+          let loc = filter (\l -> TM.locName l == TM.toLocationName name)
+                           all_locs
+          in if length loc == 1
+             then TM.locID $ head loc
+             else if length loc > 0
+                  then error $ "addOperandConstraints: multiple locations with "
+                               ++ "name '" ++ name ++ "'"
+                  else error $ "addOperandConstraints: no location with name '"
+                               ++ name ++ "'"
 
 mkOpStructure :: LLVM.InstrSemantics -> OpStructure
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
@@ -172,10 +202,10 @@ mkAsmStrTemplate i os str =
                               else error $ "mkAsmStrTemplate: no operand with "
                                         ++ "name '" ++ s ++ "'"
                       else if length n > 0
-                           then error $ "mkAsmStrTemplate: no value node with "
-                                        ++ "origin '" ++ s ++ "'"
-                           else error $ "mkAsmStrTemplate: multiple value nodes"
+                           then error $ "mkAsmStrTemplate: multiple value nodes"
                                         ++ " with origin '" ++ s ++ "'"
+                           else error $ "mkAsmStrTemplate: no value node with "
+                                        ++ "origin '" ++ s ++ "'"
               else TM.ASVerbatim s
 
 mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
