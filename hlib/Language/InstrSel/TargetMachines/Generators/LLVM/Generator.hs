@@ -79,7 +79,7 @@ generateTargetMachine m =
       generic_instrs = mkPhiInstructions mkPhiInstrAss
                        ++ [mkBrFallThroughInstruction]
                        ++ [mkDataDefInstruction]
-                       ++ [mkNullCopyInstruction]
+                       ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
       all_instrs = instrs
                    ++
                    reassignInstrIDs (toInstructionID $ length instrs)

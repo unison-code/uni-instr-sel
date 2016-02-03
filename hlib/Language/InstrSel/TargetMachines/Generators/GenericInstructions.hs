@@ -17,7 +17,7 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   ( mkBrFallThroughInstruction
   , mkPhiInstructions
   , mkDataDefInstruction
-  , mkNullCopyInstruction
+  , mkTempNullCopyInstruction
   , reassignInstrIDs
   )
 where
@@ -199,11 +199,14 @@ mkDataDefInstruction =
                                       }
        }
 
--- | Creates an instruction for handling null-copy operations. Note that the
--- 'InstructionID's of all instructions will be (incorrectly) set to 0, meaning
--- they must be reassigned afterwards.
-mkNullCopyInstruction :: Instruction
-mkNullCopyInstruction =
+-- | Creates an instruction for handling null-copy operations regarding
+-- temporaries. Note that the 'InstructionID's of all instructions will be
+-- (incorrectly) set to 0, meaning they must be reassigned afterwards.
+mkTempNullCopyInstruction
+  :: [Natural]
+     -- ^ List of temporary bit widths for which null-copies are allowed.
+  -> Instruction
+mkTempNullCopyInstruction bits =
   let g w = mkGraph
               ( map
                   Node
@@ -229,15 +232,15 @@ mkNullCopyInstruction =
                        ANodeIDExpr 2
                  )
            ]
-      pat w = InstrPattern
-                { patID = 0
-                , patOS = OpStructure (g w) Nothing cs
-                , patADDUC = True
-                , patAsmStrTemplate = ASSTemplate []
-                }
+      pat (pid, w) = InstrPattern
+                       { patID = pid
+                       , patOS = OpStructure (g w) Nothing cs
+                       , patADDUC = True
+                       , patAsmStrTemplate = ASSTemplate []
+                       }
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat 1, pat 8, pat 16, pat 32]
+       , instrPatterns = map pat $ zip [0..] bits
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsNonCopy = False
