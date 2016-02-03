@@ -60,11 +60,8 @@ copyExtend :: Function -> Function
 copyExtend f =
   let g = getGraph f
       mkNewDataType d@(IntTempType {}) = d
-      mkNewDataType (IntConstType { intConstNumBits = b }) =
-        if isJust b
-        then IntTempType { intTempNumBits = fromJust b }
-        else error $ "copyExtend: 'IntConstType' cannot have 'Nothing' as "
-                     ++ "'intConstNumBits'"
+      mkNewDataType (IntConstType { intNumBits = b }) =
+        IntTempType { intNumBits = b }
       -- TODO: restore
       mkNewDataType d = d
       --mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
@@ -163,10 +160,11 @@ combineConstants f =
   in foldl combineValueNodes f partitioned_ns
 
 combineValueNodes :: Function -> [Node] -> Function
+combineValueNodes f [] = f
 combineValueNodes f [_] = f
 combineValueNodes f ns =
   let mkNewDataType IntConstType { intConstValue = r } =
-        IntConstType { intConstValue = r, intConstNumBits = Nothing }
+        IntConstType { intConstValue = r, intNumBits = 0 }
       mkNewDataType d = error $ "combineValueNodes: unsupported data type "
                                 ++ show d
       g0 = getGraph f
@@ -181,8 +179,8 @@ combineValueNodes f ns =
   in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
 
 -- | Replaces a value node in the function graph with another value node, but
--- all inbound edges to the value node to be removed will be ignored (that is,
--- these edges will disappear).
+-- all inbound edges to the value node to be removed will be ignored and thus
+-- disappear.
 replaceValueNode
   :: Node
      -- ^ The new node.
