@@ -44,7 +44,6 @@ generateModule tm =
                    \-- |\n\
                    \-- Module      : Language.InstrSel.TargetMachines.Targets."
                    ++ tm_id ++ "\n\
-                   \--\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
                    \--\n\
