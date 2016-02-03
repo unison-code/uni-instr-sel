@@ -103,10 +103,22 @@ mkInstructions :: LLVM.MachineDescription -> [TM.Location] -> [TM.Instruction]
 mkInstructions m locs =
   map processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
   where processInstr (i_id, i) =
-          TM.Instruction { TM.instrID = TM.toInstructionID i_id
-                         , TM.instrPatterns = mkInstrPatterns locs i
-                         , TM.instrProps = mkInstrProps i
-                         }
+          let instr_id = TM.toInstructionID i_id
+              patterns = mkInstrPatterns locs i
+              is_copy_instr = if length patterns == 1
+                              then isCopyInstrPattern $ head patterns
+                              else False
+              props = mkInstrProps i is_copy_instr
+          in TM.Instruction { TM.instrID = instr_id
+                            , TM.instrPatterns = patterns
+                            , TM.instrProps = props
+                            }
+
+isCopyInstrPattern :: TM.InstrPattern -> Bool
+isCopyInstrPattern p =
+  let g = osGraph $ TM.patOS p
+      op_nodes = filter isNodeAnOperation $ getAllNodes g
+  in length op_nodes == 1 && isCopyNode (head op_nodes)
 
 mkInstrPatterns :: [TM.Location] -> LLVM.Instruction -> [TM.InstrPattern]
 mkInstrPatterns locs i =
@@ -208,12 +220,11 @@ mkAsmStrTemplate i os str =
                                         ++ "origin '" ++ s ++ "'"
               else TM.ASVerbatim s
 
-mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
-mkInstrProps i =
+mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
+mkInstrProps i is_copy =
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
                      , TM.instrLatency = LLVM.instrLatency i
-                     , TM.instrIsNonCopy = -- TODO: fix
-                                           True
+                     , TM.instrIsNonCopy = not is_copy
                      , TM.instrIsNullCopy = False
                      }
 
