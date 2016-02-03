@@ -27,6 +27,7 @@ import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
+import qualified Language.InstrSel.OpStructures.Transformations as OS
 import qualified Language.InstrSel.OpTypes as Op
 import Language.InstrSel.PrettyShow
 import qualified Language.InstrSel.Functions as F
@@ -116,8 +117,7 @@ data BuildState
       { opStruct :: OS.OpStructure
         -- ^ The current operation structure.
       , lastTouchedNode :: Maybe G.Node
-        -- ^ The last node (if any) that was touched. This is used to
-        -- simplifying edge insertion.
+        -- ^ The last node (if any) that was touched.
       , entryBlock :: Maybe F.BlockName
         -- ^ The block of the function entry point. A 'Nothing' value means that
         -- this value has not yet been assigned.
@@ -290,10 +290,11 @@ mkFunctionOS f@(LLVM.Function {}) =
       st3 = updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
-      st4 = addMissingBlockToDatumDataFlowEdges st3
-      st5 = addMissingBlockToDatumDefEdges st4
-      st6 = addMissingDatumToBlockDefEdges st5
-  in opStruct st6
+      st4 = applyOSTransformations st3
+      st5 = addMissingBlockToDatumDataFlowEdges st4
+      st6 = addMissingBlockToDatumDefEdges st5
+      st7 = addMissingDatumToBlockDefEdges st6
+  in opStruct st7
 mkFunctionOS _ = error "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure' from an instruction pattern. If the definition is
@@ -306,9 +307,10 @@ mkPatternOS f@(LLVM.Function {}) =
       st3 = updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
-      st4 = addMissingBlockToDatumDefEdges st3
-      st5 = addMissingDatumToBlockDefEdges st4
-  in opStruct st5
+      st4 = applyOSTransformations st3
+      st5 = addMissingBlockToDatumDefEdges st4
+      st6 = addMissingDatumToBlockDefEdges st5
+  in opStruct st6
 mkPatternOS _ = error "mkPattern: not a Function"
 
 -- | Creates an initial 'BuildState'.
@@ -1110,3 +1112,18 @@ addMissingDatumToBlockDefEdges st =
 fromNamed :: LLVM.Named i -> i
 fromNamed (_ LLVM.:= i) = i
 fromNamed (LLVM.Do i) = i
+
+-- | Applies various transformations on the 'OpStructure', such as
+-- canonicalizing copy operations.
+applyOSTransformations :: BuildState -> BuildState
+applyOSTransformations st =
+  let os0 = opStruct st
+      b2ddfs0 = blockToDatumDataFlows st
+      os1 = OS.canonicalizeCopies os0
+      -- Canonicalizing copies will remove value nodes with constants, which
+      -- must then be removed from the book keeping held within the build state.
+      b2ddfs1 = filter (\(_, n) -> G.isNodeInGraph (OS.osGraph os1) n) b2ddfs0
+  in st { opStruct = os1
+        , blockToDatumDataFlows = b2ddfs1
+        }
+
