@@ -14,10 +14,10 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.TargetMachines.Generators.GenericInstructions
-  ( mkBrFallThroughInstructions
+  ( mkBrFallThroughInstruction
   , mkPhiInstructions
-  , mkDataDefInstructions
-  , mkNullCopyInstructions
+  , mkDataDefInstruction
+  , mkNullCopyInstruction
   , reassignInstrIDs
   )
 where
@@ -123,12 +123,12 @@ mkPhiInstructions mkAss =
          }
      ]
 
--- | Creates a set of instructions for handling unconditional branching to the
+-- | Creates an instruction for handling unconditional branching to the
 -- immediately following block (that is, fallthroughs). Note that the
 -- 'InstructionID's of all instructions will be (incorrectly) set to 0, meaning
 -- they must be reassigned afterwards.
-mkBrFallThroughInstructions :: [Instruction]
-mkBrFallThroughInstructions =
+mkBrFallThroughInstruction :: Instruction
+mkBrFallThroughInstruction =
   let g = mkGraph
             ( map
                 Node
@@ -153,21 +153,20 @@ mkBrFallThroughInstructions =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
-  in [ Instruction
-         { instrID = 0
-         , instrPatterns = [pat]
-         , instrProps = InstrProperties { instrCodeSize = 0
-                                        , instrLatency = 0
-                                        , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
-                                        }
-         }
-     ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 0
+                                      , instrLatency = 0
+                                      , instrIsNonCopy = True
+                                      , instrIsNullCopy = False
+                                      }
+       }
 
--- | Creates a set of instructions for handling definition of data that
--- represent constants and function arguments.
-mkDataDefInstructions :: [Instruction]
-mkDataDefInstructions =
+-- | Creates an instruction for handling definition of data that represent
+-- constants and function arguments.
+mkDataDefInstruction :: Instruction
+mkDataDefInstruction =
   let mkPatternGraph datum =
         mkGraph ( map Node
                       [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
@@ -188,24 +187,23 @@ mkDataDefInstructions =
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate []
           }
-  in [ Instruction
-         { instrID = 0
-         , instrPatterns = [ mkInstrPattern 0 g1 cs1
-                           , mkInstrPattern 1 g2 cs2
-                           ]
-         , instrProps = InstrProperties { instrCodeSize = 0
-                                        , instrLatency = 0
-                                        , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
-                                        }
-         }
-     ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [ mkInstrPattern 0 g1 cs1
+                         , mkInstrPattern 1 g2 cs2
+                         ]
+       , instrProps = InstrProperties { instrCodeSize = 0
+                                      , instrLatency = 0
+                                      , instrIsNonCopy = True
+                                      , instrIsNullCopy = False
+                                      }
+       }
 
--- | Creates a set of instructions for handling null-copy operations. Note that
--- the 'InstructionID's of all instructions will be (incorrectly) set to 0,
--- meaning they must be reassigned afterwards.
-mkNullCopyInstructions :: [Instruction]
-mkNullCopyInstructions =
+-- | Creates an instruction for handling null-copy operations. Note that the
+-- 'InstructionID's of all instructions will be (incorrectly) set to 0, meaning
+-- they must be reassigned afterwards.
+mkNullCopyInstruction :: Instruction
+mkNullCopyInstruction =
   let g w = mkGraph
               ( map
                   Node
@@ -237,16 +235,15 @@ mkNullCopyInstructions =
                 , patADDUC = True
                 , patAsmStrTemplate = ASSTemplate []
                 }
-  in [ Instruction
-         { instrID = 0
-         , instrPatterns = [pat 1, pat 8, pat 16, pat 32]
-         , instrProps = InstrProperties { instrCodeSize = 0
-                                        , instrLatency = 0
-                                        , instrIsNonCopy = False
-                                        , instrIsNullCopy = True
-                                        }
-         }
-     ]
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat 1, pat 8, pat 16, pat 32]
+       , instrProps = InstrProperties { instrCodeSize = 0
+                                      , instrLatency = 0
+                                      , instrIsNonCopy = False
+                                      , instrIsNullCopy = True
+                                      }
+       }
 
 -- | Reassigns the 'InstructionID's of the given instructions, starting from a
 -- given 'InstructionID' and then incrementing it for each instruction.

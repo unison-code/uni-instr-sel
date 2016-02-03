@@ -76,10 +76,10 @@ generateTargetMachine m =
         )
       locs = mkLocations m
       instrs = mkInstructions m locs
-      generic_instrs = mkBrFallThroughInstructions
-                       ++ mkPhiInstructions mkPhiInstrAss
-                       ++ mkDataDefInstructions
-                       ++ mkNullCopyInstructions
+      generic_instrs = mkPhiInstructions mkPhiInstrAss
+                       ++ [mkBrFallThroughInstruction]
+                       ++ [mkDataDefInstruction]
+                       ++ [mkNullCopyInstruction]
       all_instrs = instrs
                    ++
                    reassignInstrIDs (toInstructionID $ length instrs)
