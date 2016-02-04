@@ -160,7 +160,7 @@ checkSemantics fg pg st c =
                           any (areOutEdgesEquivalent fg e)
                               already_matched_out_edges
                         )
-                        (getEdges fg pred_fn fn)
+                        (getEdgesBetween fg pred_fn fn)
          )
          mapped_preds_to_fn
      &&
@@ -174,7 +174,7 @@ checkSemantics fg pg st c =
                           any (areInEdgesEquivalent fg e)
                               already_matched_in_edges
                         )
-                        (getEdges fg fn succ_fn)
+                        (getEdgesBetween fg fn succ_fn)
          )
          mapped_succs_to_fn
      &&
@@ -182,8 +182,8 @@ checkSemantics fg pg st c =
      all ( \pred_pn ->
            doEdgeListsMatch fg
                             pg
-                            (getEdges fg (getFNFromState st pred_pn) fn)
-                            (getEdges pg pred_pn pn)
+                            (getEdgesBetween fg (getFNFromState st pred_pn) fn)
+                            (getEdgesBetween pg pred_pn pn)
          )
          mapped_preds_to_pn
      &&
@@ -191,8 +191,8 @@ checkSemantics fg pg st c =
      all ( \succ_pn ->
            doEdgeListsMatch fg
                             pg
-                            (getEdges fg fn (getFNFromState st succ_pn))
-                            (getEdges pg pn succ_pn)
+                            (getEdgesBetween fg fn (getFNFromState st succ_pn))
+                            (getEdgesBetween pg pn succ_pn)
          )
          mapped_succs_to_pn
 

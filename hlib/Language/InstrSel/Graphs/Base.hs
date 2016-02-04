@@ -97,7 +97,7 @@ module Language.InstrSel.Graphs.Base
   , getStFlowInEdges
   , getStFlowOutEdges
   , getEdgeType
-  , getEdges
+  , getEdgesBetween
   , getEdgeLabel
   , getInEdgeNr
   , getInEdges
@@ -747,9 +747,9 @@ mergeNodes
 mergeNodes n_to_keep n_to_discard g
   | (getIntNodeID n_to_keep) == (getIntNodeID n_to_discard) = g
   | otherwise =
-      let edges_to_ignore = getEdges g n_to_discard n_to_keep
+      let edges_to_ignore = getEdgesBetween g n_to_discard n_to_keep
                             ++
-                            getEdges g n_to_keep n_to_discard
+                            getEdgesBetween g n_to_keep n_to_discard
       in delNode n_to_discard
                  ( redirectEdges n_to_keep
                                  n_to_discard
@@ -1024,8 +1024,8 @@ getDefOutEdges :: Graph -> Node -> [Edge]
 getDefOutEdges g n = filter isDefEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
-getEdges :: Graph -> SrcNode -> DstNode -> [Edge]
-getEdges g from_n to_n =
+getEdgesBetween :: Graph -> SrcNode -> DstNode -> [Edge]
+getEdgesBetween g from_n to_n =
   let out_edges = map fromEdge $ getOutEdges g from_n
       from_id = getIntNodeID from_n
       to_id = getIntNodeID to_n

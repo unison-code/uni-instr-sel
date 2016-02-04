@@ -633,7 +633,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                     let g = getOSGraph st
                         dfe = head
                               $ filter G.isDataFlowEdge
-                              $ G.getEdges g n phi_node
+                              $ G.getEdgesBetween g n phi_node
                     in addDatumToBlockDef st
                                            (n, block_id, G.getOutEdgeNr dfe)
                   )
