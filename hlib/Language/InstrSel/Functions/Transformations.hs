@@ -60,8 +60,8 @@ copyExtend :: Function -> Function
 copyExtend f =
   let g = getGraph f
       mkNewDataType d@(IntTempType {}) = d
-      mkNewDataType (IntConstType { intNumBits = b }) =
-        IntTempType { intNumBits = b }
+      mkNewDataType (IntConstType { intConstNumBits = Just b }) =
+        IntTempType { intTempNumBits = b }
       -- TODO: restore
       mkNewDataType d = d
       --mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
@@ -164,7 +164,7 @@ combineValueNodes f [] = f
 combineValueNodes f [_] = f
 combineValueNodes f ns =
   let mkNewDataType IntConstType { intConstValue = r } =
-        IntConstType { intConstValue = r, intNumBits = 0 }
+        IntConstType { intConstValue = r, intConstNumBits = Nothing }
       mkNewDataType d = error $ "combineValueNodes: unsupported data type "
                                 ++ show d
       g0 = getGraph f

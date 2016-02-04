@@ -147,7 +147,9 @@ addOperandConstraints i all_locs os =
         f (LLVM.ImmInstrOperand op_name range) os' =
           let n = getValueNode op_name
               old_dt = getDataTypeOfValueNode n
-              new_dt = D.IntConstType range (D.intNumBits old_dt)
+              -- It is assumed that the value node for an immediate is always a
+              -- temporary at this point
+              new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
               new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
           in os' { osGraph = new_g }
         getValueNode origin =

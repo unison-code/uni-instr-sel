@@ -61,12 +61,12 @@ mkGenericValueNodeType = ValueNode { typeOfValue = AnyType
 
 -- | Creates an 'IntTempType' with a given number of bits.
 mkIntTempType :: Natural -> DataType
-mkIntTempType n = IntTempType { intNumBits = n  }
+mkIntTempType n = IntTempType { intTempNumBits = n  }
 
 -- | Creates an 'IntConstType' with a given range and number of bits.
 mkIntConstType :: Range Integer -> Natural -> DataType
 mkIntConstType r n = IntConstType { intConstValue = r
-                                  , intNumBits = n
+                                  , intConstNumBits = Just n
                                   }
 
 -- | Creates a generic block node type.
