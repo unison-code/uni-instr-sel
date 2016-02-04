@@ -74,6 +74,18 @@ canonicalizeCopies os =
                               , (IntOp And, -1)
                               ]
       fg = osGraph os
-      matches = map (findMatches fg) cp_patterns
-  in -- TODO: implement
-     os
+      matches = concatMap (findMatches fg) cp_patterns
+      process m os =
+        let g0 = osGraph os
+            f_ns = map fNode $ fromMatch m
+            comp_n = head $ filter isComputationNode f_ns
+            const_n = head $ filter isValueNodeWithConstValue f_ns
+            -- There is only one value node with constant value in each pattern,
+            -- so we expected there to be exactly one such node in the
+            -- match. Same goes for the computation node
+            g1 = foldr delEdge g0 $ getEdgesBetween g0 const_n comp_n
+            g2 = updateNodeType CopyNode comp_n g1
+            dt_es = getDtFlowOutEdges g2 const_n
+            g3 = if length dt_es == 0 then delNode const_n g2 else g2
+        in os { osGraph = g3 }
+  in foldr process os matches
