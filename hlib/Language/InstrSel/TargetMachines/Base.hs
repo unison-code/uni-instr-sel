@@ -35,6 +35,7 @@ where
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
 import Language.InstrSel.OpStructures
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
 
 
@@ -143,6 +144,10 @@ data Location
         -- register that always contains the value zero).
       }
   deriving (Show, Eq)
+
+instance PrettyShow Location where
+  pShow (Location lid name val) = "Location (" ++ pShow lid ++ ", "
+                                  ++ pShow name ++ ", " ++ pShow val ++ ")"
 
 
 

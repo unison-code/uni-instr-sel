@@ -16,6 +16,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Language.InstrSel.PrettyShow.Base where
 
 
@@ -41,6 +43,12 @@ instance PrettyShow Integer where
 instance PrettyShow Float where
   pShow = show
 
+instance PrettyShow String where
+  pShow = show
+
 instance (PrettyShow a, PrettyShow b) => PrettyShow ((,) a b) where
   pShow (a, b) = "(" ++ pShow a ++ ", " ++ pShow b ++ ")"
 
+instance (PrettyShow a) => PrettyShow (Maybe a) where
+  pShow (Just a) = pShow a
+  pShow Nothing = "?"

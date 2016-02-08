@@ -25,6 +25,7 @@ import Language.InstrSel.Functions
 import qualified Language.InstrSel.Graphs as G
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
   ( TargetMachine (..)
   , findLocation
@@ -55,38 +56,38 @@ run :: MakeAction -> Function -> PatternMatchset -> ArrayIndexMaplists
 run MakeDumpFromArrayIndexMaplists function matchset ai_maps =
   let function_g = osGraph $ functionOS function
       dumpNodes ns =
-        let mkNodeInfo n = "Node ID " ++ show n ++ ", "
+        let mkNodeInfo n = "Node ID " ++ pShow n ++ ", "
                             ++
-                            ( show
+                            ( pShow
                               $ G.getNodeType
                               $ head
                               $ G.findNodesWithNodeID function_g n
                             )
-        in concatMap (\(ai, n) -> show ai ++ " -> " ++ mkNodeInfo n ++ "\n")
+        in concatMap (\(ai, n) -> pShow ai ++ " -> " ++ mkNodeInfo n ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
       dumpMatches ns =
         let mkMatchInfo m =
               let pmatch = head $ findPatternMatchesWithMatchID matchset m
-              in "Match ID " ++ show m ++ ", "
+              in "Match ID " ++ pShow m ++ ", "
                  ++
-                 "Instruction ID " ++ (show $ pmInstrID pmatch) ++ ", "
+                 "Instruction ID " ++ (pShow $ pmInstrID pmatch) ++ ", "
                  ++
-                 "Pattern ID " ++ (show $ pmPatternID pmatch)
-        in concatMap (\(ai, m) -> show ai ++ " -> " ++ mkMatchInfo m ++ "\n")
+                 "Pattern ID " ++ (pShow $ pmPatternID pmatch)
+        in concatMap (\(ai, m) -> pShow ai ++ " -> " ++ mkMatchInfo m ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
       dumpLocations ns =
         let tm = fromJust $ retrieveTargetMachine $ pmTarget matchset
-            mkLocInfo l = show
+            mkLocInfo l = pShow
                           $ fromJust
                           $ findLocation (tmLocations tm) l
-        in concatMap (\(ai, m) -> show ai ++ " -> " ++ mkLocInfo m ++ "\n")
+        in concatMap (\(ai, m) -> pShow ai ++ " -> " ++ mkLocInfo m ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
       dumpInstructions ns =
-        let mkInstrInfo i = "Instruction ID " ++ show i
-        in concatMap (\(ai, i) -> show ai ++ " -> " ++ mkInstrInfo i ++ "\n")
+        let mkInstrInfo i = "Instruction ID " ++ pShow i
+        in concatMap (\(ai, i) -> pShow ai ++ " -> " ++ mkInstrInfo i ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
 

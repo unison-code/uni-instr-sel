@@ -268,6 +268,16 @@ data NodeType
   | CopyNode
   deriving (Show)
 
+instance PrettyShow NodeType where
+  pShow (ComputationNode op) = "Computation node (" ++ pShow op ++ ")"
+  pShow (ControlNode op) = "Control node (" ++ pShow op ++ ")"
+  pShow (ValueNode dt origin) = "Value node (" ++ pShow dt ++ ", "
+                                ++ pShow origin ++ ")"
+  pShow (BlockNode name) = "Block node (" ++ pShow name ++ ")"
+  pShow PhiNode = "Phi node"
+  pShow StateNode = "State node"
+  pShow CopyNode = "Copy node"
+
 -- | Represents a distinct edge.
 newtype Edge
   = Edge (I.LEdge EdgeLabel)
