@@ -427,16 +427,16 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
       st2 = ensureValueNodeWithSymExists st1 sym res_dt
       sym_n = fromJust $ lastTouchedNode st2
       st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
-      replaceNodeInLEDef old_n new_n (l, n, nr) =
-        if old_n == n then (l, new_n, nr) else (l, n, nr)
       st4 = st3 { blockToDatumDefs =
-                     map (replaceNodeInLEDef res_n sym_n)
+                     map ( \(b', n, nr) ->
+                           if res_n == n then (b', sym_n, nr) else (b', n, nr)
+                         )
                          (blockToDatumDefs st3)
                 }
-      replaceNodeInELDef old_n new_n (n, l, nr) =
-        if old_n == n then (new_n, l, nr) else (n, l, nr)
       st5 = st4 { datumToBlockDefs =
-                     map (replaceNodeInELDef res_n sym_n)
+                     map ( \(n, b', nr) ->
+                           if res_n == n then (sym_n, b', nr) else (n, b', nr)
+                         )
                          (datumToBlockDefs st4)
                 }
   in st5
