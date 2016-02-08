@@ -170,6 +170,7 @@ module Language.InstrSel.Graphs.Base
   , updateNodeID
   , updateNodeLabel
   , updateNodeType
+  , updateOriginOfValueNode
   )
 where
 
@@ -694,6 +695,15 @@ updateDataTypeOfValueNode new_dt n g =
       new_nt = nt { typeOfValue = new_dt }
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
                 _ -> error $ "updateDataTypeOfValueNode: node " ++ show n
+                             ++ " is not a value node"
+
+-- | Updates the origin of an already existing value node.
+updateOriginOfValueNode :: String -> Node -> Graph -> Graph
+updateOriginOfValueNode new_origin n g =
+  let nt = getNodeType n
+      new_nt = nt { originOfValue = Just new_origin }
+  in case nt of (ValueNode {}) -> updateNodeType new_nt n g
+                _ -> error $ "updateOriginOfValueNode: node " ++ show n
                              ++ " is not a value node"
 
 -- | Updates the node label of an already existing node.

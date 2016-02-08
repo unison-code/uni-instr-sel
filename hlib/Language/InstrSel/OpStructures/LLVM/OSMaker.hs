@@ -700,21 +700,51 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
       st2 = addFuncInputValue st1 n
   in st2
 
--- | Adds a constraint that forces the two value nodes in the function call to
--- have the same data location.
+-- | Merges the two nodes in the function call.
 mkPatternDFGFromSetregCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkPatternDFGFromSetregCall b st i@(LLVM.Call {}) =
-  let args = map fst (LLVM.arguments i)
-      nodes = map ( \(LLVM.LocalReference _ n) -> G.getNodeID
-                                                  $ fromJust
-                                                  $ findValueNodeWithSym st
-                                                  $ toSymbol n
-                  ) args
-  in addConstraints st $ C.mkSameDataLocConstraints nodes
+mkPatternDFGFromSetregCall
+  b
+  st0
+  ( LLVM.Call { LLVM.arguments = [ (LLVM.LocalReference _ arg1, _)
+                                 , (LLVM.LocalReference _ arg2, _)
+                                 ]
+              }
+  )
+  =
+  let [n1, n2] = map (fromJust . findValueNodeWithSym st0 . toSymbol)
+                     [arg1, arg2]
+      g0 = getOSGraph st0
+      g1 = G.mergeNodes n2 n1 g0
+      g2 = G.updateOriginOfValueNode (fromJust $ G.getOriginOfValueNode n1)
+                                     n2
+                                     g1
+      st1 = updateOSGraph st0 g2
+      st2 = st1 { blockToDatumDataFlows =
+                     map ( \(b', n) ->
+                           if n1 == n then (b', n2) else (b', n)
+                         )
+                         (blockToDatumDataFlows st1)
+                }
+      st3 = st2 { blockToDatumDefs =
+                     map ( \(b', n, nr) ->
+                           if n1 == n then (b', n2, nr) else (b', n, nr)
+                         )
+                         (blockToDatumDefs st2)
+                }
+      st4 = st3 { datumToBlockDefs =
+                     map ( \(n, b', nr) ->
+                           if n1 == n then (n2, b', nr) else (n, b', nr)
+                         )
+                         (datumToBlockDefs st3)
+                }
+  in st4
+mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =
+  error $ "mkPatternDFGFromSetregCall: unexpected number or type of function "
+          ++ "arguments in " ++ show i
 mkPatternDFGFromSetregCall _ _ i =
   error $ "mkPatternDFGFromSetregCall: not implemented for " ++ show i
 
