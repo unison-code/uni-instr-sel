@@ -45,6 +45,8 @@ import Data.Maybe
 -------------
 
 -- | Finds all instances where a pattern graph matches within a function graph.
+-- If the pattern graph is empty, then the default behavior is to indicate that
+-- there are no matches.
 findMatches
   :: Graph
      -- ^ The function graph.
@@ -52,7 +54,10 @@ findMatches
      -- ^ The pattern graph.
   -> [Match Node]
      -- ^ Found matches.
-findMatches fg pg = map toMatch (match fg pg [])
+findMatches fg pg =
+  if isGraphEmpty pg
+  then []
+  else map toMatch (match fg pg [])
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
 -- mapping candidates, and then applies a feasibility check on each of

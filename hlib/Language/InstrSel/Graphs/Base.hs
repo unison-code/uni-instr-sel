@@ -130,6 +130,7 @@ module Language.InstrSel.Graphs.Base
   , isInGraph
   , isBlockNode
   , isBlockNodeAndIntermediate
+  , isGraphEmpty
   , isNodeADatum
   , isNodeAnOperation
   , isNodeInGraph
@@ -1470,6 +1471,11 @@ computeDomSets (Graph g) n =
                  )
                  (I.dom g (getIntNodeID n))
   in doms
+
+-- | Checks whether the given graph is empty. A graph is empty if it contains no
+-- nodes.
+isGraphEmpty :: Graph -> Bool
+isGraphEmpty = I.isEmpty . intGraph
 
 -- | Extracts the control-flow graph from a graph. If there are no block nodes
 -- in the graph, an empty graph is returned.
