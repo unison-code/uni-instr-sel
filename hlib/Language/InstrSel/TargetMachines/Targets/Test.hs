@@ -15,7 +15,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstrSel.TargetMachines.Targets.Test
-  ( tmTest )
+  ( theTM )
 where
 
 import Language.InstrSel.Constraints.ConstraintBuilder
@@ -32,8 +32,8 @@ import Language.InstrSel.TargetMachines.Targets.Generic
 -- Functions
 -------------
 
-tmTest :: TargetMachine
-tmTest =
+theTM :: TargetMachine
+theTM =
   let init_def_pattern =
         mkGraph
         ( map

@@ -15,7 +15,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Language.InstrSel.TargetMachines.Targets.Mips32
-  ( tmMips32
+  ( theTM
   , tmFancyMips32
   )
 where
@@ -2027,8 +2027,8 @@ mkInstructionsInclFancy =
   -}
 
 -- | Constructs the target machine data for ordinary MIPS.
-tmMips32 :: TargetMachine
-tmMips32 = TargetMachine
+theTM :: TargetMachine
+theTM = TargetMachine
              { tmID = toTargetMachineID "mips32"
              , tmInstructions = fixInstrIDs mkInstructions
              , tmLocations = getAllLocations

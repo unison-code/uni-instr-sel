@@ -19,8 +19,8 @@ where
 import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.TargetMachines.Transformations
 
-import Language.InstrSel.TargetMachines.Targets.Mips32
-import Language.InstrSel.TargetMachines.Targets.Test
+import qualified Language.InstrSel.TargetMachines.Targets.Mips32 as Mips32
+import qualified Language.InstrSel.TargetMachines.Targets.Test as Test
 
 
 
@@ -33,9 +33,9 @@ import Language.InstrSel.TargetMachines.Targets.Test
 retrieveTargetMachine :: TargetMachineID -> Maybe TargetMachine
 retrieveTargetMachine tmid =
   do let machines = map (\t -> (tmID t, t))
-                        [ tmMips32
-                        , tmFancyMips32
-                        , tmTest
+                        [ Mips32.theTM
+                        , Mips32.tmFancyMips32
+                        , Test.theTM
                         ]
      tm <- lookup tmid machines
      return $ copyExtend tm
