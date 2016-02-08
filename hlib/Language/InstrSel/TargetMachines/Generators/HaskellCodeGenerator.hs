@@ -18,6 +18,8 @@ import Language.InstrSel.TargetMachines.Base
   ( TargetMachine (tmID)
   , fromTargetMachineID
   )
+import Language.InstrSel.Utils
+  ( replace )
 
 import Language.Haskell.Parser
 import Language.Haskell.Pretty
@@ -58,6 +60,7 @@ generateModule tm =
                    \import Language.InstrSel.Constraints\n\
                    \import Language.InstrSel.DataTypes\n\
                    \import Language.InstrSel.Graphs\n\
+                   \import qualified Data.Graph.Inductive as I\n\
                    \import Language.InstrSel.OpStructures\n\
                    \import Language.InstrSel.OpTypes\n\
                    \import Language.InstrSel.TargetMachines\n\
@@ -67,7 +70,8 @@ generateModule tm =
       res = parseModule $ header_src ++ tm_func_src
       prettyPrint m = prettyPrintStyleMode (style { lineLength = 80 })
                                            defaultMode m
+      renameFuncs str = replace "mkGraph" "I.mkGraph" str
   in case res
-     of (ParseOk m) -> boiler_src ++ prettyPrint m
+     of (ParseOk m) -> boiler_src ++ (renameFuncs $ prettyPrint m)
         (ParseFailed loc msg) -> error $ "generateModule: parsing failed at "
                                          ++ show loc ++ ": " ++ msg
