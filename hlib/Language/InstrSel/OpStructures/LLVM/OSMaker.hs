@@ -361,8 +361,8 @@ mkFunctionCFGBuilder =
 -- | Constructs a 'Builder' that will construct a pattern data-flow graph.
 mkPatternDFGBuilder :: Builder
 mkPatternDFGBuilder =
-  mkFunctionDFGBuilder { mkFromInstruction = newMk }
-  where newMk b st i@(LLVM.Call {}) =
+  mkFunctionDFGBuilder { mkFromInstruction = newInstrMk }
+  where newInstrMk b st i@(LLVM.Call {}) =
           let call_op = LLVM.function i
           in if isRight call_op
              then case fromRight call_op
@@ -376,11 +376,18 @@ mkPatternDFGBuilder =
                      _ -> -- Let the default builder handle it
                           mkFunctionDFGFromInstruction b st i
              else error "mkPatternDFGBuilder: CallableOperand is not an Operand"
-        newMk b st i = mkFunctionDFGFromInstruction b st i
+        newInstrMk b st i = mkFunctionDFGFromInstruction b st i
 
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
 mkPatternCFGBuilder :: Builder
-mkPatternCFGBuilder = mkFunctionCFGBuilder
+mkPatternCFGBuilder =
+  mkFunctionCFGBuilder { mkFromTerminator = newTermMk }
+  where newTermMk b st i@(LLVM.Ret { LLVM.metadata' = meta }) =
+          let is_dummy = any (\(n, _) -> n == "dummy") meta
+          in if is_dummy
+             then st -- Do nothing
+             else mkFunctionCFGFromTerminator b st i
+        newTermMk b st i = mkFunctionCFGFromTerminator b st i
 
 mkFunctionDFGFromGlobal
   :: Builder
