@@ -75,8 +75,8 @@ canonicalizeCopies os =
                               ]
       fg = osGraph os
       matches = concatMap (findMatches fg) cp_patterns
-      process m os =
-        let g0 = osGraph os
+      process m os' =
+        let g0 = osGraph os'
             f_ns = map fNode $ fromMatch m
             comp_n = head $ filter isComputationNode f_ns
             const_n = head $ filter isValueNodeWithConstValue f_ns
@@ -87,5 +87,5 @@ canonicalizeCopies os =
             g2 = updateNodeType CopyNode comp_n g1
             dt_es = getDtFlowOutEdges g2 const_n
             g3 = if length dt_es == 0 then delNode const_n g2 else g2
-        in os { osGraph = g3 }
+        in os' { osGraph = g3 }
   in foldr process os matches
