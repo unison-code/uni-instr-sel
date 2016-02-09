@@ -23,7 +23,6 @@ where
 
 import qualified Language.InstrSel.Constraints as C
   ( Constraint )
-import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
