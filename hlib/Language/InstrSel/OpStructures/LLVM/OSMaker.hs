@@ -407,12 +407,11 @@ mkPatternCFGFromReturnCall
   -> LLVM.Instruction
   -> BuildState
 mkPatternCFGFromReturnCall
-  b
+  _
   st0
   (LLVM.Call { LLVM.arguments = [(LLVM.LocalReference _ arg, _)] })
   =
   let st1 = addNewNode st0 (G.ControlNode Op.Ret)
-      g = getOSGraph st1
       rn = fromJust $ lastTouchedNode st1
       bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
       vn = fromJust $ findValueNodeWithSym st0 $ toSymbol arg
@@ -749,7 +748,7 @@ mkPatternDFGFromSetregCall
   -> LLVM.Instruction
   -> BuildState
 mkPatternDFGFromSetregCall
-  b
+  _
   st0
   ( LLVM.Call { LLVM.arguments = [ (LLVM.LocalReference _ arg1, _)
                                  , (LLVM.LocalReference _ arg2, _)
@@ -797,7 +796,7 @@ mkPatternDFGFromParamCall
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkPatternDFGFromParamCall b st i@(LLVM.Call {}) =
+mkPatternDFGFromParamCall _ st i@(LLVM.Call {}) =
   let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
         fromRight $ LLVM.function i
       (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
