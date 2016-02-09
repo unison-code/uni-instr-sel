@@ -344,16 +344,13 @@ mkFunctionDFGBuilder =
 -- | Constructs a 'Builder' that will construct a function control-flow graph.
 mkFunctionCFGBuilder :: Builder
 mkFunctionCFGBuilder =
-  Builder { mkFromGlobal     = mkFunctionCFGFromGlobal
-          , mkFromBasicBlock = mkFunctionCFGFromBasicBlock
-          , mkFromNamed      =
-              \_ _ n -> error $ "mkFromNamed: not implemented for " ++ show n
-          , mkFromInstruction =
-              \_ _ i -> error $ "mkFromInstruction: not implemented for "
-                                ++ show i
-          , mkFromTerminator = mkFunctionCFGFromTerminator
-          , mkFromOperand    = mkFunctionCFGFromOperand
-          , mkFromParameter  =
+  Builder { mkFromGlobal      = mkFunctionCFGFromGlobal
+          , mkFromBasicBlock  = mkFunctionCFGFromBasicBlock
+          , mkFromNamed       = mkFunctionCFGFromNamed
+          , mkFromInstruction = mkFunctionCFGFromInstruction
+          , mkFromTerminator  = mkFunctionCFGFromTerminator
+          , mkFromOperand     = mkFunctionCFGFromOperand
+          , mkFromParameter   =
               \_ _ p -> error $ "mkFromParameter: not implemented for "
                                 ++ show p
           }
@@ -370,7 +367,8 @@ mkPatternDFGBuilder =
                        (LLVMC.GlobalReference _ (LLVM.Name name)))
                        -> case name
                           of "setreg" -> mkPatternDFGFromSetregCall b st i
-                             "param" -> mkPatternDFGFromParamCall b st i
+                             "param"  -> mkPatternDFGFromParamCall b st i
+                             "return" -> st -- Will be processed in the CFG
                              _ -> -- Let the default builder handle it
                                   mkFunctionDFGFromInstruction b st i
                      _ -> -- Let the default builder handle it
@@ -381,13 +379,50 @@ mkPatternDFGBuilder =
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
 mkPatternCFGBuilder :: Builder
 mkPatternCFGBuilder =
-  mkFunctionCFGBuilder { mkFromTerminator = newTermMk }
-  where newTermMk b st i@(LLVM.Ret { LLVM.metadata' = meta }) =
-          let is_dummy = any (\(n, _) -> n == "dummy") meta
-          in if is_dummy
-             then st -- Do nothing
-             else mkFunctionCFGFromTerminator b st i
-        newTermMk b st i = mkFunctionCFGFromTerminator b st i
+  mkFunctionCFGBuilder { mkFromInstruction = newInstrMk
+                       , mkFromTerminator = newTermMk
+                       }
+  where newInstrMk b st i@(LLVM.Call {}) =
+          let call_op = LLVM.function i
+          in if isRight call_op
+             then case fromRight call_op
+                  of (LLVM.ConstantOperand
+                       (LLVMC.GlobalReference _ (LLVM.Name name)))
+                       -> case name
+                          of "return" -> mkPatternCFGFromReturnCall b st i
+                             _ -> -- Let the default builder handle it
+                                  mkFunctionCFGFromInstruction b st i
+                     _ -> -- Let the default builder handle it
+                          mkFunctionCFGFromInstruction b st i
+             else error "mkPatternCFGBuilder: CallableOperand is not an Operand"
+        newInstrMk b st i = mkFunctionCFGFromInstruction b st i
+        newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = st
+        newTermMk _ _ _ =
+          error "mkPatternCFGBuilder: non-void rets not allowed in patterns"
+
+-- | Adds a 'G.ControlNode' of type 'Op.Ret'.
+mkPatternCFGFromReturnCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternCFGFromReturnCall
+  b
+  st0
+  (LLVM.Call { LLVM.arguments = [(LLVM.LocalReference _ arg, _)] })
+  =
+  let st1 = addNewNode st0 (G.ControlNode Op.Ret)
+      g = getOSGraph st1
+      rn = fromJust $ lastTouchedNode st1
+      bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
+      vn = fromJust $ findValueNodeWithSym st0 $ toSymbol arg
+      st2 = addNewEdge st1 G.DataFlowEdge vn rn
+      st3 = addNewEdge st2 G.ControlFlowEdge bn rn
+  in st3
+mkPatternCFGFromReturnCall _ _ i =
+  error $ "mkPatternCFGFromReturnCall: not implemented for " ++ show i
+
+
 
 mkFunctionDFGFromGlobal
   :: Builder
@@ -784,7 +819,7 @@ mkFunctionCFGFromBasicBlock
   -> LLVM.BasicBlock
   -> BuildState
 mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
-                                                    _
+                                                    insts
                                                     named_term_inst
                                   ) =
   let block_name = F.BlockName str
@@ -794,10 +829,27 @@ mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
             else st0
       st2 = ensureBlockNodeExists st1 block_name
       st3 = st2 { currentBlock = Just block_name }
-      st4 = build b st3 term_inst
-    in st4
+      st4 = foldl (build b) st3 insts
+      st5 = build b st4 term_inst
+    in st5
 mkFunctionCFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
   error $ "mkFunctionCFGFromBasicBlock: does not support unnamed basic blocks"
+
+mkFunctionCFGFromInstruction
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkFunctionCFGFromInstruction _ st _ = st
+
+mkFunctionCFGFromNamed
+  :: (Buildable n)
+  => Builder
+  -> BuildState
+  -> (LLVM.Named n)
+  -> BuildState
+mkFunctionCFGFromNamed b st (_ LLVM.:= expr) = build b st expr
+mkFunctionCFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionCFGFromTerminator
   :: Builder
