@@ -310,7 +310,7 @@ mkPatternOS f@(LLVM.Function {}) =
       st4 = applyOSTransformations st3
       st5 = addMissingBlockToDatumDefEdges st4
       st6 = addMissingDatumToBlockDefEdges st5
-      st7 = removeEntryNodeIfObsolete st6
+      st7 = removeUnusedBlockNodes st6
   in opStruct st7
 mkPatternOS _ = error "mkPattern: not a Function"
 
@@ -1165,11 +1165,15 @@ applyOSTransformations st =
         , blockToDatumDataFlows = b2ddfs1
         }
 
--- | Removes the entry node from a 'BuildState' if it has no edges.
-removeEntryNodeIfObsolete :: BuildState -> BuildState
-removeEntryNodeIfObsolete st =
+-- | Removes all block nodes from a 'BuildState' which have no edges.
+removeUnusedBlockNodes :: BuildState -> BuildState
+removeUnusedBlockNodes st =
   let g = getOSGraph st
-      n = fromJust $ findBlockNodeWithID st $ fromJust $ entryBlock st
-  in if length (G.getNeighbors g n) == 0
-     then updateOSGraph st $ G.delNode n g
-     else st
+      ns = filter G.isBlockNode $ G.getAllNodes g
+      unused = filter (\n -> length (G.getNeighbors g n) == 0) ns
+      new_g = foldr G.delNode g unused
+      new_st = updateOSGraph st new_g
+      entry_block = findBlockNodeWithID st (fromJust $ entryBlock st)
+  in if isJust entry_block
+     then new_st
+     else new_st { entryBlock = Nothing }
