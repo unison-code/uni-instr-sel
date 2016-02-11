@@ -84,6 +84,18 @@ data InstrOperand
       , immOpRange :: Range Integer
         -- ^ Integer range of this immediate operand.
       }
+  | AbsAddrInstrOperand
+      { opName :: String
+        -- ^ Name of this absolute address.
+      , addrOpRange :: Range Integer
+        -- ^ Integer range of this absolute address.
+      }
+  | RelAddrInstrOperand
+      { opName :: String
+        -- ^ Name of this relative address.
+      , addrOpRange :: Range Integer
+        -- ^ Integer range of this relative address.
+      }
   deriving (Show)
 
 -- | Contains the information regarding the semantics of an instruction. The
@@ -139,6 +151,12 @@ instance FromJSON InstrOperand where
          "imm" -> ImmInstrOperand
                     <$> v .: "name"
                     <*> v .: "range"
+         "abs-addr" -> AbsAddrInstrOperand
+                       <$> v .: "name"
+                       <*> v .: "range"
+         "rel-addr" -> RelAddrInstrOperand
+                       <$> v .: "name"
+                       <*> v .: "range"
          _     -> mzero
   parseJSON _ = mzero
 
