@@ -16,6 +16,8 @@ module Language.InstrSel.Functions.IDs
   ( BlockName (..)
   , mkEmptyBlockName
   , isBlockNameEmpty
+  , toBlockName
+  , fromBlockName
   )
 where
 
@@ -62,3 +64,9 @@ mkEmptyBlockName = BlockName ""
 -- | Checks if block name is empty.
 isBlockNameEmpty :: BlockName -> Bool
 isBlockNameEmpty (BlockName str) = str == ""
+
+toBlockName :: String -> BlockName
+toBlockName = BlockName
+
+fromBlockName :: BlockName -> String
+fromBlockName (BlockName str) = str

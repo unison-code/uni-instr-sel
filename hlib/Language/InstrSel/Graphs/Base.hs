@@ -83,6 +83,7 @@ module Language.InstrSel.Graphs.Base
   , findPNInMatch
   , findPNsInMapping
   , findPNsInMatch
+  , findBlockNodesWithName
   , findValueNodesWithOrigin
   , fromEdgeNr
   , getAllNodes
@@ -108,6 +109,7 @@ module Language.InstrSel.Graphs.Base
   , getNodeLabel
   , getNodeType
   , getNumNodes
+  , getNameOfBlockNode
   , getOriginOfValueNode
   , getOutEdgeNr
   , getOutEdges
@@ -563,6 +565,9 @@ isValueNodeWithOrigin n =
 getOriginOfValueNode :: Node -> Maybe String
 getOriginOfValueNode = originOfValue . getNodeType
 
+getNameOfBlockNode :: Node -> BlockName
+getNameOfBlockNode = nameOfBlock . getNodeType
+
 isBlockNode :: Node -> Bool
 isBlockNode n = isOfBlockNodeType $ getNodeType n
 
@@ -697,6 +702,12 @@ findValueNodesWithOrigin :: Graph -> String -> [Node]
 findValueNodesWithOrigin g o =
   let vs = filter isValueNodeWithOrigin $ getAllNodes g
   in filter (\n -> (fromJust $ getOriginOfValueNode n) == o) vs
+
+-- | Gets a list of block nodes with the same name.
+findBlockNodesWithName :: Graph -> BlockName -> [Node]
+findBlockNodesWithName g name =
+  let vs = filter isBlockNode $ getAllNodes g
+  in filter (\n -> (getNameOfBlockNode n) == name) vs
 
 -- | Updates the data type of an already existing value node.
 updateDataTypeOfValueNode :: D.DataType -> Node -> Graph -> Graph

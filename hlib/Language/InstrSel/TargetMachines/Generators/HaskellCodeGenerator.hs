@@ -64,7 +64,10 @@ generateModule tm =
                    \import Language.InstrSel.OpStructures\n\
                    \import Language.InstrSel.OpTypes\n\
                    \import Language.InstrSel.TargetMachines\n\
-                   \import Language.InstrSel.Utils\n\n"
+                   \import Language.InstrSel.Utils\n\
+                   \import Prelude \n\
+                   \  hiding\n\
+                   \  ( LT )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
                     \theTM = " ++ show tm
       res = parseModule $ header_src ++ tm_func_src

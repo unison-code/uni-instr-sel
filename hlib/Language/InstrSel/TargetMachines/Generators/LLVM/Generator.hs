@@ -24,6 +24,7 @@ import qualified Language.InstrSel.TargetMachines.Base as TM
 import Language.InstrSel.TargetMachines.Generators.GenericInstructions
 import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import Language.InstrSel.TargetMachines.IDs
+import Language.InstrSel.Functions.IDs
 import Language.InstrSel.Utils
   ( capitalize
   , splitStartingOn
@@ -152,6 +153,12 @@ addOperandConstraints i all_locs os =
               new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
               new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
           in os' { osGraph = new_g }
+        f (LLVM.AbsAddrInstrOperand op_name range) os' =
+          -- TODO: implement
+          os'
+        f (LLVM.RelAddrInstrOperand op_name range) os' =
+          -- TODO: implement
+          os'
         getValueNode origin =
           let n = findValueNodesWithOrigin (osGraph os) origin
           in if length n == 1
@@ -198,29 +205,53 @@ mkAsmStrTemplate
   -> TM.AssemblyStringTemplate
 mkAsmStrTemplate i os str =
   TM.ASSTemplate $ map f $ splitStartingOn "%," str
-  where f s = if head s == '%'
-              then let g = osGraph os
-                       n = findValueNodesWithOrigin g s
-                   in if length n == 1
-                      then let op = getInstrOperand i s
-                           in if isJust op
-                              then case (fromJust op)
-                                   of (LLVM.RegInstrOperand {}) ->
-                                        TM.ASLocationOfValueNode
-                                        $ getNodeID
-                                        $ head n
-                                      (LLVM.ImmInstrOperand {}) ->
-                                        TM.ASIntConstOfValueNode
-                                        $ getNodeID
-                                        $ head n
-                              else error $ "mkAsmStrTemplate: no operand with "
-                                        ++ "name '" ++ s ++ "'"
-                      else if length n > 0
-                           then error $ "mkAsmStrTemplate: multiple value nodes"
-                                        ++ " with origin '" ++ s ++ "'"
-                           else error $ "mkAsmStrTemplate: no value node with "
-                                        ++ "origin '" ++ s ++ "'"
-              else TM.ASVerbatim s
+  where
+  f s = if head s == '%'
+        then let g = osGraph os
+                 value_n = findValueNodesWithOrigin g s
+                 block_n = findBlockNodesWithName g $ toBlockName s
+             in if length value_n > 0
+                then if length value_n == 1
+                     then let op = getInstrOperand i s
+                          in if isJust op
+                             then case (fromJust op)
+                                  of (LLVM.RegInstrOperand {}) ->
+                                       TM.ASLocationOfValueNode
+                                       $ getNodeID
+                                       $ head value_n
+                                     (LLVM.ImmInstrOperand {}) ->
+                                       TM.ASIntConstOfValueNode
+                                       $ getNodeID
+                                       $ head value_n
+                                     _ -> error $ "mkAsmStrTemplate: something "
+                                                  ++ "is terribly wrong..."
+                             else error $ "mkAsmStrTemplate: no operand with "
+                                          ++ "name '" ++ s ++ "'"
+                     else error $ "mkAsmStrTemplate: multiple value nodes with "
+                                  ++ "origin '" ++ s ++ "'"
+                else if length block_n > 0
+                     then if length block_n == 1
+                          then let op = getInstrOperand i s
+                               in if isJust op
+                                  then case (fromJust op)
+                                       of (LLVM.AbsAddrInstrOperand {}) ->
+                                            TM.ASNameOfBlockNode
+                                            $ getNodeID
+                                            $ head block_n
+                                          (LLVM.RelAddrInstrOperand {}) ->
+                                            TM.ASNameOfBlockNode
+                                            $ getNodeID
+                                            $ head block_n
+                                          _ -> error
+                                               $ "mkAsmStrTemplate: something "
+                                               ++ "is terribly wrong..."
+                                  else error $ "mkAsmStrTemplate: no operand "
+                                               ++ "with name '" ++ s ++ "'"
+                          else error $ "mkAsmStrTemplate: multiple block nodes "
+                                       ++ "with name '" ++ s ++ "'"
+                     else error $ "mkAsmStrTemplate: no value or blocks nodes "
+                                  ++ "with origin or name '" ++ s ++ "'"
+        else TM.ASVerbatim s
 
 mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
 mkInstrProps i is_copy =

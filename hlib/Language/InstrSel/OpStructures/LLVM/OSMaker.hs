@@ -33,8 +33,8 @@ import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
   , toNatural
-  , isRight
   , fromRight
+  , splitOn
   )
 
 import qualified LLVM.General.AST as LLVM
@@ -45,6 +45,9 @@ import qualified LLVM.General.AST.Global as LLVM
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
 
 import Data.Maybe
+
+import Data.List
+  ( intercalate )
 
 
 
@@ -360,20 +363,17 @@ mkPatternDFGBuilder :: Builder
 mkPatternDFGBuilder =
   mkFunctionDFGBuilder { mkFromInstruction = newInstrMk }
   where newInstrMk b st i@(LLVM.Call {}) =
-          let call_op = LLVM.function i
-          in if isRight call_op
-             then case fromRight call_op
-                  of (LLVM.ConstantOperand
-                       (LLVMC.GlobalReference _ (LLVM.Name name)))
-                       -> case name
-                          of "setreg" -> mkPatternDFGFromSetregCall b st i
-                             "param"  -> mkPatternDFGFromParamCall b st i
-                             "return" -> st -- Will be processed in the CFG
-                             _ -> -- Let the default builder handle it
-                                  mkFunctionDFGFromInstruction b st i
-                     _ -> -- Let the default builder handle it
-                          mkFunctionDFGFromInstruction b st i
-             else error "mkPatternDFGBuilder: CallableOperand is not an Operand"
+          let f_name = getFunctionName i
+          in if isJust f_name
+             then case (extractFunctionNamePart $ fromJust f_name)
+                  of "setreg"   -> mkPatternDFGFromSetregCall b st i
+                     "param"    -> mkPatternDFGFromParamCall b st i
+                     "brorfall" -> st -- Will be processed in the CFG
+                     "return"   -> st -- Will be processed in the CFG
+                     _ -> mkFunctionDFGFromInstruction b st i
+                          -- Let the default builder handle it
+             else mkFunctionDFGFromInstruction b st i
+                  -- Let the default builder handle it
         newInstrMk b st i = mkFunctionDFGFromInstruction b st i
 
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
@@ -383,22 +383,42 @@ mkPatternCFGBuilder =
                        , mkFromTerminator = newTermMk
                        }
   where newInstrMk b st i@(LLVM.Call {}) =
-          let call_op = LLVM.function i
-          in if isRight call_op
-             then case fromRight call_op
-                  of (LLVM.ConstantOperand
-                       (LLVMC.GlobalReference _ (LLVM.Name name)))
-                       -> case name
-                          of "return" -> mkPatternCFGFromReturnCall b st i
-                             _ -> -- Let the default builder handle it
-                                  mkFunctionCFGFromInstruction b st i
-                     _ -> -- Let the default builder handle it
-                          mkFunctionCFGFromInstruction b st i
-             else error "mkPatternCFGBuilder: CallableOperand is not an Operand"
+          let f_name = getFunctionName i
+          in if isJust f_name
+             then case (extractFunctionNamePart $ fromJust f_name)
+                  of "return"   -> mkPatternCFGFromReturnCall b st i
+                     "brorfall" -> mkPatternCFGFromBrOrFallCall b st i
+                     _ -> mkFunctionCFGFromInstruction b st i
+                          -- Let the default builder handle it
+             else mkFunctionCFGFromInstruction b st i
+                  -- Let the default builder handle it
         newInstrMk b st i = mkFunctionCFGFromInstruction b st i
         newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = st
         newTermMk _ _ _ =
           error "mkPatternCFGBuilder: non-void rets not allowed in patterns"
+
+-- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
+-- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
+getFunctionName :: LLVM.Instruction -> Maybe String
+getFunctionName ( LLVM.Call { LLVM.function =
+                               Right
+                                 ( LLVM.ConstantOperand
+                                   (LLVMC.GlobalReference _ (LLVM.Name name))
+                                 )
+                            }
+                )
+  = Just name
+getFunctionName _ = Nothing
+
+-- | Extracts the name part of a given function name. This is needed because
+-- some function calls has parameters embedded into the function name, such as
+-- labels (which cannot be given as a function argument in LLVM IR).
+extractFunctionNamePart :: String -> String
+extractFunctionNamePart = head . splitOn "."
+
+-- | Extracts the label part of a given function name.
+extractFunctionLabelPart :: String -> String
+extractFunctionLabelPart = intercalate "." . tail . splitOn "."
 
 -- | Adds a 'G.ControlNode' of type 'Op.Ret'.
 mkPatternCFGFromReturnCall
@@ -421,7 +441,32 @@ mkPatternCFGFromReturnCall
 mkPatternCFGFromReturnCall _ _ i =
   error $ "mkPatternCFGFromReturnCall: not implemented for " ++ show i
 
+mkPatternCFGFromBrOrFallCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternCFGFromBrOrFallCall
+  b
+  st0
+  i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
+  =
+  let t_label = extractFunctionLabelPart $ fromJust $ getFunctionName i
+      st1 = mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
+      br_node = fromJust $ lastTouchedNode st1
 
+      st2 = ensureBlockNodeExists st1 (F.BlockName t_label)
+      t_dst_node = fromJust $ lastTouchedNode st2
+      st3 = ensureBlockNodeExists st2 F.mkEmptyBlockName
+      f_dst_node = fromJust $ lastTouchedNode st3
+      st4 = addNewEdgesManyDests st3
+                                 G.ControlFlowEdge
+                                 br_node
+                                 [t_dst_node, f_dst_node]
+      -- TODO: add constraint for fall-through branch
+  in st4
+mkPatternCFGFromBrOrFallCall _ _ i =
+  error $ "mkPatternCFGFromBrOrFallCall: not implemented for " ++ show i
 
 mkFunctionDFGFromGlobal
   :: Builder
@@ -452,7 +497,7 @@ mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
       st3 = foldl (build b) st2 insts
   in st3
 mkFunctionDFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-    error $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
+  error $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
 
 mkFunctionDFGFromNamed
   :: (Buildable n)
