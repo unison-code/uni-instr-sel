@@ -1,4 +1,5 @@
 % Copyright (c) 2013-2015, Gabriel Hjort Blindell <ghb@kth.se>
+%                          Mats Carlsson <matsc@sics.se>
 % All rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
