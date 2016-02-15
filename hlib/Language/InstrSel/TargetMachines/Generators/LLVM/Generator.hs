@@ -143,10 +143,10 @@ addOperandConstraints i all_locs os =
   foldr f os (LLVM.instrOperands i)
   where f (LLVM.RegInstrOperand op_name reg_names) os' =
           let locs = map getIDOfLocWithName reg_names
-              n = getValueNode op_name
+              n = getValueNode os' op_name
           in addNewDataLocConstraints locs (getNodeID n) os'
         f (LLVM.ImmInstrOperand op_name range) os' =
-          let n = getValueNode op_name
+          let n = getValueNode os' op_name
               old_dt = getDataTypeOfValueNode n
               -- It is assumed that the value node for an immediate is always a
               -- temporary at this point
@@ -154,13 +154,11 @@ addOperandConstraints i all_locs os =
               new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
           in os' { osGraph = new_g }
         f (LLVM.AbsAddrInstrOperand op_name range) os' =
-          -- TODO: implement
-          os'
+          addAddressConstraints os' (getValueOrBlockNode os' op_name) range
         f (LLVM.RelAddrInstrOperand op_name range) os' =
-          -- TODO: implement
-          os'
-        getValueNode origin =
-          let n = findValueNodesWithOrigin (osGraph os) origin
+          addAddressConstraints os' (getValueOrBlockNode os' op_name) range
+        getValueNode os' origin =
+          let n = findValueNodesWithOrigin (osGraph os') origin
           in if length n == 1
              then head n
              else if length n > 0
@@ -168,6 +166,21 @@ addOperandConstraints i all_locs os =
                                ++ "with origin '" ++ origin ++ "'"
                   else error $ "addOperandConstraints: no value node with "
                                ++ "origin '" ++ origin ++ "'"
+        getValueOrBlockNode os' str =
+          let value_n = findValueNodesWithOrigin (osGraph os') str
+              block_n = findBlockNodesWithName (osGraph os') $ toBlockName str
+          in if length value_n > 0
+             then if length value_n == 1
+                  then head value_n
+                  else error $ "addOperandConstraints: multiple value nodes "
+                               ++ "with origin '" ++ str ++ "'"
+             else if length block_n > 0
+                  then if length block_n == 1
+                       then head block_n
+                       else error $ "addOperandConstraints: multiple block "
+                                    ++ "nodes with name '" ++ str ++ "'"
+                  else error $ "addOperandConstraints: no value or block node "
+                               ++ "with origin or name '" ++ str ++ "'"
         getIDOfLocWithName name =
           let loc = filter (\l -> TM.locName l == TM.toLocationName name)
                            all_locs
@@ -178,6 +191,17 @@ addOperandConstraints i all_locs os =
                                ++ "name '" ++ name ++ "'"
                   else error $ "addOperandConstraints: no location with name '"
                                ++ name ++ "'"
+        addAddressConstraints os' n range =
+          if isValueNode n
+          then let old_dt = getDataTypeOfValueNode n
+                   -- It is assumed that the value node for an immediate is
+                   -- always a temporary at this point
+                   new_dt = D.IntConstType range
+                                           (Just $ D.intTempNumBits old_dt)
+                   new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
+               in os' { osGraph = new_g }
+          else -- TODO: implement
+               os'
 
 mkOpStructure :: LLVM.InstrSemantics -> OpStructure
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
