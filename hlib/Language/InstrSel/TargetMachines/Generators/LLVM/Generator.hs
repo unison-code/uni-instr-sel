@@ -209,8 +209,7 @@ mkAsmStrTemplate i os str =
   f s = if head s == '%'
         then let g = osGraph os
                  value_n = findValueNodesWithOrigin g s
-                 b_name = tail s
-                 block_n = findBlockNodesWithName g $ toBlockName b_name
+                 block_n = findBlockNodesWithName g $ toBlockName s
              in if length value_n > 0
                 then if length value_n == 1
                      then let op = getInstrOperand i s
@@ -249,7 +248,7 @@ mkAsmStrTemplate i os str =
                                   else error $ "mkAsmStrTemplate: no operand "
                                                ++ "with name '" ++ s ++ "'"
                           else error $ "mkAsmStrTemplate: multiple block nodes "
-                                       ++ "with name '" ++ b_name ++ "'"
+                                       ++ "with name '" ++ s ++ "'"
                      else error $ "mkAsmStrTemplate: no value or blocks nodes "
                                   ++ "with origin or name '" ++ s ++ "'"
         else TM.ASVerbatim s
