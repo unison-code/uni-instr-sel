@@ -506,12 +506,12 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
                 )
       ord_g = mkPatternGraph ord_op
       inv_g = mkPatternGraph inv_op
-      ord_cs = mkMatchPlacementConstraints ord_g
+      ord_cs = mkPlaceAtEntryBlockConstraints ord_g
                ++
                mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      inv_cs = mkMatchPlacementConstraints inv_g
+      inv_cs = mkPlaceAtEntryBlockConstraints inv_g
                ++
                mkNoDataReuseConstraints 7
                ++
@@ -617,12 +617,12 @@ mkRegImmCondBrInstr n imm_r str op =
                 )
       ord_g = mkPatternGraph False
       swapped_g = mkPatternGraph True
-      ord_cs = mkMatchPlacementConstraints ord_g
+      ord_cs = mkPlaceAtEntryBlockConstraints ord_g
                ++
                mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      swapped_cs = mkMatchPlacementConstraints swapped_g
+      swapped_cs = mkPlaceAtEntryBlockConstraints swapped_g
                    ++
                    mkNoDataReuseConstraints 7
                    ++
@@ -685,10 +685,10 @@ mkPredBrInstr =
              , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
              ]
          )
-      ord_cs = mkMatchPlacementConstraints g
+      ord_cs = mkPlaceAtEntryBlockConstraints g
                ++
                mkFallThroughConstraints 3
-      inv_cs = mkMatchPlacementConstraints g
+      inv_cs = mkPlaceAtEntryBlockConstraints g
                ++
                mkFallThroughConstraints 2
       pats = [ InstrPattern
@@ -746,7 +746,7 @@ mkBrInstrs =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      cs = mkMatchPlacementConstraints g
+      cs = mkPlaceAtEntryBlockConstraints g
       pat =
         InstrPattern
           { patID = 0
@@ -799,7 +799,7 @@ mkRetInstrs =
                 Edge
                 [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 ) ]
             )
-      bb_cs n = mkMatchPlacementConstraints (g n)
+      bb_cs n = mkPlaceAtEntryBlockConstraints (g n)
       reg_cs  = mkNewDataLocConstraints [locID getRetRegister] 2
       pat n str =
         InstrPattern
@@ -812,7 +812,7 @@ mkRetInstrs =
         InstrPattern
           { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1)
-                    (mkMatchPlacementConstraints vg)
+                    (mkPlaceAtEntryBlockConstraints vg)
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
           }

@@ -14,12 +14,12 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addMatchPlacementConstraints
+  ( addPlaceAtEntryBlockConstraints
   , addFallThroughConstraints
   , addNewDataLocConstraints
   , addSameDataLocConstraints
   , addNoDataReuseConstraints
-  , mkMatchPlacementConstraints
+  , mkPlaceAtEntryBlockConstraints
   , mkFallThroughConstraints
   , mkNewDataLocConstraints
   , mkSameDataLocConstraints
@@ -41,16 +41,16 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Creates constraints using 'mkMatchPlacementConstraints' and adds
+-- | Creates constraints using 'mkPlaceAtEntryBlockConstraints' and adds
 -- these (if any) to the given 'OpStructure'.
-addMatchPlacementConstraints :: OpStructure -> OpStructure
-addMatchPlacementConstraints os =
-  addConstraints os (mkMatchPlacementConstraints $ osGraph os)
+addPlaceAtEntryBlockConstraints :: OpStructure -> OpStructure
+addPlaceAtEntryBlockConstraints os =
+  addConstraints os (mkPlaceAtEntryBlockConstraints $ osGraph os)
 
 -- | Creates constraints for a pattern graph such that the match must be placed
 -- in entry block of the pattern graph (if it has such a block).
-mkMatchPlacementConstraints :: Graph -> [Constraint]
-mkMatchPlacementConstraints g =
+mkPlaceAtEntryBlockConstraints :: Graph -> [Constraint]
+mkPlaceAtEntryBlockConstraints g =
   let entry_block = rootInCFG $ extractCFG g
   in if isJust entry_block
      then [ BoolExprConstraint

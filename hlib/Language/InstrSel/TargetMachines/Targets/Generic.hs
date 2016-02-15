@@ -165,7 +165,7 @@ mkGenericBrFallThroughInstructions =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      bb_alloc_cs = mkMatchPlacementConstraints g
+      bb_alloc_cs = mkPlaceAtEntryBlockConstraints g
       fallthrough_cs = mkFallThroughConstraints 2
       cs = bb_alloc_cs ++ fallthrough_cs
       pat =
@@ -201,8 +201,8 @@ mkGenericDataDefInstructions =
                 )
       g1 = mkPatternGraph mkGenericValueNodeType
       g2 = mkPatternGraph StateNode
-      cs1 = mkMatchPlacementConstraints g1
-      cs2 = mkMatchPlacementConstraints g2
+      cs1 = mkPlaceAtEntryBlockConstraints g1
+      cs2 = mkPlaceAtEntryBlockConstraints g2
       mkInstrPattern pid g cs =
         InstrPattern
           { patID = pid

@@ -118,24 +118,24 @@ theTM =
               ]
           )
       init_def_pattern_os =
-        addMatchPlacementConstraints
+        addPlaceAtEntryBlockConstraints
         $ OpStructure init_def_pattern (Just 0) []
       add_pattern_os =
-        addMatchPlacementConstraints
+        addPlaceAtEntryBlockConstraints
         $ OpStructure add_pattern Nothing []
       bnz_pattern_os =
-        addMatchPlacementConstraints
+        addPlaceAtEntryBlockConstraints
         $ OpStructure  bnz_pattern (Just 1) []
       br_pattern_os =
-        addMatchPlacementConstraints $ OpStructure br_pattern (Just 0) []
+        addPlaceAtEntryBlockConstraints $ OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
-        addMatchPlacementConstraints
+        addPlaceAtEntryBlockConstraints
         $ addFallThroughConstraints 1
         $ OpStructure br_fallthrough_pattern
                       (Just 0)
                       []
       ret_pattern_os =
-        addMatchPlacementConstraints $ OpStructure ret_pattern (Just 1) []
+        addPlaceAtEntryBlockConstraints $ OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
                   0
                   [ InstrPattern
