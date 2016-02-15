@@ -701,13 +701,13 @@ findNodesWithNodeID g i = filter ((i ==) . getNodeID) $ getAllNodes g
 findValueNodesWithOrigin :: Graph -> String -> [Node]
 findValueNodesWithOrigin g o =
   let vs = filter isValueNodeWithOrigin $ getAllNodes g
-  in filter (\n -> (fromJust $ getOriginOfValueNode n) == o) vs
+  in filter ((==) o . fromJust . getOriginOfValueNode) vs
 
 -- | Gets a list of block nodes with the same name.
 findBlockNodesWithName :: Graph -> BlockName -> [Node]
 findBlockNodesWithName g name =
-  let vs = filter isBlockNode $ getAllNodes g
-  in filter (\n -> (getNameOfBlockNode n) == name) vs
+  let bs = filter isBlockNode $ getAllNodes g
+  in filter ((==) name . getNameOfBlockNode) bs
 
 -- | Updates the data type of an already existing value node.
 updateDataTypeOfValueNode :: D.DataType -> Node -> Graph -> Graph
