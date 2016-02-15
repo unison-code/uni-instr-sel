@@ -23,6 +23,7 @@ where
 
 import qualified Language.InstrSel.Constraints as C
   ( Constraint )
+import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
@@ -463,8 +464,9 @@ mkPatternCFGFromBrOrFallCall
                                  G.ControlFlowEdge
                                  br_node
                                  [t_dst_node, f_dst_node]
-      -- TODO: add constraint for fall-through branch
-  in st4
+      st5 = addConstraints st4
+            $ C.mkFallThroughConstraints (G.getNodeID f_dst_node)
+  in st5
 mkPatternCFGFromBrOrFallCall _ _ i =
   error $ "mkPatternCFGFromBrOrFallCall: not implemented for " ++ show i
 
