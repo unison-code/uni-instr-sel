@@ -299,16 +299,13 @@ reportTask "Extending low-level model"
 exe "$THIS_DIR/size-extender $JSON_INPUT_FILEPATH > $JSON_EXT_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT_FILEPATH
-exe "sicstus -f --nologo --noinfo --goal extend_and_halt." \
-    " -l $THIS_DIR/extender.pl < $JSON_EXT_FILEPATH" \
+exe "$THIS_DIR/constraints-converter $JSON_EXT_FILEPATH" \
     " > $JSON_EXT2_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT2_FILEPATH
 
 reportTask "Generating MiniZinc parameter file"
-exe "sicstus -f --nologo --noinfo --goal convert_and_halt." \
-    " -l $THIS_DIR/json2params.pl < $JSON_EXT2_FILEPATH" \
-    " > $MINIZINC_PARAMS_FILEPATH"
+exe "$THIS_DIR/json2params $JSON_EXT2_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
 exitIfFailed
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
