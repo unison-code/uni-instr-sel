@@ -110,8 +110,9 @@ function reportWarning {
 }
 
 function reportTask {
+    msg=`echo "$@" | tr [a-z] [A-Z]`
     echo
-    echo "* $@..."
+    echo "* $msg..."
 }
 
 function reportNewEntity {
