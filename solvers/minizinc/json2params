@@ -1,0 +1,271 @@
+#!/usr/bin/python
+
+# Copyright (c) 2013-2015, Gabriel Hjort Blindell <ghb@kth.se>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+VT_PLAIN = 0
+VT_ARRAY1D = 1
+VT_ARRAY2D = 2
+VT_SET = 3
+VC_AS_IS = 0
+VC_SET = 1
+VC_SINGLETON = 2
+def dumpParams(
+    json,
+    var_name,
+    var_type = VT_PLAIN,
+    var_range = "",
+    var_conv = VC_AS_IS
+):
+    sys.stdout.write(var_name)
+    sys.stdout.write(" = ")
+    if var_type == VT_PLAIN:
+        sys.stdout.write(convData(json, var_conv))
+    elif var_type == VT_ARRAY1D:
+        sys.stdout.write("array1d(")
+        sys.stdout.write(var_range)
+        sys.stdout.write(", [")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("])")
+    elif var_type == VT_ARRAY2D:
+        sys.stdout.write("[")
+        for d in json:
+            sys.stdout.write("|")
+            for e in d:
+                sys.stdout.write(convData(e, var_conv) + ", ")
+        sys.stdout.write("|]")
+    elif var_type == VT_SET:
+        sys.stdout.write("{")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("}")
+    else:
+        error("unknown variable type")
+    sys.stdout.write(";")
+    print
+    print
+
+def convData(d, var_conv):
+    if var_conv == VC_SET:
+        return "{" + ", ".join([ str(e) for e in d ]) + "}"
+    elif var_conv == VC_SINGLETON:
+        if d is None:
+            return "{}"
+        else:
+            return "{" + str(d) + "}"
+    else:
+        return str(d)
+
+def fixLocationValues(lst):
+    new_lst = []
+    for l in lst:
+        new_l = []
+        for v in l:
+            if v is None:
+                new_l.append("locValueForNull")
+            else:
+                new_l.append(v)
+        new_lst.append(new_l)
+    return new_lst
+
+def convert2Bool(lst):
+    new_lst = []
+    for l in lst:
+        if l == True:
+            new_lst.append("true")
+        else:
+            new_lst.append("false")
+    return new_lst
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check files
+if len(sys.argv) < 2:
+    sys.stderr.write("No JSON file given\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    sys.stderr.write("Too many arguments\n")
+    sys.exit(1)
+json_file = sys.argv[1]
+if not os.path.isfile(json_file):
+    error("JSON file '" + json_file +"' not found")
+
+# Read JSON file
+json_data = []
+with open(json_file, 'r') as file:
+    json_data = json.load(file)
+
+
+# Dump parameters
+dumpParams( json_data["fun-block-dom-sets"]
+          , "domSetOfBlockInFunction"
+          , VT_ARRAY1D
+          , "allBlocksInFunction"
+          , VC_SET
+          )
+dumpParams( json_data["fun-block-exec-freqs"]
+          , "execFrequencyOfBlockInFunction"
+          , VT_ARRAY1D
+          , "allBlocksInFunction"
+          )
+dumpParams( json_data["fun-def-edges"]
+          , "defEdgesForBlockInFunction"
+          , VT_ARRAY1D
+          , "allBlocksInFunction"
+          , VC_SET
+          )
+dumpParams( json_data["fun-entry-block"]
+          , "entryBlockOfFunction"
+          )
+dumpParams( json_data["fun-loc-domain"]
+          , "funLocDomain"
+          , VT_ARRAY2D
+          )
+dumpParams( json_data["fun-num-blocks"]
+          , "numBlocksInFunction"
+          )
+dumpParams( json_data["fun-num-data"]
+          , "numDataInFunction"
+          )
+dumpParams( json_data["fun-num-operations"]
+          , "numOperationsInFunction"
+          )
+dumpParams( json_data["fun-states"]
+          , "statesInFunction"
+          )
+dumpParams( json_data["in-block"]
+          , "inBlock"
+          , VT_ARRAY2D
+          )
+dumpParams( json_data["in-block-succ"]
+          , "inBlockSucc"
+          , VT_ARRAY2D
+          )
+dumpParams( fixLocationValues(json_data["loc-domain"])
+          , "locDomain"
+          , VT_ARRAY2D
+          )
+dumpParams( convert2Bool(json_data["match-adduc-settings"])
+          , "applyDefDomUseConstraintForMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          )
+dumpParams( json_data["match-code-sizes"]
+          , "codeSizeOfMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          )
+dumpParams( json_data["match-consumed-blocks"]
+          , "consumedBlocksInMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-data-defined"]
+          , "dataDefinedByMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-data-used"]
+          , "dataUsedByMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-entry-blocks"]
+          , "entryBlockOfMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SINGLETON
+          )
+dumpParams( json_data["match-latencies"]
+          , "latencyOfMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          )
+dumpParams( json_data["match-non-copy-instrs"]
+          , "nonCopyMatches"
+          , VT_SET
+          )
+dumpParams( json_data["match-null-copy-instrs"]
+          , "nullCopyMatches"
+          , VT_SET
+          )
+dumpParams( json_data["match-operations-covered"]
+          , "operationsCoveredByMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-spanned-blocks"]
+          , "spannedBlocksInMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["num-locations"]
+          , "numLocations"
+          )
+dumpParams( json_data["num-matches"]
+          , "numMatches"
+          )
+dumpParams( json_data["same-loc"]
+          , "sameLoc"
+          , VT_ARRAY2D
+          )
+dumpParams( json_data["matches-by-size"]
+          , "allMatchesBySize"
+          , VT_ARRAY1D
+          , "allMatches"
+          )
+
+# TODO: dump constraints
+#dumpParams(json_data["fun-constraints"], void, void)
+#dumpParams(json_data["match-constraints"], void, void)
