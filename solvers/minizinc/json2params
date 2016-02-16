@@ -33,6 +33,7 @@
 import json
 import os.path
 import sys
+from pyparsing import OneOrMore, nestedExpr
 
 
 
@@ -118,6 +119,137 @@ def convert2Bool(lst):
         else:
             new_lst.append("false")
     return new_lst
+
+def convert2Lisp(s):
+    l = OneOrMore(nestedExpr()).parseString(s)
+    if len(l) != 1:
+        error("more than one lisp expression")
+    return l[0]
+
+def convertConstraint(l):
+    def fromConstraint(l):
+        return fromBoolExpr(l)
+
+    def fromBoolExpr(l):
+        op = l[0]
+        bin_num_maps = [ ("==", " == ")
+                       , ("!=", " != ")
+                       , (">" , " > ")
+                       , (">=", " >= ")
+                       , ("<" , " < ")
+                       , ("<=", " <= ")
+                       ]
+        bin_bool_maps = [ ("<->", " <-> ")
+                        , ("->", " -> ")
+                        , ("&&" , " /\\ ")
+                        , ("||", " \\/ ")
+                        ]
+        if op in [ x[0] for x in bin_num_maps ]:
+            i = [ x[0] for x in bin_num_maps ].index(op)
+            return ( "("
+                   + fromNumExpr(l[1]) + bin_num_maps[i][1] + fromNumExpr(l[2])
+                   + ")"
+                   )
+        elif op == "!":
+            return "not " + fromBoolExpr(l[1])
+        elif op in [ x[0] for x in bin_bool_maps ]:
+            i = [ x[0] for x in bool_num_maps ].index(op)
+            return ( "("
+                   + fromBoolExpr(l[1]) + bin_num_maps[i][1]
+                   + fromBoolExpr(l[2])
+                   + ")"
+                   )
+        elif op == "in-set":
+            return fromSetElemExpr(l[1]) + " in " + fromSetExpr(l[2])
+        elif op == "fall-through":
+            return ("fall_through(" + fromMatchExpr(l[1]) + ", "
+                   + fromBlockExpr(l[2]) + ")"
+                   )
+        else:
+            error("unknown Boolean expression: " + str(l))
+
+    def fromNumExpr(l):
+        op = l[0]
+        bin_arith_maps = [ ("+", " + ")
+                         , ("-", " - ")
+                         ]
+        if op in [ x[0] for x in bin_arith_maps ]:
+            i = [ x[0] for x in bin_arith_maps ].index(op)
+            return ( "("
+                   + fromNumExpr(l[1]) + bin_arith_maps[i][1]
+                   + fromNumExpr(l[2])
+                   + ")"
+                   )
+        elif op == "int-to-num":
+            return fromIntExpr(l[1])
+        elif op == "bool-to-num":
+            return "bool2int(" + fromBoolExpr(l[1]) + ")"
+        elif op == "node-to-num":
+            return fromNodeExpr(l[1])
+        elif op == "match-to-num":
+            return fromMatchExpr(l[1])
+        elif op == "instr-to-num":
+            return fromInstrExpr(l[1])
+        elif op == "block-to-num":
+            return fromBlockExpr(l[1])
+        elif op == "loc-to-num":
+            return fromLocExpr(l[1])
+        else:
+            error("unknown numeric expression: " + str(l))
+
+    def fromSetElemExpr(l):
+        op = l[0]
+        if op == "block-to-set-elem":
+            return fromBlockExpr(l[1])
+        elif op == "loc-to-set-elem":
+            return fromLocExpr(l[1])
+        else:
+            error("unknown set element expression: " + str(l))
+
+    def fromSetExpr(l):
+        op = l[0]
+        bin_set_maps = [ ("union"    , " union ")
+                       , ("intersect", " intersect ")
+                       , ("diff"     , " diff ")
+                       ]
+        if op in [ x[0] for x in bin_set_maps ]:
+            i = [ x[0] for x in bin_set_maps ].index(op)
+            return ( "("
+                   + fromSetExpr(l[1]) + bin_set_maps[i][1]
+                   + fromSetExpr(l[2])
+                   + ")"
+                   )
+        elif op == "loc-class":
+            return ( "{"
+                   + ", ".join([ fromLocExpr(e) for e in l[1] ])
+                   + "}"
+                   )
+        else:
+            error("unknown set expression: " + str(l))
+        s = s + ")"
+        return s
+
+    def fromMatchExpr(l):
+        # TODO: implement
+        return "?"
+
+    def fromBlockExpr(l):
+        # TODO: implement
+        return "?"
+
+    def fromIntExpr(l):
+        # TODO: implement
+        return "?"
+
+    def fromNodeExpr(l):
+        # TODO: implement
+        return "?"
+
+    def fromLocExpr(l):
+        # TODO: implement
+        return "?"
+
+    return fromConstraint(l)
 
 
 
@@ -266,6 +398,14 @@ dumpParams( json_data["matches-by-size"]
           , "allMatches"
           )
 
-# TODO: dump constraints
-#dumpParams(json_data["fun-constraints"], void, void)
-#dumpParams(json_data["match-constraints"], void, void)
+# Dump constraints
+for c in json_data["fun-constraints"]:
+    sys.stdout.write("constraint\n")
+    print convertConstraint(convert2Lisp(c))
+print
+for m in range(len(json_data["match-constraints"])):
+    for c in json_data["match-constraints"][m]:
+        sys.stdout.write("constraint\n")
+        sys.stdout.write("sel[" + str(m) + "] -> ")
+        print convertConstraint(convert2Lisp(c))
+    print
