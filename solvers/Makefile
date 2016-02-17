@@ -63,8 +63,7 @@
 #===================
 
 # The paths (including file) to the program binaries to build
-PROGRAMS := gecode/solver           \
-            minizinc/mzn-params-gen
+PROGRAMS := gecode/solver
 
 # Defines the application modules for the Gecode solver
 MODULES!gecode/solver := \
@@ -73,12 +72,6 @@ MODULES!gecode/solver := \
     ../clib/common/model      \
     ../clib/common/utils      \
     gecode
-MODULES!minizinc/mzn-params-gen := \
-    ../clib/common/exceptions \
-    ../clib/common/json       \
-    ../clib/common/model      \
-    ../clib/common/utils      \
-    minizinc
 
 
 
