@@ -487,11 +487,6 @@ test is_dominated(int: m2) =
 
 Dominated = {m | m in allMatches where is_dominated(m)};
 
-% constraint
-%   trace("% Dominated = "++show(Dominated)++"\n",
-%     forall(d in Dominated)(not sel[d])
-%   );
-
 
 
 %==================
