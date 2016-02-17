@@ -153,6 +153,19 @@ include "table.mzn";
 
 
 
+%===========
+% PREDICATES
+%===========
+
+% Fall-through constraint: the block wherein match m is placed must be
+% immediately followed by block b.
+predicate fall_through(int: m, int: b) =
+(
+  succ[place[m]] = b
+);
+
+
+
 %============
 % CONSTRAINTS
 %============
