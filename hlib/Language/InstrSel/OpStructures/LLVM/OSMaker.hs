@@ -535,8 +535,7 @@ mkFunctionDFGFromInstruction
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkFunctionDFGFromInstruction b st (LLVM.Add  nsw nuw op1 op2 _) =
-  -- TODO: make use of nsw and nuw?
+mkFunctionDFGFromInstruction b st (LLVM.Add _ _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
@@ -548,8 +547,7 @@ mkFunctionDFGFromInstruction b st (LLVM.FAdd _ op1 op2 _) =
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.FloatOp Op.Add)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.Sub  nsw nuw op1 op2 _) =
-  -- TODO: make use of nsw and nuw?
+mkFunctionDFGFromInstruction b st (LLVM.Sub _ _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
@@ -561,8 +559,7 @@ mkFunctionDFGFromInstruction b st (LLVM.FSub _ op1 op2 _) =
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.FloatOp Op.Sub)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.Mul nsw nuw op1 op2 _) =
-  -- TODO: make use of nsw and nuw?
+mkFunctionDFGFromInstruction b st (LLVM.Mul _ _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
@@ -574,15 +571,13 @@ mkFunctionDFGFromInstruction b st (LLVM.FMul _ op1 op2 _) =
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.FloatOp Op.Mul)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.UDiv exact op1 op2 _) =
-  -- TODO: make use of exact?
+mkFunctionDFGFromInstruction b st (LLVM.UDiv _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.UIntOp Op.Div)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.SDiv exact op1 op2 _) =
-  -- TODO: make use of exact?
+mkFunctionDFGFromInstruction b st (LLVM.SDiv _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
@@ -612,22 +607,19 @@ mkFunctionDFGFromInstruction b st (LLVM.FRem _ op1 op2 _) =
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.FloatOp Op.Rem)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.Shl nsw nuw op1 op2 _) =
-  -- TODO: make use of nsw and nuw?
+mkFunctionDFGFromInstruction b st (LLVM.Shl _ _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.IntOp Op.Shl)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.LShr exact op1 op2 _) =
-  -- TODO: make use of exact?
+mkFunctionDFGFromInstruction b st (LLVM.LShr _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
                           (Op.CompArithOp $ Op.IntOp Op.LShr)
                           [op1, op2]
-mkFunctionDFGFromInstruction b st (LLVM.AShr exact op1 op2 _) =
-  -- TODO: make use of exact?
+mkFunctionDFGFromInstruction b st (LLVM.AShr _ op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
                           (toTempDataType op1)
