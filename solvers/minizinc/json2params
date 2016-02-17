@@ -84,9 +84,7 @@ def dumpParams(
         sys.stdout.write("}")
     else:
         error("unknown variable type")
-    sys.stdout.write(";")
-    print
-    print
+    sys.stdout.write(";\n\n")
 
 def convData(d, var_conv):
     if var_conv == VC_SET:
@@ -166,7 +164,7 @@ def convertConstraint(l):
                    + fromBlockExpr(l[2]) + ")"
                    )
         else:
-            error("unknown Boolean expression: " + str(l))
+            error("unknown bool expression: " + l)
 
     def fromNumExpr(l):
         op = l[0]
@@ -195,7 +193,7 @@ def convertConstraint(l):
         elif op == "loc-to-num":
             return fromLocExpr(l[1])
         else:
-            error("unknown numeric expression: " + str(l))
+            error("unknown num expression: " + l)
 
     def fromSetElemExpr(l):
         op = l[0]
@@ -204,7 +202,7 @@ def convertConstraint(l):
         elif op == "loc-to-set-elem":
             return fromLocExpr(l[1])
         else:
-            error("unknown set element expression: " + str(l))
+            error("unknown set-elem expression: " + l)
 
     def fromSetExpr(l):
         op = l[0]
@@ -225,29 +223,56 @@ def convertConstraint(l):
                    + "}"
                    )
         else:
-            error("unknown set expression: " + str(l))
+            error("unknown set expression: " + l)
         s = s + ")"
         return s
 
     def fromMatchExpr(l):
-        # TODO: implement
-        return "?"
+        op = l[0]
+        if op == "ai":
+            return l[1]
+        elif l == "this":
+            error("'this' match expressions not allowed")
+        else:
+            error("unknown match expression: " + l)
 
     def fromBlockExpr(l):
-        # TODO: implement
-        return "?"
+        op = l[0]
+        if op == "block-wherein-match-is-placed":
+            return "place[" + fromMatchExpr(l[1]) + "]"
+        elif op == "block-of-bnode":
+            return fromNodeExpr(l[1])
+        else:
+            error("unknown block expression: " + l)
 
     def fromIntExpr(l):
-        # TODO: implement
-        return "?"
+        op = l[0]
+        if op == "int":
+            return l[1]
+        else:
+            error("unknown int expression: " + l)
 
     def fromNodeExpr(l):
-        # TODO: implement
-        return "?"
+        op = l[0]
+        if op == "ai":
+            return l[1]
+        elif op == "id":
+            error("'id' node expressions not allowed")
+        else:
+            error("unknown node expression: " + l)
 
     def fromLocExpr(l):
-        # TODO: implement
-        return "?"
+        op = l[0]
+        if op == "ai":
+            return l[1]
+        elif l == "id":
+            error("'id' loc expressions not allowed")
+        elif op == "loc-of-dnode":
+            return "loc[" + fromNodeExpr(l[1]) + "]"
+        elif l == "null":
+            return "locValueForNull"
+        else:
+            error("unknown loc expression: " + l)
 
     return fromConstraint(l)
 
@@ -401,11 +426,13 @@ dumpParams( json_data["matches-by-size"]
 # Dump constraints
 for c in json_data["fun-constraints"]:
     sys.stdout.write("constraint\n")
-    print convertConstraint(convert2Lisp(c))
-print
+    sys.stdout.write(convertConstraint(convert2Lisp(c)))
+    sys.stdout.write(";\n")
+sys.stdout.write("\n")
 for m in range(len(json_data["match-constraints"])):
     for c in json_data["match-constraints"][m]:
         sys.stdout.write("constraint\n")
         sys.stdout.write("sel[" + str(m) + "] -> ")
-        print convertConstraint(convert2Lisp(c))
-    print
+        sys.stdout.write(convertConstraint(convert2Lisp(c)))
+        sys.stdout.write(";\n")
+    sys.stdout.write("\n")
