@@ -71,11 +71,12 @@ def dumpParams(
         sys.stdout.write(lst)
         sys.stdout.write("])")
     elif var_type == VT_ARRAY2D:
-        sys.stdout.write("[")
+        sys.stdout.write("[|")
+        rows = []
         for d in json:
-            sys.stdout.write("|")
-            for e in d:
-                sys.stdout.write(convData(e, var_conv) + ", ")
+            rows.append(", ".join([ convData(e, var_conv) for e in d ]))
+        s = ", |".join(rows)
+        sys.stdout.write(s)
         sys.stdout.write("|]")
     elif var_type == VT_SET:
         sys.stdout.write("{")
