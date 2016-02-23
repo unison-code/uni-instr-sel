@@ -31,7 +31,7 @@
 UNIDISTPATH := dist
 SOLVERSPATH := solvers
 TOOLSPATH   := tools
-NUMCORES    := 4
+NUMCORES    := `grep -c ^processor /proc/cpuinfo`
 
 
 
