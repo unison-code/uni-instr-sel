@@ -52,6 +52,7 @@ import Language.InstrSel.TargetMachines
   , findInstruction
   , findInstrPattern
   )
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset )
 import Language.InstrSel.TargetMachines.Targets
@@ -142,7 +143,7 @@ loadTargetMachine :: TargetMachineID -> IO TargetMachine
 loadTargetMachine tid =
   do let target = retrieveTargetMachine tid
      when (isNothing target) $
-       reportErrorAndExit $ "Unrecognized target machine: " ++ (show tid)
+       reportErrorAndExit $ "Unrecognized target machine: " ++ (pShow tid)
      return $ fromJust target
 
 -- | Returns the instruction pattern with given ID. Reports error if no such
@@ -155,14 +156,14 @@ loadInstrPattern
 loadInstrPattern tm iid pid =
   do let instr = findInstruction (tmInstructions tm) iid
      when (isNothing instr) $
-       reportErrorAndExit $ "No instruction with ID '" ++ (show iid)
-                            ++ "' in target machine '" ++ (show $ tmID tm)
+       reportErrorAndExit $ "No instruction with ID '" ++ (pShow iid)
+                            ++ "' in target machine '" ++ (pShow $ tmID tm)
                             ++ "'"
      let pattern = findInstrPattern (instrPatterns $ fromJust instr) pid
      when (isNothing pattern) $
-       reportErrorAndExit $ "No pattern with ID '" ++ (show pid)
-                            ++ "' in instruction '" ++ (show iid) ++ "'"
-                            ++ "' in target machine '" ++ (show $ tmID tm)
+       reportErrorAndExit $ "No pattern with ID '" ++ (pShow pid)
+                            ++ "' in instruction '" ++ (pShow iid) ++ "'"
+                            ++ "' in target machine '" ++ (pShow $ tmID tm)
                             ++ "'"
      return $ fromJust pattern
 

@@ -20,6 +20,7 @@ import UniIS.Drivers.Base
 import Language.InstrSel.Functions
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.PatternMatching
 
 import Language.InstrSel.Graphs.GraphViz
@@ -49,11 +50,11 @@ run PlotCoverPerMatch function matchset =
      mapM
        ( \m ->
           do dot <- mkCoveragePlot function [pmMatch m]
-             let oid = "m" ++ show (pmMatchID m)
+             let oid = "m" ++ pShow (pmMatchID m)
                        ++ "-" ++
-                       "i" ++ show (pmInstrID m)
+                       "i" ++ pShow (pmInstrID m)
                        ++ "-" ++
-                       "p" ++ show (pmPatternID m)
+                       "p" ++ pShow (pmPatternID m)
              return $ toOutput oid dot
        )
        matches

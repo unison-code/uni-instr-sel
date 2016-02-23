@@ -89,6 +89,9 @@ newtype TargetMachineID
   = TargetMachineID String
   deriving (Show, Eq)
 
+instance PrettyShow TargetMachineID where
+  pShow (TargetMachineID i) = i
+
 
 
 -------------------------------------
