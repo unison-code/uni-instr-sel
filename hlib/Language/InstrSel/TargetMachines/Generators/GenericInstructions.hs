@@ -143,9 +143,7 @@ mkBrFallThroughInstruction =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      bb_alloc_cs = mkPlaceAtEntryBlockConstraints g
-      fallthrough_cs = mkFallThroughConstraints 2
-      cs = bb_alloc_cs ++ fallthrough_cs
+      cs = mkPlaceAtEntryBlockConstraints g ++ mkFallThroughConstraints 2
       pat =
         InstrPattern
           { patID = 0
