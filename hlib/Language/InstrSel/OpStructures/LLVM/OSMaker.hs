@@ -455,7 +455,6 @@ mkPatternCFGFromBrOrFallCall
   let t_label = "%" ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
       st1 = mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
       br_node = fromJust $ lastTouchedNode st1
-
       st2 = ensureBlockNodeExists st1 $ F.toBlockName t_label
       t_dst_node = fromJust $ lastTouchedNode st2
       st3 = ensureBlockNodeExists st2 F.mkEmptyBlockName
