@@ -31,6 +31,7 @@
 UNIDISTPATH := dist
 SOLVERSPATH := solvers
 TOOLSPATH   := tools
+NUMCORES    := 4
 
 
 
@@ -48,7 +49,7 @@ docs: uni-is-doc uni-targen-doc
 uni-is:
 	$(RM) *.cabal
 	ln -s uni-is.cabal.package uni-is.cabal
-	cabal install
+	cabal install -j$(NUMCORES)
 	rm uni-is.cabal
 	cd $(SOLVERSPATH) && make
 	cd $(TOOLSPATH) && make
@@ -65,7 +66,7 @@ uni-is-doc:
 uni-targen:
 	$(RM) *.cabal
 	ln -s uni-targen.cabal.package uni-targen.cabal
-	cabal install
+	cabal install -j$(NUMCORES)
 	rm uni-targen.cabal
 
 .PHONY: uni-targen-doc
