@@ -31,7 +31,7 @@
 #=========
 
 import json
-import lispparser
+import sexparser
 import os.path
 import sys
 
@@ -119,8 +119,8 @@ def convert2Bool(lst):
             new_lst.append("false")
     return new_lst
 
-def parseLisp(s):
-    return lispparser.parse(s)
+def parseSexpr(s):
+    return sexparser.parse(s)
 
 def convertConstraint(l):
     def fromConstraint(l):
@@ -423,7 +423,7 @@ dumpParams( json_data["matches-by-size"]
 # Dump constraints
 for c in json_data["fun-constraints"]:
     sys.stdout.write("constraint\n")
-    sys.stdout.write(convertConstraint(parseLisp(c)))
+    sys.stdout.write(convertConstraint(parseSexpr(c)))
     sys.stdout.write(";\n")
 sys.stdout.write("\n")
 for m in range(len(json_data["match-constraints"])):
@@ -433,6 +433,6 @@ for m in range(len(json_data["match-constraints"])):
     for c in cs:
         sys.stdout.write("constraint\n")
         sys.stdout.write("sel[" + str(m) + "] -> ")
-        sys.stdout.write(convertConstraint(parseLisp(c)))
+        sys.stdout.write(convertConstraint(parseSexpr(c)))
         sys.stdout.write(";\n")
     sys.stdout.write("\n")
