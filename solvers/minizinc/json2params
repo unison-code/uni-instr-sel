@@ -31,9 +31,9 @@
 #=========
 
 import json
+import lispparser
 import os.path
 import sys
-from pyparsing import OneOrMore, nestedExpr
 
 
 
@@ -119,11 +119,8 @@ def convert2Bool(lst):
             new_lst.append("false")
     return new_lst
 
-def convert2Lisp(s):
-    l = OneOrMore(nestedExpr()).parseString(s)
-    if len(l) != 1:
-        error("more than one lisp expression")
-    return l[0]
+def parseLisp(s):
+    return lispparser.parse(s)
 
 def convertConstraint(l):
     def fromConstraint(l):
@@ -165,7 +162,7 @@ def convertConstraint(l):
                    + fromBlockExpr(l[2]) + ")"
                    )
         else:
-            error("unknown bool expression: " + l)
+            error("unknown bool expression: " + str(l))
 
     def fromNumExpr(l):
         op = l[0]
@@ -194,7 +191,7 @@ def convertConstraint(l):
         elif op == "loc-to-num":
             return fromLocExpr(l[1])
         else:
-            error("unknown num expression: " + l)
+            error("unknown num expression: " + str(l))
 
     def fromSetElemExpr(l):
         op = l[0]
@@ -203,7 +200,7 @@ def convertConstraint(l):
         elif op == "loc-to-set-elem":
             return fromLocExpr(l[1])
         else:
-            error("unknown set-elem expression: " + l)
+            error("unknown set-elem expression: " + str(l))
 
     def fromSetExpr(l):
         op = l[0]
@@ -224,18 +221,18 @@ def convertConstraint(l):
                    + "}"
                    )
         else:
-            error("unknown set expression: " + l)
+            error("unknown set expression: " + str(l))
         s = s + ")"
         return s
 
     def fromMatchExpr(l):
         op = l[0]
         if op == "ai":
-            return l[1]
+            return str(l[1])
         elif l == "this":
             error("'this' match expressions not allowed")
         else:
-            error("unknown match expression: " + l)
+            error("unknown match expression: " + str(l))
 
     def fromBlockExpr(l):
         op = l[0]
@@ -244,28 +241,28 @@ def convertConstraint(l):
         elif op == "block-of-bnode":
             return fromNodeExpr(l[1])
         else:
-            error("unknown block expression: " + l)
+            error("unknown block expression: " + str(l))
 
     def fromIntExpr(l):
         op = l[0]
         if op == "int":
-            return l[1]
+            return str(l[1])
         else:
-            error("unknown int expression: " + l)
+            error("unknown int expression: " + str(l))
 
     def fromNodeExpr(l):
         op = l[0]
         if op == "ai":
-            return l[1]
+            return str(l[1])
         elif op == "id":
             error("'id' node expressions not allowed")
         else:
-            error("unknown node expression: " + l)
+            error("unknown node expression: " + str(l))
 
     def fromLocExpr(l):
         op = l[0]
         if op == "ai":
-            return l[1]
+            return str(l[1])
         elif l == "id":
             error("'id' loc expressions not allowed")
         elif op == "loc-of-dnode":
@@ -273,7 +270,7 @@ def convertConstraint(l):
         elif l == "null":
             return "locValueForNull"
         else:
-            error("unknown loc expression: " + l)
+            error("unknown loc expression: " + str(l))
 
     return fromConstraint(l)
 
@@ -426,7 +423,7 @@ dumpParams( json_data["matches-by-size"]
 # Dump constraints
 for c in json_data["fun-constraints"]:
     sys.stdout.write("constraint\n")
-    sys.stdout.write(convertConstraint(convert2Lisp(c)))
+    sys.stdout.write(convertConstraint(parseLisp(c)))
     sys.stdout.write(";\n")
 sys.stdout.write("\n")
 for m in range(len(json_data["match-constraints"])):
@@ -436,6 +433,6 @@ for m in range(len(json_data["match-constraints"])):
     for c in cs:
         sys.stdout.write("constraint\n")
         sys.stdout.write("sel[" + str(m) + "] -> ")
-        sys.stdout.write(convertConstraint(convert2Lisp(c)))
+        sys.stdout.write(convertConstraint(parseLisp(c)))
         sys.stdout.write(";\n")
     sys.stdout.write("\n")

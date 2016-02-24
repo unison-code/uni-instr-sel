@@ -31,9 +31,9 @@
 #=========
 
 import json
+import lispparser
 import os.path
 import sys
-from pyparsing import OneOrMore, nestedExpr
 
 
 
@@ -45,11 +45,8 @@ def error(msg):
     sys.stderr.write("ERROR: " + msg + "\n")
     sys.exit(1)
 
-def convert2Lisp(s):
-    l = OneOrMore(nestedExpr()).parseString(s)
-    if len(l) != 1:
-        error("more than one lisp expression")
-    return l[0]
+def parseLisp(s):
+    return lispparser.parse(s)
 
 # Takes a lisp object and checks if it corresponds to a 'loc-domain'
 # parameter. If so, the corresponding JSON data is returned; otherwise 'None' is
@@ -119,7 +116,7 @@ if len(sys.argv) > 2:
     sys.exit(1)
 json_file = sys.argv[1]
 if not os.path.isfile(json_file):
-    error("JSON file '" + json_file +"' not found")
+    error("JSON file '" + json_file + "' not found")
 
 # Read JSON file
 json_data = []
@@ -133,7 +130,7 @@ params = []
 for i in range(len(json_m_cons)):
     new_constraints = []
     for c in json_m_cons[i]:
-        l = convert2Lisp(c)
+        l = parseLisp(c)
         if ( len(l) == 3 and l[0] == "=="
              and len(l[1]) == 2 and l[1][0] == "loc-to-num"
              and len(l[1][1]) == 2 and l[1][1][0] == "loc-of-dnode"
@@ -153,7 +150,7 @@ params = []
 for i in range(len(json_m_cons)):
     new_constraints = []
     for c in json_m_cons[i]:
-        l = convert2Lisp(c)
+        l = parseLisp(c)
         if ( len(l) == 3 and l[0] == "=="
              and len(l[1]) == 2 and l[1][0] == "block-to-num"
              and len(l[1][1]) == 2 and l[1][1][0] == "block-of-bnode"
@@ -185,7 +182,7 @@ for i in range(len(json_m_cons)):
     new_constraints = []
     for c in json_m_cons[i]:
         is_c_obsolete = False
-        l = convert2Lisp(c)
+        l = parseLisp(c)
         if ( len(l) == 3 and l[0] == "fall-through"
              and len(l[1]) == 2 and l[1][0] == "ai"
              and len(l[2]) == 2 and l[2][0] == "block-of-bnode"
@@ -210,7 +207,7 @@ params = []
 for i in range(len(json_m_cons)):
     new_constraints = []
     for c in json_m_cons[i]:
-        l = convert2Lisp(c)
+        l = parseLisp(c)
         res = convert2LocDomainParam(l)
         if res is not None:
             res.insert(0, i)
@@ -224,7 +221,7 @@ json_data["loc-domain"] = params
 params = []
 new_constraints = []
 for c in json_data["fun-constraints"]:
-    l = convert2Lisp(c)
+    l = parseLisp(c)
     res = convert2LocDomainParam(l)
     if res is not None:
         params.append(res)
