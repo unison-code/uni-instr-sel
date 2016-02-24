@@ -278,9 +278,9 @@ data HighLevelSolution
         -- ^ The cost metric of the found solution.
       , hlIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
-      , hlSolTime :: Double
+      , hlSolTime :: Maybe Double
         -- ^ Time to compute the solution.
-      , hlCoreSolTime :: Double
+      , hlCoreSolTime :: Maybe Double
         -- ^ Time to compute the solution within the core constraint solver.
       }
   | NoHighLevelSolution
@@ -314,9 +314,9 @@ data LowLevelSolution
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
-      , llSolTime :: Double
+      , llSolTime :: Maybe Double
         -- ^ Time to compute the solution.
-      , llCoreSolTime :: Double
+      , llCoreSolTime :: Maybe Double
         -- ^ Time to compute the solution within the core constraint solver.
       }
   | NoLowLevelSolution
@@ -533,14 +533,14 @@ instance FromJSON HighLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then HighLevelSolution
-              <$> v .: "order-of-blocks"
-              <*> v .: "selected-matches"
-              <*> v .: "blocks-of-sel-matches"
-              <*> v .: "locs-of-data"
-              <*> v .: "cost"
-              <*> v .: "is-solution-optimal"
-              <*> v .: "time"
-              <*> v .: "core-time"
+              <$> v .:  "order-of-blocks"
+              <*> v .:  "selected-matches"
+              <*> v .:  "blocks-of-sel-matches"
+              <*> v .:  "locs-of-data"
+              <*> v .:  "cost"
+              <*> v .:  "is-solution-optimal"
+              <*> v .:? "time"
+              <*> v .:? "core-time"
        else return NoHighLevelSolution
   parseJSON _ = mzero
 
@@ -564,15 +564,15 @@ instance FromJSON LowLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then LowLevelSolution
-              <$> v .: "order-of-blocks"
-              <*> v .: "is-match-selected"
-              <*> v .: "block-of-match"
-              <*> v .: "has-datum-loc"
-              <*> v .: "loc-of-datum"
-              <*> v .: "cost"
-              <*> v .: "is-solution-optimal"
-              <*> v .: "time"
-              <*> v .: "core-time"
+              <$> v .:  "order-of-blocks"
+              <*> v .:  "is-match-selected"
+              <*> v .:  "block-of-match"
+              <*> v .:  "has-datum-loc"
+              <*> v .:  "loc-of-datum"
+              <*> v .:  "cost"
+              <*> v .:  "is-solution-optimal"
+              <*> v .:? "time"
+              <*> v .:? "core-time"
        else return NoLowLevelSolution
   parseJSON _ = mzero
 
