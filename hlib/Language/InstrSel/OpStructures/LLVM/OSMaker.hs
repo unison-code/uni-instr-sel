@@ -367,10 +367,11 @@ mkPatternDFGBuilder =
           let f_name = getFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
-                  of "setreg"     -> mkPatternDFGFromSetregCall b st i
-                     "param"      -> mkPatternDFGFromParamCall b st i
-                     "br-or-fall" -> st -- Will be processed in the CFG
-                     "return"     -> st -- Will be processed in the CFG
+                  of "setreg"          -> mkPatternDFGFromSetregCall b st i
+                     "param"           -> mkPatternDFGFromParamCall b st i
+                     "uncond-br"       -> st -- Will be processed in the CFG
+                     "cond-br-or-fall" -> st -- Will be processed in the CFG
+                     "return"          -> st -- Will be processed in the CFG
                      _ -> mkFunctionDFGFromInstruction b st i
                           -- Let the default builder handle it
              else mkFunctionDFGFromInstruction b st i
@@ -387,8 +388,10 @@ mkPatternCFGBuilder =
           let f_name = getFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
-                  of "return"     -> mkPatternCFGFromReturnCall b st i
-                     "br-or-fall" -> mkPatternCFGFromBrOrFallCall b st i
+                  of "return"          -> mkPatternCFGFromReturnCall b st i
+                     "uncond-br"       -> mkPatternCFGFromUncondBrCall b st i
+                     "cond-br-or-fall" ->
+                         mkPatternCFGFromCondBrOrFallCall b st i
                      _ -> mkFunctionCFGFromInstruction b st i
                           -- Let the default builder handle it
              else mkFunctionCFGFromInstruction b st i
@@ -442,12 +445,36 @@ mkPatternCFGFromReturnCall
 mkPatternCFGFromReturnCall _ _ i =
   error $ "mkPatternCFGFromReturnCall: not implemented for " ++ show i
 
-mkPatternCFGFromBrOrFallCall
+mkPatternCFGFromUncondBrCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
   -> BuildState
-mkPatternCFGFromBrOrFallCall
+mkPatternCFGFromUncondBrCall
+  b
+  st0
+  i@(LLVM.Call { LLVM.arguments = [] })
+  =
+  let label = "%" ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+      st1 = mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
+            -- Signature on last argument needed to please GHC...
+      br_node = fromJust $ lastTouchedNode st1
+      st2 = ensureBlockNodeExists st1 $ F.toBlockName label
+      dst_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdgesManyDests st2
+                                 G.ControlFlowEdge
+                                 br_node
+                                 [dst_node]
+  in st3
+mkPatternCFGFromUncondBrCall _ _ i =
+  error $ "mkPatternCFGFromUncondBrCall: not implemented for " ++ show i
+
+mkPatternCFGFromCondBrOrFallCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternCFGFromCondBrOrFallCall
   b
   st0
   i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
@@ -466,8 +493,8 @@ mkPatternCFGFromBrOrFallCall
       st5 = addConstraints st4
             $ C.mkFallThroughConstraints (G.getNodeID f_dst_node)
   in st5
-mkPatternCFGFromBrOrFallCall _ _ i =
-  error $ "mkPatternCFGFromBrOrFallCall: not implemented for " ++ show i
+mkPatternCFGFromCondBrOrFallCall _ _ i =
+  error $ "mkPatternCFGFromCondBrOrFallCall: not implemented for " ++ show i
 
 mkFunctionDFGFromGlobal
   :: Builder
