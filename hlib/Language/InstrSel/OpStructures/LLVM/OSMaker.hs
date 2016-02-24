@@ -367,10 +367,10 @@ mkPatternDFGBuilder =
           let f_name = getFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
-                  of "setreg"   -> mkPatternDFGFromSetregCall b st i
-                     "param"    -> mkPatternDFGFromParamCall b st i
-                     "brorfall" -> st -- Will be processed in the CFG
-                     "return"   -> st -- Will be processed in the CFG
+                  of "setreg"     -> mkPatternDFGFromSetregCall b st i
+                     "param"      -> mkPatternDFGFromParamCall b st i
+                     "br-or-fall" -> st -- Will be processed in the CFG
+                     "return"     -> st -- Will be processed in the CFG
                      _ -> mkFunctionDFGFromInstruction b st i
                           -- Let the default builder handle it
              else mkFunctionDFGFromInstruction b st i
@@ -387,8 +387,8 @@ mkPatternCFGBuilder =
           let f_name = getFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
-                  of "return"   -> mkPatternCFGFromReturnCall b st i
-                     "brorfall" -> mkPatternCFGFromBrOrFallCall b st i
+                  of "return"     -> mkPatternCFGFromReturnCall b st i
+                     "br-or-fall" -> mkPatternCFGFromBrOrFallCall b st i
                      _ -> mkFunctionCFGFromInstruction b st i
                           -- Let the default builder handle it
              else mkFunctionCFGFromInstruction b st i
