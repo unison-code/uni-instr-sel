@@ -283,13 +283,12 @@ def convertConstraint(l):
 # MAIN SCRIPT
 #=============
 
-# Check files
+# Check arguments
 if len(sys.argv) < 2:
-    sys.stderr.write("No JSON file given\n")
+    sys.stderr.write("No JSON file provided\n")
     sys.exit(1)
 if len(sys.argv) > 2:
-    sys.stderr.write("Too many arguments\n")
-    sys.exit(1)
+    error("Too many arguments\n")
 json_file = sys.argv[1]
 if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")

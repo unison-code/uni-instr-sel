@@ -100,19 +100,15 @@ def getRequiredDataByName(data, name):
 # MAIN SCRIPT
 #=============
 
-# Check files
-if len(sys.argv) < 3:
-    sys.stderr.write("Not enough arguments\n")
+# Check arguments
+if len(sys.argv) < 2:
+    sys.stderr.write("No Minizinc solution file provided\n")
     sys.exit(1)
-if len(sys.argv) > 3:
-    sys.stderr.write("Too many arguments\n")
-    sys.exit(1)
+if len(sys.argv) > 2:
+    error("Too many arguments\n")
 solution_file = sys.argv[1]
-stats_file = sys.argv[2]
 if not os.path.isfile(solution_file):
-    error("Solution file '" + solution_file +"' not found")
-if not os.path.isfile(stats_file):
-    error("Stats file '" + stats_file +"' not found")
+    error("Minizinc solution file '" + solution_file +"' not found")
 
 # Read solution file
 content = []
@@ -182,18 +178,6 @@ for loc in loc_data:
     has_d_loc_data.append(loc != loc_value_for_null)
 all_data.append(["has_d_loc", has_d_loc_data])
 
-# Read stats file
-content = []
-with open(stats_file, 'r') as file:
-    content = file.readlines()
-
-for l in content:
-    line = l.strip().split(' ')
-    if line[0] == "real":
-        time = float(line[1])
-    if len(line) == 4 and line[0] == "%" and line[2] == "seconds" and line[3] == "elapsed.":
-        core_time = float(line[1])
-
 # Turn desirable data into JSON
 data_table = [ ["loc",        "loc-of-datum"]
              , ["has_d_loc",  "has-datum-loc"]
@@ -218,12 +202,7 @@ for d in all_data:
 # Add additional field indicating that this is a solution
 json_data["has-solution"] = True
 
-# Add additional field with the solving time in seconds
-json_data["time"] = time
-
-# Add additional field with the core solving time in seconds
-json_data["core-time"] = core_time
-
+# Check if any required data is missing
 if len(keep_table) > 0:
     error("Required data '" + keep_table[0] + "' not found")
 
