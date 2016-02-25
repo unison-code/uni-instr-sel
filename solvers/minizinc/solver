@@ -292,6 +292,7 @@ reportNewEntity "$TMP_DIR"
 # Set filepath variables
 JSON_EXT_FILEPATH="$TMP_DIR/${JSON_INPUT_FILEPATH%.*}.ext.json"
 JSON_EXT2_FILEPATH="$TMP_DIR/${JSON_INPUT_FILEPATH%.*}.ext2.json"
+JSON_EXT3_FILEPATH="$TMP_DIR/${JSON_INPUT_FILEPATH%.*}.ext3.json"
 JSON_SOLUTION_FILEPATH="$TMP_DIR/$JSON_SOLUTION_FILENAME"
 JSON_STATS_FILEPATH="$TMP_DIR/$JSON_STATS_FILENAME"
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
@@ -300,17 +301,25 @@ MINIZINC_SOLUTION_FILEPATH="$TMP_DIR/$MINIZINC_SOLUTION_FILENAME"
 MINIZINC_STATS_FILEPATH="$TMP_DIR/$MINIZINC_STATS_FILENAME"
 MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 
-reportTask "Extending low-level model"
+reportTask "Extending model instance with match sizes"
 exe "$THIS_DIR/size-extender $JSON_INPUT_FILEPATH > $JSON_EXT_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT_FILEPATH
+
+reportTask "Converting constraints into parameter data"
 exe "$THIS_DIR/constraints-converter $JSON_EXT_FILEPATH" \
     " > $JSON_EXT2_FILEPATH"
 exitIfFailed
 reportNewEntity $JSON_EXT2_FILEPATH
 
+reportTask "Computing dominated matches"
+exe "$THIS_DIR/dom-matches $JSON_EXT2_FILEPATH" \
+    " > $JSON_EXT3_FILEPATH"
+exitIfFailed
+reportNewEntity $JSON_EXT3_FILEPATH
+
 reportTask "Generating MiniZinc parameter file"
-exe "$THIS_DIR/json2params $JSON_EXT2_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
+exe "$THIS_DIR/json2params $JSON_EXT3_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
 exitIfFailed
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
