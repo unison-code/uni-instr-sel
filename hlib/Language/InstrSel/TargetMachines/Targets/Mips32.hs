@@ -506,14 +506,10 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
                 )
       ord_g = mkPatternGraph ord_op
       inv_g = mkPatternGraph inv_op
-      ord_cs = mkPlaceAtEntryBlockConstraints ord_g
-               ++
-               mkNoDataReuseConstraints 7
+      ord_cs = mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      inv_cs = mkPlaceAtEntryBlockConstraints inv_g
-               ++
-               mkNoDataReuseConstraints 7
+      inv_cs = mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 2
       ord_pat =
@@ -617,14 +613,10 @@ mkRegImmCondBrInstr n imm_r str op =
                 )
       ord_g = mkPatternGraph False
       swapped_g = mkPatternGraph True
-      ord_cs = mkPlaceAtEntryBlockConstraints ord_g
-               ++
-               mkNoDataReuseConstraints 7
+      ord_cs = mkNoDataReuseConstraints 7
                ++
                mkFallThroughConstraints 3
-      swapped_cs = mkPlaceAtEntryBlockConstraints swapped_g
-                   ++
-                   mkNoDataReuseConstraints 7
+      swapped_cs = mkNoDataReuseConstraints 7
                    ++
                    mkFallThroughConstraints 3
       mkInstrPattern pid g cs =
@@ -685,12 +677,8 @@ mkPredBrInstr =
              , ( 4, 0, EdgeLabel DataFlowEdge 0 0 )
              ]
          )
-      ord_cs = mkPlaceAtEntryBlockConstraints g
-               ++
-               mkFallThroughConstraints 3
-      inv_cs = mkPlaceAtEntryBlockConstraints g
-               ++
-               mkFallThroughConstraints 2
+      ord_cs = mkFallThroughConstraints 3
+      inv_cs = mkFallThroughConstraints 2
       pats = [ InstrPattern
                  { patID = 0
                  , patOS = OS.OpStructure g (Just 1) ord_cs
@@ -746,11 +734,10 @@ mkBrInstrs =
                 , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                 ]
             )
-      cs = mkPlaceAtEntryBlockConstraints g
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure g (Just 1) cs
+          , patOS = OS.OpStructure g (Just 1) []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate
                                   [ ASVerbatim "B "
@@ -799,20 +786,18 @@ mkRetInstrs =
                 Edge
                 [ ( 1, 0, EdgeLabel ControlFlowEdge 0 0 ) ]
             )
-      bb_cs n = mkPlaceAtEntryBlockConstraints (g n)
-      reg_cs  = mkNewDataLocConstraints [locID getRetRegister] 2
+      reg_cs = mkNewDataLocConstraints [locID getRetRegister] 2
       pat n str =
         InstrPattern
           { patID = 0
-          , patOS = OS.OpStructure (g n) (Just 1) (bb_cs n ++ reg_cs)
+          , patOS = OS.OpStructure (g n) (Just 1) (reg_cs)
           , patADDUC = True
           , patAsmStrTemplate = str
           }
       vpat =
         InstrPattern
           { patID = 1
-          , patOS = OS.OpStructure (vg) (Just 1)
-                    (mkPlaceAtEntryBlockConstraints vg)
+          , patOS = OS.OpStructure (vg) (Just 1) []
           , patADDUC = True
           , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
           }

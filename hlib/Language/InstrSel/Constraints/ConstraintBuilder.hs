@@ -14,12 +14,10 @@
 --------------------------------------------------------------------------------
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addPlaceAtEntryBlockConstraints
-  , addFallThroughConstraints
+  ( addFallThroughConstraints
   , addNewDataLocConstraints
   , addSameDataLocConstraints
   , addNoDataReuseConstraints
-  , mkPlaceAtEntryBlockConstraints
   , mkFallThroughConstraints
   , mkNewDataLocConstraints
   , mkSameDataLocConstraints
@@ -33,37 +31,11 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.TargetMachines.IDs
   ( LocationID )
 
-import Data.Maybe
-
 
 
 -------------
 -- Functions
 -------------
-
--- | Creates constraints using 'mkPlaceAtEntryBlockConstraints' and adds
--- these (if any) to the given 'OpStructure'.
-addPlaceAtEntryBlockConstraints :: OpStructure -> OpStructure
-addPlaceAtEntryBlockConstraints os =
-  addConstraints os (mkPlaceAtEntryBlockConstraints $ osGraph os)
-
--- | Creates constraints for a pattern graph such that the match must be placed
--- in entry block of the pattern graph (if it has such a block).
-mkPlaceAtEntryBlockConstraints :: Graph -> [Constraint]
-mkPlaceAtEntryBlockConstraints g =
-  let entry_block = rootInCFG $ extractCFG g
-  in if isJust entry_block
-     then [ BoolExprConstraint
-            $ EqExpr ( Block2NumExpr
-                       $ BlockOfBlockNodeExpr
-                       $ ANodeIDExpr (getNodeID $ fromJust entry_block)
-                     )
-                     ( Block2NumExpr
-                       $ BlockWhereinMatchIsPlacedExpr
-                       $ ThisMatchExpr
-                     )
-          ]
-     else []
 
 -- | Creates constraints using 'mkNewDataLocConstraints' and adds these (if any)
 --  to the given 'OpStructure'.

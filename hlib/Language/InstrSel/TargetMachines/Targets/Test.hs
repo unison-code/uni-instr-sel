@@ -117,25 +117,16 @@ theTM =
               , ( 1, 2, EdgeLabel ControlFlowEdge 0 0 )
               ]
           )
-      init_def_pattern_os =
-        addPlaceAtEntryBlockConstraints
-        $ OpStructure init_def_pattern (Just 0) []
-      add_pattern_os =
-        addPlaceAtEntryBlockConstraints
-        $ OpStructure add_pattern Nothing []
-      bnz_pattern_os =
-        addPlaceAtEntryBlockConstraints
-        $ OpStructure  bnz_pattern (Just 1) []
-      br_pattern_os =
-        addPlaceAtEntryBlockConstraints $ OpStructure br_pattern (Just 0) []
+      init_def_pattern_os = OpStructure init_def_pattern (Just 0) []
+      add_pattern_os = OpStructure add_pattern Nothing []
+      bnz_pattern_os = OpStructure  bnz_pattern (Just 1) []
+      br_pattern_os = OpStructure br_pattern (Just 0) []
       br_fallthrough_pattern_os =
-        addPlaceAtEntryBlockConstraints
-        $ addFallThroughConstraints 1
+        addFallThroughConstraints 1
         $ OpStructure br_fallthrough_pattern
                       (Just 0)
                       []
-      ret_pattern_os =
-        addPlaceAtEntryBlockConstraints $ OpStructure ret_pattern (Just 1) []
+      ret_pattern_os = OpStructure ret_pattern (Just 1) []
       insts = [ Instruction
                   0
                   [ InstrPattern
