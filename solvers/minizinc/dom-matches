@@ -44,7 +44,21 @@ def error(msg):
     sys.stderr.write("ERROR: " + msg + "\n")
     sys.exit(1)
 
-def isMatchDominated(m):
+# A match m1 dominates another match m2 if:
+#    - neither match occurs in the parameters "same-loc", "in-block", and
+#      "in-block-succ" (TODO: relax?),
+#    - the latency of m1 is strictly less than the latency of m2 and the value
+#      of m1 is strictly less than the value of m2,
+#    - both matches cover exactly the same operations,
+#    - both matches define exactly the same data,
+#    - both matches use exactly the same data,
+#    - both matches have the same entry block,
+#    - both matches span across the same blocks,
+#    - both matches apply the def-dom-use constraint,
+#      and
+#    - if m1 defines any constraints in the parameter "loc-domain", then m2
+#      defines constraints that are at least as strong.
+def isMatchDominated(json, m):
     # TODO: implement
     return False
 
@@ -73,7 +87,7 @@ with open(json_file, 'r') as file:
 # Computed dominated-matches parameter
 json_data["dominated-matches"] = [ m
                                    for m in range(json_data["num-matches"])
-                                   if isMatchDominated(m)
+                                   if isMatchDominated(json_data, m)
                                  ]
 
 # Print JSON

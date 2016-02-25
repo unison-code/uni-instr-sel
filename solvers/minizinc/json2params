@@ -419,6 +419,10 @@ dumpParams( json_data["matches-by-size"]
           , VT_ARRAY1D
           , "allMatches"
           )
+dumpParams( json_data["dominated-matches"]
+          , "dominatedMatches"
+          , VT_SET
+          )
 
 # Dump constraints
 for c in json_data["fun-constraints"]:

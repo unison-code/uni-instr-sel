@@ -460,47 +460,6 @@ constraint
 
 
 
-%===================================================
-% DOMINATION DERIVED FROM PARAMETERIZED CONSTRAINTS
-%===================================================
-
-% Match m1 dominates match m2 if:
-% - neither match occurs in sameLoc, inBlock, inBlockSucc (relax later?)
-% - [latencyOfMatch[m1], m1] lex_lt [latencyOfMatch[m2], m2]
-% - operationsCoveredByMatch is the same for both matches
-% - dataDefinedByMatch   is the same for both matches
-% - dataUsedByMatch      is the same for both matches
-% - entryBlockOfMatch        is the same for both matches
-% - spannedBlocksInMatch    is the same for both matches
-% - applyDefDomUseConstraintForMatch    is the same for both matches
-% - if m1 defines any side-constraints in locDomain,
-%   then m2 defines side-constraints that are at least as strong
-test is_dominated(int: m2) =
-  let {set of allMatches: exclude = {sameLoc[i,1] | i in index_set_1of2(sameLoc)} % relax later
-                              union {inBlock[i,1] | i in index_set_1of2(inBlock)}
-			      union {inBlockSucc[i,1] | i in index_set_1of2(inBlockSucc)}} in
-  exists(m1 in allMatches where not (m1=m2 \/ m1 in exclude \/ m2 in exclude))(
-    ((latencyOfMatch[m1] < latencyOfMatch[m2]) \/
-     (latencyOfMatch[m1] = latencyOfMatch[m2] /\ m1 < m2)) /\
-    operationsCoveredByMatch[m1] = operationsCoveredByMatch[m2] /\
-    dataDefinedByMatch[m1] = dataDefinedByMatch[m2] /\
-    dataUsedByMatch[m1] = dataUsedByMatch[m2] /\
-    entryBlockOfMatch[m1] = entryBlockOfMatch[m2] /\
-    spannedBlocksInMatch[m1] = spannedBlocksInMatch[m2] /\
-    applyDefDomUseConstraintForMatch[m1] = applyDefDomUseConstraintForMatch[m2] /\
-    forall(i in index_set_1of2(locDomain) where locDomain[i,1] = m1)(
-      exists(j in index_set_1of2(locDomain)
-             where locDomain[j,1] = m2
-                /\ locDomain[j,2] = locDomain[i,2])(
-	(locDomain[j,3]..locDomain[j,4]) subset (locDomain[i,3]..locDomain[i,4])
-      )
-    )
-  );
-
-dominatedMatches = {m | m in allMatches where is_dominated(m)};
-
-
-
 %==================
 % SOLVE AND OUTPUT
 %==================
