@@ -67,7 +67,7 @@ generateModule tm =
                    \import Language.InstrSel.Utils\n\
                    \import Prelude \n\
                    \  hiding\n\
-                   \  ( LT )\n\n"
+                   \  ( LT, GT )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
                     \theTM = " ++ show tm
       res = parseModule $ header_src ++ tm_func_src
