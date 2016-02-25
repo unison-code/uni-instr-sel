@@ -56,6 +56,7 @@ array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
 set of allMatches: nullCopyMatches;
 array[allMatches] of allMatches: allMatchesBySize;
+set of allMatches: dominatedMatches;
 
 % Arrays that encode constraints
 array[int,int] of int: sameLoc;
@@ -63,8 +64,6 @@ array[int,int] of int: inBlockSucc;
 array[int,int] of int: inBlock;
 array[int,int] of int: locDomain;
 array[int,int] of int: funLocDomain;
-
-set of allMatches: Dominated;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -176,7 +175,7 @@ constraint
   forall (o in allOperationsInFunction)
   (
     let {
-      set of int: mset = { m | m in allMatches diff Dominated
+      set of int: mset = { m | m in allMatches diff dominatedMatches
                                     where o in operationsCoveredByMatch[m]
                          }
     }
@@ -203,7 +202,7 @@ constraint
   forall (e in allDataInFunction)
   (
     let {
-      set of int: mset = { m | m in allMatches diff Dominated
+      set of int: mset = { m | m in allMatches diff dominatedMatches
                                     where e in dataDefinedByMatch[m]
                          }
     }
@@ -223,7 +222,7 @@ constraint
 % equal to the number of data in the function graph (Mats calls this
 % "minimal effect").
 constraint
-  sum (m in allMatches diff Dominated)
+  sum (m in allMatches diff dominatedMatches)
   (
     card(dataDefinedByMatch[m]) * bool2int(sel[m])
   ) = numDataInFunction;
@@ -237,7 +236,7 @@ constraint
 
 % Selected matches that have an entry block must be placed in entry block.
 constraint
-  forall (m in allMatches diff Dominated)
+  forall (m in allMatches diff dominatedMatches)
   (
     % If a match has no entry block, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
@@ -251,7 +250,7 @@ constraint
 % Data defined by a selected match must be defined in either the block wherein
 % the match is placed or in one of the blocks spanned by the match.
 constraint
-  forall (m in allMatches diff Dominated)
+  forall (m in allMatches diff dominatedMatches)
   (
     forall (e in dataDefinedByMatch[m])
     (
@@ -283,7 +282,7 @@ constraint
   (
     def[e] = l
     ->
-    exists (m in allMatches diff Dominated)
+    exists (m in allMatches diff dominatedMatches)
     (
       place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m])
     )
@@ -324,7 +323,7 @@ array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
                                    k in 1..2
     ]);
 constraint
-  forall ( m in allMatches diff Dominated, e in dataUsedByMatch[m]
+  forall ( m in allMatches diff dominatedMatches, e in dataUsedByMatch[m]
                 where applyDefDomUseConstraintForMatch[m]
          )
   (
@@ -361,7 +360,7 @@ constraint
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-  cost = sum (m in allMatches diff Dominated)
+  cost = sum (m in allMatches diff dominatedMatches)
          ( latencyOfMatch[m]
          * execFrequencyOfBlocksPlusNull[place[m]]
          );
@@ -498,7 +497,7 @@ test is_dominated(int: m2) =
     )
   );
 
-Dominated = {m | m in allMatches where is_dominated(m)};
+dominatedMatches = {m | m in allMatches where is_dominated(m)};
 
 
 
@@ -510,7 +509,7 @@ solve ::
   seq_search(
     [ bool_search([ sel[m]
                   | m in allMatchesBySize
-                    where m in nonCopyMatches diff Dominated
+                    where m in nonCopyMatches diff dominatedMatches
                   ], input_order, indomain_max, complete)
 	]
   )
