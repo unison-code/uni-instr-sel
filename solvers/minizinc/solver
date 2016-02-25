@@ -361,3 +361,5 @@ reportNewEntity "$JSON_OUTPUT_FILEPATH"
 reportTask "Cleaning up temporary files"
 exe "rm -rf $TMP_DIR"
 exitIfFailed ""
+
+echo
