@@ -66,21 +66,27 @@ with open(stats_file, 'r') as file:
     content = file.readlines()
 
 # Extract data
+found_time = False
+found_core_time = False
 for l in content:
     line = l.strip().split(' ')
     if line[0] == "real":
         time = float(line[1])
+        found_time = True
     if ( len(line) == 4
          and line[0] == "%"
          and line[2] == "seconds"
          and line[3] == "elapsed."
        ):
         core_time = float(line[1])
+        found_core_time = True
 
 # Turn desirable data into JSON
 json_data = {}
-json_data["time"] = time
-json_data["core-time"] = core_time
+if found_time:
+    json_data["time"] = time
+if found_core_time:
+    json_data["core-time"] = core_time
 
 # Print JSON
 print json.dumps(json_data)
