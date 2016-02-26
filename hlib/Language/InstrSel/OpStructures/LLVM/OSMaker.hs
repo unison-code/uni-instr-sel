@@ -50,6 +50,9 @@ import Data.Maybe
 import Data.List
   ( intercalate )
 
+-- TODO: remove
+import Debug.Trace
+
 
 
 --------------
@@ -1288,7 +1291,10 @@ removeUnusedBlockNodes st =
       unused = filter (\n -> length (G.getNeighbors g n) == 0) ns
       new_g = foldr G.delNode g unused
       new_st = updateOSGraph st new_g
-      entry_block = findBlockNodeWithID st (fromJust $ entryBlock st)
+      entry_block = findBlockNodeWithID new_st (fromJust $ entryBlock st)
   in if isJust entry_block
      then new_st
-     else new_st { entryBlock = Nothing }
+     else let new_os = opStruct new_st
+          in new_st { opStruct = new_os { OS.osEntryBlockNode = Nothing }
+                    , entryBlock = Nothing
+                    }
