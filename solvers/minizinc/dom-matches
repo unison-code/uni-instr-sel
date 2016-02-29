@@ -44,22 +44,105 @@ def error(msg):
     sys.stderr.write("ERROR: " + msg + "\n")
     sys.exit(1)
 
-# A match m1 dominates another match m2 if:
+# A match m1 is dominated if there exists some other match m2 where:
 #    - neither match occurs in the parameters "same-loc", "in-block", and
 #      "in-block-succ" (TODO: relax?),
-#    - the latency of m1 is strictly less than the latency of m2 and the value
-#      of m1 is strictly less than the value of m2,
+#    - the tuple <latency of m2, index of m2> is lexicographically smaller than
+#      the tuple <latency of m1, index of m1>,
 #    - both matches cover exactly the same operations,
 #    - both matches define exactly the same data,
 #    - both matches use exactly the same data,
 #    - both matches have the same entry block,
 #    - both matches span across the same blocks,
 #    - both matches apply the def-dom-use constraint,
+#    - if m2 defines any constraints in the parameter "loc-domain", then m1
+#      defines constraints that are at least as strong,
 #      and
-#    - if m1 defines any constraints in the parameter "loc-domain", then m2
-#      defines constraints that are at least as strong.
-def isMatchDominated(json, m):
-    # TODO: implement
+#    - both matches have exactly the same auxiliary constraints (TODO: relax?).
+def isMatchDominated(json, m1):
+    def IsLocDomainAtLeastAsStrong(json, m2):
+        loc_domains = json["loc-domain"]
+        R = range(len(loc_domains))
+        for i in [ i for i in R if loc_domains[i][0] == m2]:
+            # Find constraint in m1 that is at least as strong
+            found = False
+            for j in [ j for j in R if loc_domains[j][0] == m2
+                                    and
+                                    loc_domains[i][1] == loc_domains[j][1]
+                     ]:
+                if set(range(loc_domains[j][2], loc_domains[j][3])).issubset(
+                     set(range(loc_domains[i][2], loc_domains[i][3]))
+                   ):
+                    found = True
+                    break
+
+            # No such constraint found
+            if not found:
+                return False
+
+        # All checks have passed
+        return True
+
+
+
+    excl_matches = ( set([ int(t[1]) for t in json["same-loc"] ])
+                     |
+                     set([ int(t[1]) for t in json["in-block"] ])
+                     |
+                     set([ int(t[1]) for t in json["in-block-succ"] ])
+                   )
+
+    # Check if m1 can be dominated at all
+    if m1 in excl_matches:
+        return False
+
+    # Check all eligable matches
+    for m2 in [ m for m in range(json["num-matches"])
+                if m != m1 and m not in excl_matches
+              ]:
+        if ( ( json["match-latencies"][m2] < json["match-latencies"][m1]
+               or
+               ( json["match-latencies"][m2] == json["match-latencies"][m1]
+                 and
+                 m2 < m1
+               )
+             )
+             and
+             ( set(json["match-operations-covered"][m2])
+               ==
+               set(json["match-operations-covered"][m1])
+             )
+             and
+             ( set(json["match-data-defined"][m2])
+               ==
+               set(json["match-data-defined"][m1])
+             )
+             and
+             ( set(json["match-data-used"][m2])
+               ==
+               set(json["match-data-used"][m1])
+             )
+             and
+             json["match-entry-blocks"][m2] == json["match-entry-blocks"][m1]
+             and
+             ( set(json["match-spanned-blocks"][m2])
+               ==
+               set(json["match-spanned-blocks"][m1])
+             )
+             and
+             ( json["match-adduc-settings"][m2]
+               ==
+               json["match-adduc-settings"][m1]
+             )
+             and
+             IsLocDomainAtLeastAsStrong(json, m2)
+             and
+             json["match-constraints"][m2] == json["match-constraints"][m1]
+           ):
+            # Found dominating match
+            return True
+
+    # No dominating match found
     return False
 
 
