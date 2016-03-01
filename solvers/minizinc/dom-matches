@@ -85,11 +85,11 @@ def isMatchDominated(json, m1):
 
 
 
-    excl_matches = ( set([ int(t[1]) for t in json["same-loc"] ])
+    excl_matches = ( set([ int(t[0]) for t in json["same-loc"] ])
                      |
-                     set([ int(t[1]) for t in json["in-block"] ])
+                     set([ int(t[0]) for t in json["in-block"] ])
                      |
-                     set([ int(t[1]) for t in json["in-block-succ"] ])
+                     set([ int(t[0]) for t in json["in-block-succ"] ])
                    )
 
     # Check if m1 can be dominated at all
