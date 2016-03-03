@@ -36,7 +36,6 @@ executable uni-targen
                        filepath >=1.3 && <1.4,
                        fgl >=5.5 && <5.6,
                        graphviz >=2999.18 && <2999.19,
-                       haskell-src >= 1.0.1 && <1.1,
                        llvm-general == 3.4.5.2,
                        llvm-general-pure >=3.4 && <3.5,
                        mtl >= 2.2 && <2.3,
