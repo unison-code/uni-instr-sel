@@ -21,13 +21,7 @@ import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.Utils
   ( replace )
 
-import Language.Haskell.Parser
-import Language.Haskell.Pretty
-  ( Style (..)
-  , prettyPrintStyleMode
-  , defaultMode
-  , style
-  )
+import qualified Data.Text as T
 
 
 
@@ -40,7 +34,8 @@ import Language.Haskell.Pretty
 -- 'TargetMachineID'.
 generateModule :: TargetMachine -> String
 generateModule tm =
-  let tm_id = fromTargetMachineID (tmID tm)
+  let renameFuncs str = replace "mkGraph" "I.mkGraph" str
+      tm_id = fromTargetMachineID (tmID tm)
       boiler_src = "-----------------------------------------------------------\
                    \---------------------\n\
                    \-- |\n\
@@ -69,12 +64,14 @@ generateModule tm =
                    \  hiding\n\
                    \  ( LT, GT )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
-                    \theTM = " ++ show tm
-      res = parseModule $ header_src ++ tm_func_src
-      prettyPrint m = prettyPrintStyleMode (style { lineLength = 80 })
-                                           defaultMode m
-      renameFuncs str = replace "mkGraph" "I.mkGraph" str
-  in case res
-     of (ParseOk m) -> boiler_src ++ (renameFuncs $ prettyPrint m)
-        (ParseFailed loc msg) -> error $ "generateModule: parsing failed at "
-                                         ++ show loc ++ ": " ++ msg
+                    \theTM =\n" ++ (renameFuncs $ show tm)
+  in boiler_src ++ prettyPrint tm_func_src
+
+prettyPrint :: String -> String
+prettyPrint str =
+  -- TODO: implement
+--  let txt = T.pack str
+--  in T.unpack $ fst $ T.foldl' (\(t, i) c -> (t ++ [c], i))
+--                               ("  ", 2)
+--                               txt
+  str
