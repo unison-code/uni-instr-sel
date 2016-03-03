@@ -21,8 +21,6 @@ import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.Utils
   ( replace )
 
-import qualified Data.Text as T
-
 
 
 -------------
@@ -70,8 +68,4 @@ generateModule tm =
 prettyPrint :: String -> String
 prettyPrint str =
   -- TODO: implement
---  let txt = T.pack str
---  in T.unpack $ fst $ T.foldl' (\(t, i) c -> (t ++ [c], i))
---                               ("  ", 2)
---                               txt
   str
