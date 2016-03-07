@@ -62,8 +62,8 @@ generateModule tm =
                    \  hiding\n\
                    \  ( LT, GT )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
-                    \theTM =\n" ++ (renameFuncs $ show tm)
-  in boiler_src ++ prettyPrint tm_func_src
+                    \theTM = " ++ (renameFuncs $ show tm)
+  in boiler_src ++ header_src ++ prettyPrint tm_func_src
 
 prettyPrint :: String -> String
 prettyPrint str =
