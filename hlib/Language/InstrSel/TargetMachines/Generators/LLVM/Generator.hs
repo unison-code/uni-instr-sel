@@ -165,7 +165,8 @@ addOperandConstraints i all_locs os =
                   then error $ "addOperandConstraints: multiple value nodes "
                                ++ "with origin '" ++ origin ++ "'"
                   else error $ "addOperandConstraints: no value node with "
-                               ++ "origin '" ++ origin ++ "'"
+                               ++ "origin '" ++ origin ++ "' in instruction '"
+                               ++ LLVM.instrAssemblyString i ++ "'"
         getValueOrBlockNode os' str =
           let value_n = findValueNodesWithOrigin (osGraph os') str
               block_n = findBlockNodesWithName (osGraph os') $ toBlockName str
