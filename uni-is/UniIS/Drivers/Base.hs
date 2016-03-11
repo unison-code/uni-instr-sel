@@ -89,4 +89,5 @@ data PlotAction
 
 data CheckAction
   = CheckNothing
+  | CheckFunctionGraphCoverage
   deriving (Eq, Typeable, Data)

@@ -237,6 +237,10 @@ parseArgs =
         enum [ CheckNothing
                  &= auto
                  &= ignore
+             , CheckFunctionGraphCoverage
+                 &= name "check-fun-coverage"
+                 &= explicit
+                 &= help ( "Checks whether the function graph is coverable." )
              ]
         &= groupname "'check' command flags"
     }

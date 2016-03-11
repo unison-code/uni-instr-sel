@@ -17,6 +17,7 @@ module UniIS.Drivers.CheckDispatcher
 where
 
 import UniIS.Drivers.DispatcherTools
+import qualified UniIS.Drivers.CheckFunctionGraph as CheckFunctionGraph
 
 
 
@@ -31,5 +32,9 @@ dispatch :: CheckAction -> Options -> IO [Output]
 dispatch a opts
   | a == CheckNothing =
       reportErrorAndExit "No check action provided."
+  | a `elem` [ CheckFunctionGraphCoverage ] =
+      do function <- loadFunctionFromJson opts
+         matchset <- loadPatternMatchsetFromJson opts
+         CheckFunctionGraph.run a function matchset
   | otherwise =
       reportErrorAndExit "CheckDispatcher: unsupported action"
