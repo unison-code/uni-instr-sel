@@ -17,12 +17,9 @@ module UniIS.Drivers.TransformDispatcher
 where
 
 import UniIS.Drivers.DispatcherTools
-import qualified UniIS.Drivers.TransformFunctionGraph
-  as TransformFunctionGraph
-import qualified UniIS.Drivers.TransformCPModel
-  as TransformCPModel
-import qualified UniIS.Drivers.TransformCPSolution
-  as TransformCPSolution
+import qualified UniIS.Drivers.TransformFunctionGraph as TransformFunctionGraph
+import qualified UniIS.Drivers.TransformCPModel as TransformCPModel
+import qualified UniIS.Drivers.TransformCPSolution as TransformCPSolution
 
 
 

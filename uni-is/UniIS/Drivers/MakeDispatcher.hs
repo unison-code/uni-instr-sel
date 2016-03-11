@@ -17,16 +17,11 @@ module UniIS.Drivers.MakeDispatcher
 where
 
 import UniIS.Drivers.DispatcherTools
-import qualified UniIS.Drivers.MakeArrayIndexMaplists
-  as MakeArrayIndexMaplists
-import qualified UniIS.Drivers.MakeAssemblyCode
-  as MakeAssemblyCode
-import qualified UniIS.Drivers.MakeCPModel
-  as MakeCPModel
-import qualified UniIS.Drivers.MakeFunctionFromLLVM
-  as MakeFunctionFromLLVM
-import qualified UniIS.Drivers.MakePatternMatchset
-  as MakePatternMatchset
+import qualified UniIS.Drivers.MakeArrayIndexMaplists as MakeArrayIndexMaplists
+import qualified UniIS.Drivers.MakeAssemblyCode as MakeAssemblyCode
+import qualified UniIS.Drivers.MakeCPModel as MakeCPModel
+import qualified UniIS.Drivers.MakeFunctionFromLLVM as MakeFunctionFromLLVM
+import qualified UniIS.Drivers.MakePatternMatchset as MakePatternMatchset
 import qualified UniIS.Drivers.MakeDumpFromArrayIndexMaplists
   as MakeDumpFromArrayIndexMaplists
 

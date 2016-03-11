@@ -17,12 +17,9 @@ module UniIS.Drivers.PlotDispatcher
 where
 
 import UniIS.Drivers.DispatcherTools
-import qualified UniIS.Drivers.PlotCoverGraphs
-  as PlotCoverGraphs
-import qualified UniIS.Drivers.PlotFunctionGraphs
-  as PlotFunctionGraphs
-import qualified UniIS.Drivers.PlotPatternGraphs
-  as PlotPatternGraphs
+import qualified UniIS.Drivers.PlotCoverGraphs as PlotCoverGraphs
+import qualified UniIS.Drivers.PlotFunctionGraphs as PlotFunctionGraphs
+import qualified UniIS.Drivers.PlotPatternGraphs as PlotPatternGraphs
 
 
 
