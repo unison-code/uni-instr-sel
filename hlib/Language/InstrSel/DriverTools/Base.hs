@@ -17,7 +17,9 @@ module Language.InstrSel.DriverTools.Base
   , emitToStdout
   , emitToFile
   , toOutput
-  , toOutputWithoutID
+  , toOutputWithID
+  , toOutputWithExitCode
+  , toOutputWithIDAndExitCode
   )
 where
 
@@ -26,6 +28,8 @@ import Data.Maybe
   , isJust
   )
 
+import System.Exit
+  ( ExitCode (..) )
 import System.FilePath
   ( splitExtension
   , takeDirectory
@@ -43,6 +47,10 @@ data Output
   = Output
       { oID :: Maybe String
         -- ^ A unique string that identifies this output.
+      , oExitCode :: ExitCode
+        -- ^ When the program exists after emitting the output, exit the this
+        -- exit code. If multiple 'Output's are given, the exit code of the last
+        -- 'Output' is used.
       , oData :: String
         -- ^ The produced output.
       }
@@ -53,25 +61,48 @@ data Output
 -- Functions
 -------------
 
--- | Creates an output that has no ID. This is useful when there is exactly one
--- output produced.
-toOutputWithoutID
+-- | Creates an output that has no ID and no exit code. This is useful when
+-- there is exactly one output produced.
+toOutput
   :: String
      -- ^ The output string.
   -> Output
-toOutputWithoutID = toOutput' Nothing
+toOutput s = toOutput' Nothing ExitSuccess s
 
--- | Creates an output.
-toOutput
+-- | Creates an output with an ID but no exit code.
+toOutputWithID
   :: String
      -- ^ The ID.
   -> String
      -- ^ The output string.
   -> Output
-toOutput oid s = toOutput' (Just oid) s
+toOutputWithID oid s = toOutput' (Just oid) ExitSuccess s
 
-toOutput' :: Maybe String -> String -> Output
-toOutput' oid s = Output { oID = oid, oData = s }
+-- | Creates an output with an exit code but no ID.
+toOutputWithExitCode
+  :: ExitCode
+     -- ^ The exit code.
+  -> String
+     -- ^ The output string.
+  -> Output
+toOutputWithExitCode code s = toOutput' Nothing code s
+
+-- | Creates an output with an ID and exit code.
+toOutputWithIDAndExitCode
+  :: String
+     -- ^ The ID.
+  -> ExitCode
+     -- ^ The exit code.
+  -> String
+     -- ^ The output string.
+  -> Output
+toOutputWithIDAndExitCode oid code s = toOutput' (Just oid) code s
+
+toOutput' :: Maybe String -> ExitCode -> String -> Output
+toOutput' oid code s = Output { oID = oid
+                              , oExitCode = code
+                              , oData = s
+                              }
 
 -- | Emits output to @STDOUT@.
 emitToStdout :: Output -> IO ()

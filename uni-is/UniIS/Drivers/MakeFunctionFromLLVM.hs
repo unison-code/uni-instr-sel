@@ -58,6 +58,6 @@ run MakeFunctionGraphFromLLVM str =
      let functions = mkFunctionsFromLlvmModule llvm_module
      when (length functions > 1) $
        reportErrorAndExit "Only supports one function per module."
-     return [toOutputWithoutID $ toJson $ head functions]
+     return [toOutput $ toJson $ head functions]
 
 run _ _ = reportErrorAndExit "MakeFunctionFromLLVM: unsupported action"

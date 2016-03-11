@@ -19,6 +19,7 @@ module Language.InstrSel.Utils.IO
   , readFileContent
   , when
   , mapMaybeM
+  , errorExitCode
   )
 where
 
@@ -36,7 +37,9 @@ import qualified System.Directory as D
   ( doesFileExist )
 
 import System.Exit
-  ( exitFailure )
+  ( ExitCode (..)
+  , exitFailure
+  )
 
 import Data.Maybe
   ( catMaybes )
@@ -78,3 +81,7 @@ mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
 mapMaybeM f as =
   do bs <- mapM f as
      return $ catMaybes bs
+
+-- | Returns an 'ExitCode' that indicates an error.
+errorExitCode :: ExitCode
+errorExitCode = ExitFailure 1

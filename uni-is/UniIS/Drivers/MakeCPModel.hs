@@ -51,6 +51,6 @@ run MakeHighLevelCPModel function matchset =
      let model = mkHighLevelModel function
                                   (fromJust target)
                                   (pmMatches matchset)
-     return [toOutputWithoutID $ toJson model]
+     return [toOutput $ toJson model]
 
 run _ _ _ = reportErrorAndExit "MakeCPModel: unsupported action"

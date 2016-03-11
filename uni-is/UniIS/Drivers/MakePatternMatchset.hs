@@ -51,7 +51,7 @@ run MakePatternMatchset function target =
      end <- matches `deepseq` getTime Realtime
      let time = seconds start end
          matches' = matches {pmTime = Just time}
-     return [toOutputWithoutID $ toJson matches']
+     return [toOutput $ toJson matches']
 
 run _ _ _ = reportErrorAndExit "MakePatternMatchset: unsupported action"
 

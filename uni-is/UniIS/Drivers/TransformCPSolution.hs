@@ -48,6 +48,6 @@ run RaiseLowLevelCPSolution str mstr ai_maps =
      model <- loadFromJson mstr
      target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
      let new_sol = raiseLowLevelSolution sol model target ai_maps
-     return [toOutputWithoutID $ toJson new_sol]
+     return [toOutput $ toJson new_sol]
 
 run _ _ _ _ = reportErrorAndExit "TransformCPSolution: unsupported action"

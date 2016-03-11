@@ -42,7 +42,7 @@ import Language.InstrSel.Utils.IO
 produceDotOutputWith :: (Graph -> Graph) -> InstrPattern -> IO [Output]
 produceDotOutputWith f p =
   do let dot = toDotString $ f $ osGraph $ patOS p
-     return [toOutputWithoutID dot]
+     return [toOutput dot]
 
 run :: PlotAction -> InstrPattern -> IO [Output]
 

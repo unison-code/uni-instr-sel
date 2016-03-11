@@ -43,6 +43,6 @@ run
 run LowerHighLevelCPModel str ai_maps =
   do model <- loadFromJson str
      let new_model = lowerHighLevelModel model ai_maps
-     return [toOutputWithoutID $ toJson new_model]
+     return [toOutput $ toJson new_model]
 
 run _ _ _ = reportErrorAndExit "TransformCPModel: unsupported action"

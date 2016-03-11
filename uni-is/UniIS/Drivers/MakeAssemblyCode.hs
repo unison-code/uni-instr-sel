@@ -43,7 +43,7 @@ run MakeAssemblyCode model sol =
   do target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
      let code = generateCode target model sol
          code_str = concat $ map (\c -> showCode c ++ "\n") code
-     return [toOutputWithoutID code_str]
+     return [toOutput code_str]
 
 run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"
 

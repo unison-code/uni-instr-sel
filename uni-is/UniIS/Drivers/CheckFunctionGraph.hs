@@ -28,8 +28,11 @@ import Language.InstrSel.TargetMachines.PatternMatching
   , PatternMatchset (..)
   )
 
+
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit )
+  ( reportErrorAndExit
+  , errorExitCode
+  )
 
 import Data.List
   ( intercalate )
@@ -53,8 +56,12 @@ run CheckFunctionGraphCoverage function matchset =
       uncovered_nodes = filter (not . isNodeCoverable) op_nodes
   in if length uncovered_nodes > 0
      then let node_strs = intercalate ", " $ map pShow uncovered_nodes
-          in return [toOutputWithoutID $ "NOT COVERABLE\n" ++
-                                         "  Non-coverable nodes: " ++ node_strs]
-     else return [toOutputWithoutID "OK"]
+          in return [ toOutputWithExitCode errorExitCode
+                                           ( "NOT COVERABLE\n"
+                                             ++ "  Non-coverable nodes: "
+                                             ++ node_strs
+                                           )
+                    ]
+     else return [toOutput "OK"]
 
 run _ _ _ = reportErrorAndExit "CheckFunctionGraph: unsupported action"

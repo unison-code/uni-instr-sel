@@ -41,7 +41,7 @@ import Language.InstrSel.Utils.IO
 produceDotOutputWith :: (Graph -> Graph) -> Function -> IO [Output]
 produceDotOutputWith f fun =
   do let dot = toDotString $ f $ osGraph $ functionOS fun
-     return [toOutputWithoutID dot]
+     return [toOutput dot]
 
 run :: PlotAction -> Function -> IO [Output]
 

@@ -43,7 +43,7 @@ run :: PlotAction -> Function -> PatternMatchset -> IO [Output]
 run PlotCoverAllMatches function matchset =
   do let matches = map pmMatch (pmMatches matchset)
      dot <- mkCoveragePlot function matches
-     return [toOutputWithoutID dot]
+     return [toOutput dot]
 
 run PlotCoverPerMatch function matchset =
   do let matches = pmMatches matchset
@@ -55,7 +55,7 @@ run PlotCoverPerMatch function matchset =
                        "i" ++ pShow (pmInstrID m)
                        ++ "-" ++
                        "p" ++ pShow (pmPatternID m)
-             return $ toOutput oid dot
+             return $ toOutputWithID oid dot
        )
        matches
 

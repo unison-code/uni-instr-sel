@@ -38,6 +38,9 @@ import System.Console.CmdArgs
 import System.Directory
   ( createDirectoryIfMissing )
 
+import System.Exit
+  ( exitWith )
+
 
 
 -------------
@@ -104,3 +107,4 @@ main =
      output <- GenerateTM.run opts
      emit <- mkEmitFunction opts
      mapM_ emit output
+     exitWith $ oExitCode $ last output

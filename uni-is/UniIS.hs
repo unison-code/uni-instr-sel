@@ -43,6 +43,9 @@ import Data.Maybe
   , isNothing
   )
 
+import System.Exit
+  ( exitWith )
+
 
 
 -------------
@@ -309,3 +312,4 @@ main =
            error $ "Unrecognized command: " ++ show cmd
      emit <- mkEmitFunction opts
      mapM_ emit output
+     exitWith $ oExitCode $ last output

@@ -41,6 +41,6 @@ run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 run MakeArrayIndexMaplists function matchset =
   do tm <- loadTargetMachine (pmTarget matchset)
      let mapset = mkArrayIndexMaplists function tm (pmMatches matchset)
-     return [toOutputWithoutID $ toJson mapset]
+     return [toOutput $ toJson mapset]
 
 run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"

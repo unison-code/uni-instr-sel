@@ -35,14 +35,14 @@ run :: TransformAction -> Function -> IO [Output]
 
 run CopyExtendFunctionGraph f =
   do let new_f = copyExtend f
-     return [toOutputWithoutID $ toJson new_f]
+     return [toOutput $ toJson new_f]
 
 run BranchExtendFunctionGraph f =
   do let new_f = branchExtend f
-     return [toOutputWithoutID $ toJson new_f]
+     return [toOutput $ toJson new_f]
 
 run CombineConstantsInFunctionGraph f =
   do let new_f = combineConstants f
-     return [toOutputWithoutID $ toJson new_f]
+     return [toOutput $ toJson new_f]
 
 run _ _ = reportErrorAndExit "TransformFunctionGraph: unsupported action"

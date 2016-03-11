@@ -71,7 +71,7 @@ run opts =
      parsed_m <- parseSemanticsInMD m
      let tm = generateTargetMachine parsed_m
          code = generateModule tm
-     return [toOutput ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
+     return [toOutputWithID ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.

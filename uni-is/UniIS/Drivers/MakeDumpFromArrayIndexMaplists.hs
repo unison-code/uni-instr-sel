@@ -91,7 +91,7 @@ run MakeDumpFromArrayIndexMaplists function matchset ai_maps =
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
 
-  in do return [ toOutputWithoutID
+  in do return [ toOutput
                  $ "OPERATIONS" ++ "\n" ++
                    (dumpNodes $ ai2OperationNodeIDs ai_maps)
                    ++ "\n"
