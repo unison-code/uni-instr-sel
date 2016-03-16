@@ -244,6 +244,12 @@ parseArgs =
                  &= name "check-fun-coverage"
                  &= explicit
                  &= help ( "Checks whether the function graph is coverable." )
+             , CheckFunctionGraphLocationOverlap
+                 &= name "check-fun-location-overlap"
+                 &= explicit
+                 &= help ( "Checks whether all data nodes have instructions "
+                           ++ "with overlapping location requirements."
+                         )
              ]
         &= groupname "'check' command flags"
     }

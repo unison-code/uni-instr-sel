@@ -19,6 +19,9 @@ where
 import UniIS.Drivers.DispatcherTools
 import qualified UniIS.Drivers.CheckFunctionGraph as CheckFunctionGraph
 
+import Language.InstrSel.TargetMachines.PatternMatching
+  ( PatternMatchset (pmTarget) )
+
 
 
 -------------
@@ -35,6 +38,11 @@ dispatch a opts
   | a `elem` [ CheckFunctionGraphCoverage ] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
-         CheckFunctionGraph.run a function matchset
+         CheckFunctionGraph.run a function matchset Nothing
+  | a `elem` [ CheckFunctionGraphLocationOverlap ] =
+      do function <- loadFunctionFromJson opts
+         matchset <- loadPatternMatchsetFromJson opts
+         tm <- loadTargetMachine $ pmTarget matchset
+         CheckFunctionGraph.run a function matchset (Just tm)
   | otherwise =
       reportErrorAndExit "CheckDispatcher: unsupported action"

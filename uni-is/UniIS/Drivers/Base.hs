@@ -90,4 +90,5 @@ data PlotAction
 data CheckAction
   = CheckNothing
   | CheckFunctionGraphCoverage
+  | CheckFunctionGraphLocationOverlap
   deriving (Eq, Typeable, Data)
