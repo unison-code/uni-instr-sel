@@ -66,12 +66,12 @@ def isMatchDominated(json, m1):
         for i in [ i for i in R if loc_domains[i][0] == m2]:
             # Find constraint in m1 that is at least as strong
             found = False
-            for j in [ j for j in R if loc_domains[j][0] == m2
+            for j in [ j for j in R if loc_domains[j][0] == m1
                                     and
                                     loc_domains[i][1] == loc_domains[j][1]
                      ]:
-                if set(range(loc_domains[j][2], loc_domains[j][3])).issubset(
-                     set(range(loc_domains[i][2], loc_domains[i][3]))
+                if set(range(loc_domains[j][2], loc_domains[j][3]+1)).issubset(
+                        set(range(loc_domains[i][2], loc_domains[i][3]+1))
                    ):
                     found = True
                     break
