@@ -17,8 +17,8 @@
 module Language.InstrSel.TargetMachines.Base
   ( module Language.InstrSel.Graphs.IDs
   , module Language.InstrSel.TargetMachines.IDs
-  , AssemblyStringTemplate (..)
-  , AssemblyStringPart (..)
+  , EmitStringTemplate (..)
+  , EmitStringPart (..)
   , Instruction (..)
   , InstrPattern (..)
   , InstrProperties (..)
@@ -27,8 +27,8 @@ module Language.InstrSel.TargetMachines.Base
   , findInstruction
   , findInstrPattern
   , findLocation
-  , flattenAsmStrParts
-  , updateNodeInAsmStrTemplate
+  , flattenEmitStrParts
+  , updateNodeInEmitStrTemplate
   )
 where
 
@@ -44,26 +44,26 @@ import Language.InstrSel.TargetMachines.IDs
 -- Data types
 --------------
 
--- | Represents the assembly string template, which are used to produce the
--- assembly instructions during code emission.
-data AssemblyStringTemplate
-  = ASSTemplate { asmStrParts :: [AssemblyStringPart] }
-  | ASSMultiTemplate { asmStrTemplates :: [AssemblyStringTemplate] }
+-- | Represents the emit string template, which are used to produce the assembly
+-- instructions during code emission.
+data EmitStringTemplate
+  = ESTSimple { emitStrParts :: [EmitStringPart] }
+  | ESTMulti { emitStrTemplates :: [EmitStringTemplate] }
   deriving (Show)
 
--- | Represents parts of the assembly string template.
-data AssemblyStringPart
+-- | Represents parts of the emit string template.
+data EmitStringPart
     -- | Denotes string which is meant to be output verbatim.
-  = ASVerbatim String
+  = ESVerbatim String
     -- | Denotes the integer constant of a given value node.
-  | ASIntConstOfValueNode NodeID
+  | ESIntConstOfValueNode NodeID
     -- | Denotes the location assigned to a given value node.
-  | ASLocationOfValueNode NodeID
+  | ESLocationOfValueNode NodeID
     -- | Denotes the name a given block node.
-  | ASNameOfBlockNode NodeID
+  | ESNameOfBlockNode NodeID
     -- | Denotes the block in which the definer of a given value node has been
     -- placed.
-  | ASBlockOfValueNode NodeID
+  | ESBlockOfValueNode NodeID
   deriving (Show)
 
 -- | Defines a machine instruction.
@@ -109,9 +109,9 @@ data InstrPattern
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
         -- except the generic phi patterns.
-      , patAsmStrTemplate :: AssemblyStringTemplate
-        -- ^ The assembly string template, from which the assembly instruction
-        -- will be produced upon code emission if this pattern is selected.
+      , patEmitStrTemplate :: EmitStringTemplate
+        -- ^ The emit string template, from which the assembly instruction will
+        -- be produced upon code emission if this pattern is selected.
       }
   deriving (Show)
 
@@ -185,31 +185,29 @@ findLocation rs rid =
      then Just $ head found
      else Nothing
 
--- | Flattens a (potentially multi-level) 'AssemblyStringTemplate'.
-flattenAsmStrParts :: AssemblyStringTemplate -> [[AssemblyStringPart]]
-flattenAsmStrParts (ASSTemplate []) = []
-flattenAsmStrParts (ASSTemplate asps) = [asps]
-flattenAsmStrParts (ASSMultiTemplate ats) = map (head . flattenAsmStrParts) ats
+-- | Flattens a (potentially multi-level) 'EmitStringTemplate'.
+flattenEmitStrParts :: EmitStringTemplate -> [[EmitStringPart]]
+flattenEmitStrParts (ESTSimple []) = []
+flattenEmitStrParts (ESTSimple asps) = [asps]
+flattenEmitStrParts (ESTMulti ats) = map (head . flattenEmitStrParts) ats
 
 -- | Replaces a node reference used in the template with another reference.
-updateNodeInAsmStrTemplate
+updateNodeInEmitStrTemplate
   :: NodeID
      -- ^ The new node ID.
   -> NodeID
      -- ^ The old node ID to be replaced.
-  -> AssemblyStringTemplate
-  -> AssemblyStringTemplate
-updateNodeInAsmStrTemplate new_n old_n (ASSMultiTemplate ts) =
-  ASSMultiTemplate (map (updateNodeInAsmStrTemplate new_n old_n) ts)
-updateNodeInAsmStrTemplate new_n old_n (ASSTemplate parts) =
-  ASSTemplate (map update parts)
+  -> EmitStringTemplate
+  -> EmitStringTemplate
+updateNodeInEmitStrTemplate new_n old_n (ESTMulti ts) =
+  ESTMulti (map (updateNodeInEmitStrTemplate new_n old_n) ts)
+updateNodeInEmitStrTemplate new_n old_n (ESTSimple parts) =
+  ESTSimple (map update parts)
   where checkAndReplace nid = if nid == old_n then new_n else nid
-        update (ASIntConstOfValueNode n) =
-          ASIntConstOfValueNode (checkAndReplace n)
-        update (ASLocationOfValueNode n) =
-          ASLocationOfValueNode (checkAndReplace n)
-        update (ASNameOfBlockNode n) =
-          ASNameOfBlockNode (checkAndReplace n)
-        update (ASBlockOfValueNode n) =
-          ASBlockOfValueNode (checkAndReplace n)
+        update (ESIntConstOfValueNode n) =
+          ESIntConstOfValueNode (checkAndReplace n)
+        update (ESLocationOfValueNode n) =
+          ESLocationOfValueNode (checkAndReplace n)
+        update (ESNameOfBlockNode n) = ESNameOfBlockNode (checkAndReplace n)
+        update (ESBlockOfValueNode n) = ESBlockOfValueNode (checkAndReplace n)
         update p = p

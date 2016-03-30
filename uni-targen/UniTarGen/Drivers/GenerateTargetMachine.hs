@@ -98,7 +98,7 @@ parseSemanticsInMD m =
                                   else do reportError $
                                             "--- ERROR found in semantics "
                                             ++ "of instruction with emit string"
-                                            ++ " '" + (instrEmitString i)
+                                            ++ " '" ++ (instrEmitString i)
                                             ++ "':\n" ++ (fromLeft r) ++ "\n"
                                             ++ "Skipping to next semantics.\n"
                                           return Nothing

@@ -55,20 +55,20 @@ import Data.List
 
 generateTargetMachine :: LLVM.MachineDescription -> TM.TargetMachine
 generateTargetMachine m =
-  let mkPhiInstrAss arg_ids ret_id =
-        ( TM.ASSTemplate
-          $ [ TM.ASLocationOfValueNode ret_id
-            , TM.ASVerbatim " = PHI "
+  let mkPhiInstrEmitTemplate arg_ids ret_id =
+        ( TM.ESTSimple
+          $ [ TM.ESLocationOfValueNode ret_id
+            , TM.ESVerbatim " = PHI "
             ]
             ++ ( concat
                  $ intersperse
-                     [TM.ASVerbatim " "]
+                     [TM.ESVerbatim " "]
                      ( map ( \n ->
-                             [ TM.ASVerbatim "("
-                             , TM.ASLocationOfValueNode n
-                             , TM.ASVerbatim ", "
-                             , TM.ASBlockOfValueNode n
-                             , TM.ASVerbatim ")"
+                             [ TM.ESVerbatim "("
+                             , TM.ESLocationOfValueNode n
+                             , TM.ESVerbatim ", "
+                             , TM.ESBlockOfValueNode n
+                             , TM.ESVerbatim ")"
                              ]
                            )
                            arg_ids
@@ -77,7 +77,7 @@ generateTargetMachine m =
         )
       locs = mkLocations m
       instrs = mkInstructions m locs
-      generic_instrs = mkPhiInstructions mkPhiInstrAss
+      generic_instrs = mkPhiInstructions mkPhiInstrEmitTemplate
                        ++ [mkBrFallThroughInstruction]
                        ++ [mkDataDefInstruction]
                        ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
@@ -127,11 +127,11 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addOperandConstraints i locs $ mkOpStructure p
-              tmpl = mkAsmStrTemplate i os (LLVM.instrEmitString i)
+              tmpl = mkEmitStrTemplate i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patADDUC = True
-                             , TM.patAsmStrTemplate = tmpl
+                             , TM.patEmitStrTemplate = tmpl
                              }
 
 addOperandConstraints
@@ -223,13 +223,13 @@ mkOpStructure (LLVM.InstrSemantics (Right m)) =
 mkOpStructure (LLVM.InstrSemantics (Left _)) =
   error "mkOpStructure: instruction semantics has not been parsed"
 
-mkAsmStrTemplate
+mkEmitStrTemplate
   :: LLVM.Instruction
   -> OpStructure
   -> String
-  -> TM.AssemblyStringTemplate
-mkAsmStrTemplate i os str =
-  TM.ASSTemplate $ map f $ splitStartingOn "%," str
+  -> TM.EmitStringTemplate
+mkEmitStrTemplate i os str =
+  TM.ESTSimple $ map f $ splitStartingOn "%," str
   where
   f s = if head s == '%'
         then let g = osGraph os
@@ -241,42 +241,42 @@ mkAsmStrTemplate i os str =
                           in if isJust op
                              then case (fromJust op)
                                   of (LLVM.RegInstrOperand {}) ->
-                                       TM.ASLocationOfValueNode
+                                       TM.ESLocationOfValueNode
                                        $ getNodeID
                                        $ head value_n
                                      (LLVM.ImmInstrOperand {}) ->
-                                       TM.ASIntConstOfValueNode
+                                       TM.ESIntConstOfValueNode
                                        $ getNodeID
                                        $ head value_n
-                                     _ -> error $ "mkAsmStrTemplate: something "
-                                                  ++ "is terribly wrong..."
-                             else error $ "mkAsmStrTemplate: no operand with "
+                                     _ -> error $ "mkEmitStrTemplate: something"
+                                                  ++ " is terribly wrong..."
+                             else error $ "mkEmitStrTemplate: no operand with "
                                           ++ "name '" ++ s ++ "'"
-                     else error $ "mkAsmStrTemplate: multiple value nodes with "
-                                  ++ "origin '" ++ s ++ "'"
+                     else error $ "mkEmitStrTemplate: multiple value nodes with"
+                                  ++ " origin '" ++ s ++ "'"
                 else if length block_n > 0
                      then if length block_n == 1
                           then let op = getInstrOperand i s
                                in if isJust op
                                   then case (fromJust op)
                                        of (LLVM.AbsAddrInstrOperand {}) ->
-                                            TM.ASNameOfBlockNode
+                                            TM.ESNameOfBlockNode
                                             $ getNodeID
                                             $ head block_n
                                           (LLVM.RelAddrInstrOperand {}) ->
-                                            TM.ASNameOfBlockNode
+                                            TM.ESNameOfBlockNode
                                             $ getNodeID
                                             $ head block_n
                                           _ -> error
-                                               $ "mkAsmStrTemplate: something "
+                                               $ "mkEmitStrTemplate: something "
                                                ++ "is terribly wrong..."
-                                  else error $ "mkAsmStrTemplate: no operand "
+                                  else error $ "mkEmitStrTemplate: no operand "
                                                ++ "with name '" ++ s ++ "'"
-                          else error $ "mkAsmStrTemplate: multiple block nodes "
-                                       ++ "with name '" ++ s ++ "'"
-                     else error $ "mkAsmStrTemplate: no value or blocks nodes "
+                          else error $ "mkEmitStrTemplate: multiple block nodes"
+                                       ++ " with name '" ++ s ++ "'"
+                     else error $ "mkEmitStrTemplate: no value or blocks nodes "
                                   ++ "with origin or name '" ++ s ++ "'"
-        else TM.ASVerbatim s
+        else TM.ESVerbatim s
 
 mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
 mkInstrProps i is_copy =

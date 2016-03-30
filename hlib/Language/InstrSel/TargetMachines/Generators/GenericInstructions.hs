@@ -67,15 +67,15 @@ mkIntTempType n = IntTempType { intTempNumBits = n }
 mkPhiInstructions
   :: (    [NodeID]
        -> NodeID
-       -> AssemblyStringTemplate
+       -> EmitStringTemplate
      )
-     -- ^ Function for creating the assembly string for the generic phi
+     -- ^ Function for creating the emit string for the generic phi
      -- instructions. The first argument is a list of 'NodeID's for the value
      -- nodes which serve as input to the phi operation, and the second argument
      -- is the 'NodeID's of the value node representing the output from the phi
      -- operation.
   -> [Instruction]
-mkPhiInstructions mkAss =
+mkPhiInstructions mkEmit =
   let mkPat n =
         let g = mkGraph
                   ( map
@@ -110,7 +110,7 @@ mkPhiInstructions mkAss =
              { patID = (toPatternID $ n-2)
              , patOS = OpStructure g Nothing cs
              , patADDUC = False
-             , patAsmStrTemplate = mkAss (map toNodeID [2..n+1]) 1
+             , patEmitStrTemplate = mkEmit (map toNodeID [2..n+1]) 1
              }
   in [ Instruction
          { instrID = 0
@@ -149,7 +149,7 @@ mkBrFallThroughInstruction =
           { patID = 0
           , patOS = OpStructure g (Just 1) cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitStrTemplate = ESTSimple []
           }
   in Instruction
        { instrID = 0
@@ -181,7 +181,7 @@ mkDataDefInstruction =
           { patID = pid
           , patOS = OpStructure g (Just 0) cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitStrTemplate = ESTSimple []
           }
   in Instruction
        { instrID = 0
@@ -232,7 +232,7 @@ mkTempNullCopyInstruction bits =
                        { patID = pid
                        , patOS = OpStructure (g w) Nothing cs
                        , patADDUC = True
-                       , patAsmStrTemplate = ASSTemplate []
+                       , patEmitStrTemplate = ESTSimple []
                        }
   in Instruction
        { instrID = 0

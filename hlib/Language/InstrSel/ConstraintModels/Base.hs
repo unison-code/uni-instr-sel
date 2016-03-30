@@ -165,13 +165,13 @@ data HighLevelMatchParams
         -- ^ The data in the function graph which are used by phi nodes
         -- appearing this match. This information is required during instruction
         -- emission in order to break cyclic data dependencies.
-      , hlMatchAsmStrNodeMaplist :: [Maybe NodeID]
-        -- ^ A list of mappings of the node IDs that appears in the assembly
-        -- instruction template (which refer to nodes in the pattern graph) to
-        -- the node IDs in the function graph which are covered by this
-        -- pattern. The map list has the following appearance: each element in
-        -- the list corresponds to a assembly string part with the same index in
-        -- the assembly instruction template.
+      , hlMatchEmitStrNodeMaplist :: [Maybe NodeID]
+        -- ^ A list of mappings of the node IDs that appears in the
+        -- instruction's emit string template (which refer to nodes in the
+        -- pattern graph) to the node IDs in the function graph which are
+        -- covered by this pattern. The map list has the following appearance:
+        -- each element in the list corresponds to an emit string part with the
+        -- same index in the emit string template.
       }
   deriving (Show)
 
@@ -435,7 +435,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "is-null-copy-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
-      <*> v .: "asm-str-node-maps"
+      <*> v .: "emit-str-node-maps"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelMatchParams where
@@ -457,7 +457,7 @@ instance ToJSON HighLevelMatchParams where
            , "is-null-copy-instr"           .= (hlMatchIsNullCopyInstruction d)
            , "has-control-flow"             .= (hlMatchHasControlFlow d)
            , "data-used-by-phis"            .= (hlMatchDataUsedByPhis d)
-           , "asm-str-node-maps"            .= (hlMatchAsmStrNodeMaplist d)
+           , "emit-str-node-maps"           .= (hlMatchEmitStrNodeMaplist d)
            ]
 
 instance FromJSON HighLevelMachineParams where

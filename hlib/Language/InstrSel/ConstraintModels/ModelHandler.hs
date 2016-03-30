@@ -184,7 +184,7 @@ processMatch instr pattern match mid =
                                d_use_ns
       entry_b_node_id = osEntryBlockNode $ patOS pattern
       i_props = instrProps instr
-      asm_maps = computeAsmStrNodeMaps (patAsmStrTemplate pattern) match
+      emit_maps = computeEmitStrNodeMaps (patEmitStrTemplate pattern) match
   in HighLevelMatchParams
        { hlMatchInstructionID = instrID instr
        , hlMatchPatternID = patID pattern
@@ -207,23 +207,23 @@ processMatch instr pattern match mid =
        , hlMatchLatency = instrLatency i_props
        , hlMatchDataUsedByPhis =
            findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
-       , hlMatchAsmStrNodeMaplist = asm_maps
+       , hlMatchEmitStrNodeMaplist = emit_maps
        }
 
 -- | Computes the assembly string node ID mappings, which is done as follows: if
 -- the assembly string part contains a node ID, take the node ID from the
 -- corresponding node in the function graph. Otherwise use 'Nothing'.
-computeAsmStrNodeMaps
+computeEmitStrNodeMaps
   :: AssemblyStringTemplate
   -> Match NodeID
   -> [Maybe NodeID]
-computeAsmStrNodeMaps t m =
-  map f (concat $ flattenAsmStrParts t)
-  where f (ASVerbatim _) = Nothing
-        f (ASLocationOfValueNode n) = findFNInMatch m n
-        f (ASIntConstOfValueNode n) = findFNInMatch m n
-        f (ASNameOfBlockNode     n) = findFNInMatch m n
-        f (ASBlockOfValueNode    n) = findFNInMatch m n
+computeEmitStrNodeMaps t m =
+  map f (concat $ flattenEmitStrParts t)
+  where f (ESVerbatim _) = Nothing
+        f (ESLocationOfValueNode n) = findFNInMatch m n
+        f (ESIntConstOfValueNode n) = findFNInMatch m n
+        f (ESNameOfBlockNode     n) = findFNInMatch m n
+        f (ESBlockOfValueNode    n) = findFNInMatch m n
 
 -- | Replaces occurrences of 'ThisMatchExpr' in a constraint with the given
 -- match ID.

@@ -51,9 +51,9 @@ import Data.Maybe
 regPrefix :: String
 regPrefix = "$"
 
-updateAsmStrTemplate :: AssemblyStringTemplate -> Instruction -> Instruction
-updateAsmStrTemplate t i @ Instruction { instrPatterns = pats } =
-    i {instrPatterns = map (\pat -> pat { patAsmStrTemplate = t }) pats }
+updateEmitStrTemplate :: EmitStringTemplate -> Instruction -> Instruction
+updateEmitStrTemplate t i @ Instruction { instrPatterns = pats } =
+    i {instrPatterns = map (\pat -> pat { patEmitString = t }) pats }
 
 updateLatency :: Integer -> Instruction -> Instruction
 updateLatency l i =
@@ -220,7 +220,7 @@ mkSimpleCopy32Pattern =
 -- output.
 mkGenericSimpleRegRegCompInst
   :: String
-     -- ^ The assembly string corresponding to this instruction.
+     -- ^ The emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> D.DataType
@@ -246,13 +246,13 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
-              , patAsmStrTemplate = ASSTemplate
-                                      [ ASLocationOfValueNode 3
-                                      , ASVerbatim $ " = "
-                                      , ASVerbatim $ str ++ " "
-                                      , ASLocationOfValueNode 1
-                                      , ASVerbatim ", "
-                                      , ASLocationOfValueNode 2
+              , patEmitString = ESTSimple
+                                      [ ESLocationOfValueNode 3
+                                      , ESVerbatim $ " = "
+                                      , ESVerbatim $ str ++ " "
+                                      , ESLocationOfValueNode 1
+                                      , ESVerbatim ", "
+                                      , ESLocationOfValueNode 2
                                       ]
               }
   in Instruction
@@ -272,7 +272,7 @@ mkSimpleNBitRegRegCompInst
   :: Natural
      -- ^ The width of the data.
   -> String
-     -- ^ The assembly string corresponding to this instruction.
+     -- ^ The emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -296,7 +296,7 @@ mkSimple32BitRegRegCompInst = mkSimpleNBitRegRegCompInst 32
 -- is assumed to be 1 bit in size.
 mkSimple32BitRegs1BitResultCompInst
   :: String
-     -- ^ The assembly string corresponding to this instruction.
+     -- ^ The emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -311,14 +311,14 @@ mkSimple32BitRegs1BitResultCompInst str op r1 r2 r3 =
       dt1 = mkIntTempType 1
   in mkGenericSimpleRegRegCompInst str op dt32 dt32 dt1 r1 r2 r3
 
-mkDataImmDataAsmStr :: String -> [AssemblyStringPart]
-mkDataImmDataAsmStr str =
-    [ ASLocationOfValueNode 3
-    , ASVerbatim $ " = "
-    , ASVerbatim $ str ++ " "
-    , ASLocationOfValueNode 1
-    , ASVerbatim ", "
-    , ASImmIntValueOfDataNode 2
+mkDataImmDataEmitStr :: String -> [EmitStringPart]
+mkDataImmDataEmitStr str =
+    [ ESLocationOfValueNode 3
+    , ESVerbatim $ " = "
+    , ESVerbatim $ str ++ " "
+    , ESLocationOfValueNode 1
+    , ESVerbatim ", "
+    , ESIntConstOfValueNode 2
     ]
 
 -- | Creates an instruction that consists of only a single computation node,
@@ -328,8 +328,8 @@ mkDataImmDataAsmStr str =
 -- be a N-bit immediate of a given range. If the computation is a commutative
 -- operation, then two instruction patterns will be created.
 mkSimpleNBitRegMBitImmCompInst
-  :: [AssemblyStringPart]
-     -- ^ The assembly string parts of the instruction.
+  :: [EmitStringPart]
+     -- ^ The emit string parts of the instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -356,7 +356,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
                  { patID = 0
                  , patOS = OS.OpStructure ord_g Nothing cs
                  , patADDUC = True
-                 , patAsmStrTemplate = ASSTemplate parts
+                 , patEmitString = ESTSimple parts
                  }
              ]
              ++
@@ -365,7 +365,7 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
                       { patID = 1
                       , patOS = OS.OpStructure swapped_g Nothing cs
                       , patADDUC = True
-                      , patAsmStrTemplate = ASSTemplate parts
+                      , patEmitString = ESTSimple parts
                       }
                   ]
              else []
@@ -385,8 +385,8 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
 -- the 32 general-purpose registers, and the first input operand is assumed to
 -- be a N-bit immediate of a given range.
 mkSimpleNBitRegMBitFirstImmCompInst
-  :: [AssemblyStringPart]
-     -- ^ The assembly string parts of the instruction.
+  :: [EmitStringPart]
+     -- ^ The emit string parts of the instruction.
   -> O.CompOp
      -- ^ The operation corresponding to this instruction.
   -> [Location]
@@ -412,7 +412,7 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
-              , patAsmStrTemplate = ASSTemplate str
+              , patEmitString = ESTSimple parts
               }
   in Instruction
        { instrID = 0
@@ -440,7 +440,7 @@ combineNodesInInstrPattern ip keep_n disc_n =
       old_g = OS.osGraph old_os
       old_entry = OS.osEntryBlockNode old_os
       old_cs = OS.osConstraints old_os
-      old_template = patAsmStrTemplate ip
+      old_template = patEmitString ip
       -- New data
       new_g = mergeNodes (head $ findNodesWithNodeID old_g keep_n)
                          (head $ findNodesWithNodeID old_g disc_n)
@@ -459,9 +459,9 @@ combineNodesInInstrPattern ip keep_n disc_n =
                               , OS.osEntryBlockNode = new_entry
                               , OS.osConstraints = new_cs
                               }
-      new_template = updateNodeInAsmStrTemplate keep_n disc_n old_template
+      new_template = updateNodeInEmitStrTemplate keep_n disc_n old_template
   in ip { patOS = new_os
-        , patAsmStrTemplate = new_template
+        , patEmitString = new_template
         }
 
 -- | Makes two conditional branch instructions - an ordinary branch instruction
@@ -472,11 +472,11 @@ mkRegRegCondBrInstrs
   :: Natural
      -- ^ The width of the comparison operands.
   -> String
-     -- ^ The assembly string corresponding to this instruction.
+     -- ^ The emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The comparison corresponding to this instruction.
   -> String
-     -- ^ The inverse assembly string corresponding to this instruction.
+     -- ^ The inverse emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The inverse comparison corresponding to this instruction.
   -> Instruction
@@ -517,13 +517,13 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
           { patID = 0
           , patOS = OS.OpStructure ord_g (Just 1) ord_cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim $ ord_str ++ " "
-                                  , ASLocationOfValueNode 5
-                                  , ASVerbatim ", "
-                                  , ASLocationOfValueNode 6
-                                  , ASVerbatim ", "
-                                  , ASBlockOfLabelNode 2
+          , patEmitString = ESTSimple
+                                  [ ESVerbatim $ ord_str ++ " "
+                                  , ESLocationOfValueNode 5
+                                  , ESVerbatim ", "
+                                  , ESLocationOfValueNode 6
+                                  , ESVerbatim ", "
+                                  , ESNameOfBlockNode 2
                                   ]
           }
       inv_pat =
@@ -531,13 +531,13 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
           { patID = 1
           , patOS = OS.OpStructure inv_g (Just 1) inv_cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim $ inv_str ++ " "
-                                  , ASLocationOfValueNode 5
-                                  , ASVerbatim ", "
-                                  , ASLocationOfValueNode 6
-                                  , ASVerbatim ", "
-                                  , ASBlockOfLabelNode 3
+          , patEmitString = ESTSimple
+                                  [ ESVerbatim $ inv_str ++ " "
+                                  , ESLocationOfValueNode 5
+                                  , ESVerbatim ", "
+                                  , ESLocationOfValueNode 6
+                                  , ESVerbatim ", "
+                                  , ESNameOfBlockNode 3
                                   ]
           }
   in Instruction
@@ -564,7 +564,7 @@ mkRegImmCondBrInstr
   -> Range Integer
      -- ^ The range of the integer immediate.
   -> String
-     -- ^ The assembly string corresponding to this instruction.
+     -- ^ The emit string corresponding to this instruction.
   -> O.CompOp
      -- ^ The comparison corresponding to this instruction.
   -> Instruction
@@ -624,11 +624,11 @@ mkRegImmCondBrInstr n imm_r str op =
           { patID = pid
           , patOS = OS.OpStructure g (Just 1) cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim $ str ++ " "
-                                  , ASLocationOfValueNode 5
-                                  , ASVerbatim ", "
-                                  , ASNameOfBlockNode 2
+          , patEmitString = ESTSimple
+                                  [ ESVerbatim $ str ++ " "
+                                  , ESLocationOfValueNode 5
+                                  , ESVerbatim ", "
+                                  , ESNameOfBlockNode 2
                                   ]
           }
       ord_pat = mkInstrPattern 0 ord_g ord_cs
@@ -683,26 +683,26 @@ mkPredBrInstr =
                  { patID = 0
                  , patOS = OS.OpStructure g (Just 1) ord_cs
                  , patADDUC = True
-                 , patAsmStrTemplate = ASSTemplate
-                                       [ ASVerbatim $ "BEQ "
-                                       , ASLocationOfValueNode 4
-                                       , ASVerbatim ", "
-                                       , ASNameOfBlockNode 2
-                                       , ASVerbatim ", "
-                                       , ASVerbatim getZeroRegName
+                 , patEmitString = ESTSimple
+                                       [ ESVerbatim $ "BEQ "
+                                       , ESLocationOfValueNode 4
+                                       , ESVerbatim ", "
+                                       , ESNameOfBlockNode 2
+                                       , ESVerbatim ", "
+                                       , ESVerbatim getZeroRegName
                                        ]
                  }
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure g (Just 1) inv_cs
                  , patADDUC = True
-                 , patAsmStrTemplate = ASSTemplate
-                                       [ ASVerbatim $ "BNE "
-                                       , ASLocationOfValueNode 4
-                                       , ASVerbatim ", "
-                                       , ASNameOfBlockNode 3
-                                       , ASVerbatim ", "
-                                       , ASVerbatim getZeroRegName
+                 , patEmitString = ESTSimple
+                                       [ ESVerbatim $ "BNE "
+                                       , ESLocationOfValueNode 4
+                                       , ESVerbatim ", "
+                                       , ESNameOfBlockNode 3
+                                       , ESVerbatim ", "
+                                       , ESVerbatim getZeroRegName
                                        ]
                  }
              ]
@@ -739,9 +739,9 @@ mkBrInstrs =
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) []
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim "B "
-                                  , ASBlockOfLabelNode 2
+          , patEmitString = ESTSimple
+                                  [ ESVerbatim "B "
+                                  , ESNameOfBlockNode 2
                                   ]
           }
   in [ Instruction
@@ -792,20 +792,20 @@ mkRetInstrs =
           { patID = 0
           , patOS = OS.OpStructure (g n) (Just 1) (reg_cs)
           , patADDUC = True
-          , patAsmStrTemplate = str
+          , patEmitString = str
           }
       vpat =
         InstrPattern
           { patID = 1
           , patOS = OS.OpStructure (vg) (Just 1) []
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate [ ASVerbatim "RetRA" ]
+          , patEmitString = ESTSimple [ ESVerbatim "RetRA" ]
           }
   in [ Instruction
          { instrID = 0
-         , instrPatterns = [pat 32 (ASSTemplate
-                                    [ ASVerbatim "RetRA "
-                                    , ASLocationOfValueNode 2
+         , instrPatterns = [pat 32 (ESTSimple
+                                    [ ESVerbatim "RetRA "
+                                    , ESLocationOfValueNode 2
                                     ])
                            , vpat]
          , instrProps = InstrProperties { instrCodeSize = 4
@@ -819,16 +819,16 @@ mkRetInstrs =
          { instrID = 0
            -- The 16-bits returns truncate the result value by shifting 16 bits
            -- to the left and 16 bits to the right "arithmetically".
-         , instrPatterns = [pat 16 (ASSMultiTemplate
+         , instrPatterns = [pat 16 (ESTMulti
                                     [
-                                     ASSTemplate
-                                     [ ASVerbatim "%temp1 = SLL "
-                                     , ASLocationOfValueNode 2
-                                     , ASVerbatim ", 16"
+                                     ESTSimple
+                                     [ ESVerbatim "%temp1 = SLL "
+                                     , ESLocationOfValueNode 2
+                                     , ESVerbatim ", 16"
                                      ],
-                                     ASSTemplate [ ASVerbatim
+                                     ESTSimple [ ESVerbatim
                                                    "%temp2 = SRA %temp1, 16" ],
-                                     ASSTemplate [ ASVerbatim "RetRA %temp2" ]
+                                     ESTSimple [ ESVerbatim "RetRA %temp2" ]
                                     ])]
          , instrProps = InstrProperties { instrCodeSize = 12
                                         , instrLatency = 2
@@ -850,10 +850,10 @@ mkMfhiInstrs =
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASLocationOfValueNode 2
-                                  , ASVerbatim " = PseudoMFHI "
-                                  , ASLocationOfValueNode 1
+          , patEmitString = ESTSimple
+                                  [ ESLocationOfValueNode 2
+                                  , ESVerbatim " = PseudoMFHI "
+                                  , ESLocationOfValueNode 1
                                   ]
           }
   in [ Instruction
@@ -879,10 +879,10 @@ mkMfloInstrs =
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASLocationOfValueNode 2
-                                  , ASVerbatim " = PseudoMFLO "
-                                  , ASLocationOfValueNode 1
+          , patEmitString = ESTSimple
+                                  [ ESLocationOfValueNode 2
+                                  , ESVerbatim " = PseudoMFLO "
+                                  , ESLocationOfValueNode 1
                                   ]
           }
   in [ Instruction
@@ -908,11 +908,11 @@ mkPseudoMoveInstrs =
           { patID = 0
           , patOS = OS.OpStructure g Nothing cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate
-                                  [ ASVerbatim "move "
-                                  , ASLocationOfValueNode 1
-                                  , ASVerbatim ", "
-                                  , ASLocationOfValueNode 2
+          , patEmitString = ESTSimple
+                                  [ ESVerbatim "move "
+                                  , ESLocationOfValueNode 1
+                                  , ESVerbatim ", "
+                                  , ESLocationOfValueNode 2
                                   ]
           }
   in [ Instruction
@@ -936,7 +936,7 @@ mkLoadImmInstr =
           { patID = 0
           , patOS = OS.OpStructure (g w r) Nothing (cs ls)
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate a
+          , patEmitString = ESTSimple a
           }
   in [ Instruction
        -- Zero immediate (free in mips32)
@@ -956,20 +956,20 @@ mkLoadImmInstr =
          , instrPatterns = [ pat 16
                                  (Range (-32768) 32767)
                                  getGPRegistersWithoutZero
-                                 [ ASLocationOfValueNode 2
-                                 , ASVerbatim " = "
-                                 , ASVerbatim
+                                 [ ESLocationOfValueNode 2
+                                 , ESVerbatim " = "
+                                 , ESVerbatim
                                    $ "ADDiu " ++ getZeroRegName ++ ", "
-                                 , ASIntConstOfValueNode 1
+                                 , ESIntConstOfValueNode 1
                                  ]
                            , pat 32
                                  (Range (-32768) 32767)
                                  getGPRegistersWithoutZero
-                                 [ ASLocationOfValueNode 2
-                                 , ASVerbatim " = "
-                                 , ASVerbatim
+                                 [ ESLocationOfValueNode 2
+                                 , ESVerbatim " = "
+                                 , ESVerbatim
                                    $ "ADDiu " ++ getZeroRegName ++ ", "
-                                 , ASIntConstOfValueNode 1
+                                 , ESIntConstOfValueNode 1
                                  ]
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
@@ -985,18 +985,18 @@ mkLoadImmInstr =
                              pat 16
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 [ ASLocationOfValueNode 2
-                                 , ASVerbatim " = "
-                                 , ASVerbatim "LUi+ORi "
-                                 , ASIntConstOfValueNode 1
+                                 [ ESLocationOfValueNode 2
+                                 , ESVerbatim " = "
+                                 , ESVerbatim "LUi+ORi "
+                                 , ESIntConstOfValueNode 1
                                  ]
                            , pat 32
                                  (Range (-2147483648) 2147483647)
                                  getGPRegistersWithoutZero
-                                 [ ASLocationOfValueNode 2
-                                 , ASVerbatim " = "
-                                 , ASVerbatim "LUi+ORi "
-                                 , ASIntConstOfValueNode 1
+                                 [ ESLocationOfValueNode 2
+                                 , ESVerbatim " = "
+                                 , ESVerbatim "LUi+ORi "
+                                 , ESIntConstOfValueNode 1
                                  ]
                            ]
          , instrProps = InstrProperties { instrCodeSize = 8
@@ -1011,10 +1011,10 @@ mkLoadImmInstr =
          , instrPatterns = [ pat 32
                                  (Range (-2147483648) (-2147483648))
                                  getGPRegistersWithoutZero
-                                 [ ASLocationOfValueNode 2
-                                 , ASVerbatim " = "
-                                 , ASVerbatim "LUi "
-                                 , ASIntConstOfValueNode 1
+                                 [ ESLocationOfValueNode 2
+                                 , ESVerbatim " = "
+                                 , ESVerbatim "LUi "
+                                 , ESIntConstOfValueNode 1
                                  ]
                            ]
          , instrProps = InstrProperties { instrCodeSize = 4
@@ -1063,7 +1063,7 @@ mkTypeConvInstrs =
           { patID = 0
           , patOS = OS.OpStructure (g t (n, m)) Nothing cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitString = ESTSimple []
           }
   in [ Instruction
          { instrID = 0
@@ -1085,11 +1085,11 @@ mkTypeConvInstrs =
                  { patID = 0
                  , patOS = OS.OpStructure (g O.ZExt (8, 32)) Nothing cs
                  , patADDUC = True
-                 , patAsmStrTemplate = ASSTemplate
-                                         [ ASLocationOfValueNode 2
-                                         , ASVerbatim $ " = ANDi "
-                                         , ASLocationOfValueNode 1
-                                         , ASVerbatim ", 255"
+                 , patEmitString = ESTSimple
+                                         [ ESLocationOfValueNode 2
+                                         , ESVerbatim $ " = ANDi "
+                                         , ESLocationOfValueNode 1
+                                         , ESVerbatim ", 255"
                                          ]
                  }
              ]
@@ -1121,22 +1121,22 @@ mkEqComparison =
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
-              , patAsmStrTemplate = ASSMultiTemplate
-                                    [ ASSTemplate
-                                      [ ASVerbatim "%temp1 = "
-                                      , ASVerbatim "XOR "
-                                      -- TODO: looks lite ASSTemplate must have
+              , patEmitString = ESTMulti
+                                    [ ESTSimple
+                                      [ ESVerbatim "%temp1 = "
+                                      , ESVerbatim "XOR "
+                                      -- TODO: looks lite ESTSimple must have
                                       -- a certain number of elements to work,
                                       -- otherwise we get
-                                      -- "updateNodeIDsInAsmStrParts: Invalid
+                                      -- "updateNodeIDsInEmitStrParts: Invalid
                                       -- arguments".
-                                      , ASVerbatim ""
-                                      , ASLocationOfValueNode 1
-                                      , ASVerbatim ", "
-                                      , ASIntConstOfValueNode 2
+                                      , ESVerbatim ""
+                                      , ESLocationOfValueNode 1
+                                      , ESVerbatim ", "
+                                      , ESIntConstOfValueNode 2
                                       ]
-                                    , ASSTemplate
-                                      [ ASVerbatim $
+                                    , ESTSimple
+                                      [ ESVerbatim $
                                         "%cmp = SLT " ++ getZeroRegName ++ ", %temp1" ]
                                     ]
               }
@@ -1168,12 +1168,12 @@ mkSLTIComparison =
               { patID = 0
               , patOS = OS.OpStructure g Nothing cs
               , patADDUC = True
-              , patAsmStrTemplate = ASSTemplate
-                                      [ ASLocationOfValueNode 3
-                                      , ASVerbatim " = SLTi "
-                                      , ASLocationOfValueNode 1
-                                      , ASVerbatim ", "
-                                      , ASIntConstOfValueNode 2
+              , patEmitString = ESTSimple
+                                      [ ESLocationOfValueNode 3
+                                      , ESVerbatim " = SLTi "
+                                      , ESLocationOfValueNode 1
+                                      , ESVerbatim ", "
+                                      , ESIntConstOfValueNode 2
                                       ]
               }
   in Instruction
@@ -1231,44 +1231,44 @@ mkSimdAddInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure add3_g Nothing add3_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 11
-                                 , ASVerbatim " = ADD3 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 6
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 9
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 10
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 11
+                                 , ESVerbatim " = ADD3 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 6
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 9
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 10
+                                 , ESVerbatim ")"
                                  ]
                  }
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure add2_g Nothing add2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = ADD3 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 6
-                                 , ASVerbatim ") ()"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = ADD3 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 6
+                                 , ESVerbatim ") ()"
                                  ]
                  }
              ]
@@ -1325,44 +1325,44 @@ mkSimdAndiInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure and3_g Nothing and3_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 11
-                                 , ASVerbatim " = ANDi3 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 6
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 9
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 10
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 11
+                                 , ESVerbatim " = ANDi3 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 6
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 9
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 10
+                                 , ESVerbatim ")"
                                  ]
                  }
              , InstrPattern
                  { patID = 1
                  , patOS = OS.OpStructure and2_g Nothing and2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = ANDi2 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 6
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = ANDi2 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 6
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1411,19 +1411,19 @@ mkSimdSlrlInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure slrl2_g Nothing slrl2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = SLRL2 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 6
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = SLRL2 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 6
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1469,19 +1469,19 @@ mkSimdSlrlConstantInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure slrl_g Nothing slrl_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 6
-                                 , ASVerbatim " = SLRL2 ("
-                                 , ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 4
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 6
+                                 , ESVerbatim " = SLRL2 ("
+                                 , ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 4
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1530,19 +1530,19 @@ mkSimdSllvInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure sllv2_g Nothing sllv2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = SLLV2 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 6
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = SLLV2 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 6
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1588,19 +1588,19 @@ mkSimdNorInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure xor2_g Nothing xor2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 6
-                                 , ASVerbatim " = NOR2 ("
-                                 , ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASVerbatim getZeroRegName
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 4
-                                 , ASVerbatim ", "
-                                 , ASVerbatim getZeroRegName
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 6
+                                 , ESVerbatim " = NOR2 ("
+                                 , ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESVerbatim getZeroRegName
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 4
+                                 , ESVerbatim ", "
+                                 , ESVerbatim getZeroRegName
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1649,19 +1649,19 @@ mkSimdSrlInstruction =
                  { patID = 0
                  , patOS = OS.OpStructure srl2_g Nothing srl2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = SRL2 ("
-                                 , ASLocationOfValueNode 1
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASLocationOfValueNode 5
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 6
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = SRL2 ("
+                                 , ESLocationOfValueNode 1
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESLocationOfValueNode 5
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 6
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1705,19 +1705,19 @@ mkSimdLoad16ImmInstruction w =
                  { patID = 0
                  , patOS = OS.OpStructure li2_g Nothing li2_cs
                  , patADDUC = True
-                 , patAsmStrTemplate =
-                     ASSTemplate [ ASLocationOfValueNode 3
-                                 , ASVerbatim ", "
-                                 , ASLocationOfValueNode 7
-                                 , ASVerbatim " = ADDiu2 ("
-                                 , ASVerbatim getZeroRegName
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 2
-                                 , ASVerbatim ") ("
-                                 , ASVerbatim getZeroRegName
-                                 , ASVerbatim ", "
-                                 , ASIntConstOfValueNode 6
-                                 , ASVerbatim ")"
+                 , patEmitString =
+                     ESTSimple [ ESLocationOfValueNode 3
+                                 , ESVerbatim ", "
+                                 , ESLocationOfValueNode 7
+                                 , ESVerbatim " = ADDiu2 ("
+                                 , ESVerbatim getZeroRegName
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 2
+                                 , ESVerbatim ") ("
+                                 , ESVerbatim getZeroRegName
+                                 , ESVerbatim ", "
+                                 , ESIntConstOfValueNode 6
+                                 , ESVerbatim ")"
                                  ]
                  }
              ]
@@ -1801,7 +1801,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (mkDataImmDataAsmStr $ fst a)
+              (mkDataImmDataEmitStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegistersInclZero
               getGPRegistersWithoutZero
@@ -1813,7 +1813,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (mkDataImmDataAsmStr $ fst a)
+              (mkDataImmDataEmitStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegistersInclZero
               getGPRegistersWithoutZero
@@ -1880,19 +1880,19 @@ mkInstructions =
     -- Implements a BGT as a SLTi + BEQ (LLVM gives SLTi latency 0)
   [ let i = mkRegImmCondBrInstr 32 (Range (-32768) 32766) "BEQLT"
             (O.CompArithOp $ O.SIntOp O.GT)
-    in updateAsmStrTemplate
-       (ASSMultiTemplate
-        [ ASSTemplate
-          [ ASVerbatim $ "%temp1 = SLTi "
-          , ASLocationOfValueNode 5
-          , ASVerbatim ", "
-          , ASIntConstOfValueNode 6
+    in updateEmitStrTemplate
+       (ESTMulti
+        [ ESTSimple
+          [ ESVerbatim $ "%temp1 = SLTi "
+          , ESLocationOfValueNode 5
+          , ESVerbatim ", "
+          , ESIntConstOfValueNode 6
           ]
-        , ASSTemplate
-          [ ASVerbatim $ "BEQ "
-          , ASVerbatim "%temp1, "
-          , ASVerbatim "%ZERO, "
-          , ASNameOfBlockNode 2
+        , ESTSimple
+          [ ESVerbatim $ "BEQ "
+          , ESVerbatim "%temp1, "
+          , ESVerbatim "%ZERO, "
+          , ESNameOfBlockNode 2
           ]
         ]
        ) i
@@ -1900,7 +1900,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (mkDataImmDataAsmStr $ fst a)
+              (mkDataImmDataEmitStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegistersInclZero
               getGPRegistersWithoutZero
@@ -1915,7 +1915,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (mkDataImmDataAsmStr $ fst a)
+              (mkDataImmDataEmitStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegistersInclZero
               getGPRegistersWithoutZero
@@ -1927,7 +1927,7 @@ mkInstructions =
   ++
   map
     ( \a -> mkSimpleNBitRegMBitImmCompInst
-              (mkDataImmDataAsmStr $ fst a)
+              (mkDataImmDataEmitStr $ fst a)
               (O.CompArithOp $ snd a)
               getGPRegistersInclZero
               getGPRegistersWithoutZero
@@ -1939,12 +1939,12 @@ mkInstructions =
   ++
   map
     ( \n -> mkSimpleNBitRegMBitImmCompInst
-              [ ASLocationOfValueNode 3
-              , ASVerbatim $ " = "
-              , ASVerbatim $ "NOR "
-              , ASLocationOfValueNode 1
-              , ASVerbatim ", "
-              , ASVerbatim getZeroRegName
+              [ ESLocationOfValueNode 3
+              , ESVerbatim $ " = "
+              , ESVerbatim $ "NOR "
+              , ESLocationOfValueNode 1
+              , ESVerbatim ", "
+              , ESVerbatim getZeroRegName
               ]
               (O.CompArithOp $ O.IntOp O.XOr)
               getGPRegistersInclZero
@@ -1956,12 +1956,12 @@ mkInstructions =
     [ 8, 32 ]
   ++
     [ mkSimpleNBitRegMBitFirstImmCompInst
-              [ ASLocationOfValueNode 3
-              , ASVerbatim " = "
-              , ASVerbatim "SUBu "
-              , ASVerbatim getZeroRegName
-              , ASVerbatim ", "
-              , ASLocationOfValueNode 2
+              [ ESLocationOfValueNode 3
+              , ESVerbatim " = "
+              , ESVerbatim "SUBu "
+              , ESVerbatim getZeroRegName
+              , ESVerbatim ", "
+              , ESLocationOfValueNode 2
               ]
               (O.CompArithOp $ O.UIntOp O.Sub)
               getGPRegistersInclZero

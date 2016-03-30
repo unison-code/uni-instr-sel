@@ -203,45 +203,45 @@ emitInstructions model sol tm mid =
                                  (hlMatchInstructionID match)
                                  (hlMatchPatternID match)
       instr_parts = map
-                    (\ips -> updateNodeIDsInAsmStrParts ips
-                             (hlMatchAsmStrNodeMaplist match))
-                    (flattenAsmStrParts $ patAsmStrTemplate pat_data)
+                    (\ips -> updateNodeIDsInEmitStrParts ips
+                             (hlMatchEmitStrNodeMaplist match))
+                    (flattenEmitStrParts $ patEmitStrTemplate pat_data)
   in map
      (\ip -> AsmInstruction $ concatMap (emitInstructionPart model sol tm) ip)
      instr_parts
 
 -- | Updates the pattern graph node IDs appearing in the assembly string parts
 -- with the corresponding function graph node IDs.
-updateNodeIDsInAsmStrParts
-  :: [AssemblyStringPart]
+updateNodeIDsInEmitStrParts
+  :: [EmitStringPart]
      -- ^ The parts to update.
   -> [Maybe NodeID]
      -- ^ The node ID mappings for the template.
-  -> [AssemblyStringPart]
-updateNodeIDsInAsmStrParts asm maps =
-  map f (zip asm maps)
-  where f (ASVerbatim str, _) = ASVerbatim str
-        f (ASLocationOfValueNode _, Just n) = ASLocationOfValueNode n
-        f (ASIntConstOfValueNode _, Just n) = ASIntConstOfValueNode n
-        f (ASNameOfBlockNode     _, Just n) = ASNameOfBlockNode n
-        f (ASBlockOfValueNode    _, Just n) = ASBlockOfValueNode  n
-        f _ = error "updateNodeIDsInAsmStrParts: Invalid arguments"
+  -> [EmitStringPart]
+updateNodeIDsInEmitStrParts emits maps =
+  map f (zip emits maps)
+  where f (ESVerbatim str, _) = ESVerbatim str
+        f (ESLocationOfValueNode _, Just n) = ESLocationOfValueNode n
+        f (ESIntConstOfValueNode _, Just n) = ESIntConstOfValueNode n
+        f (ESNameOfBlockNode     _, Just n) = ESNameOfBlockNode n
+        f (ESBlockOfValueNode    _, Just n) = ESBlockOfValueNode  n
+        f _ = error "updateNodeIDsInEmitStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
 emitInstructionPart
   :: HighLevelModel
   -> HighLevelSolution
   -> TargetMachine
-  -> AssemblyStringPart
+  -> EmitStringPart
   -> String
-emitInstructionPart _ _ _ (ASVerbatim s) = s
-emitInstructionPart model _ _ (ASIntConstOfValueNode n) =
+emitInstructionPart _ _ _ (ESVerbatim s) = s
+emitInstructionPart model _ _ (ESIntConstOfValueNode n) =
   let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
      then pShow $ fromJust i
      else -- TODO: handle this case
           "i?"
-emitInstructionPart model sol tm (ASLocationOfValueNode n) =
+emitInstructionPart model sol tm (ESLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
      then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
@@ -254,13 +254,13 @@ emitInstructionPart model sol tm (ASLocationOfValueNode n) =
                        "o?"
      else -- TODO: handle this case
           "r?"
-emitInstructionPart model _ _ (ASNameOfBlockNode n) =
+emitInstructionPart model _ _ (ESNameOfBlockNode n) =
   let l = findNameOfBlockNode model n
   in if isJust l
      then pShow $ fromJust l
      else -- TODO: handle this case
           "l?"
-emitInstructionPart model sol m (ASBlockOfValueNode n) =
+emitInstructionPart model sol m (ESBlockOfValueNode n) =
   let function = hlFunctionParams model
       data_nodes = hlFunData function
   in if n `elem` data_nodes
@@ -270,7 +270,7 @@ emitInstructionPart model sol m (ASBlockOfValueNode n) =
              then emitInstructionPart model
                                      sol
                                      m
-                                     (ASNameOfBlockNode $ fromJust l)
+                                     (ESNameOfBlockNode $ fromJust l)
              else -- TODO: handle this case
                   "l?"
      else -- TODO: handle this case
