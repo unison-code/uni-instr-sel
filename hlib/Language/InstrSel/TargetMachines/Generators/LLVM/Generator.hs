@@ -229,7 +229,7 @@ mkEmitString
   -> String
   -> TM.EmitStringTemplate
 mkEmitString i os str =
-  TM.ESTSimple $ map f $ splitStartingOn "% ,()[]" str
+  TM.ESTSimple $ mergeVerbatims $ map f $ splitStartingOn "% ,()[]" str
   where
   f s = if head s == '%'
         then let g = osGraph os
@@ -277,6 +277,11 @@ mkEmitString i os str =
                      else error $ "mkEmitString: no value or blocks nodes "
                                   ++ "with origin or name '" ++ s ++ "'"
         else TM.ESVerbatim s
+  mergeVerbatims [] = []
+  mergeVerbatims [s] = [s]
+  mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
+    mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
+  mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
 
 mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
 mkInstrProps i is_copy =
