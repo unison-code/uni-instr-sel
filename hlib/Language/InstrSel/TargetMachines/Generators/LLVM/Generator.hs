@@ -127,7 +127,7 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addOperandConstraints i locs $ mkOpStructure p
-              tmpl = mkAsmStrTemplate i os (LLVM.instrAssemblyString i)
+              tmpl = mkAsmStrTemplate i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patADDUC = True
@@ -166,7 +166,7 @@ addOperandConstraints i all_locs os =
                                ++ "with origin '" ++ origin ++ "'"
                   else error $ "addOperandConstraints: no value node with "
                                ++ "origin '" ++ origin ++ "' in instruction '"
-                               ++ LLVM.instrAssemblyString i ++ "'"
+                               ++ LLVM.instrEmitString i ++ "'"
         getValueOrBlockNode os' str =
           let value_n = findValueNodesWithOrigin (osGraph os') str
               block_n = findBlockNodesWithName (osGraph os') $ toBlockName str

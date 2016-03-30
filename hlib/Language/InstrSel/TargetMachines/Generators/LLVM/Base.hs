@@ -42,8 +42,8 @@ data MachineDescription
 -- | Contains the information regarding an instruction.
 data Instruction
   = Instruction
-      { instrAssemblyString :: String
-        -- ^ The assembly string of this instruction. Input operands are
+      { instrEmitString :: String
+        -- ^ The string to emit for this instruction. Input operands are
         -- prefixed with a @%@.
       , instrSize :: Integer
         -- ^ Instruction code size (in bytes).
@@ -51,7 +51,7 @@ data Instruction
         -- ^ Instruction latency (in cycles).
       , instrOperands :: [InstrOperand]
         -- ^ The operands used in the instruction. The order is NOT necesarily
-        -- the same as that given in the assembly string.
+        -- the same as that given in the emit string.
       , instrSemantics :: [InstrSemantics]
         -- ^ The semantics of this instruction, expressed in LLVM IR.
       }
@@ -124,7 +124,7 @@ instance FromJSON MachineDescription where
 instance FromJSON Instruction where
   parseJSON (Object v) =
     Instruction
-      <$> v .: "asm"
+      <$> v .: "emit"
       <*> v .: "size"
       <*> v .: "latency"
       <*> v .: "operands"

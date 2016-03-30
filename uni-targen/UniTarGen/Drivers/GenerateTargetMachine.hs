@@ -97,8 +97,8 @@ parseSemanticsInMD m =
                                   then return $ Just $ fromRight r
                                   else do reportError $
                                             "--- ERROR found in semantics "
-                                            ++ "of instruction '"
-                                            ++ (instrAssemblyString i)
+                                            ++ "of instruction with emit string"
+                                            ++ " '" + (instrEmitString i)
                                             ++ "':\n" ++ (fromLeft r) ++ "\n"
                                             ++ "Skipping to next semantics.\n"
                                           return Nothing
