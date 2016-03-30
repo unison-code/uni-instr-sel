@@ -184,7 +184,7 @@ processMatch instr pattern match mid =
                                d_use_ns
       entry_b_node_id = osEntryBlockNode $ patOS pattern
       i_props = instrProps instr
-      emit_maps = computeEmitStrNodeMaps (patEmitStrTemplate pattern) match
+      emit_maps = computeEmitStrNodeMaps (patEmitString pattern) match
   in HighLevelMatchParams
        { hlMatchInstructionID = instrID instr
        , hlMatchPatternID = patID pattern
@@ -210,11 +210,11 @@ processMatch instr pattern match mid =
        , hlMatchEmitStrNodeMaplist = emit_maps
        }
 
--- | Computes the assembly string node ID mappings, which is done as follows: if
--- the assembly string part contains a node ID, take the node ID from the
+-- | Computes the emit string node ID mappings, which is done as follows: if the
+-- assembly string part contains a node ID, take the node ID from the
 -- corresponding node in the function graph. Otherwise use 'Nothing'.
 computeEmitStrNodeMaps
-  :: AssemblyStringTemplate
+  :: EmitStringTemplate
   -> Match NodeID
   -> [Maybe NodeID]
 computeEmitStrNodeMaps t m =

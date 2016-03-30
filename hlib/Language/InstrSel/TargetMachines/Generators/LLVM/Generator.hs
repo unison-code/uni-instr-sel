@@ -127,11 +127,11 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addOperandConstraints i locs $ mkOpStructure p
-              tmpl = mkEmitStrTemplate i os (LLVM.instrEmitString i)
+              tmpl = mkEmitString i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patADDUC = True
-                             , TM.patEmitStrTemplate = tmpl
+                             , TM.patEmitString = tmpl
                              }
 
 addOperandConstraints
@@ -223,13 +223,13 @@ mkOpStructure (LLVM.InstrSemantics (Right m)) =
 mkOpStructure (LLVM.InstrSemantics (Left _)) =
   error "mkOpStructure: instruction semantics has not been parsed"
 
-mkEmitStrTemplate
+mkEmitString
   :: LLVM.Instruction
   -> OpStructure
   -> String
   -> TM.EmitStringTemplate
-mkEmitStrTemplate i os str =
-  TM.ESTSimple $ map f $ splitStartingOn "%," str
+mkEmitString i os str =
+  TM.ESTSimple $ map f $ splitStartingOn "% ,()[]" str
   where
   f s = if head s == '%'
         then let g = osGraph os
@@ -248,11 +248,11 @@ mkEmitStrTemplate i os str =
                                        TM.ESIntConstOfValueNode
                                        $ getNodeID
                                        $ head value_n
-                                     _ -> error $ "mkEmitStrTemplate: something"
+                                     _ -> error $ "mkEmitString: something"
                                                   ++ " is terribly wrong..."
-                             else error $ "mkEmitStrTemplate: no operand with "
+                             else error $ "mkEmitString: no operand with "
                                           ++ "name '" ++ s ++ "'"
-                     else error $ "mkEmitStrTemplate: multiple value nodes with"
+                     else error $ "mkEmitString: multiple value nodes with"
                                   ++ " origin '" ++ s ++ "'"
                 else if length block_n > 0
                      then if length block_n == 1
@@ -268,13 +268,13 @@ mkEmitStrTemplate i os str =
                                             $ getNodeID
                                             $ head block_n
                                           _ -> error
-                                               $ "mkEmitStrTemplate: something "
+                                               $ "mkEmitString: something "
                                                ++ "is terribly wrong..."
-                                  else error $ "mkEmitStrTemplate: no operand "
+                                  else error $ "mkEmitString: no operand "
                                                ++ "with name '" ++ s ++ "'"
-                          else error $ "mkEmitStrTemplate: multiple block nodes"
+                          else error $ "mkEmitString: multiple block nodes"
                                        ++ " with name '" ++ s ++ "'"
-                     else error $ "mkEmitStrTemplate: no value or blocks nodes "
+                     else error $ "mkEmitString: no value or blocks nodes "
                                   ++ "with origin or name '" ++ s ++ "'"
         else TM.ESVerbatim s
 

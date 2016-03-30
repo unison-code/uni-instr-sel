@@ -133,7 +133,7 @@ theTM =
                       0
                       init_def_pattern_os
                       True
-                      (ASSTemplate [])
+                      (ESTSimple [])
                   ]
                   (InstrProperties 1 1 True False)
               , Instruction
@@ -142,13 +142,13 @@ theTM =
                       0
                       add_pattern_os
                       True
-                      ( ASSTemplate
-                          [ ASVerbatim "add "
-                          , ASLocationOfValueNode 3
-                          , ASVerbatim ", "
-                          , ASLocationOfValueNode 1
-                          , ASVerbatim ", "
-                          , ASLocationOfValueNode 2
+                      ( ESTSimple
+                          [ ESVerbatim "add "
+                          , ESLocationOfValueNode 3
+                          , ESVerbatim ", "
+                          , ESLocationOfValueNode 1
+                          , ESVerbatim ", "
+                          , ESLocationOfValueNode 2
                           ]
                       )
                   ]
@@ -159,13 +159,13 @@ theTM =
                       0
                       bnz_pattern_os
                       True
-                      ( ASSTemplate
-                          [ ASVerbatim "bnz "
-                          , ASLocationOfValueNode 0
-                          , ASVerbatim ", "
-                          , ASNameOfBlockNode 2
-                          , ASVerbatim ", "
-                          , ASNameOfBlockNode 3
+                      ( ESTSimple
+                          [ ESVerbatim "bnz "
+                          , ESLocationOfValueNode 0
+                          , ESVerbatim ", "
+                          , ESNameOfBlockNode 2
+                          , ESVerbatim ", "
+                          , ESNameOfBlockNode 3
                           ]
                       )
                   ]
@@ -176,9 +176,9 @@ theTM =
                       0
                       br_pattern_os
                       True
-                      ( ASSTemplate
-                          [ ASVerbatim "br "
-                          , ASNameOfBlockNode 1
+                      ( ESTSimple
+                          [ ESVerbatim "br "
+                          , ESNameOfBlockNode 1
                           ]
                       )
                   ]
@@ -189,7 +189,7 @@ theTM =
                       0
                       br_fallthrough_pattern_os
                       True
-                      (ASSTemplate [])
+                      (ESTSimple [])
                   ]
                   (InstrProperties 1 1 True False)
               , Instruction
@@ -198,9 +198,9 @@ theTM =
                       0
                       ret_pattern_os
                       True
-                      ( ASSTemplate
-                        [ ASVerbatim "ret "
-                        , ASLocationOfValueNode 0
+                      ( ESTSimple
+                        [ ESVerbatim "ret "
+                        , ESLocationOfValueNode 0
                         ]
                       )
                   ]

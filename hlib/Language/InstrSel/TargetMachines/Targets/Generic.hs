@@ -112,21 +112,21 @@ mkGenericPhiInstructions =
              { patID = (toPatternID $ n-2)
              , patOS = OS.OpStructure g Nothing cs
              , patADDUC = False
-             , patAsmStrTemplate =
-                 ( ASSTemplate
-                   $[ ASLocationOfValueNode 1
-                     , ASVerbatim " = PHI "
+             , patEmitString =
+                 ( ESTSimple
+                   $[ ESLocationOfValueNode 1
+                     , ESVerbatim " = PHI "
                      ]
                      ++
                      ( concat
                        $ intersperse
-                           [ASVerbatim " "]
+                           [ESVerbatim " "]
                            ( map ( \n' ->
-                                   [ ASVerbatim "("
-                                   , ASLocationOfValueNode (toNodeID n')
-                                   , ASVerbatim ", "
-                                   , ASBlockOfValueNode (toNodeID n')
-                                   , ASVerbatim ")"
+                                   [ ESVerbatim "("
+                                   , ESLocationOfValueNode (toNodeID n')
+                                   , ESVerbatim ", "
+                                   , ESBlockOfValueNode (toNodeID n')
+                                   , ESVerbatim ")"
                                    ]
                                  )
                                  [2..n+1]
@@ -171,7 +171,7 @@ mkGenericBrFallThroughInstructions =
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitString = ESTSimple []
           }
   in [ Instruction
          { instrID = 0
@@ -204,7 +204,7 @@ mkGenericDataDefInstructions =
           { patID = pid
           , patOS = OS.OpStructure g (Just 0) cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitString = ESTSimple []
           }
   in [ Instruction
          { instrID = 0
@@ -252,7 +252,7 @@ mkGenericCopyInstructions =
           { patID = 0
           , patOS = OS.OpStructure (g w) Nothing cs
           , patADDUC = True
-          , patAsmStrTemplate = ASSTemplate []
+          , patEmitString = ESTSimple []
           }
   in [ Instruction
          { instrID = 0

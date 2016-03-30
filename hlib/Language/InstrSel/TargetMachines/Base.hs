@@ -109,9 +109,9 @@ data InstrPattern
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
         -- except the generic phi patterns.
-      , patEmitStrTemplate :: EmitStringTemplate
-        -- ^ The emit string template, from which the assembly instruction will
-        -- be produced upon code emission if this pattern is selected.
+      , patEmitString :: EmitStringTemplate
+        -- ^ The emit string from which the assembly instruction will be
+        -- produced upon code emission if this pattern is selected.
       }
   deriving (Show)
 
