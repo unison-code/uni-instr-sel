@@ -33,6 +33,9 @@ import Data.Maybe
   , isJust
   )
 
+import Debug.Trace
+
+
 
 --------------
 -- Data types
@@ -55,6 +58,24 @@ newtype FlowDAG
 -- | Type synonym for the internal graph.
 type IFlowDAG = I.Gr MatchID ()
 
+-- | A data type containing various information required in order to emit the
+-- assembly code.
+data EmissionState
+  = EmissionState { emittedCode :: [AssemblyCode]
+                    -- ^ Code that has already been emitted. For efficiency
+                    -- reasons, the list will be given in reverse emission order
+                    -- (that is, the last emission will appear first in the
+                    -- list).
+                  , varNamesInUse :: [String]
+                    -- ^ Variable names that are already in use or will be used
+                    -- at a later point during emission.
+                  , varNameMaps :: [(Int, String)]
+                    -- ^ Mappings from an identifier to a variable name. These
+                    -- only apply within the scope of an emit string template
+                    -- and must therefore be reset when moving from one
+                    -- instruction to another.
+                  }
+
 
 
 -------------
@@ -69,18 +90,31 @@ generateCode
   -> HighLevelSolution
   -> [AssemblyCode]
 generateCode target model sol@(HighLevelSolution {}) =
-  concat $
-    map ( \b_node ->
-          let matches = getMatchesPlacedInBlock sol b_node
-              sorted_matches = sortMatchesByFlow model matches
-              instrs = mapMaybe (emitInstruction model sol target)
-                                sorted_matches
-              block_name = fromJust $ findNameOfBlockNode model b_node
-          in (AsmBlock $ pShow block_name):instrs
-        )
-        (hlSolOrderOfBlocks sol)
+  reverse
+  $ emittedCode
+  $ foldl ( \st0 b ->
+              let matches = getMatchesPlacedInBlock sol b
+                  sorted_matches = sortMatchesByFlow model matches
+                  block_name = fromJust $ findNameOfBlockNode model b
+                  code = AsmBlock $ pShow block_name
+                  st1 = st0 { emittedCode = (code:emittedCode st0) }
+                  st2 = foldl (emitInstructions model sol target)
+                              st1
+                              sorted_matches
+              in st2
+          )
+          (mkInitState model)
+          (hlSolOrderOfBlocks sol)
+
 generateCode _ _ NoHighLevelSolution =
   error "generateCode: cannot generate code from no solution"
+
+-- | Returns an initial emission state.
+mkInitState :: HighLevelModel -> EmissionState
+mkInitState m = EmissionState { emittedCode = []
+                              , varNamesInUse = getVarNamesInUse m
+                              , varNameMaps = []
+                              }
 
 -- | Gets the list of matches that has been allocated to a given block in the CP
 -- model solution. The block is identified using the node ID of its
@@ -88,6 +122,11 @@ generateCode _ _ NoHighLevelSolution =
 getMatchesPlacedInBlock :: HighLevelSolution -> NodeID -> [MatchID]
 getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
+
+-- | Gets a list of variable names that are already in use in the
+-- 'HighLevelModel'.
+getVarNamesInUse :: HighLevelModel -> [String]
+getVarNamesInUse m = map snd $ hlFunValueOriginData $ hlFunctionParams m
 
 -- | Gets the block name for a given block node. If no such block can be found,
 -- 'Nothing' is returned.
@@ -195,9 +234,10 @@ emitInstructions
   :: HighLevelModel
   -> HighLevelSolution
   -> TargetMachine
+  -> EmissionState
   -> MatchID
-  -> [AssemblyCode]
-emitInstructions model sol tm mid =
+  -> EmissionState
+emitInstructions model sol tm st0 mid =
   let match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern (tmInstructions tm)
                                  (hlMatchInstructionID match)
@@ -206,9 +246,16 @@ emitInstructions model sol tm mid =
                     (\ips -> updateNodeIDsInEmitStrParts ips
                              (hlMatchEmitStrNodeMaplist match))
                     (flattenEmitStrParts $ patEmitString pat_data)
-  in map
-     (\ip -> AsmInstruction $ concatMap (emitInstructionPart model sol tm) ip)
-     instr_parts
+  in foldl ( \st1 parts ->
+               foldl (emitInstructionPart model sol tm)
+                      ( st1 { emittedCode = (AsmInstruction "":emittedCode st0)
+                            , varNameMaps = []
+                            }
+                      )
+                      parts
+           )
+           st0
+           instr_parts
 
 -- | Updates the pattern graph node IDs appearing in the assembly string parts
 -- with the corresponding function graph node IDs.
@@ -219,6 +266,7 @@ updateNodeIDsInEmitStrParts
      -- ^ The node ID mappings for the template.
   -> [EmitStringPart]
 updateNodeIDsInEmitStrParts emits maps =
+  trace (show emits ++ "\n" ++ show maps ++ "\n") $
   map f (zip emits maps)
   where f (p@(ESVerbatim {}),       _     ) = p
         f (ESLocationOfValueNode _, Just n) = ESLocationOfValueNode n
@@ -226,42 +274,59 @@ updateNodeIDsInEmitStrParts emits maps =
         f (ESNameOfBlockNode     _, Just n) = ESNameOfBlockNode n
         f (ESBlockOfValueNode    _, Just n) = ESBlockOfValueNode  n
         f (p@(ESTemporary {}),      _     ) = p
-        f _ = error "updateNodeIDsInEmitStrParts: Invalid arguments"
+        f _ = error "updateNodeIDsInEmitStrParts: invalid arguments"
 
 -- | Emits part of an assembly instruction.
 emitInstructionPart
   :: HighLevelModel
   -> HighLevelSolution
   -> TargetMachine
+  -> EmissionState
   -> EmitStringPart
-  -> String
-emitInstructionPart _ _ _ (ESVerbatim s) = s
-emitInstructionPart model _ _ (ESIntConstOfValueNode n) =
+  -> EmissionState
+emitInstructionPart _ _ _ st (ESVerbatim s) =
+  let code = emittedCode st
+      (AsmInstruction instr_str) = head code
+      new_instr = AsmInstruction $ instr_str ++ s
+  in st { emittedCode = (new_instr:tail code) }
+emitInstructionPart model _ _ st (ESIntConstOfValueNode n) =
   let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
-     then pShow $ fromJust i
+     then let code = emittedCode st
+              (AsmInstruction instr_str) = head code
+              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust i)
+          in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no integer constant found for function "
                   ++ "node " ++ pShow n
-emitInstructionPart model sol tm (ESLocationOfValueNode n) =
+emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
-     then let reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
+     then let code = emittedCode st
+              (AsmInstruction instr_str) = head code
+              reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
               origin = lookup n (hlFunValueOriginData $ hlFunctionParams model)
           in if (isJust $ locValue reg)
-             then pShow $ locName reg
+             then let new_instr = AsmInstruction $ instr_str
+                                  ++ (pShow $ locName reg)
+                  in st { emittedCode = (new_instr:tail code) }
              else if isJust origin
-                  then fromJust origin
+                  then let new_instr = AsmInstruction $ instr_str
+                                       ++ fromJust origin
+                  in st { emittedCode = (new_instr:tail code) }
                   else error $ "emitInstructionPart: no origin found for "
                                ++ "function node " ++ pShow n
      else error $ "emitInstructionPart: no location found for "
                   ++ "function node " ++ pShow n
-emitInstructionPart model _ _ (ESNameOfBlockNode n) =
+emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
   let l = findNameOfBlockNode model n
   in if isJust l
-     then pShow $ fromJust l
+     then let code = emittedCode st
+              (AsmInstruction instr_str) = head code
+              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust l)
+          in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no block name found for function node "
                   ++ pShow n
-emitInstructionPart model sol m (ESBlockOfValueNode n) =
+emitInstructionPart model sol m st (ESBlockOfValueNode n) =
   let function = hlFunctionParams model
       data_nodes = hlFunData function
   in if n `elem` data_nodes
@@ -271,11 +336,36 @@ emitInstructionPart model sol m (ESBlockOfValueNode n) =
              then emitInstructionPart model
                                      sol
                                      m
+                                     st
                                      (ESNameOfBlockNode $ fromJust l)
              else error $ "emitInstructionPart: found no block assigned to "
                           ++ " function node " ++ pShow n
      else error $ "emitInstructionPart: function node " ++ pShow n
                   ++ " is not part of the function's data nodes"
+
+emitInstructionPart _ _ _ st (ESTemporary i) =
+  let code = emittedCode st
+      (AsmInstruction instr_str) = head code
+      name = lookup i (varNameMaps st)
+  in if isJust name
+     then let new_instr = AsmInstruction $ instr_str ++ (fromJust name)
+          in st { emittedCode = (new_instr:tail code) }
+     else let names_in_use = varNamesInUse st
+              new_name = getUniqueVarName names_in_use
+              new_instr = AsmInstruction $ instr_str ++ new_name
+          in st { emittedCode = (new_instr:tail code)
+                , varNamesInUse = (new_name:names_in_use)
+                , varNameMaps = ((i, new_name):varNameMaps st)
+                }
+
+-- | Returns a variable name that does not appear in the given list of strings.
+getUniqueVarName :: [String] -> String
+getUniqueVarName used = head $ dropWhile (`elem` used)
+                                         (map (\i -> "tmp" ++ show i)
+                                              ([1..] :: [Integer]))
+                                              -- Cast is needed or GHC will
+                                              -- complain...
+
 
 -- | Takes the node ID of a datum, and returns the selected match that defines
 -- that datum. If no such match can be found, 'Nothing' is returned.
