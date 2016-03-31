@@ -28,7 +28,7 @@
 # SETTINGS
 #==========
 
-INSTR_SEL_PATH  := instr-sel
+HLIB_PATH       := hlib/instr-sel
 UNI_IS_PATH     := uni-is
 UNI_TARGEN_PATH := uni-targen
 SOLVERS_PATH    := solvers
@@ -41,18 +41,18 @@ TOOLS_PATH      := tools
 #=======
 
 .PHONY: build
-build: instr-sel uni-is uni-targen
+build: hlib uni-is uni-targen
 
 .PHONY: docs
-docs: instr-sel uni-is-doc uni-targen-doc
+docs: hlib uni-is-doc uni-targen-doc
 
-.PHONY: instr-sel
-instr-sel:
-	cd $(INSTR_SEL_PATH) && make
+.PHONY: hlib
+hlib:
+	cd $(HLIB_PATH) && make
 
-.PHONY: instr-sel-doc
-instr-sel-doc:
-	cd $(INSTR_SEL_PATH) && make docs
+.PHONY: hlib-doc
+hlib-doc:
+	cd $(HLIB_PATH) && make docs
 
 .PHONY: uni-is
 uni-is:
@@ -74,7 +74,7 @@ uni-targen-doc:
 
 .PHONY: clean
 clean:
-	cd $(INSTR_SEL_PATH) && make clean
+	cd $(HLIB_PATH) && make clean
 	cd $(UNI_IS_PATH) && make clean
 	cd $(UNI_TARGEN_PATH) && make clean
 	cd $(SOLVERS_PATH) && make clean
@@ -82,7 +82,7 @@ clean:
 
 .PHONY: distclean
 distclean:
-	cd $(INSTR_SEL_PATH) && make distclean
+	cd $(HLIB_PATH) && make distclean
 	cd $(UNI_IS_PATH) && make distclean
 	cd $(UNI_TARGEN_PATH) && make distclean
 	cd $(SOLVERS_PATH) && make distclean
