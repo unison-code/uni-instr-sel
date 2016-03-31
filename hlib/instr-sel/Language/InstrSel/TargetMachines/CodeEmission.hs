@@ -240,8 +240,8 @@ emitInstructionPart model _ _ (ESIntConstOfValueNode n) =
   let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
      then pShow $ fromJust i
-     else -- TODO: handle this case
-          "i?"
+     else error $ "emitInstructionPart: no integer constant found for function "
+                  ++ "node " ++ pShow n
 emitInstructionPart model sol tm (ESLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
@@ -251,16 +251,16 @@ emitInstructionPart model sol tm (ESLocationOfValueNode n) =
              then pShow $ locName reg
              else if isJust origin
                   then fromJust origin
-                  else -- TODO: handle this case
-                       "o?"
-     else -- TODO: handle this case
-          "r?"
+                  else error $ "emitInstructionPart: no origin found for "
+                               ++ "function node " ++ pShow n
+     else error $ "emitInstructionPart: no location found for "
+                  ++ "function node " ++ pShow n
 emitInstructionPart model _ _ (ESNameOfBlockNode n) =
   let l = findNameOfBlockNode model n
   in if isJust l
      then pShow $ fromJust l
-     else -- TODO: handle this case
-          "l?"
+     else error $ "emitInstructionPart: no block name found for function node "
+                  ++ pShow n
 emitInstructionPart model sol m (ESBlockOfValueNode n) =
   let function = hlFunctionParams model
       data_nodes = hlFunData function
@@ -272,10 +272,10 @@ emitInstructionPart model sol m (ESBlockOfValueNode n) =
                                      sol
                                      m
                                      (ESNameOfBlockNode $ fromJust l)
-             else -- TODO: handle this case
-                  "l?"
-     else -- TODO: handle this case
-          "l?"
+             else error $ "emitInstructionPart: found no block assigned to "
+                          ++ " function node " ++ pShow n
+     else error $ "emitInstructionPart: function node " ++ pShow n
+                  ++ " is not part of the function's data nodes"
 
 -- | Takes the node ID of a datum, and returns the selected match that defines
 -- that datum. If no such match can be found, 'Nothing' is returned.
