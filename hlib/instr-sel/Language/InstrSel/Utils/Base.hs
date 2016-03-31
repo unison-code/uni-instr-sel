@@ -25,6 +25,7 @@ module Language.InstrSel.Utils.Base
   , toLower
   , toUpper
   , capitalize
+  , isNumeric
   )
 where
 
@@ -34,6 +35,7 @@ import qualified Data.List.Split as Split
 import qualified Data.Char as Char
   ( toLower
   , toUpper
+  , isDigit
   )
 import Safe
   ( readMay )
@@ -129,6 +131,12 @@ toUpper = map Char.toUpper
 capitalize :: String -> String
 capitalize [] = []
 capitalize (c:cs) = (Char.toUpper c:map Char.toLower cs)
+
+-- | Checks whether a given string is numeric. An empty string is considered not
+-- numeric.
+isNumeric :: String -> Bool
+isNumeric [] = False
+isNumeric cs = all Char.isDigit cs
 
 maybeRead :: Read a => String -> Maybe a
 maybeRead = readMay

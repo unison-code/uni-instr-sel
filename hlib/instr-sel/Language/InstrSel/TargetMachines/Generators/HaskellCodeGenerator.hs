@@ -22,12 +22,6 @@ import Language.InstrSel.Utils
   ( replace )
 
 import Language.Haskell.Exts
-import Language.Haskell.Exts.Pretty
-  ( Style (..)
-  , prettyPrintStyleMode
-  , defaultMode
-  , style
-  )
 
 
 
@@ -72,9 +66,9 @@ generateModule tm =
       tm_func_src = "theTM :: TargetMachine\n\
                     \theTM = " ++ (renameFuncs $ show tm)
       res = parseFileContents $ header_src ++ tm_func_src
-      prettyPrint m = prettyPrintStyleMode (style { lineLength = 80 })
-                                           defaultMode m
+      prettify m = prettyPrintStyleMode (style { lineLength = 80 })
+                                        defaultMode m
   in case res
-     of (ParseOk m) -> boiler_src ++ prettyPrint m
-        (ParseFailed loc msg) -> error $ "generateModule: parsing failed at "
-                                         ++ show loc ++ ": " ++ msg
+     of (ParseOk m) -> boiler_src ++ prettify m
+        (ParseFailed line msg) -> error $ "generateModule: parsing failed at "
+                                         ++ show line ++ ": " ++ msg

@@ -27,7 +27,9 @@ import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Functions.IDs
 import Language.InstrSel.Utils
   ( capitalize
+  , splitOn
   , splitStartingOn
+  , isNumeric
   )
 
 import qualified LLVM.General.AST as LLVM
@@ -229,59 +231,69 @@ mkEmitString
   -> String
   -> TM.EmitStringTemplate
 mkEmitString i os str =
-  TM.ESTSimple $ mergeVerbatims $ map f $ splitStartingOn "% ,()[]" str
+  compact
+  $ TM.ESTMulti
+  $ map (TM.ESTSimple . mergeVerbatims . map f . splitStartingOn "% ,()[]")
+  $ splitOn "\n" str
   where
   f s = if head s == '%'
-        then let g = osGraph os
-                 value_n = findValueNodesWithOrigin g s
-                 block_n = findBlockNodesWithName g $ toBlockName s
-             in if length value_n > 0
-                then if length value_n == 1
-                     then let op = getInstrOperand i s
-                          in if isJust op
-                             then case (fromJust op)
-                                  of (LLVM.RegInstrOperand {}) ->
-                                       TM.ESLocationOfValueNode
-                                       $ getNodeID
-                                       $ head value_n
-                                     (LLVM.ImmInstrOperand {}) ->
-                                       TM.ESIntConstOfValueNode
-                                       $ getNodeID
-                                       $ head value_n
-                                     _ -> error $ "mkEmitString: something"
-                                                  ++ " is terribly wrong..."
-                             else error $ "mkEmitString: no operand with "
-                                          ++ "name '" ++ s ++ "'"
-                     else error $ "mkEmitString: multiple value nodes with"
-                                  ++ " origin '" ++ s ++ "'"
-                else if length block_n > 0
-                     then if length block_n == 1
+        then if not (isNumeric (tail s))
+             then let g = osGraph os
+                      value_n = findValueNodesWithOrigin g s
+                      block_n = findBlockNodesWithName g $ toBlockName s
+                  in if length value_n > 0
+                     then if length value_n == 1
                           then let op = getInstrOperand i s
                                in if isJust op
                                   then case (fromJust op)
-                                       of (LLVM.AbsAddrInstrOperand {}) ->
-                                            TM.ESNameOfBlockNode
+                                       of (LLVM.RegInstrOperand {}) ->
+                                            TM.ESLocationOfValueNode
                                             $ getNodeID
-                                            $ head block_n
-                                          (LLVM.RelAddrInstrOperand {}) ->
-                                            TM.ESNameOfBlockNode
+                                            $ head value_n
+                                          (LLVM.ImmInstrOperand {}) ->
+                                            TM.ESIntConstOfValueNode
                                             $ getNodeID
-                                            $ head block_n
-                                          _ -> error
-                                               $ "mkEmitString: something "
-                                               ++ "is terribly wrong..."
-                                  else error $ "mkEmitString: no operand "
-                                               ++ "with name '" ++ s ++ "'"
-                          else error $ "mkEmitString: multiple block nodes"
-                                       ++ " with name '" ++ s ++ "'"
-                     else error $ "mkEmitString: no value or blocks nodes "
-                                  ++ "with origin or name '" ++ s ++ "'"
+                                            $ head value_n
+                                          _ -> error $ "mkEmitString: unknown "
+                                                       ++ "operand type"
+                                  else error $ "mkEmitString: no operand with "
+                                               ++ "name '" ++ s ++ "'"
+                          else error $ "mkEmitString: multiple value nodes with"
+                                       ++ " origin '" ++ s ++ "'"
+                     else if length block_n > 0
+                          then if length block_n == 1
+                               then let op = getInstrOperand i s
+                                    in if isJust op
+                                       then case (fromJust op)
+                                            of (LLVM.AbsAddrInstrOperand {}) ->
+                                                 TM.ESNameOfBlockNode
+                                                 $ getNodeID
+                                                 $ head block_n
+                                               (LLVM.RelAddrInstrOperand {}) ->
+                                                 TM.ESNameOfBlockNode
+                                                 $ getNodeID
+                                                 $ head block_n
+                                               _ -> error
+                                                    $ "mkEmitString: unknown "
+                                                    ++ "operand type"
+                                       else error $ "mkEmitString: no operand "
+                                                    ++ "with name '" ++ s ++ "'"
+                               else error $ "mkEmitString: multiple block nodes"
+                                            ++ " with name '" ++ s ++ "'"
+                          else error $ "mkEmitString: no value or blocks nodes "
+                                       ++ "with origin or name '" ++ s ++ "'"
+             else let int = read $ tail s
+                  in TM.ESTemporary int
         else TM.ESVerbatim s
   mergeVerbatims [] = []
   mergeVerbatims [s] = [s]
   mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
+  compact t@(TM.ESTMulti ts) = if length ts == 1
+                               then head ts
+                               else t
+  compact t = t
 
 mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
 mkInstrProps i is_copy =

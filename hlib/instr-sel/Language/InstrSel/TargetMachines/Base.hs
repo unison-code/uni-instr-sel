@@ -64,6 +64,11 @@ data EmitStringPart
     -- | Denotes the block in which the definer of a given value node has been
     -- placed.
   | ESBlockOfValueNode NodeID
+    -- | Upon code emission, this will be replaced by a new, uniquely named
+    -- temporary. If multiple 'ESTemporary's with identical identifiers appear
+    -- within the same template, they will all be replaced by the same
+    -- temporary.
+  | ESTemporary Int
   deriving (Show)
 
 -- | Defines a machine instruction.
