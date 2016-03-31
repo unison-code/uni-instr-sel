@@ -55,7 +55,7 @@ hlib-doc:
 	cd $(HLIB_PATH) && make docs
 
 .PHONY: uni-is
-uni-is:
+uni-is: hlib
 	cd $(UNI_IS_PATH) && make
 	cd $(SOLVERS_PATH) && make
 	cd $(TOOLS_PATH) && make
@@ -65,7 +65,7 @@ uni-is-doc:
 	cd $(UNI_IS_PATH) && make docs
 
 .PHONY: uni-targen
-uni-targen:
+uni-targen: hlib
 	cd $(UNI_TARGEN_PATH) && make
 
 .PHONY: uni-targen-doc
