@@ -220,12 +220,12 @@ updateNodeIDsInEmitStrParts
   -> [EmitStringPart]
 updateNodeIDsInEmitStrParts emits maps =
   map f (zip emits maps)
-  where f (ESLocationOfValueNode _, Just n) = ESLocationOfValueNode n
+  where f (p@(ESVerbatim {}),       _     ) = p
+        f (ESLocationOfValueNode _, Just n) = ESLocationOfValueNode n
         f (ESIntConstOfValueNode _, Just n) = ESIntConstOfValueNode n
         f (ESNameOfBlockNode     _, Just n) = ESNameOfBlockNode n
         f (ESBlockOfValueNode    _, Just n) = ESBlockOfValueNode  n
-        f (p@(ESVerbatim {}), _) = p
-        f (p@(ESTemporary {}), _) = p
+        f (p@(ESTemporary {}),      _     ) = p
         f _ = error "updateNodeIDsInEmitStrParts: Invalid arguments"
 
 -- | Emits part of an assembly instruction.
