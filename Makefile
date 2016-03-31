@@ -49,10 +49,18 @@ docs: uni-is-doc uni-targen-doc
 uni-is:
 	$(RM) *.cabal
 	ln -s uni-is.cabal.package uni-is.cabal
-	cabal install -j$(NUMCORES)
+	cabal build -j$(NUMCORES)
+	cabal install
 	rm uni-is.cabal
 	cd $(SOLVERSPATH) && make
 	cd $(TOOLSPATH) && make
+
+.PHONY: uni-is-warnings
+uni-is-warnings:
+	$(RM) *.cabal
+	ln -s uni-is.cabal.package uni-is.cabal
+	cabal build --ghc-options="-fforce-recomp -fno-code"
+	rm uni-is.cabal
 
 .PHONY: uni-is-doc
 uni-is-doc:
@@ -66,8 +74,16 @@ uni-is-doc:
 uni-targen:
 	$(RM) *.cabal
 	ln -s uni-targen.cabal.package uni-targen.cabal
-	cabal install -j$(NUMCORES)
+	cabal build -j$(NUMCORES)
+	cabal install
 	rm uni-targen.cabal
+
+.PHONY: uni-targen-warnings
+uni-targen-warnings:
+	$(RM) *.cabal
+	ln -s uni-targen.cabal.package uni-targen.cabal
+	cabal build --ghc-options="-fforce-recomp -fno-code"
+	rm uni-is.cabal
 
 .PHONY: uni-targen-doc
 uni-targen-doc:
