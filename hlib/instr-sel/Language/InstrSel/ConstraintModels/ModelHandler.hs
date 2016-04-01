@@ -216,9 +216,9 @@ processMatch instr pattern match mid =
 computeEmitStrNodeMaps
   :: EmitStringTemplate
   -> Match NodeID
-  -> [Maybe NodeID]
-computeEmitStrNodeMaps t m =
-  map f (concat $ flattenEmitStrParts t)
+  -> [[Maybe NodeID]]
+computeEmitStrNodeMaps (EmitStringTemplate ts) m =
+  map (map f) ts
   where f (ESLocationOfValueNode n) = findFNInMatch m n
         f (ESIntConstOfValueNode n) = findFNInMatch m n
         f (ESNameOfBlockNode     n) = findFNInMatch m n

@@ -58,24 +58,25 @@ import Data.List
 generateTargetMachine :: LLVM.MachineDescription -> TM.TargetMachine
 generateTargetMachine m =
   let mkPhiInstrEmitTemplate arg_ids ret_id =
-        ( TM.ESTSimple
-          $ [ TM.ESLocationOfValueNode ret_id
-            , TM.ESVerbatim " = PHI "
+        ( TM.EmitStringTemplate
+          $ [ [ TM.ESLocationOfValueNode ret_id
+              , TM.ESVerbatim " = PHI "
+              ]
+              ++ ( concat
+                   $ intersperse
+                       [TM.ESVerbatim " "]
+                       ( map ( \n ->
+                               [ TM.ESVerbatim "("
+                               , TM.ESLocationOfValueNode n
+                               , TM.ESVerbatim ", "
+                               , TM.ESBlockOfValueNode n
+                               , TM.ESVerbatim ")"
+                               ]
+                             )
+                             arg_ids
+                       )
+                 )
             ]
-            ++ ( concat
-                 $ intersperse
-                     [TM.ESVerbatim " "]
-                     ( map ( \n ->
-                             [ TM.ESVerbatim "("
-                             , TM.ESLocationOfValueNode n
-                             , TM.ESVerbatim ", "
-                             , TM.ESBlockOfValueNode n
-                             , TM.ESVerbatim ")"
-                             ]
-                           )
-                           arg_ids
-                     )
-               )
         )
       locs = mkLocations m
       instrs = mkInstructions m locs
@@ -231,9 +232,8 @@ mkEmitString
   -> String
   -> TM.EmitStringTemplate
 mkEmitString i os str =
-  compact
-  $ TM.ESTMulti
-  $ map (TM.ESTSimple . mergeVerbatims . map f . splitStartingOn "% ,()[]")
+  TM.EmitStringTemplate
+  $ map (mergeVerbatims . map f . splitStartingOn "% ,()[]")
   $ splitOn "\n" str
   where
   f s = if head s == '%'
@@ -290,10 +290,6 @@ mkEmitString i os str =
   mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
-  compact t@(TM.ESTMulti ts) = if length ts == 1
-                               then head ts
-                               else t
-  compact t = t
 
 mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
 mkInstrProps i is_copy =

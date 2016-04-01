@@ -165,13 +165,14 @@ data HighLevelMatchParams
         -- ^ The data in the function graph which are used by phi nodes
         -- appearing this match. This information is required during instruction
         -- emission in order to break cyclic data dependencies.
-      , hlMatchEmitStrNodeMaplist :: [Maybe NodeID]
+      , hlMatchEmitStrNodeMaplist :: [[Maybe NodeID]]
         -- ^ A list of mappings of the node IDs that appears in the
         -- instruction's emit string template (which refer to nodes in the
         -- pattern graph) to the node IDs in the function graph which are
         -- covered by this pattern. The map list has the following appearance:
-        -- each element in the list corresponds to an emit string part with the
-        -- same index in the emit string template.
+        -- the outer list corresponds to the outer list within the
+        -- 'EmitStringTemplate', and each element in the inner list corresponds
+        -- to an 'EmitStringPart' with the same index.
       }
   deriving (Show)
 

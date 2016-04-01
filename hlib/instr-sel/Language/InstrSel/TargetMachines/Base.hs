@@ -27,7 +27,6 @@ module Language.InstrSel.TargetMachines.Base
   , findInstruction
   , findInstrPattern
   , findLocation
-  , flattenEmitStrParts
   , updateNodeInEmitStrTemplate
   )
 where
@@ -45,10 +44,10 @@ import Language.InstrSel.TargetMachines.IDs
 --------------
 
 -- | Represents the emit string template, which are used to produce the assembly
--- instructions during code emission.
+-- instructions during code emission. Each element in the outer list corresponds
+-- to a single line of code.
 data EmitStringTemplate
-  = ESTSimple { emitStrParts :: [EmitStringPart] }
-  | ESTMulti { emitStrTemplates :: [EmitStringTemplate] }
+  = EmitStringTemplate { emitStrParts :: [[EmitStringPart]] }
   deriving (Show)
 
 -- | Represents parts of the emit string template.
@@ -190,12 +189,6 @@ findLocation rs rid =
      then Just $ head found
      else Nothing
 
--- | Flattens a (potentially multi-level) 'EmitStringTemplate'.
-flattenEmitStrParts :: EmitStringTemplate -> [[EmitStringPart]]
-flattenEmitStrParts (ESTSimple []) = []
-flattenEmitStrParts (ESTSimple asps) = [asps]
-flattenEmitStrParts (ESTMulti ats) = map (head . flattenEmitStrParts) ats
-
 -- | Replaces a node reference used in the template with another reference.
 updateNodeInEmitStrTemplate
   :: NodeID
@@ -204,15 +197,13 @@ updateNodeInEmitStrTemplate
      -- ^ The old node ID to be replaced.
   -> EmitStringTemplate
   -> EmitStringTemplate
-updateNodeInEmitStrTemplate new_n old_n (ESTMulti ts) =
-  ESTMulti (map (updateNodeInEmitStrTemplate new_n old_n) ts)
-updateNodeInEmitStrTemplate new_n old_n (ESTSimple parts) =
-  ESTSimple (map update parts)
-  where checkAndReplace nid = if nid == old_n then new_n else nid
-        update (ESIntConstOfValueNode n) =
+updateNodeInEmitStrTemplate new_n old_n (EmitStringTemplate ts) =
+  EmitStringTemplate $ map (map update) ts
+  where update (ESIntConstOfValueNode n) =
           ESIntConstOfValueNode (checkAndReplace n)
         update (ESLocationOfValueNode n) =
           ESLocationOfValueNode (checkAndReplace n)
         update (ESNameOfBlockNode n) = ESNameOfBlockNode (checkAndReplace n)
         update (ESBlockOfValueNode n) = ESBlockOfValueNode (checkAndReplace n)
         update p = p
+        checkAndReplace nid = if nid == old_n then new_n else nid

@@ -133,7 +133,7 @@ theTM =
                       0
                       init_def_pattern_os
                       True
-                      (ESTSimple [])
+                      (EmitStringTemplate [])
                   ]
                   (InstrProperties 1 1 True False)
               , Instruction
@@ -142,13 +142,14 @@ theTM =
                       0
                       add_pattern_os
                       True
-                      ( ESTSimple
-                          [ ESVerbatim "add "
-                          , ESLocationOfValueNode 3
-                          , ESVerbatim ", "
-                          , ESLocationOfValueNode 1
-                          , ESVerbatim ", "
-                          , ESLocationOfValueNode 2
+                      ( EmitStringTemplate
+                          [ [ ESVerbatim "add "
+                            , ESLocationOfValueNode 3
+                            , ESVerbatim ", "
+                            , ESLocationOfValueNode 1
+                            , ESVerbatim ", "
+                            , ESLocationOfValueNode 2
+                            ]
                           ]
                       )
                   ]
@@ -159,13 +160,14 @@ theTM =
                       0
                       bnz_pattern_os
                       True
-                      ( ESTSimple
-                          [ ESVerbatim "bnz "
-                          , ESLocationOfValueNode 0
-                          , ESVerbatim ", "
-                          , ESNameOfBlockNode 2
-                          , ESVerbatim ", "
-                          , ESNameOfBlockNode 3
+                      ( EmitStringTemplate
+                          [ [ ESVerbatim "bnz "
+                            , ESLocationOfValueNode 0
+                            , ESVerbatim ", "
+                            , ESNameOfBlockNode 2
+                            , ESVerbatim ", "
+                            , ESNameOfBlockNode 3
+                            ]
                           ]
                       )
                   ]
@@ -176,9 +178,10 @@ theTM =
                       0
                       br_pattern_os
                       True
-                      ( ESTSimple
-                          [ ESVerbatim "br "
-                          , ESNameOfBlockNode 1
+                      ( EmitStringTemplate
+                          [ [ ESVerbatim "br "
+                            , ESNameOfBlockNode 1
+                            ]
                           ]
                       )
                   ]
@@ -189,7 +192,7 @@ theTM =
                       0
                       br_fallthrough_pattern_os
                       True
-                      (ESTSimple [])
+                      (EmitStringTemplate [])
                   ]
                   (InstrProperties 1 1 True False)
               , Instruction
@@ -198,9 +201,10 @@ theTM =
                       0
                       ret_pattern_os
                       True
-                      ( ESTSimple
-                        [ ESVerbatim "ret "
-                        , ESLocationOfValueNode 0
+                      ( EmitStringTemplate
+                        [ [ ESVerbatim "ret "
+                          , ESLocationOfValueNode 0
+                          ]
                         ]
                       )
                   ]

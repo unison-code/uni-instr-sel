@@ -113,25 +113,26 @@ mkGenericPhiInstructions =
              , patOS = OS.OpStructure g Nothing cs
              , patADDUC = False
              , patEmitString =
-                 ( ESTSimple
-                   $[ ESLocationOfValueNode 1
-                     , ESVerbatim " = PHI "
+                 ( EmitStringTemplate
+                   $ [ [ ESLocationOfValueNode 1
+                       , ESVerbatim " = PHI "
+                       ]
+                       ++
+                       ( concat
+                         $ intersperse
+                             [ESVerbatim " "]
+                             ( map ( \n' ->
+                                     [ ESVerbatim "("
+                                     , ESLocationOfValueNode (toNodeID n')
+                                     , ESVerbatim ", "
+                                     , ESBlockOfValueNode (toNodeID n')
+                                     , ESVerbatim ")"
+                                     ]
+                                   )
+                                   [2..n+1]
+                             )
+                       )
                      ]
-                     ++
-                     ( concat
-                       $ intersperse
-                           [ESVerbatim " "]
-                           ( map ( \n' ->
-                                   [ ESVerbatim "("
-                                   , ESLocationOfValueNode (toNodeID n')
-                                   , ESVerbatim ", "
-                                   , ESBlockOfValueNode (toNodeID n')
-                                   , ESVerbatim ")"
-                                   ]
-                                 )
-                                 [2..n+1]
-                           )
-                     )
                  )
              }
   in [ Instruction
@@ -171,7 +172,7 @@ mkGenericBrFallThroughInstructions =
           { patID = 0
           , patOS = OS.OpStructure g (Just 1) cs
           , patADDUC = True
-          , patEmitString = ESTSimple []
+          , patEmitString = EmitStringTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -204,7 +205,7 @@ mkGenericDataDefInstructions =
           { patID = pid
           , patOS = OS.OpStructure g (Just 0) cs
           , patADDUC = True
-          , patEmitString = ESTSimple []
+          , patEmitString = EmitStringTemplate []
           }
   in [ Instruction
          { instrID = 0
@@ -252,7 +253,7 @@ mkGenericCopyInstructions =
           { patID = 0
           , patOS = OS.OpStructure (g w) Nothing cs
           , patADDUC = True
-          , patEmitString = ESTSimple []
+          , patEmitString = EmitStringTemplate []
           }
   in [ Instruction
          { instrID = 0

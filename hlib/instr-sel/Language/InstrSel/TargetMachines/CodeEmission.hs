@@ -242,39 +242,46 @@ emitInstructions model sol tm st0 mid =
       pat_data = getInstrPattern (tmInstructions tm)
                                  (hlMatchInstructionID match)
                                  (hlMatchPatternID match)
-      instr_parts = map
-                    (\ips -> updateNodeIDsInEmitStrParts ips
-                             (hlMatchEmitStrNodeMaplist match))
-                    (flattenEmitStrParts $ patEmitString pat_data)
+      emit_parts = updateNodeIDsInEmitStrParts
+                     (emitStrParts $ patEmitString pat_data)
+                     (hlMatchEmitStrNodeMaplist match)
   in foldl ( \st1 parts ->
                foldl (emitInstructionPart model sol tm)
-                      ( st1 { emittedCode = (AsmInstruction "":emittedCode st0)
+                      ( st1 { emittedCode = (AsmInstruction "":emittedCode st1)
                             , varNameMaps = []
                             }
                       )
                       parts
            )
            st0
-           instr_parts
+           emit_parts
 
--- | Updates the pattern graph node IDs appearing in the assembly string parts
--- with the corresponding function graph node IDs.
+-- | Updates the pattern graph node IDs appearing in the content of an
+-- 'EmitStringTemplate' with the corresponding function graph node IDs.
 updateNodeIDsInEmitStrParts
-  :: [EmitStringPart]
-     -- ^ The parts to update.
-  -> [Maybe NodeID]
+  :: [[EmitStringPart]]
+  -> [[Maybe NodeID]]
      -- ^ The node ID mappings for the template.
-  -> [EmitStringPart]
-updateNodeIDsInEmitStrParts emits maps =
-  trace (show emits ++ "\n" ++ show maps ++ "\n") $
-  map f (zip emits maps)
-  where f (p@(ESVerbatim {}),       _     ) = p
-        f (ESLocationOfValueNode _, Just n) = ESLocationOfValueNode n
-        f (ESIntConstOfValueNode _, Just n) = ESIntConstOfValueNode n
-        f (ESNameOfBlockNode     _, Just n) = ESNameOfBlockNode n
-        f (ESBlockOfValueNode    _, Just n) = ESBlockOfValueNode  n
-        f (p@(ESTemporary {}),      _     ) = p
-        f _ = error "updateNodeIDsInEmitStrParts: invalid arguments"
+  -> [[EmitStringPart]]
+updateNodeIDsInEmitStrParts emit_strs maps =
+  if length emit_strs == length maps
+  then let f p@(ESVerbatim {})         _        = p
+           f (ESLocationOfValueNode _) (Just n) = ESLocationOfValueNode n
+           f (ESIntConstOfValueNode _) (Just n) = ESIntConstOfValueNode n
+           f (ESNameOfBlockNode     _) (Just n) = ESNameOfBlockNode n
+           f (ESBlockOfValueNode    _) (Just n) = ESBlockOfValueNode  n
+           f p@(ESTemporary {})         _       = p
+           f _ _ = error $ "updateNodeIDsInEmitStrParts: unexpected combination"
+                           ++ " of arguments"
+       in zipWith ( \es ms ->
+                      if length es == length ms
+                      then zipWith f es ms
+                      else error $ "updateNodeIDsInEmitStrParts: arguments not "
+                                   ++ "of same length"
+                  )
+                  emit_strs
+                  maps
+  else error "updateNodeIDsInEmitStrParts: arguments not of same length"
 
 -- | Emits part of an assembly instruction.
 emitInstructionPart

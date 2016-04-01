@@ -149,7 +149,7 @@ mkBrFallThroughInstruction =
           { patID = 0
           , patOS = OpStructure g (Just 1) cs
           , patADDUC = True
-          , patEmitString = ESTSimple []
+          , patEmitString = EmitStringTemplate []
           }
   in Instruction
        { instrID = 0
@@ -181,7 +181,7 @@ mkDataDefInstruction =
           { patID = pid
           , patOS = OpStructure g (Just 0) cs
           , patADDUC = True
-          , patEmitString = ESTSimple []
+          , patEmitString = EmitStringTemplate []
           }
   in Instruction
        { instrID = 0
@@ -232,7 +232,7 @@ mkTempNullCopyInstruction bits =
                        { patID = pid
                        , patOS = OpStructure (g w) Nothing cs
                        , patADDUC = True
-                       , patEmitString = ESTSimple []
+                       , patEmitString = EmitStringTemplate []
                        }
   in Instruction
        { instrID = 0
