@@ -68,7 +68,7 @@ data EmitStringPart
     -- within the same template, they will all be replaced by the same
     -- temporary.
   | ESTemporary Int
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- | Defines a machine instruction.
 data Instruction

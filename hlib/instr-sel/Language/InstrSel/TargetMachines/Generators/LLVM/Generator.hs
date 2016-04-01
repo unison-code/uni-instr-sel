@@ -233,6 +233,7 @@ mkEmitString
   -> TM.EmitStringTemplate
 mkEmitString i os str =
   TM.EmitStringTemplate
+  $ filter (\l -> l /= [])
   $ map (mergeVerbatims . map f . splitStartingOn "% ,()[]")
   $ splitOn "\n" str
   where
