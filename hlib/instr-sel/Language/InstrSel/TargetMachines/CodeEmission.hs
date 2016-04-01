@@ -235,7 +235,9 @@ getInstrPattern is iid pid =
       pat = findInstrPattern (instrPatterns $ fromJust instr) pid
   in fromJust pat
 
--- | Emits the instructions for a given match.
+-- | Emits the instructions for a given match. Each part of the code is emitted
+-- by appending strings to the instruction currently at the head of the list of
+-- already-emitted code.
 emitInstructionsOfMatch
   :: HighLevelModel
   -> HighLevelSolution
