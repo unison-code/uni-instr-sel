@@ -80,8 +80,20 @@ insertCopy df g0 df_edge =
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
       new_dt = df $ getDataTypeOfValueNode old_d_node
+      new_origin = Just $
+                   let origins = map (fromJust . getOriginOfValueNode)
+                                     $ filter isValueNodeWithOrigin
+                                     $ getAllNodes g1
+                       prefix = if isJust old_d_origin
+                                then (fromJust old_d_origin) ++ ".copy."
+                                else "%copy."
+                   in head $ dropWhile (`elem` origins)
+                                       (map (\i -> prefix ++ show i)
+                                            ([1..] :: [Integer]))
+                                            -- Cast is needed or GHC will
+                                            -- complain...
       (g2, new_d_node) =
-        insertNewNodeAlongEdge (ValueNode new_dt old_d_origin)
+        insertNewNodeAlongEdge (ValueNode new_dt new_origin)
                                (head $ getOutEdges g1 new_cp_node)
                                g1
       g3 = if isJust def_edge

@@ -67,11 +67,16 @@ data EmissionState
                   , varNamesInUse :: [String]
                     -- ^ Variable names that are already in use or will be used
                     -- at a later point during emission.
-                  , varNameMaps :: [(Int, String)]
-                    -- ^ Mappings from an identifier to a variable name. These
-                    -- only apply within the scope of an emit string template
-                    -- and must therefore be reset when moving from one
+                  , tmpToVarNameMaps :: [(Int, String)]
+                    -- ^ Mappings from a temporary identifier to a variable
+                    -- name. These only apply within the scope of an emit string
+                    -- template and must therefore be reset when moving from one
                     -- instruction to another.
+                  , valueNodeAliases :: [(NodeID, NodeID)]
+                    -- ^ Mappings from a value node that should be replaced by
+                    -- another value node. The first element contains the ID of
+                    -- the node to be replaced, and the second element contains
+                    -- the ID of the node to replace with.
                   }
   deriving (Show)
 
@@ -102,25 +107,35 @@ generateCode target model sol@(HighLevelSolution {}) =
                                     model
                                     sol
                                     target
-                                    (st' { varNameMaps = [] })
+                                    (st' { tmpToVarNameMaps = [] })
                                     m
                               )
                               st1
                               sorted_matches
               in st2
           )
-          (mkInitState model)
+          (mkInitState sol model)
           (hlSolOrderOfBlocks sol)
 
 generateCode _ _ NoHighLevelSolution =
   error "generateCode: cannot generate code from no solution"
 
 -- | Returns an initial emission state.
-mkInitState :: HighLevelModel -> EmissionState
-mkInitState m = EmissionState { emittedCode = []
-                              , varNamesInUse = getVarNamesInUse m
-                              , varNameMaps = []
-                              }
+mkInitState :: HighLevelSolution -> HighLevelModel -> EmissionState
+mkInitState sol model =
+  let sel_matches = hlSolSelMatches sol
+      null_cp_matches = filter hlMatchIsNullCopyInstruction
+                        $ map (getHLMatchParams (hlMatchParams model))
+                        $ sel_matches
+      aliases = map ( \m ->
+                        (head $ hlMatchDataDefined m, head $ hlMatchDataUsed m)
+                    )
+                    null_cp_matches
+  in EmissionState { emittedCode = []
+                   , varNamesInUse = getVarNamesInUse model
+                   , tmpToVarNameMaps = []
+                   , valueNodeAliases = aliases
+                   }
 
 -- | Gets the list of matches that has been allocated to a given block in the CP
 -- model solution. The block is identified using the node ID of its
@@ -246,13 +261,18 @@ emitInstructionsOfMatch
   -> MatchID
   -> EmissionState
 emitInstructionsOfMatch model sol tm st0 mid =
-  let match = getHLMatchParams (hlMatchParams model) mid
+  let replaceAliases Nothing = Nothing
+      replaceAliases (Just n) = let alias = lookup n $ valueNodeAliases st0
+                                in if isJust alias then alias else (Just n)
+      match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern (tmInstructions tm)
                                  (hlMatchInstructionID match)
                                  (hlMatchPatternID match)
       emit_parts = updateNodeIDsInEmitStrParts
                      (emitStrParts $ patEmitString pat_data)
-                     (hlMatchEmitStrNodeMaplist match)
+                     ( map (map replaceAliases)
+                           (hlMatchEmitStrNodeMaplist match)
+                     )
   in foldl ( \st1 parts ->
                foldl (emitInstructionPart model sol tm)
                       ( st1 { emittedCode = (AsmInstruction "":emittedCode st1)
@@ -360,7 +380,7 @@ emitInstructionPart model sol m st (ESBlockOfValueNode n) =
 emitInstructionPart _ _ _ st (ESTemporary i) =
   let code = emittedCode st
       (AsmInstruction instr_str) = head code
-      name = lookup i (varNameMaps st)
+      name = lookup i (tmpToVarNameMaps st)
   in if isJust name
      then let new_instr = AsmInstruction $ instr_str ++ (fromJust name)
           in st { emittedCode = (new_instr:tail code) }
@@ -369,13 +389,13 @@ emitInstructionPart _ _ _ st (ESTemporary i) =
               new_instr = AsmInstruction $ instr_str ++ new_name
           in st { emittedCode = (new_instr:tail code)
                 , varNamesInUse = (new_name:names_in_use)
-                , varNameMaps = ((i, new_name):varNameMaps st)
+                , tmpToVarNameMaps = ((i, new_name):tmpToVarNameMaps st)
                 }
 
 -- | Returns a variable name that does not appear in the given list of strings.
 getUniqueVarName :: [String] -> String
 getUniqueVarName used = head $ dropWhile (`elem` used)
-                                         (map (\i -> "%tmp" ++ show i)
+                                         (map (\i -> "%tmp." ++ show i)
                                               ([1..] :: [Integer]))
                                               -- Cast is needed or GHC will
                                               -- complain...
