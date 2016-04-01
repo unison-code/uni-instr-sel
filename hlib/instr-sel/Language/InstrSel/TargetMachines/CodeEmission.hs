@@ -33,8 +33,6 @@ import Data.Maybe
   , isJust
   )
 
-import Debug.Trace
-
 
 
 --------------
@@ -75,6 +73,7 @@ data EmissionState
                     -- and must therefore be reset when moving from one
                     -- instruction to another.
                   }
+  deriving (Show)
 
 
 
@@ -98,7 +97,14 @@ generateCode target model sol@(HighLevelSolution {}) =
                   block_name = fromJust $ findNameOfBlockNode model b
                   code = AsmBlock $ pShow block_name
                   st1 = st0 { emittedCode = (code:emittedCode st0) }
-                  st2 = foldl (emitInstructions model sol target)
+                  st2 = foldl ( \st' m ->
+                                  emitInstructionsOfMatch
+                                    model
+                                    sol
+                                    target
+                                    (st' { varNameMaps = [] })
+                                    m
+                              )
                               st1
                               sorted_matches
               in st2
@@ -229,15 +235,15 @@ getInstrPattern is iid pid =
       pat = findInstrPattern (instrPatterns $ fromJust instr) pid
   in fromJust pat
 
--- | Emits the assembly instruction(s) corresponding to a given match.
-emitInstructions
+-- | Emits the instructions for a given match.
+emitInstructionsOfMatch
   :: HighLevelModel
   -> HighLevelSolution
   -> TargetMachine
   -> EmissionState
   -> MatchID
   -> EmissionState
-emitInstructions model sol tm st0 mid =
+emitInstructionsOfMatch model sol tm st0 mid =
   let match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern (tmInstructions tm)
                                  (hlMatchInstructionID match)
@@ -248,7 +254,6 @@ emitInstructions model sol tm st0 mid =
   in foldl ( \st1 parts ->
                foldl (emitInstructionPart model sol tm)
                       ( st1 { emittedCode = (AsmInstruction "":emittedCode st1)
-                            , varNameMaps = []
                             }
                       )
                       parts
@@ -368,7 +373,7 @@ emitInstructionPart _ _ _ st (ESTemporary i) =
 -- | Returns a variable name that does not appear in the given list of strings.
 getUniqueVarName :: [String] -> String
 getUniqueVarName used = head $ dropWhile (`elem` used)
-                                         (map (\i -> "tmp" ++ show i)
+                                         (map (\i -> "%tmp" ++ show i)
                                               ([1..] :: [Integer]))
                                               -- Cast is needed or GHC will
                                               -- complain...
