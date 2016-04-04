@@ -228,6 +228,6 @@ isInstructionCopy i =
       isCopyPattern p =
         let os = patOS p
             g = osGraph os
-            non_op_nodes = filter (not . isNodeAnOperation) $ getAllNodes g
-        in length non_op_nodes == 0
+            op_nodes = filter isNodeAnOperation $ getAllNodes g
+        in length op_nodes == 1 && isCopyNode (head op_nodes)
   in all isCopyPattern pats
