@@ -53,7 +53,7 @@ array[allMatches] of set of int: consumedBlocksInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
-set of allMatches: nonCopyMatches;
+set of allMatches: copyInstrMatches;
 set of allMatches: nullInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 set of allMatches: dominatedMatches;
@@ -468,7 +468,7 @@ solve ::
   seq_search(
     [ bool_search([ sel[m]
                   | m in allMatchesBySize
-                    where m in nonCopyMatches diff dominatedMatches
+                    where not (m in copyInstrMatches union dominatedMatches)
                   ], input_order, indomain_max, complete)
 	]
   )

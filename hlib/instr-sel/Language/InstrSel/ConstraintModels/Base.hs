@@ -155,8 +155,8 @@ data HighLevelMatchParams
         -- ^ Whether to apply the def-dom-use constraint to this match. This
         -- will typically always be set to 'True' for all matches except those
         -- of the generic phi patterns.
-      , hlMatchIsNonCopyInstruction :: Bool
-        -- ^ Whether the corresponding instruction is a non-copy instruction.
+      , hlMatchIsCopyInstruction :: Bool
+        -- ^ Whether the corresponding instruction is a copy instruction.
       , hlMatchIsNullInstruction :: Bool
         -- ^ Whether the corresponding instruction is a null instruction.
       , hlMatchHasControlFlow :: Bool
@@ -246,8 +246,8 @@ data LowLevelModel
       , llMatchLatencies :: [Integer]
         -- ^ The latency of each match. An index into the list corresponds to
         -- the array index of a particular match.
-      , llMatchNonCopyInstructions :: [ArrayIndex]
-        -- ^ The matches that correspond to non-copy instructions.
+      , llMatchCopyInstructions :: [ArrayIndex]
+        -- ^ The matches that correspond to copy instructions.
       , llMatchNullInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to null instructions.
       , llMatchADDUCs :: [Bool]
@@ -432,7 +432,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "latency"
       <*> v .: "constraints"
       <*> v .: "apply-def-dom-use-constraint"
-      <*> v .: "is-non-copy-instr"
+      <*> v .: "is-copy-instr"
       <*> v .: "is-null-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
@@ -454,7 +454,7 @@ instance ToJSON HighLevelMatchParams where
            , "latency"                      .= (hlMatchLatency d)
            , "constraints"                  .= (hlMatchConstraints d)
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
-           , "is-non-copy-instr"            .= (hlMatchIsNonCopyInstruction d)
+           , "is-copy-instr"                .= (hlMatchIsCopyInstruction d)
            , "is-null-instr"                .= (hlMatchIsNullInstruction d)
            , "has-control-flow"             .= (hlMatchHasControlFlow d)
            , "data-used-by-phis"            .= (hlMatchDataUsedByPhis d)
@@ -496,7 +496,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-consumed-blocks"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
-      <*> v .: "match-non-copy-instrs"
+      <*> v .: "match-copy-instrs"
       <*> v .: "match-null-instrs"
       <*> v .: "match-adduc-settings"
       <*> v .: "match-constraints"
@@ -523,7 +523,7 @@ instance ToJSON LowLevelModel where
            , "match-consumed-blocks"       .= (llMatchConsumedBlocks m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
-           , "match-non-copy-instrs"       .= (llMatchNonCopyInstructions m)
+           , "match-copy-instrs"           .= (llMatchCopyInstructions m)
            , "match-null-instrs"           .= (llMatchNullInstructions m)
            , "match-adduc-settings"        .= (llMatchADDUCs m)
            , "match-constraints"           .= (llMatchConstraints m)

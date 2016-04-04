@@ -117,7 +117,6 @@ mkPhiInstructions mkEmit =
          , instrPatterns = map mkPat [2..10]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
-                                        , instrIsNonCopy = True
                                         }
          }
      ]
@@ -155,7 +154,6 @@ mkBrFallThroughInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsNonCopy = True
                                       }
        }
 
@@ -188,7 +186,6 @@ mkDataDefInstruction =
                          ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsNonCopy = True
                                       }
        }
 
@@ -236,7 +233,6 @@ mkTempNullCopyInstruction bits =
        , instrPatterns = map pat $ zip [0..] bits
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsNonCopy = False
                                       }
        }
 

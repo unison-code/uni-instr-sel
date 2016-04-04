@@ -384,8 +384,8 @@ dumpParams( json_data["match-latencies"]
           , VT_ARRAY1D
           , "allMatches"
           )
-dumpParams( json_data["match-non-copy-instrs"]
-          , "nonCopyMatches"
+dumpParams( json_data["match-copy-instrs"]
+          , "copyInstrMatches"
           , VT_SET
           )
 dumpParams( json_data["match-null-instrs"]

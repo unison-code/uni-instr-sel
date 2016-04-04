@@ -140,7 +140,6 @@ mkGenericPhiInstructions =
          , instrPatterns = map mkPat [2..10]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
-                                        , instrIsNonCopy = True
                                         }
          }
      ]
@@ -178,7 +177,6 @@ mkGenericBrFallThroughInstructions =
          , instrPatterns = [pat]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
-                                        , instrIsNonCopy = True
                                         }
          }
      ]
@@ -212,7 +210,6 @@ mkGenericDataDefInstructions =
                            ]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
-                                        , instrIsNonCopy = True
                                         }
          }
      ]
@@ -257,7 +254,6 @@ mkGenericCopyInstructions =
          , instrPatterns = [pat 1, pat 8, pat 16, pat 32]
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
-                                        , instrIsNonCopy = False
                                         }
          }
      ]

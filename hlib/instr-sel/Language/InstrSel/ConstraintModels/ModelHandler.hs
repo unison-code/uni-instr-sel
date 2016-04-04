@@ -200,7 +200,7 @@ processMatch instr pattern match mid =
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
              (osConstraints $ patOS pattern)
        , hlMatchADDUC = patADDUC pattern
-       , hlMatchIsNonCopyInstruction = instrIsNonCopy $ instrProps instr
+       , hlMatchIsCopyInstruction = isInstructionCopy $ instr
        , hlMatchIsNullInstruction = isInstructionNull instr
        , hlMatchHasControlFlow = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
@@ -308,9 +308,9 @@ lowerHighLevelModel model ai_maps =
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchADDUCs = map hlMatchADDUC m_params
-       , llMatchNonCopyInstructions =
+       , llMatchCopyInstructions =
            map (getAIForMatchID . hlMatchID)
-               (filter hlMatchIsNonCopyInstruction m_params)
+               (filter hlMatchIsCopyInstruction m_params)
        , llMatchNullInstructions =
            map (getAIForMatchID . hlMatchID)
                (filter hlMatchIsNullInstruction m_params)

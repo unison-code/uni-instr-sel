@@ -58,8 +58,8 @@ copyExtend tm =
         in os { osGraph = new_g, osConstraints = new_cs }
       copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
       copyExtendInstr i =
-        let is_non_copy = instrIsNonCopy $ instrProps i
-        in if is_non_copy
+        let is_copy = isInstructionCopy i
+        in if not is_copy
            then i { instrPatterns = map copyExtendPat (instrPatterns i) }
            else i
       new_instrs = map copyExtendInstr (tmInstructions tm)

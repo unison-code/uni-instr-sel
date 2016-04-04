@@ -135,7 +135,7 @@ theTM =
                       True
                       (EmitStringTemplate [])
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               , Instruction
                   1
                   [ InstrPattern
@@ -153,7 +153,7 @@ theTM =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               , Instruction
                   2
                   [ InstrPattern
@@ -171,7 +171,7 @@ theTM =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               , Instruction
                   3
                   [ InstrPattern
@@ -185,7 +185,7 @@ theTM =
                           ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               , Instruction
                   4
                   [ InstrPattern
@@ -194,7 +194,7 @@ theTM =
                       True
                       (EmitStringTemplate [])
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               , Instruction
                   5
                   [ InstrPattern
@@ -208,7 +208,7 @@ theTM =
                         ]
                       )
                   ]
-                  (InstrProperties 1 1 True)
+                  (InstrProperties 1 1)
               ]
   in TargetMachine
        (toTargetMachineID "test")

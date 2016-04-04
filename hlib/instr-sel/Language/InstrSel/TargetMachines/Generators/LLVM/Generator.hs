@@ -109,20 +109,11 @@ mkInstructions m locs =
   where processInstr (i_id, i) =
           let instr_id = TM.toInstructionID i_id
               patterns = mkInstrPatterns locs i
-              is_copy_instr = if length patterns == 1
-                              then isCopyInstrPattern $ head patterns
-                              else False
-              props = mkInstrProps i is_copy_instr
+              props = mkInstrProps i
           in TM.Instruction { TM.instrID = instr_id
                             , TM.instrPatterns = patterns
                             , TM.instrProps = props
                             }
-
-isCopyInstrPattern :: TM.InstrPattern -> Bool
-isCopyInstrPattern p =
-  let g = osGraph $ TM.patOS p
-      op_nodes = filter isNodeAnOperation $ getAllNodes g
-  in length op_nodes == 1 && isCopyNode (head op_nodes)
 
 mkInstrPatterns :: [TM.Location] -> LLVM.Instruction -> [TM.InstrPattern]
 mkInstrPatterns locs i =
@@ -292,11 +283,10 @@ mkEmitString i os str =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
 
-mkInstrProps :: LLVM.Instruction -> Bool -> TM.InstrProperties
-mkInstrProps i is_copy =
+mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
+mkInstrProps i=
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
                      , TM.instrLatency = LLVM.instrLatency i
-                     , TM.instrIsNonCopy = not is_copy
                      }
 
 -- | Gets the operand with a given name of a given instruction. If no such

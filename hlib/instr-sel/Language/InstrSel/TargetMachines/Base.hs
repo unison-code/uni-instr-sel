@@ -28,6 +28,7 @@ module Language.InstrSel.TargetMachines.Base
   , findInstrPattern
   , findLocation
   , updateNodeInEmitStrTemplate
+  , isInstructionCopy
   , isInstructionNull
   )
 where
@@ -96,8 +97,6 @@ data InstrProperties
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
-      , instrIsNonCopy :: Bool
-        -- ^ Whether the instruction is a non-copy instruction.
       }
   deriving (Show)
 
@@ -221,3 +220,14 @@ isInstructionNull i =
             emit_str = patEmitString p
         in length op_nodes > 0 && length (emitStrParts emit_str) == 0
   in all isNullPattern pats
+
+-- ^ Checks whether the instruction is a copy instruction.
+isInstructionCopy :: Instruction -> Bool
+isInstructionCopy i =
+  let pats = instrPatterns i
+      isCopyPattern p =
+        let os = patOS p
+            g = osGraph os
+            non_op_nodes = filter (not . isNodeAnOperation) $ getAllNodes g
+        in length non_op_nodes == 0
+  in all isCopyPattern pats
