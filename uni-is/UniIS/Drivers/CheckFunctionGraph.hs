@@ -59,7 +59,7 @@ run
 
 run CheckFunctionGraphCoverage function matchset _ =
   let g = osGraph $ functionOS function
-      op_nodes = map getNodeID $ filter isNodeAnOperation $ getAllNodes g
+      op_nodes = map getNodeID $ filter isOperationNode $ getAllNodes g
       matches = pmMatches matchset
       isNodeCoverable n =
         any (isJust . (flip findPNInMatch) n . pmMatch) matches
@@ -76,7 +76,7 @@ run CheckFunctionGraphCoverage function matchset _ =
 
 run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
   let g = osGraph $ functionOS function
-      data_nodes = map getNodeID $ filter isNodeADatum $ getAllNodes g
+      data_nodes = map getNodeID $ filter isDatumNode $ getAllNodes g
       matches = pmMatches matchset
       getPatternGraph pm =
         let i = findInstruction (tmInstructions tm) (pmInstrID pm)

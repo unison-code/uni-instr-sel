@@ -127,8 +127,8 @@ mkHLFunctionParams function target =
                      )
                      (functionInputs function)
   in HighLevelFunctionParams
-       { hlFunOperations = nodeIDsByType isNodeAnOperation
-       , hlFunData = nodeIDsByType isNodeADatum
+       { hlFunOperations = nodeIDsByType isOperationNode
+       , hlFunData = nodeIDsByType isDatumNode
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
@@ -169,8 +169,8 @@ processMatch
 processMatch instr pattern match mid =
   let graph = osGraph $ patOS pattern
       ns = getAllNodes graph
-      o_ns = filter isNodeAnOperation ns
-      d_ns = filter isNodeADatum ns
+      o_ns = filter isOperationNode ns
+      d_ns = filter isDatumNode ns
       b_ns = filter isBlockNode ns
       b_ns_consumed = filter ( \n -> hasAnyPredecessors graph n
                                      &&

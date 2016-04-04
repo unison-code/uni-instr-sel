@@ -41,8 +41,8 @@ mkArrayIndexMaplists
 mkArrayIndexMaplists function tm matches =
   let g = osGraph $ functionOS function
       nodes = getAllNodes g
-      o_nodes = filter isNodeAnOperation nodes
-      e_nodes = filter isNodeADatum nodes
+      o_nodes = filter isOperationNode nodes
+      e_nodes = filter isDatumNode nodes
       l_nodes = filter isBlockNode nodes
       match_ids = map pmMatchID (matches)
       locations = tmLocations tm

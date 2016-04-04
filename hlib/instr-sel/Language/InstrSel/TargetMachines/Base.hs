@@ -216,7 +216,7 @@ isInstructionNull i =
       isNullPattern p =
         let os = patOS p
             g = osGraph os
-            op_nodes = filter isNodeAnOperation $ getAllNodes g
+            op_nodes = filter isOperationNode $ getAllNodes g
             emit_str = patEmitString p
         in length op_nodes > 0 && length (emitStrParts emit_str) == 0
   in all isNullPattern pats
@@ -228,6 +228,6 @@ isInstructionCopy i =
       isCopyPattern p =
         let os = patOS p
             g = osGraph os
-            op_nodes = filter isNodeAnOperation $ getAllNodes g
+            op_nodes = filter isOperationNode $ getAllNodes g
         in length op_nodes == 1 && isCopyNode (head op_nodes)
   in all isCopyPattern pats

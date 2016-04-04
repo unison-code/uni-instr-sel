@@ -125,6 +125,7 @@ module Language.InstrSel.Graphs.Base
   , isControlNode
   , isCopyNode
   , isDataFlowEdge
+  , isDatumNode
   , isValueNode
   , isValueNodeWithConstValue
   , isValueNodeWithOrigin
@@ -133,9 +134,8 @@ module Language.InstrSel.Graphs.Base
   , isBlockNode
   , isBlockNodeAndIntermediate
   , isGraphEmpty
-  , isNodeADatum
-  , isNodeAnOperation
   , isNodeInGraph
+  , isOperationNode
   , isStateFlowEdge
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
@@ -523,15 +523,15 @@ toEdgeNr = EdgeNr . toNatural
 fromEdgeNr :: EdgeNr -> Natural
 fromEdgeNr (EdgeNr n) = n
 
-isNodeAnOperation :: Node -> Bool
-isNodeAnOperation n =
+isOperationNode :: Node -> Bool
+isOperationNode n =
      isComputationNode n
   || isControlNode n
   || isPhiNode n
   || isCopyNode n
 
-isNodeADatum :: Node -> Bool
-isNodeADatum n =
+isDatumNode :: Node -> Bool
+isDatumNode n =
      isValueNode n
   || isStateNode n
 
@@ -1527,8 +1527,8 @@ extractSSA :: Graph -> Graph
 extractSSA g =
   let nodes_to_remove =
         filter
-          ( \n -> not (  isNodeAnOperation n
-                      || isNodeADatum n
+          ( \n -> not (  isOperationNode n
+                      || isDatumNode n
                       )
                   ||
                   (isControlNode n && not (isRetControlNode n))
