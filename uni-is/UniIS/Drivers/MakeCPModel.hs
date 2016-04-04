@@ -18,11 +18,11 @@ module UniIS.Drivers.MakeCPModel
 where
 
 import UniIS.Drivers.Base
+import UniIS.Targets
+
 import Language.InstrSel.ConstraintModels.ModelHandler
 import Language.InstrSel.Functions
   ( Function )
-import Language.InstrSel.TargetMachines.Targets
-  ( retrieveTargetMachine )
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset (..) )
 import Language.InstrSel.Utils.JSON

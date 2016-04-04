@@ -39,8 +39,7 @@ generateModule tm =
       boiler_src = "-----------------------------------------------------------\
                    \---------------------\n\
                    \-- |\n\
-                   \-- Module      : Language.InstrSel.TargetMachines.Targets."
-                   ++ tm_id ++ "\n\
+                   \-- Module      : UniIS.Targets." ++ tm_id ++ "\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
                    \--\n\
@@ -48,8 +47,7 @@ generateModule tm =
                    \--\n\
                    \-----------------------------------------------------------\
                    \---------------------\n\n"
-      header_src = "module Language.InstrSel.TargetMachines.Targets."
-                   ++ tm_id ++ "\n\
+      header_src = "module UniIS.Targets." ++ tm_id ++ "\n\
                    \  ( theTM )\n\
                    \where\n\n\
                    \import Language.InstrSel.Constraints\n\

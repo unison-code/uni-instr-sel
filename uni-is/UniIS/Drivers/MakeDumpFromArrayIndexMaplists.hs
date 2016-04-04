@@ -18,6 +18,8 @@ module UniIS.Drivers.MakeDumpFromArrayIndexMaplists
 where
 
 import UniIS.Drivers.Base
+import UniIS.Targets
+
 import Language.InstrSel.ConstraintModels
   ( ArrayIndexMaplists (..) )
 import Language.InstrSel.Functions
@@ -30,8 +32,6 @@ import Language.InstrSel.TargetMachines
   ( TargetMachine (..)
   , findLocation
   )
-import Language.InstrSel.TargetMachines.Targets
-  ( retrieveTargetMachine )
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset (..)
   , PatternMatch (..)

@@ -73,11 +73,6 @@ library
     Language.InstrSel.TargetMachines.IDs
     Language.InstrSel.TargetMachines.PatternMatching
     Language.InstrSel.TargetMachines.Transformations
-    Language.InstrSel.TargetMachines.Targets
-    Language.InstrSel.TargetMachines.Targets.Base
-    Language.InstrSel.TargetMachines.Targets.Generic
-    Language.InstrSel.TargetMachines.Targets.Mips32
-    Language.InstrSel.TargetMachines.Targets.Test
 
     Language.InstrSel.Utils
     Language.InstrSel.Utils.Base
