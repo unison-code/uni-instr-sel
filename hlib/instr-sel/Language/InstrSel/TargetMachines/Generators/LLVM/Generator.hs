@@ -297,7 +297,6 @@ mkInstrProps i is_copy =
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
                      , TM.instrLatency = LLVM.instrLatency i
                      , TM.instrIsNonCopy = not is_copy
-                     , TM.instrIsNullCopy = False
                      }
 
 -- | Gets the operand with a given name of a given instruction. If no such

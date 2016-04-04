@@ -388,8 +388,8 @@ dumpParams( json_data["match-non-copy-instrs"]
           , "nonCopyMatches"
           , VT_SET
           )
-dumpParams( json_data["match-null-copy-instrs"]
-          , "nullCopyMatches"
+dumpParams( json_data["match-null-instrs"]
+          , "nullInstrMatches"
           , VT_SET
           )
 dumpParams( json_data["match-operations-covered"]

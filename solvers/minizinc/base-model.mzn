@@ -54,7 +54,7 @@ array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: nonCopyMatches;
-set of allMatches: nullCopyMatches;
+set of allMatches: nullInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 set of allMatches: dominatedMatches;
 
@@ -330,10 +330,10 @@ constraint
     table([place[m], def[e]], DomRel)
   );
 
-% If a null-copy match is selected, then the data used by the null-copy must be
-% defined in the same block as the null-copy match.
+% If a match representing a null instruction is selected, then the data used by
+% the match must be defined in the same block wherein the match is placed.
 constraint
-  forall (m in nullCopyMatches)
+  forall (m in nullInstrMatches)
   (
     forall (e in dataUsedByMatch[m])
     (

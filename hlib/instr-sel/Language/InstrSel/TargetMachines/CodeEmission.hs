@@ -124,13 +124,13 @@ generateCode _ _ NoHighLevelSolution =
 mkInitState :: HighLevelSolution -> HighLevelModel -> EmissionState
 mkInitState sol model =
   let sel_matches = hlSolSelMatches sol
-      null_cp_matches = filter hlMatchIsNullCopyInstruction
-                        $ map (getHLMatchParams (hlMatchParams model))
-                        $ sel_matches
+      null_matches = filter hlMatchIsNullInstruction
+                     $ map (getHLMatchParams (hlMatchParams model))
+                     $ sel_matches
       aliases = map ( \m ->
                         (head $ hlMatchDataDefined m, head $ hlMatchDataUsed m)
                     )
-                    null_cp_matches
+                    null_matches
   in EmissionState { emittedCode = []
                    , varNamesInUse = getVarNamesInUse model
                    , tmpToVarNameMaps = []

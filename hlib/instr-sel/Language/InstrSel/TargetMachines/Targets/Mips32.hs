@@ -262,7 +262,6 @@ mkGenericSimpleRegRegCompInst str op d1 d2 d3 r1 r2 r3 =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -377,7 +376,6 @@ mkSimpleNBitRegMBitImmCompInst str op r1 r3 imm n m =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -422,7 +420,6 @@ mkSimpleNBitRegMBitFirstImmCompInst str op r2 r3 imm n m =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -556,7 +553,6 @@ mkRegRegCondBrInstrs n ord_str ord_op inv_str inv_op =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -656,7 +652,6 @@ mkRegImmCondBrInstr n imm_r str op =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -719,7 +714,6 @@ mkPredBrInstr =
        , instrProps = InstrProperties { instrCodeSize = 4
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -761,7 +755,6 @@ mkBrInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -822,7 +815,6 @@ mkRetInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
        ,
@@ -843,7 +835,6 @@ mkRetInstrs =
          , instrProps = InstrProperties { instrCodeSize = 12
                                         , instrLatency = 2
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -873,7 +864,6 @@ mkMfhiInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -903,7 +893,6 @@ mkMfloInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -934,7 +923,6 @@ mkPseudoMoveInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -960,7 +948,6 @@ mkLoadImmInstr =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = False
                                         }
          }
      , Instruction
@@ -990,7 +977,6 @@ mkLoadImmInstr =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = False
                                         }
          }
      , Instruction
@@ -1019,7 +1005,6 @@ mkLoadImmInstr =
          , instrProps = InstrProperties { instrCodeSize = 8
                                         , instrLatency = 2
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = False
                                         }
          }
      , Instruction
@@ -1038,7 +1023,6 @@ mkLoadImmInstr =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -1091,7 +1075,6 @@ mkTypeConvInstrs =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -1115,7 +1098,6 @@ mkTypeConvInstrs =
          , instrProps = InstrProperties { instrCodeSize = 4
                                         , instrLatency = 1
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -1158,7 +1140,6 @@ mkEqComparison =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 2
                                       , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                       }
        }
 
@@ -1197,7 +1178,6 @@ mkSLTIComparison =
                                                        -- Should be 1, but LLVM
                                                        -- uses 0 (TODO: fix)
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1295,7 +1275,6 @@ mkSimdAddInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1393,7 +1372,6 @@ mkSimdAndiInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1456,7 +1434,6 @@ mkSimdSlrlInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1516,7 +1493,6 @@ mkSimdSlrlConstantInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1579,7 +1555,6 @@ mkSimdSllvInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1639,7 +1614,6 @@ mkSimdNorInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1702,7 +1676,6 @@ mkSimdSrlInstruction =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -1760,7 +1733,6 @@ mkSimdLoad16ImmInstruction w =
        , instrProps = InstrProperties { instrCodeSize = 8
                                       , instrLatency = 1
                                       , instrIsNonCopy = False
-                                      , instrIsNullCopy = False
                                       }
        }
 

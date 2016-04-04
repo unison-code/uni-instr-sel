@@ -118,7 +118,6 @@ mkPhiInstructions mkEmit =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -157,7 +156,6 @@ mkBrFallThroughInstruction =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -191,7 +189,6 @@ mkDataDefInstruction =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsNonCopy = True
-                                      , instrIsNullCopy = False
                                       }
        }
 
@@ -240,7 +237,6 @@ mkTempNullCopyInstruction bits =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsNonCopy = False
-                                      , instrIsNullCopy = True
                                       }
        }
 

@@ -28,11 +28,13 @@ module Language.InstrSel.TargetMachines.Base
   , findInstrPattern
   , findLocation
   , updateNodeInEmitStrTemplate
+  , isInstructionNull
   )
 where
 
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
+import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
@@ -96,8 +98,6 @@ data InstrProperties
         -- ^ Instruction latency (in cycles).
       , instrIsNonCopy :: Bool
         -- ^ Whether the instruction is a non-copy instruction.
-      , instrIsNullCopy :: Bool
-        -- ^ Whether the instruction is a null-copy instruction.
       }
   deriving (Show)
 
@@ -207,3 +207,17 @@ updateNodeInEmitStrTemplate new_n old_n (EmitStringTemplate ts) =
         update (ESBlockOfValueNode n) = ESBlockOfValueNode (checkAndReplace n)
         update p = p
         checkAndReplace nid = if nid == old_n then new_n else nid
+
+-- ^ Checks whether the instruction is a null instruction. An instruction is a
+-- null instruction if all of its pattern graphs contain at least operation node
+-- and does not emit anything during code emission.
+isInstructionNull :: Instruction -> Bool
+isInstructionNull i =
+  let pats = instrPatterns i
+      isNullPattern p =
+        let os = patOS p
+            g = osGraph os
+            op_nodes = filter isNodeAnOperation $ getAllNodes g
+            emit_str = patEmitString p
+        in length op_nodes > 0 && length (emitStrParts emit_str) == 0
+  in all isNullPattern pats

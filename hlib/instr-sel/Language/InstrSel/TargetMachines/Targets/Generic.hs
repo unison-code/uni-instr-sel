@@ -141,7 +141,6 @@ mkGenericPhiInstructions =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -180,7 +179,6 @@ mkGenericBrFallThroughInstructions =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -215,7 +213,6 @@ mkGenericDataDefInstructions =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = True
-                                        , instrIsNullCopy = False
                                         }
          }
      ]
@@ -261,7 +258,6 @@ mkGenericCopyInstructions =
          , instrProps = InstrProperties { instrCodeSize = 0
                                         , instrLatency = 0
                                         , instrIsNonCopy = False
-                                        , instrIsNullCopy = True
                                         }
          }
      ]
