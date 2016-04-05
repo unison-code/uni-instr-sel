@@ -27,6 +27,7 @@ import Language.InstrSel.TargetMachines.Generators.LLVM.Base
   , Instruction (..)
   , InstrSemantics (..)
   )
+import Language.InstrSel.TargetMachines.Transformations
 import Language.InstrSel.TargetMachines.Generators.LLVM.Generator
 import Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator
 import Language.InstrSel.Utils.Base
@@ -69,7 +70,7 @@ run opts =
        reportErrorAndExit $ fromLeft m_str
      let m = fromRight m_str
      parsed_m <- parseSemanticsInMD m
-     let tm = generateTargetMachine parsed_m
+     let tm = copyExtend $ generateTargetMachine parsed_m
          code = generateModule tm
      return [toOutputWithID ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
 

@@ -17,7 +17,6 @@ module UniIS.Targets.Base
 where
 
 import Language.InstrSel.TargetMachines.Base
-import Language.InstrSel.TargetMachines.Transformations
 import Language.InstrSel.Utils
   ( toLower )
 
@@ -36,5 +35,5 @@ retrieveTargetMachine tmid =
   do let machines = map (\t -> (convertID $ tmID t, t))
                         [ Mips32.theTM ]
      tm <- lookup (convertID tmid) machines
-     return $ copyExtend tm
+     return tm
   where convertID tid = toTargetMachineID $ toLower $ fromTargetMachineID tid

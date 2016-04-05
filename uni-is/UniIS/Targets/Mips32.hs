@@ -33,6 +33,7 @@ import Language.InstrSel.Graphs
 import qualified Language.InstrSel.OpStructures as OS
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.TargetMachines
+import Language.InstrSel.TargetMachines.Transformations
 import Language.InstrSel.Utils
   ( Natural
   , Range (..)
@@ -1992,16 +1993,18 @@ mkInstructionsInclFancy =
 
 -- | Constructs the target machine data for ordinary MIPS.
 theTM :: TargetMachine
-theTM = TargetMachine
-             { tmID = toTargetMachineID "mips32"
-             , tmInstructions = fixInstrIDs mkInstructions
-             , tmLocations = getAllLocations
-             }
+theTM = copyExtend
+        $ TargetMachine
+            { tmID = toTargetMachineID "mips32"
+            , tmInstructions = fixInstrIDs mkInstructions
+            , tmLocations = getAllLocations
+            }
 
 -- | Constructs the target machine data for fancy MIPS.
 tmFancyMips32 :: TargetMachine
-tmFancyMips32 = TargetMachine
-                  { tmID = toTargetMachineID "fmips32"
-                  , tmInstructions = fixInstrIDs mkInstructionsInclFancy
-                  , tmLocations = getAllLocations
-                  }
+tmFancyMips32 = copyExtend
+                $ TargetMachine
+                    { tmID = toTargetMachineID "fmips32"
+                    , tmInstructions = fixInstrIDs mkInstructionsInclFancy
+                    , tmLocations = getAllLocations
+                    }
