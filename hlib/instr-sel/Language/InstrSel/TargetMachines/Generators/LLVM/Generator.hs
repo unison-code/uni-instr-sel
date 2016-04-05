@@ -275,7 +275,7 @@ mkEmitString i os str =
                           else error $ "mkEmitString: no value or blocks nodes "
                                        ++ "with origin or name '" ++ s ++ "'"
              else let int = read $ tail s
-                  in TM.ESTemporary int
+                  in TM.ESLocalTemporary int
         else TM.ESVerbatim s
   mergeVerbatims [] = []
   mergeVerbatims [s] = [s]

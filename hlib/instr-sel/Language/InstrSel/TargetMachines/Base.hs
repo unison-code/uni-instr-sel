@@ -67,10 +67,10 @@ data EmitStringPart
     -- placed.
   | ESBlockOfValueNode NodeID
     -- | Upon code emission, this will be replaced by a new, uniquely named
-    -- temporary. If multiple 'ESTemporary's with identical identifiers appear
-    -- within the same template, they will all be replaced by the same
+    -- temporary. If multiple local temporaries with identical identifiers
+    -- appear within the same template, they will all be replaced by the same
     -- temporary.
-  | ESTemporary Int
+  | ESLocalTemporary Int
   deriving (Show, Eq)
 
 -- | Defines a machine instruction.
