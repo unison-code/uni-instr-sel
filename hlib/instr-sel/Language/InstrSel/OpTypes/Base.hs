@@ -140,7 +140,10 @@ data TypeConvOp
   | UInt2Float
   deriving (Show, Eq)
 
--- | Operations that define or use values by accessing memory.
+-- | Operations that define or use values by accessing memory. All operations
+-- take at least two operands - the first operand is the state, and the second
+-- operand is the address - and produce at least one output, which is a new
+-- state.
 data MemoryOp
     -- | Read from memory.
   = Load
@@ -152,6 +155,8 @@ data ControlOp
     -- | Unconditional branch (same as a jump).
   = Br
     -- | Conditional branch. Branching is done if the input value is not zero.
+    -- The first operand is the true branch, and the second operand is the false
+    -- branch.
   | CondBr
     -- | Return.
   | Ret
