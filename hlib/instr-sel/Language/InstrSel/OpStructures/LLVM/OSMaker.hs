@@ -700,6 +700,8 @@ mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
                           (toDataType t1)
                           (Op.CompTypeConvOp Op.SExt)
                           [op1]
+mkFunctionDFGFromInstruction b st (LLVM.IntToPtr op _ _) =
+  build b st op
 -- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
 -- state nodes.
 mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
