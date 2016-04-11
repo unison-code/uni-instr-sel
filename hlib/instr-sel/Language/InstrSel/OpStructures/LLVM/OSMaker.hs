@@ -60,25 +60,25 @@ import Data.List
 type SymToValueNodeMapping = (Symbol, G.Node)
 
 -- | Represents a data flow that goes from a block node, identified by the given
--- ID, to an datum node. This is needed to draw the missing flow edges after
+-- ID, to an datum node. This is needed to draw the pending flow edges after
 -- both the data-flow graph and the control-flow graph have been built.
-type BlockToDatumDataFlow = (F.BlockName, G.Node)
+type PendingBlockToDatumDataFlow = (F.BlockName, G.Node)
 
 -- | Represents a definition that goes from a block node, identified by the
--- given ID, an datum node. This is needed to draw the missing definition edges
+-- given ID, an datum node. This is needed to draw the pending definition edges
 -- after both the data-flow graph and the control-flow graph have been
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
-type BlockToDatumDef = (F.BlockName, G.Node, G.EdgeNr)
+type PendingBlockToDatumDef = (F.BlockName, G.Node, G.EdgeNr)
 
 -- | Represents a definition that goes from an datum node to a block node,
--- identified by the given ID. This is needed to draw the missing definition
+-- identified by the given ID. This is needed to draw the pending definition
 -- edges after both the data-flow graph and the control-flow graph have been
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type DatumToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
+type PendingDatumToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
 
 -- | Retains various symbol names.
 data Symbol
@@ -121,6 +121,9 @@ data BuildState
         -- ^ The current operation structure.
       , lastTouchedNode :: Maybe G.Node
         -- ^ The last node (if any) that was touched.
+      , lastTouchedState :: Maybe G.Node
+        -- ^ The state node (if any) that was touched. Note that this can point
+        -- to the same node as indicated by 'lastTouchedNode'.
       , entryBlock :: Maybe F.BlockName
         -- ^ The block of the function entry point. A 'Nothing' value means that
         -- this value has not yet been assigned.
@@ -131,13 +134,13 @@ data BuildState
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
         -- be picked.
-      , blockToDatumDataFlows :: [BlockToDatumDataFlow]
+      , blockToDatumDataFlows :: [PendingBlockToDatumDataFlow]
         -- ^ List of block-to-datum flow dependencies that are yet to be
         -- converted into edges.
-      , blockToDatumDefs :: [BlockToDatumDef]
+      , blockToDatumDefs :: [PendingBlockToDatumDef]
         -- ^ List of block-to-datum definitions that are yet to be converted
         -- into edges.
-      , datumToBlockDefs :: [DatumToBlockDef]
+      , datumToBlockDefs :: [PendingDatumToBlockDef]
         -- ^ List of datum-to-block definitions that are yet to be converted
         -- into edges.
       , funcInputValues :: [G.Node]
@@ -293,9 +296,9 @@ mkFunctionOS f@(LLVM.Function {}) =
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
       st4 = applyOSTransformations st3
-      st5 = addMissingBlockToDatumDataFlowEdges st4
-      st6 = addMissingBlockToDatumDefEdges st5
-      st7 = addMissingDatumToBlockDefEdges st6
+      st5 = addPendingBlockToDatumDataFlowEdges st4
+      st6 = addPendingBlockToDatumDefEdges st5
+      st7 = addPendingDatumToBlockDefEdges st6
   in opStruct st7
 mkFunctionOS _ = error "mkFunctionOS: not a Function"
 
@@ -310,8 +313,8 @@ mkPatternOS f@(LLVM.Function {}) =
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
       st4 = applyOSTransformations st3
-      st5 = addMissingBlockToDatumDefEdges st4
-      st6 = addMissingDatumToBlockDefEdges st5
+      st5 = addPendingBlockToDatumDefEdges st4
+      st6 = addPendingDatumToBlockDefEdges st5
       st7 = removeUnusedBlockNodes st6
   in opStruct st7
 mkPatternOS _ = error "mkPattern: not a Function"
@@ -321,6 +324,7 @@ mkInitBuildState :: BuildState
 mkInitBuildState =
   BuildState { opStruct = OS.mkEmpty
              , lastTouchedNode = Nothing
+             , lastTouchedState = Nothing
              , entryBlock = Nothing
              , currentBlock = Nothing
              , symMaps = []
@@ -361,8 +365,21 @@ mkFunctionCFGBuilder =
 -- | Constructs a 'Builder' that will construct a pattern data-flow graph.
 mkPatternDFGBuilder :: Builder
 mkPatternDFGBuilder =
-  mkFunctionDFGBuilder { mkFromInstruction = newInstrMk }
-  where newInstrMk b st i@(LLVM.Call {}) =
+  mkFunctionDFGBuilder { mkFromBasicBlock = newBlockMk
+                       , mkFromInstruction = newInstrMk
+                       }
+  where newBlockMk b st0 bb =
+          -- Let the default builder handle it, but remove the pending
+          -- definition edge to the state node if this basic block has produced
+          -- a state node in the graph.
+          let st1 = mkFunctionDFGFromBasicBlock b st0 bb
+          in if isJust (lastTouchedState st1)
+             then let n = fromJust $ lastTouchedState st1
+                      es = blockToDatumDefs st1
+                      pruned_es = filter ( \(_, n', _) ->  n /= n') es
+                  in st1 { blockToDatumDefs = pruned_es }
+             else st1
+        newInstrMk b st i@(LLVM.Call {}) =
           let f_name = getFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
@@ -516,13 +533,20 @@ mkFunctionDFGFromBasicBlock
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
   let block_name = F.BlockName str
       st1 = if isNothing $ entryBlock st0
-            then foldl (\st n -> addBlockToDatumDataFlow st (block_name, n))
+            then foldl ( \st n
+                           -> addPendingBlockToDatumDataFlow st (block_name, n)
+                       )
                        (st0 { entryBlock = Just block_name })
                        (funcInputValues st0)
             else st0
       st2 = st1 { currentBlock = Just block_name }
-      st3 = foldl (build b) st2 insts
-  in st3
+      st3 = st2 { lastTouchedState = Nothing }
+      st4 = foldl (build b) st3 insts
+      st_n = lastTouchedState st4
+      st5 = if isJust st_n
+            then addPendingBlockToDatumDef st4 (block_name, fromJust st_n, 0)
+            else st4
+  in st5
 mkFunctionDFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
   error $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
 
@@ -701,20 +725,27 @@ mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
                           [op1]
 mkFunctionDFGFromInstruction b st (LLVM.IntToPtr op _ _) =
   build b st op
--- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
--- state nodes.
 mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
-  let st1 = mkFunctionDFGFromCompOp b
-                                    st0
-                                    (toDataType op1)
-                                    (Op.CompMemoryOp Op.Load)
-                                    [op1]
-      n = fromJust $ lastTouchedNode st1
-      bb = fromJust $ currentBlock st1
-      st2 = addDatumToBlockDef st1 (n, bb, 0)
-  in st2
--- TODO: replace the 'addDatumToBlockDef' with proper dependencies from/to
--- state nodes.
+  let st1 = ensureStateNodeHasBeenTouched st0
+      state_in_node = fromJust $ lastTouchedState st1
+      st2 = build b st1 op1
+      operand_node = fromJust $ lastTouchedNode st2
+      st3 = addNewNode st2 (G.ComputationNode $ Op.CompMemoryOp Op.Load)
+      op_node = fromJust $ lastTouchedNode st3
+      st4 = addNewEdgesManySources st3
+                                   G.DataFlowEdge
+                                   [state_in_node, operand_node]
+                                   op_node
+      st5 = addNewNode st4 G.StateNode
+      state_out_node = fromJust $ lastTouchedNode st5
+      st6 = st5 { lastTouchedState = Just state_out_node }
+      st7 = addNewEdge st6 G.DataFlowEdge op_node state_out_node
+      st8 = addNewNode st7 (G.ValueNode (toDataType op1) Nothing)
+      d_node = fromJust $ lastTouchedNode st8
+      st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
+  in st9
+-- TODO: replace the 'addPendingDatumToBlockDef' with proper dependencies
+-- from/to state nodes.
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ op1 op2 _ _ _) =
   let st1 = mkFunctionDFGFromCompOp b
                                     st0
@@ -741,7 +772,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                         dfe = head
                               $ filter G.isDataFlowEdge
                               $ G.getEdgesBetween g n phi_node
-                    in addDatumToBlockDef st
+                    in addPendingDatumToBlockDef st
                                            (n, block_id, G.getOutEdgeNr dfe)
                   )
                   st3
@@ -749,7 +780,10 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
       st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
       d_node = fromJust $ lastTouchedNode st5
       st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
-      st7 = addBlockToDatumDef st6 (fromJust $ currentBlock st6, d_node, 0)
+      st7 = addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
+                                          , d_node
+                                          , 0
+                                          )
             -- Since we've just created the value node and only added a
             -- single data-flow edge to it, we are guaranteed that the in-edge
             -- number of that data-flow edge is 0.
@@ -1053,7 +1087,9 @@ addNewValueNodeWithConstant st0 c =
                                          (Just $ mkVarNameForConst c)
                            )
       new_n = fromJust $ lastTouchedNode st1
-      st2 = addBlockToDatumDataFlow st1 (fromJust $ entryBlock st1, new_n)
+      st2 = addPendingBlockToDatumDataFlow st1 ( fromJust $ entryBlock st1
+                                               , new_n
+                                               )
   in st2
 
 -- | Adds a new edge into a given state.
@@ -1108,18 +1144,21 @@ addSymMap :: BuildState -> SymToValueNodeMapping -> BuildState
 addSymMap st sm = st { symMaps = sm:(symMaps st) }
 
 -- | Adds block-to-datum flow to a given state.
-addBlockToDatumDataFlow :: BuildState -> BlockToDatumDataFlow -> BuildState
-addBlockToDatumDataFlow st flow =
+addPendingBlockToDatumDataFlow
+  :: BuildState
+  -> PendingBlockToDatumDataFlow
+  -> BuildState
+addPendingBlockToDatumDataFlow st flow =
   st { blockToDatumDataFlows = flow:(blockToDatumDataFlows st) }
 
 -- | Adds block-to-datum definition to a given state.
-addBlockToDatumDef :: BuildState -> BlockToDatumDef -> BuildState
-addBlockToDatumDef st def =
+addPendingBlockToDatumDef :: BuildState -> PendingBlockToDatumDef -> BuildState
+addPendingBlockToDatumDef st def =
   st { blockToDatumDefs = def:(blockToDatumDefs st) }
 
 -- | Adds datum-to-block definition to a given state.
-addDatumToBlockDef :: BuildState -> DatumToBlockDef -> BuildState
-addDatumToBlockDef st def =
+addPendingDatumToBlockDef :: BuildState -> PendingDatumToBlockDef -> BuildState
+addPendingDatumToBlockDef st def =
   st { datumToBlockDefs = def:(datumToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
@@ -1171,6 +1210,25 @@ ensureBlockNodeExists st l =
      then touchNode st (fromJust block_node)
      else addNewNode st (G.BlockNode l)
 
+-- | Checks that a state node has been touched. If not, then a new state node is
+-- added and set as touched. Also, if this is a function graph, a pending
+-- block-to-datum data-flow edge is added from the current block to the new
+-- state node.
+ensureStateNodeHasBeenTouched :: BuildState -> BuildState
+ensureStateNodeHasBeenTouched st0 =
+  if isJust (lastTouchedState st0)
+  then st0
+  else let st1 = addNewNode st0 G.StateNode
+           n = fromJust $ lastTouchedNode st1
+           st2 = st1 { lastTouchedState = Just n }
+           st3 = addPendingBlockToDatumDataFlow st2 ( fromJust
+                                                      $ currentBlock st2
+                                                    , n
+                                                    )
+           -- Note that, if this is a pattern, then the flow above will not be
+           -- inserted as all 'PendingBlockToDatumDataFlow' entities are
+           -- ignored.
+       in st3
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp
@@ -1204,17 +1262,17 @@ fromLlvmFPred LLVMF.ULE = Op.CompArithOp $ Op.UFloatOp Op.LE
 fromLlvmFPred LLVMF.UNE = Op.CompArithOp $ Op.UFloatOp Op.NEq
 fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
--- | Adds the missing data or state flow edges from block nodes to data or state
+-- | Adds the pending data or state flow edges from block nodes to data or state
 -- nodes, as described in the given build state.
-addMissingBlockToDatumDataFlowEdges :: BuildState -> BuildState
-addMissingBlockToDatumDataFlowEdges st =
+addPendingBlockToDatumDataFlowEdges :: BuildState -> BuildState
+addPendingBlockToDatumDataFlowEdges st =
   let g0 = getOSGraph st
       deps = map ( \(l, n) ->
                    if G.isValueNode n
                    then (l, n, G.DataFlowEdge)
                    else if G.isStateNode n
                         then (l, n, G.StateFlowEdge)
-                        else error ( "addMissingBlockToDatumDataFlowEdges: "
+                        else error ( "addPendingBlockToDatumDataFlowEdges: "
                                      ++ "This should never happen"
                                    )
                  )
@@ -1228,10 +1286,10 @@ addMissingBlockToDatumDataFlowEdges st =
               deps
   in updateOSGraph st g1
 
--- | Adds the missing block-to-datum definition edges, as described in the
+-- | Adds the pending block-to-datum definition edges, as described in the
 -- given build state.
-addMissingBlockToDatumDefEdges :: BuildState -> BuildState
-addMissingBlockToDatumDefEdges st =
+addPendingBlockToDatumDefEdges :: BuildState -> BuildState
+addPendingBlockToDatumDefEdges st =
   let g0 = getOSGraph st
       defs = blockToDatumDefs st
       g1 = foldr ( \(block_id, dn, nr) g ->
@@ -1245,10 +1303,10 @@ addMissingBlockToDatumDefEdges st =
                  defs
   in updateOSGraph st g1
 
--- | Adds the missing datum-to-block definition edges, as described in the
+-- | Adds the pending datum-to-block definition edges, as described in the
 -- given build state.
-addMissingDatumToBlockDefEdges :: BuildState -> BuildState
-addMissingDatumToBlockDefEdges st =
+addPendingDatumToBlockDefEdges :: BuildState -> BuildState
+addPendingDatumToBlockDefEdges st =
   let g0 = getOSGraph st
       defs = datumToBlockDefs st
       g1 = foldr ( \(dn, block_id, nr) g ->
