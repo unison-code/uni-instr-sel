@@ -224,9 +224,8 @@ instance DataTypeFormable Constant where
 instance DataTypeFormable LLVM.Type where
   toDataType (LLVM.IntegerType bits) =
     D.IntTempType { D.intTempNumBits = toNatural bits }
-  toDataType (LLVM.PointerType _ _) =
-    -- TODO: fix so that the correct data type is applied
-    D.AnyType
+  toDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) =
+    toDataType t
   toDataType t = error $ "'toDataType' not implemented for " ++ show t
 
 instance DataTypeFormable LLVM.Operand where
