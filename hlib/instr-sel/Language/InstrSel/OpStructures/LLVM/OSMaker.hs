@@ -744,20 +744,24 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
       d_node = fromJust $ lastTouchedNode st8
       st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
   in st9
--- TODO: replace the 'addPendingDatumToBlockDef' with proper dependencies
--- from/to state nodes.
-mkFunctionDFGFromInstruction b st0 (LLVM.Store _ op1 op2 _ _ _) =
-  let st1 = mkFunctionDFGFromCompOp b
-                                    st0
-                                    D.AnyType -- This doesn't matter since the
-                                              -- result node will be removed
-                                              -- directly afterwards
-                                    (Op.CompMemoryOp Op.Store)
-                                    [op1, op2] -- TODO: check the order that
-                                               -- it's correct TODO: remove the
-                                               -- node below
-      n = fromJust $ lastTouchedNode st1
-  in st1
+mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
+  let st1 = ensureStateNodeHasBeenTouched st0
+      state_in_node = fromJust $ lastTouchedState st1
+      st2 = build b st1 addr_op
+      addr_node = fromJust $ lastTouchedNode st2
+      st3 = build b st2 val_op
+      val_node = fromJust $ lastTouchedNode st3
+      st4 = addNewNode st3 (G.ComputationNode $ Op.CompMemoryOp Op.Store)
+      op_node = fromJust $ lastTouchedNode st4
+      st5 = addNewEdgesManySources st4
+                                   G.DataFlowEdge
+                                   [state_in_node, addr_node, val_node]
+                                   op_node
+      st6 = addNewNode st5 G.StateNode
+      state_out_node = fromJust $ lastTouchedNode st6
+      st7 = st6 { lastTouchedState = Just state_out_node }
+      st8 = addNewEdge st7 G.DataFlowEdge op_node state_out_node
+  in st8
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
   let (operands, blocks) = unzip phi_operands
       block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
