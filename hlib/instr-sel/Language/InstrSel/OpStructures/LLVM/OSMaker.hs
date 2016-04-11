@@ -334,15 +334,15 @@ mkInitBuildState =
 -- | Constructs a 'Builder' that will construct a function data-flow graph.
 mkFunctionDFGBuilder :: Builder
 mkFunctionDFGBuilder =
-  Builder { mkFromGlobal     = mkFunctionDFGFromGlobal
-          , mkFromBasicBlock = mkFunctionDFGFromBasicBlock
-          , mkFromNamed      = mkFunctionDFGFromNamed
+  Builder { mkFromGlobal      = mkFunctionDFGFromGlobal
+          , mkFromBasicBlock  = mkFunctionDFGFromBasicBlock
+          , mkFromNamed       = mkFunctionDFGFromNamed
           , mkFromInstruction = mkFunctionDFGFromInstruction
-          , mkFromTerminator =
+          , mkFromTerminator  =
               \_ _ t -> error $ "mkFromTerminator: not implemented for "
                                 ++ show t
-          , mkFromOperand    = mkFunctionDFGFromOperand
-          , mkFromParameter  = mkFunctionDFGFromParameter
+          , mkFromOperand     = mkFunctionDFGFromOperand
+          , mkFromParameter   = mkFunctionDFGFromParameter
           }
 
 -- | Constructs a 'Builder' that will construct a function control-flow graph.
