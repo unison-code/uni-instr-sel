@@ -219,9 +219,6 @@ instance DataTypeFormable Constant where
     D.IntConstType { D.intConstValue = rangeFromSingleton v
                    , D.intConstNumBits = Just $ toNatural w
                    }
-  toDataType GlobalReferenceConstant {} =
-    -- TODO: fix so that the correct data type is applied
-    D.AnyType
   toDataType c = error $ "'toDataType' not implemented for " ++ show c
 
 instance DataTypeFormable LLVM.Type where
@@ -693,7 +690,6 @@ mkFunctionDFGFromInstruction b st (LLVM.Xor op1 op2 _) =
                           (Op.CompArithOp $ Op.IntOp Op.XOr)
                           [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
-  -- TODO: add support for vectorized icmp
   mkFunctionDFGFromCompOp b
                           st
                           (D.IntTempType { D.intTempNumBits = 1 })
@@ -1086,7 +1082,6 @@ mkVarNameForConst c = "%const." ++ (pShow c)
 -- | Adds a new value node representing a particular constant to a given state.
 addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
 addNewValueNodeWithConstant st0 c =
-  -- TODO: fix so that each constant gets a unique variable name
   let st1 = addNewNode st0 ( G.ValueNode (toDataType c)
                                          (Just $ mkVarNameForConst c)
                            )
