@@ -161,17 +161,17 @@ mkBrFallThroughInstruction =
 -- constants and function arguments.
 mkDataDefInstruction :: Instruction
 mkDataDefInstruction =
-  let mkPatternGraph datum =
+  let mkPatternGraph datum flow_type =
         mkGraph ( map Node
                       [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
                       , ( 1, NodeLabel 1 datum )
                       ]
                 )
                 ( map Edge
-                      [ ( 0, 1, EdgeLabel DataFlowEdge 0 0 ) ]
+                      [ ( 0, 1, EdgeLabel flow_type 0 0 ) ]
                 )
-      g1 = mkPatternGraph mkGenericValueNodeType
-      g2 = mkPatternGraph StateNode
+      g1 = mkPatternGraph mkGenericValueNodeType DataFlowEdge
+      g2 = mkPatternGraph StateNode StateFlowEdge
       mkInstrPattern pid g cs =
         InstrPattern
           { patID = pid
