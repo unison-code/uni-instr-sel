@@ -32,7 +32,9 @@ import qualified Language.InstrSel.Graphs as G
   ( computeDomSets )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
-  ( Function (..) )
+  ( Function (..)
+  , fromFunctionName
+  )
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
@@ -115,6 +117,9 @@ mkHLFunctionParams function target =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
                ns
+      call_name_data =
+        let ns = filter isCallNode (getAllNodes graph)
+        in map (\n -> (getNodeID n, fromFunctionName $ callFunc $ getNodeType n)) ns
       mkCallingConventionConstraints =
         -- TODO: do a proper implemention. Right now it's just a quick hack to
         -- prevent the input arguments from being located in a zero-value
@@ -137,6 +142,7 @@ mkHLFunctionParams function target =
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
+       , hlFunCallNameData = call_name_data
        , hlFunConstraints = (osConstraints $ functionOS function)
                             ++
                             mkCallingConventionConstraints

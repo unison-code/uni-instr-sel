@@ -102,6 +102,8 @@ data HighLevelFunctionParams
       , hlFunValueOriginData :: [(NodeID, String)]
         -- ^ The value nodes whose value has an origin, together with their
         -- origins.
+      , hlFunCallNameData :: [(NodeID, String)]
+        -- ^ The function call nodes together with their function names.
       , hlFunConstraints :: [Constraint]
         -- ^ The function constraints, if any. No constraint in this list may
         -- use array indices.
@@ -383,6 +385,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
+      <*> v .: "call-name-data"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -398,6 +401,7 @@ instance ToJSON HighLevelFunctionParams where
            , "block-params"      .= (hlFunBlockParams d)
            , "int-constant-data" .= (hlFunValueIntConstData d)
            , "value-origin-data" .= (hlFunValueOriginData d)
+           , "call-name-data"    .= (hlFunCallNameData d)
            , "constraints"       .= (hlFunConstraints d)
            ]
 

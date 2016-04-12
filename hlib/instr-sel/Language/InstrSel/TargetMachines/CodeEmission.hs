@@ -391,6 +391,15 @@ emitInstructionPart _ _ _ st (ESLocalTemporary i) =
                 , varNamesInUse = (new_name:names_in_use)
                 , tmpToVarNameMaps = ((i, new_name):tmpToVarNameMaps st)
                 }
+emitInstructionPart model _ _ st (ESFuncOfCallNode n) =
+  let f = lookup n (hlFunCallNameData $ hlFunctionParams model)
+  in if isJust f
+     then let code = emittedCode st
+              (AsmInstruction instr_str) = head code
+              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust f)
+          in st { emittedCode = (new_instr:tail code) }
+     else error $ "emitInstructionPart: no function name found for function "
+                  ++ "call node " ++ pShow n
 
 -- | Returns a variable name that does not appear in the given list of strings.
 getUniqueVarName :: [String] -> String

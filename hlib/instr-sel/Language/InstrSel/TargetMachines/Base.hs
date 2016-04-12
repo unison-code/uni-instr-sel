@@ -71,6 +71,8 @@ data EmitStringPart
     -- appear within the same template, they will all be replaced by the same
     -- temporary.
   | ESLocalTemporary Int
+    -- | Denotes the function name of a given call node.
+  | ESFuncOfCallNode NodeID
   deriving (Show, Eq)
 
 -- | Defines a machine instruction.
