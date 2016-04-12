@@ -120,6 +120,7 @@ module Language.InstrSel.Graphs.Base
   , hasAnyPredecessors
   , hasAnySuccessors
   , insertNewNodeAlongEdge
+  , isCallNode
   , isComputationNode
   , isControlFlowEdge
   , isControlNode
@@ -137,6 +138,7 @@ module Language.InstrSel.Graphs.Base
   , isNodeInGraph
   , isOperationNode
   , isStateFlowEdge
+  , isOfCallNodeType
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
   , isOfControlNodeType
@@ -179,7 +181,9 @@ where
 import Language.InstrSel.PrettyShow
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Functions.IDs
-  ( BlockName (..) )
+  ( BlockName
+  , FunctionName
+  )
 import Language.InstrSel.Graphs.IDs
 import qualified Language.InstrSel.OpTypes as O
 import Language.InstrSel.Utils.Natural
@@ -252,6 +256,7 @@ data NodeLabel
 data NodeType
   = ComputationNode { compOp :: O.CompOp }
   | ControlNode { ctrlOp :: O.ControlOp }
+  | CallNode { callFunc :: FunctionName }
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as value nodes. What distinguishes one from another
@@ -273,6 +278,7 @@ data NodeType
 instance PrettyShow NodeType where
   pShow (ComputationNode op) = "Computation node (" ++ pShow op ++ ")"
   pShow (ControlNode op) = "Control node (" ++ pShow op ++ ")"
+  pShow (CallNode func) = "Call node (" ++ pShow func ++ ")"
   pShow (ValueNode dt origin) = "Value node (" ++ pShow dt ++ ", "
                                 ++ pShow origin ++ ")"
   pShow (BlockNode name) = "Block node (" ++ pShow name ++ ")"
@@ -382,6 +388,8 @@ instance FromJSON NodeType where
                                <$> v .: "op"
                    "ctrl" -> ControlNode
                                <$> v .: "op"
+                   "call" -> CallNode
+                               <$> v .: "func"
                    "data" -> ValueNode
                                <$> v .: "dtype"
                                <*> v .: "origin"
@@ -401,6 +409,10 @@ instance ToJSON NodeType where
   toJSON n@(ControlNode {}) =
     object [ "ntype" .= String "ctrl"
            , "op"    .= toJSON (ctrlOp n)
+           ]
+  toJSON n@(CallNode {}) =
+    object [ "ntype" .= String "call"
+           , "func"    .= toJSON (callFunc n)
            ]
   toJSON n@(ValueNode {}) =
     object [ "ntype"   .= String "data"
@@ -527,6 +539,7 @@ isOperationNode :: Node -> Bool
 isOperationNode n =
      isComputationNode n
   || isControlNode n
+  || isCallNode n
   || isPhiNode n
   || isCopyNode n
 
@@ -543,6 +556,9 @@ isComputationNode n = isOfComputationNodeType $ getNodeType n
 
 isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ getNodeType n
+
+isCallNode :: Node -> Bool
+isCallNode n = isOfCallNodeType $ getNodeType n
 
 isRetControlNode :: Node -> Bool
 isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
@@ -583,6 +599,10 @@ isCopyNode n = isOfCopyNodeType $ getNodeType n
 isOfComputationNodeType :: NodeType -> Bool
 isOfComputationNodeType (ComputationNode _) = True
 isOfComputationNodeType _ = False
+
+isOfCallNodeType :: NodeType -> Bool
+isOfCallNodeType (CallNode _) = True
+isOfCallNodeType _ = False
 
 isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
@@ -1125,9 +1145,10 @@ isNodeTypeCompatibleWith :: NodeType -> NodeType -> Bool
 isNodeTypeCompatibleWith (ComputationNode op1) (ComputationNode op2) =
   op1 `O.isCompOpCompatibleWith` op2
 isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) = op1 == op2
+isNodeTypeCompatibleWith (CallNode {}) (CallNode {}) = True
 isNodeTypeCompatibleWith (ValueNode d1 _) (ValueNode d2 _) =
   d1 `D.isDataTypeCompatibleWith` d2
-isNodeTypeCompatibleWith (BlockNode _) (BlockNode _) = True
+isNodeTypeCompatibleWith (BlockNode {}) (BlockNode {}) = True
 isNodeTypeCompatibleWith PhiNode PhiNode = True
 isNodeTypeCompatibleWith StateNode StateNode = True
 isNodeTypeCompatibleWith CopyNode CopyNode = True
@@ -1193,7 +1214,6 @@ doNumEdgesMatch fg pg fn pn =
 -- node.
 doesNumCFInEdgesMatter :: Graph -> Node -> Bool
 doesNumCFInEdgesMatter g n
-  | isComputationNode n = True
   | isControlNode n = True
   | isBlockNodeAndIntermediate g n = True
   | otherwise = False
@@ -1202,7 +1222,6 @@ doesNumCFInEdgesMatter g n
 -- node.
 doesNumCFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumCFOutEdgesMatter _ n
-  | isComputationNode n = True
   | isControlNode n = True
   | otherwise = False
 
@@ -1212,6 +1231,7 @@ doesNumDFInEdgesMatter :: Graph -> Node -> Bool
 doesNumDFInEdgesMatter _ n
   | isComputationNode n = True
   | isControlNode n = True
+  | isCallNode n = True
   | isPhiNode n = True
   | otherwise = False
 
@@ -1220,6 +1240,7 @@ doesNumDFInEdgesMatter _ n
 doesNumDFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumDFOutEdgesMatter _ n
   | isComputationNode n = True
+  | isCallNode n = True
   | otherwise = False
 
 -- | Checks if the number of state flow in-edges matters for a given pattern
@@ -1227,6 +1248,7 @@ doesNumDFOutEdgesMatter _ n
 doesNumSFInEdgesMatter :: Graph -> Node -> Bool
 doesNumSFInEdgesMatter _ n
   | isComputationNode n = True
+  | isCallNode n = True
   | otherwise = False
 
 -- | Checks if the number of state flow out-edges matters for a given pattern
@@ -1234,6 +1256,7 @@ doesNumSFInEdgesMatter _ n
 doesNumSFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumSFOutEdgesMatter _ n
   | isComputationNode n = True
+  | isCallNode n = True
   | otherwise = False
 
 -- | Checks if two lists of edges contain exactly the same edge numbers which

@@ -101,6 +101,7 @@ thickWidthAttr = GV.penWidth 3.0
 mkNodeShapeAttr :: NodeType -> GV.Attributes
 mkNodeShapeAttr (ComputationNode _) = [GV.shape GV.Circle]
 mkNodeShapeAttr (ControlNode _) = [GV.shape GV.DiamondShape, thickWidthAttr]
+mkNodeShapeAttr (CallNode _) = [GV.shape GV.Circle]
 mkNodeShapeAttr (ValueNode _ _) = [GV.shape GV.BoxShape]
 mkNodeShapeAttr (BlockNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
 mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
@@ -114,6 +115,7 @@ mkNodeLabelAttr nid nt =
   where s = f nt ++ "\n" ++ pShow nid
         f (ComputationNode op) = pShow op
         f (ControlNode op) = pShow op
+        f (CallNode func) = "call " ++ pShow func
         f (ValueNode dt src) = pShow dt ++ maybe "" (" " ++) src
         f (BlockNode l) = pShow l
         f PhiNode = "phi"

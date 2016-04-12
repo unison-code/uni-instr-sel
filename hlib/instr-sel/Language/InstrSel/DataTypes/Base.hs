@@ -19,6 +19,7 @@ module Language.InstrSel.DataTypes.Base
   , isIntTempType
   , isIntConstType
   , isAnyType
+  , isVoidType
   , isTypeAConstValue
   , isDataTypeCompatibleWith
   , parseDataTypeFromJson
@@ -66,6 +67,8 @@ data DataType
       }
     -- | When the data type does not matter.
   | AnyType
+    -- | When there is no data type.
+  | VoidType
   deriving (Show, Eq)
 
 
@@ -81,6 +84,7 @@ instance PrettyShow DataType where
     in pShow (intConstValue d) ++
        if isJust b then " i" ++ (pShow $ fromJust b) else ""
   pShow AnyType = "any"
+  pShow VoidType = "void"
 
 
 
@@ -120,6 +124,11 @@ isAnyType :: DataType -> Bool
 isAnyType AnyType = True
 isAnyType _ = False
 
+-- | Checks if a given data type is 'VoidType'.
+isVoidType :: DataType -> Bool
+isVoidType VoidType = True
+isVoidType _ = False
+
 -- | Checks if a data type is compatible with another data type. Note that this
 -- function is not necessarily commutative.
 isDataTypeCompatibleWith
@@ -134,6 +143,7 @@ isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
 isDataTypeCompatibleWith AnyType _ = True
 isDataTypeCompatibleWith _ AnyType = True
+isDataTypeCompatibleWith VoidType VoidType = True
 isDataTypeCompatibleWith _ _ = False
 
 

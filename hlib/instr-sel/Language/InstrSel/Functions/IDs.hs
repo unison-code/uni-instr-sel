@@ -14,10 +14,13 @@
 
 module Language.InstrSel.Functions.IDs
   ( BlockName (..)
+  , FunctionName (..)
   , mkEmptyBlockName
   , isBlockNameEmpty
   , toBlockName
   , fromBlockName
+  , toFunctionName
+  , fromFunctionName
   )
 where
 
@@ -38,6 +41,14 @@ newtype BlockName
 instance PrettyShow BlockName where
   pShow (BlockName str) = str
 
+-- | Represents a function name.
+newtype FunctionName
+  = FunctionName String
+  deriving (Show, Eq)
+
+instance PrettyShow FunctionName where
+  pShow (FunctionName str) = str
+
 
 
 --------------------------
@@ -50,6 +61,13 @@ instance FromJSON BlockName where
 
 instance ToJSON BlockName where
   toJSON (BlockName s) = toJSON s
+
+instance FromJSON FunctionName where
+  parseJSON (String s) = return $ (FunctionName $ unpack s)
+  parseJSON _ = mzero
+
+instance ToJSON FunctionName where
+  toJSON (FunctionName s) = toJSON s
 
 
 
@@ -70,3 +88,9 @@ toBlockName = BlockName
 
 fromBlockName :: BlockName -> String
 fromBlockName (BlockName str) = str
+
+toFunctionName :: String -> FunctionName
+toFunctionName = FunctionName
+
+fromFunctionName :: FunctionName -> String
+fromFunctionName (FunctionName str) = str

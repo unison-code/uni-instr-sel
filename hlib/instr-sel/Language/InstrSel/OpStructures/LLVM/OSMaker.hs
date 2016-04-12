@@ -196,7 +196,8 @@ instance SymbolFormable LLVM.Name where
   toSymbol (LLVM.Name str) = LocalStringSymbol str
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
--- | Class for converting an LLVM constant datum into a 'Constant'.
+-- | Class for converting an LLVM constant operand into a corresponding
+-- 'Constant'.
 class ConstantFormable a where
   toConstant :: a -> Constant
 
@@ -206,33 +207,82 @@ instance ConstantFormable LLVMC.Constant where
                 , signedIntValue = LLVMC.signedIntegerValue i
                 }
   toConstant (LLVMC.GlobalReference t n) =
-    GlobalReferenceConstant { globalRefType = toDataType t
+    GlobalReferenceConstant { globalRefType = toOpDataType t
                             , globalRefName = toSymbol n
                             }
   toConstant l = error $ "'toConstant' not implemented for " ++ show l
 
--- | Class for converting an LLVM datum into a 'DataType'.
-class DataTypeFormable a where
-  toDataType :: a -> D.DataType
+-- | Class for converting an LLVM operand into a corresponding operand
+-- 'D.DataType'.
+class OperandDataTypeFormable a where
+  toOpDataType :: a -> D.DataType
 
-instance DataTypeFormable Constant where
-  toDataType IntConstant { intBitWidth = w, signedIntValue = v } =
+instance OperandDataTypeFormable Constant where
+  toOpDataType IntConstant { intBitWidth = w, signedIntValue = v } =
     D.IntConstType { D.intConstValue = rangeFromSingleton v
                    , D.intConstNumBits = Just $ toNatural w
                    }
-  toDataType c = error $ "'toDataType' not implemented for " ++ show c
+  toOpDataType c = error $ "'toOpDataType' not implemented for " ++ show c
 
-instance DataTypeFormable LLVM.Type where
-  toDataType (LLVM.IntegerType bits) =
+instance OperandDataTypeFormable LLVM.Type where
+  toOpDataType (LLVM.IntegerType bits) =
     D.IntTempType { D.intTempNumBits = toNatural bits }
-  toDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) =
-    toDataType t
-  toDataType t = error $ "'toDataType' not implemented for " ++ show t
+  toOpDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) = toOpDataType t
+  toOpDataType t = error $ "'toOpDataType' not implemented for " ++ show t
 
-instance DataTypeFormable LLVM.Operand where
-  toDataType (LLVM.LocalReference t _) = toDataType t
-  toDataType (LLVM.ConstantOperand c) = toDataType (toConstant c)
-  toDataType o = error $ "'toDataType' not implemented for " ++ show o
+instance OperandDataTypeFormable LLVM.Operand where
+  toOpDataType (LLVM.LocalReference t _) = toOpDataType t
+  toOpDataType (LLVM.ConstantOperand c) = toOpDataType (toConstant c)
+  toOpDataType o = error $ "'toOpDataType' not implemented for " ++ show o
+
+-- | Class for converting an LLVM operand into a corresponding return
+-- 'D.DataType'.
+class ReturnDataTypeFormable a where
+  toReturnDataType :: a -> D.DataType
+
+instance ReturnDataTypeFormable LLVM.Type where
+  toReturnDataType t@(LLVM.IntegerType {}) = toOpDataType t
+  toReturnDataType (LLVM.PointerType t _) = toReturnDataType t
+  toReturnDataType (LLVM.FunctionType t _ _) = toReturnDataType t
+  toReturnDataType t =
+    error $ "'toReturnDataType' not implemented for " ++ show t
+
+instance ReturnDataTypeFormable LLVMC.Constant where
+  toReturnDataType (LLVMC.GlobalReference t _) = toReturnDataType t
+  toReturnDataType t =
+    error $ "'toReturnDataType' not implemented for " ++ show t
+
+instance ReturnDataTypeFormable LLVM.Operand where
+  toReturnDataType (LLVM.LocalReference t _) = toReturnDataType t
+  toReturnDataType (LLVM.ConstantOperand o) = toReturnDataType o
+  toReturnDataType o =
+    error $ "'toReturnDataType' not implemented for " ++ show o
+
+instance ReturnDataTypeFormable LLVM.CallableOperand where
+  toReturnDataType (Right o) = toReturnDataType o
+  toReturnDataType o =
+    error $ "'toReturnDataType' not implemented for " ++ show o
+
+-- | Class for converting an LLVM operand into a 'F.FunctionName'.
+class FunctionNameFormable a where
+  toFunctionName :: a -> F.FunctionName
+
+instance FunctionNameFormable LLVM.Name where
+  toFunctionName (LLVM.Name str) = F.toFunctionName str
+  toFunctionName n = error $ "'toFunctionName' not implemented for " ++ show n
+
+instance FunctionNameFormable LLVMC.Constant where
+  toFunctionName (LLVMC.GlobalReference _ n) = toFunctionName n
+  toFunctionName c = error $ "'toFunctionName' not implemented for " ++ show c
+
+instance FunctionNameFormable LLVM.Operand where
+  toFunctionName (LLVM.LocalReference _ n) = toFunctionName n
+  toFunctionName (LLVM.ConstantOperand c) = toFunctionName c
+  toFunctionName o = error $ "'toFunctionName' not implemented for " ++ show o
+
+instance FunctionNameFormable LLVM.CallableOperand where
+  toFunctionName (Right o) = toFunctionName o
+  toFunctionName o = error $ "'toFunctionName' not implemented for " ++ show o
 
 -- | Type class for helping a 'Builder' to traverse the AST. The idea is that
 -- 'build' will be invoked on the current AST element, and then the element will
@@ -715,19 +765,19 @@ mkFunctionDFGFromInstruction b st (LLVM.FCmp p op1 op2 _) =
 mkFunctionDFGFromInstruction b st (LLVM.Trunc op1 t1 _) =
   mkFunctionDFGFromCompOp b
                           st
-                          (toDataType t1)
+                          (toOpDataType t1)
                           (Op.CompTypeConvOp Op.Trunc)
                           [op1]
 mkFunctionDFGFromInstruction b st (LLVM.ZExt op1 t1 _) =
   mkFunctionDFGFromCompOp b
                           st
-                          (toDataType t1)
+                          (toOpDataType t1)
                           (Op.CompTypeConvOp Op.ZExt)
                           [op1]
 mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
   mkFunctionDFGFromCompOp b
                           st
-                          (toDataType t1)
+                          (toOpDataType t1)
                           (Op.CompTypeConvOp Op.SExt)
                           [op1]
 mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
@@ -748,7 +798,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
                        (fromJust $ lastTouchedStateNode st6)
       -- Note that the result value node MUST be inserted last as the last
       -- touched node in this case must be a value node and not a state node
-      st8 = addNewNode st7 (G.ValueNode (toDataType op1) Nothing)
+      st8 = addNewNode st7 (G.ValueNode (toOpDataType op1) Nothing)
       d_node = fromJust $ lastTouchedNode st8
       st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
   in st9
@@ -770,6 +820,34 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
                        op_node
                        (fromJust $ lastTouchedStateNode st6)
   in st7
+mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
+  let sts = scanl (build b) st0 $ map fst args
+      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+      st1 = last sts
+      func_name = toFunctionName f
+      st2 = addNewNode st1 (G.CallNode func_name)
+      op_node = fromJust $ lastTouchedNode st2
+      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+      st4 = ensureStateNodeHasBeenTouched st3
+      st5 = addNewEdge st4
+                       G.StateFlowEdge
+                       (fromJust $ lastTouchedStateNode st4)
+                       op_node
+      st6 = addNewStateNode st5
+      st7 = addNewEdge st6
+                       G.StateFlowEdge
+                       op_node
+                       (fromJust $ lastTouchedStateNode st6)
+      -- Note that the result value node, if any, MUST be inserted last as the
+      -- last touched node in this case must be a value node and not a state
+      -- node
+      ret_type = toReturnDataType f
+  in if D.isVoidType ret_type
+     then st7
+     else let st8 = addNewNode st7 (G.ValueNode ret_type Nothing)
+              d_node = fromJust $ lastTouchedNode st8
+              st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
+          in st9
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
   let (operands, blocks) = unzip phi_operands
       block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
@@ -789,7 +867,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                   )
                   st3
                   (zip operand_ns block_names)
-      st5 = addNewNode st4 (G.ValueNode (toDataType t) Nothing)
+      st5 = addNewNode st4 (G.ValueNode (toOpDataType t) Nothing)
       d_node = fromJust $ lastTouchedNode st5
       st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
       st7 = addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
@@ -836,7 +914,7 @@ mkFunctionDFGFromOperand
   -> LLVM.Operand
   -> BuildState
 mkFunctionDFGFromOperand _ st (LLVM.LocalReference t name) =
-  ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
+  ensureValueNodeWithSymExists st (toSymbol name) (toOpDataType t)
 mkFunctionDFGFromOperand _ st (LLVM.ConstantOperand c) =
   addNewValueNodeWithConstant st (toConstant c)
 mkFunctionDFGFromOperand _ _ o =
@@ -848,7 +926,7 @@ mkFunctionDFGFromParameter
   -> LLVM.Parameter
   -> BuildState
 mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
-  let st1 = ensureValueNodeWithSymExists st0 (toSymbol name) (toDataType t)
+  let st1 = ensureValueNodeWithSymExists st0 (toSymbol name) (toOpDataType t)
       n = fromJust $ lastTouchedNode st1
       st2 = addFuncInputValue st1 n
   in st2
@@ -913,7 +991,7 @@ mkPatternDFGFromParamCall _ st i@(LLVM.Call {}) =
         fromRight $ LLVM.function i
       (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
       (LLVM.FunctionType { LLVM.resultType = rt }) = pt
-      dt = toDataType rt
+      dt = toOpDataType rt
   in addNewNode st (G.ValueNode dt Nothing)
 mkPatternDFGFromParamCall _ _ i =
   error $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
@@ -1025,7 +1103,7 @@ mkFunctionCFGFromControlOp b st0 op operands =
 
 mkFunctionCFGFromOperand :: Builder -> BuildState -> LLVM.Operand -> BuildState
 mkFunctionCFGFromOperand _ st (LLVM.LocalReference t name) =
-  ensureValueNodeWithSymExists st (toSymbol name) (toDataType t)
+  ensureValueNodeWithSymExists st (toSymbol name) (toOpDataType t)
 mkFunctionCFGFromOperand _ st (LLVM.ConstantOperand c) =
   addNewValueNodeWithConstant st (toConstant c)
 mkFunctionCFGFromOperand _ _ o =
@@ -1044,9 +1122,9 @@ toSymbolString :: (SymbolFormable s) => s -> String
 toSymbolString = pShow . toSymbol
 
 -- | Converts an argument into a temporary-oriented data type.
-toTempDataType :: (DataTypeFormable t) => t -> D.DataType
+toTempDataType :: (OperandDataTypeFormable t) => t -> D.DataType
 toTempDataType a =
-  conv $ toDataType a
+  conv $ toOpDataType a
   where conv d@(D.IntTempType {}) = d
         conv (D.IntConstType { D.intConstNumBits = Just b }) =
           D.IntTempType { D.intTempNumBits = b }
@@ -1103,7 +1181,7 @@ mkVarNameForConst c = "%const." ++ (pShow c)
 -- | Adds a new value node representing a particular constant to a given state.
 addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
 addNewValueNodeWithConstant st0 c =
-  let st1 = addNewNode st0 ( G.ValueNode (toDataType c)
+  let st1 = addNewNode st0 ( G.ValueNode (toOpDataType c)
                                          (Just $ mkVarNameForConst c)
                            )
       new_n = fromJust $ lastTouchedNode st1

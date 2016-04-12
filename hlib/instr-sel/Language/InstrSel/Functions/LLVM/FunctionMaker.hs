@@ -27,7 +27,7 @@ import qualified Language.InstrSel.Functions as F
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC
-import qualified LLVM.General.AST.Global as LLVMG
+import qualified LLVM.General.AST.Global as LLVM
 
 import Data.Maybe
 
@@ -53,17 +53,19 @@ mkFunctionFromGlobalDef _ _ = Nothing
 -- not a 'Function', 'Nothing' is returned.
 mkFunction :: LLVM.Module -> LLVM.Global -> Maybe F.Function
 mkFunction m f@(LLVM.Function {}) =
-  let os = mkFunctionOS f
-      (params, _) = LLVMG.parameters f
-      input_nodes = map (extractFunctionInputNodeID os) params
-      exec_freqs = extractBBExecFreqs m f
-  in Just ( F.Function
-              { F.functionName = toFunctionName $ LLVMG.name f
-              , F.functionOS = os
-              , F.functionInputs = input_nodes
-              , F.functionBBExecFreq = exec_freqs
-              }
-          )
+  if length (LLVM.basicBlocks f) > 0
+     then let os = mkFunctionOS f
+              (params, _) = LLVM.parameters f
+              input_nodes = map (extractFunctionInputNodeID os) params
+              exec_freqs = extractBBExecFreqs m f
+          in Just ( F.Function
+                      { F.functionName = toFunctionName $ LLVM.name f
+                      , F.functionOS = os
+                      , F.functionInputs = input_nodes
+                      , F.functionBBExecFreq = exec_freqs
+                      }
+                  )
+     else Nothing
 mkFunction _ _ = Nothing
 
 toFunctionName :: LLVM.Name -> Maybe String
@@ -92,7 +94,7 @@ extractBBExecFreqs
   -> LLVM.Global
   -> [(F.BlockName, F.ExecFreq)]
 extractBBExecFreqs m f@(LLVM.Function {}) =
-  map processBB (LLVMG.basicBlocks f)
+  map processBB (LLVM.basicBlocks f)
   where processBB (LLVM.BasicBlock (LLVM.Name name) _ term_inst) =
           ( F.BlockName name
           , extractExecFreq m (LLVM.metadata' $ fromNamed term_inst)
