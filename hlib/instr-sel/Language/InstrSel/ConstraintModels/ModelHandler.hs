@@ -119,7 +119,12 @@ mkHLFunctionParams function target =
                ns
       call_name_data =
         let ns = filter isCallNode (getAllNodes graph)
-        in map (\n -> (getNodeID n, fromFunctionName $ callFunc $ getNodeType n)) ns
+        in map ( \n -> ( getNodeID n, fromFunctionName
+                                      $ nameOfCall
+                                      $ getNodeType n
+                       )
+               )
+               ns
       mkCallingConventionConstraints =
         -- TODO: do a proper implemention. Right now it's just a quick hack to
         -- prevent the input arguments from being located in a zero-value

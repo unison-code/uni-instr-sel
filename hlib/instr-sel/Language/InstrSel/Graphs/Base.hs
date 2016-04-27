@@ -256,7 +256,7 @@ data NodeLabel
 data NodeType
   = ComputationNode { compOp :: O.CompOp }
   | ControlNode { ctrlOp :: O.ControlOp }
-  | CallNode { callFunc :: FunctionName }
+  | CallNode { nameOfCall :: FunctionName }
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as value nodes. What distinguishes one from another
@@ -412,7 +412,7 @@ instance ToJSON NodeType where
            ]
   toJSON n@(CallNode {}) =
     object [ "ntype" .= String "call"
-           , "func"    .= toJSON (callFunc n)
+           , "func"    .= toJSON (nameOfCall n)
            ]
   toJSON n@(ValueNode {}) =
     object [ "ntype"   .= String "data"
