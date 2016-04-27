@@ -1382,6 +1382,7 @@ doesOrderDFInEdgesMatter _ n
   | isComputationNode n = True
   | isControlNode n = True
   | isPhiNode n = True
+  | isCallNode n = True
   | otherwise = False
 
 -- | Checks if the order of data-flow out-edges matters for a given pattern
