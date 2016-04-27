@@ -1021,6 +1021,7 @@ mkPatternDFGFromFunCall
   -> BuildState
 mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
   let st1 = mkFunctionDFGFromInstruction b st0 i
+      maybe_ret_n = lastTouchedNode st1
       -- The call node will have the wrong name as the true name of the call is
       -- embedded into the function name, so we need to fix that.
       old_f_name = toFunctionName $ LLVM.function i
@@ -1052,7 +1053,20 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
               )
               st2
               arg_syms
-  in st3
+      -- If the function returns any data, then the data type of its value node
+      -- is irrelevant and must be set to 'D.AnyType'. This also requires the
+      -- last touched node to be updated.
+      st4 = if not $ D.isVoidType (toReturnDataType $ LLVM.function i)
+            then let ret_n = fromJust maybe_ret_n
+                     old_g = getOSGraph st3
+                     new_g = G.updateDataTypeOfValueNode D.AnyType ret_n old_g
+                     new_n = head
+                             $ G.findNodesWithNodeID new_g (G.getNodeID ret_n)
+                     new_st0 = updateOSGraph st3 new_g
+                     new_st1 = new_st0 { lastTouchedNode = Just new_n }
+                 in new_st1
+            else st3
+  in st4
 mkPatternDFGFromFunCall _ _ i =
   error $ "mkPatternDFGFromFunCall: not implemented for " ++ show i
 

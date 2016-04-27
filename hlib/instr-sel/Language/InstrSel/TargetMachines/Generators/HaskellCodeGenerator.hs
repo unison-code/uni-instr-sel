@@ -53,6 +53,7 @@ generateModule tm =
                    \import Language.InstrSel.Constraints\n\
                    \import Language.InstrSel.DataTypes\n\
                    \import Language.InstrSel.Graphs\n\
+                   \import Language.InstrSel.Functions.IDs\n\
                    \import qualified Data.Graph.Inductive as I\n\
                    \import Language.InstrSel.OpStructures\n\
                    \import Language.InstrSel.OpTypes\n\
