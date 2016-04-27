@@ -244,6 +244,7 @@ instance ReturnDataTypeFormable LLVM.Type where
   toReturnDataType t@(LLVM.IntegerType {}) = toOpDataType t
   toReturnDataType (LLVM.PointerType t _) = toReturnDataType t
   toReturnDataType (LLVM.FunctionType t _ _) = toReturnDataType t
+  toReturnDataType LLVM.VoidType = D.VoidType
   toReturnDataType t =
     error $ "'toReturnDataType' not implemented for " ++ show t
 
@@ -283,6 +284,9 @@ instance FunctionNameFormable LLVM.Operand where
 instance FunctionNameFormable LLVM.CallableOperand where
   toFunctionName (Right o) = toFunctionName o
   toFunctionName o = error $ "'toFunctionName' not implemented for " ++ show o
+
+instance FunctionNameFormable String where
+  toFunctionName str = F.toFunctionName str
 
 -- | Type class for helping a 'Builder' to traverse the AST. The idea is that
 -- 'build' will be invoked on the current AST element, and then the element will
@@ -433,6 +437,7 @@ mkPatternDFGBuilder =
              then case (extractFunctionNamePart $ fromJust f_name)
                   of "setreg"          -> mkPatternDFGFromSetregCall b st i
                      "param"           -> mkPatternDFGFromParamCall b st i
+                     "call"            -> mkPatternDFGFromFunCall b st i
                      "uncond-br"       -> st -- Will be processed in the CFG
                      "cond-br-or-fall" -> st -- Will be processed in the CFG
                      "return"          -> st -- Will be processed in the CFG
@@ -635,6 +640,17 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
                     (datumToBlockDefs st4)
                 }
   in st5
+mkFunctionDFGFromNamed b st0 (LLVM.Do expr@(LLVM.Call {})) =
+  -- Unnamed calls to functions that returns some value must not yield a result
+  -- data node, meaning it must be removed after the call instruction has been
+  -- processed.
+  let st1 = build b st0 expr
+  in if D.isVoidType (toReturnDataType $ LLVM.function expr)
+     then st1
+     else let g = getOSGraph st1
+              ret_n = fromJust $ lastTouchedNode st1
+              new_g = G.delNode ret_n g
+          in updateOSGraph st1 new_g
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionDFGFromInstruction
@@ -797,7 +813,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
                        op_node
                        (fromJust $ lastTouchedStateNode st6)
       -- Note that the result value node MUST be inserted last as the last
-      -- touched node in this case must be a value node and not a state node
+      -- touched node in this case must be a value node and not a state node.
       st8 = addNewNode st7 (G.ValueNode (toOpDataType op1) Nothing)
       d_node = fromJust $ lastTouchedNode st8
       st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
@@ -840,7 +856,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
                        (fromJust $ lastTouchedStateNode st6)
       -- Note that the result value node, if any, MUST be inserted last as the
       -- last touched node in this case must be a value node and not a state
-      -- node
+      -- node.
       ret_type = toReturnDataType f
   in if D.isVoidType ret_type
      then st7
@@ -995,6 +1011,50 @@ mkPatternDFGFromParamCall _ st i@(LLVM.Call {}) =
   in addNewNode st (G.ValueNode dt Nothing)
 mkPatternDFGFromParamCall _ _ i =
   error $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
+
+-- | Adds a call node, where the data types of all input and output values is
+-- 'D.AnyType'.
+mkPatternDFGFromFunCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> BuildState
+mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
+  let st1 = mkFunctionDFGFromInstruction b st0 i
+      -- The call node will have the wrong name as the true name of the call is
+      -- embedded into the function name, so we need to fix that.
+      old_f_name = toFunctionName $ LLVM.function i
+      new_f_name = toFunctionName
+                   $ "%" ++ ( extractFunctionLabelPart
+                              $ fromJust $ getFunctionName i
+                            )
+      g = getOSGraph st1
+      call_n = head $ G.findCallNodesWithName g old_f_name
+      st2 = updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
+      -- If a local reference argument to the call does not have any ingoing
+      -- data-flow edges, then its data type is irrelevant and must be set to
+      -- 'D.AnyType'.
+      isRefArg (LLVM.LocalReference {}) = True
+      isRefArg _ = False
+      local_ref_args = filter isRefArg
+                       $ map fst
+                       $ LLVM.arguments i
+      arg_syms = map (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
+      st3 = foldl
+              ( \st sym ->
+                  let g0 = getOSGraph st
+                      n = fromJust $ findValueNodeWithSym st sym
+                      es = G.getDtFlowInEdges g0 n
+                  in if length es == 0
+                     then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
+                          in updateOSGraph st g1
+                     else st
+              )
+              st2
+              arg_syms
+  in st3
+mkPatternDFGFromFunCall _ _ i =
+  error $ "mkPatternDFGFromFunCall: not implemented for " ++ show i
 
 mkFunctionCFGFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
 mkFunctionCFGFromGlobal b st f@(LLVM.Function {}) =
@@ -1322,6 +1382,7 @@ ensureStateNodeHasBeenTouched st0 =
            -- Note that, if this is a pattern, then the flow above will not be
            -- inserted as all 'PendingBlockToDatumFlow' entities are ignored.
        in st2
+
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
 fromLlvmIPred :: LLVMI.IntegerPredicate -> Op.CompOp

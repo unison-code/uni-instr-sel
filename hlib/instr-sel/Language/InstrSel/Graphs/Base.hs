@@ -83,6 +83,7 @@ module Language.InstrSel.Graphs.Base
   , findPNInMatch
   , findPNsInMapping
   , findPNsInMatch
+  , findCallNodesWithName
   , findBlockNodesWithName
   , findValueNodesWithOrigin
   , fromEdgeNr
@@ -109,6 +110,7 @@ module Language.InstrSel.Graphs.Base
   , getNodeLabel
   , getNodeType
   , getNumNodes
+  , getNameOfCallNode
   , getNameOfBlockNode
   , getOriginOfValueNode
   , getOutEdgeNr
@@ -171,6 +173,7 @@ module Language.InstrSel.Graphs.Base
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
+  , updateNameOfCallNode
   , updateNodeID
   , updateNodeLabel
   , updateNodeType
@@ -584,6 +587,9 @@ getOriginOfValueNode = originOfValue . getNodeType
 getNameOfBlockNode :: Node -> BlockName
 getNameOfBlockNode = nameOfBlock . getNodeType
 
+getNameOfCallNode :: Node -> FunctionName
+getNameOfCallNode = nameOfCall . getNodeType
+
 isBlockNode :: Node -> Bool
 isBlockNode n = isOfBlockNodeType $ getNodeType n
 
@@ -723,11 +729,17 @@ findValueNodesWithOrigin g o =
   let vs = filter isValueNodeWithOrigin $ getAllNodes g
   in filter ((==) o . fromJust . getOriginOfValueNode) vs
 
--- | Gets a list of block nodes with the same name.
+-- | Gets a list of block nodes with the same block name.
 findBlockNodesWithName :: Graph -> BlockName -> [Node]
 findBlockNodesWithName g name =
   let bs = filter isBlockNode $ getAllNodes g
   in filter ((==) name . getNameOfBlockNode) bs
+
+-- | Gets a list of call nodes with the same function name.
+findCallNodesWithName :: Graph -> FunctionName -> [Node]
+findCallNodesWithName g name =
+  let bs = filter isCallNode $ getAllNodes g
+  in filter ((==) name . getNameOfCallNode) bs
 
 -- | Updates the data type of an already existing value node.
 updateDataTypeOfValueNode :: D.DataType -> Node -> Graph -> Graph
@@ -737,6 +749,15 @@ updateDataTypeOfValueNode new_dt n g =
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
                 _ -> error $ "updateDataTypeOfValueNode: node " ++ show n
                              ++ " is not a value node"
+
+-- | Updates the function name of an already existing call node.
+updateNameOfCallNode :: FunctionName -> Node -> Graph -> Graph
+updateNameOfCallNode new_name n g =
+  let nt = getNodeType n
+      new_nt = nt { nameOfCall = new_name }
+  in case nt of (CallNode {}) -> updateNodeType new_nt n g
+                _ -> error $ "updateNameOfCallNode: node " ++ show n
+                             ++ " is not a call node"
 
 -- | Updates the origin of an already existing value node.
 updateOriginOfValueNode :: String -> Node -> Graph -> Graph

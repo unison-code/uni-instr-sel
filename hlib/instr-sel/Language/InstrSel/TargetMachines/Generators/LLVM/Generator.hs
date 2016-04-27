@@ -148,9 +148,13 @@ addOperandConstraints i all_locs os =
               new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
           in os' { osGraph = new_g }
         f (LLVM.AbsAddrInstrOperand op_name range) os' =
-          addAddressConstraints os' (getValueOrBlockNode os' op_name) range
+          addAddressConstraints os'
+                                (getValueOrBlockOrCallNode os' op_name)
+                                range
         f (LLVM.RelAddrInstrOperand op_name range) os' =
-          addAddressConstraints os' (getValueOrBlockNode os' op_name) range
+          addAddressConstraints os'
+                                (getValueOrBlockOrCallNode os' op_name)
+                                range
         getValueNode os' origin =
           let n = findValueNodesWithOrigin (osGraph os') origin
           in if length n == 1
@@ -161,21 +165,18 @@ addOperandConstraints i all_locs os =
                   else error $ "addOperandConstraints: no value node with "
                                ++ "origin '" ++ origin ++ "' in instruction '"
                                ++ LLVM.instrEmitString i ++ "'"
-        getValueOrBlockNode os' str =
+        getValueOrBlockOrCallNode os' str =
           let value_n = findValueNodesWithOrigin (osGraph os') str
               block_n = findBlockNodesWithName (osGraph os') $ toBlockName str
-          in if length value_n > 0
-             then if length value_n == 1
-                  then head value_n
-                  else error $ "addOperandConstraints: multiple value nodes "
-                               ++ "with origin '" ++ str ++ "'"
-             else if length block_n > 0
-                  then if length block_n == 1
-                       then head block_n
-                       else error $ "addOperandConstraints: multiple block "
-                                    ++ "nodes with name '" ++ str ++ "'"
-                  else error $ "addOperandConstraints: no value or block node "
-                               ++ "with origin or name '" ++ str ++ "'"
+              call_n  = findCallNodesWithName (osGraph os') $ toFunctionName str
+              all_n = value_n ++ block_n ++ call_n
+          in if length all_n == 1
+             then head all_n
+             else if length all_n == 0
+                  then error $ "addOperandConstraints: no value, block, or "
+                          ++ "call node with origin or name '" ++ str ++ "'"
+                  else error $ "addOperandConstraints: multiple value, block, "
+                          ++ "or call nodes with origin or name '" ++ str ++ "'"
         getIDOfLocWithName name =
           let loc = filter (\l -> TM.locName l == TM.toLocationName name)
                            all_locs
@@ -186,17 +187,20 @@ addOperandConstraints i all_locs os =
                                ++ "name '" ++ name ++ "'"
                   else error $ "addOperandConstraints: no location with name '"
                                ++ name ++ "'"
-        addAddressConstraints os' n range =
-          if isValueNode n
-          then let old_dt = getDataTypeOfValueNode n
-                   -- It is assumed that the value node for an immediate is
-                   -- always a temporary at this point
-                   new_dt = D.IntConstType range
-                                           (Just $ D.intTempNumBits old_dt)
-                   new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
-               in os' { osGraph = new_g }
-          else -- TODO: implement
-               os'
+        addAddressConstraints os' n range
+          | isValueNode n =
+              -- It is assumed that the value node for an immediate is always a
+              -- temporary at this point
+              let old_dt = getDataTypeOfValueNode n
+                  new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
+                  new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
+              in os' { osGraph = new_g }
+          | isBlockNode n =
+              -- TODO: implement
+              os'
+          | isCallNode n = os' -- Do nothing
+          | otherwise =
+              error $ "addOperandConstraints: unexpected node type: " ++ show n
 
 mkOpStructure :: LLVM.InstrSemantics -> OpStructure
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
@@ -225,64 +229,56 @@ mkEmitString
 mkEmitString i os str =
   TM.EmitStringTemplate
   $ filter (\l -> l /= [])
-  $ map (mergeVerbatims . map f . splitStartingOn "% ,()[]")
+  $ map (mergeVerbatims . map mkES . splitStartingOn "% ,()[]")
   $ splitOn "\n" str
   where
-  f s = if head s == '%'
-        then if not (isNumeric (tail s))
-             then let g = osGraph os
-                      value_n = findValueNodesWithOrigin g s
-                      block_n = findBlockNodesWithName g $ toBlockName s
-                  in if length value_n > 0
-                     then if length value_n == 1
-                          then let op = getInstrOperand i s
-                               in if isJust op
-                                  then case (fromJust op)
-                                       of (LLVM.RegInstrOperand {}) ->
-                                            TM.ESLocationOfValueNode
-                                            $ getNodeID
-                                            $ head value_n
-                                          (LLVM.ImmInstrOperand {}) ->
-                                            TM.ESIntConstOfValueNode
-                                            $ getNodeID
-                                            $ head value_n
-                                          _ -> error $ "mkEmitString: unknown "
-                                                       ++ "operand type"
-                                  else error $ "mkEmitString: no operand with "
-                                               ++ "name '" ++ s ++ "'"
-                          else error $ "mkEmitString: multiple value nodes with"
-                                       ++ " origin '" ++ s ++ "'"
-                     else if length block_n > 0
-                          then if length block_n == 1
-                               then let op = getInstrOperand i s
-                                    in if isJust op
-                                       then case (fromJust op)
-                                            of (LLVM.AbsAddrInstrOperand {}) ->
-                                                 TM.ESNameOfBlockNode
-                                                 $ getNodeID
-                                                 $ head block_n
-                                               (LLVM.RelAddrInstrOperand {}) ->
-                                                 TM.ESNameOfBlockNode
-                                                 $ getNodeID
-                                                 $ head block_n
-                                               _ -> error
-                                                    $ "mkEmitString: unknown "
-                                                    ++ "operand type"
-                                       else error $ "mkEmitString: no operand "
-                                                    ++ "with name '" ++ s ++ "'"
-                               else error $ "mkEmitString: multiple block nodes"
-                                            ++ " with name '" ++ s ++ "'"
-                          else error $ "mkEmitString: no value or blocks nodes "
-                                       ++ "with origin or name '" ++ s ++ "'"
-             else let int = read $ tail s
-                  in TM.ESLocalTemporary int
-        else TM.ESVerbatim s
   mergeVerbatims [] = []
   mergeVerbatims [s] = [s]
   mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
-
+  mkES s =
+    if head s == '%'
+    then if not (isNumeric (tail s))
+         then let g = osGraph os
+                  value_n = findValueNodesWithOrigin g s
+                  block_n = findBlockNodesWithName g $ toBlockName s
+                  call_n = findCallNodesWithName g $ toFunctionName s
+                  all_n = value_n ++ block_n ++ call_n
+              in if length all_n == 1
+                 then mkESFromNode (head all_n) s
+                 else error $ "mkEmitString: no value, block, or call node "
+                              ++ "with name '" ++ s ++ "'"
+         else let int = read $ tail s
+              in TM.ESLocalTemporary int
+    else TM.ESVerbatim s
+  mkESFromNode n s
+    | isValueNode n =
+        let op = getInstrOperand i s
+        in if isJust op
+           then case (fromJust op)
+                of (LLVM.RegInstrOperand {}) ->
+                     TM.ESLocationOfValueNode $ getNodeID n
+                   (LLVM.ImmInstrOperand {}) ->
+                     TM.ESIntConstOfValueNode $ getNodeID n
+                   _ -> error $ "mkEmitString: unknown instruction operand "
+                                ++ "type: " ++ show op
+           else error $ "mkEmitString: no instruction operand with name '"
+                        ++ s ++ "'"
+    | isBlockNode n =
+        let op = getInstrOperand i s
+        in if isJust op
+           then case (fromJust op)
+                of (LLVM.AbsAddrInstrOperand {}) ->
+                     TM.ESNameOfBlockNode $ getNodeID n
+                   (LLVM.RelAddrInstrOperand {}) ->
+                     TM.ESNameOfBlockNode $ getNodeID n
+                   _ -> error $ "mkEmitString: unknown instruction operand "
+                                ++ "type: " ++ show op
+           else error $ "mkEmitString: no instruction operand with name '"
+                        ++ s ++ "'"
+    | isCallNode n = TM.ESFuncOfCallNode $ getNodeID n
+    | otherwise = error $ "mkEmitString: unexpected node type: " ++ show n
 mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
 mkInstrProps i=
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
