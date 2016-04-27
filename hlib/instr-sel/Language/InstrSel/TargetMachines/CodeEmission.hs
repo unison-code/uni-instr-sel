@@ -296,7 +296,8 @@ updateNodeIDsInEmitStrParts emit_strs maps =
            f (ESLocationOfValueNode _) (Just n) = ESLocationOfValueNode n
            f (ESIntConstOfValueNode _) (Just n) = ESIntConstOfValueNode n
            f (ESNameOfBlockNode     _) (Just n) = ESNameOfBlockNode n
-           f (ESBlockOfValueNode    _) (Just n) = ESBlockOfValueNode  n
+           f (ESBlockOfValueNode    _) (Just n) = ESBlockOfValueNode n
+           f (ESFuncOfCallNode      _) (Just n) = ESFuncOfCallNode n
            f p@(ESLocalTemporary {})         _       = p
            f _ _ = error $ "updateNodeIDsInEmitStrParts: unexpected combination"
                            ++ " of arguments"
@@ -376,7 +377,6 @@ emitInstructionPart model sol m st (ESBlockOfValueNode n) =
                           ++ " function node " ++ pShow n
      else error $ "emitInstructionPart: function node " ++ pShow n
                   ++ " is not part of the function's data nodes"
-
 emitInstructionPart _ _ _ st (ESLocalTemporary i) =
   let code = emittedCode st
       (AsmInstruction instr_str) = head code

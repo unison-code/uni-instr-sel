@@ -230,11 +230,13 @@ computeEmitStrNodeMaps
   -> [[Maybe NodeID]]
 computeEmitStrNodeMaps (EmitStringTemplate ts) m =
   map (map f) ts
-  where f (ESLocationOfValueNode n) = findFNInMatch m n
+  where f (ESVerbatim            _) = Nothing
+        f (ESLocationOfValueNode n) = findFNInMatch m n
         f (ESIntConstOfValueNode n) = findFNInMatch m n
         f (ESNameOfBlockNode     n) = findFNInMatch m n
         f (ESBlockOfValueNode    n) = findFNInMatch m n
-        f _                         = Nothing
+        f (ESLocalTemporary      _) = Nothing
+        f (ESFuncOfCallNode      n) = findFNInMatch m n
 
 -- | Replaces occurrences of 'ThisMatchExpr' in a constraint with the given
 -- match ID.
