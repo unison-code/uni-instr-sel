@@ -81,7 +81,7 @@ mkEmptyBlockName = BlockName ""
 
 -- | Checks if block name is empty.
 isBlockNameEmpty :: BlockName -> Bool
-isBlockNameEmpty (BlockName str) = str == ""
+isBlockNameEmpty b = b == mkEmptyBlockName
 
 toBlockName :: String -> BlockName
 toBlockName = BlockName
