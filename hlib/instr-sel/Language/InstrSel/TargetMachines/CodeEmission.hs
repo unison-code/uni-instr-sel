@@ -396,7 +396,7 @@ emitInstructionPart model _ _ st (ESFuncOfCallNode n) =
   in if isJust f
      then let code = emittedCode st
               (AsmInstruction instr_str) = head code
-              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust f)
+              new_instr = AsmInstruction $ instr_str ++ (fromJust f)
           in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no function name found for function "
                   ++ "call node " ++ pShow n
