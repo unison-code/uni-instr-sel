@@ -193,14 +193,7 @@ class SymbolFormable a where
   toSymbol :: a -> Symbol
 
 instance SymbolFormable LLVM.Name where
-  toSymbol (LLVM.Name str) =
-    if length str >= 3
-    then let prefix = take 2 str
-         in case prefix of "v." -> LocalStringSymbol $ drop 2 str
-                           "t." -> LocalStringSymbol $ drop 2 str
-                           _ -> error $ "toSymbol: unknown variable prefix '"
-                                        ++ str ++ "'"
-    else error $ "toSymbol: variable name '" ++ str ++ "' too short"
+  toSymbol (LLVM.Name str) = LocalStringSymbol str
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
 -- | Class for converting an LLVM constant operand into a corresponding
