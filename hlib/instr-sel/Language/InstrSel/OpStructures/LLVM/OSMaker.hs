@@ -507,7 +507,7 @@ mkPatternCFGFromReturnCall
   let st1 = addNewNode st0 (G.ControlNode Op.Ret)
       rn = fromJust $ lastTouchedNode st1
       bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
-      vn = fromJust $ findValueNodeWithSym st0 $ toSymbol arg
+      vn = fromJust $ findValueNodeMappedToSym st0 $ toSymbol arg
       st2 = addNewEdge st1 G.DataFlowEdge vn rn
       st3 = addNewEdge st2 G.ControlFlowEdge bn rn
   in st3
@@ -962,7 +962,15 @@ mkPatternDFGFromSetregCall
               }
   )
   =
-  let [n1, n2] = map (fromJust . findValueNodeWithSym st0 . toSymbol)
+  let [n1, n2] = map ( \arg ->
+                         let sym = toSymbol arg
+                             maybe_n = findValueNodeMappedToSym st0 sym
+                         in if isJust maybe_n
+                            then fromJust maybe_n
+                            else error $ "mkPatternDFGFromSetregCall: no value "
+                                         ++ "node with symbol '" ++ show sym
+                                         ++ "'"
+                     )
                      [arg1, arg2]
       g0 = getOSGraph st0
       g1 = G.mergeNodes n2 n1 g0
@@ -1044,7 +1052,7 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
       st3 = foldl
               ( \st sym ->
                   let g0 = getOSGraph st
-                      n = fromJust $ findValueNodeWithSym st sym
+                      n = fromJust $ findValueNodeMappedToSym st sym
                       es = G.getDtFlowInEdges g0 n
                   in if length es == 0
                      then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
@@ -1339,8 +1347,8 @@ addFuncInputValue st n =
   st { funcInputValues = n:(funcInputValues st) }
 
 -- | Finds the node ID (if any) of the value node to which a symbol is mapped.
-findValueNodeWithSym :: BuildState -> Symbol -> Maybe G.Node
-findValueNodeWithSym st sym = lookup sym (symMaps st)
+findValueNodeMappedToSym :: BuildState -> Symbol -> Maybe G.Node
+findValueNodeMappedToSym st sym = lookup sym (symMaps st)
 
 -- | Gets the block node with a particular name in the graph of the given state.
 -- If no such node exists, 'Nothing' is returned.
@@ -1364,7 +1372,7 @@ ensureValueNodeWithSymExists
      -- ^ Data type to use upon creation if such a value node does not exist.
   -> BuildState
 ensureValueNodeWithSymExists st0 sym dt =
-  let n = findValueNodeWithSym st0 sym
+  let n = findValueNodeMappedToSym st0 sym
   in if isJust n
      then touchNode st0 (fromJust n)
      else let st1 = addNewNode st0 (G.ValueNode dt (Just $ pShow sym))
