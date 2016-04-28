@@ -193,7 +193,14 @@ class SymbolFormable a where
   toSymbol :: a -> Symbol
 
 instance SymbolFormable LLVM.Name where
-  toSymbol (LLVM.Name str) = LocalStringSymbol str
+  toSymbol (LLVM.Name str) =
+    if length str >= 3
+    then let prefix = take 2 str
+         in case prefix of "v." -> LocalStringSymbol $ drop 2 str
+                           "t." -> LocalStringSymbol $ drop 2 str
+                           _ -> error $ "toSymbol: unknown variable prefix '"
+                                        ++ str ++ "'"
+    else error $ "toSymbol: variable name '" ++ str ++ "' too short"
   toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
 
 -- | Class for converting an LLVM constant operand into a corresponding
@@ -619,6 +626,18 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.IntToPtr op _ _)) =
       sym = toSymbol name
       st2 = addSymMap st1 (sym, n)
   in st2
+mkFunctionDFGFromNamed b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
+  -- Unnamed calls to functions that returns some value must not yield a result
+  -- data node, meaning it must be removed after the call instruction has been
+  -- processed.
+  let st1 = build b st0 expr
+  in if D.isVoidType (toReturnDataType $ LLVM.function expr)
+     then st1
+     else let g = getOSGraph st1
+              ret_n = fromJust $ lastTouchedNode st1
+              new_g = G.delNode ret_n g
+              st2 = updateOSGraph st1 new_g
+          in st2
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
   let st1 = build b st0 expr
       sym = toSymbol name
@@ -640,17 +659,6 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
                     (datumToBlockDefs st4)
                 }
   in st5
-mkFunctionDFGFromNamed b st0 (LLVM.Do expr@(LLVM.Call {})) =
-  -- Unnamed calls to functions that returns some value must not yield a result
-  -- data node, meaning it must be removed after the call instruction has been
-  -- processed.
-  let st1 = build b st0 expr
-  in if D.isVoidType (toReturnDataType $ LLVM.function expr)
-     then st1
-     else let g = getOSGraph st1
-              ret_n = fromJust $ lastTouchedNode st1
-              new_g = G.delNode ret_n g
-          in updateOSGraph st1 new_g
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionDFGFromInstruction
