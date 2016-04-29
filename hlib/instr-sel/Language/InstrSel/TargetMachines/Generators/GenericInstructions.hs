@@ -210,17 +210,7 @@ mkTempNullCopyInstruction bits =
                   , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
                   ]
               )
-      cs = [ BoolExprConstraint $
-               EqExpr
-                 ( Location2NumExpr $
-                     LocationOfValueNodeExpr $
-                       ANodeIDExpr 1
-                 )
-                 ( Location2NumExpr $
-                     LocationOfValueNodeExpr $
-                       ANodeIDExpr 2
-                 )
-           ]
+      cs = mkSameDataLocConstraints [1, 2]
       pat (pid, w) = InstrPattern
                        { patID = pid
                        , patOS = OpStructure (g w) Nothing cs
