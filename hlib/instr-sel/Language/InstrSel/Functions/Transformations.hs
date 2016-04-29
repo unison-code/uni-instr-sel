@@ -36,6 +36,8 @@ import Data.Maybe
   )
 import Data.List
   ( partition )
+import Control.Monad
+  ( replicateM )
 
 
 
@@ -54,19 +56,36 @@ copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
 -- extension $e$ will be moved to the new value node. Otherwise $e$ will remain
 -- on the original value node. Note that definition edges where the target is a
 -- value node are not affected.
+--
+-- In addition, reuse nodes and edges will be inserted between the newly created
+-- value nodes.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph g =
   let nodes = filter isValueNode (getAllNodes g)
-      edges = concatMap (getDtFlowOutEdges g) nodes
-  in foldl insertCopy g edges
+  in foldl insertCopies g nodes
+
+-- | Inserts a new copy and value node along each outgoing data-flow edge from
+-- the given value node.
+insertCopies :: Graph -> Node -> Graph
+insertCopies g0 n =
+  let old_edges = getDtFlowOutEdges g0 n
+      g1 = foldl insertCopyAlongEdge g0 old_edges
+      new_edges = getDtFlowOutEdges g1 n
+      new_copy_nodes = map (getTargetNode g1) new_edges
+      new_value_nodes = map (getTargetNode g1 . head . getDtFlowOutEdges g1)
+                            new_copy_nodes
+      value_pairs = filter (\[x, y] -> x /= y)
+                    $ replicateM 2 new_value_nodes
+      g2 = foldl (\g [x, y] -> insertReuseBetweenNodes g x y) g1 value_pairs
+  in g2
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
 -- value node is used by a phi node, and there is a definition edge on that
 -- value node, then the definition edge with matching out-edge number will be
 -- moved to the new data node. Note that definition edges where the target is a
 -- value node are not affected.
-insertCopy :: Graph -> Edge -> Graph
-insertCopy g0 df_edge =
+insertCopyAlongEdge :: Graph -> Edge -> Graph
+insertCopyAlongEdge g0 df_edge =
   let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
@@ -106,6 +125,15 @@ insertCopy g0 df_edge =
                 in fst $ addNewDefEdge (new_d_node, getTargetNode g2 e)
                                        (delEdge e g2)
            else g2
+  in g3
+
+-- | Inserts a reuse between the two given nodes. Note that the reuse will only
+-- be inserted in one direction.
+insertReuseBetweenNodes :: Graph -> Node -> Node -> Graph
+insertReuseBetweenNodes g0 n1 n2 =
+  let (g1, new_n) = addNewNode ReuseNode g0
+      (g2, _) = addNewEdge ReuseEdge (n1, new_n) g1
+      (g3, _) = addNewEdge ReuseEdge (new_n, n2) g2
   in g3
 
 -- | Inserts a new block node and jump control node along each outbound control
