@@ -23,7 +23,6 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   )
 where
 
-import Language.InstrSel.Constraints
 import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.DataTypes
   ( DataType (..) )
