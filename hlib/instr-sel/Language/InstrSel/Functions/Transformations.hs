@@ -70,10 +70,8 @@ insertCopy g0 df_edge =
   let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
-      -- TODO: restore
-      mkNewDataType d = d
-      --mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
-      --                          ++ "supported"
+      mkNewDataType d = error $ "insertCopy: DataType '" ++ show d ++ "' not "
+                                ++ "supported"
       old_d_node = getSourceNode g0 df_edge
       old_d_origin = originOfValue $ getNodeType old_d_node
       old_op_n = getTargetNode g0 df_edge
