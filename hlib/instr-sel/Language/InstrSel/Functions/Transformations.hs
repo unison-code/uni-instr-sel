@@ -25,9 +25,9 @@ import Language.InstrSel.Constraints
 import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
-import Language.InstrSel.Graphs.Transformations
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
+import Language.InstrSel.OpTypes
 import Language.InstrSel.Utils.Range
 
 import Data.Maybe
@@ -43,32 +43,72 @@ import Data.List
 -- Functions
 -------------
 
--- | Applies a transformation on the graph in a given function.
-getGraph :: Function -> Graph
-getGraph = osGraph . functionOS
-
--- | Replaces the current graph in a function with a new graph.
-updateGraph :: Graph -> Function -> Function
-updateGraph new_g f =
-  let os = functionOS f
-      new_os = os { osGraph = new_g }
-      new_f = f { functionOS = new_os }
-  in new_f
-
 -- | Copy-extends the given graph along every eligable data-flow edge.
 copyExtend :: Function -> Function
-copyExtend f =
-  let g = getGraph f
-      mkNewDataType d@(IntTempType {}) = d
+copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
+
+-- | Inserts a copy node along every data-flow edge that involves a use of a
+-- value node. This also updates the definition edges to retain the same
+-- semantics of the original graph. This means that if there is a definition
+-- edge $e$ that involves a value node used by a phi node, then upon copy
+-- extension $e$ will be moved to the new value node. Otherwise $e$ will remain
+-- on the original value node. Note that definition edges where the target is a
+-- value node are not affected.
+copyExtendGraph :: Graph -> Graph
+copyExtendGraph g =
+  let nodes = filter isValueNode (getAllNodes g)
+      edges = concatMap (getDtFlowOutEdges g) nodes
+  in foldl insertCopy g edges
+
+-- | Inserts a new copy and value node along a given data-flow edge. If the
+-- value node is used by a phi node, and there is a definition edge on that
+-- value node, then the definition edge with matching out-edge number will be
+-- moved to the new data node. Note that definition edges where the target is a
+-- value node are not affected.
+insertCopy :: Graph -> Edge -> Graph
+insertCopy g0 df_edge =
+  let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
       -- TODO: restore
       mkNewDataType d = d
       --mkNewDataType d = error $ "copyExtend: DataType '" ++ show d ++ "' not "
       --                          ++ "supported"
-      new_g = copyExtendWhen (\_ _ -> True) mkNewDataType g
-      new_f = updateGraph new_g f
-  in new_f
+      old_d_node = getSourceNode g0 df_edge
+      old_d_origin = originOfValue $ getNodeType old_d_node
+      old_op_n = getTargetNode g0 df_edge
+      def_edge = if isPhiNode old_op_n
+                 then let d_node_edges = getOutEdges g0 old_d_node
+                          def_edges = filter isDefEdge d_node_edges
+                      in Just
+                         $ head
+                         $ filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
+                                  def_edges
+                 else Nothing
+      (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
+      new_dt = mkNewDataType $ getDataTypeOfValueNode old_d_node
+      new_origin = Just $
+                   let origins = map (fromJust . getOriginOfValueNode)
+                                     $ filter isValueNodeWithOrigin
+                                     $ getAllNodes g1
+                       prefix = if isJust old_d_origin
+                                then (fromJust old_d_origin) ++ ".copy."
+                                else "%copy."
+                   in head $ dropWhile (`elem` origins)
+                                       (map (\i -> prefix ++ show i)
+                                            ([1..] :: [Integer]))
+                                            -- Cast is needed or GHC will
+                                            -- complain...
+      (g2, new_d_node) =
+        insertNewNodeAlongEdge (ValueNode new_dt new_origin)
+                               (head $ getOutEdges g1 new_cp_node)
+                               g1
+      g3 = if isJust def_edge
+           then let e = fromJust def_edge
+                in fst $ addNewDefEdge (new_d_node, getTargetNode g2 e)
+                                       (delEdge e g2)
+           else g2
+  in g3
 
 -- | Inserts a new block node and jump control node along each outbound control
 -- edge from every conditional jump control node. This is used to handle special
@@ -83,13 +123,32 @@ copyExtend f =
 -- block in the CFG (at this point we know for sure that each new block has only
 -- one preceding block).
 branchExtend :: Function -> Function
-branchExtend =
-  assignMissingBlockExecFreqs . assignMissingBlockNames . extend
-  where extend f =
-          let g = getGraph f
-              new_g = branchExtendWhen (\_ _ -> True) g
-              new_f = updateGraph new_g f
-          in new_f
+branchExtend f =
+  assignMissingBlockExecFreqs
+  $ assignMissingBlockNames
+  $ updateGraph (branchExtendGraph $ getGraph f) f
+
+-- | Inserts a new block node and jump control node along each outbound control
+-- edge from every conditional jump control node and passes the predicate
+-- function. The new block nodes will all have empty block name.
+--
+-- TODO: update the def-placement edges when phi nodes are involved!
+branchExtendGraph :: Graph -> Graph
+branchExtendGraph g =
+  let c_nodes = filter isControlNode (getAllNodes g)
+      nodes = filter (\n -> (ctrlOp $ getNodeType n) == CondBr)
+                     c_nodes
+      edges = concatMap (getCtrlFlowOutEdges g) nodes
+  in foldl insertBranch g edges
+
+-- | Inserts a new block node and jump control node along the given control-flow
+-- edge.
+insertBranch :: Graph -> Edge -> Graph
+insertBranch g0 e =
+  let (g1, l) = insertNewNodeAlongEdge (BlockNode mkEmptyBlockName) e g0
+      new_e = head $ getCtrlFlowOutEdges g1 l
+      (g2, _) = insertNewNodeAlongEdge (ControlNode Br) new_e g1
+  in g2
 
 -- | Assigns a unique block name to every block node that currently has an empty
 -- block name (which will be the case after branch extension).
@@ -202,3 +261,15 @@ replaceValueNode new_n old_n f =
       new_cs = map (apply recon) (osConstraints old_os)
       new_os = old_os { osGraph = new_g, osConstraints = new_cs }
   in f { functionOS = new_os }
+
+-- | Applies a transformation on the graph in a given function.
+getGraph :: Function -> Graph
+getGraph = osGraph . functionOS
+
+-- | Replaces the current graph in a function with a new graph.
+updateGraph :: Graph -> Function -> Function
+updateGraph new_g f =
+  let os = functionOS f
+      new_os = os { osGraph = new_g }
+      new_f = f { functionOS = new_os }
+  in new_f
