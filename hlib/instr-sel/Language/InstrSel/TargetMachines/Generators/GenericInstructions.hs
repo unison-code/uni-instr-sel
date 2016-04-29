@@ -243,8 +243,9 @@ mkReuseInstruction =
                 , ( 0, 2, EdgeLabel ReuseEdge 0 0 )
                 ]
             )
+      cs = mkSameDataLocConstraints [1, 2]
       pat = InstrPattern { patID = 0
-                         , patOS = OpStructure g Nothing []
+                         , patOS = OpStructure g Nothing cs
                          , patADDUC = True
                          , patEmitString = EmitStringTemplate []
                          }
