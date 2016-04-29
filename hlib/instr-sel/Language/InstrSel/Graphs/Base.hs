@@ -1217,6 +1217,7 @@ isNodeTypeCompatibleWith (BlockNode {}) (BlockNode {}) = True
 isNodeTypeCompatibleWith PhiNode PhiNode = True
 isNodeTypeCompatibleWith StateNode StateNode = True
 isNodeTypeCompatibleWith CopyNode CopyNode = True
+isNodeTypeCompatibleWith ReuseNode ReuseNode = True
 isNodeTypeCompatibleWith _ _ = False
 
 -- | Checks if a block node is an intermediate block node, meaning that it has
