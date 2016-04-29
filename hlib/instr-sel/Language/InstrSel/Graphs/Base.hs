@@ -398,21 +398,22 @@ instance FromJSON NodeType where
   parseJSON (Object v) =
     do str <- v .: "ntype"
        let typ = unpack str
-       case typ of "comp" -> ComputationNode
-                               <$> v .: "op"
-                   "ctrl" -> ControlNode
-                               <$> v .: "op"
-                   "call" -> CallNode
-                               <$> v .: "func"
-                   "data" -> ValueNode
-                               <$> v .: "dtype"
-                               <*> v .: "origin"
-                   "lab"  -> BlockNode
-                               <$> v .: "block-name"
-                   "phi"  -> return PhiNode
-                   "stat" -> return StateNode
-                   "copy" -> return CopyNode
-                   _      -> mzero
+       case typ of "comp"  -> ComputationNode
+                                <$> v .: "op"
+                   "ctrl"  -> ControlNode
+                                <$> v .: "op"
+                   "call"  -> CallNode
+                                <$> v .: "func"
+                   "data"  -> ValueNode
+                                <$> v .: "dtype"
+                                <*> v .: "origin"
+                   "lab"   -> BlockNode
+                                <$> v .: "block-name"
+                   "phi"   -> return PhiNode
+                   "stat"  -> return StateNode
+                   "copy"  -> return CopyNode
+                   "reuse" -> return ReuseNode
+                   _       -> mzero
   parseJSON _ = mzero
 
 instance ToJSON NodeType where
