@@ -80,7 +80,7 @@ generateTargetMachine m =
         )
       locs = mkLocations m
       instrs = mkInstructions m locs
-      generic_instrs = mkPhiInstructions mkPhiInstrEmitTemplate
+      generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate]
                        ++ [mkBrFallThroughInstruction]
                        ++ [mkDataDefInstruction]
                        ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]

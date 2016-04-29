@@ -15,7 +15,7 @@
 
 module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   ( mkBrFallThroughInstruction
-  , mkPhiInstructions
+  , mkPhiInstruction
   , mkDataDefInstruction
   , mkTempNullCopyInstruction
   , mkReuseInstruction
@@ -62,10 +62,10 @@ mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 mkIntTempType :: Natural -> DataType
 mkIntTempType n = IntTempType { intTempNumBits = n }
 
--- | Creates a set of instructions for handling the generic cases where
+-- | Creates an instruction for handling the generic cases where
 -- 'PhiNode's appear. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkPhiInstructions
+mkPhiInstruction
   :: (    [NodeID]
        -> NodeID
        -> EmitStringTemplate
@@ -75,8 +75,8 @@ mkPhiInstructions
      -- nodes which serve as input to the phi operation, and the second argument
      -- is the 'NodeID's of the value node representing the output from the phi
      -- operation.
-  -> [Instruction]
-mkPhiInstructions mkEmit =
+  -> Instruction
+mkPhiInstruction mkEmit =
   let mkPat n =
         let g = mkGraph
                   ( map
@@ -113,14 +113,12 @@ mkPhiInstructions mkEmit =
              , patADDUC = False
              , patEmitString = mkEmit (map toNodeID [2..n+1]) 1
              }
-  in [ Instruction
-         { instrID = 0
-         , instrPatterns = map mkPat [2..10]
-         , instrProps = InstrProperties { instrCodeSize = 0
-                                        , instrLatency = 0
-                                        }
-         }
-     ]
+  in Instruction { instrID = 0
+                 , instrPatterns = map mkPat [2..10]
+                 , instrProps = InstrProperties { instrCodeSize = 0
+                                                , instrLatency = 0
+                                                }
+                 }
 
 -- | Creates an instruction for handling unconditional branching to the
 -- immediately following block (that is, fallthroughs). Note that the
