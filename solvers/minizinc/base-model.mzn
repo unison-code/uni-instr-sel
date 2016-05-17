@@ -176,11 +176,12 @@ predicate fall_through(int: m, int: b) =
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
 constraint
-  forall (o in allOperationsInFunction)
+  forall (o in allOperationsInFunction where not (o in reusesInFunction))
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
                                     where o in operationsCoveredByMatch[m]
+                                      and o not in reusesInFunction
                          }
     }
     in if card(mset) = 1
