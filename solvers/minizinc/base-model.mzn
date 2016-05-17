@@ -357,7 +357,9 @@ constraint
 
 % All data external to a match must not be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches, e in dataExternalToMatch[m] )
+  forall ( m in allMatches diff dominatedMatches,
+           e in dataExternalToMatch[m] where not (e in statesInFunction)
+         )
   (
     sel[m] -> loc[e] != locValueForNull
   );
