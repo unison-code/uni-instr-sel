@@ -96,7 +96,7 @@ data HighLevelFunctionParams
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
         -- to always be a node denoting a datum.
-      , hlValueRelatedCopies :: [[NodeID]]
+      , hlFunValueRelatedCopies :: [[NodeID]]
         -- ^ A collection of copy nodes that copy the same value.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
@@ -207,6 +207,8 @@ data LowLevelModel
         -- ^ The operations that are reuse nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunValueRelatedCopies :: [[ArrayIndex]]
+        -- ^ A collection of copy operations that copy the same value.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -411,7 +413,7 @@ instance ToJSON HighLevelFunctionParams where
            , "entry-block"          .= (hlFunEntryBlock d)
            , "block-dom-sets"       .= (hlFunBlockDomSets d)
            , "def-edges"            .= (hlFunDefEdges d)
-           , "value-related-copies" .= (hlValueRelatedCopies d)
+           , "value-related-copies" .= (hlFunValueRelatedCopies d)
            , "block-params"         .= (hlFunBlockParams d)
            , "int-constant-data"    .= (hlFunValueIntConstData d)
            , "value-origin-data"    .= (hlFunValueOriginData d)
@@ -502,6 +504,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-blocks"
       <*> v .: "fun-reuses"
       <*> v .: "fun-states"
+      <*> v .: "fun-value-related-copies"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-def-edges"
@@ -526,31 +529,32 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-operations"          .= (llFunNumOperations m)
-           , "fun-num-data"                .= (llFunNumData m)
-           , "fun-num-blocks"              .= (llFunNumBlocks m)
-           , "fun-reuses"                  .= (llFunReuses m)
-           , "fun-states"                  .= (llFunStates m)
-           , "fun-entry-block"             .= (llFunEntryBlock m)
-           , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
-           , "fun-def-edges"               .= (llFunDefEdges m)
-           , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
-           , "fun-constraints"             .= (llFunConstraints m)
-           , "num-locations"               .= (llNumLocations m)
-           , "num-matches"                 .= (llNumMatches m)
-           , "match-operations-covered"    .= (llMatchOperationsCovered m)
-           , "match-data-defined"          .= (llMatchDataDefined m)
-           , "match-data-used"             .= (llMatchDataUsed m)
-           , "match-entry-blocks"          .= (llMatchEntryBlocks m)
-           , "match-spanned-blocks"        .= (llMatchSpannedBlocks m)
-           , "match-consumed-blocks"       .= (llMatchConsumedBlocks m)
-           , "match-code-sizes"            .= (llMatchCodeSizes m)
-           , "match-latencies"             .= (llMatchLatencies m)
-           , "match-copy-instrs"           .= (llMatchCopyInstructions m)
-           , "match-null-instrs"           .= (llMatchNullInstructions m)
-           , "match-reuse-instrs"          .= (llMatchReuseInstructions m)
-           , "match-adduc-settings"        .= (llMatchADDUCs m)
-           , "match-constraints"           .= (llMatchConstraints m)
+    object [ "fun-num-operations"       .= (llFunNumOperations m)
+           , "fun-num-data"             .= (llFunNumData m)
+           , "fun-num-blocks"           .= (llFunNumBlocks m)
+           , "fun-reuses"               .= (llFunReuses m)
+           , "fun-states"               .= (llFunStates m)
+           , "fun-value-related-copies" .= (llFunValueRelatedCopies m)
+           , "fun-entry-block"          .= (llFunEntryBlock m)
+           , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
+           , "fun-def-edges"            .= (llFunDefEdges m)
+           , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
+           , "fun-constraints"          .= (llFunConstraints m)
+           , "num-locations"            .= (llNumLocations m)
+           , "num-matches"              .= (llNumMatches m)
+           , "match-operations-covered" .= (llMatchOperationsCovered m)
+           , "match-data-defined"       .= (llMatchDataDefined m)
+           , "match-data-used"          .= (llMatchDataUsed m)
+           , "match-entry-blocks"       .= (llMatchEntryBlocks m)
+           , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
+           , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)
+           , "match-code-sizes"         .= (llMatchCodeSizes m)
+           , "match-latencies"          .= (llMatchLatencies m)
+           , "match-copy-instrs"        .= (llMatchCopyInstructions m)
+           , "match-null-instrs"        .= (llMatchNullInstructions m)
+           , "match-reuse-instrs"       .= (llMatchReuseInstructions m)
+           , "match-adduc-settings"     .= (llMatchADDUCs m)
+           , "match-constraints"        .= (llMatchConstraints m)
            ]
 
 instance FromJSON HighLevelSolution where

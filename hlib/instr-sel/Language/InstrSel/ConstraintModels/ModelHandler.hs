@@ -158,7 +158,7 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
-       , hlValueRelatedCopies = val_copies
+       , hlFunValueRelatedCopies = val_copies
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
@@ -299,6 +299,8 @@ lowerHighLevelModel model ai_maps =
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
        , llFunReuses = map getAIForOperationNodeID (hlFunReuses f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
+       , llFunValueRelatedCopies = map (map getAIForOperationNodeID)
+                                       (hlFunValueRelatedCopies f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
