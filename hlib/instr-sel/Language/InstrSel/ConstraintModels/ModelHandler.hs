@@ -51,6 +51,7 @@ import Data.Maybe
   , isNothing
   , mapMaybe
   )
+import qualified Data.Map as Map
 
 
 
@@ -113,6 +114,18 @@ mkHLFunctionParams function target =
                            else Nothing
                        )
                        ns
+      val_copies =
+        let ns = filter isCopyNode (getAllNodes graph)
+            pairs = map ( \n -> ( getSourceNode graph
+                                  $ head
+                                  $ getDtFlowInEdges graph n
+                                , [n]
+                                )
+                        )
+                        ns
+        in map ((map getNodeID) . snd)
+           $ Map.toList
+           $ Map.fromListWith (++) pairs
       value_origin_data =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
@@ -144,6 +157,7 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
+       , hlValueRelatedCopies = val_copies
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data

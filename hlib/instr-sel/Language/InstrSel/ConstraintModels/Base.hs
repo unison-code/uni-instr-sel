@@ -94,6 +94,8 @@ data HighLevelFunctionParams
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
         -- to always be a node denoting a datum.
+      , hlValueRelatedCopies :: [[NodeID]]
+        -- ^ A collection of copy nodes that copy the same value.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
@@ -382,6 +384,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
+      <*> v .: "value-related-copies"
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
@@ -391,18 +394,19 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
-    object [ "operations"        .= (hlFunOperations d)
-           , "data"              .= (hlFunData d)
-           , "states"            .= (hlFunStates d)
-           , "blocks"            .= (hlFunBlocks d)
-           , "entry-block"       .= (hlFunEntryBlock d)
-           , "block-dom-sets"    .= (hlFunBlockDomSets d)
-           , "def-edges"         .= (hlFunDefEdges d)
-           , "block-params"      .= (hlFunBlockParams d)
-           , "int-constant-data" .= (hlFunValueIntConstData d)
-           , "value-origin-data" .= (hlFunValueOriginData d)
-           , "call-name-data"    .= (hlFunCallNameData d)
-           , "constraints"       .= (hlFunConstraints d)
+    object [ "operations"           .= (hlFunOperations d)
+           , "data"                 .= (hlFunData d)
+           , "states"               .= (hlFunStates d)
+           , "blocks"               .= (hlFunBlocks d)
+           , "entry-block"          .= (hlFunEntryBlock d)
+           , "block-dom-sets"       .= (hlFunBlockDomSets d)
+           , "def-edges"            .= (hlFunDefEdges d)
+           , "value-related-copies" .= (hlValueRelatedCopies d)
+           , "block-params"         .= (hlFunBlockParams d)
+           , "int-constant-data"    .= (hlFunValueIntConstData d)
+           , "value-origin-data"    .= (hlFunValueOriginData d)
+           , "call-name-data"       .= (hlFunCallNameData d)
+           , "constraints"          .= (hlFunConstraints d)
            ]
 
 instance FromJSON HighLevelBlockParams where
