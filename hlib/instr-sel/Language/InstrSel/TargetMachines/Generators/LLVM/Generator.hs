@@ -122,13 +122,13 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addOperandConstraints i locs $ mkOpStructure p
-              vis_values = map getNodeID
+              ext_values = map getNodeID
                            $ mapMaybe (findValueNodeFromOperand os)
                                       (LLVM.instrOperands i)
               tmpl = mkEmitString i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
-                             , TM.patVisibleData = vis_values
+                             , TM.patExternalData = ext_values
                              , TM.patADDUC = True
                              , TM.patEmitString = tmpl
                              }

@@ -142,6 +142,12 @@ data HighLevelMatchParams
         -- ^ The data in the function graph which are defined by this match.
       , hlMatchDataUsed :: [NodeID]
         -- ^ The data in the function graph which are used by this match.
+      , hlMatchExternalData :: [NodeID]
+        -- ^ The data in the function graph which are external to this match
+        -- (i.e. either input or output).
+      , hlMatchInternalData :: [NodeID]
+        -- ^ The data in the function graph which are external to this match
+        -- (i.e. neither input nor output).
       , hlMatchEntryBlock :: Maybe NodeID
         -- ^ A block in the function graph that appears as entry block
         -- (if there is such a block) of this match.
@@ -240,6 +246,14 @@ data LowLevelModel
         -- a particular match.
       , llMatchDataUsed :: [[ArrayIndex]]
         -- ^ The list of data in the function graph that are used by each
+        -- match. An index into the outer list corresponds to the array index of
+        -- a particular match.
+      , llMatchExternalData :: [[ArrayIndex]]
+        -- ^ The list of data in the function graph that are external to each
+        -- match. An index into the outer list corresponds to the array index of
+        -- a particular match.
+      , llMatchInternalData :: [[ArrayIndex]]
+        -- ^ The list of data in the function graph that are internal to each
         -- match. An index into the outer list corresponds to the array index of
         -- a particular match.
       , llMatchEntryBlocks :: [Maybe ArrayIndex]
@@ -445,6 +459,8 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "operations-covered"
       <*> v .: "data-defined"
       <*> v .: "data-used"
+      <*> v .: "external-data"
+      <*> v .: "internal-data"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
       <*> v .: "consumed-blocks"
@@ -468,6 +484,8 @@ instance ToJSON HighLevelMatchParams where
            , "operations-covered"           .= (hlMatchOperationsCovered d)
            , "data-defined"                 .= (hlMatchDataDefined d)
            , "data-used"                    .= (hlMatchDataUsed d)
+           , "external-data"                .= (hlMatchExternalData d)
+           , "internal-data"                .= (hlMatchInternalData d)
            , "entry-block"                  .= (hlMatchEntryBlock d)
            , "spanned-blocks"               .= (hlMatchSpannedBlocks d)
            , "consumed-blocks"              .= (hlMatchConsumedBlocks d)
@@ -515,6 +533,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-operations-covered"
       <*> v .: "match-data-defined"
       <*> v .: "match-data-used"
+      <*> v .: "match-external-data"
+      <*> v .: "match-internal-data"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
       <*> v .: "match-consumed-blocks"
@@ -545,6 +565,8 @@ instance ToJSON LowLevelModel where
            , "match-operations-covered" .= (llMatchOperationsCovered m)
            , "match-data-defined"       .= (llMatchDataDefined m)
            , "match-data-used"          .= (llMatchDataUsed m)
+           , "match-external-data"      .= (llMatchExternalData m)
+           , "match-internal-data"      .= (llMatchInternalData m)
            , "match-entry-blocks"       .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
            , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)

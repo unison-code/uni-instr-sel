@@ -206,6 +206,10 @@ processMatch instr pattern match mid =
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
+      d_ext_ns = filter (\n -> (getNodeID n) `elem` patExternalData pattern)
+                        d_ns
+      d_int_ns = filter (\n -> (getNodeID n) `notElem` patExternalData pattern)
+                        d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
       entry_b_node_id = osEntryBlockNode $ patOS pattern
@@ -218,6 +222,8 @@ processMatch instr pattern match mid =
        , hlMatchOperationsCovered = findFNsInMatch match (getNodeIDs o_ns)
        , hlMatchDataDefined = findFNsInMatch match (getNodeIDs d_def_ns)
        , hlMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
+       , hlMatchExternalData = findFNsInMatch match (getNodeIDs d_ext_ns)
+       , hlMatchInternalData = findFNsInMatch match (getNodeIDs d_int_ns)
        , hlMatchEntryBlock = maybe Nothing (findFNInMatch match) entry_b_node_id
        , hlMatchSpannedBlocks = findFNsInMatch match (getNodeIDs b_ns)
        , hlMatchConsumedBlocks = findFNsInMatch match (getNodeIDs b_ns_consumed)
@@ -324,12 +330,15 @@ lowerHighLevelModel model ai_maps =
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
        , llNumMatches = toInteger $ length m_params
        , llMatchOperationsCovered =
-           map (\m -> map getAIForOperationNodeID (hlMatchOperationsCovered m))
-               m_params
+           map (map getAIForOperationNodeID . hlMatchOperationsCovered) m_params
        , llMatchDataDefined =
-           map (\m -> map getAIForDatumNodeID (hlMatchDataDefined m)) m_params
+           map (map getAIForDatumNodeID . hlMatchDataDefined) m_params
        , llMatchDataUsed =
-           map (\m -> map getAIForDatumNodeID (hlMatchDataUsed m)) m_params
+           map (map getAIForDatumNodeID . hlMatchDataUsed) m_params
+       , llMatchExternalData =
+           map (map getAIForDatumNodeID . hlMatchExternalData) m_params
+       , llMatchInternalData =
+           map (map getAIForDatumNodeID . hlMatchInternalData) m_params
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID))
                (map hlMatchEntryBlock m_params)

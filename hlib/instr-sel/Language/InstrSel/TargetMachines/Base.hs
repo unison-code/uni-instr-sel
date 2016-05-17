@@ -111,7 +111,7 @@ data InstrPattern
         -- instruction, but not necessarily contiguous.
       , patOS :: OpStructure
         -- ^ The operation structure of the pattern.
-      , patVisibleData :: [NodeID]
+      , patExternalData :: [NodeID]
         -- ^ The value nodes in the pattern graph that represent either input or
         -- output values to the instruction (i.e. they are not internal values).
       , patADDUC :: Bool
