@@ -151,6 +151,7 @@ mkHLFunctionParams function target =
                      (functionInputs function)
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
+       , hlFunReuses = nodeIDsByType isReuseNode
        , hlFunData = nodeIDsByType isDatumNode
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode

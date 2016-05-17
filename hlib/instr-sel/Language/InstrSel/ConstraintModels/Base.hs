@@ -80,6 +80,8 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOperations :: [NodeID]
         -- ^ The operations in the function graph.
+      , hlFunReuses :: [NodeID]
+        -- ^ The reuse nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
       , hlFunStates :: [NodeID]
@@ -378,6 +380,7 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operations"
+      <*> v .: "reuses"
       <*> v .: "data"
       <*> v .: "states"
       <*> v .: "blocks"
@@ -395,6 +398,7 @@ instance FromJSON HighLevelFunctionParams where
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operations"           .= (hlFunOperations d)
+           , "reuses"               .= (hlFunReuses d)
            , "data"                 .= (hlFunData d)
            , "states"               .= (hlFunStates d)
            , "blocks"               .= (hlFunBlocks d)
