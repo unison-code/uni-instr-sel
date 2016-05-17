@@ -228,6 +228,7 @@ processMatch instr pattern match mid =
        , hlMatchADDUC = patADDUC pattern
        , hlMatchIsCopyInstruction = isInstructionCopy $ instr
        , hlMatchIsNullInstruction = isInstructionNull instr
+       , hlMatchIsReuseInstruction = isInstructionReuse instr
        , hlMatchHasControlFlow = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
@@ -343,6 +344,9 @@ lowerHighLevelModel model ai_maps =
        , llMatchNullInstructions =
            map (getAIForMatchID . hlMatchID)
                (filter hlMatchIsNullInstruction m_params)
+       , llMatchReuseInstructions =
+           map (getAIForMatchID . hlMatchID)
+               (filter hlMatchIsReuseInstruction m_params)
        , llMatchConstraints =
            map (map (replaceIDWithArrayIndex ai_maps))
                (map hlMatchConstraints m_params)
