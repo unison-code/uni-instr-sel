@@ -36,7 +36,9 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
-array[int] of allDataInFunction: statesInFunction;
+array[int] of set of allOperationsInFunction: valueRelatedCopiesInFunction;
+set of allOperationsInFunction: reusesInFunction;
+set of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.

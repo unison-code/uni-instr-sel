@@ -49,6 +49,7 @@ VT_PLAIN = 0
 VT_ARRAY1D = 1
 VT_ARRAY2D = 2
 VT_SET = 3
+VT_ARRAY = 4
 VC_AS_IS = 0
 VC_SET = 1
 VC_SINGLETON = 2
@@ -63,6 +64,12 @@ def dumpParams(
     sys.stdout.write(" = ")
     if var_type == VT_PLAIN:
         sys.stdout.write(convData(json, var_conv))
+    elif var_type == VT_ARRAY:
+        sys.stdout.write("[")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("]")
+
     elif var_type == VT_ARRAY1D:
         sys.stdout.write("array1d(")
         sys.stdout.write(var_range)
@@ -330,8 +337,19 @@ dumpParams( json_data["fun-num-data"]
 dumpParams( json_data["fun-num-operations"]
           , "numOperationsInFunction"
           )
+dumpParams( json_data["fun-value-related-copies"]
+          , "valueRelatedCopiesInFunction"
+          , VT_ARRAY
+          , ""
+          , VC_SET
+          )
+dumpParams( json_data["fun-reuses"]
+          , "reusesInFunction"
+          , VT_SET
+          )
 dumpParams( json_data["fun-states"]
           , "statesInFunction"
+          , VT_SET
           )
 dumpParams( json_data["in-block"]
           , "inBlock"
