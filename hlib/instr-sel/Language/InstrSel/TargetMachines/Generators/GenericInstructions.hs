@@ -109,6 +109,7 @@ mkPhiInstruction mkEmit =
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OpStructure g Nothing cs
+             , patVisibleData = [2..n+1]
              , patADDUC = False
              , patEmitString = mkEmit (map toNodeID [2..n+1]) 1
              }
@@ -144,6 +145,7 @@ mkBrFallThroughInstruction =
         InstrPattern
           { patID = 0
           , patOS = OpStructure g (Just 1) cs
+          , patVisibleData = []
           , patADDUC = True
           , patEmitString = EmitStringTemplate []
           }
@@ -174,6 +176,7 @@ mkDataDefInstruction =
         InstrPattern
           { patID = pid
           , patOS = OpStructure g (Just 0) cs
+          , patVisibleData = [1]
           , patADDUC = True
           , patEmitString = EmitStringTemplate []
           }
@@ -213,6 +216,7 @@ mkTempNullCopyInstruction bits =
       pat (pid, w) = InstrPattern
                        { patID = pid
                        , patOS = OpStructure (g w) Nothing cs
+                       , patVisibleData = [1, 2]
                        , patADDUC = True
                        , patEmitString = EmitStringTemplate []
                        }

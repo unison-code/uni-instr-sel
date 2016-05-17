@@ -17,11 +17,9 @@ module Language.InstrSel.Constraints.ConstraintBuilder
   ( addFallThroughConstraints
   , addNewDataLocConstraints
   , addSameDataLocConstraints
-  , addNoDataReuseConstraints
   , mkFallThroughConstraints
   , mkNewDataLocConstraints
   , mkSameDataLocConstraints
-  , mkNoDataReuseConstraints
   )
 where
 
@@ -98,26 +96,6 @@ mkFallThroughConstraints l =
                                       ( BlockOfBlockNodeExpr
                                         $ ANodeIDExpr l
                                       )
-  ]
-
--- | Creates constraints using 'mkNoDataReuseConstraints' and adds these (if
--- any) to the given 'OpStructure'.
-addNoDataReuseConstraints :: NodeID -> OpStructure -> OpStructure
-addNoDataReuseConstraints d os =
-  addConstraints os (mkNoDataReuseConstraints d)
-
--- | Creates no-reuse constraints for a pattern graph such that the location of
--- the given value node must be in the null location.
-mkNoDataReuseConstraints :: NodeID -> [Constraint]
-mkNoDataReuseConstraints d =
-  [ BoolExprConstraint
-    $ EqExpr ( Location2NumExpr
-               $ LocationOfValueNodeExpr
-               $ ANodeIDExpr d
-             )
-             ( Location2NumExpr
-               $ TheNullLocationExpr
-             )
   ]
 
 -- | Creates constraints, using 'mkSameDataLocConstraints', that force the

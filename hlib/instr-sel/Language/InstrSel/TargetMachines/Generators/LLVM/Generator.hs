@@ -122,12 +122,40 @@ mkInstrPatterns locs i =
   where processSemantics (p_num, p) =
           let p_id = TM.toPatternID p_num
               os = addOperandConstraints i locs $ mkOpStructure p
+              vis_values = map getNodeID
+                           $ mapMaybe (findValueNodeFromOperand os)
+                                      (LLVM.instrOperands i)
               tmpl = mkEmitString i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
+                             , TM.patVisibleData = vis_values
                              , TM.patADDUC = True
                              , TM.patEmitString = tmpl
                              }
+        findValueNodeFromOperand os' (LLVM.RegInstrOperand op_name _) =
+          let n = findValueNode os' op_name
+          in if isJust n
+             then n
+             else error $ "mkInstrPatterns: no value node with "
+                          ++ "origin '" ++ op_name ++ "''"
+        findValueNodeFromOperand os' (LLVM.ImmInstrOperand op_name _) =
+          let n = findValueNode os' op_name
+          in if isJust n
+             then n
+             else error $ "mkInstrPatterns: no value node with "
+                          ++ "origin '" ++ op_name ++ "''"
+        findValueNodeFromOperand os' (LLVM.AbsAddrInstrOperand op_name _) =
+          findValueNode os' op_name
+        findValueNodeFromOperand os' (LLVM.RelAddrInstrOperand op_name _) =
+          findValueNode os' op_name
+        findValueNode os' origin =
+          let n = findValueNodesWithOrigin (osGraph os') origin
+          in if length n == 1
+             then Just $ head n
+             else if length n > 0
+                  then error $ "mkInstrPatterns: multiple value nodes "
+                               ++ "with origin '" ++ origin ++ "'"
+                  else Nothing
 
 addOperandConstraints
   :: LLVM.Instruction

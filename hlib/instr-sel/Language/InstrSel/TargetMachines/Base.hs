@@ -111,6 +111,9 @@ data InstrPattern
         -- instruction, but not necessarily contiguous.
       , patOS :: OpStructure
         -- ^ The operation structure of the pattern.
+      , patVisibleData :: [NodeID]
+        -- ^ The value nodes in the pattern graph that represent either input or
+        -- output values to the instruction (i.e. they are not internal values).
       , patADDUC :: Bool
         -- ^ Indicates whether the def-dom-use constraints apply to this
         -- pattern. This will typically always be set to 'True' for all patterns
