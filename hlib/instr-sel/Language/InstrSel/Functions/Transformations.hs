@@ -91,6 +91,12 @@ insertCopyAlongEdge g0 df_edge =
         IntTempType { intTempNumBits = b }
       mkNewDataType d = error $ "insertCopy: DataType '" ++ show d ++ "' not "
                                 ++ "supported"
+                        -- This happens if copy extension is attempted before
+                        -- constants have been combined. In many cases, the
+                        -- bit width for a constant is known somewhere in a
+                        -- program but not everywhere. By combining all equal
+                        -- constants afterwards, this information is propagated
+                        -- such that no constant has unknown bit width.
       old_d_node = getSourceNode g0 df_edge
       old_d_origin = originOfValue $ getNodeType old_d_node
       old_op_n = getTargetNode g0 df_edge
