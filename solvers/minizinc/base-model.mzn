@@ -356,14 +356,14 @@ constraint
 constraint
   forall ( m in allMatches diff dominatedMatches, e in dataExternalToMatch[m] )
   (
-    loc[e] != locValueForNull
+    sel[m] -> loc[e] != locValueForNull
   );
 
 % All data internal to a match must be located in the null location.
 constraint
   forall ( m in allMatches diff dominatedMatches, e in dataInternalToMatch[m] )
   (
-    loc[e] = locValueForNull
+    sel[m] -> loc[e] = locValueForNull
   );
 
 % Constrain the loc value for all data that are states.
