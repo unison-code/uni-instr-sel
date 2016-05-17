@@ -296,6 +296,7 @@ lowerHighLevelModel model ai_maps =
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
+       , llFunReuses = map getAIForOperationNodeID (hlFunReuses f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =

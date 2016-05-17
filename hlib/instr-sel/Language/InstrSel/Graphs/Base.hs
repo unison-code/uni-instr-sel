@@ -561,6 +561,7 @@ isOperationNode n =
   || isCallNode n
   || isPhiNode n
   || isCopyNode n
+  || isReuseNode n
 
 isDatumNode :: Node -> Bool
 isDatumNode n =

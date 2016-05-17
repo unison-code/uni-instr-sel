@@ -201,8 +201,10 @@ data LowLevelModel
         -- ^ The number of data in the function graph.
       , llFunNumBlocks :: Integer
         -- ^ The number of blocks in the function graph.
+      , llFunReuses :: [ArrayIndex]
+        -- ^ The operations that are reuse nodes of the function graph.
       , llFunStates :: [ArrayIndex]
-        -- ^ The data that are states of the function graph.
+        -- ^ The data that are state nodes of the function graph.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -492,6 +494,7 @@ instance FromJSON LowLevelModel where
       <$> v .: "fun-num-operations"
       <*> v .: "fun-num-data"
       <*> v .: "fun-num-blocks"
+      <*> v .: "fun-reuses"
       <*> v .: "fun-states"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
@@ -519,6 +522,7 @@ instance ToJSON LowLevelModel where
     object [ "fun-num-operations"          .= (llFunNumOperations m)
            , "fun-num-data"                .= (llFunNumData m)
            , "fun-num-blocks"              .= (llFunNumBlocks m)
+           , "fun-reuses"                  .= (llFunReuses m)
            , "fun-states"                  .= (llFunStates m)
            , "fun-entry-block"             .= (llFunEntryBlock m)
            , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
