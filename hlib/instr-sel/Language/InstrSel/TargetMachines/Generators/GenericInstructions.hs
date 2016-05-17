@@ -109,7 +109,7 @@ mkPhiInstruction mkEmit =
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OpStructure g Nothing cs
-             , patExternalData = [2..n+1]
+             , patExternalData = [1..n+1]
              , patADDUC = False
              , patEmitString = mkEmit (map toNodeID [2..n+1]) 1
              }
