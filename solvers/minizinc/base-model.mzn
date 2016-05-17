@@ -47,6 +47,8 @@ int: numMatches;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedByMatch;
+array[allMatches] of set of int: dataExternalToMatch;
+array[allMatches] of set of int: dataInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
@@ -349,6 +351,20 @@ constraint
 % first block, and the block of the null block must be placed as the last block.
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
+
+% All data external to a match must not be located in the null location.
+constraint
+  forall ( m in allMatches diff dominatedMatches, e in dataExternalToMatch[m] )
+  (
+    loc[e] != locValueForNull
+  );
+
+% All data internal to a match must be located in the null location.
+constraint
+  forall ( m in allMatches diff dominatedMatches, e in dataInternalToMatch[m] )
+  (
+    loc[e] = locValueForNull
+  );
 
 % Constrain the loc value for all data that are states.
 constraint
