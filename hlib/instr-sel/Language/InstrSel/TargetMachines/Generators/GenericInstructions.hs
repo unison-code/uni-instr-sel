@@ -250,6 +250,7 @@ mkReuseInstruction =
       cs = mkSameDataLocConstraints [1, 2]
       pat = InstrPattern { patID = 0
                          , patOS = OpStructure g Nothing cs
+                         , patExternalData = [1, 2]
                          , patADDUC = True
                          , patEmitString = EmitStringTemplate []
                          }
