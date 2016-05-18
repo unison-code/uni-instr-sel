@@ -178,9 +178,11 @@ predicate fall_through(int: m, int: b) =
 %============
 
 % Enforce that, for each operation, exactly one match must be selected such that
-% the operation which is not a reuse is covered.
+% the operation which is not a copy or a reuse is covered.
 constraint
-  forall (o in allOperationsInFunction where not (o in reusesInFunction))
+  forall ( o in allOperationsInFunction
+           where not (o in copiesInFunction) /\ not (o in reusesInFunction)
+         )
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
@@ -197,6 +199,20 @@ constraint
                  ) = 1
             endif
        endif
+  );
+
+% Enforce that, for each collection of value-related copies, at least one of
+% the copies is covered.
+constraint
+  forall (lst in valueRelatedCopiesInFunction)
+  (
+    let {
+      set of int: mset = { m | m in allMatches diff dominatedMatches,
+                                    o in lst
+                                    where o in operationsCoveredByMatch[m]
+                         }
+    }
+    in sum (m in mset) (bool2int(sel[m])) > 0
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that
