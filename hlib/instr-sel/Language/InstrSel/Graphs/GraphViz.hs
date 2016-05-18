@@ -113,7 +113,8 @@ mkNodeShapeAttr ReuseNode = [GV.shape GV.Triangle]
 mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
 mkNodeLabelAttr nid nt =
   [GV.toLabel s]
-  where s = f nt ++ "\n" ++ pShow nid
+  where s = let pre = f nt
+            in pre ++ (if length pre > 0 then "\n" else "") ++ pShow nid
         f (ComputationNode op) = pShow op
         f (ControlNode op) = pShow op
         f (CallNode func) = "call " ++ pShow func
