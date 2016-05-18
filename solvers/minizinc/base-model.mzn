@@ -384,7 +384,7 @@ constraint
 % Accumulate cost of selected patterns.
 % TODO: make this part generic
 constraint
-  cost = sum (m in allMatches diff dominatedMatches)
+  cost = sum (m in allMatches)
          ( latencyOfMatch[m]
          * execFrequencyOfBlocksPlusNull[place[m]]
          );
