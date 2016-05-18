@@ -48,19 +48,22 @@ build:
 %.ce.cc.f.json: %.ce.f.json
 	$(UNI) transform --combine-consts-in-fun -f $< -o $@
 
-%.ce.cc.be.f.json: %.ce.cc.f.json
+%.ce.cc.re.f.json: %.ce.cc.f.json
+	$(UNI) transform --insert-reuses-in-fun -f $< -o $@
+
+%.ce.cc.re.be.f.json: %.ce.cc.re.f.json
 	$(UNI) transform --branch-extend-fun -f $< -o $@
 
 %.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.hl.model.json: %.ce.cc.be.f.json %.ce.cc.be.p.json
+%.hl.model.json: %.ce.cc.re.be.f.json %.ce.cc.re.be.p.json
 	$(UNI) make --construct-hl-cp-model \
-      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
+      -f $*.ce.cc.re.be.f.json -p $*.ce.cc.re.be.p.json -o $@
 
-%.aimaps.json: %.ce.cc.be.f.json %.ce.cc.be.p.json
+%.aimaps.json: %.ce.cc.re.be.f.json %.ce.cc.re.be.p.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
+      -f $*.ce.cc.re.be.f.json -p $*.ce.cc.re.be.p.json -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
@@ -108,24 +111,24 @@ distclean-toolchain:
 %.ssa-f.dot: %.f.json
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.ce.cc.be.f.json %.ce.cc.be.p.json
+%.cov.dot: %.ce.cc.re.be.f.json %.ce.cc.re.be.p.json
 	$(UNI) plot --plot-cover-all-matches \
-      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $@
+      -f $*.ce.cc.re.be.f.json -p $*.ce.cc.re.be.p.json -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.ce.cc.be.f.json %.ce.cc.be.p.json
+%.all-cover-plots: %.ce.cc.re.be.f.json %.ce.cc.re.be.p.json
 	$(UNI) plot --plot-cover-per-match \
-      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -o $*.cov.dot
+      -f $*.ce.cc.re.be.f.json -p $*.ce.cc.re.be.p.json -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
 	  make $${f%.*}.pdf;      \
 	  $(RM) $${f%.*}.dot;     \
     done
 
-%.dump: %.ce.cc.be.f.json %.ce.cc.be.p.json %.aimaps.json
+%.dump: %.ce.cc.re.be.f.json %.ce.cc.re.be.p.json %.aimaps.json
 	$(UNI) make --dump-array-index-maplists-info \
-      -f $*.ce.cc.be.f.json -p $*.ce.cc.be.p.json -a $*.aimaps.json -o $@
+      -f $*.ce.cc.re.be.f.json -p $*.ce.cc.re.be.p.json -a $*.aimaps.json -o $@
 
 
 
