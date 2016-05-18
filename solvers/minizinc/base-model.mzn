@@ -114,6 +114,10 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
            array1d(blockValueForNull..blockValueForNull, [0])
          );
 
+% Merges all sets in valueRelatedCopiesInFunction to a single set.
+set of allOperationsInFunction:
+  copiesInFunction = { n | s in valueRelatedCopiesInFunction, n in s };
+
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
 set of int: allDataInFunction = 0..numDataInFunction-1;
@@ -174,14 +178,13 @@ predicate fall_through(int: m, int: b) =
 %============
 
 % Enforce that, for each operation, exactly one match must be selected such that
-% the operation is covered.
+% the operation which is not a reuse is covered.
 constraint
   forall (o in allOperationsInFunction where not (o in reusesInFunction))
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
                                     where o in operationsCoveredByMatch[m]
-                                      and o not in reusesInFunction
                          }
     }
     in if card(mset) = 1
