@@ -1606,7 +1606,7 @@ extractCFG g =
   let nodes_to_remove = filter (\n -> not (isBlockNode n || isControlNode n))
                                (getAllNodes g)
       cfg_with_ctrl_nodes = foldr delNode g nodes_to_remove
-      cfg = foldr (flip delNodeKeepEdges)
+      cfg = foldr delNodeKeepEdges
                   cfg_with_ctrl_nodes
                   (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
   in cfg
@@ -1633,8 +1633,8 @@ extractSSA g =
 -- parent. It is assumed the graph has at most one predecessor of the node to
 -- remove (if there are more than one predecessor then the edges will be
 -- redirected to one of them, but it is undefined which).
-delNodeKeepEdges :: Graph -> Node -> Graph
-delNodeKeepEdges g n =
+delNodeKeepEdges :: Node -> Graph -> Graph
+delNodeKeepEdges n g =
   let preds = getPredecessors g n
   in if length preds > 0
      then mergeNodes (head preds) n g
