@@ -337,8 +337,8 @@ dumpParams( json_data["fun-num-data"]
 dumpParams( json_data["fun-num-operations"]
           , "numOperationsInFunction"
           )
-dumpParams( json_data["fun-value-related-copies"]
-          , "valueRelatedCopiesInFunction"
+dumpParams( json_data["fun-value-use-related-copies"]
+          , "valueUseRelatedCopiesInFunction"
           , VT_ARRAY
           , ""
           , VC_SET

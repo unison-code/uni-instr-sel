@@ -96,8 +96,8 @@ data HighLevelFunctionParams
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
         -- to always be a node denoting a datum.
-      , hlFunValueRelatedCopies :: [[NodeID]]
-        -- ^ A collection of copy nodes that copy the same value.
+      , hlFunValueUseRelatedCopies :: [[NodeID]]
+        -- ^ A collection of copy nodes that copy (use) the same value.
       , hlFunDataCyclicReuses :: [[NodeID]]
         -- ^ A collection of reuse nodes that will lead to a cyclic data
         -- dependence if all reuses are implemented.
@@ -216,8 +216,8 @@ data LowLevelModel
         -- ^ The operations that are reuse nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
-      , llFunValueRelatedCopies :: [[ArrayIndex]]
-        -- ^ A collection of copy operations that copy the same value.
+      , llFunValueUseRelatedCopies :: [[ArrayIndex]]
+        -- ^ A collection of copy operations that copy (use) the same value.
       , llFunDataCyclicReuses :: [[ArrayIndex]]
         -- ^ A collection of reuse nodes that will lead to a cyclic data
         -- dependence if all reuses are implemented.
@@ -415,7 +415,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
-      <*> v .: "value-related-copies"
+      <*> v .: "value-use-related-copies"
       <*> v .: "data-cyclic-reuses"
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
@@ -426,21 +426,21 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
-    object [ "operations"           .= (hlFunOperations d)
-           , "reuses"               .= (hlFunReuses d)
-           , "data"                 .= (hlFunData d)
-           , "states"               .= (hlFunStates d)
-           , "blocks"               .= (hlFunBlocks d)
-           , "entry-block"          .= (hlFunEntryBlock d)
-           , "block-dom-sets"       .= (hlFunBlockDomSets d)
-           , "def-edges"            .= (hlFunDefEdges d)
-           , "value-related-copies" .= (hlFunValueRelatedCopies d)
-           , "data-cyclic-reuses"   .= (hlFunDataCyclicReuses d)
-           , "block-params"         .= (hlFunBlockParams d)
-           , "int-constant-data"    .= (hlFunValueIntConstData d)
-           , "value-origin-data"    .= (hlFunValueOriginData d)
-           , "call-name-data"       .= (hlFunCallNameData d)
-           , "constraints"          .= (hlFunConstraints d)
+    object [ "operations"               .= (hlFunOperations d)
+           , "reuses"                   .= (hlFunReuses d)
+           , "data"                     .= (hlFunData d)
+           , "states"                   .= (hlFunStates d)
+           , "blocks"                   .= (hlFunBlocks d)
+           , "entry-block"              .= (hlFunEntryBlock d)
+           , "block-dom-sets"           .= (hlFunBlockDomSets d)
+           , "def-edges"                .= (hlFunDefEdges d)
+           , "value-use-related-copies" .= (hlFunValueUseRelatedCopies d)
+           , "data-cyclic-reuses"       .= (hlFunDataCyclicReuses d)
+           , "block-params"             .= (hlFunBlockParams d)
+           , "int-constant-data"        .= (hlFunValueIntConstData d)
+           , "value-origin-data"        .= (hlFunValueOriginData d)
+           , "call-name-data"           .= (hlFunCallNameData d)
+           , "constraints"              .= (hlFunConstraints d)
            ]
 
 instance FromJSON HighLevelBlockParams where
@@ -530,7 +530,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-blocks"
       <*> v .: "fun-reuses"
       <*> v .: "fun-states"
-      <*> v .: "fun-value-related-copies"
+      <*> v .: "fun-value-use-related-copies"
       <*> v .: "fun-data-cyclic-reuses"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
@@ -558,35 +558,35 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-operations"       .= (llFunNumOperations m)
-           , "fun-num-data"             .= (llFunNumData m)
-           , "fun-num-blocks"           .= (llFunNumBlocks m)
-           , "fun-reuses"               .= (llFunReuses m)
-           , "fun-states"               .= (llFunStates m)
-           , "fun-value-related-copies" .= (llFunValueRelatedCopies m)
-           , "fun-data-cyclic-reuses"   .= (llFunDataCyclicReuses m)
-           , "fun-entry-block"          .= (llFunEntryBlock m)
-           , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
-           , "fun-def-edges"            .= (llFunDefEdges m)
-           , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
-           , "fun-constraints"          .= (llFunConstraints m)
-           , "num-locations"            .= (llNumLocations m)
-           , "num-matches"              .= (llNumMatches m)
-           , "match-operations-covered" .= (llMatchOperationsCovered m)
-           , "match-data-defined"       .= (llMatchDataDefined m)
-           , "match-data-used"          .= (llMatchDataUsed m)
-           , "match-external-data"      .= (llMatchExternalData m)
-           , "match-internal-data"      .= (llMatchInternalData m)
-           , "match-entry-blocks"       .= (llMatchEntryBlocks m)
-           , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
-           , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)
-           , "match-code-sizes"         .= (llMatchCodeSizes m)
-           , "match-latencies"          .= (llMatchLatencies m)
-           , "match-copy-instrs"        .= (llMatchCopyInstructions m)
-           , "match-null-instrs"        .= (llMatchNullInstructions m)
-           , "match-reuse-instrs"       .= (llMatchReuseInstructions m)
-           , "match-adduc-settings"     .= (llMatchADDUCs m)
-           , "match-constraints"        .= (llMatchConstraints m)
+    object [ "fun-num-operations"           .= (llFunNumOperations m)
+           , "fun-num-data"                 .= (llFunNumData m)
+           , "fun-num-blocks"               .= (llFunNumBlocks m)
+           , "fun-reuses"                   .= (llFunReuses m)
+           , "fun-states"                   .= (llFunStates m)
+           , "fun-value-use-related-copies" .= (llFunValueUseRelatedCopies m)
+           , "fun-data-cyclic-reuses"       .= (llFunDataCyclicReuses m)
+           , "fun-entry-block"              .= (llFunEntryBlock m)
+           , "fun-block-dom-sets"           .= (llFunBlockDomSets m)
+           , "fun-def-edges"                .= (llFunDefEdges m)
+           , "fun-block-exec-freqs"         .= (llFunBBExecFreqs m)
+           , "fun-constraints"              .= (llFunConstraints m)
+           , "num-locations"                .= (llNumLocations m)
+           , "num-matches"                  .= (llNumMatches m)
+           , "match-operations-covered"     .= (llMatchOperationsCovered m)
+           , "match-data-defined"           .= (llMatchDataDefined m)
+           , "match-data-used"              .= (llMatchDataUsed m)
+           , "match-external-data"          .= (llMatchExternalData m)
+           , "match-internal-data"          .= (llMatchInternalData m)
+           , "match-entry-blocks"           .= (llMatchEntryBlocks m)
+           , "match-spanned-blocks"         .= (llMatchSpannedBlocks m)
+           , "match-consumed-blocks"        .= (llMatchConsumedBlocks m)
+           , "match-code-sizes"             .= (llMatchCodeSizes m)
+           , "match-latencies"              .= (llMatchLatencies m)
+           , "match-copy-instrs"            .= (llMatchCopyInstructions m)
+           , "match-null-instrs"            .= (llMatchNullInstructions m)
+           , "match-adduc-settings"         .= (llMatchADDUCs m)
+           , "match-reuse-instrs"           .= (llMatchReuseInstructions m)
+           , "match-constraints"            .= (llMatchConstraints m)
            ]
 
 instance FromJSON HighLevelSolution where

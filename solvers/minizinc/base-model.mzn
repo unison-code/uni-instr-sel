@@ -36,7 +36,7 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
-array[int] of set of allOperationsInFunction: valueRelatedCopiesInFunction;
+array[int] of set of allOperationsInFunction: valueUseRelatedCopiesInFunction;
 array[int] of set of allOperationsInFunction: dataCyclicReusesInFunction;
 set of allOperationsInFunction: reusesInFunction;
 set of allDataInFunction: statesInFunction;
@@ -115,9 +115,9 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
            array1d(blockValueForNull..blockValueForNull, [0])
          );
 
-% Merges all sets in valueRelatedCopiesInFunction to a single set.
+% Merges all sets in valueUseRelatedCopiesInFunction to a single set.
 set of allOperationsInFunction:
-  copiesInFunction = { n | s in valueRelatedCopiesInFunction, n in s };
+  copiesInFunction = { n | s in valueUseRelatedCopiesInFunction, n in s };
 
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
@@ -202,10 +202,10 @@ constraint
        endif
   );
 
-% Enforce that, for each collection of value-related copies, at least one of
+% Enforce that, for each collection of value-use-related copies, at least one of
 % the copies is covered.
 constraint
-  forall (lst in valueRelatedCopiesInFunction)
+  forall (lst in valueUseRelatedCopiesInFunction)
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches,
