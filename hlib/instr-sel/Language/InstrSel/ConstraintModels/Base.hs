@@ -98,6 +98,9 @@ data HighLevelFunctionParams
         -- to always be a node denoting a datum.
       , hlFunValueRelatedCopies :: [[NodeID]]
         -- ^ A collection of copy nodes that copy the same value.
+      , hlFunDataCyclicReuses :: [[NodeID]]
+        -- ^ A collection of reuse nodes that will lead to a cyclic data
+        -- dependence if all reuses are implemented.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
@@ -215,6 +218,9 @@ data LowLevelModel
         -- ^ The data that are state nodes of the function graph.
       , llFunValueRelatedCopies :: [[ArrayIndex]]
         -- ^ A collection of copy operations that copy the same value.
+      , llFunDataCyclicReuses :: [[ArrayIndex]]
+        -- ^ A collection of reuse nodes that will lead to a cyclic data
+        -- dependence if all reuses are implemented.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -410,6 +416,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
       <*> v .: "value-related-copies"
+      <*> v .: "data-cyclic-reuses"
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
@@ -428,6 +435,7 @@ instance ToJSON HighLevelFunctionParams where
            , "block-dom-sets"       .= (hlFunBlockDomSets d)
            , "def-edges"            .= (hlFunDefEdges d)
            , "value-related-copies" .= (hlFunValueRelatedCopies d)
+           , "data-cyclic-reuses"   .= (hlFunDataCyclicReuses d)
            , "block-params"         .= (hlFunBlockParams d)
            , "int-constant-data"    .= (hlFunValueIntConstData d)
            , "value-origin-data"    .= (hlFunValueOriginData d)
@@ -523,6 +531,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-reuses"
       <*> v .: "fun-states"
       <*> v .: "fun-value-related-copies"
+      <*> v .: "fun-data-cyclic-reuses"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-def-edges"
@@ -555,6 +564,7 @@ instance ToJSON LowLevelModel where
            , "fun-reuses"               .= (llFunReuses m)
            , "fun-states"               .= (llFunStates m)
            , "fun-value-related-copies" .= (llFunValueRelatedCopies m)
+           , "fun-data-cyclic-reuses"   .= (llFunDataCyclicReuses m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
            , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
            , "fun-def-edges"            .= (llFunDefEdges m)

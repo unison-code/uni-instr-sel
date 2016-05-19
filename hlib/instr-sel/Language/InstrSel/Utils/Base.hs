@@ -26,6 +26,7 @@ module Language.InstrSel.Utils.Base
   , toUpper
   , capitalize
   , isNumeric
+  , pairMap
   )
 where
 
@@ -140,3 +141,12 @@ isNumeric cs = all Char.isDigit cs
 
 maybeRead :: Read a => String -> Maybe a
 maybeRead = readMay
+
+-- | Applies a function that takes two arguments on each pair of elements in a
+-- list. For example:
+--
+-- > pairMap (+) [1, 2, 3, 4] == [3, 5, 7]
+pairMap :: (a -> a -> b) -> [a] -> [b]
+pairMap _ [] = []
+pairMap _ [_] = error "pairMap: cannot be invoked on list with single element"
+pairMap f as = zipWith f (init as) (tail as)

@@ -38,12 +38,15 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
+import Language.InstrSel.Utils
+  ( pairMap )
 import Language.InstrSel.Utils.Range
 
 import Data.List
   ( elemIndex
   , nub
   , sortBy
+  , subsequences
   )
 import Data.Maybe
   ( fromJust
@@ -52,6 +55,7 @@ import Data.Maybe
   , mapMaybe
   )
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 
 
@@ -126,6 +130,45 @@ mkHLFunctionParams function target =
         in map ((map getNodeID) . snd)
            $ Map.toList
            $ Map.fromListWith (++) pairs
+      cyclic_reuses =
+        let getAllCycles ns =
+              let seqs = filter (\l -> length l > 1) $ subsequences ns
+                  unique_seqs = map Set.toList
+                                $ nub
+                                $ map Set.fromList
+                                $ seqs
+              in unique_seqs
+            getReuseNode v1 v2 =
+              let es = getReuseOutEdges graph v1
+                  targets = map (getTargetNode graph) es
+                  reuses = filter isReuseNode targets
+              in head
+                 $ filter ( \n ->
+                              let t = getTargetNode graph
+                                      $ head
+                                      $ getReuseOutEdges graph n
+                              in t == v2
+                          )
+                 $ reuses
+            convertToReuseNodes ns =
+              pairMap getReuseNode ns ++ [getReuseNode (last ns) (head ns)]
+            nodes_to_remove =
+              filter (\n -> not (isReuseNode n || isDatumNode n))
+                     (getAllNodes graph)
+            reuse_graph_with_data = foldr delNode graph nodes_to_remove
+            data_graph = foldr delNodeKeepEdges
+                               reuse_graph_with_data
+                               ( filter (not . isValueNode)
+                                        (getAllNodes reuse_graph_with_data)
+                               )
+            components = filter (\l -> length l > 1)
+                         $ map getAllNodes
+                         $ componentsOf data_graph
+
+            cycles = map convertToReuseNodes
+                     $ concatMap getAllCycles
+                     $ components
+        in map (map getNodeID) cycles
       value_origin_data =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
@@ -159,6 +202,7 @@ mkHLFunctionParams function target =
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
        , hlFunValueRelatedCopies = val_copies
+       , hlFunDataCyclicReuses = cyclic_reuses
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
@@ -307,6 +351,8 @@ lowerHighLevelModel model ai_maps =
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunValueRelatedCopies = map (map getAIForOperationNodeID)
                                        (hlFunValueRelatedCopies f_params)
+       , llFunDataCyclicReuses = map (map getAIForOperationNodeID)
+                                     (hlFunDataCyclicReuses f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
