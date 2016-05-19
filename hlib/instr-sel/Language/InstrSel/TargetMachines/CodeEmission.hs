@@ -127,15 +127,34 @@ mkInitState sol model =
       null_matches = filter hlMatchIsNullInstruction
                      $ map (getHLMatchParams (hlMatchParams model))
                      $ sel_matches
-      aliases = map ( \m ->
-                        (head $ hlMatchDataDefined m, head $ hlMatchDataUsed m)
-                    )
-                    null_matches
+      aliases = computeAliases null_matches
   in EmissionState { emittedCode = []
                    , varNamesInUse = getVarNamesInUse model
                    , tmpToVarNameMaps = []
                    , valueNodeAliases = aliases
                    }
+
+computeAliases :: [HighLevelMatchParams] -> [(NodeID, NodeID)]
+computeAliases null_matches =
+  let aliases = map ( \m ->
+                        (head $ hlMatchDataDefined m, head $ hlMatchDataUsed m)
+                        -- We assume that null instructions uses exactly one
+                        -- datum and defines exactly one datum
+                    )
+                null_matches
+      normalize as =
+        let alias_refs = filter (\(_, b) -> b `elem` (map fst as)) as
+        in if length alias_refs > 0
+           then let new_as = map ( \(a, b) ->
+                                     if (a, b) `elem` alias_refs
+                                     then (a, fromJust $ lookup b as)
+                                     else (a, b)
+                                 )
+                                 as
+                in normalize new_as
+           else as
+      normalized_aliases = normalize aliases
+  in normalized_aliases
 
 -- | Gets the list of matches that has been allocated to a given block in the CP
 -- model solution. The block is identified using the node ID of its
