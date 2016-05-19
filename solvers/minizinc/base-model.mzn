@@ -160,9 +160,9 @@ include "table.mzn";
 
 
 
-%===========
+%============
 % PREDICATES
-%===========
+%============
 
 % Fall-through constraint: the block wherein match m is placed must be
 % immediately followed by block b.
@@ -173,9 +173,9 @@ predicate fall_through(int: m, int: b) =
 
 
 
-%============
+%=============
 % CONSTRAINTS
-%============
+%=============
 
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation which is not a copy or a reuse is covered.
