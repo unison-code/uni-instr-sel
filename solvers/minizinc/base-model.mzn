@@ -37,6 +37,7 @@ int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
 array[int] of set of allOperationsInFunction: valueRelatedCopiesInFunction;
+array[int] of set of allOperationsInFunction: dataCyclicReusesInFunction;
 set of allOperationsInFunction: reusesInFunction;
 set of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
@@ -213,6 +214,20 @@ constraint
                          }
     }
     in sum (m in mset) (bool2int(sel[m])) > 0
+  );
+
+% Enforce that, for each collection of data-cyclic reuses, not all reuses are
+% covered simultaneously.
+constraint
+  forall (lst in dataCyclicReusesInFunction)
+  (
+    let {
+      set of int: mset = { m | m in allMatches diff dominatedMatches,
+                                    o in lst
+                                    where o in operationsCoveredByMatch[m]
+                         }
+    }
+    in not forall (m in mset) (sel[m])
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that

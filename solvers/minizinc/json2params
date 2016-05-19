@@ -347,6 +347,12 @@ dumpParams( json_data["fun-reuses"]
           , "reusesInFunction"
           , VT_SET
           )
+dumpParams( json_data["fun-data-cyclic-reuses"]
+          , "dataCyclicReusesInFunction"
+          , VT_ARRAY
+          , ""
+          , VC_SET
+          )
 dumpParams( json_data["fun-states"]
           , "statesInFunction"
           , VT_SET
