@@ -107,7 +107,7 @@ mkNodeShapeAttr (BlockNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
 mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
 mkNodeShapeAttr StateNode = [GV.shape GV.BoxShape]
 mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
-mkNodeShapeAttr ReuseNode = [GV.shape GV.Triangle]
+mkNodeShapeAttr ReuseNode = [GV.shape GV.InvTriangle]
 
 -- | Constructs a label attribute based on the node ID and node type.
 mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
