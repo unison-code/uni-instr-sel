@@ -37,6 +37,8 @@ int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
 array[int] of set of allOperationsInFunction: valueUseRelatedCopiesInFunction;
+array[int] of set of allOperationsInFunction:
+  valueDefRelatedCopiesAndReusesInFunction;
 array[int] of set of allOperationsInFunction: dataCyclicReusesInFunction;
 set of allOperationsInFunction: reusesInFunction;
 set of allDataInFunction: statesInFunction;
@@ -200,6 +202,20 @@ constraint
                  ) = 1
             endif
        endif
+  );
+
+% Enforce that, for each collection of value-def-related copies and reuses,
+% exactly one of them is covered.
+constraint
+  forall (lst in valueDefRelatedCopiesAndReusesInFunction)
+  (
+    let {
+      set of int: mset = { m | m in allMatches diff dominatedMatches,
+                                    o in lst
+                                    where o in operationsCoveredByMatch[m]
+                         }
+    }
+    in sum (m in mset) (bool2int(sel[m])) == 1
   );
 
 % Enforce that, for each collection of value-use-related copies, at least one of

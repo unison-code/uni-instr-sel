@@ -343,6 +343,12 @@ dumpParams( json_data["fun-value-use-related-copies"]
           , ""
           , VC_SET
           )
+dumpParams( json_data["fun-value-def-related-copies-and-reuses"]
+          , "valueDefRelatedCopiesAndReusesInFunction"
+          , VT_ARRAY
+          , ""
+          , VC_SET
+          )
 dumpParams( json_data["fun-reuses"]
           , "reusesInFunction"
           , VT_SET

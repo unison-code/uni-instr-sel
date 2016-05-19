@@ -118,7 +118,7 @@ mkHLFunctionParams function target =
                            else Nothing
                        )
                        ns
-      val_copies =
+      val_use_copies =
         let ns = filter isCopyNode (getAllNodes graph)
             pairs = map ( \n -> ( getSourceNode graph
                                   $ head
@@ -130,6 +130,27 @@ mkHLFunctionParams function target =
         in map ((map getNodeID) . snd)
            $ Map.toList
            $ Map.fromListWith (++) pairs
+      val_def_copies_and_reuses =
+        let copy_ns = filter isCopyNode (getAllNodes graph)
+            copy_pairs = map ( \n -> ( getTargetNode graph
+                                       $ head
+                                       $ getDtFlowOutEdges graph n
+                                     , [n]
+                                     )
+                             )
+                             copy_ns
+            reuse_ns = filter isReuseNode (getAllNodes graph)
+            reuse_pairs = map ( \n -> ( getTargetNode graph
+                                        $ head
+                                        $ getReuseOutEdges graph n
+                                      , [n]
+                                      )
+                              )
+                              reuse_ns
+        in filter (\l -> length l > 1)
+           $ map ((map getNodeID) . snd)
+           $ Map.toList
+           $ Map.fromListWith (++) (copy_pairs ++ reuse_pairs)
       cyclic_reuses =
         let getAllCycles ns =
               let seqs = filter (\l -> length l > 1) $ subsequences ns
@@ -201,7 +222,8 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
-       , hlFunValueUseRelatedCopies = val_copies
+       , hlFunValueUseRelatedCopies = val_use_copies
+       , hlFunValueDefRelatedCopiesAndReuses = val_def_copies_and_reuses
        , hlFunDataCyclicReuses = cyclic_reuses
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
@@ -351,6 +373,9 @@ lowerHighLevelModel model ai_maps =
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunValueUseRelatedCopies = map (map getAIForOperationNodeID)
                                           (hlFunValueUseRelatedCopies f_params)
+       , llFunValueDefRelatedCopiesAndReuses =
+         map (map getAIForOperationNodeID)
+             (hlFunValueDefRelatedCopiesAndReuses f_params)
        , llFunDataCyclicReuses = map (map getAIForOperationNodeID)
                                      (hlFunDataCyclicReuses f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
