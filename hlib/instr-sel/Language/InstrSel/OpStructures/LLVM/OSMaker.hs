@@ -92,7 +92,7 @@ data Symbol
 instance PrettyShow Symbol where
   pShow (LocalStringSymbol str) = "%" ++ str
   pShow (GlobalStringSymbol str) = "@" ++ str
-  pShow (TemporarySymbol int) = "t" ++ show int
+  pShow (TemporarySymbol int) = "%" ++ show int
 
 -- | Retains various constant values.
 data Constant
