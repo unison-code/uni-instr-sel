@@ -857,7 +857,7 @@ mergeNodes n_to_keep n_to_discard g
       in delNode n_to_discard
                  ( redirectEdges n_to_keep
                                  n_to_discard
-                                 (foldl (flip delEdge) g edges_to_ignore)
+                                 (foldr delEdge g edges_to_ignore)
                  )
 
 -- | Redirects all edges involving one node to another node.
@@ -1605,8 +1605,8 @@ extractCFG :: Graph -> Graph
 extractCFG g =
   let nodes_to_remove = filter (\n -> not (isBlockNode n || isControlNode n))
                                (getAllNodes g)
-      cfg_with_ctrl_nodes = foldl (flip delNode) g nodes_to_remove
-      cfg = foldl delNodeKeepEdges
+      cfg_with_ctrl_nodes = foldr delNode g nodes_to_remove
+      cfg = foldr (flip delNodeKeepEdges)
                   cfg_with_ctrl_nodes
                   (filter isControlNode $ getAllNodes cfg_with_ctrl_nodes)
   in cfg
@@ -1625,7 +1625,7 @@ extractSSA g =
                   (isControlNode n && not (isRetControlNode n))
           )
           (getAllNodes g)
-      ssa = foldl (flip delNode) g nodes_to_remove
+      ssa = foldr delNode g nodes_to_remove
   in ssa
 
 -- | Deletes a node from the graph, and redirects any edges involving the given
