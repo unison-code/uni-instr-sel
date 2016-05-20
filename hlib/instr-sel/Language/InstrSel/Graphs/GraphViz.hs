@@ -107,7 +107,6 @@ mkNodeShapeAttr (BlockNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
 mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
 mkNodeShapeAttr StateNode = [GV.shape GV.BoxShape]
 mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
-mkNodeShapeAttr ReuseNode = [GV.shape GV.InvTriangle]
 
 -- | Constructs a label attribute based on the node ID and node type.
 mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
@@ -123,7 +122,6 @@ mkNodeLabelAttr nid nt =
         f PhiNode = "phi"
         f StateNode = ""
         f CopyNode = "cp"
-        f ReuseNode = ""
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
@@ -150,7 +148,6 @@ mkEdgeAttrByType ControlFlowEdge = mkControlFlowEdgeAttr
 mkEdgeAttrByType DataFlowEdge = mkDataFlowEdgeAttr
 mkEdgeAttrByType StateFlowEdge = mkStateFlowEdgeAttr
 mkEdgeAttrByType DefEdge = mkDefEdgeAttr
-mkEdgeAttrByType ReuseEdge = mkReuseEdgeAttr
 
 mkControlFlowEdgeAttr :: GV.Attributes
 mkControlFlowEdgeAttr = [GV.style GV.solid, thickWidthAttr]
@@ -163,9 +160,6 @@ mkStateFlowEdgeAttr = [GV.style GV.solid]
 
 mkDefEdgeAttr :: GV.Attributes
 mkDefEdgeAttr = [GV.style GV.dotted]
-
-mkReuseEdgeAttr :: GV.Attributes
-mkReuseEdgeAttr = [GV.style GV.solid]
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.

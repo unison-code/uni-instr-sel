@@ -80,8 +80,6 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOperations :: [NodeID]
         -- ^ The operations in the function graph.
-      , hlFunReuses :: [NodeID]
-        -- ^ The reuse nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
       , hlFunStates :: [NodeID]
@@ -96,14 +94,6 @@ data HighLevelFunctionParams
         -- ^ The definition edges in the function graph. The first element is
         -- assumed to always be a block node and the second element is assumed
         -- to always be a node denoting a datum.
-      , hlFunValueUseRelatedCopies :: [[NodeID]]
-        -- ^ A collection of copy nodes that copy (use) the same value.
-      , hlFunValueDefRelatedCopiesAndReuses :: [[NodeID]]
-        -- ^ A collection of copy and reuse nodes that define the same value.
-        -- Collections with only one element are not included.
-      , hlFunDataCyclicReuses :: [[NodeID]]
-        -- ^ A collection of reuse nodes that will lead to a cyclic data
-        -- dependence if all reuses are implemented.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
@@ -177,8 +167,6 @@ data HighLevelMatchParams
         -- ^ Whether the corresponding instruction is a copy instruction.
       , hlMatchIsNullInstruction :: Bool
         -- ^ Whether the corresponding instruction is a null instruction.
-      , hlMatchIsReuseInstruction :: Bool
-        -- ^ Whether the corresponding instruction is a reuse instruction.
       , hlMatchHasControlFlow :: Bool
         -- ^ Whether the corresponding pattern contains any control flow.
       , hlMatchDataUsedByPhis :: [NodeID]
@@ -215,18 +203,8 @@ data LowLevelModel
         -- ^ The number of data in the function graph.
       , llFunNumBlocks :: Integer
         -- ^ The number of blocks in the function graph.
-      , llFunReuses :: [ArrayIndex]
-        -- ^ The operations that are reuse nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
-      , llFunValueUseRelatedCopies :: [[ArrayIndex]]
-        -- ^ A collection of copy operations that copy (use) the same value.
-      , llFunValueDefRelatedCopiesAndReuses :: [[ArrayIndex]]
-        -- ^ A collection of copy and reuse nodes that define the same value.
-        -- Collections with only one element are not included.
-      , llFunDataCyclicReuses :: [[ArrayIndex]]
-        -- ^ A collection of reuse nodes that will lead to a cyclic data
-        -- dependence if all reuses are implemented.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -288,8 +266,6 @@ data LowLevelModel
         -- ^ The matches that correspond to copy instructions.
       , llMatchNullInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to null instructions.
-      , llMatchReuseInstructions :: [ArrayIndex]
-        -- ^ The matches that correspond to reuse instructions.
       , llMatchADDUCs :: [Bool]
         -- ^ Whether to apply the def-dom-use constraint to some match. An index
         -- into the list corresponds to the array index of a particular match.
@@ -414,16 +390,12 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operations"
-      <*> v .: "reuses"
       <*> v .: "data"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "def-edges"
-      <*> v .: "value-use-related-copies"
-      <*> v .: "value-def-related-copies-and-reuses"
-      <*> v .: "data-cyclic-reuses"
       <*> v .: "block-params"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
@@ -434,17 +406,12 @@ instance FromJSON HighLevelFunctionParams where
 instance ToJSON HighLevelFunctionParams where
   toJSON d =
     object [ "operations"               .= (hlFunOperations d)
-           , "reuses"                   .= (hlFunReuses d)
            , "data"                     .= (hlFunData d)
            , "states"                   .= (hlFunStates d)
            , "blocks"                   .= (hlFunBlocks d)
            , "entry-block"              .= (hlFunEntryBlock d)
            , "block-dom-sets"           .= (hlFunBlockDomSets d)
            , "def-edges"                .= (hlFunDefEdges d)
-           , "value-use-related-copies" .= (hlFunValueUseRelatedCopies d)
-           , "value-def-related-copies-and-reuses"
-                                      .= (hlFunValueDefRelatedCopiesAndReuses d)
-           , "data-cyclic-reuses"       .= (hlFunDataCyclicReuses d)
            , "block-params"             .= (hlFunBlockParams d)
            , "int-constant-data"        .= (hlFunValueIntConstData d)
            , "value-origin-data"        .= (hlFunValueOriginData d)
@@ -487,7 +454,6 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "apply-def-dom-use-constraint"
       <*> v .: "is-copy-instr"
       <*> v .: "is-null-instr"
-      <*> v .: "is-reuse-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
       <*> v .: "emit-str-node-maps"
@@ -512,7 +478,6 @@ instance ToJSON HighLevelMatchParams where
            , "apply-def-dom-use-constraint" .= (hlMatchADDUC d)
            , "is-copy-instr"                .= (hlMatchIsCopyInstruction d)
            , "is-null-instr"                .= (hlMatchIsNullInstruction d)
-           , "is-reuse-instr"               .= (hlMatchIsReuseInstruction d)
            , "has-control-flow"             .= (hlMatchHasControlFlow d)
            , "data-used-by-phis"            .= (hlMatchDataUsedByPhis d)
            , "emit-str-node-maps"           .= (hlMatchEmitStrNodeMaplist d)
@@ -537,11 +502,7 @@ instance FromJSON LowLevelModel where
       <$> v .: "fun-num-operations"
       <*> v .: "fun-num-data"
       <*> v .: "fun-num-blocks"
-      <*> v .: "fun-reuses"
       <*> v .: "fun-states"
-      <*> v .: "fun-value-use-related-copies"
-      <*> v .: "fun-value-def-related-copies-and-reuses"
-      <*> v .: "fun-data-cyclic-reuses"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-def-edges"
@@ -561,7 +522,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-latencies"
       <*> v .: "match-copy-instrs"
       <*> v .: "match-null-instrs"
-      <*> v .: "match-reuse-instrs"
       <*> v .: "match-adduc-settings"
       <*> v .: "match-constraints"
   parseJSON _ = mzero
@@ -571,12 +531,7 @@ instance ToJSON LowLevelModel where
     object [ "fun-num-operations"           .= (llFunNumOperations m)
            , "fun-num-data"                 .= (llFunNumData m)
            , "fun-num-blocks"               .= (llFunNumBlocks m)
-           , "fun-reuses"                   .= (llFunReuses m)
            , "fun-states"                   .= (llFunStates m)
-           , "fun-value-use-related-copies" .= (llFunValueUseRelatedCopies m)
-           , "fun-value-def-related-copies-and-reuses"
-                                      .= (llFunValueDefRelatedCopiesAndReuses m)
-           , "fun-data-cyclic-reuses"       .= (llFunDataCyclicReuses m)
            , "fun-entry-block"              .= (llFunEntryBlock m)
            , "fun-block-dom-sets"           .= (llFunBlockDomSets m)
            , "fun-def-edges"                .= (llFunDefEdges m)

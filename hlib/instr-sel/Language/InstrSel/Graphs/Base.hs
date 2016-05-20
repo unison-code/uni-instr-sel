@@ -57,8 +57,6 @@ module Language.InstrSel.Graphs.Base
   , addNewDtFlowEdges
   , addNewDefEdge
   , addNewDefEdges
-  , addNewReuseEdge
-  , addNewReuseEdges
   , addNewStFlowEdge
   , addNewStFlowEdges
   , addNewNode
@@ -98,8 +96,6 @@ module Language.InstrSel.Graphs.Base
   , getDtFlowOutEdges
   , getDefInEdges
   , getDefOutEdges
-  , getReuseInEdges
-  , getReuseOutEdges
   , getStFlowInEdges
   , getStFlowOutEdges
   , getEdgeType
@@ -133,8 +129,6 @@ module Language.InstrSel.Graphs.Base
   , isCopyNode
   , isDataFlowEdge
   , isDatumNode
-  , isReuseEdge
-  , isReuseNode
   , isValueNode
   , isValueNodeWithConstValue
   , isValueNodeWithOrigin
@@ -156,8 +150,6 @@ module Language.InstrSel.Graphs.Base
   , isOfDefEdgeType
   , isOfBlockNodeType
   , isOfPhiNodeType
-  , isOfReuseEdgeType
-  , isOfReuseNodeType
   , isOfStateFlowEdgeType
   , isOfStateNodeType
   , isPhiNode
@@ -284,7 +276,6 @@ data NodeType
   | PhiNode
   | StateNode
   | CopyNode
-  | ReuseNode
   deriving (Show)
 
 instance PrettyShow NodeType where
@@ -297,7 +288,6 @@ instance PrettyShow NodeType where
   pShow PhiNode = "Phi node"
   pShow StateNode = "State node"
   pShow CopyNode = "Copy node"
-  pShow ReuseNode = "Reuse node"
 
 -- | Represents a distinct edge.
 newtype Edge
@@ -319,7 +309,6 @@ data EdgeType
   | DataFlowEdge
   | StateFlowEdge
   | DefEdge
-  | ReuseEdge
   deriving (Show, Eq)
 
 -- | Edge number, used for ordering edges.
@@ -412,7 +401,6 @@ instance FromJSON NodeType where
                    "phi"   -> return PhiNode
                    "stat"  -> return StateNode
                    "copy"  -> return CopyNode
-                   "reuse" -> return ReuseNode
                    _       -> mzero
   parseJSON _ = mzero
 
@@ -444,8 +432,6 @@ instance ToJSON NodeType where
     object [ "ntype" .= String "stat" ]
   toJSON (CopyNode {}) =
     object [ "ntype" .= String "copy" ]
-  toJSON (ReuseNode {}) =
-    object [ "ntype" .= String "reuse" ]
 
 instance FromJSON EdgeLabel where
   parseJSON (Object v) =
@@ -468,7 +454,6 @@ instance FromJSON EdgeType where
                 "data"  -> return DataFlowEdge
                 "stat"  -> return StateFlowEdge
                 "def"   -> return DefEdge
-                "reuse" -> return ReuseEdge
                 _       -> mzero
   parseJSON _ = mzero
 
@@ -477,7 +462,6 @@ instance ToJSON EdgeType where
   toJSON DataFlowEdge    = "data"
   toJSON StateFlowEdge   = "stat"
   toJSON DefEdge         = "def"
-  toJSON ReuseEdge       = "reuse"
 
 instance FromJSON EdgeNr where
   parseJSON v = EdgeNr <$> parseJSON v
@@ -561,7 +545,6 @@ isOperationNode n =
   || isCallNode n
   || isPhiNode n
   || isCopyNode n
-  || isReuseNode n
 
 isDatumNode :: Node -> Bool
 isDatumNode n =
@@ -619,9 +602,6 @@ isStateNode n = isOfStateNodeType $ getNodeType n
 isCopyNode :: Node -> Bool
 isCopyNode n = isOfCopyNodeType $ getNodeType n
 
-isReuseNode :: Node -> Bool
-isReuseNode n = isOfReuseNodeType $ getNodeType n
-
 isOfComputationNodeType :: NodeType -> Bool
 isOfComputationNodeType (ComputationNode _) = True
 isOfComputationNodeType _ = False
@@ -654,10 +634,6 @@ isOfCopyNodeType :: NodeType -> Bool
 isOfCopyNodeType CopyNode = True
 isOfCopyNodeType _ = False
 
-isOfReuseNodeType :: NodeType -> Bool
-isOfReuseNodeType ReuseNode = True
-isOfReuseNodeType _ = False
-
 isDataFlowEdge :: Edge -> Bool
 isDataFlowEdge = isOfDataFlowEdgeType . getEdgeType
 
@@ -669,9 +645,6 @@ isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
 
 isDefEdge :: Edge -> Bool
 isDefEdge = isOfDefEdgeType . getEdgeType
-
-isReuseEdge :: Edge -> Bool
-isReuseEdge = isOfReuseEdgeType . getEdgeType
 
 isOfDataFlowEdgeType :: EdgeType -> Bool
 isOfDataFlowEdgeType DataFlowEdge = True
@@ -688,10 +661,6 @@ isOfStateFlowEdgeType _ = False
 isOfDefEdgeType :: EdgeType -> Bool
 isOfDefEdgeType DefEdge = True
 isOfDefEdgeType _ = False
-
-isOfReuseEdgeType :: EdgeType -> Bool
-isOfReuseEdgeType ReuseEdge = True
-isOfReuseEdgeType _ = False
 
 -- | Creates an empty graph.
 mkEmpty :: Graph
@@ -1023,12 +992,6 @@ addNewDefEdge = addNewEdge DefEdge
 addNewDefEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewDefEdges = addNewEdges DefEdge
 
-addNewReuseEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewReuseEdge = addNewEdge ReuseEdge
-
-addNewReuseEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
-addNewReuseEdges = addNewEdges ReuseEdge
-
 -- | Inserts a new node along an existing edge in the graph, returning both the
 -- new graph and the new node. The existing edge will be split into two edges
 -- which will be connected to the new node. The edge numbers will be retained as
@@ -1113,10 +1076,6 @@ getStFlowInEdges g n = filter isStateFlowEdge $ getInEdges g n
 getDefInEdges :: Graph -> Node -> [Edge]
 getDefInEdges g n = filter isDefEdge $ getInEdges g n
 
--- | Gets all inbound reuse edges to a particular node.
-getReuseInEdges :: Graph -> Node -> [Edge]
-getReuseInEdges g n = filter isReuseEdge $ getInEdges g n
-
 -- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
 getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
@@ -1136,10 +1095,6 @@ getStFlowOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
 -- | Gets all outbound definition edges to a particular node.
 getDefOutEdges :: Graph -> Node -> [Edge]
 getDefOutEdges g n = filter isDefEdge $ getOutEdges g n
-
--- | Gets all outbound reuse edges to a particular node.
-getReuseOutEdges :: Graph -> Node -> [Edge]
-getReuseOutEdges g n = filter isReuseEdge $ getOutEdges g n
 
 -- | Gets the edges between two nodes.
 getEdgesBetween :: Graph -> SrcNode -> DstNode -> [Edge]
@@ -1218,7 +1173,6 @@ isNodeTypeCompatibleWith (BlockNode {}) (BlockNode {}) = True
 isNodeTypeCompatibleWith PhiNode PhiNode = True
 isNodeTypeCompatibleWith StateNode StateNode = True
 isNodeTypeCompatibleWith CopyNode CopyNode = True
-isNodeTypeCompatibleWith ReuseNode ReuseNode = True
 isNodeTypeCompatibleWith _ _ = False
 
 -- | Checks if a block node is an intermediate block node, meaning that it has

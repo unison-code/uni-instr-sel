@@ -16,7 +16,6 @@ module Language.InstrSel.Functions.Transformations
   ( branchExtend
   , copyExtend
   , combineConstants
-  , insertReuses
   )
 where
 
@@ -250,39 +249,6 @@ combineValueNodes f ns =
                    $ functionOS f
       (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
   in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
-
--- | Inserts reuse nodes between value nodes that are copied from the same
--- original value.
-insertReuses :: Function -> Function
-insertReuses f =
-  let g0 = getGraph f
-      ns = filter isValueNode $ getAllNodes g0
-      g1 = foldl insertReuses' g0 ns
-  in updateGraph g1 f
-
-insertReuses' :: Graph -> Node -> Graph
-insertReuses' g0 n =
-  let es = getDtFlowOutEdges g0 n
-  in if length es > 0
-     then let cs = filter (isCopyNode) $ map (getTargetNode g0) es
-              vs = map (getTargetNode g0 . head . getDtFlowOutEdges g0) cs
-                   -- A copy node always have exactly one outgoing data flow
-                   -- edge
-              pairs = filter (\[x, y] -> x /= y) $ replicateM 2 vs
-              g1 = foldl (\g [x, y] -> insertReuseBetweenNodes g x y) g0 pairs
-          in if length cs > 0
-             then g1
-             else g0
-     else g0
-
--- | Inserts a reuse between the two given nodes. Note that the reuse will only
--- be inserted in one direction.
-insertReuseBetweenNodes :: Graph -> Node -> Node -> Graph
-insertReuseBetweenNodes g0 n1 n2 =
-  let (g1, new_n) = addNewNode ReuseNode g0
-      (g2, _) = addNewEdge ReuseEdge (n1, new_n) g1
-      (g3, _) = addNewEdge ReuseEdge (new_n, n2) g2
-  in g3
 
 -- | Replaces a value node in the function graph with another value node, but
 -- all inbound edges to the value node to be removed will be ignored and thus

@@ -176,12 +176,6 @@ parseArgs =
                  &= help ( "Combines data nodes in the given function that "
                            ++ "represent the same constant."
                          )
-             , InsertReusesInFunctionGraph
-                 &= name "insert-reuses-in-fun"
-                 &= explicit
-                 &= help ( "Inserts reuse nodes between value nodes that are "
-                           ++ "copied from the same original value."
-                         )
              , RaiseLowLevelCPSolution
                  &= name "raise-ll-cp-solution"
                  &= explicit

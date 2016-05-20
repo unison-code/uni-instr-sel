@@ -84,7 +84,6 @@ generateTargetMachine m =
                        ++ [mkBrFallThroughInstruction]
                        ++ [mkDataDefInstruction]
                        ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
-                       ++ [mkReuseInstruction]
       all_instrs = instrs
                    ++
                    reassignInstrIDs (toInstructionID $ length instrs)

@@ -18,7 +18,6 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   , mkPhiInstruction
   , mkDataDefInstruction
   , mkTempNullCopyInstruction
-  , mkReuseInstruction
   , reassignInstrIDs
   )
 where
@@ -223,40 +222,6 @@ mkTempNullCopyInstruction bits =
   in Instruction
        { instrID = 0
        , instrPatterns = map pat $ zip [0..] bits
-       , instrProps = InstrProperties { instrCodeSize = 0
-                                      , instrLatency = 0
-                                      }
-       }
-
--- | Creates an instruction for covering reuse operations. Note that the
--- 'InstructionID's of all instructions will be (incorrectly) set to 0, meaning
--- they must be reassigned afterwards.
-mkReuseInstruction :: Instruction
-mkReuseInstruction =
-  let g = mkGraph
-            ( map
-                Node
-                [ ( 0, NodeLabel 0 ReuseNode )
-                , ( 1, NodeLabel 1 $ mkValueNode AnyType)
-                , ( 2, NodeLabel 2 $ mkValueNode AnyType)
-                ]
-            )
-            ( map
-                Edge
-                [ ( 1, 0, EdgeLabel ReuseEdge 0 0 )
-                , ( 0, 2, EdgeLabel ReuseEdge 0 0 )
-                ]
-            )
-      cs = mkSameDataLocConstraints [1, 2]
-      pat = InstrPattern { patID = 0
-                         , patOS = OpStructure g Nothing cs
-                         , patExternalData = [1, 2]
-                         , patADDUC = True
-                         , patEmitString = EmitStringTemplate []
-                         }
-  in Instruction
-       { instrID = 0
-       , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       }

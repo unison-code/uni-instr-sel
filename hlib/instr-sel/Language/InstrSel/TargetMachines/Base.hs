@@ -30,7 +30,6 @@ module Language.InstrSel.TargetMachines.Base
   , updateNodeInEmitStrTemplate
   , isInstructionCopy
   , isInstructionNull
-  , isInstructionReuse
   )
 where
 
@@ -237,14 +236,3 @@ isInstructionCopy i =
             op_nodes = filter isOperationNode $ getAllNodes g
         in length op_nodes == 1 && isCopyNode (head op_nodes)
   in all isCopyPattern pats
-
--- ^ Checks whether the instruction is a reuse instruction.
-isInstructionReuse :: Instruction -> Bool
-isInstructionReuse i =
-  let pats = instrPatterns i
-      isReusePattern p =
-        let os = patOS p
-            g = osGraph os
-            op_nodes = filter isOperationNode $ getAllNodes g
-        in length op_nodes == 1 && isReuseNode (head op_nodes)
-  in all isReusePattern pats

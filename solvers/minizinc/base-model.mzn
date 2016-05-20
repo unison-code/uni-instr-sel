@@ -36,11 +36,6 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
-array[int] of set of allOperationsInFunction: valueUseRelatedCopiesInFunction;
-array[int] of set of allOperationsInFunction:
-  valueDefRelatedCopiesAndReusesInFunction;
-array[int] of set of allOperationsInFunction: dataCyclicReusesInFunction;
-set of allOperationsInFunction: reusesInFunction;
 set of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
@@ -117,10 +112,6 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
            array1d(blockValueForNull..blockValueForNull, [0])
          );
 
-% Merges all sets in valueUseRelatedCopiesInFunction to a single set.
-set of allOperationsInFunction:
-  copiesInFunction = { n | s in valueUseRelatedCopiesInFunction, n in s };
-
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
 set of int: allDataInFunction = 0..numDataInFunction-1;
@@ -181,11 +172,9 @@ predicate fall_through(int: m, int: b) =
 %=============
 
 % Enforce that, for each operation, exactly one match must be selected such that
-% the operation which is not a copy or a reuse is covered.
+% the operation is covered.
 constraint
-  forall ( o in allOperationsInFunction
-           where not (o in copiesInFunction) /\ not (o in reusesInFunction)
-         )
+  forall (o in allOperationsInFunction)
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
@@ -202,48 +191,6 @@ constraint
                  ) = 1
             endif
        endif
-  );
-
-% Enforce that, for each collection of value-def-related copies and reuses,
-% exactly one of them is covered.
-constraint
-  forall (lst in valueDefRelatedCopiesAndReusesInFunction)
-  (
-    let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches,
-                                    o in lst
-                                    where o in operationsCoveredByMatch[m]
-                         }
-    }
-    in sum (m in mset) (bool2int(sel[m])) == 1
-  );
-
-% Enforce that, for each collection of value-use-related copies, at least one of
-% the copies is covered.
-constraint
-  forall (lst in valueUseRelatedCopiesInFunction)
-  (
-    let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches,
-                                    o in lst
-                                    where o in operationsCoveredByMatch[m]
-                         }
-    }
-    in sum (m in mset) (bool2int(sel[m])) > 0
-  );
-
-% Enforce that, for each collection of data-cyclic reuses, not all reuses are
-% covered simultaneously.
-constraint
-  forall (lst in dataCyclicReusesInFunction)
-  (
-    let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches,
-                                    o in lst
-                                    where o in operationsCoveredByMatch[m]
-                         }
-    }
-    in not forall (m in mset) (sel[m])
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that

@@ -37,7 +37,6 @@ dispatch a opts
   | a `elem` [ CopyExtendFunctionGraph
              , BranchExtendFunctionGraph
              , CombineConstantsInFunctionGraph
-             , InsertReusesInFunctionGraph
              ] =
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content

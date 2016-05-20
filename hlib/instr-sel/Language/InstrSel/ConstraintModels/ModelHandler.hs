@@ -38,17 +38,12 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
-import Language.InstrSel.Utils
-  ( pairMap
-  , removeAt
-  )
 import Language.InstrSel.Utils.Range
 
 import Data.List
   ( elemIndex
   , nub
   , sortBy
-  , permutations
   )
 import Data.Maybe
   ( fromJust
@@ -56,8 +51,6 @@ import Data.Maybe
   , isNothing
   , mapMaybe
   )
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 
 
@@ -120,79 +113,6 @@ mkHLFunctionParams function target =
                            else Nothing
                        )
                        ns
-      val_use_copies =
-        let ns = filter isCopyNode (getAllNodes graph)
-            pairs = map ( \n -> ( getSourceNode graph
-                                  $ head
-                                  $ getDtFlowInEdges graph n
-                                , [n]
-                                )
-                        )
-                        ns
-        in map ((map getNodeID) . snd)
-           $ Map.toList
-           $ Map.fromListWith (++) pairs
-      val_def_copies_and_reuses =
-        let copy_ns = filter isCopyNode (getAllNodes graph)
-            copy_pairs = map ( \n -> ( getTargetNode graph
-                                       $ head
-                                       $ getDtFlowOutEdges graph n
-                                     , [n]
-                                     )
-                             )
-                             copy_ns
-            reuse_ns = filter isReuseNode (getAllNodes graph)
-            reuse_pairs = map ( \n -> ( getTargetNode graph
-                                        $ head
-                                        $ getReuseOutEdges graph n
-                                      , [n]
-                                      )
-                              )
-                              reuse_ns
-        in filter (\l -> length l > 1)
-           $ map ((map getNodeID) . snd)
-           $ Map.toList
-           $ Map.fromListWith (++) (copy_pairs ++ reuse_pairs)
-      cyclic_reuses =
-        let computeAllCycles [] = []
-            computeAllCycles [_] = []
-            computeAllCycles ns =
-              let sub_ns = map (removeAt ns) [0..(length ns - 1)]
-              in concatMap computeAllCycles sub_ns ++ permutations ns
-            getReuseNode v1 v2 =
-              let es = getReuseOutEdges graph v1
-                  targets = map (getTargetNode graph) es
-                  reuses = filter isReuseNode targets
-              in head
-                 $ filter ( \n ->
-                              let t = getTargetNode graph
-                                      $ head
-                                      $ getReuseOutEdges graph n
-                              in t == v2
-                          )
-                 $ reuses
-            convertToReuseNodes ns =
-              pairMap getReuseNode ns ++ [getReuseNode (last ns) (head ns)]
-            nodes_to_remove =
-              filter (\n -> not (isReuseNode n || isDatumNode n))
-                     (getAllNodes graph)
-            reuse_graph_with_data = foldr delNode graph nodes_to_remove
-            data_graph = foldr delNodeKeepEdges
-                               reuse_graph_with_data
-                               ( filter (not . isValueNode)
-                                        (getAllNodes reuse_graph_with_data)
-                               )
-            components = filter (\l -> length l > 1)
-                         $ map getAllNodes
-                         $ componentsOf data_graph
-            value_cycles = concatMap computeAllCycles
-                           $ components
-            reuse_cycles = map convertToReuseNodes value_cycles
-            unique_reuse_cycles = map Set.toList
-                                  $ nub
-                                  $ map Set.fromList
-                                  $ reuse_cycles
-        in map (map getNodeID) unique_reuse_cycles
       value_origin_data =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
@@ -218,16 +138,12 @@ mkHLFunctionParams function target =
                      (functionInputs function)
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
-       , hlFunReuses = nodeIDsByType isReuseNode
        , hlFunData = nodeIDsByType isDatumNode
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunDefEdges = def_edges
-       , hlFunValueUseRelatedCopies = val_use_copies
-       , hlFunValueDefRelatedCopiesAndReuses = val_def_copies_and_reuses
-       , hlFunDataCyclicReuses = cyclic_reuses
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
@@ -303,7 +219,6 @@ processMatch instr pattern match mid =
        , hlMatchADDUC = patADDUC pattern
        , hlMatchIsCopyInstruction = isInstructionCopy $ instr
        , hlMatchIsNullInstruction = isInstructionNull instr
-       , hlMatchIsReuseInstruction = isInstructionReuse instr
        , hlMatchHasControlFlow = length c_ns > 0
        , hlMatchCodeSize = instrCodeSize i_props
        , hlMatchLatency = instrLatency i_props
@@ -372,15 +287,7 @@ lowerHighLevelModel model ai_maps =
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
-       , llFunReuses = map getAIForOperationNodeID (hlFunReuses f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
-       , llFunValueUseRelatedCopies = map (map getAIForOperationNodeID)
-                                          (hlFunValueUseRelatedCopies f_params)
-       , llFunValueDefRelatedCopiesAndReuses =
-         map (map getAIForOperationNodeID)
-             (hlFunValueDefRelatedCopiesAndReuses f_params)
-       , llFunDataCyclicReuses = map (map getAIForOperationNodeID)
-                                     (hlFunDataCyclicReuses f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
@@ -429,9 +336,6 @@ lowerHighLevelModel model ai_maps =
        , llMatchNullInstructions =
            map (getAIForMatchID . hlMatchID)
                (filter hlMatchIsNullInstruction m_params)
-       , llMatchReuseInstructions =
-           map (getAIForMatchID . hlMatchID)
-               (filter hlMatchIsReuseInstruction m_params)
        , llMatchConstraints =
            map (map (replaceIDWithArrayIndex ai_maps))
                (map hlMatchConstraints m_params)
