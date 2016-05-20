@@ -20,6 +20,9 @@
 
 module Language.InstrSel.PrettyShow.Base where
 
+import Data.List
+  ( intercalate )
+
 
 
 ----------------
@@ -30,6 +33,8 @@ module Language.InstrSel.PrettyShow.Base where
 -- guaranteed to be parseable without ambiguity.
 class PrettyShow a where
   pShow :: a -> String
+  pShowList :: [a] -> String
+  pShowList as = "[" ++ intercalate "," (map pShow as) ++ "]"
 
 
 
@@ -37,17 +42,21 @@ class PrettyShow a where
 -- Instances
 -------------
 
+instance (PrettyShow a) => PrettyShow [a] where
+  pShow = pShowList
+
+instance (PrettyShow a, PrettyShow b) => PrettyShow ((,) a b) where
+  pShow (a, b) = "(" ++ pShow a ++ ", " ++ pShow b ++ ")"
+
 instance PrettyShow Integer where
   pShow = show
 
 instance PrettyShow Float where
   pShow = show
 
-instance PrettyShow String where
+instance PrettyShow Char where
   pShow = show
-
-instance (PrettyShow a, PrettyShow b) => PrettyShow ((,) a b) where
-  pShow (a, b) = "(" ++ pShow a ++ ", " ++ pShow b ++ ")"
+  pShowList = show
 
 instance (PrettyShow a) => PrettyShow (Maybe a) where
   pShow (Just a) = pShow a
