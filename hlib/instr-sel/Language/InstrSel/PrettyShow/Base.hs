@@ -16,8 +16,6 @@
 --
 --------------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances #-}
-
 module Language.InstrSel.PrettyShow.Base where
 
 import Data.List
