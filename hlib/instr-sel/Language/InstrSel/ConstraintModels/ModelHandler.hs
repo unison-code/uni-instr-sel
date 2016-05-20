@@ -39,14 +39,16 @@ import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
 import Language.InstrSel.Utils
-  ( pairMap )
+  ( pairMap
+  , removeAt
+  )
 import Language.InstrSel.Utils.Range
 
 import Data.List
   ( elemIndex
   , nub
   , sortBy
-  , subsequences
+  , permutations
   )
 import Data.Maybe
   ( fromJust
@@ -152,13 +154,11 @@ mkHLFunctionParams function target =
            $ Map.toList
            $ Map.fromListWith (++) (copy_pairs ++ reuse_pairs)
       cyclic_reuses =
-        let getAllCycles ns =
-              let seqs = filter (\l -> length l > 1) $ subsequences ns
-                  unique_seqs = map Set.toList
-                                $ nub
-                                $ map Set.fromList
-                                $ seqs
-              in unique_seqs
+        let computeAllCycles [] = []
+            computeAllCycles [_] = []
+            computeAllCycles ns =
+              let sub_ns = map (removeAt ns) [0..(length ns - 1)]
+              in concatMap computeAllCycles sub_ns ++ permutations ns
             getReuseNode v1 v2 =
               let es = getReuseOutEdges graph v1
                   targets = map (getTargetNode graph) es
@@ -185,11 +185,14 @@ mkHLFunctionParams function target =
             components = filter (\l -> length l > 1)
                          $ map getAllNodes
                          $ componentsOf data_graph
-
-            cycles = map convertToReuseNodes
-                     $ concatMap getAllCycles
-                     $ components
-        in map (map getNodeID) cycles
+            value_cycles = concatMap computeAllCycles
+                           $ components
+            reuse_cycles = map convertToReuseNodes value_cycles
+            unique_reuse_cycles = map Set.toList
+                                  $ nub
+                                  $ map Set.fromList
+                                  $ reuse_cycles
+        in map (map getNodeID) unique_reuse_cycles
       value_origin_data =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
         in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))

@@ -27,6 +27,7 @@ module Language.InstrSel.Utils.Base
   , capitalize
   , isNumeric
   , pairMap
+  , removeAt
   )
 where
 
@@ -150,3 +151,10 @@ pairMap :: (a -> a -> b) -> [a] -> [b]
 pairMap _ [] = []
 pairMap _ [_] = error "pairMap: cannot be invoked on list with single element"
 pairMap f as = zipWith f (init as) (tail as)
+
+-- | Removes an element at a given index from a list.
+removeAt :: [a] -> Int -> [a]
+removeAt xs i
+  | i < 0 = error "removeAt: negative index"
+  | i >= length xs = error "removeAt: index out of bound"
+  | otherwise = take i xs ++ drop (i + 1) xs
