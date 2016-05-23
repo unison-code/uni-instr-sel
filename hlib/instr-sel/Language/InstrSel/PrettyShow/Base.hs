@@ -34,7 +34,7 @@ import qualified Data.Set as Set
 class PrettyShow a where
   pShow :: a -> String
   pShowList :: [a] -> String
-  pShowList as = "[" ++ intercalate "," (map pShow as) ++ "]"
+  pShowList as = "[" ++ intercalate ", " (map pShow as) ++ "]"
 
 
 
