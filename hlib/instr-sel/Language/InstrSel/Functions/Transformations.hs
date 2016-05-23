@@ -310,7 +310,8 @@ insertAlternativeEdges vs g0 =
                     -- as new data-flow edges will continuously be added to g1
             processOp o g2 =
               let alts = filter (/= i) vs
-                  orig_e = head $ getEdgesBetween g2 i o
+                  orig_e = head $ getEdgesBetween g0 i o
+                           -- Here it is also important to get the edge from g0
                   insertEdge v g3 =
                     let (g4, new_e) = addNewDtFlowEdge (v, o) g3
                         label = getEdgeLabel new_e
@@ -321,6 +322,7 @@ insertAlternativeEdges vs g0 =
               in foldr insertEdge g2 alts
         in foldr processOp g1 ops
   in foldr processInput g0 vs
+  -- TODO: insert alterative definitions edges for phi nodes
 
 -- | Applies a transformation on the graph in a given function.
 getGraph :: Function -> Graph
