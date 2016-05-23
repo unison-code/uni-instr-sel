@@ -37,6 +37,10 @@ build:
 uni-is:
 	cd .. && make uni-is
 
+.PHONY: hlib
+hlib:
+	cd .. && make hlib
+
 %.ll: %.c
 	$(CLANG) -emit-llvm -S $< -o $@
 
