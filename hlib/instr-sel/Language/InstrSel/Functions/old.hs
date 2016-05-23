@@ -16,7 +16,7 @@ module Language.InstrSel.Functions.Transformations
   ( branchExtend
   , copyExtend
   , combineConstants
-  , alternativeExtend
+  , insertReuses
   )
 where
 
@@ -34,10 +34,11 @@ import Language.InstrSel.Utils.Range
 import Data.Maybe
   ( fromJust
   , isJust
-  , mapMaybe
   )
 import Data.List
   ( partition )
+import Control.Monad
+  ( replicateM )
 
 
 
@@ -250,6 +251,39 @@ combineValueNodes f ns =
       (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
   in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
 
+-- | Inserts reuse nodes between value nodes that are copied from the same
+-- original value.
+insertReuses :: Function -> Function
+insertReuses f =
+  let g0 = getGraph f
+      ns = filter isValueNode $ getAllNodes g0
+      g1 = foldl insertReuses' g0 ns
+  in updateGraph g1 f
+
+insertReuses' :: Graph -> Node -> Graph
+insertReuses' g0 n =
+  let es = getDtFlowOutEdges g0 n
+  in if length es > 0
+     then let cs = filter (isCopyNode) $ map (getTargetNode g0) es
+              vs = map (getTargetNode g0 . head . getDtFlowOutEdges g0) cs
+                   -- A copy node always have exactly one outgoing data flow
+                   -- edge
+              pairs = filter (\[x, y] -> x /= y) $ replicateM 2 vs
+              g1 = foldl (\g [x, y] -> insertReuseBetweenNodes g x y) g0 pairs
+          in if length cs > 0
+             then g1
+             else g0
+     else g0
+
+-- | Inserts a reuse between the two given nodes. Note that the reuse will only
+-- be inserted in one direction.
+insertReuseBetweenNodes :: Graph -> Node -> Node -> Graph
+insertReuseBetweenNodes g0 n1 n2 =
+  let (g1, new_n) = addNewNode ReuseNode g0
+      (g2, _) = addNewEdge ReuseEdge (n1, new_n) g1
+      (g3, _) = addNewEdge ReuseEdge (new_n, n2) g2
+  in g3
+
 -- | Replaces a value node in the function graph with another value node, but
 -- all inbound edges to the value node to be removed will be ignored and thus
 -- disappear.
@@ -274,53 +308,6 @@ replaceValueNode new_n old_n f =
       new_cs = map (apply recon) (osConstraints old_os)
       new_os = old_os { osGraph = new_g, osConstraints = new_cs }
   in f { functionOS = new_os }
-
--- | For each value node that is copied multiple times, an additional data-flow
--- edge will be inserted for each operation that uses one of the copied values.
--- If the operation is a phi node, alternative definition edges will also be
--- inserted.
-alternativeExtend :: Function -> Function
-alternativeExtend f = updateGraph (alternativeExtendGraph $ getGraph f) f
-
-alternativeExtendGraph :: Graph -> Graph
-alternativeExtendGraph g =
-  let v_ns = filter isValueNode $ getAllNodes g
-      copy_related_vs =
-        mapMaybe
-          ( \n ->
-              let es = getDtFlowOutEdges g n
-                  copies = filter isCopyNode $ map (getTargetNode g) es
-                  -- A copy node always have exactly one outgoing data flow edge
-              in if length copies > 1
-                 then Just $
-                      map (getTargetNode g . head . getDtFlowOutEdges g) copies
-                 else Nothing
-          )
-          v_ns
-  in foldr insertAlternativeEdges g copy_related_vs
-
-insertAlternativeEdges :: [Node] -> Graph -> Graph
-insertAlternativeEdges vs g0 =
-  -- A this point, every copy-related value node has exactly one outgoing data
-  -- flow edge as it is used by exactly one operation
-  let processInput i g1 =
-        let ops = map (getTargetNode g0)
-                  $ getDtFlowOutEdges g0 i
-                    -- It's very important to get the edges from g0 and not g1,
-                    -- as new data-flow edges will continuously be added to g1
-            processOp o g2 =
-              let alts = filter (/= i) vs
-                  orig_e = head $ getEdgesBetween g2 i o
-                  insertEdge v g3 =
-                    let (g4, new_e) = addNewDtFlowEdge (v, o) g3
-                        label = getEdgeLabel new_e
-                        orig_e_label = getEdgeLabel orig_e
-                        new_label = label { inEdgeNr = inEdgeNr orig_e_label }
-                        g5 = updateEdgeLabel new_label new_e g4
-                    in g5
-              in foldr insertEdge g2 alts
-        in foldr processOp g1 ops
-  in foldr processInput g0 vs
 
 -- | Applies a transformation on the graph in a given function.
 getGraph :: Function -> Graph

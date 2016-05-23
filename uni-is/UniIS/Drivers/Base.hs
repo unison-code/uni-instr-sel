@@ -71,7 +71,7 @@ data TransformAction
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph
   | CombineConstantsInFunctionGraph
-  | InsertReusesInFunctionGraph
+  | AlternativeExtendFunctionGraph
   | RaiseLowLevelCPSolution
   | LowerHighLevelCPModel
   deriving (Eq, Typeable, Data)

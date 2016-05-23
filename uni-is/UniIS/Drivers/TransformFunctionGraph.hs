@@ -45,4 +45,8 @@ run CombineConstantsInFunctionGraph f =
   do let new_f = combineConstants f
      return [toOutput $ toJson new_f]
 
+run AlternativeExtendFunctionGraph f =
+  do let new_f = alternativeExtend f
+     return [toOutput $ toJson new_f]
+
 run _ _ = reportErrorAndExit "TransformFunctionGraph: unsupported action"

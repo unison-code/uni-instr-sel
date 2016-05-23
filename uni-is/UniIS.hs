@@ -176,6 +176,13 @@ parseArgs =
                  &= help ( "Combines data nodes in the given function that "
                            ++ "represent the same constant."
                          )
+             , AlternativeExtendFunctionGraph
+                 &= name "alternative-extend-fun"
+                 &= explicit
+                 &= help ( "Inserts alternative edges for operations that "
+                           ++ "could take its input values from multiple "
+                           ++ "copy-related value nodes."
+                         )
              , RaiseLowLevelCPSolution
                  &= name "raise-ll-cp-solution"
                  &= explicit
