@@ -329,10 +329,18 @@ data Mapping n
       }
   deriving (Show, Eq, Ord)
 
+instance (PrettyShow a) => PrettyShow (Mapping a) where
+  -- | The mapping is shown as a tuple, where the 'fNode is the first element
+  -- and the 'pNode' is the second element.
+  pShow m = pShow (fNode m, pNode m)
+
 -- | Represents a match between two graphs.
 newtype Match n
   = Match (S.Set (Mapping n))
   deriving (Show, Eq)
+
+instance (PrettyShow a) => PrettyShow (Match a) where
+  pShow (Match s) = pShow s
 
 -- | Represents a dominator set.
 data DomSet t

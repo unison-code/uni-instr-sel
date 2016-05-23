@@ -21,6 +21,8 @@ module Language.InstrSel.PrettyShow.Base where
 import Data.List
   ( intercalate )
 
+import qualified Data.Set as Set
+
 
 
 ----------------
@@ -59,3 +61,6 @@ instance PrettyShow Char where
 instance (PrettyShow a) => PrettyShow (Maybe a) where
   pShow (Just a) = pShow a
   pShow Nothing = "?"
+
+instance (PrettyShow a) => PrettyShow (Set.Set a) where
+  pShow = pShow . Set.toList
