@@ -156,7 +156,7 @@ mkDataFlowEdgeAttr :: GV.Attributes
 mkDataFlowEdgeAttr = [GV.style GV.solid]
 
 mkStateFlowEdgeAttr :: GV.Attributes
-mkStateFlowEdgeAttr = [GV.style GV.solid]
+mkStateFlowEdgeAttr = [GV.style GV.dashed]
 
 mkDefEdgeAttr :: GV.Attributes
 mkDefEdgeAttr = [GV.style GV.dotted]
