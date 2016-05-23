@@ -145,43 +145,12 @@ checkSemantics
 checkSemantics fg pg st c =
   let fn = fNode c
       pn = pNode c
-      all_f_nodes_in_st = map fNode st
       mapped_preds_to_pn =
         filter (`elem` (map pNode st)) (getPredecessors pg pn)
-      mapped_preds_to_fn = findFNsInMapping st mapped_preds_to_pn
       mapped_succs_to_pn =
         filter (`elem` (map pNode st)) (getSuccessors pg pn)
-      mapped_succs_to_fn = findFNsInMapping st mapped_succs_to_pn
   in -- Check that the nodes are of matching type
      doNodesMatch fg pg (fNode c) (pNode c)
-     &&
-     -- Check that there are no existing matches for the in-edges from the
-     -- function graph to be included in the mapping state
-     all ( \pred_fn ->
-           let already_matched_out_edges =
-                 filter (\e -> getTargetNode fg e `elem` all_f_nodes_in_st)
-                        (getOutEdges fg pred_fn)
-           in not $ any ( \e ->
-                          any (areOutEdgesEquivalent fg e)
-                              already_matched_out_edges
-                        )
-                        (getEdgesBetween fg pred_fn fn)
-         )
-         mapped_preds_to_fn
-     &&
-     -- Check that there are no existing matches for the out-edges from the
-     -- function graph to be included in the mapping state
-     all ( \succ_fn ->
-           let already_matched_in_edges =
-                 filter (\e -> getSourceNode fg e `elem` all_f_nodes_in_st)
-                        (getInEdges fg succ_fn)
-           in not $ any ( \e ->
-                          any (areInEdgesEquivalent fg e)
-                              already_matched_in_edges
-                        )
-                        (getEdgesBetween fg fn succ_fn)
-         )
-         mapped_succs_to_fn
      &&
      -- Check that the new in-edge mappings are of matching type
      all ( \pred_pn ->
