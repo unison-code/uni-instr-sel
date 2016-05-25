@@ -1288,21 +1288,26 @@ doesNumSFOutEdgesMatter _ n
   | isCallNode n = True
   | otherwise = False
 
--- | Checks if two lists of edges contain exactly the same edge numbers which
--- are provided by a given function. If the lists do not have the same number of
--- edges, an error is produced.
-doEdgeNrsMatch :: (Edge -> EdgeNr) -> [Edge] -> [Edge] -> Bool
+-- | Checks if every edge in a list of edges from the pattern graph has at least
+-- one edge in a list of edges from the function graph with matching edge number
+-- (which is retrieved from a predicate function). It is assumed that each edge
+-- number in the list from the pattern graph appears at most once.
+doEdgeNrsMatch
+  :: (Edge -> EdgeNr)
+  -> [Edge]
+     -- ^ In-edges from the function graph.
+  -> [Edge]
+     -- ^ In-edges from the pattern graph.
+  -> Bool
 doEdgeNrsMatch f es1 es2 =
-  if length es1 == length es2
-  then all (\(e1, e2) -> (f e1) == (f e2))
-           (zip (sortByEdgeNr f es1) (sortByEdgeNr f es2))
-  else error "Edge lists not of equal length"
+  all (\e -> length (filter (\e' -> f e == f e') es1) > 0) es2
 
--- | Checks if a list of edges matches another list of edges. It is assumed that
--- the source and target nodes are the same for every edge in each list. It is
--- also assumed that, for each edge type, a in-edge number appears at most once
--- in the list (which should be the case if we are considering matches of
--- patterns on a function graph).
+-- | Checks if a list of edges from the pattern graph matches a list of edges
+-- from the function graph. It is assumed that the source and target nodes are
+-- the same for every edge in each list. The lists match if all edges from the
+-- pattern graph have a corresponding edge in the list from the function graph
+-- (hence it is allowed that the latter list contain edges that have no
+-- corresponding edge in the former list).
 doEdgeListsMatch
   :: Graph
      -- ^ The function graph.
@@ -1315,21 +1320,11 @@ doEdgeListsMatch
   -> Bool
 doEdgeListsMatch _ _ [] [] = True
 doEdgeListsMatch fg pg fes pes =
-  let checkEdgeLengths f = (length $ filter f fes) == (length $ filter f pes)
-  in checkEdgeLengths isControlFlowEdge
-     &&
-     checkEdgeLengths isDataFlowEdge
-     &&
-     checkEdgeLengths isStateFlowEdge
-     &&
-     doInEdgeListsMatch fg pg fes pes && doOutEdgeListsMatch fg pg fes pes
+  doInEdgeListsMatch fg pg fes pes && doOutEdgeListsMatch fg pg fes pes
 
--- | Checks if a list of in-edges matches another list of in-edges. It is
--- assumed that the source and target nodes are the same for every edge in each
--- list, and that the lists are non-empty and has the same number of edges per
--- edge type. It is also assumed that, for each edge type, a in-edge number
--- appears at most once in the list (which should be the case if we are
--- considering matches of patterns on a function graph).
+-- | Checks if a list of in-edges from the pattern graph matches list of
+-- in-edges from the function graph. It is assumed that the source and target
+-- nodes are the same for every edge in each list.
 doInEdgeListsMatch
   :: Graph
      -- ^ The function graph.
