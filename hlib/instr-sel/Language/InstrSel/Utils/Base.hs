@@ -26,7 +26,7 @@ module Language.InstrSel.Utils.Base
   , toUpper
   , capitalize
   , isNumeric
-  , pairMap
+  , mapPair
   , removeAt
   )
 where
@@ -146,11 +146,11 @@ maybeRead = readMay
 -- | Applies a function that takes two arguments on each pair of elements in a
 -- list. For example:
 --
--- > pairMap (+) [1, 2, 3, 4] == [3, 5, 7]
-pairMap :: (a -> a -> b) -> [a] -> [b]
-pairMap _ [] = []
-pairMap _ [_] = error "pairMap: cannot be invoked on list with single element"
-pairMap f as = zipWith f (init as) (tail as)
+-- > mapPair (+) [1, 2, 3, 4] == [3, 5, 7]
+mapPair :: (a -> a -> b) -> [a] -> [b]
+mapPair _ [] = []
+mapPair _ [_] = error "mapPair: cannot be invoked on list with single element"
+mapPair f as = zipWith f (init as) (tail as)
 
 -- | Removes an element at a given index from a list.
 removeAt :: [a] -> Int -> [a]
