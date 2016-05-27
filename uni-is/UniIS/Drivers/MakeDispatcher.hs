@@ -19,7 +19,8 @@ where
 import UniIS.Drivers.DispatcherTools
 import qualified UniIS.Drivers.MakeArrayIndexMaplists as MakeArrayIndexMaplists
 import qualified UniIS.Drivers.MakeAssemblyCode as MakeAssemblyCode
-import qualified UniIS.Drivers.MakeCPModel as MakeCPModel
+import qualified UniIS.Drivers.MakeCPModelNoOp as MakeCPModelNoOp
+import qualified UniIS.Drivers.MakeCPModelWOp as MakeCPModelWOp
 import qualified UniIS.Drivers.MakeFunctionFromLLVM as MakeFunctionFromLLVM
 import qualified UniIS.Drivers.MakePatternMatchset as MakePatternMatchset
 import qualified UniIS.Drivers.MakeDumpFromArrayIndexMaplists
@@ -48,17 +49,23 @@ dispatch a opts
          MakePatternMatchset.run a function target
   | a `elem` [MakeArrayIndexMaplists] =
       do function <- loadFunctionFromJson opts
-         matchset <- loadPatternMatchsetFromJson opts
-         MakeArrayIndexMaplists.run a function matchset
+         model_content <- loadModelFileContent opts
+         model <- loadFromJson model_content
+         MakeArrayIndexMaplists.run a function model
   | a `elem` [MakeDumpFromArrayIndexMaplists] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          ai_maps <- loadArrayIndexMaplistsFromJson opts
          MakeDumpFromArrayIndexMaplists.run a function matchset ai_maps
-  | a `elem` [MakeHighLevelCPModel] =
+  | a `elem` [MakeHighLevelCPModelNoOp] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
-         MakeCPModel.run a function matchset
+         MakeCPModelNoOp.run a function matchset
+  | a `elem` [MakeHighLevelCPModelWOp] =
+      do model_content <- loadModelFileContent opts
+         model <- loadFromJson model_content
+         matchset <- loadPatternMatchsetFromJson opts
+         MakeCPModelWOp.run a model matchset
   | a `elem` [MakeAssemblyCode] =
       do model_content <- loadModelFileContent opts
          model <- loadFromJson model_content

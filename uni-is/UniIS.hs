@@ -141,11 +141,20 @@ parseArgs =
                  &= help ( "Dumps information for each array index in the "
                            ++ "given array index maplists."
                          )
-             , MakeHighLevelCPModel
-                 &= name "construct-hl-cp-model"
+             , MakeHighLevelCPModelNoOp
+                 &= name "construct-hl-cp-model-no-op"
                  &= explicit
-                 &= help ( "Constructs a high-level CP model instance from the "
+                 &= help ( "Constructs a high-level CP model instance without "
+                           ++ "operands from the "
                            ++ "given function graph and pattern matchset ."
+                         )
+             , MakeHighLevelCPModelWOp
+                 &= name "construct-hl-cp-model-w-op"
+                 &= explicit
+                 &= help ( "Constructs a high-level CP model instance with "
+                           ++ "operands from the "
+                           ++ " high-level CP model without operands and "
+                           ++ "pattern matchset ."
                          )
              , MakeAssemblyCode
                  &= name "generate-asm"

@@ -90,7 +90,7 @@ data EmissionState
 -- high-level CP model and solution.
 generateCode
   :: TargetMachine
-  -> HighLevelModel
+  -> HighLevelModelWOp
   -> HighLevelSolution
   -> [AssemblyCode]
 generateCode target model sol@(HighLevelSolution {}) =
@@ -98,7 +98,7 @@ generateCode target model sol@(HighLevelSolution {}) =
   $ emittedCode
   $ foldl ( \st0 b ->
               let matches = getMatchesPlacedInBlock sol b
-                  sorted_matches = sortMatchesByFlow model matches
+                  sorted_matches = sortMatchesByFlow sol model matches
                   block_name = fromJust $ findNameOfBlockNode model b
                   code = AsmBlock $ pShow block_name
                   st1 = st0 { emittedCode = (code:emittedCode st0) }
@@ -121,23 +121,29 @@ generateCode _ _ NoHighLevelSolution =
   error "generateCode: cannot generate code from no solution"
 
 -- | Returns an initial emission state.
-mkInitState :: HighLevelSolution -> HighLevelModel -> EmissionState
+mkInitState :: HighLevelSolution -> HighLevelModelWOp -> EmissionState
 mkInitState sol model =
   let sel_matches = hlSolSelMatches sol
-      null_matches = filter hlMatchIsNullInstruction
-                     $ map (getHLMatchParams (hlMatchParams model))
+      null_matches = filter hlWOpMatchIsNullInstruction
+                     $ map (getHLMatchParams (hlWOpMatchParams model))
                      $ sel_matches
-      aliases = computeAliases null_matches
+      aliases = computeAliases sol null_matches
   in EmissionState { emittedCode = []
                    , varNamesInUse = getVarNamesInUse model
                    , tmpToVarNameMaps = []
                    , valueNodeAliases = aliases
                    }
 
-computeAliases :: [HighLevelMatchParams] -> [(NodeID, NodeID)]
-computeAliases null_matches =
-  let aliases = map ( \m ->
-                        (head $ hlMatchDataDefined m, head $ hlMatchDataUsed m)
+computeAliases
+  :: HighLevelSolution
+  -> [HighLevelMatchParamsWOp]
+  -> [(NodeID, NodeID)]
+computeAliases sol null_matches =
+  let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
+      aliases = map ( \m ->
+                        ( getNodeID $ head $ hlWOpMatchDataDefined m
+                        , getNodeID $ head $ hlWOpMatchDataUsed m
+                        )
                         -- We assume that null instructions uses exactly one
                         -- datum and defines exactly one datum
                     )
@@ -164,15 +170,15 @@ getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
 
 -- | Gets a list of variable names that are already in use in the
--- 'HighLevelModel'.
-getVarNamesInUse :: HighLevelModel -> [String]
-getVarNamesInUse m = map snd $ hlFunValueOriginData $ hlFunctionParams m
+-- 'HighLevelModelWOp'.
+getVarNamesInUse :: HighLevelModelWOp -> [String]
+getVarNamesInUse m = map snd $ hlFunValueOriginData $ hlWOpFunctionParams m
 
 -- | Gets the block name for a given block node. If no such block can be found,
 -- 'Nothing' is returned.
-findNameOfBlockNode :: HighLevelModel -> NodeID -> Maybe BlockName
+findNameOfBlockNode :: HighLevelModelWOp -> NodeID -> Maybe BlockName
 findNameOfBlockNode model n =
-  let bb_params = hlFunBlockParams $ hlFunctionParams model
+  let bb_params = hlFunBlockParams $ hlWOpFunctionParams model
       found_bbs = filter (\m -> hlBlockNode m == n) bb_params
   in if length found_bbs > 0
      then Just $ hlBlockName $ head found_bbs
@@ -181,9 +187,13 @@ findNameOfBlockNode model n =
 -- | Sorts a list of matches according to their flow dependencies. This is done
 -- by first constructing the corresponding 'FlowDAG' for the matches, and then
 -- performing a topological sort on that DAG.
-sortMatchesByFlow :: HighLevelModel -> [MatchID] -> [MatchID]
-sortMatchesByFlow model ms =
-  let dag = mkFlowDAG model ms
+sortMatchesByFlow
+  :: HighLevelSolution
+  -> HighLevelModelWOp
+  -> [MatchID]
+  -> [MatchID]
+sortMatchesByFlow sol model ms =
+  let dag = mkFlowDAG sol model ms
   in I.topsort' (getIntDag dag)
 
 -- | Takes a CP solution data set and a list of match IDs, and produces a
@@ -195,11 +205,11 @@ sortMatchesByFlow model ms =
 -- the phi node which makes use of the data appears at the top of the
 -- DAG. Cyclic control dependencies will appear if there is more than one match
 -- with control nodes in the list (which should not happen).
-mkFlowDAG :: HighLevelModel -> [MatchID] -> FlowDAG
-mkFlowDAG model ms =
+mkFlowDAG :: HighLevelSolution -> HighLevelModelWOp -> [MatchID] -> FlowDAG
+mkFlowDAG sol model ms =
   let g0 = I.mkGraph (zip [0..] ms) []
-      g1 = foldr (addUseEdgesToDAG model) g0 ms
-      g2 = foldr (addControlEdgesToDAG model) g1 ms
+      g1 = foldr (addUseEdgesToDAG sol model) g0 ms
+      g2 = foldr (addControlEdgesToDAG sol model) g1 ms
   in FlowDAG g2
 
 -- | Adds an edge for each use of data or state of the given match ID. If the
@@ -207,18 +217,29 @@ mkFlowDAG model ms =
 -- there always exists exactly one node in the graph representing the match ID
 -- given as argument to the function. Note that this may lead to cycles, which
 -- will have to be broken as a second step.
-addUseEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
-addUseEdgesToDAG model mid g0 =
-  let ds = hlMatchParams model
+addUseEdgesToDAG
+  :: HighLevelSolution
+  -> HighLevelModelWOp
+  -> MatchID
+  -> IFlowDAG
+  -> IFlowDAG
+addUseEdgesToDAG sol model mid g0 =
+  let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
+      ds = hlWOpMatchParams model
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      uses_of_m = filter (`notElem` hlMatchDataUsedByPhis match)
-                         (hlMatchDataUsed match)
+      op_uses_of_m = filter (`notElem` hlWOpMatchDataUsedByPhis match)
+                            (hlWOpMatchDataUsed match)
+      d_uses_of_m = map getNodeID op_uses_of_m
       defs_of_m =
-        map (\(n, i) -> (n, hlMatchDataDefined $ getHLMatchParams ds i))
+        map ( \(n, i) -> ( n
+                         , map getNodeID
+                           $ hlWOpMatchDataDefined $ getHLMatchParams ds i
+                         )
+            )
             ns
-      g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 uses_of_m
+      g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 d_uses_of_m
   in g1
 
 addUseEdgesToDAG'
@@ -246,20 +267,28 @@ getNodeOfMatch g mid =
 -- nodes, then an edge will be added to the node of that match ID from every
 -- other node. This is to ensure that the instruction of that pattern appears
 -- last in the block.
-addControlEdgesToDAG :: HighLevelModel -> MatchID -> IFlowDAG -> IFlowDAG
-addControlEdgesToDAG model mid g =
-  let match = getHLMatchParams (hlMatchParams model) mid
-  in if hlMatchHasControlFlow match
+addControlEdgesToDAG
+  :: HighLevelSolution
+  -> HighLevelModelWOp
+  -> MatchID
+  -> IFlowDAG
+  -> IFlowDAG
+addControlEdgesToDAG _ model mid g =
+  let match = getHLMatchParams (hlWOpMatchParams model) mid
+  in if hlWOpMatchHasControlFlow match
      then let ns = I.labNodes g
               pi_n = fst $ head $ filter (\(_, i) -> i == mid) ns
               other_ns = map fst $ filter (\(_, i) -> i /= mid) ns
           in foldr (\n' g' -> I.insEdge (n', pi_n, ()) g') g other_ns
      else g
 
--- | Retrieves the 'HighLevelMatchParams' entity with matching match ID. It is
--- assumed that exactly one such entity always exists in the given list.
-getHLMatchParams :: [HighLevelMatchParams] -> MatchID -> HighLevelMatchParams
-getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
+-- | Retrieves the 'HighLevelMatchParamsWOp' entity with matching match ID. It
+-- is assumed that exactly one such entity always exists in the given list.
+getHLMatchParams
+  :: [HighLevelMatchParamsWOp]
+  -> MatchID
+  -> HighLevelMatchParamsWOp
+getHLMatchParams ps mid = head $ filter (\p -> hlWOpMatchID p == mid) ps
 
 -- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
 -- that such an entity always exists in the given list.
@@ -273,7 +302,7 @@ getInstrPattern is iid pid =
 -- by appending strings to the instruction currently at the head of the list of
 -- already-emitted code.
 emitInstructionsOfMatch
-  :: HighLevelModel
+  :: HighLevelModelWOp
   -> HighLevelSolution
   -> TargetMachine
   -> EmissionState
@@ -283,14 +312,21 @@ emitInstructionsOfMatch model sol tm st0 mid =
   let replaceAliases Nothing = Nothing
       replaceAliases (Just n) = let alias = lookup n $ valueNodeAliases st0
                                 in if isJust alias then alias else (Just n)
-      match = getHLMatchParams (hlMatchParams model) mid
+      fetchNodeID (Just (Right nid)) = Just nid
+      fetchNodeID (Just (Left oid)) =
+        let nid = lookup oid (hlSolNodesOfOperands sol)
+        in if isJust nid
+           then nid
+           else error $ "fetchNodeID: no mapping for operand ID " ++ pShow oid
+      fetchNodeID Nothing = Nothing
+      match = getHLMatchParams (hlWOpMatchParams model) mid
       pat_data = getInstrPattern (tmInstructions tm)
-                                 (hlMatchInstructionID match)
-                                 (hlMatchPatternID match)
+                                 (hlWOpMatchInstructionID match)
+                                 (hlWOpMatchPatternID match)
       emit_parts = updateNodeIDsInEmitStrParts
                      (emitStrParts $ patEmitString pat_data)
-                     ( map (map replaceAliases)
-                           (hlMatchEmitStrNodeMaplist match)
+                     ( map (map (replaceAliases . fetchNodeID))
+                           (hlWOpMatchEmitStrNodeMaplist match)
                      )
   in foldl ( \st1 parts ->
                foldl (emitInstructionPart model sol tm)
@@ -332,7 +368,7 @@ updateNodeIDsInEmitStrParts emit_strs maps =
 
 -- | Emits part of an assembly instruction.
 emitInstructionPart
-  :: HighLevelModel
+  :: HighLevelModelWOp
   -> HighLevelSolution
   -> TargetMachine
   -> EmissionState
@@ -344,7 +380,7 @@ emitInstructionPart _ _ _ st (ESVerbatim s) =
       new_instr = AsmInstruction $ instr_str ++ s
   in st { emittedCode = (new_instr:tail code) }
 emitInstructionPart model _ _ st (ESIntConstOfValueNode n) =
-  let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
+  let i = lookup n (hlFunValueIntConstData $ hlWOpFunctionParams model)
   in if isJust i
      then let code = emittedCode st
               (AsmInstruction instr_str) = head code
@@ -358,7 +394,9 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
      then let code = emittedCode st
               (AsmInstruction instr_str) = head code
               reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
-              origin = lookup n (hlFunValueOriginData $ hlFunctionParams model)
+              origin = lookup n ( hlFunValueOriginData
+                                  $ hlWOpFunctionParams model
+                                )
           in if (isJust $ locValue reg)
              then let new_instr = AsmInstruction $ instr_str
                                   ++ (pShow $ locName reg)
@@ -381,10 +419,10 @@ emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
      else error $ "emitInstructionPart: no block name found for function node "
                   ++ pShow n
 emitInstructionPart model sol m st (ESBlockOfValueNode n) =
-  let function = hlFunctionParams model
+  let function = hlWOpFunctionParams model
       data_nodes = hlFunData function
   in if n `elem` data_nodes
-     then let mid = fromJust $ findDefinerOfData model sol n
+     then let mid = getDefinerOfData model sol n
               l = lookup mid (hlSolBlocksOfSelMatches sol)
           in if isJust l
              then emitInstructionPart model
@@ -411,7 +449,7 @@ emitInstructionPart _ _ _ st (ESLocalTemporary i) =
                 , tmpToVarNameMaps = ((i, new_name):tmpToVarNameMaps st)
                 }
 emitInstructionPart model _ _ st (ESFuncOfCallNode n) =
-  let f = lookup n (hlFunCallNameData $ hlFunctionParams model)
+  let f = lookup n (hlFunCallNameData $ hlWOpFunctionParams model)
   in if isJust f
      then let code = emittedCode st
               (AsmInstruction instr_str) = head code
@@ -428,21 +466,31 @@ getUniqueVarName used = head $ dropWhile (`elem` used)
                                               -- Cast is needed or GHC will
                                               -- complain...
 
-
 -- | Takes the node ID of a datum, and returns the selected match that defines
--- that datum. If no such match can be found, 'Nothing' is returned.
-findDefinerOfData
-  :: HighLevelModel
+-- that datum.
+getDefinerOfData
+  :: HighLevelModelWOp
   -> HighLevelSolution
   -> NodeID
-  -> Maybe MatchID
-findDefinerOfData model sol n =
-  let match = hlMatchParams model
-      definers = map hlMatchID
-                     ( filter (\mid -> n `elem` hlMatchDataDefined mid)
-                              match
+  -> MatchID
+getDefinerOfData model sol n =
+  let findOp maps nid =
+        let ms = filter (elem nid . snd) maps
+        in if length ms > 0 then Just $ fst $ head ms else Nothing
+      matches = hlWOpMatchParams model
+      definers = map hlWOpMatchID
+                     ( filter ( \m ->
+                                  let o = findOp (hlWOpOperandNodeMaps m) n
+                                  in if isJust o
+                                     then (fromJust o)
+                                          `elem`
+                                          hlWOpMatchDataDefined m
+                                     else False
+                              )
+                              matches
                      )
       selected = filter (`elem` (hlSolSelMatches sol)) definers
   in if length selected == 1
-     then Just $ head selected
-     else Nothing
+     then head selected
+     else error $ "getDefinerOfData: no or multiple matches found that define "
+                  ++ "data with node ID " ++ pShow n

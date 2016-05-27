@@ -22,7 +22,7 @@ import UniIS.Drivers.DispatcherTools
   ( loadTargetMachine )
 
 import Language.InstrSel.ConstraintModels
-  ( HighLevelModel (..)
+  ( HighLevelModelWOp (..)
   , HighLevelMachineParams (..)
   , HighLevelSolution
   )
@@ -37,10 +37,10 @@ import Language.InstrSel.Utils.IO
 -- Functions
 -------------
 
-run :: MakeAction -> HighLevelModel -> HighLevelSolution -> IO [Output]
+run :: MakeAction -> HighLevelModelWOp -> HighLevelSolution -> IO [Output]
 
 run MakeAssemblyCode model sol =
-  do target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
+  do target <- loadTargetMachine $ hlMachineID $ hlWOpMachineParams model
      let code = generateCode target model sol
          code_str = concat $ map (\c -> showCode c ++ "\n") code
      return [toOutput code_str]

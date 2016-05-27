@@ -28,11 +28,14 @@ module Language.InstrSel.Utils.Base
   , isNumeric
   , mapPair
   , removeAt
+  , (===)
   )
 where
 
 import Data.List
-  ( intercalate )
+  ( intercalate
+  , sort
+  )
 import qualified Data.List.Split as Split
 import qualified Data.Char as Char
   ( toLower
@@ -158,3 +161,7 @@ removeAt xs i
   | i < 0 = error "removeAt: negative index"
   | i >= length xs = error "removeAt: index out of bound"
   | otherwise = take i xs ++ drop (i + 1) xs
+
+-- | Checks if two lists contain exactly the same elements.
+(===) :: (Ord a, Eq a) => [a] -> [a] -> Bool
+l1 === l2 = sort l1 == sort l2

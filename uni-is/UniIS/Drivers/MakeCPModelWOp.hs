@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module      : UniIS.Drivers.MakeCPModel
+-- Module      : UniIS.Drivers.MakeCPModelWOp
 -- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
 -- License     : BSD-style (see the LICENSE file)
 --
@@ -13,16 +13,15 @@
 --
 --------------------------------------------------------------------------------
 
-module UniIS.Drivers.MakeCPModel
+module UniIS.Drivers.MakeCPModelWOp
   ( run )
 where
 
 import UniIS.Drivers.Base
-import UniIS.Targets
 
+import Language.InstrSel.ConstraintModels
+  ( HighLevelModelNoOp )
 import Language.InstrSel.ConstraintModels.ModelHandler
-import Language.InstrSel.Functions
-  ( Function )
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset (..) )
 import Language.InstrSel.Utils.JSON
@@ -30,27 +29,16 @@ import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 
-import Data.Maybe
-  ( fromJust
-  , isNothing
-  )
-
 
 
 -------------
 -- Functions
 -------------
 
-run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
+run :: MakeAction -> HighLevelModelNoOp -> PatternMatchset -> IO [Output]
 
-run MakeHighLevelCPModel function matchset =
-  do let target = retrieveTargetMachine $ pmTarget matchset
-     when (isNothing target) $
-       reportErrorAndExit $ "Unrecognized target machine: "
-                            ++ (show $ fromJust target)
-     let model = mkHighLevelModel function
-                                  (fromJust target)
-                                  (pmMatches matchset)
-     return [toOutput $ toJson model]
+run MakeHighLevelCPModelWOp model matchset =
+  do let new_model = mkHighLevelModelWOp model (pmMatches matchset)
+     return [toOutput $ toJson new_model]
 
 run _ _ _ = reportErrorAndExit "MakeCPModel: unsupported action"

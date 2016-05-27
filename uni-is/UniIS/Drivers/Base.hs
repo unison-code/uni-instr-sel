@@ -62,7 +62,8 @@ data MakeAction
   | MakePatternMatchset
   | MakeArrayIndexMaplists
   | MakeDumpFromArrayIndexMaplists
-  | MakeHighLevelCPModel
+  | MakeHighLevelCPModelNoOp
+  | MakeHighLevelCPModelWOp
   | MakeAssemblyCode
   deriving (Eq, Typeable, Data)
 
@@ -72,6 +73,7 @@ data TransformAction
   | BranchExtendFunctionGraph
   | CombineConstantsInFunctionGraph
   | AlternativeExtendFunctionGraph
+  | AddOperandsToHighLevelCPModel
   | RaiseLowLevelCPSolution
   | LowerHighLevelCPModel
   deriving (Eq, Typeable, Data)

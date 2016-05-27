@@ -20,11 +20,13 @@ where
 import UniIS.Drivers.Base
 import UniIS.Drivers.DispatcherTools
   ( loadTargetMachine )
+import Language.InstrSel.ConstraintModels
+  ( HighLevelModelWOp (..)
+  , HighLevelMachineParams (..)
+  )
 import Language.InstrSel.ConstraintModels.ArrayIndexMaplistsMaker
 import Language.InstrSel.Functions
   ( Function )
-import Language.InstrSel.TargetMachines.PatternMatching
-  ( PatternMatchset (..) )
 import Language.InstrSel.Utils.JSON
 
 import Language.InstrSel.Utils.IO
@@ -36,11 +38,11 @@ import Language.InstrSel.Utils.IO
 -- Functions
 -------------
 
-run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
+run :: MakeAction -> Function -> HighLevelModelWOp -> IO [Output]
 
-run MakeArrayIndexMaplists function matchset =
-  do tm <- loadTargetMachine (pmTarget matchset)
-     let mapset = mkArrayIndexMaplists function tm (pmMatches matchset)
+run MakeArrayIndexMaplists function model =
+  do tm <- loadTargetMachine (hlMachineID $ hlWOpMachineParams model)
+     let mapset = mkArrayIndexMaplists function tm model
      return [toOutput $ toJson mapset]
 
 run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"

@@ -39,6 +39,7 @@ data Reconstructor
       , mkNumExprF         :: Reconstructor -> NumExpr -> NumExpr
       , mkIntExprF         :: Reconstructor -> IntExpr -> IntExpr
       , mkNodeExprF        :: Reconstructor -> NodeExpr -> NodeExpr
+      , mkOperandExprF     :: Reconstructor -> OperandExpr -> OperandExpr
       , mkMatchExprF       :: Reconstructor -> MatchExpr -> MatchExpr
       , mkInstructionExprF :: Reconstructor
                            -> InstructionExpr
@@ -113,6 +114,12 @@ mkDefaultReconstructor =
         expr
       mkNodeExpr _ expr@(ANodeArrayIndexExpr _) =
         expr
+      mkNodeExpr r (NodeSelectedForOperandExpr expr) =
+        NodeSelectedForOperandExpr ((mkOperandExprF r) r expr)
+      mkOperandExpr _ expr@(AnOperandIDExpr _) =
+        expr
+      mkOperandExpr _ expr@(AnOperandArrayIndexExpr _) =
+        expr
       mkMatchExpr _ expr@(AMatchIDExpr _) =
         expr
       mkMatchExpr _ expr@(AMatchArrayIndexExpr _) =
@@ -155,6 +162,7 @@ mkDefaultReconstructor =
        , mkNumExprF = mkNumExpr
        , mkIntExprF = mkIntExpr
        , mkNodeExprF = mkNodeExpr
+       , mkOperandExprF = mkOperandExpr
        , mkMatchExprF = mkMatchExpr
        , mkInstructionExprF = mkInstructionExpr
        , mkBlockExprF = mkBlockExpr

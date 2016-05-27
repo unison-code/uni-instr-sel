@@ -23,6 +23,7 @@ module Language.InstrSel.Utils.JSON
   , pack
   , toJson
   , unpack
+  , hasField
   )
 where
 
@@ -30,6 +31,10 @@ import Language.InstrSel.Utils.Base
   ( replace )
 
 import Data.Aeson
+import Data.Aeson.Types
+  ( Parser )
+import qualified Data.HashMap.Strict as H
+  ( lookup )
 import qualified Data.ByteString.Lazy.Char8 as BS
   ( pack
   , unpack
@@ -88,3 +93,9 @@ unpack = T.unpack
 -- | Converts a 'String' into 'Text'.
 pack :: String -> T.Text
 pack = T.pack
+
+-- | Checks if the given JSON object has a field of certain name.
+hasField :: Object -> T.Text -> Parser Bool
+hasField obj key = case H.lookup key obj of
+                     Nothing -> return False
+                     Just _  -> return True

@@ -46,7 +46,7 @@ run
 run RaiseLowLevelCPSolution str mstr ai_maps =
   do sol <- loadFromJson str
      model <- loadFromJson mstr
-     target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
+     target <- loadTargetMachine $ hlMachineID $ hlWOpMachineParams model
      let new_sol = raiseLowLevelSolution sol model target ai_maps
      return [toOutput $ toJson new_sol]
 

@@ -16,7 +16,10 @@
 
 module Language.InstrSel.ConstraintModels.IDs
   ( ArrayIndex (..)
+  , OperandID (..)
+  , fromOperandID
   , toArrayIndex
+  , toOperandID
   )
 where
 
@@ -46,6 +49,13 @@ newtype ArrayIndex
 instance PrettyShow ArrayIndex where
   pShow (ArrayIndex i) = pShow i
 
+newtype OperandID
+  = OperandID Natural
+  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
+
+instance PrettyShow OperandID where
+  pShow (OperandID i) = pShow i
+
 
 
 -------------------------------------
@@ -58,6 +68,13 @@ instance FromJSON ArrayIndex where
 
 instance ToJSON ArrayIndex where
   toJSON mid = toJSON (fromArrayIndex mid)
+
+instance FromJSON OperandID where
+  parseJSON (JSON.Number sn) = return $ toOperandID $ sn2nat sn
+  parseJSON _ = mzero
+
+instance ToJSON OperandID where
+  toJSON mid = toJSON (fromOperandID mid)
 
 
 
@@ -72,6 +89,13 @@ instance FromLisp ArrayIndex where
 instance ToLisp ArrayIndex where
   toLisp (ArrayIndex nid) = Lisp.Number (I (fromNatural nid))
 
+instance FromLisp OperandID where
+  parseLisp (Lisp.Number (I n)) = return $ toOperandID n
+  parseLisp _ = mzero
+
+instance ToLisp OperandID where
+  toLisp (OperandID nid) = Lisp.Number (I (fromNatural nid))
+
 
 
 
@@ -84,3 +108,9 @@ fromArrayIndex (ArrayIndex i) = i
 
 toArrayIndex :: (Integral i) => i -> ArrayIndex
 toArrayIndex = ArrayIndex . toNatural
+
+fromOperandID :: OperandID -> Natural
+fromOperandID (OperandID i) = i
+
+toOperandID :: (Integral i) => i -> OperandID
+toOperandID = OperandID . toNatural

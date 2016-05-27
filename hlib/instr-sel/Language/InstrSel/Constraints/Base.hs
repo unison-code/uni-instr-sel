@@ -22,6 +22,7 @@ module Language.InstrSel.Constraints.Base
   , BlockExpr (..)
   , MatchExpr (..)
   , NodeExpr (..)
+  , OperandExpr (..)
   , NumExpr (..)
   , LocationExpr (..)
   , SetElemExpr (..)
@@ -123,6 +124,16 @@ data NodeExpr
   = ANodeIDExpr NodeID
     -- | Introduces an array index of a node.
   | ANodeArrayIndexExpr ArrayIndex
+    -- | Retrieves the node selected for an operand.
+  | NodeSelectedForOperandExpr OperandExpr
+  deriving (Show)
+
+-- | Operand expressions.
+data OperandExpr
+    -- | Introduces the ID of an operand.
+  = AnOperandIDExpr OperandID
+    -- | Introduces an array index of an operand.
+  | AnOperandArrayIndexExpr ArrayIndex
   deriving (Show)
 
 -- | Match expressions.
@@ -279,10 +290,22 @@ instance FromLisp NodeExpr where
   parseLisp e =
         struct "id" ANodeIDExpr e
     <|> struct "ai" ANodeArrayIndexExpr e
+    <|> struct "node-selected-for-op" NodeSelectedForOperandExpr e
 
 instance ToLisp NodeExpr where
   toLisp (ANodeIDExpr nid) = mkStruct "id" [toLisp nid]
   toLisp (ANodeArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
+  toLisp (NodeSelectedForOperandExpr e) =
+    mkStruct "node-selected-for-op" [toLisp e]
+
+instance FromLisp OperandExpr where
+  parseLisp e =
+        struct "id" AnOperandIDExpr e
+    <|> struct "ai" AnOperandArrayIndexExpr e
+
+instance ToLisp OperandExpr where
+  toLisp (AnOperandIDExpr nid) = mkStruct "id" [toLisp nid]
+  toLisp (AnOperandArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
 
 instance FromLisp MatchExpr where
   parseLisp (Lisp.Symbol "this") = return ThisMatchExpr
