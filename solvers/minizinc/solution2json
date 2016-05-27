@@ -182,6 +182,7 @@ all_data.append(["has_d_loc", has_d_loc_data])
 data_table = [ ["loc",        "loc-of-datum"]
              , ["has_d_loc",  "has-datum-loc"]
              , ["sel",        "is-match-selected"]
+             , ["alt",        "node-of-operand"]
              , ["place",      "block-of-match"]
              , ["ord",        "order-of-blocks"]
              , ["cost",       "cost"]

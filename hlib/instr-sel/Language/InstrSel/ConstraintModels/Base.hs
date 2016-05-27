@@ -268,6 +268,10 @@ data LowLevelModel
         -- ^ The number of matches.
       , llNumOperands :: Integer
         -- ^ The number of operands.
+      , llOperandAlternatives :: [[ArrayIndex]]
+        -- ^ The list of data in the function graph that are selectable for each
+        -- operand. An index into the outer list corresponds to the array index
+        -- of a particular operand.
       , llMatchOperationsCovered :: [[ArrayIndex]]
         -- ^ The list of operation in the function graph that are covered by
         -- each match. An index into the outer list corresponds to the array
@@ -628,6 +632,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "num-locations"
       <*> v .: "num-matches"
       <*> v .: "num-operands"
+      <*> v .: "operand-alternatives"
       <*> v .: "match-operations-covered"
       <*> v .: "match-data-defined"
       <*> v .: "match-data-used"
@@ -658,6 +663,7 @@ instance ToJSON LowLevelModel where
            , "num-locations"                .= (llNumLocations m)
            , "num-matches"                  .= (llNumMatches m)
            , "num-operands"                 .= (llNumOperands m)
+           , "operand-alternatives"         .= (llOperandAlternatives m)
            , "match-operations-covered"     .= (llMatchOperationsCovered m)
            , "match-data-defined"           .= (llMatchDataDefined m)
            , "match-data-used"              .= (llMatchDataUsed m)

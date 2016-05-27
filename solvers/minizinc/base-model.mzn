@@ -44,6 +44,7 @@ int: numLocations;
 
 % Match data.
 int: numMatches;
+int: numOperands;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedByMatch;
@@ -59,6 +60,7 @@ set of allMatches: copyInstrMatches;
 set of allMatches: nullInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 set of allMatches: dominatedMatches;
+array[allOperands] of set of int: operandAlternatives;
 
 % Arrays that encode constraints
 array[int,int] of int: sameLoc;
@@ -118,6 +120,7 @@ set of int: allDataInFunction = 0..numDataInFunction-1;
 set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
 set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
 set of int: allMatches = 0..numMatches-1;
+set of int: allOperands = 0..numOperands-1;
 set of int: allLocValues = 0..numLocValues-1;
 
 
@@ -135,6 +138,9 @@ array[allMatches] of var bool: sel;
 
 % Blocks wherein the matches are placed.
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
+
+% TODO
+array[allOperands] of var allDataInFunction: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
@@ -171,6 +177,13 @@ predicate fall_through(int: m, int: b) =
 % CONSTRAINTS
 %=============
 
+% Constraint alternatives of operands.
+constraint
+  forall (o in allOperands)
+  (
+    alt[o] in operandAlternatives[o]
+  );
+
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
 constraint
@@ -205,7 +218,8 @@ constraint
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
-                                    where e in dataDefinedByMatch[m]
+                             , o in dataDefinedByMatch[m]
+                                    where e in operandAlternatives[o]
                          }
     }
     in if card(mset) = 1
@@ -254,7 +268,7 @@ constraint
 constraint
   forall (m in allMatches diff dominatedMatches)
   (
-    forall (e in dataDefinedByMatch[m])
+    forall (o in dataDefinedByMatch[m], e in operandAlternatives[o])
     (
       if (card(spannedBlocksInMatch[m]) > 0)
       then
@@ -273,9 +287,9 @@ constraint
     sel[m] -> place[mm] != b
   );
 
-% For every block wherein a datum is defined, there must exist some selected
-% match such that it is either placed in that block or that block is part of
-% one of the blocks that appear in the selected match.
+% For every block wherein a datum d is defined, there must exist some selected
+% match that defines d such that it is either placed in that block or that block
+% is part of one of the blocks that appear in the selected match.
 %
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
@@ -284,7 +298,10 @@ constraint
   (
     def[e] = l
     ->
-    exists (m in allMatches diff dominatedMatches)
+    exists ( m in allMatches diff dominatedMatches
+           , o in dataDefinedByMatch[m]
+                  where e in operandAlternatives[o]
+           )
     (
       place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m])
     )
@@ -301,6 +318,8 @@ constraint
     )
   );
 
+% TODO: FIX!
+%
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
@@ -313,31 +332,32 @@ constraint
 %       (
 %         def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
 %       );
-int: DomRelSize =
-  sum (l in allBlocksInFunction)
-  (
-    card(domSetOfBlockInFunction[l])
-  ) + numBlocksInFunction;
-array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
-  array2d(1..DomRelSize, 1..2,
-    [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
-                                   j in domSetOfBlockInFunctionPlusNull[i],
-                                   k in 1..2
-    ]);
-constraint
-  forall ( m in allMatches diff dominatedMatches, e in dataUsedByMatch[m]
-                where applyDefDomUseConstraintForMatch[m]
-         )
-  (
-    table([place[m], def[e]], DomRel)
-  );
+%
+%int: DomRelSize =
+%  sum (l in allBlocksInFunction)
+%  (
+%    card(domSetOfBlockInFunction[l])
+%  ) + numBlocksInFunction;
+%array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
+%  array2d(1..DomRelSize, 1..2,
+%    [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
+%                                   j in domSetOfBlockInFunctionPlusNull[i],
+%                                   k in 1..2
+%    ]);
+%constraint
+%  forall ( m in allMatches diff dominatedMatches, e in dataUsedByMatch[m]
+%                where applyDefDomUseConstraintForMatch[m]
+%         )
+%  (
+%    table([place[m], def[e]], DomRel)
+%  );
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.
 constraint
   forall (m in nullInstrMatches)
   (
-    forall (e in dataUsedByMatch[m])
+    forall (o in dataUsedByMatch[m], e in operandAlternatives[o])
     (
       sel[m] -> def[e] = place[m]
     )
@@ -354,8 +374,10 @@ constraint
 
 % All data external to a match must not be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches,
-           e in dataExternalToMatch[m] where not (e in statesInFunction)
+  forall ( m in allMatches diff dominatedMatches
+         , o in dataExternalToMatch[m]
+         , e in operandAlternatives[o]
+                where not (e in statesInFunction)
          )
   (
     sel[m] -> loc[e] != locValueForNull
@@ -363,7 +385,10 @@ constraint
 
 % All data internal to a match must be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches, e in dataInternalToMatch[m] )
+  forall ( m in allMatches diff dominatedMatches
+         , o in dataInternalToMatch[m]
+         , e in operandAlternatives[o]
+         )
   (
     sel[m] -> loc[e] = locValueForNull
   );
@@ -462,19 +487,22 @@ constraint
     )
   );
 
+% TODO: FIX!
+%
 % Ad hoc: detect symmetry among location values 1..31
-constraint
-  forall(i in index_set_1of2(funLocDomain))(
-    let {int: lo = funLocDomain[i,2],
-         int: hi = funLocDomain[i,3]} in
-	lo<=31 -> hi>=31 \/ hi=0
-  ) /\
-  forall(i in index_set_1of2(locDomain))(
-    let {int: lo = locDomain[i,3],
-         int: hi = locDomain[i,4]} in
-	lo<=31 -> hi>=31 \/ hi=0
-  ) ->
-  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
+%
+%constraint
+%  forall(i in index_set_1of2(funLocDomain))(
+%    let {int: lo = funLocDomain[i,2],
+%         int: hi = funLocDomain[i,3]} in
+%	lo<=31 -> hi>=31 \/ hi=0
+%  ) /\
+%  forall(i in index_set_1of2(locDomain))(
+%    let {int: lo = locDomain[i,3],
+%         int: hi = locDomain[i,4]} in
+%	lo<=31 -> hi>=31 \/ hi=0
+%  ) ->
+%  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
 
 
 
@@ -493,6 +521,7 @@ solve ::
 minimize cost;
 
 output [ "sel=", show(sel), "\n"
+       , "alt=", show(alt), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
        , "place=", show(place), "\n"

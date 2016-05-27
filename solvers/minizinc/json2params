@@ -263,8 +263,19 @@ def convertConstraint(l):
             return str(l[1])
         elif op == "id":
             error("'id' node expressions not allowed")
+        elif op == "node-selected-for-op":
+            return "alt[" + fromOperandExpr(l[1]) + "]"
         else:
             error("unknown node expression: " + str(l))
+
+    def fromOperandExpr(l):
+        op = l[0]
+        if op == "ai":
+            return str(l[1])
+        elif op == "id":
+            error("'id' operand expressions not allowed")
+        else:
+            error("unknown operand expression: " + str(l))
 
     def fromLocExpr(l):
         op = l[0]
@@ -429,6 +440,15 @@ dumpParams( json_data["num-locations"]
           )
 dumpParams( json_data["num-matches"]
           , "numMatches"
+          )
+dumpParams( json_data["num-operands"]
+          , "numOperands"
+          )
+dumpParams( json_data["operand-alternatives"]
+          , "operandAlternatives"
+          , VT_ARRAY1D
+          , "allOperands"
+          , VC_SET
           )
 dumpParams( json_data["same-loc"]
           , "sameLoc"

@@ -470,6 +470,8 @@ lowerHighLevelModel model ai_maps =
       tm_params = hlWOpMachineParams model
       m_params = sortByAI (getAIForMatchID . hlWOpMatchID)
                           (hlWOpMatchParams model)
+      operands = sortByAI (getAIForOperandID . fst)
+                          (concatMap (hlWOpOperandNodeMaps) m_params)
   in LowLevelModel
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
@@ -497,10 +499,8 @@ lowerHighLevelModel model ai_maps =
            map (replaceIDsWithArrayIndexes ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
        , llNumMatches = toInteger $ length m_params
-       , llNumOperands = toInteger
-                         $ length
-                         $ map fst
-                         $ concatMap (hlWOpOperandNodeMaps) m_params
+       , llNumOperands = toInteger $ length $ map fst $ operands
+       , llOperandAlternatives = map (map getAIForDatumNodeID . snd) operands
        , llMatchOperationsCovered =
            map (map getAIForOperationNodeID . hlWOpMatchOperationsCovered)
                m_params
@@ -539,6 +539,7 @@ replaceIDsWithArrayIndexes :: ArrayIndexMaplists -> Constraint -> Constraint
 replaceIDsWithArrayIndexes ai_maps c =
   let getAIForAnyNodeID nid = fromJust $ findAIWithAnyNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
+      getAIForOperandID oid = fromJust $ findAIWithOperandID ai_maps oid
       getAIForLocationID rid = fromJust $ findAIWithLocationID ai_maps rid
       getAIForInstructionID iid =
         fromJust $ findAIWithInstructionID ai_maps iid
@@ -549,6 +550,9 @@ replaceIDsWithArrayIndexes ai_maps c =
       mkMatchExpr _ (AMatchIDExpr nid) =
         AMatchArrayIndexExpr $ getAIForMatchID nid
       mkMatchExpr r expr = (mkMatchExprF def_r) r expr
+      mkOperandExpr _ (AnOperandIDExpr oid) =
+        AnOperandArrayIndexExpr $ getAIForOperandID oid
+      mkOperandExpr r expr = (mkOperandExprF def_r) r expr
       mkLocationExpr _ (ALocationIDExpr nid) =
         ALocationArrayIndexExpr $ getAIForLocationID nid
       mkLocationExpr r expr = (mkLocationExprF def_r) r expr
@@ -556,6 +560,7 @@ replaceIDsWithArrayIndexes ai_maps c =
         AnInstructionArrayIndexExpr $ getAIForInstructionID nid
       mkInstructionExpr r expr = (mkInstructionExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr
+                    , mkOperandExprF = mkOperandExpr
                     , mkMatchExprF = mkMatchExpr
                     , mkLocationExprF = mkLocationExpr
                     , mkInstructionExprF = mkInstructionExpr
