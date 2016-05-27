@@ -269,13 +269,13 @@ constraint
 constraint
   forall (m in allMatches diff dominatedMatches)
   (
-    forall (o in dataDefinedByMatch[m], e in operandAlternatives[o])
+    forall (o in dataDefinedByMatch[m])
     (
       if (card(spannedBlocksInMatch[m]) > 0)
       then
-        sel[m] -> def[e] in spannedBlocksInMatch[m]
+        sel[m] -> def[alt[o]] in spannedBlocksInMatch[m]
       else
-        sel[m] -> def[e] = place[m]
+        sel[m] -> def[alt[o]] = place[m]
       endif
     )
   );
@@ -304,7 +304,9 @@ constraint
                   where e in operandAlternatives[o]
            )
     (
-      place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m])
+      alt[o] = e
+      /\
+      (place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m]))
     )
   );
 
@@ -329,22 +331,15 @@ constraint
 % to apply this constraint even on non-selected matches as these will be placed
 % in the null block, which is dominated by every other block in the function):
 %     constraint
-%       forall ( m in allMatches
-%              , e in dataUsedByMatch[m]
-%                     where applyDefDomUseConstraintForMatch[m]
-%              )
+%       forall (m in allMatches, o in dataUsedByMatch[m])
 %       (
-%         def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
+%         def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
 %       );
 %
 constraint
-  forall ( m in allMatches
-         , o in dataUsedByMatch[m]
-         , e in operandAlternatives[o]
-                where applyDefDomUseConstraintForMatch[m]
-         )
+  forall (m in allMatches, o in dataUsedByMatch[m])
   (
-    def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
+    def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
   );
 %int: DomRelSize =
 %  sum (l in allBlocksInFunction)
@@ -370,9 +365,9 @@ constraint
 constraint
   forall (m in nullInstrMatches)
   (
-    forall (o in dataUsedByMatch[m], e in operandAlternatives[o])
+    forall (o in dataUsedByMatch[m])
     (
-      sel[m] -> def[e] = place[m]
+      sel[m] -> def[alt[o]] = place[m]
     )
   );
 
@@ -387,23 +382,16 @@ constraint
 
 % All data external to a match must not be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches
-         , o in dataExternalToMatch[m]
-         , e in operandAlternatives[o]
-                where not (e in statesInFunction)
-         )
+  forall (m in allMatches diff dominatedMatches, o in dataExternalToMatch[m])
   (
-    sel[m] -> loc[e] != locValueForNull
+    sel[m] -> loc[alt[o]] != locValueForNull
   );
 
 % All data internal to a match must be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches
-         , o in dataInternalToMatch[m]
-         , e in operandAlternatives[o]
-         )
+  forall (m in allMatches diff dominatedMatches, o in dataInternalToMatch[m])
   (
-    sel[m] -> loc[e] = locValueForNull
+    sel[m] -> loc[alt[o]] = locValueForNull
   );
 
 % Constrain the loc value for all data that are states.
