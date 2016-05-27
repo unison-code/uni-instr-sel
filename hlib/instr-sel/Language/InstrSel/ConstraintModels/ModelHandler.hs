@@ -497,6 +497,10 @@ lowerHighLevelModel model ai_maps =
            map (replaceIDsWithArrayIndexes ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
        , llNumMatches = toInteger $ length m_params
+       , llNumOperands = toInteger
+                         $ length
+                         $ map fst
+                         $ concatMap (hlWOpOperandNodeMaps) m_params
        , llMatchOperationsCovered =
            map (map getAIForOperationNodeID . hlWOpMatchOperationsCovered)
                m_params

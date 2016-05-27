@@ -77,11 +77,11 @@ hlib:
 	$(UNI) make --compute-array-index-maplists \
       -f $*.ce.cc.ae.be.f.json -m $*.hl.model-w-op.json -o $@
 
-%.llmodel-w-opjson: %.hl.model-w-op.json %.aimaps.json
+%.ll.model.json: %.hl.model-w-op.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
       -m $*.hl.model-w-op.json -a $*.aimaps.json -o $@
 
-%.ll.sol.json: %.llmodel-w-opjson
+%.ll.sol.json: %.ll.model.json
 	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
 %.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json

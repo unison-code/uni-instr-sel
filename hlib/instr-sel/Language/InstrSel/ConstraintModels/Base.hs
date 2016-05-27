@@ -266,6 +266,8 @@ data LowLevelModel
         -- ^ The number of locations available in the target machine.
       , llNumMatches :: Integer
         -- ^ The number of matches.
+      , llNumOperands :: Integer
+        -- ^ The number of operands.
       , llMatchOperationsCovered :: [[ArrayIndex]]
         -- ^ The list of operation in the function graph that are covered by
         -- each match. An index into the outer list corresponds to the array
@@ -625,6 +627,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
       <*> v .: "num-matches"
+      <*> v .: "num-operands"
       <*> v .: "match-operations-covered"
       <*> v .: "match-data-defined"
       <*> v .: "match-data-used"
@@ -654,6 +657,7 @@ instance ToJSON LowLevelModel where
            , "fun-constraints"              .= (llFunConstraints m)
            , "num-locations"                .= (llNumLocations m)
            , "num-matches"                  .= (llNumMatches m)
+           , "num-operands"                 .= (llNumOperands m)
            , "match-operations-covered"     .= (llMatchOperationsCovered m)
            , "match-data-defined"           .= (llMatchDataDefined m)
            , "match-data-used"              .= (llMatchDataUsed m)
