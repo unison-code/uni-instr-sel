@@ -91,6 +91,8 @@ data HighLevelFunctionParams
   = HighLevelFunctionParams
       { hlFunOperations :: [NodeID]
         -- ^ The operations in the function graph.
+      , hlFunCopies :: [NodeID]
+        -- ^ The copy nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
       , hlFunStates :: [NodeID]
@@ -243,6 +245,8 @@ data LowLevelModel
         -- ^ The number of data in the function graph.
       , llFunNumBlocks :: Integer
         -- ^ The number of blocks in the function graph.
+      , llFunCopies :: [ArrayIndex]
+        -- ^ The copy nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
       , llFunEntryBlock :: ArrayIndex
@@ -460,6 +464,7 @@ instance FromJSON HighLevelFunctionParams where
   parseJSON (Object v) =
     HighLevelFunctionParams
       <$> v .: "operations"
+      <*> v .: "copies"
       <*> v .: "data"
       <*> v .: "states"
       <*> v .: "blocks"
@@ -476,6 +481,7 @@ instance FromJSON HighLevelFunctionParams where
 instance ToJSON HighLevelFunctionParams where
   toJSON p =
     object [ "operations"               .= (hlFunOperations p)
+           , "copies"                   .= (hlFunCopies p)
            , "data"                     .= (hlFunData p)
            , "states"                   .= (hlFunStates p)
            , "blocks"                   .= (hlFunBlocks p)
@@ -623,6 +629,7 @@ instance FromJSON LowLevelModel where
       <$> v .: "fun-num-operations"
       <*> v .: "fun-num-data"
       <*> v .: "fun-num-blocks"
+      <*> v .: "fun-copies"
       <*> v .: "fun-states"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
@@ -654,6 +661,7 @@ instance ToJSON LowLevelModel where
     object [ "fun-num-operations"           .= (llFunNumOperations m)
            , "fun-num-data"                 .= (llFunNumData m)
            , "fun-num-blocks"               .= (llFunNumBlocks m)
+           , "fun-copies"                   .= (llFunCopies m)
            , "fun-states"                   .= (llFunStates m)
            , "fun-entry-block"              .= (llFunEntryBlock m)
            , "fun-block-dom-sets"           .= (llFunBlockDomSets m)

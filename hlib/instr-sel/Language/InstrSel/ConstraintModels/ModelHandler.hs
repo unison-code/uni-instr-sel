@@ -156,6 +156,7 @@ mkHLFunctionParams function target =
                      (functionInputs function)
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
+       , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunData = nodeIDsByType isDatumNode
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
@@ -476,6 +477,7 @@ lowerHighLevelModel model ai_maps =
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
+       , llFunCopies = map getAIForOperationNodeID (hlFunCopies f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =

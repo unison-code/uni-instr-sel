@@ -348,6 +348,10 @@ dumpParams( json_data["fun-num-data"]
 dumpParams( json_data["fun-num-operations"]
           , "numOperationsInFunction"
           )
+dumpParams( json_data["fun-copies"]
+          , "copiesInFunction"
+          , VT_SET
+          )
 dumpParams( json_data["fun-states"]
           , "statesInFunction"
           , VT_SET

@@ -1,4 +1,4 @@
-% Copyright (c) 2013-2015, Gabriel Hjort Blindell <ghb@kth.se>
+% Copyright (c) 2013-2016, Gabriel Hjort Blindell <ghb@kth.se>
 %                          Mats Carlsson <matsc@sics.se>
 % All rights reserved.
 %
@@ -36,6 +36,7 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
+set of allDataInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
@@ -187,7 +188,7 @@ constraint
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
 constraint
-  forall (o in allOperationsInFunction)
+  forall (o in allOperationsInFunction where not (o in copiesInFunction))
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
@@ -324,15 +325,27 @@ constraint
 % all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
 %
-% The code below is essentially a more efficient implementation of:
+% The code below is essentially a more efficient implementation of (it is okay
+% to apply this constraint even on non-selected matches as these will be placed
+% in the null block, which is dominated by every other block in the function):
 %     constraint
-%       forall ( m in allMatches, e in dataUsedByMatch[m]
+%       forall ( m in allMatches
+%              , e in dataUsedByMatch[m]
 %                     where applyDefDomUseConstraintForMatch[m]
 %              )
 %       (
 %         def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
 %       );
 %
+constraint
+  forall ( m in allMatches
+         , o in dataUsedByMatch[m]
+         , e in operandAlternatives[o]
+                where applyDefDomUseConstraintForMatch[m]
+         )
+  (
+    def[e] in domSetOfBlockInFunctionPlusNull[place[m]]
+  );
 %int: DomRelSize =
 %  sum (l in allBlocksInFunction)
 %  (
