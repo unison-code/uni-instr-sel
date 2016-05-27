@@ -65,27 +65,31 @@ hlib:
 %.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.hl.model.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) make --construct-hl-cp-model \
+%.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+	$(UNI) make --construct-hl-cp-model-no-op \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $@
 
-%.aimaps.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+%.hl.model-w-op.json: %.hl.model-no-op.json %.ce.cc.ae.be.p.json
+	$(UNI) make --construct-hl-cp-model-w-op \
+      -m $*.hl.model-no-op.json -p $*.ce.cc.ae.be.p.json -o $@
+
+%.aimaps.json: %.ce.cc.ae.be.f.json %.hl.model-w-op.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $@
+      -f $*.ce.cc.ae.be.f.json -m $*.hl.model-w-op.json -o $@
 
-%.ll.model.json: %.hl.model.json %.aimaps.json
+%.llmodel-w-opjson: %.hl.model-w-op.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
-      -m $*.hl.model.json -a $*.aimaps.json -o $@
+      -m $*.hl.model-w-op.json -a $*.aimaps.json -o $@
 
-%.ll.sol.json: %.ll.model.json
+%.ll.sol.json: %.llmodel-w-opjson
 	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
-%.hl.sol.json: %.hl.model.json %.ll.sol.json %.aimaps.json
+%.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json
 	$(UNI) transform --raise-ll-cp-solution \
-      -m $*.hl.model.json -s $*.ll.sol.json -a $*.aimaps.json -o $@
+      -m $*.hl.model-w-op.json -s $*.ll.sol.json -a $*.aimaps.json -o $@
 
-%.s: %.hl.model.json %.hl.sol.json
-	$(UNI) make --generate-asm -m $*.hl.model.json -s $*.hl.sol.json -o $@
+%.s: %.hl.model-w-op.json %.hl.sol.json
+	$(UNI) make --generate-asm -m $*.hl.model-w-op.json -s $*.hl.sol.json -o $@
 
 .PHONY: clean
 clean:
