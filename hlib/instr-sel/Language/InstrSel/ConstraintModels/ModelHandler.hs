@@ -95,17 +95,6 @@ mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
       entry_block = fromJust $ osEntryBlockNode $ functionOS function
       nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
-      def_edges =
-        map ( \e ->
-              let src = getSourceNode graph e
-                  srcid = getNodeID src
-                  dst = getTargetNode graph e
-                  dstid = getNodeID dst
-              in if isBlockNode src
-                 then (srcid, dstid)
-                 else (dstid, srcid)
-            )
-            (filter isDefEdge (getAllEdges graph))
       domsets = computeDomSets graph entry_block
       getExecFreq n =
         fromJust
@@ -162,7 +151,6 @@ mkHLFunctionParams function target =
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
-       , hlFunDefEdges = def_edges
        , hlFunBlockParams = bb_params
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
@@ -485,13 +473,6 @@ lowerHighLevelModel model ai_maps =
                ( sortByAI (getAIForBlockNodeID . domNode)
                           (hlFunBlockDomSets f_params)
                )
-       , llFunDefEdges =
-           map ( \n ->
-                 nub $
-                 map (getAIForDatumNodeID . snd)
-                     (filter (\(n', _) -> n == n') (hlFunDefEdges f_params))
-               )
-               (sortByAI getAIForBlockNodeID (hlFunBlocks f_params))
        , llFunBBExecFreqs =
            map hlBlockExecFrequency
                ( sortByAI (getAIForBlockNodeID . hlBlockNode)

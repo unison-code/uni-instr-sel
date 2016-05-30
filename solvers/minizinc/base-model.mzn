@@ -35,7 +35,6 @@ int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
-array[allBlocksInFunction] of set of int: defEdgesForBlockInFunction;
 set of allDataInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;

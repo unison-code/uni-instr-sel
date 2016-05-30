@@ -328,12 +328,6 @@ dumpParams( json_data["fun-block-exec-freqs"]
           , VT_ARRAY1D
           , "allBlocksInFunction"
           )
-dumpParams( json_data["fun-def-edges"]
-          , "defEdgesForBlockInFunction"
-          , VT_ARRAY1D
-          , "allBlocksInFunction"
-          , VC_SET
-          )
 dumpParams( json_data["fun-entry-block"]
           , "entryBlockOfFunction"
           )
