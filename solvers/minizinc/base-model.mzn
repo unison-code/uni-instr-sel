@@ -310,17 +310,6 @@ constraint
     )
   );
 
-% A datum with a definition edge with a block must be defined in the block of
-% that block.
-constraint
-  forall (l in allBlocksInFunction)
-  (
-    forall (e in defEdgesForBlockInFunction[l])
-    (
-      def[e] = l
-    )
-  );
-
 % TODO: FIX!
 %
 % Enforce that every datum is defined in a block such that the block dominates
