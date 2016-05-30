@@ -127,7 +127,7 @@ mkPhiInstruction mkEmit =
                  ( concat
                    $ zipWith mkDataDefinitionConstraints
                              (map toNodeID [2..n+1])
-                             (map toNodeID [n+2..2*n+2])
+                             (map toNodeID [n+3..2*n+2])
                  )
         in InstrPattern
              { patID = (toPatternID $ n-2)
