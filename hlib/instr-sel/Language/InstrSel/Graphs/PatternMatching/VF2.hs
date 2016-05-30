@@ -169,6 +169,8 @@ checkSemantics fg pg st c =
                             (getEdgesBetween pg pn succ_pn)
          )
          mapped_succs_to_pn
+     &&
+     customPatternMatchingSemanticsCheck fg pg st c
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
 -- equation 2 in the paper).

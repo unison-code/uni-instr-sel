@@ -89,6 +89,13 @@ mkPhiInstruction mkEmit =
                               )
                             )
                             [2..n+1]
+                        ++
+                        map ( \n' ->
+                              ( fromIntegral n'
+                              , NodeLabel (toNodeID n') mkGenericBlockNodeType
+                              )
+                            )
+                            [n+2..2*n+2]
                       )
                   )
                   ( map
@@ -102,9 +109,26 @@ mkPhiInstruction mkEmit =
                               )
                             )
                             [2..n+1]
+                        ++
+                        [ ( fromIntegral n + 2, 1, EdgeLabel DefEdge 0 0 ) ]
+                        ++
+                        map ( \n' ->
+                                let int = fromIntegral n'
+                                in ( int
+                                   , int + fromIntegral n + 1
+                                   , EdgeLabel DefEdge 0 0
+                                   )
+                            )
+                            [2..n+1]
                       )
                   )
             cs = mkSameDataLocConstraints [1..n+1]
+                 ++
+                 ( concat
+                   $ zipWith mkDataDefinitionConstraints
+                             (map toNodeID [2..n+1])
+                             (map toNodeID [n+2..2*n+2])
+                 )
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OpStructure g Nothing cs

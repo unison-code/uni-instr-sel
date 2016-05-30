@@ -67,6 +67,7 @@ module Language.InstrSel.Graphs.Base
   , convertMappingN2ID
   , convertMatchN2ID
   , copyNodeLabel
+  , customPatternMatchingSemanticsCheck
   , delEdge
   , delNode
   , delNodeKeepEdges
@@ -214,6 +215,8 @@ import Data.List
   ( unfoldr
   , foldl'
   )
+
+import Debug.Trace
 
 
 
@@ -1393,6 +1396,7 @@ doesOrderDFInEdgesMatter _ n
 doesOrderDFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFOutEdgesMatter _ n
   | isComputationNode n = True
+  | isPhiNode n = True
   | otherwise = False
 
 -- | Checks if the order of state flow in-edges matters for a given pattern
@@ -1404,6 +1408,74 @@ doesOrderSFInEdgesMatter _ _ = False
 -- node.
 doesOrderSFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderSFOutEdgesMatter _ _ = False
+
+customPatternMatchingSemanticsCheck
+  :: Graph
+     -- ^ The function graph.
+  -> Graph
+     -- ^ The pattern graph.
+  -> [Mapping Node]
+     -- ^ Current mapping state.
+  -> Mapping Node
+     -- ^ Candidate mapping.
+  -> Bool
+customPatternMatchingSemanticsCheck fg pg st c =
+  let pn = pNode c
+  in if isPhiNode pn
+     then let es = filter isDataFlowEdge $ getInEdges pg pn
+              val_es = filter (isValueNode . getSourceNode pg) es
+          in all (checkPhiValBlockMappings fg pg (c:st)) val_es
+     else if isValueNode pn
+          then let es = filter isDataFlowEdge $ getOutEdges pg pn
+                   phi_es = filter (isPhiNode . getTargetNode pg) es
+               in all (checkPhiValBlockMappings fg pg (c:st)) phi_es
+          else if isBlockNode pn
+               then let es = filter isDefEdge $ getInEdges pg pn
+                        v_ns = map (getSourceNode pg) es
+               in all ( \n ->
+                          let es' = filter isDataFlowEdge $ getOutEdges pg n
+                              phi_es = filter (isPhiNode . getTargetNode pg) es'
+                          in all (checkPhiValBlockMappings fg pg (c:st)) phi_es
+                      ) v_ns
+               else True
+
+-- | TODO
+checkPhiValBlockMappings
+  :: Graph
+     -- ^ The function graph.
+  -> Graph
+     -- ^ The pattern graph.
+  -> [Mapping Node]
+     -- ^ Current mapping state together with the candidate mapping.
+  -> Edge
+     -- ^ The pattern data-flow edge between the phi node and the value node to
+     -- check.
+  -> Bool
+checkPhiValBlockMappings fg pg st pe =
+  let v_pn = getSourceNode pg pe
+      v_fn = findFNInMapping st v_pn
+      p_pn = getTargetNode pg pe
+      p_fn = findFNInMapping st p_pn
+      def_pe = head
+               $ filter ((==) (getOutEdgeNr pe) . getOutEdgeNr)
+               $ filter isDefEdge
+               $ getOutEdges pg v_pn
+      b_pn = getTargetNode pg def_pe
+      b_fn = findFNInMapping st b_pn
+  in if isJust p_fn && isJust v_fn && isJust b_fn
+        -- Check if all necessary nodes have been mapped
+     then let df_fes = filter isDataFlowEdge
+                       $ getEdgesBetween fg (fromJust v_fn) (fromJust p_fn)
+              hasMatchingDefEdge fe =
+                let out_nr_fe = getOutEdgeNr fe
+                    def_fes = filter ((==) out_nr_fe . getOutEdgeNr)
+                              $ filter isDefEdge
+                              $ getOutEdges fg (getSourceNode fg fe)
+                in if length def_fes > 0
+                   then getTargetNode fg (head def_fes) == fromJust b_fn
+                   else False
+          in any hasMatchingDefEdge df_fes
+     else True
 
 -- | Checks if two in-edges are equivalent, meaning they must be of the same
 -- edge type, have target nodes with the same node ID, and have the same in-edge
@@ -1638,8 +1710,6 @@ componentsOf :: Graph -> [Graph]
 componentsOf (Graph g) =
     let gs = componentsOf' g
     in map Graph gs
-
--- TODO: this is taken from Graphalyze
 
 -- | Find all connected components of a graph.
 componentsOf' :: (I.DynGraph g) => g a b -> [g a b]

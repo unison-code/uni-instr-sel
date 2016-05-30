@@ -134,6 +134,8 @@ mkDefaultReconstructor =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
       mkBlockExpr r (BlockWhereinMatchIsPlacedExpr expr) =
         BlockWhereinMatchIsPlacedExpr ((mkMatchExprF r) r expr)
+      mkBlockExpr r (BlockWhereinDataIsDefinedExpr expr) =
+        BlockWhereinDataIsDefinedExpr ((mkNodeExprF r) r expr)
       mkBlockExpr r (BlockOfBlockNodeExpr expr) =
         BlockOfBlockNodeExpr ((mkNodeExprF r) r expr)
       mkLocationExpr _ expr@(ALocationIDExpr _) =

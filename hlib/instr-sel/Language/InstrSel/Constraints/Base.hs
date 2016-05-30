@@ -158,8 +158,10 @@ data InstructionExpr
 
 -- | Block expressions.
 data BlockExpr
-    -- | Retrieves the of the block in which a match has been placed.
+    -- | Retrieves the block in which a match has been placed.
   = BlockWhereinMatchIsPlacedExpr MatchExpr
+    -- | Retrieves the block in which the data of a value node has been defined.
+  | BlockWhereinDataIsDefinedExpr NodeExpr
     -- | Retrieves the block associated with a block node.
   | BlockOfBlockNodeExpr NodeExpr
   deriving (Show)
@@ -332,11 +334,14 @@ instance ToLisp InstructionExpr where
 instance FromLisp BlockExpr where
   parseLisp e =
         struct "block-wherein-match-is-placed" BlockWhereinMatchIsPlacedExpr e
+    <|> struct "block-wherein-data-is-defined" BlockWhereinDataIsDefinedExpr e
     <|> struct "block-of-bnode" BlockOfBlockNodeExpr e
 
 instance ToLisp BlockExpr where
   toLisp (BlockWhereinMatchIsPlacedExpr e) =
     mkStruct "block-wherein-match-is-placed" [toLisp e]
+  toLisp (BlockWhereinDataIsDefinedExpr e) =
+    mkStruct "block-wherein-data-is-defined" [toLisp e]
   toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
 instance FromLisp LocationExpr where
