@@ -311,18 +311,36 @@ insertAlternativeEdges vs g0 =
             processOp o g2 =
               let alts = filter (/= i) vs
                   orig_e = head $ getEdgesBetween g0 i o
-                           -- Here it is also important to get the edge from g0
+                           -- Here it is also important to get the edge from g0,
+                           -- where there should be exactly one edge between
+                           -- nodes i and o
+                  orig_in_nr = inEdgeNr $ getEdgeLabel $ orig_e
                   insertEdge v g3 =
                     let (g4, new_e) = addNewDtFlowEdge (v, o) g3
                         label = getEdgeLabel new_e
-                        orig_e_label = getEdgeLabel orig_e
-                        new_label = label { inEdgeNr = inEdgeNr orig_e_label }
+                        new_label = label { inEdgeNr = orig_in_nr }
                         g5 = updateEdgeLabel new_label new_e g4
-                    in g5
+                    in if isPhiNode o
+                       then let orig_out_nr = outEdgeNr $ getEdgeLabel $ orig_e
+                                orig_d_e = head
+                                           $ filter ( (==) orig_out_nr
+                                                      . getOutEdgeNr
+                                                    )
+                                           $ filter isDefEdge
+                                           $ getOutEdges g0 i
+                                           -- Remember to get edges from g0
+                                b_node = getTargetNode g0 orig_d_e
+                                (g6, new_d_e) = addNewDefEdge (v, b_node) g5
+                                d_label = getEdgeLabel new_d_e
+                                new_out_nr = outEdgeNr $ getEdgeLabel $ new_e
+                                new_d_label = d_label { outEdgeNr = new_out_nr
+                                                      }
+                                g7 = updateEdgeLabel new_d_label new_d_e g6
+                            in g7
+                       else g5
               in foldr insertEdge g2 alts
         in foldr processOp g1 ops
   in foldr processInput g0 vs
-  -- TODO: insert alterative definitions edges for phi nodes
 
 -- | Applies a transformation on the graph in a given function.
 getGraph :: Function -> Graph
