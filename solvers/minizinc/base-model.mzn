@@ -309,8 +309,6 @@ constraint
     )
   );
 
-% TODO: FIX!
-%
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
@@ -335,6 +333,9 @@ constraint
   (
     def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
   );
+%
+% TODO: FIX so that it supports alternatives
+%
 %int: DomRelSize =
 %  sum (l in allBlocksInFunction)
 %  (
