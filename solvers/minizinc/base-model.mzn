@@ -319,13 +319,19 @@ constraint
 % to apply this constraint even on non-selected matches as these will be placed
 % in the null block, which is dominated by every other block in the function):
 %     constraint
-%       forall (m in allMatches, o in dataUsedByMatch[m])
+%       forall ( m in allMatches
+%              , o in dataUsedByMatch[m]
+%                     where applyDefDomUseConstraintForMatch[m]
+%              )
 %       (
 %         def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
 %       );
 %
 constraint
-  forall (m in allMatches, o in dataUsedByMatch[m])
+  forall ( m in allMatches,
+           o in dataUsedByMatch[m]
+                where applyDefDomUseConstraintForMatch[m]
+         )
   (
     def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
   );
