@@ -374,16 +374,23 @@ constraint
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
 
-% All data external to a match must not be located in the null location.
+% All data external to a match, and which are not states, must not be located in
+% the null location.
 constraint
-  forall (m in allMatches diff dominatedMatches, o in dataExternalToMatch[m])
+  forall ( m in allMatches diff dominatedMatches
+         , o in dataExternalToMatch[m]
+                where not (operandAlternatives[o] subset statesInFunction)
+         )
   (
     sel[m] -> loc[alt[o]] != locValueForNull
   );
 
 % All data internal to a match must be located in the null location.
 constraint
-  forall (m in allMatches diff dominatedMatches, o in dataInternalToMatch[m])
+  forall ( m in allMatches diff dominatedMatches
+         , o in dataInternalToMatch[m]
+                where not (operandAlternatives[o] subset statesInFunction)
+         )
   (
     sel[m] -> loc[alt[o]] = locValueForNull
   );
