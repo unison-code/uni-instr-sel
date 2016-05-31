@@ -124,6 +124,8 @@ mkPhiInstruction mkEmit =
                   )
             cs = mkSameDataLocConstraints [1..n+1]
                  ++
+                 mkDataDefinitionConstraints 1 (n+2)
+                 ++
                  ( concat
                    $ zipWith mkDataDefinitionConstraints
                              (map toNodeID [2..n+1])
