@@ -518,6 +518,7 @@ solve ::
                   | m in allMatchesBySize
                     where not (m in copyInstrMatches union dominatedMatches)
                   ], input_order, indomain_max, complete)
+    , int_search(alt, input_order, indomain_max, complete)
 	]
   )
 minimize cost;
