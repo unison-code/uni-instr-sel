@@ -196,11 +196,14 @@ processMatch instr pattern match mid =
       o_ns = filter isOperationNode ns
       d_ns = filter isDatumNode ns
       b_ns = filter isBlockNode ns
-      b_ns_consumed = filter ( \n -> hasAnyPredecessors graph n
-                                     &&
-                                     hasAnySuccessors graph n
-                             )
-                             b_ns
+      entry_b = osEntryBlockNode $ patOS pattern
+      b_ns_consumed = if isJust entry_b
+                      then filter ( \n -> hasAnyPredecessors graph n
+                                          &&
+                                          hasAnySuccessors graph n
+                                  )
+                                  b_ns
+                      else []
       c_ns = filter isControlNode ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
@@ -224,7 +227,10 @@ processMatch instr pattern match mid =
        , hlNoOpMatchInternalData = findFNsInMatch match (getNodeIDs d_int_ns)
        , hlNoOpMatchEntryBlock =
            maybe Nothing (findFNInMatch match) entry_b_node_id
-       , hlNoOpMatchSpannedBlocks = findFNsInMatch match (getNodeIDs b_ns)
+       , hlNoOpMatchSpannedBlocks =
+         if isJust entry_b
+         then findFNsInMatch match (getNodeIDs b_ns)
+         else []
        , hlNoOpMatchConsumedBlocks =
            findFNsInMatch match (getNodeIDs b_ns_consumed)
        , hlNoOpMatchConstraints =
