@@ -359,7 +359,12 @@ constraint
 %  );
 
 % If a match representing a phi instruction is selected, then its data
-% must be defined in the blocks dictated by the definition edges.
+% must be defined in the blocks indicated by the definition edges.
+%
+% Input data d must be placed in some block b that dominates the block b'
+% indicated by the definition d -> b'. However, no two data d1 or d2 must be
+% placed in a block that dominates both blocks of d1 and d2.  The output data
+% must be placed in the block indicated by the definition edge.
 %
 % Note that since both 'inputDefEdgesInMatch' and 'outputDefEdgesInMatch' are
 % arrays where the indices start at 1, the value of the induction variables
@@ -369,10 +374,39 @@ constraint
 constraint
   forall (m in phiInstrMatches)
   (
-    forall (b in allBlocksInFunction, o in inputDefEdgesInMatch[m+1, b+1])
-    (
-      sel[m] -> def[alt[o]] = b
-    )
+    let {
+      array[int] of int: oset = [ o | b in allBlocksInFunction
+                                    , o in inputDefEdgesInMatch[m+1, b+1]
+                                ]
+    , array[int] of int: bset = [ b | b in allBlocksInFunction
+                                    , o in inputDefEdgesInMatch[m+1, b+1]
+                                ]
+    }
+    in forall (i,j in 1..length(oset) where i != j)
+       (
+         (sel[m] -> (def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]))
+         /\
+         (sel[m] -> (def[alt[oset[j]]] in domSetOfBlockInFunction[bset[j]]))
+         /\
+         ( sel[m] ->
+           (
+             def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]
+             /\
+             sum (k in [i, j])
+             (
+               bool2int
+               (
+                 def[alt[oset[i]]]
+                 in
+                 ( domSetOfBlockInFunction[bset[i]]
+                   intersect
+                   domSetOfBlockInFunction[bset[j]]
+                 )
+               )
+             ) <= 1
+           )
+         )
+       )
   );
 % Output data constraints
 constraint
@@ -389,7 +423,7 @@ constraint
 constraint
   forall (m in phiInstrMatches)
   (
-    all_equal([ loc[d] | d in dataExternalToMatch[m] ])
+    all_equal([ loc[alt[d]] | d in dataExternalToMatch[m] ])
   );
 
 % If a match representing a null instruction is selected, then the data used by
