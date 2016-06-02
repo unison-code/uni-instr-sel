@@ -363,8 +363,8 @@ constraint
 %
 % Input data d must be placed in some block b that dominates the block b'
 % indicated by the definition d -> b'. However, no two data d1 or d2 must be
-% placed in a block that dominates both blocks of d1 and d2.  The output data
-% must be placed in the block indicated by the definition edge.
+% placed in the same block that dominates both blocks of d1 and d2. The output
+% data must be placed in the block indicated by the definition edge.
 %
 % Note that since both 'inputDefEdgesInMatch' and 'outputDefEdgesInMatch' are
 % arrays where the indices start at 1, the value of the induction variables
@@ -390,13 +390,11 @@ constraint
          /\
          ( sel[m] ->
            (
-             def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]
-             /\
              sum (k in [i, j])
              (
                bool2int
                (
-                 def[alt[oset[i]]]
+                 def[alt[oset[k]]]
                  in
                  ( domSetOfBlockInFunction[bset[i]]
                    intersect
