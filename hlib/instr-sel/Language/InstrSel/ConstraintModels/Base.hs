@@ -168,20 +168,27 @@ data HighLevelMatchParamsNoOp
         -- ^ The pattern-specific constraints, if any. All node IDs used in the
         -- patterns refer to nodes in the function graph (not the pattern
         -- graph). No constraint in this list may use array indices.
-      , hlNoOpMatchADDUC :: Bool
-        -- ^ Whether to apply the def-dom-use constraint to this match. This
-        -- will typically always be set to 'True' for all matches except those
-        -- of the generic phi patterns.
+      , hlNoOpMatchIsPhiInstruction :: Bool
+        -- ^ Whether the corresponding instruction is a phi instruction.
       , hlNoOpMatchIsCopyInstruction :: Bool
         -- ^ Whether the corresponding instruction is a copy instruction.
       , hlNoOpMatchIsNullInstruction :: Bool
         -- ^ Whether the corresponding instruction is a null instruction.
       , hlNoOpMatchHasControlFlow :: Bool
         -- ^ Whether the corresponding pattern contains any control flow.
-      , hlNoOpMatchDataUsedByPhis :: [NodeID]
-        -- ^ The data in the function graph which are used by phi nodes
-        -- appearing this match. This information is required during instruction
-        -- emission in order to break cyclic data dependencies.
+      , hlNoOpMatchDataUsedByPhis :: [(NodeID, NodeID)]
+        -- ^ The data, together with the blocks that appear in the definition
+        -- edges, in the function graph which are used by phi nodes appearing
+        -- this match. The first element is the datum node and the second
+        -- element is the block node. This information is required for adding
+        -- the necessary constraints as well as during instruction emission in
+        -- order to break cyclic data dependencies.
+      , hlNoOpMatchDataDefinedByPhis :: [(NodeID, NodeID)]
+        -- ^ The data, together with the blocks that appear in the definition
+        -- edges, in the function graph which are defined by phi nodes appearing
+        -- this match. The first element is the datum node and the second
+        -- element is the block node. This information is required for adding
+        -- the necessary constraints.
       , hlNoOpMatchEmitStrNodeMaplist :: [[Maybe NodeID]]
         -- ^ A list of mappings of the node IDs that appears in the
         -- instruction's emit string template (which refer to nodes in the
@@ -213,11 +220,12 @@ data HighLevelMatchParamsWOp
       , hlWOpMatchCodeSize :: Integer
       , hlWOpMatchLatency :: Integer
       , hlWOpMatchConstraints :: [Constraint]
-      , hlWOpMatchADDUC :: Bool
+      , hlWOpMatchIsPhiInstruction :: Bool
       , hlWOpMatchIsCopyInstruction :: Bool
       , hlWOpMatchIsNullInstruction :: Bool
       , hlWOpMatchHasControlFlow :: Bool
-      , hlWOpMatchDataUsedByPhis :: [OperandID]
+      , hlWOpMatchDataUsedByPhis :: [(OperandID, NodeID)]
+      , hlWOpMatchDataDefinedByPhis :: [(OperandID, NodeID)]
       , hlWOpMatchEmitStrNodeMaplist :: [[Maybe (Either OperandID NodeID)]]
       }
   deriving (Show)
@@ -298,6 +306,18 @@ data LowLevelModel
       , llMatchConsumedBlocks :: [[ArrayIndex]]
         -- ^ Block in the function graph consumed by this match. An index into
         -- the outer list corresponds to the array index of a particular match.
+      , llMatchInputDefinitionEdges :: [[[ArrayIndex]]]
+        -- ^ The input definition edges that appear in this match. An index into
+        -- the outer list corresponds to the array index of a particular match,
+        -- the middle list corresponds to the array indexes of the blocks in the
+        -- function graph, and the innermost list corresponds to array indexes
+        -- of operands in the match.
+      , llMatchOutputDefinitionEdges :: [[[ArrayIndex]]]
+        -- ^ The output definition edges that appear in this match. An index
+        -- into the outer list corresponds to the array index of a particular
+        -- match, the middle list corresponds to the array indexes of the blocks
+        -- in the function graph, and the innermost list corresponds to array
+        -- indexes of operands in the match.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
         -- the array index of a particular match.
@@ -308,9 +328,8 @@ data LowLevelModel
         -- ^ The matches that correspond to copy instructions.
       , llMatchNullInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to null instructions.
-      , llMatchADDUCs :: [Bool]
-        -- ^ Whether to apply the def-dom-use constraint to some match. An index
-        -- into the list corresponds to the array index of a particular match.
+      , llMatchPhiInstructions :: [ArrayIndex]
+        -- ^ The matches that correspond to phi instructions.
       , llMatchConstraints :: [[Constraint]]
         -- ^ The list of constraints for each match. An index into the outer
         -- list corresponds to the array index of a particular match.
@@ -517,11 +536,12 @@ instance FromJSON HighLevelMatchParamsNoOp where
       <*> v .: "code-size"
       <*> v .: "latency"
       <*> v .: "constraints"
-      <*> v .: "apply-def-dom-use-constraint"
+      <*> v .: "is-phi-instr"
       <*> v .: "is-copy-instr"
       <*> v .: "is-null-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
+      <*> v .: "data-defined-by-phis"
       <*> v .: "emit-str-node-maps"
   parseJSON _ = mzero
 
@@ -543,61 +563,64 @@ instance FromJSON HighLevelMatchParamsWOp where
       <*> v .: "code-size"
       <*> v .: "latency"
       <*> v .: "constraints"
-      <*> v .: "apply-def-dom-use-constraint"
+      <*> v .: "is-phi-instr"
       <*> v .: "is-copy-instr"
       <*> v .: "is-null-instr"
       <*> v .: "has-control-flow"
       <*> v .: "data-used-by-phis"
+      <*> v .: "data-defined-by-phis"
       <*> v .: "emit-str-node-maps"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelMatchParamsNoOp where
   toJSON p@(HighLevelMatchParamsNoOp {}) =
-    object [ "instruction-id"               .= (hlNoOpMatchInstructionID p)
-           , "pattern-id"                   .= (hlNoOpMatchPatternID p)
-           , "match-id"                     .= (hlNoOpMatchID p)
-           , "operations-covered"           .= (hlNoOpMatchOperationsCovered p)
-           , "data-defined"                 .= (hlNoOpMatchDataDefined p)
-           , "data-used"                    .= (hlNoOpMatchDataUsed p)
-           , "external-data"                .= (hlNoOpMatchExternalData p)
-           , "internal-data"                .= (hlNoOpMatchInternalData p)
-           , "entry-block"                  .= (hlNoOpMatchEntryBlock p)
-           , "spanned-blocks"               .= (hlNoOpMatchSpannedBlocks p)
-           , "consumed-blocks"              .= (hlNoOpMatchConsumedBlocks p)
-           , "code-size"                    .= (hlNoOpMatchCodeSize p)
-           , "latency"                      .= (hlNoOpMatchLatency p)
-           , "constraints"                  .= (hlNoOpMatchConstraints p)
-           , "apply-def-dom-use-constraint" .= (hlNoOpMatchADDUC p)
-           , "is-copy-instr"                .= (hlNoOpMatchIsCopyInstruction p)
-           , "is-null-instr"                .= (hlNoOpMatchIsNullInstruction p)
-           , "has-control-flow"             .= (hlNoOpMatchHasControlFlow p)
-           , "data-used-by-phis"            .= (hlNoOpMatchDataUsedByPhis p)
-           , "emit-str-node-maps"           .= (hlNoOpMatchEmitStrNodeMaplist p)
+    object [ "instruction-id"       .= (hlNoOpMatchInstructionID p)
+           , "pattern-id"           .= (hlNoOpMatchPatternID p)
+           , "match-id"             .= (hlNoOpMatchID p)
+           , "operations-covered"   .= (hlNoOpMatchOperationsCovered p)
+           , "data-defined"         .= (hlNoOpMatchDataDefined p)
+           , "data-used"            .= (hlNoOpMatchDataUsed p)
+           , "external-data"        .= (hlNoOpMatchExternalData p)
+           , "internal-data"        .= (hlNoOpMatchInternalData p)
+           , "entry-block"          .= (hlNoOpMatchEntryBlock p)
+           , "spanned-blocks"       .= (hlNoOpMatchSpannedBlocks p)
+           , "consumed-blocks"      .= (hlNoOpMatchConsumedBlocks p)
+           , "code-size"            .= (hlNoOpMatchCodeSize p)
+           , "latency"              .= (hlNoOpMatchLatency p)
+           , "constraints"          .= (hlNoOpMatchConstraints p)
+           , "is-phi-instr"         .= (hlNoOpMatchIsPhiInstruction p)
+           , "is-copy-instr"        .= (hlNoOpMatchIsCopyInstruction p)
+           , "is-null-instr"        .= (hlNoOpMatchIsNullInstruction p)
+           , "has-control-flow"     .= (hlNoOpMatchHasControlFlow p)
+           , "data-used-by-phis"    .= (hlNoOpMatchDataUsedByPhis p)
+           , "data-defined-by-phis" .= (hlNoOpMatchDataDefinedByPhis p)
+           , "emit-str-node-maps"   .= (hlNoOpMatchEmitStrNodeMaplist p)
            ]
 
 instance ToJSON HighLevelMatchParamsWOp where
   toJSON p@(HighLevelMatchParamsWOp {}) =
-    object [ "instruction-id"               .= (hlWOpMatchInstructionID p)
-           , "pattern-id"                   .= (hlWOpMatchPatternID p)
-           , "match-id"                     .= (hlWOpMatchID p)
-           , "operand-node-maps"            .= (hlWOpOperandNodeMaps p)
-           , "operations-covered"           .= (hlWOpMatchOperationsCovered p)
-           , "data-defined"                 .= (hlWOpMatchDataDefined p)
-           , "data-used"                    .= (hlWOpMatchDataUsed p)
-           , "external-data"                .= (hlWOpMatchExternalData p)
-           , "internal-data"                .= (hlWOpMatchInternalData p)
-           , "entry-block"                  .= (hlWOpMatchEntryBlock p)
-           , "spanned-blocks"               .= (hlWOpMatchSpannedBlocks p)
-           , "consumed-blocks"              .= (hlWOpMatchConsumedBlocks p)
-           , "code-size"                    .= (hlWOpMatchCodeSize p)
-           , "latency"                      .= (hlWOpMatchLatency p)
-           , "constraints"                  .= (hlWOpMatchConstraints p)
-           , "apply-def-dom-use-constraint" .= (hlWOpMatchADDUC p)
-           , "is-copy-instr"                .= (hlWOpMatchIsCopyInstruction p)
-           , "is-null-instr"                .= (hlWOpMatchIsNullInstruction p)
-           , "has-control-flow"             .= (hlWOpMatchHasControlFlow p)
-           , "data-used-by-phis"            .= (hlWOpMatchDataUsedByPhis p)
-           , "emit-str-node-maps"           .= (hlWOpMatchEmitStrNodeMaplist p)
+    object [ "instruction-id"       .= (hlWOpMatchInstructionID p)
+           , "pattern-id"           .= (hlWOpMatchPatternID p)
+           , "match-id"             .= (hlWOpMatchID p)
+           , "operand-node-maps"    .= (hlWOpOperandNodeMaps p)
+           , "operations-covered"   .= (hlWOpMatchOperationsCovered p)
+           , "data-defined"         .= (hlWOpMatchDataDefined p)
+           , "data-used"            .= (hlWOpMatchDataUsed p)
+           , "external-data"        .= (hlWOpMatchExternalData p)
+           , "internal-data"        .= (hlWOpMatchInternalData p)
+           , "entry-block"          .= (hlWOpMatchEntryBlock p)
+           , "spanned-blocks"       .= (hlWOpMatchSpannedBlocks p)
+           , "consumed-blocks"      .= (hlWOpMatchConsumedBlocks p)
+           , "code-size"            .= (hlWOpMatchCodeSize p)
+           , "latency"              .= (hlWOpMatchLatency p)
+           , "constraints"          .= (hlWOpMatchConstraints p)
+           , "is-phi-instr"         .= (hlWOpMatchIsPhiInstruction p)
+           , "is-copy-instr"        .= (hlWOpMatchIsCopyInstruction p)
+           , "is-null-instr"        .= (hlWOpMatchIsNullInstruction p)
+           , "has-control-flow"     .= (hlWOpMatchHasControlFlow p)
+           , "data-used-by-phis"    .= (hlWOpMatchDataUsedByPhis p)
+           , "data-defined-by-phis" .= (hlWOpMatchDataDefinedByPhis p)
+           , "emit-str-node-maps"   .= (hlWOpMatchEmitStrNodeMaplist p)
            ]
 
 instance FromJSON HighLevelMachineParams where
@@ -637,44 +660,47 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
       <*> v .: "match-consumed-blocks"
+      <*> v .: "match-input-def-edges"
+      <*> v .: "match-output-def-edges"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-copy-instrs"
       <*> v .: "match-null-instrs"
-      <*> v .: "match-adduc-settings"
+      <*> v .: "match-phi-instrs"
       <*> v .: "match-constraints"
   parseJSON _ = mzero
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-operations"           .= (llFunNumOperations m)
-           , "fun-num-data"                 .= (llFunNumData m)
-           , "fun-num-blocks"               .= (llFunNumBlocks m)
-           , "fun-copies"                   .= (llFunCopies m)
-           , "fun-states"                   .= (llFunStates m)
-           , "fun-entry-block"              .= (llFunEntryBlock m)
-           , "fun-block-dom-sets"           .= (llFunBlockDomSets m)
-           , "fun-block-exec-freqs"         .= (llFunBBExecFreqs m)
-           , "fun-constraints"              .= (llFunConstraints m)
-           , "num-locations"                .= (llNumLocations m)
-           , "num-matches"                  .= (llNumMatches m)
-           , "num-operands"                 .= (llNumOperands m)
-           , "operand-alternatives"         .= (llOperandAlternatives m)
-           , "match-operations-covered"     .= (llMatchOperationsCovered m)
-           , "match-data-defined"           .= (llMatchDataDefined m)
-           , "match-data-used"              .= (llMatchDataUsed m)
-           , "match-external-data"          .= (llMatchExternalData m)
-           , "match-internal-data"          .= (llMatchInternalData m)
-           , "match-entry-blocks"           .= (llMatchEntryBlocks m)
-           , "match-spanned-blocks"         .= (llMatchSpannedBlocks m)
-           , "match-consumed-blocks"        .= (llMatchConsumedBlocks m)
-           , "match-code-sizes"             .= (llMatchCodeSizes m)
-           , "match-latencies"              .= (llMatchLatencies m)
-           , "match-copy-instrs"            .= (llMatchCopyInstructions m)
-           , "match-null-instrs"            .= (llMatchNullInstructions m)
-           , "match-adduc-settings"         .= (llMatchADDUCs m)
-           , "match-reuse-instrs"           .= (llMatchReuseInstructions m)
-           , "match-constraints"            .= (llMatchConstraints m)
+    object [ "fun-num-operations"       .= (llFunNumOperations m)
+           , "fun-num-data"             .= (llFunNumData m)
+           , "fun-num-blocks"           .= (llFunNumBlocks m)
+           , "fun-copies"               .= (llFunCopies m)
+           , "fun-states"               .= (llFunStates m)
+           , "fun-entry-block"          .= (llFunEntryBlock m)
+           , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
+           , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
+           , "fun-constraints"          .= (llFunConstraints m)
+           , "num-locations"            .= (llNumLocations m)
+           , "num-matches"              .= (llNumMatches m)
+           , "num-operands"             .= (llNumOperands m)
+           , "operand-alternatives"     .= (llOperandAlternatives m)
+           , "match-operations-covered" .= (llMatchOperationsCovered m)
+           , "match-data-defined"       .= (llMatchDataDefined m)
+           , "match-data-used"          .= (llMatchDataUsed m)
+           , "match-external-data"      .= (llMatchExternalData m)
+           , "match-internal-data"      .= (llMatchInternalData m)
+           , "match-entry-blocks"       .= (llMatchEntryBlocks m)
+           , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
+           , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)
+           , "match-input-def-edges"    .= (llMatchInputDefinitionEdges m)
+           , "match-output-def-edges"   .= (llMatchOutputDefinitionEdges m)
+           , "match-code-sizes"         .= (llMatchCodeSizes m)
+           , "match-latencies"          .= (llMatchLatencies m)
+           , "match-copy-instrs"        .= (llMatchCopyInstructions m)
+           , "match-null-instrs"        .= (llMatchNullInstructions m)
+           , "match-phi-instrs"         .= (llMatchPhiInstructions m)
+           , "match-constraints"        .= (llMatchConstraints m)
            ]
 
 instance FromJSON HighLevelSolution where

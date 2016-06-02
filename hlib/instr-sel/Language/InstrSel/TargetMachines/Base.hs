@@ -30,6 +30,7 @@ module Language.InstrSel.TargetMachines.Base
   , updateNodeInEmitStrTemplate
   , isInstructionCopy
   , isInstructionNull
+  , isInstructionPhi
   )
 where
 
@@ -113,10 +114,6 @@ data InstrPattern
       , patExternalData :: [NodeID]
         -- ^ The value nodes in the pattern graph that represent either input or
         -- output values to the instruction (i.e. they are not internal values).
-      , patADDUC :: Bool
-        -- ^ Indicates whether the def-dom-use constraints apply to this
-        -- pattern. This will typically always be set to 'True' for all patterns
-        -- except the generic phi patterns.
       , patEmitString :: EmitStringTemplate
         -- ^ The emit string from which the assembly instruction will be
         -- produced upon code emission if this pattern is selected.
@@ -236,3 +233,14 @@ isInstructionCopy i =
             op_nodes = filter isOperationNode $ getAllNodes g
         in length op_nodes == 1 && isCopyNode (head op_nodes)
   in all isCopyPattern pats
+
+-- ^ Checks whether the instruction is a phi instruction.
+isInstructionPhi :: Instruction -> Bool
+isInstructionPhi i =
+  let pats = instrPatterns i
+      isPhiPattern p =
+        let os = patOS p
+            g = osGraph os
+            op_nodes = filter isOperationNode $ getAllNodes g
+        in length op_nodes == 1 && isPhiNode (head op_nodes)
+  in all isPhiPattern pats

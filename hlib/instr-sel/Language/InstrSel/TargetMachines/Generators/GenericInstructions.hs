@@ -122,20 +122,10 @@ mkPhiInstruction mkEmit =
                             [2..n+1]
                       )
                   )
-            cs = mkSameDataLocConstraints [1..n+1]
-                 ++
-                 mkDataDefinitionConstraints 1 (n+2)
-                 ++
-                 ( concat
-                   $ zipWith mkDataDefinitionConstraints
-                             (map toNodeID [2..n+1])
-                             (map toNodeID [n+3..2*n+2])
-                 )
         in InstrPattern
              { patID = (toPatternID $ n-2)
-             , patOS = OpStructure g Nothing cs
+             , patOS = OpStructure g Nothing []
              , patExternalData = [1..n+1]
-             , patADDUC = False
              , patEmitString = mkEmit (map toNodeID [2..n+1]) 1
              }
   in Instruction { instrID = 0
@@ -171,7 +161,6 @@ mkBrFallThroughInstruction =
           { patID = 0
           , patOS = OpStructure g (Just 1) cs
           , patExternalData = []
-          , patADDUC = True
           , patEmitString = EmitStringTemplate []
           }
   in Instruction
@@ -202,7 +191,6 @@ mkDataDefInstruction =
           { patID = pid
           , patOS = OpStructure g (Just 0) cs
           , patExternalData = [1]
-          , patADDUC = True
           , patEmitString = EmitStringTemplate []
           }
   in Instruction
@@ -242,7 +230,6 @@ mkTempNullCopyInstruction bits =
                        { patID = pid
                        , patOS = OpStructure (g w) Nothing cs
                        , patExternalData = [1, 2]
-                       , patADDUC = True
                        , patEmitString = EmitStringTemplate []
                        }
   in Instruction

@@ -364,11 +364,6 @@ dumpParams( fixLocationValues(json_data["loc-domain"])
           , "locDomain"
           , VT_ARRAY2D
           )
-dumpParams( convert2Bool(json_data["match-adduc-settings"])
-          , "applyDefDomUseConstraintForMatch"
-          , VT_ARRAY1D
-          , "allMatches"
-          )
 dumpParams( json_data["match-code-sizes"]
           , "codeSizeOfMatch"
           , VT_ARRAY1D
@@ -423,6 +418,11 @@ dumpParams( json_data["match-null-instrs"]
           , "nullInstrMatches"
           , VT_SET
           )
+dumpParams( json_data["match-phi-instrs"]
+          , "phiInstrMatches"
+          , VT_SET
+          , "allMatches"
+          )
 dumpParams( json_data["match-operations-covered"]
           , "operationsCoveredByMatch"
           , VT_ARRAY1D
@@ -433,6 +433,18 @@ dumpParams( json_data["match-spanned-blocks"]
           , "spannedBlocksInMatch"
           , VT_ARRAY1D
           , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-input-def-edges"]
+          , "inputDefEdgesInMatch"
+          , VT_ARRAY2D
+          , ""
+          , VC_SET
+          )
+dumpParams( json_data["match-output-def-edges"]
+          , "outputDefEdgesInMatch"
+          , VT_ARRAY2D
+          , ""
           , VC_SET
           )
 dumpParams( json_data["num-locations"]

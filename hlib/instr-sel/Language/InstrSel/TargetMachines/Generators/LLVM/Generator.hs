@@ -128,7 +128,6 @@ mkInstrPatterns locs i =
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
                              , TM.patExternalData = ext_values
-                             , TM.patADDUC = True
                              , TM.patEmitString = tmpl
                              }
         findValueNodeFromOperand os' (LLVM.RegInstrOperand op_name _) =

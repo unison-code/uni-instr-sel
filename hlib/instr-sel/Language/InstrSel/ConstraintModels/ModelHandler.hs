@@ -213,6 +213,20 @@ processMatch instr pattern match mid =
                         d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
+      b_use_by_phi_ns = map ( getTargetNode graph
+                              . head
+                              . filter isDefEdge
+                              . getOutEdges graph
+                            )
+                            d_use_by_phi_ns
+      d_def_by_phi_ns = filter (\n -> any isPhiNode (getPredecessors graph n))
+                               d_def_ns
+      b_def_by_phi_ns = map ( getSourceNode graph
+                              . head
+                              . filter isDefEdge
+                              . getInEdges graph
+                            )
+                            d_def_by_phi_ns
       entry_b_node_id = osEntryBlockNode $ patOS pattern
       i_props = instrProps instr
       emit_maps = computeEmitStrNodeMaps (patEmitString pattern) match
@@ -237,14 +251,18 @@ processMatch instr pattern match mid =
            map
              ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
              (osConstraints $ patOS pattern)
-       , hlNoOpMatchADDUC = patADDUC pattern
+       , hlNoOpMatchIsPhiInstruction = isInstructionPhi $ instr
        , hlNoOpMatchIsCopyInstruction = isInstructionCopy $ instr
        , hlNoOpMatchIsNullInstruction = isInstructionNull instr
        , hlNoOpMatchHasControlFlow = length c_ns > 0
        , hlNoOpMatchCodeSize = instrCodeSize i_props
        , hlNoOpMatchLatency = instrLatency i_props
        , hlNoOpMatchDataUsedByPhis =
-           findFNsInMatch match (getNodeIDs d_use_by_phi_ns)
+           zip (findFNsInMatch match $ getNodeIDs d_use_by_phi_ns)
+               (findFNsInMatch match $ getNodeIDs b_use_by_phi_ns)
+       , hlNoOpMatchDataDefinedByPhis =
+           zip (findFNsInMatch match $ getNodeIDs d_def_by_phi_ns)
+               (findFNsInMatch match $ getNodeIDs b_def_by_phi_ns)
        , hlNoOpMatchEmitStrNodeMaplist = emit_maps
        }
 
@@ -366,12 +384,16 @@ mkHLMatchParamsWOp p oid =
          , hlWOpMatchConstraints =
              map (replaceNodeIDsWithOperandIDs op_node_maps)
                  (hlNoOpMatchConstraints p)
-         , hlWOpMatchADDUC = hlNoOpMatchADDUC p
+         , hlWOpMatchIsPhiInstruction = hlNoOpMatchIsPhiInstruction p
          , hlWOpMatchIsCopyInstruction = hlNoOpMatchIsCopyInstruction p
          , hlWOpMatchIsNullInstruction = hlNoOpMatchIsNullInstruction p
          , hlWOpMatchHasControlFlow = hlNoOpMatchHasControlFlow p
          , hlWOpMatchDataUsedByPhis =
-             map getOpIDFromNodeID $ hlNoOpMatchDataUsedByPhis p
+             map (\(v, b) -> (getOpIDFromNodeID v, b))
+                 (hlNoOpMatchDataUsedByPhis p)
+         , hlWOpMatchDataDefinedByPhis =
+             map (\(v, b) -> (getOpIDFromNodeID v, b))
+                 (hlNoOpMatchDataDefinedByPhis p)
          , hlWOpMatchEmitStrNodeMaplist =
              map ( map ( \n ->
                           if isJust n
@@ -467,6 +489,32 @@ lowerHighLevelModel model ai_maps =
                           (hlWOpMatchParams model)
       operands = sortByAI (getAIForOperandID . fst)
                           (concatMap (hlWOpOperandNodeMaps) m_params)
+      blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
+      in_def_edges = map ( \m ->
+                             map ( \b ->
+                                     if hlWOpMatchIsPhiInstruction m
+                                     then let ops = map fst
+                                                    $ filter ((==) b . snd)
+                                                    $ hlWOpMatchDataUsedByPhis m
+                                          in ops
+                                     else []
+                                 )
+                                 blocks
+                         )
+                         m_params
+      out_def_edges = map ( \m ->
+                              map ( \b ->
+                                      if hlWOpMatchIsPhiInstruction m
+                                      then let ops =
+                                                 map fst
+                                                 $ filter ((==) b . snd)
+                                                 $ hlWOpMatchDataDefinedByPhis m
+                                           in ops
+                                      else []
+                                  )
+                                  blocks
+                          )
+                          m_params
   in LowLevelModel
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
@@ -508,9 +556,15 @@ lowerHighLevelModel model ai_maps =
                                     (map hlWOpMatchSpannedBlocks m_params)
        , llMatchConsumedBlocks = map (map getAIForBlockNodeID)
                                     (map hlWOpMatchConsumedBlocks m_params)
+       , llMatchInputDefinitionEdges =
+         map (map (map getAIForOperandID)) in_def_edges
+       , llMatchOutputDefinitionEdges =
+         map (map (map getAIForOperandID)) out_def_edges
        , llMatchCodeSizes = map hlWOpMatchCodeSize m_params
        , llMatchLatencies = map hlWOpMatchLatency m_params
-       , llMatchADDUCs = map hlWOpMatchADDUC m_params
+       , llMatchPhiInstructions =
+           map (getAIForMatchID . hlWOpMatchID)
+               (filter hlWOpMatchIsPhiInstruction m_params)
        , llMatchCopyInstructions =
            map (getAIForMatchID . hlWOpMatchID)
                (filter hlWOpMatchIsCopyInstruction m_params)

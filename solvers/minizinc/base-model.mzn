@@ -45,6 +45,7 @@ int: numLocations;
 % Match data.
 int: numMatches;
 int: numOperands;
+array[allOperands] of set of int: operandAlternatives;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: dataDefinedByMatch;
 array[allMatches] of set of int: dataUsedByMatch;
@@ -53,21 +54,22 @@ array[allMatches] of set of int: dataInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
+array[int, int] of set of int: inputDefEdgesInMatch;
+array[int, int] of set of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
-array[allMatches] of bool: applyDefDomUseConstraintForMatch;
 set of allMatches: copyInstrMatches;
 set of allMatches: nullInstrMatches;
+set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 set of allMatches: dominatedMatches;
-array[allOperands] of set of int: operandAlternatives;
 
 % Arrays that encode constraints
-array[int,int] of int: sameLoc;
-array[int,int] of int: inBlockSucc;
-array[int,int] of int: inBlock;
-array[int,int] of int: locDomain;
-array[int,int] of int: funLocDomain;
+array[int, int] of int: sameLoc;
+array[int, int] of int: inBlockSucc;
+array[int, int] of int: inBlock;
+array[int, int] of int: locDomain;
+array[int, int] of int: funLocDomain;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -139,7 +141,7 @@ array[allMatches] of var bool: sel;
 % Blocks wherein the matches are placed.
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
 
-% TODO
+% Data selected for the operands.
 array[allOperands] of var allDataInFunction: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
@@ -155,6 +157,7 @@ var int: cost;
 % GLOBAL CONSTRAINTS
 %====================
 
+include "all_equal.mzn";
 include "circuit.mzn";
 include "table.mzn";
 
@@ -319,7 +322,7 @@ constraint
 %     constraint
 %       forall ( m in allMatches
 %              , o in dataUsedByMatch[m]
-%                     where applyDefDomUseConstraintForMatch[m]
+%                     where not (m in phiInstrMatches)
 %              )
 %       (
 %         def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
@@ -328,7 +331,7 @@ constraint
 constraint
   forall ( m in allMatches,
            o in dataUsedByMatch[m]
-                where applyDefDomUseConstraintForMatch[m]
+                where not (m in phiInstrMatches)
          )
   (
     def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
@@ -354,6 +357,40 @@ constraint
 %  (
 %    table([place[m], def[e]], DomRel)
 %  );
+
+% If a match representing a phi instruction is selected, then its data
+% must be defined in the blocks dictated by the definition edges.
+%
+% Note that since both 'inputDefEdgesInMatch' and 'outputDefEdgesInMatch' are
+% arrays where the indices start at 1, the value of the induction variables
+% must be adjusted accordingly.
+%
+% Input data constraints
+constraint
+  forall (m in phiInstrMatches)
+  (
+    forall (b in allBlocksInFunction, o in inputDefEdgesInMatch[m+1, b+1])
+    (
+      sel[m] -> def[alt[o]] = b
+    )
+  );
+% Output data constraints
+constraint
+  forall (m in phiInstrMatches)
+  (
+    forall (b in allBlocksInFunction, o in outputDefEdgesInMatch[m+1, b+1])
+    (
+      sel[m] -> def[alt[o]] = b
+    )
+  );
+
+% If a match representing a phi instruction is selected, then its data
+% must be placed in the same location.
+constraint
+  forall (m in phiInstrMatches)
+  (
+    all_equal([ loc[d] | d in dataExternalToMatch[m] ])
+  );
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.

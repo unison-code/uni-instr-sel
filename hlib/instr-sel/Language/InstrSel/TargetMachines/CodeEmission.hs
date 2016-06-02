@@ -229,7 +229,10 @@ addUseEdgesToDAG sol model mid g0 =
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
-      op_uses_of_m = filter (`notElem` hlWOpMatchDataUsedByPhis match)
+      op_uses_of_m = filter ( `notElem` ( map fst
+                                          $ hlWOpMatchDataUsedByPhis match
+                                        )
+                            )
                             (hlWOpMatchDataUsed match)
       d_uses_of_m = map getNodeID op_uses_of_m
       defs_of_m =
