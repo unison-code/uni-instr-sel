@@ -68,7 +68,7 @@ set of allMatches: dominatedMatches;
 array[int, int] of int: sameLoc;
 array[int, int] of int: inBlockSucc;
 array[int, int] of int: inBlock;
-array[int, int] of int: locDomain;
+array[int, int] of int: matchLocDomain;
 array[int, int] of int: funLocDomain;
 
 % These variables will be set by concatenating the definitions to the end of
@@ -511,16 +511,16 @@ constraint
   );
 
 constraint
-  forall(i in index_set_1of2(locDomain))(
-    let {int: m = locDomain[i,1],
-         int: l = locDomain[i,2]} in
-	sel[m] -> loc[l] in locDomain[i,3]..locDomain[i,4]
+  forall(i in index_set_1of2(matchLocDomain))(
+    let {int: m = matchLocDomain[i,1],
+         int: o = matchLocDomain[i,2]} in
+    sel[m] -> loc[alt[o]] in matchLocDomain[i,3]..matchLocDomain[i,4]
   );
 
 constraint
   forall(i in index_set_1of2(funLocDomain))(
-    let {int: l = funLocDomain[i,1]} in
-	loc[l] in funLocDomain[i,2]..funLocDomain[i,3]
+    let {int: d = funLocDomain[i,1]} in
+	loc[d] in funLocDomain[i,2]..funLocDomain[i,3]
   );
 
 
@@ -549,11 +549,11 @@ constraint
     let {int: m1 = sameLoc[i,1],
          int: p = sameLoc[i,2],
          int: q = sameLoc[i,3]} in
-    forall(j1 in index_set_1of2(locDomain) where locDomain[j1,2]=p)(
-      forall(j2 in index_set_1of2(locDomain) where locDomain[j2,1]=locDomain[j1,1] /\
-                                                   locDomain[j2,2]=q)(
-        let {int: m2 = locDomain[j1,1]} in
-	    card((locDomain[j1,3]..locDomain[j1,4]) intersect (locDomain[j2,3]..locDomain[j2,4]))=0 ->
+    forall(j1 in index_set_1of2(matchLocDomain) where matchLocDomain[j1,2]=p)(
+      forall(j2 in index_set_1of2(matchLocDomain) where matchLocDomain[j2,1]=matchLocDomain[j1,1] /\
+                                                   matchLocDomain[j2,2]=q)(
+        let {int: m2 = matchLocDomain[j1,1]} in
+	    card((matchLocDomain[j1,3]..matchLocDomain[j1,4]) intersect (matchLocDomain[j2,3]..matchLocDomain[j2,4]))=0 ->
             not sel[m1] \/ not sel[m2]
       )
     )
@@ -569,9 +569,9 @@ constraint
 %         int: hi = funLocDomain[i,3]} in
 %	lo<=31 -> hi>=31 \/ hi=0
 %  ) /\
-%  forall(i in index_set_1of2(locDomain))(
-%    let {int: lo = locDomain[i,3],
-%         int: hi = locDomain[i,4]} in
+%  forall(i in index_set_1of2(matchLocDomain))(
+%    let {int: lo = matchLocDomain[i,3],
+%         int: hi = matchLocDomain[i,4]} in
 %	lo<=31 -> hi>=31 \/ hi=0
 %  ) ->
 %  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));

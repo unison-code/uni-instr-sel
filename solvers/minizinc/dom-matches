@@ -55,26 +55,25 @@ def error(msg):
 #    - both matches have the same entry block,
 #    - both matches span across the same blocks,
 #    - both matches apply the def-dom-use constraint,
-#    - if m2 defines any constraints in the parameter "loc-domain", then m1
-#      defines constraints that are at least as strong,
+#    - if m2 defines any constraints in the parameter "match-loc-domain",
+#      then m1 defines constraints that are at least as strong,
 #      and
 #    - both matches have exactly the same auxiliary constraints (TODO: relax?).
 def isMatchDominated(json, m1):
     def IsLocDomainAtLeastAsStrong(json, m2):
-        loc_domains = json["loc-domain"]
+        loc_domains = json["match-loc-domain"]
         R = range(len(loc_domains))
+        O = json["operand-alternatives"]
         for i in [ i for i in R if loc_domains[i][0] == m2]:
             # Find constraint in m1 that is at least as strong
             found = False
-            for j in [ j for j in R if loc_domains[j][0] == m1
-                                    and
-                                    loc_domains[i][1] == loc_domains[j][1]
-                     ]:
-                if set(range(loc_domains[j][2], loc_domains[j][3]+1)).issubset(
-                        set(range(loc_domains[i][2], loc_domains[i][3]+1))
-                   ):
-                    found = True
-                    break
+            for j in [ j for j in R if loc_domains[j][0] == m1 ]:
+                if sorted(O[loc_domains[i][1]]) == sorted(O[loc_domains[j][1]]):
+                    regs2 = set(range(loc_domains[j][2], loc_domains[j][3]+1))
+                    regs1 = set(range(loc_domains[i][2], loc_domains[i][3]+1))
+                    if regs2.issubset(regs1):
+                        found = True
+                        break
 
             # No such constraint found
             if not found:
@@ -83,7 +82,11 @@ def isMatchDominated(json, m1):
         # All checks have passed
         return True
 
-
+    def AreOperandListsSame(json, lo1, lo2):
+        O = json["operand-alternatives"]
+        ln1 = [ sorted(O[o]) for o in lo1 ]
+        ln2 = [ sorted(O[o]) for o in lo2 ]
+        return ln1 == ln2
 
     excl_matches = ( set([ int(t[0]) for t in json["same-loc"] ])
                      |
@@ -113,14 +116,14 @@ def isMatchDominated(json, m1):
                set(json["match-operations-covered"][m1])
              )
              and
-             ( set(json["match-data-defined"][m2])
-               ==
-               set(json["match-data-defined"][m1])
+             ( AreOperandListsSame(json,
+                                   json["match-data-defined"][m2],
+                                   json["match-data-defined"][m1])
              )
              and
-             ( set(json["match-data-used"][m2])
-               ==
-               set(json["match-data-used"][m1])
+             ( AreOperandListsSame(json,
+                                   json["match-data-used"][m2],
+                                   json["match-data-used"][m1])
              )
              and
              json["match-entry-blocks"][m2] == json["match-entry-blocks"][m1]
@@ -128,11 +131,6 @@ def isMatchDominated(json, m1):
              ( set(json["match-spanned-blocks"][m2])
                ==
                set(json["match-spanned-blocks"][m1])
-             )
-             and
-             ( json["match-adduc-settings"][m2]
-               ==
-               json["match-adduc-settings"][m1]
              )
              and
              IsLocDomainAtLeastAsStrong(json, m2)

@@ -360,8 +360,8 @@ dumpParams( json_data["in-block-succ"]
           , "inBlockSucc"
           , VT_ARRAY2D
           )
-dumpParams( fixLocationValues(json_data["loc-domain"])
-          , "locDomain"
+dumpParams( fixLocationValues(json_data["match-loc-domain"])
+          , "matchLocDomain"
           , VT_ARRAY2D
           )
 dumpParams( json_data["match-code-sizes"]
