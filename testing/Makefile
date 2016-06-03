@@ -94,6 +94,7 @@ hlib:
 .PHONY: clean
 clean:
 	$(RM) *.json
+	$(RM) *.mzn
 	$(RM) *.s
 	$(RM) *.stats
 	$(RM) *.dump
