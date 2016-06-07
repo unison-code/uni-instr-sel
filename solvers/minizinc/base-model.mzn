@@ -421,7 +421,7 @@ constraint
 constraint
   forall (m in phiInstrMatches)
   (
-    all_equal([ loc[alt[d]] | d in dataExternalToMatch[m] ])
+    sel[m] -> all_equal([ loc[alt[d]] | d in dataExternalToMatch[m] ])
   );
 
 % If a match representing a null instruction is selected, then the data used by
