@@ -108,6 +108,8 @@ data HighLevelFunctionParams
       , hlFunStateDefEdges :: [(NodeID, NodeID)]
         -- ^ The definition edges in the function graph that involve states. The
         -- first element is a block node and the second element is a state node.
+      , hlFunValidValueLocs :: [(NodeID, [LocationID])]
+        -- ^ The value nodes together with a list of valid locations.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
         -- ^ The value nodes which represent integer constants together with
         -- their values.
@@ -156,6 +158,9 @@ data HighLevelMatchParamsNoOp
       , hlNoOpMatchInternalData :: [NodeID]
         -- ^ The data in the function graph which are external to this match
         -- (i.e. neither input nor output).
+      , hlNoOpMatchValidValueLocs :: [(NodeID, [LocationID])]
+        -- ^ The data in the function graph together with a list of locations
+        -- that are valid for this match.
       , hlNoOpMatchEntryBlock :: Maybe NodeID
         -- ^ A block in the function graph that appears as entry block
         -- (if there is such a block) of this match.
@@ -217,6 +222,7 @@ data HighLevelMatchParamsWOp
       , hlWOpMatchDataUsed :: [OperandID]
       , hlWOpMatchExternalData :: [OperandID]
       , hlWOpMatchInternalData :: [OperandID]
+      , hlWOpMatchValidValueLocs :: [(OperandID, [LocationID])]
       , hlWOpMatchEntryBlock :: Maybe NodeID
       , hlWOpMatchSpannedBlocks :: [NodeID]
       , hlWOpMatchConsumedBlocks :: [NodeID]
@@ -256,6 +262,11 @@ data LowLevelModel
         -- ^ The copy nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
+        -- ^ The valid locations for each datum in the function graph (an empty
+        -- list means that all locations are valid). The first element is the
+        -- array index of a particular datum, and the second element is a
+        -- location.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
       , llFunBlockDomSets :: [[ArrayIndex]]
@@ -303,6 +314,11 @@ data LowLevelModel
         -- ^ The list of data in the function graph that are internal to each
         -- match. An index into the outer list corresponds to the array index of
         -- a particular match.
+      , llMatchValidValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The locations that are valid for a particular operand in a certain
+        -- match. The first element is the array index of a particular match,
+        -- the second element is an operand, and the third element is a
+        -- location.
       , llMatchEntryBlocks :: [Maybe ArrayIndex]
         -- ^ The block in the function graph which is the entry block (if any)
         -- of each match. An index into the list corresponds to the array index
@@ -488,6 +504,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "block-dom-sets"
       <*> v .: "block-params"
       <*> v .: "state-def-edges"
+      <*> v .: "valid-value-locs"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
       <*> v .: "call-name-data"
@@ -505,6 +522,7 @@ instance ToJSON HighLevelFunctionParams where
            , "block-dom-sets"           .= (hlFunBlockDomSets p)
            , "block-params"             .= (hlFunBlockParams p)
            , "state-def-edges"          .= (hlFunStateDefEdges p)
+           , "valid-value-locs"         .= (hlFunValidValueLocs p)
            , "int-constant-data"        .= (hlFunValueIntConstData p)
            , "value-origin-data"        .= (hlFunValueOriginData p)
            , "call-name-data"           .= (hlFunCallNameData p)
@@ -537,6 +555,7 @@ instance FromJSON HighLevelMatchParamsNoOp where
       <*> v .: "data-used"
       <*> v .: "external-data"
       <*> v .: "internal-data"
+      <*> v .: "valid-value-locs"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
       <*> v .: "consumed-blocks"
@@ -564,6 +583,7 @@ instance FromJSON HighLevelMatchParamsWOp where
       <*> v .: "data-used"
       <*> v .: "external-data"
       <*> v .: "internal-data"
+      <*> v .: "valid-value-locs"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
       <*> v .: "consumed-blocks"
@@ -589,6 +609,7 @@ instance ToJSON HighLevelMatchParamsNoOp where
            , "data-used"            .= (hlNoOpMatchDataUsed p)
            , "external-data"        .= (hlNoOpMatchExternalData p)
            , "internal-data"        .= (hlNoOpMatchInternalData p)
+           , "valid-value-locs"     .= (hlNoOpMatchValidValueLocs p)
            , "entry-block"          .= (hlNoOpMatchEntryBlock p)
            , "spanned-blocks"       .= (hlNoOpMatchSpannedBlocks p)
            , "consumed-blocks"      .= (hlNoOpMatchConsumedBlocks p)
@@ -615,6 +636,7 @@ instance ToJSON HighLevelMatchParamsWOp where
            , "data-used"            .= (hlWOpMatchDataUsed p)
            , "external-data"        .= (hlWOpMatchExternalData p)
            , "internal-data"        .= (hlWOpMatchInternalData p)
+           , "valid-value-locs"     .= (hlWOpMatchValidValueLocs p)
            , "entry-block"          .= (hlWOpMatchEntryBlock p)
            , "spanned-blocks"       .= (hlWOpMatchSpannedBlocks p)
            , "consumed-blocks"      .= (hlWOpMatchConsumedBlocks p)
@@ -651,6 +673,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-blocks"
       <*> v .: "fun-copies"
       <*> v .: "fun-states"
+      <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-block-exec-freqs"
@@ -665,6 +688,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-data-used"
       <*> v .: "match-external-data"
       <*> v .: "match-internal-data"
+      <*> v .: "match-valid-value-locs"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
       <*> v .: "match-consumed-blocks"
@@ -685,6 +709,7 @@ instance ToJSON LowLevelModel where
            , "fun-num-blocks"           .= (llFunNumBlocks m)
            , "fun-copies"               .= (llFunCopies m)
            , "fun-states"               .= (llFunStates m)
+           , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
            , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
            , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
@@ -699,6 +724,7 @@ instance ToJSON LowLevelModel where
            , "match-data-used"          .= (llMatchDataUsed m)
            , "match-external-data"      .= (llMatchExternalData m)
            , "match-internal-data"      .= (llMatchInternalData m)
+           , "match-valid-value-locs"   .= (llMatchValidValueLocs m)
            , "match-entry-blocks"       .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
            , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)

@@ -334,6 +334,10 @@ dumpParams( json_data["fun-block-exec-freqs"]
 dumpParams( json_data["fun-entry-block"]
           , "entryBlockOfFunction"
           )
+dumpParams( json_data["fun-valid-value-locs"]
+          , "funValidValueLocs"
+          , VT_ARRAY2D
+          )
 dumpParams( json_data["fun-loc-domain"]
           , "funLocDomain"
           , VT_ARRAY2D
@@ -365,6 +369,10 @@ dumpParams( json_data["in-block"]
           )
 dumpParams( json_data["in-block-succ"]
           , "inBlockSucc"
+          , VT_ARRAY2D
+          )
+dumpParams( json_data["match-valid-value-locs"]
+          , "matchValidValueLocs"
           , VT_ARRAY2D
           )
 dumpParams( fixLocationValues(json_data["match-loc-domain"])

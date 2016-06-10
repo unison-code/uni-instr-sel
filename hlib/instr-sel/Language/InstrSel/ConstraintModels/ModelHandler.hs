@@ -122,6 +122,15 @@ mkHLFunctionParams function target =
                             )
                      $ filter isDefEdge
                      $ getAllEdges graph
+      valid_locs =
+        -- TODO: do a proper implemention. Right now it's just a quick hack to
+        -- prevent the input arguments from being located in a fixed-value
+        -- register
+        let okay_locs = map locID
+                        $ filter (isNothing . locValue)
+                        $ tmLocations target
+        in map (\n -> (n, okay_locs))
+           $ functionInputs function
       int_const_data =
         let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub
@@ -146,17 +155,6 @@ mkHLFunctionParams function target =
                        )
                )
                ns
-      mkCallingConventionConstraints =
-        -- TODO: do a proper implemention. Right now it's just a quick hack to
-        -- prevent the input arguments from being located in a zero-value
-        -- register
-        let okay_locs = map locID
-                        $ filter (isNothing . locValue)
-                        $ tmLocations target
-        in concatMap ( \n ->
-                       mkNewDataLocConstraints okay_locs n
-                     )
-                     (functionInputs function)
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
@@ -167,12 +165,11 @@ mkHLFunctionParams function target =
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunBlockParams = bb_params
        , hlFunStateDefEdges = state_def_es
+       , hlFunValidValueLocs = valid_locs
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
        , hlFunCallNameData = call_name_data
-       , hlFunConstraints = (osConstraints $ functionOS function)
-                            ++
-                            mkCallingConventionConstraints
+       , hlFunConstraints = osConstraints $ functionOS function
        }
 
 mkHLMachineParams :: TargetMachine -> HighLevelMachineParams
@@ -245,6 +242,8 @@ processMatch instr pattern match mid =
       entry_b_node_id = osEntryBlockNode $ patOS pattern
       i_props = instrProps instr
       emit_maps = computeEmitStrNodeMaps (patEmitString pattern) match
+      valid_locs = map (\(pn, ls) -> (fromJust $ findFNInMatch match pn, ls))
+                   $ osValidLocations $ patOS pattern
   in HighLevelMatchParamsNoOp
        { hlNoOpMatchInstructionID = instrID instr
        , hlNoOpMatchPatternID = patID pattern
@@ -254,6 +253,7 @@ processMatch instr pattern match mid =
        , hlNoOpMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
        , hlNoOpMatchExternalData = findFNsInMatch match (getNodeIDs d_ext_ns)
        , hlNoOpMatchInternalData = findFNsInMatch match (getNodeIDs d_int_ns)
+       , hlNoOpMatchValidValueLocs = valid_locs
        , hlNoOpMatchEntryBlock =
            maybe Nothing (findFNInMatch match) entry_b_node_id
        , hlNoOpMatchSpannedBlocks =
@@ -391,6 +391,9 @@ mkHLMatchParamsWOp p oid =
              map getOpIDFromNodeID $ hlNoOpMatchExternalData p
          , hlWOpMatchInternalData =
              map getOpIDFromNodeID $ hlNoOpMatchInternalData p
+         , hlWOpMatchValidValueLocs =
+             map (\(n, ls) -> (getOpIDFromNodeID n, ls))
+             $ hlNoOpMatchValidValueLocs p
          , hlWOpMatchEntryBlock = hlNoOpMatchEntryBlock p
          , hlWOpMatchSpannedBlocks = hlNoOpMatchSpannedBlocks p
          , hlWOpMatchConsumedBlocks = hlNoOpMatchConsumedBlocks p
@@ -492,6 +495,7 @@ lowerHighLevelModel model ai_maps =
       getAIForBlockNodeID nid = fromJust $ findAIWithBlockNodeID ai_maps nid
       getAIForOperandID oid = fromJust $ findAIWithOperandID ai_maps oid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
+      getAIForLocationID lid = fromJust $ findAIWithLocationID ai_maps lid
       pairWithAI get_ai_f nids = map (\nid -> (get_ai_f nid, nid)) nids
       sortByAI get_ai_f nids =
         map snd
@@ -534,12 +538,26 @@ lowerHighLevelModel model ai_maps =
                                 blocks
                   )
                   m_params
+      f_valid_locs =
+        concatMap (\(n, ls) -> map (\l -> (n, l)) ls)
+                  (hlFunValidValueLocs f_params)
+      m_valid_locs =
+        concatMap ( \m ->
+                      concatMap ( \(o, ls) ->
+                                    map (\l -> (hlWOpMatchID m, o, l)) ls
+                                )
+                                (hlWOpMatchValidValueLocs m)
+                  )
+                  m_params
   in LowLevelModel
        { llFunNumOperations = toInteger $ length $ hlFunOperations f_params
        , llFunNumData = toInteger $ length $ hlFunData f_params
        , llFunNumBlocks = toInteger $ length $ hlFunBlocks f_params
        , llFunCopies = map getAIForOperationNodeID (hlFunCopies f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
+       , llFunValidValueLocs =
+           map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))
+               f_valid_locs
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d))
@@ -571,6 +589,14 @@ lowerHighLevelModel model ai_maps =
            map (map getAIForOperandID . hlWOpMatchExternalData) m_params
        , llMatchInternalData =
            map (map getAIForOperandID . hlWOpMatchInternalData) m_params
+       , llMatchValidValueLocs =
+           map ( \(m, o, l) ->
+                   ( getAIForMatchID m
+                   , getAIForOperandID o
+                   , getAIForLocationID l
+                   )
+               )
+               m_valid_locs
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID))
                (map hlWOpMatchEntryBlock m_params)

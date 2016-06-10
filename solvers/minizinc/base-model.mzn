@@ -35,6 +35,7 @@ int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
+array[int, int] of int: funValidValueLocs;
 set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
@@ -55,6 +56,7 @@ array[allMatches] of set of int: dataInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
+array[int, int] of int: matchValidValueLocs;
 array[int, int] of int: inputDefEdgesInMatch;
 array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
@@ -181,11 +183,27 @@ predicate fall_through(int: m, int: b) =
 % CONSTRAINTS
 %=============
 
-% Constraint alternatives of operands.
+% Constrain alternatives of operands.
 constraint
   forall (o in allOperands)
   (
     alt[o] in operandAlternatives[o]
+  );
+
+% Constrain locations of data representing values.
+constraint
+  forall (d in allDataInFunction)
+  (
+    let {
+      set of int: locs = { funValidValueLocs[i, 2]
+                         | i in index_set_1of2(funValidValueLocs)
+                                where funValidValueLocs[i, 1] = d
+                         }
+    }
+    in if card(locs) > 0
+       then loc[d] in locs
+       else true
+       endif
   );
 
 % Enforce that, for each operation, exactly one match must be selected such that
@@ -431,6 +449,27 @@ constraint
     , int: o = outputDefEdgesInMatch[i, 3]
     }
     in sel[m] -> def[alt[o]] = b
+  );
+
+% Constrain locations of operands representing values for selected matches.
+constraint
+  forall (m in allMatches)
+  (
+    forall (o in allOperands)
+    (
+      let {
+        set of int: locs = { matchValidValueLocs[i, 3]
+                           | i in index_set_1of2(matchValidValueLocs)
+                                  where matchValidValueLocs[i, 1] = m
+                                  /\
+                                  matchValidValueLocs[i, 2] = o
+                           }
+      }
+      in if card(locs) > 0
+         then sel[m] -> loc[alt[o]] in locs
+         else true
+         endif
+    )
   );
 
 % If a match representing a phi instruction is selected, then its data
