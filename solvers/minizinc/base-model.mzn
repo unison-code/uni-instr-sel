@@ -229,12 +229,12 @@ constraint
 % cover any operations, they are not entailed in the above constraint for
 % exactly covering each operation.
 constraint
-  forall (e in allDataInFunction)
+  forall (d in allDataInFunction)
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
                              , o in dataDefinedByMatch[m]
-                                    where e in operandAlternatives[o]
+                                    where d in operandAlternatives[o]
                          }
     }
     in if card(mset) = 1
@@ -309,16 +309,16 @@ constraint
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
 constraint
-  forall (e in allDataInFunction, l in allBlocksInFunction)
+  forall (d in allDataInFunction, l in allBlocksInFunction)
   (
-    def[e] = l
+    def[d] = l
     ->
     exists ( m in allMatches diff dominatedMatches
            , o in dataDefinedByMatch[m]
-                  where e in operandAlternatives[o]
+                  where d in operandAlternatives[o]
            )
     (
-      alt[o] = e
+      alt[o] = d
       /\
       (place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m]))
     )
@@ -363,11 +363,11 @@ constraint
 %                                   k in 1..2
 %    ]);
 %constraint
-%  forall ( m in allMatches diff dominatedMatches, e in dataUsedByMatch[m]
+%  forall ( m in allMatches diff dominatedMatches, d in dataUsedByMatch[m]
 %                where applyDefDomUseConstraintForMatch[m]
 %         )
 %  (
-%    table([place[m], def[e]], DomRel)
+%    table([place[m], def[d]], DomRel)
 %  );
 
 % If a match representing a phi instruction is selected, then its data
@@ -479,9 +479,9 @@ constraint
 
 % Constrain the loc value for all data that are states.
 constraint
-  forall (e in statesInFunction)
+  forall (d in statesInFunction)
   (
-    loc[e] = locValueForNull
+    loc[d] = locValueForNull
   );
 
 % Accumulate cost of selected patterns.
