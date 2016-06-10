@@ -106,9 +106,8 @@ data HighLevelFunctionParams
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunStateDefEdges :: [(NodeID, NodeID)]
-        -- ^ The states, together with the blocks, that appear in definition
-        -- edges in the function graph. The first element is the state node and
-        -- the second element is the block node.
+        -- ^ The definition edges in the function graph that involve states. The
+        -- first element is a block node and the second element is a state node.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
         -- ^ The value nodes which represent integer constants together with
         -- their values.
@@ -183,16 +182,16 @@ data HighLevelMatchParamsNoOp
       , hlNoOpMatchDataUsedByPhis :: [(NodeID, NodeID)]
         -- ^ The data, together with the blocks that appear in the definition
         -- edges, in the function graph which are used by phi nodes appearing
-        -- this match. The first element is the datum node and the second
-        -- element is the block node. This information is required for adding
-        -- the necessary constraints as well as during instruction emission in
-        -- order to break cyclic data dependencies.
+        -- this match. The first element is a block node and the second element
+        -- is a datum node. This information is required for adding the
+        -- necessary constraints as well as during instruction emission in order
+        -- to break cyclic data dependencies.
       , hlNoOpMatchDataDefinedByPhis :: [(NodeID, NodeID)]
         -- ^ The data, together with the blocks that appear in the definition
         -- edges, in the function graph which are defined by phi nodes appearing
-        -- this match. The first element is the datum node and the second
-        -- element is the block node. This information is required for adding
-        -- the necessary constraints.
+        -- this match. The first element is a block node and the second element
+        -- is a datum node. This information is required for adding the
+        -- necessary constraints.
       , hlNoOpMatchEmitStrNodeMaplist :: [[Maybe NodeID]]
         -- ^ A list of mappings of the node IDs that appears in the
         -- instruction's emit string template (which refer to nodes in the
@@ -228,8 +227,8 @@ data HighLevelMatchParamsWOp
       , hlWOpMatchIsCopyInstruction :: Bool
       , hlWOpMatchIsNullInstruction :: Bool
       , hlWOpMatchHasControlFlow :: Bool
-      , hlWOpMatchDataUsedByPhis :: [(OperandID, NodeID)]
-      , hlWOpMatchDataDefinedByPhis :: [(OperandID, NodeID)]
+      , hlWOpMatchDataUsedByPhis :: [(NodeID, OperandID)]
+      , hlWOpMatchDataDefinedByPhis :: [(NodeID, OperandID)]
       , hlWOpMatchEmitStrNodeMaplist :: [[Maybe (Either OperandID NodeID)]]
       }
   deriving (Show)
@@ -267,11 +266,10 @@ data LowLevelModel
         -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular block in the function
         -- graph.
-      , llFunStateDefEdges :: [[ArrayIndex]]
-        -- ^ The state definition edges that appear in this match. An index into
-        -- the outer list corresponds to the array indexes of the blocks in the
-        -- function graph, and the innermost list corresponds to array indexes
-        -- of state nodes in the function graph.
+      , llFunStateDefEdges :: [(ArrayIndex, ArrayIndex)]
+        -- ^ The state definition edges that appear in this match. The first
+        -- element is the array index of a particular block, and the second
+        -- element is the array index of a particular state.
       , llFunConstraints :: [Constraint]
         -- ^ The constraints of the function graph. No constraint in this list
         -- may use IDs.
@@ -310,23 +308,21 @@ data LowLevelModel
         -- of each match. An index into the list corresponds to the array index
         -- of a particular match.
       , llMatchSpannedBlocks :: [[ArrayIndex]]
-        -- ^ Block in the function graph spanned by this match. An index into
-        -- the outer list corresponds to the array index of a particular match.
-      , llMatchConsumedBlocks :: [[ArrayIndex]]
-        -- ^ Block in the function graph consumed by this match. An index into
-        -- the outer list corresponds to the array index of a particular match.
-      , llMatchInputDefinitionEdges :: [[[ArrayIndex]]]
-        -- ^ The input definition edges that appear in this match. An index into
-        -- the outer list corresponds to the array index of a particular match,
-        -- the middle list corresponds to the array indexes of the blocks in the
-        -- function graph, and the innermost list corresponds to array indexes
-        -- of operands in the match.
-      , llMatchOutputDefinitionEdges :: [[[ArrayIndex]]]
-        -- ^ The output definition edges that appear in this match. An index
+        -- ^ The blocks in the function graph spanned by each match. An index
         -- into the outer list corresponds to the array index of a particular
-        -- match, the middle list corresponds to the array indexes of the blocks
-        -- in the function graph, and the innermost list corresponds to array
-        -- indexes of operands in the match.
+        -- match.
+      , llMatchConsumedBlocks :: [[ArrayIndex]]
+        -- ^ The blocks in the function graph consumed by each match. An index
+        -- into the outer list corresponds to the array index of a particular
+        -- match.
+      , llMatchInputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The input definition edges that appear in a particular match. The
+        -- first element is the array index of a particular match, the second
+        -- element is a block, and the third element is an operand.
+      , llMatchOutputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The output definition edges that appear in a particular match. The
+        -- first element is the array index of a particular match, the second
+        -- element is a block, and the third element is an operand.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
         -- the array index of a particular match.

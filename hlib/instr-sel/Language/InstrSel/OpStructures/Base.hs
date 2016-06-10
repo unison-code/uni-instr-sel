@@ -33,6 +33,8 @@ import qualified Language.InstrSel.Graphs as G
   , NodeID
   , mkEmpty
   )
+import Language.InstrSel.TargetMachines.IDs
+  ( LocationID )
 import Language.InstrSel.Utils.JSON
 
 
@@ -45,6 +47,8 @@ data OpStructure
   = OpStructure
       { osGraph :: G.Graph
       , osEntryBlockNode :: Maybe G.NodeID
+      , osValidLocations :: [(G.NodeID, [LocationID])]
+        -- ^ The first element represents the ID of a value node.
       , osConstraints :: [Constraint]
       }
   deriving (Show)
@@ -60,6 +64,7 @@ instance FromJSON OpStructure where
     OpStructure
       <$> v .: "graph"
       <*> v .: "entry-block-node"
+      <*> v .: "valid-locs"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -67,6 +72,7 @@ instance ToJSON OpStructure where
   toJSON os =
     object [ "graph"            .= (osGraph os)
            , "entry-block-node" .= (osEntryBlockNode os)
+           , "valid-locs"       .= (osValidLocations os)
            , "constraints"      .= (osConstraints os)
            ]
 
@@ -80,6 +86,7 @@ instance ToJSON OpStructure where
 mkEmpty :: OpStructure
 mkEmpty = OpStructure { osGraph = G.mkEmpty
                       , osEntryBlockNode = Nothing
+                      , osValidLocations = []
                       , osConstraints = []
                       }
 

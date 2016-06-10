@@ -37,7 +37,7 @@ int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
-array[allBlocksInFunction] of set of int: stateDefEdgesForBlocksInFunction;
+array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.
@@ -55,8 +55,8 @@ array[allMatches] of set of int: dataInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
-array[int, int] of set of int: inputDefEdgesInMatch;
-array[int, int] of set of int: outputDefEdgesInMatch;
+array[int, int] of int: inputDefEdgesInMatch;
+array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 set of allMatches: copyInstrMatches;
@@ -213,12 +213,13 @@ constraint
 % A state datum with a definition edge with a block must be defined in the block
 % of that block.
 constraint
-  forall (l in allBlocksInFunction)
+  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction))
   (
-    forall (d in stateDefEdgesForBlocksInFunction[l])
-    (
-      def[d] = l
-    )
+    let {
+      int: b = stateDefEdgesForBlocksInFunction[i, 1]
+    , int: d = stateDefEdgesForBlocksInFunction[i, 2]
+    }
+    in def[d] = b
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that
@@ -378,20 +379,22 @@ constraint
 % placed in the same block that dominates both blocks of d1 and d2. The output
 % data must be placed in the block indicated by the definition edge.
 %
-% Note that since both 'inputDefEdgesInMatch' and 'outputDefEdgesInMatch' are
-% arrays where the indices start at 1, the value of the induction variables
-% must be adjusted accordingly.
-%
 % Input data constraints
 constraint
   forall (m in phiInstrMatches)
   (
     let {
-      array[int] of int: oset = [ o | b in allBlocksInFunction
-                                    , o in inputDefEdgesInMatch[m+1, b+1]
+      set of int: I = index_set_1of2(inputDefEdgesInMatch)
+    , array[int] of int: oset = [ inputDefEdgesInMatch[i, 3]
+                                | i in I
+                                , b in allBlocksInFunction
+                                       where inputDefEdgesInMatch[i, 1] = m
+                                             /\
+                                             inputDefEdgesInMatch[i, 2] = b
                                 ]
-    , array[int] of int: bset = [ b | b in allBlocksInFunction
-                                    , o in inputDefEdgesInMatch[m+1, b+1]
+    , array[int] of int: bset = [ inputDefEdgesInMatch[i, 2]
+                                | i in I
+                                       where inputDefEdgesInMatch[i, 1] = m
                                 ]
     }
     in forall (i,j in 1..length(oset) where i != j)
@@ -420,12 +423,14 @@ constraint
   );
 % Output data constraints
 constraint
-  forall (m in phiInstrMatches)
+  forall (i in index_set_1of2(outputDefEdgesInMatch))
   (
-    forall (b in allBlocksInFunction, o in outputDefEdgesInMatch[m+1, b+1])
-    (
-      sel[m] -> def[alt[o]] = b
-    )
+    let {
+      int: m = outputDefEdgesInMatch[i, 1]
+    , int: b = outputDefEdgesInMatch[i, 2]
+    , int: o = outputDefEdgesInMatch[i, 3]
+    }
+    in sel[m] -> def[alt[o]] = b
   );
 
 % If a match representing a phi instruction is selected, then its data

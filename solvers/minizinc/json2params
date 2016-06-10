@@ -96,7 +96,10 @@ def dumpParams(
 
 def convData(d, var_conv):
     if var_conv == VC_SET:
-        return "{" + ", ".join([ str(e) for e in d ]) + "}"
+        if hasattr(d, "__iter__"):
+            return "{" + ", ".join([ str(e) for e in d ]) + "}"
+        else:
+            return "{" + str(d) + "}"
     elif var_conv == VC_SINGLETON:
         if d is None:
             return "{}"
@@ -354,9 +357,7 @@ dumpParams( json_data["fun-states"]
           )
 dumpParams( json_data["fun-state-def-edges"]
           , "stateDefEdgesForBlocksInFunction"
-          , VT_ARRAY1D
-          , "allBlocksInFunction"
-          , VC_SET
+          , VT_ARRAY2D
           )
 dumpParams( json_data["in-block"]
           , "inBlock"
@@ -444,14 +445,10 @@ dumpParams( json_data["match-spanned-blocks"]
 dumpParams( json_data["match-input-def-edges"]
           , "inputDefEdgesInMatch"
           , VT_ARRAY2D
-          , ""
-          , VC_SET
           )
 dumpParams( json_data["match-output-def-edges"]
           , "outputDefEdgesInMatch"
           , VT_ARRAY2D
-          , ""
-          , VC_SET
           )
 dumpParams( json_data["num-locations"]
           , "numLocations"

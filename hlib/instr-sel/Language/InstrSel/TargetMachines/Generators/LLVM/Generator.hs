@@ -15,7 +15,6 @@
 
 module Language.InstrSel.TargetMachines.Generators.LLVM.Generator where
 
-import Language.InstrSel.Constraints.ConstraintBuilder
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures.Base
@@ -164,8 +163,8 @@ addOperandConstraints i all_locs os =
   foldr f os (LLVM.instrOperands i)
   where f (LLVM.RegInstrOperand op_name reg_names) os' =
           let locs = map getIDOfLocWithName reg_names
-              n = getValueNode os' op_name
-          in addNewDataLocConstraints locs (getNodeID n) os'
+              n = getNodeID $ getValueNode os' op_name
+          in os' { osValidLocations = [(n, locs)] }
         f (LLVM.ImmInstrOperand op_name range) os' =
           let n = getValueNode os' op_name
               old_dt = getDataTypeOfValueNode n
