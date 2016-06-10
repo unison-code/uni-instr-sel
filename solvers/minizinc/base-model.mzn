@@ -37,6 +37,7 @@ int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
+array[allBlocksInFunction] of set of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.
@@ -207,6 +208,17 @@ constraint
                  ) = 1
             endif
        endif
+  );
+
+% A state datum with a definition edge with a block must be defined in the block
+% of that block.
+constraint
+  forall (l in allBlocksInFunction)
+  (
+    forall (d in stateDefEdgesForBlocksInFunction[l])
+    (
+      def[d] = l
+    )
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that

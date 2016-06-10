@@ -108,6 +108,21 @@ mkHLFunctionParams function target =
                       }
             )
             (filter isBlockNode (getAllNodes graph))
+      state_def_es = map ( \e ->
+                             let s = getSourceNode graph e
+                                 t = getTargetNode graph e
+                                 s_id = getNodeID s
+                                 t_id = getNodeID t
+                             in if isStateNode s
+                                then (s_id, t_id)
+                                else (t_id, s_id)
+                         )
+                     $ filter ( \e -> isStateNode (getSourceNode graph e)
+                                    ||
+                                    isStateNode (getTargetNode graph e)
+                            )
+                     $ filter isDefEdge
+                     $ getAllEdges graph
       int_const_data =
         let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub
@@ -152,6 +167,7 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunBlockParams = bb_params
+       , hlFunStateDefEdges = state_def_es
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
        , hlFunCallNameData = call_name_data
@@ -490,6 +506,13 @@ lowerHighLevelModel model ai_maps =
       operands = sortByAI (getAIForOperandID . fst)
                           (concatMap (hlWOpOperandNodeMaps) m_params)
       blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
+      state_def_edges = map ( \b ->
+                                let states = map fst
+                                             $ filter ((==) b . snd)
+                                             $ hlFunStateDefEdges f_params
+                                in states
+                            )
+                            blocks
       in_def_edges = map ( \m ->
                              map ( \b ->
                                      if hlWOpMatchIsPhiInstruction m
@@ -532,6 +555,7 @@ lowerHighLevelModel model ai_maps =
                ( sortByAI (getAIForBlockNodeID . hlBlockNode)
                           (hlFunBlockParams f_params)
                )
+       , llFunStateDefEdges = map (map getAIForDatumNodeID) state_def_edges
        , llFunConstraints =
            map (replaceIDsWithArrayIndexes ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params
@@ -557,9 +581,9 @@ lowerHighLevelModel model ai_maps =
        , llMatchConsumedBlocks = map (map getAIForBlockNodeID)
                                     (map hlWOpMatchConsumedBlocks m_params)
        , llMatchInputDefinitionEdges =
-         map (map (map getAIForOperandID)) in_def_edges
+           map (map (map getAIForOperandID)) in_def_edges
        , llMatchOutputDefinitionEdges =
-         map (map (map getAIForOperandID)) out_def_edges
+           map (map (map getAIForOperandID)) out_def_edges
        , llMatchCodeSizes = map hlWOpMatchCodeSize m_params
        , llMatchLatencies = map hlWOpMatchLatency m_params
        , llMatchPhiInstructions =

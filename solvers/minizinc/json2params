@@ -352,6 +352,12 @@ dumpParams( json_data["fun-states"]
           , "statesInFunction"
           , VT_SET
           )
+dumpParams( json_data["fun-state-def-edges"]
+          , "stateDefEdgesForBlocksInFunction"
+          , VT_ARRAY1D
+          , "allBlocksInFunction"
+          , VC_SET
+          )
 dumpParams( json_data["in-block"]
           , "inBlock"
           , VT_ARRAY2D

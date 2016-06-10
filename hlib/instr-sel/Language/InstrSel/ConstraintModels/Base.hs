@@ -105,6 +105,10 @@ data HighLevelFunctionParams
         -- ^ The dominator sets of the block in the function graph.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
+      , hlFunStateDefEdges :: [(NodeID, NodeID)]
+        -- ^ The states, together with the blocks, that appear in definition
+        -- edges in the function graph. The first element is the state node and
+        -- the second element is the block node.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
         -- ^ The value nodes which represent integer constants together with
         -- their values.
@@ -263,6 +267,11 @@ data LowLevelModel
         -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular block in the function
         -- graph.
+      , llFunStateDefEdges :: [[ArrayIndex]]
+        -- ^ The state definition edges that appear in this match. An index into
+        -- the outer list corresponds to the array indexes of the blocks in the
+        -- function graph, and the innermost list corresponds to array indexes
+        -- of state nodes in the function graph.
       , llFunConstraints :: [Constraint]
         -- ^ The constraints of the function graph. No constraint in this list
         -- may use IDs.
@@ -482,6 +491,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "block-params"
+      <*> v .: "state-def-edges"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
       <*> v .: "call-name-data"
@@ -498,6 +508,7 @@ instance ToJSON HighLevelFunctionParams where
            , "entry-block"              .= (hlFunEntryBlock p)
            , "block-dom-sets"           .= (hlFunBlockDomSets p)
            , "block-params"             .= (hlFunBlockParams p)
+           , "state-def-edges"          .= (hlFunStateDefEdges p)
            , "int-constant-data"        .= (hlFunValueIntConstData p)
            , "value-origin-data"        .= (hlFunValueOriginData p)
            , "call-name-data"           .= (hlFunCallNameData p)
@@ -647,6 +658,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-block-exec-freqs"
+      <*> v .: "fun-state-def-edges"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
       <*> v .: "num-matches"
@@ -680,6 +692,7 @@ instance ToJSON LowLevelModel where
            , "fun-entry-block"          .= (llFunEntryBlock m)
            , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
            , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
+           , "fun-state-def-edges"      .= (llFunStateDefEdges m)
            , "fun-constraints"          .= (llFunConstraints m)
            , "num-locations"            .= (llNumLocations m)
            , "num-matches"              .= (llNumMatches m)
