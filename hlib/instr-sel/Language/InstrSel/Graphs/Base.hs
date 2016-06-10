@@ -100,6 +100,7 @@ module Language.InstrSel.Graphs.Base
   , getStFlowInEdges
   , getStFlowOutEdges
   , getEdgeType
+  , getEdges
   , getEdgesBetween
   , getEdgeLabel
   , getInEdgeNr
@@ -215,8 +216,6 @@ import Data.List
   ( unfoldr
   , foldl'
   )
-
-import Debug.Trace
 
 
 
@@ -1106,6 +1105,12 @@ getStFlowOutEdges g n = filter isStateFlowEdge $ getOutEdges g n
 -- | Gets all outbound definition edges to a particular node.
 getDefOutEdges :: Graph -> Node -> [Edge]
 getDefOutEdges g n = filter isDefEdge $ getOutEdges g n
+
+-- | Gets the edges involving a given node.
+getEdges :: Graph -> Node -> [Edge]
+getEdges g n =
+  filter (\e -> getSourceNode g e == n || getTargetNode g e == n)
+  $ getAllEdges g
 
 -- | Gets the edges between two nodes.
 getEdgesBetween :: Graph -> SrcNode -> DstNode -> [Edge]
