@@ -55,22 +55,23 @@ def error(msg):
 #    - both matches have the same entry block,
 #    - both matches span across the same blocks,
 #    - both matches apply the def-dom-use constraint,
-#    - if m2 defines any constraints in the parameter "match-loc-domain",
-#      then m1 defines constraints that are at least as strong,
+#    - if m2 defines any constraints in the parameter
+#      "match-valid-value-loc-ranges", then m1 defines constraints that are at
+#      least as strong,
 #      and
 #    - both matches have exactly the same auxiliary constraints (TODO: relax?).
 def isMatchDominated(json, m1):
     def IsLocDomainAtLeastAsStrong(json, m2):
-        loc_domains = json["match-loc-domain"]
-        R = range(len(loc_domains))
+        loc_ranges = json["match-valid-value-loc-ranges"]
+        R = range(len(loc_ranges))
         O = json["operand-alternatives"]
-        for i in [ i for i in R if loc_domains[i][0] == m2]:
+        for i in [ i for i in R if loc_ranges[i][0] == m2]:
             # Find constraint in m1 that is at least as strong
             found = False
-            for j in [ j for j in R if loc_domains[j][0] == m1 ]:
-                if sorted(O[loc_domains[i][1]]) == sorted(O[loc_domains[j][1]]):
-                    regs2 = set(range(loc_domains[j][2], loc_domains[j][3]+1))
-                    regs1 = set(range(loc_domains[i][2], loc_domains[i][3]+1))
+            for j in [ j for j in R if loc_ranges[j][0] == m1 ]:
+                if sorted(O[loc_ranges[i][1]]) == sorted(O[loc_ranges[j][1]]):
+                    regs2 = set(range(loc_ranges[j][2], loc_ranges[j][3]+1))
+                    regs1 = set(range(loc_ranges[i][2], loc_ranges[i][3]+1))
                     if regs2.issubset(regs1):
                         found = True
                         break

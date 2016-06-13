@@ -338,7 +338,7 @@ dumpParams( json_data["fun-valid-value-locs"]
           , "funValidValueLocs"
           , VT_ARRAY2D
           )
-dumpParams( json_data["fun-loc-domain"]
+dumpParams( json_data["fun-valid-value-loc-ranges"]
           , "funLocDomain"
           , VT_ARRAY2D
           )
@@ -375,7 +375,7 @@ dumpParams( json_data["match-valid-value-locs"]
           , "matchValidValueLocs"
           , VT_ARRAY2D
           )
-dumpParams( fixLocationValues(json_data["match-loc-domain"])
+dumpParams( fixLocationValues(json_data["match-valid-value-loc-ranges"])
           , "matchLocDomain"
           , VT_ARRAY2D
           )
