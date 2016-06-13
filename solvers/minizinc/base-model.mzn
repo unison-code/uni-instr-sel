@@ -35,7 +35,7 @@ int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
-array[int, int] of int: funValidValueLocs;
+array[int, int] of int: funValidDataLocs;
 set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
@@ -56,7 +56,7 @@ array[allMatches] of set of int: operandsInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
-array[int, int] of int: matchValidValueLocs;
+array[int, int] of int: matchValidDataLocs;
 array[int, int] of int: inputDefEdgesInMatch;
 array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
@@ -71,8 +71,8 @@ set of allMatches: dominatedMatches;
 array[int, int] of int: sameLoc;
 array[int, int] of int: inBlockSucc;
 array[int, int] of int: inBlock;
-array[int, int] of int: matchLocDomain;
-array[int, int] of int: funLocDomain;
+array[int, int] of int: matchValidDataLocRanges;
+array[int, int] of int: funValidDataLocRanges;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -195,9 +195,9 @@ constraint
   forall (d in allDataInFunction)
   (
     let {
-      set of int: locs = { funValidValueLocs[i, 2]
-                         | i in index_set_1of2(funValidValueLocs)
-                                where funValidValueLocs[i, 1] = d
+      set of int: locs = { funValidDataLocs[i, 2]
+                         | i in index_set_1of2(funValidDataLocs)
+                                where funValidDataLocs[i, 1] = d
                          }
     }
     in if card(locs) > 0
@@ -458,11 +458,11 @@ constraint
     forall (o in allOperands)
     (
       let {
-        set of int: locs = { matchValidValueLocs[i, 3]
-                           | i in index_set_1of2(matchValidValueLocs)
-                                  where matchValidValueLocs[i, 1] = m
+        set of int: locs = { matchValidDataLocs[i, 3]
+                           | i in index_set_1of2(matchValidDataLocs)
+                                  where matchValidDataLocs[i, 1] = m
                                   /\
-                                  matchValidValueLocs[i, 2] = o
+                                  matchValidDataLocs[i, 2] = o
                            }
       }
       in if card(locs) > 0
@@ -567,16 +567,17 @@ constraint
   );
 
 constraint
-  forall(i in index_set_1of2(matchLocDomain))(
-    let {int: m = matchLocDomain[i,1],
-         int: o = matchLocDomain[i,2]} in
-    sel[m] -> loc[alt[o]] in matchLocDomain[i,3]..matchLocDomain[i,4]
+  forall(i in index_set_1of2(matchValidDataLocRanges))(
+    let {int: m = matchValidDataLocRanges[i,1],
+         int: o = matchValidDataLocRanges[i,2]} in
+    sel[m] -> loc[alt[o]]
+              in matchValidDataLocRanges[i,3]..matchValidDataLocRanges[i,4]
   );
 
 constraint
-  forall(i in index_set_1of2(funLocDomain))(
-    let {int: d = funLocDomain[i,1]} in
-	loc[d] in funLocDomain[i,2]..funLocDomain[i,3]
+  forall(i in index_set_1of2(funValidDataLocRanges))(
+    let {int: d = funValidDataLocRanges[i,1]} in
+	loc[d] in funValidDataLocRanges[i,2]..funValidDataLocRanges[i,3]
   );
 
 
@@ -605,11 +606,11 @@ constraint
     let {int: m1 = sameLoc[i,1],
          int: p = sameLoc[i,2],
          int: q = sameLoc[i,3]} in
-    forall(j1 in index_set_1of2(matchLocDomain) where matchLocDomain[j1,2]=p)(
-      forall(j2 in index_set_1of2(matchLocDomain) where matchLocDomain[j2,1]=matchLocDomain[j1,1] /\
-                                                   matchLocDomain[j2,2]=q)(
-        let {int: m2 = matchLocDomain[j1,1]} in
-	    card((matchLocDomain[j1,3]..matchLocDomain[j1,4]) intersect (matchLocDomain[j2,3]..matchLocDomain[j2,4]))=0 ->
+    forall(j1 in index_set_1of2(matchValidDataLocRanges) where matchValidDataLocRanges[j1,2]=p)(
+      forall(j2 in index_set_1of2(matchValidDataLocRanges) where matchValidDataLocRanges[j2,1]=matchValidDataLocRanges[j1,1] /\
+                                                   matchValidDataLocRanges[j2,2]=q)(
+        let {int: m2 = matchValidDataLocRanges[j1,1]} in
+	    card((matchValidDataLocRanges[j1,3]..matchValidDataLocRanges[j1,4]) intersect (matchValidDataLocRanges[j2,3]..matchValidDataLocRanges[j2,4]))=0 ->
             not sel[m1] \/ not sel[m2]
       )
     )
@@ -620,14 +621,14 @@ constraint
 % Ad hoc: detect symmetry among location values 1..31
 %
 %constraint
-%  forall(i in index_set_1of2(funLocDomain))(
-%    let {int: lo = funLocDomain[i,2],
-%         int: hi = funLocDomain[i,3]} in
+%  forall(i in index_set_1of2(funValidDataLocRanges))(
+%    let {int: lo = funValidDataLocRanges[i,2],
+%         int: hi = funValidDataLocRanges[i,3]} in
 %	lo<=31 -> hi>=31 \/ hi=0
 %  ) /\
-%  forall(i in index_set_1of2(matchLocDomain))(
-%    let {int: lo = matchLocDomain[i,3],
-%         int: hi = matchLocDomain[i,4]} in
+%  forall(i in index_set_1of2(matchValidDataLocRanges))(
+%    let {int: lo = matchValidDataLocRanges[i,3],
+%         int: hi = matchValidDataLocRanges[i,4]} in
 %	lo<=31 -> hi>=31 \/ hi=0
 %  ) ->
 %  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
