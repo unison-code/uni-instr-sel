@@ -218,10 +218,10 @@ data HighLevelMatchParamsWOp
       , hlWOpOperandNodeMaps :: [(OperandID, [NodeID])]
         -- ^ Maps an operand to a list of value nodes in the function graph.
       , hlWOpMatchOperationsCovered :: [NodeID]
-      , hlWOpMatchDataDefined :: [OperandID]
-      , hlWOpMatchDataUsed :: [OperandID]
-      , hlWOpMatchExternalData :: [OperandID]
-      , hlWOpMatchInternalData :: [OperandID]
+      , hlWOpMatchOperandsDefined :: [OperandID]
+      , hlWOpMatchOperandsUsed :: [OperandID]
+      , hlWOpMatchExternalOperands :: [OperandID]
+      , hlWOpMatchInternalOperands :: [OperandID]
       , hlWOpMatchValidValueLocs :: [(OperandID, [LocationID])]
       , hlWOpMatchEntryBlock :: Maybe NodeID
       , hlWOpMatchSpannedBlocks :: [NodeID]
@@ -233,8 +233,8 @@ data HighLevelMatchParamsWOp
       , hlWOpMatchIsCopyInstruction :: Bool
       , hlWOpMatchIsNullInstruction :: Bool
       , hlWOpMatchHasControlFlow :: Bool
-      , hlWOpMatchDataUsedByPhis :: [(NodeID, OperandID)]
-      , hlWOpMatchDataDefinedByPhis :: [(NodeID, OperandID)]
+      , hlWOpMatchOperandsUsedByPhis :: [(NodeID, OperandID)]
+      , hlWOpMatchOperandsDefinedByPhis :: [(NodeID, OperandID)]
       , hlWOpMatchEmitStrNodeMaplist :: [[Maybe (Either OperandID NodeID)]]
       }
   deriving (Show)
@@ -298,22 +298,18 @@ data LowLevelModel
         -- ^ The list of operation in the function graph that are covered by
         -- each match. An index into the outer list corresponds to the array
         -- index of a particular match.
-      , llMatchDataDefined :: [[ArrayIndex]]
-        -- ^ The list of data in the function graph that are defined by each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
-      , llMatchDataUsed :: [[ArrayIndex]]
-        -- ^ The list of data in the function graph that are used by each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
-      , llMatchExternalData :: [[ArrayIndex]]
-        -- ^ The list of data in the function graph that are external to each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
-      , llMatchInternalData :: [[ArrayIndex]]
-        -- ^ The list of data in the function graph that are internal to each
-        -- match. An index into the outer list corresponds to the array index of
-        -- a particular match.
+      , llMatchOperandsDefined :: [[ArrayIndex]]
+        -- ^ The list of operands that are defined by each match. An index into
+        -- the outer list corresponds to the array index of a particular match.
+      , llMatchOperandsUsed :: [[ArrayIndex]]
+        -- ^ The list of operands that are used by each match. An index into the
+        -- outer list corresponds to the array index of a particular match.
+      , llMatchExternalOperands :: [[ArrayIndex]]
+        -- ^ The list of operands that are external to each match. An index into
+        -- the outer list corresponds to the array index of a particular match.
+      , llMatchInternalOperands :: [[ArrayIndex]]
+        -- ^ The list of operands that are internal to each match. An index into
+        -- the outer list corresponds to the array index of a particular match.
       , llMatchValidValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
         -- ^ The locations that are valid for a particular operand in a certain
         -- match. The first element is the array index of a particular match,
@@ -579,10 +575,10 @@ instance FromJSON HighLevelMatchParamsWOp where
       <*> v .: "match-id"
       <*> v .: "operand-node-maps"
       <*> v .: "operations-covered"
-      <*> v .: "data-defined"
-      <*> v .: "data-used"
-      <*> v .: "external-data"
-      <*> v .: "internal-data"
+      <*> v .: "operands-defined"
+      <*> v .: "operands-used"
+      <*> v .: "external-operands"
+      <*> v .: "internal-operands"
       <*> v .: "valid-value-locs"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
@@ -594,8 +590,8 @@ instance FromJSON HighLevelMatchParamsWOp where
       <*> v .: "is-copy-instr"
       <*> v .: "is-null-instr"
       <*> v .: "has-control-flow"
-      <*> v .: "data-used-by-phis"
-      <*> v .: "data-defined-by-phis"
+      <*> v .: "operands-used-by-phis"
+      <*> v .: "operands-defined-by-phis"
       <*> v .: "emit-str-node-maps"
   parseJSON _ = mzero
 
@@ -627,29 +623,29 @@ instance ToJSON HighLevelMatchParamsNoOp where
 
 instance ToJSON HighLevelMatchParamsWOp where
   toJSON p@(HighLevelMatchParamsWOp {}) =
-    object [ "instruction-id"       .= (hlWOpMatchInstructionID p)
-           , "pattern-id"           .= (hlWOpMatchPatternID p)
-           , "match-id"             .= (hlWOpMatchID p)
-           , "operand-node-maps"    .= (hlWOpOperandNodeMaps p)
-           , "operations-covered"   .= (hlWOpMatchOperationsCovered p)
-           , "data-defined"         .= (hlWOpMatchDataDefined p)
-           , "data-used"            .= (hlWOpMatchDataUsed p)
-           , "external-data"        .= (hlWOpMatchExternalData p)
-           , "internal-data"        .= (hlWOpMatchInternalData p)
-           , "valid-value-locs"     .= (hlWOpMatchValidValueLocs p)
-           , "entry-block"          .= (hlWOpMatchEntryBlock p)
-           , "spanned-blocks"       .= (hlWOpMatchSpannedBlocks p)
-           , "consumed-blocks"      .= (hlWOpMatchConsumedBlocks p)
-           , "code-size"            .= (hlWOpMatchCodeSize p)
-           , "latency"              .= (hlWOpMatchLatency p)
-           , "constraints"          .= (hlWOpMatchConstraints p)
-           , "is-phi-instr"         .= (hlWOpMatchIsPhiInstruction p)
-           , "is-copy-instr"        .= (hlWOpMatchIsCopyInstruction p)
-           , "is-null-instr"        .= (hlWOpMatchIsNullInstruction p)
-           , "has-control-flow"     .= (hlWOpMatchHasControlFlow p)
-           , "data-used-by-phis"    .= (hlWOpMatchDataUsedByPhis p)
-           , "data-defined-by-phis" .= (hlWOpMatchDataDefinedByPhis p)
-           , "emit-str-node-maps"   .= (hlWOpMatchEmitStrNodeMaplist p)
+    object [ "instruction-id"           .= (hlWOpMatchInstructionID p)
+           , "pattern-id"               .= (hlWOpMatchPatternID p)
+           , "match-id"                 .= (hlWOpMatchID p)
+           , "operand-node-maps"        .= (hlWOpOperandNodeMaps p)
+           , "operations-covered"       .= (hlWOpMatchOperationsCovered p)
+           , "operands-defined"         .= (hlWOpMatchOperandsDefined p)
+           , "operands-used"            .= (hlWOpMatchOperandsUsed p)
+           , "external-operands"        .= (hlWOpMatchExternalOperands p)
+           , "internal-operands"        .= (hlWOpMatchInternalOperands p)
+           , "valid-value-locs"         .= (hlWOpMatchValidValueLocs p)
+           , "entry-block"              .= (hlWOpMatchEntryBlock p)
+           , "spanned-blocks"           .= (hlWOpMatchSpannedBlocks p)
+           , "consumed-blocks"          .= (hlWOpMatchConsumedBlocks p)
+           , "code-size"                .= (hlWOpMatchCodeSize p)
+           , "latency"                  .= (hlWOpMatchLatency p)
+           , "constraints"              .= (hlWOpMatchConstraints p)
+           , "is-phi-instr"             .= (hlWOpMatchIsPhiInstruction p)
+           , "is-copy-instr"            .= (hlWOpMatchIsCopyInstruction p)
+           , "is-null-instr"            .= (hlWOpMatchIsNullInstruction p)
+           , "has-control-flow"         .= (hlWOpMatchHasControlFlow p)
+           , "operands-used-by-phis"    .= (hlWOpMatchOperandsUsedByPhis p)
+           , "operands-defined-by-phis" .= (hlWOpMatchOperandsDefinedByPhis p)
+           , "emit-str-node-maps"       .= (hlWOpMatchEmitStrNodeMaplist p)
            ]
 
 instance FromJSON HighLevelMachineParams where
@@ -684,10 +680,10 @@ instance FromJSON LowLevelModel where
       <*> v .: "num-operands"
       <*> v .: "operand-alternatives"
       <*> v .: "match-operations-covered"
-      <*> v .: "match-data-defined"
-      <*> v .: "match-data-used"
-      <*> v .: "match-external-data"
-      <*> v .: "match-internal-data"
+      <*> v .: "match-operands-defined"
+      <*> v .: "match-operands-used"
+      <*> v .: "match-external-operands"
+      <*> v .: "match-internal-operands"
       <*> v .: "match-valid-value-locs"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
@@ -720,10 +716,10 @@ instance ToJSON LowLevelModel where
            , "num-operands"             .= (llNumOperands m)
            , "operand-alternatives"     .= (llOperandAlternatives m)
            , "match-operations-covered" .= (llMatchOperationsCovered m)
-           , "match-data-defined"       .= (llMatchDataDefined m)
-           , "match-data-used"          .= (llMatchDataUsed m)
-           , "match-external-data"      .= (llMatchExternalData m)
-           , "match-internal-data"      .= (llMatchInternalData m)
+           , "match-operands-defined"   .= (llMatchOperandsDefined m)
+           , "match-operands-used"      .= (llMatchOperandsUsed m)
+           , "match-external-operands"  .= (llMatchExternalOperands m)
+           , "match-internal-operands"  .= (llMatchInternalOperands m)
            , "match-valid-value-locs"   .= (llMatchValidValueLocs m)
            , "match-entry-blocks"       .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)

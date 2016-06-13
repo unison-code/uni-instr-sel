@@ -390,26 +390,26 @@ dumpParams( json_data["match-consumed-blocks"]
           , "allMatches"
           , VC_SET
           )
-dumpParams( json_data["match-data-defined"]
-          , "dataDefinedByMatch"
+dumpParams( json_data["match-operands-defined"]
+          , "operandsDefinedByMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
           )
-dumpParams( json_data["match-data-used"]
-          , "dataUsedByMatch"
+dumpParams( json_data["match-operands-used"]
+          , "operandsUsedByMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
           )
-dumpParams( json_data["match-external-data"]
-          , "dataExternalToMatch"
+dumpParams( json_data["match-external-operands"]
+          , "operandsExternalToMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
           )
-dumpParams( json_data["match-internal-data"]
-          , "dataInternalToMatch"
+dumpParams( json_data["match-internal-operands"]
+          , "operandsInternalToMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET

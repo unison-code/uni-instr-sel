@@ -141,8 +141,8 @@ computeAliases
 computeAliases sol null_matches =
   let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
       aliases = map ( \m ->
-                        ( getNodeID $ head $ hlWOpMatchDataDefined m
-                        , getNodeID $ head $ hlWOpMatchDataUsed m
+                        ( getNodeID $ head $ hlWOpMatchOperandsDefined m
+                        , getNodeID $ head $ hlWOpMatchOperandsUsed m
                         )
                         -- We assume that null instructions uses exactly one
                         -- datum and defines exactly one datum
@@ -230,15 +230,15 @@ addUseEdgesToDAG sol model mid g0 =
       match = getHLMatchParams ds mid
       ns = I.labNodes g0
       op_uses_of_m = filter ( `notElem` ( map snd
-                                          $ hlWOpMatchDataUsedByPhis match
+                                          $ hlWOpMatchOperandsUsedByPhis match
                                         )
                             )
-                            (hlWOpMatchDataUsed match)
+                            (hlWOpMatchOperandsUsed match)
       d_uses_of_m = map getNodeID op_uses_of_m
       defs_of_m =
         map ( \(n, i) -> ( n
                          , map getNodeID
-                           $ hlWOpMatchDataDefined $ getHLMatchParams ds i
+                           $ hlWOpMatchOperandsDefined $ getHLMatchParams ds i
                          )
             )
             ns
@@ -487,7 +487,7 @@ getDefinerOfData model sol n =
                                   in if isJust o
                                      then (fromJust o)
                                           `elem`
-                                          hlWOpMatchDataDefined m
+                                          hlWOpMatchOperandsDefined m
                                      else False
                               )
                               matches

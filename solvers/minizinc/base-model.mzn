@@ -49,10 +49,10 @@ int: numMatches;
 int: numOperands;
 array[allOperands] of set of int: operandAlternatives;
 array[allMatches] of set of int: operationsCoveredByMatch;
-array[allMatches] of set of int: dataDefinedByMatch;
-array[allMatches] of set of int: dataUsedByMatch;
-array[allMatches] of set of int: dataExternalToMatch;
-array[allMatches] of set of int: dataInternalToMatch;
+array[allMatches] of set of int: operandsDefinedByMatch;
+array[allMatches] of set of int: operandsUsedByMatch;
+array[allMatches] of set of int: operandsExternalToMatch;
+array[allMatches] of set of int: operandsInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
@@ -252,7 +252,7 @@ constraint
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
-                             , o in dataDefinedByMatch[m]
+                             , o in operandsDefinedByMatch[m]
                                     where d in operandAlternatives[o]
                          }
     }
@@ -274,7 +274,7 @@ constraint
 constraint
   sum (m in allMatches diff dominatedMatches)
   (
-    card(dataDefinedByMatch[m]) * bool2int(sel[m])
+    card(operandsDefinedByMatch[m]) * bool2int(sel[m])
   ) = numDataInFunction;
 
 % Selected matches must not be placed in the null block.
@@ -302,7 +302,7 @@ constraint
 constraint
   forall (m in allMatches diff dominatedMatches)
   (
-    forall (o in dataDefinedByMatch[m])
+    forall (o in operandsDefinedByMatch[m])
     (
       if (card(spannedBlocksInMatch[m]) > 0)
       then
@@ -333,7 +333,7 @@ constraint
     def[d] = l
     ->
     exists ( m in allMatches diff dominatedMatches
-           , o in dataDefinedByMatch[m]
+           , o in operandsDefinedByMatch[m]
                   where d in operandAlternatives[o]
            )
     (
@@ -352,7 +352,7 @@ constraint
 % in the null block, which is dominated by every other block in the function):
 %     constraint
 %       forall ( m in allMatches
-%              , o in dataUsedByMatch[m]
+%              , o in operandsUsedByMatch[m]
 %                     where not (m in phiInstrMatches)
 %              )
 %       (
@@ -361,7 +361,7 @@ constraint
 %
 constraint
   forall ( m in allMatches,
-           o in dataUsedByMatch[m]
+           o in operandsUsedByMatch[m]
                 where not (m in phiInstrMatches)
          )
   (
@@ -477,7 +477,7 @@ constraint
 constraint
   forall (m in phiInstrMatches)
   (
-    sel[m] -> all_equal([ loc[alt[d]] | d in dataExternalToMatch[m] ])
+    sel[m] -> all_equal([ loc[alt[o]] | o in operandsExternalToMatch[m] ])
   );
 
 % If a match representing a null instruction is selected, then the data used by
@@ -485,7 +485,7 @@ constraint
 constraint
   forall (m in nullInstrMatches)
   (
-    forall (o in dataUsedByMatch[m])
+    forall (o in operandsUsedByMatch[m])
     (
       sel[m] -> def[alt[o]] = place[m]
     )
@@ -504,7 +504,7 @@ constraint
 % the null location.
 constraint
   forall ( m in allMatches diff dominatedMatches
-         , o in dataExternalToMatch[m]
+         , o in operandsExternalToMatch[m]
                 where not (operandAlternatives[o] subset statesInFunction)
          )
   (
@@ -514,7 +514,7 @@ constraint
 % All data internal to a match must be located in the null location.
 constraint
   forall ( m in allMatches diff dominatedMatches
-         , o in dataInternalToMatch[m]
+         , o in operandsInternalToMatch[m]
                 where not (operandAlternatives[o] subset statesInFunction)
          )
   (

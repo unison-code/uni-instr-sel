@@ -117,13 +117,13 @@ def isMatchDominated(json, m1):
              )
              and
              ( AreOperandListsSame(json,
-                                   json["match-data-defined"][m2],
-                                   json["match-data-defined"][m1])
+                                   json["match-operands-defined"][m2],
+                                   json["match-operands-defined"][m1])
              )
              and
              ( AreOperandListsSame(json,
-                                   json["match-data-used"][m2],
-                                   json["match-data-used"][m1])
+                                   json["match-operands-used"][m2],
+                                   json["match-operands-used"][m1])
              )
              and
              json["match-entry-blocks"][m2] == json["match-entry-blocks"][m1]

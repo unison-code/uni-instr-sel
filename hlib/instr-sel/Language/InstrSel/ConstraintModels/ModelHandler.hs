@@ -383,13 +383,13 @@ mkHLMatchParamsWOp p oid =
          , hlWOpMatchID = hlNoOpMatchID p
          , hlWOpOperandNodeMaps = op_node_maps
          , hlWOpMatchOperationsCovered = hlNoOpMatchOperationsCovered p
-         , hlWOpMatchDataDefined =
+         , hlWOpMatchOperandsDefined =
              map getOpIDFromNodeID $ hlNoOpMatchDataDefined p
-         , hlWOpMatchDataUsed =
+         , hlWOpMatchOperandsUsed =
              map getOpIDFromNodeID $ hlNoOpMatchDataUsed p
-         , hlWOpMatchExternalData =
+         , hlWOpMatchExternalOperands =
              map getOpIDFromNodeID $ hlNoOpMatchExternalData p
-         , hlWOpMatchInternalData =
+         , hlWOpMatchInternalOperands =
              map getOpIDFromNodeID $ hlNoOpMatchInternalData p
          , hlWOpMatchValidValueLocs =
              map (\(n, ls) -> (getOpIDFromNodeID n, ls))
@@ -406,10 +406,10 @@ mkHLMatchParamsWOp p oid =
          , hlWOpMatchIsCopyInstruction = hlNoOpMatchIsCopyInstruction p
          , hlWOpMatchIsNullInstruction = hlNoOpMatchIsNullInstruction p
          , hlWOpMatchHasControlFlow = hlNoOpMatchHasControlFlow p
-         , hlWOpMatchDataUsedByPhis =
+         , hlWOpMatchOperandsUsedByPhis =
              map (\(b, v) -> (b, getOpIDFromNodeID v))
                  (hlNoOpMatchDataUsedByPhis p)
-         , hlWOpMatchDataDefinedByPhis =
+         , hlWOpMatchOperandsDefinedByPhis =
              map (\(b, v) -> (b, getOpIDFromNodeID v))
                  (hlNoOpMatchDataDefinedByPhis p)
          , hlWOpMatchEmitStrNodeMaplist =
@@ -513,9 +513,10 @@ lowerHighLevelModel model ai_maps =
         concatMap ( \m ->
                       concatMap ( \b ->
                                     if hlWOpMatchIsPhiInstruction m
-                                    then let ops = map snd
-                                                   $ filter ((==) b . fst)
-                                                   $ hlWOpMatchDataUsedByPhis m
+                                    then let ops =
+                                               map snd
+                                               $ filter ((==) b . fst)
+                                               $ hlWOpMatchOperandsUsedByPhis m
                                          in map (\o -> (hlWOpMatchID m, b, o))
                                                 ops
                                     else []
@@ -527,10 +528,11 @@ lowerHighLevelModel model ai_maps =
         concatMap ( \m ->
                       concatMap ( \b ->
                                     if hlWOpMatchIsPhiInstruction m
-                                    then let ops = map snd
-                                                   $ filter ((==) b . fst)
-                                                   $ hlWOpMatchDataDefinedByPhis
-                                                       m
+                                    then let ops =
+                                               map snd
+                                               $ filter ((==) b . fst)
+                                               $ hlWOpMatchOperandsDefinedByPhis
+                                                   m
                                          in map (\o -> (hlWOpMatchID m, b, o))
                                                 ops
                                     else []
@@ -581,14 +583,14 @@ lowerHighLevelModel model ai_maps =
        , llMatchOperationsCovered =
            map (map getAIForOperationNodeID . hlWOpMatchOperationsCovered)
                m_params
-       , llMatchDataDefined =
-           map (map getAIForOperandID . hlWOpMatchDataDefined) m_params
-       , llMatchDataUsed =
-           map (map getAIForOperandID . hlWOpMatchDataUsed) m_params
-       , llMatchExternalData =
-           map (map getAIForOperandID . hlWOpMatchExternalData) m_params
-       , llMatchInternalData =
-           map (map getAIForOperandID . hlWOpMatchInternalData) m_params
+       , llMatchOperandsDefined =
+           map (map getAIForOperandID . hlWOpMatchOperandsDefined) m_params
+       , llMatchOperandsUsed =
+           map (map getAIForOperandID . hlWOpMatchOperandsUsed) m_params
+       , llMatchExternalOperands =
+           map (map getAIForOperandID . hlWOpMatchExternalOperands) m_params
+       , llMatchInternalOperands =
+           map (map getAIForOperandID . hlWOpMatchInternalOperands) m_params
        , llMatchValidValueLocs =
            map ( \(m, o, l) ->
                    ( getAIForMatchID m
