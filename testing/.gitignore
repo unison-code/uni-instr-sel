@@ -9,3 +9,4 @@
 *.stats
 *.modeldump
 *.mzn
+*.dump
