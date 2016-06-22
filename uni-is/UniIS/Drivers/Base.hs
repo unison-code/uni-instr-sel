@@ -61,7 +61,7 @@ data MakeAction
   | MakeFunctionGraphFromLLVM
   | MakePatternMatchset
   | MakeArrayIndexMaplists
-  | MakeDumpFromArrayIndexMaplists
+  | MakeLowLevelModelDump
   | MakeHighLevelCPModelNoOp
   | MakeHighLevelCPModelWOp
   | MakeAssemblyCode

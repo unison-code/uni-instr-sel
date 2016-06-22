@@ -23,8 +23,7 @@ import qualified UniIS.Drivers.MakeCPModelNoOp as MakeCPModelNoOp
 import qualified UniIS.Drivers.MakeCPModelWOp as MakeCPModelWOp
 import qualified UniIS.Drivers.MakeFunctionFromLLVM as MakeFunctionFromLLVM
 import qualified UniIS.Drivers.MakePatternMatchset as MakePatternMatchset
-import qualified UniIS.Drivers.MakeDumpFromArrayIndexMaplists
-  as MakeDumpFromArrayIndexMaplists
+import qualified UniIS.Drivers.MakeLowLevelModelDump as MakeLowLevelModelDump
 
 
 
@@ -52,11 +51,12 @@ dispatch a opts
          model_content <- loadModelFileContent opts
          model <- loadFromJson model_content
          MakeArrayIndexMaplists.run a function model
-  | a `elem` [MakeDumpFromArrayIndexMaplists] =
+  | a `elem` [MakeLowLevelModelDump] =
       do function <- loadFunctionFromJson opts
-         matchset <- loadPatternMatchsetFromJson opts
+         model_content <- loadModelFileContent opts
+         model <- loadFromJson model_content
          ai_maps <- loadArrayIndexMaplistsFromJson opts
-         MakeDumpFromArrayIndexMaplists.run a function matchset ai_maps
+         MakeLowLevelModelDump.run a function model ai_maps
   | a `elem` [MakeHighLevelCPModelNoOp] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts

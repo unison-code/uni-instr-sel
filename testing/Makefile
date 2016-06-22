@@ -139,9 +139,9 @@ distclean-toolchain:
 	  $(RM) $${f%.*}.dot;     \
     done
 
-%.dump: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json %.aimaps.json
-	$(UNI) make --dump-array-index-maplists-info \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -a $*.aimaps.json -o $@
+%.dump: %.ce.cc.ae.be.f.json %.ll.model.json %.aimaps.json
+	$(UNI) make --dump-low-level-model-info \
+      -f $*.ce.cc.ae.be.f.json -m $*.ll.model.json -a $*.aimaps.json -o $@
 
 
 

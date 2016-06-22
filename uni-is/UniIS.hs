@@ -135,11 +135,11 @@ parseArgs =
                  &= help ( "Computes the array index maplists from "
                            ++ "the given function graph and pattern matchset. "
                          )
-             , MakeDumpFromArrayIndexMaplists
-                 &= name "dump-array-index-maplists-info"
+             , MakeLowLevelModelDump
+                 &= name "dump-low-level-model-info"
                  &= explicit
-                 &= help ( "Dumps information for each array index in the "
-                           ++ "given array index maplists."
+                 &= help ( "Dumps useful information about the low-level CP "
+                           ++ "model instance."
                          )
              , MakeHighLevelCPModelNoOp
                  &= name "construct-hl-cp-model-no-op"
