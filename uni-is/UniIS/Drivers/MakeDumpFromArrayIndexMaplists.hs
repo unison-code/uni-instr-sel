@@ -39,7 +39,9 @@ import Language.InstrSel.TargetMachines.PatternMatching
   )
 
 import Data.Maybe
-  ( fromJust )
+  ( fromJust
+  , isJust
+  )
 
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
@@ -56,25 +58,48 @@ run :: MakeAction -> Function -> PatternMatchset -> ArrayIndexMaplists
 run MakeDumpFromArrayIndexMaplists function matchset ai_maps =
   let function_g = osGraph $ functionOS function
       dumpNodes ns =
-        let mkNodeInfo n = "Node ID " ++ pShow n ++ ", "
-                            ++
-                            ( pShow
-                              $ G.getNodeType
-                              $ head
-                              $ G.findNodesWithNodeID function_g n
-                            )
-        in concatMap (\(ai, n) -> pShow ai ++ " -> " ++ mkNodeInfo n ++ "\n")
+        let mtup = zip ([0..] :: [Integer]) (pmMatches matchset)
+                   -- Cast needed to prevent compiler warning
+            mkNodeInfo ai n =
+              "Node ID " ++ pShow n ++ ", "
+              ++
+              ( pShow
+                $ G.getNodeType
+                $ head
+                $ G.findNodesWithNodeID function_g n
+              )
+              ++
+              "\n"
+              ++
+              (take (length $ pShow ai) $ repeat ' ')
+              ++
+              "    Appears in matches: "
+              ++
+              ( pShow
+                $ map fst
+                $ filter (\(_, m) -> isJust $ G.findPNInMatch (pmMatch m) n)
+                $ mtup
+              )
+        in concatMap (\(ai, n) -> pShow ai ++ " -> " ++ mkNodeInfo ai n ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
       dumpMatches ns =
-        let mkMatchInfo m =
+        let mkMatchInfo ai m =
               let pmatch = head $ findPatternMatchesWithMatchID matchset m
               in "Match ID " ++ pShow m ++ ", "
                  ++
                  "Instruction ID " ++ (pShow $ pmInstrID pmatch) ++ ", "
                  ++
                  "Pattern ID " ++ (pShow $ pmPatternID pmatch)
-        in concatMap (\(ai, m) -> pShow ai ++ " -> " ++ mkMatchInfo m ++ "\n")
+                 ++
+                 "\n"
+                 ++
+                 (take (length $ pShow ai) $ repeat ' ')
+                 ++
+                 "    Nodes: "
+                 ++
+                 (pShow $ map G.fNode $ G.fromMatch $ pmMatch pmatch)
+        in concatMap (\(i, m) -> pShow i ++ " -> " ++ mkMatchInfo i m ++ "\n")
                      (zip ([0..] :: [Integer]) ns) -- Cast needed to prevent
                                                    -- compiler warning
       dumpLocations ns =
