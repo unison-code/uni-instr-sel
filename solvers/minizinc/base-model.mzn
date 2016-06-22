@@ -183,11 +183,28 @@ predicate fall_through(int: m, int: b) =
 % CONSTRAINTS
 %=============
 
+% Dominated matches must not be selected.
+constraint
+  forall (m in dominatedMatches)
+  (
+    not sel[m]
+  );
+
 % Constrain alternatives of operands.
 constraint
   forall (o in allOperands)
   (
     alt[o] in operandAlternatives[o]
+  );
+
+% [MC] Break alt symmetries for operands of unused matches.
+constraint
+  forall ( m in allMatches
+         , o in operandsUsedByMatch[m]
+                where card(operandAlternatives[o])>1
+         )
+  (
+    (not sel[m] -> alt[o] == min(operandAlternatives[o]))
   );
 
 % Constrain locations of data representing values.
