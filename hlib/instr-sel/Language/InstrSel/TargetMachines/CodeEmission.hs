@@ -127,7 +127,9 @@ mkInitState sol model =
       null_matches = filter hlWOpMatchIsNullInstruction
                      $ map (getHLMatchParams (hlWOpMatchParams model))
                      $ sel_matches
-      aliases = computeAliases sol null_matches
+      op_maps = hlSolNodesOfOperands sol
+      const_ns = map fst $ hlFunValueIntConstData $ hlWOpFunctionParams model
+      aliases = computeAliases op_maps const_ns null_matches
   in EmissionState { emittedCode = []
                    , varNamesInUse = getVarNamesInUse model
                    , tmpToVarNameMaps = []
@@ -135,18 +137,20 @@ mkInitState sol model =
                    }
 
 computeAliases
-  :: HighLevelSolution
+  :: [(OperandID, NodeID)]
+  -> [NodeID]
   -> [HighLevelMatchParamsWOp]
   -> [(NodeID, NodeID)]
-computeAliases sol null_matches =
-  let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
-      aliases = map ( \m ->
-                        ( getNodeID $ head $ hlWOpMatchOperandsDefined m
-                        , getNodeID $ head $ hlWOpMatchOperandsUsed m
-                        )
-                        -- We assume that null instructions uses exactly one
-                        -- datum and defines exactly one datum
-                    )
+computeAliases op_maps const_ns null_matches =
+  let getNodeID o = fromJust $ lookup o op_maps
+      aliases = filter (\(_, n) -> n `notElem` const_ns)
+                $ map ( \m ->
+                          ( getNodeID $ head $ hlWOpMatchOperandsDefined m
+                          , getNodeID $ head $ hlWOpMatchOperandsUsed m
+                          )
+                          -- We assume that null instructions uses exactly one
+                          -- datum and defines exactly one datum
+                      )
                 null_matches
       normalize as =
         let alias_refs = filter (\(_, b) -> b `elem` (map fst as)) as
