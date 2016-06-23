@@ -169,7 +169,6 @@ var int: cost;
 %====================
 
 include "all_equal.mzn";
-include "count.mzn";
 include "circuit.mzn";
 include "table.mzn";
 
