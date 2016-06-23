@@ -136,6 +136,12 @@ mkInitState sol model =
                    , valueNodeAliases = aliases
                    }
 
+-- | Computes the aliases where usage of a data node defined by a null
+-- instruction would be aliased to the data node used by the null
+-- instruction. This is computed transitively until all data nodes are aliased
+-- to a data node defined by either a non-null instruction or an instruction
+-- that does not take any input. However, if the null instruction uses a data
+-- node representing a constant, then its defined data node is not aliased.
 computeAliases
   :: [(OperandID, NodeID)]
   -> [NodeID]
