@@ -17,7 +17,6 @@ module UniIS.Drivers.CheckFunctionGraph
 where
 
 import UniIS.Drivers.Base
-import Language.InstrSel.Constraints.ConstraintQuerier
 import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.Graphs
@@ -75,7 +74,12 @@ run CheckFunctionGraphCoverage function matchset _ =
      else return [toOutput "OK"]
 
 run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
-  let g = osGraph $ functionOS function
+  let getValidLocs os nid =
+        let locs = lookup nid $ osValidLocations os
+        in if isJust locs
+           then fromJust locs
+           else []
+      g = osGraph $ functionOS function
       data_nodes = map getNodeID $ filter isDatumNode $ getAllNodes g
       matches = pmMatches matchset
       getPatternGraph pm =
@@ -88,13 +92,13 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
         let ssa_g = extractSSA $ osGraph os
             n = head $ findNodesWithNodeID ssa_g nid
         in if length (getDtFlowInEdges ssa_g n) > 0
-           then extractDataLocsInConstraints nid (osConstraints os)
+           then getValidLocs os nid
            else []
       getUseLocationsForNode os nid =
         let ssa_g = extractSSA $ osGraph os
             n = head $ findNodesWithNodeID ssa_g nid
         in if length (getDtFlowInEdges ssa_g n) == 0
-           then extractDataLocsInConstraints nid (osConstraints os)
+           then getValidLocs os nid
            else []
       hasNodeOverlappingLocs n =
         let def_locs =
