@@ -32,10 +32,9 @@ import Language.InstrSel.Graphs
   , extractSSA
   , fromMatch
   , subGraph
-  , componentsOf
   , getAllNodes
-  , isReachableComponent
   )
+import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )

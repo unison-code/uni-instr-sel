@@ -45,6 +45,7 @@ library
 
     Language.InstrSel.Graphs
     Language.InstrSel.Graphs.Base
+    Language.InstrSel.Graphs.Graphalyze
     Language.InstrSel.Graphs.GraphViz
     Language.InstrSel.Graphs.IDs
     Language.InstrSel.Graphs.PatternMatching.VF2
