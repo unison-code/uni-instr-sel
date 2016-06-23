@@ -360,7 +360,7 @@ updateNodeIDsInEmitStrParts emit_strs maps =
            f (ESNameOfBlockNode     _) (Just n) = ESNameOfBlockNode n
            f (ESBlockOfValueNode    _) (Just n) = ESBlockOfValueNode n
            f (ESFuncOfCallNode      _) (Just n) = ESFuncOfCallNode n
-           f p@(ESLocalTemporary {})         _       = p
+           f p@(ESLocalTemporary {})         _  = p
            f _ _ = error $ "updateNodeIDsInEmitStrParts: unexpected combination"
                            ++ " of arguments"
        in zipWith ( \es ms ->
