@@ -303,23 +303,18 @@ constraint
 constraint
   forall (d in allDataInFunction)
   (
-    % mzn-cpx crashes if <-> is used in this situation
-    ( active[d]
-      ->
-      exists (o in allOperands)
-      (
-        alt[o] == d
-      )
+    let {
+      array[int] of int: O = [ o | o in allOperands
+                                        where d in operandAlternatives[o]
+                             ]
+    , array[1..length(O)] of var bool: a
+    } in
+    forall (i in index_set(O))
+    (
+      a[i] <-> alt[O[i]] == d
     )
     /\
-    ( forall (d in allDataInFunction)
-      (
-        forall (o in allOperands)
-        (
-          alt[o] != d
-        ) -> not active[d]
-      )
-    )
+    (active[d] <-> (sum (i in index_set(a)) (bool2int(a[i])) > 0))
   );
 
 % Inactive data must be defined by inactive copy matches.
