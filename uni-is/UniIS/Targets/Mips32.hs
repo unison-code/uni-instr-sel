@@ -544,7 +544,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 1),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -855,7 +857,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 2),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -1166,7 +1170,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 3),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -1414,7 +1420,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 4),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -1662,7 +1670,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 5),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -1910,7 +1920,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 6),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -2158,7 +2170,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 7),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -2469,7 +2483,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 8),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -2983,7 +2999,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 9),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -3693,7 +3711,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 10),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -3941,7 +3961,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 11),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -4189,7 +4211,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 12),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -4437,7 +4461,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 13),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -4685,7 +4711,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 14),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -5179,7 +5207,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 15),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -5673,7 +5703,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 16),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -6167,7 +6199,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 17),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -6592,7 +6626,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 18),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -7017,7 +7053,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 19),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -7442,7 +7480,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 20),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -7867,7 +7907,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 21),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -8292,7 +8334,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 22),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -8717,7 +8761,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 23),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -9142,7 +9188,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 24),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -9567,7 +9615,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 25),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -9992,7 +10042,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 26),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -10473,7 +10525,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 27),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -10954,7 +11008,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 28),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -11435,7 +11491,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 29),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -11916,7 +11974,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 30),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -12397,7 +12457,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 31),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -12878,7 +12940,9 @@ theTM
                                                                                   8))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 32),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -13148,7 +13212,9 @@ theTM
                                                                                   4))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 33),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -13573,7 +13639,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 34),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -13998,7 +14066,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 35),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -14423,7 +14493,9 @@ theTM
                                                                                   9))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 36),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -14519,7 +14591,9 @@ theTM
                                                                                   2))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 37),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -14843,7 +14917,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 38}},
+                                                   instrLatency = 38,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 38),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -15167,7 +15243,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 38}},
+                                                   instrLatency = 38,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 39),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -15414,7 +15492,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 38}},
+                                                   instrLatency = 38,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 40),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -15503,7 +15583,9 @@ theTM
                                                                             " ()"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 41),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -15728,7 +15810,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 42),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -16027,7 +16111,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 43),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -16287,7 +16373,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 44),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -16762,7 +16850,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 45),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -17237,7 +17327,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 46),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -17712,7 +17804,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 47),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -18187,7 +18281,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 48),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -18416,7 +18512,9 @@ theTM
                                                                             "[15:0]"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 2}},
+                                                   instrLatency = 2,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 49),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -18629,7 +18727,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 50),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -18842,7 +18942,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 51),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19055,7 +19157,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 52),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19268,7 +19372,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 53),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19481,7 +19587,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 54),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19594,7 +19702,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 55),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19707,7 +19817,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 56),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19820,7 +19932,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 57),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -19933,7 +20047,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 58),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -20300,7 +20416,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 59),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -20560,7 +20678,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 60),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -20991,7 +21111,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 61),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -21422,7 +21544,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 62),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -21622,7 +21746,9 @@ theTM
                                                                                   7))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 63),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -21822,7 +21948,9 @@ theTM
                                                                                   7))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 64),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -22029,7 +22157,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 65),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -22460,7 +22590,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 66),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -22891,7 +23023,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 67),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -23094,7 +23228,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 68),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -23297,7 +23433,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 69),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -23545,7 +23683,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 17}},
+                                                   instrLatency = 17,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 70),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -23792,7 +23932,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 71),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -24039,7 +24181,9 @@ theTM
                                                                                   3))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 72),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -24498,7 +24642,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 73),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -24746,7 +24892,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 74),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -25057,7 +25205,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 75),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -25304,7 +25454,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 38}},
+                                                   instrLatency = 38,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 76),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -25432,7 +25584,9 @@ theTM
                                                                             2]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 12,
-                                                   instrLatency = 2}},
+                                                   instrLatency = 2,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 77),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -25544,7 +25698,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 78),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -26024,7 +26180,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 79),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -26335,7 +26493,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 80),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -26646,7 +26806,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 81),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -26900,7 +27062,9 @@ theTM
                                                                             1]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 2}},
+                                                   instrLatency = 2,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 82),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -27154,7 +27318,9 @@ theTM
                                                                             1]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 2}},
+                                                   instrLatency = 2,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 83),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -27424,7 +27590,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 84),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -27694,7 +27862,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 85),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -27904,7 +28074,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 86),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -28114,7 +28286,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 87),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -28594,7 +28768,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 88),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -28905,7 +29081,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 89),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -29153,7 +29331,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 90),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -29667,7 +29847,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 91),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -29978,7 +30160,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 92),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -30289,7 +30473,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 93),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -30537,7 +30723,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 94),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -30785,7 +30973,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 95),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -31033,7 +31223,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 96),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -31281,7 +31473,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 97),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -31592,7 +31786,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 98),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -31840,7 +32036,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 99),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -32088,7 +32286,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 100),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -32336,7 +32536,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 101),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -32647,7 +32849,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 102),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -32895,7 +33099,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 103),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -33143,7 +33349,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 104),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -33391,7 +33599,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 105),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -33639,7 +33849,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 106),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -33887,7 +34099,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 107),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -34149,7 +34363,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 108),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -34361,7 +34577,9 @@ theTM
                                                                             ", 255"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 109),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -34573,7 +34791,9 @@ theTM
                                                                             ", 255"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 110),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -35087,7 +35307,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 8,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 111),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -35398,7 +35620,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 112),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -35709,7 +35933,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 113),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -36020,7 +36246,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 114),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -36268,7 +36496,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 115),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -36516,7 +36746,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 116),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -36764,7 +36996,9 @@ theTM
                                                                                   5))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 117),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -37034,7 +37268,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 118),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -37304,7 +37540,9 @@ theTM
                                                                                   1))]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 119),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -37516,7 +37754,9 @@ theTM
                                                                             ", 255"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 120),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -37728,7 +37968,9 @@ theTM
                                                                             ", 255"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 4,
-                                                   instrLatency = 1}},
+                                                   instrLatency = 1,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 121),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -42449,7 +42691,9 @@ theTM
                                                                             ")"]]}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 122),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -42547,7 +42791,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 123),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -42671,7 +42917,9 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}},
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
                      Instruction{instrID = InstructionID (Natural 124),
                                  instrPatterns =
                                    [InstrPattern{patID = PatternID (Natural 0),
@@ -43096,7 +43344,101 @@ theTM
                                                                         = []}}],
                                  instrProps =
                                    InstrProperties{instrCodeSize = 0,
-                                                   instrLatency = 0}}],
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     False}},
+                     Instruction{instrID = InstructionID (Natural 125),
+                                 instrPatterns =
+                                   [InstrPattern{patID = PatternID (Natural 0),
+                                                 patOS =
+                                                   OpStructure{osGraph =
+                                                                 Graph{intGraph
+                                                                         =
+                                                                         I.mkGraph
+                                                                           [(0,
+                                                                             NodeLabel{nodeID
+                                                                                         =
+                                                                                         NodeID
+                                                                                           (Natural
+                                                                                              0),
+                                                                                       nodeType
+                                                                                         =
+                                                                                         CopyNode}),
+                                                                            (1,
+                                                                             NodeLabel{nodeID
+                                                                                         =
+                                                                                         NodeID
+                                                                                           (Natural
+                                                                                              1),
+                                                                                       nodeType
+                                                                                         =
+                                                                                         ValueNode{typeOfValue
+                                                                                                     =
+                                                                                                     AnyType,
+                                                                                                   originOfValue
+                                                                                                     =
+                                                                                                     Nothing}}),
+                                                                            (2,
+                                                                             NodeLabel{nodeID
+                                                                                         =
+                                                                                         NodeID
+                                                                                           (Natural
+                                                                                              2),
+                                                                                       nodeType
+                                                                                         =
+                                                                                         ValueNode{typeOfValue
+                                                                                                     =
+                                                                                                     AnyType,
+                                                                                                   originOfValue
+                                                                                                     =
+                                                                                                     Nothing}})]
+                                                                           [(0,
+                                                                             2,
+                                                                             EdgeLabel{edgeType
+                                                                                         =
+                                                                                         DataFlowEdge,
+                                                                                       outEdgeNr
+                                                                                         =
+                                                                                         EdgeNr
+                                                                                           (Natural
+                                                                                              0),
+                                                                                       inEdgeNr
+                                                                                         =
+                                                                                         EdgeNr
+                                                                                           (Natural
+                                                                                              0)}),
+                                                                            (1,
+                                                                             0,
+                                                                             EdgeLabel{edgeType
+                                                                                         =
+                                                                                         DataFlowEdge,
+                                                                                       outEdgeNr
+                                                                                         =
+                                                                                         EdgeNr
+                                                                                           (Natural
+                                                                                              0),
+                                                                                       inEdgeNr
+                                                                                         =
+                                                                                         EdgeNr
+                                                                                           (Natural
+                                                                                              0)})]},
+                                                               osEntryBlockNode
+                                                                 = Nothing,
+                                                               osValidLocations
+                                                                 = [],
+                                                               osConstraints =
+                                                                 []},
+                                                 patExternalData =
+                                                   [NodeID (Natural 1),
+                                                    NodeID (Natural 2)],
+                                                 patEmitString =
+                                                   EmitStringTemplate{emitStrParts
+                                                                        = []}}],
+                                 instrProps =
+                                   InstrProperties{instrCodeSize = 0,
+                                                   instrLatency = 0,
+                                                   instrIsInactiveCopy =
+                                                     True}}],
                   tmLocations =
                     [Location{locID = LocationID (Natural 0),
                               locName = LocationName "temp",
