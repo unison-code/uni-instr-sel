@@ -182,11 +182,21 @@ for loc in loc_data:
     has_d_loc_data.append(loc != loc_value_for_null)
 all_data.append(["has_d_loc", has_d_loc_data])
 
+# Add 'has_o_alt' array to data
+alt_data = getRequiredDataByName(all_data, "alt")
+alt_value_for_null = \
+  getRequiredDataByName(all_data, "alt_value_for_null")
+has_o_alt_data = []
+for alt in alt_data:
+    has_o_alt_data.append(alt != alt_value_for_null)
+all_data.append(["has_o_alt", has_o_alt_data])
+
 # Turn desirable data into JSON
 data_table = [ ["loc",        "loc-of-datum"]
              , ["has_d_loc",  "has-datum-loc"]
              , ["sel",        "is-match-selected"]
-             , ["alt",        "node-of-operand"]
+             , ["has_o_alt",  "has-operand-alt"]
+             , ["alt",        "alt-of-operand"]
              , ["place",      "block-of-match"]
              , ["ord",        "order-of-blocks"]
              , ["cost",       "cost"]

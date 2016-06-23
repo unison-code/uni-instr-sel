@@ -378,10 +378,14 @@ data LowLevelSolution
       , llSolIsMatchSelected :: [Bool]
         -- ^ Indicates whether a particular match was selected. An index into
         -- the list corresponds to the array index of a particular match.
-      , llSolNodesOfOperands :: [ArrayIndex]
-        -- ^ The array index of the node selected for a particular operand. An
-        -- index into the list corresponds to the array index of a particular
-        -- operand.
+      , llSolHasOperandAlt :: [Bool]
+        -- ^ Indicates whether an alternative has been selected for a particular
+        -- operand. An index into the list corresponds to the array index of a
+        -- particular operand.
+      , llSolAltsOfOperands :: [ArrayIndex]
+        -- ^ The array index of the alternative selected for a particular
+        -- operand. An index into the list corresponds to the array index of a
+        -- particular operand.
       , llSolBlocksOfMatches :: [ArrayIndex]
         -- ^ The array index of the block wherein a particular match was
         -- placed. An index into the list corresponds to the array index of a
@@ -767,7 +771,8 @@ instance FromJSON LowLevelSolution where
        then LowLevelSolution
               <$> v .:  "order-of-blocks"
               <*> v .:  "is-match-selected"
-              <*> v .:  "node-of-operand"
+              <*> v .:  "has-operand-alt"
+              <*> v .:  "alt-of-operand"
               <*> v .:  "block-of-match"
               <*> v .:  "has-datum-loc"
               <*> v .:  "loc-of-datum"

@@ -100,12 +100,12 @@ int: numLocValues = numLocations + 1;
 % Reference to to the null-location value.
 int: locValueForNull = numLocValues - 1;
 
-% Total number of operand values (an additional value will be needed for
+% Total number of data values (an additional value will be needed for
 % representing the null datum, for operands used in non-selected matches).
-int: numOperandValues = numOperands + 1;
+int: numDataValues = numDataInFunction + 1;
 
 % Reference to to the null-datum value.
-int: opValueForNull = numOperandValues - 1;
+int: datumValueForNull = numDataValues - 1;
 
 % Total number of blocks values (an additional value will be needed for
 % representing the null block, to which non-selected matches will be placed).
@@ -136,11 +136,11 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
 set of int: allDataInFunction = 0..numDataInFunction-1;
+set of int: allDataInFunctionPlusNull = 0..numDataValues-1;
 set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
 set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
 set of int: allMatches = 0..numMatches-1;
 set of int: allOperands = 0..numOperands-1;
-set of int: allOperandsPlusNull = 0..numOperandValues-1;
 set of int: allLocValues = 0..numLocValues-1;
 
 
@@ -161,7 +161,7 @@ array[allMatches] of var bool: sel;
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
 
 % Data selected for the operands.
-array[allOperandsPlusNull] of var allDataInFunction: alt;
+array[allOperands] of var allDataInFunctionPlusNull: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
@@ -206,7 +206,7 @@ constraint
 % Constrain alternatives of operands.
 constraint
   forall (o in allOperands) (
-    alt[o] in (operandAlternatives[o] union {opValueForNull})
+    alt[o] in (operandAlternatives[o] union {datumValueForNull})
   );
 
 % Constrain locations of data representing values.
@@ -286,9 +286,9 @@ constraint
   forall (m in allMatches) (
     forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
       % mzn-cpx crashes if posting "sel[m] <-> (alt[o] != opValueForNull)"!
-      (sel[m] -> (alt[o] != opValueForNull))
+      (sel[m] -> (alt[o] != datumValueForNull))
       /\
-      (alt[o] = opValueForNull) -> (not sel[m])
+      (alt[o] = datumValueForNull) -> (not sel[m])
     )
   );
 
@@ -688,6 +688,6 @@ output [ "sel=", show(sel), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
-       , "op_value_for_null=", show(opValueForNull), "\n"
+       , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(cost), "\n"
        ];
