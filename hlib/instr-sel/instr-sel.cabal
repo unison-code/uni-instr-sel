@@ -20,7 +20,6 @@ library
     Language.InstrSel.Constraints
     Language.InstrSel.Constraints.Base
     Language.InstrSel.Constraints.ConstraintBuilder
-    Language.InstrSel.Constraints.ConstraintQuerier
     Language.InstrSel.Constraints.ConstraintReconstructor
 
     Language.InstrSel.ConstraintModels
