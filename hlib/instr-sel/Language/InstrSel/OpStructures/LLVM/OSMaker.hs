@@ -643,13 +643,13 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
                     map ( \(b', n, nr) ->
                             if res_n == n then (b', sym_n, nr) else (b', n, nr)
                         )
-                    (blockToDatumDefs st3)
+                        (blockToDatumDefs st3)
                 }
       st5 = st4 { datumToBlockDefs =
                     map ( \(n, b', nr) ->
                             if res_n == n then (sym_n, b', nr) else (n, b', nr)
                         )
-                    (datumToBlockDefs st4)
+                        (datumToBlockDefs st4)
                 }
   in st5
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr

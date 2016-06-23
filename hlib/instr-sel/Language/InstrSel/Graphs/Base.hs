@@ -1164,8 +1164,7 @@ doNodesMatch
   -> Bool
 doNodesMatch fg pg fn pn =
   (getNodeType pn) `isNodeTypeCompatibleWith` (getNodeType fn)
-  &&
-  doNumEdgesMatch fg pg fn pn
+  && doNumEdgesMatch fg pg fn pn
 
 -- | Checks if a node type is compatible with another node type. Note that this
 -- function is not necessarily commutative.
@@ -1188,10 +1187,8 @@ isNodeTypeCompatibleWith _ _ = False
 isBlockNodeAndIntermediate :: Graph -> Node -> Bool
 isBlockNodeAndIntermediate g n
   | ( isBlockNode n
-      &&
-      (length $ filter isControlFlowEdge $ getInEdges g n) > 0
-      &&
-      (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
+      && (length $ filter isControlFlowEdge $ getInEdges g n) > 0
+      && (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
     ) = True
   | otherwise = False
 
@@ -1338,10 +1335,8 @@ doInEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
       pn = getTargetNode pg (head pes)
   in ((not $ doesOrderCFInEdgesMatter pg pn) || checkEdges isControlFlowEdge)
-     &&
-     ((not $ doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge)
-     &&
-     ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
+     && ((not $ doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge)
+     && ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Same as `doInEdgeListsMatch` but for out-edges.
 doOutEdgeListsMatch
@@ -1357,11 +1352,11 @@ doOutEdgeListsMatch
 doOutEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
       pn = getSourceNode pg (head pes)
-  in ((not $ doesOrderCFOutEdgesMatter pg pn) || checkEdges isControlFlowEdge)
-     &&
-     ((not $ doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge)
-     &&
-     ((not $ doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
+  in ( (not $ doesOrderCFOutEdgesMatter pg pn)
+       || checkEdges isControlFlowEdge
+     )
+     && ((not $ doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge)
+     && ((not $ doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Checks if the order of control-flow in-edges matters for a given pattern
 -- node.
@@ -1484,10 +1479,8 @@ areInEdgesEquivalent
   -> Bool
 areInEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2
-  &&
-  (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2)
-  &&
-  getInEdgeNr e1 == getInEdgeNr e2
+  && (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2)
+  && getInEdgeNr e1 == getInEdgeNr e2
 
 -- | Checks if two out-edges are equivalent, meaning they must be of the same
 -- edge type, have source nodes with the same node ID, and have the same
@@ -1500,10 +1493,8 @@ areOutEdgesEquivalent
   -> Bool
 areOutEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2
-  &&
-  (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2)
-  &&
-  getOutEdgeNr e1 == getOutEdgeNr e2
+  && (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2)
+  && getOutEdgeNr e1 == getOutEdgeNr e2
 
 -- | Same as `findPNsInMapping`.
 findPNsInMatch
@@ -1643,11 +1634,8 @@ extractSSA :: Graph -> Graph
 extractSSA g =
   let nodes_to_remove =
         filter
-          ( \n -> not (  isOperationNode n
-                      || isDatumNode n
-                      )
-                  ||
-                  (isControlNode n && not (isRetControlNode n))
+          ( \n -> not (isOperationNode n || isDatumNode n)
+                  || (isControlNode n && not (isRetControlNode n))
           )
           (getAllNodes g)
       ssa = foldr delNode g nodes_to_remove
@@ -1696,7 +1684,8 @@ fromMatch (Match s) = S.toList s
 subGraph :: Graph -> [Node] -> Graph
 subGraph g ns =
     let sns = filter (\n -> n `elem` ns) $ getAllNodes g
-        ses = filter (\e -> getSourceNode g e `elem` ns &&
-                            getTargetNode g e `elem` ns) $
-              getAllEdges g
+        ses = filter ( \e -> getSourceNode g e `elem` ns
+                             && getTargetNode g e `elem` ns
+                     )
+              $ getAllEdges g
     in mkGraph sns ses

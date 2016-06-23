@@ -112,12 +112,12 @@ extractExecFreq m im =
   where soughtMetaName = "exec_freq"
         findNodes = map snd . filter (\m' -> fst m' == soughtMetaName)
         checkNumNodes ms | length ms == 0 =
-                             error $
-                               "No metadata entry with name '" ++
+                             error
+                             $ "No metadata entry with name '" ++
                                soughtMetaName ++ "'!"
                          | length ms > 1 =
-                             error $
-                               "Multiple metadata entries with name '" ++
+                             error
+                             $ "Multiple metadata entries with name '" ++
                                soughtMetaName ++ "'!"
                          | otherwise = ms
 

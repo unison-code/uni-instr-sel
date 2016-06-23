@@ -117,8 +117,7 @@ mkHLFunctionParams function target =
                                 else (s_id, t_id)
                          )
                      $ filter ( \e -> isStateNode (getSourceNode graph e)
-                                    ||
-                                    isStateNode (getTargetNode graph e)
+                                      || isStateNode (getTargetNode graph e)
                             )
                      $ filter isDefEdge
                      $ getAllEdges graph
@@ -211,8 +210,7 @@ processMatch instr pattern match mid =
       entry_b = osEntryBlockNode $ patOS pattern
       b_ns_consumed = if isJust entry_b
                       then filter ( \n -> hasAnyPredecessors graph n
-                                          &&
-                                          hasAnySuccessors graph n
+                                          && hasAnySuccessors graph n
                                   )
                                   b_ns
                       else []
