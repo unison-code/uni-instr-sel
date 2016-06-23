@@ -62,6 +62,7 @@ array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 set of allMatches: copyInstrMatches;
+set of allMatches: inactiveCopyInstrMatches;
 set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
@@ -88,15 +89,22 @@ array[int, int] of int: funValidDataLocRanges;
 % matches).
 int: numLocValues = numLocations + 1;
 
+% Reference to to the null-location value.
+int: locValueForNull = numLocValues - 1;
+
+% Total number of operand values (an additional value will be needed for
+% representing the null datum, for operands used in non-selected matches).
+int: numOperandValues = numOperands + 1;
+
+% Reference to to the null-datum value.
+int: opValueForNull = numOperandValues - 1;
+
 % Total number of blocks values (an additional value will be needed for
 % representing the null block, to which non-selected matches will be placed).
 int: numBlockValues = numBlocksInFunction + 1;
 
 % Reference to the null-block value.
 int: blockValueForNull = numBlockValues - 1;
-
-% Reference to to the null-location value.
-int: locValueForNull = numLocValues - 1;
 
 % Extends the external parameter 'domSetOfBlockInFunction' with a value
 % for the null block (which is assumed to be dominated by all blocks).
@@ -126,6 +134,7 @@ set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
 set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
 set of int: allMatches = 0..numMatches-1;
 set of int: allOperands = 0..numOperands-1;
+set of int: allOperandsPlusNull = 0..numOperandValues-1;
 set of int: allLocValues = 0..numLocValues-1;
 
 
@@ -134,9 +143,10 @@ set of int: allLocValues = 0..numLocValues-1;
 % VARIABLES
 %===========
 
-% Data definitions and locations.
+% Data definitions, locations, and activity.
 array[allDataInFunction] of var allBlocksInFunction: def;
 array[allDataInFunction] of var allLocValues: loc;
+array[allDataInFunction] of var bool: active;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -145,7 +155,7 @@ array[allMatches] of var bool: sel;
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
 
 % Data selected for the operands.
-array[allOperands] of var allDataInFunction: alt;
+array[allOperandsPlusNull] of var allDataInFunction: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
@@ -161,6 +171,7 @@ var int: cost;
 %====================
 
 include "all_equal.mzn";
+include "count.mzn";
 include "circuit.mzn";
 include "table.mzn";
 
@@ -194,17 +205,7 @@ constraint
 constraint
   forall (o in allOperands)
   (
-    alt[o] in operandAlternatives[o]
-  );
-
-% [MC] Break alt symmetries for operands of unused matches.
-constraint
-  forall ( m in allMatches
-         , o in operandsUsedByMatch[m]
-                where card(operandAlternatives[o])>1
-         )
-  (
-    (not sel[m] -> alt[o] == min(operandAlternatives[o]))
+    alt[o] in (operandAlternatives[o] union {opValueForNull})
   );
 
 % Constrain locations of data representing values.
@@ -226,7 +227,7 @@ constraint
 % Enforce that, for each operation, exactly one match must be selected such that
 % the operation is covered.
 constraint
-  forall (o in allOperationsInFunction where not (o in copiesInFunction))
+  forall (o in allOperationsInFunction)
   (
     let {
       set of int: mset = { m | m in allMatches diff dominatedMatches
@@ -283,6 +284,55 @@ constraint
                  ) = 1
             endif
        endif
+  );
+
+% Operands in non-selected matches are set to the null datum.
+constraint
+  forall (m in allMatches)
+  (
+    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m])
+    (
+      % mzn-cpx crashes if posting "sel[m] <-> (alt[o] != opValueForNull)"!
+      sel[m] -> (alt[o] != opValueForNull)
+      /\
+      (alt[o] == opValueForNull) -> (not sel[m])
+    )
+  );
+
+% A datum is active if there is at least one operand that uses that datum.
+constraint
+  forall (d in allDataInFunction)
+  (
+    % mzn-cpx crashes if <-> is used in this situation
+    ( active[d]
+      ->
+      exists (o in allOperands)
+      (
+        alt[o] == d
+      )
+    )
+    /\
+    ( forall (d in allDataInFunction)
+      (
+        forall (o in allOperands)
+        (
+          alt[o] != d
+        ) -> not active[d]
+      )
+    )
+  );
+
+% Inactive data must be defined by inactive copy matches.
+constraint
+  forall (d in allDataInFunction)
+  (
+    let {
+      set of int: mset = { m | m in allMatches diff dominatedMatches
+                             , o in operandsDefinedByMatch[m]
+                                    where d in operandAlternatives[o]
+                         }
+    }
+    in (not active[d]) <-> sel[min(mset)]
   );
 
 % Implied: The total number of data defined by the selected matches must be
@@ -499,8 +549,9 @@ constraint
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.
+% However, this does not apply to inactive copy instructions.
 constraint
-  forall (m in nullInstrMatches)
+  forall (m in nullInstrMatches where not (m in inactiveCopyInstrMatches))
   (
     forall (o in operandsUsedByMatch[m])
     (
@@ -660,7 +711,10 @@ solve ::
   seq_search(
     [ bool_search([ sel[m]
                   | m in allMatchesBySize
-                    where not (m in copyInstrMatches union dominatedMatches)
+                    where not ( m in copyInstrMatches
+                                     union inactiveCopyInstrMatches
+                                     union dominatedMatches
+                              )
                   ], input_order, indomain_max, complete)
     , int_search(alt, input_order, indomain_max, complete)
 	]
@@ -675,5 +729,6 @@ output [ "sel=", show(sel), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
+       , "op_value_for_null=", show(opValueForNull), "\n"
        , "cost=", show(cost), "\n"
        ];

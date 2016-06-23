@@ -429,6 +429,10 @@ dumpParams( json_data["match-copy-instrs"]
           , "copyInstrMatches"
           , VT_SET
           )
+dumpParams( json_data["match-inactive-copy-instrs"]
+          , "inactiveCopyInstrMatches"
+          , VT_SET
+          )
 dumpParams( json_data["match-null-instrs"]
           , "nullInstrMatches"
           , VT_SET

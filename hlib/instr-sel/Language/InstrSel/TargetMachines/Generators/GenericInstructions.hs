@@ -18,6 +18,7 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   , mkPhiInstruction
   , mkDataDefInstruction
   , mkTempNullCopyInstruction
+  , mkInactiveCopyInstruction
   , reassignInstrIDs
   )
 where
@@ -132,6 +133,7 @@ mkPhiInstruction mkEmit =
                  , instrPatterns = map mkPat [2..10]
                  , instrProps = InstrProperties { instrCodeSize = 0
                                                 , instrLatency = 0
+                                                , instrIsInactiveCopy = False
                                                 }
                  }
 
@@ -168,6 +170,7 @@ mkBrFallThroughInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsInactiveCopy = False
                                       }
        }
 
@@ -200,6 +203,7 @@ mkDataDefInstruction =
                          ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsInactiveCopy = False
                                       }
        }
 
@@ -237,6 +241,41 @@ mkTempNullCopyInstruction bits =
        , instrPatterns = map pat $ zip [0..] bits
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsInactiveCopy = False
+                                      }
+       }
+
+-- | Creates an instruction to be selected for copy operations that are
+-- inactive. Note that the 'InstructionID's of all instructions will be
+-- (incorrectly) set to 0, meaning they must be reassigned afterwards.
+mkInactiveCopyInstruction :: Instruction
+mkInactiveCopyInstruction =
+  let g = mkGraph
+            ( map
+                Node
+                [ ( 0, NodeLabel 0 CopyNode )
+                , ( 1, NodeLabel 1 mkGenericValueNodeType )
+                , ( 2, NodeLabel 2 mkGenericValueNodeType )
+                ]
+            )
+            ( map
+                Edge
+                [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+                ]
+            )
+      pat = InstrPattern
+              { patID = 0
+              , patOS = OpStructure g Nothing [] []
+              , patExternalData = [1, 2]
+              , patEmitString = EmitStringTemplate []
+              }
+  in Instruction
+       { instrID = 0
+       , instrPatterns = [pat]
+       , instrProps = InstrProperties { instrCodeSize = 0
+                                      , instrLatency = 0
+                                      , instrIsInactiveCopy = True
                                       }
        }
 

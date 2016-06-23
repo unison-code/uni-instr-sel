@@ -266,6 +266,8 @@ processMatch instr pattern match mid =
              (osConstraints $ patOS pattern)
        , hlNoOpMatchIsPhiInstruction = isInstructionPhi $ instr
        , hlNoOpMatchIsCopyInstruction = isInstructionCopy $ instr
+       , hlNoOpMatchIsInactiveCopyInstruction =
+           isInstructionInactiveCopy $ instr
        , hlNoOpMatchIsNullInstruction = isInstructionNull instr
        , hlNoOpMatchHasControlFlow = length c_ns > 0
        , hlNoOpMatchCodeSize = instrCodeSize i_props
@@ -402,6 +404,8 @@ mkHLMatchParamsWOp p oid =
                  (hlNoOpMatchConstraints p)
          , hlWOpMatchIsPhiInstruction = hlNoOpMatchIsPhiInstruction p
          , hlWOpMatchIsCopyInstruction = hlNoOpMatchIsCopyInstruction p
+         , hlWOpMatchIsInactiveCopyInstruction =
+             hlNoOpMatchIsInactiveCopyInstruction p
          , hlWOpMatchIsNullInstruction = hlNoOpMatchIsNullInstruction p
          , hlWOpMatchHasControlFlow = hlNoOpMatchHasControlFlow p
          , hlWOpMatchOperandsUsedByPhis =
@@ -628,6 +632,9 @@ lowerHighLevelModel model ai_maps =
        , llMatchCopyInstructions =
            map (getAIForMatchID . hlWOpMatchID)
                (filter hlWOpMatchIsCopyInstruction m_params)
+       , llMatchInactiveCopyInstructions =
+           map (getAIForMatchID . hlWOpMatchID)
+               (filter hlWOpMatchIsInactiveCopyInstruction m_params)
        , llMatchNullInstructions =
            map (getAIForMatchID . hlWOpMatchID)
                (filter hlWOpMatchIsNullInstruction m_params)
