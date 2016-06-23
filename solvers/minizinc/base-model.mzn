@@ -322,7 +322,7 @@ constraint
   forall (d in allDataInFunction)
   (
     let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches
+      set of int: mset = { m | m in inactiveCopyInstrMatches
                              , o in operandsDefinedByMatch[m]
                                     where d in operandAlternatives[o]
                          }
