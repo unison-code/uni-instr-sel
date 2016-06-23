@@ -112,10 +112,9 @@ array[allBlocksInFunctionPlusNull] of set of int:
   domSetOfBlockInFunctionPlusNull =
     array1d( allBlocksInFunctionPlusNull
            , domSetOfBlockInFunction
-             ++
-             array1d( blockValueForNull..blockValueForNull,
-                      [allBlocksInFunction]
-                    )
+             ++ array1d( blockValueForNull..blockValueForNull
+                       , [allBlocksInFunction]
+                       )
            );
 
 % Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
@@ -123,8 +122,7 @@ array[allBlocksInFunctionPlusNull] of set of int:
 array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
   array1d( allBlocksInFunctionPlusNull
          , execFrequencyOfBlockInFunction
-           ++
-           array1d(blockValueForNull..blockValueForNull, [0])
+           ++ array1d(blockValueForNull..blockValueForNull, [0])
          );
 
 % Sets to be used as array ranges.
@@ -184,9 +182,7 @@ include "table.mzn";
 % Fall-through constraint: the block wherein match m is placed must be
 % immediately followed by block b.
 predicate fall_through(int: m, int: b) =
-(
-  succ[place[m]] = b
-);
+  succ[place[m]] = b;
 
 
 
@@ -196,32 +192,29 @@ predicate fall_through(int: m, int: b) =
 
 % Dominated matches must not be selected.
 constraint
-  forall (m in dominatedMatches)
-  (
+  forall (m in dominatedMatches) (
     not sel[m]
   );
 
 % Constrain alternatives of operands.
 constraint
-  forall (o in allOperands)
-  (
+  forall (o in allOperands) (
     alt[o] in (operandAlternatives[o] union {opValueForNull})
   );
 
 % Constrain locations of data representing values.
 constraint
-  forall (d in allDataInFunction)
-  (
-    let {
-      set of int: locs = { funValidDataLocs[i, 2]
+  forall (d in allDataInFunction) (
+    let
+    { set of int: locs = { funValidDataLocs[i, 2]
                          | i in index_set_1of2(funValidDataLocs)
-                                where funValidDataLocs[i, 1] = d
+                           where funValidDataLocs[i, 1] = d
                          }
-    }
-    in if card(locs) > 0
-       then loc[d] in locs
-       else true
-       endif
+    } in
+    if card(locs) > 0
+    then loc[d] in locs
+    else true
+    endif
   );
 
 % Enforce that, for each operation, exactly one match must be selected such that
@@ -229,33 +222,31 @@ constraint
 constraint
   forall (o in allOperationsInFunction)
   (
-    let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches
-                                    where o in operationsCoveredByMatch[m]
+    let
+    { set of int: mset = { m | m in allMatches diff dominatedMatches
+                               where o in operationsCoveredByMatch[m]
                          }
-    }
-    in if card(mset) = 1
-       then sel[min(mset)]
-       else if card(mset) = 2
-            then sel[min(mset)] xor sel[max(mset)]
-            else sum (m in mset)
-                 (
-                   bool2int(sel[m])
-                 ) = 1
-            endif
-       endif
+    } in
+    if card(mset) = 1
+    then sel[min(mset)]
+    else if card(mset) = 2
+         then sel[min(mset)] xor sel[max(mset)]
+         else sum (m in mset) (
+                bool2int(sel[m])
+              ) = 1
+         endif
+    endif
   );
 
 % A state datum with a definition edge with a block must be defined in the block
 % of that block.
 constraint
-  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction))
-  (
-    let {
-      int: b = stateDefEdgesForBlocksInFunction[i, 1]
+  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction)) (
+    let
+    { int: b = stateDefEdgesForBlocksInFunction[i, 1]
     , int: d = stateDefEdgesForBlocksInFunction[i, 2]
-    }
-    in def[d] = b
+    } in
+    def[d] = b
   );
 
 % Enforce that, for each datum, exactly one match must be selected such that
@@ -268,34 +259,29 @@ constraint
 constraint
   forall (d in allDataInFunction)
   (
-    let {
-      set of int: mset = { m | m in allMatches diff dominatedMatches
+    let
+    { set of int: mset = { m | m in allMatches diff dominatedMatches
                              , o in operandsDefinedByMatch[m]
-                                    where d in operandAlternatives[o]
+                               where d in operandAlternatives[o]
                          }
-    }
-    in if card(mset) = 1
-       then sel[min(mset)]
-       else if card(mset) = 2
-            then sel[min(mset)] xor sel[max(mset)]
-            else sum (m in mset)
-                 (
-                   bool2int(sel[m])
-                 ) = 1
-            endif
-       endif
+    } in
+    if card(mset) = 1
+    then sel[min(mset)]
+    else if card(mset) = 2
+         then sel[min(mset)] xor sel[max(mset)]
+         else sum (m in mset) (bool2int(sel[m])) = 1
+         endif
+    endif
   );
 
 % Operands in non-selected matches are set to the null datum.
 constraint
-  forall (m in allMatches)
-  (
-    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m])
-    (
+  forall (m in allMatches) (
+    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
       % mzn-cpx crashes if posting "sel[m] <-> (alt[o] != opValueForNull)"!
-      sel[m] -> (alt[o] != opValueForNull)
+      (sel[m] -> (alt[o] != opValueForNull))
       /\
-      (alt[o] == opValueForNull) -> (not sel[m])
+      (alt[o] = opValueForNull) -> (not sel[m])
     )
   );
 
@@ -303,15 +289,14 @@ constraint
 constraint
   forall (d in allDataInFunction)
   (
-    let {
-      array[int] of int: O = [ o | o in allOperands
-                                        where d in operandAlternatives[o]
+    let
+    { array[int] of int: O = [ o | o in allOperands
+                                   where d in operandAlternatives[o]
                              ]
     , array[1..length(O)] of var bool: a
     } in
-    forall (i in index_set(O))
-    (
-      a[i] <-> alt[O[i]] == d
+    forall (i in index_set(O)) (
+      a[i] <-> alt[O[i]] = d
     )
     /\
     (active[d] <-> (sum (i in index_set(a)) (bool2int(a[i])) > 0))
@@ -319,42 +304,37 @@ constraint
 
 % Inactive data must be defined by inactive copy matches.
 constraint
-  forall (d in allDataInFunction)
-  (
-    let {
-      set of int: mset = { m | m in inactiveCopyInstrMatches
+  forall (d in allDataInFunction) (
+    let
+    { set of int: mset = { m | m in inactiveCopyInstrMatches
                              , o in operandsDefinedByMatch[m]
-                                    where d in operandAlternatives[o]
+                               where d in operandAlternatives[o]
                          }
-    }
-    in (not active[d]) <-> sel[min(mset)]
+    } in
+    (not active[d]) <-> sel[min(mset)]
   );
 
 % Implied: The total number of data defined by the selected matches must be
 % equal to the number of data in the function graph (Mats calls this
 % "minimal effect").
 constraint
-  sum (m in allMatches diff dominatedMatches)
-  (
+  sum (m in allMatches diff dominatedMatches) (
     card(operandsDefinedByMatch[m]) * bool2int(sel[m])
   ) = numDataInFunction;
 
 % Selected matches must not be placed in the null block.
 constraint
-  forall (m in allMatches)
-  (
+  forall (m in allMatches) (
     sel[m] <-> place[m] != blockValueForNull
   );
 
 % Selected matches that have an entry block must be placed in entry block.
 constraint
-  forall (m in allMatches diff dominatedMatches)
-  (
+  forall (m in allMatches diff dominatedMatches) (
     % If a match has no entry block, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
     % entry.
-    forall (r in entryBlockOfMatch[m])
-    (
+    forall (r in entryBlockOfMatch[m]) (
       place[m] in {r, blockValueForNull}
     )
   );
@@ -362,15 +342,11 @@ constraint
 % Data defined by a selected match must be defined in either the block wherein
 % the match is placed or in one of the blocks spanned by the match.
 constraint
-  forall (m in allMatches diff dominatedMatches)
-  (
-    forall (o in operandsDefinedByMatch[m])
-    (
+  forall (m in allMatches diff dominatedMatches) (
+    forall (o in operandsDefinedByMatch[m]) (
       if (card(spannedBlocksInMatch[m]) > 0)
-      then
-        sel[m] -> def[alt[o]] in spannedBlocksInMatch[m]
-      else
-        sel[m] -> def[alt[o]] = place[m]
+      then sel[m] -> def[alt[o]] in spannedBlocksInMatch[m]
+      else sel[m] -> def[alt[o]] = place[m]
       endif
     )
   );
@@ -378,8 +354,7 @@ constraint
 % No selected matches may be placed in a block which is consumed by some
 % selected match.
 constraint
-  forall (m, mm in allMatches, b in consumedBlocksInMatch[m])
-  (
+  forall (m, mm in allMatches, b in consumedBlocksInMatch[m]) (
     sel[m] -> place[mm] != b
   );
 
@@ -390,13 +365,12 @@ constraint
 % I am not certain whether this is a strictly required or just an implied
 % constraint...
 constraint
-  forall (d in allDataInFunction, l in allBlocksInFunction)
-  (
+  forall (d in allDataInFunction, l in allBlocksInFunction) (
     def[d] = l
     ->
     exists ( m in allMatches diff dominatedMatches
            , o in operandsDefinedByMatch[m]
-                  where d in operandAlternatives[o]
+             where d in operandAlternatives[o]
            )
     (
       alt[o] = d
@@ -415,7 +389,7 @@ constraint
 %     constraint
 %       forall ( m in allMatches
 %              , o in operandsUsedByMatch[m]
-%                     where not (m in phiInstrMatches)
+%                where not (m in phiInstrMatches)
 %              )
 %       (
 %         def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
@@ -424,7 +398,7 @@ constraint
 constraint
   forall ( m in allMatches,
            o in operandsUsedByMatch[m]
-                where not (m in phiInstrMatches)
+           where not (m in phiInstrMatches)
          )
   (
     def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
@@ -463,82 +437,68 @@ constraint
 constraint
   forall (m in phiInstrMatches)
   (
-    let {
-      set of int: I = index_set_1of2(inputDefEdgesInMatch)
+    let
+    { set of int: I = index_set_1of2(inputDefEdgesInMatch)
     , array[int] of int: oset = [ inputDefEdgesInMatch[i, 3]
                                 | i in I
                                 , b in allBlocksInFunction
-                                       where inputDefEdgesInMatch[i, 1] = m
-                                             /\
-                                             inputDefEdgesInMatch[i, 2] = b
+                                  where inputDefEdgesInMatch[i, 1] = m
+                                        /\ inputDefEdgesInMatch[i, 2] = b
                                 ]
     , array[int] of int: bset = [ inputDefEdgesInMatch[i, 2]
-                                | i in I
-                                       where inputDefEdgesInMatch[i, 1] = m
+                                | i in I where inputDefEdgesInMatch[i, 1] = m
                                 ]
-    }
-    in forall (i,j in 1..length(oset) where i != j)
-       (
-         (sel[m] -> (def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]))
-         /\
-         (sel[m] -> (def[alt[oset[j]]] in domSetOfBlockInFunction[bset[j]]))
-         /\
-         ( sel[m] ->
-           (
-             sum (k in [i, j])
-             (
-               bool2int
-               (
-                 def[alt[oset[k]]]
-                 in
-                 ( domSetOfBlockInFunction[bset[i]]
-                   intersect
-                   domSetOfBlockInFunction[bset[j]]
-                 )
+    } in
+    forall (i,j in 1..length(oset) where i != j) (
+      (sel[m] -> (def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]))
+      /\ (sel[m] -> (def[alt[oset[j]]] in domSetOfBlockInFunction[bset[j]]))
+      /\ ( sel[m] ->
+           ( sum (k in [i, j])
+             ( bool2int
+               ( def[alt[oset[k]]]
+                 in ( domSetOfBlockInFunction[bset[i]]
+                      intersect
+                      domSetOfBlockInFunction[bset[j]]
+                    )
                )
              ) <= 1
            )
          )
-       )
+    )
   );
 % Output data constraints
 constraint
-  forall (i in index_set_1of2(outputDefEdgesInMatch))
-  (
-    let {
-      int: m = outputDefEdgesInMatch[i, 1]
+  forall (i in index_set_1of2(outputDefEdgesInMatch)) (
+    let
+    { int: m = outputDefEdgesInMatch[i, 1]
     , int: b = outputDefEdgesInMatch[i, 2]
     , int: o = outputDefEdgesInMatch[i, 3]
-    }
-    in sel[m] -> def[alt[o]] = b
+    } in
+    sel[m] -> def[alt[o]] = b
   );
 
 % Constrain locations of operands representing values for selected matches.
 constraint
-  forall (m in allMatches)
-  (
-    forall (o in allOperands)
-    (
-      let {
-        set of int: locs = { matchValidDataLocs[i, 3]
+  forall (m in allMatches) (
+    forall (o in allOperands) (
+      let
+      { set of int: locs = { matchValidDataLocs[i, 3]
                            | i in index_set_1of2(matchValidDataLocs)
-                                  where matchValidDataLocs[i, 1] = m
-                                  /\
-                                  matchValidDataLocs[i, 2] = o
+                             where matchValidDataLocs[i, 1] = m
+                             /\ matchValidDataLocs[i, 2] = o
                            }
-      }
-      in if card(locs) > 0
-         then sel[m] -> loc[alt[o]] in locs
-         else true
-         endif
+      } in
+      if card(locs) > 0
+      then sel[m] -> loc[alt[o]] in locs
+      else true
+      endif
     )
   );
 
 % If a match representing a phi instruction is selected, then its data
 % must be placed in the same location.
 constraint
-  forall (m in phiInstrMatches)
-  (
+  forall (m in phiInstrMatches) (
     sel[m] -> all_equal([ loc[alt[o]] | o in operandsExternalToMatch[m] ])
   );
 
@@ -546,10 +506,8 @@ constraint
 % the match must be defined in the same block wherein the match is placed.
 % However, this does not apply to inactive copy instructions.
 constraint
-  forall (m in nullInstrMatches where not (m in inactiveCopyInstrMatches))
-  (
-    forall (o in operandsUsedByMatch[m])
-    (
+  forall (m in nullInstrMatches where not (m in inactiveCopyInstrMatches)) (
+    forall (o in operandsUsedByMatch[m]) (
       sel[m] -> def[alt[o]] = place[m]
     )
   );
@@ -568,7 +526,7 @@ constraint
 constraint
   forall ( m in allMatches diff dominatedMatches
          , o in operandsExternalToMatch[m]
-                where not (operandAlternatives[o] subset statesInFunction)
+           where not (operandAlternatives[o] subset statesInFunction)
          )
   (
     sel[m] -> loc[alt[o]] != locValueForNull
@@ -586,8 +544,7 @@ constraint
 
 % Constrain the loc value for all data that are states.
 constraint
-  forall (d in statesInFunction)
-  (
+  forall (d in statesInFunction) (
     loc[d] = locValueForNull
   );
 
