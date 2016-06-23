@@ -1,29 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Language.InstrSel.Graphs.PatternMatching.VF2
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Contains an implementation of the VF2 subgraph isomorphism algorithm
--- (http://dx.doi.org/10.1109/TPAMI.2004.75). There are always two graphs
--- involved: the function graph and the pattern graph. The function graph is the
--- graph on which another graph will be matched. The graph to match is called
--- the pattern graph.
---
--- The VF2 algorithm assumes that neither graph contains multi-edges (that is,
--- more than one edges between the same pair of nodes).
---
--- It seems that the paper has some bugs as it forbids matching of certain
--- subgraph isomorphism. Basically, if there is an edge in the function graph
--- between two nodes which does not appear in the pattern graph, then it will
--- not match. But we're only interested in matching all edges in the pattern,
--- not necessarily all edges in the function graph! I should contact the authors
--- about this and see whether there's a mistake.
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module Language.InstrSel.Graphs.PatternMatching.VF2
   ( findMatches )

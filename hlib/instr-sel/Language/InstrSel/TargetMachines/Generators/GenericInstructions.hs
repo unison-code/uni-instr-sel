@@ -1,17 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      :  Language.InstrSel.TargetMachines.Generators.GenericInstructions
--- Copyright   :  (c) Gabriel Hjort Blindell 2013-2015
--- License     :  BSD-style (see the LICENSE file)
---
--- Maintainer  :  ghb@kth.se
--- Stability   :  experimental
--- Portability :  portable
---
--- A module for creating generic instructions that must appear in all target
--- machines.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   ( mkBrFallThroughInstruction

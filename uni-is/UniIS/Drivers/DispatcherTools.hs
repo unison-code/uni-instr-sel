@@ -1,16 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Drivers.DispatcherTools
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Contains useful imports and functions when implementing a dispatcher.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module UniIS.Drivers.DispatcherTools
   ( module UniIS.Drivers.Base

@@ -1,34 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Language.InstrSel.ConstraintModels.Base
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Contains the data structures representing CP model instances and solutions to
--- these instances.
---
--- There are two kinds of instances and solutions: high-level versions, and
--- low-level versions. In a high-level version, all IDs (such as node IDs, match
--- IDs, location IDs, etc.) appearing the model are left intact. In a low-level
--- version, these IDs are instead represented as array indices. The reason for
--- having a low-level version is because this simplifies the implementation of
--- the solver backend; an ID is often used to identify a specific domain
--- variable, which are typically organized as domain variable arrays, but since
--- IDs are not required to be contiguous they cannot be used as array indices
--- directly. By lowering a high-level version into a low-level version, the IDs
--- are converted into corresponding array indices such that the array indices
--- later can be converted back into the original IDs.
---
--- In addition, low-level CP model instances have a flatter hierarchy than their
--- high-level counterparts, and information appearing in the high-level CP model
--- instance that is not strictly needed for solving is removed from the
--- low-level CP model instance.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 

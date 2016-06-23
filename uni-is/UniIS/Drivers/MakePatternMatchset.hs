@@ -1,18 +1,14 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Drivers.MakePatternMatchset
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Takes a function and target machine as input, and produces the corresponding
--- pattern matchset by performing pattern matching of all instruction patterns
--- in the target machine on the function graph.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+  Roberto Castaneda Lozano <rcas@sics.se>
+
+-}
 
 module UniIS.Drivers.MakePatternMatchset
   ( run )

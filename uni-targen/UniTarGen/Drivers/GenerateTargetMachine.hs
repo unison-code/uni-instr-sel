@@ -1,17 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniTarGen.Drivers.GenerateTargetMachine
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Takes a machine description and generates a corresponding target machine. The
--- result is intended to be written to file.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module UniTarGen.Drivers.GenerateTargetMachine
   ( run )

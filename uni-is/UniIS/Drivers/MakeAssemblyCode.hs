@@ -1,17 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Drivers.MakeAssemblyCode
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Takes a high-level CP model instance and solution as input, and emits the
--- corresponding assembly code.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module UniIS.Drivers.MakeAssemblyCode
   ( run )

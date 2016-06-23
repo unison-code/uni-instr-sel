@@ -1,35 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Language.InstrSel.Graphs.Base
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Contains the data types and records for representing graphs which are
--- specialized for representing program functions and patterns.
---
--- Every node has an internal ID, and an external ID. The users of the graph
--- will only be exposed to the external ID, where nodes with the same external
--- ID indicate that the nodes are the same. However, internally the nodes may
--- still be different. Using the equality operator (@==@) checks if two nodes
--- are the same node internally, and comparing the node IDs checks if two nodes
--- are the same node externally.
---
--- Since there exist operations that are not commutative, such as subtraction,
--- it must be possible to distinguish the operands. This is done by labeling the
--- input edges to a given node. Likewise it may be necessary to be able to
--- distinguish between produced values, and this is handled by labeling the
--- output edges to a given node. Hence every edge is labeled with two integer
--- values, which are called /edge numbers/: one for indicating which output edge
--- it is of the source node, and another for indicating which input edge it is
--- for the destination node. The edge numbers are only per edge type, which
--- means that the same pair of edge numbers can appear in multiple edges for
--- the same node provided that they are of different edge types.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}

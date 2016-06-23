@@ -1,22 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Language.InstrSel.OpStructures.Base
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Contains the data types and functions for representing the operation
--- structures that constitute the input programs and patterns.
---
--- Both constants and immediate symbols are mapped to a constant node on which a
--- 'ConstantValueConstraint' applies to restrict the value. The same goes for
--- temporaries (which will later be allocated to a register) and value nodes
--- whose value must be allocated to a specific register.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 

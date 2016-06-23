@@ -1,18 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Language.InstrSel.Functions.LLVM.FunctionMaker
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Converts and LLVM IR module into the internal function format.
---
--- Since only the function name is retained, the names of overloaded functions
--- must have been resolved such that each is given a unique name.
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module Language.InstrSel.Functions.LLVM.FunctionMaker
   ( mkFunctionsFromLlvmModule

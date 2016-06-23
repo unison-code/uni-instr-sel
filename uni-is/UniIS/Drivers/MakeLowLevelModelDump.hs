@@ -1,17 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Drivers.MakeLowLevelModelDump
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Takes a function graph, pattern matchset, and array index maplists as input,
--- and produces a dump containing the combined information.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module UniIS.Drivers.MakeLowLevelModelDump
   ( run )

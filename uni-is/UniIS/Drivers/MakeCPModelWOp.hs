@@ -1,17 +1,13 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Drivers.MakeCPModelWOp
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- Takes a function graph and pattern matchset as input, and constructs a CP
--- model instance.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+-}
 
 module UniIS.Drivers.MakeCPModelWOp
   ( run )

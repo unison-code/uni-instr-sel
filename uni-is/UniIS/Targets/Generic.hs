@@ -1,16 +1,16 @@
---------------------------------------------------------------------------------
--- |
--- Module      : UniIS.Targets.Generic
--- Copyright   : (c) Gabriel Hjort Blindell 2013-2015
--- License     : BSD-style (see the LICENSE file)
---
--- Maintainer  : ghb@kth.se
--- Stability   : experimental
--- Portability : portable
---
--- A module for creating generic instructions, and other useful help functions.
---
---------------------------------------------------------------------------------
+{-|
+Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+License     :  BSD3 (see the LICENSE file)
+Maintainer  :  ghb@kth.se
+-}
+{-
+Main authors:
+  Gabriel Hjort Blindell <ghb@kth.se>
+
+Contributing authors:
+  Roberto Castaneda Lozano <rcas@sics.se>
+
+-}
 
 module UniIS.Targets.Generic
   ( fixInstrIDs
