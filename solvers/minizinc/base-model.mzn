@@ -42,6 +42,7 @@ int: numOperationsInFunction;
 int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
+int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[int, int] of int: funValidDataLocs;
 set of allOperationsInFunction: copiesInFunction;
@@ -51,6 +52,7 @@ array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 
 % Target machine data.
 int: numLocations;
+set of int: canonicalDataLocs;
 
 % Match data.
 int: numMatches;
@@ -150,9 +152,12 @@ set of int: allLocValues = 0..numLocValues-1;
 %===========
 
 % Data definitions, locations, and activity.
+
+% array[allDataInFunctionPlusNull] of var allBlocksInFunction: def;
+% array[allDataInFunctionPlusNull] of var canonicalDataLocs: loc;
+
 array[allDataInFunction] of var allBlocksInFunction: def;
 array[allDataInFunction] of var allLocValues: loc;
-array[allDataInFunction] of var bool: active;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -170,17 +175,16 @@ array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 % Cost.
 var int: cost;
 
-
+% [MC] Dual variables.
+array[allOperationsInFunction] of var allMatches: omatch;
+array[allDataInFunction] of var allMatches: dmatch;
 
 %====================
 % GLOBAL CONSTRAINTS
 %====================
 
-include "all_equal.mzn";
 include "circuit.mzn";
 include "table.mzn";
-
-
 
 %============
 % PREDICATES
@@ -224,25 +228,37 @@ constraint
     endif
   );
 
-% Enforce that, for each operation, exactly one match must be selected such that
-% the operation is covered.
+% [MC] Dual variables: for each operation, exactly one match must be selected
+% such that the operation is covered.
 constraint
-  forall (o in allOperationsInFunction)
-  (
+  forall (o in allOperationsInFunction) (
     let
     { set of int: mset = { m | m in allMatches diff dominatedMatches
                                where o in operationsCoveredByMatch[m]
                          }
     } in
-    if card(mset) = 1
-    then sel[min(mset)]
-    else if card(mset) = 2
-         then sel[min(mset)] xor sel[max(mset)]
-         else sum (m in mset) (
-                bool2int(sel[m])
-              ) = 1
-         endif
-    endif
+    omatch[o] in mset
+    /\
+    forall (m in mset) (
+      omatch[o] = m <-> sel[m]
+    )
+  );
+
+% [MC] Dual variables: for each datum, exactly one match must be selected such
+% that the datum is defined.
+constraint
+  forall (d in allDataInFunction) (
+    let
+    { set of int: mset = { m | m in allMatches diff dominatedMatches
+                             , o in operandsDefinedByMatch[m]
+                               where d in operandAlternatives[o]
+                         }
+    } in
+    dmatch[d] in mset
+    /\
+    forall (m in mset) (
+      dmatch[d] = m <-> sel[m]
+    )
   );
 
 % A state datum with a definition edge with a block must be defined in the block
@@ -256,78 +272,32 @@ constraint
     def[d] = b
   );
 
-% Enforce that, for each datum, exactly one match must be selected such that
-% the datum is defined.
-%
-% This is an implied constraint, but it also enforces that the patterns for
-% defining the function input and constants are selected. Such patterns do not
-% cover any operations, they are not entailed in the above constraint for
-% exactly covering each operation.
+% Operands are set to the null datum iff match was not selected.
+% This helps symmetry breakins as well as determining whether a datum is active.
 constraint
-  forall (d in allDataInFunction)
-  (
-    let
-    { set of int: mset = { m | m in allMatches diff dominatedMatches
-                             , o in operandsDefinedByMatch[m]
-                               where d in operandAlternatives[o]
-                         }
-    } in
-    if card(mset) = 1
-    then sel[min(mset)]
-    else if card(mset) = 2
-         then sel[min(mset)] xor sel[max(mset)]
-         else sum (m in mset) (bool2int(sel[m])) = 1
-         endif
-    endif
-  );
-
-% Operands in non-selected matches are set to the null datum.
-constraint
+  def[datumValueForNull] = 0 /\
+  loc[datumValueForNull] = locValueForNull /\
   forall (m in allMatches) (
     forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
-      % mzn-cpx crashes if posting "sel[m] <-> (alt[o] != opValueForNull)"!
-      (sel[m] -> (alt[o] != datumValueForNull))
-      /\
-      (alt[o] = datumValueForNull) -> (not sel[m])
+      sel[m] <-> alt[o] != datumValueForNull
     )
   );
 
-% A datum is active if there is at least one operand that uses that datum.
+% [MC] A datum is active if at least one operand uses that datum.
+% Active data must not be defined by inactive copy matches.
+array[int] of int: useOperands = [o | m in allMatches
+                                    , o in operandsUsedByMatch[m]
+                                 ];
 constraint
-  forall (d in allDataInFunction)
+  forall ( o in useOperands
+         , m in inactiveCopyInstrMatches
+         , mo in operandsDefinedByMatch[m]
+         , d in operandAlternatives[mo]
+           where d in operandAlternatives[o]
+         )
   (
-    let
-    { array[int] of int: O = [ o | o in allOperands
-                                   where d in operandAlternatives[o]
-                             ]
-    , array[1..length(O)] of var bool: a
-    } in
-    forall (i in index_set(O)) (
-      a[i] <-> alt[O[i]] = d
-    )
-    /\
-    (active[d] <-> (sum (i in index_set(a)) (bool2int(a[i])) > 0))
+    alt[o] = d -> not sel[m]
   );
-
-% Inactive data must be defined by inactive copy matches.
-constraint
-  forall (d in allDataInFunction) (
-    let
-    { set of int: mset = { m | m in inactiveCopyInstrMatches
-                             , o in operandsDefinedByMatch[m]
-                               where d in operandAlternatives[o]
-                         }
-    } in
-    (not active[d]) <-> sel[min(mset)]
-  );
-
-% Implied: The total number of data defined by the selected matches must be
-% equal to the number of data in the function graph (Mats calls this
-% "minimal effect").
-constraint
-  sum (m in allMatches diff dominatedMatches) (
-    card(operandsDefinedByMatch[m]) * bool2int(sel[m])
-  ) = numDataInFunction;
 
 % Selected matches must not be placed in the null block.
 constraint
@@ -365,43 +335,9 @@ constraint
     sel[m] -> place[mm] != b
   );
 
-% For every block wherein a datum d is defined, there must exist some selected
-% match that defines d such that it is either placed in that block or that block
-% is part of one of the blocks that appear in the selected match.
-%
-% I am not certain whether this is a strictly required or just an implied
-% constraint...
-constraint
-  forall (d in allDataInFunction, l in allBlocksInFunction) (
-    def[d] = l
-    ->
-    exists ( m in allMatches diff dominatedMatches
-           , o in operandsDefinedByMatch[m]
-             where d in operandAlternatives[o]
-           )
-    (
-      alt[o] = d
-      /\
-      (place[m] = l \/ (sel[m] /\ l in spannedBlocksInMatch[m]))
-    )
-  );
-
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
-%
-% The code below is essentially a more efficient implementation of (it is okay
-% to apply this constraint even on non-selected matches as these will be placed
-% in the null block, which is dominated by every other block in the function):
-%     constraint
-%       forall ( m in allMatches
-%              , o in operandsUsedByMatch[m]
-%                where not (m in phiInstrMatches)
-%              )
-%       (
-%         def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
-%       );
-%
 constraint
   forall ( m in allMatches,
            o in operandsUsedByMatch[m]
@@ -410,27 +346,6 @@ constraint
   (
     def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
   );
-%
-% TODO: FIX so that it supports alternatives
-%
-%int: DomRelSize =
-%  sum (l in allBlocksInFunction)
-%  (
-%    card(domSetOfBlockInFunction[l])
-%  ) + numBlocksInFunction;
-%array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
-%  array2d(1..DomRelSize, 1..2,
-%    [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
-%                                   j in domSetOfBlockInFunctionPlusNull[i],
-%                                   k in 1..2
-%    ]);
-%constraint
-%  forall ( m in allMatches diff dominatedMatches, d in dataUsedByMatch[m]
-%                where applyDefDomUseConstraintForMatch[m]
-%         )
-%  (
-%    table([place[m], def[d]], DomRel)
-%  );
 
 % If a match representing a phi instruction is selected, then its data
 % must be defined in the blocks indicated by the definition edges.
@@ -504,9 +419,21 @@ constraint
 
 % If a match representing a phi instruction is selected, then its data
 % must be placed in the same location.
+% constraint
+%   forall (m in phiInstrMatches) (
+%     sel[m] -> all_equal([ loc[alt[o]] | o in operandsExternalToMatch[m] ])
+%   );
+%
+% [MC] Reformulation for solvers that can't reify all_equal
 constraint
-  forall (m in phiInstrMatches) (
-    sel[m] -> all_equal([ loc[alt[o]] | o in operandsExternalToMatch[m] ])
+  forall (m in phiInstrMatches, o in operandsExternalToMatch[m]) (
+    let
+    { int: o1 = min(operandsExternalToMatch[m])
+    } in
+    if o = o1
+    then true
+    else sel[m] -> loc[alt[o]] = loc[alt[o1]]
+    endif
   );
 
 % If a match representing a null instruction is selected, then the data used by
@@ -555,15 +482,47 @@ constraint
     loc[d] = locValueForNull
   );
 
-% Accumulate cost of selected patterns.
-% TODO: make this part generic
+% Cost function.
+
+array[int] of int: OCostFlat =
+  [ if k=1 then o
+    else if k=2 then m
+    else if k=3 then p
+    else let {int: prod = latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[p],
+	      int: d = card(operationsCoveredByMatch[m]),
+	      int: q = prod div d,
+	      int: r = prod mod d} in
+        if operationsCoveredByMatch[m][r+1]>o then q+1 else q endif
+    endif
+    endif
+    endif
+  | o in allOperationsInFunction,
+    m in allMatches diff dominatedMatches,
+    p in if card(entryBlockOfMatch[m])>0 then entryBlockOfMatch[m] union {blockValueForNull} else allBlocksInFunctionPlusNull endif,
+    k in 1..4
+  where 
+    o in operationsCoveredByMatch[m]
+  ];
+
+int: OCostSize = card(index_set(OCostFlat)) div 4;
+
+array[1..OCostSize, 1..4] of int: OCost = array2d(1..OCostSize, 1..4, OCostFlat);
+
+set of int: OCostDom = {OCost[i,4] | i in 1..OCostSize};
+
 constraint
-  cost = sum (m in allMatches diff dominatedMatches)
-         ( latencyOfMatch[m]
-         * execFrequencyOfBlocksPlusNull[place[m]]
-         );
+  % cost = sum (m in allMatches diff dominatedMatches)
+  %        ( latencyOfMatch[m]
+  %        * execFrequencyOfBlocksPlusNull[place[m]]
+  %        ) /\
+  (
+    forall (o in allOperationsInFunction) (
+      table([o, omatch[o], place[omatch[o]], oslice[o]], OCost)
+    ) /\
+    cost = sum(oslice)
+  );
 
-
+array[allOperationsInFunction] of var OCostDom: oslice;
 
 %===========================
 % PARAMETERIZED CONSTRAINTS
@@ -643,41 +602,23 @@ constraint
     )
   );
 
-% TODO: FIX!
-%
-% Ad hoc: detect symmetry among location values 1..31
-%
-%constraint
-%  forall(i in index_set_1of2(funValidDataLocRanges))(
-%    let {int: lo = funValidDataLocRanges[i,2],
-%         int: hi = funValidDataLocRanges[i,3]} in
-%	lo<=31 -> hi>=31 \/ hi=0
-%  ) /\
-%  forall(i in index_set_1of2(matchValidDataLocRanges))(
-%    let {int: lo = matchValidDataLocRanges[i,3],
-%         int: hi = matchValidDataLocRanges[i,4]} in
-%	lo<=31 -> hi>=31 \/ hi=0
-%  ) ->
-%  forall(i in allDataInFunction)(loc[i] in {0} union (31..numLocValues-1));
-
-
-
 %==================
 % SOLVE AND OUTPUT
 %==================
 
-solve ::
-  seq_search(
-    [ bool_search([ sel[m]
-                  | m in allMatchesBySize
-                    where not ( m in copyInstrMatches
-                                     union inactiveCopyInstrMatches
-                                     union dominatedMatches
-                              )
-                  ], input_order, indomain_max, complete)
-    , int_search(alt, input_order, indomain_max, complete)
-	]
-  )
+solve
+  % :: seq_search(
+  %   [ bool_search([ sel[m]
+  %                 | m in allMatchesBySize
+  %                   where not ( m in copyInstrMatches
+  %                                    union inactiveCopyInstrMatches
+  %                                    union dominatedMatches
+  %                             )
+  %                 ], input_order, indomain_max, complete)
+  %   , int_search(alt, input_order, indomain_max, complete)
+  % 	]
+  % )
+  :: int_search(oslice, largest, indomain_min, complete)
 minimize cost;
 
 output [ "sel=", show(sel), "\n"
@@ -685,9 +626,11 @@ output [ "sel=", show(sel), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
        , "place=", show(place), "\n"
+       , "omatch=", show(omatch), "\n"
+       , "dmatch=", show(dmatch), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
-       , "cost=", show(cost), "\n"
+       , "cost=", show(execFrequencyGCD * cost), "\n"
        ];

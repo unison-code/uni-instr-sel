@@ -38,7 +38,7 @@ import json
 import sexparser
 import os.path
 import sys
-
+import fractions
 
 
 #================
@@ -322,6 +322,32 @@ json_data = []
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
+# [MC] Compute "canonicalDataLocs"
+canonical = [0]
+canonical.append(json_data["num-locations"])
+for row in json_data["fun-valid-value-locs"]:
+    canonical.append(row[1])
+    canonical.append(row[1]+1)
+for row in json_data["fun-valid-value-loc-ranges"]:
+    canonical.append(row[2])
+    canonical.append(row[3]+1)
+for row in json_data["match-valid-value-locs"]:
+    canonical.append(row[1])
+    canonical.append(row[1]+1)
+for row in json_data["match-valid-value-loc-ranges"]:
+    canonical.append(row[2])
+    canonical.append(row[3]+1)
+canonical.sort()
+canonical_set = set(canonical)
+
+# [MC] Compute GCD of frequencies
+fqs = json_data["fun-block-exec-freqs"]
+scaled = []
+g = fqs[1]
+for x in fqs:
+    g = fractions.gcd(g,x)
+for x in fqs:
+    scaled.append(x/g)
 
 # Dump parameters
 dumpParams( json_data["fun-block-dom-sets"]
@@ -330,7 +356,10 @@ dumpParams( json_data["fun-block-dom-sets"]
           , "allBlocksInFunction"
           , VC_SET
           )
-dumpParams( json_data["fun-block-exec-freqs"]
+dumpParams( g
+          , "execFrequencyGCD"
+          )
+dumpParams( scaled
           , "execFrequencyOfBlockInFunction"
           , VT_ARRAY1D
           , "allBlocksInFunction"
@@ -492,6 +521,10 @@ dumpParams( json_data["matches-by-size"]
           )
 dumpParams( json_data["dominated-matches"]
           , "dominatedMatches"
+          , VT_SET
+          )
+dumpParams( canonical_set
+          , "canonicalDataLocs"
           , VT_SET
           )
 
