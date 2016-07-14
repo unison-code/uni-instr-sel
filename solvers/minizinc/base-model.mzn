@@ -176,6 +176,19 @@ array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 var int: cost;
 
 % [MC] Dual variables.
+array[allOperationsInFunction] of set of allMatches: omatchD = 
+			       array1d(allOperationsInFunction,
+			               [ { m | m in allMatches diff dominatedMatches
+					       where o in operationsCoveredByMatch[m]}
+				       | o in allOperationsInFunction
+				       ]);
+array[allDataInFunction] of set of allMatches: dmatchD =
+			       array1d(allDataInFunction,
+			               [ { m | m in allMatches diff dominatedMatches
+                                             , o in operandsDefinedByMatch[m]
+                                  	       where d in operandAlternatives[o]}
+				       | d in allDataInFunction
+				       ]);
 array[allOperationsInFunction] of var allMatches: omatch;
 array[allDataInFunction] of var allMatches: dmatch;
 
@@ -185,17 +198,6 @@ array[allDataInFunction] of var allMatches: dmatch;
 
 include "circuit.mzn";
 include "table.mzn";
-
-%============
-% PREDICATES
-%============
-
-% Fall-through constraint: the block wherein match m is placed must be
-% immediately followed by block b.
-predicate fall_through(int: m, int: b) =
-  succ[place[m]] = b;
-
-
 
 %=============
 % CONSTRAINTS
@@ -232,31 +234,20 @@ constraint
 % such that the operation is covered.
 constraint
   forall (o in allOperationsInFunction) (
-    let
-    { set of int: mset = { m | m in allMatches diff dominatedMatches
-                               where o in operationsCoveredByMatch[m]
-                         }
-    } in
-    omatch[o] in mset
-    /\
-    forall (m in mset) (
-      omatch[o] = m <-> sel[m]
-    )
+     omatch[o] in omatchD[o]
+     /\
+     forall (m in omatchD[o]) (
+       omatch[o] = m <-> sel[m]
+     )
   );
 
 % [MC] Dual variables: for each datum, exactly one match must be selected such
 % that the datum is defined.
 constraint
   forall (d in allDataInFunction) (
-    let
-    { set of int: mset = { m | m in allMatches diff dominatedMatches
-                             , o in operandsDefinedByMatch[m]
-                               where d in operandAlternatives[o]
-                         }
-    } in
-    dmatch[d] in mset
+    dmatch[d] in dmatchD[d]
     /\
-    forall (m in mset) (
+    forall (m in dmatchD[d]) (
       dmatch[d] = m <-> sel[m]
     )
   );
@@ -438,9 +429,9 @@ constraint
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.
-% However, this does not apply to inactive copy instructions.
+% Let this apply to inactive copy instructions as well, for symmetry breaking.
 constraint
-  forall (m in nullInstrMatches where not (m in inactiveCopyInstrMatches)) (
+  forall (m in nullInstrMatches /* where not (m in inactiveCopyInstrMatches) */) (
     forall (o in operandsUsedByMatch[m]) (
       sel[m] -> def[alt[o]] = place[m]
     )
@@ -599,6 +590,39 @@ constraint
 	    card((matchValidDataLocRanges[j1,3]..matchValidDataLocRanges[j1,4]) intersect (matchValidDataLocRanges[j2,3]..matchValidDataLocRanges[j2,4]))=0 ->
             not sel[m1] \/ not sel[m2]
       )
+    )
+  );
+
+% RULE 1: if all matches out of a set, not a phi and no spanned blocks, uses datum u and defines datum d,
+%         and one of them must be selected,
+%         then the block defining u must dominate the block defining d.
+constraint
+  forall (M in omatchD++dmatchD,
+          d in allDataInFunction,
+          u in allDataInFunction
+	  where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
+    if forall (m in M) (
+         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
+	 exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
+    ) then (
+      trace("/* 1 \(M) */ table([def[\(d)], def[\(u)]], DomRel)\n", table([def[d], def[u]], DomRel))
+    ) else true endif
+  );
+
+% RULE 2: if all matches out of a set spans blocks S and defines datum d,
+%         and one of them must be selected,
+%         then d must be defined in the spanned blocks S.
+constraint
+  forall (M in omatchD++dmatchD,
+          d in allDataInFunction
+	  where forall(m in M)(card(spannedBlocksInMatch[m])>0)) (
+    let {set of int: S = spannedBlocksInMatch[min(M)]} in (
+      if forall (m in M) (
+    	   spannedBlocksInMatch[m] = S /\
+    	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
+      ) then (
+    	trace("/* 2 \(M) */ def[\(d)] in \(S)\n", def[d] in S)
+      ) else true endif
     )
   );
 
