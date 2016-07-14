@@ -343,7 +343,7 @@ canonical_set = set(canonical)
 # [MC] Compute GCD of frequencies
 fqs = json_data["fun-block-exec-freqs"]
 scaled = []
-g = fqs[1]
+g = fqs[0]
 for x in fqs:
     g = fractions.gcd(g,x)
 for x in fqs:
