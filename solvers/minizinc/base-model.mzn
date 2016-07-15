@@ -619,6 +619,7 @@ constraint
 % RULE 2: if all matches out of a set spans blocks S and defines datum d,
 %         and one of them must be selected,
 %         then d must be defined in the spanned blocks S.
+% RULE 3: and any potential no-spanned-block definer of d must be placed in S or in blockValueForNull.
 constraint
   forall (M in omatchD++dmatchD,
           d in allDataInFunction
@@ -628,11 +629,38 @@ constraint
     	   spannedBlocksInMatch[m] = S /\
     	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
       ) then (
-    	def[d] in S
+        def[d] in S
+        /\
+        forall (m in allMatches where card(spannedBlocksInMatch[m])=0) (
+          if exists (do in operandsDefinedByMatch[m]) (
+               operandAlternatives[do] = {d}
+             )
+          then place[m] in S union {blockValueForNull}
+          else true endif
+        )
       ) else true endif
     )
   );
 
+% RULE 4: users of the output of a forced phi operation must be downstream of the phi
+constraint
+  forall (M in omatchD++dmatchD,
+	  i in index_set_1of2(outputDefEdgesInMatch)
+	  where card(M)=1 /\ min(M) = outputDefEdgesInMatch[i, 1]) (
+    let {int: b = outputDefEdgesInMatch[i, 2],
+         int: o = outputDefEdgesInMatch[i, 3],
+	 int: d = min(operandAlternatives[o]),
+	 set of int: B = {bb | bb in allBlocksInFunction
+	                       where b in domSetOfBlockInFunction[bb]}
+			 union {blockValueForNull}} in (			       
+      forall (m in allMatches diff dominatedMatches,
+              u in operandsUsedByMatch[m]
+	      where operandAlternatives[u] = {d}) (
+	place[m] in B
+      )
+    )
+  );
+              
 %==================
 % SOLVE AND OUTPUT
 %==================
