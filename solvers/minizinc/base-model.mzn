@@ -107,14 +107,14 @@ int: locValueForNull = numLocValues - 1;
 int: numDataValues = numDataInFunction + 1;
 
 % Reference to to the null-datum value.
-int: datumValueForNull = numDataValues - 1;
+int: datumValueForNull = numDataValues;
 
 % Total number of blocks values (an additional value will be needed for
 % representing the null block, to which non-selected matches will be placed).
 int: numBlockValues = numBlocksInFunction + 1;
 
 % Reference to the null-block value.
-int: blockValueForNull = numBlockValues - 1;
+int: blockValueForNull = numBlockValues;
 
 % Extends the external parameter 'domSetOfBlockInFunction' with a value
 % for the null block (which is assumed to be dominated by all blocks).
@@ -136,13 +136,13 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
          );
 
 % Sets to be used as array ranges.
-set of int: allOperationsInFunction = 0..numOperationsInFunction-1;
-set of int: allDataInFunction = 0..numDataInFunction-1;
-set of int: allDataInFunctionPlusNull = 0..numDataValues-1;
-set of int: allBlocksInFunction = 0..numBlocksInFunction-1;
-set of int: allBlocksInFunctionPlusNull = 0..numBlockValues-1;
-set of int: allMatches = 0..numMatches-1;
-set of int: allOperands = 0..numOperands-1;
+set of int: allOperationsInFunction = 1..numOperationsInFunction;
+set of int: allDataInFunction = 1..numDataInFunction;
+set of int: allDataInFunctionPlusNull = 1..numDataValues;
+set of int: allBlocksInFunction = 1..numBlocksInFunction;
+set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
+set of int: allMatches = 1..numMatches;
+set of int: allOperands = 1..numOperands;
 set of int: allLocValues = 0..numLocValues-1;
 
 
@@ -195,14 +195,16 @@ array[allDataInFunction] of var allMatches: dmatch;
 include "circuit.mzn";
 include "table.mzn";
 
-%=============
+%===========
 % FUNCTIONS
-%=============
+%===========
 
-% Valid under the assumption that its operation was selected
+% Valid under the assumption that its operation was selected.
 var allBlocksInFunction: Alt(allOperands: o) =
-  let {allDataInFunction: d = min(operandAlternatives[o])} in
-    if card(operandAlternatives[o])=1 then d else alt[o] endif;
+  let
+  { allDataInFunction: d = min(operandAlternatives[o])
+  } in
+  if card(operandAlternatives[o]) = 1 then d else alt[o] endif;
 
 %=============
 % CONSTRAINTS
@@ -271,7 +273,7 @@ constraint
 % Operands are set to the null datum iff match was not selected.
 % This helps symmetry breakins as well as determining whether a datum is active.
 constraint
-  def[datumValueForNull] = 0 /\
+  def[datumValueForNull] = min(allDataInFunction) /\
   loc[datumValueForNull] = locValueForNull /\
   forall (m in allMatches) (
     forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
@@ -653,24 +655,47 @@ constraint
   );
 
 % RULE 4: users of the output of a forced phi operation must be downstream of the phi
-constraint
-  forall (M in omatchD++dmatchD,
-	  i in index_set_1of2(outputDefEdgesInMatch)
-	  where card(M)=1 /\ min(M) = outputDefEdgesInMatch[i, 1]) (
-    let {int: b = outputDefEdgesInMatch[i, 2],
-         int: o = outputDefEdgesInMatch[i, 3],
-	 int: d = min(operandAlternatives[o]),
-	 set of int: B = {bb | bb in allBlocksInFunction
-	                       where b in domSetOfBlockInFunction[bb]}
-			 union {blockValueForNull}} in (			       
-      forall (m in allMatches diff dominatedMatches,
-              u in operandsUsedByMatch[m]
-	      where operandAlternatives[u] = {d}) (
-	place[m] in B
-      )
-    )
-  );
-              
+% constraint
+%   forall (M in omatchD++dmatchD,
+% 	  i in index_set_1of2(outputDefEdgesInMatch)
+% 	  where card(M)=1 /\ min(M) = outputDefEdgesInMatch[i, 1]) (
+%     let {int: b = outputDefEdgesInMatch[i, 2],
+%          int: o = outputDefEdgesInMatch[i, 3],
+% 	 int: d = min(operandAlternatives[o]),
+% 	 set of int: B = {bb | bb in allBlocksInFunction
+% 	                       where b in domSetOfBlockInFunction[bb]}
+% 			 union {blockValueForNull}} in (			       
+%       forall (m in allMatches diff dominatedMatches,
+%               u in operandsUsedByMatch[m]
+% 	      where operandAlternatives[u] = {d}) (
+% 	trace("/* 4 */ place["++show(m)++"] in "++show(B)++"\n", place[m] in B)
+%       )
+%     )
+%   );
+             
+% If for given p,q, inBlockSucc contains [_, p, q] but does not contain [_, p, q'] or [_, p', q]
+% then succ[p] = q can only help, never hurt.
+% But this constraing does not seem to help search.
+% constraint
+%   let {array[allBlocksInFunction] of set of allBlocksInFunction: fwd = array1d(allBlocksInFunction,
+%                                             [ {s | i in index_set_1of2(inBlockSucc),
+% 					           s in {inBlockSucc[i,3]}
+% 						   where inBlockSucc[i,2] = b}
+% 					    | b in allBlocksInFunction
+% 					    ]),
+%        array[allBlocksInFunction] of set of allBlocksInFunction: bwd = array1d(allBlocksInFunction,
+%                                             [ {s | i in index_set_1of2(inBlockSucc),
+% 					           s in {inBlockSucc[i,2]}
+% 						   where inBlockSucc[i,3] = b}
+% 					    | b in allBlocksInFunction
+% 					    ])} in
+%     forall (p in allBlocksInFunction,
+%             q in allBlocksInFunction) (
+%       if fwd[p] = {q} /\ bwd[q] = {p} then
+%         trace("succ[\(p)] = \(q)\n", succ[p] = q)
+%       else true endif
+%     );
+
 %==================
 % SOLVE AND OUTPUT
 %==================
