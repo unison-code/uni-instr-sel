@@ -196,6 +196,15 @@ include "circuit.mzn";
 include "table.mzn";
 
 %=============
+% FUNCTIONS
+%=============
+
+% Valid under the assumption that its operation was selected
+var allBlocksInFunction: Alt(allOperands: o) =
+  let {allDataInFunction: d = min(operandAlternatives[o])} in
+    if card(operandAlternatives[o])=1 then d else alt[o] endif;
+
+%=============
 % CONSTRAINTS
 %=============
 
@@ -309,8 +318,8 @@ constraint
   forall (m in allMatches diff dominatedMatches) (
     forall (o in operandsDefinedByMatch[m]) (
       if (card(spannedBlocksInMatch[m]) > 0)
-      then sel[m] -> def[alt[o]] in spannedBlocksInMatch[m]
-      else sel[m] -> def[alt[o]] = place[m]
+      then sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]
+      else sel[m] -> def[Alt(o)] = place[m]
       endif
     )
   );
@@ -342,7 +351,9 @@ constraint
            where not (m in phiInstrMatches)
          )
   (
-    def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
+    % [GHB] Used to be:
+    %   def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
+    table([place[m], def[Alt(o)]], DomRel)
   );
 
 % If a match representing a phi instruction is selected, then its data
@@ -369,21 +380,23 @@ constraint
                                 | i in I where inputDefEdgesInMatch[i, 1] = m
                                 ]
     } in
-    forall (i,j in 1..length(oset) where i != j) (
-      (sel[m] -> (def[alt[oset[i]]] in domSetOfBlockInFunction[bset[i]]))
-      /\ (sel[m] -> (def[alt[oset[j]]] in domSetOfBlockInFunction[bset[j]]))
-      /\ ( sel[m] ->
-           ( sum (k in [i, j])
-             ( bool2int
-               ( def[alt[oset[k]]]
-                 in ( domSetOfBlockInFunction[bset[i]]
-                      intersect
-                      domSetOfBlockInFunction[bset[j]]
-                    )
-               )
-             ) <= 1
-           )
-         )
+    forall (i in 1..length(oset)) (
+      (sel[m] -> (def[Alt(oset[i])] in domSetOfBlockInFunction[bset[i]]))
+    )
+    /\
+    forall (i,j in 1..length(oset) where i < j) (
+      let
+      { set of int: B = domSetOfBlockInFunction[bset[i]]
+                        intersect
+                        domSetOfBlockInFunction[bset[j]]
+      } in
+      if card(B) = 0 then true else
+        not sel[m]
+        \/
+        not (def[Alt(oset[i])] in B)
+        \/
+        not (def[Alt(oset[j])] in B)
+      endif
     )
   );
 % Output data constraints
@@ -394,7 +407,7 @@ constraint
     , int: b = outputDefEdgesInMatch[i, 2]
     , int: o = outputDefEdgesInMatch[i, 3]
     } in
-    sel[m] -> def[alt[o]] = b
+    sel[m] -> def[Alt(o)] = b
   );
 
 % Constrain locations of operands representing values for selected matches.
@@ -409,7 +422,7 @@ constraint
                            }
       } in
       if card(locs) > 0
-      then sel[m] -> loc[alt[o]] in locs
+      then sel[m] -> loc[Alt(o)] in locs
       else true
       endif
     )
@@ -419,7 +432,7 @@ constraint
 % must be placed in the same location.
 % constraint
 %   forall (m in phiInstrMatches) (
-%     sel[m] -> all_equal([ loc[alt[o]] | o in operandsExternalToMatch[m] ])
+%     sel[m] -> all_equal([ loc[Alt(o)] | o in operandsExternalToMatch[m] ])
 %   );
 %
 % [MC] Reformulation for solvers that can't reify all_equal
@@ -428,10 +441,7 @@ constraint
     let
     { int: o1 = min(operandsExternalToMatch[m])
     } in
-    if o = o1
-    then true
-    else sel[m] -> loc[alt[o]] = loc[alt[o1]]
-    endif
+    if o = o1 then true else sel[m] -> loc[Alt(o)] = loc[Alt(o1)] endif
   );
 
 % If a match representing a null instruction is selected, then the data used by
@@ -440,7 +450,7 @@ constraint
 constraint
   forall (m in nullInstrMatches /* where not (m in inactiveCopyInstrMatches) */) (
     forall (o in operandsUsedByMatch[m]) (
-      sel[m] -> def[alt[o]] = place[m]
+      sel[m] -> def[Alt(o)] = place[m]
     )
   );
 
@@ -461,7 +471,7 @@ constraint
            where not (operandAlternatives[o] subset statesInFunction)
          )
   (
-    sel[m] -> loc[alt[o]] != locValueForNull
+    sel[m] -> loc[Alt(o)] != locValueForNull
   );
 
 % All data internal to a match must be located in the null location.
@@ -471,7 +481,7 @@ constraint
                 where not (operandAlternatives[o] subset statesInFunction)
          )
   (
-    sel[m] -> loc[alt[o]] = locValueForNull
+    sel[m] -> loc[Alt(o)] = locValueForNull
   );
 
 % Constrain the loc value for all data that are states.
@@ -554,7 +564,7 @@ constraint
   forall(i in index_set_1of2(matchValidDataLocRanges))(
     let {int: m = matchValidDataLocRanges[i,1],
          int: o = matchValidDataLocRanges[i,2]} in
-    sel[m] -> loc[alt[o]]
+    sel[m] -> loc[Alt(o)]
               in matchValidDataLocRanges[i,3]..matchValidDataLocRanges[i,4]
   );
 
