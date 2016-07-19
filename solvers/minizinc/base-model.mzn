@@ -641,15 +641,7 @@ constraint
     	   spannedBlocksInMatch[m] = S /\
     	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
       ) then (
-        def[d] in S
-        /\
-        forall (m in allMatches where card(spannedBlocksInMatch[m])=0) (
-          if exists (do in operandsDefinedByMatch[m]) (
-               operandAlternatives[do] = {d}
-             )
-          then place[m] in S union {blockValueForNull}
-          else true endif
-        )
+    	def[d] in S
       ) else true endif
     )
   );
@@ -668,33 +660,45 @@ constraint
 %       forall (m in allMatches diff dominatedMatches,
 %               u in operandsUsedByMatch[m]
 % 	      where operandAlternatives[u] = {d}) (
-% 	trace("/* 4 */ place["++show(m)++"] in "++show(B)++"\n", place[m] in B)
+% 	place[m] in B
 %       )
 %     )
 %   );
              
 % If for given p,q, inBlockSucc contains [_, p, q] but does not contain [_, p, q'] or [_, p', q]
 % then succ[p] = q can only help, never hurt.
-% But this constraing does not seem to help search.
-% constraint
-%   let {array[allBlocksInFunction] of set of allBlocksInFunction: fwd = array1d(allBlocksInFunction,
-%                                             [ {s | i in index_set_1of2(inBlockSucc),
-% 					           s in {inBlockSucc[i,3]}
-% 						   where inBlockSucc[i,2] = b}
-% 					    | b in allBlocksInFunction
-% 					    ]),
-%        array[allBlocksInFunction] of set of allBlocksInFunction: bwd = array1d(allBlocksInFunction,
-%                                             [ {s | i in index_set_1of2(inBlockSucc),
-% 					           s in {inBlockSucc[i,2]}
-% 						   where inBlockSucc[i,3] = b}
-% 					    | b in allBlocksInFunction
-% 					    ])} in
-%     forall (p in allBlocksInFunction,
-%             q in allBlocksInFunction) (
-%       if fwd[p] = {q} /\ bwd[q] = {p} then
-%         trace("succ[\(p)] = \(q)\n", succ[p] = q)
-%       else true endif
-%     );
+constraint
+  let {array[allBlocksInFunction] of set of allBlocksInFunction: fwd = array1d(allBlocksInFunction,
+                                            [ {s | i in index_set_1of2(inBlockSucc),
+					           s in {inBlockSucc[i,3]}
+						   where inBlockSucc[i,2] = b}
+					    | b in allBlocksInFunction
+					    ]),
+       array[allBlocksInFunction] of set of allBlocksInFunction: bwd = array1d(allBlocksInFunction,
+                                            [ {s | i in index_set_1of2(inBlockSucc),
+					           s in {inBlockSucc[i,2]}
+						   where inBlockSucc[i,3] = b}
+					    | b in allBlocksInFunction
+					    ])} in
+    forall (p in allBlocksInFunction,
+            q in allBlocksInFunction) (
+      if fwd[p] = {q} /\ bwd[q] = {p} then
+        succ[p] = q
+      else true endif
+    );
+
+% Forbid matches that would wipe out some omatch or dmatch domain.
+constraint
+  let {array[int] of set of int: domains = omatchD++dmatchD} in
+    forall (i in index_set(domains),
+	    j in index_set(domains)
+	    where i!=j) (
+      if domains[i] subset domains[j] then
+        forall (m in domains[j] diff domains[i]) (
+	  not sel[m]
+	)
+      else true endif
+    );					        
 
 %==================
 % SOLVE AND OUTPUT
