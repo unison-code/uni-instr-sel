@@ -283,18 +283,15 @@ constraint
 
 % [MC] A datum is active if at least one operand uses that datum.
 % Active data must not be defined by inactive copy matches.
-array[int] of int: useOperands = [o | m in allMatches
-                                    , o in operandsUsedByMatch[m]
-                                 ];
 constraint
-  forall ( o in useOperands
-         , m in inactiveCopyInstrMatches
-         , mo in operandsDefinedByMatch[m]
-         , d in operandAlternatives[mo]
-           where d in operandAlternatives[o]
-         )
-  (
-    alt[o] = d -> not sel[m]
+  forall (mi in inactiveCopyInstrMatches,
+	  oi in operandsDefinedByMatch[mi],
+	  d in operandAlternatives[oi]) (
+    exists (m in allMatches,
+            o in operandsUsedByMatch[m]
+	    where d in operandAlternatives[o])(alt[o]=d)
+    <->
+    not sel[mi]
   );
 
 % Selected matches must not be placed in the null block.
