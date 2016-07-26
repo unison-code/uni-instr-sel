@@ -152,12 +152,8 @@ set of int: allLocValues = 0..numLocValues-1;
 %===========
 
 % Data definitions, locations, and activity.
-
-% array[allDataInFunctionPlusNull] of var allBlocksInFunction: def;
-% array[allDataInFunctionPlusNull] of var canonicalDataLocs: loc;
-
-array[allDataInFunction] of var allBlocksInFunction: def;
-array[allDataInFunction] of var allLocValues: loc;
+array[allDataInFunctionPlusNull] of var allBlocksInFunction: def;
+array[allDataInFunctionPlusNull] of var canonicalDataLocs: loc;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -329,6 +325,17 @@ constraint
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
 % the generic phi patterns.
+int: DomRelSize =
+ sum (l in allBlocksInFunction)
+ (
+   card(domSetOfBlockInFunction[l])
+ ) + numBlocksInFunction;
+array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
+ array2d(1..DomRelSize, 1..2,
+   [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
+                                  j in domSetOfBlockInFunctionPlusNull[i],
+                                  k in 1..2
+   ]);
 constraint
   forall ( m in allMatches,
            o in operandsUsedByMatch[m]
@@ -605,7 +612,7 @@ constraint
          exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 	 exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
     ) then (
-      trace("/* 1 \(M) */ table([def[\(d)], def[\(u)]], DomRel)\n", table([def[d], def[u]], DomRel))
+      table([def[d], def[u]], DomRel)
     ) else true endif
   );
 
@@ -621,7 +628,7 @@ constraint
     	   spannedBlocksInMatch[m] = S /\
     	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
       ) then (
-    	trace("/* 2 \(M) */ def[\(d)] in \(S)\n", def[d] in S)
+    	def[d] in S
       ) else true endif
     )
   );
