@@ -193,12 +193,16 @@ array[allDataInFunction] of set of allMatches: dmatchD =
 array[allOperationsInFunction] of var allMatches: omatch;
 array[allDataInFunction] of var allMatches: dmatch;
 
+
+
 %====================
 % GLOBAL CONSTRAINTS
 %====================
 
 include "circuit.mzn";
 include "table.mzn";
+
+
 
 %===========
 % FUNCTIONS
@@ -210,6 +214,8 @@ var allBlocksInFunction: Alt(allOperands: o) =
   { allDataInFunction: d = min(operandAlternatives[o])
   } in
   if card(operandAlternatives[o]) = 1 then d else alt[o] endif;
+
+
 
 %=============
 % CONSTRAINTS
@@ -544,6 +550,8 @@ constraint
 
 array[allOperationsInFunction] of var OCostDom: oslice;
 
+
+
 %===========================
 % PARAMETERIZED CONSTRAINTS
 %===========================
@@ -715,6 +723,8 @@ constraint
     else true
     endif
   );
+
+
 
 %==================
 % SOLVE AND OUTPUT
