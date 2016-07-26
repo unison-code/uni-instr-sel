@@ -445,12 +445,14 @@ constraint
 
 % If a match representing a phi instruction is selected, then its data
 % must be placed in the same location.
-% constraint
-%   forall (m in phiInstrMatches) (
-%     sel[m] -> all_equal([ loc[Alt(o)] | o in operandsExternalToMatch[m] ])
-%   );
 %
-% [MC] Reformulation for solvers that can't reify all_equal
+% [GHB] Used to be:
+%   constraint
+%     forall (m in phiInstrMatches) (
+%       sel[m] -> all_equal([ loc[Alt(o)] | o in operandsExternalToMatch[m] ])
+%     );
+%
+% [MC] Reformulation for solvers that can't reify all_equal.
 constraint
   forall (m in phiInstrMatches, o in operandsExternalToMatch[m]) (
     let
