@@ -146,7 +146,7 @@ function inflateSolutionFile {
     ozn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
     tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
     reportTask "Inflating MiniZinc solution file"
-    exe "solns2out ${ozn_filepath##*/} ${szn_filepath##*/} > $tmp_file"
+    exe "solns2out ${ozn_filepath##*/} < ${szn_filepath##*/} > $tmp_file"
     exitIfFailed ""
     exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
     exitIfFailed ""
@@ -200,7 +200,7 @@ function executeSolver {
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command timeout ${MINIZINC_TIMELIMIT}s"
     fi
-    command="$command $MINIZINC_SOLVER_BIN -s"
+    command="$command $MINIZINC_SOLVER_BIN"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command -a"
     fi

@@ -38,7 +38,7 @@ LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
 OPT      := $(LLVMDIR)/bin/opt
 AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 
-export MINIZINC_BACKEND := mzn-cpx
+export MINIZINC_BACKEND := fzn_chuffed
 
 UNI              := uni-is
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
