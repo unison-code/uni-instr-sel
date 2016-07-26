@@ -158,15 +158,12 @@ for line in content:
 all_data.append(["optimal", found_optimal])
 
 # [MC] Convert data to 0-based indexing
-
 for d in all_data:
     name = d[0]
     if name == "alt" or name == "def" or name == "place" or name == "succ":
         d[1] = [x-1 for x in d[1]]
     elif name == "block_value_for_null" or name == "alt_value_for_null":
         d[1] = d[1]-1
-
-# Add, modify, or remove certain data in order to facilitate postprocessing
 
 # Construct block order data from block successor data
 succ_data = getRequiredDataByName(all_data, "succ")
