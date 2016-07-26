@@ -172,7 +172,7 @@ array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 var int: cost;
 
 % [MC] Dual variables.
-array[allOperationsInFunction] of set of allMatches: omatchD = 
+array[allOperationsInFunction] of set of allMatches: omatchD =
 			       array1d(allOperationsInFunction,
 			               [ { m | m in allMatches diff dominatedMatches
 					       where o in operationsCoveredByMatch[m]}
@@ -507,7 +507,7 @@ array[int] of int: OCostFlat =
     m in allMatches diff dominatedMatches,
     p in if card(entryBlockOfMatch[m])>0 then entryBlockOfMatch[m] union {blockValueForNull} else allBlocksInFunctionPlusNull endif,
     k in 1..4
-  where 
+  where
     o in operationsCoveredByMatch[m]
   ];
 
@@ -653,7 +653,7 @@ constraint
 % 	 int: d = min(operandAlternatives[o]),
 % 	 set of int: B = {bb | bb in allBlocksInFunction
 % 	                       where b in domSetOfBlockInFunction[bb]}
-% 			 union {blockValueForNull}} in (			       
+% 			 union {blockValueForNull}} in (
 %       forall (m in allMatches diff dominatedMatches,
 %               u in operandsUsedByMatch[m]
 % 	      where operandAlternatives[u] = {d}) (
@@ -661,7 +661,7 @@ constraint
 %       )
 %     )
 %   );
-             
+
 % If for given p,q, inBlockSucc contains [_, p, q] but does not contain [_, p, q'] or [_, p', q]
 % then succ[p] = q can only help, never hurt.
 constraint
@@ -695,7 +695,7 @@ constraint
 	  not sel[m]
 	)
       else true endif
-    );					        
+    );
 
 %==================
 % SOLVE AND OUTPUT
