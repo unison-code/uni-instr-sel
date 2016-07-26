@@ -374,8 +374,4 @@ exe "$THIS_DIR/merge-jsons $JSON_SOLUTION_FILEPATH $JSON_STATS_FILEPATH" \
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
 
-reportTask "Cleaning up temporary files"
-exe "rm -rf $TMP_DIR"
-exitIfFailed ""
-
 echo
