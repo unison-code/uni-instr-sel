@@ -89,7 +89,7 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               ( pShow
                 $ map snd
-                $ filter (\(nodes, i) -> i `elem` nodes)
+                $ filter (\(nodes, _) -> ai `elem` nodes)
                 $ zip (llOperandAlternatives model) ([0..] :: [ArrayIndex])
                       -- Cast needed to prevent compiler warning
               )
