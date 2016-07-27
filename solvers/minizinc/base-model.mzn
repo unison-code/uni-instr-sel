@@ -301,7 +301,7 @@ constraint
            , o in operandsUsedByMatch[m]
              where d in operandAlternatives[o]
            )
-           (alt[o] = d)
+      (alt[o] = d)
     <->
     not sel[mi]
   );
