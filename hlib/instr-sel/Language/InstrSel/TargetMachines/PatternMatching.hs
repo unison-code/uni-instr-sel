@@ -33,6 +33,7 @@ import Language.InstrSel.Graphs
   , fromMatch
   , subGraph
   , getAllNodes
+  , getFNsInMatch
   )
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.Graphs.PatternMatching.VF2
@@ -41,11 +42,17 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.TargetMachines
+import Language.InstrSel.Utils
+  ( (===) )
 import Language.InstrSel.Utils.JSON
+
 import Control.DeepSeq
   ( NFData
   , rnf
   )
+
+import Data.List
+  ( nubBy )
 
 
 
@@ -157,28 +164,29 @@ mkPatternMatchset function target =
 
 processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =
-  let iid = instrID i
-      patterns = instrPatterns i
-  in concatMap (processInstrPattern f iid) patterns
+  concatMap (processInstrPattern f i) (instrPatterns i)
 
 processInstrPattern
   :: Function
-  -> InstructionID
+  -> Instruction
   -> InstrPattern
   -> [PatternMatch]
-processInstrPattern function iid pattern =
+processInstrPattern function instr pattern =
   let fg = osGraph $ functionOS function
       pg = osGraph $ patOS pattern
       matches = findMatches fg pg
       okay_matches = filter (not . hasCyclicDataDependency fg) matches
+      non_sym_matches = if isInstructionSimd instr
+                        then pruneSymmetricSimdMatches okay_matches
+                        else okay_matches
   in map
-       ( \m -> PatternMatch { pmInstrID = iid
+       ( \m -> PatternMatch { pmInstrID = instrID instr
                             , pmPatternID = patID pattern
-                            , pmMatchID = 0
+                            , pmMatchID = 0 -- Unique value is assigned later
                             , pmMatch = m
                             }
        )
-       (map convertMatchN2ID okay_matches)
+       (map convertMatchN2ID non_sym_matches)
 
 -- | Checks if a given match will result in a cyclic data dependency in the
 -- function graph.
@@ -195,3 +203,13 @@ hasCyclicDataDependency fg m =
       cdd     = or [isReachableComponent ssa_fg c1 c2 | c1 <- mcs, c2 <- mcs,
                     getAllNodes c1 /= getAllNodes c2]
   in cdd
+
+-- | Removes matches that cover the same nodes in the function graph. It is
+-- assumed that the matches originate from a SIMD instruction.
+pruneSymmetricSimdMatches :: [Match Node] -> [Match Node]
+pruneSymmetricSimdMatches ms =
+  let check m1 m2 =
+        let ns1 = getFNsInMatch m1
+            ns2 = getFNsInMatch m2
+        in ns1 === ns2
+  in nubBy check ms

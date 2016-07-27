@@ -66,6 +66,10 @@ module Language.InstrSel.Graphs.Base
   , findBlockNodesWithName
   , findValueNodesWithOrigin
   , fromEdgeNr
+  , getFNsInMatch
+  , getFNsInMapping
+  , getPNsInMatch
+  , getPNsInMapping
   , getAllNodes
   , getAllEdges
   , getCtrlFlowInEdges
@@ -1575,6 +1579,22 @@ findFNInMapping st pn =
   in if length found > 0
      then Just $ head found
      else Nothing
+
+-- | Returns all function nodes in a given match.
+getFNsInMatch :: (Match n) -> [n]
+getFNsInMatch (Match s) = getFNsInMapping $ S.toList s
+
+-- | Returns all pattern nodes in a given match.
+getPNsInMatch :: (Match n) -> [n]
+getPNsInMatch (Match s) = getPNsInMapping $ S.toList s
+
+-- | Same as `getFNsInMatch`.
+getFNsInMapping :: [Mapping n] -> [n]
+getFNsInMapping = map fNode
+
+-- | Same as `getPNsInMatch`.
+getPNsInMapping :: [Mapping n] -> [n]
+getPNsInMapping = map pNode
 
 -- | Computes the dominator sets for a given graph and root node.
 computeDomSets :: Graph -> Node -> [DomSet Node]

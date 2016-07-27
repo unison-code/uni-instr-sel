@@ -29,12 +29,14 @@ module Language.InstrSel.TargetMachines.Base
   , isInstructionInactiveCopy
   , isInstructionNull
   , isInstructionPhi
+  , isInstructionSimd
   )
 where
 
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
 import Language.InstrSel.Graphs
+import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
@@ -248,3 +250,14 @@ isInstructionPhi i =
             op_nodes = filter isOperationNode $ getAllNodes g
         in length op_nodes == 1 && isPhiNode (head op_nodes)
   in all isPhiPattern pats
+
+-- ^ Checks whether the instruction is a SIMD instruction.
+isInstructionSimd :: Instruction -> Bool
+isInstructionSimd i =
+  let pats = instrPatterns i
+      isSimdPattern p =
+        let os = patOS p
+            g = osGraph os
+            cs = componentsOf g
+        in length cs > 1 && all (areGraphsIsomorphic (head cs)) (tail cs)
+  in all isSimdPattern pats

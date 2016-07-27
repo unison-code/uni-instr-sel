@@ -14,10 +14,12 @@ Main authors:
 module Language.InstrSel.Graphs.Graphalyze
   ( componentsOf
   , isReachableComponent
+  , areGraphsIsomorphic
   )
 where
 
 import Language.InstrSel.Graphs.Base
+import Language.InstrSel.Graphs.PatternMatching.VF2
 
 import qualified Data.Graph.Inductive as I
 
@@ -86,3 +88,7 @@ isReachable :: Graph -> Node -> Node -> Bool
 isReachable (Graph g) n1 n2 =
     let rns = I.reachable (getIntNodeID n1) g
     in getIntNodeID n2 `elem` rns
+
+-- | Tests if two graphs are isomorphic to each other.
+areGraphsIsomorphic :: Graph -> Graph -> Bool
+areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) == 1
