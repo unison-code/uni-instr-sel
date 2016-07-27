@@ -245,6 +245,11 @@ constraint
     if card(locs) > 0 then loc[d] in locs else true endif
   );
 
+% Fixate the variables related to the datumValueForNull entity.
+constraint
+  def[datumValueForNull] = entryBlockOfFunction /\
+  loc[datumValueForNull] = locValueForNull;
+
 % [MC] Dual variables: for each operation, exactly one match must be selected
 % such that the operation is covered.
 constraint
@@ -279,8 +284,6 @@ constraint
 % Operands are set to the null datum iff match was not selected.
 % This helps symmetry breaking as well as determining whether a datum is active.
 constraint
-  def[datumValueForNull] = min(allDataInFunction) /\
-  loc[datumValueForNull] = locValueForNull /\
   forall (m in allMatches) (
     forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
       sel[m] <-> alt[o] != datumValueForNull
