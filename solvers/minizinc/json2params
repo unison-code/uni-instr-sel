@@ -67,11 +67,17 @@ def bumpArrOfArr(json):
 def bump2DArrYY(json):
     return [ [x[0]+1, x[1]+1] for x in json ]
 
+def bump2DArrYN(json):
+    return [ [x[0]+1, x[1]] for x in json ]
+
 def bump2DArrYYY(json):
     return [ [x[0]+1, x[1]+1, x[2]+1] for x in json ]
 
 def bump2DArrYYN(json):
     return [ [x[0]+1, x[1]+1, x[2]] for x in json ]
+
+def bump2DArrYNN(json):
+    return [ [x[0]+1, x[1], x[2]] for x in json ]
 
 def bump2DArrYYNN(json):
     return [ [x[0]+1, x[1]+1, x[2], x[3]] for x in json ]
@@ -396,11 +402,11 @@ dumpParams( scaled
 dumpParams( json_data["fun-entry-block"]+1
           , "entryBlockOfFunction"
           )
-dumpParams( json_data["fun-valid-value-locs"]
+dumpParams( bump2DArrYN(json_data["fun-valid-value-locs"])
           , "funValidDataLocs"
           , VT_ARRAY2D
           )
-dumpParams( json_data["fun-valid-value-loc-ranges"]
+dumpParams( bump2DArrYNN(json_data["fun-valid-value-loc-ranges"])
           , "funValidDataLocRanges"
           , VT_ARRAY2D
           )

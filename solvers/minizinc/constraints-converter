@@ -73,10 +73,10 @@ def extractValueRanges(loc_data):
         if len(locs) - 1 == loc_max - loc_min:
             ranges.append([v, loc_min, loc_max])
         else:
-            for l in ld:
-                new_data.append(l)
+            for l in locs:
+                new_data.append([v, l])
 
-    return ranges,  new_data
+    return ranges, new_data
 
 
 
