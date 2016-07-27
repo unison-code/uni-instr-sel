@@ -277,7 +277,7 @@ constraint
   );
 
 % Operands are set to the null datum iff match was not selected.
-% This helps symmetry breakins as well as determining whether a datum is active.
+% This helps symmetry breaking as well as determining whether a datum is active.
 constraint
   def[datumValueForNull] = min(allDataInFunction) /\
   loc[datumValueForNull] = locValueForNull /\
