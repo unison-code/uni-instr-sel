@@ -30,7 +30,6 @@ import Language.InstrSel.Graphs
   , Node
   , convertMatchN2ID
   , extractSSA
-  , fromMatch
   , subGraph
   , getAllNodes
   , getFNsInMatch
@@ -53,6 +52,8 @@ import Control.DeepSeq
 
 import Data.List
   ( nubBy )
+
+import Debug.Trace
 
 
 
@@ -176,9 +177,14 @@ processInstrPattern function instr pattern =
       pg = osGraph $ patOS pattern
       matches = findMatches fg pg
       okay_matches = filter (not . hasCyclicDataDependency fg) matches
-      non_sym_matches = if isInstructionSimd instr
-                        then pruneSymmetricSimdMatches okay_matches
-                        else okay_matches
+      non_sym_matches = if instrID instr == 9
+                        then trace (show $ length matches) $
+                             if isInstructionSimd instr
+                             then pruneSymmetricSimdMatches okay_matches
+                             else okay_matches
+                        else if isInstructionSimd instr
+                             then pruneSymmetricSimdMatches okay_matches
+                             else okay_matches
   in map
        ( \m -> PatternMatch { pmInstrID = instrID instr
                             , pmPatternID = patID pattern
@@ -193,7 +199,7 @@ processInstrPattern function instr pattern =
 -- TODO: explain how it is done
 hasCyclicDataDependency :: Graph -> Match Node -> Bool
 hasCyclicDataDependency fg m =
-  let f_ns    = map fNode (fromMatch m)
+  let f_ns    = getFNsInMatch m
       -- SSA graph originated from the function graph
       ssa_fg  = extractSSA fg
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
