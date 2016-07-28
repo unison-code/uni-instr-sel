@@ -497,8 +497,8 @@ dumpParams( bumpArr(json_data["match-copy-instrs"])
           , "copyInstrMatches"
           , VT_SET
           )
-dumpParams( bumpArr(json_data["match-inactive-copy-instrs"])
-          , "inactiveCopyInstrMatches"
+dumpParams( bumpArr(json_data["match-inactive-instrs"])
+          , "inactiveInstrMatches"
           , VT_SET
           )
 dumpParams( bumpArr(json_data["match-null-instrs"])

@@ -26,7 +26,7 @@ module Language.InstrSel.TargetMachines.Base
   , findLocation
   , updateNodeInEmitStrTemplate
   , isInstructionCopy
-  , isInstructionInactiveCopy
+  , isInstructionInactive
   , isInstructionNull
   , isInstructionPhi
   , isInstructionSimd
@@ -100,8 +100,8 @@ data InstrProperties
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
-      , instrIsInactiveCopy :: Bool
-        -- ^ Whether the instruction represents an inactive copy.
+      , instrIsInactive :: Bool
+        -- ^ Whether the instruction represents an inactive operation.
       }
   deriving (Show)
 
@@ -236,9 +236,9 @@ isInstructionCopy i =
         in length op_nodes == 1 && isCopyNode (head op_nodes)
   in all isCopyPattern pats
 
--- ^ Checks whether the instruction is an inactive copy instruction.
-isInstructionInactiveCopy :: Instruction -> Bool
-isInstructionInactiveCopy i = instrIsInactiveCopy $ instrProps i
+-- ^ Checks whether the instruction is an inactive instruction.
+isInstructionInactive :: Instruction -> Bool
+isInstructionInactive i = instrIsInactive $ instrProps i
 
 -- ^ Checks whether the instruction is a phi instruction.
 isInstructionPhi :: Instruction -> Bool

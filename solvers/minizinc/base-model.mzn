@@ -72,7 +72,7 @@ array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 set of allMatches: copyInstrMatches;
-set of allMatches: inactiveCopyInstrMatches;
+set of allMatches: inactiveInstrMatches;
 set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
@@ -291,9 +291,9 @@ constraint
   );
 
 % [MC] A datum is active if at least one operand uses that datum.
-% Active data must not be defined by inactive copy matches.
+% Active data must not be defined by inactive instruction matches.
 constraint
-  forall ( mi in inactiveCopyInstrMatches
+  forall ( mi in inactiveInstrMatches
          , oi in operandsDefinedByMatch[mi]
          , d in operandAlternatives[oi])
   (
@@ -740,7 +740,7 @@ solve
   %   [ bool_search([ sel[m]
   %                 | m in allMatchesBySize
   %                   where not ( m in copyInstrMatches
-  %                                    union inactiveCopyInstrMatches
+  %                                    union inactiveInstrMatches
   %                                    union dominatedMatches
   %                             )
   %                 ], input_order, indomain_max, complete)

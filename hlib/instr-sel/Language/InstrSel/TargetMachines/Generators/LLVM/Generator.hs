@@ -79,7 +79,7 @@ generateTargetMachine m =
                        ++ [mkBrFallThroughInstruction]
                        ++ [mkDataDefInstruction]
                        ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
-                       ++ [mkInactiveCopyInstruction]
+                       ++ [mkInactiveInstruction]
       all_instrs = instrs
                    ++
                    reassignInstrIDs (toInstructionID $ length instrs)
@@ -306,7 +306,7 @@ mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
 mkInstrProps i=
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
                      , TM.instrLatency = LLVM.instrLatency i
-                     , TM.instrIsInactiveCopy = False
+                     , TM.instrIsInactive = False
                      }
 
 -- | Gets the operand with a given name of a given instruction. If no such

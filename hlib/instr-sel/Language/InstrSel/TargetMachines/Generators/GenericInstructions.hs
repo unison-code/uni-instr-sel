@@ -14,7 +14,7 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   , mkPhiInstruction
   , mkDataDefInstruction
   , mkTempNullCopyInstruction
-  , mkInactiveCopyInstruction
+  , mkInactiveInstruction
   , reassignInstrIDs
   )
 where
@@ -129,7 +129,7 @@ mkPhiInstruction mkEmit =
                  , instrPatterns = map mkPat [2..10]
                  , instrProps = InstrProperties { instrCodeSize = 0
                                                 , instrLatency = 0
-                                                , instrIsInactiveCopy = False
+                                                , instrIsInactive = False
                                                 }
                  }
 
@@ -166,7 +166,7 @@ mkBrFallThroughInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsInactiveCopy = False
+                                      , instrIsInactive = False
                                       }
        }
 
@@ -199,7 +199,7 @@ mkDataDefInstruction =
                          ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsInactiveCopy = False
+                                      , instrIsInactive = False
                                       }
        }
 
@@ -237,15 +237,15 @@ mkTempNullCopyInstruction bits =
        , instrPatterns = map pat $ zip [0..] bits
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsInactiveCopy = False
+                                      , instrIsInactive = False
                                       }
        }
 
--- | Creates an instruction to be selected for copy operations that are
+-- | Creates an instruction to be selected for operations that are
 -- inactive. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkInactiveCopyInstruction :: Instruction
-mkInactiveCopyInstruction =
+mkInactiveInstruction :: Instruction
+mkInactiveInstruction =
   let g = mkGraph
             ( map
                 Node
@@ -271,7 +271,7 @@ mkInactiveCopyInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
-                                      , instrIsInactiveCopy = True
+                                      , instrIsInactive = True
                                       }
        }
 
