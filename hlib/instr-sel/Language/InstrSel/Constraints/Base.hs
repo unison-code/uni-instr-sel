@@ -179,7 +179,7 @@ data LocationExpr
 data SetExpr =
     UnionSetExpr SetExpr SetExpr
   | IntersectSetExpr SetExpr SetExpr
-    -- | @A@ `diff` @B@. The first field represents @A@ and the second field
+    -- | @A diff B@. The first field represents @A@ and the second field
     -- @B@.
   | DiffSetExpr SetExpr SetExpr
     -- | Converts a list of locations into a set.

@@ -184,13 +184,15 @@ data HighLevelMatchParamsNoOp
         -- pattern graph) to the node IDs in the function graph which are
         -- covered by this pattern. The map list has the following appearance:
         -- the outer list corresponds to the outer list within the
-        -- 'EmitStringTemplate', and each element in the inner list corresponds
-        -- to an 'EmitStringPart' with the same index.
+        -- 'Language.InstrSel.TargetMachines.Base.EmitStringTemplate', and each
+        -- element in the inner list corresponds to an
+        -- 'Language.InstrSel.TargetMachines.Base.EmitStringPart' with the same
+        -- index.
       }
   deriving (Show)
 
 -- | Contains the high-level match parameters, with operands. Most fields
--- are identical to those of 'HighLevelMatchParamsWithoutOperands'.
+-- are identical to those of 'HighLevelMatchParamsNoOp'.
 data HighLevelMatchParamsWOp
   = HighLevelMatchParamsWOp
       { hlWOpMatchInstructionID :: InstructionID
@@ -389,7 +391,7 @@ data LowLevelSolution
         -- ^ The array index of the block wherein a particular match was
         -- placed. An index into the list corresponds to the array index of a
         -- particular match, but this value is only valid if the corresponding
-        -- match in 'llIsMatchSelected' is set to 'True'.
+        -- match in 'llSolIsMatchSelected' is set to @True@.
       , llSolHasDatumLocation :: [Bool]
         -- ^ Indicates whether a location has been selected for a particular
         -- datum. An index into the list corresponds to the array index of a
@@ -398,7 +400,7 @@ data LowLevelSolution
         -- ^ Specifies the location of a particular datum. An index into the
         -- list corresponds to the array index of a particular datum, but this
         -- value is only valid if the corresponding datum in
-        -- 'llHasDatumLocation' is set to 'True'.
+        -- 'llSolHasDatumLocation' is set to @True@.
       , llSolCost :: Integer
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool

@@ -71,7 +71,7 @@ data InstrOperand
   -- | Represents a register operand.
   = RegInstrOperand
       { opName :: String
-        -- ^ Name of this register operand.
+        -- ^ Name of this operand.
       , regOpClass :: [String]
         -- ^ Register class, denoted as a list of register operand names.
       }
@@ -79,21 +79,17 @@ data InstrOperand
     -- | Represents an immediate operand.
   | ImmInstrOperand
       { opName :: String
-        -- ^ Name of this immediate operand.
       , immOpRange :: Range Integer
         -- ^ Integer range of this immediate operand.
       }
   | AbsAddrInstrOperand
       { opName :: String
-        -- ^ Name of this absolute address.
       , addrOpRange :: Range Integer
-        -- ^ Integer range of this absolute address.
+        -- ^ Integer range of this address.
       }
   | RelAddrInstrOperand
       { opName :: String
-        -- ^ Name of this relative address.
       , addrOpRange :: Range Integer
-        -- ^ Integer range of this relative address.
       }
   deriving (Show)
 

@@ -28,7 +28,7 @@ import Language.Haskell.Exts
 
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
 -- The source code is then wrapped inside a module with name equal to the
--- 'TargetMachineID'.
+-- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'.
 generateModule :: TargetMachine -> String
 generateModule tm =
   let renameFuncs str = replace "mkGraph" "I.mkGraph" str

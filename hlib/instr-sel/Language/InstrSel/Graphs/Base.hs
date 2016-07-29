@@ -1011,14 +1011,14 @@ getNodeWithIntNodeID :: IntGraph -> I.Node -> Maybe Node
 getNodeWithIntNodeID g nid =
   maybe Nothing (\l -> Just (Node (nid, l))) (I.lab g nid)
 
--- | Gets the predecessors (if any) of a given node. A node A is a predecessor
--- of another node B if there is a directed edge from B to A.
+-- | Gets the predecessors (if any) of a given node. A node @n@ is a predecessor
+-- of another node @m@ if there is a directed edge from @m@ to @n@.
 getPredecessors :: Graph -> Node -> [Node]
 getPredecessors (Graph g) n =
   map (fromJust . getNodeWithIntNodeID g) (I.pre g (getIntNodeID n))
 
--- | Gets the successors (if any) of a given node. A node A is a successor of
--- another node B if there is a directed edge from A to B.
+-- | Gets the successors (if any) of a given node. A node @n@ is a successor of
+-- another node @m@ if there is a directed edge from @n@ to @m@.
 getSuccessors :: Graph -> Node -> [Node]
 getSuccessors (Graph g) n =
   map (fromJust . getNodeWithIntNodeID g) (I.suc g (getIntNodeID n))
@@ -1316,7 +1316,7 @@ doInEdgeListsMatch _ pg fes pes =
      && ((not $ doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge)
      && ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
--- | Same as `doInEdgeListsMatch` but for out-edges.
+-- | Same as 'doInEdgeListsMatch' but for out-edges.
 doOutEdgeListsMatch
   :: Graph
      -- ^ The function graph.
@@ -1474,7 +1474,7 @@ areOutEdgesEquivalent g e1 e2 =
   && (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2)
   && getOutEdgeNr e1 == getOutEdgeNr e2
 
--- | Same as `findPNsInMapping`.
+-- | Same as 'findPNsInMapping'.
 findPNsInMatch
   :: (Eq n)
   => Match n
@@ -1485,7 +1485,7 @@ findPNsInMatch
      -- ^ List of corresponding pattern nodes.
 findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
 
--- | Same as `findFNsInMapping`.
+-- | Same as 'findFNsInMapping'.
 findFNsInMatch
   :: (Eq n)
   => Match n
@@ -1496,7 +1496,7 @@ findFNsInMatch
      -- ^ List of corresponding function nodes.
 findFNsInMatch (Match m) = findFNsInMapping (S.toList m)
 
--- | Same as `findPNInMapping`.
+-- | Same as 'findPNInMapping'.
 findPNInMatch
   :: (Eq n)
   => Match n
@@ -1507,7 +1507,7 @@ findPNInMatch
      -- ^ Corresponding pattern node.
 findPNInMatch (Match m) = findPNInMapping (S.toList m)
 
--- | Same as `findFNInMapping`.
+-- | Same as 'findFNInMapping'.
 findFNInMatch
   :: (Eq n)
   => Match n

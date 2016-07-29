@@ -77,17 +77,22 @@ nodeExtractor cg@(cs,g) n
     | I.gelem n g = first (++ cs) . extractNode $ I.match n g
     | otherwise = cg
 
--- | Tests whether there is a path in g from a node in c1 to a node in c2
-isReachableComponent :: Graph -> Graph -> Graph -> Bool
+-- | Tests whether there is a path in the graph @g@ from a node in component
+-- @c1@ to a node in compnent @c2@.
+isReachableComponent
+  :: Graph
+     -- ^ Graph @g@.
+  -> Graph
+     -- ^ Component @c1@.
+  -> Graph
+     -- ^ Component @c2@.
+  -> Bool
 isReachableComponent g c1 c2 =
-    or [isReachable g n1 n2 | n1 <- getAllNodes c1, n2 <- getAllNodes c2,
-                                    n1 /= n2]
-
--- | Tests whether there is a path in g from a node n1 to a node n2
-isReachable :: Graph -> Node -> Node -> Bool
-isReachable (Graph g) n1 n2 =
-    let rns = I.reachable (getIntNodeID n1) g
-    in getIntNodeID n2 `elem` rns
+  or [isReachable g n1 n2 | n1 <- getAllNodes c1, n2 <- getAllNodes c2,
+                                  n1 /= n2]
+  where isReachable (Graph g') n1 n2 =
+          let rns = I.reachable (getIntNodeID n1) g'
+          in getIntNodeID n2 `elem` rns
 
 -- | Tests if two graphs are isomorphic to each other.
 areGraphsIsomorphic :: Graph -> Graph -> Bool

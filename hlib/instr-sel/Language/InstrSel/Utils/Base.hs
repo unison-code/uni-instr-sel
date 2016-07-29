@@ -96,8 +96,7 @@ splitOn = Split.splitOn
 -- | Splits a given list into a list of sublists at points where any of the
 -- given delimiters are found. For example:
 --
--- > splitStartingOn "['A'..'Z'] "AStringToBeSplit" == ["A", "String", "To",
--- "Be", "Split"]
+-- > splitStartingOn "['A'..'Z'] "AStringToBeSplit" == ["A", "String", "To", "Be", "Split"]
 splitStartingOn
   :: Eq a
   => [a]
