@@ -26,12 +26,13 @@ import Language.InstrSel.Graphs
   ( Graph
   , MatchID
   , Match (..)
+  , Mapping (fNode)
   , Node
   , convertMatchN2ID
   , extractSSA
   , subGraph
   , getAllNodes
-  , getFNsInMatch
+  , fromMatch
   , delNode
   , isDatumNode
   , hasAnyPredecessors
@@ -199,7 +200,7 @@ processInstrPattern function instr pattern =
 -- removed prior to extracting the components.
 hasCyclicDataDependency :: Graph -> Match Node -> Bool
 hasCyclicDataDependency fg m =
-  let f_ns = getFNsInMatch m
+  let f_ns = map fNode (fromMatch m)
       ssa_fg = extractSSA fg
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
       ssa_fg' = subGraph ssa_fg f_ns
@@ -220,7 +221,7 @@ hasCyclicDataDependency fg m =
 pruneSymmetricSimdMatches :: [Match Node] -> [Match Node]
 pruneSymmetricSimdMatches ms =
   let check m1 m2 =
-        let ns1 = getFNsInMatch m1
-            ns2 = getFNsInMatch m2
+        let ns1 = map fNode (fromMatch m1)
+            ns2 = map fNode (fromMatch m2)
         in ns1 === ns2
   in nubBy check ms
