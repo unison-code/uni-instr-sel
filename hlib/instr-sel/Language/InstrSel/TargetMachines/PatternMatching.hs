@@ -24,7 +24,6 @@ where
 
 import Language.InstrSel.Graphs
   ( Graph
-  , Mapping (..)
   , MatchID
   , Match (..)
   , Node
@@ -33,6 +32,9 @@ import Language.InstrSel.Graphs
   , subGraph
   , getAllNodes
   , getFNsInMatch
+  , delNode
+  , isDatumNode
+  , hasAnyPredecessors
   )
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.Graphs.PatternMatching.VF2
@@ -52,8 +54,6 @@ import Control.DeepSeq
 
 import Data.List
   ( nubBy )
-
-import Debug.Trace
 
 
 
@@ -177,14 +177,9 @@ processInstrPattern function instr pattern =
       pg = osGraph $ patOS pattern
       matches = findMatches fg pg
       okay_matches = filter (not . hasCyclicDataDependency fg) matches
-      non_sym_matches = if instrID instr == 9
-                        then trace (show $ length matches) $
-                             if isInstructionSimd instr
-                             then pruneSymmetricSimdMatches okay_matches
-                             else okay_matches
-                        else if isInstructionSimd instr
-                             then pruneSymmetricSimdMatches okay_matches
-                             else okay_matches
+      non_sym_matches = if isInstructionSimd instr
+                        then pruneSymmetricSimdMatches okay_matches
+                        else okay_matches
   in map
        ( \m -> PatternMatch { pmInstrID = instrID instr
                             , pmPatternID = patID pattern
@@ -195,19 +190,29 @@ processInstrPattern function instr pattern =
        (map convertMatchN2ID non_sym_matches)
 
 -- | Checks if a given match will result in a cyclic data dependency in the
--- function graph.
--- TODO: explain how it is done
+-- function graph. The check works as follows: first the subgraph of the
+-- function covered by the match is extracted. From this subgraph, each
+-- component is extracted, and then it is checked whether a component is
+-- reachable from any other component. If so, then the match has a cyclic
+-- dependency. However, components that are only reachable via an input node to
+-- the pattern is not considered a dependency. Due to this, such data nodes are
+-- removed prior to extracting the components.
 hasCyclicDataDependency :: Graph -> Match Node -> Bool
 hasCyclicDataDependency fg m =
-  let f_ns    = getFNsInMatch m
-      -- SSA graph originated from the function graph
-      ssa_fg  = extractSSA fg
+  let f_ns = getFNsInMatch m
+      ssa_fg = extractSSA fg
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
       ssa_fg' = subGraph ssa_fg f_ns
-      -- components of the match in the SSA graph
-      mcs     = componentsOf ssa_fg'
-      cdd     = or [isReachableComponent ssa_fg c1 c2 | c1 <- mcs, c2 <- mcs,
-                    getAllNodes c1 /= getAllNodes c2]
+      -- Data nodes which act as input to the pattern should not be included
+      ssa_fg'' = foldr delNode ssa_fg'
+                 $ filter ( \n -> isDatumNode n
+                                  && not (hasAnyPredecessors ssa_fg' n)
+                          )
+                 $ getAllNodes ssa_fg'
+      mcs = componentsOf ssa_fg''
+      cdd = or [ isReachableComponent ssa_fg c1 c2
+               | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
+               ]
   in cdd
 
 -- | Removes matches that cover the same nodes in the function graph. It is
