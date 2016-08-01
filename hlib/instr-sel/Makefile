@@ -41,7 +41,7 @@ build:
 .PHONY: docs
 docs:
 	cabal configure
-	cabal haddock --executables
+	cabal haddock
 
 .PHONY: warnings
 warnings:
