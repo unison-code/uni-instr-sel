@@ -465,8 +465,12 @@ mkPatternCFGBuilder =
                   -- Let the default builder handle it
         newInstrMk b st i = mkFunctionCFGFromInstruction b st i
         newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = st
-        newTermMk _ _ _ =
-          error "mkPatternCFGBuilder: non-void rets not allowed in patterns"
+        newTermMk _ _ (LLVM.Ret { LLVM.returnOperand = Just _ }) =
+          error "mkPatternCFGBuilder: non-void returns not supported"
+        newTermMk b st i@(LLVM.Br {}) = mkFunctionCFGFromTerminator b st i
+        newTermMk b st i@(LLVM.CondBr {}) = mkFunctionCFGFromTerminator b st i
+        newTermMk _ _ i =
+          error $ "mkPatternCFGBuilder: cannot handle terminator " ++ show i
 
 -- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
 -- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
