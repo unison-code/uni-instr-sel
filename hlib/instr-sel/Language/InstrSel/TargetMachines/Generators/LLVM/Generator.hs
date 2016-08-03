@@ -9,7 +9,9 @@ Main authors:
 
 -}
 
-module Language.InstrSel.TargetMachines.Generators.LLVM.Generator where
+module Language.InstrSel.TargetMachines.Generators.LLVM.Generator
+  ( generateTargetMachine )
+where
 
 import qualified Language.InstrSel.DataTypes as D
 import Language.InstrSel.Graphs
