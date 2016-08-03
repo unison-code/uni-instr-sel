@@ -46,10 +46,16 @@ import qualified LLVM.General.AST as AST
 import LLVM.General.Context
 import Control.Monad.Except
   ( runExceptT )
+import Control.Exception
+  ( SomeException
+  , try
+  , evaluate
+  )
 
 import Data.Maybe
   ( isNothing
   , fromJust
+  , mapMaybe
   )
 
 
@@ -66,9 +72,10 @@ run opts =
        reportErrorAndExit $ fromLeft m_str
      let m = fromRight m_str
      parsed_m <- parseSemanticsInMD m
-     let tm = copyExtend $ generateTargetMachine parsed_m
-         code = generateModule tm
-     return [toOutputWithID ((fromTargetMachineID $ tmID tm) ++ ".hs") code]
+     tm <- generateTM parsed_m
+     let ce_tm = copyExtend tm
+         code = generateModule ce_tm
+     return [toOutputWithID ((fromTargetMachineID $ tmID ce_tm) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.
@@ -89,17 +96,19 @@ parseSemanticsInMD m =
      return $ m { mdInstructions = new_is }
   where processInstr i =
           do res <- mapM processSem $ instrSemantics i
-             new_sem <- mapMaybeM
-                          ( \r -> if isRight r
-                                  then return $ Just $ fromRight r
-                                  else do reportError $
-                                            "--- ERROR found in semantics "
-                                            ++ "of instruction with emit string"
-                                            ++ " '" ++ (instrEmitString i)
-                                            ++ "':\n" ++ (fromLeft r) ++ "\n"
-                                            ++ "Skipping to next semantics.\n"
-                                          return Nothing
-                          ) res
+             new_sem <-
+               mapMaybeM
+                 ( \r -> if isRight r
+                         then return $ Just $ fromRight r
+                         else do reportError $
+                                   "--- ERROR found in semantics of instruction"
+                                   ++ " with emit string '"
+                                   ++ (instrEmitString i) ++ "':\n"
+                                   ++ (fromLeft r) ++ "\n"
+                                   ++ "Skipping to next semantics.\n"
+                                 return Nothing
+                 )
+                 res
              return $ if length new_sem > 0 || (length $ instrSemantics i) == 0
                       then Just $ i { instrSemantics = new_sem }
                       else Nothing
@@ -123,3 +132,35 @@ parseSemantics str =
           in if isLeft err
              then return $ Left $ fromLeft err
              else return $ Left $ show $ fromRight err
+
+-- | Generates a 'TargetMachine' from a given 'MachineDescription'. In order to
+-- ignore instructions that yield errors when generating the 'TargetMachine', we
+-- generate the 'TargetMachine' one instruction at a time and then regenerate
+-- the 'TargetMachine' using only the instructions that succeeded.
+generateTM :: MachineDescription -> IO TargetMachine
+generateTM md =
+  do let all_instrs = mdInstructions md
+         uni_instr_mds = map (\i -> md { mdInstructions = [i] }) all_instrs
+     uni_instr_tms <-
+       mapM ( \m -> try (evaluate $ generateTargetMachine m)
+                      :: IO (Either SomeException TargetMachine)
+            )
+            uni_instr_mds
+     let md_pairs = zip uni_instr_tms all_instrs
+         okay_instrs =
+           mapMaybe (\(r, i) -> if isRight r then Just i else Nothing) md_pairs
+         bad_instrs_with_err =
+           mapMaybe ( \(r, i) -> if isLeft r
+                                 then Just (i, fromLeft r)
+                                 else Nothing
+                    )
+                    md_pairs
+     mapM_ ( \(i, err) -> reportError $
+                            "--- ERROR found in semantics of instruction"
+                            ++ " with emit string '"
+                            ++ (instrEmitString i) ++ "':\n"
+                            ++ (show err) ++ "\n"
+                            ++ "Skipping to next instruction.\n"
+           )
+           bad_instrs_with_err
+     return $ generateTargetMachine $ md { mdInstructions = okay_instrs }
