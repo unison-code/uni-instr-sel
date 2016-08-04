@@ -21,6 +21,7 @@ import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.TargetMachines.Generators.LLVM.Base
   ( MachineDescription (..)
   , Instruction (..)
+  , InstrPattern (..)
   , InstrSemantics (..)
   )
 import Language.InstrSel.TargetMachines.Transformations
@@ -95,23 +96,29 @@ parseSemanticsInMD m =
   do new_is <- mapMaybeM processInstr $ mdInstructions m
      return $ m { mdInstructions = new_is }
   where processInstr i =
-          do res <- mapM processSem $ instrSemantics i
-             new_sem <-
+          do res <- mapM processPattern $ instrPatterns i
+             new_p <-
                mapMaybeM
                  ( \r -> if isRight r
                          then return $ Just $ fromRight r
                          else do reportError $
-                                   "--- ERROR found in semantics of instruction"
-                                   ++ " with emit string '"
+                                   "--- ERROR found in pattern semantics of "
+                                   ++ "instruction with emit string\n"
+                                   ++ "--- '"
                                    ++ (instrEmitString i) ++ "':\n"
                                    ++ (fromLeft r) ++ "\n"
-                                   ++ "Skipping to next semantics.\n"
+                                   ++ "Skipping to next pattern.\n"
                                  return Nothing
                  )
                  res
-             return $ if length new_sem > 0 || (length $ instrSemantics i) == 0
-                      then Just $ i { instrSemantics = new_sem }
+             return $ if length new_p > 0 || (length $ instrPatterns i) == 0
+                      then Just $ i { instrPatterns = new_p }
                       else Nothing
+        processPattern p =
+          do res <- processSem $ instrSemantics p
+             if isRight res
+             then return $ Right $ p { instrSemantics = fromRight res }
+             else return $ Left $ fromLeft res
         processSem (InstrSemantics (Left str)) =
           do res <- parseSemantics str
              if isRight res
@@ -146,18 +153,19 @@ generateTM md =
                       :: IO (Either SomeException TargetMachine)
             )
             uni_instr_mds
-     let md_pairs = zip uni_instr_tms all_instrs
+     let tm_pairs = zip uni_instr_tms all_instrs
          okay_instrs =
-           mapMaybe (\(r, i) -> if isRight r then Just i else Nothing) md_pairs
+           mapMaybe (\(r, i) -> if isRight r then Just i else Nothing) tm_pairs
          bad_instrs_with_err =
            mapMaybe ( \(r, i) -> if isLeft r
                                  then Just (i, fromLeft r)
                                  else Nothing
                     )
-                    md_pairs
+                    tm_pairs
      mapM_ ( \(i, err) -> reportError $
-                            "--- ERROR found in semantics of instruction"
-                            ++ " with emit string '"
+                            "--- ERROR found in pattern semantics of "
+                            ++ "instruction with emit string:\n"
+                            ++ "--- "
                             ++ (instrEmitString i) ++ "':\n"
                             ++ (show err) ++ "\n"
                             ++ "Skipping to next instruction.\n"

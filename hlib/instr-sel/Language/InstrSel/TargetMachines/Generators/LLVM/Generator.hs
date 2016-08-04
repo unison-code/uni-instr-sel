@@ -115,13 +115,14 @@ mkInstructions m locs =
 
 mkInstrPatterns :: [TM.Location] -> LLVM.Instruction -> [TM.InstrPattern]
 mkInstrPatterns locs i =
-  map processSemantics $ zip ([0..] :: [Integer]) (LLVM.instrSemantics i)
-  where processSemantics (p_num, p) =
+  map processInstrPattern $ zip ([0..] :: [Integer]) (LLVM.instrPatterns i)
+  where processInstrPattern (p_num, p) =
+          processSemantics p_num (LLVM.instrSemantics p) (LLVM.instrOperands p)
+        processSemantics p_num p ops =
           let p_id = TM.toPatternID p_num
-              os = addOperandConstraints i locs $ mkOpStructure p
+              os = addOperandConstraints ops locs $ mkOpStructure p
               ext_values = map getNodeID
-                           $ mapMaybe (findValueNodeFromOperand os)
-                                      (LLVM.instrOperands i)
+                           $ mapMaybe (findValueNodeFromOperand os) ops
               tmpl = mkEmitString i os (LLVM.instrEmitString i)
           in TM.InstrPattern { TM.patID = p_id
                              , TM.patOS = os
@@ -154,12 +155,12 @@ mkInstrPatterns locs i =
                   else Nothing
 
 addOperandConstraints
-  :: LLVM.Instruction
+  :: [LLVM.InstrOperand]
   -> [TM.Location]
   -> OpStructure
   -> OpStructure
-addOperandConstraints i all_locs os =
-  foldr f os (LLVM.instrOperands i)
+addOperandConstraints ops all_locs os =
+  foldr f os ops
   where f (LLVM.RegInstrOperand op_name reg_names) os' =
           let locs = map getIDOfLocWithName reg_names
               n = getNodeID $ getValueNode os' op_name
@@ -314,7 +315,10 @@ mkInstrProps i=
 -- operand is found, 'Nothing' is returned.
 getInstrOperand :: LLVM.Instruction -> String -> Maybe LLVM.InstrOperand
 getInstrOperand i name =
-  let op = filter (\o -> LLVM.opName o == name) $ LLVM.instrOperands i
+  let op = filter (\o -> LLVM.opName o == name)
+           $ LLVM.instrOperands
+           $ head
+           $ LLVM.instrPatterns i
   in if length op > 0
      then Just $ head op
      else Nothing

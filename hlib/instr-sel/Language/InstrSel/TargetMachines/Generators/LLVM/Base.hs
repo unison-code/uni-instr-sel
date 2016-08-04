@@ -48,11 +48,18 @@ data Instruction
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
-      , instrOperands :: [InstrOperand]
-        -- ^ The operands used in the instruction. The order is NOT necesarily
+      , instrPatterns :: [InstrPattern]
+        -- ^ The behaviour of this instruction, expressed as patterns.
+      }
+  deriving (Show)
+
+data InstrPattern
+  = InstrPattern
+      { instrOperands :: [InstrOperand]
+        -- ^ The operands used in the pattern. The order is NOT necesarily
         -- the same as that given in the emit string.
-      , instrSemantics :: [InstrSemantics]
-        -- ^ The semantics of this instruction, expressed in LLVM IR.
+      , instrSemantics :: InstrSemantics
+        -- ^ The semantics of this pattern, expressed in LLVM IR.
       }
   deriving (Show)
 
@@ -122,7 +129,13 @@ instance FromJSON Instruction where
       <$> v .: "emit"
       <*> v .: "size"
       <*> v .: "latency"
-      <*> v .: "operands"
+      <*> v .: "patterns"
+  parseJSON _ = mzero
+
+instance FromJSON InstrPattern where
+  parseJSON (Object v) =
+    InstrPattern
+      <$> v .: "operands"
       <*> v .: "semantics"
   parseJSON _ = mzero
 
