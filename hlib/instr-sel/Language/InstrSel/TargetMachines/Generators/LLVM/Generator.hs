@@ -317,7 +317,7 @@ getInstrOperand :: LLVM.Instruction -> String -> Maybe LLVM.InstrOperand
 getInstrOperand i name =
   let op = filter (\o -> LLVM.opName o == name)
            $ LLVM.instrOperands
-           $ head
+           $ head -- Which pattern we take does not matter in this context
            $ LLVM.instrPatterns i
   in if length op > 0
      then Just $ head op

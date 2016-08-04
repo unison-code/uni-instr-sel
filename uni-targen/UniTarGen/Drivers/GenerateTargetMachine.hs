@@ -151,6 +151,7 @@ generateTM md =
      uni_instr_tms <-
        mapM ( \m -> try (evaluate $ generateTargetMachine m)
                       :: IO (Either SomeException TargetMachine)
+                    -- Unfortunately, this doesn't work due to lazy evaluation
             )
             uni_instr_mds
      let tm_pairs = zip uni_instr_tms all_instrs
