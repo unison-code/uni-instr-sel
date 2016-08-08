@@ -47,11 +47,6 @@ import qualified LLVM.General.AST as AST
 import LLVM.General.Context
 import Control.Monad.Except
   ( runExceptT )
-import Control.Exception
-  ( SomeException
-  , try
-  , evaluate
-  )
 
 import Data.Maybe
   ( isNothing
@@ -148,12 +143,7 @@ generateTM :: MachineDescription -> IO TargetMachine
 generateTM md =
   do let all_instrs = mdInstructions md
          uni_instr_mds = map (\i -> md { mdInstructions = [i] }) all_instrs
-     uni_instr_tms <-
-       mapM ( \m -> try (evaluate $ generateTargetMachine m)
-                      :: IO (Either SomeException TargetMachine)
-                    -- Unfortunately, this doesn't work due to lazy evaluation
-            )
-            uni_instr_mds
+         uni_instr_tms = map generateTargetMachine uni_instr_mds
      let tm_pairs = zip uni_instr_tms all_instrs
          okay_instrs =
            mapMaybe (\(r, i) -> if isRight r then Just i else Nothing) tm_pairs
@@ -168,8 +158,9 @@ generateTM md =
                             ++ "instruction with emit string:\n"
                             ++ "--- "
                             ++ (instrEmitString i) ++ "':\n"
-                            ++ (show err) ++ "\n"
+                            ++ err ++ "\n"
                             ++ "Skipping to next instruction.\n"
            )
            bad_instrs_with_err
-     return $ generateTargetMachine $ md { mdInstructions = okay_instrs }
+     let tm = generateTargetMachine $ md { mdInstructions = okay_instrs }
+     return $ fromRight tm

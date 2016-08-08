@@ -34,6 +34,7 @@ import Language.InstrSel.Utils
   , toNatural
   , fromRight
   , splitOn
+  , scanlM
   )
 
 import qualified LLVM.General.AST as LLVM
@@ -42,6 +43,9 @@ import qualified LLVM.General.AST.FloatingPointPredicate as LLVMF
 import qualified LLVM.General.AST.Global as LLVM
   ( Global (..) )
 import qualified LLVM.General.AST.IntegerPredicate as LLVMI
+
+import Control.Monad
+  ( foldM )
 
 import Data.Maybe
 
@@ -155,28 +159,34 @@ data BuildState
 -- bottom up.
 data Builder
   = Builder
-      { mkFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
+      { mkFromGlobal :: Builder
+                     -> BuildState
+                     -> LLVM.Global
+                     -> Either String BuildState
       , mkFromBasicBlock :: Builder
                          -> BuildState
                          -> LLVM.BasicBlock
-                         -> BuildState
+                         -> Either String BuildState
       , mkFromNamed :: Builder
                     -> BuildState
                     -> LLVM.Named LLVM.Instruction
-                    -> BuildState
+                    -> Either String BuildState
       , mkFromInstruction :: Builder
                           -> BuildState
                           -> LLVM.Instruction
-                          -> BuildState
+                          -> Either String BuildState
       , mkFromTerminator :: Builder
                          -> BuildState
                          -> LLVM.Terminator
-                         -> BuildState
-      , mkFromOperand :: Builder -> BuildState -> LLVM.Operand -> BuildState
+                         -> Either String BuildState
+      , mkFromOperand :: Builder
+                      -> BuildState
+                      -> LLVM.Operand
+                      -> Either String BuildState
       , mkFromParameter :: Builder
                         -> BuildState
                         -> LLVM.Parameter
-                        -> BuildState
+                        -> Either String BuildState
       }
 
 
@@ -188,103 +198,103 @@ data Builder
 
 -- | Class for converting an LLVM symbol datum into a 'Symbol'.
 class SymbolFormable a where
-  toSymbol :: a -> Symbol
+  toSymbol :: a -> Either String Symbol
 
 instance SymbolFormable LLVM.Name where
-  toSymbol (LLVM.Name str) = LocalStringSymbol str
-  toSymbol (LLVM.UnName int) = TemporarySymbol $ toInteger int
+  toSymbol (LLVM.Name str) = Right $ LocalStringSymbol str
+  toSymbol (LLVM.UnName int) = Right $ TemporarySymbol $ toInteger int
 
 -- | Class for converting an LLVM constant operand into a corresponding
 -- 'Constant'.
 class ConstantFormable a where
-  toConstant :: a -> Constant
+  toConstant :: a -> Either String Constant
 
 instance ConstantFormable LLVMC.Constant where
   toConstant i@(LLVMC.Int b _) =
-    IntConstant { intBitWidth = fromIntegral b
-                , signedIntValue = LLVMC.signedIntegerValue i
-                }
+    Right $ IntConstant { intBitWidth = fromIntegral b
+                        , signedIntValue = LLVMC.signedIntegerValue i
+                        }
   toConstant (LLVMC.GlobalReference t n) =
-    GlobalReferenceConstant { globalRefType = toOpDataType t
-                            , globalRefName = toSymbol n
-                            }
-  toConstant l = error $ "'toConstant' not implemented for " ++ show l
+    do rt <- toOpDataType t
+       sym <- toSymbol n
+       return $ GlobalReferenceConstant { globalRefType = rt
+                                        , globalRefName = sym
+                                        }
+  toConstant l = Left $ "toConstant: not implemented for " ++ show l
 
 -- | Class for converting an LLVM operand into a corresponding operand
 -- 'D.DataType'.
 class OperandDataTypeFormable a where
-  toOpDataType :: a -> D.DataType
+  toOpDataType :: a -> Either String D.DataType
 
 instance OperandDataTypeFormable Constant where
   toOpDataType IntConstant { intBitWidth = w, signedIntValue = v } =
-    D.IntConstType { D.intConstValue = rangeFromSingleton v
-                   , D.intConstNumBits = Just $ toNatural w
-                   }
-  toOpDataType c = error $ "'toOpDataType' not implemented for " ++ show c
+    Right $ D.IntConstType { D.intConstValue = rangeFromSingleton v
+                           , D.intConstNumBits = Just $ toNatural w
+                           }
+  toOpDataType c = Left $ "toOpDataType: not implemented for " ++ show c
 
 instance OperandDataTypeFormable LLVM.Type where
   toOpDataType (LLVM.IntegerType bits) =
-    D.IntTempType { D.intTempNumBits = toNatural bits }
+    Right $ D.IntTempType { D.intTempNumBits = toNatural bits }
   toOpDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) = toOpDataType t
-  toOpDataType t = error $ "'toOpDataType' not implemented for " ++ show t
+  toOpDataType t = Left $ "toOpDataType: not implemented for " ++ show t
 
 instance OperandDataTypeFormable LLVM.Operand where
   toOpDataType (LLVM.LocalReference t _) = toOpDataType t
-  toOpDataType (LLVM.ConstantOperand c) = toOpDataType (toConstant c)
-  toOpDataType o = error $ "'toOpDataType' not implemented for " ++ show o
+  toOpDataType (LLVM.ConstantOperand c) =
+    do const_d <- toConstant c
+       toOpDataType const_d
+  toOpDataType o = Left $ "toOpDataType: not implemented for " ++ show o
 
 -- | Class for converting an LLVM operand into a corresponding return
 -- 'D.DataType'.
 class ReturnDataTypeFormable a where
-  toReturnDataType :: a -> D.DataType
+  toReturnDataType :: a -> Either String D.DataType
 
 instance ReturnDataTypeFormable LLVM.Type where
   toReturnDataType t@(LLVM.IntegerType {}) = toOpDataType t
   toReturnDataType (LLVM.PointerType t _) = toReturnDataType t
   toReturnDataType (LLVM.FunctionType t _ _) = toReturnDataType t
-  toReturnDataType LLVM.VoidType = D.VoidType
-  toReturnDataType t =
-    error $ "'toReturnDataType' not implemented for " ++ show t
+  toReturnDataType LLVM.VoidType = return D.VoidType
+  toReturnDataType t = Left $ "toReturnDataType: not implemented for " ++ show t
 
 instance ReturnDataTypeFormable LLVMC.Constant where
   toReturnDataType (LLVMC.GlobalReference t _) = toReturnDataType t
-  toReturnDataType t =
-    error $ "'toReturnDataType' not implemented for " ++ show t
+  toReturnDataType t = Left $ "toReturnDataType: not implemented for " ++ show t
 
 instance ReturnDataTypeFormable LLVM.Operand where
   toReturnDataType (LLVM.LocalReference t _) = toReturnDataType t
   toReturnDataType (LLVM.ConstantOperand o) = toReturnDataType o
-  toReturnDataType o =
-    error $ "'toReturnDataType' not implemented for " ++ show o
+  toReturnDataType o = Left $ "toReturnDataType: not implemented for " ++ show o
 
 instance ReturnDataTypeFormable LLVM.CallableOperand where
   toReturnDataType (Right o) = toReturnDataType o
-  toReturnDataType o =
-    error $ "'toReturnDataType' not implemented for " ++ show o
+  toReturnDataType o = Left $ "toReturnDataType: not implemented for " ++ show o
 
 -- | Class for converting an LLVM operand into a 'F.FunctionName'.
 class FunctionNameFormable a where
-  toFunctionName :: a -> F.FunctionName
+  toFunctionName :: a -> Either String F.FunctionName
 
 instance FunctionNameFormable LLVM.Name where
-  toFunctionName (LLVM.Name str) = F.toFunctionName str
-  toFunctionName n = error $ "'toFunctionName' not implemented for " ++ show n
+  toFunctionName (LLVM.Name str) = Right $ F.toFunctionName str
+  toFunctionName n = Left $ "toFunctionName: not implemented for " ++ show n
 
 instance FunctionNameFormable LLVMC.Constant where
   toFunctionName (LLVMC.GlobalReference _ n) = toFunctionName n
-  toFunctionName c = error $ "'toFunctionName' not implemented for " ++ show c
+  toFunctionName c = Left $ "toFunctionName: not implemented for " ++ show c
 
 instance FunctionNameFormable LLVM.Operand where
   toFunctionName (LLVM.LocalReference _ n) = toFunctionName n
   toFunctionName (LLVM.ConstantOperand c) = toFunctionName c
-  toFunctionName o = error $ "'toFunctionName' not implemented for " ++ show o
+  toFunctionName o = Left $ "toFunctionName: not implemented for " ++ show o
 
 instance FunctionNameFormable LLVM.CallableOperand where
   toFunctionName (Right o) = toFunctionName o
-  toFunctionName o = error $ "'toFunctionName' not implemented for " ++ show o
+  toFunctionName o = Left $ "toFunctionName: not implemented for " ++ show o
 
 instance FunctionNameFormable String where
-  toFunctionName str = F.toFunctionName str
+  toFunctionName str = Right $ F.toFunctionName str
 
 -- | Type class for helping a 'Builder' to traverse the AST. The idea is that
 -- 'build' will be invoked on the current AST element, and then the element will
@@ -302,11 +312,11 @@ class Buildable e where
       -- ^ The current build state.
     -> e
        -- ^ The AST element to be processed.
-    -> BuildState
-       -- ^ The new build state.
+    -> Either String BuildState
+       -- ^ An error message or the new build state.
 
 instance (Buildable e) => Buildable [e] where
-  build b st e = foldl (build b) st e
+  build b st e = foldM (build b) st e
 
 instance Buildable LLVM.Global where
   build b st e = (mkFromGlobal b) b st e
@@ -336,53 +346,53 @@ instance Buildable LLVM.Parameter where
 -------------------
 
 -- | Builds an 'OpStructure' from a function to be compiled. If the definition
--- is not a 'Function', an error is produced.
-mkFunctionOS :: LLVM.Global -> OS.OpStructure
+-- is not a 'Function', or any other error occurs, an error message is returned.
+mkFunctionOS :: LLVM.Global -> Either String OS.OpStructure
 mkFunctionOS f@(LLVM.Function {}) =
-  let st0 = mkInitBuildState
-      st1 = build mkFunctionDFGBuilder st0 f
-      st2 = build mkFunctionCFGBuilder st1 f
-      st3 = updateOSEntryBlockNode
+  do st0 <- mkInitBuildState
+     st1 <- build mkFunctionDFGBuilder st0 f
+     st2 <- build mkFunctionCFGBuilder st1 f
+     st3 <- updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
-      st4 = applyOSTransformations st3
-      st5 = addPendingBlockToDatumFlowEdges st4
-      st6 = addPendingBlockToDatumDefEdges st5
-      st7 = addPendingDatumToBlockDefEdges st6
-  in opStruct st7
-mkFunctionOS _ = error "mkFunctionOS: not a Function"
+     st4 <- applyOSTransformations st3
+     st5 <- addPendingBlockToDatumFlowEdges st4
+     st6 <- addPendingBlockToDatumDefEdges st5
+     st7 <- addPendingDatumToBlockDefEdges st6
+     return $ opStruct st7
+mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure' from an instruction pattern. If the definition is
--- not a 'Function', an error is produced.
-mkPatternOS :: LLVM.Global -> OS.OpStructure
+-- not a 'Function', or any other error occurs, an error message is returned.
+mkPatternOS :: LLVM.Global -> Either String OS.OpStructure
 mkPatternOS f@(LLVM.Function {}) =
-  let st0 = mkInitBuildState
-      st1 = build mkPatternDFGBuilder st0 f
-      st2 = build mkPatternCFGBuilder st1 f
-      st3 = updateOSEntryBlockNode
+  do st0 <- mkInitBuildState
+     st1 <- build mkPatternDFGBuilder st0 f
+     st2 <- build mkPatternCFGBuilder st1 f
+     st3 <- updateOSEntryBlockNode
               st2
               (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
-      st4 = applyOSTransformations st3
-      st5 = addPendingBlockToDatumDefEdges st4
-      st6 = addPendingDatumToBlockDefEdges st5
-      st7 = removeUnusedBlockNodes st6
-  in opStruct st7
-mkPatternOS _ = error "mkPattern: not a Function"
+     st4 <- applyOSTransformations st3
+     st5 <- addPendingBlockToDatumDefEdges st4
+     st6 <- addPendingDatumToBlockDefEdges st5
+     st7 <- removeUnusedBlockNodes st6
+     return $ opStruct st7
+mkPatternOS _ = Left "mkPattern: not a Function"
 
 -- | Creates an initial 'BuildState'.
-mkInitBuildState :: BuildState
+mkInitBuildState :: Either String BuildState
 mkInitBuildState =
-  BuildState { opStruct = OS.mkEmpty
-             , lastTouchedNode = Nothing
-             , lastTouchedStateNode = Nothing
-             , entryBlock = Nothing
-             , currentBlock = Nothing
-             , symMaps = []
-             , blockToDatumDataFlows = []
-             , blockToDatumDefs = []
-             , datumToBlockDefs = []
-             , funcInputValues = []
-             }
+  Right $ BuildState { opStruct = OS.mkEmpty
+                     , lastTouchedNode = Nothing
+                     , lastTouchedStateNode = Nothing
+                     , entryBlock = Nothing
+                     , currentBlock = Nothing
+                     , symMaps = []
+                     , blockToDatumDataFlows = []
+                     , blockToDatumDefs = []
+                     , datumToBlockDefs = []
+                     , funcInputValues = []
+                     }
 
 -- | Constructs a 'Builder' that will construct a function data-flow graph.
 mkFunctionDFGBuilder :: Builder
@@ -392,7 +402,7 @@ mkFunctionDFGBuilder =
           , mkFromNamed       = mkFunctionDFGFromNamed
           , mkFromInstruction = mkFunctionDFGFromInstruction
           , mkFromTerminator  =
-              \_ _ t -> error $ "mkFromTerminator: not implemented for "
+              \_ _ t -> Left $ "mkFromTerminator: not implemented for "
                                 ++ show t
           , mkFromOperand     = mkFunctionDFGFromOperand
           , mkFromParameter   = mkFunctionDFGFromParameter
@@ -408,8 +418,7 @@ mkFunctionCFGBuilder =
           , mkFromTerminator  = mkFunctionCFGFromTerminator
           , mkFromOperand     = mkFunctionCFGFromOperand
           , mkFromParameter   =
-              \_ _ p -> error $ "mkFromParameter: not implemented for "
-                                ++ show p
+              \_ _ p -> Left $ "mkFromParameter: not implemented for " ++ show p
           }
 
 -- | Constructs a 'Builder' that will construct a pattern data-flow graph.
@@ -422,13 +431,13 @@ mkPatternDFGBuilder =
           -- Let the default builder handle it, but remove the pending
           -- definition edge to the state node if this basic block has produced
           -- a state node in the graph.
-          let st1 = mkFunctionDFGFromBasicBlock b st0 bb
-          in if isJust (lastTouchedStateNode st1)
-             then let n = fromJust $ lastTouchedStateNode st1
-                      es = blockToDatumDefs st1
-                      pruned_es = filter ( \(_, n', _) ->  n /= n') es
-                  in st1 { blockToDatumDefs = pruned_es }
-             else st1
+          do st1 <- mkFunctionDFGFromBasicBlock b st0 bb
+             return $ if isJust (lastTouchedStateNode st1)
+                      then let n = fromJust $ lastTouchedStateNode st1
+                               es = blockToDatumDefs st1
+                               pruned_es = filter ( \(_, n', _) ->  n /= n') es
+                           in st1 { blockToDatumDefs = pruned_es }
+                      else st1
         newInstrMk b st i@(LLVM.Call {}) =
           let f_name = getFunctionName i
           in if isJust f_name
@@ -436,9 +445,12 @@ mkPatternDFGBuilder =
                   of "setreg"          -> mkPatternDFGFromSetregCall b st i
                      "param"           -> mkPatternDFGFromParamCall b st i
                      "call"            -> mkPatternDFGFromFunCall b st i
-                     "uncond-br"       -> st -- Will be processed in the CFG
-                     "cond-br-or-fall" -> st -- Will be processed in the CFG
-                     "return"          -> st -- Will be processed in the CFG
+                     "uncond-br"       -> return st
+                                          -- Will be processed in the CFG
+                     "cond-br-or-fall" -> return st
+                                          -- Will be processed in the CFG
+                     "return"          -> return st
+                                          -- Will be processed in the CFG
                      _ -> mkFunctionDFGFromInstruction b st i
                           -- Let the default builder handle it
              else mkFunctionDFGFromInstruction b st i
@@ -464,13 +476,13 @@ mkPatternCFGBuilder =
              else mkFunctionCFGFromInstruction b st i
                   -- Let the default builder handle it
         newInstrMk b st i = mkFunctionCFGFromInstruction b st i
-        newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = st
+        newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = return st
         newTermMk _ _ (LLVM.Ret { LLVM.returnOperand = Just _ }) =
-          error "mkPatternCFGBuilder: non-void returns not supported"
+          Left "mkPatternCFGBuilder: non-void returns not supported"
         newTermMk b st i@(LLVM.Br {}) = mkFunctionCFGFromTerminator b st i
         newTermMk b st i@(LLVM.CondBr {}) = mkFunctionCFGFromTerminator b st i
         newTermMk _ _ i =
-          error $ "mkPatternCFGBuilder: cannot handle terminator " ++ show i
+          Left $ "mkPatternCFGBuilder: cannot handle terminator: " ++ show i
 
 -- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
 -- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
@@ -500,275 +512,300 @@ mkPatternCFGFromReturnCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternCFGFromReturnCall
   _
   st0
   (LLVM.Call { LLVM.arguments = [(LLVM.LocalReference _ arg, _)] })
   =
-  let st1 = addNewNode st0 (G.ControlNode Op.Ret)
-      rn = fromJust $ lastTouchedNode st1
-      bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
-      vn = fromJust $ findValueNodeMappedToSym st0 $ toSymbol arg
-      st2 = addNewEdge st1 G.DataFlowEdge vn rn
-      st3 = addNewEdge st2 G.ControlFlowEdge bn rn
-  in st3
+  do st1 <- addNewNode st0 (G.ControlNode Op.Ret)
+     let rn = fromJust $ lastTouchedNode st1
+         bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
+     arg_sym <- toSymbol arg
+     let vn = fromJust $ findValueNodeMappedToSym st0 arg_sym
+     st2 <- addNewEdge st1 G.DataFlowEdge vn rn
+     st3 <- addNewEdge st2 G.ControlFlowEdge bn rn
+     return st3
 mkPatternCFGFromReturnCall _ _ i =
-  error $ "mkPatternCFGFromReturnCall: not implemented for " ++ show i
+  Left $ "mkPatternCFGFromReturnCall: not implemented for " ++ show i
 
 mkPatternCFGFromUncondBrCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternCFGFromUncondBrCall
   b
   st0
   i@(LLVM.Call { LLVM.arguments = [] })
   =
-  let label = "%" ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
-      st1 = mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
+  do let label = "%"
+                 ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+     st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
-      br_node = fromJust $ lastTouchedNode st1
-      st2 = ensureBlockNodeExists st1 $ F.toBlockName label
-      dst_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManyDests st2
+     let br_node = fromJust $ lastTouchedNode st1
+     st2 <- ensureBlockNodeExists st1 $ F.toBlockName label
+     let dst_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdgesManyDests st2
                                  G.ControlFlowEdge
                                  br_node
                                  [dst_node]
-  in st3
+     return st3
 mkPatternCFGFromUncondBrCall _ _ i =
-  error $ "mkPatternCFGFromUncondBrCall: not implemented for " ++ show i
+  Left $ "mkPatternCFGFromUncondBrCall: not implemented for " ++ show i
 
 mkPatternCFGFromCondBrOrFallCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternCFGFromCondBrOrFallCall
   b
   st0
   i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
   =
-  let t_label = "%" ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
-      st1 = mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
-      br_node = fromJust $ lastTouchedNode st1
-      st2 = ensureBlockNodeExists st1 $ F.toBlockName t_label
-      t_dst_node = fromJust $ lastTouchedNode st2
-      st3 = ensureBlockNodeExists st2 F.mkEmptyBlockName
-      f_dst_node = fromJust $ lastTouchedNode st3
-      st4 = addNewEdgesManyDests st3
+  do let t_label = "%"
+                   ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+     st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
+     let br_node = fromJust $ lastTouchedNode st1
+     st2 <- ensureBlockNodeExists st1 $ F.toBlockName t_label
+     let t_dst_node = fromJust $ lastTouchedNode st2
+     st3 <- ensureBlockNodeExists st2 F.mkEmptyBlockName
+     let f_dst_node = fromJust $ lastTouchedNode st3
+     st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge
                                  br_node
                                  [t_dst_node, f_dst_node]
-      st5 = addConstraints st4
+     st5 <- addConstraints st4
             $ C.mkFallThroughConstraints (G.getNodeID f_dst_node)
-  in st5
+     return st5
 mkPatternCFGFromCondBrOrFallCall _ _ i =
-  error $ "mkPatternCFGFromCondBrOrFallCall: not implemented for " ++ show i
+  Left $ "mkPatternCFGFromCondBrOrFallCall: not implemented for " ++ show i
 
 mkFunctionDFGFromGlobal
   :: Builder
   -> BuildState
   -> LLVM.Global
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromGlobal b st0 f@(LLVM.Function {}) =
-  let (params, _) = LLVM.parameters f
-      st1 = build b st0 params
-      st2 = build b st1 (LLVM.basicBlocks f)
-  in st2
+  do let (params, _) = LLVM.parameters f
+     st1 <- build b st0 params
+     st2 <- build b st1 (LLVM.basicBlocks f)
+     return st2
 mkFunctionDFGFromGlobal _ _ g =
-  error $ "mkFunctionDFGFromGlobal: not implemented for " ++ show g
+  Left $ "mkFunctionDFGFromGlobal: not implemented for " ++ show g
 
 mkFunctionDFGFromBasicBlock
   :: Builder
   -> BuildState
   -> LLVM.BasicBlock
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-  let block_name = F.BlockName str
-      st1 = if isNothing $ entryBlock st0
-            then foldl ( \st n
+  do let block_name = F.BlockName str
+     st1 <- if isNothing $ entryBlock st0
+            then foldM ( \st n
                            -> addPendingBlockToDatumFlow st (block_name, n)
                        )
                        (st0 { entryBlock = Just block_name })
                        (funcInputValues st0)
-            else st0
-      st2 = st1 { currentBlock = Just block_name }
-      st3 = st2 { lastTouchedStateNode = Nothing }
-      st4 = foldl (build b) st3 insts
-      st_n = lastTouchedStateNode st4
-      st5 = if isJust st_n
-            then addPendingBlockToDatumDef st4 (block_name, fromJust st_n, 0)
-            else st4
-  in st5
+            else return st0
+     let st2 = st1 { currentBlock = Just block_name
+                   , lastTouchedStateNode = Nothing
+                   }
+     st3 <- foldM (build b) st2 insts
+     let st_n = lastTouchedStateNode st3
+     st4 <- if isJust st_n
+            then addPendingBlockToDatumDef st3 (block_name, fromJust st_n, 0)
+            else return st3
+     return st4
 mkFunctionDFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-  error $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
+  Left $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
 
 mkFunctionDFGFromNamed
   :: Builder
   -> BuildState
   -> (LLVM.Named LLVM.Instruction)
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.IntToPtr op _ _)) =
   -- Assignments involving 'IntToPtr' expressions must be handled differently as
   -- 'IntToPtr' only touches the value node representing its input and does not
   -- produce any new value nodes, meaning the result of the assignment is not
   -- allowed to replace the origin of the input value node. Instead, an alias
   -- from the result to the input value node is created.
-  let st1 = build b st0 op
-      n = fromJust $ lastTouchedNode st1
-      sym = toSymbol name
-      st2 = addSymMap st1 (sym, n)
-  in st2
+  do st1 <- build b st0 op
+     let n = fromJust $ lastTouchedNode st1
+     sym <- toSymbol name
+     st2 <- addSymMap st1 (sym, n)
+     return st2
 mkFunctionDFGFromNamed b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
   -- Unnamed calls to functions that returns some value must not yield a result
   -- data node, meaning it must be removed after the call instruction has been
   -- processed.
-  let st1 = build b st0 expr
-  in if D.isVoidType (toReturnDataType $ LLVM.function expr)
-     then st1
-     else let g = getOSGraph st1
-              ret_n = fromJust $ lastTouchedNode st1
-              new_g = G.delNode ret_n g
-              st2 = updateOSGraph st1 new_g
-          in st2
+  do st1 <- build b st0 expr
+     ret_t <- toReturnDataType $ LLVM.function expr
+     if D.isVoidType ret_t
+     then return st1
+     else do let g = getOSGraph st1
+                 ret_n = fromJust $ lastTouchedNode st1
+                 new_g = G.delNode ret_n g
+             st2 <- updateOSGraph st1 new_g
+             return st2
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
-  let st1 = build b st0 expr
-      sym = toSymbol name
-      res_n = fromJust $ lastTouchedNode st1
-      res_dt = G.getDataTypeOfValueNode res_n
-      st2 = ensureValueNodeWithSymExists st1 sym res_dt
-      sym_n = fromJust $ lastTouchedNode st2
-      st3 = updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
-      st4 = st3 { blockToDatumDefs =
-                    map ( \(b', n, nr) ->
-                            if res_n == n then (b', sym_n, nr) else (b', n, nr)
-                        )
-                        (blockToDatumDefs st3)
-                }
-      st5 = st4 { datumToBlockDefs =
-                    map ( \(n, b', nr) ->
-                            if res_n == n then (sym_n, b', nr) else (n, b', nr)
-                        )
-                        (datumToBlockDefs st4)
-                }
-  in st5
+  do st1 <- build b st0 expr
+     sym <- toSymbol name
+     let res_n = fromJust $ lastTouchedNode st1
+         res_dt = G.getDataTypeOfValueNode res_n
+     st2 <- ensureValueNodeWithSymExists st1 sym res_dt
+     let sym_n = fromJust $ lastTouchedNode st2
+     st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
+     let st4 = st3 { blockToDatumDefs =
+                       map ( \(b', n, nr) -> if res_n == n
+                                             then (b', sym_n, nr)
+                                             else (b', n, nr)
+                           )
+                           (blockToDatumDefs st3)
+                   }
+         st5 = st4 { datumToBlockDefs =
+                       map ( \(n, b', nr) -> if res_n == n
+                                             then (sym_n, b', nr)
+                                             else (n, b', nr)
+                           )
+                           (datumToBlockDefs st4)
+                   }
+     return st5
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionDFGFromInstruction
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromInstruction b st (LLVM.Add _ _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.Add)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.Add)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FAdd _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.FloatOp Op.Add)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.FloatOp Op.Add)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Sub _ _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.Sub)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.Sub)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FSub _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.FloatOp Op.Sub)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.FloatOp Op.Sub)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Mul _ _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.Mul)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.Mul)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FMul _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.FloatOp Op.Mul)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.FloatOp Op.Mul)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.UDiv _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.UIntOp Op.Div)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.UIntOp Op.Div)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.SDiv _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.SIntOp Op.Div)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.SIntOp Op.Div)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FDiv _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.FloatOp Op.Div)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.FloatOp Op.Div)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.URem op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.UIntOp Op.Rem)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.UIntOp Op.Rem)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.SRem op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.SIntOp Op.Rem)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.SIntOp Op.Rem)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FRem _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.FloatOp Op.Rem)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.FloatOp Op.Rem)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Shl _ _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.Shl)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.Shl)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.LShr _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.LShr)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.LShr)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.AShr _ op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.AShr)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.AShr)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.And op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.And)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.And)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Or op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.Or)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.Or)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Xor op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (Op.CompArithOp $ Op.IntOp Op.XOr)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (Op.CompArithOp $ Op.IntOp Op.XOr)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
   mkFunctionDFGFromCompOp b
                           st
@@ -776,107 +813,112 @@ mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
                           (fromLlvmIPred p)
                           [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FCmp p op1 op2 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toTempDataType op1)
-                          (fromLlvmFPred p)
-                          [op1, op2]
+  do t_t <- toTempDataType op1
+     mkFunctionDFGFromCompOp b
+                             st
+                             t_t
+                             (fromLlvmFPred p)
+                             [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Trunc op1 t1 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toOpDataType t1)
-                          (Op.CompTypeConvOp Op.Trunc)
-                          [op1]
+  do op_t <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             op_t
+                             (Op.CompTypeConvOp Op.Trunc)
+                             [op1]
 mkFunctionDFGFromInstruction b st (LLVM.ZExt op1 t1 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toOpDataType t1)
-                          (Op.CompTypeConvOp Op.ZExt)
-                          [op1]
+  do op_t <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             op_t
+                             (Op.CompTypeConvOp Op.ZExt)
+                             [op1]
 mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
-  mkFunctionDFGFromCompOp b
-                          st
-                          (toOpDataType t1)
-                          (Op.CompTypeConvOp Op.SExt)
-                          [op1]
+  do op_t <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             op_t
+                             (Op.CompTypeConvOp Op.SExt)
+                             [op1]
 mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
-  let st1 = build b st0 op1
-      operand_node = fromJust $ lastTouchedNode st1
-      st2 = addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Load)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge st2 G.DataFlowEdge operand_node op_node
-      st4 = ensureStateNodeHasBeenTouched st3
-      st5 = addNewEdge st4
+  do st1 <- build b st0 op1
+     let operand_node = fromJust $ lastTouchedNode st1
+     st2 <- addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Load)
+     let op_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdge st2 G.DataFlowEdge operand_node op_node
+     st4 <- ensureStateNodeHasBeenTouched st3
+     st5 <- addNewEdge st4
                        G.StateFlowEdge
                        (fromJust $ lastTouchedStateNode st4)
                        op_node
-      st6 = addNewStateNode st5
-      st7 = addNewEdge st6
+     st6 <- addNewStateNode st5
+     st7 <- addNewEdge st6
                        G.StateFlowEdge
                        op_node
                        (fromJust $ lastTouchedStateNode st6)
-      -- Note that the result value node MUST be inserted last as the last
-      -- touched node in this case must be a value node and not a state node.
-      st8 = addNewNode st7 (G.ValueNode (toOpDataType op1) Nothing)
-      d_node = fromJust $ lastTouchedNode st8
-      st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
-  in st9
+     -- Note that the result value node MUST be inserted last as the last
+     -- touched node in this case must be a value node and not a state node.
+     op_t <- toOpDataType op1
+     st8 <- addNewNode st7 (G.ValueNode op_t Nothing)
+     let d_node = fromJust $ lastTouchedNode st8
+     st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
+     return st9
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
-  let sts = scanl (build b) st0 [addr_op, val_op]
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      st2 = addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Store)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-      st4 = ensureStateNodeHasBeenTouched st3
-      st5 = addNewEdge st4
+  do sts <- scanlM (build b) st0 [addr_op, val_op]
+     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     let st1 = last sts
+     st2 <- addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Store)
+     let op_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+     st4 <- ensureStateNodeHasBeenTouched st3
+     st5 <- addNewEdge st4
                        G.StateFlowEdge
                        (fromJust $ lastTouchedStateNode st4)
                        op_node
-      st6 = addNewStateNode st5
-      st7 = addNewEdge st6
+     st6 <- addNewStateNode st5
+     st7 <- addNewEdge st6
                        G.StateFlowEdge
                        op_node
                        (fromJust $ lastTouchedStateNode st6)
-  in st7
+     return st7
 mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
-  let sts = scanl (build b) st0 $ map fst args
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      func_name = toFunctionName f
-      st2 = addNewNode st1 (G.CallNode func_name)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-      st4 = ensureStateNodeHasBeenTouched st3
-      st5 = addNewEdge st4
+  do sts <- scanlM (build b) st0 $ map fst args
+     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     let st1 = last sts
+     func_name <- toFunctionName f
+     st2 <- addNewNode st1 (G.CallNode func_name)
+     let op_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+     st4 <- ensureStateNodeHasBeenTouched st3
+     st5 <- addNewEdge st4
                        G.StateFlowEdge
                        (fromJust $ lastTouchedStateNode st4)
                        op_node
-      st6 = addNewStateNode st5
-      st7 = addNewEdge st6
+     st6 <- addNewStateNode st5
+     st7 <- addNewEdge st6
                        G.StateFlowEdge
                        op_node
                        (fromJust $ lastTouchedStateNode st6)
-      -- Note that the result value node, if any, MUST be inserted last as the
-      -- last touched node in this case must be a value node and not a state
-      -- node.
-      ret_type = toReturnDataType f
-  in if D.isVoidType ret_type
-     then st7
-     else let st8 = addNewNode st7 (G.ValueNode ret_type Nothing)
-              d_node = fromJust $ lastTouchedNode st8
-              st9 = addNewEdge st8 G.DataFlowEdge op_node d_node
-          in st9
+     -- Note that the result value node, if any, MUST be inserted last as the
+     -- last touched node in this case must be a value node and not a state
+     -- node.
+     ret_type <- toReturnDataType f
+     if D.isVoidType ret_type
+     then return st7
+     else do st8 <- addNewNode st7 (G.ValueNode ret_type Nothing)
+             let d_node = fromJust $ lastTouchedNode st8
+             st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
+             return st9
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
-  let (operands, blocks) = unzip phi_operands
-      block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
-      operand_node_sts = scanl (build b) st0 operands
-      operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
-      st1 = last operand_node_sts
-      st2 = addNewNode st1 G.PhiNode
-      phi_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-      st4 = foldl ( \st (n, block_id) ->
+  do let (operands, blocks) = unzip phi_operands
+         block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
+     operand_node_sts <- scanlM (build b) st0 operands
+     let operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
+     let st1 = last operand_node_sts
+     st2 <- addNewNode st1 G.PhiNode
+     let phi_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
+     st4 <- foldM ( \st (n, block_id) ->
                     let g = getOSGraph st
                         dfe = head
                               $ filter G.isDataFlowEdge
@@ -886,19 +928,20 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                   )
                   st3
                   (zip operand_ns block_names)
-      st5 = addNewNode st4 (G.ValueNode (toOpDataType t) Nothing)
-      d_node = fromJust $ lastTouchedNode st5
-      st6 = addNewEdge st5 G.DataFlowEdge phi_node d_node
-      st7 = addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
+     op_t <- toOpDataType t
+     st5 <- addNewNode st4 (G.ValueNode op_t Nothing)
+     let d_node = fromJust $ lastTouchedNode st5
+     st6 <- addNewEdge st5 G.DataFlowEdge phi_node d_node
+     st7 <- addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
                                           , d_node
                                           , 0
                                           )
             -- Since we've just created the value node and only added a
             -- single data-flow edge to it, we are guaranteed that the in-edge
             -- number of that data-flow edge is 0.
-  in st7
+     return st7
 mkFunctionDFGFromInstruction _ _ i =
-  error $ "mkFunctionDFGFromInstruction: not implemented for " ++ show i
+  Left $ "mkFunctionDFGFromInstruction: not implemented for " ++ show i
 
 -- | Inserts a new computation node representing the operation along with edges
 -- to that computation node from the given operands (which will also be
@@ -914,48 +957,53 @@ mkFunctionDFGFromCompOp
      -- ^ The computational operation.
   -> [o]
      -- ^ The operands.
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromCompOp b st0 dt op operands =
-  let sts = scanl (build b) st0 operands
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      st2 = addNewNode st1 (G.ComputationNode op)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-      st4 = addNewNode st3 (G.ValueNode dt Nothing)
-      d_node = fromJust $ lastTouchedNode st4
-      st5 = addNewEdge st4 G.DataFlowEdge op_node d_node
-  in st5
+  do sts <- scanlM (build b) st0 operands
+     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     let st1 = last sts
+     st2 <- addNewNode st1 (G.ComputationNode op)
+     let op_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+     st4 <- addNewNode st3 (G.ValueNode dt Nothing)
+     let d_node = fromJust $ lastTouchedNode st4
+     st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
+     return st5
 
 mkFunctionDFGFromOperand
   :: Builder
   -> BuildState
   -> LLVM.Operand
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromOperand _ st (LLVM.LocalReference t name) =
-  ensureValueNodeWithSymExists st (toSymbol name) (toOpDataType t)
+  do sym <- toSymbol name
+     op_t <- toOpDataType t
+     ensureValueNodeWithSymExists st sym op_t
 mkFunctionDFGFromOperand _ st (LLVM.ConstantOperand c) =
-  addNewValueNodeWithConstant st (toConstant c)
+  do const_d <- toConstant c
+     addNewValueNodeWithConstant st const_d
 mkFunctionDFGFromOperand _ _ o =
-  error $ "mkFunctionDFGFromOperand: not implemented for " ++ show o
+  Left $ "mkFunctionDFGFromOperand: not implemented for " ++ show o
 
 mkFunctionDFGFromParameter
   :: Builder
   -> BuildState
   -> LLVM.Parameter
-  -> BuildState
+  -> Either String BuildState
 mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
-  let st1 = ensureValueNodeWithSymExists st0 (toSymbol name) (toOpDataType t)
-      n = fromJust $ lastTouchedNode st1
-      st2 = addFuncInputValue st1 n
-  in st2
+  do sym <- toSymbol name
+     op_t <- toOpDataType t
+     st1 <- ensureValueNodeWithSymExists st0 sym op_t
+     let n = fromJust $ lastTouchedNode st1
+     st2 <- addFuncInputValue st1 n
+     return st2
 
 -- | Merges the two nodes in the function call.
 mkPatternDFGFromSetregCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternDFGFromSetregCall
   _
   st0
@@ -965,46 +1013,50 @@ mkPatternDFGFromSetregCall
               }
   )
   =
-  let [n1, n2] = map ( \arg ->
-                         let sym = toSymbol arg
-                             maybe_n = findValueNodeMappedToSym st0 sym
-                         in if isJust maybe_n
-                            then fromJust maybe_n
-                            else error $ "mkPatternDFGFromSetregCall: no value "
-                                         ++ "node with symbol '" ++ show sym
-                                         ++ "'"
-                     )
-                     [arg1, arg2]
-      g0 = getOSGraph st0
-      g1 = G.mergeNodes n2 n1 g0
-      g2 = G.updateOriginOfValueNode (fromJust $ G.getOriginOfValueNode n1)
-                                     n2
-                                     g1
-      st1 = updateOSGraph st0 g2
-      st2 = st1 { blockToDatumDataFlows =
-                     map ( \(b', n) ->
-                           if n1 == n then (b', n2) else (b', n)
-                         )
-                         (blockToDatumDataFlows st1)
-                }
-      st3 = st2 { blockToDatumDefs =
-                     map ( \(b', n, nr) ->
-                           if n1 == n then (b', n2, nr) else (b', n, nr)
-                         )
-                         (blockToDatumDefs st2)
-                }
-      st4 = st3 { datumToBlockDefs =
-                     map ( \(n, b', nr) ->
-                           if n1 == n then (n2, b', nr) else (n, b', nr)
-                         )
-                         (datumToBlockDefs st3)
-                }
-  in st4
+  do [n1, n2] <- mapM ( \arg ->
+                        do sym <- toSymbol arg
+                           let maybe_n = findValueNodeMappedToSym st0 sym
+                           if isJust maybe_n
+                           then return $ fromJust maybe_n
+                           else Left $ "mkPatternDFGFromSetregCall: "
+                                       ++ "no value node with symbol "
+                                       ++ "'" ++ show sym ++ "'"
+                    )
+                    [arg1, arg2]
+     let g0 = getOSGraph st0
+     g1 <- if length (G.getPredecessors g0 n1) == 0
+           then Right $ G.mergeNodes n2 n1 g0
+           else Left $ "mkPatternDFGFromSetregCall: destination node with "
+                        ++ "symbol '" ++ show arg1 ++ "' is not allowed to "
+                        ++ "have any predecessors"
+     let g2 = G.updateOriginOfValueNode (fromJust $ G.getOriginOfValueNode n1)
+                                        n2
+                                        g1
+     st1 <- updateOSGraph st0 g2
+     let st2 = st1 { blockToDatumDataFlows =
+                       map ( \(b', n) ->
+                             if n1 == n then (b', n2) else (b', n)
+                           )
+                           (blockToDatumDataFlows st1)
+                   }
+         st3 = st2 { blockToDatumDefs =
+                        map ( \(b', n, nr) ->
+                              if n1 == n then (b', n2, nr) else (b', n, nr)
+                            )
+                            (blockToDatumDefs st2)
+                   }
+         st4 = st3 { datumToBlockDefs =
+                        map ( \(n, b', nr) ->
+                              if n1 == n then (n2, b', nr) else (n, b', nr)
+                            )
+                            (datumToBlockDefs st3)
+                   }
+     return st4
 mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =
-  error $ "mkPatternDFGFromSetregCall: unexpected number or type of function "
+  Left $ "mkPatternDFGFromSetregCall: unexpected number or type of function "
           ++ "arguments in " ++ show i
 mkPatternDFGFromSetregCall _ _ i =
-  error $ "mkPatternDFGFromSetregCall: not implemented for " ++ show i
+  Left $ "mkPatternDFGFromSetregCall: not implemented for " ++ show i
 
 -- | Adds a new unnamed node with the same data type as the return type of the
 -- function call.
@@ -1012,16 +1064,16 @@ mkPatternDFGFromParamCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternDFGFromParamCall _ st i@(LLVM.Call {}) =
-  let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
-        fromRight $ LLVM.function i
-      (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
-      (LLVM.FunctionType { LLVM.resultType = rt }) = pt
-      dt = toOpDataType rt
-  in addNewNode st (G.ValueNode dt Nothing)
+  do let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
+           fromRight $ LLVM.function i
+         (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
+         (LLVM.FunctionType { LLVM.resultType = rt }) = pt
+     dt <- toOpDataType rt
+     addNewNode st (G.ValueNode dt Nothing)
 mkPatternDFGFromParamCall _ _ i =
-  error $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
+  Left $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
 
 -- | Adds a call node, where the data types of all input and output values is
 -- 'D.AnyType'.
@@ -1029,30 +1081,30 @@ mkPatternDFGFromFunCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
+  -> Either String BuildState
 mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
-  let st1 = mkFunctionDFGFromInstruction b st0 i
-      maybe_ret_n = lastTouchedNode st1
-      -- The call node will have the wrong name as the true name of the call is
-      -- embedded into the function name, so we need to fix that.
-      old_f_name = toFunctionName $ LLVM.function i
-      new_f_name = toFunctionName
+  do st1 <- mkFunctionDFGFromInstruction b st0 i
+     let maybe_ret_n = lastTouchedNode st1
+     -- The call node will have the wrong name as the true name of the call is
+     -- embedded into the function name, so we need to fix that.
+     old_f_name <- toFunctionName $ LLVM.function i
+     new_f_name <- toFunctionName
                    $ "%" ++ ( extractFunctionLabelPart
                               $ fromJust $ getFunctionName i
                             )
-      g = getOSGraph st1
-      call_n = head $ G.findCallNodesWithName g old_f_name
-      st2 = updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
-      -- If a local reference argument to the call does not have any ingoing
-      -- data-flow edges, then its data type is irrelevant and must be set to
-      -- 'D.AnyType'.
-      isRefArg (LLVM.LocalReference {}) = True
-      isRefArg _ = False
-      local_ref_args = filter isRefArg
-                       $ map fst
-                       $ LLVM.arguments i
-      arg_syms = map (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
-      st3 = foldl
+     let g = getOSGraph st1
+         call_n = head $ G.findCallNodesWithName g old_f_name
+     st2 <- updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
+     -- If a local reference argument to the call does not have any ingoing
+     -- data-flow edges, then its data type is irrelevant and must be set to
+     -- 'D.AnyType'.
+     let isRefArg (LLVM.LocalReference {}) = True
+         isRefArg _ = False
+         local_ref_args = filter isRefArg
+                          $ map fst
+                          $ LLVM.arguments i
+     arg_syms <- mapM (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
+     st3 <- foldM
               ( \st sym ->
                   let g0 = getOSGraph st
                       n = fromJust $ findValueNodeMappedToSym st sym
@@ -1060,68 +1112,73 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
                   in if length es == 0
                      then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
                           in updateOSGraph st g1
-                     else st
+                     else return st
               )
               st2
               arg_syms
-      -- If the function returns any data, then the data type of its value node
-      -- is irrelevant and must be set to 'D.AnyType'. This also requires the
-      -- last touched node to be updated.
-      st4 = if not $ D.isVoidType (toReturnDataType $ LLVM.function i)
+     -- If the function returns any data, then the data type of its value node
+     -- is irrelevant and must be set to 'D.AnyType'. This also requires the
+     -- last touched node to be updated.
+     ret_t <- toReturnDataType $ LLVM.function i
+     st4 <- if not $ D.isVoidType ret_t
             then let ret_n = fromJust maybe_ret_n
                      old_g = getOSGraph st3
                      new_g = G.updateDataTypeOfValueNode D.AnyType ret_n old_g
                      new_n = head
                              $ G.findNodesWithNodeID new_g (G.getNodeID ret_n)
-                     new_st0 = updateOSGraph st3 new_g
-                     new_st1 = new_st0 { lastTouchedNode = Just new_n }
-                 in new_st1
-            else st3
-  in st4
-mkPatternDFGFromFunCall _ _ i =
-  error $ "mkPatternDFGFromFunCall: not implemented for " ++ show i
 
-mkFunctionCFGFromGlobal :: Builder -> BuildState -> LLVM.Global -> BuildState
+                 in do new_st0 <- updateOSGraph st3 new_g
+                       let new_st1 = new_st0 { lastTouchedNode = Just new_n }
+                       return new_st1
+            else return st3
+     return st4
+mkPatternDFGFromFunCall _ _ i =
+  Left $ "mkPatternDFGFromFunCall: not implemented for " ++ show i
+
+mkFunctionCFGFromGlobal :: Builder
+                        -> BuildState
+                        -> LLVM.Global
+                        -> Either String BuildState
 mkFunctionCFGFromGlobal b st f@(LLVM.Function {}) =
   build b st (LLVM.basicBlocks f)
 mkFunctionCFGFromGlobal _ _ g =
-  error $ "mkFunctionCFGFromGlobal: not implemented for " ++ show g
+  Left $ "mkFunctionCFGFromGlobal: not implemented for " ++ show g
 
 mkFunctionCFGFromBasicBlock
   :: Builder
   -> BuildState
   -> LLVM.BasicBlock
-  -> BuildState
+  -> Either String BuildState
 mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
                                                     insts
                                                     named_term_inst
                                   ) =
-  let block_name = F.BlockName str
-      term_inst = fromNamed named_term_inst
-      st1 = if isNothing $ entryBlock st0
-            then st1 { entryBlock = Just block_name }
-            else st0
-      st2 = ensureBlockNodeExists st1 block_name
-      st3 = st2 { currentBlock = Just block_name }
-      st4 = foldl (build b) st3 insts
-      st5 = build b st4 term_inst
-    in st5
+  do let block_name = F.BlockName str
+         term_inst = fromNamed named_term_inst
+     let st1 = if isNothing $ entryBlock st0
+               then st0 { entryBlock = Just block_name }
+               else st0
+     st2 <- ensureBlockNodeExists st1 block_name
+     let st3 = st2 { currentBlock = Just block_name }
+     st4 <- foldM (build b) st3 insts
+     st5 <- build b st4 term_inst
+     return st5
 mkFunctionCFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-  error $ "mkFunctionCFGFromBasicBlock: does not support unnamed basic blocks"
+  Left $ "mkFunctionCFGFromBasicBlock: does not support unnamed basic blocks"
 
 mkFunctionCFGFromInstruction
   :: Builder
   -> BuildState
   -> LLVM.Instruction
-  -> BuildState
-mkFunctionCFGFromInstruction _ st _ = st
+  -> Either String BuildState
+mkFunctionCFGFromInstruction _ st _ = return st
 
 mkFunctionCFGFromNamed
   :: (Buildable n)
   => Builder
   -> BuildState
   -> (LLVM.Named n)
-  -> BuildState
+  -> Either String BuildState
 mkFunctionCFGFromNamed b st (_ LLVM.:= expr) = build b st expr
 mkFunctionCFGFromNamed b st (LLVM.Do expr) = build b st expr
 
@@ -1129,35 +1186,35 @@ mkFunctionCFGFromTerminator
   :: Builder
   -> BuildState
   -> LLVM.Terminator
-  -> BuildState
+  -> Either String BuildState
 mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
     mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
 mkFunctionCFGFromTerminator b st0 (LLVM.Br (LLVM.Name dst) _) =
-  let st1 = mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
+  do st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
-      br_node = fromJust $ lastTouchedNode st1
-      st2 = ensureBlockNodeExists st1 (F.BlockName dst)
-      dst_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge st2 G.ControlFlowEdge br_node dst_node
-  in st3
+     let br_node = fromJust $ lastTouchedNode st1
+     st2 <- ensureBlockNodeExists st1 (F.BlockName dst)
+     let dst_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdge st2 G.ControlFlowEdge br_node dst_node
+     return st3
 mkFunctionCFGFromTerminator b st0 ( LLVM.CondBr op
                                                 (LLVM.Name t_dst)
                                                 (LLVM.Name f_dst)
                                                 _
                                   ) =
-  let st1 = mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
-      br_node = fromJust $ lastTouchedNode st1
-      st2 = ensureBlockNodeExists st1 (F.BlockName t_dst)
-      t_dst_node = fromJust $ lastTouchedNode st2
-      st3 = ensureBlockNodeExists st2 (F.BlockName f_dst)
-      f_dst_node = fromJust $ lastTouchedNode st3
-      st4 = addNewEdgesManyDests st3
+  do st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
+     let br_node = fromJust $ lastTouchedNode st1
+     st2 <- ensureBlockNodeExists st1 (F.BlockName t_dst)
+     let t_dst_node = fromJust $ lastTouchedNode st2
+     st3 <- ensureBlockNodeExists st2 (F.BlockName f_dst)
+     let f_dst_node = fromJust $ lastTouchedNode st3
+     st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge
                                  br_node
                                  [t_dst_node, f_dst_node]
-  in st4
+     return st4
 mkFunctionCFGFromTerminator _ _ t =
-  error $ "mkFunctionCFGFromTerminator: not implemented for " ++ show t
+  Left $ "mkFunctionCFGFromTerminator: not implemented for " ++ show t
 
 -- | Inserts a new node representing a control operation, and adds edges to that
 -- node from the current block node and operands (which will also be processed).
@@ -1169,30 +1226,36 @@ mkFunctionCFGFromControlOp
      -- ^ The control operations.
   -> [o]
      -- ^ The operands.
-  -> BuildState
+  -> Either String BuildState
 mkFunctionCFGFromControlOp b st0 op operands =
-  let sts = scanl (build b) st0 operands
-      operand_ns = map (fromJust . lastTouchedNode) (tail sts)
-      st1 = last sts
-      st2 = addNewNode st1 (G.ControlNode op)
-      op_node = fromJust $ lastTouchedNode st2
-      st3 = addNewEdge st2
+  do sts <- scanlM (build b) st0 operands
+     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     let st1 = last sts
+     st2 <- addNewNode st1 (G.ControlNode op)
+     let op_node = fromJust $ lastTouchedNode st2
+     st3 <- addNewEdge st2
                        G.ControlFlowEdge
                        ( fromJust $
                            findBlockNodeWithID st2
                                                (fromJust $ currentBlock st2)
                        )
-              op_node
-      st4 = addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
-  in st4
+                       op_node
+     st4 <- addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
+     return st4
 
-mkFunctionCFGFromOperand :: Builder -> BuildState -> LLVM.Operand -> BuildState
+mkFunctionCFGFromOperand :: Builder
+                         -> BuildState
+                         -> LLVM.Operand
+                         -> Either String BuildState
 mkFunctionCFGFromOperand _ st (LLVM.LocalReference t name) =
-  ensureValueNodeWithSymExists st (toSymbol name) (toOpDataType t)
+  do sym <- toSymbol name
+     op_t <- toOpDataType t
+     ensureValueNodeWithSymExists st sym op_t
 mkFunctionCFGFromOperand _ st (LLVM.ConstantOperand c) =
-  addNewValueNodeWithConstant st (toConstant c)
+  do const_d <- toConstant c
+     addNewValueNodeWithConstant st const_d
 mkFunctionCFGFromOperand _ _ o =
-  error $ "mkFunctionCFGFromOperand: not implemented for " ++ show o
+  Left $ "mkFunctionCFGFromOperand: not implemented for " ++ show o
 
 
 
@@ -1203,77 +1266,88 @@ mkFunctionCFGFromOperand _ _ o =
 -- | Converts a 'SymbolFormable' entity into a string. This is typically used
 -- when referring to nodes whose name or origin is based on an LLVM entity (such
 -- as a temporary or a variable).
-toSymbolString :: (SymbolFormable s) => s -> String
-toSymbolString = pShow . toSymbol
+toSymbolString
+  :: (SymbolFormable s)
+  => s
+  -> Either String String
+     -- ^ An error message ('Left') or the resulting string ('Right').
+toSymbolString s =
+  do sym <- toSymbol s
+     return $ pShow sym
 
 -- | Converts an argument into a temporary-oriented data type.
-toTempDataType :: (OperandDataTypeFormable t) => t -> D.DataType
+toTempDataType
+  :: (OperandDataTypeFormable t)
+  => t
+  -> Either String D.DataType
+     -- ^ An error message or the resulting data type.
 toTempDataType a =
-  conv $ toOpDataType a
-  where conv d@(D.IntTempType {}) = d
+  do op_t <- toOpDataType a
+     conv op_t
+  where conv d@(D.IntTempType {}) = Right d
         conv (D.IntConstType { D.intConstNumBits = Just b }) =
-          D.IntTempType { D.intTempNumBits = b }
-        conv d = error $ "toTempDataType: unexpected data type " ++ show d
+          Right $ D.IntTempType { D.intTempNumBits = b }
+        conv d = Left $ "toTempDataType: unexpected data type " ++ show d
 
 -- | Gets the OS graph contained by the operation structure in a given state.
 getOSGraph :: BuildState -> G.Graph
 getOSGraph = OS.osGraph . opStruct
 
 -- | Updates the OS graph contained by the operation structure in a given state.
-updateOSGraph :: BuildState -> G.Graph -> BuildState
+updateOSGraph :: BuildState -> G.Graph -> Either String BuildState
 updateOSGraph st g =
   let os = opStruct st
-  in st { opStruct = os { OS.osGraph = g } }
+  in return $ st { opStruct = os { OS.osGraph = g } }
 
 -- | Updates the OS entry block node contained by the operation structure in a
 -- given state.
-updateOSEntryBlockNode :: BuildState -> G.Node -> BuildState
+updateOSEntryBlockNode :: BuildState -> G.Node -> Either String BuildState
 updateOSEntryBlockNode st n =
-  let os = opStruct st
-  in st { opStruct = os { OS.osEntryBlockNode = Just (G.getNodeID n) } }
+  let nid = G.getNodeID n
+      os = opStruct st
+  in return $ st { opStruct = os { OS.osEntryBlockNode = Just nid } }
 
 -- | Updates the last touched node information.
-touchNode :: BuildState -> G.Node -> BuildState
-touchNode st n = st { lastTouchedNode = Just n }
+touchNode :: BuildState -> G.Node -> Either String BuildState
+touchNode st n = return $ st { lastTouchedNode = Just n }
 
 -- | Adds a new node into a given state. This also updates the last touched node
 -- setting.
-addNewNode :: BuildState -> G.NodeType -> BuildState
+addNewNode :: BuildState -> G.NodeType -> Either String BuildState
 addNewNode st0 nt =
-  let (new_g, new_n) = G.addNewNode nt (getOSGraph st0)
-      st1 = updateOSGraph st0 new_g
-      st2 = touchNode st1 new_n
-  in st2
+  do let (new_g, new_n) = G.addNewNode nt (getOSGraph st0)
+     st1 <- updateOSGraph st0 new_g
+     st2 <- touchNode st1 new_n
+     return st2
 
 -- | Adds a new state node into a given state. This also updates the last
 -- touched node and last touched state node setting.
-addNewStateNode :: BuildState -> BuildState
+addNewStateNode :: BuildState -> Either String BuildState
 addNewStateNode st0 =
-  let st1 = addNewNode st0 G.StateNode
-      st2 = st1 { lastTouchedStateNode = lastTouchedNode st1 }
-  in st2
+  do st1 <- addNewNode st0 G.StateNode
+     let st2 = st1 { lastTouchedStateNode = lastTouchedNode st1 }
+     return st2
 
 -- | Adds a list of constraints to the 'OpStructure' in the given 'BuildState'.
-addConstraints :: BuildState -> [C.Constraint] -> BuildState
+addConstraints :: BuildState -> [C.Constraint] -> Either String BuildState
 addConstraints st cs =
   let os = opStruct st
       new_os = OS.addConstraints os cs
-  in st { opStruct = new_os }
+  in return $ st { opStruct = new_os }
 
 mkVarNameForConst :: Constant -> String
 mkVarNameForConst c = "%const." ++ (pShow c)
 
 -- | Adds a new value node representing a particular constant to a given state.
-addNewValueNodeWithConstant :: BuildState -> Constant -> BuildState
+addNewValueNodeWithConstant :: BuildState
+                            -> Constant
+                            -> Either String BuildState
 addNewValueNodeWithConstant st0 c =
-  let st1 = addNewNode st0 ( G.ValueNode (toOpDataType c)
-                                         (Just $ mkVarNameForConst c)
-                           )
-      new_n = fromJust $ lastTouchedNode st1
-      st2 = addPendingBlockToDatumFlow st1 ( fromJust $ entryBlock st1
-                                               , new_n
-                                               )
-  in st2
+  do op_t <- toOpDataType c
+     st1 <- addNewNode st0 $ G.ValueNode op_t (Just $ mkVarNameForConst c)
+     let new_n = fromJust $ lastTouchedNode st1
+     st2 <- addPendingBlockToDatumFlow st1 (fromJust $ entryBlock st1, new_n)
+     return st2
 
 -- | Adds a new edge into a given state.
 addNewEdge
@@ -1284,8 +1358,8 @@ addNewEdge
      -- ^ The source node.
   -> G.Node
      -- ^ The destination node.
-  -> BuildState
-     -- ^ The new state.
+  -> Either String BuildState
+     -- ^ An error message or the new state.
 addNewEdge st et src dst =
   let (new_g, _) = G.addNewEdge et (src, dst) (getOSGraph st)
   in updateOSGraph st new_g
@@ -1299,8 +1373,8 @@ addNewEdgesManySources
      -- ^ The source nodes.
   -> G.Node
      -- ^ The destination node.
-  -> BuildState
-     -- ^ The new state.
+  -> Either String BuildState
+     -- ^ An error message or the new state.
 addNewEdgesManySources st et srcs dst =
   let es = zip srcs (repeat dst)
       f g e = fst $ G.addNewEdge et e g
@@ -1315,39 +1389,44 @@ addNewEdgesManyDests
      -- ^ The source node.
   -> [G.Node]
      -- ^ The destination nodes.
-  -> BuildState
-     -- ^ The new state.
+  -> Either String BuildState
+     -- ^ An error message or the new state.
 addNewEdgesManyDests st et src dsts =
-  let es = zip (repeat src) dsts
-      f g e = fst $ G.addNewEdge et e g
-  in updateOSGraph st $ foldl f (getOSGraph st) es
+  do let es = zip (repeat src) dsts
+         f g' e = fst $ G.addNewEdge et e g'
+         g = foldl f (getOSGraph st) es
+     updateOSGraph st g
 
 -- | Adds a new symbol-to-node mapping to a given state.
-addSymMap :: BuildState -> SymToValueNodeMapping -> BuildState
-addSymMap st sm = st { symMaps = sm:(symMaps st) }
+addSymMap :: BuildState -> SymToValueNodeMapping -> Either String BuildState
+addSymMap st sm = return $ st { symMaps = sm:(symMaps st) }
 
 -- | Adds block-to-datum flow to a given state.
 addPendingBlockToDatumFlow
   :: BuildState
   -> PendingBlockToDatumFlow
-  -> BuildState
+  -> Either String BuildState
 addPendingBlockToDatumFlow st flow =
-  st { blockToDatumDataFlows = flow:(blockToDatumDataFlows st) }
+  return $ st { blockToDatumDataFlows = flow:(blockToDatumDataFlows st) }
 
 -- | Adds block-to-datum definition to a given state.
-addPendingBlockToDatumDef :: BuildState -> PendingBlockToDatumDef -> BuildState
+addPendingBlockToDatumDef :: BuildState
+                          -> PendingBlockToDatumDef
+                          -> Either String BuildState
 addPendingBlockToDatumDef st def =
-  st { blockToDatumDefs = def:(blockToDatumDefs st) }
+  return $ st { blockToDatumDefs = def:(blockToDatumDefs st) }
 
 -- | Adds datum-to-block definition to a given state.
-addPendingDatumToBlockDef :: BuildState -> PendingDatumToBlockDef -> BuildState
+addPendingDatumToBlockDef :: BuildState
+                          -> PendingDatumToBlockDef
+                          -> Either String BuildState
 addPendingDatumToBlockDef st def =
-  st { datumToBlockDefs = def:(datumToBlockDefs st) }
+  return $ st { datumToBlockDefs = def:(datumToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
-addFuncInputValue :: BuildState -> G.Node -> BuildState
+addFuncInputValue :: BuildState -> G.Node -> Either String BuildState
 addFuncInputValue st n =
-  st { funcInputValues = n:(funcInputValues st) }
+  return $ st { funcInputValues = n:(funcInputValues st) }
 
 -- | Finds the node ID (if any) of the value node to which a symbol is mapped.
 findValueNodeMappedToSym :: BuildState -> Symbol -> Maybe G.Node
@@ -1373,20 +1452,20 @@ ensureValueNodeWithSymExists
   -> Symbol
   -> D.DataType
      -- ^ Data type to use upon creation if such a value node does not exist.
-  -> BuildState
+  -> Either String BuildState
 ensureValueNodeWithSymExists st0 sym dt =
   let n = findValueNodeMappedToSym st0 sym
   in if isJust n
      then touchNode st0 (fromJust n)
-     else let st1 = addNewNode st0 (G.ValueNode dt (Just $ pShow sym))
-              new_n = fromJust $ lastTouchedNode st1
-              st2 = addSymMap st1 (sym, new_n)
-          in st2
+     else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ pShow sym))
+             let new_n = fromJust $ lastTouchedNode st1
+             st2 <- addSymMap st1 (sym, new_n)
+             return st2
 
 -- | Checks that a block node with a particular name exists in the graph of the
 -- given state. If it does then the last touched node is updated accordingly,
 -- otherwise then a new block node is added.
-ensureBlockNodeExists :: BuildState -> F.BlockName -> BuildState
+ensureBlockNodeExists :: BuildState -> F.BlockName -> Either String BuildState
 ensureBlockNodeExists st l =
   let block_node = findBlockNodeWithID st l
   in if isJust block_node
@@ -1397,16 +1476,16 @@ ensureBlockNodeExists st l =
 -- added and set as touched. Also, if this is a function graph, a pending
 -- block-to-datum data-flow edge is added from the current block to the new
 -- state node.
-ensureStateNodeHasBeenTouched :: BuildState -> BuildState
+ensureStateNodeHasBeenTouched :: BuildState -> Either String BuildState
 ensureStateNodeHasBeenTouched st0 =
   if isJust (lastTouchedStateNode st0)
-  then st0
-  else let st1 = addNewStateNode st0
-           n = fromJust $ lastTouchedStateNode st1
-           st2 = addPendingBlockToDatumFlow st1 (fromJust $ currentBlock st1, n)
+  then return st0
+  else do st1 <- addNewStateNode st0
+          let n = fromJust $ lastTouchedStateNode st1
+          st2 <- addPendingBlockToDatumFlow st1 (fromJust $ currentBlock st1, n)
            -- Note that, if this is a pattern, then the flow above will not be
            -- inserted as all 'PendingBlockToDatumFlow' entities are ignored.
-       in st2
+          return st2
 
 -- | Converts an LLVM integer comparison op into an equivalent op of our own
 -- data type.
@@ -1443,7 +1522,7 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 
 -- | Adds the pending data or state flow edges from block nodes to data or state
 -- nodes, as described in the given build state.
-addPendingBlockToDatumFlowEdges :: BuildState -> BuildState
+addPendingBlockToDatumFlowEdges :: BuildState -> Either String BuildState
 addPendingBlockToDatumFlowEdges st =
   let g0 = getOSGraph st
       deps = map ( \(l, n) ->
@@ -1451,9 +1530,8 @@ addPendingBlockToDatumFlowEdges st =
                    then (l, n, G.DataFlowEdge)
                    else if G.isStateNode n
                         then (l, n, G.StateFlowEdge)
-                        else error ( "addPendingBlockToDatumFlowEdges: "
+                        else error $ "addPendingBlockToDatumFlowEdges: "
                                      ++ "This should never happen"
-                                   )
                  )
                  (blockToDatumDataFlows st)
       g1 =
@@ -1467,7 +1545,7 @@ addPendingBlockToDatumFlowEdges st =
 
 -- | Adds the pending block-to-datum definition edges, as described in the
 -- given build state.
-addPendingBlockToDatumDefEdges :: BuildState -> BuildState
+addPendingBlockToDatumDefEdges :: BuildState -> Either String BuildState
 addPendingBlockToDatumDefEdges st =
   let g0 = getOSGraph st
       defs = blockToDatumDefs st
@@ -1484,7 +1562,7 @@ addPendingBlockToDatumDefEdges st =
 
 -- | Adds the pending datum-to-block definition edges, as described in the
 -- given build state.
-addPendingDatumToBlockDefEdges :: BuildState -> BuildState
+addPendingDatumToBlockDefEdges :: BuildState -> Either String BuildState
 addPendingDatumToBlockDefEdges st =
   let g0 = getOSGraph st
       defs = datumToBlockDefs st
@@ -1506,7 +1584,7 @@ fromNamed (LLVM.Do i) = i
 
 -- | Applies various transformations on the 'OpStructure', such as
 -- canonicalizing copy operations.
-applyOSTransformations :: BuildState -> BuildState
+applyOSTransformations :: BuildState -> Either String BuildState
 applyOSTransformations st =
   let os0 = opStruct st
       b2ddfs0 = blockToDatumDataFlows st
@@ -1514,22 +1592,23 @@ applyOSTransformations st =
       -- Canonicalizing copies will remove value nodes with constants, which
       -- must then be removed from the book keeping held within the build state.
       b2ddfs1 = filter (\(_, n) -> G.isNodeInGraph (OS.osGraph os1) n) b2ddfs0
-  in st { opStruct = os1
-        , blockToDatumDataFlows = b2ddfs1
-        }
+  in return $ st { opStruct = os1
+                 , blockToDatumDataFlows = b2ddfs1
+                 }
 
 -- | Removes all block nodes from a 'BuildState' which have no edges.
-removeUnusedBlockNodes :: BuildState -> BuildState
+removeUnusedBlockNodes :: BuildState -> Either String BuildState
 removeUnusedBlockNodes st =
-  let g = getOSGraph st
-      ns = filter G.isBlockNode $ G.getAllNodes g
-      unused = filter (\n -> length (G.getNeighbors g n) == 0) ns
-      new_g = foldr G.delNode g unused
-      new_st = updateOSGraph st new_g
-      entry_block = findBlockNodeWithID new_st (fromJust $ entryBlock st)
-  in if isJust entry_block
-     then new_st
-     else let new_os = opStruct new_st
-          in new_st { opStruct = new_os { OS.osEntryBlockNode = Nothing }
-                    , entryBlock = Nothing
-                    }
+  do let g = getOSGraph st
+         ns = filter G.isBlockNode $ G.getAllNodes g
+         unused = filter (\n -> length (G.getNeighbors g n) == 0) ns
+         new_g = foldr G.delNode g unused
+     new_st <- updateOSGraph st new_g
+     let entry_block = findBlockNodeWithID new_st (fromJust $ entryBlock st)
+     return $ if isJust entry_block
+              then new_st
+              else let new_os = opStruct new_st
+                   in new_st { opStruct =
+                                 new_os { OS.osEntryBlockNode = Nothing }
+                             , entryBlock = Nothing
+                             }

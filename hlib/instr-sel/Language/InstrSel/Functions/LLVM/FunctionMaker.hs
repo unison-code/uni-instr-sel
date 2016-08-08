@@ -33,34 +33,44 @@ import Data.Maybe
 -------------
 
 -- | Builds a list of functions from an LLVM module. If the module does not
--- contain any globally defined functions, an empty list is returned.
-mkFunctionsFromLlvmModule :: LLVM.Module -> [F.Function]
+-- contain any globally defined functions, an empty list is returned. If any of
+-- the functions produce an error, only the first encountered error is returned.
+mkFunctionsFromLlvmModule
+  :: LLVM.Module
+  -> Either String [F.Function]
+     -- ^ An error message or the built functions.
 mkFunctionsFromLlvmModule m =
-  mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
+  sequence
+  $ mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
 
 -- | Builds a function from an LLVM AST definition. If the definition is not a
 -- 'GlobalDefinition', 'Nothing' is returned.
-mkFunctionFromGlobalDef :: LLVM.Module -> LLVM.Definition -> Maybe F.Function
+mkFunctionFromGlobalDef
+  :: LLVM.Module
+  -> LLVM.Definition
+  -> Maybe (Either String F.Function)
 mkFunctionFromGlobalDef m (LLVM.GlobalDefinition g) = mkFunction m g
 mkFunctionFromGlobalDef _ _ = Nothing
 
--- | Builds a function from a global LLVM AST definition. If the definition is
--- not a 'Function', 'Nothing' is returned.
-mkFunction :: LLVM.Module -> LLVM.Global -> Maybe F.Function
+-- | Builds a function from a global LLVM AST definition.
+mkFunction
+  :: LLVM.Module
+  -> LLVM.Global
+  -> Maybe (Either String F.Function)
+     -- ^ An error message or the built function.
 mkFunction m f@(LLVM.Function {}) =
   if length (LLVM.basicBlocks f) > 0
-     then let os = mkFunctionOS f
-              (params, _) = LLVM.parameters f
-              input_nodes = map (extractFunctionInputNodeID os) params
-              exec_freqs = extractBBExecFreqs m f
-          in Just ( F.Function
-                      { F.functionName = toFunctionName $ LLVM.name f
-                      , F.functionOS = os
-                      , F.functionInputs = input_nodes
-                      , F.functionBBExecFreq = exec_freqs
-                      }
-                  )
-     else Nothing
+     then Just $ do os <- mkFunctionOS f
+                    let (params, _) = LLVM.parameters f
+                    input_nodes <- mapM (extractFunctionInputNodeID os) params
+                    let exec_freqs = extractBBExecFreqs m f
+                    return F.Function
+                             { F.functionName = toFunctionName $ LLVM.name f
+                             , F.functionOS = os
+                             , F.functionInputs = input_nodes
+                             , F.functionBBExecFreq = exec_freqs
+                             }
+     else Just $ Left "mkFunction: function has no basic blocks"
 mkFunction _ _ = Nothing
 
 toFunctionName :: LLVM.Name -> Maybe String
@@ -69,18 +79,22 @@ toFunctionName (LLVM.UnName _) = Nothing
 
 -- | Extracts the ID of the node in the 'OpStructure' that corresponds to the
 -- given function parameter.
-extractFunctionInputNodeID :: OS.OpStructure -> LLVM.Parameter -> G.NodeID
+extractFunctionInputNodeID
+  :: OS.OpStructure
+  -> LLVM.Parameter
+  -> Either String G.NodeID
+     -- An error message or the extracted node ID.
 extractFunctionInputNodeID os (LLVM.Parameter _ name _) =
-  let sym = toSymbolString name
-      g = OS.osGraph os
-      ns = G.findValueNodesWithOrigin g sym
-  in if length ns == 1
-     then G.getNodeID $ head ns
+  do sym <- toSymbolString name
+     let g = OS.osGraph os
+         ns = G.findValueNodesWithOrigin g sym
+     if length ns == 1
+     then return $ G.getNodeID $ head ns
      else if length ns == 0
-          then error ( "extractFunctionInputNodeID: no value node with origin "
-                       ++ sym ++ "'")
-          else error ( "extractFunctionInputNodeID: more than one value node "
-                       ++ "with origin '" ++ sym ++ "'")
+          then Left $ "extractFunctionInputNodeID: no value node with origin '"
+                       ++ sym ++ "'"
+          else Left $ "extractFunctionInputNodeID: more than one value node "
+                       ++ "with origin '" ++ sym ++ "'"
 
 -- | Extracts all basic blocks in the given function together with their
 -- execution frequencies.

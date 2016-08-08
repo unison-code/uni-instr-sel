@@ -26,6 +26,7 @@ module Language.InstrSel.Utils.Base
   , mapPair
   , removeAt
   , (===)
+  , scanlM
   )
 where
 
@@ -161,3 +162,14 @@ removeAt xs i
 -- | Checks if two lists contain exactly the same elements.
 (===) :: (Ord a, Eq a) => [a] -> [a] -> Bool
 l1 === l2 = sort l1 == sort l2
+
+-- | A monadic version of 'Prelude.scanl'.
+scanlM :: (Monad m) => (b -> a -> m b) -> b -> [a] -> m [b]
+scanlM f q xs =
+  do qs <- scanlM' q xs
+     return (q:qs)
+  where scanlM' _ [] = return []
+        scanlM' q' (x':xs') =
+          do q'' <- f q' x'
+             qs'' <- scanlM' q'' xs'
+             return (q'':qs'')

@@ -52,7 +52,10 @@ run MakeFunctionGraphFromLLVM str =
      when (isLeft llvm_module_result) $
        reportErrorAndExit $ fromLeft $ fromLeft llvm_module_result
      let llvm_module = fromRight llvm_module_result
-     let functions = mkFunctionsFromLlvmModule llvm_module
+     let functions_res = mkFunctionsFromLlvmModule llvm_module
+     when (isLeft functions_res) $
+       reportErrorAndExit $ fromLeft functions_res
+     let functions = fromRight functions_res
      when (length functions > 1) $
        reportErrorAndExit "Only supports one function per module."
      return [toOutput $ toJson $ head functions]

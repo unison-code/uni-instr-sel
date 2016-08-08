@@ -37,10 +37,14 @@ import qualified LLVM.General.AST.Global as LLVM
   ( Global (..) )
 import qualified LLVM.General.AST.Name as LLVM
 
+import Control.Monad
+  ( foldM )
+
 import Data.Maybe
   ( isJust
   , fromJust
   , mapMaybe
+  , catMaybes
   )
 
 import Data.List
@@ -52,45 +56,48 @@ import Data.List
 -- Functions
 -------------
 
-generateTargetMachine :: LLVM.MachineDescription -> TM.TargetMachine
+generateTargetMachine
+  :: LLVM.MachineDescription
+  -> Either String TM.TargetMachine
+     -- ^ An error message or the generated target machine.
 generateTargetMachine m =
-  let mkPhiInstrEmitTemplate arg_ids ret_id =
-        ( TM.EmitStringTemplate
-          $ [ [ TM.ESLocationOfValueNode ret_id
-              , TM.ESVerbatim " = PHI "
-              ]
-              ++ ( concat
-                   $ intersperse
-                       [TM.ESVerbatim " "]
-                       ( map ( \n ->
-                               [ TM.ESVerbatim "("
-                               , TM.ESLocationOfValueNode n
-                               , TM.ESVerbatim ", "
-                               , TM.ESBlockOfValueNode n
-                               , TM.ESVerbatim ")"
-                               ]
-                             )
-                             arg_ids
-                       )
-                 )
-            ]
-        )
-      locs = mkLocations m
-      instrs = mkInstructions m locs
-      generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate]
-                       ++ [mkBrFallThroughInstruction]
-                       ++ [mkDataDefInstruction]
-                       ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
-                       ++ [mkInactiveInstruction]
-      all_instrs = instrs
-                   ++
-                   reassignInstrIDs (toInstructionID $ length instrs)
-                                    generic_instrs
-  in TM.TargetMachine
-       { TM.tmID = toTargetMachineID $ capitalize $ LLVM.mdID m
-       , TM.tmInstructions = all_instrs
-       , TM.tmLocations = locs
-       }
+  do let mkPhiInstrEmitTemplate arg_ids ret_id =
+           ( TM.EmitStringTemplate
+             $ [ [ TM.ESLocationOfValueNode ret_id
+                 , TM.ESVerbatim " = PHI "
+                 ]
+                 ++ ( concat
+                      $ intersperse
+                          [TM.ESVerbatim " "]
+                          ( map ( \n ->
+                                  [ TM.ESVerbatim "("
+                                  , TM.ESLocationOfValueNode n
+                                  , TM.ESVerbatim ", "
+                                  , TM.ESBlockOfValueNode n
+                                  , TM.ESVerbatim ")"
+                                  ]
+                                )
+                                arg_ids
+                          )
+                    )
+               ]
+           )
+         locs = mkLocations m
+         generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate]
+                          ++ [mkBrFallThroughInstruction]
+                          ++ [mkDataDefInstruction]
+                          ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
+                          ++ [mkInactiveInstruction]
+     instrs <- mkInstructions m locs
+     let all_instrs = instrs
+                      ++
+                      reassignInstrIDs (toInstructionID $ length instrs)
+                                       generic_instrs
+     return TM.TargetMachine
+              { TM.tmID = toTargetMachineID $ capitalize $ LLVM.mdID m
+              , TM.tmInstructions = all_instrs
+              , TM.tmLocations = locs
+              }
 
 mkLocations :: LLVM.MachineDescription -> [TM.Location]
 mkLocations m =
@@ -101,46 +108,55 @@ mkLocations m =
                       , TM.locValue = value
                       }
 
-mkInstructions :: LLVM.MachineDescription -> [TM.Location] -> [TM.Instruction]
+mkInstructions
+  :: LLVM.MachineDescription
+  -> [TM.Location]
+  -> Either String [TM.Instruction]
+     -- ^ An error message or the generated instructions.
 mkInstructions m locs =
-  map processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
+  mapM processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
   where processInstr (i_id, i) =
-          let instr_id = TM.toInstructionID i_id
-              patterns = mkInstrPatterns locs i
-              props = mkInstrProps i
-          in TM.Instruction { TM.instrID = instr_id
-                            , TM.instrPatterns = patterns
-                            , TM.instrProps = props
-                            }
+          do let instr_id = TM.toInstructionID i_id
+                 props = mkInstrProps i
+             patterns <- mkInstrPatterns locs i
+             return TM.Instruction { TM.instrID = instr_id
+                                   , TM.instrPatterns = patterns
+                                   , TM.instrProps = props
+                                   }
 
-mkInstrPatterns :: [TM.Location] -> LLVM.Instruction -> [TM.InstrPattern]
+mkInstrPatterns
+  :: [TM.Location]
+  -> LLVM.Instruction
+  -> Either String [TM.InstrPattern]
+     -- ^ An error message or the generated instruction patterns.
 mkInstrPatterns locs i =
-  map processInstrPattern $ zip ([0..] :: [Integer]) (LLVM.instrPatterns i)
+  mapM processInstrPattern $ zip ([0..] :: [Integer]) (LLVM.instrPatterns i)
   where processInstrPattern (p_num, p) =
           processSemantics p_num (LLVM.instrSemantics p) (LLVM.instrOperands p)
         processSemantics p_num p ops =
-          let p_id = TM.toPatternID p_num
-              os = addOperandConstraints ops locs $ mkOpStructure p
-              ext_values = map getNodeID
-                           $ mapMaybe (findValueNodeFromOperand os) ops
-              tmpl = mkEmitString i os (LLVM.instrEmitString i)
-          in TM.InstrPattern { TM.patID = p_id
-                             , TM.patOS = os
-                             , TM.patExternalData = ext_values
-                             , TM.patEmitString = tmpl
-                             }
+          do let p_id = TM.toPatternID p_num
+             os0 <-mkOpStructure p
+             os1 <- addOperandConstraints ops locs os0
+             ext_value_nodes <- mapM (findValueNodeFromOperand os1) ops
+             let ext_value_ids = map getNodeID $ catMaybes ext_value_nodes
+             tmpl <- mkEmitString i os1 (LLVM.instrEmitString i)
+             return TM.InstrPattern { TM.patID = p_id
+                                    , TM.patOS = os1
+                                    , TM.patExternalData = ext_value_ids
+                                    , TM.patEmitString = tmpl
+                                    }
         findValueNodeFromOperand os' (LLVM.RegInstrOperand op_name _) =
-          let n = findValueNode os' op_name
-          in if isJust n
-             then n
-             else error $ "mkInstrPatterns: no value node with "
-                          ++ "origin '" ++ op_name ++ "''"
+          do n <- findValueNode os' op_name
+             if isJust n
+             then return n
+             else Left $ "mkInstrPatterns: no value node with origin "
+                         ++ "'" ++ op_name ++ "''"
         findValueNodeFromOperand os' (LLVM.ImmInstrOperand op_name _) =
-          let n = findValueNode os' op_name
-          in if isJust n
-             then n
-             else error $ "mkInstrPatterns: no value node with "
-                          ++ "origin '" ++ op_name ++ "''"
+          do n <- findValueNode os' op_name
+             if isJust n
+             then return n
+             else Left $ "mkInstrPatterns: no value node with origin "
+                         ++ "'" ++ op_name ++ "''"
         findValueNodeFromOperand os' (LLVM.AbsAddrInstrOperand op_name _) =
           findValueNode os' op_name
         findValueNodeFromOperand os' (LLVM.RelAddrInstrOperand op_name _) =
@@ -148,70 +164,74 @@ mkInstrPatterns locs i =
         findValueNode os' origin =
           let n = findValueNodesWithOrigin (osGraph os') origin
           in if length n == 1
-             then Just $ head n
+             then return $ Just $ head n
              else if length n > 0
-                  then error $ "mkInstrPatterns: multiple value nodes "
-                               ++ "with origin '" ++ origin ++ "'"
-                  else Nothing
+                  then Left $ "mkInstrPatterns: multiple value nodes with "
+                              ++ "origin '" ++ origin ++ "'"
+                  else return Nothing
 
 addOperandConstraints
   :: [LLVM.InstrOperand]
   -> [TM.Location]
   -> OpStructure
-  -> OpStructure
+  -> Either String OpStructure
+     -- ^ An error message or the generated 'OpStructure'.
 addOperandConstraints ops all_locs os =
-  foldr f os ops
-  where f (LLVM.RegInstrOperand op_name reg_names) os' =
-          let locs = map getIDOfLocWithName reg_names
-              n = getNodeID $ getValueNode os' op_name
-          in os' { osValidLocations = osValidLocations os' ++ [(n, locs)] }
-        f (LLVM.ImmInstrOperand op_name range) os' =
-          let n = getValueNode os' op_name
-              old_dt = getDataTypeOfValueNode n
-              -- It is assumed that the value node for an immediate is always a
-              -- temporary at this point
-              new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
-              new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
-          in os' { osGraph = new_g }
-        f (LLVM.AbsAddrInstrOperand op_name range) os' =
-          addAddressConstraints os'
-                                (getValueOrBlockOrCallNode os' op_name)
-                                range
-        f (LLVM.RelAddrInstrOperand op_name range) os' =
-          addAddressConstraints os'
-                                (getValueOrBlockOrCallNode os' op_name)
-                                range
+  foldM processOp os ops
+  where processOp os' (LLVM.RegInstrOperand op_name reg_names) =
+          do locs <- mapM getIDOfLocWithName reg_names
+             n <- getValueNode os' op_name
+             return os' { osValidLocations = osValidLocations os'
+                                             ++ [(getNodeID n, locs)]
+                        }
+        processOp os' (LLVM.ImmInstrOperand op_name range) =
+          do n <- getValueNode os' op_name
+             let old_dt = getDataTypeOfValueNode n
+                 -- It is assumed that the value node for an immediate is always
+                 -- a temporary at this point
+                 new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
+                 new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
+             return os' { osGraph = new_g }
+        processOp os' (LLVM.AbsAddrInstrOperand op_name range) =
+          do n <- getValueOrBlockOrCallNode os' op_name
+             addAddressConstraints os' n range
+        processOp os' (LLVM.RelAddrInstrOperand op_name range) =
+          do n <- getValueOrBlockOrCallNode os' op_name
+             addAddressConstraints os' n range
         getValueNode os' origin =
-          let n = findValueNodesWithOrigin (osGraph os') origin
-          in if length n == 1
-             then head n
+          do let n = findValueNodesWithOrigin (osGraph os') origin
+             if length n == 1
+             then return $ head n
              else if length n > 0
-                  then error $ "addOperandConstraints: multiple value nodes "
-                               ++ "with origin '" ++ origin ++ "'"
-                  else error $ "addOperandConstraints: no value node with "
-                               ++ "origin '" ++ origin ++ "'"
+                  then Left $ "addOperandConstraints: multiple value nodes "
+                              ++ "with origin '" ++ origin ++ "'"
+                  else Left $ "addOperandConstraints: no value node with "
+                              ++ "origin '" ++ origin ++ "'"
         getValueOrBlockOrCallNode os' str =
-          let value_n = findValueNodesWithOrigin (osGraph os') str
-              block_n = findBlockNodesWithName (osGraph os') $ toBlockName str
-              call_n  = findCallNodesWithName (osGraph os') $ toFunctionName str
-              all_n = value_n ++ block_n ++ call_n
-          in if length all_n == 1
-             then head all_n
+          do let value_n = findValueNodesWithOrigin (osGraph os') str
+                 block_n = findBlockNodesWithName (osGraph os')
+                           $ toBlockName str
+             let call_n  = findCallNodesWithName (osGraph os')
+                                                 (toFunctionName str)
+                 all_n = value_n ++ block_n ++ call_n
+             if length all_n == 1
+             then return $ head all_n
              else if length all_n == 0
-                  then error $ "addOperandConstraints: no value, block, or "
-                          ++ "call node with origin or name '" ++ str ++ "'"
-                  else error $ "addOperandConstraints: multiple value, block, "
-                          ++ "or call nodes with origin or name '" ++ str ++ "'"
+                  then Left $ "addOperandConstraints: no value, block, or "
+                              ++ "call node with origin or name '" ++ str ++ "'"
+                  else Left $ "addOperandConstraints: multiple value, block, "
+                              ++ "or call nodes with origin or name '"
+                              ++ str ++ "'"
         getIDOfLocWithName name =
-          let loc = filter (\l -> TM.locName l == TM.toLocationName name)
-                           all_locs
-          in if length loc == 1
-             then TM.locID $ head loc
+          do let loc = filter (\l -> TM.locName l == TM.toLocationName name)
+                              all_locs
+             if length loc == 1
+             then return $ TM.locID $ head loc
              else if length loc > 0
-                  then error $ "addOperandConstraints: multiple locations with "
-                               ++ "name '" ++ name ++ "'"
-                  else error $ "addOperandConstraints: no location with name '"
-                               ++ name ++ "'"
+                  then Left $ "addOperandConstraints: multiple locations with "
+                              ++ "name '" ++ name ++ "'"
+                  else Left $ "addOperandConstraints: no location with name '"
+                              ++ name ++ "'"
         addAddressConstraints os' n range
           | isValueNode n =
               -- It is assumed that the value node for an immediate is always a
@@ -219,15 +239,18 @@ addOperandConstraints ops all_locs os =
               let old_dt = getDataTypeOfValueNode n
                   new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
                   new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
-              in os' { osGraph = new_g }
+              in return os' { osGraph = new_g }
           | isBlockNode n =
               -- TODO: implement
-              os'
-          | isCallNode n = os' -- Do nothing
+              return os'
+          | isCallNode n = return os' -- Do nothing
           | otherwise =
-              error $ "addOperandConstraints: unexpected node type: " ++ show n
+              Left $ "addOperandConstraints: unexpected node type: " ++ show n
 
-mkOpStructure :: LLVM.InstrSemantics -> OpStructure
+mkOpStructure
+  :: LLVM.InstrSemantics
+  -> Either String OpStructure
+     -- ^ An error message or the generated 'OpStructure'.
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
   let m_defs = LLVM.moduleDefinitions m
       getFunction d =
@@ -250,18 +273,16 @@ mkEmitString
   :: LLVM.Instruction
   -> OpStructure
   -> String
-  -> TM.EmitStringTemplate
+  -> Either String TM.EmitStringTemplate
+     -- ^ An error message or the generated 'TM.EmitStringTemplate'.
 mkEmitString i os str =
-  TM.EmitStringTemplate
-  $ filter (\l -> l /= [])
-  $ map (mergeVerbatims . map mkES . splitStartingOn "% ,()[]")
-  $ splitOn "\n" str
+  do let ls = splitOn "\n" str
+         ls_parts = map (splitStartingOn "% ,()[]") ls
+     t_parts <- mapM (mapM mkES) ls_parts
+     let merged_t_parts = filter (\l -> l /= [])
+                          $ map mergeVerbatims t_parts
+     return $ TM.EmitStringTemplate merged_t_parts
   where
-  mergeVerbatims [] = []
-  mergeVerbatims [s] = [s]
-  mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
-    mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
-  mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
   mkES s =
     if head s == '%'
     then if not (isNumeric (tail s))
@@ -272,38 +293,44 @@ mkEmitString i os str =
                   all_n = value_n ++ block_n ++ call_n
               in if length all_n == 1
                  then mkESFromNode (head all_n) s
-                 else error $ "mkEmitString: no value, block, or call node "
-                              ++ "with name '" ++ s ++ "'"
+                 else Left $ "mkEmitString: no value, block, or call node "
+                             ++ "with name '" ++ s ++ "'"
          else let int = read $ tail s
-              in TM.ESLocalTemporary int
-    else TM.ESVerbatim s
+              in return $ TM.ESLocalTemporary int
+    else return $ TM.ESVerbatim s
   mkESFromNode n s
     | isValueNode n =
         let op = getInstrOperand i s
         in if isJust op
            then case (fromJust op)
                 of (LLVM.RegInstrOperand {}) ->
-                     TM.ESLocationOfValueNode $ getNodeID n
+                     return $ TM.ESLocationOfValueNode $ getNodeID n
                    (LLVM.ImmInstrOperand {}) ->
-                     TM.ESIntConstOfValueNode $ getNodeID n
-                   _ -> error $ "mkEmitString: unknown instruction operand "
-                                ++ "type: " ++ show op
-           else error $ "mkEmitString: no instruction operand with name '"
-                        ++ s ++ "'"
+                     return $ TM.ESIntConstOfValueNode $ getNodeID n
+                   _ -> Left $ "mkEmitString: unknown instruction operand "
+                               ++ "type: " ++ show op
+           else Left $ "mkEmitString: no instruction operand with name '"
+                       ++ s ++ "'"
     | isBlockNode n =
         let op = getInstrOperand i s
         in if isJust op
            then case (fromJust op)
                 of (LLVM.AbsAddrInstrOperand {}) ->
-                     TM.ESNameOfBlockNode $ getNodeID n
+                     return $ TM.ESNameOfBlockNode $ getNodeID n
                    (LLVM.RelAddrInstrOperand {}) ->
-                     TM.ESNameOfBlockNode $ getNodeID n
-                   _ -> error $ "mkEmitString: unknown instruction operand "
-                                ++ "type: " ++ show op
-           else error $ "mkEmitString: no instruction operand with name '"
-                        ++ s ++ "'"
-    | isCallNode n = TM.ESFuncOfCallNode $ getNodeID n
-    | otherwise = error $ "mkEmitString: unexpected node type: " ++ show n
+                     return $ TM.ESNameOfBlockNode $ getNodeID n
+                   _ -> Left $ "mkEmitString: unknown instruction operand "
+                               ++ "type: " ++ show op
+           else Left $ "mkEmitString: no instruction operand with name '"
+                       ++ s ++ "'"
+    | isCallNode n = return $ TM.ESFuncOfCallNode $ getNodeID n
+    | otherwise = Left $ "mkEmitString: unexpected node type: " ++ show n
+  mergeVerbatims [] = []
+  mergeVerbatims [s] = [s]
+  mergeVerbatims (TM.ESVerbatim s1:TM.ESVerbatim s2:ss) =
+    mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
+  mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
+
 mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
 mkInstrProps i=
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
