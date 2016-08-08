@@ -18,6 +18,7 @@ import Language.InstrSel.Utils
   ( toLower )
 
 import qualified UniIS.Targets.Mips32 as Mips32
+import qualified UniIS.Targets.Hexagon5 as Hexagon5
 
 
 
@@ -30,7 +31,9 @@ import qualified UniIS.Targets.Mips32 as Mips32
 retrieveTargetMachine :: TargetMachineID -> Maybe TargetMachine
 retrieveTargetMachine tmid =
   do let machines = map (\t -> (convertID $ tmID t, t))
-                        [ Mips32.theTM ]
+                        [ Mips32.theTM
+                        , Hexagon5.theTM
+                        ]
      tm <- lookup (convertID tmid) machines
      return tm
   where convertID tid = toTargetMachineID $ toLower $ fromTargetMachineID tid
