@@ -1231,11 +1231,12 @@ doesNumCFOutEdgesMatter _ n
 -- | Checks if the number of data-flow in-edges matters for a given pattern
 -- node.
 doesNumDFInEdgesMatter :: Graph -> Node -> Bool
-doesNumDFInEdgesMatter _ n
+doesNumDFInEdgesMatter g n
   | isComputationNode n = True
   | isControlNode n = True
   | isCallNode n = True
   | isPhiNode n = True
+  | isValueNode n = (length $ getDtFlowInEdges g n) > 0
   | otherwise = False
 
 -- | Checks if the number of data-flow out-edges matters for a given pattern
@@ -1358,6 +1359,7 @@ doesOrderDFInEdgesMatter _ n
   | isControlNode n = True
   | isPhiNode n = True
   | isCallNode n = True
+  | isValueNode n = True
   | otherwise = False
 
 -- | Checks if the order of data-flow out-edges matters for a given pattern
