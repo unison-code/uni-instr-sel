@@ -44,7 +44,7 @@ run MakeLowLevelModelDump function model ai_maps =
   let addPadding ai = (take (length $ pShow ai) $ repeat ' ') ++ "    "
       function_g = osGraph $ functionOS function
       mkNodeInfo n =
-        "Node ID " ++ pShow n ++ ", "
+        "Node ID: " ++ pShow n ++ ", "
         ++
         ( pShow
           $ G.getNodeType
@@ -143,7 +143,7 @@ run MakeLowLevelModelDump function model ai_maps =
                      -- Cast needed to prevent compiler warning
       dumpMatches ns =
         let mkMatchInfo m ai =
-              "Match ID " ++ pShow m
+              "Match ID: " ++ pShow m
               ++
               "\n"
               ++
