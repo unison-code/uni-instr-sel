@@ -45,7 +45,7 @@ SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
 PRETTIFY := ../tools/prettify-json
 
-TARGET := mips32
+TARGET := hexagon5
 
 
 
@@ -151,7 +151,7 @@ distclean-toolchain:
 	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
 
 %.cov.dot: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) plot --plot-cover-all-matches --hide-inactive-instrs \
+	$(UNI) plot --plot-cover-all-matches --hide-null-instrs \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $@
 
 %.pdf: %.dot
