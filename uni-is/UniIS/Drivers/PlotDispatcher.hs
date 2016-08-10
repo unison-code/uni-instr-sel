@@ -50,7 +50,12 @@ dispatch a opts
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
+         hide_null_instrs <- getHideNullInstrsPred opts
          hide_inactive_instrs <- getHideInactiveInstrsPred opts
-         PlotCoverGraphs.run a function matchset hide_inactive_instrs
+         PlotCoverGraphs.run a
+                             function
+                             matchset
+                             hide_null_instrs
+                             hide_inactive_instrs
   | otherwise =
       reportErrorAndExit "PlotDispatcher: unsupported action"

@@ -257,10 +257,17 @@ parseArgs =
                          )
              ]
         &= groupname "'plot' command flags"
+    , hideNullInstructions = def
+        &= name "hide-null-instrs"
+        &= explicit
+        &= help ( "Whether to exclude null instructions in the cover plots."
+                  ++ " Only usable together with --plot-cover-all-matches "
+                  ++ "option."
+                )
     , hideInactiveInstructions = def
         &= name "hide-inactive-instrs"
         &= explicit
-        &= help ( "Whether to include inactive instructions in the cover plots."
+        &= help ( "Whether to exclude inactive instructions in the cover plots."
                   ++ " Only usable together with --plot-cover-all-matches "
                   ++ "option."
                 )

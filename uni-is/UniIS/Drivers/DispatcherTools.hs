@@ -16,6 +16,7 @@ module UniIS.Drivers.DispatcherTools
   , getSelectedTargetMachineID
   , getSelectedInstructionID
   , getSelectedPatternID
+  , getHideNullInstrsPred
   , getHideInactiveInstrsPred
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
@@ -135,6 +136,13 @@ getSelectedPatternID opts =
      when (isNothing pid) $
        reportErrorAndExit "No pattern ID provided."
      return $ toPatternID $ fromJust pid
+
+-- | Returns the option whether to hide null instructions as specified on
+-- the command line.
+getHideNullInstrsPred :: Options -> IO Bool
+getHideNullInstrsPred opts =
+  do let p = hideNullInstructions opts
+     return $ if isJust p then fromJust p else False
 
 -- | Returns the option whether to hide inactive instructions as specified on
 -- the command line.

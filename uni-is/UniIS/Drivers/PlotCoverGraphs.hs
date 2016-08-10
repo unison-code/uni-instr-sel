@@ -49,40 +49,40 @@ import Data.Maybe
 -- Functions
 -------------
 
-run :: PlotAction -> Function -> PatternMatchset -> Bool -> IO [Output]
+run :: PlotAction -> Function -> PatternMatchset -> Bool -> Bool -> IO [Output]
 
-run PlotCoverAllMatches function matchset hide_inactive_instrs =
+run PlotCoverAllMatches
+    function
+    matchset
+    hide_null_instrs
+    hide_inactive_instrs
+  =
   do let tid = pmTarget matchset
          tm_res = retrieveTargetMachine tid
      when (isNothing tm_res) $
        reportErrorAndExit $ "Unrecognized target machine: " ++ (pShow tid)
      let tm = fromJust tm_res
-         matches_res =
-           let ms = pmMatches matchset
-           in if not hide_inactive_instrs
-              then Right $ map pmMatch ms
-              else do ms' <- mapM ( \m ->
-                                      let is = tmInstructions tm
-                                          iid = pmInstrID m
-                                          i = findInstruction is iid
-                                      in if isJust i
-                                         then if not
-                                                 $ isInstructionInactive
-                                                 $ fromJust i
-                                              then return $ Just m
-                                              else return Nothing
-                                         else Left $ "No instruction with ID "
-                                                     ++ pShow iid
-                                  )
-                                  ms
-                      return $ map pmMatch $ catMaybes ms'
+         ms0 = pmMatches matchset
+         matches_res = do ms1 <- if hide_null_instrs
+                                 then filterMatches tm
+                                                    (not . isInstructionNull)
+                                                    ms0
+                                 else return ms0
+                          ms2 <- if hide_inactive_instrs
+                                 then filterMatches tm
+                                                    ( not
+                                                      . isInstructionInactive
+                                                    )
+                                                    ms1
+                                 else return ms1
+                          return ms2
      when (isLeft matches_res) $
        reportErrorAndExit $ fromLeft matches_res
-     let matches = fromRight matches_res
+     let matches = map pmMatch $ fromRight matches_res
      dot <- mkCoveragePlot function matches
      return [toOutput dot]
 
-run PlotCoverPerMatch function matchset _ =
+run PlotCoverPerMatch function matchset _ _ =
   do let matches = pmMatches matchset
      mapM
        ( \m ->
@@ -96,7 +96,7 @@ run PlotCoverPerMatch function matchset _ =
        )
        matches
 
-run _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
+run _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =
@@ -110,3 +110,22 @@ mkCoveragePlot function matches =
                $ osGraph
                $ functionOS function
      return dot
+
+filterMatches
+  :: TargetMachine
+  -> (Instruction -> Bool)
+  -> [PatternMatch]
+  -> Either String [PatternMatch]
+filterMatches tm p_fun ms =
+  do let is = tmInstructions tm
+     ms' <- mapM ( \m -> let iid = pmInstrID m
+                             i = findInstruction is iid
+                         in if isJust i
+                            then if p_fun $ fromJust i
+                                 then return $ Just m
+                                 else return Nothing
+                            else Left $ "No instruction with ID "
+                                        ++ pShow iid
+                 )
+                 ms
+     return $ catMaybes ms'
