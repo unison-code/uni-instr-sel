@@ -203,6 +203,14 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
+              "Instruction ID: "
+              ++
+              (pShow $ (llMatchInstructionIDs model) !! (fromIntegral ai))
+              ++
+              "\n"
+              ++
+              addPadding ai
+              ++
               "Latency: "
               ++
               (pShow $ (llMatchLatencies model) !! (fromIntegral ai))

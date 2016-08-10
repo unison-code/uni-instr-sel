@@ -636,6 +636,8 @@ lowerHighLevelModel model ai_maps =
        , llMatchConstraints =
            map (map (replaceIDsWithArrayIndexes ai_maps))
                (map hlWOpMatchConstraints m_params)
+       , llTMID = hlMachineID tm_params
+       , llMatchInstructionIDs = map hlWOpMatchInstructionID m_params
        }
 
 -- | Converts any IDs appearing in a constraint with the corresponding array

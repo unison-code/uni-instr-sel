@@ -336,6 +336,13 @@ data LowLevelModel
       , llMatchConstraints :: [[Constraint]]
         -- ^ The list of constraints for each match. An index into the outer
         -- list corresponds to the array index of a particular match.
+      , llTMID :: TargetMachineID
+        -- ^ ID of the target machine from which the low-level model is
+        -- derived. This information is used for debugging purposes only.
+      , llMatchInstructionIDs :: [InstructionID]
+        -- ^ The instructions from which each match is derived. An index into
+        -- the list corresponds to the array index of a particular match. This
+        -- information is used for debugging purposes only.
       }
   deriving (Show)
 
@@ -691,6 +698,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-null-instrs"
       <*> v .: "match-phi-instrs"
       <*> v .: "match-constraints"
+      <*> v .: "target-machine"
+      <*> v .: "match-instruction-ids"
   parseJSON _ = mzero
 
 instance ToJSON LowLevelModel where
@@ -728,6 +737,8 @@ instance ToJSON LowLevelModel where
            , "match-null-instrs"        .= (llMatchNullInstructions m)
            , "match-phi-instrs"         .= (llMatchPhiInstructions m)
            , "match-constraints"        .= (llMatchConstraints m)
+           , "target-machine"           .= (llTMID m)
+           , "match-instruction-ids"    .= (llMatchInstructionIDs m)
            ]
 
 instance FromJSON HighLevelSolution where
