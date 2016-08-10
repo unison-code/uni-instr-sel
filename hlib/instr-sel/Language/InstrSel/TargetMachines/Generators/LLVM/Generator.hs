@@ -40,6 +40,9 @@ import qualified LLVM.General.AST.Name as LLVM
 import Control.Monad
   ( foldM )
 
+import Data.List
+  ( sort )
+
 import Data.Maybe
   ( isJust
   , fromJust
@@ -180,9 +183,10 @@ addOperandConstraints ops all_locs os =
   foldM processOp os ops
   where processOp os' (LLVM.RegInstrOperand op_name reg_names) =
           do locs <- mapM getIDOfLocWithName reg_names
+             let sorted_locs = sort locs
              n <- getValueNode os' op_name
              return os' { osValidLocations = osValidLocations os'
-                                             ++ [(getNodeID n, locs)]
+                                             ++ [(getNodeID n, sorted_locs)]
                         }
         processOp os' (LLVM.ImmInstrOperand op_name range) =
           do n <- getValueNode os' op_name
