@@ -257,6 +257,13 @@ parseArgs =
                          )
              ]
         &= groupname "'plot' command flags"
+    , hideInactiveInstructions = def
+        &= name "hide-inactive-instrs"
+        &= explicit
+        &= help ( "Whether to include inactive instructions in the cover plots."
+                  ++ " Only usable together with --plot-cover-all-matches "
+                  ++ "option."
+                )
     , checkAction =
         enum [ CheckNothing
                  &= auto

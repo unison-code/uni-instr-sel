@@ -16,6 +16,7 @@ module UniIS.Drivers.DispatcherTools
   , getSelectedTargetMachineID
   , getSelectedInstructionID
   , getSelectedPatternID
+  , getHideInactiveInstrsPred
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
@@ -64,6 +65,7 @@ import Language.InstrSel.Utils.JSON
 
 import Data.Maybe
   ( fromJust
+  , isJust
   , isNothing
   )
 
@@ -133,6 +135,13 @@ getSelectedPatternID opts =
      when (isNothing pid) $
        reportErrorAndExit "No pattern ID provided."
      return $ toPatternID $ fromJust pid
+
+-- | Returns the option whether to hide inactive instructions as specified on
+-- the command line.
+getHideInactiveInstrsPred :: Options -> IO Bool
+getHideInactiveInstrsPred opts =
+  do let p = hideInactiveInstructions opts
+     return $ if isJust p then fromJust p else False
 
 -- | Returns the target machine with given ID. Reports error if no such target
 -- machine exists.

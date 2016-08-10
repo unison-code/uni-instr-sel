@@ -49,6 +49,7 @@ data Options
       , makeAction :: MakeAction
       , transformAction :: TransformAction
       , plotAction :: PlotAction
+      , hideInactiveInstructions :: Maybe Bool
       , checkAction :: CheckAction
       }
   deriving (Data, Typeable)
