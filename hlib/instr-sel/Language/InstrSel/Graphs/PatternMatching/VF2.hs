@@ -172,10 +172,10 @@ checkSyntax
      -- ^ Candidate mapping.
   -> Bool
 checkSyntax fg pg st c =
-  checkSyntaxPred fg pg st c
-  && checkSyntaxSucc fg pg st c
-  && checkSyntaxIn   fg pg st c
-  && checkSyntaxOut  fg pg st c
+  checkSyntaxPred fg pg st c &&
+  checkSyntaxSucc fg pg st c &&
+  checkSyntaxIn   fg pg st c &&
+  checkSyntaxOut  fg pg st c
 
 -- | Checks that for each predecessor of the matched pattern node that appears
 -- in the current mapping state, there exists a node mapping for the

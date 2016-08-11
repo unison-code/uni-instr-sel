@@ -40,8 +40,8 @@ mkFunctionsFromLlvmModule
   -> Either String [F.Function]
      -- ^ An error message or the built functions.
 mkFunctionsFromLlvmModule m =
-  sequence
-  $ mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
+  sequence $
+  mapMaybe (mkFunctionFromGlobalDef m) (LLVM.moduleDefinitions m)
 
 -- | Builds a function from an LLVM AST definition. If the definition is not a
 -- 'GlobalDefinition', 'Nothing' is returned.
@@ -121,13 +121,13 @@ extractExecFreq m im =
   where soughtMetaName = "exec_freq"
         findNodes = map snd . filter (\m' -> fst m' == soughtMetaName)
         checkNumNodes ms | length ms == 0 =
-                             error
-                             $ "No metadata entry with name '" ++
-                               soughtMetaName ++ "'!"
+                             error $
+                             "No metadata entry with name '" ++
+                             soughtMetaName ++ "'!"
                          | length ms > 1 =
-                             error
-                             $ "Multiple metadata entries with name '" ++
-                               soughtMetaName ++ "'!"
+                             error $
+                             "Multiple metadata entries with name '" ++
+                             soughtMetaName ++ "'!"
                          | otherwise = ms
 
         getOps = catMaybes . (retrieveMetadataOps m)
@@ -149,11 +149,9 @@ retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
       isMetaDef _ = False
       meta_defs = filter isMetaDef module_defs
       sought_ops = mapMaybe ( \(LLVM.MetadataNodeDefinition mid' ops) ->
-                              if mid' == mid
-                              then Just ops
-                              else Nothing
-                            )
-                            meta_defs
+                              if mid' == mid then Just ops else Nothing
+                            ) $
+                   meta_defs
   in if length sought_ops == 1
      then head sought_ops
      else let (LLVM.MetadataNodeID mid_value) = mid

@@ -91,28 +91,28 @@ generateCode
   -> HighLevelSolution
   -> [AssemblyCode]
 generateCode target model sol@(HighLevelSolution {}) =
-  reverse
-  $ emittedCode
-  $ foldl ( \st0 b ->
-              let matches = getMatchesPlacedInBlock sol b
-                  sorted_matches = sortMatchesByFlow sol model matches
-                  block_name = fromJust $ findNameOfBlockNode model b
-                  code = AsmBlock $ pShow block_name
-                  st1 = st0 { emittedCode = (code:emittedCode st0) }
-                  st2 = foldl ( \st' m ->
-                                  emitInstructionsOfMatch
-                                    model
-                                    sol
-                                    target
-                                    (st' { tmpToVarNameMaps = [] })
-                                    m
-                              )
-                              st1
-                              sorted_matches
-              in st2
-          )
-          (mkInitState sol model)
-          (hlSolOrderOfBlocks sol)
+  reverse $
+  emittedCode $
+  foldl ( \st0 b ->
+          let matches = getMatchesPlacedInBlock sol b
+              sorted_matches = sortMatchesByFlow sol model matches
+              block_name = fromJust $ findNameOfBlockNode model b
+              code = AsmBlock $ pShow block_name
+              st1 = st0 { emittedCode = (code:emittedCode st0) }
+              st2 = foldl ( \st' m ->
+                            emitInstructionsOfMatch
+                              model
+                              sol
+                              target
+                              (st' { tmpToVarNameMaps = [] })
+                              m
+                          )
+                          st1
+                          sorted_matches
+          in st2
+        )
+        (mkInitState sol model)
+        (hlSolOrderOfBlocks sol)
 
 generateCode _ _ NoHighLevelSolution =
   error "generateCode: cannot generate code from no solution"
@@ -121,9 +121,9 @@ generateCode _ _ NoHighLevelSolution =
 mkInitState :: HighLevelSolution -> HighLevelModelWOp -> EmissionState
 mkInitState sol model =
   let sel_matches = hlSolSelMatches sol
-      null_matches = filter hlWOpMatchIsNullInstruction
-                     $ map (getHLMatchParams (hlWOpMatchParams model))
-                     $ sel_matches
+      null_matches = filter hlWOpMatchIsNullInstruction $
+                     map (getHLMatchParams (hlWOpMatchParams model)) $
+                     sel_matches
       op_maps = hlSolNodesOfOperands sol
       const_ns = map fst $ hlFunValueIntConstData $ hlWOpFunctionParams model
       aliases = computeAliases op_maps const_ns null_matches
@@ -146,24 +146,23 @@ computeAliases
   -> [(NodeID, NodeID)]
 computeAliases op_maps const_ns null_matches =
   let getNodeID o = fromJust $ lookup o op_maps
-      aliases = filter (\(_, n) -> n `notElem` const_ns)
-                $ map ( \m ->
-                          ( getNodeID $ head $ hlWOpMatchOperandsDefined m
-                          , getNodeID $ head $ hlWOpMatchOperandsUsed m
-                          )
-                          -- We assume that null instructions uses exactly one
-                          -- datum and defines exactly one datum
-                      )
+      aliases = filter (\(_, n) -> n `notElem` const_ns) $
+                map ( \m -> ( getNodeID $ head $ hlWOpMatchOperandsDefined m
+                            , getNodeID $ head $ hlWOpMatchOperandsUsed m
+                            )
+                            -- We assume that null instructions uses exactly one
+                            -- datum and defines exactly one datum
+                    ) $
                 null_matches
       normalize as =
         let alias_refs = filter (\(_, b) -> b `elem` (map fst as)) as
         in if length alias_refs > 0
            then let new_as = map ( \(a, b) ->
-                                     if (a, b) `elem` alias_refs
-                                     then (a, fromJust $ lookup b as)
-                                     else (a, b)
-                                 )
-                                 as
+                                   if (a, b) `elem` alias_refs
+                                   then (a, fromJust $ lookup b as)
+                                   else (a, b)
+                                 ) $
+                             as
                 in normalize new_as
            else as
       normalized_aliases = normalize aliases
@@ -239,16 +238,16 @@ addUseEdgesToDAG sol model mid g0 =
       op_uses_of_m = filter ( `notElem` ( map snd
                                           $ hlWOpMatchOperandsUsedByPhis match
                                         )
-                            )
-                            (hlWOpMatchOperandsUsed match)
+                            ) $
+                     hlWOpMatchOperandsUsed match
       d_uses_of_m = map getNodeID op_uses_of_m
       defs_of_m =
         map ( \(n, i) -> ( n
                          , map getNodeID
                            $ hlWOpMatchOperandsDefined $ getHLMatchParams ds i
                          )
-            )
-            ns
+            ) $
+        ns
       g1 = foldr (addUseEdgesToDAG' match_node defs_of_m) g0 d_uses_of_m
   in g1
 
@@ -270,7 +269,7 @@ getNodeOfMatch :: IFlowDAG -> MatchID -> Maybe I.Node
 getNodeOfMatch g mid =
   let ns = filter (\n -> snd n == mid) $ I.labNodes g
   in if length ns > 0
-     then Just (fst $ head ns)
+     then Just $ fst $ head ns
      else Nothing
 
 -- | If the given match ID represents a pattern that has one or more control
@@ -339,11 +338,9 @@ emitInstructionsOfMatch model sol tm st0 mid =
                            (hlWOpMatchEmitStrNodeMaplist match)
                      )
   in foldl ( \st1 parts ->
-               foldl (emitInstructionPart model sol tm)
-                      ( st1 { emittedCode = (AsmInstruction "":emittedCode st1)
-                            }
-                      )
-                      parts
+             foldl (emitInstructionPart model sol tm)
+                   (st1 { emittedCode = (AsmInstruction "":emittedCode st1) }) $
+             parts
            )
            st0
            emit_parts
@@ -364,13 +361,13 @@ updateNodeIDsInEmitStrParts emit_strs maps =
            f (ESBlockOfValueNode    _) (Just n) = ESBlockOfValueNode n
            f (ESFuncOfCallNode      _) (Just n) = ESFuncOfCallNode n
            f p@(ESLocalTemporary {})         _  = p
-           f _ _ = error $ "updateNodeIDsInEmitStrParts: unexpected combination"
-                           ++ " of arguments"
+           f _ _ = error $ "updateNodeIDsInEmitStrParts: unexpected " ++
+                           "combination of arguments"
        in zipWith ( \es ms ->
-                      if length es == length ms
-                      then zipWith f es ms
-                      else error $ "updateNodeIDsInEmitStrParts: arguments not "
-                                   ++ "of same length"
+                    if length es == length ms
+                    then zipWith f es ms
+                    else error $ "updateNodeIDsInEmitStrParts: arguments " ++
+                                 "not of same length"
                   )
                   emit_strs
                   maps
@@ -396,8 +393,8 @@ emitInstructionPart model _ _ st (ESIntConstOfValueNode n) =
               (AsmInstruction instr_str) = head code
               new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust i)
           in st { emittedCode = (new_instr:tail code) }
-     else error $ "emitInstructionPart: no integer constant found for function "
-                  ++ "node " ++ pShow n
+     else error $ "emitInstructionPart: no integer constant found for " ++
+                  "function node " ++ pShow n
 emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
@@ -415,8 +412,8 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
                   then let new_instr = AsmInstruction $ instr_str
                                        ++ fromJust origin
                   in st { emittedCode = (new_instr:tail code) }
-                  else error $ "emitInstructionPart: no origin found for "
-                               ++ "function node " ++ pShow n
+                  else error $ "emitInstructionPart: no origin found for " ++
+                               "function node " ++ pShow n
      else error $ "emitInstructionPart: no location found for "
                   ++ "function node " ++ pShow n
 emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
@@ -426,8 +423,8 @@ emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
               (AsmInstruction instr_str) = head code
               new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust l)
           in st { emittedCode = (new_instr:tail code) }
-     else error $ "emitInstructionPart: no block name found for function node "
-                  ++ pShow n
+     else error $ "emitInstructionPart: no block name found for function " ++
+                  "node " ++ pShow n
 emitInstructionPart model sol m st (ESBlockOfValueNode n) =
   let function = hlWOpFunctionParams model
       data_nodes = hlFunData function
@@ -440,10 +437,10 @@ emitInstructionPart model sol m st (ESBlockOfValueNode n) =
                                      m
                                      st
                                      (ESNameOfBlockNode $ fromJust l)
-             else error $ "emitInstructionPart: found no block assigned to "
-                          ++ " function node " ++ pShow n
-     else error $ "emitInstructionPart: function node " ++ pShow n
-                  ++ " is not part of the function's data nodes"
+             else error $ "emitInstructionPart: found no block assigned to " ++
+                          "function node " ++ pShow n
+     else error $ "emitInstructionPart: function node " ++ pShow n ++
+                  " is not part of the function's data nodes"
 emitInstructionPart _ _ _ st (ESLocalTemporary i) =
   let code = emittedCode st
       (AsmInstruction instr_str) = head code
@@ -465,16 +462,16 @@ emitInstructionPart model _ _ st (ESFuncOfCallNode n) =
               (AsmInstruction instr_str) = head code
               new_instr = AsmInstruction $ instr_str ++ (fromJust f)
           in st { emittedCode = (new_instr:tail code) }
-     else error $ "emitInstructionPart: no function name found for function "
-                  ++ "call node " ++ pShow n
+     else error $ "emitInstructionPart: no function name found for " ++
+                  "function call node " ++ pShow n
 
 -- | Returns a variable name that does not appear in the given list of strings.
 getUniqueVarName :: [String] -> String
-getUniqueVarName used = head $ dropWhile (`elem` used)
-                                         (map (\i -> "%tmp." ++ show i)
-                                              ([1..] :: [Integer]))
-                                              -- Cast is needed or GHC will
-                                              -- complain...
+getUniqueVarName used =
+  head $
+  dropWhile (`elem` used) $
+  map (\i -> "%tmp." ++ show i) $
+  ([1..] :: [Integer]) -- Cast is needed or GHC will complain
 
 -- | Takes the node ID of a datum, and returns the selected match that defines
 -- that datum.
@@ -488,19 +485,17 @@ getDefinerOfData model sol n =
         let ms = filter (elem nid . snd) maps
         in if length ms > 0 then Just $ fst $ head ms else Nothing
       matches = hlWOpMatchParams model
-      definers = map hlWOpMatchID
-                     ( filter ( \m ->
-                                  let o = findOp (hlWOpOperandNodeMaps m) n
-                                  in if isJust o
-                                     then (fromJust o)
-                                          `elem`
-                                          hlWOpMatchOperandsDefined m
-                                     else False
-                              )
-                              matches
-                     )
+      definers = map hlWOpMatchID $
+                 filter ( \m -> let o = findOp (hlWOpOperandNodeMaps m) n
+                                in if isJust o
+                                   then (fromJust o)
+                                        `elem`
+                                        hlWOpMatchOperandsDefined m
+                                   else False
+                        ) $
+                 matches
       selected = filter (`elem` (hlSolSelMatches sol)) definers
   in if length selected == 1
      then head selected
-     else error $ "getDefinerOfData: no or multiple matches found that define "
-                  ++ "data with node ID " ++ pShow n
+     else error $ "getDefinerOfData: no or multiple matches found that " ++
+                  "define data with node ID " ++ pShow n

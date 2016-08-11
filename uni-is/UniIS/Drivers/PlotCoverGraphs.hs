@@ -87,10 +87,8 @@ run PlotCoverPerMatch function matchset _ _ =
      mapM
        ( \m ->
           do dot <- mkCoveragePlot function [pmMatch m]
-             let oid = "m" ++ pShow (pmMatchID m)
-                       ++ "-" ++
-                       "i" ++ pShow (pmInstrID m)
-                       ++ "-" ++
+             let oid = "m" ++ pShow (pmMatchID m) ++ "-" ++
+                       "i" ++ pShow (pmInstrID m) ++ "-" ++
                        "p" ++ pShow (pmPatternID m)
              return $ toOutputWithID oid dot
        )
@@ -101,14 +99,14 @@ run _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 mkCoveragePlot :: Function -> [Match NodeID] -> IO String
 mkCoveragePlot function matches =
   do let hasMatch n = any (\m -> isJust $ findPNInMatch m (getNodeID n)) matches
-         nf n = [ GV.style GV.filled,
-                  if hasMatch n
+         nf n = [ GV.style GV.filled
+                , if hasMatch n
                   then GV.fillColor GV.Green
                   else GV.fillColor GV.Red
                 ]
-         dot = (toDotStringWith nf noMoreEdgeAttr)
-               $ osGraph
-               $ functionOS function
+         dot = (toDotStringWith nf noMoreEdgeAttr) $
+               osGraph $
+               functionOS function
      return dot
 
 filterMatches
@@ -126,6 +124,6 @@ filterMatches tm p_fun ms =
                                  else return Nothing
                             else Left $ "No instruction with ID "
                                         ++ pShow iid
-                 )
-                 ms
+                 ) $
+            ms
      return $ catMaybes ms'

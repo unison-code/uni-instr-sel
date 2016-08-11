@@ -170,15 +170,15 @@ loadInstrPattern
 loadInstrPattern tm iid pid =
   do let instr = findInstruction (tmInstructions tm) iid
      when (isNothing instr) $
-       reportErrorAndExit $ "No instruction with ID '" ++ (pShow iid)
-                            ++ "' in target machine '" ++ (pShow $ tmID tm)
-                            ++ "'"
+       reportErrorAndExit $ "No instruction with ID '" ++ (pShow iid) ++
+                            "' in target machine '" ++ (pShow $ tmID tm) ++
+                            "'"
      let pattern = findInstrPattern (instrPatterns $ fromJust instr) pid
      when (isNothing pattern) $
-       reportErrorAndExit $ "No pattern with ID '" ++ (pShow pid)
-                            ++ "' in instruction '" ++ (pShow iid) ++ "'"
-                            ++ "' in target machine '" ++ (pShow $ tmID tm)
-                            ++ "'"
+       reportErrorAndExit $ "No pattern with ID '" ++ (pShow pid) ++
+                            "' in instruction '" ++ (pShow iid) ++ "'" ++
+                            "' in target machine '" ++ (pShow $ tmID tm) ++
+                            "'"
      return $ fromJust pattern
 
 -- | Parses a given JSON string and loads its content. Reports error if this

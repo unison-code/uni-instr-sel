@@ -44,26 +44,25 @@ canonicalizeCopies os =
                   }
       mkCompNode op = ComputationNode { compOp = CompArithOp op }
       mkPat op c_val swap_ops =
-        mkGraph
-          ( map Node
-                [ ( 0, NodeLabel 0 (mkCompNode op) )
-                , ( 1, NodeLabel 1 mkTempValueNode )
-                , ( 2, NodeLabel 2 (mkIntConstValueNode c_val) )
-                , ( 3, NodeLabel 3 mkTempValueNode )
-                ]
-          )
-          ( map Edge
-                ( [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 ) ]
-                  ++
-                  if not swap_ops
-                  then [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-                       , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
-                       ]
-                  else [ ( 1, 0, EdgeLabel DataFlowEdge 0 1 )
-                       , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
-                       ]
+        mkGraph ( map Node $
+                  [ ( 0, NodeLabel 0 (mkCompNode op) )
+                  , ( 1, NodeLabel 1 mkTempValueNode )
+                  , ( 2, NodeLabel 2 (mkIntConstValueNode c_val) )
+                  , ( 3, NodeLabel 3 mkTempValueNode )
+                  ]
                 )
-          )
+                ( map Edge $
+                  ( [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 ) ]
+                    ++
+                    if not swap_ops
+                    then [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                         , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
+                         ]
+                    else [ ( 1, 0, EdgeLabel DataFlowEdge 0 1 )
+                         , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
+                         ]
+                  )
+                )
       cp_patterns = concatMap (\(op, c) -> [mkPat op c False, mkPat op c True])
                               [ (IntOp Add,  0)
                               , (IntOp Mul,  1)

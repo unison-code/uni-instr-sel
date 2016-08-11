@@ -113,11 +113,12 @@ emitToFile fp o =
   let dname = takeDirectory fp
       (fname, ext) = splitExtension $ takeFileName fp
       oid = oID o
-      filename =
-        dname ++ (if length dname > 0 then "/" else "")
-              ++ fname
-              ++ ( if isJust oid
+      filename = dname ++
+                 (if length dname > 0 then "/" else "") ++
+                 fname ++
+                 ( if isJust oid
                    then (if length fname > 0 then "." else "") ++ fromJust oid
-                   else "")
-              ++ ext
+                   else ""
+                 ) ++
+                 ext
   in writeFile filename (oData o)

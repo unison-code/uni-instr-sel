@@ -97,15 +97,15 @@ parseSemanticsInMD m =
                  ( \r -> if isRight r
                          then return $ Just $ fromRight r
                          else do reportError $
-                                   "--- ERROR found in pattern semantics of "
-                                   ++ "instruction with emit string\n"
-                                   ++ "--- '"
-                                   ++ (instrEmitString i) ++ "':\n"
-                                   ++ (fromLeft r) ++ "\n"
-                                   ++ "Skipping to next pattern.\n"
+                                   "--- ERROR found in pattern semantics of " ++
+                                   "instruction with emit string\n" ++
+                                   "--- '" ++
+                                   (instrEmitString i) ++ "':\n" ++
+                                   (fromLeft r) ++ "\n" ++
+                                   "Skipping to next pattern.\n"
                                  return Nothing
-                 )
-                 res
+                 ) $
+               res
              return $ if length new_p > 0 || (length $ instrPatterns i) == 0
                       then Just $ i { instrPatterns = new_p }
                       else Nothing
@@ -151,15 +151,14 @@ generateTM md =
            mapMaybe ( \(r, i) -> if isLeft r
                                  then Just (i, fromLeft r)
                                  else Nothing
-                    )
-                    tm_pairs
+                    ) $
+           tm_pairs
      mapM_ ( \(i, err) -> reportError $
-                            "--- ERROR found in pattern semantics of "
-                            ++ "instruction with emit string:\n"
-                            ++ "--- "
-                            ++ (instrEmitString i) ++ "':\n"
-                            ++ err ++ "\n"
-                            ++ "Skipping to next instruction.\n"
+                            "--- ERROR found in pattern semantics of " ++
+                            "instruction with emit string:\n" ++
+                            "--- " ++ (instrEmitString i) ++ "':\n" ++
+                            err ++ "\n" ++
+                            "Skipping to next instruction.\n"
            )
            bad_instrs_with_err
      let tm = generateTargetMachine $ md { mdInstructions = okay_instrs }

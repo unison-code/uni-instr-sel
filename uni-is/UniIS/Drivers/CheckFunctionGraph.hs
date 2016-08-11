@@ -62,11 +62,11 @@ run CheckFunctionGraphCoverage function matchset _ =
       uncovered_nodes = filter (not . isNodeCoverable) op_nodes
   in if length uncovered_nodes > 0
      then let node_strs = intercalate ", " $ map pShow uncovered_nodes
-          in return [ toOutputWithExitCode errorExitCode
-                                           ( "FAILED\n"
-                                             ++ "  Non-coverable op nodes: "
-                                             ++ node_strs
-                                           )
+          in return [ toOutputWithExitCode
+                        errorExitCode
+                        ( "FAILED\n" ++
+                          "  Non-coverable op nodes: " ++ node_strs
+                        )
                     ]
      else return [toOutput "OK"]
 
@@ -105,8 +105,8 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
                                  in if isJust pn
                                     then getDefLocationsForNode os (fromJust pn)
                                     else []
-                        )
-                        matches
+                        ) $
+              matches
             use_locs =
               concatMap ( \pm -> let m = pmMatch pm
                                      pn = findPNInMatch m n
@@ -114,25 +114,24 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
                                  in if isJust pn
                                     then getUseLocationsForNode os (fromJust pn)
                                     else []
-                        )
-                        matches
+                        ) $
+              matches
         in -- If either list is empty, it means there are no restrictions on the
            -- locations and thus there is automatically an overlap
            if length def_locs > 0 && length use_locs > 0
-           then not
-                $ S.null
-                $ (S.fromList def_locs) `S.intersection` (S.fromList use_locs)
+           then not $
+                S.null $
+                (S.fromList def_locs) `S.intersection` (S.fromList use_locs)
            else True
       non_overlapping_nodes = filter (not . hasNodeOverlappingLocs) data_nodes
   in if length non_overlapping_nodes > 0
      then let node_strs = intercalate ", " $ map pShow non_overlapping_nodes
-          in return [ toOutputWithExitCode errorExitCode
-                                           ( "FAILED\n"
-                                             ++ "  Data nodes with "
-                                             ++ "non-overlapping location "
-                                             ++ "requirements: "
-                                             ++ node_strs
-                                           )
+          in return [ toOutputWithExitCode
+                      errorExitCode
+                      ( "FAILED\n" ++
+                        "  Data nodes with non-overlapping location " ++
+                        "requirements: " ++ node_strs
+                      )
                     ]
      else return [toOutput "OK"]
 

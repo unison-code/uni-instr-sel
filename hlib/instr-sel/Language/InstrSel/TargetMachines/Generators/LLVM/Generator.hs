@@ -65,35 +65,31 @@ generateTargetMachine
      -- ^ An error message or the generated target machine.
 generateTargetMachine m =
   do let mkPhiInstrEmitTemplate arg_ids ret_id =
-           ( TM.EmitStringTemplate
-             $ [ [ TM.ESLocationOfValueNode ret_id
-                 , TM.ESVerbatim " = PHI "
-                 ]
-                 ++ ( concat
-                      $ intersperse
-                          [TM.ESVerbatim " "]
-                          ( map ( \n ->
-                                  [ TM.ESVerbatim "("
-                                  , TM.ESLocationOfValueNode n
-                                  , TM.ESVerbatim ", "
-                                  , TM.ESBlockOfValueNode n
-                                  , TM.ESVerbatim ")"
-                                  ]
-                                )
-                                arg_ids
-                          )
-                    )
-               ]
-           )
+           TM.EmitStringTemplate $
+           [ [ TM.ESLocationOfValueNode ret_id
+             , TM.ESVerbatim " = PHI "
+             ]
+             ++
+             ( concat $
+               intersperse [TM.ESVerbatim " "] $
+               map ( \n -> [ TM.ESVerbatim "("
+                           , TM.ESLocationOfValueNode n
+                           , TM.ESVerbatim ", "
+                           , TM.ESBlockOfValueNode n
+                           , TM.ESVerbatim ")"
+                           ]
+                   ) $
+               arg_ids
+             )
+           ]
          locs = mkLocations m
-         generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate]
-                          ++ [mkBrFallThroughInstruction]
-                          ++ [mkDataDefInstruction]
-                          ++ [mkTempNullCopyInstruction [1, 8, 16, 32]]
-                          ++ [mkInactiveInstruction]
+         generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate] ++
+                          [mkBrFallThroughInstruction] ++
+                          [mkDataDefInstruction] ++
+                          [mkTempNullCopyInstruction [1, 8, 16, 32]] ++
+                          [mkInactiveInstruction]
      instrs <- mkInstructions m locs
-     let all_instrs = instrs
-                      ++
+     let all_instrs = instrs ++
                       reassignInstrIDs (toInstructionID $ length instrs)
                                        generic_instrs
      return TM.TargetMachine
@@ -152,14 +148,14 @@ mkInstrPatterns locs i =
           do n <- findValueNode os' op_name
              if isJust n
              then return n
-             else Left $ "mkInstrPatterns: no value node with origin "
-                         ++ "'" ++ op_name ++ "''"
+             else Left $ "mkInstrPatterns: no value node with origin " ++
+                         "'" ++ op_name ++ "''"
         findValueNodeFromOperand os' (LLVM.ImmInstrOperand op_name _) =
           do n <- findValueNode os' op_name
              if isJust n
              then return n
-             else Left $ "mkInstrPatterns: no value node with origin "
-                         ++ "'" ++ op_name ++ "''"
+             else Left $ "mkInstrPatterns: no value node with origin " ++
+                         "'" ++ op_name ++ "''"
         findValueNodeFromOperand os' (LLVM.AbsAddrInstrOperand op_name _) =
           findValueNode os' op_name
         findValueNodeFromOperand os' (LLVM.RelAddrInstrOperand op_name _) =
@@ -169,8 +165,8 @@ mkInstrPatterns locs i =
           in if length n == 1
              then return $ Just $ head n
              else if length n > 0
-                  then Left $ "mkInstrPatterns: multiple value nodes with "
-                              ++ "origin '" ++ origin ++ "'"
+                  then Left $ "mkInstrPatterns: multiple value nodes with " ++
+                              "origin '" ++ origin ++ "'"
                   else return Nothing
 
 addOperandConstraints
@@ -185,8 +181,8 @@ addOperandConstraints ops all_locs os =
           do locs <- mapM getIDOfLocWithName reg_names
              let sorted_locs = sort locs
              n <- getValueNode os' op_name
-             return os' { osValidLocations = osValidLocations os'
-                                             ++ [(getNodeID n, sorted_locs)]
+             return os' { osValidLocations = osValidLocations os' ++
+                                             [(getNodeID n, sorted_locs)]
                         }
         processOp os' (LLVM.ImmInstrOperand op_name range) =
           do n <- getValueNode os' op_name
@@ -207,10 +203,10 @@ addOperandConstraints ops all_locs os =
              if length n == 1
              then return $ head n
              else if length n > 0
-                  then Left $ "addOperandConstraints: multiple value nodes "
-                              ++ "with origin '" ++ origin ++ "'"
-                  else Left $ "addOperandConstraints: no value node with "
-                              ++ "origin '" ++ origin ++ "'"
+                  then Left $ "addOperandConstraints: multiple value nodes " ++
+                              "with origin '" ++ origin ++ "'"
+                  else Left $ "addOperandConstraints: no value node with " ++
+                              "origin '" ++ origin ++ "'"
         getValueOrBlockOrCallNode os' str =
           do let value_n = findValueNodesWithOrigin (osGraph os') str
                  block_n = findBlockNodesWithName (osGraph os')
@@ -221,21 +217,21 @@ addOperandConstraints ops all_locs os =
              if length all_n == 1
              then return $ head all_n
              else if length all_n == 0
-                  then Left $ "addOperandConstraints: no value, block, or "
-                              ++ "call node with origin or name '" ++ str ++ "'"
-                  else Left $ "addOperandConstraints: multiple value, block, "
-                              ++ "or call nodes with origin or name '"
-                              ++ str ++ "'"
+                  then Left $ "addOperandConstraints: no value, block, or " ++
+                              "call node with origin or name '" ++ str ++ "'"
+                  else Left $ "addOperandConstraints: multiple value, " ++
+                              "block, or call nodes with origin or name " ++
+                              "'" ++ str ++ "'"
         getIDOfLocWithName name =
           do let loc = filter (\l -> TM.locName l == TM.toLocationName name)
                               all_locs
              if length loc == 1
              then return $ TM.locID $ head loc
              else if length loc > 0
-                  then Left $ "addOperandConstraints: multiple locations with "
-                              ++ "name '" ++ name ++ "'"
-                  else Left $ "addOperandConstraints: no location with name '"
-                              ++ name ++ "'"
+                  then Left $ "addOperandConstraints: multiple locations " ++
+                              "with name '" ++ name ++ "'"
+                  else Left $ "addOperandConstraints: no location with name " ++
+                              "'" ++ name ++ "'"
         addAddressConstraints os' n range
           | isValueNode n =
               -- It is assumed that the value node for an immediate is always a
@@ -283,8 +279,8 @@ mkEmitString i os str =
   do let ls = splitOn "\n" str
          ls_parts = map (splitStartingOn "% ,()[]") ls
      t_parts <- mapM (mapM mkES) ls_parts
-     let merged_t_parts = filter (\l -> l /= [])
-                          $ map mergeVerbatims t_parts
+     let merged_t_parts = filter (\l -> l /= []) $
+                          map mergeVerbatims t_parts
      return $ TM.EmitStringTemplate merged_t_parts
   where
   mkES s =
@@ -297,8 +293,8 @@ mkEmitString i os str =
                   all_n = value_n ++ block_n ++ call_n
               in if length all_n == 1
                  then mkESFromNode (head all_n) s
-                 else Left $ "mkEmitString: no value, block, or call node "
-                             ++ "with name '" ++ s ++ "'"
+                 else Left $ "mkEmitString: no value, block, or call node " ++
+                             "with name '" ++ s ++ "'"
          else let int = read $ tail s
               in return $ TM.ESLocalTemporary int
     else return $ TM.ESVerbatim s
@@ -311,10 +307,10 @@ mkEmitString i os str =
                      return $ TM.ESLocationOfValueNode $ getNodeID n
                    (LLVM.ImmInstrOperand {}) ->
                      return $ TM.ESIntConstOfValueNode $ getNodeID n
-                   _ -> Left $ "mkEmitString: unknown instruction operand "
-                               ++ "type: " ++ show op
-           else Left $ "mkEmitString: no instruction operand with name '"
-                       ++ s ++ "'"
+                   _ -> Left $ "mkEmitString: unknown instruction operand " ++
+                               "type: " ++ show op
+           else Left $ "mkEmitString: no instruction operand with name " ++
+                       "'" ++ s ++ "'"
     | isBlockNode n =
         let op = getInstrOperand i s
         in if isJust op
@@ -323,8 +319,8 @@ mkEmitString i os str =
                      return $ TM.ESNameOfBlockNode $ getNodeID n
                    (LLVM.RelAddrInstrOperand {}) ->
                      return $ TM.ESNameOfBlockNode $ getNodeID n
-                   _ -> Left $ "mkEmitString: unknown instruction operand "
-                               ++ "type: " ++ show op
+                   _ -> Left $ "mkEmitString: unknown instruction operand " ++
+                               "type: " ++ show op
            else Left $ "mkEmitString: no instruction operand with name '"
                        ++ s ++ "'"
     | isCallNode n = return $ TM.ESFuncOfCallNode $ getNodeID n
@@ -346,10 +342,10 @@ mkInstrProps i=
 -- operand is found, 'Nothing' is returned.
 getInstrOperand :: LLVM.Instruction -> String -> Maybe LLVM.InstrOperand
 getInstrOperand i name =
-  let op = filter (\o -> LLVM.opName o == name)
-           $ LLVM.instrOperands
-           $ head -- Which pattern we take does not matter in this context
-           $ LLVM.instrPatterns i
+  let op = filter (\o -> LLVM.opName o == name) $
+           LLVM.instrOperands $
+           head $ -- Which pattern we take does not matter in this context
+           LLVM.instrPatterns i
   in if length op > 0
      then Just $ head op
      else Nothing

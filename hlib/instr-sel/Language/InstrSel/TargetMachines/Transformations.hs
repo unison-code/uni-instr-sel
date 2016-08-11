@@ -57,11 +57,11 @@ copyExtendGraph g =
   let nodes = filter isValueNode (getAllNodes g)
       edges = concatMap (getDtFlowOutEdges g) nodes
       filtered_edges = filter ( \e ->
-                                  let src = getSourceNode g e
-                                  in length (getDtFlowInEdges g src) > 0
-                                     || isValueNodeWithConstValue src
-                              )
-                              edges
+                                let src = getSourceNode g e
+                                in length (getDtFlowInEdges g src) > 0 ||
+                                   isValueNodeWithConstValue src
+                              ) $
+                       edges
   in foldl insertCopy g filtered_edges
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
@@ -77,25 +77,25 @@ insertCopy g0 df_edge =
       def_edge = if isPhiNode old_op_n
                  then let d_node_edges = getOutEdges g0 old_d_node
                           def_edges = filter isDefEdge d_node_edges
-                      in Just
-                         $ head
-                         $ filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
-                                  def_edges
+                      in Just $
+                         head $
+                         filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge) $
+                         def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
       new_dt = AnyType
       new_origin = Just $
-                   let origins = map (fromJust . getOriginOfValueNode)
-                                     $ filter isValueNodeWithOrigin
-                                     $ getAllNodes g1
+                   let origins = map (fromJust . getOriginOfValueNode) $
+                                 filter isValueNodeWithOrigin $
+                                 getAllNodes g1
                        prefix = if isJust old_d_origin
                                 then (fromJust old_d_origin) ++ ".copy."
                                 else "%copy."
-                   in head $ dropWhile (`elem` origins)
-                                       (map (\i -> prefix ++ show i)
-                                            ([1..] :: [Integer]))
-                                            -- Cast is needed or GHC will
-                                            -- complain...
+                   in head $
+                      dropWhile (`elem` origins) $
+                      map (\i -> prefix ++ show i) $
+                      ([1..] :: [Integer]) -- Cast is needed or GHC will
+                                           -- complain
       (g2, new_d_node) =
         insertNewNodeAlongEdge (ValueNode new_dt new_origin)
                                (head $ getOutEdges g1 new_cp_node)

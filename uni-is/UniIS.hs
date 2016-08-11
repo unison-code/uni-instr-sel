@@ -97,9 +97,9 @@ parseArgs =
         &= name "o"
         &= name "output"
         &= explicit
-        &= help ( "File that will contain the output. If the output involves "
-                  ++ "multiple files, each file will be suffixed with a "
-                  ++ "unique ID."
+        &= help ( "File that will contain the output. If the output " ++
+                  "involves multiple files, each file will be suffixed with " ++
+                  "a unique ID."
                 )
         &= typFile
     , targetName = def
@@ -129,43 +129,42 @@ parseArgs =
              , MakePatternMatchset
                  &= name "compute-pattern-matchset"
                  &= explicit
-                 &= help ( "Computes the pattern matchset by performing "
-                           ++ "pattern matching on the given function using "
-                           ++ "the instruction patterns available in the given "
-                           ++ "target machine."
+                 &= help ( "Computes the pattern matchset by performing " ++
+                           "pattern matching on the given function using " ++
+                           "the instruction patterns available in the given " ++
+                           "target machine."
                          )
              , MakeArrayIndexMaplists
                  &= name "compute-array-index-maplists"
                  &= explicit
-                 &= help ( "Computes the array index maplists from "
-                           ++ "the given function graph and pattern matchset. "
+                 &= help ( "Computes the array index maplists from " ++
+                           "the given function graph and pattern matchset. "
                          )
              , MakeLowLevelModelDump
                  &= name "dump-low-level-model-info"
                  &= explicit
-                 &= help ( "Dumps useful information about the low-level CP "
-                           ++ "model instance."
+                 &= help ( "Dumps useful information about the low-level CP " ++
+                           "model instance."
                          )
              , MakeHighLevelCPModelNoOp
                  &= name "construct-hl-cp-model-no-op"
                  &= explicit
-                 &= help ( "Constructs a high-level CP model instance without "
-                           ++ "operands from the "
-                           ++ "given function graph and pattern matchset ."
+                 &= help ( "Constructs a high-level CP model instance " ++
+                           "without operands from the " ++
+                           "given function graph and pattern matchset ."
                          )
              , MakeHighLevelCPModelWOp
                  &= name "construct-hl-cp-model-w-op"
                  &= explicit
-                 &= help ( "Constructs a high-level CP model instance with "
-                           ++ "operands from the "
-                           ++ " high-level CP model without operands and "
-                           ++ "pattern matchset ."
+                 &= help ( "Constructs a high-level CP model instance with " ++
+                           "operands from the high-level CP model without" ++
+                           "operands and pattern matchset ."
                          )
              , MakeAssemblyCode
                  &= name "generate-asm"
                  &= explicit
-                 &= help ( "Generates the corresponding assembly code from the "
-                           ++ "given high-level CP model and solution."
+                 &= help ( "Generates the corresponding assembly code from " ++
+                           "the given high-level CP model and solution."
                          )
              ]
         &= groupname "'make' command flags"
@@ -180,34 +179,34 @@ parseArgs =
              , BranchExtendFunctionGraph
                  &= name "branch-extend-fun"
                  &= explicit
-                 &= help ( "Extends the given function with additional "
-                           ++ "branches alone every conditional control flow "
-                           ++ "edge."
+                 &= help ( "Extends the given function with additional " ++
+                           "branches alone every conditional control flow " ++
+                           "edge."
                          )
              , CombineConstantsInFunctionGraph
                  &= name "combine-consts-in-fun"
                  &= explicit
-                 &= help ( "Combines data nodes in the given function that "
-                           ++ "represent the same constant."
+                 &= help ( "Combines data nodes in the given function that " ++
+                           "represent the same constant."
                          )
              , AlternativeExtendFunctionGraph
                  &= name "alternative-extend-fun"
                  &= explicit
-                 &= help ( "Inserts alternative edges for operations that "
-                           ++ "could take its input values from multiple "
-                           ++ "copy-related value nodes."
+                 &= help ( "Inserts alternative edges for operations that " ++
+                           "could take its input values from multiple " ++
+                           "copy-related value nodes."
                          )
              , RaiseLowLevelCPSolution
                  &= name "raise-ll-cp-solution"
                  &= explicit
-                 &= help ( "Raises a low-level CP model solution to a "
-                           ++ "high-level CP model solution."
+                 &= help ( "Raises a low-level CP model solution to a " ++
+                           "high-level CP model solution."
                          )
              , LowerHighLevelCPModel
                  &= name "lower-hl-cp-model"
                  &= explicit
-                 &= help ( "Lowers a high-level CP model instance to a "
-                           ++ "low-level CP model instance."
+                 &= help ( "Lowers a high-level CP model instance to a " ++
+                           "low-level CP model instance."
                          )
              ]
         &= groupname "'transform' command flags"
@@ -222,8 +221,8 @@ parseArgs =
              , PlotFunctionControlFlowGraph
                  &= name "plot-fun-cf-graph"
                  &= explicit
-                 &= help ( "Plots the control flow graph (in DOT format) "
-                           ++ "of a function."
+                 &= help ( "Plots the control flow graph (in DOT format) " ++
+                           "of a function."
                          )
              , PlotFunctionSSAGraph
                  &= name "plot-fun-ssa-graph"
@@ -236,8 +235,8 @@ parseArgs =
              , PlotPatternControlFlowGraph
                  &= name "plot-pat-cf-graph"
                  &= explicit
-                 &= help ( "Plots the control flow graph (in DOT format) "
-                           ++ "of a pattern."
+                 &= help ( "Plots the control flow graph (in DOT format) " ++
+                           "of a pattern."
                          )
              , PlotPatternSSAGraph
                  &= name "plot-pat-ssa-graph"
@@ -246,30 +245,30 @@ parseArgs =
              , PlotCoverAllMatches
                  &= name "plot-cover-all-matches"
                  &= explicit
-                 &= help ( "Same as --plot-fun-graph, but also marks the nodes "
-                           ++ "that is potentially covered by some match."
+                 &= help ( "Same as --plot-fun-graph, but also marks the " ++
+                           "nodes that is potentially covered by some match."
                          )
              , PlotCoverPerMatch
                  &= name "plot-cover-per-match"
                  &= explicit
-                 &= help ( "Same as --plot-cover-all-matches, but produces a "
-                           ++ "separate plot for each individual match."
+                 &= help ( "Same as --plot-cover-all-matches, but produces " ++
+                           "a separate plot for each individual match."
                          )
              ]
         &= groupname "'plot' command flags"
     , hideNullInstructions = def
         &= name "hide-null-instrs"
         &= explicit
-        &= help ( "Whether to exclude null instructions in the cover plots."
-                  ++ " Only usable together with --plot-cover-all-matches "
-                  ++ "option."
+        &= help ( "Whether to exclude null instructions in the cover plots." ++
+                  " Only usable together with --plot-cover-all-matches " ++
+                  "option."
                 )
     , hideInactiveInstructions = def
         &= name "hide-inactive-instrs"
         &= explicit
-        &= help ( "Whether to exclude inactive instructions in the cover plots."
-                  ++ " Only usable together with --plot-cover-all-matches "
-                  ++ "option."
+        &= help ( "Whether to exclude inactive instructions in the cover " ++
+                  "plots. Only usable together with " ++
+                  "--plot-cover-all-matches option."
                 )
     , checkAction =
         enum [ CheckNothing
@@ -282,8 +281,8 @@ parseArgs =
              , CheckFunctionGraphLocationOverlap
                  &= name "check-fun-location-overlap"
                  &= explicit
-                 &= help ( "Checks whether all data nodes have instructions "
-                           ++ "with overlapping location requirements."
+                 &= help ( "Checks whether all data nodes have instructions " ++
+                           "with overlapping location requirements."
                          )
              ]
         &= groupname "'check' command flags"
@@ -296,8 +295,7 @@ parseArgs =
                ]
     &= versionArg [ ignore ]
     &= program "uni-is"
-    &= summary ( "Unison (instruction selection) tool\n"
-                 ++
+    &= summary ( "Unison (instruction selection) tool\n" ++
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
     &= details

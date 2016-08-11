@@ -42,8 +42,8 @@ run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 run MakeHighLevelCPModelNoOp function matchset =
   do let target = retrieveTargetMachine $ pmTarget matchset
      when (isNothing target) $
-       reportErrorAndExit $ "Unrecognized target machine: "
-                            ++ (show $ fromJust target)
+       reportErrorAndExit $ "Unrecognized target machine: " ++
+                            (show $ fromJust target)
      let model = mkHighLevelModelNoOp function
                                       (fromJust target)
                                       (pmMatches matchset)

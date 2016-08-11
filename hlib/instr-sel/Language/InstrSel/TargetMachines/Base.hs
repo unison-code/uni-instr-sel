@@ -153,8 +153,8 @@ data Location
   deriving (Show, Eq)
 
 instance PrettyShow Location where
-  pShow (Location lid name val) = "Location (" ++ pShow lid ++ ", "
-                                  ++ pShow name ++ ", " ++ pShow val ++ ")"
+  pShow (Location lid name val) = "Location (" ++ pShow lid ++ ", " ++
+                                  pShow name ++ ", " ++ pShow val ++ ")"
 
 
 

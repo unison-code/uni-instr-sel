@@ -47,7 +47,7 @@ run MakeFunctionGraphFromLLVM str =
   do llvm_module_result <-
        withContext
          ( \context ->
-             runExceptT $ withModuleFromLLVMAssembly context str moduleAST
+           runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft llvm_module_result) $
        reportErrorAndExit $ fromLeft $ fromLeft llvm_module_result

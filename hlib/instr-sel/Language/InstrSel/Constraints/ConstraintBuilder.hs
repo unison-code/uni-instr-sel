@@ -57,15 +57,15 @@ mkDataDefinitionConstraints
      -- ^ A block node.
   -> [Constraint]
 mkDataDefinitionConstraints d b =
-  [ BoolExprConstraint
-    $ EqExpr ( Block2NumExpr
-               $ BlockWhereinDataIsDefinedExpr
-               $ ANodeIDExpr d
-             )
-             ( Block2NumExpr
-               $ BlockOfBlockNodeExpr
-               $ ANodeIDExpr b
-             )
+  [ BoolExprConstraint $
+    EqExpr ( Block2NumExpr $
+             BlockWhereinDataIsDefinedExpr $
+             ANodeIDExpr d
+           )
+           ( Block2NumExpr $
+             BlockOfBlockNodeExpr $
+             ANodeIDExpr b
+           )
   ]
 
 -- | Creates constraints using 'mkNewDataLocConstraints' and adds these (if any)
@@ -92,24 +92,24 @@ mkNewDataLocConstraints
      -- ^ A value node.
   -> [Constraint]
 mkNewDataLocConstraints [reg] d =
-  [ BoolExprConstraint
-    $ EqExpr ( Location2NumExpr
-               $ LocationOfValueNodeExpr
-               $ ANodeIDExpr d
-             )
-             ( Location2NumExpr
-               $ ALocationIDExpr reg
-             )
+  [ BoolExprConstraint $
+    EqExpr ( Location2NumExpr $
+             LocationOfValueNodeExpr $
+             ANodeIDExpr d
+           )
+           ( Location2NumExpr $
+             ALocationIDExpr reg
+           )
   ]
 mkNewDataLocConstraints regs d =
-  [ BoolExprConstraint
-    $ InSetExpr ( Location2SetElemExpr
-                  $ LocationOfValueNodeExpr
-                  $ ANodeIDExpr d
-                )
-                ( LocationClassExpr
-                  $ map ALocationIDExpr regs
-                )
+  [ BoolExprConstraint $
+    InSetExpr ( Location2SetElemExpr $
+                LocationOfValueNodeExpr $
+                ANodeIDExpr d
+              )
+              ( LocationClassExpr $
+                map ALocationIDExpr regs
+              )
   ]
 
 -- | Creates constraints using 'mkFallThroughConstraints' and adds these (if
@@ -124,11 +124,11 @@ mkFallThroughConstraints
      -- ^ A block node.
   -> [Constraint]
 mkFallThroughConstraints l =
-  [ BoolExprConstraint
-    $ FallThroughFromMatchToBlockExpr ThisMatchExpr
-                                      ( BlockOfBlockNodeExpr
-                                        $ ANodeIDExpr l
-                                      )
+  [ BoolExprConstraint $
+    FallThroughFromMatchToBlockExpr ThisMatchExpr
+                                    ( BlockOfBlockNodeExpr $
+                                      ANodeIDExpr l
+                                    )
   ]
 
 -- | Creates constraints, using 'mkSameDataLocConstraints', that force the
@@ -145,12 +145,12 @@ mkSameDataLocConstraints [] = []
 mkSameDataLocConstraints [_] = []
 mkSameDataLocConstraints ns =
   map (mkC $ head ns) (tail ns)
-  where mkC n1 n2 = BoolExprConstraint
-                    $ EqExpr ( Location2NumExpr
-                                $ LocationOfValueNodeExpr
-                                $ ANodeIDExpr n1
-                              )
-                              ( Location2NumExpr
-                                $ LocationOfValueNodeExpr
-                                $ ANodeIDExpr n2
-                              )
+  where mkC n1 n2 = BoolExprConstraint $
+                    EqExpr ( Location2NumExpr $
+                             LocationOfValueNodeExpr $
+                             ANodeIDExpr n1
+                           )
+                           ( Location2NumExpr $
+                             LocationOfValueNodeExpr $
+                             ANodeIDExpr n2
+                           )

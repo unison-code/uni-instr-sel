@@ -68,7 +68,7 @@ extractNode (Just ctxt, gr)
     | I.isEmpty gr = ([ctxt], I.empty)
     | otherwise  = first (ctxt:) $ foldl' nodeExtractor ([],gr) nbrs
     where
-      nbrs = I.neighbors' ctxt
+    nbrs = I.neighbors' ctxt
 
 -- | Helper function for 'extractNode' above.
 nodeExtractor :: (I.DynGraph g) => ([I.Context a b], g a b) -> I.Node

@@ -76,8 +76,7 @@ parseArgs =
                ]
     &= versionArg [ ignore ]
     &= program "uni-targen"
-    &= summary ( "Unison (target machine generator) tool\n"
-                 ++
+    &= summary ( "Unison (target machine generator) tool\n" ++
                  "Gabriel Hjort Blindell <ghb@kth.se>"
                )
 

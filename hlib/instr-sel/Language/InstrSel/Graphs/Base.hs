@@ -366,21 +366,21 @@ instance FromJSON NodeType where
   parseJSON (Object v) =
     do str <- v .: "ntype"
        let typ = unpack str
-       case typ of "comp"  -> ComputationNode
-                                <$> v .: "op"
-                   "ctrl"  -> ControlNode
-                                <$> v .: "op"
-                   "call"  -> CallNode
-                                <$> v .: "func"
-                   "data"  -> ValueNode
-                                <$> v .: "dtype"
-                                <*> v .: "origin"
-                   "lab"   -> BlockNode
-                                <$> v .: "block-name"
-                   "phi"   -> return PhiNode
-                   "stat"  -> return StateNode
-                   "copy"  -> return CopyNode
-                   _       -> mzero
+       case typ of "comp" -> ComputationNode
+                               <$> v .: "op"
+                   "ctrl" -> ControlNode
+                               <$> v .: "op"
+                   "call" -> CallNode
+                               <$> v .: "func"
+                   "data" -> ValueNode
+                               <$> v .: "dtype"
+                               <*> v .: "origin"
+                   "lab"  -> BlockNode
+                               <$> v .: "block-name"
+                   "phi"  -> return PhiNode
+                   "stat" -> return StateNode
+                   "copy" -> return CopyNode
+                   _      -> mzero
   parseJSON _ = mzero
 
 instance ToJSON NodeType where
@@ -519,16 +519,16 @@ fromEdgeNr (EdgeNr n) = n
 
 isOperationNode :: Node -> Bool
 isOperationNode n =
-     isComputationNode n
-  || isControlNode n
-  || isCallNode n
-  || isPhiNode n
-  || isCopyNode n
+  isComputationNode n ||
+  isControlNode n ||
+  isCallNode n ||
+  isPhiNode n ||
+  isCopyNode n
 
 isDatumNode :: Node -> Bool
 isDatumNode n =
-     isValueNode n
-  || isStateNode n
+  isValueNode n ||
+  isStateNode n
 
 isNodeInGraph :: Graph -> Node -> Bool
 isNodeInGraph g n = n `elem` getAllNodes g
@@ -726,8 +726,8 @@ updateDataTypeOfValueNode new_dt n g =
   let nt = getNodeType n
       new_nt = nt { typeOfValue = new_dt }
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
-                _ -> error $ "updateDataTypeOfValueNode: node " ++ show n
-                             ++ " is not a value node"
+                _ -> error $ "updateDataTypeOfValueNode: node " ++ show n ++
+                             " is not a value node"
 
 -- | Updates the function name of an already existing call node.
 updateNameOfCallNode :: FunctionName -> Node -> Graph -> Graph
@@ -735,8 +735,8 @@ updateNameOfCallNode new_name n g =
   let nt = getNodeType n
       new_nt = nt { nameOfCall = new_name }
   in case nt of (CallNode {}) -> updateNodeType new_nt n g
-                _ -> error $ "updateNameOfCallNode: node " ++ show n
-                             ++ " is not a call node"
+                _ -> error $ "updateNameOfCallNode: node " ++ show n ++
+                             " is not a call node"
 
 -- | Updates the origin of an already existing value node.
 updateOriginOfValueNode :: String -> Node -> Graph -> Graph
@@ -744,8 +744,8 @@ updateOriginOfValueNode new_origin n g =
   let nt = getNodeType n
       new_nt = nt { originOfValue = Just new_origin }
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
-                _ -> error $ "updateOriginOfValueNode: node " ++ show n
-                             ++ " is not a value node"
+                _ -> error $ "updateOriginOfValueNode: node " ++ show n ++
+                             " is not a value node"
 
 -- | Updates the node label of an already existing node.
 updateNodeLabel :: NodeLabel -> Node -> Graph -> Graph
@@ -799,8 +799,7 @@ mergeNodes
 mergeNodes n_to_keep n_to_discard g
   | (getIntNodeID n_to_keep) == (getIntNodeID n_to_discard) = g
   | otherwise =
-      let edges_to_ignore = getEdgesBetween g n_to_discard n_to_keep
-                            ++
+      let edges_to_ignore = getEdgesBetween g n_to_discard n_to_keep ++
                             getEdgesBetween g n_to_keep n_to_discard
       in delNode n_to_discard
                  ( redirectEdges n_to_keep
@@ -842,12 +841,12 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
   let new_trg_id = getIntNodeID new_trg
       new_e = ( src
               , new_trg_id
-              , l
-                { inEdgeNr = getNextInEdgeNr
-                               g
-                               new_trg_id
-                               (\e' -> getEdgeType e' == edgeType l)
-                }
+              , l { inEdgeNr = getNextInEdgeNr g
+                                               new_trg_id
+                                               ( \e' ->
+                                                 getEdgeType e' == edgeType l
+                                               )
+                  }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
@@ -874,12 +873,12 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
   let new_src_id = getIntNodeID new_src
       new_e = ( new_src_id
               , trg
-              , l
-                { outEdgeNr = getNextOutEdgeNr
-                                g
-                                new_src_id
-                                (\e' -> getEdgeType e' == edgeType l)
-                }
+              , l { outEdgeNr = getNextOutEdgeNr g
+                                                 new_src_id
+                                                 ( \e' ->
+                                                   getEdgeType e' == edgeType l
+                                                 )
+                  }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
@@ -1078,8 +1077,8 @@ getDefOutEdges g n = filter isDefEdge $ getOutEdges g n
 -- | Gets the edges involving a given node.
 getEdges :: Graph -> Node -> [Edge]
 getEdges g n =
-  filter (\e -> getSourceNode g e == n || getTargetNode g e == n)
-  $ getAllEdges g
+  filter (\e -> getSourceNode g e == n || getTargetNode g e == n) $
+  getAllEdges g
 
 -- | Gets the edges between two nodes.
 getEdgesBetween :: Graph -> SrcNode -> DstNode -> [Edge]
@@ -1087,8 +1086,9 @@ getEdgesBetween g from_n to_n =
   let out_edges = map fromEdge $ getOutEdges g from_n
       from_id = getIntNodeID from_n
       to_id = getIntNodeID to_n
-      es = map toEdge
-               (filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) out_edges)
+      es = map toEdge $
+           filter (\(n1, n2, _) -> from_id == n1 && to_id == n2) $
+           out_edges
   in es
 
 -- | Sorts a list of edges according to their edge numbers (in increasing
@@ -1141,8 +1141,8 @@ doNodesMatch
      -- ^ A node from the pattern graph.
   -> Bool
 doNodesMatch fg pg fn pn =
-  (getNodeType pn) `isNodeTypeCompatibleWith` (getNodeType fn)
-  && doNumEdgesMatch fg pg fn pn
+  (getNodeType pn) `isNodeTypeCompatibleWith` (getNodeType fn) &&
+  doNumEdgesMatch fg pg fn pn
 
 -- | Checks if a node type is compatible with another node type. Note that this
 -- function is not necessarily commutative.
@@ -1164,9 +1164,9 @@ isNodeTypeCompatibleWith _ _ = False
 -- control node.
 isBlockNodeAndIntermediate :: Graph -> Node -> Bool
 isBlockNodeAndIntermediate g n
-  | ( isBlockNode n
-      && (length $ filter isControlFlowEdge $ getInEdges g n) > 0
-      && (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
+  | ( isBlockNode n &&
+      (length $ filter isControlFlowEdge $ getInEdges g n) > 0 &&
+      (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
     ) = True
   | otherwise = False
 
@@ -1313,9 +1313,9 @@ doInEdgeListsMatch
 doInEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
       pn = getTargetNode pg (head pes)
-  in ((not $ doesOrderCFInEdgesMatter pg pn) || checkEdges isControlFlowEdge)
-     && ((not $ doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge)
-     && ((not $ doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
+  in (not (doesOrderCFInEdgesMatter pg pn) || checkEdges isControlFlowEdge) &&
+     (not (doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge) &&
+     (not (doesOrderSFInEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Same as 'doInEdgeListsMatch' but for out-edges.
 doOutEdgeListsMatch
@@ -1331,11 +1331,9 @@ doOutEdgeListsMatch
 doOutEdgeListsMatch _ pg fes pes =
   let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
       pn = getSourceNode pg (head pes)
-  in ( (not $ doesOrderCFOutEdgesMatter pg pn)
-       || checkEdges isControlFlowEdge
-     )
-     && ((not $ doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge)
-     && ((not $ doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
+  in (not (doesOrderCFOutEdgesMatter pg pn) || checkEdges isControlFlowEdge) &&
+     (not (doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge) &&
+     (not (doesOrderSFOutEdgesMatter pg pn) || checkEdges isStateFlowEdge)
 
 -- | Checks if the order of control-flow in-edges matters for a given pattern
 -- node.
@@ -1404,9 +1402,9 @@ customPatternMatchingSemanticsCheck fg pg st c =
                then let es = filter isDefEdge $ getInEdges pg pn
                         v_ns = map (getSourceNode pg) es
                in all ( \n ->
-                          let es' = filter isDataFlowEdge $ getOutEdges pg n
-                              phi_es = filter (isPhiNode . getTargetNode pg) es'
-                          in all (checkPhiValBlockMappings fg pg (c:st)) phi_es
+                        let es' = filter isDataFlowEdge $ getOutEdges pg n
+                            phi_es = filter (isPhiNode . getTargetNode pg) es'
+                        in all (checkPhiValBlockMappings fg pg (c:st)) phi_es
                       ) v_ns
                else True
 
@@ -1427,21 +1425,21 @@ checkPhiValBlockMappings fg pg st pe =
       v_fn = findFNInMapping st v_pn
       p_pn = getTargetNode pg pe
       p_fn = findFNInMapping st p_pn
-      def_pe = head
-               $ filter ((==) (getOutEdgeNr pe) . getOutEdgeNr)
-               $ filter isDefEdge
-               $ getOutEdges pg v_pn
+      def_pe = head $
+               filter ((==) (getOutEdgeNr pe) . getOutEdgeNr) $
+               filter isDefEdge $
+               getOutEdges pg v_pn
       b_pn = getTargetNode pg def_pe
       b_fn = findFNInMapping st b_pn
   in if isJust p_fn && isJust v_fn && isJust b_fn
         -- Check if all necessary nodes have been mapped
-     then let df_fes = filter isDataFlowEdge
-                       $ getEdgesBetween fg (fromJust v_fn) (fromJust p_fn)
+     then let df_fes = filter isDataFlowEdge $
+                       getEdgesBetween fg (fromJust v_fn) (fromJust p_fn)
               hasMatchingDefEdge fe =
                 let out_nr_fe = getOutEdgeNr fe
-                    def_fes = filter ((==) out_nr_fe . getOutEdgeNr)
-                              $ filter isDefEdge
-                              $ getOutEdges fg (getSourceNode fg fe)
+                    def_fes = filter ((==) out_nr_fe . getOutEdgeNr) $
+                              filter isDefEdge $
+                              getOutEdges fg (getSourceNode fg fe)
                 in if length def_fes > 0
                    then getTargetNode fg (head def_fes) == fromJust b_fn
                    else False
@@ -1458,9 +1456,9 @@ areInEdgesEquivalent
   -> Edge
   -> Bool
 areInEdgesEquivalent g e1 e2 =
-  getEdgeType e1 == getEdgeType e2
-  && (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2)
-  && getInEdgeNr e1 == getInEdgeNr e2
+  getEdgeType e1 == getEdgeType e2 &&
+  (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2) &&
+  getInEdgeNr e1 == getInEdgeNr e2
 
 -- | Checks if two out-edges are equivalent, meaning they must be of the same
 -- edge type, have source nodes with the same node ID, and have the same
@@ -1472,9 +1470,9 @@ areOutEdgesEquivalent
   -> Edge
   -> Bool
 areOutEdgesEquivalent g e1 e2 =
-  getEdgeType e1 == getEdgeType e2
-  && (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2)
-  && getOutEdgeNr e1 == getOutEdgeNr e2
+  getEdgeType e1 == getEdgeType e2 &&
+  (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2) &&
+  getOutEdgeNr e1 == getOutEdgeNr e2
 
 -- | Same as 'findPNsInMapping'.
 findPNsInMatch
@@ -1582,10 +1580,9 @@ findFNInMapping st pn =
 computeDomSets :: Graph -> Node -> [DomSet Node]
 computeDomSets (Graph g) n =
   let toNode = fromJust . getNodeWithIntNodeID g
-      doms = map ( \(n1, ns2) ->
-                   DomSet { domNode = toNode n1
-                          , domSet = map toNode ns2
-                          }
+      doms = map ( \(n1, ns2) -> DomSet { domNode = toNode n1
+                                        , domSet = map toNode ns2
+                                        }
                  )
                  (I.dom g (getIntNodeID n))
   in doms
@@ -1599,8 +1596,8 @@ isGraphEmpty = I.isEmpty . intGraph
 -- in the graph, an empty graph is returned.
 extractCFG :: Graph -> Graph
 extractCFG g =
-  let nodes_to_remove = filter (\n -> not (isBlockNode n || isControlNode n))
-                               (getAllNodes g)
+  let nodes_to_remove = filter (\n -> not (isBlockNode n || isControlNode n)) $
+                        getAllNodes g
       cfg_with_ctrl_nodes = foldr delNode g nodes_to_remove
       cfg = foldr delNodeKeepEdges
                   cfg_with_ctrl_nodes
@@ -1613,11 +1610,10 @@ extractCFG g =
 extractSSA :: Graph -> Graph
 extractSSA g =
   let nodes_to_remove =
-        filter
-          ( \n -> not (isOperationNode n || isDatumNode n)
-                  || (isControlNode n && not (isRetControlNode n))
-          )
-          (getAllNodes g)
+        filter ( \n -> not (isOperationNode n || isDatumNode n) ||
+                       (isControlNode n && not (isRetControlNode n))
+               ) $
+        getAllNodes g
       ssa = foldr delNode g nodes_to_remove
   in ssa
 
@@ -1664,8 +1660,8 @@ fromMatch (Match s) = S.toList s
 subGraph :: Graph -> [Node] -> Graph
 subGraph g ns =
     let sns = filter (\n -> n `elem` ns) $ getAllNodes g
-        ses = filter ( \e -> getSourceNode g e `elem` ns
-                             && getTargetNode g e `elem` ns
-                     )
-              $ getAllEdges g
+        ses = filter ( \e -> getSourceNode g e `elem` ns &&
+                             getTargetNode g e `elem` ns
+                     ) $
+              getAllEdges g
     in mkGraph sns ses

@@ -52,51 +52,48 @@ raiseLowLevelSolution
       getLocationIDFromAI ai = ai_maps_for_locations !! (fromIntegral ai)
       order_of_blocks = map getNodeIDFromBlockAI (llSolOrderOfBlocks sol)
       sel_matches =
-        catMaybes
-        $ zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
-                  (llSolIsMatchSelected sol)
-                  ai_maps_for_matches
+        catMaybes $
+        zipWith (\is_sel mid -> if is_sel then Just mid else Nothing)
+                (llSolIsMatchSelected sol)
+                ai_maps_for_matches
       alts_of_operands =
-        catMaybes $ zipWith3
-                    ( \has_alt o ai ->
-                        if has_alt
-                        then Just (o, getNodeIDFromDatumAI ai)
-                        else Nothing
-                    )
-                    (llSolHasOperandAlt sol)
-                    ai_maps_for_operands
-                    (llSolAltsOfOperands sol)
+        catMaybes $ zipWith3 ( \has_alt o ai ->
+                               if has_alt
+                               then Just (o, getNodeIDFromDatumAI ai)
+                               else Nothing
+                             )
+                             (llSolHasOperandAlt sol)
+                             ai_maps_for_operands
+                             (llSolAltsOfOperands sol)
       blocks_of_sel_matches =
-        catMaybes $ zipWith3
-                    ( \is_sel mid ai ->
-                        if is_sel
-                        then Just (mid, getNodeIDFromBlockAI ai)
-                        else Nothing
-                    )
-                    (llSolIsMatchSelected sol)
-                    ai_maps_for_matches
-                    (llSolBlocksOfMatches sol)
+        catMaybes $ zipWith3 ( \is_sel mid ai ->
+                               if is_sel
+                               then Just (mid, getNodeIDFromBlockAI ai)
+                               else Nothing
+                             )
+                             (llSolIsMatchSelected sol)
+                             ai_maps_for_matches
+                             (llSolBlocksOfMatches sol)
       locs_of_data =
-        catMaybes $ zipWith3
-                    ( \has_reg nid ai ->
-                        if has_reg
-                        then Just (nid, getLocationIDFromAI ai)
-                        else Nothing
-                    )
-                    (llSolHasDatumLocation sol)
-                    ai_maps_for_data
-                    (llSolLocationsOfData sol)
+        catMaybes $ zipWith3 ( \has_reg nid ai ->
+                               if has_reg
+                               then Just (nid, getLocationIDFromAI ai)
+                               else Nothing
+                             )
+                             (llSolHasDatumLocation sol)
+                             ai_maps_for_data
+                             (llSolLocationsOfData sol)
       hl_sol = HighLevelSolution
-               { hlSolOrderOfBlocks = order_of_blocks
-               , hlSolSelMatches = sel_matches
-               , hlSolNodesOfOperands = alts_of_operands
-               , hlSolBlocksOfSelMatches = blocks_of_sel_matches
-               , hlSolLocationsOfData = locs_of_data
-               , hlSolCost = llSolCost sol
-               , hlIsOptimal = llIsOptimal sol
-               , hlSolTime = llSolTime sol
-               , hlCoreSolTime = llCoreSolTime sol
-               }
+                 { hlSolOrderOfBlocks = order_of_blocks
+                 , hlSolSelMatches = sel_matches
+                 , hlSolNodesOfOperands = alts_of_operands
+                 , hlSolBlocksOfSelMatches = blocks_of_sel_matches
+                 , hlSolLocationsOfData = locs_of_data
+                 , hlSolCost = llSolCost sol
+                 , hlIsOptimal = llIsOptimal sol
+                 , hlSolTime = llSolTime sol
+                 , hlCoreSolTime = llCoreSolTime sol
+                 }
       hl_sol' = deleteExplicitFallthroughs model tm hl_sol
   in hl_sol'
 
@@ -115,14 +112,13 @@ deleteExplicitFallthroughs
   tm
   sol@(HighLevelSolution {})
   =
-  let matches  = hlSolSelMatches sol
-      brs      = filter (isUnconditionalBranch model tm) matches
-      brs'     = filter (isExplicitFallthrough sol model) brs
+  let matches = hlSolSelMatches sol
+      brs = filter (isUnconditionalBranch model tm) matches
+      brs' = filter (isExplicitFallthrough sol model) brs
   in case brs' of
-       []   -> sol
-       brs'' ->
-           let sol' = foldl (removeMatch model) sol brs''
-           in deleteExplicitFallthroughs model tm sol'
+       []    -> sol
+       brs'' -> let sol' = foldl (removeMatch model) sol brs''
+                in deleteExplicitFallthroughs model tm sol'
 
 deleteExplicitFallthroughs _ _ NoHighLevelSolution = NoHighLevelSolution
 
@@ -169,19 +165,20 @@ removeMatch
   -> MatchID
   -> HighLevelSolution
 removeMatch model sol match =
-  let mps  = getHLMatchParams (hlWOpMatchParams model) match
-      b    = fromJust $ hlWOpMatchEntryBlock mps
+  let mps = getHLMatchParams (hlWOpMatchParams model) match
+      b = fromJust $ hlWOpMatchEntryBlock mps
       -- TODO: replace when optimizing for code size
-      l    = hlWOpMatchLatency mps
-      bps  = hlFunBlockParams $ hlWOpFunctionParams model
-      f    = hlBlockExecFrequency $ fromJust $
-             find (\bp -> hlBlockNode bp == b) bps
-      mc   = l * (fromNatural $ fromExecFreq f)
+      l = hlWOpMatchLatency mps
+      bps = hlFunBlockParams $ hlWOpFunctionParams model
+      f = hlBlockExecFrequency $
+          fromJust $
+          find (\bp -> hlBlockNode bp == b) bps
+      mc = l * (fromNatural $ fromExecFreq f)
       sol' = sol { hlSolSelMatches =
-                       filter (\m -> m /= match) (hlSolSelMatches sol)
+                     filter (\m -> m /= match) (hlSolSelMatches sol)
                  , hlSolBlocksOfSelMatches =
                      filter (\(m, _) -> m /= match)
-                                (hlSolBlocksOfSelMatches sol)
+                            (hlSolBlocksOfSelMatches sol)
                  , hlSolCost = hlSolCost sol - mc
                  }
   in sol'

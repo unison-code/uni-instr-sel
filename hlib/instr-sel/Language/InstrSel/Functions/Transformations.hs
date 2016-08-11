@@ -76,8 +76,8 @@ insertCopyAlongEdge g0 df_edge =
   let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
-      mkNewDataType d = error $ "insertCopy: DataType '" ++ show d ++ "' not "
-                                ++ "supported"
+      mkNewDataType d = error $ "insertCopy: DataType '" ++ show d ++ "' " ++
+                                "not " ++ "supported"
                         -- This happens if copy extension is attempted before
                         -- constants have been combined. In many cases, the
                         -- bit width for a constant is known somewhere in a
@@ -90,25 +90,26 @@ insertCopyAlongEdge g0 df_edge =
       def_edge = if isPhiNode old_op_n
                  then let d_node_edges = getOutEdges g0 old_d_node
                           def_edges = filter isDefEdge d_node_edges
-                      in Just
-                         $ head
-                         $ filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
-                                  def_edges
+                      in Just $
+                         head $
+                         filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge)
+                                def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
       new_dt = mkNewDataType $ getDataTypeOfValueNode old_d_node
       new_origin = Just $
-                   let origins = map (fromJust . getOriginOfValueNode)
-                                     $ filter isValueNodeWithOrigin
-                                     $ getAllNodes g1
+                   let origins = map (fromJust . getOriginOfValueNode) $
+                                 filter isValueNodeWithOrigin $
+                                 getAllNodes g1
                        prefix = if isJust old_d_origin
                                 then (fromJust old_d_origin) ++ ".copy."
                                 else "%copy."
                    in head $ dropWhile (`elem` origins)
-                                       (map (\i -> prefix ++ show i)
-                                            ([1..] :: [Integer]))
-                                            -- Cast is needed or GHC will
-                                            -- complain...
+                                       ( map (\i -> prefix ++ show i)
+                                             ([1..] :: [Integer])
+                                             -- Cast is needed or GHC will
+                                             -- complain
+                                       )
       (g2, new_d_node) =
         insertNewNodeAlongEdge (ValueNode new_dt new_origin)
                                (head $ getOutEdges g1 new_cp_node)
@@ -134,9 +135,9 @@ insertCopyAlongEdge g0 df_edge =
 -- one preceding block).
 branchExtend :: Function -> Function
 branchExtend f =
-  assignMissingBlockExecFreqs
-  $ assignMissingBlockNames
-  $ updateGraph (branchExtendGraph $ getGraph f) f
+  assignMissingBlockExecFreqs $
+  assignMissingBlockNames $
+  updateGraph (branchExtendGraph $ getGraph f) f
 
 -- | Inserts a new block node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
@@ -146,8 +147,7 @@ branchExtend f =
 branchExtendGraph :: Graph -> Graph
 branchExtendGraph g =
   let c_nodes = filter isControlNode (getAllNodes g)
-      nodes = filter (\n -> (ctrlOp $ getNodeType n) == CondBr)
-                     c_nodes
+      nodes = filter (\n -> (ctrlOp $ getNodeType n) == CondBr) c_nodes
       edges = concatMap (getCtrlFlowOutEdges g) nodes
   in foldl insertBranch g edges
 
@@ -180,8 +180,8 @@ assignMissingBlockNames f =
         foldl ( \g' (l, n) ->
                 updateNodeType (BlockNode { nameOfBlock = l }) n g'
               )
-              g
-              (zip ok_names no_block_nodes)
+              g $
+        zip ok_names no_block_nodes
   in updateGraph new_g f
 
 -- | Assigns an execution frequency to every block that currently does not have
@@ -198,14 +198,14 @@ assignMissingBlockExecFreqs f =
                         l_freq = lookup l freqs
                     in if isJust l_freq
                        then (l, fromJust l_freq)
-                       else let prec_n = getSourceNode
-                                           cfg
-                                           (head $ getCtrlFlowInEdges cfg n)
+                       else let prec_n = getSourceNode cfg $
+                                         head $
+                                         getCtrlFlowInEdges cfg n
                                 prec_l = nameOfBlock $ getNodeType prec_n
                                 prec_freq = fromJust $ lookup prec_l freqs
                             in (l, prec_freq)
-            )
-            (getAllNodes cfg)
+            ) $
+        getAllNodes cfg
   in (updateGraph g f) { functionBBExecFreq = new_freqs }
 
 -- | Combines value nodes in the function graph that represent the same
@@ -234,16 +234,16 @@ combineValueNodes f [_] = f
 combineValueNodes f ns =
   let mkNewDataType IntConstType { intConstValue = r } =
         IntConstType { intConstValue = r, intConstNumBits = Nothing }
-      mkNewDataType d = error $ "combineValueNodes: unsupported data type "
-                                ++ show d
+      mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
+                                show d
       g0 = getGraph f
       nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns) Nothing
       (g1, new_n) = addNewNode nt g0
-      entry_node = head
-                   $ findNodesWithNodeID g1
-                   $ fromJust
-                   $ osEntryBlockNode
-                   $ functionOS f
+      entry_node = head $
+                   findNodesWithNodeID g1 $
+                   fromJust $
+                   osEntryBlockNode $
+                   functionOS f
       (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
   in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
 
@@ -285,13 +285,13 @@ alternativeExtendGraph g =
       copy_related_vs =
         mapMaybe
           ( \n ->
-              let es = getDtFlowOutEdges g n
-                  copies = filter isCopyNode $ map (getTargetNode g) es
-                  -- A copy node always have exactly one outgoing data flow edge
-              in if length copies > 1
-                 then Just $
-                      map (getTargetNode g . head . getDtFlowOutEdges g) copies
-                 else Nothing
+            let es = getDtFlowOutEdges g n
+                copies = filter isCopyNode $ map (getTargetNode g) es
+                -- A copy node always have exactly one outgoing data flow edge
+            in if length copies > 1
+               then Just $
+                    map (getTargetNode g . head . getDtFlowOutEdges g) copies
+               else Nothing
           )
           v_ns
   in foldr insertAlternativeEdges g copy_related_vs
@@ -301,10 +301,10 @@ insertAlternativeEdges vs g0 =
   -- A this point, every copy-related value node has exactly one outgoing data
   -- flow edge as it is used by exactly one operation
   let processInput i g1 =
-        let ops = map (getTargetNode g0)
-                  $ getDtFlowOutEdges g0 i
-                    -- It's very important to get the edges from g0 and not g1,
-                    -- as new data-flow edges will continuously be added to g1
+        let ops = map (getTargetNode g0) $
+                  getDtFlowOutEdges g0 i
+                  -- It's very important to get the edges from g0 and not g1, as
+                  -- new data-flow edges will continuously be added to g1
             processOp o g2 =
               let alts = filter (/= i) vs
                   orig_e = head $ getEdgesBetween g0 i o
@@ -319,19 +319,19 @@ insertAlternativeEdges vs g0 =
                         g5 = updateEdgeLabel new_label new_e g4
                     in if isPhiNode o
                        then let orig_out_nr = outEdgeNr $ getEdgeLabel $ orig_e
-                                orig_d_e = head
-                                           $ filter ( (==) orig_out_nr
-                                                      . getOutEdgeNr
-                                                    )
-                                           $ filter isDefEdge
-                                           $ getOutEdges g0 i
+                                orig_d_e = head $
+                                           filter ( (==) orig_out_nr .
+                                                    getOutEdgeNr
+                                                  ) $
+                                           filter isDefEdge $
+                                           getOutEdges g0 i
                                            -- Remember to get edges from g0
                                 b_node = getTargetNode g0 orig_d_e
                                 (g6, new_d_e) = addNewDefEdge (v, b_node) g5
                                 d_label = getEdgeLabel new_d_e
                                 new_out_nr = outEdgeNr $ getEdgeLabel $ new_e
-                                new_d_label = d_label { outEdgeNr = new_out_nr
-                                                      }
+                                new_d_label =
+                                  d_label { outEdgeNr = new_out_nr }
                                 g7 = updateEdgeLabel new_d_label new_d_e g6
                             in g7
                        else g5

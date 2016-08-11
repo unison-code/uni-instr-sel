@@ -463,35 +463,36 @@ mkPatternCFGBuilder =
   mkFunctionCFGBuilder { mkFromInstruction = newInstrMk
                        , mkFromTerminator = newTermMk
                        }
-  where newInstrMk b st i@(LLVM.Call {}) =
-          let f_name = getFunctionName i
-          in if isJust f_name
-             then case (extractFunctionNamePart $ fromJust f_name)
-                  of "return"          -> mkPatternCFGFromReturnCall b st i
-                     "uncond-br"       -> mkPatternCFGFromUncondBrCall b st i
-                     "cond-br-or-fall" ->
-                         mkPatternCFGFromCondBrOrFallCall b st i
-                     _ -> mkFunctionCFGFromInstruction b st i
-                          -- Let the default builder handle it
-             else mkFunctionCFGFromInstruction b st i
-                  -- Let the default builder handle it
-        newInstrMk b st i = mkFunctionCFGFromInstruction b st i
-        newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = return st
-        newTermMk _ _ (LLVM.Ret { LLVM.returnOperand = Just _ }) =
-          Left "mkPatternCFGBuilder: non-void returns not supported"
-        newTermMk b st i@(LLVM.Br {}) = mkFunctionCFGFromTerminator b st i
-        newTermMk b st i@(LLVM.CondBr {}) = mkFunctionCFGFromTerminator b st i
-        newTermMk _ _ i =
-          Left $ "mkPatternCFGBuilder: cannot handle terminator: " ++ show i
+  where
+  newInstrMk b st i@(LLVM.Call {}) =
+    let f_name = getFunctionName i
+    in if isJust f_name
+       then case (extractFunctionNamePart $ fromJust f_name)
+            of "return"          -> mkPatternCFGFromReturnCall b st i
+               "uncond-br"       -> mkPatternCFGFromUncondBrCall b st i
+               "cond-br-or-fall" -> mkPatternCFGFromCondBrOrFallCall b st i
+               _ -> mkFunctionCFGFromInstruction b st i
+                    -- Let the default builder handle it
+       else mkFunctionCFGFromInstruction b st i
+            -- Let the default builder handle it
+  newInstrMk b st i = mkFunctionCFGFromInstruction b st i
+  newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = return st
+  newTermMk _ _ (LLVM.Ret { LLVM.returnOperand = Just _ }) =
+    Left "mkPatternCFGBuilder: non-void returns not supported"
+  newTermMk b st i@(LLVM.Br {}) = mkFunctionCFGFromTerminator b st i
+  newTermMk b st i@(LLVM.CondBr {}) = mkFunctionCFGFromTerminator b st i
+  newTermMk _ _ i =
+    Left $ "mkPatternCFGBuilder: cannot handle terminator: " ++ show i
 
 -- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
 -- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
 getFunctionName :: LLVM.Instruction -> Maybe String
 getFunctionName ( LLVM.Call { LLVM.function =
                                Right
-                                 ( LLVM.ConstantOperand
-                                   (LLVMC.GlobalReference _ (LLVM.Name name))
+                               ( LLVM.ConstantOperand
+                                 ( LLVMC.GlobalReference _ (LLVM.Name name)
                                  )
+                               )
                             }
                 )
   = Just name
@@ -539,8 +540,8 @@ mkPatternCFGFromUncondBrCall
   st0
   i@(LLVM.Call { LLVM.arguments = [] })
   =
-  do let label = "%"
-                 ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+  do let label = "%" ++
+                 (extractFunctionLabelPart $ fromJust $ getFunctionName i)
      st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
      let br_node = fromJust $ lastTouchedNode st1
@@ -564,8 +565,8 @@ mkPatternCFGFromCondBrOrFallCall
   st0
   i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
   =
-  do let t_label = "%"
-                   ++ (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+  do let t_label = "%" ++
+                   (extractFunctionLabelPart $ fromJust $ getFunctionName i)
      st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
      let br_node = fromJust $ lastTouchedNode st1
      st2 <- ensureBlockNodeExists st1 $ F.toBlockName t_label
@@ -576,8 +577,8 @@ mkPatternCFGFromCondBrOrFallCall
                                  G.ControlFlowEdge
                                  br_node
                                  [t_dst_node, f_dst_node]
-     st5 <- addConstraints st4
-            $ C.mkFallThroughConstraints (G.getNodeID f_dst_node)
+     st5 <- addConstraints st4 $
+            C.mkFallThroughConstraints (G.getNodeID f_dst_node)
      return st5
 mkPatternCFGFromCondBrOrFallCall _ _ i =
   Left $ "mkPatternCFGFromCondBrOrFallCall: not implemented for " ++ show i
@@ -603,9 +604,7 @@ mkFunctionDFGFromBasicBlock
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
   do let block_name = F.BlockName str
      st1 <- if isNothing $ entryBlock st0
-            then foldM ( \st n
-                           -> addPendingBlockToDatumFlow st (block_name, n)
-                       )
+            then foldM (\st n -> addPendingBlockToDatumFlow st (block_name, n))
                        (st0 { entryBlock = Just block_name })
                        (funcInputValues st0)
             else return st0
@@ -662,15 +661,15 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
                        map ( \(b', n, nr) -> if res_n == n
                                              then (b', sym_n, nr)
                                              else (b', n, nr)
-                           )
-                           (blockToDatumDefs st3)
+                           ) $
+                       blockToDatumDefs st3
                    }
          st5 = st4 { datumToBlockDefs =
                        map ( \(n, b', nr) -> if res_n == n
                                              then (sym_n, b', nr)
                                              else (n, b', nr)
-                           )
-                           (datumToBlockDefs st4)
+                           ) $
+                       datumToBlockDefs st4
                    }
      return st5
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
@@ -920,11 +919,12 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
      st4 <- foldM ( \st (n, block_id) ->
                     let g = getOSGraph st
-                        dfe = head
-                              $ filter G.isDataFlowEdge
-                              $ G.getEdgesBetween g n phi_node
-                    in addPendingDatumToBlockDef st
-                                           (n, block_id, G.getOutEdgeNr dfe)
+                        dfe = head $
+                              filter G.isDataFlowEdge $
+                              G.getEdgesBetween g n phi_node
+                    in addPendingDatumToBlockDef
+                         st
+                         (n, block_id, G.getOutEdgeNr dfe)
                   )
                   st3
                   (zip operand_ns block_names)
@@ -1021,8 +1021,8 @@ mkPatternDFGFromSetregCall
                            else Left $ "mkPatternDFGFromSetregCall: "
                                        ++ "no value node with symbol "
                                        ++ "'" ++ show sym ++ "'"
-                    )
-                    [arg1, arg2]
+                      ) $
+                 [arg1, arg2]
      let g0 = getOSGraph st0
      g1 <- if length (G.getPredecessors g0 n1) == 0
            then Right $ G.mergeNodes n2 n1 g0
@@ -1035,21 +1035,21 @@ mkPatternDFGFromSetregCall
      st1 <- updateOSGraph st0 g2
      let st2 = st1 { blockToDatumDataFlows =
                        map ( \(b', n) ->
-                             if n1 == n then (b', n2) else (b', n)
-                           )
-                           (blockToDatumDataFlows st1)
+                               if n1 == n then (b', n2) else (b', n)
+                           ) $
+                       blockToDatumDataFlows st1
                    }
          st3 = st2 { blockToDatumDefs =
                         map ( \(b', n, nr) ->
-                              if n1 == n then (b', n2, nr) else (b', n, nr)
-                            )
-                            (blockToDatumDefs st2)
+                                if n1 == n then (b', n2, nr) else (b', n, nr)
+                            ) $
+                        blockToDatumDefs st2
                    }
          st4 = st3 { datumToBlockDefs =
                         map ( \(n, b', nr) ->
-                              if n1 == n then (n2, b', nr) else (n, b', nr)
-                            )
-                            (datumToBlockDefs st3)
+                                if n1 == n then (n2, b', nr) else (n, b', nr)
+                            ) $
+                        datumToBlockDefs st3
                    }
      return st4
 mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =
@@ -1088,10 +1088,10 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      -- The call node will have the wrong name as the true name of the call is
      -- embedded into the function name, so we need to fix that.
      old_f_name <- toFunctionName $ LLVM.function i
-     new_f_name <- toFunctionName
-                   $ "%" ++ ( extractFunctionLabelPart
-                              $ fromJust $ getFunctionName i
-                            )
+     new_f_name <- toFunctionName $
+                   "%" ++ ( extractFunctionLabelPart
+                            $ fromJust $ getFunctionName i
+                          )
      let g = getOSGraph st1
          call_n = head $ G.findCallNodesWithName g old_f_name
      st2 <- updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
@@ -1100,19 +1100,19 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      -- 'D.AnyType'.
      let isRefArg (LLVM.LocalReference {}) = True
          isRefArg _ = False
-         local_ref_args = filter isRefArg
-                          $ map fst
-                          $ LLVM.arguments i
+         local_ref_args = filter isRefArg $
+                          map fst $
+                          LLVM.arguments i
      arg_syms <- mapM (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
      st3 <- foldM
               ( \st sym ->
-                  let g0 = getOSGraph st
-                      n = fromJust $ findValueNodeMappedToSym st sym
-                      es = G.getDtFlowInEdges g0 n
-                  in if length es == 0
-                     then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
-                          in updateOSGraph st g1
-                     else return st
+                let g0 = getOSGraph st
+                    n = fromJust $ findValueNodeMappedToSym st sym
+                    es = G.getDtFlowInEdges g0 n
+                in if length es == 0
+                   then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
+                        in updateOSGraph st g1
+                   else return st
               )
               st2
               arg_syms
@@ -1124,9 +1124,8 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
             then let ret_n = fromJust maybe_ret_n
                      old_g = getOSGraph st3
                      new_g = G.updateDataTypeOfValueNode D.AnyType ret_n old_g
-                     new_n = head
-                             $ G.findNodesWithNodeID new_g (G.getNodeID ret_n)
-
+                     new_n = head $
+                             G.findNodesWithNodeID new_g (G.getNodeID ret_n)
                  in do new_st0 <- updateOSGraph st3 new_g
                        let new_st1 = new_st0 { lastTouchedNode = Just new_n }
                        return new_st1
@@ -1201,7 +1200,8 @@ mkFunctionCFGFromTerminator b st0 ( LLVM.CondBr op
                                                 (LLVM.Name t_dst)
                                                 (LLVM.Name f_dst)
                                                 _
-                                  ) =
+                                  )
+  =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
      let br_node = fromJust $ lastTouchedNode st1
      st2 <- ensureBlockNodeExists st1 (F.BlockName t_dst)
@@ -1236,8 +1236,7 @@ mkFunctionCFGFromControlOp b st0 op operands =
      st3 <- addNewEdge st2
                        G.ControlFlowEdge
                        ( fromJust $
-                           findBlockNodeWithID st2
-                                               (fromJust $ currentBlock st2)
+                         findBlockNodeWithID st2 (fromJust $ currentBlock st2)
                        )
                        op_node
      st4 <- addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node

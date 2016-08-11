@@ -181,14 +181,14 @@ processInstrPattern function instr pattern =
       non_sym_matches = if isInstructionSimd instr
                         then pruneSymmetricSimdMatches okay_matches
                         else okay_matches
-  in map
-       ( \m -> PatternMatch { pmInstrID = instrID instr
-                            , pmPatternID = patID pattern
-                            , pmMatchID = 0 -- Unique value is assigned later
-                            , pmMatch = m
-                            }
-       )
-       (map convertMatchN2ID non_sym_matches)
+  in map ( \m -> PatternMatch { pmInstrID = instrID instr
+                              , pmPatternID = patID pattern
+                              , pmMatchID = 0 -- Unique value is assigned later
+                              , pmMatch = m
+                              }
+         ) $
+     map convertMatchN2ID $
+     non_sym_matches
 
 -- | Checks if a given match will result in a cyclic data dependency in the
 -- function graph. The check works as follows: first the subgraph of the
@@ -205,11 +205,11 @@ hasCyclicDataDependency fg m =
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
       ssa_fg' = subGraph ssa_fg f_ns
       -- Data nodes which act as input to the pattern should not be included
-      ssa_fg'' = foldr delNode ssa_fg'
-                 $ filter ( \n -> isDatumNode n
-                                  && not (hasAnyPredecessors ssa_fg' n)
-                          )
-                 $ getAllNodes ssa_fg'
+      ssa_fg'' = foldr delNode ssa_fg' $
+                 filter ( \n -> isDatumNode n &&
+                                not (hasAnyPredecessors ssa_fg' n)
+                        ) $
+                 getAllNodes ssa_fg'
       mcs = componentsOf ssa_fg''
       cdd = or [ isReachableComponent ssa_fg c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2

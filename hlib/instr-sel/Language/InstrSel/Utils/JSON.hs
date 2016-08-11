@@ -80,8 +80,8 @@ fromJson s =
 toJson :: ToJSON a => a -> String
 toJson = unescape . BS.unpack . encode
   where unescape = replace "\\u003c" "<" . replace "\\u003e" ">"
-        -- ^ For security reasons, Aeson will escape '<' and '>' when dumping
-        -- JSON data to string, which is something we want to undo.
+        -- For security reasons, Aeson will escape '<' and '>' when dumping JSON
+        -- data to string, which is something we want to undo.
 
 -- | Converts 'Text' into a 'String'.
 unpack :: T.Text -> String

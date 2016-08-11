@@ -46,10 +46,10 @@ run MakeLowLevelModelDump function model ai_maps =
       mkNodeInfo n =
         "Node ID: " ++ pShow n ++ ", "
         ++
-        ( pShow
-          $ G.getNodeType
-          $ head
-          $ G.findNodesWithNodeID function_g n
+        ( pShow $
+          G.getNodeType $
+          head $
+          G.findNodesWithNodeID function_g n
         )
       dumpOperationNodes ns =
         let dumpNode n ai =
@@ -61,11 +61,11 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               "Covered by: "
               ++
-              ( pShow
-                $ map snd
-                $ filter (\(nodes, _) -> ai `elem` nodes)
-                $ zip (llMatchOperationsCovered model) ([0..] :: [ArrayIndex])
-                      -- Cast needed to prevent compiler warning
+              ( pShow $
+                map snd $
+                filter (\(nodes, _) -> ai `elem` nodes) $
+                zip (llMatchOperationsCovered model) ([0..] :: [ArrayIndex])
+                -- Cast needed to prevent compiler warning
               )
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
@@ -91,7 +91,7 @@ run MakeLowLevelModelDump function model ai_maps =
                 $ map snd
                 $ filter (\(nodes, _) -> ai `elem` nodes)
                 $ zip (llOperandAlternatives model) ([0..] :: [ArrayIndex])
-                      -- Cast needed to prevent compiler warning
+                  -- Cast needed to prevent compiler warning
               )
               ++
               "\n"
@@ -104,7 +104,7 @@ run MakeLowLevelModelDump function model ai_maps =
                 $ map snd
                 $ filter (isNodeAnOpAlt ai . fst)
                 $ zip (llMatchOperandsDefined model) ([0..] :: [ArrayIndex])
-                      -- Cast needed to prevent compiler warning
+                  -- Cast needed to prevent compiler warning
               )
               ++
               "\n"
@@ -113,11 +113,11 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               "Used by: "
               ++
-              ( pShow
-                $ map snd
-                $ filter (isNodeAnOpAlt ai . fst)
-                $ zip (llMatchOperandsUsed model) ([0..] :: [ArrayIndex])
-                      -- Cast needed to prevent compiler warning
+              ( pShow $
+                map snd $
+                filter (isNodeAnOpAlt ai . fst) $
+                zip (llMatchOperandsUsed model) ([0..] :: [ArrayIndex])
+                -- Cast needed to prevent compiler warning
               )
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
@@ -167,9 +167,9 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               "Data defined: "
               ++
-              ( pShow
-                $ map (\o -> (llOperandAlternatives model) !! (fromIntegral o))
-                $ (llMatchOperandsDefined model) !! (fromIntegral ai)
+              ( pShow $
+                map (\o -> (llOperandAlternatives model) !! (fromIntegral o)) $
+                (llMatchOperandsDefined model) !! (fromIntegral ai)
               )
               ++
               "\n"
@@ -186,9 +186,9 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               "Data used: "
               ++
-              ( pShow
-                $ map (\o -> (llOperandAlternatives model) !! (fromIntegral o))
-                $ (llMatchOperandsUsed model) !! (fromIntegral ai)
+              ( pShow $
+                map (\o -> (llOperandAlternatives model) !! (fromIntegral o)) $
+                (llMatchOperandsUsed model) !! (fromIntegral ai)
               )
               ++
               "\n"
@@ -227,15 +227,15 @@ run MakeLowLevelModelDump function model ai_maps =
                      -- Cast needed to prevent compiler warning
   in do return [ toOutput
                  $ "OPERATIONS" ++ "\n\n" ++
-                   (dumpOperationNodes $ ai2OperationNodeIDs ai_maps)
-                   ++ "\n\n"
-                   ++ "DATA" ++ "\n\n" ++
-                   (dumpDataNodes $ ai2DatumNodeIDs ai_maps)
-                   ++ "\n\n"
-                   ++ "BLOCKS" ++ "\n\n" ++
-                   (dumpBlockNodes $ ai2BlockNodeIDs ai_maps)
-                   ++ "\n\n"
-                   ++ "MATCHES" ++ "\n\n" ++
+                   (dumpOperationNodes $ ai2OperationNodeIDs ai_maps) ++
+                   "\n\n" ++
+                   "DATA" ++ "\n\n" ++
+                   (dumpDataNodes $ ai2DatumNodeIDs ai_maps) ++
+                   "\n\n" ++
+                   "BLOCKS" ++ "\n\n" ++
+                   (dumpBlockNodes $ ai2BlockNodeIDs ai_maps) ++
+                   "\n\n" ++
+                   "MATCHES" ++ "\n\n" ++
                    (dumpMatches $ ai2MatchIDs ai_maps)
                ]
 
