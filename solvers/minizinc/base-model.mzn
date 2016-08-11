@@ -115,18 +115,6 @@ int: numBlockValues = numBlocksInFunction + 1;
 % Reference to the null-block value.
 int: blockValueForNull = numBlockValues;
 
-% Extends the external parameter 'domSetOfBlockInFunction' with a value
-% for the null block (which is assumed to be dominated by all blocks).
-array[allBlocksInFunctionPlusNull] of set of int:
-  domSetOfBlockInFunctionPlusNull =
-    array1d( allBlocksInFunctionPlusNull
-           , domSetOfBlockInFunction
-             ++
-             array1d( blockValueForNull..blockValueForNull
-                    , [allBlocksInFunction]
-                    )
-           );
-
 % Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
 % of 0 for the null block.
 array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
@@ -138,7 +126,6 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 1..numOperationsInFunction;
 set of int: allDataInFunction = 1..numDataInFunction;
-set of int: allDataInFunctionPlusNull = 1..numDataValues;
 set of int: allBlocksInFunction = 1..numBlocksInFunction;
 set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
 set of int: allMatches = 1..numMatches;
@@ -152,8 +139,8 @@ set of int: allLocValues = 0..numLocValues-1;
 %===========
 
 % Data definitions, locations, and activity.
-array[allDataInFunctionPlusNull] of var allBlocksInFunction: def;
-array[allDataInFunctionPlusNull] of var canonicalDataLocs: loc;
+array[allDataInFunction] of var allBlocksInFunction: def;
+array[allDataInFunction] of var canonicalDataLocs: loc;
 
 % Match selection.
 array[allMatches] of var bool: sel;
@@ -162,7 +149,7 @@ array[allMatches] of var bool: sel;
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
 
 % Data selected for the operands.
-array[allOperands] of var allDataInFunctionPlusNull: alt;
+array[allOperands] of var allDataInFunction: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
@@ -189,7 +176,11 @@ array[allDataInFunction] of set of allMatches: dmatchD =
              | d in allDataInFunction
            ]
          );
+array[allMatches] of int: opOfM =      [ min({op | op in allOperationsInFunction where m in omatchD[op]})
+				       | m in allMatches
+				       ];
 array[allOperationsInFunction] of var allMatches: omatch;
+array[allOperationsInFunction] of var allBlocksInFunction: oplace;
 array[allDataInFunction] of var allMatches: dmatch;
 
 
@@ -223,7 +214,7 @@ var allBlocksInFunction: Alt(allOperands: o) =
 % Constrain alternatives of operands.
 constraint
   forall (o in allOperands) (
-    alt[o] in (operandAlternatives[o] union {datumValueForNull})
+    alt[o] in operandAlternatives[o]
   );
 
 % Constrain locations of data representing values.
@@ -237,11 +228,6 @@ constraint
     } in
     if card(locs) > 0 then loc[d] in locs else true endif
   );
-
-% Fixate the variables related to the datumValueForNull entity.
-constraint
-  def[datumValueForNull] = entryBlockOfFunction /\
-  loc[datumValueForNull] = locValueForNull;
 
 % [MC] Dual variables: for each operation, exactly one match must be selected
 % such that the operation is covered.
@@ -274,59 +260,58 @@ constraint
     def[d] = b
   );
 
-% Operands are set to the null datum iff match was not selected.
-% This helps symmetry breaking as well as determining whether a datum is active.
+% Fix operand value if match was not selected.
 constraint
   forall (m in allMatches) (
-    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]) (
-      sel[m] <-> alt[o] != datumValueForNull
+    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+            where card(operandAlternatives[o])>1) (
+      not sel[m] -> alt[o] = min(operandAlternatives[o])
     )
   );
 
 % [MC] A datum is active if at least one operand uses that datum.
-% Active data must not be defined by inactive instruction matches.
+% Active data must not be defined by inactive copy matches.
 constraint
-  forall ( mi in inactiveInstrMatches
-         , oi in operandsDefinedByMatch[mi]
-         , d in operandAlternatives[oi])
-  (
-    exists ( m in allMatches
-           , o in operandsUsedByMatch[m]
-             where d in operandAlternatives[o]
-           )
-      (alt[o] = d)
+  forall (mi in inactiveInstrMatches,
+	  oi in operandsDefinedByMatch[mi],
+	  d in operandAlternatives[oi]) (
+    exists (m in allMatches,
+            o in operandsUsedByMatch[m]
+	    where d in operandAlternatives[o])(sel[m] /\ alt[o]=d)
     <->
     not sel[mi]
   );
 
-% Selected matches must not be placed in the null block.
-constraint
-  forall (m in allMatches) (
-    sel[m] <-> place[m] != blockValueForNull
-  );
-
-% Selected matches that have an entry block must be placed in entry block.
-constraint
-  forall (m in allMatches) (
-    % If a match has no entry block, then this set will be empty and hence there
-    % will be no such constraint. It is assumed that there will be at most one
-    % entry.
-    forall (r in entryBlockOfMatch[m]) (
-      place[m] in {r, blockValueForNull}
-    )
-  );
-
-% Data defined by a selected match must be defined in either the block wherein
-% the match is placed or in one of the blocks spanned by the match.
-constraint
-  forall (m in allMatches) (
-    forall (o in operandsDefinedByMatch[m]) (
-      if (card(spannedBlocksInMatch[m]) > 0)
-      then sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]
-      else sel[m] -> def[Alt(o)] = place[m]
-      endif
-    )
-  );
+% [GHB] These constraints have been reformulated by MC into a table constraint.
+%
+% % Selected matches must not be placed in the null block.
+% constraint
+%   forall (m in allMatches) (
+%     sel[m] <-> place[m] != blockValueForNull
+%   );
+%
+% % Selected matches that have an entry block must be placed in entry block.
+% constraint
+%   forall (m in allMatches) (
+%     % If a match has no entry block, then this set will be empty and hence
+%     % there will be no such constraint. It is assumed that there will be at
+%     % most one entry.
+%     forall (r in entryBlockOfMatch[m]) (
+%       place[m] in {r, blockValueForNull}
+%     )
+%   );
+%
+% % Data defined by a selected match must be defined in either the block wherein
+% % the match is placed or in one of the blocks spanned by the match.
+% constraint
+%   forall (m in allMatches) (
+%     forall (o in operandsDefinedByMatch[m]) (
+%       if (card(spannedBlocksInMatch[m]) > 0)
+%       then sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]
+%       else sel[m] -> def[Alt(o)] = place[m]
+%       endif
+%     )
+%   );
 
 % No selected matches may be placed in a block which is consumed by some
 % selected match.
@@ -348,26 +333,56 @@ constraint
 %     (
 %       def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
 %     );
+% Also, selected matches that have an entry block must be placed in entry block.
 
 int: DomRelSize =
  sum (l in allBlocksInFunction)
-     (card(domSetOfBlockInFunction[l])) +
- numBlocksInFunction;
-
-array[1..DomRelSize, 1..2] of allBlocksInFunctionPlusNull: DomRel =
+ (
+   card(domSetOfBlockInFunction[l])
+ );
+array[1..DomRelSize, 1..2] of allBlocksInFunction: DomRel =
  array2d(1..DomRelSize, 1..2,
-   [ if k=1 then i else j endif | i in allBlocksInFunctionPlusNull,
-                                  j in domSetOfBlockInFunctionPlusNull[i],
+   [ if k=1 then i else j endif | i in allBlocksInFunction,
+                                  j in domSetOfBlockInFunction[i],
                                   k in 1..2
    ]);
 
 constraint
-  forall ( m in allMatches,
-           o in operandsUsedByMatch[m]
-           where not (m in phiInstrMatches)
-         )
-  (
-    table([place[m], def[Alt(o)]], DomRel)
+  forall (m in allMatches diff phiInstrMatches
+          where card(spannedBlocksInMatch[m])=0) (
+    let {array[int] of int: defs = [x | x in operandsDefinedByMatch[m]],
+	 array[int] of int: usonly = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
+	 array[index_set(defs)] of var allBlocksInFunctionPlusNull: defplaces,
+	 array[index_set(usonly)] of var allBlocksInFunctionPlusNull: useplaces,
+	 array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
+	forall (i in index_set(usonly)) (table([useplaces[i], def[Alt(usonly[i])]], DomRel)) /\
+	forall (i in index_set(defs)) (defplaces[i] = def[Alt(defs[i])]) /\
+	forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
+	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1])
+    )
+  );
+
+constraint
+  forall (m in allMatches diff phiInstrMatches
+          where card(spannedBlocksInMatch[m])>0) (
+    let {array[int] of int: defs = [x | x in operandsDefinedByMatch[m]],
+	 array[int] of int: usonly = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
+	 array[index_set(usonly)] of var allBlocksInFunctionPlusNull: useplaces} in (
+	forall (i in index_set(usonly)) (table([useplaces[i], def[Alt(usonly[i])]], DomRel)) /\
+	forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
+	forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
+	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m]))
+    )
+  );
+
+constraint
+  forall (m in phiInstrMatches) (
+    let {array[int] of int: defs = [x | x in operandsDefinedByMatch[m]],
+	 array[index_set(defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
+	forall (i in index_set(defs)) (defplaces[i] = def[Alt(defs[i])]) /\
+	forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
+	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
+    )
   );
 
 % If a match representing a phi instruction is selected, then its data
@@ -742,11 +757,23 @@ solve
   :: int_search(oslice, largest, indomain_min, complete)
 minimize cost;
 
+array[allOperands] of int: matchOfO = [ m
+		                      | o in allOperands, m in allMatches
+		   		      where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+				      ];
+
 output [ "sel=", show(sel), "\n"
-       , "alt=", show(alt), "\n"
+       , "alt=", show([if not fix(sel[matchOfO[o]]) then datumValueForNull else alt[o] endif | o in allOperands]), "\n"
        , "def=", show(def), "\n"
        , "loc=", show(loc), "\n"
-       , "place=", show(place), "\n"
+       , "oplace=", show(oplace), "\n"
+       , "place=", show([if not fix(sel[m]) then
+                           blockValueForNull
+                         else if card(operationsCoveredByMatch[m])=0 then
+                           min(entryBlockOfMatch[m])
+                         else
+                           oplace[opOfM[m]]
+                         endif endif | m in allMatches]), "\n"
        , "omatch=", show(omatch), "\n"
        , "dmatch=", show(dmatch), "\n"
        , "succ=", show(succ), "\n"
