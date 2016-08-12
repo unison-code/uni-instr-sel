@@ -70,7 +70,7 @@ mkFunction m f@(LLVM.Function {}) =
                              , F.functionInputs = input_nodes
                              , F.functionBBExecFreq = exec_freqs
                              }
-     else Just $ Left "mkFunction: function has no basic blocks"
+     else Nothing
 mkFunction _ _ = Nothing
 
 toFunctionName :: LLVM.Name -> Maybe String
