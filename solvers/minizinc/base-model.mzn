@@ -160,25 +160,25 @@ var int: cost;
 
 % [MC] Dual variables.
 array[allOperationsInFunction] of set of allMatches: omatchD =
-  array1d( allOperationsInFunction
-         , [ { m | m in allMatches
-                   where o in operationsCoveredByMatch[m]
-             }
-             | o in allOperationsInFunction
-           ]
-         );
+  [ { m | m in allMatches
+            where op in operationsCoveredByMatch[m]}
+  | op in allOperationsInFunction
+  ];
 array[allDataInFunction] of set of allMatches: dmatchD =
-  array1d( allDataInFunction
-         , [ { m | m in allMatches
-                 , o in operandsDefinedByMatch[m]
-                   where d in operandAlternatives[o]
-             }
-             | d in allDataInFunction
-           ]
-         );
-array[allMatches] of int: opOfM =      [ min({op | op in allOperationsInFunction where m in omatchD[op]})
-				       | m in allMatches
-				       ];
+  [ { m | m in allMatches
+        , o in operandsDefinedByMatch[m]
+            where d in operandAlternatives[o]}
+  | d in allDataInFunction
+  ];
+array[int] of set of allMatches: dmatchDOnly =
+  [ M | M in dmatchD
+          where forall(i in index_set(omatchD))(omatchD[i] != M)
+  ];
+
+array[allMatches] of int: opOfM =
+  [ min({op | op in allOperationsInFunction where m in omatchD[op]})
+  | m in allMatches
+  ];
 array[allOperationsInFunction] of var allMatches: omatch;
 array[allOperationsInFunction] of var allBlocksInFunction: oplace;
 array[allDataInFunction] of var allMatches: dmatch;
@@ -358,7 +358,8 @@ constraint
 	forall (i in index_set(usonly)) (table([useplaces[i], def[Alt(usonly[i])]], DomRel)) /\
 	forall (i in index_set(defs)) (defplaces[i] = def[Alt(defs[i])]) /\
 	forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
-	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1])
+	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
+	forall (i in index_set(usonly)) (not sel[m] -> useplaces[i] = def[Alt(usonly[i])]) % prevent false symmetries
     )
   );
 
@@ -371,7 +372,8 @@ constraint
 	forall (i in index_set(usonly)) (table([useplaces[i], def[Alt(usonly[i])]], DomRel)) /\
 	forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
 	forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
-	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m]))
+	forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
+	forall (i in index_set(usonly)) (not sel[m] -> useplaces[i] = def[Alt(usonly[i])]) % prevent false symmetries
     )
   );
 
@@ -644,11 +646,28 @@ constraint
     )
   );
 
-% RULE 1: if all matches out of a set, not a phi and no spanned blocks, uses datum u and defines datum d,
-%         and one of them must be selected,
-%         then the block defining u must dominate the block defining d.
+% RULE 1A: If all matches for operation i, not a phi and no spanned blocks, use
+%          datum u and define datum d, then the block defining u must dominate
+%          the block defining d, and i must be placed in the block defining d.
 constraint
-  forall (M in omatchD++dmatchD,
+  forall (i in allOperationsInFunction,
+          d in allDataInFunction,
+          u in allDataInFunction
+	  where forall(m in omatchD[i])(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
+    if forall (m in omatchD[i]) (
+         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
+	 exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
+    ) then (
+      trace("/* 1A: table([def["++show(d)++"], def["++show(u)++"]], DomRel); */\n", table([def[d], def[u]], DomRel)) /\
+      trace("/* 1A: oplace[\(i)] = def[\(d)]; */\n", oplace[i] = def[d])
+    ) else true endif
+  );
+
+% RULE 1B: If all matches that define some data, not a phi and no spanned
+%          blocks, use datum u and define datum d, then the block defining u
+%          must dominate the block defining d.
+constraint
+  forall (M in dmatchDOnly,
           d in allDataInFunction,
           u in allDataInFunction
           where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
@@ -656,49 +675,77 @@ constraint
          exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
          exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
     ) then (
-      table([def[d], def[u]], DomRel)
+      trace("/* 1B: table([def["++show(d)++"], def["++show(u)++"]], DomRel); */\n", table([def[d], def[u]], DomRel))
     ) else true endif
   );
 
-% RULE 2: if all matches out of a set spans blocks S and defines datum d,
-%         and one of them must be selected,
-%         then d must be defined in the spanned blocks S.
-% RULE 3: and any potential no-spanned-block definer of d must be placed in S or in blockValueForNull.
+% RULE 1C: If all matches out of some oneof set, not a phi, have identical entry
+%          blocks, use datum u, then the block defining u must dominate the
+%          entry block,
 constraint
-  forall (M in omatchD++dmatchD,
-          d in allDataInFunction
-          where forall(m in M)(card(spannedBlocksInMatch[m])>0)) (
-    let {set of int: S = spannedBlocksInMatch[min(M)]} in (
+  forall (M in omatchD++dmatchDOnly,
+          u in allDataInFunction
+	  where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])>0)) (
+    let {int: Entry = min(entryBlockOfMatch[min(M)])} in
       if forall (m in M) (
-           spannedBlocksInMatch[m] = S /\
-           exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
+	   min(entryBlockOfMatch[m]) = Entry /\
+	   exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
       ) then (
-        def[d] in S
+	trace("/* 1C: table([\(Entry), def[\(u)]], DomRel); */\n", table([Entry, def[u]], DomRel))
       ) else true endif
-    )
   );
 
-% RULE 4: users of the output of a forced phi operation must be downstream of the phi
-% constraint
-%   forall (M in omatchD++dmatchD,
-%         i in index_set_1of2(outputDefEdgesInMatch)
-%         where card(M)=1 /\ min(M) = outputDefEdgesInMatch[i, 1]) (
-%     let {int: b = outputDefEdgesInMatch[i, 2],
-%          int: o = outputDefEdgesInMatch[i, 3],
-%        int: d = min(operandAlternatives[o]),
-%        set of int: B = {bb | bb in allBlocksInFunction
-%                              where b in domSetOfBlockInFunction[bb]}
-%                        union {blockValueForNull}} in (
-%       forall (m in allMatches,
-%               u in operandsUsedByMatch[m]
-%             where operandAlternatives[u] = {d}) (
-%       place[m] in B
-%       )
-%     )
-%   );
+% RULE 1D: If all matches out of some oneof set have identical spanned blocks,
+%          define datum d, then d must be placed in a spanned block.
+constraint
+  forall (M in omatchD++dmatchDOnly,
+          d in allDataInFunction,
+	  where forall(m in M)(card(spannedBlocksInMatch[m])>0)) (
+    let {set of int: Spanned = spannedBlocksInMatch[min(M)]} in
+      if forall (m in M) (
+	   spannedBlocksInMatch[m] = Spanned /\
+	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
+      ) then (
+	trace("/* 1D: def[\(d)] in \(Spanned); */\n", def[d] in Spanned)
+      ) else true endif
+  );
 
-% If for given p,q, inBlockSucc contains [_, p, q] but does not contain
-% [_, p, q'] or [_, p', q] then succ[p] = q can only help, never hurt.
+% RULE 1E: If all matches for operation i have identical entry blocks,
+%          then i must be placed in the entry block.
+constraint
+  forall (i in allOperationsInFunction,
+	  where forall(m in omatchD[i])(card(spannedBlocksInMatch[m])>0)) (
+    let {int: Entry = min(entryBlockOfMatch[min(omatchD[i])])} in
+      if forall (m in omatchD[i]) (
+	   min(entryBlockOfMatch[m]) = Entry
+      ) then (
+	trace("/* 1E: oplace[\(i)] = \(Entry); */\n", oplace[i] = Entry)
+      ) else true endif
+  );
+
+% RULE 1F: If all matches for operation i are phi and have the same def operand
+%          then the def operand as well as i itself must all be placed in the
+%          block mentioned in the output def edge.
+constraint
+  forall (i in allOperationsInFunction,
+          d in allDataInFunction
+	  where omatchD[i] subset phiInstrMatches) (
+    let {set of int: BO = { outputDefEdgesInMatch[j,2]
+                          | j in index_set_1of2(outputDefEdgesInMatch)
+                            where outputDefEdgesInMatch[j,1] in omatchD[i]
+			  },
+         set of int: DO = { outputDefEdgesInMatch[j,3]
+                          | j in index_set_1of2(outputDefEdgesInMatch)
+                            where outputDefEdgesInMatch[j,1] in omatchD[i]
+			  }} in
+    if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
+    then
+      trace("/* 1F: def[\(d)] = \(min(BO)); oplace[\(i)] = \(min(BO)); */\n", def[d] = min(BO) /\ oplace[i] = min(BO))
+    else true endif
+  );
+
+% RULE 3: If for given p,q, inBlockSucc contains [_, p, q] but does not contain
+%         [_, p, q'] or [_, p', q] then succ[p] = q can only help, never hurt.
 constraint
   let {array[allBlocksInFunction] of set of allBlocksInFunction: fwd = array1d(allBlocksInFunction,
                                             [ {s | i in index_set_1of2(inBlockSucc),
@@ -715,29 +762,37 @@ constraint
     forall (p in allBlocksInFunction,
             q in allBlocksInFunction) (
       if fwd[p] = {q} /\ bwd[q] = {p} then
-        succ[p] = q
+        trace("/* 3: succ[\(p)] = \(q); */\n", succ[p] = q)
       else true endif
     );
 
-% Forbid matches that would wipe out some omatch or dmatch domain.
+% RULE 4: Forbid matches that would wipe out some omatch or dmatch domain.
 constraint
-  let
-  { array[int] of set of int: domains = omatchD++dmatchD
-  } in
-  forall ( i in index_set(domains)
-         , j in index_set(domains)
-           where i!=j
-         )
-  (
-    if domains[i] subset domains[j]
-    then forall (m in domains[j] diff domains[i]) (
-           not sel[m]
-         )
-    else true
-    endif
+  let {array[int] of set of int: domains = omatchD++dmatchDOnly} in
+    forall (i in index_set(domains),
+	    j in index_set(domains)
+	    where i!=j) (
+      if domains[i] subset domains[j] then
+        forall (m in domains[j] diff domains[i]) (
+	  trace("/* 4: not sel[\(m)]; */\n", not sel[m])
+	)
+      else true endif
+    );
+
+% RULE 5: If all matches out of some oneof set use datum u,
+%         then forbid any inactive copy for u
+constraint
+  forall (M in omatchD++dmatchDOnly,
+          u in allDataInFunction) (
+      if forall (m in M) (exists (uo in operandsUsedByMatch[m]) (operandAlternatives[uo] = {u}))
+      then
+        forall (mi in inactiveInstrMatches,
+	        oi in operandsDefinedByMatch[mi]
+		where operandAlternatives[oi] = {u}) (
+	  trace("/* 5: not sel[\(mi)]; */\n", not sel[mi])
+        )
+      else true endif
   );
-
-
 
 %==================
 % SOLVE AND OUTPUT
