@@ -191,7 +191,7 @@ instance PrettyShow ArithOpType where
   pShow Div       = "/"
   pShow Rem       = "%"
   pShow Shl       = "<<"
-  pShow LShr      = ">>"
+  pShow LShr      = "l>>"
   pShow AShr      = "a>>"
   pShow And       = "&&"
   pShow Or        = "||"
