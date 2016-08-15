@@ -230,24 +230,33 @@ combineConstants f =
   in foldl combineValueNodes f partitioned_ns
 
 combineValueNodes :: Function -> [Node] -> Function
-combineValueNodes f [] = f
-combineValueNodes f [_] = f
-combineValueNodes f ns =
-  let mkNewDataType IntConstType { intConstValue = r } =
-        IntConstType { intConstValue = r, intConstNumBits = Nothing }
-      mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
-                                show d
-      g0 = getGraph f
-      nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns)
-                     (getOriginOfValueNode $ head ns)
-      (g1, new_n) = addNewNode nt g0
-      entry_node = head $
-                   findNodesWithNodeID g1 $
-                   fromJust $
-                   osEntryBlockNode $
-                   functionOS f
-      (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
-  in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
+combineValueNodes f nodes =
+  cc nodes
+  where
+  cc [] = f
+  cc [n] =
+    let dt = mkNewDataType $ getDataTypeOfValueNode n
+             -- Note that the bitwidth is not copied
+        g0 = getGraph f
+        g1 = updateDataTypeOfValueNode dt n g0
+    in updateGraph g1 f
+  cc ns =
+    let g0 = getGraph f
+        nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns)
+                       (getOriginOfValueNode $ head ns)
+             -- Note that the bitwidth is not copied
+        (g1, new_n) = addNewNode nt g0
+        entry_node = head $
+                     findNodesWithNodeID g1 $
+                     fromJust $
+                     osEntryBlockNode $
+                     functionOS f
+        (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
+    in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
+  mkNewDataType IntConstType { intConstValue = r } =
+    IntConstType { intConstValue = r, intConstNumBits = Nothing }
+  mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
+                            show d
 
 -- | Replaces a value node in the function graph with another value node, but
 -- all inbound edges to the value node to be removed will be ignored and thus

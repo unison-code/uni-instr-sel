@@ -20,6 +20,8 @@ module Language.InstrSel.Graphs.GraphViz
 where
 
 import Language.InstrSel.PrettyShow
+import Language.InstrSel.DataTypes
+  ( isTypeAConstValue )
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
@@ -115,7 +117,12 @@ mkNodeLabelAttr nid nt =
         f (ComputationNode op) = pShow op
         f (ControlNode op) = pShow op
         f (CallNode func) = "call " ++ pShow func
-        f (ValueNode dt src) = pShow dt ++ maybe "" (" " ++) src
+        f (ValueNode dt src) = pShow dt
+                               ++
+                               ( if not (isTypeAConstValue dt)
+                                 then maybe "" (" " ++) src
+                                 else ""
+                               )
         f (BlockNode l) = pShow l
         f PhiNode = "phi"
         f StateNode = ""
