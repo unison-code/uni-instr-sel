@@ -26,12 +26,13 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.OpTypes
+import Language.InstrSel.Utils
+  ( groupBy )
 import Language.InstrSel.Utils.Range
 
 import Data.Maybe
   ( fromJust
   , isJust
-  , mapMaybe
   )
 import Data.List
   ( partition )
@@ -283,17 +284,27 @@ alternativeExtendGraph :: Graph -> Graph
 alternativeExtendGraph g =
   let v_ns = filter isValueNode $ getAllNodes g
       copy_related_vs =
-        mapMaybe
-          ( \n ->
-            let es = getDtFlowOutEdges g n
-                copies = filter isCopyNode $ map (getTargetNode g) es
-                -- A copy node always have exactly one outgoing data flow edge
-            in if length copies > 1
-               then Just $
-                    map (getTargetNode g . head . getDtFlowOutEdges g) copies
-               else Nothing
-          )
-          v_ns
+        concat $
+        map ( \n ->
+              let es = getDtFlowOutEdges g n
+                  copies = filter isCopyNode $ map (getTargetNode g) es
+                  -- A copy node always have exactly one outgoing data flow
+                  -- edge
+                  cp_vs = map ( getTargetNode g .
+                                head .
+                                getDtFlowOutEdges g
+                              ) $
+                          copies
+                  grouped_vs = filter ((> 1) . length) $
+                               groupBy ( \v1 v2 ->
+                                         getDataTypeOfValueNode v1
+                                         ==
+                                         getDataTypeOfValueNode v2
+                                       ) $
+                               cp_vs
+              in grouped_vs
+            ) $
+        v_ns
   in foldr insertAlternativeEdges g copy_related_vs
 
 insertAlternativeEdges :: [Node] -> Graph -> Graph
