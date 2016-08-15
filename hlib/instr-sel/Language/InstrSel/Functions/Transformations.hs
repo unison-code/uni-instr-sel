@@ -238,7 +238,8 @@ combineValueNodes f ns =
       mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
                                 show d
       g0 = getGraph f
-      nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns) Nothing
+      nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns)
+                     (getOriginOfValueNode $ head ns)
       (g1, new_n) = addNewNode nt g0
       entry_node = head $
                    findNodesWithNodeID g1 $
