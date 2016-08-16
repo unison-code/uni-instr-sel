@@ -133,17 +133,23 @@ function reportUpdatedEntity {
     echo "  Updated: $@"
 }
 
+function reportLatestTimeFromStats {
+    stats_filepath="$MINIZINC_STATS_FILEPATH"
+    time=`tail -n 1 $stats_filepath | sed -n 's/^[^:]*: //p'`
+    echo "  Took: $time"
+}
+
 function flattenModelFile {
     # It is assumed that the working directory is where the MZN file is
     fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
     reportTask "Flattening MiniZinc model file"
-    command=""
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "FLATTENING TIME: " > $stats_filepath
-    command="$command `which time` -ap -o $stats_filepath --format %es"
+    command="`which time` -ap -o $stats_filepath --format %es"
     command="$command mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
     exe "$command"
     exitIfFailed ""
+    reportLatestTimeFromStats
     reportNewEntity "$fzn_filepath"
     reportNewEntity "${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
     reportUpdatedEntity "$stats_filepath"
@@ -197,10 +203,9 @@ function executeSolver {
     # It is assumed that the working directory is where the FZN and OZN files
     # are
     reportTask "Running solver"
-    command=""
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "SOLVING TIME: " >> $stats_filepath
-    command="$command `which time` -ap -o $stats_filepath --format %es"
+    command="`which time` -ap -o $stats_filepath --format %es"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command timeout ${MINIZINC_TIMELIMIT}s"
     fi
@@ -222,6 +227,7 @@ function executeSolver {
     $( exit $solver_exit_status ) # Restore $? to exit status of the solver
     exitIfFailed "$error_msg"
     warnAboutPotentialErrors
+    reportLatestTimeFromStats
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
     reportUpdatedEntity "$stats_filepath"
 
@@ -357,7 +363,6 @@ executeSolver
 inflateSolutionFile
 
 cd "$prev_dir"
-
 
 reportTask "Converting MiniZinc solution to JSON format"
 exe "$THIS_DIR/solution2json $MINIZINC_SOLUTION_FILEPATH" \
