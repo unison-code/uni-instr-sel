@@ -129,14 +129,24 @@ function reportNewEntity {
     echo "  Created: $@"
 }
 
+function reportUpdatedEntity {
+    echo "  Updated: $@"
+}
+
 function flattenModelFile {
     # It is assumed that the working directory is where the MZN file is
     fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
     reportTask "Flattening MiniZinc model file"
-    exe "mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    command=""
+    stats_filepath="$MINIZINC_STATS_FILEPATH"
+    echo -n "FLATTENING TIME: " > $stats_filepath
+    command="$command `which time` -ap -o $stats_filepath --format %es"
+    command="$command mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    exe "$command"
     exitIfFailed ""
     reportNewEntity "$fzn_filepath"
     reportNewEntity "${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
+    reportUpdatedEntity "$stats_filepath"
 }
 
 function inflateSolutionFile {
@@ -184,19 +194,13 @@ function warnAboutPotentialErrors {
 }
 
 function executeSolver {
-    working_dir=`pwd`
-    cd "$TMP_DIR"
-
-    # Flatten model, if necessary
-    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
-        flattenModelFile
-    fi
-
+    # It is assumed that the working directory is where the FZN and OZN files
+    # are
     reportTask "Running solver"
     command=""
     stats_filepath="$MINIZINC_STATS_FILEPATH"
-    echo "SOLVING TIME (in seconds):" > $stats_filepath
-    command="$command `which time` -ap -o $stats_filepath"
+    echo -n "SOLVING TIME: " >> $stats_filepath
+    command="$command `which time` -ap -o $stats_filepath --format %es"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command timeout ${MINIZINC_TIMELIMIT}s"
     fi
@@ -204,11 +208,7 @@ function executeSolver {
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command -a"
     fi
-    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
-        command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
-    else
-        command="$command $MINIZINC_FULL_MODEL_FILENAME"
-    fi
+    command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     command="$command > $MINIZINC_SOLUTION_FILEPATH"
     command="$command 2> $MINIZINC_ERROR_FILEPATH"
     exe "$command"
@@ -223,16 +223,9 @@ function executeSolver {
     exitIfFailed "$error_msg"
     warnAboutPotentialErrors
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
-    reportNewEntity "$stats_filepath"
+    reportUpdatedEntity "$stats_filepath"
 
     purgeIntermediateSolutions
-
-    # Inflate solution, if necessary
-    if [[ "$MINIZINC_SOLVER_BIN" == fzn* ]]; then
-        inflateSolutionFile
-    fi
-
-    cd "$working_dir"
 }
 
 
@@ -287,6 +280,12 @@ fi
 if [ -z "$MINIZINC_SOLVER_BIN" ]; then
     reportError "No solver specified (use -s or --solver switch)"
     exit 1
+else
+    if [[ "$MINIZINC_SOLVER_BIN" != fzn* ]]; then
+        reportError "Only FZN solvers supported (name of executable must" \
+                    "start with \"fzn\")"
+        exit 1
+    fi
 fi
 
 reportTask "Creating temporary directory"
@@ -349,13 +348,16 @@ exe "cp $MINIZINC_FULL_MODEL_FILEPATH $MINIZINC_FULL_MODEL_SAVE_PATH"
 exitIfFailed ""
 reportNewEntity "$MINIZINC_FULL_MODEL_SAVE_PATH"
 
-executeSolver
+prev_dir=`pwd`
+cd "$TMP_DIR"
 
-reportTask "Extracting MiniZinc statistics"
-echo >> "$MINIZINC_STATS_FILEPATH"
-echo "SOLVING STATISTICS:" >> "$MINIZINC_STATS_FILEPATH"
-exe "sed -n -e '/^%/p' $MINIZINC_SOLUTION_FILEPATH >> $MINIZINC_STATS_FILEPATH"
-exitIfFailed ""
+# The following functions assume that the working directory is $TMP_DIR
+flattenModelFile
+executeSolver
+inflateSolutionFile
+
+cd "$prev_dir"
+
 
 reportTask "Converting MiniZinc solution to JSON format"
 exe "$THIS_DIR/solution2json $MINIZINC_SOLUTION_FILEPATH" \

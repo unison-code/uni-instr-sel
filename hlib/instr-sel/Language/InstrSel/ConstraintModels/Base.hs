@@ -368,10 +368,10 @@ data HighLevelSolution
         -- ^ The cost metric of the found solution.
       , hlIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
-      , hlSolTime :: Maybe Double
-        -- ^ Time to compute the solution.
-      , hlCoreSolTime :: Maybe Double
-        -- ^ Time to compute the solution within the core constraint solver.
+      , hlSolTime :: Double
+        -- ^ Time to compute to solve the model.
+      , hlPrepTime :: Double
+        -- ^ Time to prepare the model before solving.
       }
   | NoHighLevelSolution
   deriving (Show)
@@ -412,10 +412,10 @@ data LowLevelSolution
         -- ^ The cost metric of the found solution.
       , llIsOptimal :: Bool
         -- ^ Whether this solution is optimal.
-      , llSolTime :: Maybe Double
-        -- ^ Time to compute the solution.
-      , llCoreSolTime :: Maybe Double
-        -- ^ Time to compute the solution within the core constraint solver.
+      , llSolTime :: Double
+        -- ^ Time to solve the constraint model.
+      , llPrepTime :: Double
+        -- ^ Time to prepare the constraint model.
       }
   | NoLowLevelSolution
   deriving (Show)
@@ -746,15 +746,15 @@ instance FromJSON HighLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then HighLevelSolution
-              <$> v .:  "order-of-blocks"
-              <*> v .:  "selected-matches"
-              <*> v .:  "nodes-of-operands"
-              <*> v .:  "blocks-of-sel-matches"
-              <*> v .:  "locs-of-data"
-              <*> v .:  "cost"
-              <*> v .:  "is-solution-optimal"
-              <*> v .:? "time"
-              <*> v .:? "core-time"
+              <$> v .: "order-of-blocks"
+              <*> v .: "selected-matches"
+              <*> v .: "nodes-of-operands"
+              <*> v .: "blocks-of-sel-matches"
+              <*> v .: "locs-of-data"
+              <*> v .: "cost"
+              <*> v .: "is-solution-optimal"
+              <*> v .: "solving-time"
+              <*> v .: "prep-time"
        else return NoHighLevelSolution
   parseJSON _ = mzero
 
@@ -768,8 +768,8 @@ instance ToJSON HighLevelSolution where
            , "cost"                  .= (hlSolCost s)
            , "has-solution"          .= True
            , "is-solution-optimal"   .= (hlIsOptimal s)
-           , "time"                  .= (hlSolTime s)
-           , "core-time"             .= (hlCoreSolTime s)
+           , "solving-time"          .= (hlSolTime s)
+           , "prep-time"             .= (hlPrepTime s)
            ]
   toJSON NoHighLevelSolution =
     object [ "has-solution" .= False ]
@@ -779,17 +779,17 @@ instance FromJSON LowLevelSolution where
     do has_solution <- v .: "has-solution"
        if has_solution
        then LowLevelSolution
-              <$> v .:  "order-of-blocks"
-              <*> v .:  "is-match-selected"
-              <*> v .:  "has-operand-alt"
-              <*> v .:  "alt-of-operand"
-              <*> v .:  "block-of-match"
-              <*> v .:  "has-datum-loc"
-              <*> v .:  "loc-of-datum"
-              <*> v .:  "cost"
-              <*> v .:  "is-solution-optimal"
-              <*> v .:? "time"
-              <*> v .:? "core-time"
+              <$> v .: "order-of-blocks"
+              <*> v .: "is-match-selected"
+              <*> v .: "has-operand-alt"
+              <*> v .: "alt-of-operand"
+              <*> v .: "block-of-match"
+              <*> v .: "has-datum-loc"
+              <*> v .: "loc-of-datum"
+              <*> v .: "cost"
+              <*> v .: "is-solution-optimal"
+              <*> v .: "solving-time"
+              <*> v .: "prep-time"
        else return NoLowLevelSolution
   parseJSON _ = mzero
 

@@ -92,7 +92,7 @@ raiseLowLevelSolution
                  , hlSolCost = llSolCost sol
                  , hlIsOptimal = llIsOptimal sol
                  , hlSolTime = llSolTime sol
-                 , hlCoreSolTime = llCoreSolTime sol
+                 , hlPrepTime = llPrepTime sol
                  }
       hl_sol' = deleteExplicitFallthroughs model tm hl_sol
   in hl_sol'
