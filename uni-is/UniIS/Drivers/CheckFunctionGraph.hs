@@ -64,11 +64,11 @@ run CheckFunctionGraphCoverage function matchset _ =
      then let node_strs = intercalate ", " $ map pShow uncovered_nodes
           in return [ toOutputWithExitCode
                         errorExitCode
-                        ( "FAILED\n" ++
+                        ( "* FAILED\n" ++
                           "  Non-coverable op nodes: " ++ node_strs
                         )
                     ]
-     else return [toOutput "OK"]
+     else return [toOutput "* OK"]
 
 run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
   let getValidLocs os nid =
@@ -128,11 +128,11 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
      then let node_strs = intercalate ", " $ map pShow non_overlapping_nodes
           in return [ toOutputWithExitCode
                       errorExitCode
-                      ( "FAILED\n" ++
+                      ( "* FAILED\n" ++
                         "  Data nodes with non-overlapping location " ++
                         "requirements: " ++ node_strs
                       )
                     ]
-     else return [toOutput "OK"]
+     else return [toOutput "* OK"]
 
 run _ _ _ _ = reportErrorAndExit "CheckFunctionGraph: unsupported action"
