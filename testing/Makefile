@@ -169,6 +169,12 @@ distclean-toolchain:
 	$(UNI) make --dump-low-level-model-info \
       -f $*.ce.cc.ae.be.f.json -m $*.ll.model.json -a $*.aimaps.json -o $@
 
+%.check: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+	$(UNI) check --check-fun-coverage \
+      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
+	$(UNI) check --check-fun-location-overlap \
+      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
+
 
 
 #==============
@@ -201,7 +207,9 @@ FUN_ASM_TARGETS   := $(addsuffix .s, $(FUN_NAMES))
 FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
                           $(addsuffix .all-cover-plots, $(FUN_NAMES))
 FUN_MDUMP_TARGETS := $(addsuffix .dump, $(FUN_NAMES))
+FUN_CHECK_TARGETS := $(addsuffix .check, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
 $(FUN_PLOTS_TARGETS):
 $(FUN_MDUMP_TARGETS):
+$(FUN_CHECK_TARGETS):
