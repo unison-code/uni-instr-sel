@@ -183,9 +183,9 @@ distclean-toolchain:
 	$(UNI) check --check-fun-location-overlap \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
 
-%.run-bugpoint: %.ll
+%.run-bugpoint:
 	make clean
-	bugpoint -compile-custom -compile-command ./bugpoint-script -timeout 0 $<
+	bugpoint -compile-custom -compile-command ./bugpoint-script $*.ll
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
