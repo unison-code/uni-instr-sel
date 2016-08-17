@@ -1187,7 +1187,7 @@ mkFunctionCFGFromTerminator
   -> LLVM.Terminator
   -> Either String BuildState
 mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
-    mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
+  mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
 mkFunctionCFGFromTerminator b st0 (LLVM.Br (LLVM.Name dst) _) =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
@@ -1213,6 +1213,9 @@ mkFunctionCFGFromTerminator b st0 ( LLVM.CondBr op
                                  br_node
                                  [t_dst_node, f_dst_node]
      return st4
+mkFunctionCFGFromTerminator _ st (LLVM.Unreachable _) =
+  -- Do nothing
+  return st
 mkFunctionCFGFromTerminator _ _ t =
   Left $ "mkFunctionCFGFromTerminator: not implemented for " ++ show t
 
