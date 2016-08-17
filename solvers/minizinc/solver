@@ -166,7 +166,7 @@ function inflateSolutionFile {
     exitIfFailed ""
     exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
     exitIfFailed ""
-    reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
+    reportUpdatedEntity "$MINIZINC_SOLUTION_FILEPATH"
 }
 
 function purgeIntermediateSolutions {
@@ -177,6 +177,7 @@ function purgeIntermediateSolutions {
     exitIfFailed ""
     exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
     exitIfFailed ""
+    reportUpdatedEntity "$MINIZINC_SOLUTION_FILEPATH"
 }
 
 function cleanupErrorFile {
