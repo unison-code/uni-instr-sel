@@ -126,6 +126,7 @@ clean:
 	$(RM) *.dump
 	$(RM) *.dot
 	$(RM) *.pdf
+	$(RM) *.bc
 
 .PHONY: clean-toolchain
 clean-toolchain:
