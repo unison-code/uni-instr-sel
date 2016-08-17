@@ -30,6 +30,8 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
+import Language.InstrSel.Utils
+  ( replace )
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 
@@ -50,8 +52,12 @@ run :: MakeAction -> Function -> LowLevelModel -> ArrayIndexMaplists
 run MakeLowLevelModelDump function model ai_maps =
   let addPadding ai = (take (length $ pShow ai) $ repeat ' ') ++ "    "
       function_g = osGraph $ functionOS function
-      mkNodeInfo n =
-        "Node ID: " ++ pShow n ++ ", "
+      mkNodeInfo n ai =
+        "Node ID: " ++ pShow n
+        ++
+        "\n"
+        ++
+        addPadding ai
         ++
         ( pShow $
           G.getNodeType $
@@ -60,7 +66,7 @@ run MakeLowLevelModelDump function model ai_maps =
         )
       dumpOperationNodes ns =
         let dumpNode n ai =
-              mkNodeInfo n
+              mkNodeInfo n ai
               ++
               "\n"
               ++
@@ -86,7 +92,7 @@ run MakeLowLevelModelDump function model ai_maps =
                   )
                   ops
             dumpNode n ai =
-              mkNodeInfo n
+              mkNodeInfo n ai
               ++
               "\n"
               ++
@@ -131,7 +137,7 @@ run MakeLowLevelModelDump function model ai_maps =
                      -- Cast needed to prevent compiler warning
       dumpBlockNodes ns =
         let dumpNode n ai =
-              mkNodeInfo n
+              mkNodeInfo n ai
               ++
               "\n"
               ++
@@ -154,10 +160,15 @@ run MakeLowLevelModelDump function model ai_maps =
                   tm = fromJust tm_res
                   iid = (llMatchInstructionIDs model) !! (fromIntegral ai)
                   instr_res = findInstruction (tmInstructions tm) iid
-                  instr = fromJust instr_res
+                  instr = if isJust instr_res
+                          then fromJust instr_res
+                          else error $ "No instruction with ID " ++ (pShow iid)
                   pid = (llMatchPatternIDs model) !! (fromIntegral ai)
                   pat_res = findInstrPattern (instrPatterns instr) pid
-                  pat = fromJust pat_res
+                  pat = if isJust instr_res
+                        then fromJust pat_res
+                        else error $ "No pattern with ID " ++ (pShow pid) ++
+                                     " in instruction with ID " ++ (pShow iid)
                   emit_str = patEmitString pat
               in "Match ID: " ++ pShow m
                  ++
@@ -247,7 +258,9 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  "Emit string: "
                  ++
-                 (pShow emit_str)
+                 ( replace "\n" ("\n" ++ addPadding ai ++ "             ") $
+                   (pShow emit_str)
+                 )
                  ++
                  "\n"
                  ++
