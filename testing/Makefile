@@ -127,6 +127,7 @@ clean:
 	$(RM) *.dot
 	$(RM) *.pdf
 	$(RM) *.bc
+	$(RM) bugpoint-test-*
 
 .PHONY: clean-toolchain
 clean-toolchain:
@@ -183,6 +184,7 @@ distclean-toolchain:
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
 
 %.run-bugpoint: %.ll
+	make clean
 	bugpoint -compile-custom -compile-command ./bugpoint-script -timeout 0 $<
 
 %.pretty.json: %.json
