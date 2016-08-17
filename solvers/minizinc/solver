@@ -88,8 +88,8 @@ function echowarn {
 }
 
 function exe {
-    echo "  Executing: $@";
-    eval "$@";
+    echo "  Executing: $@"
+    eval "$@"
 }
 
 function exitIfFailed {
@@ -97,8 +97,10 @@ function exitIfFailed {
     if [[ $status != 0 ]]; then
         if [ ! -z "$@" ]; then
             reportError "$@ (exit status $status)"
+            echoerr
         else
             reportError "Terminated with exit status $status"
+            echoerr
         fi
         exit 1
     fi
