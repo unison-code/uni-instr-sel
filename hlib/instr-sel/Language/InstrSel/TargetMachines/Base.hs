@@ -41,6 +41,9 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
 
+import Data.List
+  ( intercalate )
+
 
 
 --------------
@@ -53,6 +56,11 @@ import Language.InstrSel.TargetMachines.IDs
 data EmitStringTemplate
   = EmitStringTemplate { emitStrParts :: [[EmitStringPart]] }
   deriving (Show)
+
+instance PrettyShow EmitStringTemplate where
+  pShow t = intercalate "\n" $
+            map pShow $
+            emitStrParts t
 
 -- | Represents parts of the emit string template.
 data EmitStringPart
@@ -75,6 +83,16 @@ data EmitStringPart
     -- | Denotes the function name of a given call node.
   | ESFuncOfCallNode NodeID
   deriving (Show, Eq)
+
+instance PrettyShow EmitStringPart where
+  pShow (ESVerbatim str) = str
+  pShow (ESIntConstOfValueNode nid) = "[const of vnode " ++ pShow nid ++ "]"
+  pShow (ESLocationOfValueNode nid) = "[loc of vnode " ++ pShow nid ++ "]"
+  pShow (ESNameOfBlockNode nid) = "[name of bnode " ++ pShow nid ++ "]"
+  pShow (ESBlockOfValueNode nid) = "[block of vnode " ++ pShow nid ++ "]"
+  pShow (ESLocalTemporary i) = "%" ++ pShow i
+  pShow (ESFuncOfCallNode nid) = "[func of cnode " ++ pShow nid ++ "]"
+  pShowList ps = concatMap pShow ps
 
 -- | Defines a machine instruction.
 data Instruction

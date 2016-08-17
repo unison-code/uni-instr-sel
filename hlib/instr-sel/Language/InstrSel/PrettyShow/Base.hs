@@ -44,12 +44,18 @@ instance (PrettyShow a, PrettyShow b) => PrettyShow ((,) a b) where
 instance PrettyShow Integer where
   pShow = show
 
+instance PrettyShow Int where
+  pShow = show
+
 instance PrettyShow Float where
   pShow = show
 
 instance PrettyShow Char where
   pShow = show
   pShowList = show
+
+instance PrettyShow Bool where
+  pShow = show
 
 instance (PrettyShow a) => PrettyShow (Maybe a) where
   pShow (Just a) = pShow a

@@ -301,9 +301,9 @@ getHLMatchParams ps mid = head $ filter (\p -> hlWOpMatchID p == mid) ps
 
 -- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
 -- that such an entity always exists in the given list.
-getInstrPattern :: [Instruction] -> InstructionID -> PatternID -> InstrPattern
-getInstrPattern is iid pid =
-  let instr = findInstruction is iid
+getInstrPattern :: TargetMachine -> InstructionID -> PatternID -> InstrPattern
+getInstrPattern tm iid pid =
+  let instr = findInstruction (tmInstructions tm) iid
       pat = findInstrPattern (instrPatterns $ fromJust instr) pid
   in fromJust pat
 
@@ -329,7 +329,7 @@ emitInstructionsOfMatch model sol tm st0 mid =
            else error $ "fetchNodeID: no mapping for operand ID " ++ pShow oid
       fetchNodeID Nothing = Nothing
       match = getHLMatchParams (hlWOpMatchParams model) mid
-      pat_data = getInstrPattern (tmInstructions tm)
+      pat_data = getInstrPattern tm
                                  (hlWOpMatchInstructionID match)
                                  (hlWOpMatchPatternID match)
       emit_parts = updateNodeIDsInEmitStrParts

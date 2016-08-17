@@ -14,6 +14,7 @@ module UniIS.Drivers.MakeLowLevelModelDump
 where
 
 import UniIS.Drivers.Base
+import UniIS.Targets
 
 import Language.InstrSel.ConstraintModels
   ( ArrayIndexMaplists (..)
@@ -27,9 +28,15 @@ import qualified Language.InstrSel.Graphs as G
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.PrettyShow
+import Language.InstrSel.TargetMachines
 
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
+
+import Data.Maybe
+  ( isJust
+  , fromJust
+  )
 
 
 
@@ -143,85 +150,112 @@ run MakeLowLevelModelDump function model ai_maps =
                      -- Cast needed to prevent compiler warning
       dumpMatches ns =
         let mkMatchInfo m ai =
-              "Match ID: " ++ pShow m
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Operations covered: "
-              ++
-              (pShow $ (llMatchOperationsCovered model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Operands defined: "
-              ++
-              (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Data defined: "
-              ++
-              ( pShow $
-                map (\o -> (llOperandAlternatives model) !! (fromIntegral o)) $
-                (llMatchOperandsDefined model) !! (fromIntegral ai)
-              )
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Operands used: "
-              ++
-              (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Data used: "
-              ++
-              ( pShow $
-                map (\o -> (llOperandAlternatives model) !! (fromIntegral o)) $
-                (llMatchOperandsUsed model) !! (fromIntegral ai)
-              )
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Blocks spanned: "
-              ++
-              (pShow $ (llMatchSpannedBlocks model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Instruction ID: "
-              ++
-              (pShow $ (llMatchInstructionIDs model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Latency: "
-              ++
-              (pShow $ (llMatchLatencies model) !! (fromIntegral ai))
-              ++
-              "\n"
-              ++
-              addPadding ai
-              ++
-              "Code size: "
-              ++
-              (pShow $ (llMatchCodeSizes model) !! (fromIntegral ai))
+              let tm_res = retrieveTargetMachine $ llTMID model
+                  tm = fromJust tm_res
+                  iid = (llMatchInstructionIDs model) !! (fromIntegral ai)
+                  instr_res = findInstruction (tmInstructions tm) iid
+                  instr = fromJust instr_res
+                  pid = (llMatchPatternIDs model) !! (fromIntegral ai)
+                  pat_res = findInstrPattern (instrPatterns instr) pid
+                  pat = fromJust pat_res
+                  emit_str = patEmitString pat
+              in "Match ID: " ++ pShow m
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Operations covered: "
+                 ++
+                 (pShow $ (llMatchOperationsCovered model) !! (fromIntegral ai))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Data / operands defined: "
+                 ++
+                 (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
+                 ++
+                 " / "
+                 ++
+                 ( pShow $
+                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                       ) $
+                   (llMatchOperandsDefined model) !! (fromIntegral ai)
+                 )
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Data / operands used: "
+                 ++
+                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
+                 ++
+                 " / "
+                 ++
+                 ( pShow $
+                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                       ) $
+                   (llMatchOperandsUsed model) !! (fromIntegral ai)
+                 )
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Blocks spanned: "
+                 ++
+                 (pShow $ (llMatchSpannedBlocks model) !! (fromIntegral ai))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Instruction ID: "
+                 ++
+                 (pShow iid)
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Pattern ID: "
+                 ++
+                 (pShow pid)
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Latency: "
+                 ++
+                 (pShow $ (llMatchLatencies model) !! (fromIntegral ai))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Code size: "
+                 ++
+                 (pShow $ (llMatchCodeSizes model) !! (fromIntegral ai))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Emit string: "
+                 ++
+                 (pShow emit_str)
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Is inactive instruction: "
+                 ++
+                 (pShow $ isInstructionInactive instr)
         in concatMap (\(m, i) -> pShow i ++ " -> " ++ mkMatchInfo m i ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
