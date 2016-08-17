@@ -195,7 +195,7 @@ distclean-toolchain:
 
 %.run-bugpoint:
 	make clean
-	bugpoint -compile-custom -compile-command "$BUGPOINTSCRIPT" \
+	bugpoint -compile-custom -compile-command "${BUGPOINTSCRIPT}" \
 	         -exec-command "echo OK" -mlimit 0 \
 	         $*.ll
 	llvm-dis bugpoint-reduced-blocks.bc
