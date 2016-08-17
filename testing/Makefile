@@ -185,7 +185,11 @@ distclean-toolchain:
 
 %.run-bugpoint:
 	make clean
-	bugpoint -compile-custom -compile-command ./bugpoint-script $*.ll
+	bugpoint -compile-custom -compile-command "./bugpoint-script" \
+	         -exec-command "echo OK" -mlimit 0 \
+	         $*.ll
+	llvm-dis bugpoint-reduced-blocks.bc
+	llvm-dis bugpoint-reduced-simplified.bc
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
