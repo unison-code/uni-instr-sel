@@ -10,3 +10,4 @@
 *.modeldump
 *.mzn
 *.dump
+*.bc

@@ -169,17 +169,20 @@ distclean-toolchain:
 	$(UNI) make --dump-low-level-model-info \
       -f $*.ce.cc.ae.be.f.json -m $*.ll.model.json -a $*.aimaps.json -o $@
 
+
+
+#==============
+# MISC TARGETS
+#==============
+
 %.check: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
 	$(UNI) check --check-fun-coverage \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
 	$(UNI) check --check-fun-location-overlap \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
 
-
-
-#==============
-# MISC TARGETS
-#==============
+%.run-bugpoint: %.ll
+	bugpoint -compile-custom -compile-command ./bugpoint-script -timeout 0 $<
 
 %.pretty.json: %.json
 	$(PRETTIFY) $< > $@
