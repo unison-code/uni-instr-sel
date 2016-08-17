@@ -36,14 +36,16 @@ GHCFLAGS += -Wall -i$(HLIBPATH)
 CLANG    := /home/ghb/programs/llvm-3.4-build/Release+Asserts/bin/clang
 LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
 OPT      := $(LLVMDIR)/bin/opt
+LSLIB    := $(LLVMDIR)/lib/LowerSelect.so
 AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 
 export MINIZINC_BACKEND := fzn_chuffed
 
 UNI              := uni-is
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
-SOLVER_TIMELIMIT := 0 # In milliseconds; 0 indicates no timelimit
-PRETTIFY := ../tools/prettify-json
+SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
+PRETTIFY         := ../tools/prettify-json
+BUGPOINTSCRIPT   := ./compile-from-bc
 
 TARGET := hexagon5
 
@@ -70,10 +72,16 @@ hlib:
 %.ll: %.c
 	$(CLANG) -emit-llvm -S $< -o $@
 
-%.mll: %.ll
-	$(OPT) -load $(AEFMLIB) -mem2reg -attach-exec-freq-metadata -S $< -o $@
+%.reg.ll: %.ll
+	$(OPT) -mem2reg -S $< -o $@
 
-%.f.json: %.mll
+%.reg.low.ll: %.reg.ll
+	$(OPT) -load $(LSLIB) -lowerselect -lowerswitch -S $< -o $@
+
+%.reg.low.freq.ll: %.reg.low.ll
+	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
+
+%.f.json: %.reg.low.freq.ll
 	$(UNI) make --construct-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json
@@ -119,6 +127,9 @@ hlib:
 
 .PHONY: clean
 clean:
+	$(RM) *.reg.ll
+	$(RM) *.reg.low.ll
+	$(RM) *.reg.low.freq.ll
 	$(RM) *.json
 	$(RM) *.mzn
 	$(RM) *.s
@@ -127,7 +138,6 @@ clean:
 	$(RM) *.dot
 	$(RM) *.pdf
 	$(RM) *.bc
-	$(RM) bugpoint-test-*
 
 .PHONY: clean-toolchain
 clean-toolchain:
@@ -185,7 +195,7 @@ distclean-toolchain:
 
 %.run-bugpoint:
 	make clean
-	bugpoint -compile-custom -compile-command "./bugpoint-script" \
+	bugpoint -compile-custom -compile-command "$BUGPOINTSCRIPT" \
 	         -exec-command "echo OK" -mlimit 0 \
 	         $*.ll
 	llvm-dis bugpoint-reduced-blocks.bc
