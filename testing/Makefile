@@ -212,8 +212,10 @@ FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
                           $(addsuffix .all-cover-plots, $(FUN_NAMES))
 FUN_MDUMP_TARGETS := $(addsuffix .dump, $(FUN_NAMES))
 FUN_CHECK_TARGETS := $(addsuffix .check, $(FUN_NAMES))
+FUN_BUGPOINT_TARGETS := $(addsuffix .run-bugpoint, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
 $(FUN_PLOTS_TARGETS):
 $(FUN_MDUMP_TARGETS):
 $(FUN_CHECK_TARGETS):
+$(FUN_BUGPOINT_TARGETS):
