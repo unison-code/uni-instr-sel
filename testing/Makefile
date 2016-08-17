@@ -187,7 +187,7 @@ distclean-toolchain:
 # MISC TARGETS
 #==============
 
-%.check: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+%.run-checks: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
 	$(UNI) check --check-fun-coverage \
       -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
 	$(UNI) check --check-fun-location-overlap \
@@ -227,7 +227,7 @@ FUN_ASM_TARGETS   := $(addsuffix .s, $(FUN_NAMES))
 FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
                           $(addsuffix .all-cover-plots, $(FUN_NAMES))
 FUN_MDUMP_TARGETS := $(addsuffix .dump, $(FUN_NAMES))
-FUN_CHECK_TARGETS := $(addsuffix .check, $(FUN_NAMES))
+FUN_CHECK_TARGETS := $(addsuffix .run-checks, $(FUN_NAMES))
 FUN_BUGPOINT_TARGETS := $(addsuffix .run-bugpoint, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
