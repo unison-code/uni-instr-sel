@@ -1,0 +1,121 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import argparse
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument( "-p"
+                   , dest="patternset"
+                   , metavar="JSON"
+                   , help="Pattern matchset JSON file"
+                   )
+parser.add_argument( "-d"
+                   , dest="dom"
+                   , metavar="JSON"
+                   , help="Dominated matches JSON file"
+                   )
+parser.add_argument( "-a"
+                   , dest="aimaps"
+                   , metavar="JSON"
+                   , help="Array index mapping JSON file"
+                   )
+args = parser.parse_args()
+
+# Check arguments
+p_json_file = args.patternset
+if p_json_file is None:
+    sys.stderr.write("No pattern matchset JSON file given\n")
+    sys.exit(1)
+if not os.path.isfile(p_json_file):
+    error("JSON file '" + p_json_file +"' not found")
+d_json_file = args.dom
+if d_json_file is None:
+    sys.stderr.write("No dominated matches JSON file given\n")
+    sys.exit(1)
+if not os.path.isfile(d_json_file):
+    error("JSON file '" + d_json_file +"' not found")
+a_json_file = args.aimaps
+if a_json_file is None:
+    sys.stderr.write("No array index mapping JSON file given\n")
+    sys.exit(1)
+if not os.path.isfile(a_json_file):
+    error("JSON file '" + a_json_file +"' not found")
+
+# Read JSON file
+p_json_data = []
+with open(p_json_file, 'r') as file:
+    p_json_data = json.load(file)
+d_json_data = []
+with open(d_json_file, 'r') as file:
+    d_json_data = json.load(file)
+a_json_data = []
+with open(a_json_file, 'r') as file:
+    a_json_data = json.load(file)
+
+# Map match array indices to match IDs
+dom_matches = []
+for ai in d_json_data["dominated-matches-ai"]:
+    mid = a_json_data["array-index-to-match-id-maps"][ai]
+    dom_matches.append(mid)
+
+# Prune dominated matches
+pruned_matches = []
+for m in p_json_data["match-data"]:
+    if not m["match-id"] in dom_matches:
+        pruned_matches.append(m)
+p_json_data["match-data"] = pruned_matches
+
+print json.dumps(p_json_data)

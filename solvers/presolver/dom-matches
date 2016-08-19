@@ -165,15 +165,16 @@ if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")
 
 # Read JSON file
-json_data = []
+json_data = {}
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
 # Computed dominated-matches parameter
-json_data["dominated-matches"] = [ m
-                                   for m in range(json_data["num-matches"])
-                                   if isMatchDominated(json_data, m)
-                                 ]
+d_json_data = {}
+d_json_data["dominated-matches-ai"] = \
+  [ m for m in range(json_data["num-matches"])
+          if isMatchDominated(json_data, m)
+  ]
 
 # Print JSON
-print json.dumps(json_data)
+print json.dumps(d_json_data)

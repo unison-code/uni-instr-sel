@@ -554,10 +554,6 @@ dumpParams( bumpArr(json_data["matches-by-size"])
           , VT_ARRAY1D
           , "allMatches"
           )
-dumpParams( bumpArr(json_data["dominated-matches"])
-          , "dominatedMatches"
-          , VT_SET
-          )
 dumpParams( canonical_set
           , "canonicalDataLocs"
           , VT_SET

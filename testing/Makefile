@@ -42,6 +42,9 @@ AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
 export MINIZINC_BACKEND := fzn_chuffed
 
 UNI              := uni-is
+CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
+DOM_MATCHES_CMD  := ../solvers/presolver/dom-matches
+PRUNE_DOM_MATCHES_CMD := ../solvers/presolver/prune-dom-matches
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
 PRETTIFY         := ../tools/prettify-json
@@ -99,31 +102,75 @@ hlib:
 %.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
+%.ce.cc.ae.be.d.json: %.ll.model.json
+	$(eval TEMPFILE := $(shell mktemp))
+	$(CONSTR_CONV_CMD) $< > $(TEMPFILE)
+	$(DOM_MATCHES_CMD) $(TEMPFILE) > $@
+	$(RM) $(TEMPFILE)
+
+%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json %.ce.cc.ae.be.d.json %.aimaps.json
+	$(PRUNE_DOM_MATCHES_CMD) -d $*.ce.cc.ae.be.d.json \
+                             -p $*.ce.cc.ae.be.p.json \
+                             -a $*.aimaps.json \
+                             > $@
+
+%.presolved.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.presolved.p.json
+	$(UNI) make --construct-hl-cp-model-no-op \
+           -f $*.ce.cc.ae.be.f.json \
+           -p $*.ce.cc.ae.be.presolved.p.json \
+           -o $@
+
 %.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
 	$(UNI) make --construct-hl-cp-model-no-op \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $@
+           -f $*.ce.cc.ae.be.f.json \
+           -p $*.ce.cc.ae.be.p.json \
+           -o $@
+
+%.presolved.hl.model-w-op.json: %.presolved.hl.model-no-op.json %.ce.cc.ae.be.presolved.p.json
+	$(UNI) make --construct-hl-cp-model-w-op \
+           -m $*.presolved.hl.model-no-op.json \
+           -p $*.ce.cc.ae.be.presolved.p.json \
+           -o $@
 
 %.hl.model-w-op.json: %.hl.model-no-op.json %.ce.cc.ae.be.p.json
 	$(UNI) make --construct-hl-cp-model-w-op \
-      -m $*.hl.model-no-op.json -p $*.ce.cc.ae.be.p.json -o $@
+           -m $*.hl.model-no-op.json \
+           -p $*.ce.cc.ae.be.p.json \
+           -o $@
+
+%.presolved.aimaps.json: %.ce.cc.ae.be.f.json %.presolved.hl.model-w-op.json
+	$(UNI) make --compute-array-index-maplists \
+           -f $*.ce.cc.ae.be.f.json \
+           -m $*.presolved.hl.model-w-op.json \
+           -o $@
 
 %.aimaps.json: %.ce.cc.ae.be.f.json %.hl.model-w-op.json
 	$(UNI) make --compute-array-index-maplists \
-      -f $*.ce.cc.ae.be.f.json -m $*.hl.model-w-op.json -o $@
+           -f $*.ce.cc.ae.be.f.json \
+           -m $*.hl.model-w-op.json \
+           -o $@
 
 %.ll.model.json: %.hl.model-w-op.json %.aimaps.json
 	$(UNI) transform --lower-hl-cp-model \
-      -m $*.hl.model-w-op.json -a $*.aimaps.json -o $@
+           -m $*.hl.model-w-op.json \
+           -a $*.aimaps.json \
+           -o $@
 
 %.ll.sol.json: %.ll.model.json
 	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
 %.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json
 	$(UNI) transform --raise-ll-cp-solution \
-      -m $*.hl.model-w-op.json -s $*.ll.sol.json -a $*.aimaps.json -o $@
+           -m $*.hl.model-w-op.json \
+           -s $*.ll.sol.json \
+           -a $*.aimaps.json \
+           -o $@
 
-%.s: %.hl.model-w-op.json %.hl.sol.json
-	$(UNI) make --generate-asm -m $*.hl.model-w-op.json -s $*.hl.sol.json -o $@
+%.s: %.presolved.hl.model-w-op.json %.presolved.hl.sol.json
+	$(UNI) make --generate-asm \
+           -m $*.presolved.hl.model-w-op.json \
+           -s $*.presolved.hl.sol.json \
+           -o $@
 
 .PHONY: clean
 clean:
@@ -202,7 +249,10 @@ distclean-toolchain:
 	llvm-dis bugpoint-reduced-simplified.bc
 
 %.pretty.json: %.json
-	$(PRETTIFY) $< > $@
+	$(eval TEMPFILE := $(shell mktemp))
+	$(PRETTIFY) $< > $(TEMPFILE)
+	mv $(TEMPFILE) $@
+	$(RM) $(TEMPFILE)
 
 fetch-test-cases:
 	cp ../experiments/mediabench/selected/*.ll .

@@ -76,7 +76,6 @@ set of allMatches: inactiveInstrMatches;
 set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
-set of allMatches: dominatedMatches;
 
 % Arrays that encode constraints
 array[int, int] of int: sameLoc;
@@ -175,7 +174,7 @@ var int: cost;
 % [MC] Dual variables.
 array[allOperationsInFunction] of set of allMatches: omatchD =
   array1d( allOperationsInFunction
-         , [ { m | m in allMatches diff dominatedMatches
+         , [ { m | m in allMatches
                    where o in operationsCoveredByMatch[m]
              }
              | o in allOperationsInFunction
@@ -183,7 +182,7 @@ array[allOperationsInFunction] of set of allMatches: omatchD =
          );
 array[allDataInFunction] of set of allMatches: dmatchD =
   array1d( allDataInFunction
-         , [ { m | m in allMatches diff dominatedMatches
+         , [ { m | m in allMatches
                  , o in operandsDefinedByMatch[m]
                    where d in operandAlternatives[o]
              }
@@ -220,12 +219,6 @@ var allBlocksInFunction: Alt(allOperands: o) =
 %=============
 % CONSTRAINTS
 %=============
-
-% Dominated matches must not be selected.
-constraint
-  forall (m in dominatedMatches) (
-    not sel[m]
-  );
 
 % Constrain alternatives of operands.
 constraint
@@ -314,7 +307,7 @@ constraint
 
 % Selected matches that have an entry block must be placed in entry block.
 constraint
-  forall (m in allMatches diff dominatedMatches) (
+  forall (m in allMatches) (
     % If a match has no entry block, then this set will be empty and hence there
     % will be no such constraint. It is assumed that there will be at most one
     % entry.
@@ -326,7 +319,7 @@ constraint
 % Data defined by a selected match must be defined in either the block wherein
 % the match is placed or in one of the blocks spanned by the match.
 constraint
-  forall (m in allMatches diff dominatedMatches) (
+  forall (m in allMatches) (
     forall (o in operandsDefinedByMatch[m]) (
       if (card(spannedBlocksInMatch[m]) > 0)
       then sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]
@@ -485,7 +478,7 @@ constraint
 % All data external to a match, and which are not states, must not be located in
 % the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches
+  forall ( m in allMatches
          , o in operandsExternalToMatch[m]
            where not (operandAlternatives[o] subset statesInFunction)
          )
@@ -495,7 +488,7 @@ constraint
 
 % All data internal to a match must be located in the null location.
 constraint
-  forall ( m in allMatches diff dominatedMatches
+  forall ( m in allMatches
          , o in operandsInternalToMatch[m]
                 where not (operandAlternatives[o] subset statesInFunction)
          )
@@ -524,7 +517,7 @@ array[int] of int: OCostFlat =
     endif
     endif
   | o in allOperationsInFunction
-  , m in allMatches diff dominatedMatches
+  , m in allMatches
   , p in if card(entryBlockOfMatch[m])>0 then entryBlockOfMatch[m]
             union
             {blockValueForNull}
@@ -542,7 +535,7 @@ array[1..OCostSize, 1..4] of int: OCost =
 set of int: OCostDom = {OCost[i,4] | i in 1..OCostSize};
 
 constraint
-  % cost = sum (m in allMatches diff dominatedMatches)
+  % cost = sum (m in allMatches)
   %        ( latencyOfMatch[m]
   %        * execFrequencyOfBlocksPlusNull[place[m]]
   %        ) /\
@@ -681,7 +674,7 @@ constraint
 %        set of int: B = {bb | bb in allBlocksInFunction
 %                              where b in domSetOfBlockInFunction[bb]}
 %                        union {blockValueForNull}} in (
-%       forall (m in allMatches diff dominatedMatches,
+%       forall (m in allMatches,
 %               u in operandsUsedByMatch[m]
 %             where operandAlternatives[u] = {d}) (
 %       place[m] in B
@@ -741,7 +734,6 @@ solve
   %                 | m in allMatchesBySize
   %                   where not ( m in copyInstrMatches
   %                                    union inactiveInstrMatches
-  %                                    union dominatedMatches
   %                             )
   %                 ], input_order, indomain_max, complete)
   %   , int_search(alt, input_order, indomain_max, complete)
