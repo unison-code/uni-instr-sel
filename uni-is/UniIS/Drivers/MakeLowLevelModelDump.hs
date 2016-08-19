@@ -186,15 +186,15 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  "Data / operands defined: "
                  ++
-                 (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
-                 ++
-                 " / "
-                 ++
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
                    (llMatchOperandsDefined model) !! (fromIntegral ai)
                  )
+                 ++
+                 " / "
+                 ++
+                 (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
                  ++
                  "\n"
                  ++
@@ -202,15 +202,15 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  "Data / operands used: "
                  ++
-                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
-                 ++
-                 " / "
-                 ++
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
                    (llMatchOperandsUsed model) !! (fromIntegral ai)
                  )
+                 ++
+                 " / "
+                 ++
+                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
                  ++
                  "\n"
                  ++
