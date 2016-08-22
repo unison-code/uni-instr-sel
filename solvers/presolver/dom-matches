@@ -169,7 +169,7 @@ json_data = {}
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
-# Computed dominated-matches parameter
+# Computed dominated matches
 d_json_data = {}
 d_json_data["dominated-matches-ai"] = \
   [ m for m in range(json_data["num-matches"])

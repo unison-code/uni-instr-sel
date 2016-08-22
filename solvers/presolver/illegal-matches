@@ -1,0 +1,122 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check arguments
+if len(sys.argv) < 2:
+    sys.stderr.write("No JSON file given\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    sys.stderr.write("Too many arguments\n")
+    sys.exit(1)
+json_file = sys.argv[1]
+if not os.path.isfile(json_file):
+    error("JSON file '" + json_file +"' not found")
+
+# Read JSON file
+json_data = {}
+with open(json_file, 'r') as file:
+    json_data = json.load(file)
+
+num_matches = json_data["num-matches"]
+
+# Compute set of matches that cover a particular operation
+num_operands = json_data["fun-num-operations"]
+o_matches = [[]] * num_operands
+for o in range(num_operands):
+    o_matches[o] = { m for m in range(num_matches)
+                           if o in json_data["match-operations-covered"][m]
+                   }
+
+# Compute set of matches that define a particular datum
+num_data = json_data["fun-num-data"]
+d_matches = [[]] * num_data
+for d in range(num_data):
+    d_matches[d] = { m for m in range(num_matches)
+                       for o in json_data["match-operands-defined"][m]
+                       if d in json_data["operand-alternatives"][o]
+                   }
+
+illegal_matches = set()
+
+# Forbid matches that, if selected, would leave some operations uncoverable
+for i in range(num_operands):
+    for j in range(num_operands):
+        if i == j: continue
+        if o_matches[i] <= o_matches[j]:
+            illegal_matches |= o_matches[j] - o_matches[i]
+
+# Forbid matches that, if selected, would leave some data undefinable
+for i in range(num_data):
+    for j in range(num_data):
+        if i == j: continue
+        if d_matches[i] <= d_matches[j]:
+            illegal_matches |= d_matches[j] - d_matches[i]
+
+
+# If all matches in domain[i] make use of some datum d, then all inactive copy
+# instructions that define d are not selectable
+domain = o_matches + d_matches
+for i in range(len(domain)):
+    M = domain[i]
+    for d in range(num_data):
+        for m in M:
+            # TODO: implement
+
+
+# Print JSON
+i_json_data = {}
+i_json_data["illegal-matches-ai"] = list(illegal_matches)
+print json.dumps(i_json_data)
