@@ -5,7 +5,7 @@ name:                uni-targen
 version:             0.1.0.0
 --synopsis:
 --description:
-license:             BSD2
+license:             BSD3
 license-file:        LICENSE
 author:              Gabriel Hjort Blindell
 maintainer:          ghb@kth.se
