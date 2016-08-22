@@ -103,6 +103,9 @@ library
                      scientific >=0.3 && <0.4,
                      split >=0.2 && <0.3,
                      text >= 1.2 && <1.3,
+                     -- The restriction below prevents compilation error when
+                     -- building llvm-general-3.4.5.2
+                     transformers <0.5,
                      unordered-containers >= 0.2.5.0,
                      vector >= 0.11 && <0.12
   default-language:  Haskell2010
