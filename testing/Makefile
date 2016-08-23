@@ -112,14 +112,18 @@ hlib:
 %.ce.cc.ae.be.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
 
-%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json %.ce.cc.ae.be.dom.json %.ce.cc.ae.be.ill.json %.aimaps.json
+%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json \
+                                %.ce.cc.ae.be.dom.json \
+                                %.ce.cc.ae.be.ill.json \
+                                %.aimaps.json
 	$(PRUNE_BAD_MATCHES_CMD) -d $*.ce.cc.ae.be.dom.json \
                              -i $*.ce.cc.ae.be.ill.json \
                              -p $*.ce.cc.ae.be.p.json \
                              -a $*.aimaps.json \
                              > $@
 
-%.presolved.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.presolved.p.json
+%.presolved.hl.model-no-op.json: %.ce.cc.ae.be.f.json \
+                                 %.ce.cc.ae.be.presolved.p.json
 	$(UNI) make --construct-hl-cp-model-no-op \
            -f $*.ce.cc.ae.be.f.json \
            -p $*.ce.cc.ae.be.presolved.p.json \
@@ -131,7 +135,8 @@ hlib:
            -p $*.ce.cc.ae.be.p.json \
            -o $@
 
-%.presolved.hl.model-w-op.json: %.presolved.hl.model-no-op.json %.ce.cc.ae.be.presolved.p.json
+%.presolved.hl.model-w-op.json: %.presolved.hl.model-no-op.json \
+                                %.ce.cc.ae.be.presolved.p.json
 	$(UNI) make --construct-hl-cp-model-w-op \
            -m $*.presolved.hl.model-no-op.json \
            -p $*.ce.cc.ae.be.presolved.p.json \
