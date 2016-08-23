@@ -43,8 +43,8 @@ export MINIZINC_BACKEND := fzn_chuffed
 
 UNI              := uni-is
 CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
-DOM_MATCHES_CMD  := ../solvers/presolver/dom-matches
-PRUNE_DOM_MATCHES_CMD := ../solvers/presolver/prune-dom-matches
+DOM_MATCHES_CMD  := ../solvers/presolver/find-dominated-matches
+PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
 PRETTIFY         := ../tools/prettify-json
@@ -109,7 +109,7 @@ hlib:
 	$(RM) $(TEMPFILE)
 
 %.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json %.ce.cc.ae.be.d.json %.aimaps.json
-	$(PRUNE_DOM_MATCHES_CMD) -d $*.ce.cc.ae.be.d.json \
+	$(PRUNE_BAD_MATCHES_CMD) -d $*.ce.cc.ae.be.d.json \
                              -p $*.ce.cc.ae.be.p.json \
                              -a $*.aimaps.json \
                              > $@
