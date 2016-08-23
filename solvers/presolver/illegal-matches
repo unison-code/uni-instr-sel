@@ -70,7 +70,29 @@ json_data = {}
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
+# Setup convenience variables
 num_matches = json_data["num-matches"]
+num_data = json_data["fun-num-data"]
+num_operands = json_data["num-operands"]
+
+# Convert lists of operand alternatives into sets
+operand_alt_sets = [[]] * num_operands
+for o in range(num_operands):
+    operand_alt_sets[o] = set(json_data["operand-alternatives"][o])
+
+# Compute set of data defined and set of data used per match
+match_data_defined = [[]] * num_matches
+match_data_used = [[]] * num_matches
+for m in range(num_matches):
+    match_data_defined[m] = [ d for d in range(num_data)
+                                for o in json_data["match-operands-defined"][m]
+                                    if {d} == operand_alt_sets[o]
+                            ]
+    match_data_used[m] = [ d for d in range(num_data)
+                             for o in json_data["match-operands-used"][m]
+                                 if {d} == operand_alt_sets[o]
+                         ]
+
 
 # Compute set of matches that cover a particular operation
 num_operands = json_data["fun-num-operations"]
@@ -81,12 +103,10 @@ for o in range(num_operands):
                    }
 
 # Compute set of matches that define a particular datum
-num_data = json_data["fun-num-data"]
 d_matches = [[]] * num_data
 for d in range(num_data):
     d_matches[d] = { m for m in range(num_matches)
-                       for o in json_data["match-operands-defined"][m]
-                       if d in json_data["operand-alternatives"][o]
+                           if d in match_data_defined[m]
                    }
 
 illegal_matches = set()
@@ -106,15 +126,21 @@ for i in range(num_data):
             illegal_matches |= d_matches[j] - d_matches[i]
 
 
-# If all matches in domain[i] make use of some datum d, then all inactive copy
-# instructions that define d are not selectable
+# If all matches in domain[i] use some datum d, then all inactive instructions
+# that define d are not selectable
 domain = o_matches + d_matches
 for i in range(len(domain)):
     M = domain[i]
     for d in range(num_data):
+        all_matches_use_d = True
         for m in M:
-            # TODO: implement
-
+            if not d in match_data_used[m]:
+                all_matches_use_d = False
+                break
+        if all_matches_use_d:
+            illegal_matches |= { m for m in json_data["match-inactive-instrs"]
+                                       if d in match_data_defined[m]
+                               }
 
 # Print JSON
 i_json_data = {}
