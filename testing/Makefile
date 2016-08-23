@@ -44,6 +44,7 @@ export MINIZINC_BACKEND := fzn_chuffed
 UNI              := uni-is
 CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD  := ../solvers/presolver/find-dominated-matches
+ILL_MATCHES_CMD  := ../solvers/presolver/find-illegal-matches
 PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND)
 SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
@@ -102,14 +103,18 @@ hlib:
 %.p.json: %.f.json
 	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
-%.ce.cc.ae.be.d.json: %.ll.model.json
+%.ce.cc.ae.be.dom.json: %.ll.model.json
 	$(eval TEMPFILE := $(shell mktemp))
 	$(CONSTR_CONV_CMD) $< > $(TEMPFILE)
 	$(DOM_MATCHES_CMD) $(TEMPFILE) > $@
 	$(RM) $(TEMPFILE)
 
-%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json %.ce.cc.ae.be.d.json %.aimaps.json
-	$(PRUNE_BAD_MATCHES_CMD) -d $*.ce.cc.ae.be.d.json \
+%.ce.cc.ae.be.ill.json: %.ll.model.json
+	$(ILL_MATCHES_CMD) $< > $@
+
+%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json %.ce.cc.ae.be.dom.json %.ce.cc.ae.be.ill.json %.aimaps.json
+	$(PRUNE_BAD_MATCHES_CMD) -d $*.ce.cc.ae.be.dom.json \
+                             -i $*.ce.cc.ae.be.ill.json \
                              -p $*.ce.cc.ae.be.p.json \
                              -a $*.aimaps.json \
                              > $@

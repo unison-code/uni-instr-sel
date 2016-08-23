@@ -63,9 +63,14 @@ parser.add_argument( "-p"
                    , help="Pattern matchset JSON file"
                    )
 parser.add_argument( "-d"
-                   , dest="dom"
+                   , dest="dominated"
                    , metavar="JSON"
                    , help="Dominated matches JSON file"
+                   )
+parser.add_argument( "-i"
+                   , dest="illegal"
+                   , metavar="JSON"
+                   , help="Illegal matches JSON file"
                    )
 parser.add_argument( "-a"
                    , dest="aimaps"
@@ -81,12 +86,18 @@ if p_json_file is None:
     sys.exit(1)
 if not os.path.isfile(p_json_file):
     error("JSON file '" + p_json_file +"' not found")
-d_json_file = args.dom
+d_json_file = args.dominated
 if d_json_file is None:
     sys.stderr.write("No dominated matches JSON file given\n")
     sys.exit(1)
 if not os.path.isfile(d_json_file):
     error("JSON file '" + d_json_file +"' not found")
+i_json_file = args.illegal
+if i_json_file is None:
+    sys.stderr.write("No illegal matches JSON file given\n")
+    sys.exit(1)
+if not os.path.isfile(i_json_file):
+    error("JSON file '" + i_json_file +"' not found")
 a_json_file = args.aimaps
 if a_json_file is None:
     sys.stderr.write("No array index mapping JSON file given\n")
@@ -101,20 +112,25 @@ with open(p_json_file, 'r') as file:
 d_json_data = []
 with open(d_json_file, 'r') as file:
     d_json_data = json.load(file)
+i_json_data = []
+with open(i_json_file, 'r') as file:
+    i_json_data = json.load(file)
 a_json_data = []
 with open(a_json_file, 'r') as file:
     a_json_data = json.load(file)
 
+bad_matches_ai = set(d_json_data["dominated-matches-ai"]) | \
+                 set(i_json_data["illegal-matches-ai"])
+
 # Map match array indices to match IDs
-dom_matches = []
-for ai in d_json_data["dominated-matches-ai"]:
-    mid = a_json_data["array-index-to-match-id-maps"][ai]
-    dom_matches.append(mid)
+bad_matches = { a_json_data["array-index-to-match-id-maps"][ai]
+                for ai in bad_matches_ai
+              }
 
 # Prune dominated matches
 pruned_matches = []
 for m in p_json_data["match-data"]:
-    if not m["match-id"] in dom_matches:
+    if not m["match-id"] in bad_matches:
         pruned_matches.append(m)
 p_json_data["match-data"] = pruned_matches
 
