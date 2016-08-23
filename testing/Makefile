@@ -51,7 +51,7 @@ SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
 PRETTIFY         := ../tools/prettify-json
 BUGPOINTSCRIPT   := ./compile-from-bc
 
-TARGET := hexagon5
+TARGET := mips32
 
 
 
