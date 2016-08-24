@@ -34,10 +34,10 @@ GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
 CLANG    := /home/ghb/programs/llvm-3.4-build/Release+Asserts/bin/clang
-LLVMDIR  := /home/ghb/projects/zapbar/llvm-build/Release+Asserts
+LLVMDIR  := /home/ghb/projects/zapbar/llvm-int-build
 OPT      := $(LLVMDIR)/bin/opt
-LSLIB    := $(LLVMDIR)/lib/LowerSelect.so
-AEFMLIB  := $(LLVMDIR)/lib/AttachExecFreqMetadata.so
+LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
+AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
 
 export MINIZINC_BACKEND := fzn_chuffed
 
