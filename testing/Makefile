@@ -39,7 +39,7 @@ OPT      := $(LLVMDIR)/bin/opt
 LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
 AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
 
-export MINIZINC_BACKEND := fzn_chuffed
+MINIZINC_BACKEND := fzn_chuffed
 
 UNI              := uni-is
 CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
