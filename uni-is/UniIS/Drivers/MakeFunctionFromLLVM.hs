@@ -50,7 +50,7 @@ run MakeFunctionGraphFromLLVM str =
            runExceptT $ withModuleFromLLVMAssembly context str moduleAST
          )
      when (isLeft llvm_module_result) $
-       reportErrorAndExit $ fromLeft $ fromLeft llvm_module_result
+       reportErrorAndExit $ fromLeft $ llvm_module_result
      let llvm_module = fromRight llvm_module_result
      let functions_res = mkFunctionsFromLlvmModule llvm_module
      when (isLeft functions_res) $

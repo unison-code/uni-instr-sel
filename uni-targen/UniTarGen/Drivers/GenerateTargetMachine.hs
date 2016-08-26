@@ -130,10 +130,7 @@ parseSemantics str =
          )
      if isRight res
      then return $ Right $ fromRight res
-     else let err = fromLeft res
-          in if isLeft err
-             then return $ Left $ fromLeft err
-             else return $ Left $ show $ fromRight err
+     else return $ Left $ fromLeft res
 
 -- | Generates a 'TargetMachine' from a given 'MachineDescription'. In order to
 -- ignore instructions that yield errors when generating the 'TargetMachine', we
