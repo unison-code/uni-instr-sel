@@ -40,7 +40,19 @@ UNI_TARGEN_PATH := uni-targen
 SOLVERS_PATH    := solvers
 TOOLS_PATH      := tools
 LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
+LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
+LLVM_GENERAL_NAME := llvm-general-3.8.0.0
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+define check_pkg
+	ghc-pkg list | grep "$(1)"
+endef
 
 
 
@@ -52,7 +64,7 @@ LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
 build: hlib uni-is uni-targen
 
 .PHONY: docs
-docs: hlib uni-is-doc uni-targen-doc
+docs: llvm-general-pure-doc llvm-general-doc hlib-doc uni-is-doc uni-targen-doc
 
 .PHONY: hlib
 hlib: llvm-general-pure
@@ -64,11 +76,25 @@ hlib-doc:
 
 .PHONY: llvm-general-pure
 llvm-general-pure:
-	cd $(LLVM_GENERAL_PURE_PATH) && cabal install
+	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_PURE_NAME))))
+	if [ -z "$(RES)" ]; then \
+	    cd $(LLVM_GENERAL_PURE_PATH) && cabal install; \
+	fi
+
+.PHONY: llvm-general-pure-doc
+llvm-general-pure-doc:
+	cd $(LLVM_GENERAL_PURE_PATH) && cabal configure && cabal haddock
 
 .PHONY: llvm-general
 llvm-general: llvm-general-pure
-	cd $(LLVM_GENERAL_PATH) && cabal install
+	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_NAME))))
+	if [ -z "$(RES)" ]; then \
+	    cd $(LLVM_GENERAL_PATH) && cabal install; \
+	fi
+
+.PHONY: llvm-general-doc
+llvm-general-doc: llvm-general-pure-doc
+	cd $(LLVM_GENERAL_PATH) && cabal configure && cabal haddock
 
 .PHONY: uni-is
 uni-is: hlib llvm-general llvm-general-pure
