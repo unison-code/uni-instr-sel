@@ -33,8 +33,8 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-CLANG    := /home/ghb/programs/llvm-3.8-build/bin/clang
 LLVMDIR  := /home/ghb/projects/zapbar/llvm-int-build
+CLANG    := $(LLVMDIR)/bin/clang
 OPT      := $(LLVMDIR)/bin/opt
 LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
 AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
