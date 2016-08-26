@@ -6,27 +6,59 @@ Written by Gabriel Hjort Blindell <ghb@kth.se>
 = HOW TO BUILD AND INSTALL
 ===========================
 
-First, LLVM 3.4 needs to be installed on the machine. LLVM *must* be installed
-such that it can be invoked from any location or else a necessary Haskell
-package will fail to be installed. (I've tried to keep LLVM in the home
-directory, but no matter which flags I set to Cabal the package will just refuse
-to recognize that the correct version of LLVM is installed.)
+We denote the folder wherein this README file is located as <REPO>.
 
-To download and install LLVM 3.4, run the following commands:
+First, LLVM 3.8 needs to be installed on the machine. Just follow these
+instructions.
 
-   svn co http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_34/final llvm
-   cd llvm/tools
-   svn co http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_34/final clang
-   cd ../..
-   mkdir build
-   cd build
-   ../llvm/configure --enable-shared --enable-optimized
-   make
-   sudo make install
+1. Clone the LLVM repo and checkout the correct branch.
 
-The last command installs the LLVM binaries in /usr/local.
+   clone git ssh://git@luggage.sics.se/zapbar-llvm-int.git
+   cd zapbar-llvm-int
+   git checkout release_38-uni-is
 
-Now you will need to build the toolchain, which is done by running the following
-commands from the folder where this file is located:
+2. Clone LLVM clang (assuming that your terminal is currently standing in
+   the 'zapbar-llvm-int' folder).
+
+   git clone http://llvm.org/git/clang.git --branch release_38 --single-branch \
+       tools/clang
+
+3. Configure and build LLVM (assuming that your terminal is currently standing
+   in the 'zapbar-llvm-int' folder).
+
+   cd ..
+   mkdir zapbar-llvm-int-build
+   cd zapbar-llvm-int-build
+   cmake -LLVM_BUILD_LLVM_DYLIB ../zapbar-llvm-int
+   make -j <num cores>
+
+If this repo has recently been cloned, then we must initiate the submodule that
+contains the 'llvm-general' Haskell packages.
+
+5. Initiate and update submodules (assuming that your terminal is currently
+   standing in the <REPO> folder).
+
+   git submodule init
+   git submodule update
+
+Before we can build the 'llvm-general' package, we must ensure that the LLVM
+binaries are available in the default search locations. This is done by
+extending the $PATH variable. Assuming the full path to the LLVM build directory
+is denoted as <LLVM_BUILD> (in this example, it's the folder with basename
+'zapbar-llvm-int-build').
+
+6. In your ~/.bashrc file, add the following line:
+
+   export PATH=<LLVM_BUILD>/bin:$PATH
+
+To ensure the new $PATH is loaded, either open a new terminal or run following
+command:
+
+   source ~/.bashrc
+
+Now we can build the tool chain.
+
+7. Build tool chain (assuming that your terminal is currently standing in the
+   <REPO> folder).
 
    make
