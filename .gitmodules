@@ -1,0 +1,3 @@
+[submodule "hlib/llvm-general"]
+	path = hlib/llvm-general
+	url = https://github.com/bscarlet/llvm-general.git

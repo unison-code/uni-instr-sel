@@ -98,7 +98,7 @@ library
                      fgl >=5.5 && <5.6,
                      graphviz >=2999.18 && <2999.19,
                      haskell-src-exts >= 1.0 && <2.0,
-                     llvm-general-pure == 3.4.5.2,
+                     llvm-general-pure >= 3.8 && < 3.9,
                      safe >=0.3 && <0.4,
                      scientific >=0.3 && <0.4,
                      split >=0.2 && <0.3,

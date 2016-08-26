@@ -28,7 +28,7 @@ executable uni-is
                      fgl,
                      graphviz >=2999.18 && <2999.19,
                      instr-sel,
-                     llvm-general == 3.4.5.2,
+                     llvm-general >= 3.8 && < 3.9,
                      mtl >= 2.2 && <2.3,
                      -- The restriction below prevents compilation error when
                      -- building llvm-general-3.4.5.2

@@ -39,6 +39,8 @@ UNI_IS_PATH     := uni-is
 UNI_TARGEN_PATH := uni-targen
 SOLVERS_PATH    := solvers
 TOOLS_PATH      := tools
+LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
+LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
 
 
 
@@ -53,15 +55,23 @@ build: hlib uni-is uni-targen
 docs: hlib uni-is-doc uni-targen-doc
 
 .PHONY: hlib
-hlib:
+hlib: llvm-general-pure
 	cd $(HLIB_PATH) && make
 
 .PHONY: hlib-doc
 hlib-doc:
 	cd $(HLIB_PATH) && make docs
 
+.PHONY: llvm-general-pure
+llvm-general-pure:
+	cd $(LLVM_GENERAL_PURE_PATH) && cabal install
+
+.PHONY: llvm-general
+llvm-general: llvm-general-pure
+	cd $(LLVM_GENERAL_PATH) && cabal install
+
 .PHONY: uni-is
-uni-is: hlib
+uni-is: hlib llvm-general llvm-general-pure
 	cd $(UNI_IS_PATH) && make
 	cd $(SOLVERS_PATH) && make
 	cd $(TOOLS_PATH) && make
@@ -71,7 +81,7 @@ uni-is-doc:
 	cd $(UNI_IS_PATH) && make docs
 
 .PHONY: uni-targen
-uni-targen: hlib
+uni-targen: hlib llvm-general llvm-general-pure
 	cd $(UNI_TARGEN_PATH) && make
 
 .PHONY: uni-targen-doc
@@ -80,6 +90,8 @@ uni-targen-doc:
 
 .PHONY: clean
 clean:
+	cd $(LLVM_GENERAL_PURE_PATH) && $(RM) -r dist
+	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make clean
 	cd $(UNI_IS_PATH) && make clean
 	cd $(UNI_TARGEN_PATH) && make clean
@@ -88,6 +100,8 @@ clean:
 
 .PHONY: distclean
 distclean:
+	cd $(LLVM_GENERAL_PURE_PATH) && $(RM) -r dist
+	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make distclean
 	cd $(UNI_IS_PATH) && make distclean
 	cd $(UNI_TARGEN_PATH) && make distclean
