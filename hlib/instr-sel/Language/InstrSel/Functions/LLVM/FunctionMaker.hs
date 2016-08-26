@@ -142,7 +142,10 @@ extractExecFreq m im =
 -- | Retrieves the list of operands attached to a metadata node. If the node is
 -- a metanode ID, then the operands of that metanode ID will be retrieved.
 retrieveMetadataOps :: LLVM.Module -> LLVM.MetadataNode -> [Maybe LLVM.Operand]
-retrieveMetadataOps _ (LLVM.MetadataNode ops) = ops
+retrieveMetadataOps _ (LLVM.MetadataNode ops) =
+  map (maybe Nothing f) ops
+  where f (LLVM.MDValue o) = Just o
+        f o = error $ "Unexpected metadata: " ++ show o
 retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
   let module_defs = LLVM.moduleDefinitions m
       isMetaDef (LLVM.MetadataNodeDefinition _ _) = True
@@ -153,6 +156,8 @@ retrieveMetadataOps m (LLVM.MetadataNodeReference mid) =
                             ) $
                    meta_defs
   in if length sought_ops == 1
-     then head sought_ops
+     then let f (LLVM.MDValue o) = Just o
+              f o = error $ "Unexpected metadata: " ++ show o
+          in map (maybe Nothing f) $ head sought_ops
      else let (LLVM.MetadataNodeID mid_value) = mid
           in error $ "No metadata with ID " ++ (show mid_value)
