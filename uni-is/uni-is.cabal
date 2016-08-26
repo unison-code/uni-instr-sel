@@ -29,7 +29,7 @@ executable uni-is
                      graphviz >=2999.18,
                      instr-sel,
                      llvm-general >= 3.8 && < 3.9,
-                     mtl >= 2.2,
+                     mtl >= 2.2
   hs-source-dirs:    .
   default-language:  Haskell2010
   ghc-options:       -Wall
