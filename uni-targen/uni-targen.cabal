@@ -20,12 +20,12 @@ executable uni-targen
 --other-modules:
   other-extensions:  DeriveDataTypeable
   build-depends:     base >=4.5,
-                     cmdargs >=0.10 && <0.11,
-                     directory >=1.2 && <1.3,
+                     cmdargs >=0.10,
+                     directory >=1.2,
                      instr-sel,
                      llvm-general >= 3.8 && < 3.9,
                      llvm-general-pure >= 3.8 && < 3.9,
-                     mtl >= 2.2 && <2.3
+                     mtl >= 2.2,
   hs-source-dirs:    .
   default-language:  Haskell2010
   ghc-options:       -Wall
