@@ -658,8 +658,7 @@ constraint
          exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 	 exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
     ) then (
-      trace("/* 1A: table([def["++show(d)++"], def["++show(u)++"]], DomRel); */\n", table([def[d], def[u]], DomRel)) /\
-      trace("/* 1A: oplace[\(i)] = def[\(d)]; */\n", oplace[i] = def[d])
+      table([def[d], def[u]], DomRel) /\ oplace[i] = def[d]
     ) else true endif
   );
 
@@ -675,7 +674,7 @@ constraint
          exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
          exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
     ) then (
-      trace("/* 1B: table([def["++show(d)++"], def["++show(u)++"]], DomRel); */\n", table([def[d], def[u]], DomRel))
+      table([def[d], def[u]], DomRel)
     ) else true endif
   );
 
@@ -691,7 +690,7 @@ constraint
 	   min(entryBlockOfMatch[m]) = Entry /\
 	   exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
       ) then (
-	trace("/* 1C: table([\(Entry), def[\(u)]], DomRel); */\n", table([Entry, def[u]], DomRel))
+	table([Entry, def[u]], DomRel)
       ) else true endif
   );
 
@@ -706,7 +705,7 @@ constraint
 	   spannedBlocksInMatch[m] = Spanned /\
 	   exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
       ) then (
-	trace("/* 1D: def[\(d)] in \(Spanned); */\n", def[d] in Spanned)
+	def[d] in Spanned
       ) else true endif
   );
 
@@ -719,7 +718,7 @@ constraint
       if forall (m in omatchD[i]) (
 	   min(entryBlockOfMatch[m]) = Entry
       ) then (
-	trace("/* 1E: oplace[\(i)] = \(Entry); */\n", oplace[i] = Entry)
+	oplace[i] = Entry
       ) else true endif
   );
 
@@ -740,7 +739,7 @@ constraint
 			  }} in
     if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
     then
-      trace("/* 1F: def[\(d)] = \(min(BO)); oplace[\(i)] = \(min(BO)); */\n", def[d] = min(BO) /\ oplace[i] = min(BO))
+      def[d] = min(BO) /\ oplace[i] = min(BO)
     else true endif
   );
 
@@ -762,7 +761,7 @@ constraint
     forall (p in allBlocksInFunction,
             q in allBlocksInFunction) (
       if fwd[p] = {q} /\ bwd[q] = {p} then
-        trace("/* 3: succ[\(p)] = \(q); */\n", succ[p] = q)
+        succ[p] = q
       else true endif
     );
 
