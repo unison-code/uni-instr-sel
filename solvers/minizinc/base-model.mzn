@@ -766,33 +766,7 @@ constraint
       else true endif
     );
 
-% RULE 4: Forbid matches that would wipe out some omatch or dmatch domain.
-constraint
-  let {array[int] of set of int: domains = omatchD++dmatchDOnly} in
-    forall (i in index_set(domains),
-	    j in index_set(domains)
-	    where i!=j) (
-      if domains[i] subset domains[j] then
-        forall (m in domains[j] diff domains[i]) (
-	  trace("/* 4: not sel[\(m)]; */\n", not sel[m])
-	)
-      else true endif
-    );
 
-% RULE 5: If all matches out of some oneof set use datum u,
-%         then forbid any inactive copy for u
-constraint
-  forall (M in omatchD++dmatchDOnly,
-          u in allDataInFunction) (
-      if forall (m in M) (exists (uo in operandsUsedByMatch[m]) (operandAlternatives[uo] = {u}))
-      then
-        forall (mi in inactiveInstrMatches,
-	        oi in operandsDefinedByMatch[mi]
-		where operandAlternatives[oi] = {u}) (
-	  trace("/* 5: not sel[\(mi)]; */\n", not sel[mi])
-        )
-      else true endif
-  );
 
 %==================
 % SOLVE AND OUTPUT
