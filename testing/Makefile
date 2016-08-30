@@ -39,16 +39,19 @@ OPT      := $(LLVMDIR)/bin/opt
 LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
 AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
 
-MINIZINC_BACKEND := fzn_chuffed
 MINIZINC_GLOBALS_DIR := chuffed
+MINIZINC_BACKEND := fzn_chuffed
+MINIZINC_BACKEND_FLAGS :=
 
 UNI              := uni-is
 CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD  := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD  := ../solvers/presolver/find-illegal-matches
 PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
-SOLVER_CMD       := ../solvers/minizinc/solver -s $(MINIZINC_BACKEND) \
-	                -g $(MINIZINC_GLOBALS_DIR)
+SOLVER_CMD       := ../solvers/minizinc/solver \
+                    -g $(MINIZINC_GLOBALS_DIR) \
+                    -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
+
 SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
 PRETTIFY         := ../tools/prettify-json
 BUGPOINTSCRIPT   := ./compile-from-bc
