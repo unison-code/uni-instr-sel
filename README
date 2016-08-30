@@ -13,7 +13,7 @@ instructions.
 
 1. Clone the LLVM repo and checkout the correct branch.
 
-   clone git ssh://git@luggage.sics.se/zapbar-llvm-int.git
+   git clone ssh://git@luggage.sics.se/zapbar-llvm-int.git
    cd zapbar-llvm-int
    git checkout release_38-uni-is
 
