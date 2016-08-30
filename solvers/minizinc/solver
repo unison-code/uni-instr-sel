@@ -71,6 +71,7 @@ MINIZINC_SOLUTION_FILEPATH=""
 MINIZINC_STATS_FILEPATH=""
 MINIZINC_ERROR_FILEPATH=""
 MINIZINC_SOLVER_BIN=""
+MINIZINC_GLOBALS_DIR=""
 MINIZINC_TIMELIMIT=""
 
 
@@ -148,7 +149,8 @@ function flattenModelFile {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "FLATTENING TIME: " > $stats_filepath
     command="`which time` -ap -o $stats_filepath --format %es"
-    command="$command mzn2fzn ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    command="$command mzn2fzn -G $MINIZINC_GLOBALS_DIR"
+    command="$command ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
     exe "$command"
     exitIfFailed ""
     reportLatestTimeFromStats
@@ -257,6 +259,10 @@ do
             MINIZINC_SOLVER_BIN="$2"
             shift
         ;;
+        -g|--globals)
+            MINIZINC_GLOBALS_DIR="$2"
+            shift
+        ;;
         -t|--timelimit)
             MINIZINC_TIMELIMIT="$2"
             shift
@@ -298,6 +304,10 @@ else
                     "start with \"fzn\")"
         exit 1
     fi
+fi
+if [ -z "$MINIZINC_GLOBALS_DIR" ]; then
+    reportError "No globals directory specified (use -g or --globals switch)"
+    exit 1
 fi
 
 reportTask "Creating temporary directory"
