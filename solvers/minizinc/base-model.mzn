@@ -199,7 +199,7 @@ include "table.mzn";
 %===========
 
 % Valid under the assumption that its operation was selected.
-var allBlocksInFunction: Alt(allOperands: o) =
+var allDataInFunction: Alt(allOperands: o) =
   let
   { allDataInFunction: d = min(operandAlternatives[o])
   } in
