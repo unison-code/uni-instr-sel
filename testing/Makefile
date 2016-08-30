@@ -38,6 +38,8 @@ CLANG    := $(LLVMDIR)/bin/clang
 OPT      := $(LLVMDIR)/bin/opt
 LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
 AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
+PRETTIFY         := ../tools/prettify-json
+BUGPOINTSCRIPT   := ./compile-from-bc
 
 MINIZINC_GLOBALS_DIR := chuffed
 MINIZINC_BACKEND := fzn_chuffed
@@ -51,10 +53,7 @@ PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 SOLVER_CMD       := ../solvers/minizinc/solver \
                     -g $(MINIZINC_GLOBALS_DIR) \
                     -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
-
 SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
-PRETTIFY         := ../tools/prettify-json
-BUGPOINTSCRIPT   := ./compile-from-bc
 
 TARGET := mips32
 
