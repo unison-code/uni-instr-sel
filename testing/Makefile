@@ -34,7 +34,8 @@ GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
 # Should be set and exported as an environment variable
-LLVM_BUILD_DIR ?= @echo 'ERROR: $$LLVM_BUILD_DIR not set!' ; exit 1 ;
+LLVM_BUILD_DIR ?= @echo 'ERROR: Environment variable $$LLVM_BUILD_DIR is not' \
+                        'set!' ; exit 1 ;
 
 CLANG          := $(LLVM_BUILD_DIR)/bin/clang
 OPT            := $(LLVM_BUILD_DIR)/bin/opt
