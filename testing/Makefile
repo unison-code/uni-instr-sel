@@ -33,7 +33,9 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-LLVM_BUILD_DIR := /home/ghb/projects/zapbar/llvm-int-build
+# Should be set and exported as an environment variable
+LLVM_BUILD_DIR ?= @echo 'ERROR: $$LLVM_BUILD_DIR not set!' ; exit 1 ;
+
 CLANG          := $(LLVM_BUILD_DIR)/bin/clang
 OPT            := $(LLVM_BUILD_DIR)/bin/opt
 LSLIB          := $(LLVM_BUILD_DIR)/lib/LibLowerSelect.so
