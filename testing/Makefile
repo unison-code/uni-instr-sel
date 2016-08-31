@@ -34,13 +34,14 @@ GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
 # Should be set and exported as an environment variable
-LLVM_BUILD_DIR ?= @echo 'ERROR: Environment variable $$LLVM_BUILD_DIR is not' \
-                        'set!' ; exit 1 ;
+UNI_IS_LLVM_BUILD_DIR ?= @echo 'ERROR: Environment variable' \
+                               '$$UNI_IS_LLVM_BUILD_DIR is not set!' ; \
+                         exit 1 ;
 
-CLANG          := $(LLVM_BUILD_DIR)/bin/clang
-OPT            := $(LLVM_BUILD_DIR)/bin/opt
-LSLIB          := $(LLVM_BUILD_DIR)/lib/LibLowerSelect.so
-AEFMLIB        := $(LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+CLANG          := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
+OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
+LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
+AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 PRETTIFY       := ../tools/prettify-json
 BUGPOINTSCRIPT := ./compile-from-bc
 
