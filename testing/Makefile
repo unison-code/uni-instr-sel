@@ -33,27 +33,27 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-LLVMDIR  := /home/ghb/projects/zapbar/llvm-int-build
-CLANG    := $(LLVMDIR)/bin/clang
-OPT      := $(LLVMDIR)/bin/opt
-LSLIB    := $(LLVMDIR)/lib/LibLowerSelect.so
-AEFMLIB  := $(LLVMDIR)/lib/LibAttachExecFreqMetadata.so
-PRETTIFY         := ../tools/prettify-json
-BUGPOINTSCRIPT   := ./compile-from-bc
+LLVM_BUILD_DIR := /home/ghb/projects/zapbar/llvm-int-build
+CLANG          := $(LLVM_BUILD_DIR)/bin/clang
+OPT            := $(LLVM_BUILD_DIR)/bin/opt
+LSLIB          := $(LLVM_BUILD_DIR)/lib/LibLowerSelect.so
+AEFMLIB        := $(LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+PRETTIFY       := ../tools/prettify-json
+BUGPOINTSCRIPT := ./compile-from-bc
 
-MINIZINC_GLOBALS_DIR := chuffed
-MINIZINC_BACKEND := fzn_chuffed
+MINIZINC_GLOBALS_DIR   := chuffed
+MINIZINC_BACKEND       := fzn_chuffed
 MINIZINC_BACKEND_FLAGS :=
 
-UNI              := uni-is
-CONSTR_CONV_CMD  := ../solvers/presolver/constraints-converter
-DOM_MATCHES_CMD  := ../solvers/presolver/find-dominated-matches
-ILL_MATCHES_CMD  := ../solvers/presolver/find-illegal-matches
+UNI_IS                := uni-is
+CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
+DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
+ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
 PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
-SOLVER_CMD       := ../solvers/minizinc/solver \
-                    -g $(MINIZINC_GLOBALS_DIR) \
-                    -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
-SOLVER_TIMELIMIT := 0 # In seconds; 0 indicates no timelimit
+SOLVER_CMD            := ../solvers/minizinc/solver \
+                         -g $(MINIZINC_GLOBALS_DIR) \
+                         -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
+SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
 TARGET := mips32
 
@@ -90,28 +90,27 @@ hlib:
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
 %.f.json: %.reg.low.freq.ll
-	$(UNI) make --construct-fun-from-llvm -f $< -o $@
+	$(UNI_IS) make --construct-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json
-	$(UNI) transform --copy-extend-fun -f $< -o $@
+	$(UNI_IS) transform --copy-extend-fun -f $< -o $@
 
 %.ce.cc.f.json: %.ce.f.json
-	$(UNI) transform --combine-consts-in-fun -f $< -o $@
+	$(UNI_IS) transform --combine-consts-in-fun -f $< -o $@
 
 %.ce.cc.ae.f.json: %.ce.cc.f.json
-	$(UNI) transform --alternative-extend-fun -f $< -o $@
+	$(UNI_IS) transform --alternative-extend-fun -f $< -o $@
 
 %.ce.cc.ae.be.f.json: %.ce.cc.ae.f.json
-	$(UNI) transform --branch-extend-fun -f $< -o $@
+	$(UNI_IS) transform --branch-extend-fun -f $< -o $@
 
 %.p.json: %.f.json
-	$(UNI) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
+	$(UNI_IS) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
 
 %.ce.cc.ae.be.dom.json: %.ll.model.json
-	$(eval TEMPFILE := $(shell mktemp))
-	$(CONSTR_CONV_CMD) $< > $(TEMPFILE)
-	$(DOM_MATCHES_CMD) $(TEMPFILE) > $@
-	$(RM) $(TEMPFILE)
+	$(CONSTR_CONV_CMD) $< > $@.temp
+	$(DOM_MATCHES_CMD) $@.temp > $@
+	$(RM) $@.temp
 
 %.ce.cc.ae.be.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
@@ -128,63 +127,63 @@ hlib:
 
 %.presolved.hl.model-no-op.json: %.ce.cc.ae.be.f.json \
                                  %.ce.cc.ae.be.presolved.p.json
-	$(UNI) make --construct-hl-cp-model-no-op \
-           -f $*.ce.cc.ae.be.f.json \
-           -p $*.ce.cc.ae.be.presolved.p.json \
-           -o $@
+	$(UNI_IS) make --construct-hl-cp-model-no-op \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.presolved.p.json \
+              -o $@
 
 %.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) make --construct-hl-cp-model-no-op \
-           -f $*.ce.cc.ae.be.f.json \
-           -p $*.ce.cc.ae.be.p.json \
-           -o $@
+	$(UNI_IS) make --construct-hl-cp-model-no-op \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.p.json \
+              -o $@
 
 %.presolved.hl.model-w-op.json: %.presolved.hl.model-no-op.json \
                                 %.ce.cc.ae.be.presolved.p.json
-	$(UNI) make --construct-hl-cp-model-w-op \
-           -m $*.presolved.hl.model-no-op.json \
-           -p $*.ce.cc.ae.be.presolved.p.json \
-           -o $@
+	$(UNI_IS) make --construct-hl-cp-model-w-op \
+              -m $*.presolved.hl.model-no-op.json \
+              -p $*.ce.cc.ae.be.presolved.p.json \
+              -o $@
 
 %.hl.model-w-op.json: %.hl.model-no-op.json %.ce.cc.ae.be.p.json
-	$(UNI) make --construct-hl-cp-model-w-op \
+	$(UNI_IS) make --construct-hl-cp-model-w-op \
            -m $*.hl.model-no-op.json \
            -p $*.ce.cc.ae.be.p.json \
            -o $@
 
 %.presolved.aimaps.json: %.ce.cc.ae.be.f.json %.presolved.hl.model-w-op.json
-	$(UNI) make --compute-array-index-maplists \
-           -f $*.ce.cc.ae.be.f.json \
-           -m $*.presolved.hl.model-w-op.json \
-           -o $@
+	$(UNI_IS) make --compute-array-index-maplists \
+              -f $*.ce.cc.ae.be.f.json \
+              -m $*.presolved.hl.model-w-op.json \
+              -o $@
 
 %.aimaps.json: %.ce.cc.ae.be.f.json %.hl.model-w-op.json
-	$(UNI) make --compute-array-index-maplists \
-           -f $*.ce.cc.ae.be.f.json \
-           -m $*.hl.model-w-op.json \
-           -o $@
+	$(UNI_IS) make --compute-array-index-maplists \
+              -f $*.ce.cc.ae.be.f.json \
+              -m $*.hl.model-w-op.json \
+              -o $@
 
 %.ll.model.json: %.hl.model-w-op.json %.aimaps.json
-	$(UNI) transform --lower-hl-cp-model \
-           -m $*.hl.model-w-op.json \
-           -a $*.aimaps.json \
-           -o $@
+	$(UNI_IS) transform --lower-hl-cp-model \
+              -m $*.hl.model-w-op.json \
+              -a $*.aimaps.json \
+              -o $@
 
 %.ll.sol.json: %.ll.model.json
 	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
 
 %.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json
-	$(UNI) transform --raise-ll-cp-solution \
-           -m $*.hl.model-w-op.json \
-           -s $*.ll.sol.json \
-           -a $*.aimaps.json \
-           -o $@
+	$(UNI_IS) transform --raise-ll-cp-solution \
+              -m $*.hl.model-w-op.json \
+              -s $*.ll.sol.json \
+              -a $*.aimaps.json \
+              -o $@
 
 %.s: %.presolved.hl.model-w-op.json %.presolved.hl.sol.json
-	$(UNI) make --generate-asm \
-           -m $*.presolved.hl.model-w-op.json \
-           -s $*.presolved.hl.sol.json \
-           -o $@
+	$(UNI_IS) make --generate-asm \
+              -m $*.presolved.hl.model-w-op.json \
+              -s $*.presolved.hl.sol.json \
+              -o $@
 
 .PHONY: clean
 clean:
@@ -215,32 +214,39 @@ distclean-toolchain:
 #=====================
 
 %.full-f.dot: %.f.json
-	$(UNI) plot --plot-fun-full-graph -f $< -o $@
+	$(UNI_IS) plot --plot-fun-full-graph -f $< -o $@
 
 %.cfg-f.dot: %.f.json
-	$(UNI) plot --plot-fun-cf-graph -f $< -o $@
+	$(UNI_IS) plot --plot-fun-cf-graph -f $< -o $@
 
 %.ssa-f.dot: %.f.json
-	$(UNI) plot --plot-fun-ssa-graph -f $< -o $@
+	$(UNI_IS) plot --plot-fun-ssa-graph -f $< -o $@
 
 %.cov.dot: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) plot --plot-cover-all-matches --hide-null-instrs \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $@
+	$(UNI_IS) plot --plot-cover-all-matches --hide-null-instrs \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.p.json \
+              -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
 %.all-cover-plots: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) plot --plot-cover-per-match \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json -o $*.cov.dot
+	$(UNI_IS) plot --plot-cover-per-match \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.p.json \
+              -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
-	  make $${f%.*}.pdf;      \
-	  $(RM) $${f%.*}.dot;     \
+	  make $${f%.*}.pdf; \
+	  $(RM) $${f%.*}.dot; \
     done
 
 %.dump: %.ce.cc.ae.be.f.json %.ll.model.json %.aimaps.json
-	$(UNI) make --dump-low-level-model-info \
-      -f $*.ce.cc.ae.be.f.json -m $*.ll.model.json -a $*.aimaps.json -o $@
+	$(UNI_IS) make --dump-low-level-model-info \
+              -f $*.ce.cc.ae.be.f.json \
+              -m $*.ll.model.json \
+              -a $*.aimaps.json \
+              -o $@
 
 
 
@@ -249,10 +255,12 @@ distclean-toolchain:
 #==============
 
 %.run-checks: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI) check --check-fun-coverage \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
-	$(UNI) check --check-fun-location-overlap \
-      -f $*.ce.cc.ae.be.f.json -p $*.ce.cc.ae.be.p.json
+	$(UNI_IS) check --check-fun-coverage \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.p.json
+	$(UNI_IS) check --check-fun-location-overlap \
+              -f $*.ce.cc.ae.be.f.json \
+              -p $*.ce.cc.ae.be.p.json
 
 %.run-bugpoint:
 	make clean
@@ -263,14 +271,12 @@ distclean-toolchain:
 	llvm-dis bugpoint-reduced-simplified.bc
 
 %.pretty.json: %.json
-	$(eval TEMPFILE := $(shell mktemp))
-	$(PRETTIFY) $< > $(TEMPFILE)
-	mv $(TEMPFILE) $@
-	$(RM) $(TEMPFILE)
+	$(PRETTIFY) $< > $@.temp
+	mv $@.temp $@
+	$(RM) $@.temp
 
 fetch-test-cases:
 	cp ../experiments/mediabench/selected/*.ll .
-	rename 's/\.ll$$/.mll/' *.ll
 
 
 
