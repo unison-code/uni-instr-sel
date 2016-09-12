@@ -387,47 +387,17 @@ constraint
     )
   );
 
-% If a match representing a phi instruction is selected, then its data
-% must be defined in the blocks indicated by the definition edges.
-%
-% Input data d must be placed in some block b that dominates the block b'
-% indicated by the definition d -> b'. However, no two data d1 or d2 must be
-% placed in the same block that dominates both blocks of d1 and d2. The output
-% data must be placed in the block indicated by the definition edge.
-%
-% Input data constraints
+% If a match representing a phi instruction is selected, then its data must be
+% defined in the blocks indicated by the definition edges.
 constraint
-  forall (m in phiInstrMatches) (
+  forall (i in index_set_1of2(inputDefEdgesInMatch)) (
     let
-    { set of int: I = index_set_1of2(inputDefEdgesInMatch)
-    , array[int] of int: oset = [ inputDefEdgesInMatch[i, 3]
-                                | i in I
-                                , b in allBlocksInFunction
-                                  where inputDefEdgesInMatch[i, 1] = m
-                                        /\ inputDefEdgesInMatch[i, 2] = b
-                                ]
-    , array[int] of int: bset = [ inputDefEdgesInMatch[i, 2]
-                                | i in I where inputDefEdgesInMatch[i, 1] = m
-                                ]
+    { int: m = inputDefEdgesInMatch[i, 1]
+    , int: b = inputDefEdgesInMatch[i, 2]
+    , int: o = inputDefEdgesInMatch[i, 3]
     } in
-    forall (i in 1..length(oset)) (
-      (sel[m] -> (def[Alt(oset[i])] in domSetOfBlockInFunction[bset[i]]))
-    )
-    /\
-    forall (i,j in 1..length(oset) where i < j) (
-      let
-      { set of int: B = domSetOfBlockInFunction[bset[i]]
-                        intersect
-                        domSetOfBlockInFunction[bset[j]]
-      } in
-      if card(B) = 0 then true
-      else not sel[m] \/
-           not (def[Alt(oset[i])] in B) \/
-           not (def[Alt(oset[j])] in B)
-      endif
-    )
+    sel[m] -> def[Alt(o)] = b
   );
-% Output data constraints
 constraint
   forall (i in index_set_1of2(outputDefEdgesInMatch)) (
     let
