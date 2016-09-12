@@ -167,7 +167,7 @@ assignMissingBlockNames :: Function -> Function
 assignMissingBlockNames f =
   let g = getGraph f
       nodes = filter isBlockNode (getAllNodes g)
-      block_node_pairs = map (\n -> (nameOfBlock (getNodeType n), n)) nodes
+      block_node_pairs = map (\n -> (getNameOfBlockNode n, n)) nodes
       no_block_nodes =
         map snd (filter (isBlockNameEmpty . fst) block_node_pairs)
       existing_names = map fst block_node_pairs
@@ -194,7 +194,7 @@ assignMissingBlockExecFreqs f =
   let g = getGraph f
       cfg = extractCFG g
       new_freqs =
-        map ( \n -> let l = nameOfBlock $ getNodeType n
+        map ( \n -> let l = getNameOfBlockNode n
                         freqs = functionBBExecFreq f
                         l_freq = lookup l freqs
                     in if isJust l_freq
@@ -202,7 +202,7 @@ assignMissingBlockExecFreqs f =
                        else let prec_n = getSourceNode cfg $
                                          head $
                                          getCtrlFlowInEdges cfg n
-                                prec_l = nameOfBlock $ getNodeType prec_n
+                                prec_l = getNameOfBlockNode prec_n
                                 prec_freq = fromJust $ lookup prec_l freqs
                             in (l, prec_freq)
             ) $
