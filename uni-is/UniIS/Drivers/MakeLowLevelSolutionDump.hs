@@ -267,9 +267,17 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  addPadding ai
                  ++
+                 "Is null instruction: "
+                 ++
+                 (pShow $ ai `elem` (llMatchNullInstructions model))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
                  "Is inactive instruction: "
                  ++
-                 (pShow $ isInstructionInactive instr)
+                 (pShow $ ai `elem` (llMatchInactiveInstructions model))
                  ++
                  "\n"
                  ++
