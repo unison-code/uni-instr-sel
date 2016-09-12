@@ -399,6 +399,10 @@ dumpParams( scaled
           , VT_ARRAY1D
           , "allBlocksInFunction"
           )
+dumpParams( bumpArr(json_data["fun-branch-ext-blocks"])
+          , "branchExtBlocksInFunction"
+          , VT_SET
+          )
 dumpParams( json_data["fun-entry-block"]+1
           , "entryBlockOfFunction"
           )

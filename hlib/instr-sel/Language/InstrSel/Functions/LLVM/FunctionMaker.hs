@@ -69,6 +69,7 @@ mkFunction m f@(LLVM.Function {}) =
                              , F.functionOS = os
                              , F.functionInputs = input_nodes
                              , F.functionBBExecFreq = exec_freqs
+                             , F.functionBEBlocks = []
                              }
      else Nothing
 mkFunction _ _ = Nothing

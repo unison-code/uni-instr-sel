@@ -49,6 +49,7 @@ set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
+set of allBlocksInFunction: branchExtBlocksInFunction;
 
 % Target machine data.
 int: numLocations;
@@ -318,6 +319,23 @@ constraint
 constraint
   forall (m, mm in allMatches, b in consumedBlocksInMatch[m]) (
     sel[m] -> place[mm] != b
+  );
+
+% No data may be defined in a branch-extension block.
+constraint
+  forall (b in branchExtBlocksInFunction) (
+    forall (d in allDataInFunction) (
+      def[d] != b
+    )
+  );
+
+% No matches that does not span any blocks may be placed in a branch-extension
+% block.
+constraint
+  forall (b in branchExtBlocksInFunction) (
+    forall (m in allMatches where not (b in spannedBlocksInMatch[m])) (
+      place[m] != b
+    )
   );
 
 % Enforce that every datum is defined in a block such that the block dominates

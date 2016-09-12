@@ -33,6 +33,7 @@ import Language.InstrSel.Utils.Range
 import Data.Maybe
   ( fromJust
   , isJust
+  , isNothing
   )
 import Data.List
   ( partition )
@@ -137,6 +138,7 @@ insertCopyAlongEdge g0 df_edge =
 branchExtend :: Function -> Function
 branchExtend f =
   assignMissingBlockExecFreqs $
+  discoverBEBlocks $
   assignMissingBlockNames $
   updateGraph (branchExtendGraph $ getGraph f) f
 
@@ -184,6 +186,22 @@ assignMissingBlockNames f =
               g $
         zip ok_names no_block_nodes
   in updateGraph new_g f
+
+-- | Updates the 'functionBEBlocks' field in the 'Function' record. These blocks
+-- are those which have yet to be assigned an execution frequency.
+discoverBEBlocks :: Function -> Function
+discoverBEBlocks f =
+  let g = getGraph f
+      cfg = extractCFG g
+      be_blocks =
+        map getNameOfBlockNode $
+        filter ( \n -> let l = getNameOfBlockNode n
+                           freqs = functionBBExecFreq f
+                           l_freq = lookup l freqs
+                       in isNothing l_freq
+               ) $
+        getAllNodes cfg
+  in f { functionBEBlocks = be_blocks }
 
 -- | Assigns an execution frequency to every block that currently does not have
 -- one (which will be the case after branch extension). These blocks will be set

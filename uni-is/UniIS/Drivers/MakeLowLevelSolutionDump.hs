@@ -152,6 +152,14 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                 zip (llMatchSpannedBlocks model) ([0..] :: [ArrayIndex])
                 -- Cast needed to prevent compiler warning
               )
+              ++
+              "\n"
+              ++
+              addPadding ai
+              ++
+              "Is branch-extension block: "
+              ++
+              (pShow $ ai `elem` (llFunBranchExtBlocks model))
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
