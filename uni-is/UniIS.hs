@@ -146,6 +146,12 @@ parseArgs =
                  &= help ( "Dumps useful information about the low-level CP " ++
                            "model instance."
                          )
+             , MakeLowLevelSolutionDump
+                 &= name "dump-low-level-solution-info"
+                 &= explicit
+                 &= help ( "Dumps useful information about the low-level CP " ++
+                           "solution instance."
+                         )
              , MakeHighLevelCPModelNoOp
                  &= name "construct-hl-cp-model-no-op"
                  &= explicit

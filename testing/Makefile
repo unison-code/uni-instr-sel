@@ -245,11 +245,24 @@ distclean-toolchain:
 	  $(RM) $${f%.*}.dot; \
     done
 
-%.dump: %.ce.cc.ae.be.f.json %.ll.model.json %.aimaps.json
+%.model.dump: %.ce.cc.ae.be.f.json \
+              %.presolved.aimaps.json \
+              %.presolved.ll.model.json
 	$(UNI_IS) make --dump-low-level-model-info \
               -f $*.ce.cc.ae.be.f.json \
-              -m $*.ll.model.json \
-              -a $*.aimaps.json \
+              -m $*.presolved.ll.model.json \
+              -a $*.presolved.aimaps.json \
+              -o $@
+
+%.sol.dump: %.ce.cc.ae.be.f.json \
+            %.presolved.aimaps.json \
+            %.presolved.ll.model.json \
+            %.presolved.ll.sol.json
+	$(UNI_IS) make --dump-low-level-solution-info \
+              -f $*.ce.cc.ae.be.f.json \
+              -m $*.presolved.ll.model.json \
+              -a $*.presolved.aimaps.json \
+              -s $*.presolved.ll.sol.json \
               -o $@
 
 
@@ -288,24 +301,26 @@ fetch-test-cases:
 # AUTO-COMPLETION
 #=================
 
-C_TARGETS         := $(wildcard *.c)
-LL_TARGETS        := $(wildcard *.ll) \
-                     $(addsuffix .ll, $(basename $(C_TARGETS)))
-MLL_TARGETS       := $(wildcard *.mll) \
-                     $(addsuffix .mll, $(basename $(LL_TARGETS)))
-F_JSON_TARGETS    := $(wildcard *.f.json) \
-                     $(addsuffix .f.json, $(basename $(MLL_TARGETS)))
-FUN_NAMES         := $(basename $(basename $(F_JSON_TARGETS)))
+C_TARGETS          := $(wildcard *.c)
+LL_TARGETS         := $(wildcard *.ll) \
+                      $(addsuffix .ll, $(basename $(C_TARGETS)))
+MLL_TARGETS        := $(wildcard *.mll) \
+                      $(addsuffix .mll, $(basename $(LL_TARGETS)))
+F_JSON_TARGETS     := $(wildcard *.f.json) \
+                      $(addsuffix .f.json, $(basename $(MLL_TARGETS)))
+FUN_NAMES          := $(basename $(basename $(F_JSON_TARGETS)))
 
-FUN_ASM_TARGETS   := $(addsuffix .s, $(FUN_NAMES))
-FUN_PLOTS_TARGETS := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
-                          $(addsuffix .all-cover-plots, $(FUN_NAMES))
-FUN_MDUMP_TARGETS := $(addsuffix .dump, $(FUN_NAMES))
-FUN_CHECK_TARGETS := $(addsuffix .run-checks, $(FUN_NAMES))
+FUN_ASM_TARGETS    := $(addsuffix .s, $(FUN_NAMES))
+FUN_PLOTS_TARGETS  := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
+                           $(addsuffix .all-cover-plots, $(FUN_NAMES))
+FUN_MDUMP_TARGETS  := $(addsuffix .model.dump, $(FUN_NAMES))
+FUN_SDUMP_TARGETS := $(addsuffix .sol.dump, $(FUN_NAMES))
+FUN_CHECK_TARGETS  := $(addsuffix .run-checks, $(FUN_NAMES))
 FUN_BUGPOINT_TARGETS := $(addsuffix .run-bugpoint, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
 $(FUN_PLOTS_TARGETS):
 $(FUN_MDUMP_TARGETS):
+$(FUN_SDUMP_TARGETS):
 $(FUN_CHECK_TARGETS):
 $(FUN_BUGPOINT_TARGETS):

@@ -61,6 +61,7 @@ data MakeAction
   | MakePatternMatchset
   | MakeArrayIndexMaplists
   | MakeLowLevelModelDump
+  | MakeLowLevelSolutionDump
   | MakeHighLevelCPModelNoOp
   | MakeHighLevelCPModelWOp
   | MakeAssemblyCode
