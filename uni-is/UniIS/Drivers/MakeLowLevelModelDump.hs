@@ -72,7 +72,7 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
-              "Covered by: "
+              "Covered by matches: "
               ++
               ( pShow $
                 map snd $
@@ -98,7 +98,7 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
-              "Alternative to: "
+              "Alternative to operands: "
               ++
               ( pShow
                 $ map snd
@@ -111,7 +111,7 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
-              "Defined by: "
+              "Defined by matches: "
               ++
               ( pShow
                 $ map snd
@@ -124,7 +124,7 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
-              "Used by: "
+              "Used by matches: "
               ++
               ( pShow $
                 map snd $
@@ -143,18 +143,18 @@ run MakeLowLevelModelDump function model ai_maps =
               ++
               addPadding ai
               ++
-              "Spanned by: "
+              "Spanned by matches: "
               ++
-              ( pShow
-                $ map snd
-                $ filter (\(nodes, _) -> ai `elem` nodes)
-                $ zip (llMatchSpannedBlocks model) ([0..] :: [ArrayIndex])
+              ( pShow $
+                map snd $
+                filter (\(nodes, _) -> ai `elem` nodes) $
+                zip (llMatchSpannedBlocks model) ([0..] :: [ArrayIndex])
                       -- Cast needed to prevent compiler warning
               )
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
-      dumpMatches ns =
+      dumpMatches ms =
         let mkMatchInfo m ai =
               let tm_res = retrieveTargetMachine $ llTMID model
                   tm = fromJust tm_res
@@ -270,20 +270,20 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  (pShow $ isInstructionInactive instr)
         in concatMap (\(m, i) -> pShow i ++ " -> " ++ mkMatchInfo m i ++ "\n\n")
-                     (zip ns ([0..] :: [ArrayIndex]))
+                     (zip ms ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
-  in do return [ toOutput
-                 $ "OPERATIONS" ++ "\n\n" ++
-                   (dumpOperationNodes $ ai2OperationNodeIDs ai_maps) ++
-                   "\n\n" ++
-                   "DATA" ++ "\n\n" ++
-                   (dumpDataNodes $ ai2DatumNodeIDs ai_maps) ++
-                   "\n\n" ++
-                   "BLOCKS" ++ "\n\n" ++
-                   (dumpBlockNodes $ ai2BlockNodeIDs ai_maps) ++
-                   "\n\n" ++
-                   "MATCHES" ++ "\n\n" ++
-                   (dumpMatches $ ai2MatchIDs ai_maps)
+  in do return [ toOutput $
+                 "OPERATIONS" ++ "\n\n" ++
+                 (dumpOperationNodes $ ai2OperationNodeIDs ai_maps) ++
+                 "\n\n" ++
+                 "DATA" ++ "\n\n" ++
+                 (dumpDataNodes $ ai2DatumNodeIDs ai_maps) ++
+                 "\n\n" ++
+                 "BLOCKS" ++ "\n\n" ++
+                 (dumpBlockNodes $ ai2BlockNodeIDs ai_maps) ++
+                 "\n\n" ++
+                 "MATCHES" ++ "\n\n" ++
+                 (dumpMatches $ ai2MatchIDs ai_maps)
                ]
 
 run _ _ _ _ =
