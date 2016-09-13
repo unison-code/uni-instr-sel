@@ -734,9 +734,9 @@ constraint
 
 
 
-%======================================
-% IMPLIED BY PARAMETERIZED CONSTRAINTS
-%======================================
+%=====================
+% IMPLIED CONSTRAINTS
+%=====================
 
 %% Two matches can't both be selected, if they imply conflicting successor
 %% blocks.
@@ -907,7 +907,7 @@ solve
   %     ]
   % )
   %
-  % [GHB] What does this do?
+  % [GHB] TODO: What does this do?
   :: int_search(oslice, largest, indomain_min, complete)
 minimize cost;
 
