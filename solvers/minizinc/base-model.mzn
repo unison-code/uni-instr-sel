@@ -155,6 +155,8 @@ array[1..numDomRelRows, 1..2] of allBlocksInFunction: domRelOfBlockInFunction =
          );
 
 % Same as domRelOfBlockInFunction but includes the null block.
+%
+% TODO: keep these parameters?
 int: numDomRel2Rows =
   sum (b in allBlocksInFunctionPlusNull)
   (
@@ -522,58 +524,9 @@ constraint
 
 
 
-
-
-
-% TODO: What to do with these constraints?
-
-%constraint
-%  forall (m in allMatches diff phiInstrMatches
-%          where card(spannedBlocksInMatch[m])=0) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
-%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces,
-%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces,
-%         array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
-%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
-%        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
-%    )
-%  );
-%
-%constraint
-%  forall (m in allMatches diff phiInstrMatches
-%          where card(spannedBlocksInMatch[m])>0) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
-%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
-%        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
-%        forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
-%    )
-%  );
-%
-%constraint
-%  forall (m in phiInstrMatches) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
-%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
-%        forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
-%    )
-%  );
-
-
-
-
-
-
-
 % Cost function.
+%
+% TODO: understand how this works
 
 array[int] of int: OCostFlat =
   [ if k=1 then o
@@ -618,6 +571,54 @@ constraint
   );
 
 array[allOperationsInFunction] of var OCostDom: oslice;
+
+
+
+
+
+
+
+% TODO: What to do with these constraints?
+
+%constraint
+%  forall (m in allMatches diff phiInstrMatches
+%          where card(spannedBlocksInMatch[m])=0) (
+%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
+%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
+%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces,
+%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces,
+%         array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
+%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
+%        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
+%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
+%    )
+%  );
+%
+%constraint
+%  forall (m in allMatches diff phiInstrMatches
+%          where card(spannedBlocksInMatch[m])>0) (
+%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
+%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
+%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces} in (
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
+%        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
+%        forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
+%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
+%    )
+%  );
+%
+%constraint
+%  forall (m in phiInstrMatches) (
+%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
+%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
+%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
+%        forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
+%    )
+%  );
 
 
 
@@ -725,8 +726,7 @@ constraint
 % block.
 constraint
   forall ( b in branchExtBlocksInFunction
-         , m in allMatches
-             where card(spannedBlocksInMatch[m]) = 0
+         , m in allMatches where card(spannedBlocksInMatch[m]) = 0
          )
   (
     place[m] != b
@@ -897,17 +897,19 @@ constraint
 solve
   % [GHB] Used to be:
   % :: seq_search(
-  %   [ bool_search([ sel[m]
-  %                 | m in allMatchesBySize
-  %                   where not ( m in copyInstrMatches
-  %                                    union inactiveInstrMatches
-  %                             )
-  %                 ], input_order, indomain_max, complete)
-  %   , int_search(alt, input_order, indomain_max, complete)
-  %     ]
-  % )
-  %
-  % [GHB] TODO: What does this do?
+  %      [ bool_search( [ sel[m]
+  %                     | m in allMatchesBySize
+  %                       where not ( m in copyInstrMatches
+  %                                        union inactiveInstrMatches
+  %                                 )
+  %                     ]
+  %                   , input_order
+  %                   , indomain_max
+  %                   , complete
+  %                   )
+  %      , int_search(alt, input_order, indomain_max, complete)
+  %      ]
+  %    )
   :: int_search(oslice, largest, indomain_min, complete)
 minimize cost;
 
