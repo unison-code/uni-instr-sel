@@ -199,6 +199,7 @@ include "table.mzn";
 % FUNCTIONS
 %===========
 
+% Bypasses the alt[.] variable if the given operand only has one alternative.
 % Valid under the assumption that its operation was selected.
 var allDataInFunction: Alt(allOperands: o) =
   let
