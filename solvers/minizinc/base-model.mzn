@@ -799,3 +799,7 @@ output [ "sel=", show(sel), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(execFrequencyGCD * cost), "\n"
        ];
+
+% Local Variables:
+% tab-width: 8
+% End:
