@@ -714,20 +714,23 @@ constraint
 
 % No data may be defined in a branch-extension block.
 constraint
-  forall (b in branchExtBlocksInFunction) (
-    forall (d in allDataInFunction) (
-      def[d] != b
-    )
+  forall ( b in branchExtBlocksInFunction
+         , d in allDataInFunction
+         )
+  (
+    def[d] != b
   );
 
-%% No matches that does not span any blocks may be placed in a branch-extension
-%% block.
-%constraint
-%  forall (b in branchExtBlocksInFunction) (
-%    forall (m in allMatches) (
-%      place[m] != b
-%    )
-%  );
+% No matches that does not span any blocks may be placed in a branch-extension
+% block.
+constraint
+  forall ( b in branchExtBlocksInFunction
+         , m in allMatches
+             where card(spannedBlocksInMatch[m]) = 0
+         )
+  (
+    place[m] != b
+  );
 
 
 
