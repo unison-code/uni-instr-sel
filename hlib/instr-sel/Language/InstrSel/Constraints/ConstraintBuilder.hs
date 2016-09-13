@@ -10,11 +10,9 @@ Main authors:
 -}
 
 module Language.InstrSel.Constraints.ConstraintBuilder
-  ( addDataDefinitionConstraints
-  , addFallThroughConstraints
+  ( addFallThroughConstraints
   , addNewDataLocConstraints
   , addSameDataLocConstraints
-  , mkDataDefinitionConstraints
   , mkFallThroughConstraints
   , mkNewDataLocConstraints
   , mkSameDataLocConstraints
@@ -32,41 +30,6 @@ import Language.InstrSel.TargetMachines.IDs
 -------------
 -- Functions
 -------------
-
--- | Creates constraints using 'mkDataDefinitionConstraints' and adds these (if
--- any) to the given 'OpStructure'.
-addDataDefinitionConstraints
-  :: NodeID
-     -- ^ A value node.
-  -> NodeID
-     -- ^ A block node.
-  -> OpStructure
-     -- ^ The old structure.
-  -> OpStructure
-     -- ^ The new structure, with the produced constraints (may be the same
-     -- structure).
-addDataDefinitionConstraints d b os =
-  addConstraints os (mkDataDefinitionConstraints d b)
-
--- | Creates data placment constraints such that the data of a particular value
--- node must be defined in a specific block.
-mkDataDefinitionConstraints
-  :: NodeID
-     -- ^ A value node.
-  -> NodeID
-     -- ^ A block node.
-  -> [Constraint]
-mkDataDefinitionConstraints d b =
-  [ BoolExprConstraint $
-    EqExpr ( Block2NumExpr $
-             BlockWhereinDataIsDefinedExpr $
-             ANodeIDExpr d
-           )
-           ( Block2NumExpr $
-             BlockOfBlockNodeExpr $
-             ANodeIDExpr b
-           )
-  ]
 
 -- | Creates constraints using 'mkNewDataLocConstraints' and adds these (if any)
 --  to the given 'OpStructure'.
@@ -125,10 +88,9 @@ mkFallThroughConstraints
   -> [Constraint]
 mkFallThroughConstraints l =
   [ BoolExprConstraint $
-    FallThroughFromMatchToBlockExpr ThisMatchExpr
-                                    ( BlockOfBlockNodeExpr $
-                                      ANodeIDExpr l
-                                    )
+    FallThroughFromMatchToBlockExpr $
+    BlockOfBlockNodeExpr $
+    ANodeIDExpr l
   ]
 
 -- | Creates constraints, using 'mkSameDataLocConstraints', that force the

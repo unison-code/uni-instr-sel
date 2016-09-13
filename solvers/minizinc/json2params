@@ -58,29 +58,32 @@ def bumpArrOfSing(json):
             output.append(d+1)
     return output
 
+def bumpValue(v):
+    return v + 1
+
 def bumpArr(json):
-    return [ x+1 for x in json ]
+    return [ x + 1 for x in json ]
 
 def bumpArrOfArr(json):
     return [ bumpArr(x) for x in json ]
 
 def bump2DArrYY(json):
-    return [ [x[0]+1, x[1]+1] for x in json ]
+    return [ [x[0] + 1, x[1] + 1] for x in json ]
 
 def bump2DArrYN(json):
-    return [ [x[0]+1, x[1]] for x in json ]
+    return [ [x[0] + 1, x[1]] for x in json ]
 
 def bump2DArrYYY(json):
-    return [ [x[0]+1, x[1]+1, x[2]+1] for x in json ]
+    return [ [x[0] + 1, x[1] + 1, x[2] + 1] for x in json ]
 
 def bump2DArrYYN(json):
-    return [ [x[0]+1, x[1]+1, x[2]] for x in json ]
+    return [ [x[0] + 1, x[1] + 1, x[2]] for x in json ]
 
 def bump2DArrYNN(json):
-    return [ [x[0]+1, x[1], x[2]] for x in json ]
+    return [ [x[0] + 1, x[1], x[2]] for x in json ]
 
 def bump2DArrYYNN(json):
-    return [ [x[0]+1, x[1]+1, x[2], x[3]] for x in json ]
+    return [ [x[0] + 1, x[1] + 1, x[2], x[3]] for x in json ]
 
 VT_PLAIN = 0
 VT_ARRAY1D = 1
@@ -204,10 +207,6 @@ def convertConstraint(l):
                    )
         elif op == "in-set":
             return fromSetElemExpr(l[1]) + " in " + fromSetExpr(l[2])
-        elif op == "fall-through":
-            return ("fall_through(" + fromMatchExpr(l[1]) + ", "
-                   + fromBlockExpr(l[2]) + ")"
-                   )
         else:
             error("unknown bool expression: " + str(l))
 
@@ -315,7 +314,7 @@ def convertConstraint(l):
         op = l[0]
         if op == "ai":
             # [MC] +1 for 1-based solver
-            return str(l[1]+1)
+            return str(l[1] + 1)
         elif op == "id":
             error("'id' operand expressions not allowed")
         else:
@@ -362,16 +361,16 @@ canonical = [0]
 canonical.append(json_data["num-locations"])
 for row in json_data["fun-valid-value-locs"]:
     canonical.append(row[1])
-    canonical.append(row[1]+1)
+    canonical.append(row[1] + 1)
 for row in json_data["fun-valid-value-loc-ranges"]:
     canonical.append(row[2])
-    canonical.append(row[3]+1)
+    canonical.append(row[3] + 1)
 for row in json_data["match-valid-value-locs"]:
     canonical.append(row[1])
-    canonical.append(row[1]+1)
+    canonical.append(row[1] + 1)
 for row in json_data["match-valid-value-loc-ranges"]:
     canonical.append(row[2])
-    canonical.append(row[3]+1)
+    canonical.append(row[3] + 1)
 canonical.sort()
 canonical_set = set(canonical)
 
@@ -380,9 +379,9 @@ fqs = json_data["fun-block-exec-freqs"]
 scaled = []
 g = fqs[0]
 for x in fqs:
-    g = fractions.gcd(g,x)
+    g = fractions.gcd(g, x)
 for x in fqs:
-    scaled.append(x/g)
+    scaled.append(x / g)
 
 # Dump parameters [MC] for 1-based solver
 dumpParams( bumpArrOfArr(json_data["fun-block-dom-sets"])
@@ -403,15 +402,15 @@ dumpParams( bumpArr(json_data["fun-branch-ext-blocks"])
           , "branchExtBlocksInFunction"
           , VT_SET
           )
-dumpParams( json_data["fun-entry-block"]+1
+dumpParams( bumpValue(json_data["fun-entry-block"])
           , "entryBlockOfFunction"
           )
 dumpParams( bump2DArrYN(json_data["fun-valid-value-locs"])
-          , "funValidDataLocs"
+          , "validDataLocsInFunction"
           , VT_ARRAY2D
           )
 dumpParams( bump2DArrYNN(json_data["fun-valid-value-loc-ranges"])
-          , "funValidDataLocRanges"
+          , "validDataLocRangesInFunction"
           , VT_ARRAY2D
           )
 dumpParams( json_data["fun-num-blocks"]
@@ -435,32 +434,19 @@ dumpParams( bump2DArrYY(json_data["fun-state-def-edges"])
           , "stateDefEdgesForBlocksInFunction"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYY(json_data["in-block"])
-          , "inBlock"
-          , VT_ARRAY2D
-          )
-dumpParams( bump2DArrYYY(json_data["in-block-succ"])
-          , "inBlockSucc"
-          , VT_ARRAY2D
-          )
-dumpParams( bump2DArrYYN(json_data["match-valid-value-locs"])
-          , "matchValidDataLocs"
-          , VT_ARRAY2D
-          )
-dumpParams( bump2DArrYYNN(fixLocationValues(json_data["match-valid-value-loc-ranges"]))
-          , "matchValidDataLocRanges"
-          , VT_ARRAY2D
-          )
-dumpParams( json_data["match-code-sizes"]
-          , "codeSizeOfMatch"
-          , VT_ARRAY1D
-          , "allMatches"
-          )
-dumpParams( bumpArrOfArr(json_data["match-consumed-blocks"])
-          , "consumedBlocksInMatch"
+dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
+          , "operationsCoveredByMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
+          )
+dumpParams( bump2DArrYYY(json_data["match-input-def-edges"])
+          , "inputDefEdgesInMatch"
+          , VT_ARRAY2D
+          )
+dumpParams( bump2DArrYYY(json_data["match-output-def-edges"])
+          , "outputDefEdgesInMatch"
+          , VT_ARRAY2D
           )
 dumpParams( bumpArrOfArr(json_data["match-operands-defined"])
           , "operandsDefinedByMatch"
@@ -492,10 +478,35 @@ dumpParams( bumpArrOfSing(json_data["match-entry-blocks"])
           , "allMatches"
           , VC_SINGLETON
           )
-dumpParams( json_data["match-latencies"]
-          , "latencyOfMatch"
+dumpParams( bumpArrOfArr(json_data["match-spanned-blocks"])
+          , "spannedBlocksInMatch"
           , VT_ARRAY1D
           , "allMatches"
+          , VC_SET
+          )
+dumpParams( bumpArrOfArr(json_data["match-consumed-blocks"])
+          , "consumedBlocksInMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( bump2DArrYY(json_data["match-fall-through-block"])
+          , "fallThroughBlockOfMatch"
+          , VT_ARRAY2D
+          )
+dumpParams( bump2DArrYYN(json_data["match-valid-value-locs"])
+          , "validDataLocsInMatch"
+          , VT_ARRAY2D
+          )
+dumpParams( bump2DArrYYNN( \
+              fixLocationValues(json_data["match-valid-value-loc-ranges"])
+            )
+          , "validDataLocRangesInMatch"
+          , VT_ARRAY2D
+          )
+dumpParams( bump2DArrYYY(json_data["match-operands-with-same-loc"])
+          , "operandsWithSameLocInMatch"
+          , VT_ARRAY2D
           )
 dumpParams( bumpArr(json_data["match-copy-instrs"])
           , "copyInstrMatches"
@@ -514,25 +525,15 @@ dumpParams( bumpArr(json_data["match-phi-instrs"])
           , VT_SET
           , "allMatches"
           )
-dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
-          , "operationsCoveredByMatch"
+dumpParams( json_data["match-code-sizes"]
+          , "codeSizeOfMatch"
           , VT_ARRAY1D
           , "allMatches"
-          , VC_SET
           )
-dumpParams( bumpArrOfArr(json_data["match-spanned-blocks"])
-          , "spannedBlocksInMatch"
+dumpParams( json_data["match-latencies"]
+          , "latencyOfMatch"
           , VT_ARRAY1D
           , "allMatches"
-          , VC_SET
-          )
-dumpParams( bump2DArrYYY(json_data["match-input-def-edges"])
-          , "inputDefEdgesInMatch"
-          , VT_ARRAY2D
-          )
-dumpParams( bump2DArrYYY(json_data["match-output-def-edges"])
-          , "outputDefEdgesInMatch"
-          , VT_ARRAY2D
           )
 dumpParams( json_data["num-locations"]
           , "numLocations"
@@ -548,10 +549,6 @@ dumpParams( bumpArrOfArr(json_data["operand-alternatives"])
           , VT_ARRAY1D
           , "allOperands"
           , VC_SET
-          )
-dumpParams( bump2DArrYYY(json_data["same-loc"])
-          , "sameLoc"
-          , VT_ARRAY2D
           )
 dumpParams( bumpArr(json_data["matches-by-size"])
           , "allMatchesBySize"
@@ -576,7 +573,7 @@ for m in range(len(json_data["match-constraints"])):
     for c in cs:
         sys.stdout.write("constraint\n")
         # [MC] +1 for 1-based solver
-        sys.stdout.write("sel[" + str(m+1) + "] -> ")
+        sys.stdout.write("sel[" + str(bumpValue(m)) + "] -> ")
         sys.stdout.write(convertConstraint(parseSexpr(c)))
         sys.stdout.write(";\n")
     sys.stdout.write("\n")

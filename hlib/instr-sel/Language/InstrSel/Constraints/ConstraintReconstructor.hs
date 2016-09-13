@@ -83,9 +83,8 @@ mkDefaultReconstructor =
         NotExpr ((mkBoolExprF r) r expr)
       mkBoolExpr r (InSetExpr lhs rhs) =
         InSetExpr ((mkSetElemExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkBoolExpr r (FallThroughFromMatchToBlockExpr lhs rhs) =
-        FallThroughFromMatchToBlockExpr ((mkMatchExprF r) r lhs)
-                                        ((mkBlockExprF r) r rhs)
+      mkBoolExpr r (FallThroughFromMatchToBlockExpr e) =
+        FallThroughFromMatchToBlockExpr ((mkBlockExprF r) r e)
       mkNumExpr r (PlusExpr lhs rhs) =
         PlusExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkNumExpr r (MinusExpr lhs rhs) =
@@ -128,10 +127,6 @@ mkDefaultReconstructor =
         expr
       mkInstructionExpr r (InstructionOfMatchExpr expr) =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
-      mkBlockExpr r (BlockWhereinMatchIsPlacedExpr expr) =
-        BlockWhereinMatchIsPlacedExpr ((mkMatchExprF r) r expr)
-      mkBlockExpr r (BlockWhereinDataIsDefinedExpr expr) =
-        BlockWhereinDataIsDefinedExpr ((mkNodeExprF r) r expr)
       mkBlockExpr r (BlockOfBlockNodeExpr expr) =
         BlockOfBlockNodeExpr ((mkNodeExprF r) r expr)
       mkLocationExpr _ expr@(ALocationIDExpr _) =

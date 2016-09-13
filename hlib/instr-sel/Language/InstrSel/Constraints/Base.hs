@@ -82,10 +82,11 @@ data BoolExpr
   | EqvExpr BoolExpr BoolExpr
   | NotExpr BoolExpr
   | InSetExpr SetElemExpr SetExpr
-    -- | Denotes a fall-through constraint between a given match and a given
-    -- block. In other words, the block in which the match is placed must be
-    -- appear immediately before the other block of the generated code.
-  | FallThroughFromMatchToBlockExpr MatchExpr BlockExpr
+    -- | Denotes a fall-through constraint between the match in which this
+    -- constraint appears and a given block. In other words, the block in which
+    -- the match is placed must be appear immediately before the other block of
+    -- the generated code.
+  | FallThroughFromMatchToBlockExpr BlockExpr
   deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
@@ -155,12 +156,8 @@ data InstructionExpr
 
 -- | Block expressions.
 data BlockExpr
-    -- | Retrieves the block in which a match has been placed.
-  = BlockWhereinMatchIsPlacedExpr MatchExpr
-    -- | Retrieves the block in which the data of a value node has been defined.
-  | BlockWhereinDataIsDefinedExpr NodeExpr
     -- | Retrieves the block associated with a block node.
-  | BlockOfBlockNodeExpr NodeExpr
+  = BlockOfBlockNodeExpr NodeExpr
   deriving (Show)
 
 -- | Location expressions.
@@ -252,8 +249,8 @@ instance ToLisp BoolExpr where
   toLisp (EqvExpr lhs rhs) = mkStruct "<->" [toLisp lhs, toLisp rhs]
   toLisp (NotExpr lhs) = mkStruct "!" [toLisp lhs]
   toLisp (InSetExpr lhs rhs) = mkStruct "in-set" [toLisp lhs, toLisp rhs]
-  toLisp (FallThroughFromMatchToBlockExpr lhs rhs) =
-    mkStruct "fall-through" [toLisp lhs, toLisp rhs]
+  toLisp (FallThroughFromMatchToBlockExpr e) =
+    mkStruct "fall-through" [toLisp e]
 
 instance FromLisp NumExpr where
   parseLisp e =
@@ -329,16 +326,9 @@ instance ToLisp InstructionExpr where
   toLisp (InstructionOfMatchExpr e) = mkStruct "instr-of-match" [toLisp e]
 
 instance FromLisp BlockExpr where
-  parseLisp e =
-        struct "block-wherein-match-is-placed" BlockWhereinMatchIsPlacedExpr e
-    <|> struct "block-wherein-data-is-defined" BlockWhereinDataIsDefinedExpr e
-    <|> struct "block-of-bnode" BlockOfBlockNodeExpr e
+  parseLisp e = struct "block-of-bnode" BlockOfBlockNodeExpr e
 
 instance ToLisp BlockExpr where
-  toLisp (BlockWhereinMatchIsPlacedExpr e) =
-    mkStruct "block-wherein-match-is-placed" [toLisp e]
-  toLisp (BlockWhereinDataIsDefinedExpr e) =
-    mkStruct "block-wherein-data-is-defined" [toLisp e]
   toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
 instance FromLisp LocationExpr where

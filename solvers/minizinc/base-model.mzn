@@ -44,7 +44,7 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
-array[int, int] of int: funValidDataLocs;
+array[int, int] of int: validDataLocsInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
@@ -67,7 +67,7 @@ array[allMatches] of set of int: operandsInternalToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
-array[int, int] of int: matchValidDataLocs;
+array[int, int] of int: validDataLocsInMatch;
 array[int, int] of int: inputDefEdgesInMatch;
 array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
@@ -79,11 +79,10 @@ set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
 % Arrays that encode constraints
-array[int, int] of int: sameLoc;
-array[int, int] of int: inBlockSucc;
-array[int, int] of int: inBlock;
-array[int, int] of int: matchValidDataLocRanges;
-array[int, int] of int: funValidDataLocRanges;
+array[int, int] of int: operandsWithSameLocInMatch;
+array[int, int] of int: fallThroughBlockOfMatch;
+array[int, int] of int: validDataLocRangesInMatch;
+array[int, int] of int: validDataLocRangesInFunction;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -219,10 +218,39 @@ var allDataInFunction: Alt(allOperands: o) =
 % BASE CONSTRAINTS
 %==================
 
-% Enforce that, for each operation o, exactly one match must be selected such
-% that o is covered.
-%
-% Has been replaced with dual variable constraint.
+% Constrain locations of data representing values.
+constraint
+  forall (d in allDataInFunction) (
+    let
+    { set of int: locs = { validDataLocsInFunction[i, 2]
+                         | i in index_set_1of2(validDataLocsInFunction)
+                           where validDataLocsInFunction[i, 1] = d
+                         }
+    } in
+    if card(locs) > 0 then loc[d] in locs else true endif
+  );
+
+% Constrain locations of data that must be within a specific range.
+constraint
+  forall (i in index_set_1of2(validDataLocRangesInFunction)) (
+    let
+    { int: d = validDataLocRangesInFunction[i, 1]
+    , int: l = validDataLocRangesInFunction[i, 2]
+    , int: u = validDataLocRangesInFunction[i, 3]
+    } in
+    loc[d] in l..u
+  );
+
+% Constrain locations of data that must be within a specific range.
+constraint
+  forall (i in index_set_1of2(validDataLocRangesInFunction)) (
+    let
+    { int: d = validDataLocRangesInFunction[i, 1]
+    , int: l = validDataLocRangesInFunction[i, 2]
+    , int: u = validDataLocRangesInFunction[i, 3]
+    } in
+    loc[d] in l..u
+  );
 
 % Constrain alternatives of operands.
 constraint
@@ -230,20 +258,8 @@ constraint
     alt[o] in operandAlternatives[o]
   );
 
-% Constrain locations of data representing values.
-constraint
-  forall (d in allDataInFunction) (
-    let
-    { set of int: locs = { funValidDataLocs[i, 2]
-                         | i in index_set_1of2(funValidDataLocs)
-                           where funValidDataLocs[i, 1] = d
-                         }
-    } in
-    if card(locs) > 0 then loc[d] in locs else true endif
-  );
-
-% All data external to a match, and which are not states, must not be located in
-% the null location.
+% All operands external to a match, and which are not states, must not be
+% located in the null location.
 constraint
   forall ( m in allMatches
          , o in operandsExternalToMatch[m]
@@ -253,7 +269,7 @@ constraint
     sel[m] -> loc[Alt(o)] != locValueForNull
   );
 
-% All data internal to a match must be located in the null location.
+% All operands internal to a match must be located in the null location.
 constraint
   forall ( m in allMatches
          , o in operandsInternalToMatch[m]
@@ -263,40 +279,97 @@ constraint
     sel[m] -> loc[Alt(o)] = locValueForNull
   );
 
-% If a match representing a phi instruction is selected, then its data
+% If a match representing a phi instruction is selected, then its operands
 % must be placed in the same location.
-%
-% [GHB] Used to be:
-%   constraint
-%     forall (m in phiInstrMatches) (
-%       sel[m] -> all_equal([ loc[Alt(o)] | o in operandsExternalToMatch[m] ])
-%     );
-%
-% [MC] Reformulation for solvers that can't reify all_equal.
 constraint
-  forall (m in phiInstrMatches, o in operandsExternalToMatch[m]) (
+  forall (m in phiInstrMatches, o1 in operandsExternalToMatch[m]) (
     let
-    { int: o1 = min(operandsExternalToMatch[m])
+    { int: o2 = min(operandsExternalToMatch[m])
     } in
-    if o = o1 then true else sel[m] -> loc[Alt(o)] = loc[Alt(o1)] endif
+    if o1 != o2 then sel[m] -> loc[Alt(o1)] = loc[Alt(o2)] else true endif
   );
 
-% If a datum d is used by at least one operand in at least one selected match,
-% then d must not be defined by any inactive match (and hence cannot be
-% selected).
+% Constrain locations of operands representing values for selected matches.
 constraint
-  forall ( mi in inactiveInstrMatches
-         , oi in operandsDefinedByMatch[mi]
-         , d in operandAlternatives[oi]
-         )
-  (
-    exists ( m in allMatches
-           , o in operandsUsedByMatch[m]
-               where d in operandAlternatives[o]
-           )
-    ( sel[m] /\ alt[o] = d )
-    <->
-    not sel[mi]
+  forall (m in allMatches) (
+    forall (o in allOperands) (
+      let
+      { set of int: locs = { validDataLocsInMatch[i, 3]
+                           | i in index_set_1of2(validDataLocsInMatch)
+                             where validDataLocsInMatch[i, 1] = m
+                             /\ validDataLocsInMatch[i, 2] = o
+                           }
+      } in
+      if card(locs) > 0
+      then sel[m] -> loc[Alt(o)] in locs
+      else true
+      endif
+    )
+  );
+
+% Constrain locations of operands that must be within a specific range.
+constraint
+  forall (i in index_set_1of2(validDataLocRangesInMatch)) (
+    let
+    { int: m = validDataLocRangesInMatch[i, 1]
+    , int: o = validDataLocRangesInMatch[i, 2]
+    , int: l = validDataLocRangesInMatch[i, 3]
+    , int: u = validDataLocRangesInMatch[i, 4]
+    } in
+    sel[m] -> loc[Alt(o)] in l..u
+  );
+
+% For selected matches that require two or more of its operands to have the same
+% location, enforce them to be the same.
+constraint
+  forall (i in index_set_1of2(operandsWithSameLocInMatch)) (
+    let
+    { int: m = operandsWithSameLocInMatch[i, 1]
+    , int: o1 = operandsWithSameLocInMatch[i, 2]
+    , int: o2 = operandsWithSameLocInMatch[i, 3]
+    } in
+    sel[m] -> loc[Alt(o1)] = loc[Alt(o2)]
+  );
+
+% If a match representing a phi instruction is selected, then its data must be
+% defined in the blocks indicated by the definition edges.
+constraint
+  forall (i in index_set_1of2(inputDefEdgesInMatch)) (
+    let
+    { int: m = inputDefEdgesInMatch[i, 1]
+    , int: b = inputDefEdgesInMatch[i, 2]
+    , int: o = inputDefEdgesInMatch[i, 3]
+    } in
+    sel[m] -> def[Alt(o)] = b
+  );
+constraint
+  forall (i in index_set_1of2(outputDefEdgesInMatch)) (
+    let
+    { int: m = outputDefEdgesInMatch[i, 1]
+    , int: b = outputDefEdgesInMatch[i, 2]
+    , int: o = outputDefEdgesInMatch[i, 3]
+    } in
+    sel[m] -> def[Alt(o)] = b
+  );
+
+% A state datum with a definition edge with a block must be defined in the block
+% of that edge.
+constraint
+  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction)) (
+    let
+    { int: b = stateDefEdgesForBlocksInFunction[i, 1]
+    , int: d = stateDefEdgesForBlocksInFunction[i, 2]
+    } in
+    def[d] = b
+  );
+
+% If a match representing a null instruction is selected, then the data used by
+% the match must be defined in the same block wherein the match is placed.
+constraint
+  forall (m in nullInstrMatches) (
+    forall (o in operandsUsedByMatch[m]) (
+      sel[m] -> def[Alt(o)] = place[m]
+    )
   );
 
 % Selected matches must not be placed in the null block.
@@ -335,6 +408,25 @@ constraint
     sel[m] -> place[mm] != b
   );
 
+% For each selected match m that apply fall-through, enforce that m's
+% fall-through block is the successor of m's entry block.
+constraint
+  forall (i in index_set_1of2(fallThroughBlockOfMatch)) (
+    let
+    { int: m = fallThroughBlockOfMatch[i, 1]
+    , int: fall_b = fallThroughBlockOfMatch[i, 2]
+    , int: entry_b = min(entryBlockOfMatch[m])
+    } in
+    sel[m] -> succ[entry_b] = fall_b
+  );
+
+% Enforce that, for each operation o, exactly one match must be selected such
+% that o is covered.
+%
+% [GHB] This has been replaced with dual variable constraint.
+
+% TODO: RESTORE!
+%
 %% Enforce that every datum is defined in a block such that the block dominates
 %% all blocks wherein the datum is used. This constraint shall not be applied to
 %% the generic phi patterns.
@@ -347,7 +439,32 @@ constraint
 %    def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]]
 %  );
 
+% If a datum d is used by at least one operand in at least one selected match,
+% then d must not be defined by any inactive match (and hence cannot be
+% selected).
+constraint
+  forall ( mi in inactiveInstrMatches
+         , oi in operandsDefinedByMatch[mi]
+         , d in operandAlternatives[oi]
+         )
+  (
+    exists ( m in allMatches
+           , o in operandsUsedByMatch[m]
+               where d in operandAlternatives[o]
+           )
+    ( sel[m] /\ alt[o] = d )
+    <->
+    not sel[mi]
+  );
 
+% Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
+constraint
+  circuit(succ) :: domain;
+
+% The block of the entry block (i.e. function entry point) must be placed as the
+% first block, and the block of the null block must be placed as the last block.
+constraint
+  succ[blockValueForNull] = entryBlockOfFunction;
 
 
 
@@ -424,73 +541,21 @@ constraint
 
 
 
-% If a match representing a phi instruction is selected, then its data must be
-% defined in the blocks indicated by the definition edges.
-constraint
-  forall (i in index_set_1of2(inputDefEdgesInMatch)) (
-    let
-    { int: m = inputDefEdgesInMatch[i, 1]
-    , int: b = inputDefEdgesInMatch[i, 2]
-    , int: o = inputDefEdgesInMatch[i, 3]
-    } in
-    sel[m] -> def[Alt(o)] = b
-  );
-constraint
-  forall (i in index_set_1of2(outputDefEdgesInMatch)) (
-    let
-    { int: m = outputDefEdgesInMatch[i, 1]
-    , int: b = outputDefEdgesInMatch[i, 2]
-    , int: o = outputDefEdgesInMatch[i, 3]
-    } in
-    sel[m] -> def[Alt(o)] = b
-  );
 
-% A state datum with a definition edge with a block must be defined in the block
-% of that edge.
-constraint
-  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction)) (
-    let
-    { int: b = stateDefEdgesForBlocksInFunction[i, 1]
-    , int: d = stateDefEdgesForBlocksInFunction[i, 2]
-    } in
-    def[d] = b
-  );
 
-% Constrain locations of operands representing values for selected matches.
-constraint
-  forall (m in allMatches) (
-    forall (o in allOperands) (
-      let
-      { set of int: locs = { matchValidDataLocs[i, 3]
-                           | i in index_set_1of2(matchValidDataLocs)
-                             where matchValidDataLocs[i, 1] = m
-                             /\ matchValidDataLocs[i, 2] = o
-                           }
-      } in
-      if card(locs) > 0
-      then sel[m] -> loc[Alt(o)] in locs
-      else true
-      endif
-    )
-  );
 
-% If a match representing a null instruction is selected, then the data used by
-% the match must be defined in the same block wherein the match is placed.
-constraint
-  forall (m in nullInstrMatches) (
-    forall (o in operandsUsedByMatch[m]) (
-      sel[m] -> def[Alt(o)] = place[m]
-    )
-  );
 
-% Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
-constraint
-  circuit(succ) :: domain;
 
-% The block of the entry block (i.e. function entry point) must be placed as the
-% first block, and the block of the null block must be placed as the last block.
-constraint
-  succ[blockValueForNull] = entryBlockOfFunction;
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -662,50 +727,6 @@ constraint
 
 
 
-%===========================
-% PARAMETERIZED CONSTRAINTS
-%===========================
-
-constraint
-  forall(i in index_set_1of2(sameLoc))(
-    let {int: m = sameLoc[i,1],
-         int: p = sameLoc[i,2],
-         int: q = sameLoc[i,3]} in
-        sel[m] -> loc[p] = loc[q]
-  );
-
-constraint
-  forall(i in index_set_1of2(inBlockSucc))(
-    let {int: m = inBlockSucc[i,1],
-         int: p = inBlockSucc[i,2],
-         int: q = inBlockSucc[i,3]} in
-        place[m] in {p,blockValueForNull} /\
-        (sel[m] -> succ[p] = q)
-  );
-
-constraint
-  forall(i in index_set_1of2(inBlock))(
-    let {int: m = inBlock[i,1],
-         int: p = inBlock[i,2]} in
-        place[m] in {p,blockValueForNull}
-  );
-
-constraint
-  forall(i in index_set_1of2(matchValidDataLocRanges))(
-    let {int: m = matchValidDataLocRanges[i,1],
-         int: o = matchValidDataLocRanges[i,2]} in
-    sel[m] -> loc[Alt(o)]
-              in matchValidDataLocRanges[i,3]..matchValidDataLocRanges[i,4]
-  );
-
-constraint
-  forall(i in index_set_1of2(funValidDataLocRanges))(
-    let {int: d = funValidDataLocRanges[i,1]} in
-        loc[d] in funValidDataLocRanges[i,2]..funValidDataLocRanges[i,3]
-  );
-
-
-
 %======================================
 % IMPLIED BY PARAMETERIZED CONSTRAINTS
 %======================================
@@ -731,11 +752,11 @@ constraint
 %    let {int: m1 = sameLoc[i,1],
 %         int: p = sameLoc[i,2],
 %         int: q = sameLoc[i,3]} in
-%    forall(j1 in index_set_1of2(matchValidDataLocRanges) where matchValidDataLocRanges[j1,2]=p)(
-%      forall(j2 in index_set_1of2(matchValidDataLocRanges) where matchValidDataLocRanges[j2,1]=matchValidDataLocRanges[j1,1] /\
-%                                                   matchValidDataLocRanges[j2,2]=q)(
-%        let {int: m2 = matchValidDataLocRanges[j1,1]} in
-%            card((matchValidDataLocRanges[j1,3]..matchValidDataLocRanges[j1,4]) intersect (matchValidDataLocRanges[j2,3]..matchValidDataLocRanges[j2,4]))=0 ->
+%    forall(j1 in index_set_1of2(validDataLocRangesInMatch) where validDataLocRangesInMatch[j1,2]=p)(
+%      forall(j2 in index_set_1of2(validDataLocRangesInMatch) where validDataLocRangesInMatch[j2,1]=validDataLocRangesInMatch[j1,1] /\
+%                                                   validDataLocRangesInMatch[j2,2]=q)(
+%        let {int: m2 = validDataLocRangesInMatch[j1,1]} in
+%            card((validDataLocRangesInMatch[j1,3]..validDataLocRangesInMatch[j1,4]) intersect (validDataLocRangesInMatch[j2,3]..validDataLocRangesInMatch[j2,4]))=0 ->
 %            not sel[m1] \/ not sel[m2]
 %      )
 %    )
