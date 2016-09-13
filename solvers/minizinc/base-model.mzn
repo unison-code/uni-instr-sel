@@ -115,6 +115,15 @@ int: numBlockValues = numBlocksInFunction + 1;
 % Reference to the null-block value.
 int: blockValueForNull = numBlockValues;
 
+% Sets to be used as array ranges.
+set of int: allOperationsInFunction = 1..numOperationsInFunction;
+set of int: allDataInFunction = 1..numDataInFunction;
+set of int: allBlocksInFunction = 1..numBlocksInFunction;
+set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
+set of int: allMatches = 1..numMatches;
+set of int: allOperands = 1..numOperands;
+set of int: allLocValues = 0..numLocValues-1;
+
 % Extends the external parameter 'domSetOfBlockInFunction' with a value
 % for the null block (which is assumed to be dominated by all blocks).
 array[allBlocksInFunctionPlusNull] of set of int:
@@ -174,14 +183,27 @@ array[1..numDomRel2Rows, 1..2] of allBlocksInFunctionPlusNull:
            ]
          );
 
-% Sets to be used as array ranges.
-set of int: allOperationsInFunction = 1..numOperationsInFunction;
-set of int: allDataInFunction = 1..numDataInFunction;
-set of int: allBlocksInFunction = 1..numBlocksInFunction;
-set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
-set of int: allMatches = 1..numMatches;
-set of int: allOperands = 1..numOperands;
-set of int: allLocValues = 0..numLocValues-1;
+% The set of matches that can cover a particular operation.
+array[allOperationsInFunction] of set of allMatches: matchsetOfOp =
+  [ { m | m in allMatches where op in operationsCoveredByMatch[m] }
+  | op in allOperationsInFunction
+  ];
+
+% The set of matches that can define a particular datum.
+array[allDataInFunction] of set of allMatches: defsetOfDatum =
+  [ { m | m in allMatches
+        , o in operandsDefinedByMatch[m]
+            where d in operandAlternatives[o]
+    }
+  | d in allDataInFunction
+  ];
+
+% The set of matches that can define a particular datum and does not cover any
+% operations.
+array[int] of set of allMatches: defsetOfDatumOnly =
+  [ M | M in defsetOfDatum
+          where forall (i in index_set(matchsetOfOp)) (matchsetOfOp[i] != M)
+  ];
 
 
 
@@ -210,21 +232,6 @@ array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 var int: cost;
 
 % [MC] Dual variables.
-array[allOperationsInFunction] of set of allMatches: omatchD =
-  [ { m | m in allMatches
-            where op in operationsCoveredByMatch[m]}
-  | op in allOperationsInFunction
-  ];
-array[allDataInFunction] of set of allMatches: dmatchD =
-  [ { m | m in allMatches
-        , o in operandsDefinedByMatch[m]
-            where d in operandAlternatives[o]}
-  | d in allDataInFunction
-  ];
-array[int] of set of allMatches: dmatchDOnly =
-  [ M | M in dmatchD
-          where forall (i in index_set(omatchD)) (omatchD[i] != M)
-  ];
 array[allOperationsInFunction] of var allMatches: omatch;
 array[allDataInFunction] of var allMatches: dmatch;
 
@@ -651,8 +658,8 @@ array[allOperationsInFunction] of var OCostDom: oslice;
 %     );
 constraint
   forall (o in allOperationsInFunction) (
-    omatch[o] in omatchD[o] /\
-    forall (m in omatchD[o]) (
+    omatch[o] in matchsetOfOp[o] /\
+    forall (m in matchsetOfOp[o]) (
       omatch[o] = m <-> sel[m]
     )
   );
@@ -685,8 +692,8 @@ constraint
 % exactly covering each operation.
 constraint
   forall (d in allDataInFunction) (
-    dmatch[d] in dmatchD[d] /\
-    forall (m in dmatchD[d]) (
+    dmatch[d] in defsetOfDatum[d] /\
+    forall (m in defsetOfDatum[d]) (
       dmatch[d] = m <-> sel[m]
     )
   );
@@ -776,8 +783,8 @@ constraint
 %  forall (i in allOperationsInFunction,
 %          d in allDataInFunction,
 %          u in allDataInFunction
-%          where forall(m in omatchD[i])(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
-%    if forall (m in omatchD[i]) (
+%          where forall(m in matchsetOfOp[i])(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
+%    if forall (m in matchsetOfOp[i]) (
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
@@ -789,7 +796,7 @@ constraint
 %%          blocks, use datum u and define datum d, then the block defining u
 %%          must dominate the block defining d.
 %constraint
-%  forall (M in dmatchDOnly,
+%  forall (M in defsetOfDatumOnly,
 %          d in allDataInFunction,
 %          u in allDataInFunction
 %          where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
@@ -805,7 +812,7 @@ constraint
 %%          blocks, use datum u, then the block defining u must dominate the
 %%          entry block,
 %constraint
-%  forall (M in omatchD++dmatchDOnly,
+%  forall (M in matchsetOfOp++defsetOfDatumOnly,
 %          u in allDataInFunction
 %          where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])>0)) (
 %    let {int: Entry = min(entryBlockOfMatch[min(M)])} in
@@ -820,7 +827,7 @@ constraint
 %% RULE 1D: If all matches out of some oneof set have identical spanned blocks,
 %%          define datum d, then d must be placed in a spanned block.
 %constraint
-%  forall (M in omatchD++dmatchDOnly,
+%  forall (M in matchsetOfOp++defsetOfDatumOnly,
 %          d in allDataInFunction,
 %          where forall(m in M)(card(spannedBlocksInMatch[m])>0)) (
 %    let {set of int: Spanned = spannedBlocksInMatch[min(M)]} in
@@ -836,9 +843,9 @@ constraint
 %%          then i must be placed in the entry block.
 %constraint
 %  forall (i in allOperationsInFunction,
-%          where forall(m in omatchD[i])(card(spannedBlocksInMatch[m])>0)) (
-%    let {int: Entry = min(entryBlockOfMatch[min(omatchD[i])])} in
-%      if forall (m in omatchD[i]) (
+%          where forall(m in matchsetOfOp[i])(card(spannedBlocksInMatch[m])>0)) (
+%    let {int: Entry = min(entryBlockOfMatch[min(matchsetOfOp[i])])} in
+%      if forall (m in matchsetOfOp[i]) (
 %           min(entryBlockOfMatch[m]) = Entry
 %      ) then (
 %        oplace[i] = Entry
@@ -851,14 +858,14 @@ constraint
 %constraint
 %  forall (i in allOperationsInFunction,
 %          d in allDataInFunction
-%          where omatchD[i] subset phiInstrMatches) (
+%          where matchsetOfOp[i] subset phiInstrMatches) (
 %    let {set of int: BO = { outputDefEdgesInMatch[j,2]
 %                          | j in index_set_1of2(outputDefEdgesInMatch)
-%                            where outputDefEdgesInMatch[j,1] in omatchD[i]
+%                            where outputDefEdgesInMatch[j,1] in matchsetOfOp[i]
 %                          },
 %         set of int: DO = { outputDefEdgesInMatch[j,3]
 %                          | j in index_set_1of2(outputDefEdgesInMatch)
-%                            where outputDefEdgesInMatch[j,1] in omatchD[i]
+%                            where outputDefEdgesInMatch[j,1] in matchsetOfOp[i]
 %                          }} in
 %    if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
 %    then
@@ -934,7 +941,7 @@ output [ "sel=", show(sel), "\n"
 %                                      ];
 %
 %array[allMatches] of int: opOfM =
-%  [ min({op | op in allOperationsInFunction where m in omatchD[op]})
+%  [ min({op | op in allOperationsInFunction where m in matchsetOfOp[op]})
 %  | m in allMatches
 %  ];
 %output [ "sel=", show(sel), "\n"
