@@ -111,18 +111,22 @@ for d in range(num_data):
 
 illegal_matches = set()
 
-# Forbid matches that, if selected, would leave some operations uncoverable
+# Forbid matches that, if selected, would leave some operations uncoverable.
+# Empty matchsets (due to lack of patterns) are ignored as those would otherwise
+# cause everything to become an illegal match
 for i in range(num_operands):
     for j in range(num_operands):
         if i == j: continue
-        if o_matches[i] <= o_matches[j]:
+        if len(o_matches[i]) > 0 and o_matches[i] <= o_matches[j]:
             illegal_matches |= o_matches[j] - o_matches[i]
 
-# Forbid matches that, if selected, would leave some data undefinable
+# Forbid matches that, if selected, would leave some data undefinable.
+# Empty matchsets (due to lack of patterns) are ignored as those would otherwise
+# cause everything to become an illegal match
 for i in range(num_data):
     for j in range(num_data):
         if i == j: continue
-        if d_matches[i] <= d_matches[j]:
+        if len(d_matches[i]) > 0 and d_matches[i] <= d_matches[j]:
             illegal_matches |= d_matches[j] - d_matches[i]
 
 
