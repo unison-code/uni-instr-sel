@@ -143,19 +143,18 @@ array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
            ++ array1d(blockValueForNull..blockValueForNull, [0])
          );
 
-% The domRelOfBlockInFunction matrix is a 2D matrix with 2 columns, where there
-% is a row:
-%    [domRelOfBlockInFunction[x, 1] = i, domRelOfBlockInFunction[x, 2] = j]
-
-% if and only if block i is dominated by block j (i.e. if and only if j belongs
-% to domSetOfBlockInFunction[i]).
-int: numDomRelRows =
+% The 'domRelMatrix' matrix is a 2D matrix with 2 columns:
+%    col 1: a block i
+%        2: a block j that dominates i
+% In other words, domRelMatrix has a row [i, j] if and only if j belongs to
+% domSetOfBlockInFunction[i].
+int: numDomMatrixRows =
   sum (b in allBlocksInFunction)
   (
     card(domSetOfBlockInFunction[b])
   );
-array[1..numDomRelRows, 1..2] of allBlocksInFunction: domRelOfBlockInFunction =
-  array2d( 1..numDomRelRows
+array[1..numDomMatrixRows, 1..2] of allBlocksInFunction: domRelMatrix =
+  array2d( 1..numDomMatrixRows
          , 1..2
          , [ if k = 1 then i else j endif | i in allBlocksInFunction
                                           , j in domSetOfBlockInFunction[i]
@@ -163,7 +162,7 @@ array[1..numDomRelRows, 1..2] of allBlocksInFunction: domRelOfBlockInFunction =
            ]
          );
 
-% Same as domRelOfBlockInFunction but includes the null block.
+% Same as 'domRelMatrix' but includes the null block.
 %
 % TODO: keep these parameters?
 int: numDomRel2Rows =
@@ -172,7 +171,7 @@ int: numDomRel2Rows =
     card(domSetOfBlockInFunctionPlusNull[b])
   );
 array[1..numDomRel2Rows, 1..2] of allBlocksInFunctionPlusNull:
-  domRelOfBlockInFunctionPlusNull =
+  domRelMatrixPlusNull =
   array2d( 1..numDomRel2Rows
          , 1..2
          , [ if k = 1
@@ -494,7 +493,7 @@ constraint
          , o in operandsUsedByMatch[m]
          )
   (
-    table([place[m], def[Alt(o)]], domRelOfBlockInFunctionPlusNull)
+    table([place[m], def[Alt(o)]], domRelMatrixPlusNull)
   );
 
 % If a datum d is used by at least one operand in at least one selected match,
@@ -595,7 +594,7 @@ array[allOperationsInFunction] of var OCostDom: oslice;
 %         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces,
 %         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces,
 %         array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelMatrix)) /\
 %        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
 %        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
 %        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
@@ -609,7 +608,7 @@ array[allOperationsInFunction] of var OCostDom: oslice;
 %    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
 %         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
 %         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelOfBlockInFunction)) /\
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelMatrix)) /\
 %        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
 %        forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
 %        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
@@ -788,7 +787,7 @@ constraint
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
-%      table([def[d], def[u]], domRelOfBlockInFunction) /\ oplace[i] = def[d]
+%      table([def[d], def[u]], domRelMatrix) /\ oplace[i] = def[d]
 %    ) else true endif
 %  );
 %
@@ -804,7 +803,7 @@ constraint
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
-%      table([def[d], def[u]], domRelOfBlockInFunction)
+%      table([def[d], def[u]], domRelMatrix)
 %    ) else true endif
 %  );
 %
@@ -820,7 +819,7 @@ constraint
 %           min(entryBlockOfMatch[m]) = Entry /\
 %           exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %      ) then (
-%        table([Entry, def[u]], domRelOfBlockInFunction)
+%        table([Entry, def[u]], domRelMatrix)
 %      ) else true endif
 %  );
 %
