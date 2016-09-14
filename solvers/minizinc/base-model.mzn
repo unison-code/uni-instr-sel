@@ -507,7 +507,7 @@ constraint
 % Enforce that, for each operation o, exactly one match must be selected such
 % that o is covered.
 %
-% [GHB] This has been replaced with dual variable constraint.
+% THIS HAS BEEN REPLACED WITH DUAL VARIABLE CONSTRAINT.
 
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
@@ -615,11 +615,12 @@ constraint
 % DUAL VARIABLE CONSTRAINTS
 %===========================
 
-% [MC] For each operation o, exactly one match must be selected such that o is
+% For each operation o, exactly one match must be selected such that o is
 % covered.
 %
-% [GHB] This replaces the constraint that, for each operation o, exactly one
-% match must be selected such that o is covered:
+% This replaces the constraint that, for each operation o, exactly one match
+% must be selected such that o is covered:
+%
 %   constraint
 %     forall (o in allOperationsInFunction)
 %     ( let { set of int: mset = { m | m in allMatches
@@ -636,11 +637,11 @@ constraint
     ( omatch[o] = m <-> sel[m] )
   );
 
-% [MC] For each datum d, exactly one match must be selected such that d is
-% defined.
+% For each datum d, exactly one match must be selected such that d is defined.
 %
-% [GHB] This replaces the constraint that that, for each datum d, exactly one
-% match must be selected such that d is defined:
+% This replaces the constraint that that, for each datum d, exactly one match
+% must be selected such that d is defined:
+%
 %   constraint
 %     forall (d in allDataInFunction)
 %     ( let { set of int: mset = { m | m in allMatches
@@ -650,6 +651,7 @@ constraint
 %           }
 %       in sum (m in mset) (bool2int(sel[m])) = 1
 %     );
+%
 % This is an implied constraint, but it also enforces that the patterns for
 % defining the function input and constants are selected. Such patterns do not
 % cover any operations, they are not entailed in the above constraint for
