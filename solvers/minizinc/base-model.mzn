@@ -752,39 +752,59 @@ constraint
 % IMPLIED CONSTRAINTS
 %=====================
 
+% Two matches can't be both selected if they imply conflicting successor blocks.
+constraint
+  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
+         , j in index_set_1of2(fallThroughBlockOfMatch)
+           where i < j
+         )
+  (
+    let
+    { int:       m1 = fallThroughBlockOfMatch[i, 1]
+    , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
+    , int: entry_b1 = min(entryBlockOfMatch[m1])
+    , int:       m2 = fallThroughBlockOfMatch[j, 1]
+    , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
+    , int: entry_b2 = min(entryBlockOfMatch[m2])
+    } in
+   (fall_b1 = fall_b2 xor entry_b1 = entry_b2) -> (not sel[m1] \/ not sel[m2])
+  );
+
 % TODO: restore
 
-%% Two matches can't both be selected, if they imply conflicting successor
-%% blocks.
-%constraint
-%  forall(i in index_set_1of2(inBlockSucc), j in index_set_1of2(inBlockSucc) where i<j)(
-%    let {int: mi = inBlockSucc[i,1],
-%         int: pi = inBlockSucc[i,2],
-%         int: qi = inBlockSucc[i,3],
-%         int: mj = inBlockSucc[j,1],
-%         int: pj = inBlockSucc[j,2],
-%         int: qj = inBlockSucc[j,3]} in
-%        (pi=pj xor qi=qj) -> (not sel[mi] \/ not sel[mj])
-%  );
-%
-%% Two matches can't both be selected, if the first implies that two locations
-%% are equal, and the second implies that the intersection of their domains is
-%% empty
-%constraint
-%  forall(i in index_set_1of2(sameLoc))(
-%    let {int: m1 = sameLoc[i,1],
-%         int: p = sameLoc[i,2],
-%         int: q = sameLoc[i,3]} in
-%    forall(j1 in index_set_1of2(validDataLocRangesInMatch) where validDataLocRangesInMatch[j1,2]=p)(
-%      forall(j2 in index_set_1of2(validDataLocRangesInMatch) where validDataLocRangesInMatch[j2,1]=validDataLocRangesInMatch[j1,1] /\
-%                                                   validDataLocRangesInMatch[j2,2]=q)(
-%        let {int: m2 = validDataLocRangesInMatch[j1,1]} in
-%            card((validDataLocRangesInMatch[j1,3]..validDataLocRangesInMatch[j1,4]) intersect (validDataLocRangesInMatch[j2,3]..validDataLocRangesInMatch[j2,4]))=0 ->
-%            not sel[m1] \/ not sel[m2]
-%      )
-%    )
-%  );
-%
+% Two matches can't both be selected if the first match implies that two
+% locations are equal, and the second match implies that the intersection of
+% their domains is empty.
+constraint
+  forall (i in index_set_1of2(operandsWithSameLocInMatch)) (
+    let
+    { int: m1 = operandsWithSameLocInMatch[i, 1]
+    , int: o1 = operandsWithSameLocInMatch[i, 2]
+    , int: o2 = operandsWithSameLocInMatch[i, 3]
+    } in
+    forall ( j in index_set_1of2(validDataLocRangesInMatch)
+           , k in index_set_1of2(validDataLocRangesInMatch)
+             where validDataLocRangesInMatch[j, 2] = o1
+                   /\
+                   validDataLocRangesInMatch[k, 1] =
+                   validDataLocRangesInMatch[j, 1]
+                   /\
+                   validDataLocRangesInMatch[k, 2] = o2
+           )
+    (
+      let
+      { int: m2 = validDataLocRangesInMatch[j, 1]
+      } in
+      card(
+        (validDataLocRangesInMatch[j, 3]..validDataLocRangesInMatch[j, 4])
+        intersect
+        (validDataLocRangesInMatch[k, 3]..validDataLocRangesInMatch[k, 4])
+      ) = 0
+      ->
+      not sel[m1] \/ not sel[m2]
+    )
+  );
+
 %% RULE 1A: If all matches for operation i, not a phi and no spanned blocks, use
 %%          datum u and define datum d, then the block defining u must dominate
 %%          the block defining d, and i must be placed in the block defining d.
