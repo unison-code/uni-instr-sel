@@ -204,6 +204,60 @@ array[int] of set of allMatches: defsetOfDatumOnly =
         where forall (i in index_set(matchsetOfOp)) (matchsetOfOp[i] != M)
   ];
 
+% The total cost is computed as:
+%
+%   sum (m in allMatches)
+%       (latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[place[m]])
+%
+% but this implementation yields poor propagation. To improve propagation, we
+% use the cost per operation instead of cost per selected match.
+%
+% First, we split the cost incurred by selecting a given match over the
+% operations that it covers. As the latency of a match times the exeqution
+% frequency of a given block may not be evenly divisible by the number of
+% operations covered, some operations may have a higher cost than others. The
+% sum, however, is equal to the latency of the match times the execution
+% frequency of the block in which the match is finally placed. This information
+% is put in a matrix called 'costPerOpMatrix'.
+
+% The 'costPerOpMatrix' is a 2D matrix with 4 columns:
+%    col 1: an operation o
+%        2: a match m that covers o
+%        3: a block b in which m can be placed
+%        4: the cost incurred by o if m is selected and placed in b
+% For simplicity, we first create a list and then the matrix using the list.
+array[int] of int: costPerOpList =
+  [ if      k = 1 then o
+    else if k = 2 then m
+    else if k = 3 then b
+    else let
+         { int: prod = latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[b]
+         , int: d = card(operationsCoveredByMatch[m])
+         , int: q = prod div d
+         , int: r = prod mod d
+         } in
+         if operationsCoveredByMatch[m][r+1] > o then q+1 else q endif
+    endif
+    endif
+    endif
+  | o in allOperationsInFunction
+  , m in allMatches
+  , b in if card(entryBlockOfMatch[m]) > 0 then
+            entryBlockOfMatch[m] union {blockValueForNull}
+         else allBlocksInFunctionPlusNull
+         endif
+  , k in 1..4
+    where o in operationsCoveredByMatch[m]
+  ];
+int: numCostPerOpMatrixRows = card(index_set(costPerOpList)) div 4;
+array[1..numCostPerOpMatrixRows, 1..4] of int: costPerOpMatrix =
+  array2d(1..numCostPerOpMatrixRows, 1..4, costPerOpList);
+
+% A set with all the possible costs that can be incurred by any operation.
+set of int: allOpCosts = { costPerOpMatrix[i, 4]
+                         | i in 1..numCostPerOpMatrixRows
+                         };
+
 
 
 %===========
@@ -228,7 +282,8 @@ array[allOperands] of var allDataInFunction: alt;
 array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 
 % Cost.
-var int: cost;
+var int: totalcost;
+array[allOperationsInFunction] of var allOpCosts: opcosts;
 
 % [MC] Dual variables.
 array[allOperationsInFunction] of var allMatches: omatch;
@@ -523,62 +578,15 @@ constraint
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
 
-
-
-
-
-
-
-
-% Cost function.
-%
-% TODO: understand how this works
-
-array[int] of int: OCostFlat =
-  [ if k=1 then o
-    else if k=2 then m
-    else if k=3 then p
-    else let {int: prod = latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[p],
-              int: d = card(operationsCoveredByMatch[m]),
-              int: q = prod div d,
-              int: r = prod mod d} in
-         if operationsCoveredByMatch[m][r+1]>o then q+1 else q endif
-    endif
-    endif
-    endif
-  | o in allOperationsInFunction
-  , m in allMatches
-  , p in if card(entryBlockOfMatch[m])>0 then entryBlockOfMatch[m]
-            union
-            {blockValueForNull}
-         else allBlocksInFunctionPlusNull
-         endif
-  , k in 1..4
-    where o in operationsCoveredByMatch[m]
-  ];
-
-int: OCostSize = card(index_set(OCostFlat)) div 4;
-
-array[1..OCostSize, 1..4] of int: OCost =
-  array2d(1..OCostSize, 1..4, OCostFlat);
-
-set of int: OCostDom = {OCost[i,4] | i in 1..OCostSize};
-
+% Constrain the cost that can be incurred by each operation.
 constraint
-  % cost = sum (m in allMatches)
-  %        ( latencyOfMatch[m]
-  %        * execFrequencyOfBlocksPlusNull[place[m]]
-  %        ) /\
-  (
-    forall (o in allOperationsInFunction) (
-      table([o, omatch[o], place[omatch[o]], oslice[o]], OCost)
-    ) /\
-    cost = sum(oslice)
+  forall (op in allOperationsInFunction) (
+    table([op, omatch[op], place[omatch[op]], opcosts[op]], costPerOpMatrix)
   );
 
-array[allOperationsInFunction] of var OCostDom: oslice;
-
-
+% The total cost is the sum of the costs incurred by all operations.
+constraint
+  totalcost = sum(opcosts);
 
 
 
@@ -901,23 +909,9 @@ constraint
 %==================
 
 solve
-  % [GHB] Used to be:
-  % :: seq_search(
-  %      [ bool_search( [ sel[m]
-  %                     | m in allMatchesBySize
-  %                       where not ( m in copyInstrMatches
-  %                                        union inactiveInstrMatches
-  %                                 )
-  %                     ]
-  %                   , input_order
-  %                   , indomain_max
-  %                   , complete
-  %                   )
-  %      , int_search(alt, input_order, indomain_max, complete)
-  %      ]
-  %    )
-  :: int_search(oslice, largest, indomain_min, complete)
-minimize cost;
+     % Try the smallest cost for the operation that incurs the largest cost.
+  :: int_search(opcosts, largest, indomain_min, complete)
+minimize totalcost;
 
 output [ "sel=", show(sel), "\n"
        , "alt=", show(alt), "\n"
@@ -928,7 +922,7 @@ output [ "sel=", show(sel), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
-       , "cost=", show(execFrequencyGCD * cost), "\n"
+       , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];
 
 
