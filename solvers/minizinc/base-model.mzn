@@ -752,6 +752,8 @@ constraint
 % IMPLIED CONSTRAINTS
 %=====================
 
+% TODO: restore
+
 %% Two matches can't both be selected, if they imply conflicting successor
 %% blocks.
 %constraint
@@ -927,6 +929,8 @@ output [ "sel=", show(sel), "\n"
 
 
 
+
+% TODO: what to output?
 
 %array[allOperands] of int: matchOfO = [ m
 %                                      | o in allOperands, m in allMatches
