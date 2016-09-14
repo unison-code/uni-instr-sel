@@ -33,15 +33,6 @@ HLIBPATH := ../hlib
 GHC      := ghc
 GHCFLAGS += -Wall -i$(HLIBPATH)
 
-# Should be set and exported as an environment variable
-UNI_IS_LLVM_BUILD_DIR ?= @echo 'ERROR: Environment variable' \
-                               '$$UNI_IS_LLVM_BUILD_DIR is not set!' ; \
-                         exit 1 ;
-
-CLANG          := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
-OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
-LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
-AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 PRETTIFY       := ../tools/prettify-json
 BUGPOINTSCRIPT := ./compile-from-bc
 
@@ -49,7 +40,7 @@ MINIZINC_GLOBALS_DIR   := chuffed
 MINIZINC_BACKEND       := fzn_chuffed
 MINIZINC_BACKEND_FLAGS :=
 
-UNI_IS                := uni-is
+UNI_IS_CMD            := uni-is
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
@@ -63,11 +54,9 @@ TARGET := mips32
 
 
 
-#=================
-# TOOLCHAIN RULES
-#=================
-
-.SECONDARY:
+#=============
+# BUILD RULES
+#=============
 
 .PHONY: build
 build:
@@ -81,113 +70,23 @@ uni-is:
 hlib:
 	cd .. && make hlib
 
-%.ll: %.c
-	$(CLANG) -emit-llvm -S $< -o $@
+.PHONY: clean-toolchain
+clean-toolchain:
+	cd .. && make clean
 
-%.reg.ll: %.ll
-	$(OPT) -mem2reg -S $< -o $@
+.PHONY: distclean-toolchain
+distclean-toolchain:
+	cd .. && make distclean
 
-%.reg.low.ll: %.reg.ll
-	$(OPT) -load $(LSLIB) -lowerselect -lowerswitch -S $< -o $@
 
-%.reg.low.freq.ll: %.reg.low.ll
-	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
-%.f.json: %.reg.low.freq.ll
-	$(UNI_IS) make --construct-fun-from-llvm -f $< -o $@
+#=================
+# TOOLCHAIN RULES
+#=================
 
-%.ce.f.json: %.f.json
-	$(UNI_IS) transform --copy-extend-fun -f $< -o $@
+.SECONDARY:
 
-%.ce.cc.f.json: %.ce.f.json
-	$(UNI_IS) transform --combine-consts-in-fun -f $< -o $@
-
-%.ce.cc.ae.f.json: %.ce.cc.f.json
-	$(UNI_IS) transform --alternative-extend-fun -f $< -o $@
-
-%.ce.cc.ae.be.f.json: %.ce.cc.ae.f.json
-	$(UNI_IS) transform --branch-extend-fun -f $< -o $@
-
-%.p.json: %.f.json
-	$(UNI_IS) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
-
-%.ce.cc.ae.be.dom.json: %.ll.model.json
-	$(CONSTR_CONV_CMD) $< > $@.temp
-	$(DOM_MATCHES_CMD) $@.temp > $@
-	$(RM) $@.temp
-
-%.ce.cc.ae.be.ill.json: %.ll.model.json
-	$(ILL_MATCHES_CMD) $< > $@
-
-%.ce.cc.ae.be.presolved.p.json: %.ce.cc.ae.be.p.json \
-                                %.ce.cc.ae.be.dom.json \
-                                %.ce.cc.ae.be.ill.json \
-                                %.aimaps.json
-	$(PRUNE_BAD_MATCHES_CMD) -d $*.ce.cc.ae.be.dom.json \
-                             -i $*.ce.cc.ae.be.ill.json \
-                             -p $*.ce.cc.ae.be.p.json \
-                             -a $*.aimaps.json \
-                             > $@
-
-%.presolved.hl.model-no-op.json: %.ce.cc.ae.be.f.json \
-                                 %.ce.cc.ae.be.presolved.p.json
-	$(UNI_IS) make --construct-hl-cp-model-no-op \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.presolved.p.json \
-              -o $@
-
-%.hl.model-no-op.json: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI_IS) make --construct-hl-cp-model-no-op \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.p.json \
-              -o $@
-
-%.presolved.hl.model-w-op.json: %.presolved.hl.model-no-op.json \
-                                %.ce.cc.ae.be.presolved.p.json
-	$(UNI_IS) make --construct-hl-cp-model-w-op \
-              -m $*.presolved.hl.model-no-op.json \
-              -p $*.ce.cc.ae.be.presolved.p.json \
-              -o $@
-
-%.hl.model-w-op.json: %.hl.model-no-op.json %.ce.cc.ae.be.p.json
-	$(UNI_IS) make --construct-hl-cp-model-w-op \
-           -m $*.hl.model-no-op.json \
-           -p $*.ce.cc.ae.be.p.json \
-           -o $@
-
-%.presolved.aimaps.json: %.ce.cc.ae.be.f.json %.presolved.hl.model-w-op.json
-	$(UNI_IS) make --compute-array-index-maplists \
-              -f $*.ce.cc.ae.be.f.json \
-              -m $*.presolved.hl.model-w-op.json \
-              -o $@
-
-%.aimaps.json: %.ce.cc.ae.be.f.json %.hl.model-w-op.json
-	$(UNI_IS) make --compute-array-index-maplists \
-              -f $*.ce.cc.ae.be.f.json \
-              -m $*.hl.model-w-op.json \
-              -o $@
-
-%.ll.model.json: %.hl.model-w-op.json %.aimaps.json
-	$(UNI_IS) transform --lower-hl-cp-model \
-              -m $*.hl.model-w-op.json \
-              -a $*.aimaps.json \
-              -o $@
-
-%.ll.sol.json: %.ll.model.json
-	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
-
-%.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json
-	$(UNI_IS) transform --raise-ll-cp-solution \
-              -m $*.hl.model-w-op.json \
-              -s $*.ll.sol.json \
-              -a $*.aimaps.json \
-              -o $@
-
-%.s: %.presolved.hl.model-w-op.json %.presolved.hl.sol.json
-	$(UNI_IS) make --generate-asm \
-              -m $*.presolved.hl.model-w-op.json \
-              -s $*.presolved.hl.sol.json \
-              -o $@
+include ../toolchain/rules.mk
 
 .PHONY: clean
 clean:
@@ -203,14 +102,6 @@ clean:
 	$(RM) *.pdf
 	$(RM) *.bc
 
-.PHONY: clean-toolchain
-clean-toolchain:
-	cd .. && make clean
-
-.PHONY: distclean-toolchain
-distclean-toolchain:
-	cd .. && make distclean
-
 
 
 #=====================
@@ -218,28 +109,28 @@ distclean-toolchain:
 #=====================
 
 %.full-f.dot: %.f.json
-	$(UNI_IS) plot --plot-fun-full-graph -f $< -o $@
+	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
 
 %.cfg-f.dot: %.f.json
-	$(UNI_IS) plot --plot-fun-cf-graph -f $< -o $@
+	$(UNI_IS_CMD) plot --plot-fun-cf-graph -f $< -o $@
 
 %.ssa-f.dot: %.f.json
-	$(UNI_IS) plot --plot-fun-ssa-graph -f $< -o $@
+	$(UNI_IS_CMD) plot --plot-fun-ssa-graph -f $< -o $@
 
 %.cov.dot: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI_IS) plot --plot-cover-all-matches --hide-null-instrs \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.p.json \
-              -o $@
+	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -p $*.ce.cc.ae.be.p.json \
+                  -o $@
 
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
 %.all-cover-plots: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI_IS) plot --plot-cover-per-match \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.p.json \
-              -o $*.cov.dot
+	$(UNI_IS_CMD) plot --plot-cover-per-match \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -p $*.ce.cc.ae.be.p.json \
+                  -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
 	  make $${f%.*}.pdf; \
 	  $(RM) $${f%.*}.dot; \
@@ -248,22 +139,22 @@ distclean-toolchain:
 %.model.dump: %.ce.cc.ae.be.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
-	$(UNI_IS) make --dump-low-level-model-info \
-              -f $*.ce.cc.ae.be.f.json \
-              -m $*.presolved.ll.model.json \
-              -a $*.presolved.aimaps.json \
-              -o $@
+	$(UNI_IS_CMD) make --dump-low-level-model-info \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -m $*.presolved.ll.model.json \
+                  -a $*.presolved.aimaps.json \
+                  -o $@
 
 %.sol.dump: %.ce.cc.ae.be.f.json \
             %.presolved.aimaps.json \
             %.presolved.ll.model.json \
             %.presolved.ll.sol.json
-	$(UNI_IS) make --dump-low-level-solution-info \
-              -f $*.ce.cc.ae.be.f.json \
-              -m $*.presolved.ll.model.json \
-              -a $*.presolved.aimaps.json \
-              -s $*.presolved.ll.sol.json \
-              -o $@
+	$(UNI_IS_CMD) make --dump-low-level-solution-info \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -m $*.presolved.ll.model.json \
+                  -a $*.presolved.aimaps.json \
+                  -s $*.presolved.ll.sol.json \
+                  -o $@
 
 
 
@@ -272,12 +163,12 @@ distclean-toolchain:
 #==============
 
 %.run-checks: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
-	$(UNI_IS) check --check-fun-coverage \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.p.json
-	$(UNI_IS) check --check-fun-location-overlap \
-              -f $*.ce.cc.ae.be.f.json \
-              -p $*.ce.cc.ae.be.p.json
+	$(UNI_IS_CMD) check --check-fun-coverage \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -p $*.ce.cc.ae.be.p.json
+	$(UNI_IS_CMD) check --check-fun-location-overlap \
+                  -f $*.ce.cc.ae.be.f.json \
+                  -p $*.ce.cc.ae.be.p.json
 
 %.run-bugpoint:
 	make clean
