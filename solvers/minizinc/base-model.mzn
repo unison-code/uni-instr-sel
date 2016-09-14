@@ -282,9 +282,6 @@ array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
 var int: totalcost;
 array[allOperationsInFunction] of var allOpCosts: opcosts;
 
-% [MC] Dual variables.
-array[allOperationsInFunction] of var allMatches: omatch;
-array[allDataInFunction] of var allMatches: dmatch;
 
 % TODO: What to do with this variable?
 % array[allOperationsInFunction] of var allBlocksInFunction: oplace;
@@ -557,12 +554,27 @@ constraint
 % Constrain the cost that can be incurred by each operation.
 constraint
   forall (op in allOperationsInFunction)
-  ( table([op, omatch[op], place[omatch[op]], opcosts[op]], costPerOpMatrix) );
+  ( table( [op, opmatch[op], place[opmatch[op]], opcosts[op]]
+         , costPerOpMatrix
+         )
+  );
 
 % The total cost is the sum of the costs incurred by all operations.
 constraint
   totalcost = sum(opcosts);
 
+%================
+% DUAL VARIABLES
+%================
+
+% The match that covers a particular operation.
+array[allOperationsInFunction] of var allMatches: opmatch;
+
+% The block in which a particular operation is placed.
+array[allOperationsInFunction] of var allBlocksInFunction: opplace;
+
+% The match that defines a particular datum.
+array[allDataInFunction] of var allMatches: dmatch;
 
 
 
@@ -631,10 +643,10 @@ constraint
 %     );
 constraint
   forall (o in allOperationsInFunction)
-  ( omatch[o] in matchsetOfOp[o]
+  ( opmatch[o] in matchsetOfOp[o]
     /\
     forall (m in matchsetOfOp[o])
-    ( omatch[o] = m <-> sel[m] )
+    ( opmatch[o] = m <-> sel[m] )
   );
 
 % For each datum d, exactly one match must be selected such that d is defined.
