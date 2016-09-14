@@ -192,7 +192,7 @@ array[allOperationsInFunction] of set of allMatches: matchsetOfOp =
 array[allDataInFunction] of set of allMatches: defsetOfDatum =
   [ { m | m in allMatches
         , o in operandsDefinedByMatch[m]
-            where d in operandAlternatives[o]
+          where d in operandAlternatives[o]
     }
   | d in allDataInFunction
   ];
@@ -201,7 +201,7 @@ array[allDataInFunction] of set of allMatches: defsetOfDatum =
 % operations.
 array[int] of set of allMatches: defsetOfDatumOnly =
   [ M | M in defsetOfDatum
-          where forall (i in index_set(matchsetOfOp)) (matchsetOfOp[i] != M)
+        where forall (i in index_set(matchsetOfOp)) (matchsetOfOp[i] != M)
   ];
 
 
@@ -321,7 +321,7 @@ constraint
 constraint
   forall ( m in allMatches
          , o in operandsInternalToMatch[m]
-                where not (operandAlternatives[o] subset statesInFunction)
+           where not (operandAlternatives[o] subset statesInFunction)
          )
   (
     sel[m] -> loc[Alt(o)] = locValueForNull
@@ -344,8 +344,8 @@ constraint
       let
       { set of int: locs = { validDataLocsInMatch[i, 3]
                            | i in index_set_1of2(validDataLocsInMatch)
-                             where validDataLocsInMatch[i, 1] = m
-                             /\ validDataLocsInMatch[i, 2] = o
+                             where validDataLocsInMatch[i, 1] = m /\
+                                   validDataLocsInMatch[i, 2] = o
                            }
       } in
       if card(locs) > 0
@@ -507,7 +507,7 @@ constraint
   (
     exists ( m in allMatches
            , o in operandsUsedByMatch[m]
-               where d in operandAlternatives[o]
+             where d in operandAlternatives[o]
            )
     ( sel[m] /\ alt[o] = d )
     <->
@@ -642,7 +642,7 @@ array[allOperationsInFunction] of var OCostDom: oslice;
 %     (
 %       let
 %       { set of int: mset = { m | m in allMatches
-%                                  where o in operationsCoveredByMatch[m]
+%                              where o in operationsCoveredByMatch[m]
 %                            }
 %       } in
 %       if card(mset) = 1
@@ -699,7 +699,6 @@ constraint
 
 
 
-
 %=======================
 % DOMINANCE CONSTRAINTS
 %=======================
@@ -712,11 +711,12 @@ constraint
 
 % Fix operand value if match was not selected.
 constraint
-  forall (m in allMatches) (
-    forall (o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
-            where card(operandAlternatives[o])>1) (
-      not sel[m] -> alt[o] = min(operandAlternatives[o])
-    )
+  forall ( m in allMatches
+         , o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+           where card(operandAlternatives[o]) > 1
+         )
+  (
+    not sel[m] -> alt[o] = min(operandAlternatives[o])
   );
 
 % No data may be defined in a branch-extension block.
@@ -936,7 +936,7 @@ output [ "sel=", show(sel), "\n"
 
 %array[allOperands] of int: matchOfO = [ m
 %                                      | o in allOperands, m in allMatches
-%                                      where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+%                                        where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
 %                                      ];
 %
 %array[allMatches] of int: opOfM =
@@ -963,7 +963,6 @@ output [ "sel=", show(sel), "\n"
 %       , "alt_value_for_null=", show(datumValueForNull), "\n"
 %       , "cost=", show(execFrequencyGCD * cost), "\n"
 %       ];
-
 
 
 
