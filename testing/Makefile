@@ -106,28 +106,55 @@ clean:
 
 .PHONY: run-regression-tests
 run-regression-tests:
-	$(MAKE) TARGET=Mips32 run-regression-tests-for-target
+	@$(MAKE) TARGET=Mips32   run-regression-tests-for-target
+	@$(MAKE) TARGET=Hexagon5 run-regression-tests-for-target
 
 .PHONY: run-regression-tests-for-target
 run-regression-tests-for-target:
-	$(MAKE) clean
-	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
-		cp $$T . ;\
+	@echo
+	@echo "=========================================================="
+	@echo "=   REGRESSION TESTS FOR TARGET: $(TARGET)"
+	@echo "=========================================================="
+	@echo
+	@echo -n "* Cleaning testing environment..."
+	@$(MAKE) clean > /dev/null
+	@echo "done"
+	@echo
+	@echo "* Executing regression tests:"
+	@for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
 	    T_NAME=$$(basename $$T) ;\
 	    T_ASM=$${T_NAME%.*}.s ;\
-		$(MAKE) $$T_ASM ;\
-		T_DIFF=`diff -q $$T_ASM $(REGRESSION_TESTS_DIR)/$(TARGET)/$${T%.*}.s` ;\
-		if [ -n "$$T_DIFF" ]; then \
-			echo "==========================================================" ;\
-			echo "=   REGRESSION TEST FAILED: $$T" ;\
-			echo "==========================================================" ;\
-			exit 1 ;\
+		echo -n "  Test case '$$T'..." ;\
+		TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
+		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
+		T_ORACLE=$$RT_TARGET_DIR/$${T_NAME%.*}.s ;\
+		if [ -f $$T_ORACLE ]; then \
+			cp $$T . ;\
+			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
+		    T_ASM_TXT=`cat $$T_ASM` ;\
+			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
+				T_DIFF=`diff -q $$T_ASM $$T_ORACLE` ;\
+				if [ -z "$$T_DIFF" ]; then \
+				    echo "OK" ;\
+				else \
+					echo "FAILED" ;\
+					echo ;\
+					exit 1 ;\
+				fi \
+			else \
+				echo "FAILED" ;\
+				echo ;\
+				exit 1 ;\
+			fi \
+		else \
+			echo "IGNORED (no oracle)" ;\
 		fi ;\
 	done
-	$(MAKE) clean
+	@echo
 	@echo "=========================================================="
 	@echo "=   ALL REGRESSION TESTS PASSED"
 	@echo "=========================================================="
+	@echo
 
 
 #=====================
