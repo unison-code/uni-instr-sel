@@ -261,15 +261,15 @@ set of int: allOpCosts = { costPerOpMatrix[i, 4]
 % VARIABLES
 %===========
 
-% Data definitions and locations.
-array[allDataInFunction] of var allBlocksInFunction: def;
-array[allDataInFunction] of var canonicalDataLocs: loc;
-
 % Match selection.
 array[allMatches] of var bool: sel;
 
-% Blocks wherein the matches are placed.
+% Blocks wherein the data and matches are placed.
+array[allDataInFunction] of var allBlocksInFunction: dplace;
 array[allMatches] of var allBlocksInFunctionPlusNull: place;
+
+% Data locations.
+array[allDataInFunction] of var canonicalDataLocs: loc;
 
 % Data selected for the operands.
 array[allOperands] of var allDataInFunction: alt;
@@ -424,7 +424,7 @@ constraint
         , int: b = inputDefEdgesInMatch[i, 2]
         , int: o = inputDefEdgesInMatch[i, 3]
         }
-    in sel[m] -> def[Alt(o)] = b
+    in sel[m] -> dplace[Alt(o)] = b
   );
 constraint
   forall (i in index_set_1of2(outputDefEdgesInMatch)) (
@@ -432,7 +432,7 @@ constraint
         , int: b = outputDefEdgesInMatch[i, 2]
         , int: o = outputDefEdgesInMatch[i, 3]
         }
-    in sel[m] -> def[Alt(o)] = b
+    in sel[m] -> dplace[Alt(o)] = b
   );
 
 % A state datum with a definition edge with a block must be defined in the block
@@ -442,7 +442,7 @@ constraint
     let { int: b = stateDefEdgesForBlocksInFunction[i, 1]
         , int: d = stateDefEdgesForBlocksInFunction[i, 2]
         }
-    in def[d] = b
+    in dplace[d] = b
   );
 
 % If a match representing a null instruction is selected, then the data used by
@@ -451,7 +451,7 @@ constraint
   forall ( m in nullInstrMatches
          , o in operandsUsedByMatch[m]
          )
-  ( sel[m] -> def[Alt(o)] = place[m] );
+  ( sel[m] -> dplace[Alt(o)] = place[m] );
 
 % Selected matches must not be placed in the null block.
 constraint
@@ -476,8 +476,8 @@ constraint
          , o in operandsDefinedByMatch[m]
          )
   ( if card(spannedBlocksInMatch[m]) > 0
-    then sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]
-    else sel[m] -> def[Alt(o)] = place[m]
+    then sel[m] -> dplace[Alt(o)] in spannedBlocksInMatch[m]
+    else sel[m] -> dplace[Alt(o)] = place[m]
     endif
   );
 
@@ -516,14 +516,14 @@ constraint
 %            , o in operandsUsedByMatch[m]
 %              where not (m in phiInstrMatches)
 %            )
-%     ( def[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
+%     ( dplace[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
 constraint
   forall ( m in allMatches diff phiInstrMatches
          , o in operandsUsedByMatch[m]
          )
-  ( table([place[m], def[Alt(o)]], domRelMatrixPlusNull) );
+  ( table([place[m], dplace[Alt(o)]], domRelMatrixPlusNull) );
 
 % If a datum d is used by at least one operand in at least one selected match,
 % then d must not be defined by any inactive match (and hence cannot be
@@ -589,11 +589,11 @@ array[allDataInFunction] of var allMatches: dmatch;
 %         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces,
 %         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces,
 %         array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelMatrix)) /\
-%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
+%        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
 %        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = places[1]) /\
+%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
 %    )
 %  );
 %
@@ -603,11 +603,11 @@ array[allDataInFunction] of var allMatches: dmatch;
 %    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
 %         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
 %         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], def[Alt(o_use_only[i])]], domRelMatrix)) /\
+%        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
 %        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
-%        forall (o in operandsDefinedByMatch[m]) (sel[m] -> def[Alt(o)] in spannedBlocksInMatch[m]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = def[Alt(o_use_only[i])]) % prevent false symmetries
+%        forall (o in operandsDefinedByMatch[m]) (sel[m] -> dplace[Alt(o)] in spannedBlocksInMatch[m]) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = min(entryBlockOfMatch[m])) /\
+%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
 %    )
 %  );
 %
@@ -615,9 +615,9 @@ array[allDataInFunction] of var allMatches: dmatch;
 %  forall (m in phiInstrMatches) (
 %    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
 %         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
-%        forall (i in index_set(o_defs)) (defplaces[i] = def[Alt(o_defs[i])]) /\
+%        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
 %        forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = defplaces[1])
 %    )
 %  );
 
@@ -700,7 +700,7 @@ constraint
   forall ( b in branchExtBlocksInFunction
          , d in allDataInFunction
          )
-  ( def[d] != b );
+  ( dplace[d] != b );
 
 % No matches that does not span any blocks may be placed in a branch-extension
 % block.
@@ -778,7 +778,7 @@ constraint
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
-%      table([def[d], def[u]], domRelMatrix) /\ oplace[i] = def[d]
+%      table([dplace[d], dplace[u]], domRelMatrix) /\ opplace[i] = dplace[d]
 %    ) else true endif
 %  );
 %
@@ -794,7 +794,7 @@ constraint
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
-%      table([def[d], def[u]], domRelMatrix)
+%      table([dplace[d], dplace[u]], domRelMatrix)
 %    ) else true endif
 %  );
 %
@@ -810,7 +810,7 @@ constraint
 %           min(entryBlockOfMatch[m]) = Entry /\
 %           exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %      ) then (
-%        table([Entry, def[u]], domRelMatrix)
+%        table([Entry, dplace[u]], domRelMatrix)
 %      ) else true endif
 %  );
 %
@@ -825,7 +825,7 @@ constraint
 %           spannedBlocksInMatch[m] = Spanned /\
 %           exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
 %      ) then (
-%        def[d] in Spanned
+%        dplace[d] in Spanned
 %      ) else true endif
 %  );
 %
@@ -838,7 +838,7 @@ constraint
 %      if forall (m in matchsetOfOp[i]) (
 %           min(entryBlockOfMatch[m]) = Entry
 %      ) then (
-%        oplace[i] = Entry
+%        opplace[i] = Entry
 %      ) else true endif
 %  );
 %
@@ -859,7 +859,7 @@ constraint
 %                          }} in
 %    if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
 %    then
-%      def[d] = min(BO) /\ oplace[i] = min(BO)
+%      dplace[d] = min(BO) /\ opplace[i] = min(BO)
 %    else true endif
 %  );
 %
@@ -898,7 +898,7 @@ minimize totalcost;
 
 output [ "sel=", show(sel), "\n"
        , "alt=", show(alt), "\n"
-       , "def=", show(def), "\n"
+       , "dplace=", show(dplace), "\n"
        , "loc=", show(loc), "\n"
        , "place=", show(place), "\n"
        , "succ=", show(succ), "\n"
@@ -924,17 +924,17 @@ output [ "sel=", show(sel), "\n"
 %  ];
 %output [ "sel=", show(sel), "\n"
 %       , "alt=", show([if not fix(sel[matchOfO[o]]) then datumValueForNull else alt[o] endif | o in allOperands]), "\n"
-%       , "def=", show(def), "\n"
+%       , "dplace=", show(dplace), "\n"
 %       , "loc=", show(loc), "\n"
-%       , "oplace=", show(oplace), "\n"
+%       , "opplace=", show(opplace), "\n"
 %       , "place=", show([if not fix(sel[m]) then
 %                           blockValueForNull
 %                         else if card(operationsCoveredByMatch[m])=0 then
 %                           min(entryBlockOfMatch[m])
 %                         else
-%                           oplace[opOfM[m]]
+%                           opplace[opOfM[m]]
 %                         endif endif | m in allMatches]), "\n"
-%       , "omatch=", show(omatch), "\n"
+%       , "opmatch=", show(opmatch), "\n"
 %       , "dmatch=", show(dmatch), "\n"
 %       , "succ=", show(succ), "\n"
 %       , "block_value_for_null=", show(blockValueForNull), "\n"

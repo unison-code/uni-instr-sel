@@ -285,7 +285,7 @@ def convertConstraint(l):
         if op == "block-wherein-match-is-placed":
             return "place[" + fromMatchExpr(l[1]) + "]"
         elif op == "block-wherein-data-is-defined":
-            return "def[" + fromNodeExpr(l[1]) + "]"
+            return "dplace[" + fromNodeExpr(l[1]) + "]"
         elif op == "block-of-bnode":
             return fromNodeExpr(l[1])
         else:
