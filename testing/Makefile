@@ -50,7 +50,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
-TARGET := mips32
+TARGET := hexagon5
 
 REGRESSION_TESTS_DIR := ./regression
 
@@ -106,13 +106,17 @@ clean:
 
 .PHONY: run-regression-tests
 run-regression-tests:
+	$(MAKE) TARGET=Mips32 run-regression-tests-for-target
+
+.PHONY: run-regression-tests-for-target
+run-regression-tests-for-target:
 	$(MAKE) clean
 	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
 		cp $$T . ;\
 	    T_NAME=$$(basename $$T) ;\
 	    T_ASM=$${T_NAME%.*}.s ;\
 		$(MAKE) $$T_ASM ;\
-		T_DIFF=`diff -q $$T_ASM $${T%.*}.s` ;\
+		T_DIFF=`diff -q $$T_ASM $(REGRESSION_TESTS_DIR)/$(TARGET)/$${T%.*}.s` ;\
 		if [ -n "$$T_DIFF" ]; then \
 			echo "==========================================================" ;\
 			echo "=   REGRESSION TEST FAILED: $$T" ;\
