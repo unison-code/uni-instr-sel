@@ -289,7 +289,7 @@ array[allOperationsInFunction] of var allOpCosts: opcosts;
 %================
 
 % The match that covers a particular operation.
-array[allOperationsInFunction] of var allMatches: opmatch;
+array[allOperationsInFunction] of var allMatches: omatch;
 
 % The block in which a particular operation is placed.
 array[allOperationsInFunction] of var allBlocksInFunction: oplace;
@@ -565,7 +565,7 @@ constraint
 % Constrain the cost that can be incurred by each operation.
 constraint
   forall (op in allOperationsInFunction)
-  ( table( [op, opmatch[op], place[opmatch[op]], opcosts[op]]
+  ( table( [op, omatch[op], place[omatch[op]], opcosts[op]]
          , costPerOpMatrix
          )
   );
@@ -642,10 +642,10 @@ constraint
 %     );
 constraint
   forall (o in allOperationsInFunction)
-  ( opmatch[o] in matchsetOfOp[o]
+  ( omatch[o] in matchsetOfOp[o]
     /\
     forall (m in matchsetOfOp[o])
-    ( opmatch[o] = m <-> sel[m] )
+    ( omatch[o] = m <-> sel[m] )
   );
 
 % For each datum d, exactly one match must be selected such that d is defined.
@@ -946,7 +946,7 @@ output [ "sel=", show(sel), "\n"
 %                         else
 %                           oplace[opOfM[m]]
 %                         endif endif | m in allMatches]), "\n"
-%       , "opmatch=", show(opmatch), "\n"
+%       , "omatch=", show(omatch), "\n"
 %       , "dmatch=", show(dmatch), "\n"
 %       , "succ=", show(succ), "\n"
 %       , "block_value_for_null=", show(blockValueForNull), "\n"
