@@ -283,8 +283,19 @@ var int: totalcost;
 array[allOperationsInFunction] of var allOpCosts: opcosts;
 
 
-% TODO: What to do with this variable?
-% array[allOperationsInFunction] of var allBlocksInFunction: oplace;
+
+%================
+% DUAL VARIABLES
+%================
+
+% The match that covers a particular operation.
+array[allOperationsInFunction] of var allMatches: opmatch;
+
+% The block in which a particular operation is placed.
+array[allOperationsInFunction] of var allBlocksInFunction: oplace;
+
+% The match that defines a particular datum.
+array[allDataInFunction] of var allMatches: dmatch;
 
 
 
@@ -563,18 +574,6 @@ constraint
 constraint
   totalcost = sum(opcosts);
 
-%================
-% DUAL VARIABLES
-%================
-
-% The match that covers a particular operation.
-array[allOperationsInFunction] of var allMatches: opmatch;
-
-% The block in which a particular operation is placed.
-array[allOperationsInFunction] of var allBlocksInFunction: opplace;
-
-% The match that defines a particular datum.
-array[allDataInFunction] of var allMatches: dmatch;
 
 
 
@@ -592,7 +591,7 @@ array[allDataInFunction] of var allMatches: dmatch;
 %        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
 %        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
 %        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = places[1]) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
 %        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
 %    )
 %  );
@@ -606,7 +605,7 @@ array[allDataInFunction] of var allMatches: dmatch;
 %        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
 %        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
 %        forall (o in operandsDefinedByMatch[m]) (sel[m] -> dplace[Alt(o)] in spannedBlocksInMatch[m]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = min(entryBlockOfMatch[m])) /\
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
 %        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
 %    )
 %  );
@@ -617,7 +616,7 @@ array[allDataInFunction] of var allMatches: dmatch;
 %         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
 %        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
 %        forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> opplace[op] = defplaces[1])
+%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
 %    )
 %  );
 
@@ -674,6 +673,19 @@ constraint
     /\
     forall (m in defsetOfDatum[d])
     ( dmatch[d] = m <-> sel[m] )
+  );
+
+% If a match m is selected and placed in block b, then every operation covered
+% by m is a also placed in b.
+constraint
+  forall ( o in allOperationsInFunction
+         , m in allMatches
+         , b in allBlocksInFunction
+           where o in operationsCoveredByMatch[m]
+         )
+  ( (sel[m] /\ place[m] = b)
+    ->
+    oplace[o] = b
   );
 
 
@@ -778,7 +790,7 @@ constraint
 %         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
 %         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
 %    ) then (
-%      table([dplace[d], dplace[u]], domRelMatrix) /\ opplace[i] = dplace[d]
+%      table([dplace[d], dplace[u]], domRelMatrix) /\ oplace[i] = dplace[d]
 %    ) else true endif
 %  );
 %
@@ -838,7 +850,7 @@ constraint
 %      if forall (m in matchsetOfOp[i]) (
 %           min(entryBlockOfMatch[m]) = Entry
 %      ) then (
-%        opplace[i] = Entry
+%        oplace[i] = Entry
 %      ) else true endif
 %  );
 %
@@ -859,7 +871,7 @@ constraint
 %                          }} in
 %    if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
 %    then
-%      dplace[d] = min(BO) /\ opplace[i] = min(BO)
+%      dplace[d] = min(BO) /\ oplace[i] = min(BO)
 %    else true endif
 %  );
 %
@@ -926,13 +938,13 @@ output [ "sel=", show(sel), "\n"
 %       , "alt=", show([if not fix(sel[matchOfO[o]]) then datumValueForNull else alt[o] endif | o in allOperands]), "\n"
 %       , "dplace=", show(dplace), "\n"
 %       , "loc=", show(loc), "\n"
-%       , "opplace=", show(opplace), "\n"
+%       , "oplace=", show(oplace), "\n"
 %       , "place=", show([if not fix(sel[m]) then
 %                           blockValueForNull
 %                         else if card(operationsCoveredByMatch[m])=0 then
 %                           min(entryBlockOfMatch[m])
 %                         else
-%                           opplace[opOfM[m]]
+%                           oplace[opOfM[m]]
 %                         endif endif | m in allMatches]), "\n"
 %       , "opmatch=", show(opmatch), "\n"
 %       , "dmatch=", show(dmatch), "\n"
