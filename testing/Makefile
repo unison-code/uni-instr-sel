@@ -52,6 +52,8 @@ SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
 TARGET := mips32
 
+REGRESSION_TESTS_DIR := ./regression
+
 
 
 #=============
@@ -102,6 +104,26 @@ clean:
 	$(RM) *.pdf
 	$(RM) *.bc
 
+.PHONY: run-regression-tests
+run-regression-tests:
+	$(MAKE) clean
+	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
+		cp $$T . ;\
+	    T_NAME=$$(basename $$T) ;\
+	    T_ASM=$${T_NAME%.*}.s ;\
+		$(MAKE) $$T_ASM ;\
+		T_DIFF=`diff -q $$T_ASM $${T%.*}.s` ;\
+		if [ -n "$$T_DIFF" ]; then \
+			echo "==========================================================" ;\
+			echo "=   REGRESSION TEST FAILED: $$T" ;\
+			echo "==========================================================" ;\
+			exit 1 ;\
+		fi ;\
+	done
+	$(MAKE) clean
+	@echo "=========================================================="
+	@echo "=   ALL REGRESSION TESTS PASSED"
+	@echo "=========================================================="
 
 
 #=====================
@@ -132,8 +154,8 @@ clean:
                   -p $*.ce.cc.ae.be.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
-	  make $${f%.*}.pdf; \
-	  $(RM) $${f%.*}.dot; \
+        $(MAKE) $${f%.*}.pdf; \
+        $(RM) $${f%.*}.dot; \
     done
 
 %.model.dump: %.ce.cc.ae.be.f.json \
