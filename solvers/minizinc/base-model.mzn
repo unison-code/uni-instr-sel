@@ -46,6 +46,7 @@ int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
 array[int, int] of int: validDataLocsInFunction;
 set of allOperationsInFunction: copiesInFunction;
+set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
@@ -162,7 +163,7 @@ array[1..numDomMatrixRows, 1..2] of allBlocksInFunction: domRelMatrix =
 
 % Same as 'domRelMatrix' but includes the null block.
 %
-% TODO: keep these parameters?
+% TODO: remove when obsolete
 int: numDomRel2Rows =
   sum (b in allBlocksInFunctionPlusNull)
   ( card(domSetOfBlockInFunctionPlusNull[b]) );
@@ -199,6 +200,21 @@ array[int] of set of allMatches: defsetOfDatumOnly =
   [ M | M in defsetOfDatum
         where forall (i in index_set(matchsetOfOp))
               ( matchsetOfOp[i] != M )
+  ];
+
+% Maps a match to an operation. This is only needed for figuring out in which
+% block a selected match is to be placed.
+array[allMatches] of int: opOfM =
+  [ min({ o | o in allOperationsInFunction where m in matchsetOfOp[o] })
+  | m in allMatches
+  ];
+
+% Maps an operand to a match. This is only needed for figuring out which
+% operands have not been assigned a datum.
+array[allOperands] of int: matchOfO =
+  [ m
+  | o in allOperands, m in allMatches
+    where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
   ];
 
 % The total cost is computed as:
@@ -465,41 +481,46 @@ constraint
   ( sel[m] -> dplace[Alt(o)] = place[m] );
 
 % Selected matches must not be placed in the null block.
+%
+% TODO: remove when obsolete
 constraint
   forall (m in allMatches)
   ( sel[m] <-> place[m] != blockValueForNull );
 
-% Selected matches that have an entry block must be placed in entry block.
+% If a selected match m has an entry block b, then all operations covered by m
+% must be placed in b.
 %
 % If a match has no entry block, then this set will be empty and hence there
 % will be no such constraint. It is assumed that there will be at most one
 % entry.
 constraint
   forall ( m in allMatches
-         , r in entryBlockOfMatch[m]
+         , b in entryBlockOfMatch[m]
+         , o in operationsCoveredByMatch[m]
          )
-  ( place[m] in {r, blockValueForNull} );
+  ( sel[m] -> oplace[o] = b );
 
-% Data defined by a selected match must be defined in either the block wherein
-% the match is placed or in one of the blocks spanned by the match.
+% Data defined by a selected match m must be defined either in one of the blocks
+% spanned by m, or the block wherein the operations covered by m are placed.
 constraint
   forall ( m in allMatches
          , o in operandsDefinedByMatch[m]
          )
-  ( if card(spannedBlocksInMatch[m]) > 0
-    then sel[m] -> dplace[Alt(o)] in spannedBlocksInMatch[m]
-    else sel[m] -> dplace[Alt(o)] = place[m]
-    endif
+  ( sel[m] -> if card(spannedBlocksInMatch[m]) > 0
+              then dplace[Alt(o)] in spannedBlocksInMatch[m]
+              else forall (op in operationsCoveredByMatch[m])
+                   ( dplace[Alt(o)] = oplace[op] )
+              endif
   );
 
-% No selected matches may be placed in a block which is consumed by some
-% selected match.
+% No operations may be placed in a block which is consumed by some selected
+% match.
 constraint
-  forall ( m, mm in allMatches
+  forall ( o in allOperationsInFunction
+         , m in allMatches
          , b in consumedBlocksInMatch[m]
-           where m != mm
          )
-  ( sel[m] -> place[mm] != b );
+  ( sel[m] -> oplace[o] != b );
 
 % For each selected match m that apply fall-through, enforce that m's
 % fall-through block is the successor of m's entry block.
@@ -530,6 +551,8 @@ constraint
 %     ( dplace[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
+%
+% TODO: use 'oplace' instead
 constraint
   forall ( m in allMatches diff phiInstrMatches
          , o in operandsUsedByMatch[m]
@@ -565,9 +588,7 @@ constraint
 % Constrain the cost that can be incurred by each operation.
 constraint
   forall (op in allOperationsInFunction)
-  ( table( [op, omatch[op], place[omatch[op]], opcosts[op]]
-         , costPerOpMatrix
-         )
+  ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix)
   );
 
 % The total cost is the sum of the costs incurred by all operations.
@@ -677,6 +698,8 @@ constraint
 
 % If a match m is selected and placed in block b, then every operation covered
 % by m is a also placed in b.
+%
+% TODO: remove
 constraint
   forall ( o in allOperationsInFunction
          , m in allMatches
@@ -714,14 +737,13 @@ constraint
          )
   ( dplace[d] != b );
 
-% No matches that does not span any blocks may be placed in a branch-extension
-% block.
+% If a block b is a branch-extension block, then only control operations may be
+% placed in that block.
 constraint
   forall ( b in branchExtBlocksInFunction
-         , m in allMatches
-           where card(spannedBlocksInMatch[m]) = 0
+         , o in allOperationsInFunction diff controlOpsInFunction
          )
-  ( place[m] != b );
+  ( oplace[o] != b );
 
 
 
@@ -746,8 +768,6 @@ constraint
        ->
        (not sel[m1] \/ not sel[m2])
   );
-
-% TODO: restore
 
 % Two matches can't both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of
@@ -778,124 +798,174 @@ constraint
        )
   );
 
-%% RULE 1A: If all matches for operation i, not a phi and no spanned blocks, use
-%%          datum u and define datum d, then the block defining u must dominate
-%%          the block defining d, and i must be placed in the block defining d.
-%constraint
-%  forall (i in allOperationsInFunction,
-%          d in allDataInFunction,
-%          u in allDataInFunction
-%          where forall(m in matchsetOfOp[i])(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
-%    if forall (m in matchsetOfOp[i]) (
-%         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
-%         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
-%    ) then (
-%      table([dplace[d], dplace[u]], domRelMatrix) /\ oplace[i] = dplace[d]
-%    ) else true endif
-%  );
-%
-%% RULE 1B: If all matches that define some data, not a phi and no spanned
-%%          blocks, use datum u and define datum d, then the block defining u
-%%          must dominate the block defining d.
-%constraint
-%  forall (M in defsetOfDatumOnly,
-%          d in allDataInFunction,
-%          u in allDataInFunction
-%          where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])=0)) (
-%    if forall (m in M) (
-%         exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d}) /\
-%         exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
-%    ) then (
-%      table([dplace[d], dplace[u]], domRelMatrix)
-%    ) else true endif
-%  );
-%
-%% RULE 1C: If all matches out of some oneof set, not a phi, have identical entry
-%%          blocks, use datum u, then the block defining u must dominate the
-%%          entry block,
-%constraint
-%  forall (M in matchsetOfOp++defsetOfDatumOnly,
-%          u in allDataInFunction
-%          where forall(m in M)(not (m in phiInstrMatches) /\ card(spannedBlocksInMatch[m])>0)) (
-%    let {int: Entry = min(entryBlockOfMatch[min(M)])} in
-%      if forall (m in M) (
-%           min(entryBlockOfMatch[m]) = Entry /\
-%           exists (uo in operandsUsedByMatch[m])    (operandAlternatives[uo] = {u})
-%      ) then (
-%        table([Entry, dplace[u]], domRelMatrix)
-%      ) else true endif
-%  );
-%
-%% RULE 1D: If all matches out of some oneof set have identical spanned blocks,
-%%          define datum d, then d must be placed in a spanned block.
-%constraint
-%  forall (M in matchsetOfOp++defsetOfDatumOnly,
-%          d in allDataInFunction,
-%          where forall(m in M)(card(spannedBlocksInMatch[m])>0)) (
-%    let {set of int: Spanned = spannedBlocksInMatch[min(M)]} in
-%      if forall (m in M) (
-%           spannedBlocksInMatch[m] = Spanned /\
-%           exists (do in operandsDefinedByMatch[m]) (operandAlternatives[do] = {d})
-%      ) then (
-%        dplace[d] in Spanned
-%      ) else true endif
-%  );
-%
-%% RULE 1E: If all matches for operation i have identical entry blocks,
-%%          then i must be placed in the entry block.
-%constraint
-%  forall (i in allOperationsInFunction,
-%          where forall(m in matchsetOfOp[i])(card(spannedBlocksInMatch[m])>0)) (
-%    let {int: Entry = min(entryBlockOfMatch[min(matchsetOfOp[i])])} in
-%      if forall (m in matchsetOfOp[i]) (
-%           min(entryBlockOfMatch[m]) = Entry
-%      ) then (
-%        oplace[i] = Entry
-%      ) else true endif
-%  );
-%
-%% RULE 1F: If all matches for operation i are phi and have the same def operand
-%%          then the def operand as well as i itself must all be placed in the
-%%          block mentioned in the output def edge.
-%constraint
-%  forall (i in allOperationsInFunction,
-%          d in allDataInFunction
-%          where matchsetOfOp[i] subset phiInstrMatches) (
-%    let {set of int: BO = { outputDefEdgesInMatch[j,2]
-%                          | j in index_set_1of2(outputDefEdgesInMatch)
-%                            where outputDefEdgesInMatch[j,1] in matchsetOfOp[i]
-%                          },
-%         set of int: DO = { outputDefEdgesInMatch[j,3]
-%                          | j in index_set_1of2(outputDefEdgesInMatch)
-%                            where outputDefEdgesInMatch[j,1] in matchsetOfOp[i]
-%                          }} in
-%    if card(BO)=1 /\ forall(do in DO)(operandAlternatives[do] = {d})
-%    then
-%      dplace[d] = min(BO) /\ oplace[i] = min(BO)
-%    else true endif
-%  );
-%
-%% RULE 3: If for given p,q, inBlockSucc contains [_, p, q] but does not contain
-%%         [_, p, q'] or [_, p', q] then succ[p] = q can only help, never hurt.
-%constraint
-%  let {array[allBlocksInFunction] of set of allBlocksInFunction: fwd = array1d(allBlocksInFunction,
-%                                            [ {s | i in index_set_1of2(inBlockSucc),
-%                                                   s in {inBlockSucc[i,3]}
-%                                                   where inBlockSucc[i,2] = b}
-%                                            | b in allBlocksInFunction
-%                                            ]),
-%       array[allBlocksInFunction] of set of allBlocksInFunction: bwd = array1d(allBlocksInFunction,
-%                                            [ {s | i in index_set_1of2(inBlockSucc),
-%                                                   s in {inBlockSucc[i,2]}
-%                                                   where inBlockSucc[i,3] = b}
-%                                            | b in allBlocksInFunction
-%                                            ])} in
-%    forall (p in allBlocksInFunction,
-%            q in allBlocksInFunction) (
-%      if fwd[p] = {q} /\ bwd[q] = {p} then
-%        succ[p] = q
-%      else true endif
-%    );
+% If all matches for operation o are not phi instruction, do not span any
+% blocks, use datum u, and define datum d, then the block defining u must
+% dominate the block defining d, and o must be placed in the block defining d.
+constraint
+  forall ( o in allOperationsInFunction
+         , d in allDataInFunction
+         , u in allDataInFunction
+           where forall (m in matchsetOfOp[o])
+                 ( not (m in phiInstrMatches) /\
+                   card(spannedBlocksInMatch[m]) = 0
+                 )
+         )
+  ( if forall (m in matchsetOfOp[o])
+       ( exists (do in operandsDefinedByMatch[m])
+         ( operandAlternatives[do] = {d} )
+         /\
+         exists (uo in operandsUsedByMatch[m])
+         ( operandAlternatives[uo] = {u} )
+       )
+    then table([dplace[d], dplace[u]], domRelMatrix) /\
+         oplace[o] = dplace[d]
+    else true
+    endif
+  );
+
+% If all matches that define some data, does not contain any phi instructions
+% nor instructions that span any blocks, use datum u and define datum d, then
+% the block defining u must dominate the block defining d.
+constraint
+  forall ( M in defsetOfDatumOnly
+         , d in allDataInFunction
+         , u in allDataInFunction
+           where forall (m in M)
+                 ( not (m in phiInstrMatches)
+                   /\
+                   card(spannedBlocksInMatch[m]) = 0
+                 )
+         )
+  ( if forall (m in M)
+       ( exists (do in operandsDefinedByMatch[m])
+         ( operandAlternatives[do] = {d} )
+         /\
+         exists (uo in operandsUsedByMatch[m])
+         ( operandAlternatives[uo] = {u} )
+       )
+    then table([dplace[d], dplace[u]], domRelMatrix)
+    else true
+    endif
+  );
+
+% If all matches in the matchset that either covers a particular operation or
+% defines a datum, does not contain any phi instructions, have identical entry
+% blocks, and use datum u, then the block defining u must dominate the entry
+% block.
+constraint
+  forall ( M in matchsetOfOp ++ defsetOfDatumOnly
+         , u in allDataInFunction
+           where forall (m in M)
+                 ( not (m in phiInstrMatches)
+                   /\
+                   card(spannedBlocksInMatch[m])>0
+                 )
+         )
+  ( let { int: Entry = min(entryBlockOfMatch[min(M)]) }
+    in if forall (m in M)
+          ( min(entryBlockOfMatch[m]) = Entry /\
+            exists (uo in operandsUsedByMatch[m])
+            ( operandAlternatives[uo] = {u} )
+          )
+       then table([Entry, dplace[u]], domRelMatrix)
+       else true
+       endif
+  );
+
+% If all matches in the matchset that either covers a particular operation or
+% defines a datum, have identical spanned blocks, and define datum d, then d
+% must be placed in a spanned block.
+constraint
+  forall ( M in matchsetOfOp ++ defsetOfDatumOnly
+         , d in allDataInFunction,
+           where forall (m in M)
+                 ( card(spannedBlocksInMatch[m]) > 0 )
+         )
+  ( let { set of int: Spanned = spannedBlocksInMatch[min(M)] }
+    in if forall (m in M)
+          ( spannedBlocksInMatch[m] = Spanned /\
+            exists (do in operandsDefinedByMatch[m])
+            ( operandAlternatives[do] = {d} )
+          )
+       then dplace[d] in Spanned
+       else true
+       endif
+  );
+
+% If all matches for an operation o have identical entry blocks, then o must be
+% placed in the entry block.
+constraint
+  forall ( o in allOperationsInFunction
+           where forall (m in matchsetOfOp[o])
+                 ( card(spannedBlocksInMatch[m]) > 0 )
+         )
+  ( let { int: Entry = min(entryBlockOfMatch[min(matchsetOfOp[o])]) }
+    in if forall (m in matchsetOfOp[o])
+          ( min(entryBlockOfMatch[m]) = Entry )
+       then oplace[o] = Entry
+       else true
+       endif
+  );
+
+% If all matches for an operation o are all phi instructions and have the same
+% def operand, then the def operand as well as o itself must all be placed in
+% the block mentioned in the output def edge.
+constraint
+  forall ( o in allOperationsInFunction
+         , d in allDataInFunction
+           where matchsetOfOp[o] subset phiInstrMatches
+         )
+  ( let { set of int: BO = { outputDefEdgesInMatch[j, 2]
+                           | j in index_set_1of2(outputDefEdgesInMatch)
+                             where outputDefEdgesInMatch[j, 1] in
+                                   matchsetOfOp[o]
+                           }
+        , set of int: DO = { outputDefEdgesInMatch[j, 3]
+                           | j in index_set_1of2(outputDefEdgesInMatch)
+                             where outputDefEdgesInMatch[j, 1] in
+                                   matchsetOfOp[o]
+                           }
+        }
+    in if card(BO) = 1 /\ forall (do in DO)
+                          ( operandAlternatives[do] = {d} )
+       then dplace[d] = min(BO) /\ oplace[o] = min(BO)
+       else true
+       endif
+  );
+
+% If for any two given blocks p and q, and fallThroughBlockOfMatch contains
+% [_, p, q] but does not contain [_, p, q'] or [_, p', q], then succ[p] = q can
+% only help, never hurt.
+constraint
+  let { array[allBlocksInFunction] of set of allBlocksInFunction: fwd =
+          array1d( allBlocksInFunction
+                 , [ { s | i in index_set_1of2(fallThroughBlockOfMatch)
+                         , m in {fallThroughBlockOfMatch[i, 1]}
+                         , s in {fallThroughBlockOfMatch[i, 2]}
+                           where entryBlockOfMatch[m] = {b}
+                     }
+                   | b in allBlocksInFunction
+                   ]
+                 )
+      , array[allBlocksInFunction] of set of allBlocksInFunction: bwd =
+          array1d( allBlocksInFunction
+                 , [ { s | i in index_set_1of2(fallThroughBlockOfMatch)
+                         , m in {fallThroughBlockOfMatch[i, 1]}
+                         , s in entryBlockOfMatch[m]
+                           where fallThroughBlockOfMatch[i, 2] = b
+                     }
+                   | b in allBlocksInFunction
+                   ]
+                 )
+      }
+  in forall ( p in allBlocksInFunction
+            , q in allBlocksInFunction
+            )
+     ( if fwd[p] = {q} /\ bwd[q] = {p}
+       then succ[p] = q
+       else true
+       endif
+     );
 
 
 
@@ -909,51 +979,28 @@ solve
 minimize totalcost;
 
 output [ "sel=", show(sel), "\n"
-       , "alt=", show(alt), "\n"
+       , "alt=", show([ if not fix(sel[matchOfO[o]])
+                        then datumValueForNull
+                        else alt[o] endif
+                      | o in allOperands
+                      ]), "\n"
        , "dplace=", show(dplace), "\n"
        , "loc=", show(loc), "\n"
-       , "place=", show(place), "\n"
+       , "place=", show([ if not fix(sel[m])
+                          then blockValueForNull
+                          else if card(operationsCoveredByMatch[m]) = 0
+                               then min(entryBlockOfMatch[m])
+                               else oplace[opOfM[m]]
+                               endif
+                          endif
+                        | m in allMatches
+                        ]), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];
-
-
-
-
-% TODO: what to output?
-
-%array[allOperands] of int: matchOfO = [ m
-%                                      | o in allOperands, m in allMatches
-%                                        where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
-%                                      ];
-%
-%array[allMatches] of int: opOfM =
-%  [ min({op | op in allOperationsInFunction where m in matchsetOfOp[op]})
-%  | m in allMatches
-%  ];
-%output [ "sel=", show(sel), "\n"
-%       , "alt=", show([if not fix(sel[matchOfO[o]]) then datumValueForNull else alt[o] endif | o in allOperands]), "\n"
-%       , "dplace=", show(dplace), "\n"
-%       , "loc=", show(loc), "\n"
-%       , "oplace=", show(oplace), "\n"
-%       , "place=", show([if not fix(sel[m]) then
-%                           blockValueForNull
-%                         else if card(operationsCoveredByMatch[m])=0 then
-%                           min(entryBlockOfMatch[m])
-%                         else
-%                           oplace[opOfM[m]]
-%                         endif endif | m in allMatches]), "\n"
-%       , "omatch=", show(omatch), "\n"
-%       , "dmatch=", show(dmatch), "\n"
-%       , "succ=", show(succ), "\n"
-%       , "block_value_for_null=", show(blockValueForNull), "\n"
-%       , "loc_value_for_null=", show(locValueForNull), "\n"
-%       , "alt_value_for_null=", show(datumValueForNull), "\n"
-%       , "cost=", show(execFrequencyGCD * cost), "\n"
-%       ];
 
 
 
