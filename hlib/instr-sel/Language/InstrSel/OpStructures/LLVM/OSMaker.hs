@@ -601,8 +601,8 @@ mkFunctionDFGFromBasicBlock
   -> BuildState
   -> LLVM.BasicBlock
   -> Either String BuildState
-mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
-  do let block_name = F.BlockName str
+mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock b_name insts _) =
+  do let block_name = F.BlockName $ nameToString b_name
      st1 <- if isNothing $ entryBlock st0
             then foldM (\st n -> addPendingBlockToDatumFlow st (block_name, n))
                        (st0 { entryBlock = Just block_name })
@@ -617,8 +617,6 @@ mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock (LLVM.Name str) insts _) =
             then addPendingBlockToDatumDef st3 (block_name, fromJust st_n, 0)
             else return st3
      return st4
-mkFunctionDFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-  Left $ "mkFunctionDFGFromBasicBlock: does not support unnamed basic blocks"
 
 mkFunctionDFGFromNamed
   :: Builder
@@ -910,7 +908,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
              return st9
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
   do let (operands, blocks) = unzip phi_operands
-         block_names = map (\(LLVM.Name str) -> F.BlockName str) blocks
+         block_names = map (\b_name -> F.BlockName $ nameToString b_name) blocks
      operand_node_sts <- scanlM (build b) st0 operands
      let operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
      let st1 = last operand_node_sts
@@ -1148,11 +1146,11 @@ mkFunctionCFGFromBasicBlock
   -> BuildState
   -> LLVM.BasicBlock
   -> Either String BuildState
-mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
+mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock b_name
                                                     insts
                                                     named_term_inst
                                   ) =
-  do let block_name = F.BlockName str
+  do let block_name = F.BlockName $ nameToString b_name
          term_inst = fromNamed named_term_inst
      let st1 = if isNothing $ entryBlock st0
                then st0 { entryBlock = Just block_name }
@@ -1162,8 +1160,6 @@ mkFunctionCFGFromBasicBlock b st0 ( LLVM.BasicBlock (LLVM.Name str)
      st4 <- foldM (build b) st3 insts
      st5 <- build b st4 term_inst
      return st5
-mkFunctionCFGFromBasicBlock _ _ (LLVM.BasicBlock (LLVM.UnName _) _ _) =
-  Left $ "mkFunctionCFGFromBasicBlock: does not support unnamed basic blocks"
 
 mkFunctionCFGFromInstruction
   :: Builder
@@ -1614,3 +1610,8 @@ removeUnusedBlockNodes st =
                                  new_os { OS.osEntryBlockNode = Nothing }
                              , entryBlock = Nothing
                              }
+
+-- | Converts an 'LLVM.Named' entity into a 'String'.
+nameToString :: LLVM.Name -> String
+nameToString (LLVM.Name str) = str
+nameToString (LLVM.UnName int) = show int
