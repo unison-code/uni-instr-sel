@@ -552,7 +552,7 @@ constraint
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
 %
-% TODO: use 'oplace' instead
+% TODO: replace use of 'place' with 'oplace'
 constraint
   forall ( m in allMatches diff phiInstrMatches
          , o in operandsUsedByMatch[m]
@@ -594,52 +594,6 @@ constraint
 % The total cost is the sum of the costs incurred by all operations.
 constraint
   totalcost = sum(opcosts);
-
-
-
-
-
-% TODO: What to do with these constraints?
-
-%constraint
-%  forall (m in allMatches diff phiInstrMatches
-%          where card(spannedBlocksInMatch[m])=0) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
-%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces,
-%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces,
-%         array[int] of var allBlocksInFunctionPlusNull: places = defplaces ++ useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
-%        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
-%        forall (i in index_set(places), j in index_set(places) where i<j) (sel[m] -> places[i] = places[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = places[1]) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
-%    )
-%  );
-%
-%constraint
-%  forall (m in allMatches diff phiInstrMatches
-%          where card(spannedBlocksInMatch[m])>0) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[int] of int: o_use_only = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]],
-%         array[index_set(o_use_only)] of var allBlocksInFunctionPlusNull: useplaces} in (
-%        forall (i in index_set(o_use_only)) (table([useplaces[i], dplace[Alt(o_use_only[i])]], domRelMatrix)) /\
-%        forall (i in index_set(useplaces)) (sel[m] -> useplaces[i] = min(entryBlockOfMatch[m])) /\
-%        forall (o in operandsDefinedByMatch[m]) (sel[m] -> dplace[Alt(o)] in spannedBlocksInMatch[m]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = min(entryBlockOfMatch[m])) /\
-%        forall (i in index_set(o_use_only)) (not sel[m] -> useplaces[i] = dplace[Alt(o_use_only[i])]) % prevent false symmetries
-%    )
-%  );
-%
-%constraint
-%  forall (m in phiInstrMatches) (
-%    let {array[int] of int: o_defs = [x | x in operandsDefinedByMatch[m]],
-%         array[index_set(o_defs)] of var allBlocksInFunctionPlusNull: defplaces} in (
-%        forall (i in index_set(o_defs)) (defplaces[i] = dplace[Alt(o_defs[i])]) /\
-%        forall (i in index_set(defplaces), j in index_set(defplaces) where i<j) (sel[m] -> defplaces[i] = defplaces[j]) /\
-%        forall (op in operationsCoveredByMatch[m]) (sel[m] -> oplace[op] = defplaces[1])
-%    )
-%  );
 
 
 
@@ -699,7 +653,7 @@ constraint
 % If a match m is selected and placed in block b, then every operation covered
 % by m is a also placed in b.
 %
-% TODO: remove
+% TODO: remove when obsolete
 constraint
   forall ( o in allOperationsInFunction
          , m in allMatches
