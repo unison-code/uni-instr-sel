@@ -123,6 +123,8 @@ run-regression-tests-for-target:
 	@echo "* Executing regression tests:"
 	@T_TOTAL=0 ;\
 	T_PASSED=0 ;\
+	T_IGNORED=0 ;\
+	T_FAILED=0 ;\
 	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=$$(basename $$T) ;\
@@ -141,19 +143,29 @@ run-regression-tests-for-target:
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
 				    echo "OK" ;\
 				else \
+				    T_FAILED=`expr $$T_FAILED + 1` ;\
 					echo "FAILED (diff)" ;\
 					echo "$$T_DIFF";\
 				fi \
 			else \
+			    T_FAILED=`expr $$T_FAILED + 1` ;\
 				echo "FAILED (no output)" ;\
 			fi \
 		else \
+		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
 			echo "IGNORED (no oracle)" ;\
 		fi ;\
 	done ;\
 	echo ;\
 	echo "==========================================================" ;\
-	echo "=   PASSED $$T_PASSED of $$T_TOTAL TESTS" ;\
+	echo -n "=   PASSED $$T_PASSED" ;\
+	if [ "$$T_IGNORED" -ne "0" ]; then \
+		echo -n ", IGNORED $$T_IGNORED" ;\
+	fi ;\
+	if [ "$$T_FAILED" -ne "0" ]; then \
+		echo -n ", FAILED $$T_FAILED" ;\
+	fi ;\
+	echo " of $$T_TOTAL TESTS" ;\
 	echo "==========================================================" ;\
 	echo
 
