@@ -132,14 +132,22 @@ run-regression-tests-for-target:
 		echo -n "  Test case '$$T'..." ;\
 		TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
 		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
-		T_ORACLE=$$RT_TARGET_DIR/$${T_NAME%.*}.s ;\
-		if [ -f $$T_ORACLE ]; then \
+		T_ORACLES=`ls $$RT_TARGET_DIR/$${T_NAME%.*}.s.* 2> /dev/null` ;\
+		if [ -n "$$T_ORACLES" ]; then \
 			cp $$T . ;\
 			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 		    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
-				T_DIFF=`diff $$T_ASM $$T_ORACLE` ;\
-				if [ -z "$$T_DIFF" ]; then \
+				T_IS_OK=0 ;\
+				for O in $$T_ORACLES; do \
+					if [ "$$T_IS_OK" -eq "0" ]; then \
+						T_DIFF=`diff $$T_ASM $$O` ;\
+						if [ -z "$$T_DIFF" ]; then \
+							T_IS_OK=1 ;\
+						fi \
+					fi \
+				done ;\
+				if [ "$$T_IS_OK" -ne "0" ]; then \
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
 				    echo "OK" ;\
 				else \
@@ -153,7 +161,7 @@ run-regression-tests-for-target:
 			fi \
 		else \
 		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
-			echo "IGNORED (no oracle)" ;\
+			echo "IGNORED (has no oracles)" ;\
 		fi ;\
 	done ;\
 	echo ;\
