@@ -72,6 +72,8 @@ data HighLevelFunctionParams
         -- ^ The operations in the function graph.
       , hlFunCopies :: [NodeID]
         -- ^ The copy nodes in the function graph.
+      , hlFunControlOps :: [NodeID]
+        -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
       , hlFunStates :: [NodeID]
@@ -246,6 +248,8 @@ data LowLevelModel
         -- ^ The number of blocks in the function graph.
       , llFunCopies :: [ArrayIndex]
         -- ^ The copy nodes of the function graph.
+      , llFunControlOps :: [ArrayIndex]
+        -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
@@ -498,6 +502,7 @@ instance FromJSON HighLevelFunctionParams where
     HighLevelFunctionParams
       <$> v .: "operations"
       <*> v .: "copies"
+      <*> v .: "control-ops"
       <*> v .: "data"
       <*> v .: "states"
       <*> v .: "blocks"
@@ -516,6 +521,7 @@ instance ToJSON HighLevelFunctionParams where
   toJSON p =
     object [ "operations"               .= (hlFunOperations p)
            , "copies"                   .= (hlFunCopies p)
+           , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
            , "states"                   .= (hlFunStates p)
            , "blocks"                   .= (hlFunBlocks p)
@@ -679,6 +685,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-num-data"
       <*> v .: "fun-num-blocks"
       <*> v .: "fun-copies"
+      <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-entry-block"
@@ -720,6 +727,7 @@ instance ToJSON LowLevelModel where
            , "fun-num-data"             .= (llFunNumData m)
            , "fun-num-blocks"           .= (llFunNumBlocks m)
            , "fun-copies"               .= (llFunCopies m)
+           , "fun-control-ops"          .= (llFunControlOps m)
            , "fun-states"               .= (llFunStates m)
            , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
