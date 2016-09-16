@@ -136,7 +136,7 @@ run-regression-tests-for-target:
 		if [ -f $$T_ORACLE ]; then \
 			cp $$T . ;\
 			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
-		    T_ASM_TXT=`cat $$T_ASM` ;\
+		    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
 				T_DIFF=`diff $$T_ASM $$T_ORACLE` ;\
 				if [ -z "$$T_DIFF" ]; then \
