@@ -50,7 +50,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
-TARGET := hexagon5
+TARGET := mips32
 
 REGRESSION_TESTS_DIR := ./regression
 
@@ -121,7 +121,10 @@ run-regression-tests-for-target:
 	@echo "done"
 	@echo
 	@echo "* Executing regression tests:"
-	@for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
+	@T_TOTAL=0 ;\
+	T_PASSED=0 ;\
+	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
+	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=$$(basename $$T) ;\
 	    T_ASM=$${T_NAME%.*}.s ;\
 		echo -n "  Test case '$$T'..." ;\
@@ -133,28 +136,26 @@ run-regression-tests-for-target:
 			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 		    T_ASM_TXT=`cat $$T_ASM` ;\
 			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
-				T_DIFF=`diff -q $$T_ASM $$T_ORACLE` ;\
+				T_DIFF=`diff $$T_ASM $$T_ORACLE` ;\
 				if [ -z "$$T_DIFF" ]; then \
+				    T_PASSED=`expr $$T_PASSED + 1` ;\
 				    echo "OK" ;\
 				else \
-					echo "FAILED" ;\
-					echo ;\
-					exit 1 ;\
+					echo "FAILED (diff)" ;\
+					echo "$$T_DIFF";\
 				fi \
 			else \
-				echo "FAILED" ;\
-				echo ;\
-				exit 1 ;\
+				echo "FAILED (no output)" ;\
 			fi \
 		else \
 			echo "IGNORED (no oracle)" ;\
 		fi ;\
-	done
-	@echo
-	@echo "=========================================================="
-	@echo "=   ALL REGRESSION TESTS PASSED"
-	@echo "=========================================================="
-	@echo
+	done ;\
+	echo ;\
+	echo "==========================================================" ;\
+	echo "=   PASSED $$T_PASSED of $$T_TOTAL TESTS" ;\
+	echo "==========================================================" ;\
+	echo
 
 
 #=====================
