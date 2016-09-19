@@ -257,7 +257,8 @@ run-regression-tests-for-target:
 	$(RM) $@.temp
 
 fetch-test-cases:
-	cp ../experiments/mediabench/selected/*.ll .
+	TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
+	cp ../experiments/mediabench/selected-$$TARGET_LC/*.ll .
 
 
 
