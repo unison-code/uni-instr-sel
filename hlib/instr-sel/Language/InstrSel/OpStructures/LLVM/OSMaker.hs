@@ -1184,25 +1184,21 @@ mkFunctionCFGFromTerminator
   -> Either String BuildState
 mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
   mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
-mkFunctionCFGFromTerminator b st0 (LLVM.Br (LLVM.Name dst) _) =
+mkFunctionCFGFromTerminator b st0 (LLVM.Br dst _) =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
      let br_node = fromJust $ lastTouchedNode st1
-     st2 <- ensureBlockNodeExists st1 (F.BlockName dst)
+     st2 <- ensureBlockNodeExists st1 (F.BlockName $ nameToString dst)
      let dst_node = fromJust $ lastTouchedNode st2
      st3 <- addNewEdge st2 G.ControlFlowEdge br_node dst_node
      return st3
-mkFunctionCFGFromTerminator b st0 ( LLVM.CondBr op
-                                                (LLVM.Name t_dst)
-                                                (LLVM.Name f_dst)
-                                                _
-                                  )
+mkFunctionCFGFromTerminator b st0 (LLVM.CondBr op t_dst f_dst _)
   =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
      let br_node = fromJust $ lastTouchedNode st1
-     st2 <- ensureBlockNodeExists st1 (F.BlockName t_dst)
+     st2 <- ensureBlockNodeExists st1 (F.BlockName $ nameToString t_dst)
      let t_dst_node = fromJust $ lastTouchedNode st2
-     st3 <- ensureBlockNodeExists st2 (F.BlockName f_dst)
+     st3 <- ensureBlockNodeExists st2 (F.BlockName $ nameToString f_dst)
      let f_dst_node = fromJust $ lastTouchedNode st3
      st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge

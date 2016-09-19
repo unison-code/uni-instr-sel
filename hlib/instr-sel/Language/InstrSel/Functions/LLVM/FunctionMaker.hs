@@ -105,13 +105,14 @@ extractBBExecFreqs
   -> [(F.BlockName, F.ExecFreq)]
 extractBBExecFreqs m f@(LLVM.Function {}) =
   map processBB (LLVM.basicBlocks f)
-  where processBB (LLVM.BasicBlock (LLVM.Name name) _ term_inst) =
-          ( F.BlockName name
+  where processBB (LLVM.BasicBlock name _ term_inst) =
+          ( F.BlockName $ nameToString name
           , extractExecFreq m (LLVM.metadata' $ fromNamed term_inst)
           )
-        processBB _ = error "extractBBExecFreqs: not an expected BasicBlock"
         fromNamed (_ LLVM.:= i) = i
         fromNamed (LLVM.Do i) = i
+        nameToString (LLVM.Name str) = str
+        nameToString (LLVM.UnName int) = show int
 extractBBExecFreqs _ _ = error "extractBBExecFreqs: not a Function"
 
 -- | Extracts the block execution frequency from the metadata (which should be
