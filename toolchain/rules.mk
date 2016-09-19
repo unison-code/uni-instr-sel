@@ -76,16 +76,13 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 %.ll: %.c
 	$(CLANG) -emit-llvm -S $< -o $@
 
-%.reg.ll: %.ll
-	$(OPT) -mem2reg -S $< -o $@
+%.low.ll: %.reg.ll
+	$(OPT) -load $(LSLIB) -mem2reg -lowerselect -lowerswitch -S $< -o $@
 
-%.reg.low.ll: %.reg.ll
-	$(OPT) -load $(LSLIB) -lowerselect -lowerswitch -S $< -o $@
-
-%.reg.low.freq.ll: %.reg.low.ll
+%.low.freq.ll: %.low.ll
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
-%.f.json: %.reg.low.freq.ll
+%.f.json: %.low.freq.ll
 	$(UNI_IS_CMD) make --construct-fun-from-llvm -f $< -o $@
 
 %.ce.f.json: %.f.json
