@@ -80,8 +80,14 @@ MINIZINC_TIMELIMIT=""
 # HELP FUNCTIONS
 #================
 
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[1;35m'
+NC='\033[0m' # No Color
+
 function echoerr {
-    echo "$@" 1>&2
+    echo -e "$@" 1>&2
 }
 
 function echowarn {
@@ -89,7 +95,7 @@ function echowarn {
 }
 
 function exe {
-    echo "  Executing: $@"
+    echo -e "  [${YELLOW}EXECUTING${NC}] $@"
     eval "$@"
 }
 
@@ -115,31 +121,31 @@ function ensureFileExists {
 }
 
 function reportError {
-    echoerr "*** ERROR: $@"
+    echoerr "*** [${RED}ERROR${NC}] $@"
 }
 
 function reportWarning {
-    echowarn "*** WARNING: $@"
+    echowarn "*** [${RED}WARNING${NC}] $@"
 }
 
 function reportTask {
     msg=`echo "$@" | tr [a-z] [A-Z]`
     echo
-    echo "* $msg..."
+    echo -e "* ${BLUE}$msg${NC}..."
 }
 
 function reportNewEntity {
-    echo "  Created: $@"
+    echo -e "  [${GREEN}CREATED${NC}] $@"
 }
 
 function reportUpdatedEntity {
-    echo "  Updated: $@"
+    echo -e "  [${GREEN}UPDATED${NC}] $@"
 }
 
 function reportLatestTimeFromStats {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     time=`tail -n 1 $stats_filepath | sed -n 's/^[^:]*: //p'`
-    echo "  Took: $time"
+    echo -e "  [${YELLOW}TOOK${NC}] $time"
 }
 
 function flattenModelFile {
