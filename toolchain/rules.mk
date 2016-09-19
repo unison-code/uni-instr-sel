@@ -76,7 +76,7 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 %.ll: %.c
 	$(CLANG) -emit-llvm -S $< -o $@
 
-%.low.ll: %.reg.ll
+%.low.ll: %.ll
 	$(OPT) -load $(LSLIB) -mem2reg -lowerselect -lowerswitch -S $< -o $@
 
 %.low.freq.ll: %.low.ll
