@@ -50,7 +50,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
-TARGET := mips32
+TARGET := hexagon5
 
 REGRESSION_TESTS_DIR := ./regression
 
@@ -92,9 +92,8 @@ include ../toolchain/rules.mk
 
 .PHONY: clean
 clean:
-	$(RM) *.reg.ll
-	$(RM) *.reg.low.ll
-	$(RM) *.reg.low.freq.ll
+	$(RM) *.low.ll
+	$(RM) *.low.freq.ll
 	$(RM) *.json
 	$(RM) *.mzn
 	$(RM) *.s
