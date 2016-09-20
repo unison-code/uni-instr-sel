@@ -115,6 +115,8 @@ run-regression-tests-for-target:
 	@echo "=   REGRESSION TESTS FOR TARGET: $(TARGET)"
 	@echo "=========================================================="
 	@echo
+	@echo "Solving time is given in brackets"
+	@echo
 	@echo -n "* Cleaning testing environment..."
 	@$(MAKE) clean > /dev/null
 	@echo "done"
@@ -148,7 +150,11 @@ run-regression-tests-for-target:
 				done ;\
 				if [ "$$T_IS_OK" -ne "0" ]; then \
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
-				    echo "OK" ;\
+				    echo -n "OK [" ;\
+					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
+						  $${T_NAME%.*}.presolved.hl.sol.json` ;\
+					echo -n "$${time}s" ;\
+				    echo "]" ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
 					echo "FAILED (diff)" ;\
