@@ -54,6 +54,13 @@ TARGET := hexagon5
 
 REGRESSION_TESTS_DIR := ./regression
 
+RED=\033[1;31m
+GREEN=\033[1;32m
+YELLOW=\033[1;33m
+PURPLE=\033[1;35m
+NC=\033[0m# No color
+
+
 
 
 #=============
@@ -117,12 +124,13 @@ run-regression-tests-for-target:
 	@echo
 	@echo "Solving time is given in brackets"
 	@echo
-	@echo -n "* Cleaning testing environment..."
+	@echo -n "* $(PURPLE)CLEANING TESTING ENVIRONMENT$(NC)... "
 	@$(MAKE) clean > /dev/null
-	@echo "done"
+	@echo "[$(GREEN)DONE$(NC)]"
 	@echo
-	@echo "* Executing regression tests:"
-	@T_TOTAL=0 ;\
+	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$(NC):"
+	@\
+	T_TOTAL=0 ;\
 	T_PASSED=0 ;\
 	T_IGNORED=0 ;\
 	T_FAILED=0 ;\
@@ -130,7 +138,7 @@ run-regression-tests-for-target:
 	T_MAX_LENGTH=0 ;\
 	for T in $$T_ALL; do \
 	    T_NAME=$$(basename $$T) ;\
-		if [ $${#T_NAME} > T_MAX_LENGTH ]; then \
+		if [ "$${#T_NAME}" -gt "$$T_MAX_LENGTH" ]; then \
 			T_MAX_LENGTH=$${#T_NAME} ;\
 	    fi \
     done ;\
@@ -138,7 +146,7 @@ run-regression-tests-for-target:
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=$$(basename $$T) ;\
 	    T_ASM=$${T_NAME%.*}.s ;\
-		echo -n "  Test case '$$T'..." ;\
+		echo -n "  Test case $$T_NAME..." ;\
 		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
 			echo -n " " ;\
 		done ;\
@@ -161,33 +169,33 @@ run-regression-tests-for-target:
 				done ;\
 				if [ "$$T_IS_OK" -ne "0" ]; then \
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
-				    echo -n "OK [" ;\
+				    echo -n "[$(GREEN)OK$(NC)] [" ;\
 					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
 						  $${T_NAME%.*}.presolved.hl.sol.json` ;\
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
-					echo "FAILED (diff)" ;\
+					echo "[$(RED)FAILED$(NC)] (diff)" ;\
 					echo "$$T_DIFF";\
 				fi \
 			else \
 			    T_FAILED=`expr $$T_FAILED + 1` ;\
-				echo "FAILED (no output)" ;\
+				echo "[$(RED)FAILED$(NC)] (no output)" ;\
 			fi \
 		else \
 		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
-			echo "IGNORED (has no oracles)" ;\
+			echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
 		fi ;\
 	done ;\
 	echo ;\
 	echo "==========================================================" ;\
-	echo -n "=   PASSED $$T_PASSED" ;\
+	echo -n "=   $(GREEN)PASSED $$T_PASSED$(NC)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
-		echo -n ", IGNORED $$T_IGNORED" ;\
+		echo -n ", $(YELLOW)IGNORED $$T_IGNORED$(NC)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
-		echo -n ", FAILED $$T_FAILED" ;\
+		echo -n ", $(RED)FAILED $$T_FAILED$(NC)" ;\
 	fi ;\
 	echo " of $$T_TOTAL TESTS" ;\
 	echo "==========================================================" ;\
