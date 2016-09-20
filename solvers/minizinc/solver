@@ -83,7 +83,7 @@ MINIZINC_TIMELIMIT=""
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[1;35m'
+PURPLE='\033[1;35m'
 NC='\033[0m' # No Color
 
 function echoerr {
@@ -154,7 +154,7 @@ function reportWarning {
 function reportTask {
     msg=`echo "$@" | tr [a-z] [A-Z]`
     echo
-    echo -e "* ${BLUE}$msg${NC}..."
+    echo -e "* ${PURPLE}$msg${NC}..."
 }
 
 function reportNewEntity {
