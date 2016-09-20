@@ -132,11 +132,8 @@ if ( len(content) == 0
      or content[0].strip() == "=====UNBOUNDED====="
      or content[0].strip() == "=====UNKNOWN====="
    ):
-    print json.dumps({"has-solution": False})
-    sys.exit(0)
-
-# Report error if the model was unsatisfiable
-if content[0].strip() == "=====UNSATISFIABLE=====":
+    error("No solution found (reason unknown)")
+elif content[0].strip() == "=====UNSATISFIABLE=====":
     error("No solution found because model was reported as unsatisfiable")
 
 # Extract data

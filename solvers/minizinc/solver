@@ -94,9 +94,32 @@ function echowarn {
     echoerr "$@"
 }
 
+# Executes a bash command.
+#
+# $1: Command string.
+# $2: File to pipe stderr.
 function exe {
-    echo -e "  [${YELLOW}EXECUTING${NC}] $@"
-    eval "$@"
+    if [ -z "$2" ]; then
+        ERROR_LOG=`mktemp`
+        DEL_ERROR_LOG=1
+    else
+        ERROR_LOG="$2"
+        DEL_ERROR_LOG=0
+    fi
+    cmd="$1 2> $ERROR_LOG"
+    echo -e "  [${YELLOW}EXECUTING${NC}] $cmd"
+    eval "$cmd"
+    status=$?
+    if [ -f "$ERROR_LOG" ]; then
+        errors=`cat $ERROR_LOG`
+        if [ -n "$errors" ]; then
+            reportWarning "$errors"
+        fi
+    fi
+    if [ $DEL_ERROR_LOG -ne 0 ]; then
+        rm -f "$ERROR_LOG"
+    fi
+    $( exit $status ) # Restore $? to exit status of the exe command
 }
 
 function exitIfFailed {
@@ -121,11 +144,11 @@ function ensureFileExists {
 }
 
 function reportError {
-    echoerr "*** [${RED}ERROR${NC}] $@"
+    echoerr "  [${RED}ERROR${NC}] $@"
 }
 
 function reportWarning {
-    echowarn "*** [${RED}WARNING${NC}] $@"
+    echowarn "  [${RED}WARNING${NC}] $@"
 }
 
 function reportTask {
@@ -158,8 +181,10 @@ function flattenModelFile {
     command="$command mzn2fzn -G $MINIZINC_GLOBALS_DIR"
     command="$command ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
     exe "$command"
-    exitIfFailed ""
+    solver_exit_status=$?
     reportLatestTimeFromStats
+    $( exit $solver_exit_status ) # Restore $? to exit status of the solver
+    exitIfFailed ""
     reportNewEntity "$fzn_filepath"
     reportNewEntity "${MINIZINC_FULL_MODEL_FILEPATH%.*}.ozn"
     reportUpdatedEntity "$stats_filepath"
@@ -182,8 +207,9 @@ function inflateSolutionFile {
 function purgeIntermediateSolutions {
     tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
     reportTask "Purging intermediate solutions"
-    exe "$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH" \
-        " > $tmp_file"
+    cmd="$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH \
+         > $tmp_file"
+    exe "$cmd"
     exitIfFailed ""
     exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
     exitIfFailed ""
@@ -226,9 +252,9 @@ function executeSolver {
     fi
     command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     command="$command > $MINIZINC_SOLUTION_FILEPATH"
-    command="$command 2> $MINIZINC_ERROR_FILEPATH"
-    exe "$command"
+    exe "$command" "$MINIZINC_ERROR_FILEPATH"
     solver_exit_status=$?
+    reportLatestTimeFromStats
     if [[ $solver_exit_status == 124 ]]; then
         # Solver timed out
         solver_exit_status=0
@@ -238,7 +264,6 @@ function executeSolver {
     $( exit $solver_exit_status ) # Restore $? to exit status of the solver
     exitIfFailed "$error_msg"
     warnAboutPotentialErrors
-    reportLatestTimeFromStats
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
     reportUpdatedEntity "$stats_filepath"
 
@@ -343,8 +368,9 @@ exitIfFailed
 reportNewEntity $JSON_EXT_FILEPATH
 
 reportTask "Converting constraints into parameter data"
-exe "$THIS_DIR/constraints-converter $JSON_EXT_FILEPATH" \
-    " > $JSON_EXT2_FILEPATH"
+cmd="$THIS_DIR/constraints-converter $JSON_EXT_FILEPATH \
+     > $JSON_EXT2_FILEPATH"
+exe "$cmd"
 exitIfFailed
 reportNewEntity $JSON_EXT2_FILEPATH
 
@@ -380,8 +406,9 @@ inflateSolutionFile
 cd "$prev_dir"
 
 reportTask "Converting MiniZinc solution to JSON format"
-exe "$THIS_DIR/solution2json $MINIZINC_SOLUTION_FILEPATH" \
-    " > $JSON_SOLUTION_FILEPATH"
+cmd="$THIS_DIR/solution2json $MINIZINC_SOLUTION_FILEPATH \
+     > $JSON_SOLUTION_FILEPATH"
+exe "$cmd"
 exitIfFailed ""
 reportNewEntity "$JSON_SOLUTION_FILEPATH"
 
@@ -391,8 +418,9 @@ exitIfFailed ""
 reportNewEntity "$JSON_STATS_FILEPATH"
 
 reportTask "Merging JSON files"
-exe "$THIS_DIR/merge-jsons $JSON_SOLUTION_FILEPATH $JSON_STATS_FILEPATH" \
-    " > $JSON_OUTPUT_FILEPATH"
+cmd="$THIS_DIR/merge-jsons $JSON_SOLUTION_FILEPATH $JSON_STATS_FILEPATH \
+     > $JSON_OUTPUT_FILEPATH"
+exe "$cmd"
 exitIfFailed ""
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
 
