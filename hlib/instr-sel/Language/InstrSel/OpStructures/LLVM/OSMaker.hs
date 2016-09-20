@@ -424,7 +424,8 @@ mkFunctionCFGBuilder =
 -- | Constructs a 'Builder' that will construct a pattern data-flow graph.
 mkPatternDFGBuilder :: Builder
 mkPatternDFGBuilder =
-  mkFunctionDFGBuilder { mkFromBasicBlock = newBlockMk
+  mkFunctionDFGBuilder { mkFromBasicBlock  = newBlockMk
+                       , mkFromNamed       = newNamedMk
                        , mkFromInstruction = newInstrMk
                        }
   where newBlockMk b st0 bb =
@@ -456,6 +457,21 @@ mkPatternDFGBuilder =
              else mkFunctionDFGFromInstruction b st i
                   -- Let the default builder handle it
         newInstrMk b st i = mkFunctionDFGFromInstruction b st i
+        newNamedMk b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
+          -- Unnamed calls to functions that returns some value must not yield a
+          -- result data node, meaning it must be removed after the call
+          -- instruction has been processed.
+          do st1 <- build b st0 expr
+             ret_t <- toReturnDataType $ LLVM.function expr
+             if D.isVoidType ret_t
+             then return st1
+             else do let g = getOSGraph st1
+                         ret_n = fromJust $ lastTouchedNode st1
+                         new_g = G.delNode ret_n g
+                     st2 <- updateOSGraph st1 new_g
+                     return st2
+        newNamedMk b st i = mkFunctionDFGFromNamed b st i
+                            -- Let the default builder handle it
 
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
 mkPatternCFGBuilder :: Builder
@@ -634,19 +650,6 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.IntToPtr op _ _)) =
      sym <- toSymbol name
      st2 <- addSymMap st1 (sym, n)
      return st2
-mkFunctionDFGFromNamed b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
-  -- Unnamed calls to functions that returns some value must not yield a result
-  -- data node, meaning it must be removed after the call instruction has been
-  -- processed.
-  do st1 <- build b st0 expr
-     ret_t <- toReturnDataType $ LLVM.function expr
-     if D.isVoidType ret_t
-     then return st1
-     else do let g = getOSGraph st1
-                 ret_n = fromJust $ lastTouchedNode st1
-                 new_g = G.delNode ret_n g
-             st2 <- updateOSGraph st1 new_g
-             return st2
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
   do st1 <- build b st0 expr
      sym <- toSymbol name
