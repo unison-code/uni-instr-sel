@@ -196,7 +196,7 @@ run-regression-tests-for-target:
 		fi ;\
 	done ;\
 	echo ;\
-	echo -n "$(PURPLE)"
+	echo -n "$(PURPLE)" ;\
 	echo "==========================================================" ;\
 	echo -n "=   $(GREEN)PASSED $$T_PASSED$(PURPLE)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
@@ -208,7 +208,7 @@ run-regression-tests-for-target:
 	echo " of $$T_TOTAL TESTS" ;\
 	echo "=   TOTAL SOLVING TIME: $${T_TIME_TOTAL}s" ;\
 	echo "==========================================================" ;\
-	echo -n "$(NC)"
+	echo -n "$(NC)" ;\
 	echo
 
 
