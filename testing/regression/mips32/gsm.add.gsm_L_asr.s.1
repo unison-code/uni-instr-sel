@@ -1,0 +1,29 @@
+0:
+  %tmp.1 = SLTi %n, 31
+  BEQ %tmp.1, $0, bb0
+bb1:
+4:
+  %5 = SLTI %n, -31
+  %const.0.copy.3 = ADDiu $0, 0
+  BNE $0, $%5, bb2
+bb3:
+6:
+  %7 = SLTI %n, 0
+  BNE $0, $%7, bb4
+bb5:
+11:
+  %12 = SRAV %a, %n
+  B 13
+bb4:
+8:
+  %9 = SUBU r0, %n
+  %10 = SLLV %a, %9
+  B 13
+bb2:
+  B 13
+bb0:
+2:
+  %3 = SRA %a, 31
+13:
+  %.0 = PHI (%3, 2) (%10, 8) (%12, 11) (%const.0.copy.3, 4)
+  RetRA %.0

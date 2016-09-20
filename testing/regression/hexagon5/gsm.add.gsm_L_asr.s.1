@@ -1,0 +1,30 @@
+0:
+  %1 = cmp.gt(%n, 31)
+  if (%1) jump bb0
+bb1:
+4:
+  %const.0.copy.3 = ##0
+  %const.-31.copy.1 = ##-31
+  %5 = cmp.lt(%n, %const.-31.copy.1)
+  if (%5) jump bb2
+bb3:
+6:
+  %7 = cmp.lt(%n, %const.0.copy.3)
+  if (%7) jump bb4
+bb5:
+11:
+  %12 = asr(%a, %n)
+  jump 13
+bb4:
+8:
+  %9 = sub(%const.0.copy.3, %n)
+  %10 = asl(%a, %9)
+  jump 13
+bb2:
+  jump 13
+bb0:
+2:
+  %3 = asr(%a, #31)
+13:
+  %.0 = PHI (%3, 2) (%10, 8) (%12, 11) (%const.0.copy.3, 4)
+  jumpr %.0

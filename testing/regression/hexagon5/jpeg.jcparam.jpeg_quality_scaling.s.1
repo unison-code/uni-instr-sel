@@ -1,0 +1,36 @@
+0:
+  %const.1.copy.3 = ##1
+  %const.50.copy.1 = ##50
+  %1 = cmp.lt(%quality, %const.1.copy.3)
+  if (%1) jump bb0
+bb1:
+.selectcont:
+  %.quality = PHI (%const.1.copy.2, .selecttrue) (%quality, 0)
+  %2 = cmp.gt(%.quality, 100)
+  if (%2) jump bb2
+bb3:
+.selectcont.selectcont:
+  %..quality = PHI (%const.100.copy.2, .selectcont.selecttrue) (%.quality, .selectcont)
+  %3 = cmp.lt(%..quality, %const.50.copy.1)
+  if (%3) jump bb4
+bb5:
+6:
+  %const.200.copy.1 = ##200
+  %7 = asl(%..quality, #1)
+  %8 = sub(%const.200.copy.1, %7)
+  jump 9
+bb4:
+4:
+  %const.5000.copy.1 = ##5000
+  %5 = __hexagon_divsi(%const.5000.copy.1, %..quality)
+9:
+  %.0 = PHI (%5, 4) (%8, 6)
+  jumpr %.0
+bb2:
+.selectcont.selecttrue:
+  %const.100.copy.2 = ##100
+  jump .selectcont.selectcont
+bb0:
+.selecttrue:
+  %const.1.copy.2 = ##1
+  jump .selectcont

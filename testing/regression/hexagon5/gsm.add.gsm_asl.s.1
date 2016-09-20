@@ -1,0 +1,41 @@
+0:
+  %const.0.copy.4 = #0
+  %1 = cmp.gt(%n, 15)
+  if (%1) jump bb0
+bb1:
+2:
+  %const.0.copy.3 = ##0
+  %const.-15.copy.1 = ##-15
+  %3 = cmp.lt(%n, %const.-15.copy.1)
+  if (%3) jump bb2
+bb3:
+8:
+  %9 = cmp.lt(%n, %const.0.copy.3)
+  if (%9) jump bb4
+bb5:
+15:
+  %16 = sxth(%a)
+  %17 = asl(%16, %n)
+  %18 = and(%17, #-32768)
+  jump gsm_asr.exit
+bb4:
+10:
+  %11 = sub(%const.0.copy.3, %n)
+  %12 = sxth(%a)
+  %13 = asr(%12, %11)
+  %14 = and(%13, #-32768)
+  jump gsm_asr.exit
+bb2:
+4:
+  %tmp.1 = lsr(%a, #15)
+  %a.lobit = zxth(%tmp.1)
+  %5 = zxth(%a.lobit)
+  %6 = sub(%const.0.copy.3, %5)
+  %7 = and(%6, #-32768)
+  jump gsm_asr.exit
+bb0:
+gsm_asr.exit:
+  %.0 = PHI (%7, 4) (%18, 15) (%const.0.copy.4, 0) (%14, 10)
+  %tmp.2 = aslh(%.0)
+  %tmp.3 = asr(%tmp.2)
+  jumpr %tmp.3

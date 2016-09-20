@@ -1,0 +1,54 @@
+0:
+  %const.0.copy.2 = ##0
+  %1 = cmp.lt(%a, %const.0.copy.2)
+  if (%1) jump bb0
+bb1:
+12:
+  %const.1.copy.1 = ##1
+  %13 = cmp.lt(%b, %const.1.copy.1)
+  %14 = add(%b, %a)
+  if (%13) jump bb6
+bb7:
+15:
+  %14.copy.3 = %14
+  %16 = cmp.lt(%14, %const.0.copy.2)
+  if (%16) jump bb8
+bb9:
+.selectcont1:
+  %17 = PHI (%const.2147483647.copy.1, .selecttrue2) (%14.copy.3, 15)
+  jump 18
+bb8:
+.selecttrue2:
+  %const.2147483647.copy.1 = ##2147483647
+  jump .selectcont1
+bb6:
+18:
+  %.0 = PHI (%5, 4) (%., .selectcont) (%17, .selectcont1) (%14, 12)
+  jumpr %.0
+bb0:
+2:
+  %3 = cmp.gt(%b, -1)
+  if (%3) jump bb2
+bb3:
+6:
+  %const.-1.copy.2 = ##-1
+  %8 = xor(%b, %const.-1.copy.2)
+  %7 = xor(%a, %const.-1.copy.2)
+  %const.-2.copy.1 = ##-2
+  %const.2147483646.copy.1 = ##2147483646
+  %9 = add(%8, %7)
+  %10 = cmp.gtu(%9, %const.2147483646.copy.1)
+  %11 = sub(%const.-2.copy.1, %9)
+  if (%10) jump bb4
+bb5:
+.selectcont:
+  %. = PHI (%const.-2147483648.copy.1, .selecttrue) (%11, 6)
+  jump 18
+bb4:
+.selecttrue:
+  %const.-2147483648.copy.1 = ##-2147483648
+  jump .selectcont
+bb2:
+4:
+  %5 = add(%b, %a)
+  jump 18

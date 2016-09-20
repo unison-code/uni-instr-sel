@@ -1,0 +1,27 @@
+0:
+  %1 = zxtb(%u_val)
+  %const.132.copy.2 = ##132
+  %const.-132.copy.1 = ##-132
+  %const.128.copy.1 = ##128
+  %const.7.copy.1 = ##7
+  %const.120.copy.1 = ##120
+  %const.255.copy.1 = ##255
+  %2 = xor(%1, %const.255.copy.1)
+  %6 = lsr(%2, #4)
+  %3 = asl(%2, #3)
+  %7 = and(%6, %const.7.copy.1)
+  %4 = and(%3, %const.120.copy.1)
+  %5 = or(%4, %const.132.copy.2)
+  %8 = asl(%5, %7)
+  %9 = and(%2, %const.128.copy.1)
+  %10 = cmp.ne(%9, 0)
+  %12 = add(%8, %const.-132.copy.1)
+  if (%10) jump bb0
+bb1:
+.selectcont:
+  %13 = PHI (%11, .selecttrue) (%12, 0)
+  jumpr %13
+bb0:
+.selecttrue:
+  %11 = sub(%const.132.copy.2, %8)
+  jump .selectcont

@@ -1,0 +1,34 @@
+0:
+  %1 = SLTI %quality, 1
+  BNE $0, $%1, bb0
+bb1:
+.selectcont:
+  %.quality = PHI (%const.1.copy.2, .selecttrue) (%quality, 0)
+  %tmp.1 = SLTi %.quality, 100
+  BEQ %tmp.1, $0, bb2
+bb3:
+.selectcont.selectcont:
+  %..quality = PHI (%const.100.copy.2, .selectcont.selecttrue) (%.quality, .selectcont)
+  %3 = SLTI %..quality, 50
+  BNE $0, $%3, bb4
+bb5:
+6:
+  %7 = SLL %..quality, 1
+  %const.200.copy.1 = ADDiu $0, 200
+  %8 = SUBU %const.200.copy.1, %7
+  B 9
+bb4:
+4:
+  %const.5000.copy.1 = ADDiu $0, 5000
+  DIV %const.5000.copy.1, %..quality
+9:
+  %.0 = PHI (%5, 4) (%8, 6)
+  RetRA %.0
+bb2:
+.selectcont.selecttrue:
+  %const.100.copy.2 = ADDiu $0, 100
+  B .selectcont.selectcont
+bb0:
+.selecttrue:
+  %const.1.copy.2 = ADDiu $0, 1
+  B .selectcont
