@@ -122,7 +122,7 @@ run-regression-tests-for-target:
 	@echo "=   REGRESSION TESTS FOR TARGET: $(TARGET)"
 	@echo "=========================================================="
 	@echo
-	@echo "Solving time is given in brackets"
+	@echo "NOTE: Solving time is given in brackets"
 	@echo
 	@echo -n "* $(PURPLE)CLEANING TESTING ENVIRONMENT$(NC)... "
 	@$(MAKE) clean > /dev/null
@@ -136,6 +136,7 @@ run-regression-tests-for-target:
 	T_FAILED=0 ;\
 	T_ALL=$(REGRESSION_TESTS_DIR)/*.ll ;\
 	T_MAX_LENGTH=0 ;\
+	T_TIME_TOTAL=0 ;\
 	for T in $$T_ALL; do \
 	    T_NAME=$$(basename $$T) ;\
 		if [ "$${#T_NAME}" -gt "$$T_MAX_LENGTH" ]; then \
@@ -174,6 +175,10 @@ run-regression-tests-for-target:
 						  $${T_NAME%.*}.presolved.hl.sol.json` ;\
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
+					T_TIME_TOTAL=`echo "scale=2; \
+								 		t = $$T_TIME_TOTAL + $$time; \
+										if (t < 1) print 0; t" \
+								  | bc` ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
 					echo "[$(RED)FAILED$(NC)] (diff)" ;\
@@ -198,6 +203,7 @@ run-regression-tests-for-target:
 		echo -n ", $(RED)FAILED $$T_FAILED$(NC)" ;\
 	fi ;\
 	echo " of $$T_TOTAL TESTS" ;\
+	echo "=   TOTAL SOLVING TIME: $${T_TIME_TOTAL}s" ;\
 	echo "==========================================================" ;\
 	echo
 
