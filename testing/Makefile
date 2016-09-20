@@ -126,11 +126,22 @@ run-regression-tests-for-target:
 	T_PASSED=0 ;\
 	T_IGNORED=0 ;\
 	T_FAILED=0 ;\
-	for T in $(REGRESSION_TESTS_DIR)/*.ll; do \
+	T_ALL=$(REGRESSION_TESTS_DIR)/*.ll ;\
+	T_MAX_LENGTH=0 ;\
+	for T in $$T_ALL; do \
+	    T_NAME=$$(basename $$T) ;\
+		if [ $${#T_NAME} > T_MAX_LENGTH ]; then \
+			T_MAX_LENGTH=$${#T_NAME} ;\
+	    fi \
+    done ;\
+	for T in $$T_ALL; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=$$(basename $$T) ;\
 	    T_ASM=$${T_NAME%.*}.s ;\
 		echo -n "  Test case '$$T'..." ;\
+		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
+			echo -n " " ;\
+		done ;\
 		TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
 		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
 		T_ORACLES=`ls $$RT_TARGET_DIR/$${T_NAME%.*}.s.* 2> /dev/null` ;\
