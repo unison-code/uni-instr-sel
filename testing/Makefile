@@ -118,9 +118,11 @@ run-regression-tests:
 .PHONY: run-regression-tests-for-target
 run-regression-tests-for-target:
 	@echo
+	@echo -n "$(PURPLE)"
 	@echo "=========================================================="
 	@echo "=   REGRESSION TESTS FOR TARGET: $(TARGET)"
 	@echo "=========================================================="
+	@echo -n "$(NC)"
 	@echo
 	@echo "NOTE: Solving time is given in brackets"
 	@echo
@@ -194,17 +196,19 @@ run-regression-tests-for-target:
 		fi ;\
 	done ;\
 	echo ;\
+	echo -n "$(PURPLE)"
 	echo "==========================================================" ;\
-	echo -n "=   $(GREEN)PASSED $$T_PASSED$(NC)" ;\
+	echo -n "=   $(GREEN)PASSED $$T_PASSED$(PURPLE)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
-		echo -n ", $(YELLOW)IGNORED $$T_IGNORED$(NC)" ;\
+		echo -n ", $(YELLOW)IGNORED $$T_IGNORED$(PURLE)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
-		echo -n ", $(RED)FAILED $$T_FAILED$(NC)" ;\
+		echo -n ", $(RED)FAILED $$T_FAILED$(PURPLE)" ;\
 	fi ;\
 	echo " of $$T_TOTAL TESTS" ;\
 	echo "=   TOTAL SOLVING TIME: $${T_TIME_TOTAL}s" ;\
 	echo "==========================================================" ;\
+	echo -n "$(NC)"
 	echo
 
 
