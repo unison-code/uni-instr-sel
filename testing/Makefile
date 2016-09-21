@@ -120,7 +120,7 @@ run-regression-tests-for-target:
 	@echo
 	@echo -n "$(PURPLE)"
 	@echo "=========================================================="
-	@echo "=   REGRESSION TESTS FOR TARGET: $(TARGET)"
+	@echo "=   REGRESSION TESTS FOR TARGET: $(NC)$(TARGET)$(PURPLE)"
 	@echo "=========================================================="
 	@echo -n "$(NC)"
 	@echo
@@ -198,15 +198,15 @@ run-regression-tests-for-target:
 	echo ;\
 	echo -n "$(PURPLE)" ;\
 	echo "==========================================================" ;\
-	echo -n "=   $(GREEN)PASSED $$T_PASSED$(PURPLE)" ;\
+	echo -n "=   PASSED $(GREEN)$$T_PASSED$(PURPLE)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
-		echo -n ", $(YELLOW)IGNORED $$T_IGNORED$(PURLE)" ;\
+		echo -n ", IGNORED $(YELLOW)$$T_IGNORED$(PURPLE)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
-		echo -n ", $(RED)FAILED $$T_FAILED$(PURPLE)" ;\
+		echo -n ", FAILED $(RED)$$T_FAILED$(PURPLE)" ;\
 	fi ;\
-	echo " of $$T_TOTAL TESTS" ;\
-	echo "=   TOTAL SOLVING TIME: $${T_TIME_TOTAL}s" ;\
+	echo " of $(NC)$$T_TOTAL$(PURPLE) TESTS" ;\
+	echo "=   TOTAL SOLVING TIME: $(NC)$${T_TIME_TOTAL}s$(PURPLE)" ;\
 	echo "==========================================================" ;\
 	echo -n "$(NC)" ;\
 	echo
