@@ -62,7 +62,6 @@ TARGET                ?=
 # INTERNALLY SET VARIABLES
 #==========================
 
-CLANG          := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
 OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
 LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
 AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
@@ -72,9 +71,6 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 #=================
 # TOOLCHAIN RULES
 #=================
-
-%.ll: %.c
-	$(CLANG) -emit-llvm -S $< -o $@
 
 %.low.ll: %.ll
 	$(OPT) -load $(LSLIB) -mem2reg -lowerselect -lowerswitch -S $< -o $@

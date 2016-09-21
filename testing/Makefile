@@ -40,6 +40,7 @@ MINIZINC_GLOBALS_DIR   := chuffed
 MINIZINC_BACKEND       := fzn_chuffed
 MINIZINC_BACKEND_FLAGS :=
 
+CLANG                 := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
 UNI_IS_CMD            := uni-is
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
@@ -94,6 +95,9 @@ distclean-toolchain:
 #=================
 
 .SECONDARY:
+
+%.ll: %.c
+	$(CLANG) -O1 -emit-llvm -S $< -o $@
 
 include ../toolchain/rules.mk
 
