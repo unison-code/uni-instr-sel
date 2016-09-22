@@ -130,11 +130,11 @@ run-regression-tests-for-target:
 	@echo
 	@echo "NOTE: Solving time is given in brackets"
 	@echo
-	@echo -n "* $(PURPLE)CLEANING TESTING ENVIRONMENT$(NC)... "
+	@echo -n "* $(PURPLE)CLEANING TESTING ENVIRONMENT...$(NC) "
 	@$(MAKE) clean > /dev/null
 	@echo "[$(GREEN)DONE$(NC)]"
 	@echo
-	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$(NC):"
+	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$:(NC)"
 	@\
 	T_TOTAL=0 ;\
 	T_PASSED=0 ;\

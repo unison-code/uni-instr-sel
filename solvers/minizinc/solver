@@ -154,7 +154,7 @@ function reportWarning {
 function reportTask {
     msg=`echo "$@" | tr [a-z] [A-Z]`
     echo
-    echo -e "* ${PURPLE}$msg${NC}..."
+    echo -e "* ${PURPLE}$msg...${NC}"
 }
 
 function reportNewEntity {
