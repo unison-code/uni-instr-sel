@@ -1411,7 +1411,7 @@ customPatternMatchingSemanticsCheck fg pg st c =
                else True
 
 -- | For a given data-flow edge between a phi node and a value node in the
--- pattern graph, check that the function graph has matching definition edges.
+-- pattern graph, check that the function graph has a matching definition edge.
 checkPhiValBlockMappings
   :: Graph
      -- ^ The function graph.
@@ -1428,10 +1428,18 @@ checkPhiValBlockMappings fg pg st pe =
       v_fn = findFNInMapping st v_pn
       p_pn = getTargetNode pg pe
       p_fn = findFNInMapping st p_pn
-      def_pe = head $
-               filter ((==) (getOutEdgeNr pe) . getOutEdgeNr) $
-               filter isDefEdge $
-               getOutEdges pg v_pn
+      def_pes = filter ((==) (getOutEdgeNr pe) . getOutEdgeNr) $
+                filter isDefEdge $
+                getOutEdges pg v_pn
+      def_pe = if length def_pes == 1
+               then head def_pes
+               else if length def_pes == 0
+                    then error $ "checkPhiValBlockMappings: data-flow edge " ++
+                                 show pe ++ " in pattern graph has no " ++
+                                 " matching definition edge"
+                    else error $ "checkPhiValBlockMappings: data-flow edge " ++
+                                 show pe ++ " in pattern graph has more " ++
+                                 "than one matching definition edge"
       b_pn = getTargetNode pg def_pe
       b_fn = findFNInMapping st b_pn
   in if isJust p_fn && isJust v_fn && isJust b_fn
@@ -1443,7 +1451,7 @@ checkPhiValBlockMappings fg pg st pe =
                     def_fes = filter ((==) out_nr_fe . getOutEdgeNr) $
                               filter isDefEdge $
                               getOutEdges fg (getSourceNode fg fe)
-                in if length def_fes > 0
+                in if length def_fes == 1
                    then getTargetNode fg (head def_fes) == fromJust b_fn
                    else False
           in any hasMatchingDefEdge df_fes
