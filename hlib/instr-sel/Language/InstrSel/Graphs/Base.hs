@@ -141,6 +141,9 @@ module Language.InstrSel.Graphs.Base
   , redirectEdges
   , redirectInEdges
   , redirectOutEdges
+  , redirectEdgesWhen
+  , redirectInEdgesWhen
+  , redirectOutEdgesWhen
   , rootInCFG
   , sortByEdgeNr
   , toEdgeNr
@@ -815,8 +818,7 @@ redirectEdges
      -- ^ Node to redirect edges from.
   -> Graph
   -> Graph
-redirectEdges to_n from_n g =
-  redirectInEdges to_n from_n (redirectOutEdges to_n from_n g)
+redirectEdges = redirectEdgesWhen (\_ -> True)
 
 -- | Redirects all inbound edges to one node to another node.
 redirectInEdges
@@ -826,8 +828,60 @@ redirectInEdges
      -- ^ Node to redirect edges from.
   -> Graph
   -> Graph
-redirectInEdges to_n from_n g =
-  foldr (updateEdgeTarget to_n) g (getInEdges g from_n)
+redirectInEdges = redirectInEdgesWhen (\_ -> True)
+
+-- | Redirects the outbound edges from one node to another.
+redirectOutEdges
+  :: Node
+     -- ^ Node to redirect edges to.
+  -> Node
+     -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
+redirectOutEdges = redirectOutEdgesWhen (\_ -> True)
+
+-- | Same as 'redirectEdges' but takes a predicate for which edges to redirect.
+redirectEdgesWhen
+  :: (Edge -> Bool)
+     -- ^ Predicate.
+  -> Node
+     -- ^ Node to redirect edges to.
+  -> Node
+     -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
+redirectEdgesWhen p to_n from_n g =
+  redirectInEdgesWhen p to_n from_n (redirectOutEdgesWhen p to_n from_n g)
+
+-- | Same as 'redirectInEdges' but takes a predicate for which edges to
+-- redirect.
+redirectInEdgesWhen
+  :: (Edge -> Bool)
+     -- ^ Predicate.
+  -> Node
+     -- ^ Node to redirect edges to.
+  -> Node
+     -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
+redirectInEdgesWhen p to_n from_n g =
+  let es = filter p $ getInEdges g from_n
+  in foldr (updateEdgeTarget to_n) g es
+
+-- | Same as 'redirectOutEdges' but takes a predicate for which edges to
+-- redirect.
+redirectOutEdgesWhen
+  :: (Edge -> Bool)
+     -- ^ Predicate.
+  -> Node
+     -- ^ Node to redirect edges to.
+  -> Node
+     -- ^ Node to redirect edges from.
+  -> Graph
+  -> Graph
+redirectOutEdgesWhen p to_n from_n g =
+  let es = filter p $ getOutEdges g from_n
+  in foldr (updateEdgeSource to_n) g es
 
 -- | Updates the target of an edge.
 updateEdgeTarget
@@ -849,17 +903,6 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
                   }
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
-
--- | Redirects the outbound edges from one node to another.
-redirectOutEdges
-  :: Node
-     -- ^ Node to redirect edges to.
-  -> Node
-     -- ^ Node to redirect edges from.
-  -> Graph
-  -> Graph
-redirectOutEdges to_n from_n g =
-  foldr (updateEdgeSource to_n) g (getOutEdges g from_n)
 
 -- | Updates the source of an edge.
 updateEdgeSource
