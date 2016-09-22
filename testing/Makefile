@@ -128,13 +128,9 @@ run-regression-tests-for-target:
 	@echo "=========================================================="
 	@echo -n "$(NC)"
 	@echo
-	@echo "NOTE: Solving time is given in brackets"
+	@echo "$(PURPLE)NOTE: Solving time is given in brackets$(NC)"
 	@echo
-	@echo -n "* $(PURPLE)CLEANING TESTING ENVIRONMENT...$(NC) "
-	@$(MAKE) clean > /dev/null
-	@echo "[$(GREEN)DONE$(NC)]"
-	@echo
-	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$:(NC)"
+	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$:$(NC)"
 	@\
 	T_TOTAL=0 ;\
 	T_PASSED=0 ;\
@@ -144,15 +140,14 @@ run-regression-tests-for-target:
 	T_MAX_LENGTH=0 ;\
 	T_TIME_TOTAL=0 ;\
 	for T in $$T_ALL; do \
-	    T_NAME=$$(basename $$T) ;\
+	    T_NAME=`basename $$T` ;\
 		if [ "$${#T_NAME}" -gt "$$T_MAX_LENGTH" ]; then \
 			T_MAX_LENGTH=$${#T_NAME} ;\
 	    fi \
     done ;\
 	for T in $$T_ALL; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
-	    T_NAME=$$(basename $$T) ;\
-	    T_ASM=$${T_NAME%.*}.s ;\
+	    T_NAME=`basename $$T` ;\
 		echo -n "  Test case $$T_NAME..." ;\
 		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
 			echo -n " " ;\
@@ -161,7 +156,10 @@ run-regression-tests-for-target:
 		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
 		T_ORACLES=`ls $$RT_TARGET_DIR/$${T_NAME%.*}.s.* 2> /dev/null` ;\
 		if [ -n "$$T_ORACLES" ]; then \
-			cp $$T . ;\
+			TEMPFILE=$$(basename `mktemp`) ;\
+			T_LL=$${TEMPFILE}.ll ;\
+		    T_ASM=$${TEMPFILE}.s ;\
+			cp $$T $$T_LL ;\
 			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 		    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
@@ -178,7 +176,7 @@ run-regression-tests-for-target:
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
 				    echo -n "[$(GREEN)OK$(NC)] [" ;\
 					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-						  $${T_NAME%.*}.presolved.hl.sol.json` ;\
+						  $${T_LL%.*}.presolved.hl.sol.json` ;\
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
 					T_TIME_TOTAL=`echo "scale=2; \
@@ -193,7 +191,8 @@ run-regression-tests-for-target:
 			else \
 			    T_FAILED=`expr $$T_FAILED + 1` ;\
 				echo "[$(RED)FAILED$(NC)] (no output)" ;\
-			fi \
+			fi ;\
+			rm -f $${TEMPFILE}.* ;\
 		else \
 		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
 			echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
