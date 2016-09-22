@@ -148,7 +148,7 @@ run-regression-tests-for-target:
 	for T in $$T_ALL; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=`basename $$T` ;\
-		echo -n "  Test case $$T_NAME..." ;\
+		echo -n "    $$T_NAME" ;\
 		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
 			echo -n " " ;\
 		done ;\
