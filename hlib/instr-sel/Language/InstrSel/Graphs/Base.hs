@@ -1378,6 +1378,8 @@ doesOrderSFInEdgesMatter _ _ = False
 doesOrderSFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderSFOutEdgesMatter _ _ = False
 
+-- | If the pattern contains phi nodes, check that there is a matching
+-- definition edge for each value-phi and phi-value edge.
 customPatternMatchingSemanticsCheck
   :: Graph
      -- ^ The function graph.
@@ -1408,7 +1410,8 @@ customPatternMatchingSemanticsCheck fg pg st c =
                       ) v_ns
                else True
 
--- | TODO
+-- | For a given data-flow edge between a phi node and a value node in the
+-- pattern graph, check that the function graph has matching definition edges.
 checkPhiValBlockMappings
   :: Graph
      -- ^ The function graph.

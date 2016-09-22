@@ -154,6 +154,7 @@ checkSemantics fg pg st c =
          )
          mapped_succs_to_pn
      &&
+     -- Apply (any) additional checks
      customPatternMatchingSemanticsCheck fg pg st c
 
 -- | Checks that the syntax of matched nodes are compatible (modified version of
