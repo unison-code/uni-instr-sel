@@ -64,6 +64,7 @@ TARGET                ?=
 
 OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
 LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
+LGLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerGetElementPtr.so
 AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 
 
@@ -73,7 +74,10 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 #=================
 
 %.low.ll: %.ll
-	$(OPT) -load $(LSLIB) -mem2reg -lowerselect -lowerswitch -S $< -o $@
+	$(OPT) -lowerswitch \
+		   -load $(LSLIB) -lowerselect \
+		   -load $(LGLIB) -lowergetelementptr \
+		   -S $< -o $@
 
 %.low.freq.ll: %.low.ll
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
