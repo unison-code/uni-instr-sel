@@ -238,6 +238,8 @@ instance OperandDataTypeFormable LLVM.Type where
   toOpDataType (LLVM.IntegerType bits) =
     Right $ D.IntTempType { D.intTempNumBits = toNatural bits }
   toOpDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) = toOpDataType t
+  toOpDataType (LLVM.PointerType (LLVM.NamedTypeReference {}) _) =
+    return D.AnyType
   toOpDataType t = Left $ "toOpDataType: not implemented for " ++ show t
 
 instance OperandDataTypeFormable LLVM.Operand where
@@ -359,7 +361,8 @@ mkFunctionOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
      st7 <- addPendingDatumToBlockDefEdges st6
-     return $ opStruct st7
+     st8 <- checkAllDataHasType st7
+     return $ opStruct st8
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure' from an instruction pattern. If the definition is
@@ -650,6 +653,27 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.IntToPtr op _ _)) =
      sym <- toSymbol name
      st2 <- addSymMap st1 (sym, n)
      return st2
+mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.PtrToInt op t _)) =
+  -- Assignments involving 'PtrToInt' expressions must be handled differently as
+  -- 'PtrToInt' modifies the data type of the input value node to match the data
+  -- type of the instruction. Then, an alias from the result to the input value
+  -- node is created. If the input value node has already been assigned a data
+  -- type and does not match the data type of the instruction, an error is
+  -- produced.
+  do st1 <- build b st0 op
+     let n = fromJust $ lastTouchedNode st1
+         old_dt = G.getDataTypeOfValueNode n
+     new_dt <- toOpDataType t
+     st2 <- if old_dt == D.AnyType
+            then updateOSGraph st1 $
+                 G.updateDataTypeOfValueNode new_dt n $
+                 getOSGraph st1
+            else if old_dt == new_dt
+                 then return st1
+                 else Left "mkFunctionDFGFromNamed: mismatching data types"
+     sym <- toSymbol name
+     st3 <- addSymMap st2 (sym, n)
+     return st3
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
   do st1 <- build b st0 expr
      sym <- toSymbol name
@@ -1614,3 +1638,15 @@ removeUnusedBlockNodes st =
 nameToString :: LLVM.Name -> String
 nameToString (LLVM.Name str) = str
 nameToString (LLVM.UnName int) = show int
+
+-- | Checks that all value nodes in the graph have a data type (that is,
+-- anything else but 'D.AnyType').
+checkAllDataHasType :: BuildState -> Either String BuildState
+checkAllDataHasType st =
+  do let g = getOSGraph st
+         ns = filter G.isValueNode $ G.getAllNodes g
+         check st' n = if G.getDataTypeOfValueNode n == D.AnyType
+                       then Left $ "Value node " ++ show n ++
+                                   " is of illegal data type"
+                       else Right st'
+     foldM check st ns
