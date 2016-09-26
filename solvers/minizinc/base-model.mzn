@@ -51,6 +51,7 @@ set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 set of allBlocksInFunction: branchExtBlocksInFunction;
+array[int] of set of int: interchangeableDataInFunction;
 
 % Target machine data.
 int: numLocations;
@@ -124,17 +125,6 @@ set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
 set of int: allMatches = 1..numMatches;
 set of int: allOperands = 1..numOperands;
 set of int: allLocValues = 0..numLocValues-1;
-
-% Extends the external parameter 'domSetOfBlockInFunction' with a value
-% for the null block (which is assumed to be dominated by all blocks).
-array[allBlocksInFunctionPlusNull] of set of int:
-  domSetOfBlockInFunctionPlusNull =
-    array1d( allBlocksInFunctionPlusNull
-           , domSetOfBlockInFunction
-             ++ array1d( blockValueForNull..blockValueForNull
-                       , [allBlocksInFunction]
-                       )
-           );
 
 % Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
 % of 0 for the null block.
@@ -271,6 +261,11 @@ set of int: allOpCosts = { costPerOpMatrix[i, 4]
                          | i in 1..numCostPerOpMatrixRows
                          };
 
+% The set of all non-null, non-phi instruction use operands.
+set of int: nonNullNonPhiUseOperands = { p
+            			       | m in allMatches diff phiInstrMatches diff nullInstrMatches
+				       , p in operandsUsedByMatch[m]
+				       };
 
 
 %===========
@@ -280,9 +275,11 @@ set of int: allOpCosts = { costPerOpMatrix[i, 4]
 % Match selection.
 array[allMatches] of var bool: sel;
 
-% Blocks wherein the data and matches are placed.
+% Blocks wherein the data are placed.
 array[allDataInFunction] of var allBlocksInFunction: dplace;
-array[allMatches] of var allBlocksInFunctionPlusNull: place;
+
+% The block in which a particular operation is placed.
+array[allOperationsInFunction] of var allBlocksInFunction: oplace;
 
 % Data locations.
 array[allDataInFunction] of var canonicalDataLocs: loc;
@@ -307,11 +304,16 @@ array[allOperationsInFunction] of var allOpCosts: opcosts;
 % The match that covers a particular operation.
 array[allOperationsInFunction] of var allMatches: omatch;
 
-% The block in which a particular operation is placed.
-array[allOperationsInFunction] of var allBlocksInFunction: oplace;
-
 % The match that defines a particular datum.
 array[allDataInFunction] of var allMatches: dmatch;
+
+% For selected, non-null, non-phi instruction use operands:
+%   block where a given operand is used.
+% For non-selected, non-null, non-phi instruction use operands:
+%   block where a given operand is defined.
+% For other operands:
+%   1.
+array[allOperands] of var allBlocksInFunction: uplace;
 
 
 
@@ -321,6 +323,7 @@ array[allDataInFunction] of var allMatches: dmatch;
 
 include "circuit.mzn";
 include "table.mzn";
+include "value_precede_chain.mzn";
 
 
 
@@ -453,6 +456,7 @@ constraint
         }
     in sel[m] -> dplace[Alt(o)] = b
   );
+
 constraint
   forall (i in index_set_1of2(outputDefEdgesInMatch)) (
     let { int: m = outputDefEdgesInMatch[i, 1]
@@ -474,18 +478,13 @@ constraint
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.
+% ASSERT: such matches cover at least one operation.
 constraint
   forall ( m in nullInstrMatches
          , o in operandsUsedByMatch[m]
+         , c in operationsCoveredByMatch[m]
          )
-  ( sel[m] -> dplace[Alt(o)] = place[m] );
-
-% Selected matches must not be placed in the null block.
-%
-% TODO: remove when obsolete
-constraint
-  forall (m in allMatches)
-  ( sel[m] <-> place[m] != blockValueForNull );
+  ( sel[m] -> dplace[Alt(o)] = oplace[c] );
 
 % If a selected match m has an entry block b, then all operations covered by m
 % must be placed in b.
@@ -540,7 +539,7 @@ constraint
 
 % Enforce that every datum is defined in a block such that the block dominates
 % all blocks wherein the datum is used. This constraint shall not be applied to
-% the generic phi patterns.
+% the generic phi patterns, nor to null instructions.
 %
 % This used to be enforced by the following constraint:
 %   constraint
@@ -551,13 +550,27 @@ constraint
 %     ( dplace[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
-%
-% TODO: replace use of 'place' with 'oplace'
+% ASSERT: matches that use some data cover at least one operation.
 constraint
-  forall ( m in allMatches diff phiInstrMatches
+  forall (p in nonNullNonPhiUseOperands)
+  ( table([uplace[p], dplace[Alt(p)]], domRelMatrix) );
+
+constraint
+  forall (p in allOperands diff nonNullNonPhiUseOperands)
+  ( uplace[p] = 1 );
+
+constraint
+  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+         , p in operandsUsedByMatch[m]
+	 )
+  ( not sel[m] -> uplace[p] = dplace[Alt(p)] );
+
+constraint
+  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
          , o in operandsUsedByMatch[m]
+	 , c in operationsCoveredByMatch[m]
          )
-  ( table([place[m], dplace[Alt(o)]], domRelMatrixPlusNull) );
+  ( sel[m] -> oplace[c] = uplace[o] );
 
 % If a datum d is used by at least one operand in at least one selected match,
 % then d must not be defined by any inactive match (and hence cannot be
@@ -650,21 +663,6 @@ constraint
     ( dmatch[d] = m <-> sel[m] )
   );
 
-% If a match m is selected and placed in block b, then every operation covered
-% by m is a also placed in b.
-%
-% TODO: remove when obsolete
-constraint
-  forall ( o in allOperationsInFunction
-         , m in allMatches
-         , b in allBlocksInFunction
-           where o in operationsCoveredByMatch[m]
-         )
-  ( (sel[m] /\ place[m] = b)
-    ->
-    oplace[o] = b
-  );
-
 
 
 %=======================
@@ -698,6 +696,15 @@ constraint
          , o in allOperationsInFunction diff controlOpsInFunction
          )
   ( oplace[o] != b );
+
+% Break symmetries introduced by interchangeable data
+constraint
+  forall ( chain in interchangeableDataInFunction )
+  (  let { set of int: ixset = {y | y in nonNullNonPhiUseOperands where operandAlternatives[y] = chain}
+         } in if card(ixset)=0
+	      then true
+	      else value_precede_chain(chain, [alt[y] | y in ixset])
+	      endif);
 
 
 
@@ -921,6 +928,74 @@ constraint
        endif
      );
 
+% For non-null, non-phi matches, no spanned blocks:
+% if selected, blocks of outputs and blocks of use of inputs must be all equal.
+constraint
+  forall (m in allMatches diff phiInstrMatches diff nullInstrMatches
+          where card(spannedBlocksInMatch[m])=0) (
+    let {array[int] of int: defs = [x | x in operandsDefinedByMatch[m]],
+	 array[int] of int: usonly = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]]} in (
+	forall (i in index_set(usonly), j in index_set(usonly) where i<j)
+	       (sel[m] -> uplace[usonly[i]] = uplace[usonly[j]]) /\
+	forall (i in index_set(defs), j in index_set(defs) where i<j)
+	       (sel[m] -> dplace[Alt(defs[i])] = dplace[Alt(defs[j])]) /\
+	forall (i in index_set(usonly), j in index_set(defs))
+	       (sel[m] -> uplace[usonly[i]] = dplace[Alt(defs[j])])
+    )
+  );
+
+% For non-null, non-phi matches, spanned blocks:
+% if selected, blocks of use of inputs must be all equal.
+constraint
+  forall (m in allMatches diff phiInstrMatches diff nullInstrMatches
+          where card(spannedBlocksInMatch[m])>0) (
+    let {array[int] of int: use = [x | x in operandsUsedByMatch[m]]} in (
+	forall (i in index_set(use), j in index_set(use) where i<j)
+	       (sel[m] -> uplace[use[i]] = uplace[use[j]])
+    )
+  );
+
+% TODO! Wrong and/or obsolete?
+% If a match representing a phi instruction is selected, then its data
+% must be defined in the blocks indicated by the definition edges.
+%
+% Input data d must be placed in some block b that dominates the block b'
+% indicated by the definition d -> b'. However, no two data d1 or d2 must be
+% placed in the same block that dominates both blocks of d1 and d2. The output
+% data must be placed in the block indicated by the definition edge.
+%
+% Input data constraints
+% constraint
+%   forall (m in phiInstrMatches) (
+%     let
+%     { set of int: I = index_set_1of2(inputDefEdgesInMatch)
+%     , array[int] of int: oset = [ inputDefEdgesInMatch[i, 3]
+%                                 | i in I
+%                                 , b in allBlocksInFunction
+%                                   where inputDefEdgesInMatch[i, 1] = m
+%                                         /\ inputDefEdgesInMatch[i, 2] = b
+%                                 ]
+%     , array[int] of int: bset = [ inputDefEdgesInMatch[i, 2]
+%                                 | i in I where inputDefEdgesInMatch[i, 1] = m
+%                                 ]
+%     } in
+%     forall (i in 1..length(oset)) (
+%       (sel[m] -> (dplace[Alt(oset[i])] in domSetOfBlockInFunction[bset[i]]))
+%     )
+%     /\
+%     forall (i,j in 1..length(oset) where i < j) (
+%       let
+%       { set of int: B = domSetOfBlockInFunction[bset[i]]
+%                         intersect
+%                         domSetOfBlockInFunction[bset[j]]
+%       } in
+%       if card(B) = 0 then true
+%       else not sel[m] \/
+%            not (dplace[Alt(oset[i])] in B) \/
+%            not (dplace[Alt(oset[j])] in B)
+%       endif
+%     )
+%   );
 
 
 %==================
@@ -928,10 +1003,21 @@ constraint
 %==================
 
 solve
+  % :: seq_search(
+  %   [ bool_search([ sel[m]
+  %                 | m in allMatchesBySize
+  %                   where not ( m in copyInstrMatches
+  %                                    union inactiveInstrMatches
+  %                             )
+  %                 ], input_order, indomain_max, complete)
+  %   , int_search(alt, input_order, indomain_max, complete)
+  %     ]
+  % )
      % Try the smallest cost for the operation that incurs the largest cost.
   :: int_search(opcosts, largest, indomain_min, complete)
 minimize totalcost;
 
+% oplace, omatch, dmatch are handy for debugging
 output [ "sel=", show(sel), "\n"
        , "alt=", show([ if not fix(sel[matchOfO[o]])
                         then datumValueForNull
@@ -949,6 +1035,9 @@ output [ "sel=", show(sel), "\n"
                           endif
                         | m in allMatches
                         ]), "\n"
+       , "oplace=", show(oplace), "\n"
+       , "omatch=", show(omatch), "\n"
+       , "dmatch=", show(dmatch), "\n"
        , "succ=", show(succ), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_null=", show(locValueForNull), "\n"
