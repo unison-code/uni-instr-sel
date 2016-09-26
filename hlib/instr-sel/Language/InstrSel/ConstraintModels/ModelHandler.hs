@@ -90,7 +90,8 @@ mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
 mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
       entry_block = fromJust $ osEntryBlockNode $ functionOS function
-      nodeIDsByType f = getNodeIDs $ filter f (getAllNodes graph)
+      all_ns = getAllNodes graph
+      nodeIDsByType f = getNodeIDs $ filter f all_ns
       domsets = computeDomSets graph entry_block
       getExecFreq n = fromJust $
                       lookup (nameOfBlock $ getNodeType n)
@@ -153,11 +154,21 @@ mkHLFunctionParams function target =
                        )
                )
                ns
+      cp_ns = filter isCopyNode all_ns
+      cp_groups = filter (\ns -> length ns > 1) $
+                  groupBy ( \n1 n2 ->
+                            let d1 = head $ getPredecessors graph n1
+                                d2 = head $ getPredecessors graph n2
+                            in d1 == d2
+                          )
+                          cp_ns
+      interch_data = map (map (head . getSuccessors graph)) cp_groups
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
+       , hlFunInterchangeableData = map getNodeIDs interch_data
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
@@ -552,6 +563,8 @@ lowerHighLevelModel model ai_maps =
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
+       , llFunInterchangeableData =
+           map (map getAIForDatumNodeID) (hlFunInterchangeableData f_params)
        , llFunValidValueLocs =
            map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))$
            f_valid_locs

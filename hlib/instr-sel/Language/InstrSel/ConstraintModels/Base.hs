@@ -76,6 +76,9 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
+      , hlFunInterchangeableData :: [[NodeID]]
+        -- ^ The data in the function graph that are interchangeable. This is
+        -- used for symmetry breaking.
       , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
       , hlFunBlocks :: [NodeID]
@@ -252,6 +255,10 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunInterchangeableData :: [[ArrayIndex]]
+        -- ^ The data in the function graph that are interchangeable. This is
+        -- used for symmetry breaking. The outer list represents groups of data
+        -- that are interchangeable.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
         -- ^ The valid locations for each datum in the function graph (an empty
         -- list means that all locations are valid). The first element is the
@@ -504,6 +511,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
+      <*> v .: "interchangeable-data"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
@@ -523,6 +531,7 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
+           , "interchangeable-data"     .= (hlFunInterchangeableData p)
            , "states"                   .= (hlFunStates p)
            , "blocks"                   .= (hlFunBlocks p)
            , "entry-block"              .= (hlFunEntryBlock p)
@@ -687,6 +696,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
+      <*> v .: "fun-interchangeable-data"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
@@ -729,6 +739,7 @@ instance ToJSON LowLevelModel where
            , "fun-copies"               .= (llFunCopies m)
            , "fun-control-ops"          .= (llFunControlOps m)
            , "fun-states"               .= (llFunStates m)
+           , "fun-interchangeable-data" .= (llFunInterchangeableData m)
            , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
            , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
