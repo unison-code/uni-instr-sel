@@ -871,6 +871,13 @@ mkFunctionDFGFromInstruction b st (LLVM.Load _ op1 _ _ _) =
                             op_t
                             Op.Load
                             [op1]
+mkFunctionDFGFromInstruction b st (LLVM.Alloca t _ _ _) =
+  do op_t <- toOpDataType t
+     mkFunctionDFGFromMemOp b
+                            st
+                            op_t
+                            Op.Load
+                            ([] :: [LLVM.Operand])
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
   do sts <- scanlM (build b) st0 [addr_op, val_op]
      let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
