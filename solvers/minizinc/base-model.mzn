@@ -262,10 +262,12 @@ set of int: allOpCosts = { costPerOpMatrix[i, 4]
                          };
 
 % The set of all non-null, non-phi instruction use operands.
-set of int: nonNullNonPhiUseOperands = { p
-            			       | m in allMatches diff phiInstrMatches diff nullInstrMatches
-				       , p in operandsUsedByMatch[m]
-				       };
+set of int: nonNullNonPhiUseOperands =
+  { p
+  | m in allMatches diff phiInstrMatches diff nullInstrMatches
+  , p in operandsUsedByMatch[m]
+  };
+
 
 
 %===========
@@ -700,11 +702,15 @@ constraint
 % Break symmetries introduced by interchangeable data
 constraint
   forall ( chain in interchangeableDataInFunction )
-  (  let { set of int: ixset = {y | y in nonNullNonPhiUseOperands where operandAlternatives[y] = chain}
-         } in if card(ixset)=0
-	      then true
-	      else value_precede_chain(chain, [alt[y] | y in ixset])
-	      endif);
+  ( let { set of int: ixset = { y | y in nonNullNonPhiUseOperands
+                                    where operandAlternatives[y] = chain
+                              }
+        }
+    in if card(ixset) = 0
+       then true
+       else value_precede_chain(chain, [alt[y] | y in ixset])
+       endif
+  );
 
 
 
@@ -931,28 +937,44 @@ constraint
 % For non-null, non-phi matches, no spanned blocks:
 % if selected, blocks of outputs and blocks of use of inputs must be all equal.
 constraint
-  forall (m in allMatches diff phiInstrMatches diff nullInstrMatches
-          where card(spannedBlocksInMatch[m])=0) (
-    let {array[int] of int: defs = [x | x in operandsDefinedByMatch[m]],
-	 array[int] of int: usonly = [x | x in operandsUsedByMatch[m] diff operandsDefinedByMatch[m]]} in (
-	forall (i in index_set(usonly), j in index_set(usonly) where i<j)
-	       (sel[m] -> uplace[usonly[i]] = uplace[usonly[j]]) /\
-	forall (i in index_set(defs), j in index_set(defs) where i<j)
-	       (sel[m] -> dplace[Alt(defs[i])] = dplace[Alt(defs[j])]) /\
-	forall (i in index_set(usonly), j in index_set(defs))
-	       (sel[m] -> uplace[usonly[i]] = dplace[Alt(defs[j])])
-    )
+  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+           where card(spannedBlocksInMatch[m]) = 0
+         )
+  ( let { array[int] of int: defs = [x | x in operandsDefinedByMatch[m]]
+        , array[int] of int: usonly = [ x | x in operandsUsedByMatch[m]
+                                            diff operandsDefinedByMatch[m]
+                                      ]
+        }
+    in forall ( i in index_set(usonly)
+              , j in index_set(usonly)
+                where i < j
+              )
+       ( sel[m] -> uplace[usonly[i]] = uplace[usonly[j]] )
+       /\
+       forall ( i in index_set(defs)
+              , j in index_set(defs)
+                where i < j
+              )
+       ( sel[m] -> dplace[Alt(defs[i])] = dplace[Alt(defs[j])] )
+       /\
+       forall ( i in index_set(usonly)
+              , j in index_set(defs)
+              )
+       ( sel[m] -> uplace[usonly[i]] = dplace[Alt(defs[j])] )
   );
 
 % For non-null, non-phi matches, spanned blocks:
 % if selected, blocks of use of inputs must be all equal.
 constraint
-  forall (m in allMatches diff phiInstrMatches diff nullInstrMatches
-          where card(spannedBlocksInMatch[m])>0) (
-    let {array[int] of int: use = [x | x in operandsUsedByMatch[m]]} in (
-	forall (i in index_set(use), j in index_set(use) where i<j)
-	       (sel[m] -> uplace[use[i]] = uplace[use[j]])
-    )
+  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+           where card(spannedBlocksInMatch[m]) > 0
+         )
+  ( let { array[int] of int: use = [x | x in operandsUsedByMatch[m]] }
+    in forall ( i in index_set(use)
+              , j in index_set(use)
+                where i < j
+              )
+       ( sel[m] -> uplace[use[i]] = uplace[use[j]] )
   );
 
 % TODO! Wrong and/or obsolete?
