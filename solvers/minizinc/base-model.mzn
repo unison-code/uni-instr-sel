@@ -1025,18 +1025,8 @@ constraint
 %==================
 
 solve
-  % :: seq_search(
-  %   [ bool_search([ sel[m]
-  %                 | m in allMatchesBySize
-  %                   where not ( m in copyInstrMatches
-  %                                    union inactiveInstrMatches
-  %                             )
-  %                 ], input_order, indomain_max, complete)
-  %   , int_search(alt, input_order, indomain_max, complete)
-  %     ]
-  % )
-     % Try the smallest cost for the operation that incurs the largest cost.
-  :: int_search(opcosts, largest, indomain_min, complete)
+  :: % Try the smallest cost for the operation that incurs the largest cost.
+     int_search(opcosts, largest, indomain_min, complete)
 minimize totalcost;
 
 % oplace, omatch, dmatch are handy for debugging
