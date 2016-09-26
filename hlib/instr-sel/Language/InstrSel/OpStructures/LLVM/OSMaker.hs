@@ -864,29 +864,13 @@ mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
                              op_t
                              (Op.CompTypeConvOp Op.SExt)
                              [op1]
-mkFunctionDFGFromInstruction b st0 (LLVM.Load _ op1 _ _ _) =
-  do st1 <- build b st0 op1
-     let operand_node = fromJust $ lastTouchedNode st1
-     st2 <- addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Load)
-     let op_node = fromJust $ lastTouchedNode st2
-     st3 <- addNewEdge st2 G.DataFlowEdge operand_node op_node
-     st4 <- ensureStateNodeHasBeenTouched st3
-     st5 <- addNewEdge st4
-                       G.StateFlowEdge
-                       (fromJust $ lastTouchedStateNode st4)
-                       op_node
-     st6 <- addNewStateNode st5
-     st7 <- addNewEdge st6
-                       G.StateFlowEdge
-                       op_node
-                       (fromJust $ lastTouchedStateNode st6)
-     -- Note that the result value node MUST be inserted last as the last
-     -- touched node in this case must be a value node and not a state node.
-     op_t <- toOpDataType op1
-     st8 <- addNewNode st7 (G.ValueNode op_t Nothing)
-     let d_node = fromJust $ lastTouchedNode st8
-     st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
-     return st9
+mkFunctionDFGFromInstruction b st (LLVM.Load _ op1 _ _ _) =
+  do op_t <- toOpDataType op1
+     mkFunctionDFGFromMemOp b
+                            st
+                            op_t
+                            Op.Load
+                            [op1]
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
   do sts <- scanlM (build b) st0 [addr_op, val_op]
      let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
@@ -994,6 +978,41 @@ mkFunctionDFGFromCompOp b st0 dt op operands =
      let d_node = fromJust $ lastTouchedNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
      return st5
+
+-- | Inserts a new memory node representing the operation along with edges to
+-- that computation node from the given operands (which will also be
+-- processed). In addition, an input state node and output state node is
+-- inserted. Lastly, a new value node representing the result will be added
+-- along with an edge to that value node from the computation node.
+mkFunctionDFGFromMemOp
+  :: (Buildable o)
+  => Builder
+  -> BuildState
+  -> D.DataType
+     -- ^ The data type of the result.
+  -> Op.MemoryOp
+     -- ^ The memory computational operation.
+  -> [o]
+     -- ^ The operands.
+  -> Either String BuildState
+mkFunctionDFGFromMemOp b st0 dt op operands =
+  do st1 <- mkFunctionDFGFromCompOp b st0 dt (Op.CompMemoryOp op) operands
+     let res_node = fromJust $ lastTouchedNode st1
+         op_node = head $
+                   G.getPredecessors (getOSGraph st1) res_node
+     st2 <- ensureStateNodeHasBeenTouched st1
+     st3 <- addNewEdge st2
+                       G.StateFlowEdge
+                       (fromJust $ lastTouchedStateNode st2)
+                       op_node
+     st4 <- addNewStateNode st3
+     st5 <- addNewEdge st4
+                       G.StateFlowEdge
+                       op_node
+                       (fromJust $ lastTouchedStateNode st4)
+     -- Note that the result value node MUST be the last touched node.
+     st6 <- touchNode st5 res_node
+     return st6
 
 mkFunctionDFGFromOperand
   :: Builder
