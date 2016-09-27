@@ -176,7 +176,7 @@ run-regression-tests-for-target:
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
 				    echo -n "[$(GREEN)OK$(NC)] [" ;\
 					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-						  $${T_LL%.*}.presolved.hl.sol.json` ;\
+						  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
 					T_TIME_TOTAL=`echo "scale=2; \
@@ -186,14 +186,14 @@ run-regression-tests-for-target:
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
 					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-						  $${T_LL%.*}.presolved.hl.sol.json` ;\
+						  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
 					echo "[$(RED)FAILED$(NC)] [$${time}s] (diff)" ;\
 					echo "$$T_DIFF" ;\
 				fi \
 			else \
 			    T_FAILED=`expr $$T_FAILED + 1` ;\
 				time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-					  $${T_LL%.*}.presolved.hl.sol.json` ;\
+					  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
 				echo "[$(RED)FAILED$(NC)] [$${time}s] (no output)" ;\
 			fi ;\
 			rm -f $${TEMPFILE}.* ;\
