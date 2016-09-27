@@ -185,12 +185,16 @@ run-regression-tests-for-target:
 								  | bc` ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
-					echo "[$(RED)FAILED$(NC)] (diff)" ;\
-					echo "$$T_DIFF";\
+					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
+						  $${T_LL%.*}.presolved.hl.sol.json` ;\
+					echo "[$(RED)FAILED$(NC)] [$${time}s] (diff)" ;\
+					echo "$$T_DIFF" ;\
 				fi \
 			else \
 			    T_FAILED=`expr $$T_FAILED + 1` ;\
-				echo "[$(RED)FAILED$(NC)] (no output)" ;\
+				time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
+					  $${T_LL%.*}.presolved.hl.sol.json` ;\
+				echo "[$(RED)FAILED$(NC)] [$${time}s] (no output)" ;\
 			fi ;\
 			rm -f $${TEMPFILE}.* ;\
 		else \
