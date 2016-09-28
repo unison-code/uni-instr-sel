@@ -1,0 +1,48 @@
+0:
+  %const.32768.copy.1 = ##32768
+  %1 = lsr(%y, #2)
+  %2 = add(%1, %dqln)
+  %sext.mask = and(%2, %const.32768.copy.1)
+  %3 = cmp.eq(%sext.mask, 0)
+  if (%3) jump bb0
+bb1:
+4:
+  %const.0.copy.3 = ##0
+  %5 = cmp.ne(%sign, 0)
+  if (%5) jump bb2
+bb3:
+.selectcont:
+  %6 = PHI (%const.-32768.copy.2, .selecttrue) (%const.0.copy.3, 4)
+19:
+  %.0 = PHI (%6, .selectcont) (%18, .selectcont1)
+  jumpr %.0
+bb0:
+7:
+  %const.14.copy.1 = ##14
+  %const.16384.copy.1 = ##16384
+  %const.16256.copy.1 = ##16256
+  %const.15.copy.1 = ##15
+  %8 = lsr(%2, #7)
+  %15 = cmp.ne(%sign, 0)
+  %10 = asl(%2, #7)
+  %11 = and(%10, %const.16256.copy.1)
+  %12 = or(%11, %const.16384.copy.1)
+  %9 = and(%8, %const.15.copy.1)
+  %13 = sub(%const.14.copy.1, %9)
+  %14 = lsr(%12, %13)
+  %sext1 = asl(%14, #16)
+  %16 = asr(%sext1, #16)
+  if (%15) jump bb4
+bb5:
+.selectcont1:
+  %18 = PHI (%17, .selecttrue2) (%16, 7)
+  jump 19
+bb4:
+.selecttrue2:
+  %const.-32768.copy.1 = ##-32768
+  %17 = add(%16, %const.-32768.copy.1)
+  jump .selectcont1
+bb2:
+.selecttrue:
+  %const.-32768.copy.2 = ##-32768
+  jump .selectcont
