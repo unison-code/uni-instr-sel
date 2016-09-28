@@ -113,6 +113,7 @@ clean:
 	$(RM) *.dot
 	$(RM) *.pdf
 	$(RM) *.bc
+	$(RM) tmp.*
 
 .PHONY: run-regression-tests
 run-regression-tests:
