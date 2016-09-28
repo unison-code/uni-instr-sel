@@ -239,6 +239,14 @@ run-regression-tests-for-target:
                   -p $*.ce.cc.ae.be.p.json \
                   -o $@
 
+.PHONY: pattern.dot
+pattern.dot:
+	$(UNI_IS_CMD) plot --plot-pat-full-graph \
+                  -t $(TARGET) \
+				  --instruction $(INSTR) \
+				  --pattern $(PAT) \
+                  -o $@
+
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
