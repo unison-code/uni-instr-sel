@@ -281,7 +281,7 @@ instance FromJSON CompOp where
                      tcfound = filter (\op -> pShow op == str) tcops
                      ccfound = filter (\op -> pShow op == str) ccops
                      mfound  = filter (\op -> pShow op == str) mops
-                 case (null tcfound, null tcfound, null mfound) of
+                 case (null tcfound, null ccfound, null mfound) of
                    (False, True, True) -> return $ CompTypeConvOp $ head tcfound
                    (True, False, True) -> return $ CompTypeCastOp $ head ccfound
                    (True, True, False) -> return $ CompMemoryOp $ head mfound
