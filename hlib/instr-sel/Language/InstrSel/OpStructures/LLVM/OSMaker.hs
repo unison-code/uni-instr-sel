@@ -237,9 +237,7 @@ instance OperandDataTypeFormable Constant where
 instance OperandDataTypeFormable LLVM.Type where
   toOpDataType (LLVM.IntegerType bits) =
     Right $ D.IntTempType { D.intTempNumBits = toNatural bits }
-  toOpDataType (LLVM.PointerType t@(LLVM.IntegerType {}) _) = toOpDataType t
-  toOpDataType (LLVM.PointerType (LLVM.NamedTypeReference {}) _) =
-    return D.AnyType
+  toOpDataType (LLVM.PointerType _ _) = return D.PointerType
   toOpDataType t = Left $ "toOpDataType: not implemented for " ++ show t
 
 instance OperandDataTypeFormable LLVM.Operand where
@@ -256,7 +254,8 @@ class ReturnDataTypeFormable a where
 
 instance ReturnDataTypeFormable LLVM.Type where
   toReturnDataType t@(LLVM.IntegerType {}) = toOpDataType t
-  toReturnDataType (LLVM.PointerType t _) = toReturnDataType t
+  toReturnDataType (LLVM.PointerType t@(LLVM.FunctionType {}) _) =
+    toReturnDataType t
   toReturnDataType (LLVM.FunctionType t _ _) = toReturnDataType t
   toReturnDataType LLVM.VoidType = return D.VoidType
   toReturnDataType t = Left $ "toReturnDataType: not implemented for " ++ show t
@@ -361,8 +360,7 @@ mkFunctionOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
      st7 <- addPendingDatumToBlockDefEdges st6
-     st8 <- checkAllDataHasType st7
-     return $ opStruct st8
+     return $ opStruct st7
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure' from an instruction pattern. If the definition is
@@ -379,7 +377,8 @@ mkPatternOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
      st7 <- removeUnusedBlockNodes st6
-     return $ opStruct st7
+     st8 <- removeOutlyingTypeCasts st7
+     return $ opStruct st8
 mkPatternOS _ = Left "mkPattern: not a Function"
 
 -- | Creates an initial 'BuildState'.
@@ -642,38 +641,6 @@ mkFunctionDFGFromNamed
   -> BuildState
   -> (LLVM.Named LLVM.Instruction)
   -> Either String BuildState
-mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.IntToPtr op _ _)) =
-  -- Assignments involving 'IntToPtr' expressions must be handled differently as
-  -- 'IntToPtr' only touches the value node representing its input and does not
-  -- produce any new value nodes, meaning the result of the assignment is not
-  -- allowed to replace the origin of the input value node. Instead, an alias
-  -- from the result to the input value node is created.
-  do st1 <- build b st0 op
-     let n = fromJust $ lastTouchedNode st1
-     sym <- toSymbol name
-     st2 <- addSymMap st1 (sym, n)
-     return st2
-mkFunctionDFGFromNamed b st0 (name LLVM.:= (LLVM.PtrToInt op t _)) =
-  -- Assignments involving 'PtrToInt' expressions must be handled differently as
-  -- 'PtrToInt' modifies the data type of the input value node to match the data
-  -- type of the instruction. Then, an alias from the result to the input value
-  -- node is created. If the input value node has already been assigned a data
-  -- type and does not match the data type of the instruction, an error is
-  -- produced.
-  do st1 <- build b st0 op
-     let n = fromJust $ lastTouchedNode st1
-         old_dt = G.getDataTypeOfValueNode n
-     new_dt <- toOpDataType t
-     st2 <- if old_dt == D.AnyType
-            then updateOSGraph st1 $
-                 G.updateDataTypeOfValueNode new_dt n $
-                 getOSGraph st1
-            else if old_dt == new_dt
-                 then return st1
-                 else Left "mkFunctionDFGFromNamed: mismatching data types"
-     sym <- toSymbol name
-     st3 <- addSymMap st2 (sym, n)
-     return st3
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
   do st1 <- build b st0 expr
      sym <- toSymbol name
@@ -705,129 +672,129 @@ mkFunctionDFGFromInstruction
   -> LLVM.Instruction
   -> Either String BuildState
 mkFunctionDFGFromInstruction b st (LLVM.Add _ _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.Add)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FAdd _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.FloatOp Op.Add)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Sub _ _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.Sub)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FSub _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.FloatOp Op.Sub)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Mul _ _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.Mul)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FMul _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.FloatOp Op.Mul)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.UDiv _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.UIntOp Op.Div)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.SDiv _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.SIntOp Op.Div)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FDiv _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.FloatOp Op.Div)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.URem op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.UIntOp Op.Rem)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.SRem op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.SIntOp Op.Rem)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FRem _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.FloatOp Op.Rem)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Shl _ _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.Shl)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.LShr _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.LShr)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.AShr _ op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.AShr)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.And op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.And)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Or op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.Or)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Xor op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (Op.CompArithOp $ Op.IntOp Op.XOr)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
@@ -837,45 +804,67 @@ mkFunctionDFGFromInstruction b st (LLVM.ICmp p op1 op2 _) =
                           (fromLlvmIPred p)
                           [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.FCmp p op1 op2 _) =
-  do t_t <- toTempDataType op1
+  do dt <- toTempDataType op1
      mkFunctionDFGFromCompOp b
                              st
-                             t_t
+                             dt
                              (fromLlvmFPred p)
                              [op1, op2]
 mkFunctionDFGFromInstruction b st (LLVM.Trunc op1 t1 _) =
-  do op_t <- toOpDataType t1
+  do dt <- toOpDataType t1
      mkFunctionDFGFromCompOp b
                              st
-                             op_t
+                             dt
                              (Op.CompTypeConvOp Op.Trunc)
                              [op1]
 mkFunctionDFGFromInstruction b st (LLVM.ZExt op1 t1 _) =
-  do op_t <- toOpDataType t1
+  do dt <- toOpDataType t1
      mkFunctionDFGFromCompOp b
                              st
-                             op_t
+                             dt
                              (Op.CompTypeConvOp Op.ZExt)
                              [op1]
 mkFunctionDFGFromInstruction b st (LLVM.SExt op1 t1 _) =
-  do op_t <- toOpDataType t1
+  do dt <- toOpDataType t1
      mkFunctionDFGFromCompOp b
                              st
-                             op_t
+                             dt
                              (Op.CompTypeConvOp Op.SExt)
                              [op1]
+mkFunctionDFGFromInstruction b st (LLVM.IntToPtr op1 t1 _) =
+  do dt <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             dt
+                             (Op.CompTypeCastOp Op.IntToPtr)
+                             [op1]
+mkFunctionDFGFromInstruction b st (LLVM.PtrToInt op1 t1 _) =
+  do dt <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             dt
+                             (Op.CompTypeCastOp Op.PtrToInt)
+                             [op1]
+mkFunctionDFGFromInstruction b st (LLVM.BitCast op1 t1 _) =
+  do dt <- toOpDataType t1
+     mkFunctionDFGFromCompOp b
+                             st
+                             dt
+                             (Op.CompTypeCastOp Op.BitCast)
+                             [op1]
 mkFunctionDFGFromInstruction b st (LLVM.Load _ op1 _ _ _) =
-  do op_t <- toOpDataType op1
+  do t <- dereferencePointerOp op1
+     dt <- toOpDataType t
      mkFunctionDFGFromMemOp b
                             st
-                            op_t
+                            dt
                             Op.Load
                             [op1]
 mkFunctionDFGFromInstruction b st (LLVM.Alloca t _ _ _) =
-  do op_t <- toOpDataType t
+  do dt <- toOpDataType t
      mkFunctionDFGFromMemOp b
                             st
-                            op_t
+                            dt
                             Op.Load
                             ([] :: [LLVM.Operand])
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
@@ -944,8 +933,8 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                   )
                   st3
                   (zip operand_ns block_names)
-     op_t <- toOpDataType t
-     st5 <- addNewNode st4 (G.ValueNode op_t Nothing)
+     dt <- toOpDataType t
+     st5 <- addNewNode st4 (G.ValueNode dt Nothing)
      let d_node = fromJust $ lastTouchedNode st5
      st6 <- addNewEdge st5 G.DataFlowEdge phi_node d_node
      st7 <- addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
@@ -985,6 +974,14 @@ mkFunctionDFGFromCompOp b st0 dt op operands =
      let d_node = fromJust $ lastTouchedNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
      return st5
+
+-- | Takes an operand of pointer type and returns the type after the pointer has
+-- been dereferenced.
+dereferencePointerOp :: LLVM.Operand -> Either String LLVM.Type
+dereferencePointerOp (LLVM.LocalReference (LLVM.PointerType t _) _) = return t
+dereferencePointerOp o = Left $ "dereferencePointerOp: " ++ show o ++
+                                " is not a pointer"
+
 
 -- | Inserts a new memory node representing the operation along with edges to
 -- that computation node from the given operands (which will also be
@@ -1028,8 +1025,8 @@ mkFunctionDFGFromOperand
   -> Either String BuildState
 mkFunctionDFGFromOperand _ st (LLVM.LocalReference t name) =
   do sym <- toSymbol name
-     op_t <- toOpDataType t
-     ensureValueNodeWithSymExists st sym op_t
+     dt <- toOpDataType t
+     ensureValueNodeWithSymExists st sym dt
 mkFunctionDFGFromOperand _ st (LLVM.ConstantOperand c) =
   do const_d <- toConstant c
      addNewValueNodeWithConstant st const_d
@@ -1043,8 +1040,8 @@ mkFunctionDFGFromParameter
   -> Either String BuildState
 mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
   do sym <- toSymbol name
-     op_t <- toOpDataType t
-     st1 <- ensureValueNodeWithSymExists st0 sym op_t
+     dt <- toOpDataType t
+     st1 <- ensureValueNodeWithSymExists st0 sym dt
      let n = fromJust $ lastTouchedNode st1
      st2 <- addFuncInputValue st1 n
      return st2
@@ -1080,9 +1077,7 @@ mkPatternDFGFromSetregCall
            else Left $ "mkPatternDFGFromSetregCall: destination node with "
                         ++ "symbol '" ++ show arg1 ++ "' is not allowed to "
                         ++ "have any predecessors"
-     let g2 = G.updateOriginOfValueNode (fromJust $ G.getOriginOfValueNode n1)
-                                        n2
-                                        g1
+     let g2 = G.updateOriginOfValueNode (G.getOriginOfValueNode n1) n2 g1
      st1 <- updateOSGraph st0 g2
      let st2 = st1 { blockToDatumDataFlows =
                        map ( \(b', n) ->
@@ -1296,8 +1291,8 @@ mkFunctionCFGFromOperand :: Builder
                          -> Either String BuildState
 mkFunctionCFGFromOperand _ st (LLVM.LocalReference t name) =
   do sym <- toSymbol name
-     op_t <- toOpDataType t
-     ensureValueNodeWithSymExists st sym op_t
+     dt <- toOpDataType t
+     ensureValueNodeWithSymExists st sym dt
 mkFunctionCFGFromOperand _ st (LLVM.ConstantOperand c) =
   do const_d <- toConstant c
      addNewValueNodeWithConstant st const_d
@@ -1329,8 +1324,8 @@ toTempDataType
   -> Either String D.DataType
      -- ^ An error message or the resulting data type.
 toTempDataType a =
-  do op_t <- toOpDataType a
-     conv op_t
+  do dt <- toOpDataType a
+     conv dt
   where conv d@(D.IntTempType {}) = Right d
         conv (D.IntConstType { D.intConstNumBits = Just b }) =
           Right $ D.IntTempType { D.intTempNumBits = b }
@@ -1390,8 +1385,8 @@ addNewValueNodeWithConstant :: BuildState
                             -> Constant
                             -> Either String BuildState
 addNewValueNodeWithConstant st0 c =
-  do op_t <- toOpDataType c
-     st1 <- addNewNode st0 $ G.ValueNode op_t (Just $ mkVarNameForConst c)
+  do dt <- toOpDataType c
+     st1 <- addNewNode st0 $ G.ValueNode dt (Just $ mkVarNameForConst c)
      let new_n = fromJust $ lastTouchedNode st1
      st2 <- addPendingBlockToDatumFlow st1 (fromJust $ entryBlock st1, new_n)
      return st2
@@ -1665,14 +1660,28 @@ nameToString :: LLVM.Name -> String
 nameToString (LLVM.Name str) = str
 nameToString (LLVM.UnName int) = show int
 
--- | Checks that all value nodes in the graph have a data type (that is,
--- anything else but 'D.AnyType').
-checkAllDataHasType :: BuildState -> Either String BuildState
-checkAllDataHasType st =
+-- | Removes computation nodes that type-cast external values. Such casts
+-- typically end up in the pattern due to restrictions in the machine
+-- description. This also results in renaming of the origin for value nodes
+-- produced by type-casts which are removed.
+removeOutlyingTypeCasts :: BuildState -> Either String BuildState
+removeOutlyingTypeCasts st =
   do let g = getOSGraph st
-         ns = filter G.isValueNode $ G.getAllNodes g
-         check st' n = if G.getDataTypeOfValueNode n == D.AnyType
-                       then Left $ "Value node " ++ show n ++
-                                   " is of illegal data type"
-                       else Right st'
-     foldM check st ns
+         ns = filter G.isComputationNode $ G.getAllNodes g
+         cast_ns = filter (Op.isCompTypeCastOp . G.getCompOpOfComputationNode) $
+                   ns
+         cast_value_pairs =
+           map (\n -> (n, head $ G.getPredecessors g n)) cast_ns
+         cv_pairs_to_remove =
+           filter (\(_, d) -> length (G.getPredecessors g d) == 0) $
+           cast_value_pairs
+         processPair (cn, vn) g0 =
+           let dst_vn = head $ G.getSuccessors g0 cn
+               g1 = G.updateOriginOfValueNode (G.getOriginOfValueNode vn)
+                                              dst_vn
+                                              g0
+               g2 = G.delNode cn g1
+               g3 = G.delNode vn g2
+           in g3
+         new_g = foldr processPair g cv_pairs_to_remove
+     updateOSGraph st new_g

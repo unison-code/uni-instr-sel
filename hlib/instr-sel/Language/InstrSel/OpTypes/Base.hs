@@ -43,6 +43,7 @@ import Prelude
 data CompOp
   = CompArithOp ArithOp
   | CompTypeConvOp TypeConvOp
+  | CompTypeCastOp TypeCastOp
   | CompMemoryOp MemoryOp
   deriving (Show, Eq)
 
@@ -122,7 +123,8 @@ data ArithOpType
   | Unordered
   deriving (Show, Eq)
 
--- | Operations that convert values of one type to another type.
+-- | Operations that convert values of one type to another type. Unlike
+-- 'TypeCastOp', these operations may result in actual code.
 data TypeConvOp
     -- | Zero extension.
   = ZExt
@@ -138,6 +140,17 @@ data TypeConvOp
   | SInt2Float
     -- | Unsigned integer to floating-point.
   | UInt2Float
+  deriving (Show, Eq)
+
+-- | Operations that cast values of one type to another type. Unlike
+-- 'TypeConvOp', these operations never result in actual code.
+data TypeCastOp
+    -- | Integer to pointer.
+  = IntToPtr
+    -- | Pointer to integer.
+  | PtrToInt
+    -- | Bitcast.
+  | BitCast
   deriving (Show, Eq)
 
 -- | Operations that define or use values by accessing memory. All operations
@@ -171,6 +184,7 @@ data ControlOp
 instance PrettyShow CompOp where
   pShow (CompArithOp op)    = pShow op
   pShow (CompTypeConvOp op) = pShow op
+  pShow (CompTypeCastOp op) = pShow op
   pShow (CompMemoryOp op)   = pShow op
 
 instance PrettyShow ArithOp where
@@ -216,6 +230,11 @@ instance PrettyShow TypeConvOp where
   pShow SInt2Float = "sitofp"
   pShow UInt2Float = "uitofp"
 
+instance PrettyShow TypeCastOp where
+  pShow IntToPtr = "int-to-ptr"
+  pShow PtrToInt = "ptr-to-int"
+  pShow BitCast  = "bit-cast"
+
 instance PrettyShow MemoryOp where
   pShow Load  = "load"
   pShow Store = "store"
@@ -257,13 +276,15 @@ instance FromJSON CompOp where
          1 -> do let tcops   = [ ZExt, SExt, Trunc
                                , Float2SInt, Float2UInt, SInt2Float, UInt2Float
                                ]
+                     ccops   = [ IntToPtr, PtrToInt, BitCast ]
                      mops    = [ Load, Store ]
                      tcfound = filter (\op -> pShow op == str) tcops
+                     ccfound = filter (\op -> pShow op == str) ccops
                      mfound  = filter (\op -> pShow op == str) mops
-                 when (null tcfound && null mfound) mzero
-                 case (null tcfound, null mfound) of
-                   (False, True) -> return $ CompTypeConvOp $ head tcfound
-                   (True, False) -> return $ CompMemoryOp $ head mfound
+                 case (null tcfound, null tcfound, null mfound) of
+                   (False, True, True) -> return $ CompTypeConvOp $ head tcfound
+                   (True, False, True) -> return $ CompTypeCastOp $ head ccfound
+                   (True, True, False) -> return $ CompMemoryOp $ head mfound
                    _ -> mzero
          _ -> mzero
   parseJSON _ = mzero
@@ -289,6 +310,22 @@ instance ToJSON ControlOp where
 -- Functions
 --------------
 
+isCompArithOp :: CompOp -> Bool
+isCompArithOp (CompArithOp _) = True
+isCompArithOp _ = False
+
+isCompTypeConvOp :: CompOp -> Bool
+isCompTypeConvOp (CompTypeConvOp _) = True
+isCompTypeConvOp _ = False
+
+isCompTypeCastOp :: CompOp -> Bool
+isCompTypeCastOp (CompTypeCastOp _) = True
+isCompTypeCastOp _ = False
+
+isCompMemoryOp :: CompOp -> Bool
+isCompMemoryOp (CompMemoryOp _) = True
+isCompMemoryOp _ = False
+
 -- | Gets the operation type from an arithmetic operation.
 getArithOpType :: ArithOp -> ArithOpType
 getArithOpType ( IntOp op)     = op
@@ -304,6 +341,7 @@ getArithOpType (UFloatOp op)   = op
 isOpCommutative :: CompOp -> Bool
 isOpCommutative (CompArithOp op) = isArithOpCommutative op
 isOpCommutative (CompTypeConvOp _) = True
+isOpCommutative (CompTypeCastOp _) = True
 isOpCommutative (CompMemoryOp Load) = True
 isOpCommutative (CompMemoryOp Store) = False
 
@@ -321,6 +359,7 @@ isArithOpTypeCommutative op =
 numOperandsForCompOp :: CompOp -> Natural
 numOperandsForCompOp (CompArithOp op) = numOperandsForArithOp op
 numOperandsForCompOp (CompTypeConvOp _) = 1
+numOperandsForCompOp (CompTypeCastOp _) = 1
 numOperandsForCompOp (CompMemoryOp Load) = 1
 numOperandsForCompOp (CompMemoryOp Store) = 2
 
@@ -342,6 +381,8 @@ isCompOpCompatibleWith (CompArithOp op1) (CompArithOp op2) =
   op1 `isArithOpCompatibleWith` op2
 isCompOpCompatibleWith (CompTypeConvOp op1) (CompTypeConvOp op2) =
   op1 `isTypeConvOpCompatibleWith` op2
+isCompOpCompatibleWith (CompTypeCastOp op1) (CompTypeCastOp op2) =
+  op1 `isTypeCastOpCompatibleWith` op2
 isCompOpCompatibleWith (CompMemoryOp op1) (CompMemoryOp op2) =
   op1 `isMemoryOpCompatibleWith` op2
 isCompOpCompatibleWith _ _ = False
@@ -367,6 +408,12 @@ isArithOpCompatibleWith op1 op2                       = op1 == op2
 -- necessarily commutative.
 isTypeConvOpCompatibleWith :: TypeConvOp -> TypeConvOp -> Bool
 isTypeConvOpCompatibleWith = (==)
+
+-- | Checks if a type cast operation is compatible with another operation,
+-- meaning that they are semantically equivalent. Note that this function is not
+-- necessarily commutative.
+isTypeCastOpCompatibleWith :: TypeCastOp -> TypeCastOp -> Bool
+isTypeCastOpCompatibleWith = (==)
 
 -- | Checks if a memory operation is compatible with another operation, meaning
 -- that they are semantically equivalent. Note that this function is not

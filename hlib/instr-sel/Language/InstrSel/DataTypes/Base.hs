@@ -15,6 +15,7 @@ module Language.InstrSel.DataTypes.Base
   ( DataType (..)
   , isIntTempType
   , isIntConstType
+  , isPointerType
   , isAnyType
   , isVoidType
   , isTypeAConstValue
@@ -62,6 +63,8 @@ data DataType
         -- width is only necessary to be able to perform copy extension of the
         -- program graph).
       }
+    -- | Represents a pointer.
+  | PointerType
     -- | When the data type does not matter.
   | AnyType
     -- | When there is no data type.
@@ -80,6 +83,7 @@ instance PrettyShow DataType where
     let b = intConstNumBits d
     in pShow (intConstValue d) ++
        if isJust b then " i" ++ (pShow $ fromJust b) else ""
+  pShow PointerType = "ptr"
   pShow AnyType = "any"
   pShow VoidType = "void"
 
@@ -116,6 +120,11 @@ isIntConstType :: DataType -> Bool
 isIntConstType IntConstType {} = True
 isIntConstType _ = False
 
+-- | Checks if a given data type is 'PointerType'.
+isPointerType :: DataType -> Bool
+isPointerType PointerType = True
+isPointerType _ = False
+
 -- | Checks if a given data type is 'AnyType'.
 isAnyType :: DataType -> Bool
 isAnyType AnyType = True
@@ -140,6 +149,7 @@ isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
 isDataTypeCompatibleWith AnyType _ = True
 isDataTypeCompatibleWith _ AnyType = True
+isDataTypeCompatibleWith PointerType PointerType = True
 isDataTypeCompatibleWith VoidType VoidType = True
 isDataTypeCompatibleWith _ _ = False
 
@@ -151,6 +161,7 @@ parseDataTypeFromJson str =
   let res = catMaybes [ parseIntTempTypeFromJson str
                       , parseIntConstTypeFromJson str
                       , parseAnyTypeFromJson str
+                      , parsePointerTypeFromJson str
                       ]
   in if length res > 0
      then Just $ head res
@@ -194,6 +205,14 @@ parseAnyTypeFromJson :: String -> Maybe DataType
 parseAnyTypeFromJson str =
   if str == pShow AnyType
   then Just AnyType
+  else Nothing
+
+-- | Parses a 'PointerType' from a JSON string. If parsing fails, 'Nothing' is
+-- returned.
+parsePointerTypeFromJson :: String -> Maybe DataType
+parsePointerTypeFromJson str =
+  if str == pShow PointerType
+  then Just PointerType
   else Nothing
 
 -- | Checks if a given data type represents a constant value.

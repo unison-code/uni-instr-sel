@@ -92,6 +92,7 @@ module Language.InstrSel.Graphs.Base
   , getNumNodes
   , getNameOfCallNode
   , getNameOfBlockNode
+  , getCompOpOfComputationNode
   , getOriginOfValueNode
   , getOutEdgeNr
   , getOutEdges
@@ -680,6 +681,10 @@ getNodeType (Node (_, NodeLabel _ nt)) = nt
 getDataTypeOfValueNode :: Node -> D.DataType
 getDataTypeOfValueNode n = typeOfValue $ getNodeType n
 
+-- | Gets the operation from a computation node.
+getCompOpOfComputationNode :: Node -> O.CompOp
+getCompOpOfComputationNode n = compOp $ getNodeType n
+
 -- | Gets the internal node ID from a node.
 getIntNodeID :: Node -> I.Node
 getIntNodeID (Node (nid, _)) = nid
@@ -742,10 +747,10 @@ updateNameOfCallNode new_name n g =
                              " is not a call node"
 
 -- | Updates the origin of an already existing value node.
-updateOriginOfValueNode :: String -> Node -> Graph -> Graph
+updateOriginOfValueNode :: Maybe String -> Node -> Graph -> Graph
 updateOriginOfValueNode new_origin n g =
   let nt = getNodeType n
-      new_nt = nt { originOfValue = Just new_origin }
+      new_nt = nt { originOfValue = new_origin }
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
                 _ -> error $ "updateOriginOfValueNode: node " ++ show n ++
                              " is not a value node"
