@@ -131,7 +131,7 @@ run-regression-tests-for-target:
 	@echo
 	@echo "$(PURPLE)NOTE: Solving time is given in brackets$(NC)"
 	@echo
-	@echo "* $(PURPLE)EXECUTING REGRESSION TESTS$:$(NC)"
+	@echo "$(PURPLE)* EXECUTING REGRESSION TESTS$:$(NC)"
 	@\
 	T_TOTAL=0 ;\
 	T_PASSED=0 ;\
