@@ -51,7 +51,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 SOLVER_TIMELIMIT      := 0 # In seconds; 0 indicates no timelimit
 
-TARGET := hexagon5
+TARGET := mips32
 
 REGRESSION_TESTS_DIR := ./regression
 
