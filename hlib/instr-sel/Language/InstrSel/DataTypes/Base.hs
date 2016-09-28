@@ -14,6 +14,7 @@ Main authors:
 module Language.InstrSel.DataTypes.Base
   ( DataType (..)
   , isIntTempType
+  , isIntTempTypeAnyWidth
   , isIntConstType
   , isPointerType
   , isAnyType
@@ -52,6 +53,10 @@ data DataType
       { intTempNumBits :: Natural
         -- ^ Number of bits required for the temporary.
       }
+    -- | Represents an integer value stored in a temporary of arbitrary bit
+    -- width. This type is only to be used in the null instruction for copying
+    -- temporaries.
+  | IntTempTypeAnyWidth
     -- | Represents an integer constant.
   | IntConstType
       { intConstValue :: Range Integer
@@ -79,6 +84,7 @@ data DataType
 
 instance PrettyShow DataType where
   pShow d@(IntTempType {}) = "i" ++ pShow (intTempNumBits d)
+  pShow IntTempTypeAnyWidth = "i?"
   pShow d@(IntConstType {}) =
     let b = intConstNumBits d
     in pShow (intConstValue d) ++
@@ -115,6 +121,11 @@ isIntTempType :: DataType -> Bool
 isIntTempType IntTempType {} = True
 isIntTempType _ = False
 
+-- | Checks if a given data type is 'IntTempTypeAnyWidth'.
+isIntTempTypeAnyWidth :: DataType -> Bool
+isIntTempTypeAnyWidth IntTempTypeAnyWidth = True
+isIntTempTypeAnyWidth _ = False
+
 -- | Checks if a given data type is 'IntConstType'.
 isIntConstType :: DataType -> Bool
 isIntConstType IntConstType {} = True
@@ -145,6 +156,8 @@ isDataTypeCompatibleWith
   -> Bool
 isDataTypeCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
   intTempNumBits d1 == intTempNumBits d2
+isDataTypeCompatibleWith IntTempTypeAnyWidth (IntTempType {}) = True
+isDataTypeCompatibleWith (IntTempType {}) IntTempTypeAnyWidth = True
 isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
 isDataTypeCompatibleWith AnyType _ = True
@@ -159,6 +172,7 @@ isDataTypeCompatibleWith _ _ = False
 parseDataTypeFromJson :: String -> Maybe DataType
 parseDataTypeFromJson str =
   let res = catMaybes [ parseIntTempTypeFromJson str
+                      , parseIntTempTypeAnyWidthFromJson str
                       , parseIntConstTypeFromJson str
                       , parseAnyTypeFromJson str
                       , parsePointerTypeFromJson str
@@ -177,6 +191,14 @@ parseIntTempTypeFromJson str =
        in if isJust numbits
           then Just $ IntTempType { intTempNumBits = fromJust numbits }
           else Nothing
+  else Nothing
+
+-- | Parses an 'IntTempTypeAnyWidth' from a JSON string. If parsing fails,
+-- 'Nothing' is returned.
+parseIntTempTypeAnyWidthFromJson :: String -> Maybe DataType
+parseIntTempTypeAnyWidthFromJson str =
+  if str == pShow IntTempTypeAnyWidth
+  then Just IntTempTypeAnyWidth
   else Nothing
 
 -- | Parses an 'IntConstType' from a JSON string. If parsing fails, 'Nothing' is

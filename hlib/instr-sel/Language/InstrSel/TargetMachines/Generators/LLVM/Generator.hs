@@ -86,7 +86,7 @@ generateTargetMachine m =
          generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate] ++
                           [mkBrFallThroughInstruction] ++
                           [mkDataDefInstruction] ++
-                          [mkTempNullCopyInstruction [1, 8, 16, 32]] ++
+                          [mkTempNullCopyInstruction] ++
                           [mkInactiveInstruction]
      instrs <- mkInstructions m locs
      let all_instrs = instrs ++

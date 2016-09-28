@@ -30,8 +30,6 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.OpTypes
   ( ControlOp (Br) )
 import Language.InstrSel.TargetMachines.Base
-import Language.InstrSel.Utils
-  ( Natural )
 
 
 
@@ -52,10 +50,6 @@ mkGenericValueNodeType = ValueNode { typeOfValue = AnyType
 -- | Creates a generic block node type.
 mkGenericBlockNodeType :: NodeType
 mkGenericBlockNodeType = BlockNode mkEmptyBlockName
-
--- | Creates an 'IntTempType' with a given number of bits.
-mkIntTempType :: Natural -> DataType
-mkIntTempType n = IntTempType { intTempNumBits = n }
 
 -- | Creates an instruction for handling the generic cases where
 -- 'PhiNode's appear. Note that the 'InstructionID's of all instructions will be
@@ -202,32 +196,29 @@ mkDataDefInstruction =
 -- | Creates an instruction for handling null-copy operations regarding
 -- temporaries. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkTempNullCopyInstruction
-  :: [Natural]
-     -- ^ List of temporary bit widths for which null-copies are allowed.
-  -> Instruction
-mkTempNullCopyInstruction bits =
-  let g w = mkGraph ( map Node $
-                      [ ( 0, NodeLabel 0 CopyNode )
-                      , ( 1, NodeLabel 1 $ mkValueNode $ mkIntTempType w)
-                      , ( 2, NodeLabel 2 $ mkValueNode $ mkIntTempType w)
-                      ]
-                    )
-                    ( map Edge $
-                      [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-                      , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
-                      ]
-                    )
+mkTempNullCopyInstruction :: Instruction
+mkTempNullCopyInstruction =
+  let g dt = mkGraph ( map Node $
+                       [ ( 0, NodeLabel 0 CopyNode )
+                       , ( 1, NodeLabel 1 $ mkValueNode dt)
+                       , ( 2, NodeLabel 2 $ mkValueNode dt)
+                       ]
+                     )
+                     ( map Edge $
+                       [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                       , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+                       ]
+                     )
       cs = mkSameDataLocConstraints [1, 2]
-      pat (pid, w) = InstrPattern
+      pat (pid, dt) = InstrPattern
                        { patID = pid
-                       , patOS = OpStructure (g w) Nothing [] cs
+                       , patOS = OpStructure (g dt) Nothing [] cs
                        , patExternalData = [1, 2]
                        , patEmitString = EmitStringTemplate []
                        }
   in Instruction
        { instrID = 0
-       , instrPatterns = map pat $ zip [0..] bits
+       , instrPatterns = map pat $ zip [0..] [IntTempTypeAnyWidth, PointerType]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsInactive = False
