@@ -218,7 +218,10 @@ mkTempNullCopyInstruction =
                        }
   in Instruction
        { instrID = 0
-       , instrPatterns = map pat $ zip [0..] [IntTempTypeAnyWidth, PointerType]
+       , instrPatterns = map pat $ zip [0..] [ IntTempTypeAnyWidth
+                                             , PointerTempType
+                                             , PointerNullType
+                                             ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsInactive = False

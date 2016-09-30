@@ -78,7 +78,8 @@ insertCopyAlongEdge g0 df_edge =
   let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
-      mkNewDataType d@(PointerType {}) = d
+      mkNewDataType d@(PointerTempType {}) = d
+      mkNewDataType d@(PointerNullType {}) = d
       mkNewDataType d = error $ "insertCopy: DataType '" ++ show d ++ "' " ++
                                 "not " ++ "supported"
                         -- This happens if copy extension is attempted before

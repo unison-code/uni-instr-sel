@@ -111,12 +111,14 @@ data Constant
   | GlobalReferenceConstant { globalRefType :: D.DataType
                             , globalRefName :: Symbol
                             }
+  | NullConstant
   deriving (Show, Eq)
 
 instance PrettyShow Constant where
   pShow IntConstant { signedIntValue = v } = pShow v
   pShow FloatConstant { floatValue = v } = pShow v
   pShow GlobalReferenceConstant { globalRefName = s } = pShow s
+  pShow NullConstant = "null"
 
 -- | Represents the intermediate build data.
 data BuildState
@@ -220,6 +222,7 @@ instance ConstantFormable LLVMC.Constant where
        return $ GlobalReferenceConstant { globalRefType = rt
                                         , globalRefName = sym
                                         }
+  toConstant (LLVMC.Null (LLVM.PointerType {})) = Right NullConstant
   toConstant l = Left $ "toConstant: not implemented for " ++ show l
 
 -- | Class for converting an LLVM operand into a corresponding operand
@@ -232,12 +235,13 @@ instance OperandDataTypeFormable Constant where
     Right $ D.IntConstType { D.intConstValue = rangeFromSingleton v
                            , D.intConstNumBits = Just $ toNatural w
                            }
+  toOpDataType NullConstant = Right D.PointerNullType
   toOpDataType c = Left $ "toOpDataType: not implemented for " ++ show c
 
 instance OperandDataTypeFormable LLVM.Type where
   toOpDataType (LLVM.IntegerType bits) =
     Right $ D.IntTempType { D.intTempNumBits = toNatural bits }
-  toOpDataType (LLVM.PointerType _ _) = return D.PointerType
+  toOpDataType (LLVM.PointerType _ _) = return D.PointerTempType
   toOpDataType t = Left $ "toOpDataType: not implemented for " ++ show t
 
 instance OperandDataTypeFormable LLVM.Operand where
@@ -253,15 +257,8 @@ class ReturnDataTypeFormable a where
   toReturnDataType :: a -> Either String D.DataType
 
 instance ReturnDataTypeFormable LLVM.Type where
-  -- For some reason, this is how LLVM wraps the return type of a function
-  toReturnDataType ( LLVM.PointerType
-                     ( LLVM.FunctionType
-                       ( LLVM.PointerType t _ )
-                       _
-                       _
-                     )
-                     _
-                   ) =
+  -- This is how LLVM wraps the return type of a function
+  toReturnDataType (LLVM.PointerType (LLVM.FunctionType t _ _) _) =
     toOpDataType t
   toReturnDataType LLVM.VoidType = return D.VoidType
   toReturnDataType t = Left $ "toReturnDataType: not implemented for " ++ show t
@@ -284,8 +281,10 @@ class FunctionNameFormable a where
   toFunctionName :: a -> Either String F.FunctionName
 
 instance FunctionNameFormable LLVM.Name where
-  toFunctionName (LLVM.Name str) = Right $ F.toFunctionName str
-  toFunctionName n = Left $ "toFunctionName: not implemented for " ++ show n
+  -- TODO: temporary fix
+  toFunctionName n = Right $ F.toFunctionName $ nameToString n
+  -- toFunctionName (LLVM.Name str) = Right $ F.toFunctionName str
+  -- toFunctionName n = Left $ "toFunctionName: not implemented for " ++ show n
 
 instance FunctionNameFormable LLVMC.Constant where
   toFunctionName (LLVMC.GlobalReference _ n) = toFunctionName n
