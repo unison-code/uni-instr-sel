@@ -1,0 +1,5 @@
+* TASKS
+** TODO Handle pointers
+** TODO Lower pointers to integers
+** TODO Handle indirect function calls
+** TODO Branch-extend patterns
