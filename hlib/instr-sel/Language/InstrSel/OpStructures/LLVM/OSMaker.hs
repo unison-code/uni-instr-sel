@@ -1073,7 +1073,11 @@ mkPatternDFGFromSetregCall
                  [arg1, arg2]
      let g0 = getOSGraph st0
      g1 <- if length (G.getPredecessors g0 n1) == 0
-           then Right $ G.mergeNodes n2 n1 g0
+           then if length (G.getSuccessors g0 n1) == 0
+                then Right $ G.mergeNodes n2 n1 g0
+                else Left $ "mkPatternDFGFromSetregCall: destination node " ++
+                            "with symbol '" ++ show arg1 ++ "' is not " ++
+                            "allowed to have any successors"
            else Left $ "mkPatternDFGFromSetregCall: destination node with "
                         ++ "symbol '" ++ show arg1 ++ "' is not allowed to "
                         ++ "have any predecessors"
