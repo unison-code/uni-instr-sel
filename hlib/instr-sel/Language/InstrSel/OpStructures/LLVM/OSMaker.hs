@@ -247,16 +247,22 @@ instance OperandDataTypeFormable LLVM.Operand where
        toOpDataType const_d
   toOpDataType o = Left $ "toOpDataType: not implemented for " ++ show o
 
--- | Class for converting an LLVM operand into a corresponding return
--- 'D.DataType'.
+-- | Class for converting the 'LLVM.function' value of a 'LLVM.Call' operation
+-- into a corresponding return 'D.DataType'.
 class ReturnDataTypeFormable a where
   toReturnDataType :: a -> Either String D.DataType
 
 instance ReturnDataTypeFormable LLVM.Type where
-  toReturnDataType t@(LLVM.IntegerType {}) = toOpDataType t
-  toReturnDataType (LLVM.PointerType t@(LLVM.FunctionType {}) _) =
-    toReturnDataType t
-  toReturnDataType (LLVM.FunctionType t _ _) = toReturnDataType t
+  -- For some reason, this is how LLVM wraps the return type of a function
+  toReturnDataType ( LLVM.PointerType
+                     ( LLVM.FunctionType
+                       ( LLVM.PointerType t _ )
+                       _
+                       _
+                     )
+                     _
+                   ) =
+    toOpDataType t
   toReturnDataType LLVM.VoidType = return D.VoidType
   toReturnDataType t = Left $ "toReturnDataType: not implemented for " ++ show t
 
