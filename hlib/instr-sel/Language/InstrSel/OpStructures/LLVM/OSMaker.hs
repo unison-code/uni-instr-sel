@@ -59,7 +59,7 @@ import Data.List
 --------------
 
 -- | Represents a mapping from a symbol to a value node currently in the graph.
-type SymToValueNodeMapping = (Symbol, G.Node)
+type SymToValueNodeMapping = (Symbol, G.NodeID)
 
 -- | Represents a flow that goes from a block node, identified by the given ID,
 -- to an datum node. This is needed to draw the pending flow edges after both
@@ -546,7 +546,7 @@ mkPatternCFGFromReturnCall
      let rn = fromJust $ lastTouchedNode st1
          bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
      arg_sym <- toSymbol arg
-     let vn = fromJust $ findValueNodeMappedToSym st0 arg_sym
+     vn <- getValueNodeMappedToSym st0 arg_sym
      st2 <- addNewEdge st1 G.DataFlowEdge vn rn
      st3 <- addNewEdge st2 G.ControlFlowEdge bn rn
      return st3
@@ -1068,12 +1068,7 @@ mkPatternDFGFromSetregCall
   =
   do [n1, n2] <- mapM ( \arg ->
                         do sym <- toSymbol arg
-                           let maybe_n = findValueNodeMappedToSym st0 sym
-                           if isJust maybe_n
-                           then return $ fromJust maybe_n
-                           else Left $ "mkPatternDFGFromSetregCall: "
-                                       ++ "no value node with symbol "
-                                       ++ "'" ++ show sym ++ "'"
+                           getValueNodeMappedToSym st0 sym
                       ) $
                  [arg1, arg2]
      let g0 = getOSGraph st0
@@ -1157,10 +1152,10 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      arg_syms <- mapM (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
      st3 <- foldM
               ( \st sym ->
-                let g0 = getOSGraph st
-                    n = fromJust $ findValueNodeMappedToSym st sym
-                    es = G.getDtFlowInEdges g0 n
-                in if length es == 0
+                do let g0 = getOSGraph st
+                   n <- getValueNodeMappedToSym st sym
+                   let es = G.getDtFlowInEdges g0 n
+                   if length es == 0
                    then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
                         in updateOSGraph st g1
                    else return st
@@ -1475,9 +1470,25 @@ addFuncInputValue :: BuildState -> G.Node -> Either String BuildState
 addFuncInputValue st n =
   return $ st { funcInputValues = n:(funcInputValues st) }
 
--- | Finds the node ID (if any) of the value node to which a symbol is mapped.
-findValueNodeMappedToSym :: BuildState -> Symbol -> Maybe G.Node
-findValueNodeMappedToSym st sym = lookup sym (symMaps st)
+-- | Gets the node with a given ID.
+getNodeWithID :: BuildState -> G.NodeID -> Either String G.Node
+getNodeWithID st nid =
+  do let ns = G.findNodesWithNodeID (getOSGraph st) nid
+     if length ns > 0
+     then if length ns == 1
+          then return $ head ns
+          else Left $ "getNodeWithID: found multiple nodes with ID " ++
+                      pShow nid
+     else Left $ "getNodeWithID: found no node with ID " ++ pShow nid
+
+-- | Gets the value node to which a symbol is mapped.
+getValueNodeMappedToSym :: BuildState -> Symbol -> Either String G.Node
+getValueNodeMappedToSym st sym =
+  let nid = lookup sym (symMaps st)
+  in if isJust nid
+     then getNodeWithID st $ fromJust nid
+     else Left $ "getValueNodeMappedToSym: no value-node mapping for " ++
+                 "symbol '" ++ pShow sym ++ "'"
 
 -- | Gets the block node with a particular name in the graph of the given state.
 -- If no such node exists, 'Nothing' is returned.
@@ -1501,12 +1512,21 @@ ensureValueNodeWithSymExists
      -- ^ Data type to use upon creation if such a value node does not exist.
   -> Either String BuildState
 ensureValueNodeWithSymExists st0 sym dt =
-  let n = findValueNodeMappedToSym st0 sym
-  in if isJust n
-     then touchNode st0 (fromJust n)
-     else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ pShow sym))
+  let nid = lookup sym (symMaps st0)
+  in if isJust nid
+     then let ns = G.findNodesWithNodeID (getOSGraph st0) (fromJust nid)
+          in if length ns > 0
+             then if length ns == 1
+                  then touchNode st0 (head ns)
+                  else Left $ "ensureValueNodeWithSymExists: found multiple " ++
+                              "value nodes with ID " ++ pShow (fromJust nid) ++
+                              ", mapped from symbol '" ++ pShow sym ++ "'"
+             else Left $ "ensureValueNodeWithSymExists: found no value node " ++
+                         "with ID " ++ pShow (fromJust nid) ++ ", mapped " ++
+                         "from symbol '" ++ pShow sym ++ "'"
+     else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ toOrigin sym))
              let new_n = fromJust $ lastTouchedNode st1
-             st2 <- addSymMap st1 (sym, new_n)
+             st2 <- addSymMap st1 (sym, G.getNodeID new_n)
              return st2
 
 -- | Checks that a block node with a particular name exists in the graph of the
@@ -1671,6 +1691,15 @@ nameToString (LLVM.UnName int) = show int
 -- produced by type-casts which are removed.
 removeOutlyingTypeCasts :: BuildState -> Either String BuildState
 removeOutlyingTypeCasts st =
+
+-- | Converts a 'Symbol' into 'String' to be used as origin for value nodes.
+toOrigin :: Symbol -> String
+toOrigin = pShow
+
+-- | Checks that all value nodes in the graph have a data type (that is,
+-- anything else but 'D.AnyType').
+checkAllDataHasType :: BuildState -> Either String BuildState
+checkAllDataHasType st =
   do let g = getOSGraph st
          ns = filter G.isComputationNode $ G.getAllNodes g
          cast_ns = filter (Op.isCompTypeCastOp . G.getCompOpOfComputationNode) $
