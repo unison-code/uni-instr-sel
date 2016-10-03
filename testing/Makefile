@@ -139,7 +139,8 @@ run-regression-tests-for-target:
 	T_FAILED=0 ;\
 	T_ALL=$(REGRESSION_TESTS_DIR)/*.ll ;\
 	T_MAX_LENGTH=0 ;\
-	T_TIME_TOTAL=0 ;\
+	T_TIME_START=`date +%s` ;\
+	T_SOLV_TIME_TOTAL=0 ;\
 	for T in $$T_ALL; do \
 	    T_NAME=`basename $$T` ;\
 		if [ "$${#T_NAME}" -gt "$$T_MAX_LENGTH" ]; then \
@@ -180,8 +181,8 @@ run-regression-tests-for-target:
 						  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
-					T_TIME_TOTAL=`echo "scale=2; \
-								 		t = $$T_TIME_TOTAL + $$time; \
+					T_SOLV_TIME_TOTAL=`echo "scale=2; \
+								 		t = $$T_SOLV_TIME_TOTAL + $$time; \
 										if (t < 1) print 0; t" \
 								  | bc` ;\
 				else \
@@ -203,6 +204,9 @@ run-regression-tests-for-target:
 			echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
 		fi ;\
 	done ;\
+	T_TIME_END=`date +%s` ;\
+	T_TIME_TOTAL=`expr $$T_TIME_END - $$T_TIME_START` ;\
+	T_TIME_TOTAL_PRETTY=`date -u -d @"$$T_TIME_TOTAL" +'%-Mm %-Ss'` ;\
 	echo ;\
 	echo -n "$(BLUE)" ;\
 	echo "==========================================================" ;\
@@ -214,7 +218,8 @@ run-regression-tests-for-target:
 		echo -n ", FAILED $(RED)$$T_FAILED$(BLUE)" ;\
 	fi ;\
 	echo " of $(NC)$$T_TOTAL$(BLUE) TESTS" ;\
-	echo "=   TOTAL SOLVING TIME: $(NC)$${T_TIME_TOTAL}s$(BLUE)" ;\
+	echo "=   TOOK: $(NC)$${T_TIME_TOTAL_PRETTY}$(BLUE)" ;\
+	echo "=   TOTAL SOLVING TIME: $(NC)$${T_SOLV_TIME_TOTAL}s$(BLUE)" ;\
 	echo "==========================================================" ;\
 	echo -n "$(NC)" ;\
 	echo
