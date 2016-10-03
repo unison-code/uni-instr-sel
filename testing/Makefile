@@ -58,7 +58,7 @@ REGRESSION_TESTS_DIR := ./regression
 RED=\033[1;31m
 GREEN=\033[1;32m
 YELLOW=\033[1;33m
-PURPLE=\033[1;35m
+BLUE=\033[1;34m
 NC=\033[0m# No color
 
 
@@ -123,15 +123,15 @@ run-regression-tests:
 .PHONY: run-regression-tests-for-target
 run-regression-tests-for-target:
 	@echo
-	@echo -n "$(PURPLE)"
+	@echo -n "$(BLUE)"
 	@echo "=========================================================="
-	@echo "=   REGRESSION TESTS FOR TARGET: $(NC)$(TARGET)$(PURPLE)"
+	@echo "=   REGRESSION TESTS FOR TARGET: $(NC)$(TARGET)$(BLUE)"
 	@echo "=========================================================="
 	@echo -n "$(NC)"
 	@echo
-	@echo "$(PURPLE)NOTE: Solving time is given in brackets$(NC)"
+	@echo "$(BLUE)NOTE: Solving time is given in brackets$(NC)"
 	@echo
-	@echo "$(PURPLE)* EXECUTING REGRESSION TESTS$:$(NC)"
+	@echo "$(BLUE)* EXECUTING REGRESSION TESTS$:$(NC)"
 	@\
 	T_TOTAL=0 ;\
 	T_PASSED=0 ;\
@@ -204,17 +204,17 @@ run-regression-tests-for-target:
 		fi ;\
 	done ;\
 	echo ;\
-	echo -n "$(PURPLE)" ;\
+	echo -n "$(BLUE)" ;\
 	echo "==========================================================" ;\
-	echo -n "=   PASSED $(GREEN)$$T_PASSED$(PURPLE)" ;\
+	echo -n "=   PASSED $(GREEN)$$T_PASSED$(BLUE)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
-		echo -n ", IGNORED $(YELLOW)$$T_IGNORED$(PURPLE)" ;\
+		echo -n ", IGNORED $(YELLOW)$$T_IGNORED$(BLUE)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
-		echo -n ", FAILED $(RED)$$T_FAILED$(PURPLE)" ;\
+		echo -n ", FAILED $(RED)$$T_FAILED$(BLUE)" ;\
 	fi ;\
-	echo " of $(NC)$$T_TOTAL$(PURPLE) TESTS" ;\
-	echo "=   TOTAL SOLVING TIME: $(NC)$${T_TIME_TOTAL}s$(PURPLE)" ;\
+	echo " of $(NC)$$T_TOTAL$(BLUE) TESTS" ;\
+	echo "=   TOTAL SOLVING TIME: $(NC)$${T_TIME_TOTAL}s$(BLUE)" ;\
 	echo "==========================================================" ;\
 	echo -n "$(NC)" ;\
 	echo
