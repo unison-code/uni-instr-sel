@@ -1173,25 +1173,28 @@ mkPatternDFGFromSetregCall
                       ) $
                  [arg1, arg2]
      let g0 = getOSGraph st0
-     sym1 <- toSymbol arg1
-     g1 <- if length (G.getPredecessors g0 n1) == 0
-           then if length (G.getSuccessors g0 n1) == 0
-                then Right $ G.mergeNodes n2 n1 g0
-                else Left $ "mkPatternDFGFromSetregCall: destination node " ++
-                            "mapped from symbol '" ++ pShow sym1 ++ "' is " ++
-                            "not allowed to have any successors"
-           else Left $ "mkPatternDFGFromSetregCall: destination node mapped " ++
-                        "from symbol '" ++ pShow sym1 ++ "' is " ++
-                        "not allowed to have any predecessors"
-     n1_origin <- let o = G.getOriginOfValueNode n1
-                  in if isJust o
-                     then return $ fromJust o
-                     else Left $ "mkPatternDFGFromSetregCall: node mapped " ++
-                                 "symblol '" ++ pShow sym1 ++ "' " ++
-                                 "has no origin"
-     let g2 = G.updateOriginOfValueNode n1_origin n2 g1
-     st1 <- updateOSGraph st0 g2
-     st2 <- replaceNodeIDInBuildState (G.getNodeID n1) (G.getNodeID n2) st1
+         do_merge = length (G.getDtFlowInEdges g0 n1) == 0 &&
+                    length (G.getDtFlowOutEdges g0 n1) == 0
+     g1 <- if do_merge
+           then do let g = G.mergeNodes n2 n1 g0
+                   sym1 <- toSymbol arg1
+                   n1_origin <- let o = G.getOriginOfValueNode n1
+                                in if isJust o
+                                   then return $ fromJust o
+                                   else Left $ "mkPatternDFGFromSetregCall: " ++
+                                               "node mapped symbol '" ++
+                                               pShow sym1 ++ "' has no origin"
+                   return $ G.updateOriginOfValueNode n1_origin n2 g
+           else return g0
+     st1 <- updateOSGraph st0 g1
+     st2 <- if do_merge
+            then replaceNodeIDInBuildState (G.getNodeID n1) (G.getNodeID n2) st1
+            else do let os = C.addSameDataLocConstraints [ G.getNodeID n1
+                                                         , G.getNodeID n2
+                                                         ]
+                                                         (opStruct st1)
+                        st = st1 { opStruct = os }
+                    addPatExtValue st (G.getNodeID n2)
      return st2
 mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =
   Left $ "mkPatternDFGFromSetregCall: unexpected number or type of function "
