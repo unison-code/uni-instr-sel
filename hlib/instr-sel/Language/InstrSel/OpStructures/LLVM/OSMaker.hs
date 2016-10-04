@@ -82,7 +82,7 @@ type PendingBlockToDatumDef = (F.BlockName, G.NodeID, G.EdgeNr)
 -- built. Since the out-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the out-edge number of the data-flow edge is
 -- also included in the tuple.
-type PendingDatumToBlockDef = (G.Node, F.BlockName, G.EdgeNr)
+type PendingDatumToBlockDef = (G.NodeID, F.BlockName, G.EdgeNr)
 
 -- | Retains various symbol names.
 data Symbol
@@ -671,8 +671,8 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
                    }
          st5 = st4 { datumToBlockDefs =
                        map ( \old@(n, b', nr) ->
-                             if res_n == n
-                             then (sym_n, b', nr)
+                             if G.getNodeID res_n == n
+                             then (G.getNodeID sym_n, b', nr)
                              else old
                            ) $
                        datumToBlockDefs st4
@@ -936,14 +936,15 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
      st2 <- addNewNode st1 G.PhiNode
      let phi_node = fromJust $ lastTouchedNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-     st4 <- foldM ( \st (n, block_id) ->
+     st4 <- foldM ( \st (n, name) ->
                     let g = getOSGraph st
                         dfe = head $
                               filter G.isDataFlowEdge $
                               G.getEdgesBetween g n phi_node
-                    in addPendingDatumToBlockDef
-                         st
-                         (n, block_id, G.getOutEdgeNr dfe)
+                    in addPendingDatumToBlockDef st
+                                                 ( G.getNodeID n, name
+                                                 , G.getOutEdgeNr dfe
+                                                 )
                   )
                   st3
                   (zip operand_ns block_names)
@@ -1110,8 +1111,8 @@ mkPatternDFGFromSetregCall
                    }
          st4 = st3 { datumToBlockDefs =
                         map ( \old@(n, b', nr) ->
-                                if n1 == n
-                                then (n2, b', nr)
+                                if G.getNodeID n1 == n
+                                then (G.getNodeID n2, b', nr)
                                 else old
                             ) $
                         datumToBlockDefs st3
@@ -1680,8 +1681,9 @@ addPendingDatumToBlockDefEdges :: BuildState -> Either String BuildState
 addPendingDatumToBlockDefEdges st =
   do let g0 = getOSGraph st
          defs = datumToBlockDefs st
-     g1 <- foldM ( \g (dn, name, nr) ->
-                   do bn <- getBlockNodeWithName st name
+     g1 <- foldM ( \g (dn_id, name, nr) ->
+                   do dn <- getNodeWithID st dn_id
+                      bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (dn, bn) g
                           new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
                           g'' = G.updateEdgeLabel new_el new_e g'
