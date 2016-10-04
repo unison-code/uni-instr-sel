@@ -42,6 +42,7 @@ MINIZINC_BACKEND_FLAGS :=
 
 CLANG                 := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
 UNI_IS_CMD            := uni-is
+UNI_TARGEN_CMD        := uni-targen
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
@@ -75,6 +76,10 @@ build:
 .PHONY: uni-is
 uni-is:
 	cd .. && make uni-is
+
+.PHONY: uni-targen
+uni-targen:
+	cd .. && make uni-targen
 
 .PHONY: hlib
 hlib:
@@ -311,6 +316,12 @@ pattern.dot:
 	$(PRETTIFY) $< > $@.temp
 	mv $@.temp $@
 	$(RM) $@.temp
+
+regenerate-targets:
+	$(MAKE) uni-targen
+	for json in *.arch.json; do \
+		$(UNI_TARGEN_CMD) -m $$json -o ../uni-is/UniIS/Targets ;\
+	done
 
 fetch-test-cases:
 	TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
