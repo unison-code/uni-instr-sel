@@ -318,7 +318,6 @@ pattern.dot:
 	$(RM) $@.temp
 
 regenerate-targets:
-	$(MAKE) uni-targen
 	for json in *.arch.json; do \
 		$(UNI_TARGEN_CMD) -m $$json -o ../uni-is/UniIS/Targets ;\
 	done
