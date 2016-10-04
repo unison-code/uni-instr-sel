@@ -66,7 +66,7 @@ type SymToValueNodeMapping = (Symbol, G.NodeID)
 -- the data-flow graph and the control-flow graph have been built. If the datum
 -- node is a value node then a data-flow edge is added, and if it is a state
 -- node then a state-flow edge is added.
-type PendingBlockToDatumFlow = (F.BlockName, G.Node)
+type PendingBlockToDatumFlow = (F.BlockName, G.NodeID)
 
 -- | Represents a definition that goes from a block node, identified by the
 -- given ID, an datum node. This is needed to draw the pending definition edges
@@ -74,7 +74,7 @@ type PendingBlockToDatumFlow = (F.BlockName, G.Node)
 -- built. Since the in-edge number of an data-flow edge must match that of the
 -- corresponding definition edge, the in-edge number of the data-flow edge is
 -- also included in the tuple.
-type PendingBlockToDatumDef = (F.BlockName, G.Node, G.EdgeNr)
+type PendingBlockToDatumDef = (F.BlockName, G.NodeID, G.EdgeNr)
 
 -- | Represents a definition that goes from an datum node to a block node,
 -- identified by the given ID. This is needed to draw the pending definition
@@ -358,9 +358,8 @@ mkFunctionOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkFunctionDFGBuilder st0 f
      st2 <- build mkFunctionCFGBuilder st1 f
-     st3 <- updateOSEntryBlockNode
-              st2
-              (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
+     entry_n <- getBlockNodeWithName st2 (fromJust $ entryBlock st2)
+     st3 <- updateOSEntryBlockNode st2 entry_n
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
@@ -375,9 +374,8 @@ mkPatternOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkPatternDFGBuilder st0 f
      st2 <- build mkPatternCFGBuilder st1 f
-     st3 <- updateOSEntryBlockNode
-              st2
-              (fromJust $ findBlockNodeWithID st2 (fromJust $ entryBlock st2))
+     entry_n <- getBlockNodeWithName st2 (fromJust $ entryBlock st2)
+     st3 <- updateOSEntryBlockNode st2 entry_n
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
@@ -443,7 +441,10 @@ mkPatternDFGBuilder =
              return $ if isJust (lastTouchedStateNode st1)
                       then let n = fromJust $ lastTouchedStateNode st1
                                es = blockToDatumDefs st1
-                               pruned_es = filter ( \(_, n', _) ->  n /= n') es
+                               pruned_es = filter ( \(_, n', _) ->
+                                                    G.getNodeID n /= n'
+                                                  )
+                                                  es
                            in st1 { blockToDatumDefs = pruned_es }
                       else st1
         newInstrMk b st i@(LLVM.Call {}) =
@@ -544,7 +545,7 @@ mkPatternCFGFromReturnCall
   =
   do st1 <- addNewNode st0 (G.ControlNode Op.Ret)
      let rn = fromJust $ lastTouchedNode st1
-         bn = fromJust $ findBlockNodeWithID st1 $ fromJust $ currentBlock st1
+     bn <- getBlockNodeWithName st1 $ fromJust $ currentBlock st1
      arg_sym <- toSymbol arg
      vn <- getValueNodeMappedToSym st0 arg_sym
      st2 <- addNewEdge st1 G.DataFlowEdge vn rn
@@ -627,7 +628,10 @@ mkFunctionDFGFromBasicBlock
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock b_name insts _) =
   do let block_name = F.BlockName $ nameToString b_name
      st1 <- if isNothing $ entryBlock st0
-            then foldM (\st n -> addPendingBlockToDatumFlow st (block_name, n))
+            then foldM ( \st n -> addPendingBlockToDatumFlow st ( block_name
+                                                                , G.getNodeID n
+                                                                )
+                       )
                        (st0 { entryBlock = Just block_name })
                        (funcInputValues st0)
             else return st0
@@ -637,7 +641,10 @@ mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock b_name insts _) =
      st3 <- foldM (build b) st2 insts
      let st_n = lastTouchedStateNode st3
      st4 <- if isJust st_n
-            then addPendingBlockToDatumDef st3 (block_name, fromJust st_n, 0)
+            then addPendingBlockToDatumDef st3 ( block_name
+                                               , G.getNodeID $ fromJust st_n
+                                               , 0
+                                               )
             else return st3
      return st4
 
@@ -655,8 +662,8 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
      let sym_n = fromJust $ lastTouchedNode st2
      st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
      let st4 = st3 { blockToDatumDefs =
-                       map ( \(b', n, nr) -> if res_n == n
-                                             then (b', sym_n, nr)
+                       map ( \(b', n, nr) -> if G.getNodeID res_n == n
+                                             then (b', G.getNodeID sym_n, nr)
                                              else (b', n, nr)
                            ) $
                        blockToDatumDefs st3
@@ -943,7 +950,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
      let d_node = fromJust $ lastTouchedNode st5
      st6 <- addNewEdge st5 G.DataFlowEdge phi_node d_node
      st7 <- addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
-                                          , d_node
+                                          , G.getNodeID d_node
                                           , 0
                                           )
             -- Since we've just created the value node and only added a
@@ -1084,14 +1091,18 @@ mkPatternDFGFromSetregCall
      let g2 = G.updateOriginOfValueNode (G.getOriginOfValueNode n1) n2 g1
      st1 <- updateOSGraph st0 g2
      let st2 = st1 { blockToDatumDataFlows =
-                       map ( \(b', n) ->
-                               if n1 == n then (b', n2) else (b', n)
+                       map ( \old@(b', nid) ->
+                               if G.getNodeID n1 == nid
+                               then (b', G.getNodeID n2)
+                               else old
                            ) $
                        blockToDatumDataFlows st1
                    }
          st3 = st2 { blockToDatumDefs =
-                        map ( \(b', n, nr) ->
-                                if n1 == n then (b', n2, nr) else (b', n, nr)
+                        map ( \old@(b', n, nr) ->
+                                if G.getNodeID n1 == n
+                                then (b', G.getNodeID n2, nr)
+                                else old
                             ) $
                         blockToDatumDefs st2
                    }
@@ -1280,12 +1291,8 @@ mkFunctionCFGFromControlOp b st0 op operands =
      let st1 = last sts
      st2 <- addNewNode st1 (G.ControlNode op)
      let op_node = fromJust $ lastTouchedNode st2
-     st3 <- addNewEdge st2
-                       G.ControlFlowEdge
-                       ( fromJust $
-                         findBlockNodeWithID st2 (fromJust $ currentBlock st2)
-                       )
-                       op_node
+     bn <- getBlockNodeWithName st2 (fromJust $ currentBlock st2)
+     st3 <- addNewEdge st2 G.ControlFlowEdge bn op_node
      st4 <- addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
      return st4
 
@@ -1392,7 +1399,9 @@ addNewValueNodeWithConstant st0 c =
   do dt <- toOpDataType c
      st1 <- addNewNode st0 $ G.ValueNode dt (Just $ mkVarNameForConst c)
      let new_n = fromJust $ lastTouchedNode st1
-     st2 <- addPendingBlockToDatumFlow st1 (fromJust $ entryBlock st1, new_n)
+     st2 <- addPendingBlockToDatumFlow st1 ( fromJust $ entryBlock st1
+                                           , G.getNodeID new_n
+                                           )
      return st2
 
 -- | Adds a new edge into a given state.
@@ -1474,10 +1483,15 @@ addFuncInputValue :: BuildState -> G.Node -> Either String BuildState
 addFuncInputValue st n =
   return $ st { funcInputValues = n:(funcInputValues st) }
 
+-- | Finds the nodes in the graph of the givne state that matches a given node
+-- ID.
+findNodesWithID :: BuildState -> G.NodeID -> [G.Node]
+findNodesWithID st nid = G.findNodesWithNodeID (getOSGraph st) nid
+
 -- | Gets the node with a given ID.
 getNodeWithID :: BuildState -> G.NodeID -> Either String G.Node
 getNodeWithID st nid =
-  do let ns = G.findNodesWithNodeID (getOSGraph st) nid
+  do let ns = findNodesWithID st nid
      if length ns > 0
      then if length ns == 1
           then return $ head ns
@@ -1490,20 +1504,37 @@ getValueNodeMappedToSym :: BuildState -> Symbol -> Either String G.Node
 getValueNodeMappedToSym st sym =
   let nid = lookup sym (symMaps st)
   in if isJust nid
-     then getNodeWithID st $ fromJust nid
+     then let ns = findNodesWithID st (fromJust nid)
+          in if length ns > 0
+             then if length ns == 1
+                  then return $ head ns
+                  else Left $ "getValueNodeMappedToSym: found multiple " ++
+                              "nodes with ID " ++ pShow (fromJust nid) ++
+                              ", mapped from symbol '" ++ pShow sym ++ "'"
+             else Left $ "getValueNodeMappedToSym: found no nodes with ID " ++
+                         pShow (fromJust nid) ++ ", mapped from symbol " ++
+                         "'" ++ pShow sym ++ "'"
      else Left $ "getValueNodeMappedToSym: no value-node mapping for " ++
                  "symbol '" ++ pShow sym ++ "'"
 
--- | Gets the block node with a particular name in the graph of the given state.
--- If no such node exists, 'Nothing' is returned.
-findBlockNodeWithID :: BuildState -> F.BlockName -> Maybe G.Node
-findBlockNodeWithID st l =
+-- | Returns the block nodes in the graph of the given state that match a given
+-- name.
+findBlockNodesWithName :: BuildState -> F.BlockName -> [G.Node]
+findBlockNodesWithName st name =
   let block_nodes = filter G.isBlockNode $ G.getAllNodes $ getOSGraph st
-      nodes_w_matching_blocks =
-        filter (\n -> (G.nameOfBlock $ G.getNodeType n) == l) block_nodes
-  in if length nodes_w_matching_blocks > 0
-     then Just (head nodes_w_matching_blocks)
-     else Nothing
+  in filter (\n -> (G.nameOfBlock $ G.getNodeType n) == name) block_nodes
+
+-- | Gets the block node with a particular name in the graph of the given state.
+getBlockNodeWithName :: BuildState -> F.BlockName -> Either String G.Node
+getBlockNodeWithName st name =
+  let ns = findBlockNodesWithName st name
+  in if length ns > 0
+     then if length ns == 1
+          then return $ head ns
+          else Left $ "getBlockNodeWithName: found multiple block nodes " ++
+                      "with name '" ++ pShow name ++ "'"
+     else Left $ "getBlockNodeWithName: found no block node with name " ++
+                 "'" ++ pShow name ++ "'"
 
 -- | Checks that a value node with a particular symbol exists in the graph of
 -- the given state. If it does then the last touched node is updated
@@ -1518,7 +1549,7 @@ ensureValueNodeWithSymExists
 ensureValueNodeWithSymExists st0 sym dt =
   let nid = lookup sym (symMaps st0)
   in if isJust nid
-     then let ns = G.findNodesWithNodeID (getOSGraph st0) (fromJust nid)
+     then let ns = findNodesWithID st0 (fromJust nid)
           in if length ns > 0
              then if length ns == 1
                   then touchNode st0 (head ns)
@@ -1537,11 +1568,14 @@ ensureValueNodeWithSymExists st0 sym dt =
 -- given state. If it does then the last touched node is updated accordingly,
 -- otherwise then a new block node is added.
 ensureBlockNodeExists :: BuildState -> F.BlockName -> Either String BuildState
-ensureBlockNodeExists st l =
-  let block_node = findBlockNodeWithID st l
-  in if isJust block_node
-     then touchNode st (fromJust block_node)
-     else addNewNode st (G.BlockNode l)
+ensureBlockNodeExists st name =
+  let ns = findBlockNodesWithName st name
+  in if length ns > 0
+     then if length ns == 1
+          then touchNode st (head ns)
+          else Left $ "ensureBlockNodeExists: found multiple block nodes " ++
+                      "with name '" ++ pShow name ++ "'"
+     else addNewNode st (G.BlockNode name)
 
 -- | Checks that a state node has been touched. If not, then a new state node is
 -- added and set as touched. Also, if this is a function graph, a pending
@@ -1553,7 +1587,9 @@ ensureStateNodeHasBeenTouched st0 =
   then return st0
   else do st1 <- addNewStateNode st0
           let n = fromJust $ lastTouchedStateNode st1
-          st2 <- addPendingBlockToDatumFlow st1 (fromJust $ currentBlock st1, n)
+          st2 <- addPendingBlockToDatumFlow st1 ( fromJust $ currentBlock st1
+                                                , G.getNodeID n
+                                                )
            -- Note that, if this is a pattern, then the flow above will not be
            -- inserted as all 'PendingBlockToDatumFlow' entities are ignored.
           return st2
@@ -1595,58 +1631,61 @@ fromLlvmFPred op = error $ "'fromLlvmFPred' not implemented for " ++ show op
 -- nodes, as described in the given build state.
 addPendingBlockToDatumFlowEdges :: BuildState -> Either String BuildState
 addPendingBlockToDatumFlowEdges st =
-  let g0 = getOSGraph st
-      deps = map ( \(l, n) ->
-                   if G.isValueNode n
-                   then (l, n, G.DataFlowEdge)
-                   else if G.isStateNode n
-                        then (l, n, G.StateFlowEdge)
-                        else error $ "addPendingBlockToDatumFlowEdges: "
-                                     ++ "This should never happen"
+  do let g0 = getOSGraph st
+     deps <- mapM ( \(name, nid) ->
+                    do n <- getNodeWithID st nid
+                       p <- if G.isValueNode n
+                            then return (name, n, G.DataFlowEdge)
+                            else if G.isStateNode n
+                                 then return (name, n, G.StateFlowEdge)
+                                 else Left $
+                                      "addPendingBlockToDatumFlowEdges: " ++
+                                      show n ++ "is of unexpected type"
+                       return p
+                  ) $
+             blockToDatumDataFlows st
+     g1 <- foldM ( \g (name, n, et) ->
+                   do bn <- getBlockNodeWithName st name
+                      return $ fst $ G.addNewEdge et (bn, n) g
                  )
-                 (blockToDatumDataFlows st)
-      g1 =
-        foldr ( \(l, n, et) g ->
-                let pair = (fromJust $ findBlockNodeWithID st l, n)
-                in fst $ G.addNewEdge et pair g
-              )
-              g0
-              deps
-  in updateOSGraph st g1
+                 g0
+                 deps
+     updateOSGraph st g1
 
 -- | Adds the pending block-to-datum definition edges, as described in the
 -- given build state.
 addPendingBlockToDatumDefEdges :: BuildState -> Either String BuildState
 addPendingBlockToDatumDefEdges st =
-  let g0 = getOSGraph st
-      defs = blockToDatumDefs st
-      g1 = foldr ( \(block_id, dn, nr) g ->
-                   let ln = fromJust $ findBlockNodeWithID st block_id
-                       (g', new_e) = G.addNewDefEdge (ln, dn) g
-                       new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
-                       g'' = G.updateEdgeLabel new_el new_e g'
-                   in g''
+  do let g0 = getOSGraph st
+         defs = blockToDatumDefs st
+     g1 <- foldM ( \g (name, dn_id, nr) ->
+                   do dn <- getNodeWithID st dn_id
+                      bn <- getBlockNodeWithName st name
+                      let (g', new_e) = G.addNewDefEdge (bn, dn) g
+                          new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
+                          g'' = G.updateEdgeLabel new_el new_e g'
+                      return g''
                  )
                  g0
                  defs
-  in updateOSGraph st g1
+     updateOSGraph st g1
 
 -- | Adds the pending datum-to-block definition edges, as described in the
 -- given build state.
 addPendingDatumToBlockDefEdges :: BuildState -> Either String BuildState
 addPendingDatumToBlockDefEdges st =
-  let g0 = getOSGraph st
-      defs = datumToBlockDefs st
-      g1 = foldr ( \(dn, block_id, nr) g ->
-                   let ln = fromJust $ findBlockNodeWithID st block_id
-                       (g', new_e) = G.addNewDefEdge (dn, ln) g
-                       new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
-                       g'' = G.updateEdgeLabel new_el new_e g'
-                   in g''
+  do let g0 = getOSGraph st
+         defs = datumToBlockDefs st
+     g1 <- foldM ( \g (dn, name, nr) ->
+                   do bn <- getBlockNodeWithName st name
+                      let (g', new_e) = G.addNewDefEdge (dn, bn) g
+                          new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
+                          g'' = G.updateEdgeLabel new_el new_e g'
+                      return g''
                  )
                  g0
                  defs
-  in updateOSGraph st g1
+     updateOSGraph st g1
 
 -- | Gets the LLVM instruction from a named expression.
 fromNamed :: LLVM.Named i -> i
@@ -1662,7 +1701,10 @@ applyOSTransformations st =
       os1 = OS.canonicalizeCopies os0
       -- Canonicalizing copies will remove value nodes with constants, which
       -- must then be removed from the book keeping held within the build state.
-      b2ddfs1 = filter (\(_, n) -> G.isNodeInGraph (OS.osGraph os1) n) b2ddfs0
+      b2ddfs1 = filter ( \(_, nid) ->
+                         length (G.findNodesWithNodeID (OS.osGraph os1) nid) > 0
+                       )
+                       b2ddfs0
   in return $ st { opStruct = os1
                  , blockToDatumDataFlows = b2ddfs1
                  }
@@ -1675,8 +1717,11 @@ removeUnusedBlockNodes st =
          unused = filter (\n -> length (G.getNeighbors g n) == 0) ns
          new_g = foldr G.delNode g unused
      new_st <- updateOSGraph st new_g
-     let entry_block = findBlockNodeWithID new_st (fromJust $ entryBlock st)
-     return $ if isJust entry_block
+     let entry_name = entryBlock st
+         entry_ns = if isJust entry_name
+                    then findBlockNodesWithName new_st (fromJust entry_name)
+                    else []
+     return $ if length entry_ns > 0
               then new_st
               else let new_os = opStruct new_st
                    in new_st { opStruct =
