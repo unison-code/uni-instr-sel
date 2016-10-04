@@ -15,8 +15,6 @@ module Language.InstrSel.Functions.LLVM.FunctionMaker
   )
 where
 
-import qualified Language.InstrSel.Graphs as G
-import qualified Language.InstrSel.OpStructures as OS
 import Language.InstrSel.OpStructures.LLVM.OSMaker
 import qualified Language.InstrSel.Functions as F
 
@@ -60,14 +58,12 @@ mkFunction
      -- ^ An error message or the built function.
 mkFunction m f@(LLVM.Function {}) =
   if length (LLVM.basicBlocks f) > 0
-     then Just $ do os <- mkFunctionOS f
-                    let (params, _) = LLVM.parameters f
-                    input_nodes <- mapM (extractFunctionInputNodeID os) params
+     then Just $ do (os, inputs) <- mkFunctionOS f
                     let exec_freqs = extractBBExecFreqs m f
                     return F.Function
                              { F.functionName = toFunctionName $ LLVM.name f
                              , F.functionOS = os
-                             , F.functionInputs = input_nodes
+                             , F.functionInputs = inputs
                              , F.functionBBExecFreq = exec_freqs
                              , F.functionBEBlocks = []
                              }
@@ -77,25 +73,6 @@ mkFunction _ _ = Nothing
 toFunctionName :: LLVM.Name -> Maybe String
 toFunctionName (LLVM.Name str) = Just str
 toFunctionName (LLVM.UnName _) = Nothing
-
--- | Extracts the ID of the node in the 'OpStructure' that corresponds to the
--- given function parameter.
-extractFunctionInputNodeID
-  :: OS.OpStructure
-  -> LLVM.Parameter
-  -> Either String G.NodeID
-     -- An error message or the extracted node ID.
-extractFunctionInputNodeID os (LLVM.Parameter _ name _) =
-  do sym <- toSymbolString name
-     let g = OS.osGraph os
-         ns = G.findValueNodesWithOrigin g sym
-     if length ns == 1
-     then return $ G.getNodeID $ head ns
-     else if length ns == 0
-          then Left $ "extractFunctionInputNodeID: no value node with origin '"
-                       ++ sym ++ "'"
-          else Left $ "extractFunctionInputNodeID: more than one value node "
-                       ++ "with origin '" ++ sym ++ "'"
 
 -- | Extracts all basic blocks in the given function together with their
 -- execution frequencies.

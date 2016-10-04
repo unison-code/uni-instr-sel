@@ -15,7 +15,6 @@ module Language.InstrSel.OpStructures.LLVM.OSMaker
   ( SymbolFormable (..)
   , mkFunctionOS
   , mkPatternOS
-  , toSymbolString
   )
 where
 
@@ -149,7 +148,7 @@ data BuildState
       , datumToBlockDefs :: [PendingDatumToBlockDef]
         -- ^ List of datum-to-block definitions that are yet to be converted
         -- into edges.
-      , funcInputValues :: [G.Node]
+      , funcInputValues :: [G.NodeID]
         -- ^ The value nodes representing the function input arguments.
       }
   deriving (Show)
@@ -351,9 +350,10 @@ instance Buildable LLVM.Parameter where
 -- Build functions
 -------------------
 
--- | Builds an 'OpStructure' from a function to be compiled. If the definition
--- is not a 'Function', or any other error occurs, an error message is returned.
-mkFunctionOS :: LLVM.Global -> Either String OS.OpStructure
+-- | Builds an 'OpStructure', together with the input value nodes, from a
+-- function to be compiled. If the definition is not a 'Function', or any other
+-- error occurs, an error message is returned.
+mkFunctionOS :: LLVM.Global -> Either String (OS.OpStructure, [G.NodeID])
 mkFunctionOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkFunctionDFGBuilder st0 f
@@ -365,7 +365,8 @@ mkFunctionOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
      st7 <- addPendingDatumToBlockDefEdges st6
-     return $ opStruct st7
+     st8 <- checkAllDataHasType st7
+     return $ (opStruct st8, funcInputValues st8)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure' from an instruction pattern. If the definition is
@@ -740,10 +741,7 @@ mkFunctionDFGFromBasicBlock
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock b_name insts _) =
   do let block_name = F.BlockName $ nameToString b_name
      st1 <- if isNothing $ entryBlock st0
-            then foldM ( \st n -> addPendingBlockToDatumFlow st ( block_name
-                                                                , G.getNodeID n
-                                                                )
-                       )
+            then foldM (\st n -> addPendingBlockToDatumFlow st (block_name, n))
                        (st0 { entryBlock = Just block_name })
                        (funcInputValues st0)
             else return st0
@@ -1156,7 +1154,7 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
      dt <- toOpDataType t
      st1 <- ensureValueNodeWithSymExists st0 sym dt
      n <- getLastTouchedValueNode st1
-     st2 <- addFuncInputValue st1 n
+     st2 <- addFuncInputValue st1 (G.getNodeID n)
      return st2
 
 -- | Merges the two nodes in the function call.
@@ -1426,18 +1424,6 @@ mkFunctionCFGFromOperand _ _ o =
 -- Help functions
 ------------------
 
--- | Converts a 'SymbolFormable' entity into a string. This is typically used
--- when referring to nodes whose name or origin is based on an LLVM entity (such
--- as a temporary or a variable).
-toSymbolString
-  :: (SymbolFormable s)
-  => s
-  -> Either String String
-     -- ^ An error message ('Left') or the resulting string ('Right').
-toSymbolString s =
-  do sym <- toSymbol s
-     return $ pShow sym
-
 -- | Converts an argument into a temporary-oriented data type.
 toTempDataType
   :: (OperandDataTypeFormable t)
@@ -1588,7 +1574,7 @@ addPendingDatumToBlockDef st def =
   return $ st { datumToBlockDefs = def:(datumToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
-addFuncInputValue :: BuildState -> G.Node -> Either String BuildState
+addFuncInputValue :: BuildState -> G.NodeID -> Either String BuildState
 addFuncInputValue st n =
   return $ st { funcInputValues = n:(funcInputValues st) }
 
