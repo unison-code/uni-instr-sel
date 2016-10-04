@@ -31,7 +31,6 @@ import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
   , toNatural
-  , fromRight
   , splitOn
   , scanlM
   )
@@ -1208,11 +1207,25 @@ mkPatternDFGFromParamCall
   -> LLVM.Instruction
   -> Either String BuildState
 mkPatternDFGFromParamCall _ st0 i@(LLVM.Call {}) =
-  -- TODO: fix error handling
-  do let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
-           fromRight $ LLVM.function i
-         (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
-         (LLVM.FunctionType { LLVM.resultType = rt }) = pt
+  do rt <- case i of ( LLVM.Call
+                       { LLVM.function =
+                         ( Right
+                           ( LLVM.ConstantOperand
+                             ( LLVMC.GlobalReference
+                               ( LLVM.PointerType
+                                 { LLVM.pointerReferent =
+                                   ( LLVM.FunctionType
+                                     { LLVM.resultType = llvm_rt }
+                                   )
+                                 }
+                               )
+                               _
+                             )
+                           )
+                         )
+                       }) -> return llvm_rt
+                     _ -> Left $ "mkPatternDFGFromParamCall: unexpected " ++
+                                 "instruction: " ++ show i
      dt <- toOpDataType rt
      st1 <- addNewNode st0 (G.ValueNode dt Nothing)
      n <- getLastTouchedValueNode st1
