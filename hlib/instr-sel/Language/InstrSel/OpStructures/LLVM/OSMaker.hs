@@ -662,16 +662,18 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
      let sym_n = fromJust $ lastTouchedNode st2
      st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
      let st4 = st3 { blockToDatumDefs =
-                       map ( \(b', n, nr) -> if G.getNodeID res_n == n
-                                             then (b', G.getNodeID sym_n, nr)
-                                             else (b', n, nr)
+                       map ( \old@(b', n, nr) ->
+                             if G.getNodeID res_n == n
+                             then (b', G.getNodeID sym_n, nr)
+                             else old
                            ) $
                        blockToDatumDefs st3
                    }
          st5 = st4 { datumToBlockDefs =
-                       map ( \(n, b', nr) -> if res_n == n
-                                             then (sym_n, b', nr)
-                                             else (n, b', nr)
+                       map ( \old@(n, b', nr) ->
+                             if res_n == n
+                             then (sym_n, b', nr)
+                             else old
                            ) $
                        datumToBlockDefs st4
                    }
@@ -1107,8 +1109,10 @@ mkPatternDFGFromSetregCall
                         blockToDatumDefs st2
                    }
          st4 = st3 { datumToBlockDefs =
-                        map ( \(n, b', nr) ->
-                                if n1 == n then (n2, b', nr) else (n, b', nr)
+                        map ( \old@(n, b', nr) ->
+                                if n1 == n
+                                then (n2, b', nr)
+                                else old
                             ) $
                         datumToBlockDefs st3
                    }
