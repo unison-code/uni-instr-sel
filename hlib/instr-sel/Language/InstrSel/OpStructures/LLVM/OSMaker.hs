@@ -1885,4 +1885,4 @@ replaceNodeIDInBuildState old_nid new_nid st0 =
                         ) $
                     symMaps st5
                 }
-  in return st5
+  in return st6
