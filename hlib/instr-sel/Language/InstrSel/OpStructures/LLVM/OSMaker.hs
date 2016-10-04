@@ -358,8 +358,9 @@ mkFunctionOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkFunctionDFGBuilder st0 f
      st2 <- build mkFunctionCFGBuilder st1 f
-     entry_n <- getBlockNodeWithName st2 (fromJust $ entryBlock st2)
-     st3 <- updateOSEntryBlockNode st2 entry_n
+     entry_name <- getEntryBlock st2
+     entry_node <- getBlockNodeWithName st2 entry_name
+     st3 <- updateOSEntryBlockNode st2 entry_node
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
@@ -374,8 +375,9 @@ mkPatternOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkPatternDFGBuilder st0 f
      st2 <- build mkPatternCFGBuilder st1 f
-     entry_n <- getBlockNodeWithName st2 (fromJust $ entryBlock st2)
-     st3 <- updateOSEntryBlockNode st2 entry_n
+     entry_name <- getEntryBlock st2
+     entry_node <- getBlockNodeWithName st2 entry_name
+     st3 <- updateOSEntryBlockNode st2 entry_node
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
@@ -438,8 +440,9 @@ mkPatternDFGBuilder =
           -- definition edge to the state node if this basic block has produced
           -- a state node in the graph.
           do st1 <- mkFunctionDFGFromBasicBlock b st0 bb
-             return $ if isJust (lastTouchedStateNode st1)
-                      then let n = fromJust $ lastTouchedStateNode st1
+             let st_n = lastTouchedStateNode st1
+             return $ if isJust st_n
+                      then let n = fromJust st_n
                                es = blockToDatumDefs st1
                                pruned_es = filter ( \(_, n', _) ->
                                                     G.getNodeID n /= n'
@@ -448,7 +451,7 @@ mkPatternDFGBuilder =
                            in st1 { blockToDatumDefs = pruned_es }
                       else st1
         newInstrMk b st i@(LLVM.Call {}) =
-          let f_name = getFunctionName i
+          let f_name = retrieveFunctionName i
           in if isJust f_name
              then case (extractFunctionNamePart $ fromJust f_name)
                   of "setreg"          -> mkPatternDFGFromSetregCall b st i
@@ -474,8 +477,8 @@ mkPatternDFGBuilder =
              if D.isVoidType ret_t
              then return st1
              else do let g = getOSGraph st1
-                         ret_n = fromJust $ lastTouchedNode st1
-                         new_g = G.delNode ret_n g
+                     ret_n <- getLastTouchedValueNode st1
+                     let new_g = G.delNode ret_n g
                      st2 <- updateOSGraph st1 new_g
                      return st2
         newNamedMk b st i = mkFunctionDFGFromNamed b st i
@@ -489,7 +492,7 @@ mkPatternCFGBuilder =
                        }
   where
   newInstrMk b st i@(LLVM.Call {}) =
-    let f_name = getFunctionName i
+    let f_name = retrieveFunctionName i
     in if isJust f_name
        then case (extractFunctionNamePart $ fromJust f_name)
             of "return"          -> mkPatternCFGFromReturnCall b st i
@@ -508,10 +511,110 @@ mkPatternCFGBuilder =
   newTermMk _ _ i =
     Left $ "mkPatternCFGBuilder: cannot handle terminator: " ++ show i
 
+-- | Gets the last touched node, and checks that it is a value node.
+getLastTouchedValueNode :: BuildState -> Either String G.Node
+getLastTouchedValueNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isValueNode n
+             then return n
+             else Left $ "getLastTouchedValueNode: last touched node is not " ++
+                         "a value node: " ++ show n
+     else Left "getLastTouchedValueNode: has no last touched node"
+
+-- | Gets the last touched node, and checks that it is a control node.
+getLastTouchedControlNode :: BuildState -> Either String G.Node
+getLastTouchedControlNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isControlNode n
+             then return n
+             else Left $ "getLastTouchedControlNode: last touched node is " ++
+                         "not a control node: " ++ show n
+     else Left "getLastTouchedControlNode: has no last touched node"
+
+-- | Gets the last touched node, and checks that it is a call node.
+getLastTouchedCallNode :: BuildState -> Either String G.Node
+getLastTouchedCallNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isCallNode n
+             then return n
+             else Left $ "getLastTouchedCallNode: last touched node is not " ++
+                         "a call node: " ++ show n
+     else Left "getLastTouchedCallNode: has no last touched node"
+
+-- | Gets the last touched node, and checks that it is a computation node.
+getLastTouchedComputationNode :: BuildState -> Either String G.Node
+getLastTouchedComputationNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isComputationNode n
+             then return n
+             else Left $ "getLastTouchedComputationNode: last touched node " ++
+                         "is not a computation node: " ++ show n
+     else Left "getLastTouchedComputationNode: has no last touched node"
+
+-- | Gets the last touched node, and checks that it is a block node.
+getLastTouchedBlockNode :: BuildState -> Either String G.Node
+getLastTouchedBlockNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isBlockNode n
+             then return n
+             else Left $ "getLastTouchedBlockNode: last touched node is not " ++
+                         "a block node: " ++ show n
+     else Left "getLastTouchedBlockNode: has no last touched node"
+
+-- | Gets the last touched node, and checks that it is a phi node.
+getLastTouchedPhiNode :: BuildState -> Either String G.Node
+getLastTouchedPhiNode st =
+  let maybe_n = lastTouchedNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isPhiNode n
+             then return n
+             else Left $ "getLastTouchedPhiNode: last touched node is not a " ++
+                         "phi node: " ++ show n
+     else Left "getLastTouchedPhiNode: has no last touched node"
+
+-- | Gets the last touched state node, and checks that it is a state node.
+getLastTouchedStateNode :: BuildState -> Either String G.Node
+getLastTouchedStateNode st =
+  let maybe_n = lastTouchedStateNode st
+  in if isJust maybe_n
+     then let n = fromJust maybe_n
+          in if G.isStateNode n
+             then return n
+             else Left $ "getLastTouchedStateNode: last touched state node " ++
+                         "is not a state node: " ++ show n
+     else Left "getLastTouchedStateNode: has no last touched state node"
+
+-- | Gets the entry block in a given state.
+getEntryBlock :: BuildState -> Either String F.BlockName
+getEntryBlock st =
+  let e = entryBlock st
+  in if isJust e
+     then return $ fromJust e
+     else Left "getEntryBlock: has no entry block"
+
+-- | Gets the current block in a given state.
+getCurrentBlock :: BuildState -> Either String F.BlockName
+getCurrentBlock st =
+  let e = currentBlock st
+  in if isJust e
+     then return $ fromJust e
+     else Left "getCurrentBlock: has no current block"
+
 -- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
 -- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
-getFunctionName :: LLVM.Instruction -> Maybe String
-getFunctionName ( LLVM.Call { LLVM.function =
+retrieveFunctionName :: LLVM.Instruction -> Maybe String
+retrieveFunctionName ( LLVM.Call { LLVM.function =
                                Right
                                ( LLVM.ConstantOperand
                                  ( LLVMC.GlobalReference _ (LLVM.Name name)
@@ -520,7 +623,15 @@ getFunctionName ( LLVM.Call { LLVM.function =
                             }
                 )
   = Just name
-getFunctionName _ = Nothing
+retrieveFunctionName _ = Nothing
+
+-- | Gets the name of a given 'LLVM.Call' instruction.
+getFunctionName :: LLVM.Instruction -> Either String String
+getFunctionName i =
+  let name = retrieveFunctionName i
+  in if isJust name
+     then return $ fromJust name
+     else Left $ "getFunctionName: unexpected instruction: " ++ show i
 
 -- | Extracts the name part of a given function name. This is needed because
 -- some function calls has parameters embedded into the function name, such as
@@ -544,8 +655,9 @@ mkPatternCFGFromReturnCall
   (LLVM.Call { LLVM.arguments = [(LLVM.LocalReference _ arg, _)] })
   =
   do st1 <- addNewNode st0 (G.ControlNode Op.Ret)
-     let rn = fromJust $ lastTouchedNode st1
-     bn <- getBlockNodeWithName st1 $ fromJust $ currentBlock st1
+     rn <- getLastTouchedControlNode st1
+     current_b <- getCurrentBlock st1
+     bn <- getBlockNodeWithName st1 current_b
      arg_sym <- toSymbol arg
      vn <- getValueNodeMappedToSym st0 arg_sym
      st2 <- addNewEdge st1 G.DataFlowEdge vn rn
@@ -564,13 +676,13 @@ mkPatternCFGFromUncondBrCall
   st0
   i@(LLVM.Call { LLVM.arguments = [] })
   =
-  do let label = "%" ++
-                 (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+  do f_name <- getFunctionName i
+     let label = "%" ++ extractFunctionLabelPart f_name
      st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
-     let br_node = fromJust $ lastTouchedNode st1
+     br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 $ F.toBlockName label
-     let dst_node = fromJust $ lastTouchedNode st2
+     dst_node <- getLastTouchedBlockNode st2
      st3 <- addNewEdgesManyDests st2
                                  G.ControlFlowEdge
                                  br_node
@@ -589,14 +701,14 @@ mkPatternCFGFromCondBrOrFallCall
   st0
   i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
   =
-  do let t_label = "%" ++
-                   (extractFunctionLabelPart $ fromJust $ getFunctionName i)
+  do f_name <- getFunctionName i
+     let t_label = "%" ++ extractFunctionLabelPart f_name
      st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
-     let br_node = fromJust $ lastTouchedNode st1
+     br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 $ F.toBlockName t_label
-     let t_dst_node = fromJust $ lastTouchedNode st2
+     t_dst_node <- getLastTouchedBlockNode st2
      st3 <- ensureBlockNodeExists st2 F.mkEmptyBlockName
-     let f_dst_node = fromJust $ lastTouchedNode st3
+     f_dst_node <- getLastTouchedBlockNode st3
      st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge
                                  br_node
@@ -656,10 +768,10 @@ mkFunctionDFGFromNamed
 mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
   do st1 <- build b st0 expr
      sym <- toSymbol name
-     let res_n = fromJust $ lastTouchedNode st1
-         res_dt = G.getDataTypeOfValueNode res_n
+     res_n <- getLastTouchedValueNode st1
+     let res_dt = G.getDataTypeOfValueNode res_n
      st2 <- ensureValueNodeWithSymExists st1 sym res_dt
-     let sym_n = fromJust $ lastTouchedNode st2
+     sym_n <- getLastTouchedValueNode st2
      st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
      let st4 = st3 { blockToDatumDefs =
                        map ( \old@(b', n, nr) ->
@@ -883,40 +995,32 @@ mkFunctionDFGFromInstruction b st (LLVM.Alloca t _ _ _) =
                             ([] :: [LLVM.Operand])
 mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
   do sts <- scanlM (build b) st0 [addr_op, val_op]
-     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     operand_ns <- mapM getLastTouchedValueNode (tail sts)
      let st1 = last sts
      st2 <- addNewNode st1 (G.ComputationNode $ Op.CompMemoryOp Op.Store)
-     let op_node = fromJust $ lastTouchedNode st2
+     op_node <- getLastTouchedComputationNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
      st4 <- ensureStateNodeHasBeenTouched st3
-     st5 <- addNewEdge st4
-                       G.StateFlowEdge
-                       (fromJust $ lastTouchedStateNode st4)
-                       op_node
+     st_n4 <- getLastTouchedStateNode st4
+     st5 <- addNewEdge st4 G.StateFlowEdge st_n4 op_node
      st6 <- addNewStateNode st5
-     st7 <- addNewEdge st6
-                       G.StateFlowEdge
-                       op_node
-                       (fromJust $ lastTouchedStateNode st6)
+     st_n6 <- getLastTouchedStateNode st6
+     st7 <- addNewEdge st6 G.StateFlowEdge op_node st_n6
      return st7
 mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
   do sts <- scanlM (build b) st0 $ map fst args
-     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     operand_ns <- mapM getLastTouchedValueNode (tail sts)
      let st1 = last sts
      func_name <- toFunctionName f
      st2 <- addNewNode st1 (G.CallNode func_name)
-     let op_node = fromJust $ lastTouchedNode st2
+     op_node <- getLastTouchedCallNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
      st4 <- ensureStateNodeHasBeenTouched st3
-     st5 <- addNewEdge st4
-                       G.StateFlowEdge
-                       (fromJust $ lastTouchedStateNode st4)
-                       op_node
+     st_n4 <- getLastTouchedStateNode st4
+     st5 <- addNewEdge st4 G.StateFlowEdge st_n4 op_node
      st6 <- addNewStateNode st5
-     st7 <- addNewEdge st6
-                       G.StateFlowEdge
-                       op_node
-                       (fromJust $ lastTouchedStateNode st6)
+     st_n6 <- getLastTouchedStateNode st6
+     st7 <- addNewEdge st6 G.StateFlowEdge op_node st_n6
      -- Note that the result value node, if any, MUST be inserted last as the
      -- last touched node in this case must be a value node and not a state
      -- node.
@@ -924,17 +1028,17 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
      if D.isVoidType ret_type
      then return st7
      else do st8 <- addNewNode st7 (G.ValueNode ret_type Nothing)
-             let d_node = fromJust $ lastTouchedNode st8
+             d_node <- getLastTouchedValueNode st8
              st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
              return st9
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
   do let (operands, blocks) = unzip phi_operands
          block_names = map (\b_name -> F.BlockName $ nameToString b_name) blocks
      operand_node_sts <- scanlM (build b) st0 operands
-     let operand_ns = map (fromJust . lastTouchedNode) (tail operand_node_sts)
+     operand_ns <- mapM getLastTouchedValueNode (tail operand_node_sts)
      let st1 = last operand_node_sts
      st2 <- addNewNode st1 G.PhiNode
-     let phi_node = fromJust $ lastTouchedNode st2
+     phi_node <- getLastTouchedPhiNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
      st4 <- foldM ( \st (n, name) ->
                     let g = getOSGraph st
@@ -948,14 +1052,12 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                   )
                   st3
                   (zip operand_ns block_names)
-     dt <- toOpDataType t
-     st5 <- addNewNode st4 (G.ValueNode dt Nothing)
-     let d_node = fromJust $ lastTouchedNode st5
+     op_t <- toOpDataType t
+     st5 <- addNewNode st4 (G.ValueNode op_t Nothing)
+     d_node <- getLastTouchedValueNode st5
      st6 <- addNewEdge st5 G.DataFlowEdge phi_node d_node
-     st7 <- addPendingBlockToDatumDef st6 ( fromJust $ currentBlock st6
-                                          , G.getNodeID d_node
-                                          , 0
-                                          )
+     current_b <- getCurrentBlock st6
+     st7 <- addPendingBlockToDatumDef st6 (current_b, G.getNodeID d_node, 0)
             -- Since we've just created the value node and only added a
             -- single data-flow edge to it, we are guaranteed that the in-edge
             -- number of that data-flow edge is 0.
@@ -980,13 +1082,13 @@ mkFunctionDFGFromCompOp
   -> Either String BuildState
 mkFunctionDFGFromCompOp b st0 dt op operands =
   do sts <- scanlM (build b) st0 operands
-     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     operand_ns <- mapM getLastTouchedValueNode (tail sts)
      let st1 = last sts
      st2 <- addNewNode st1 (G.ComputationNode op)
-     let op_node = fromJust $ lastTouchedNode st2
+     op_node <- getLastTouchedComputationNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
      st4 <- addNewNode st3 (G.ValueNode dt Nothing)
-     let d_node = fromJust $ lastTouchedNode st4
+     d_node <- getLastTouchedValueNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
      return st5
 
@@ -1016,19 +1118,15 @@ mkFunctionDFGFromMemOp
   -> Either String BuildState
 mkFunctionDFGFromMemOp b st0 dt op operands =
   do st1 <- mkFunctionDFGFromCompOp b st0 dt (Op.CompMemoryOp op) operands
-     let res_node = fromJust $ lastTouchedNode st1
-         op_node = head $
+     res_node <- getLastTouchedValueNode st1
+     let op_node = head $
                    G.getPredecessors (getOSGraph st1) res_node
      st2 <- ensureStateNodeHasBeenTouched st1
-     st3 <- addNewEdge st2
-                       G.StateFlowEdge
-                       (fromJust $ lastTouchedStateNode st2)
-                       op_node
+     st_n2 <- getLastTouchedStateNode st2
+     st3 <- addNewEdge st2 G.StateFlowEdge st_n2 op_node
      st4 <- addNewStateNode st3
-     st5 <- addNewEdge st4
-                       G.StateFlowEdge
-                       op_node
-                       (fromJust $ lastTouchedStateNode st4)
+     st_n4 <- getLastTouchedStateNode st4
+     st5 <- addNewEdge st4 G.StateFlowEdge op_node st_n4
      -- Note that the result value node MUST be the last touched node.
      st6 <- touchNode st5 res_node
      return st6
@@ -1057,7 +1155,7 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
   do sym <- toSymbol name
      dt <- toOpDataType t
      st1 <- ensureValueNodeWithSymExists st0 sym dt
-     let n = fromJust $ lastTouchedNode st1
+     n <- getLastTouchedValueNode st1
      st2 <- addFuncInputValue st1 n
      return st2
 
@@ -1082,16 +1180,23 @@ mkPatternDFGFromSetregCall
                       ) $
                  [arg1, arg2]
      let g0 = getOSGraph st0
+     sym1 <- toSymbol arg1
      g1 <- if length (G.getPredecessors g0 n1) == 0
            then if length (G.getSuccessors g0 n1) == 0
                 then Right $ G.mergeNodes n2 n1 g0
                 else Left $ "mkPatternDFGFromSetregCall: destination node " ++
-                            "with symbol '" ++ show arg1 ++ "' is not " ++
-                            "allowed to have any successors"
-           else Left $ "mkPatternDFGFromSetregCall: destination node with "
-                        ++ "symbol '" ++ show arg1 ++ "' is not allowed to "
-                        ++ "have any predecessors"
-     let g2 = G.updateOriginOfValueNode (G.getOriginOfValueNode n1) n2 g1
+                            "mapped from symbol '" ++ pShow sym1 ++ "' is " ++
+                            "not allowed to have any successors"
+           else Left $ "mkPatternDFGFromSetregCall: destination node mapped " ++
+                        "from symbol '" ++ pShow sym1 ++ "' is " ++
+                        "not allowed to have any predecessors"
+     n1_origin <- let o = G.getOriginOfValueNode n1
+                  in if isJust o
+                     then return $ fromJust o
+                     else Left $ "mkPatternDFGFromSetregCall: node mapped " ++
+                                 "symblol '" ++ pShow sym1 ++ "' " ++
+                                 "has no origin"
+     let g2 = G.updateOriginOfValueNode n1_origin n2 g1
      st1 <- updateOSGraph st0 g2
      let st2 = st1 { blockToDatumDataFlows =
                        map ( \old@(b', nid) ->
@@ -1154,10 +1259,9 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      -- The call node will have the wrong name as the true name of the call is
      -- embedded into the function name, so we need to fix that.
      old_f_name <- toFunctionName $ LLVM.function i
+     f_name <- getFunctionName i
      new_f_name <- toFunctionName $
-                   "%" ++ ( extractFunctionLabelPart
-                            $ fromJust $ getFunctionName i
-                          )
+                   "%" ++ extractFunctionLabelPart f_name
      let g = getOSGraph st1
          call_n = head $ G.findCallNodesWithName g old_f_name
      st2 <- updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
@@ -1255,19 +1359,19 @@ mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
 mkFunctionCFGFromTerminator b st0 (LLVM.Br dst _) =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
             -- Signature on last argument needed to please GHC...
-     let br_node = fromJust $ lastTouchedNode st1
+     br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 (F.BlockName $ nameToString dst)
-     let dst_node = fromJust $ lastTouchedNode st2
+     dst_node <- getLastTouchedBlockNode st2
      st3 <- addNewEdge st2 G.ControlFlowEdge br_node dst_node
      return st3
 mkFunctionCFGFromTerminator b st0 (LLVM.CondBr op t_dst f_dst _)
   =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [op]
-     let br_node = fromJust $ lastTouchedNode st1
+     br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 (F.BlockName $ nameToString t_dst)
-     let t_dst_node = fromJust $ lastTouchedNode st2
+     t_dst_node <- getLastTouchedBlockNode st2
      st3 <- ensureBlockNodeExists st2 (F.BlockName $ nameToString f_dst)
-     let f_dst_node = fromJust $ lastTouchedNode st3
+     f_dst_node <- getLastTouchedBlockNode st3
      st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge
                                  br_node
@@ -1292,11 +1396,12 @@ mkFunctionCFGFromControlOp
   -> Either String BuildState
 mkFunctionCFGFromControlOp b st0 op operands =
   do sts <- scanlM (build b) st0 operands
-     let operand_ns = map (fromJust . lastTouchedNode) (tail sts)
+     operand_ns <- mapM getLastTouchedValueNode (tail sts)
      let st1 = last sts
      st2 <- addNewNode st1 (G.ControlNode op)
-     let op_node = fromJust $ lastTouchedNode st2
-     bn <- getBlockNodeWithName st2 (fromJust $ currentBlock st2)
+     op_node <- getLastTouchedControlNode st2
+     current_b <- getCurrentBlock st2
+     bn <- getBlockNodeWithName st2 current_b
      st3 <- addNewEdge st2 G.ControlFlowEdge bn op_node
      st4 <- addNewEdgesManySources st3 G.DataFlowEdge operand_ns op_node
      return st4
@@ -1401,12 +1506,11 @@ addNewValueNodeWithConstant :: BuildState
                             -> Constant
                             -> Either String BuildState
 addNewValueNodeWithConstant st0 c =
-  do dt <- toOpDataType c
-     st1 <- addNewNode st0 $ G.ValueNode dt (Just $ mkVarNameForConst c)
-     let new_n = fromJust $ lastTouchedNode st1
-     st2 <- addPendingBlockToDatumFlow st1 ( fromJust $ entryBlock st1
-                                           , G.getNodeID new_n
-                                           )
+  do op_t <- toOpDataType c
+     st1 <- addNewNode st0 $ G.ValueNode op_t (Just $ mkVarNameForConst c)
+     new_n <- getLastTouchedValueNode st1
+     entry_b <- getEntryBlock st1
+     st2 <- addPendingBlockToDatumFlow st1 (entry_b, G.getNodeID new_n)
      return st2
 
 -- | Adds a new edge into a given state.
@@ -1565,7 +1669,7 @@ ensureValueNodeWithSymExists st0 sym dt =
                          "with ID " ++ pShow (fromJust nid) ++ ", mapped " ++
                          "from symbol '" ++ pShow sym ++ "'"
      else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ toOrigin sym))
-             let new_n = fromJust $ lastTouchedNode st1
+             new_n <- getLastTouchedValueNode st1
              st2 <- addSymMap st1 (sym, G.getNodeID new_n)
              return st2
 
@@ -1591,10 +1695,9 @@ ensureStateNodeHasBeenTouched st0 =
   if isJust (lastTouchedStateNode st0)
   then return st0
   else do st1 <- addNewStateNode st0
-          let n = fromJust $ lastTouchedStateNode st1
-          st2 <- addPendingBlockToDatumFlow st1 ( fromJust $ currentBlock st1
-                                                , G.getNodeID n
-                                                )
+          n <- getLastTouchedStateNode st1
+          current_b <- getCurrentBlock st1
+          st2 <- addPendingBlockToDatumFlow st1 (current_b, G.getNodeID n)
            -- Note that, if this is a pattern, then the flow above will not be
            -- inserted as all 'PendingBlockToDatumFlow' entities are ignored.
           return st2
