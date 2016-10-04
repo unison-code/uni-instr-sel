@@ -773,6 +773,10 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
      sym <- toSymbol name
      res_n <- getLastTouchedValueNode st1
      let res_dt = G.getDataTypeOfValueNode res_n
+     -- We use 'ensureValueNodeWithSymExists' as there may already exist a value
+     -- node with this symbol (typically incurred by phi functions). In such
+     -- cases, we want to merge the existing node with the result value node
+     -- produced by the expression.
      st2 <- ensureValueNodeWithSymExists st1 sym res_dt
      sym_n <- getLastTouchedValueNode st2
      st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
