@@ -49,7 +49,9 @@ import Control.Monad
 import Data.Maybe
 
 import Data.List
-  ( intercalate )
+  ( intercalate
+  , nub
+  )
 
 
 
@@ -150,6 +152,8 @@ data BuildState
         -- into edges.
       , funcInputValues :: [G.NodeID]
         -- ^ The value nodes representing the function input arguments.
+      , patExtValues :: [G.NodeID]
+        -- ^ The value nodes representing the external values of the pattern.
       }
   deriving (Show)
 
@@ -369,9 +373,10 @@ mkFunctionOS f@(LLVM.Function {}) =
      return $ (opStruct st8, funcInputValues st8)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
--- | Builds an 'OpStructure' from an instruction pattern. If the definition is
--- not a 'Function', or any other error occurs, an error message is returned.
-mkPatternOS :: LLVM.Global -> Either String OS.OpStructure
+-- | Builds an 'OpStructure', together with the external value nodes, from an
+-- instruction pattern. If the definition is not a 'Function', or any other
+-- error occurs, an error message is returned.
+mkPatternOS :: LLVM.Global -> Either String (OS.OpStructure, [G.NodeID])
 mkPatternOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkPatternDFGBuilder st0 f
@@ -383,8 +388,7 @@ mkPatternOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
      st7 <- removeUnusedBlockNodes st6
-     st8 <- removeOutlyingTypeCasts st7
-     return $ opStruct st8
+     return $ (opStruct st7, patExtValues st7)
 mkPatternOS _ = Left "mkPattern: not a Function"
 
 -- | Creates an initial 'BuildState'.
@@ -400,6 +404,7 @@ mkInitBuildState =
                      , blockToDatumDefs = []
                      , datumToBlockDefs = []
                      , funcInputValues = []
+                     , patExtValues = []
                      }
 
 -- | Constructs a 'Builder' that will construct a function data-flow graph.
@@ -771,23 +776,10 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
      st2 <- ensureValueNodeWithSymExists st1 sym res_dt
      sym_n <- getLastTouchedValueNode st2
      st3 <- updateOSGraph st2 (G.mergeNodes sym_n res_n (getOSGraph st2))
-     let st4 = st3 { blockToDatumDefs =
-                       map ( \old@(b', n, nr) ->
-                             if G.getNodeID res_n == n
-                             then (b', G.getNodeID sym_n, nr)
-                             else old
-                           ) $
-                       blockToDatumDefs st3
-                   }
-         st5 = st4 { datumToBlockDefs =
-                       map ( \old@(n, b', nr) ->
-                             if G.getNodeID res_n == n
-                             then (G.getNodeID sym_n, b', nr)
-                             else old
-                           ) $
-                       datumToBlockDefs st4
-                   }
-     return st5
+     st4 <- replaceNodeIDInBuildState (G.getNodeID res_n)
+                                      (G.getNodeID sym_n)
+                                      st3
+     return st4
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionDFGFromInstruction
@@ -1196,31 +1188,8 @@ mkPatternDFGFromSetregCall
                                  "has no origin"
      let g2 = G.updateOriginOfValueNode n1_origin n2 g1
      st1 <- updateOSGraph st0 g2
-     let st2 = st1 { blockToDatumDataFlows =
-                       map ( \old@(b', nid) ->
-                               if G.getNodeID n1 == nid
-                               then (b', G.getNodeID n2)
-                               else old
-                           ) $
-                       blockToDatumDataFlows st1
-                   }
-         st3 = st2 { blockToDatumDefs =
-                        map ( \old@(b', n, nr) ->
-                                if G.getNodeID n1 == n
-                                then (b', G.getNodeID n2, nr)
-                                else old
-                            ) $
-                        blockToDatumDefs st2
-                   }
-         st4 = st3 { datumToBlockDefs =
-                        map ( \old@(n, b', nr) ->
-                                if G.getNodeID n1 == n
-                                then (G.getNodeID n2, b', nr)
-                                else old
-                            ) $
-                        datumToBlockDefs st3
-                   }
-     return st4
+     st2 <- replaceNodeIDInBuildState (G.getNodeID n1) (G.getNodeID n2) st1
+     return st2
 mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =
   Left $ "mkPatternDFGFromSetregCall: unexpected number or type of function "
           ++ "arguments in " ++ show i
@@ -1234,13 +1203,17 @@ mkPatternDFGFromParamCall
   -> BuildState
   -> LLVM.Instruction
   -> Either String BuildState
-mkPatternDFGFromParamCall _ st i@(LLVM.Call {}) =
+mkPatternDFGFromParamCall _ st0 i@(LLVM.Call {}) =
+  -- TODO: fix error handling
   do let (LLVM.ConstantOperand (LLVMC.GlobalReference grt _)) =
            fromRight $ LLVM.function i
          (LLVM.PointerType { LLVM.pointerReferent = pt }) = grt
          (LLVM.FunctionType { LLVM.resultType = rt }) = pt
      dt <- toOpDataType rt
-     addNewNode st (G.ValueNode dt Nothing)
+     st1 <- addNewNode st0 (G.ValueNode dt Nothing)
+     n <- getLastTouchedValueNode st1
+     st2 <- addPatExtValue st1 (G.getNodeID n)
+     return st2
 mkPatternDFGFromParamCall _ _ i =
   Left $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
 
@@ -1576,7 +1549,13 @@ addPendingDatumToBlockDef st def =
 -- | Adds a value node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.NodeID -> Either String BuildState
 addFuncInputValue st n =
-  return $ st { funcInputValues = n:(funcInputValues st) }
+  return $ st { funcInputValues = nub $ n:(funcInputValues st) }
+
+-- | Adds a value node representing an external value of a pattern to a given
+-- state.
+addPatExtValue :: BuildState -> G.NodeID -> Either String BuildState
+addPatExtValue st n =
+  return $ st { patExtValues = nub $ n:(patExtValues st) }
 
 -- | Finds the nodes in the graph of the givne state that matches a given node
 -- ID.
@@ -1829,13 +1808,6 @@ nameToString :: LLVM.Name -> String
 nameToString (LLVM.Name str) = str
 nameToString (LLVM.UnName int) = show int
 
--- | Removes computation nodes that type-cast external values. Such casts
--- typically end up in the pattern due to restrictions in the machine
--- description. This also results in renaming of the origin for value nodes
--- produced by type-casts which are removed.
-removeOutlyingTypeCasts :: BuildState -> Either String BuildState
-removeOutlyingTypeCasts st =
-
 -- | Converts a 'Symbol' into 'String' to be used as origin for value nodes.
 toOrigin :: Symbol -> String
 toOrigin = pShow
@@ -1845,21 +1817,55 @@ toOrigin = pShow
 checkAllDataHasType :: BuildState -> Either String BuildState
 checkAllDataHasType st =
   do let g = getOSGraph st
-         ns = filter G.isComputationNode $ G.getAllNodes g
-         cast_ns = filter (Op.isCompTypeCastOp . G.getCompOpOfComputationNode) $
-                   ns
-         cast_value_pairs =
-           map (\n -> (n, head $ G.getPredecessors g n)) cast_ns
-         cv_pairs_to_remove =
-           filter (\(_, d) -> length (G.getPredecessors g d) == 0) $
-           cast_value_pairs
-         processPair (cn, vn) g0 =
-           let dst_vn = head $ G.getSuccessors g0 cn
-               g1 = G.updateOriginOfValueNode (G.getOriginOfValueNode vn)
-                                              dst_vn
-                                              g0
-               g2 = G.delNode cn g1
-               g3 = G.delNode vn g2
-           in g3
-         new_g = foldr processPair g cv_pairs_to_remove
-     updateOSGraph st new_g
+         ns = filter G.isValueNode $ G.getAllNodes g
+         check st' n = if G.getDataTypeOfValueNode n == D.AnyType
+                       then Left $ "Value node " ++ show n ++
+                                   " is of illegal data type"
+                       else Right st'
+     foldM check st ns
+
+-- | Replaces all occurrances of a given 'G.NodeID' in a given state with
+-- another 'G.NodeID'.
+replaceNodeIDInBuildState
+  :: G.NodeID
+     -- ^ The node ID to be replaced.
+  -> G.NodeID
+     -- ^ The node ID to replace with.
+  -> BuildState
+     -- ^ The build state to update.
+  -> Either String BuildState
+replaceNodeIDInBuildState old_nid new_nid st0 =
+  let st1 = st0 { blockToDatumDataFlows =
+                    map ( \old@(b', nid) ->
+                          if old_nid == nid then (b', new_nid) else old
+                        ) $
+                    blockToDatumDataFlows st0
+                }
+      st2 = st1 { blockToDatumDefs =
+                    map ( \old@(b', n, nr) ->
+                          if old_nid == n then (b', new_nid, nr) else old
+                        ) $
+                    blockToDatumDefs st1
+                }
+      st3 = st2 { datumToBlockDefs =
+                    map ( \old@(n, b', nr) ->
+                          if old_nid == n then (new_nid, b', nr) else old
+                        ) $
+                    datumToBlockDefs st2
+                }
+      st4 = st3 { funcInputValues =
+                    map (\n -> if old_nid == n then new_nid else n) $
+                    funcInputValues st3
+                }
+
+      st5 = st4 { patExtValues =
+                    map (\n -> if old_nid == n then new_nid else n) $
+                    patExtValues st4
+                }
+      st6 = st5 { symMaps =
+                    map ( \old@(sym, n) ->
+                          if old_nid == n then (sym, new_nid) else old
+                        ) $
+                    symMaps st5
+                }
+  in return st5

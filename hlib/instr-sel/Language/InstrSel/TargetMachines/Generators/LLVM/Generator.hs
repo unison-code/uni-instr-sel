@@ -47,7 +47,6 @@ import Data.Maybe
   ( isJust
   , fromJust
   , mapMaybe
-  , catMaybes
   )
 
 import Data.List
@@ -134,40 +133,14 @@ mkInstrPatterns locs i =
           processSemantics p_num (LLVM.instrSemantics p) (LLVM.instrOperands p)
         processSemantics p_num p ops =
           do let p_id = TM.toPatternID p_num
-             os0 <-mkOpStructure p
+             (os0, ext_values) <-mkOpStructure p
              os1 <- addOperandConstraints ops locs os0
-             ext_value_nodes <- mapM (findValueNodeFromOperand os1) ops
-             let ext_value_ids = map getNodeID $ catMaybes ext_value_nodes
              tmpl <- mkEmitString i os1 (LLVM.instrEmitString i)
              return TM.InstrPattern { TM.patID = p_id
                                     , TM.patOS = os1
-                                    , TM.patExternalData = ext_value_ids
+                                    , TM.patExternalData = ext_values
                                     , TM.patEmitString = tmpl
                                     }
-        findValueNodeFromOperand os' (LLVM.RegInstrOperand op_name _) =
-          do n <- findValueNode os' op_name
-             if isJust n
-             then return n
-             else Left $ "mkInstrPatterns: no value node with origin " ++
-                         "'" ++ op_name ++ "''"
-        findValueNodeFromOperand os' (LLVM.ImmInstrOperand op_name _) =
-          do n <- findValueNode os' op_name
-             if isJust n
-             then return n
-             else Left $ "mkInstrPatterns: no value node with origin " ++
-                         "'" ++ op_name ++ "''"
-        findValueNodeFromOperand os' (LLVM.AbsAddrInstrOperand op_name _) =
-          findValueNode os' op_name
-        findValueNodeFromOperand os' (LLVM.RelAddrInstrOperand op_name _) =
-          findValueNode os' op_name
-        findValueNode os' origin =
-          let n = findValueNodesWithOrigin (osGraph os') origin
-          in if length n == 1
-             then return $ Just $ head n
-             else if length n > 0
-                  then Left $ "mkInstrPatterns: multiple value nodes with " ++
-                              "origin '" ++ origin ++ "'"
-                  else return Nothing
 
 addOperandConstraints
   :: [LLVM.InstrOperand]
@@ -249,7 +222,7 @@ addOperandConstraints ops all_locs os =
 
 mkOpStructure
   :: LLVM.InstrSemantics
-  -> Either String OpStructure
+  -> Either String (OpStructure, [NodeID])
      -- ^ An error message or the generated 'OpStructure'.
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
   let m_defs = LLVM.moduleDefinitions m
