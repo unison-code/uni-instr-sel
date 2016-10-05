@@ -260,13 +260,6 @@ pattern.dot:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-pattern.dot:
-	$(UNI_IS_CMD) plot --plot-pat-full-graph \
-                  -t $(TARGET) \
-                  --instruction $(INSTR) \
-                  --pattern $(PAT) \
-                  -o $@
-
 %.all-cover-plots: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
                   -f $*.ce.cc.ae.be.f.json \
