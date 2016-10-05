@@ -10,7 +10,9 @@ Main authors:
 -}
 
 module Language.InstrSel.TargetMachines.Transformations
-  ( copyExtend )
+  ( copyExtend
+  , lowerPointers
+  )
 where
 
 import Language.InstrSel.TargetMachines.Base
@@ -18,6 +20,8 @@ import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
+import qualified Language.InstrSel.OpStructures.Transformations as OS
+  ( lowerPointers )
 
 import Data.Maybe
   ( fromJust
@@ -106,3 +110,15 @@ insertCopy g0 df_edge =
                                        (delEdge e g2)
            else g2
   in g3
+
+-- | Lowers pointers in every instruction in the given target machine.
+lowerPointers :: TargetMachine -> TargetMachine
+lowerPointers tm =
+  let lowerPat p = p { patOS = OS.lowerPointers (tmPointerSize tm)
+                                                (tmNullPointerValue tm)
+                                                (patOS p)
+                     }
+      lowerInstr i =
+        i { instrPatterns = map lowerPat (instrPatterns i) }
+      new_instrs = map lowerInstr (tmInstructions tm)
+  in tm { tmInstructions = new_instrs }

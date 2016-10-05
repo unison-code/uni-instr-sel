@@ -13,6 +13,7 @@ Main authors:
 
 module Language.InstrSel.DataTypes.Base
   ( DataType (..)
+  , getTypeBitWidth
   , isIntTempType
   , isIntTempTypeAnyWidth
   , isIntConstType
@@ -23,6 +24,7 @@ module Language.InstrSel.DataTypes.Base
   , isTypeAConstValue
   , isTypeAPointer
   , isDataTypeCompatibleWith
+  , hasSameBitWidth
   , parseDataTypeFromJson
   )
 where
@@ -157,12 +159,7 @@ isVoidType VoidType = True
 isVoidType _ = False
 
 -- | Checks if a data type is compatible with another data type.
-isDataTypeCompatibleWith
-  :: DataType
-     -- ^ First type.
-  -> DataType
-     -- ^ Second type.
-  -> Bool
+isDataTypeCompatibleWith :: DataType -> DataType -> Bool
 isDataTypeCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
   intTempNumBits d1 == intTempNumBits d2
 isDataTypeCompatibleWith IntTempTypeAnyWidth (IntTempType {}) = True
@@ -178,6 +175,30 @@ isDataTypeCompatibleWith PointerNullType PointerNullType = True
 isDataTypeCompatibleWith VoidType VoidType = True
 isDataTypeCompatibleWith _ _ = False
 
+-- | Gets the bit width of a given data type. If the data type has no bit width,
+-- 'Nothing' is returned.
+getTypeBitWidth :: DataType -> Maybe Natural
+getTypeBitWidth (IntTempType w) = Just w
+getTypeBitWidth (IntConstType { intConstNumBits = Just w }) = Just w
+getTypeBitWidth _ = Nothing
+
+-- | Checks if two data types have the same bit width.
+hasSameBitWidth :: DataType -> DataType -> Bool
+hasSameBitWidth d1@(IntTempType {}) d2@(IntTempType {}) =
+  intTempNumBits d1 == intTempNumBits d2
+hasSameBitWidth d1@(IntTempType {}) d2@(IntConstType {}) =
+  if (isJust $ intConstNumBits d2)
+  then intTempNumBits d1 == (fromJust $ intConstNumBits d2)
+  else False
+hasSameBitWidth d1@(IntConstType {}) d2@(IntTempType {}) =
+  if (isJust $ intConstNumBits d1)
+  then (fromJust $ intConstNumBits d1) == intTempNumBits d2
+  else False
+hasSameBitWidth d1@(IntConstType {}) d2@(IntConstType {}) =
+  if (isJust $ intConstNumBits d1) && (isJust $ intConstNumBits d2)
+  then (fromJust $ intConstNumBits d1) == (fromJust $ intConstNumBits d2)
+  else False
+hasSameBitWidth _ _ = False
 
 -- | Parses a data type from a JSON string. If parsing fails, 'Nothing' is
 -- returned.

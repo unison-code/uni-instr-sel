@@ -68,10 +68,11 @@ run opts =
        reportErrorAndExit $ fromLeft m_str
      let m = fromRight m_str
      parsed_m <- parseSemanticsInMD m
-     tm <- generateTM parsed_m
-     let ce_tm = copyExtend tm
-         code = generateModule ce_tm
-     return [toOutputWithID ((fromTargetMachineID $ tmID ce_tm) ++ ".hs") code]
+     tm0 <- generateTM parsed_m
+     let tm1 = lowerPointers tm0
+         tm2 = copyExtend tm1
+         code = generateModule tm2
+     return [toOutputWithID ((fromTargetMachineID $ tmID tm2) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.

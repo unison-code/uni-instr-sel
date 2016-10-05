@@ -954,14 +954,14 @@ mkFunctionDFGFromInstruction b st (LLVM.IntToPtr op1 t1 _) =
      mkFunctionDFGFromCompOp b
                              st
                              dt
-                             (Op.CompTypeCastOp Op.IntToPtr)
+                             (Op.CompTypeConvOp Op.IntToPtr)
                              [op1]
 mkFunctionDFGFromInstruction b st (LLVM.PtrToInt op1 t1 _) =
   do dt <- toOpDataType t1
      mkFunctionDFGFromCompOp b
                              st
                              dt
-                             (Op.CompTypeCastOp Op.PtrToInt)
+                             (Op.CompTypeConvOp Op.PtrToInt)
                              [op1]
 mkFunctionDFGFromInstruction b st (LLVM.BitCast op1 t1 _) =
   do dt <- toOpDataType t1

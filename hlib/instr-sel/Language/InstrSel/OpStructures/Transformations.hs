@@ -10,7 +10,9 @@ Main authors:
 -}
 
 module Language.InstrSel.OpStructures.Transformations
-  ( canonicalizeCopies )
+  ( canonicalizeCopies
+  , lowerPointers
+  )
 where
 
 import Language.InstrSel.Graphs
@@ -19,7 +21,14 @@ import Language.InstrSel.DataTypes
 import Language.InstrSel.OpTypes
 import Language.InstrSel.OpStructures.Base
 import Language.InstrSel.Utils
-  ( rangeFromSingleton )
+  ( Natural
+  , rangeFromSingleton
+  )
+
+import Data.Maybe
+  ( isJust
+  , fromJust
+  )
 
 
 
@@ -85,3 +94,95 @@ canonicalizeCopies os =
             g3 = if length dt_es == 0 then delNode const_n g2 else g2
         in os' { osGraph = g3 }
   in foldr process os matches
+
+-- | Lowers pointer value nodes into corresponding integer values. Computation
+-- nodes that operate on pointers are also either removed (if they become
+-- redundant) or converted into appropriate operations.
+lowerPointers
+  :: Natural
+     -- ^ Size (in number of bits) of a pointer value.
+  -> Integer
+     -- ^ Value of a null-pointer reference.
+  -> OpStructure
+  -> OpStructure
+lowerPointers ptr_size null_value os =
+  -- TODO: check that these transformations do not cause inconsistencies,
+  -- for example that something refers to the deleted value nodes
+  let g0 = osGraph os
+      g1 = transformPtrValueNodesInGraph ptr_size null_value g0
+      g2 = removeRedundantPtrConversionsInGraph g1
+      g3 = transformPtrConversionsInGraph g2
+  in os { osGraph = g3 }
+
+transformPtrValueNodesInGraph :: Natural -> Integer -> Graph -> Graph
+transformPtrValueNodesInGraph ptr_size null_value g0 =
+  let new_temp_dt = IntTempType { intTempNumBits = ptr_size }
+      new_null_dt = IntConstType { intConstValue = rangeFromSingleton null_value
+                                 , intConstNumBits = Just ptr_size
+                                 }
+      ns = filter isValueNodeWithPointerDataType $
+           getAllNodes g0
+      temp_ptr_ns = filter (isPointerTempType . getDataTypeOfValueNode) ns
+      null_ptr_ns = filter (isPointerNullType . getDataTypeOfValueNode) ns
+      g1 = foldr (updateDataTypeOfValueNode new_temp_dt) g0 temp_ptr_ns
+      g2 = foldr (updateDataTypeOfValueNode new_null_dt) g1 null_ptr_ns
+  in g2
+
+removeRedundantPtrConversionsInGraph :: Graph -> Graph
+removeRedundantPtrConversionsInGraph g0 =
+  let ns = filter ( \n -> let op = getCompOpOfComputationNode n
+                          in isCompTypeConvOp op || isCompTypeCastOp op
+                  ) $
+           filter isComputationNode $
+           getAllNodes g0
+      ps = map ( \n -> ( n
+                       , head $ getPredecessors g0 n
+                       , head $ getSuccessors g0 n
+                       )
+               )
+               ns
+      redundant_ps = filter ( \(_, v1, v2) ->
+                              let d1 = getDataTypeOfValueNode v1
+                                  d2 = getDataTypeOfValueNode v2
+                              in d1 `hasSameBitWidth` d2
+                            )
+                            ps
+      g1 = foldr (\(o, _, _) g -> delNode o g) g0 redundant_ps
+      g2 = foldr (\(_, in_v, out_v) g -> mergeNodes in_v out_v g)
+                 g1
+                 redundant_ps
+  in g2
+
+transformPtrConversionsInGraph :: Graph -> Graph
+transformPtrConversionsInGraph g =
+  let ns = filter ( \n -> let op = getCompOpOfComputationNode n
+                          in if isCompTypeConvOp op
+                             then let (CompTypeConvOp op') = op
+                                  in op' `elem` [IntToPtr, PtrToInt]
+                             else False
+                  ) $
+           filter isComputationNode $
+           getAllNodes g
+      getBitWidthFromNode n = getTypeBitWidth $ getDataTypeOfValueNode n
+      ps = map ( \n -> let v1 = head $ getPredecessors g n
+                           v2 = head $ getSuccessors g n
+                           w1 = getBitWidthFromNode v1
+                           w2 = getBitWidthFromNode v2
+                       in if isJust w1
+                          then if isJust w2
+                               then (n, fromJust w1, fromJust w2)
+                               else error $ "transformPtrConversionsInGraph:" ++
+                                            " data type of node has no bit " ++
+                                            "width: " ++ show v2
+                          else error $ "transformPtrConversionsInGraph:" ++
+                                       " data type of node has no bit " ++
+                                       "width: " ++ show v1
+               )
+               ns
+  in foldr ( \(n, w1, w2) g' ->
+             if w1 < w2
+             then updateOpOfComputationNode (CompTypeConvOp ZExt) n g'
+             else updateOpOfComputationNode (CompTypeConvOp Trunc) n g'
+           )
+           g
+           ps

@@ -140,17 +140,17 @@ data TypeConvOp
   | SInt2Float
     -- | Unsigned integer to floating-point.
   | UInt2Float
+    -- | Integer to pointer.
+  | IntToPtr
+    -- | Pointer to integer.
+  | PtrToInt
+    -- | Bitcast.
   deriving (Show, Eq)
 
 -- | Operations that cast values of one type to another type. Unlike
 -- 'TypeConvOp', these operations never result in actual code.
 data TypeCastOp
-    -- | Integer to pointer.
-  = IntToPtr
-    -- | Pointer to integer.
-  | PtrToInt
-    -- | Bitcast.
-  | BitCast
+  = BitCast
   deriving (Show, Eq)
 
 -- | Operations that define or use values by accessing memory. All operations
@@ -229,10 +229,10 @@ instance PrettyShow TypeConvOp where
   pShow Float2UInt = "fptoui"
   pShow SInt2Float = "sitofp"
   pShow UInt2Float = "uitofp"
-
-instance PrettyShow TypeCastOp where
   pShow IntToPtr = "int-to-ptr"
   pShow PtrToInt = "ptr-to-int"
+
+instance PrettyShow TypeCastOp where
   pShow BitCast  = "bit-cast"
 
 instance PrettyShow MemoryOp where
@@ -275,8 +275,9 @@ instance FromJSON CompOp where
                  else mzero
          1 -> do let tcops   = [ ZExt, SExt, Trunc
                                , Float2SInt, Float2UInt, SInt2Float, UInt2Float
+                               , IntToPtr, PtrToInt
                                ]
-                     ccops   = [ IntToPtr, PtrToInt, BitCast ]
+                     ccops   = [ BitCast ]
                      mops    = [ Load, Store ]
                      tcfound = filter (\op -> pShow op == str) tcops
                      ccfound = filter (\op -> pShow op == str) ccops

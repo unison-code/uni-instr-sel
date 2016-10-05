@@ -152,6 +152,7 @@ module Language.InstrSel.Graphs.Base
   , fromMatch
   , toMatch
   , subGraph
+  , updateOpOfComputationNode
   , updateDataTypeOfValueNode
   , updateEdgeLabel
   , updateEdgeSource
@@ -761,6 +762,15 @@ updateOriginOfValueNode new_origin n g =
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
                 _ -> error $ "updateOriginOfValueNode: node " ++ show n ++
                              " is not a value node"
+
+-- | Updates the operation of an already existing computation node.
+updateOpOfComputationNode :: O.CompOp -> Node -> Graph -> Graph
+updateOpOfComputationNode new_op n g =
+  let nt = getNodeType n
+      new_nt = nt { compOp = new_op }
+  in case nt of (ComputationNode {}) -> updateNodeType new_nt n g
+                _ -> error $ "updateOpOfComputationNode: node " ++ show n ++
+                             " is not a computation node"
 
 -- | Updates the node label of an already existing node.
 updateNodeLabel :: NodeLabel -> Node -> Graph -> Graph
