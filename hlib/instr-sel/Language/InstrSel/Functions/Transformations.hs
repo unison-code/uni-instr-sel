@@ -147,8 +147,6 @@ branchExtend f =
 -- | Inserts a new block node and jump control node along each outbound control
 -- edge from every conditional jump control node and passes the predicate
 -- function. The new block nodes will all have empty block name.
---
--- TODO: update the def-placement edges when phi nodes are involved!
 branchExtendGraph :: Graph -> Graph
 branchExtendGraph g =
   let c_nodes = filter isControlNode (getAllNodes g)
