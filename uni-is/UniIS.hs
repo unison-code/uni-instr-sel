@@ -178,6 +178,12 @@ parseArgs =
         enum [ TransformNothing
                  &= auto
                  &= ignore
+             , LowerPointersInFunctionGraph
+                 &= name "lower-pointers-in-fun"
+                 &= explicit
+                 &= help ( "Rewrites pointer values into integer values in " ++
+                           "given function graph."
+                         )
              , CopyExtendFunctionGraph
                  &= name "copy-extend-fun"
                  &= explicit

@@ -41,7 +41,13 @@ dispatch a opts
              ] =
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
-         TransformFunctionGraph.run a function
+         TransformFunctionGraph.run a function Nothing
+  | a `elem` [ LowerPointersInFunctionGraph ] =
+      do content <- loadFunctionFileContent opts
+         function <- loadFromJson content
+         tid <- getSelectedTargetMachineID opts
+         target <- loadTargetMachine tid
+         TransformFunctionGraph.run a function (Just target)
   | a `elem` [LowerHighLevelCPModel] =
       do m_content <- loadModelFileContent opts
          ai_maps <- loadArrayIndexMaplistsFromJson opts

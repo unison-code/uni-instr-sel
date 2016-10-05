@@ -21,6 +21,7 @@ module Language.InstrSel.DataTypes.Base
   , isAnyType
   , isVoidType
   , isTypeAConstValue
+  , isTypeAPointer
   , isDataTypeCompatibleWith
   , parseDataTypeFromJson
   )
@@ -260,4 +261,8 @@ parsePointerNullTypeFromJson str =
 
 -- | Checks if a given data type represents a constant value.
 isTypeAConstValue :: DataType -> Bool
-isTypeAConstValue = isIntConstType
+isTypeAConstValue t = isIntConstType t || isPointerNullType t
+
+-- | Checks if a given data type represents a pointer.
+isTypeAPointer :: DataType -> Bool
+isTypeAPointer t = isPointerTempType t || isPointerNullType t

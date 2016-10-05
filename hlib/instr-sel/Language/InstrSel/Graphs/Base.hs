@@ -113,6 +113,7 @@ module Language.InstrSel.Graphs.Base
   , isValueNode
   , isValueNodeWithConstValue
   , isValueNodeWithOrigin
+  , isValueNodeWithPointerDataType
   , isDefEdge
   , isInGraph
   , isBlockNode
@@ -556,6 +557,12 @@ isValueNodeWithConstValue :: Node -> Bool
 isValueNodeWithConstValue n =
   if isValueNode n
   then D.isTypeAConstValue $ getDataTypeOfValueNode n
+  else False
+
+isValueNodeWithPointerDataType :: Node -> Bool
+isValueNodeWithPointerDataType n =
+  if isValueNode n
+  then D.isTypeAPointer $ getDataTypeOfValueNode n
   else False
 
 isValueNodeWithOrigin :: Node -> Bool

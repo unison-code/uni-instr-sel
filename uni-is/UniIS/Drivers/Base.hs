@@ -69,6 +69,7 @@ data MakeAction
 
 data TransformAction
   = TransformNothing
+  | LowerPointersInFunctionGraph
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph
   | CombineConstantsInFunctionGraph

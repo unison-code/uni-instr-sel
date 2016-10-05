@@ -14,6 +14,7 @@ module Language.InstrSel.Functions.Transformations
   , copyExtend
   , combineConstants
   , alternativeExtend
+  , lowerPointers
   )
 where
 
@@ -26,6 +27,8 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.OpTypes
+import Language.InstrSel.TargetMachines
+  ( TargetMachine (..) )
 import Language.InstrSel.Utils
   ( groupBy )
 import Language.InstrSel.Utils.Range
@@ -389,3 +392,27 @@ updateGraph new_g f =
       new_os = os { osGraph = new_g }
       new_f = f { functionOS = new_os }
   in new_f
+
+-- | Lowers pointers in a given function graph into corresponding integer values
+-- for the given target machine.
+lowerPointers :: TargetMachine -> Function -> Function
+lowerPointers tm f = updateGraph (lowerPointersInGraph tm $ getGraph f) f
+
+lowerPointersInGraph :: TargetMachine -> Graph -> Graph
+lowerPointersInGraph tm g =
+  rewritePtrValueNodesInGraph tm g
+
+rewritePtrValueNodesInGraph :: TargetMachine -> Graph -> Graph
+rewritePtrValueNodesInGraph tm g0 =
+  let new_temp_dt = IntTempType { intTempNumBits = tmPointerSize tm }
+      new_null_dt = IntConstType { intConstValue = rangeFromSingleton $
+                                                   tmNullPointerValue tm
+                                 , intConstNumBits = Just $ tmPointerSize tm
+                                 }
+      ns = filter isValueNodeWithPointerDataType $
+           getAllNodes g0
+      temp_ptr_ns = filter (isPointerTempType . getDataTypeOfValueNode) ns
+      null_ptr_ns = filter (isPointerNullType . getDataTypeOfValueNode) ns
+      g1 = foldr (updateDataTypeOfValueNode new_temp_dt) g0 temp_ptr_ns
+      g2 = foldr (updateDataTypeOfValueNode new_null_dt) g1 null_ptr_ns
+  in g2

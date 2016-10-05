@@ -243,10 +243,10 @@ run-regression-tests-for-target:
 %.ssa-f.dot: %.f.json
 	$(UNI_IS_CMD) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+%.cov.dot: %.lp.ce.cc.ae.be.f.json %.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
-                  -f $*.ce.cc.ae.be.f.json \
-                  -p $*.ce.cc.ae.be.p.json \
+                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -p $*.lp.ce.cc.ae.be.p.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -260,31 +260,31 @@ pattern.dot:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+%.all-cover-plots: %.lp.ce.cc.ae.be.f.json %.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
-                  -f $*.ce.cc.ae.be.f.json \
-                  -p $*.ce.cc.ae.be.p.json \
+                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -p $*.lp.ce.cc.ae.be.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
         $(RM) $${f%.*}.dot; \
     done
 
-%.model.dump: %.ce.cc.ae.be.f.json \
+%.model.dump: %.lp.ce.cc.ae.be.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
-                  -f $*.ce.cc.ae.be.f.json \
+                  -f $*.lp.ce.cc.ae.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -o $@
 
-%.sol.dump: %.ce.cc.ae.be.f.json \
+%.sol.dump: %.lp.ce.cc.ae.be.f.json \
             %.presolved.aimaps.json \
             %.presolved.ll.model.json \
             %.presolved.ll.sol.json
 	$(UNI_IS_CMD) make --dump-low-level-solution-info \
-                  -f $*.ce.cc.ae.be.f.json \
+                  -f $*.lp.ce.cc.ae.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -s $*.presolved.ll.sol.json \
@@ -296,13 +296,13 @@ pattern.dot:
 # MISC TARGETS
 #==============
 
-%.run-checks: %.ce.cc.ae.be.f.json %.ce.cc.ae.be.p.json
+%.run-checks: %.lp.ce.cc.ae.be.f.json %.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) check --check-fun-coverage \
-                  -f $*.ce.cc.ae.be.f.json \
-                  -p $*.ce.cc.ae.be.p.json
+                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -p $*.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) check --check-fun-location-overlap \
-                  -f $*.ce.cc.ae.be.f.json \
-                  -p $*.ce.cc.ae.be.p.json
+                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -p $*.lp.ce.cc.ae.be.p.json
 
 %.run-bugpoint:
 	make clean

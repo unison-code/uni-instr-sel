@@ -40,6 +40,8 @@ import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
+import Language.InstrSel.Utils
+  ( Natural )
 
 import Data.List
   ( intercalate )
@@ -152,6 +154,11 @@ data TargetMachine
         -- names (which are needed during instruction emission). Each must be
         -- given a unique location ID, but not necessarily in a contiguous
         -- order.
+      , tmPointerSize :: Natural
+       -- ^ The size (in number of bits) of a memory pointer in the target
+       -- macine.
+      , tmNullPointerValue :: Integer
+       -- ^ The integer value representing a null-pointer in the target machine.
       }
   deriving (Show)
 

@@ -368,8 +368,7 @@ mkFunctionOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
      st7 <- addPendingDatumToBlockDefEdges st6
-     st8 <- checkAllDataHasType st7
-     return $ (opStruct st8, funcInputValues st8)
+     return $ (opStruct st7, funcInputValues st7)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure', together with the external value nodes, from an
@@ -1831,18 +1830,6 @@ nameToString (LLVM.UnName int) = show int
 -- | Converts a 'Symbol' into 'String' to be used as origin for value nodes.
 toOrigin :: Symbol -> String
 toOrigin = pShow
-
--- | Checks that all value nodes in the graph have a data type (that is,
--- anything else but 'D.AnyType').
-checkAllDataHasType :: BuildState -> Either String BuildState
-checkAllDataHasType st =
-  do let g = getOSGraph st
-         ns = filter G.isValueNode $ G.getAllNodes g
-         check st' n = if G.getDataTypeOfValueNode n == D.AnyType
-                       then Left $ "Value node " ++ show n ++
-                                   " is of illegal data type"
-                       else Right st'
-     foldM check st ns
 
 -- | Replaces all occurrances of a given 'G.NodeID' in a given state with
 -- another 'G.NodeID'.

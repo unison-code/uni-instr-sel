@@ -95,6 +95,8 @@ generateTargetMachine m =
               { TM.tmID = toTargetMachineID $ capitalize $ LLVM.mdID m
               , TM.tmInstructions = all_instrs
               , TM.tmLocations = locs
+              , TM.tmPointerSize = LLVM.mdPointerSize m
+              , TM.tmNullPointerValue = LLVM.mdNullPointerValue m
               }
 
 mkLocations :: LLVM.MachineDescription -> [TM.Location]
