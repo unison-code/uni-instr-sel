@@ -156,8 +156,7 @@ isVoidType :: DataType -> Bool
 isVoidType VoidType = True
 isVoidType _ = False
 
--- | Checks if a data type is compatible with another data type. Note that this
--- function is not necessarily commutative.
+-- | Checks if a data type is compatible with another data type.
 isDataTypeCompatibleWith
   :: DataType
      -- ^ First type.
