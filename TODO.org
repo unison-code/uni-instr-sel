@@ -1,6 +1,6 @@
 * TASKS
 ** DONE Fix how setreg is handled
-** TODO Handle pointers
-** TODO Lower pointers to integers
+** DONE Handle pointers
+** DONE Lower pointers to integers
 ** TODO Handle indirect function calls
 ** TODO Branch-extend patterns
