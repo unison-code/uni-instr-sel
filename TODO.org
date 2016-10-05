@@ -1,5 +1,5 @@
 * TASKS
-** TODO Fix how setreg is handled
+** DONE Fix how setreg is handled
 ** TODO Handle pointers
 ** TODO Lower pointers to integers
 ** TODO Handle indirect function calls
