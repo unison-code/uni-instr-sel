@@ -2,5 +2,7 @@
 ** DONE Fix how setreg is handled
 ** DONE Handle pointers
 ** DONE Lower pointers to integers
+** TODO Implement a graph invariant checker
+** TODO Fix bug when processing ghostscript test case
 ** TODO Handle indirect function calls
 ** TODO Branch-extend patterns
