@@ -1102,7 +1102,6 @@ dereferencePointerOp (LLVM.LocalReference (LLVM.PointerType t _) _) = return t
 dereferencePointerOp o = Left $ "dereferencePointerOp: " ++ show o ++
                                 " is not a pointer"
 
-
 -- | Inserts a new memory node representing the operation along with edges to
 -- that computation node from the given operands (which will also be
 -- processed). In addition, an input state node and output state node is
@@ -1122,8 +1121,15 @@ mkFunctionDFGFromMemOp
 mkFunctionDFGFromMemOp b st0 dt op operands =
   do st1 <- mkFunctionDFGFromCompOp b st0 dt (Op.CompMemoryOp op) operands
      res_node <- getLastTouchedValueNode st1
-     let op_node = head $
-                   G.getPredecessors (getOSGraph st1) res_node
+     op_node <- let preds = G.getPredecessors (getOSGraph st1) res_node
+                in if length preds == 1
+                   then return $ head preds
+                   else if length preds == 0
+                        then Left $ "mkFunctionDFGFromMemOp: " ++
+                                    show res_node ++ " has no predecessors"
+                        else Left $ "mkFunctionDFGFromMemOp: " ++
+                                    show res_node ++ " has multiple " ++
+                                    "predecessors"
      st2 <- ensureStateNodeHasBeenTouched st1
      st_n2 <- getLastTouchedStateNode st2
      st3 <- addNewEdge st2 G.StateFlowEdge st_n2 op_node
@@ -1256,7 +1262,6 @@ mkPatternDFGFromFunCall
   -> Either String BuildState
 mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
   do st1 <- mkFunctionDFGFromInstruction b st0 i
-     let maybe_ret_n = lastTouchedNode st1
      -- The call node will have the wrong name as the true name of the call is
      -- embedded into the function name, so we need to fix that.
      old_f_name <- toFunctionName $ LLVM.function i
@@ -1264,7 +1269,15 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      new_f_name <- toFunctionName $
                    "%" ++ extractFunctionLabelPart f_name
      let g = getOSGraph st1
-         call_n = head $ G.findCallNodesWithName g old_f_name
+     call_n <- let ns = G.findCallNodesWithName g old_f_name
+               in if length ns == 1
+                  then return $ head ns
+                  else if length ns == 0
+                       then Left $ "mkPatternDFGFromFunCall: found no call " ++
+                                   "node with name '" ++ pShow old_f_name ++ "'"
+                       else Left $ "mkPatternDFGFromFunCall: found multiple " ++
+                                   "call node with name '" ++
+                                   pShow old_f_name ++ "'"
      st2 <- updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
      -- If a local reference argument to the call does not have any ingoing
      -- data-flow edges, then its data type is irrelevant and must be set to
@@ -1277,12 +1290,12 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      arg_syms <- mapM (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
      st3 <- foldM
               ( \st sym ->
-                do let g0 = getOSGraph st
+                do let g' = getOSGraph st
                    n <- getValueNodeMappedToSym st sym
-                   let es = G.getDtFlowInEdges g0 n
+                   let es = G.getDtFlowInEdges g' n
                    if length es == 0
-                   then let g1 = G.updateDataTypeOfValueNode D.AnyType n g0
-                        in updateOSGraph st g1
+                   then updateOSGraph st $
+                        G.updateDataTypeOfValueNode D.AnyType n g'
                    else return st
               )
               st2
@@ -1292,14 +1305,15 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
      -- last touched node to be updated.
      ret_t <- toReturnDataType $ LLVM.function i
      st4 <- if not $ D.isVoidType ret_t
-            then let ret_n = fromJust maybe_ret_n
-                     old_g = getOSGraph st3
-                     new_g = G.updateDataTypeOfValueNode D.AnyType ret_n old_g
-                     new_n = head $
-                             G.findNodesWithNodeID new_g (G.getNodeID ret_n)
-                 in do new_st0 <- updateOSGraph st3 new_g
-                       let new_st1 = new_st0 { lastTouchedNode = Just new_n }
-                       return new_st1
+            then do old_ret_n <- getLastTouchedValueNode st1
+                    let old_g = getOSGraph st3
+                        new_g = G.updateDataTypeOfValueNode D.AnyType
+                                                            old_ret_n
+                                                            old_g
+                    st' <- updateOSGraph st3 new_g
+                    new_ret_n <- getNodeWithID st' (G.getNodeID old_ret_n)
+                    let st'' = st' { lastTouchedNode = Just new_ret_n }
+                    return st''
             else return st3
      return st4
 mkPatternDFGFromFunCall _ _ i =
@@ -1596,12 +1610,12 @@ findNodesWithID st nid = G.findNodesWithNodeID (getOSGraph st) nid
 getNodeWithID :: BuildState -> G.NodeID -> Either String G.Node
 getNodeWithID st nid =
   do let ns = findNodesWithID st nid
-     if length ns > 0
-     then if length ns == 1
-          then return $ head ns
+     if length ns == 1
+     then return $ head ns
+     else if length ns == 0
+          then Left $ "getNodeWithID: found no node with ID " ++ pShow nid
           else Left $ "getNodeWithID: found multiple nodes with ID " ++
                       pShow nid
-     else Left $ "getNodeWithID: found no node with ID " ++ pShow nid
 
 -- | Gets the value node to which a symbol is mapped.
 getValueNodeMappedToSym :: BuildState -> Symbol -> Either String G.Node
@@ -1609,16 +1623,16 @@ getValueNodeMappedToSym st sym =
   let nid = lookup sym (symMaps st)
   in if isJust nid
      then let ns = findNodesWithID st (fromJust nid)
-          in if length ns > 0
-             then if length ns == 1
-                  then return $ head ns
+          in if length ns == 1
+             then return $ head ns
+             else if length ns == 0
+                  then Left $ "getValueNodeMappedToSym: found no node with " ++
+                              "ID " ++ pShow (fromJust nid) ++ ", mapped " ++
+                              "from symbol '" ++ pShow sym ++ "'"
                   else Left $ "getValueNodeMappedToSym: found multiple " ++
                               "nodes with ID " ++ pShow (fromJust nid) ++
                               ", mapped from symbol '" ++ pShow sym ++ "'"
-             else Left $ "getValueNodeMappedToSym: found no nodes with ID " ++
-                         pShow (fromJust nid) ++ ", mapped from symbol " ++
-                         "'" ++ pShow sym ++ "'"
-     else Left $ "getValueNodeMappedToSym: no value-node mapping for " ++
+     else Left $ "getValueNodeMappedToSym: found no value node mapped from " ++
                  "symbol '" ++ pShow sym ++ "'"
 
 -- | Returns the block nodes in the graph of the given state that match a given
@@ -1632,13 +1646,13 @@ findBlockNodesWithName st name =
 getBlockNodeWithName :: BuildState -> F.BlockName -> Either String G.Node
 getBlockNodeWithName st name =
   let ns = findBlockNodesWithName st name
-  in if length ns > 0
-     then if length ns == 1
-          then return $ head ns
+  in if length ns == 1
+     then return $ head ns
+     else if length ns == 0
+          then Left $ "getBlockNodeWithName: found no block node with name " ++
+                      "'" ++ pShow name ++ "'"
           else Left $ "getBlockNodeWithName: found multiple block nodes " ++
                       "with name '" ++ pShow name ++ "'"
-     else Left $ "getBlockNodeWithName: found no block node with name " ++
-                 "'" ++ pShow name ++ "'"
 
 -- | Checks that a value node with a particular symbol exists in the graph of
 -- the given state. If it does then the last touched node is updated
@@ -1654,15 +1668,15 @@ ensureValueNodeWithSymExists st0 sym dt =
   let nid = lookup sym (symMaps st0)
   in if isJust nid
      then let ns = findNodesWithID st0 (fromJust nid)
-          in if length ns > 0
-             then if length ns == 1
-                  then touchNode st0 (head ns)
+          in if length ns == 1
+             then touchNode st0 (head ns)
+             else if length ns == 0
+                  then Left $ "ensureValueNodeWithSymExists: found no " ++
+                              "value node with ID " ++ pShow (fromJust nid) ++
+                              ", mapped from symbol '" ++ pShow sym ++ "'"
                   else Left $ "ensureValueNodeWithSymExists: found multiple " ++
                               "value nodes with ID " ++ pShow (fromJust nid) ++
                               ", mapped from symbol '" ++ pShow sym ++ "'"
-             else Left $ "ensureValueNodeWithSymExists: found no value node " ++
-                         "with ID " ++ pShow (fromJust nid) ++ ", mapped " ++
-                         "from symbol '" ++ pShow sym ++ "'"
      else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ toOrigin sym))
              new_n <- getLastTouchedValueNode st1
              st2 <- addSymMap st1 (sym, G.getNodeID new_n)
@@ -1674,12 +1688,12 @@ ensureValueNodeWithSymExists st0 sym dt =
 ensureBlockNodeExists :: BuildState -> F.BlockName -> Either String BuildState
 ensureBlockNodeExists st name =
   let ns = findBlockNodesWithName st name
-  in if length ns > 0
-     then if length ns == 1
+  in if length ns == 0
+     then addNewNode st (G.BlockNode name)
+     else if length ns == 1
           then touchNode st (head ns)
           else Left $ "ensureBlockNodeExists: found multiple block nodes " ++
                       "with name '" ++ pShow name ++ "'"
-     else addNewNode st (G.BlockNode name)
 
 -- | Checks that a state node has been touched. If not, then a new state node is
 -- added and set as touched. Also, if this is a function graph, a pending
