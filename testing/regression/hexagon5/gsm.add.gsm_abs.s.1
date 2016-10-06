@@ -9,7 +9,7 @@ bb1:
   %8 = and(%7, #-32768)
   %tmp.1 = aslh(%8)
   %tmp.2 = asr(%tmp.1)
-  jumpr %tmp.2
+  return %tmp.2
 bb0:
 3:
   %const.-32768.copy.1 = #-32768
