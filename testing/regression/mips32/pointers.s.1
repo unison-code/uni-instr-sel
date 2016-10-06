@@ -1,0 +1,15 @@
+entry:
+  %1 = ORi $0, 255
+  %0 = SLTi %a 0
+  BNE $0, $%0, bb0
+bb1:
+load:
+  %3 = LW 0(%1)
+  %const.255.copy.2 = ADDiu $0, 255
+  %4 = LW 0(%const.255.copy.2)
+  %5 = ADDU %3, %4
+  SW %5, 0(%a)
+  B end
+bb0:
+end:
+  Ret

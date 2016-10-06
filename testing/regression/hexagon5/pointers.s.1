@@ -1,0 +1,16 @@
+entry:
+  %0 = cmp.eq(%a, 0)
+  if (%0) jump bb0
+bb1:
+load:
+  %const.255.copy.1 = #255
+  %1 = zxth(%const.255.copy.1)
+  %const.255.copy.2 = ##255
+  %3 = memb (%1)
+  %4 = memb (%const.255.copy.2)
+  %5 = add(%3, %4)
+  memb (%a) = %5
+  jump end
+bb0:
+end:
+  return
