@@ -656,6 +656,17 @@ mkPatternCFGFromReturnCall
 mkPatternCFGFromReturnCall
   _
   st0
+  (LLVM.Call { LLVM.arguments = [] })
+  =
+  do st1 <- addNewNode st0 (G.ControlNode Op.Ret)
+     rn <- getLastTouchedControlNode st1
+     current_b <- getCurrentBlock st1
+     bn <- getBlockNodeWithName st1 current_b
+     st2 <- addNewEdge st1 G.ControlFlowEdge bn rn
+     return st2
+mkPatternCFGFromReturnCall
+  _
+  st0
   (LLVM.Call { LLVM.arguments = [(LLVM.LocalReference _ arg, _)] })
   =
   do st1 <- addNewNode st0 (G.ControlNode Op.Ret)
