@@ -102,6 +102,8 @@ module Language.InstrSel.Graphs.Base
   , getTargetNode
   , hasAnyPredecessors
   , hasAnySuccessors
+  , haveSameInEdgeNrs
+  , haveSameOutEdgeNrs
   , insertNewNodeAlongEdge
   , isCallNode
   , isComputationNode
@@ -1494,7 +1496,7 @@ checkPhiValBlockMappings fg pg st pe =
       v_fn = findFNInMapping st v_pn
       p_pn = getTargetNode pg pe
       p_fn = findFNInMapping st p_pn
-      def_pes = filter ((==) (getOutEdgeNr pe) . getOutEdgeNr) $
+      def_pes = filter (haveSameOutEdgeNrs pe) $
                 filter isDefEdge $
                 getOutEdges pg v_pn
       def_pe = if length def_pes == 1
@@ -1513,8 +1515,7 @@ checkPhiValBlockMappings fg pg st pe =
      then let df_fes = filter isDataFlowEdge $
                        getEdgesBetween fg (fromJust v_fn) (fromJust p_fn)
               hasMatchingDefEdge fe =
-                let out_nr_fe = getOutEdgeNr fe
-                    def_fes = filter ((==) out_nr_fe . getOutEdgeNr) $
+                let def_fes = filter (haveSameOutEdgeNrs fe) $
                               filter isDefEdge $
                               getOutEdges fg (getSourceNode fg fe)
                 in if length def_fes == 1
@@ -1742,3 +1743,11 @@ subGraph g ns =
                      ) $
               getAllEdges g
     in mkGraph sns ses
+
+-- | Checks if two edges have the same in-edge numbers.
+haveSameInEdgeNrs :: Edge -> Edge -> Bool
+haveSameInEdgeNrs e1 e2 = getInEdgeNr e1 == getInEdgeNr e2
+
+-- | Checks if two edges have the same out-edge numbers.
+haveSameOutEdgeNrs :: Edge -> Edge -> Bool
+haveSameOutEdgeNrs e1 e2 = getOutEdgeNr e1 == getOutEdgeNr e2
