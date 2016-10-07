@@ -286,6 +286,14 @@ parseArgs =
         enum [ CheckNothing
                  &= auto
                  &= ignore
+             , CheckFunctionIntegrity
+                 &= name "check-fun-integrity"
+                 &= explicit
+                 &= help ( "Checks the integrity of a function." )
+             , CheckPatternIntegrity
+                 &= name "check-pat-integrity"
+                 &= explicit
+                 &= help ( "Checks the integrity of a pattern." )
              , CheckFunctionGraphCoverage
                  &= name "check-fun-coverage"
                  &= explicit

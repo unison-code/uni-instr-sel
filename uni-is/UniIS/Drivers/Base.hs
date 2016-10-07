@@ -95,4 +95,6 @@ data CheckAction
   = CheckNothing
   | CheckFunctionGraphCoverage
   | CheckFunctionGraphLocationOverlap
+  | CheckFunctionIntegrity
+  | CheckPatternIntegrity
   deriving (Eq, Typeable, Data)

@@ -15,6 +15,7 @@ where
 
 import UniIS.Drivers.DispatcherTools
 import qualified UniIS.Drivers.CheckFunctionGraph as CheckFunctionGraph
+import qualified UniIS.Drivers.CheckIntegrity as CheckIntegrity
 
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset (pmTarget) )
@@ -41,5 +42,15 @@ dispatch a opts
          matchset <- loadPatternMatchsetFromJson opts
          tm <- loadTargetMachine $ pmTarget matchset
          CheckFunctionGraph.run a function matchset (Just tm)
+  | a `elem` [ CheckFunctionIntegrity ] =
+      do function <- loadFunctionFromJson opts
+         CheckIntegrity.run a (Just function) Nothing
+  | a `elem` [ CheckPatternIntegrity ] =
+      do tmid <- getSelectedTargetMachineID opts
+         tm <- loadTargetMachine tmid
+         iid <- getSelectedInstructionID opts
+         pid <- getSelectedPatternID opts
+         pat <- loadInstrPattern tm iid pid
+         CheckIntegrity.run a Nothing (Just pat)
   | otherwise =
       reportErrorAndExit "CheckDispatcher: unsupported action"
