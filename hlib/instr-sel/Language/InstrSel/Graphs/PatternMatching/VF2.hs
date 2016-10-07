@@ -171,7 +171,7 @@ checkSemantics fg pg st c =
       mapped_succs_to_pn =
         filter (`elem` (map pNode st)) (getSuccessors pg pn)
   in -- Check that the nodes are of matching type
-     doNodesMatch fg pg (fNode c) (pNode c)
+     doNodesMatch fg pg fn pn
      &&
      -- Check that the new in-edge mappings are of matching type
      all ( \pred_pn ->

@@ -1213,11 +1213,12 @@ doNodesMatch fg pg fn pn =
 -- function is not necessarily commutative.
 isNodeTypeCompatibleWith :: NodeType -> NodeType -> Bool
 isNodeTypeCompatibleWith (ComputationNode op1) (ComputationNode op2) =
-  op1 `O.isCompOpCompatibleWith` op2
-isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) = op1 == op2
+  op1 `O.isCompatibleWith` op2
+isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) =
+  op1 `O.isCompatibleWith` op2
 isNodeTypeCompatibleWith (CallNode {}) (CallNode {}) = True
 isNodeTypeCompatibleWith (ValueNode d1 _) (ValueNode d2 _) =
-  d1 `D.isDataTypeCompatibleWith` d2
+  d1 `D.isCompatibleWith` d2
 isNodeTypeCompatibleWith (BlockNode {}) (BlockNode {}) = True
 isNodeTypeCompatibleWith PhiNode PhiNode = True
 isNodeTypeCompatibleWith StateNode StateNode = True

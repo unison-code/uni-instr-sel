@@ -18,9 +18,7 @@ module Language.InstrSel.OpTypes.Base where
 
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils
-  ( Natural
-  , splitOn
-  )
+  ( splitOn )
 import Language.InstrSel.Utils.JSON
 import Data.Maybe
   ( fromJust
@@ -32,6 +30,34 @@ import Prelude
   ( GT
   , LT
   )
+
+
+
+----------------
+-- Type classes
+----------------
+
+-- | A class for providing useful information about an operation.
+class OpType a where
+  -- | Gets the number of values that this operation takes as input.
+  numOperands :: a -> Integer
+
+  -- | Whether this operation is commutative. If the operation takes less than
+  -- two operands, then 'True' is returned by default.
+  isCommutative :: a -> Bool
+  isCommutative a =
+    if numOperands a == 1 then True else error "isCommutative: undefined"
+
+  -- | Whether this operation produces a value.
+  producesValue :: a -> Bool
+
+  -- | Whether this operation makes use of state.
+  requiresState :: a -> Bool
+
+  -- | Checks if an operation is compatible with another, meaning that they are
+  -- semantically equivalent. Note that this function is not necessarily
+  -- commutative.
+  isCompatibleWith :: a -> a -> Bool
 
 
 
@@ -177,9 +203,104 @@ data ControlOp
 
 
 
--------------------------------------
+---------------------------------------
+-- OpType-related type class instances
+---------------------------------------
+
+instance OpType CompOp where
+  numOperands (CompArithOp op) = numOperands op
+  numOperands (CompTypeConvOp op) = numOperands op
+  numOperands (CompTypeCastOp op) = numOperands op
+  numOperands (CompMemoryOp op) = numOperands op
+
+  isCommutative (CompArithOp op) = isCommutative op
+  isCommutative (CompTypeConvOp op) = isCommutative op
+  isCommutative (CompTypeCastOp op) = isCommutative op
+  isCommutative (CompMemoryOp op) = isCommutative op
+
+  producesValue (CompArithOp op) = producesValue op
+  producesValue (CompTypeConvOp op) = producesValue op
+  producesValue (CompTypeCastOp op) = producesValue op
+  producesValue (CompMemoryOp op) = producesValue op
+
+  requiresState (CompArithOp op) = requiresState op
+  requiresState (CompTypeConvOp op) = requiresState op
+  requiresState (CompTypeCastOp op) = requiresState op
+  requiresState (CompMemoryOp op) = requiresState op
+
+  isCompatibleWith (CompArithOp op1) (CompArithOp op2) =
+    isCompatibleWith op1 op2
+  isCompatibleWith (CompTypeConvOp op1) (CompTypeConvOp op2) =
+    isCompatibleWith op1 op2
+  isCompatibleWith (CompTypeCastOp op1) (CompTypeCastOp op2) =
+    isCompatibleWith op1 op2
+  isCompatibleWith (CompMemoryOp op1) (CompMemoryOp op2) =
+    isCompatibleWith op1 op2
+  isCompatibleWith _ _ = False
+
+instance OpType ArithOp where
+  numOperands = numOperands . getArithOpType
+  isCommutative = isCommutative . getArithOpType
+  producesValue = producesValue . getArithOpType
+  requiresState = requiresState . getArithOpType
+
+  isCompatibleWith  ( IntOp op1)    ( IntOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith  ( IntOp op1)    (UIntOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith  ( IntOp op1)    (SIntOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith  (UIntOp op1)    (UIntOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith  (SIntOp op1)    (SIntOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith ( FloatOp op1) ( FloatOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith ( FloatOp op1) (OFloatOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith ( FloatOp op1) (UFloatOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith (OFloatOp op1) (OFloatOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith (UFloatOp op1) (UFloatOp op2) = isCompatibleWith op1 op2
+  isCompatibleWith _ _ = False
+
+instance OpType ArithOpType where
+  numOperands op
+    | op `elem` [ Not, Sqrt ] = 1
+    | otherwise = 2
+  isCommutative op =
+    op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
+  producesValue _ = True
+  requiresState _ = False
+  isCompatibleWith = (==)
+
+instance OpType TypeConvOp where
+  numOperands _ = 1
+  producesValue _ = True
+  requiresState _ = False
+  isCompatibleWith = (==)
+
+instance OpType TypeCastOp where
+  numOperands _ = 1
+  producesValue _ = True
+  requiresState _ = False
+  isCompatibleWith = (==)
+
+instance OpType MemoryOp where
+  numOperands Load  = 1
+  numOperands Store = 2
+  isCommutative Load  = True
+  isCommutative Store = False
+  producesValue Load  = True
+  producesValue Store = False
+  requiresState _ = True
+  isCompatibleWith = (==)
+
+instance OpType ControlOp where
+  numOperands Br  = 0
+  numOperands CondBr = 1
+  numOperands Ret = error "numOperands: undefined for Ret"
+  producesValue _ = False
+  requiresState _ = False
+  isCompatibleWith = (==)
+
+
+
+-------------------------------------------
 -- PrettyShow-related type class instances
--------------------------------------
+-------------------------------------------
 
 instance PrettyShow CompOp where
   pShow (CompArithOp op)    = pShow op
@@ -336,91 +457,6 @@ getArithOpType (FixpointOp op) = op
 getArithOpType ( FloatOp op)   = op
 getArithOpType (OFloatOp op)   = op
 getArithOpType (UFloatOp op)   = op
-
--- | Checks if an operation is commutative. Unary operations are always
--- considered to be commutative.
-isOpCommutative :: CompOp -> Bool
-isOpCommutative (CompArithOp op) = isArithOpCommutative op
-isOpCommutative (CompTypeConvOp _) = True
-isOpCommutative (CompTypeCastOp _) = True
-isOpCommutative (CompMemoryOp Load) = True
-isOpCommutative (CompMemoryOp Store) = False
-
--- | Checks if an arithmetic operation is commutative.
-isArithOpCommutative :: ArithOp -> Bool
-isArithOpCommutative = isArithOpTypeCommutative . getArithOpType
-
--- | Checks if an arithmetic operation type is commutative. Unary operations are
--- always considered to be commutative.
-isArithOpTypeCommutative :: ArithOpType -> Bool
-isArithOpTypeCommutative op =
-  op `notElem` [ Sub, SatSub, Div, Rem, Shl, LShr, AShr, GT, GE, LT, LE ]
-
--- | Gets the number of operands required by a given operation.
-numOperandsForCompOp :: CompOp -> Natural
-numOperandsForCompOp (CompArithOp op) = numOperandsForArithOp op
-numOperandsForCompOp (CompTypeConvOp _) = 1
-numOperandsForCompOp (CompTypeCastOp _) = 1
-numOperandsForCompOp (CompMemoryOp Load) = 1
-numOperandsForCompOp (CompMemoryOp Store) = 2
-
--- | Gets the number of operands required by a given arithmetic operation.
-numOperandsForArithOp :: ArithOp -> Natural
-numOperandsForArithOp = numOperandsForArithOpType . getArithOpType
-
--- | Gets the number of operands required by a given arithmetic operation type.
-numOperandsForArithOpType :: ArithOpType -> Natural
-numOperandsForArithOpType op
-  | op `elem` [ Not, Sqrt ] = 1
-  | otherwise = 2
-
--- | Checks if a computation is compatible with another, meaning that they are
--- semantically equivalent. Note that this function is not necessarily
--- commutative.
-isCompOpCompatibleWith :: CompOp -> CompOp -> Bool
-isCompOpCompatibleWith (CompArithOp op1) (CompArithOp op2) =
-  op1 `isArithOpCompatibleWith` op2
-isCompOpCompatibleWith (CompTypeConvOp op1) (CompTypeConvOp op2) =
-  op1 `isTypeConvOpCompatibleWith` op2
-isCompOpCompatibleWith (CompTypeCastOp op1) (CompTypeCastOp op2) =
-  op1 `isTypeCastOpCompatibleWith` op2
-isCompOpCompatibleWith (CompMemoryOp op1) (CompMemoryOp op2) =
-  op1 `isMemoryOpCompatibleWith` op2
-isCompOpCompatibleWith _ _ = False
-
--- | Checks if an arithmetic operation is compatible another operation, meaning
--- that they are semantically equivalent. Note that this function is not
--- necessarily commutative.
-isArithOpCompatibleWith :: ArithOp -> ArithOp -> Bool
-isArithOpCompatibleWith  ( IntOp op1)    ( IntOp op2) = op1 == op2
-isArithOpCompatibleWith  ( IntOp op1)    (UIntOp op2) = op1 == op2
-isArithOpCompatibleWith  ( IntOp op1)    (SIntOp op2) = op1 == op2
-isArithOpCompatibleWith  (UIntOp op1)    ( IntOp op2) = op1 == op2
-isArithOpCompatibleWith  (SIntOp op1)    ( IntOp op2) = op1 == op2
-isArithOpCompatibleWith ( FloatOp op1) ( FloatOp op2) = op1 == op2
-isArithOpCompatibleWith ( FloatOp op1) (OFloatOp op2) = op1 == op2
-isArithOpCompatibleWith ( FloatOp op1) (UFloatOp op2) = op1 == op2
-isArithOpCompatibleWith (UFloatOp op1) ( FloatOp op2) = op1 == op2
-isArithOpCompatibleWith (OFloatOp op1) ( FloatOp op2) = op1 == op2
-isArithOpCompatibleWith op1 op2                       = op1 == op2
-
--- | Checks if a type conversion operation is compatible with another operation,
--- meaning that they are semantically equivalent. Note that this function is not
--- necessarily commutative.
-isTypeConvOpCompatibleWith :: TypeConvOp -> TypeConvOp -> Bool
-isTypeConvOpCompatibleWith = (==)
-
--- | Checks if a type cast operation is compatible with another operation,
--- meaning that they are semantically equivalent. Note that this function is not
--- necessarily commutative.
-isTypeCastOpCompatibleWith :: TypeCastOp -> TypeCastOp -> Bool
-isTypeCastOpCompatibleWith = (==)
-
--- | Checks if a memory operation is compatible with another operation, meaning
--- that they are semantically equivalent. Note that this function is not
--- necessarily commutative.
-isMemoryOpCompatibleWith :: MemoryOp -> MemoryOp -> Bool
-isMemoryOpCompatibleWith = (==)
 
 -- | Updates the operation type inside an 'ArithOp'.
 updateArithOpType :: ArithOp -> ArithOpType -> ArithOp

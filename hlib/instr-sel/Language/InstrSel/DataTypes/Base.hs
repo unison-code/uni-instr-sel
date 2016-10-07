@@ -23,7 +23,7 @@ module Language.InstrSel.DataTypes.Base
   , isVoidType
   , isTypeAConstValue
   , isTypeAPointer
-  , isDataTypeCompatibleWith
+  , isCompatibleWith
   , hasSameBitWidth
   , parseDataTypeFromJson
   )
@@ -76,10 +76,10 @@ data DataType
   | PointerTempType
     -- | Represents a null pointer value.
   | PointerNullType
-    -- | When the data type does not matter.
-  | AnyType
     -- | When there is no data type.
   | VoidType
+    -- | When the data type does not matter.
+  | AnyType
   deriving (Show, Eq)
 
 
@@ -97,8 +97,8 @@ instance PrettyShow DataType where
        if isJust b then " i" ++ (pShow $ fromJust b) else ""
   pShow PointerTempType = "ptr"
   pShow PointerNullType = "null"
-  pShow AnyType = "any"
   pShow VoidType = "void"
+  pShow AnyType = "any"
 
 
 
@@ -148,32 +148,32 @@ isPointerNullType :: DataType -> Bool
 isPointerNullType PointerNullType = True
 isPointerNullType _ = False
 
--- | Checks if a given data type is 'AnyType'.
-isAnyType :: DataType -> Bool
-isAnyType AnyType = True
-isAnyType _ = False
-
 -- | Checks if a given data type is 'VoidType'.
 isVoidType :: DataType -> Bool
 isVoidType VoidType = True
 isVoidType _ = False
 
--- | Checks if a data type is compatible with another data type.
-isDataTypeCompatibleWith :: DataType -> DataType -> Bool
-isDataTypeCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
+
+-- | Checks if a given data type is 'AnyType'.
+isAnyType :: DataType -> Bool
+isAnyType AnyType = True
+isAnyType _ = False
+
+-- | Checks if a data type is compatible with another data type. Note that this
+-- function is not necessarily commutative.
+isCompatibleWith :: DataType -> DataType -> Bool
+isCompatibleWith d1@(IntTempType {}) d2@(IntTempType {}) =
   intTempNumBits d1 == intTempNumBits d2
-isDataTypeCompatibleWith IntTempTypeAnyWidth (IntTempType {}) = True
-isDataTypeCompatibleWith (IntTempType {}) IntTempTypeAnyWidth = True
-isDataTypeCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
+isCompatibleWith IntTempTypeAnyWidth (IntTempType {}) = True
+isCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
-isDataTypeCompatibleWith AnyType _ = True
-isDataTypeCompatibleWith _ AnyType = True
-isDataTypeCompatibleWith PointerTempType PointerTempType = True
-isDataTypeCompatibleWith PointerTempType PointerNullType = True
-isDataTypeCompatibleWith PointerNullType PointerTempType = True
-isDataTypeCompatibleWith PointerNullType PointerNullType = True
-isDataTypeCompatibleWith VoidType VoidType = True
-isDataTypeCompatibleWith _ _ = False
+isCompatibleWith PointerTempType PointerTempType = True
+isCompatibleWith PointerTempType PointerNullType = True
+isCompatibleWith PointerNullType PointerTempType = True
+isCompatibleWith PointerNullType PointerNullType = True
+isCompatibleWith VoidType VoidType = True
+isCompatibleWith AnyType _ = True
+isCompatibleWith _ _ = False
 
 -- | Gets the bit width of a given data type. If the data type has no bit width,
 -- 'Nothing' is returned.
@@ -207,9 +207,10 @@ parseDataTypeFromJson str =
   let res = catMaybes [ parseIntTempTypeFromJson str
                       , parseIntTempTypeAnyWidthFromJson str
                       , parseIntConstTypeFromJson str
-                      , parseAnyTypeFromJson str
                       , parsePointerTempTypeFromJson str
                       , parsePointerNullTypeFromJson str
+                      , parseVoidTypeFromJson str
+                      , parseAnyTypeFromJson str
                       ]
   in if length res > 0
      then Just $ head res
@@ -254,6 +255,14 @@ parseIntConstTypeFromJson str =
                                       }
              else Nothing
      else Nothing
+
+-- | Parses a 'VoidType' from a JSON string. If parsing fails, 'Nothing' is
+-- returned.
+parseVoidTypeFromJson :: String -> Maybe DataType
+parseVoidTypeFromJson str =
+  if str == pShow VoidType
+  then Just VoidType
+  else Nothing
 
 -- | Parses an 'AnyType' from a JSON string. If parsing fails, 'Nothing' is
 -- returned.
