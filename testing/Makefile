@@ -297,47 +297,63 @@ pattern.dot:
 #==============
 
 %.run-checks:
-	@for f in [ $*.f.json \
-			 , $*.lp.f.json \
-			 , $*.lp.ce.f.json \
-			 , $*.lp.ce.cc.f.json \
-			 , $*.lp.ce.cc.ae.f.json \
-			 ]; do \
+	@echo "$(BLUE)* CHECKING INTEGRITY$(NC)"
+	@for f in $*.f.json \
+			  $*.lp.f.json \
+			  $*.lp.ce.f.json \
+			  $*.lp.ce.cc.f.json \
+			  $*.lp.ce.cc.ae.f.json \
+			  ; do \
+		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
-			echo -n "* Checking integrity of $$f " ;\
-			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
 				echo $$msg ;\
 			fi \
+		else \
+			echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
 		fi \
 	done
+	@echo "$(BLUE)* CHECKING COVERABILITY$(NC)"
+	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
 	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
 		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
-			echo -n "* Checking coverability of $*.lp.ce.cc.ae.be.f.json " ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
 			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json` ;\
-			if [ "$$?" -eq "0" ]; then \
-				echo "[$(GREEN)OK$(NC)]" ;\
-			else \
-				echo "[$(RED)FAILED$(NC)]" ;\
-				echo $$msg ;\
-			fi ;\
-			echo -n "* Checking location overlaps of " ;\
-			echo -n "$*.lp.ce.cc.ae.be.f.json " ;\
-			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
-			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json` ;\
+			                   -p $*.lp.ce.cc.ae.be.p.json 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
 				echo $$msg ;\
 			fi \
+		else \
+			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
 		fi \
+	else \
+		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
+	fi
+	@echo "$(BLUE)* CHECKING OVERLAP OF DATA LOCATIONS$(NC)"
+	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
+	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
+		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
+			                   -f $*.lp.ce.cc.ae.be.f.json \
+			                   -p $*.lp.ce.cc.ae.be.p.json 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(GREEN)OK$(NC)]" ;\
+			else \
+				echo "[$(RED)FAILED$(NC)]" ;\
+				echo $$msg ;\
+			fi \
+		else \
+			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
 	fi
 
 %.run-bugpoint:
