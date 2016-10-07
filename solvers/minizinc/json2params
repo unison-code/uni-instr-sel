@@ -39,6 +39,7 @@ import sexparser
 import os.path
 import sys
 import fractions
+from itertools import groupby
 
 
 #================
@@ -357,20 +358,55 @@ with open(json_file, 'r') as file:
     json_data = json.load(file)
 
 # [MC] Compute "canonicalDataLocs"
+
+def getStretch(ls):
+    if len(ls)==1:
+        return [ls, []]
+    elif ls[0]+1 == ls[1]:
+        i = 1
+        while i<len(ls) and ls[i-1]+1 == ls[i]:
+            i = i+1
+        return [[ls[j] for j in range(0,i)], [ls[j] for j in range(i,len(ls))]]
+    elif ls[0]+2 == ls[1]:
+        i = 1
+        while i<len(ls) and ls[i-1]+2 == ls[i]:
+            i = i+1
+        return [[ls[j] for j in range(0,i)], [ls[j] for j in range(i,len(ls))]]
+    else:
+        return [[ls[0]], [ls[j] for j in range(1,len(ls))]]
+
+def canonicalFromSet(ls):
+    stretches = []
+    value = []
+    while len(ls)>0:
+        str_ls = getStretch(ls)
+        str = str_ls[0]
+        ls = str_ls[1]
+        if len(str)==1:
+            value.extend([str[0], str[0]+1])
+        elif str[0]+1 == str[1]:
+            value.extend([str[0], str[len(str)-1]+1])
+        else:
+            value.extend([str[0], str[len(str)-1]+2])
+    return value
+
 canonical = [0]
 canonical.append(json_data["num-locations"])
-for row in json_data["fun-valid-value-locs"]:
-    canonical.append(row[1])
-    canonical.append(row[1] + 1)
+
+for key, group in groupby(json_data["fun-valid-value-locs"], lambda x: x[0]):
+    canonical.extend(canonicalFromSet([row[1] for row in group]))
+
 for row in json_data["fun-valid-value-loc-ranges"]:
     canonical.append(row[2])
     canonical.append(row[3] + 1)
-for row in json_data["match-valid-value-locs"]:
-    canonical.append(row[1])
-    canonical.append(row[1] + 1)
+
+for key, group in groupby(json_data["match-valid-value-locs"], lambda x: [x[0],x[1]]):
+    canonical.extend(canonicalFromSet([row[2] for row in group]))
+
 for row in json_data["match-valid-value-loc-ranges"]:
     canonical.append(row[2])
     canonical.append(row[3] + 1)
+
 canonical.sort()
 canonical_set = set(canonical)
 
