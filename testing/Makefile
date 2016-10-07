@@ -296,24 +296,49 @@ pattern.dot:
 # MISC TARGETS
 #==============
 
-%.run-checks: %.f.json \
-              %.lp.f.json \
-              %.lp.ce.f.json \
-              %.lp.ce.cc.f.json \
-              %.lp.ce.cc.ae.f.json \
-              %.lp.ce.cc.ae.be.p.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.f.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.lp.f.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.lp.ce.f.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.lp.ce.cc.f.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.lp.ce.cc.ae.f.json
-	$(UNI_IS_CMD) check --check-fun-integrity -f $*.lp.ce.cc.ae.be.f.json
-	$(UNI_IS_CMD) check --check-fun-coverage \
-                  -f $*.lp.ce.cc.ae.be.f.json \
-                  -p $*.lp.ce.cc.ae.be.p.json
-	$(UNI_IS_CMD) check --check-fun-location-overlap \
-                  -f $*.lp.ce.cc.ae.be.f.json \
-                  -p $*.lp.ce.cc.ae.be.p.json
+%.run-checks:
+	@for f in [ $*.f.json \
+			 , $*.lp.f.json \
+			 , $*.lp.ce.f.json \
+			 , $*.lp.ce.cc.f.json \
+			 , $*.lp.ce.cc.ae.f.json \
+			 ]; do \
+		if [ -f $$f ]; then \
+			echo -n "* Checking integrity of $$f " ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(GREEN)OK$(NC)]" ;\
+			else \
+				echo "[$(RED)FAILED$(NC)]" ;\
+				echo $$msg ;\
+			fi \
+		fi \
+	done
+	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
+		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+			echo -n "* Checking coverability of $*.lp.ce.cc.ae.be.f.json " ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
+			                   -f $*.lp.ce.cc.ae.be.f.json \
+			                   -p $*.lp.ce.cc.ae.be.p.json` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(GREEN)OK$(NC)]" ;\
+			else \
+				echo "[$(RED)FAILED$(NC)]" ;\
+				echo $$msg ;\
+			fi ;\
+			echo -n "* Checking location overlaps of " ;\
+			echo -n "$*.lp.ce.cc.ae.be.f.json " ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
+			                   -f $*.lp.ce.cc.ae.be.f.json \
+			                   -p $*.lp.ce.cc.ae.be.p.json` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(GREEN)OK$(NC)]" ;\
+			else \
+				echo "[$(RED)FAILED$(NC)]" ;\
+				echo $$msg ;\
+			fi \
+		fi \
+	fi
 
 %.run-bugpoint:
 	make clean
