@@ -306,12 +306,14 @@ pattern.dot:
 			  ; do \
 		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
-			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f 2>&1` ;\
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f \
+				 > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
-				echo $$msg ;\
+				cat $$out ;\
 			fi \
 		else \
 			echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
@@ -321,14 +323,16 @@ pattern.dot:
 	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
 	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
 		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
 			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json 2>&1` ;\
+			                   -p $*.lp.ce.cc.ae.be.p.json \
+							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
-				echo $$msg ;\
+				cat $$out ;\
 			fi \
 		else \
 			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
@@ -340,14 +344,16 @@ pattern.dot:
 	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
 	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
 		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
 			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json 2>&1` ;\
+			                   -p $*.lp.ce.cc.ae.be.p.json \
+							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
-				echo $$msg ;\
+				cat $$out ;\
 			fi \
 		else \
 			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
