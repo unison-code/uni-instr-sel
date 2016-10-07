@@ -40,7 +40,7 @@ import Prelude
 -- | A class for providing useful information about an operation.
 class OpType a where
   -- | Gets the number of values that this operation takes as input.
-  numOperands :: a -> Integer
+  numOperands :: a -> Int
 
   -- | Whether this operation is commutative. If the operation takes less than
   -- two operands, then 'True' is returned by default.
