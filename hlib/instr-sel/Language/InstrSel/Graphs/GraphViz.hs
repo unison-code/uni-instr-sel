@@ -12,6 +12,7 @@ Main authors:
 module Language.InstrSel.Graphs.GraphViz
   ( noMoreEdgeAttr
   , noMoreNodeAttr
+  , showEdgeNrsAttr
   , toDotGraph
   , toDotGraphWith
   , toDotString
@@ -141,11 +142,8 @@ mkDefaultEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
 
 -- | Constructs attributes for the edge numbers.
 mkEdgeNrAttributes :: (I.LEdge EdgeLabel) -> GV.Attributes
-mkEdgeNrAttributes e =
-  [ GVA.TailLabel (GV.toLabelValue $ pShow $ getOutEdgeNr (Edge e))
-  , GVA.HeadLabel (GV.toLabelValue $ pShow $ getInEdgeNr (Edge e))
-  , GVA.LabelDistance 2.0
-  ]
+mkEdgeNrAttributes _ =
+  [ GVA.LabelDistance 2.0 ]
 
 -- | Constructs the edge attributes based on the given edge type.
 mkEdgeAttrByType :: EdgeType -> GV.Attributes
@@ -170,3 +168,13 @@ mkDefEdgeAttr = [GV.style GV.dotted]
 -- argument.
 noMoreEdgeAttr :: Edge -> GV.Attributes
 noMoreEdgeAttr _ = []
+
+-- | Returns a function that constructs attributes for showing an edge's edge
+-- numbers.
+showEdgeNrsAttr :: Edge -> GV.Attributes
+showEdgeNrsAttr =
+  ( \e ->
+    [ GVA.TailLabel (GV.toLabelValue $ pShow $ getOutEdgeNr e)
+    , GVA.HeadLabel (GV.toLabelValue $ pShow $ getInEdgeNr e)
+    ]
+  )

@@ -36,7 +36,8 @@ dispatch a opts
              , PlotFunctionSSAGraph
              ] =
       do function <- loadFunctionFromJson opts
-         PlotFunctionGraphs.run a function
+         show_edge_nrs <- getShowEdgeNumbersPred opts
+         PlotFunctionGraphs.run a show_edge_nrs function
   | a `elem` [ PlotPatternFullGraph
              , PlotPatternControlFlowGraph
              , PlotPatternSSAGraph
@@ -46,16 +47,19 @@ dispatch a opts
          iid <- getSelectedInstructionID opts
          pid <- getSelectedPatternID opts
          pattern <- loadInstrPattern tm iid pid
-         PlotPatternGraphs.run a pattern
+         show_edge_nrs <- getShowEdgeNumbersPred opts
+         PlotPatternGraphs.run a show_edge_nrs pattern
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
+         show_edge_nrs <- getShowEdgeNumbersPred opts
          hide_null_instrs <- getHideNullInstrsPred opts
          hide_inactive_instrs <- getHideInactiveInstrsPred opts
          PlotCoverGraphs.run a
-                             function
-                             matchset
+                             show_edge_nrs
                              hide_null_instrs
                              hide_inactive_instrs
+                             function
+                             matchset
   | otherwise =
       reportErrorAndExit "PlotDispatcher: unsupported action"

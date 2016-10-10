@@ -49,6 +49,7 @@ data Options
       , makeAction :: MakeAction
       , transformAction :: TransformAction
       , plotAction :: PlotAction
+      , showEdgeNumbers :: Maybe Bool
       , hideNullInstructions :: Maybe Bool
       , hideInactiveInstructions :: Maybe Bool
       , checkAction :: CheckAction

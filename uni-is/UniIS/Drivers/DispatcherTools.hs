@@ -16,6 +16,7 @@ module UniIS.Drivers.DispatcherTools
   , getSelectedTargetMachineID
   , getSelectedInstructionID
   , getSelectedPatternID
+  , getShowEdgeNumbersPred
   , getHideNullInstrsPred
   , getHideInactiveInstrsPred
   , loadFileContent
@@ -136,6 +137,13 @@ getSelectedPatternID opts =
      when (isNothing pid) $
        reportErrorAndExit "No pattern ID provided."
      return $ toPatternID $ fromJust pid
+
+-- | Returns the option whether to show edge numbers as specified on the command
+-- line.
+getShowEdgeNumbersPred :: Options -> IO Bool
+getShowEdgeNumbersPred opts =
+  do let p = showEdgeNumbers opts
+     return $ if isJust p then fromJust p else False
 
 -- | Returns the option whether to hide null instructions as specified on
 -- the command line.

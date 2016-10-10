@@ -49,13 +49,23 @@ import Data.Maybe
 -- Functions
 -------------
 
-run :: PlotAction -> Function -> PatternMatchset -> Bool -> Bool -> IO [Output]
+run :: PlotAction
+    -> Bool
+       -- ^ Whether to show edge numbers.
+    -> Bool
+       -- ^ Whether to hide null instructions.
+    -> Bool
+       -- ^ Whether to hide inactive instructions.
+    -> Function
+    -> PatternMatchset
+    -> IO [Output]
 
 run PlotCoverAllMatches
-    function
-    matchset
+    show_edge_nrs
     hide_null_instrs
     hide_inactive_instrs
+    function
+    matchset
   =
   do let tid = pmTarget matchset
          tm_res = retrieveTargetMachine tid
@@ -79,14 +89,14 @@ run PlotCoverAllMatches
      when (isLeft matches_res) $
        reportErrorAndExit $ fromLeft matches_res
      let matches = map pmMatch $ fromRight matches_res
-     dot <- mkCoveragePlot function matches
+     dot <- mkCoveragePlot show_edge_nrs function matches
      return [toOutput dot]
 
-run PlotCoverPerMatch function matchset _ _ =
+run PlotCoverPerMatch show_edge_nrs _ _ function matchset =
   do let matches = pmMatches matchset
      mapM
        ( \m ->
-          do dot <- mkCoveragePlot function [pmMatch m]
+          do dot <- mkCoveragePlot show_edge_nrs function [pmMatch m]
              let oid = "m" ++ pShow (pmMatchID m) ++ "-" ++
                        "i" ++ pShow (pmInstrID m) ++ "-" ++
                        "p" ++ pShow (pmPatternID m)
@@ -94,17 +104,18 @@ run PlotCoverPerMatch function matchset _ _ =
        )
        matches
 
-run _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
+run _ _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
-mkCoveragePlot :: Function -> [Match NodeID] -> IO String
-mkCoveragePlot function matches =
+mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO String
+mkCoveragePlot show_edge_nrs function matches =
   do let hasMatch n = any (\m -> isJust $ findPNInMatch m (getNodeID n)) matches
          nf n = [ GV.style GV.filled
                 , if hasMatch n
                   then GV.fillColor GV.Green
                   else GV.fillColor GV.Red
                 ]
-         dot = (toDotStringWith nf noMoreEdgeAttr) $
+         ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
+         dot = (toDotStringWith nf ef) $
                osGraph $
                functionOS function
      return dot

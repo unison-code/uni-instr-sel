@@ -36,17 +36,26 @@ import Language.InstrSel.Utils.IO
 
 -- | Produces DOT data as output by applying a given graph-to-graph function on
 -- the given 'InstrPattern'.
-produceDotOutputWith :: (Graph -> Graph) -> InstrPattern -> IO [Output]
-produceDotOutputWith f p =
-  do let dot = toDotString $ f $ osGraph $ patOS p
+produceDotOutputWith :: Bool -> (Graph -> Graph) -> InstrPattern -> IO [Output]
+produceDotOutputWith show_edge_nrs f pat =
+  do let g = f $ osGraph $ patOS pat
+         ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
+         dot = toDotStringWith noMoreNodeAttr ef g
      return [toOutput dot]
 
-run :: PlotAction -> InstrPattern -> IO [Output]
+run :: PlotAction
+    -> Bool
+       -- ^ Whether to show edge numbers.
+    -> InstrPattern
+    -> IO [Output]
 
-run PlotPatternFullGraph p = produceDotOutputWith id p
+run PlotPatternFullGraph show_edge_nrs p =
+  produceDotOutputWith show_edge_nrs id p
 
-run PlotPatternControlFlowGraph p = produceDotOutputWith extractCFG p
+run PlotPatternControlFlowGraph show_edge_nrs p =
+  produceDotOutputWith show_edge_nrs extractCFG p
 
-run PlotPatternSSAGraph p = produceDotOutputWith extractSSA p
+run PlotPatternSSAGraph show_edge_nrs p =
+  produceDotOutputWith show_edge_nrs extractSSA p
 
-run _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"
+run _ _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"

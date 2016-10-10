@@ -35,17 +35,26 @@ import Language.InstrSel.Utils.IO
 
 -- | Produces DOT data as output by applying a given graph-to-graph function on
 -- the given 'Function'.
-produceDotOutputWith :: (Graph -> Graph) -> Function -> IO [Output]
-produceDotOutputWith f fun =
-  do let dot = toDotString $ f $ osGraph $ functionOS fun
+produceDotOutputWith :: Bool -> (Graph -> Graph) -> Function -> IO [Output]
+produceDotOutputWith show_edge_nrs f fun =
+  do let g = f $ osGraph $ functionOS fun
+         ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
+         dot = toDotStringWith noMoreNodeAttr ef g
      return [toOutput dot]
 
-run :: PlotAction -> Function -> IO [Output]
+run :: PlotAction
+    -> Bool
+       -- ^ Whether to show edge numbers.
+    -> Function
+    -> IO [Output]
 
-run PlotFunctionFullGraph fun = produceDotOutputWith id fun
+run PlotFunctionFullGraph show_edge_nrs fun =
+  produceDotOutputWith show_edge_nrs id fun
 
-run PlotFunctionControlFlowGraph fun = produceDotOutputWith extractCFG fun
+run PlotFunctionControlFlowGraph show_edge_nrs fun =
+  produceDotOutputWith show_edge_nrs extractCFG fun
 
-run PlotFunctionSSAGraph fun = produceDotOutputWith extractSSA fun
+run PlotFunctionSSAGraph show_edge_nrs fun =
+  produceDotOutputWith show_edge_nrs extractSSA fun
 
-run _ _ = reportErrorAndExit "PlotFunctionGraphs: unsupported action"
+run _ _ _ = reportErrorAndExit "PlotFunctionGraphs: unsupported action"

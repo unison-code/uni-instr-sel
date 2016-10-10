@@ -268,6 +268,10 @@ parseArgs =
                          )
              ]
         &= groupname "'plot' command flags"
+    , showEdgeNumbers = def
+        &= name "show-edge-numbers"
+        &= explicit
+        &= help "Whether to show edge numbers in the plot."
     , hideNullInstructions = def
         &= name "hide-null-instrs"
         &= explicit
