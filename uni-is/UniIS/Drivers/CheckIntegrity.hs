@@ -20,6 +20,7 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.OpTypes
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
   ( InstrPattern (..) )
 
@@ -31,6 +32,7 @@ import Language.InstrSel.Utils.IO
 import Data.List
   ( intercalate
   , nubBy
+  , sort
   )
 
 
@@ -66,135 +68,338 @@ mkOutput msgs =
 
 checkGraphInvariants :: Graph -> [String]
 checkGraphInvariants g =
-  checkOperationNodes g
---  checkValueNodes g ++
---  checkStateNodes g
---  checkBlockNodes g ++
---  checkControlNodes g
-
-checkOperationNodes :: Graph -> [String]
-checkOperationNodes g =
-  let ns = filter isOperationNode $
-           getAllNodes g
-      check n =
+  let check n =
+        let msg0 = nodeCheck n
+            in_edges = getInEdges g n
+            msg1 = concatMap edgeNodeCheck in_edges
+            msg2 = inEdgeOrderCheck n in_edges
+            out_edges = getInEdges g n
+            msg3 = concatMap edgeNodeCheck out_edges
+            msg4 = outEdgeOrderCheck n out_edges
+        in concat [msg0, msg1, msg2, msg3, msg4]
+      nodeCheck n =
         case (getNodeType n) of
           (ComputationNode op) ->
-            let msg0 = checkNumOperands g n op
-                msg1 = checkOperandsAreValues g n
-                msg2 = checkNumProducts g n op
-                msg3 = checkProductsAreValues g n
-                msg4 = checkStates g n op
-            in concat [msg0, msg1, msg2, msg3, msg4]
-            -- TODO: implement
+            let msg0 = checkNumInDtFlowEdges  g n (numOperands op)
+                msg1 = checkNumOutDtFlowEdges g n ( if producesValue op
+                                                    then 1 else 0 )
+                msg2 = checkNumInStFlowEdges  g n ( if requiresState op
+                                                    then 1 else 0 )
+                msg3 = checkNumOutStFlowEdges g n ( if requiresState op
+                                                    then 1 else 0 )
+                msg4 = checkNumInCtrlFlowEdges  g n 0
+                msg5 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           (ControlNode op) ->
-            let msg0 = if op /= Ret
-                       then checkNumOperands g n op
-                       else []
-                msg1 = checkOperandsAreValues g n
-                msg2 = checkNumProducts g n op
-                msg3 = checkProductsAreValues g n
-            in concat [msg0, msg1, msg2, msg3]
-            -- TODO: implement
+            let msg0 = checkNumInDtFlowEdges  g n (numOperands op)
+                msg1 = checkNumOutDtFlowEdges g n ( if producesValue op
+                                                    then 1 else 0 )
+                msg2 = checkNumInStFlowEdges  g n ( if requiresState op
+                                                    then 1 else 0 )
+                msg3 = checkNumOutStFlowEdges g n ( if requiresState op
+                                                    then 1 else 0 )
+                msg4 = checkNumInCtrlFlowEdges  g n (numInCtrlFlows op)
+                msg5 = checkNumOutCtrlFlowEdges g n (numOutCtrlFlows op)
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           (CallNode {}) ->
-            -- TODO: implement
-            []
+            let msg0 = checkNumInStFlowEdges  g n 1
+                msg1 = checkNumOutStFlowEdges g n 1
+                msg2 = checkNumInCtrlFlowEdges  g n 0
+                msg3 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3]
           (ValueNode {}) ->
-            -- TODO: implement
-            []
+            let msg0 = checkNumInDtFlowEdges g n 1
+                msg1 = checkNumOutDtFlowEdgesAtLeast g n 1
+                msg2 = checkNumInStFlowEdges  g n 0
+                msg3 = checkNumOutStFlowEdges g n 0
+                msg4 = checkNumInCtrlFlowEdges  g n 0
+                msg5 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           (BlockNode {}) ->
-            -- TODO: implement
-            []
+            let msg0 = checkNumInDtFlowEdges  g n 0
+                msg1 = checkNumOutDtFlowEdges g n 0
+                msg2 = checkNumInStFlowEdges  g n 0
+                msg3 = checkNumOutStFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3]
           PhiNode ->
-            -- TODO: implement
-            []
+            let msg0 = checkNumInDtFlowEdgesAtLeast g n 1
+                msg1 = checkNumOutDtFlowEdges g n 1
+                msg2 = checkNumInStFlowEdges  g n 0
+                msg3 = checkNumOutStFlowEdges g n 0
+                msg4 = checkNumInCtrlFlowEdges  g n 0
+                msg5 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           StateNode ->
-            -- TODO: implement
-            []
+            let msg0 = checkNumInStFlowEdges  g n 1
+                msg1 = checkHasOutStFlowEdgeOrOutDefEdge g n
+                msg2 = checkNumInDtFlowEdges  g n 0
+                msg3 = checkNumOutDtFlowEdges g n 0
+                msg4 = checkNumInCtrlFlowEdges  g n 0
+                msg5 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           CopyNode ->
-            -- TODO: implement
-            []
-  in concat $
-     foldr (\n msgs -> (check n:msgs)) [] ns
-
-checkNumOperands :: (OpType o) => Graph -> Node -> o -> [String]
-checkNumOperands g n op =
-  let act_num_ops = length $
-                    nubBy haveSameInEdgeNrs $
-                    getDtFlowInEdges g n
-      exp_num_ops = numOperands op
-  in if act_num_ops /= exp_num_ops
-     then [ "Wrong number of operands: " ++ show n ++
-            " has " ++ show act_num_ops ++ ", expected " ++ show exp_num_ops
-          ]
-     else []
-
-checkOperandsAreValues :: Graph -> Node -> [String]
-checkOperandsAreValues g n =
-  let es = getDtFlowInEdges g n
-      check e = let src = getSourceNode g e
-                in if not (isValueNode src)
-                   then [ "Invalid node type: " ++ show n ++ " has " ++
-                          show src ++ " as operand, expected value node"
-                        ]
-                   else []
-  in concatMap check es
-
-checkNumProducts :: (OpType o) => Graph -> Node -> o -> [String]
-checkNumProducts g n op =
-  let act_num_res = length $
-                    getDtFlowOutEdges g n
-      exp_num_res = if producesValue op then 1 else 0
-  in if act_num_res /= exp_num_res
-     then [ "Wrong number of products: " ++ show n ++
-            " has " ++ show act_num_res ++ ", expected " ++ show exp_num_res
-          ]
-     else []
-
-checkProductsAreValues :: Graph -> Node -> [String]
-checkProductsAreValues g n =
-  let es = getDtFlowOutEdges g n
-      check e = let trg = getTargetNode g e
-                in if not (isValueNode trg)
-                   then [ "Invalid node type: " ++ show n ++ " has " ++
-                          show trg ++ " as product, expected value node"
-                        ]
-                   else []
-  in concatMap check es
-
-checkStates :: (OpType o) => Graph -> Node -> o -> [String]
-checkStates g n op =
-  let in_edges = getStFlowInEdges g n
-      out_edges = getStFlowOutEdges g n
-      act_num_in_sts = length in_edges
-      exp_num_in_sts = if requiresState op then 1 else 0
-      act_num_out_sts = length out_edges
-      exp_num_out_sts = if requiresState op then 1 else 0
-      msg0 = if act_num_in_sts /= exp_num_in_sts
-             then [ "Wrong number of input states: " ++ show n ++
-                    " has " ++ show act_num_in_sts ++ ", expected " ++
-                    show exp_num_in_sts
-                  ]
-             else []
-      msg1 = if act_num_out_sts /= exp_num_out_sts
-             then [ "Wrong number of output states: " ++ show n ++
-                    " has " ++ show act_num_out_sts ++ ", expected " ++
-                    show exp_num_out_sts
-                  ]
-             else []
-      checkInState e =
+            let msg0 = checkNumInDtFlowEdges  g n 1
+                msg1 = checkNumOutDtFlowEdges g n 1
+                msg2 = checkNumInStFlowEdges  g n 0
+                msg3 = checkNumOutStFlowEdges g n 0
+                msg4 = checkNumInCtrlFlowEdges  g n 0
+                msg5 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+      edgeNodeCheck e =
         let src = getSourceNode g e
-        in if not (isStateNode src)
-           then [ "Invalid node type: " ++ show n ++ " has " ++
-                  show src ++ " as input, expected state node"
+            trg = getTargetNode g e
+            src_type = getNodeType src
+            trg_type = getNodeType trg
+        in case (getEdgeType e) of
+            ControlFlowEdge ->
+              if not (isBlockNode src || isControlNode src)
+              then [ "Invalid source node type: " ++ show e ++ " has " ++
+                     pShow src_type ++ ", expected either block or control node"
+                   ]
+              else if not (isBlockNode trg || isControlNode trg)
+                   then [ "Invalid target node type: " ++ show e ++ " has " ++
+                          pShow trg_type ++ ", expected either block or " ++
+                          "control node"
+                        ]
+                   else if isBlockNode src && not (isControlNode trg)
+                        then [ "Invalid target node type: " ++ show e ++
+                               " has " ++ pShow trg_type ++ ", expected " ++
+                               "control node"
+                        ]
+                        else if isControlNode src && not (isBlockNode trg)
+                             then [ "Invalid target node type: " ++ show e ++
+                                    " has " ++ pShow trg_type ++ ", " ++
+                                    "expected block node"
+                                  ]
+                             else []
+            DataFlowEdge ->
+              if not (isOperationNode src || isBlockNode src || isValueNode src)
+              then [ "Invalid source node type: " ++ show e ++ " has " ++
+                     pShow src_type ++ ", expected either a computation, " ++
+                     "control, call, phi, copy, block, or value node"
+                   ]
+              else if not (isOperationNode trg || isValueNode trg)
+                   then [ "Invalid target node type: " ++ show e ++ " has " ++
+                          pShow trg_type ++ ", expected either a " ++
+                          "computation, control, call, phi, copy, or value node"
+                        ]
+                   else if isOperationNode src && not (isValueNode trg)
+                        then [ "Invalid target node type: " ++ show e ++
+                               " has " ++ pShow trg_type ++ ", expected " ++
+                               "value node"
+                        ]
+                        else if isValueNode src && not (isOperationNode trg)
+                             then [ "Invalid target node type: " ++ show e ++
+                                    " has " ++ pShow trg_type ++ ", " ++
+                                    "expected computation, control, call, " ++
+                                    "phi, or copy node"
+                                  ]
+                             else if isBlockNode src && not (isValueNode trg)
+                                  then [ "Invalid target node type: " ++
+                                         show e ++ " has " ++ pShow trg_type ++
+                                         ", expected value node"
+                                       ]
+                                  else []
+            StateFlowEdge ->
+              if not (isOperationNode src || isBlockNode src || isStateNode src)
+              then [ "Invalid source node type: " ++ show e ++ " has " ++
+                     pShow src_type ++ ", expected either a computation, " ++
+                     "control, call, phi, copy, block or state node"
+                   ]
+              else if not (isOperationNode trg || isStateNode trg)
+                   then [ "Invalid target node type: " ++ show e ++ " has " ++
+                          pShow trg_type ++ ", expected either a " ++
+                          "computation, control, call, phi, copy, or state node"
+                        ]
+                   else if isOperationNode src && not (isStateNode trg)
+                        then [ "Invalid target node type: " ++ show e ++
+                               " has " ++ pShow trg_type ++ ", expected " ++
+                               "state node"
+                        ]
+                        else if isStateNode src && not (isOperationNode trg)
+                             then [ "Invalid target node type: " ++ show e ++
+                                    " has " ++ pShow trg_type ++ ", " ++
+                                    "expected computation, control, call, " ++
+                                    "phi, or copy node"
+                                  ]
+                             else if isBlockNode src && not (isStateNode trg)
+                                  then [ "Invalid target node type: " ++
+                                         show e ++ " has " ++ pShow trg_type ++
+                                         ", expected state node"
+                                       ]
+                                  else []
+            DefEdge ->
+              if not (isBlockNode src || isValueNode src || isStateNode src)
+              then [ "Invalid source node type: " ++ show e ++ " has " ++
+                     pShow src_type ++ ", expected either block, value or " ++
+                     "state node"
+                   ]
+              else if not ( isBlockNode src ||
+                            isValueNode src ||
+                            isStateNode src
+                          )
+                   then [ "Invalid target node type: " ++ show e ++ " has " ++
+                          pShow trg_type ++ ", expected either block, value " ++
+                          "or state node"
+                        ]
+                   else if isBlockNode src &&
+                           not (isValueNode trg || isStateNode trg)
+                        then [ "Invalid target node type: " ++ show e ++
+                               " has " ++ pShow trg_type ++ ", expected " ++
+                               "value or state node"
+                        ]
+                        else if isValueNode src && not (isBlockNode trg)
+                             then [ "Invalid target node type: " ++ show e ++
+                                    " has " ++ pShow trg_type ++ ", " ++
+                                    "expected block node"
+                                  ]
+                             else if isStateNode src && not (isBlockNode trg)
+                                  then [ "Invalid target node type: " ++
+                                         show e ++ " has " ++ pShow trg_type ++
+                                         ", expected block node"
+                                       ]
+                                  else []
+      inEdgeOrderCheck n es =
+        let dt_es = nubBy haveSameInEdgeNrs $
+                    filter isDataFlowEdge $
+                    es
+            msg0 = checkNumberOrder n "inbound data-flow edges" $
+                   map getInEdgeNr dt_es
+            st_es = filter isStateFlowEdge es
+            msg1 = checkNumberOrder n "inbound state-flow edges" $
+                   map getInEdgeNr st_es
+            ctrl_es = filter isControlFlowEdge es
+            msg2 = checkNumberOrder n "inbound control-flow edges" $
+                   map getInEdgeNr ctrl_es
+            def_es = filter isDefEdge es
+            msg3 = checkNumberOrder n "inbound definition edges" $
+                   map getInEdgeNr def_es
+        in concat [msg0, msg1, msg2, msg3]
+      outEdgeOrderCheck n es =
+        let dt_es = filter isDataFlowEdge es
+            msg0 = checkNumberOrder n "outbound data-flow edges" $
+                   map getOutEdgeNr dt_es
+            st_es = filter isStateFlowEdge es
+            msg1 = checkNumberOrder n "outbound state-flow edges" $
+                   map getOutEdgeNr st_es
+            ctrl_es = filter isControlFlowEdge es
+            msg2 = checkNumberOrder n "outbound control-flow edges" $
+                   map getOutEdgeNr ctrl_es
+            def_es = filter isDefEdge es
+            msg3 = checkNumberOrder n "outbound definition edges" $
+                   map getOutEdgeNr def_es
+        in concat [msg0, msg1, msg2, msg3]
+      checkNumberOrder :: Node -> String -> [EdgeNr] -> [String]
+      checkNumberOrder n e_type ns =
+        let sorted = sort $ map fromIntegral ns
+        in if length sorted /= (last sorted - 1)
+           then [ "Inconsistent edge order: " ++ show n ++ " has " ++ e_type ++
+                  " edges with order " ++ pShow sorted ++ ", expected a " ++
+                  "contigous sequence"
                 ]
            else []
-      checkOutState e =
-        let trg = getTargetNode g e
-        in if not (isStateNode trg)
-           then [ "Invalid node type: " ++ show n ++ " has " ++
-                  show trg ++ " as output, expected state node"
-                ]
-           else []
-      msg2 = concatMap checkInState in_edges
-      msg3 = concatMap checkOutState out_edges
-  in concat [msg0, msg1, msg2, msg3]
+  in concat $
+     foldr (\n msgs -> (check n:msgs)) [] $
+     getAllNodes g
+
+numInCtrlFlows :: ControlOp -> Int
+numInCtrlFlows Br = 1
+numInCtrlFlows CondBr = 1
+numInCtrlFlows Ret = 1
+
+numOutCtrlFlows :: ControlOp -> Int
+numOutCtrlFlows Br = 1
+numOutCtrlFlows CondBr = 2
+numOutCtrlFlows Ret = 0
+
+checkNumInDtFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInDtFlowEdges g n exp_num =
+  let act_num = length $
+                nubBy haveSameInEdgeNrs $
+                getDtFlowInEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of inbound data-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [String]
+checkNumInDtFlowEdgesAtLeast g n exp_num =
+  let act_num = length $
+                nubBy haveSameInEdgeNrs $
+                getDtFlowInEdges g n
+  in if act_num < exp_num
+     then [ "Wrong number of inbound data-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected at least " ++ show exp_num
+          ]
+     else []
+
+checkNumOutDtFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutDtFlowEdges g n exp_num =
+  let act_num = length $
+                nubBy haveSameOutEdgeNrs $
+                getDtFlowOutEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of outbound data-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [String]
+checkNumOutDtFlowEdgesAtLeast g n exp_num =
+  let act_num = length $
+                nubBy haveSameOutEdgeNrs $
+                getDtFlowOutEdges g n
+  in if act_num < exp_num
+     then [ "Wrong number of outbound data-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected at least" ++ show exp_num
+          ]
+     else []
+
+checkNumInCtrlFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInCtrlFlowEdges g n exp_num =
+  let act_num = length $ getCtrlFlowInEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of inbound control-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutCtrlFlowEdges g n exp_num =
+  let act_num = length $ getCtrlFlowOutEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of outbound control-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkNumInStFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInStFlowEdges g n exp_num =
+  let act_num = length $ getStFlowInEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of inbound state-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkNumOutStFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutStFlowEdges g n exp_num =
+  let act_num = length $ getStFlowOutEdges g n
+  in if act_num /= exp_num
+     then [ "Wrong number of outbound state-flow edges: " ++ show n ++
+            " has " ++ show act_num ++ ", expected " ++ show exp_num
+          ]
+     else []
+
+checkHasOutStFlowEdgeOrOutDefEdge :: Graph -> Node -> [String]
+checkHasOutStFlowEdgeOrOutDefEdge g n =
+  let num_st_es = length $ getStFlowOutEdges g n
+      num_def_es = length $ getDefOutEdges g n
+  in if num_st_es /= 1 && num_def_es /= 1
+     then [ "Wrong number of outbound state-flow or definition edges: " ++
+            show n ++ " has " ++ show num_st_es ++ " state-flow edges and " ++
+            show num_def_es ++ " definition edges, expected either " ++
+            "1 state-flow edge or 1 definition edge (but not both)"
+          ]
+     else []

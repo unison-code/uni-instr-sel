@@ -258,15 +258,15 @@ data NodeType
   deriving (Show)
 
 instance PrettyShow NodeType where
-  pShow (ComputationNode op) = "Computation node (" ++ pShow op ++ ")"
-  pShow (ControlNode op) = "Control node (" ++ pShow op ++ ")"
-  pShow (CallNode func) = "Call node (" ++ pShow func ++ ")"
-  pShow (ValueNode dt origin) = "Value node (" ++ pShow dt ++ ", "
+  pShow (ComputationNode op) = "computation node (" ++ pShow op ++ ")"
+  pShow (ControlNode op) = "control node (" ++ pShow op ++ ")"
+  pShow (CallNode func) = "call node (" ++ pShow func ++ ")"
+  pShow (ValueNode dt origin) = "calue node (" ++ pShow dt ++ ", "
                                 ++ pShow origin ++ ")"
-  pShow (BlockNode name) = "Block node (" ++ pShow name ++ ")"
-  pShow PhiNode = "Phi node"
-  pShow StateNode = "State node"
-  pShow CopyNode = "Copy node"
+  pShow (BlockNode name) = "block node (" ++ pShow name ++ ")"
+  pShow PhiNode = "phi node"
+  pShow StateNode = "state node"
+  pShow CopyNode = "copy node"
 
 -- | Represents a distinct edge.
 newtype Edge
@@ -290,10 +290,16 @@ data EdgeType
   | DefEdge
   deriving (Show, Eq)
 
+instance PrettyShow EdgeType where
+  pShow ControlFlowEdge = "control-flow"
+  pShow DataFlowEdge = "data-flow"
+  pShow StateFlowEdge = "state-flow"
+  pShow DefEdge = "definition"
+
 -- | Edge number, used for ordering edges.
 newtype EdgeNr
   = EdgeNr Natural
-  deriving (Show, Eq, Ord, Num, Enum)
+  deriving (Show, Eq, Ord, Num, Enum, Integral, Real)
 
 instance PrettyShow EdgeNr where
   pShow (EdgeNr i) = pShow i
