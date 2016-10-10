@@ -61,11 +61,10 @@ run CheckFunctionGraphCoverage function matchset _ =
         any (isJust . (flip findPNInMatch) n . pmMatch) matches
       uncovered_nodes = filter (not . isNodeCoverable) op_nodes
   in if length uncovered_nodes > 0
-     then let node_strs = intercalate ", " $ map pShow uncovered_nodes
-          in return [ toOutputWithExitCode
-                        errorExitCode
-                        ("Non-coverable op nodes: " ++ node_strs)
-                    ]
+     then return [ toOutputWithExitCode
+                   errorExitCode
+                   ("Non-coverable op nodes: " ++ pShow uncovered_nodes)
+                 ]
      else return [toOutput ""]
 
 run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
