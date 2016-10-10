@@ -73,7 +73,7 @@ checkGraphInvariants g =
             in_edges = getInEdges g n
             msg1 = concatMap edgeNodeCheck in_edges
             msg2 = inEdgeOrderCheck n in_edges
-            out_edges = getInEdges g n
+            out_edges = getOutEdges g n
             msg3 = concatMap edgeNodeCheck out_edges
             msg4 = outEdgeOrderCheck n out_edges
         in concat [msg0, msg1, msg2, msg3, msg4]
@@ -91,7 +91,9 @@ checkGraphInvariants g =
                 msg5 = checkNumOutCtrlFlowEdges g n 0
             in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           (ControlNode op) ->
-            let msg0 = checkNumInDtFlowEdges  g n (numOperands op)
+            let msg0 = if op /= Ret
+                       then checkNumInDtFlowEdges  g n (numOperands op)
+                       else []
                 msg1 = checkNumOutDtFlowEdges g n ( if producesValue op
                                                     then 1 else 0 )
                 msg2 = checkNumInStFlowEdges  g n ( if requiresState op
@@ -117,10 +119,8 @@ checkGraphInvariants g =
             in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           (BlockNode {}) ->
             let msg0 = checkNumInDtFlowEdges  g n 0
-                msg1 = checkNumOutDtFlowEdges g n 0
-                msg2 = checkNumInStFlowEdges  g n 0
-                msg3 = checkNumOutStFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3]
+                msg1 = checkNumInStFlowEdges  g n 0
+            in concat [msg0, msg1]
           PhiNode ->
             let msg0 = checkNumInDtFlowEdgesAtLeast g n 1
                 msg1 = checkNumOutDtFlowEdges g n 1
@@ -263,39 +263,40 @@ checkGraphInvariants g =
         let dt_es = nubBy haveSameInEdgeNrs $
                     filter isDataFlowEdge $
                     es
-            msg0 = checkNumberOrder n "inbound data-flow edges" $
-                   map getInEdgeNr dt_es
             st_es = filter isStateFlowEdge es
-            msg1 = checkNumberOrder n "inbound state-flow edges" $
-                   map getInEdgeNr st_es
             ctrl_es = filter isControlFlowEdge es
-            msg2 = checkNumberOrder n "inbound control-flow edges" $
-                   map getInEdgeNr ctrl_es
-            def_es = filter isDefEdge es
-            msg3 = checkNumberOrder n "inbound definition edges" $
-                   map getInEdgeNr def_es
-        in concat [msg0, msg1, msg2, msg3]
+        in if isOperationNode n
+           then let msg0 = checkNumberOrder n "inbound data-flow edges" $
+                           map getInEdgeNr dt_es
+                    msg1 = checkNumberOrder n "inbound state-flow edges" $
+                           map getInEdgeNr st_es
+                    msg2 = checkNumberOrder n "inbound control-flow edges" $
+                           map getInEdgeNr ctrl_es
+                in concat [msg0, msg1, msg2]
+           else []
       outEdgeOrderCheck n es =
         let dt_es = filter isDataFlowEdge es
-            msg0 = checkNumberOrder n "outbound data-flow edges" $
-                   map getOutEdgeNr dt_es
             st_es = filter isStateFlowEdge es
-            msg1 = checkNumberOrder n "outbound state-flow edges" $
-                   map getOutEdgeNr st_es
             ctrl_es = filter isControlFlowEdge es
-            msg2 = checkNumberOrder n "outbound control-flow edges" $
-                   map getOutEdgeNr ctrl_es
-            def_es = filter isDefEdge es
-            msg3 = checkNumberOrder n "outbound definition edges" $
-                   map getOutEdgeNr def_es
-        in concat [msg0, msg1, msg2, msg3]
-      checkNumberOrder :: Node -> String -> [EdgeNr] -> [String]
+        in if isOperationNode n
+           then let msg0 = checkNumberOrder n "outbound data-flow edges" $
+                           map getOutEdgeNr dt_es
+                    msg1 = checkNumberOrder n "outbound state-flow edges" $
+                           map getOutEdgeNr st_es
+                    msg2 = checkNumberOrder n "outbound control-flow edges" $
+                           map getOutEdgeNr ctrl_es
+                in concat [msg0, msg1, msg2]
+           else if isBlockNode n
+                then checkNumberOrder n "outbound control-flow edges" $
+                     map getOutEdgeNr ctrl_es
+                else []
+      checkNumberOrder _ _ [] = []
       checkNumberOrder n e_type ns =
         let sorted = sort $ map fromIntegral ns
-        in if length sorted /= (last sorted - 1)
+        in if length sorted /= (last sorted + 1)
            then [ "Inconsistent edge order: " ++ show n ++ " has " ++ e_type ++
-                  " edges with order " ++ pShow sorted ++ ", expected a " ++
-                  "contigous sequence"
+                  " edges with order " ++ pShow sorted ++ ", expected " ++
+                  pShow (take (length sorted) [0..] :: [Int])
                 ]
            else []
   in concat $
