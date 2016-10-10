@@ -407,7 +407,7 @@ checkNumOutDtFlowEdgesAtLeast g n exp_num =
                 getDtFlowOutEdges g n
   in if act_num < exp_num
      then [ "Wrong number of outbound data-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected at least" ++ show exp_num
+            " has " ++ show act_num ++ ", expected at least " ++ show exp_num
           ]
      else []
 
