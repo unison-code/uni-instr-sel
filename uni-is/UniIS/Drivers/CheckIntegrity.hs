@@ -178,7 +178,8 @@ checkGraphInvariants c g =
                 msg3 = checkNumOutStFlowEdges g n 0
                 msg4 = checkNumInCtrlFlowEdges  g n 0
                 msg5 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+                msg6 = checkPhiDefEdges g n
+            in concat [msg0, msg1, msg2, msg3, msg4, msg5, msg6]
           StateNode ->
             let msg0 = if c == FunctionCheck
                        then checkNumInStFlowEdges  g n 1
@@ -353,8 +354,7 @@ checkGraphInvariants c g =
                   pShow (take (length sorted) [0..] :: [Int])
                 ]
            else []
-  in concat $
-     foldr (\n msgs -> (check n:msgs)) [] $
+  in concatMap check $
      getAllNodes g
 
 numInCtrlFlows :: ControlOp -> Int
@@ -480,3 +480,33 @@ checkValueLocations os =
                                  nid
                )
                (osValidLocations os)
+
+checkPhiDefEdges :: Graph -> Node -> [ErrorMessage]
+checkPhiDefEdges g n =
+  let in_es = getDtFlowInEdges g n
+      out_es = getDtFlowOutEdges g n
+      checkInEdge e =
+        let src = getSourceNode g e
+            nr = getOutEdgeNr e
+            num_def_es = length $
+                         filter (\e' -> getOutEdgeNr e' == nr) $
+                         getDefOutEdges g src
+        in if num_def_es /= 1
+           then [ "Wrong number of outbound definition edges: " ++ show src ++
+                  ", which is predecessor of " ++ show n ++ ", has " ++
+                  pShow num_def_es ++ " definition edges with out-edge-" ++
+                  "number " ++ pShow nr ++ ", expected 1"
+                ]
+           else []
+      checkOutEdge e =
+        let trg = getTargetNode g e
+            num_def_es = length $ getDefInEdges g trg
+        in if num_def_es /= 1
+           then [ "Wrong number of inbound definition edges: " ++ show trg ++
+                  ", which is successor of " ++ show n ++ ", has " ++
+                  pShow num_def_es ++ " definition edges, expected 1"
+                ]
+           else []
+      msg0 = concatMap checkInEdge in_es
+      msg1 = concatMap checkOutEdge out_es
+  in concat [msg0, msg1]
