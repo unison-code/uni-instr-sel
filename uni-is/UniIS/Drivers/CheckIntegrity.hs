@@ -184,7 +184,7 @@ checkGraphInvariants c g =
                        then checkNumInStFlowEdges  g n 1
                        else []
                 msg1 = if c == FunctionCheck
-                       then checkHasOutStFlowEdgeOrOutDefEdge g n
+                       then checkHasOutStFlowEdgeOrInDefEdge g n
                        else []
                 msg2 = checkNumInDtFlowEdges  g n 0
                 msg3 = checkNumOutDtFlowEdges g n 0
@@ -447,12 +447,13 @@ checkNumOutStFlowEdges g n exp_num =
           ]
      else []
 
-checkHasOutStFlowEdgeOrOutDefEdge :: Graph -> Node -> [ErrorMessage]
-checkHasOutStFlowEdgeOrOutDefEdge g n =
+checkHasOutStFlowEdgeOrInDefEdge :: Graph -> Node -> [ErrorMessage]
+checkHasOutStFlowEdgeOrInDefEdge g n =
   let num_st_es = length $ getStFlowOutEdges g n
-      num_def_es = length $ getDefOutEdges g n
+      num_def_es = length $ getDefInEdges g n
   in if num_st_es /= 1 && num_def_es /= 1
-     then [ "Wrong number of outbound state-flow or definition edges: " ++
+     then [ "Wrong number of outbound state-flow or inbound definition " ++
+            "edges: " ++
             show n ++ " has " ++ show num_st_es ++ " state-flow edges and " ++
             show num_def_es ++ " definition edges, expected either " ++
             "1 state-flow edge or 1 definition edge (but not both)"
