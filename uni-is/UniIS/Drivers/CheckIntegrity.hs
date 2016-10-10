@@ -37,6 +37,14 @@ import Data.List
 
 
 
+---------
+-- Types
+---------
+
+type ErrorMessage = String
+
+
+
 -------------
 -- Functions
 -------------
@@ -49,24 +57,39 @@ run
 
 run CheckFunctionIntegrity (Just fun) _ =
   do let g = osGraph $ functionOS fun
-     return $ mkOutput $
-              checkGraphInvariants g
+         msg0 = checkGraphInvariants g
+         msg1 = concatMap ( \nid ->
+                            checkNodeExists ( "could not find function " ++
+                                              "input with ID " ++ pShow nid
+                                            )
+                                            g
+                                            nid
+                          )
+                          (functionInputs fun)
+     return $ mkOutput $ concat [msg0, msg1]
 
 run CheckPatternIntegrity _ (Just pat) =
   do let g = osGraph $ patOS pat
-     return $ mkOutput $
-              checkGraphInvariants g
+         msg0 = checkGraphInvariants g
+     return $ mkOutput $ msg0
 
 run _ _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 
 -- | Makes an 'Output' from a given output log. An empty log indicates no
 -- errors.
-mkOutput :: [String] -> [Output]
+mkOutput :: [ErrorMessage] -> [Output]
 mkOutput [] = [toOutput ""]
 mkOutput msgs =
   [toOutputWithExitCode errorExitCode (intercalate "\n\n" msgs)]
 
-checkGraphInvariants :: Graph -> [String]
+checkNodeExists :: ErrorMessage -> Graph -> NodeID -> [ErrorMessage]
+checkNodeExists msg g nid =
+  let ns = findNodesWithNodeID g nid
+  in if length ns == 0
+     then [ "Non-existing node: " ++ msg ]
+     else []
+
+checkGraphInvariants :: Graph -> [ErrorMessage]
 checkGraphInvariants g =
   let check n =
         let msg0 = nodeCheck n
@@ -313,7 +336,7 @@ numOutCtrlFlows Br = 1
 numOutCtrlFlows CondBr = 2
 numOutCtrlFlows Ret = 0
 
-checkNumInDtFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInDtFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumInDtFlowEdges g n exp_num =
   let act_num = length $
                 nubBy haveSameInEdgeNrs $
@@ -324,7 +347,7 @@ checkNumInDtFlowEdges g n exp_num =
           ]
      else []
 
-checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [String]
+checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumInDtFlowEdgesAtLeast g n exp_num =
   let act_num = length $
                 nubBy haveSameInEdgeNrs $
@@ -335,7 +358,7 @@ checkNumInDtFlowEdgesAtLeast g n exp_num =
           ]
      else []
 
-checkNumOutDtFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutDtFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumOutDtFlowEdges g n exp_num =
   let act_num = length $
                 nubBy haveSameOutEdgeNrs $
@@ -346,7 +369,7 @@ checkNumOutDtFlowEdges g n exp_num =
           ]
      else []
 
-checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [String]
+checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumOutDtFlowEdgesAtLeast g n exp_num =
   let act_num = length $
                 nubBy haveSameOutEdgeNrs $
@@ -357,7 +380,7 @@ checkNumOutDtFlowEdgesAtLeast g n exp_num =
           ]
      else []
 
-checkNumInCtrlFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInCtrlFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumInCtrlFlowEdges g n exp_num =
   let act_num = length $ getCtrlFlowInEdges g n
   in if act_num /= exp_num
@@ -366,7 +389,7 @@ checkNumInCtrlFlowEdges g n exp_num =
           ]
      else []
 
-checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumOutCtrlFlowEdges g n exp_num =
   let act_num = length $ getCtrlFlowOutEdges g n
   in if act_num /= exp_num
@@ -375,7 +398,7 @@ checkNumOutCtrlFlowEdges g n exp_num =
           ]
      else []
 
-checkNumInStFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumInStFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumInStFlowEdges g n exp_num =
   let act_num = length $ getStFlowInEdges g n
   in if act_num /= exp_num
@@ -384,7 +407,7 @@ checkNumInStFlowEdges g n exp_num =
           ]
      else []
 
-checkNumOutStFlowEdges :: Graph -> Node -> Int -> [String]
+checkNumOutStFlowEdges :: Graph -> Node -> Int -> [ErrorMessage]
 checkNumOutStFlowEdges g n exp_num =
   let act_num = length $ getStFlowOutEdges g n
   in if act_num /= exp_num
@@ -393,7 +416,7 @@ checkNumOutStFlowEdges g n exp_num =
           ]
      else []
 
-checkHasOutStFlowEdgeOrOutDefEdge :: Graph -> Node -> [String]
+checkHasOutStFlowEdgeOrOutDefEdge :: Graph -> Node -> [ErrorMessage]
 checkHasOutStFlowEdgeOrOutDefEdge g n =
   let num_st_es = length $ getStFlowOutEdges g n
       num_def_es = length $ getDefOutEdges g n
