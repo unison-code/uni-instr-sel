@@ -63,18 +63,20 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Parses a JSON string into an entity.
+-- | Parses a JSON string into an entity. An empty string will always result in
+-- an error.
 fromJson
   :: FromJSON a
   => String
   -> Either String a
      -- ^ The left field contains the error message (when parsing failed), and
      -- the right field the parsed entity (when parsing was successful).
+fromJson [] = Left "failed to parse JSON: empty string"
 fromJson s =
   let result = decode (BS.pack s)
   in if isJust result
      then Right (fromJust result)
-     else Left ("failed to parse JSON")
+     else Left "failed to parse JSON: unknown error"
 
 -- | Converts an entity into a JSON string.
 toJson :: ToJSON a => a -> String
