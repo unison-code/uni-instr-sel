@@ -35,6 +35,11 @@ import Data.List
   , sort
   )
 
+import Data.Maybe
+  ( isJust
+  , fromJust
+  )
+
 
 
 --------------
@@ -60,30 +65,36 @@ run
   -> IO [Output]
 
 run CheckFunctionIntegrity (Left fun) =
-  do let g = osGraph $ functionOS fun
+  do let os = functionOS fun
+         g = osGraph os
          msg0 = checkGraphInvariants FunctionCheck g
          msg1 = concatMap ( \nid ->
-                            checkNodeExists ( "could not find function " ++
-                                              "input with ID " ++ pShow nid
+                            checkNodeExists ( "function input with ID " ++
+                                              pShow nid
                                             )
                                             g
                                             nid
                           )
                           (functionInputs fun)
-     return $ mkOutput $ concat [msg0, msg1]
+         msg2 = checkEntryBlock os
+         msg3 = checkValueLocations os
+     return $ mkOutput $ concat [msg0, msg1, msg2, msg3]
 
 run CheckPatternIntegrity (Right pat) =
-  do let g = osGraph $ patOS pat
+  do let os = patOS pat
+         g = osGraph os
          msg0 = checkGraphInvariants PatternCheck g
          msg1 = concatMap ( \nid ->
-                            checkNodeExists ( "could not find external " ++
-                                              "data with ID " ++ pShow nid
+                            checkNodeExists ( "external data with ID " ++
+                                              pShow nid
                                             )
                                             g
                                             nid
                           )
                           (patExternalData pat)
-     return $ mkOutput $ concat [msg0, msg1]
+         msg2 = checkEntryBlock os
+         msg3 = checkValueLocations os
+     return $ mkOutput $ concat [msg0, msg1, msg2, msg3]
 
 run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 
@@ -447,3 +458,24 @@ checkHasOutStFlowEdgeOrOutDefEdge g n =
             "1 state-flow edge or 1 definition edge (but not both)"
           ]
      else []
+
+checkEntryBlock :: OpStructure -> [ErrorMessage]
+checkEntryBlock os =
+  let g = osGraph os
+      entry_n = osEntryBlockNode os
+  in if isJust entry_n
+     then let nid = fromJust entry_n
+          in checkNodeExists ("entry block with ID " ++ pShow nid) g nid
+     else []
+
+checkValueLocations :: OpStructure -> [ErrorMessage]
+checkValueLocations os =
+  let g = osGraph os
+  in concatMap ( \(nid, _) ->
+                 checkNodeExists ( "valid location specification with ID " ++
+                                   pShow nid
+                                 )
+                                 g
+                                 nid
+               )
+               (osValidLocations os)
