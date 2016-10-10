@@ -37,11 +37,16 @@ import Data.List
 
 
 
----------
--- Types
----------
+--------------
+-- Data types
+--------------
 
 type ErrorMessage = String
+
+data CheckType
+  = FunctionCheck
+  | PatternCheck
+  deriving (Eq)
 
 
 
@@ -51,13 +56,12 @@ type ErrorMessage = String
 
 run
   :: CheckAction
-  -> Maybe Function
-  -> Maybe InstrPattern
+  -> Either Function InstrPattern
   -> IO [Output]
 
-run CheckFunctionIntegrity (Just fun) _ =
+run CheckFunctionIntegrity (Left fun) =
   do let g = osGraph $ functionOS fun
-         msg0 = checkGraphInvariants g
+         msg0 = checkGraphInvariants FunctionCheck g
          msg1 = concatMap ( \nid ->
                             checkNodeExists ( "could not find function " ++
                                               "input with ID " ++ pShow nid
@@ -68,12 +72,20 @@ run CheckFunctionIntegrity (Just fun) _ =
                           (functionInputs fun)
      return $ mkOutput $ concat [msg0, msg1]
 
-run CheckPatternIntegrity _ (Just pat) =
+run CheckPatternIntegrity (Right pat) =
   do let g = osGraph $ patOS pat
-         msg0 = checkGraphInvariants g
-     return $ mkOutput $ msg0
+         msg0 = checkGraphInvariants PatternCheck g
+         msg1 = concatMap ( \nid ->
+                            checkNodeExists ( "could not find external " ++
+                                              "data with ID " ++ pShow nid
+                                            )
+                                            g
+                                            nid
+                          )
+                          (patExternalData pat)
+     return $ mkOutput $ concat [msg0, msg1]
 
-run _ _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
+run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 
 -- | Makes an 'Output' from a given output log. An empty log indicates no
 -- errors.
@@ -89,8 +101,8 @@ checkNodeExists msg g nid =
      then [ "Non-existing node: " ++ msg ]
      else []
 
-checkGraphInvariants :: Graph -> [ErrorMessage]
-checkGraphInvariants g =
+checkGraphInvariants :: CheckType -> Graph -> [ErrorMessage]
+checkGraphInvariants c g =
   let check n =
         let msg0 = nodeCheck n
             in_edges = getInEdges g n
@@ -133,8 +145,12 @@ checkGraphInvariants g =
                 msg3 = checkNumOutCtrlFlowEdges g n 0
             in concat [msg0, msg1, msg2, msg3]
           (ValueNode {}) ->
-            let msg0 = checkNumInDtFlowEdges g n 1
-                msg1 = checkNumOutDtFlowEdgesAtLeast g n 1
+            let msg0 = if c == FunctionCheck
+                       then checkNumInDtFlowEdges g n 1
+                       else []
+                msg1 = if c == FunctionCheck
+                       then checkNumOutDtFlowEdgesAtLeast g n 1
+                       else []
                 msg2 = checkNumInStFlowEdges  g n 0
                 msg3 = checkNumOutStFlowEdges g n 0
                 msg4 = checkNumInCtrlFlowEdges  g n 0
@@ -153,8 +169,12 @@ checkGraphInvariants g =
                 msg5 = checkNumOutCtrlFlowEdges g n 0
             in concat [msg0, msg1, msg2, msg3, msg4, msg5]
           StateNode ->
-            let msg0 = checkNumInStFlowEdges  g n 1
-                msg1 = checkHasOutStFlowEdgeOrOutDefEdge g n
+            let msg0 = if c == FunctionCheck
+                       then checkNumInStFlowEdges  g n 1
+                       else []
+                msg1 = if c == FunctionCheck
+                       then checkHasOutStFlowEdgeOrOutDefEdge g n
+                       else []
                 msg2 = checkNumInDtFlowEdges  g n 0
                 msg3 = checkNumOutDtFlowEdges g n 0
                 msg4 = checkNumInCtrlFlowEdges  g n 0
