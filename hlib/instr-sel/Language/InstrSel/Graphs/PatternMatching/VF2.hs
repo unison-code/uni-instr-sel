@@ -30,7 +30,10 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | TODO: write description
+-- | Sometimes we want pattern nodes to be mapped to the same function
+-- node. However, the VF2 algorithm doesn't allow that. To get around this
+-- limitation, we duplicate these nodes and then remap the pattern nodes after a
+-- match is found.
 duplicateNodes :: Graph -> Graph
 duplicateNodes fg =
   let ns = getAllNodes fg
