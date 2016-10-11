@@ -28,6 +28,8 @@ import Language.InstrSel.Constraints.Base
 -- will recursively call the appropriate reconstruct function on every argument
 -- of the part, thus traversing the entire constraint and reconstructing it from
 -- the bottom up.
+--
+-- See also the 'ConstraintFolder' module.
 data Reconstructor
   = Reconstructor
       { mkConstraintF      :: Reconstructor -> Constraint -> Constraint
@@ -83,8 +85,8 @@ mkDefaultReconstructor =
         NotExpr ((mkBoolExprF r) r expr)
       mkBoolExpr r (InSetExpr lhs rhs) =
         InSetExpr ((mkSetElemExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkBoolExpr r (FallThroughFromMatchToBlockExpr e) =
-        FallThroughFromMatchToBlockExpr ((mkBlockExprF r) r e)
+      mkBoolExpr r (FallThroughFromMatchToBlockExpr expr) =
+        FallThroughFromMatchToBlockExpr ((mkBlockExprF r) r expr)
       mkNumExpr r (PlusExpr lhs rhs) =
         PlusExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkNumExpr r (MinusExpr lhs rhs) =
