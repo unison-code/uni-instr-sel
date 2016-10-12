@@ -14,6 +14,7 @@ module UniIS.Drivers.CheckIntegrity
 where
 
 import UniIS.Drivers.Base
+import Language.InstrSel.Constraints
 import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.Graphs
@@ -69,7 +70,7 @@ run CheckFunctionIntegrity (Left fun) =
          g = osGraph os
          msg0 = checkGraphInvariants FunctionCheck g
          msg1 = concatMap ( \nid ->
-                            checkNodeExists ( "function input with ID " ++
+                            checkNodeExists ( "function input with node ID " ++
                                               pShow nid
                                             )
                                             g
@@ -78,7 +79,8 @@ run CheckFunctionIntegrity (Left fun) =
                           (functionInputs fun)
          msg2 = checkEntryBlock os
          msg3 = checkValueLocations os
-     return $ mkOutput $ concat [msg0, msg1, msg2, msg3]
+         msg4 = checkConstraints os
+     return $ mkOutput $ concat [msg0, msg1, msg2, msg3, msg4]
 
 run CheckPatternIntegrity (Right pat) =
   do let os = patOS pat
@@ -94,7 +96,8 @@ run CheckPatternIntegrity (Right pat) =
                           (patExternalData pat)
          msg2 = checkEntryBlock os
          msg3 = checkValueLocations os
-     return $ mkOutput $ concat [msg0, msg1, msg2, msg3]
+         msg4 = checkConstraints os
+     return $ mkOutput $ concat [msg0, msg1, msg2, msg3, msg4]
 
 run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 
@@ -466,7 +469,7 @@ checkEntryBlock os =
       entry_n = osEntryBlockNode os
   in if isJust entry_n
      then let nid = fromJust entry_n
-          in checkNodeExists ("entry block with ID " ++ pShow nid) g nid
+          in checkNodeExists ("entry block node with ID " ++ pShow nid) g nid
      else []
 
 checkValueLocations :: OpStructure -> [ErrorMessage]
@@ -510,3 +513,111 @@ checkPhiDefEdges g n =
       msg0 = concatMap checkInEdge in_es
       msg1 = concatMap checkOutEdge out_es
   in concat [msg0, msg1]
+
+checkConstraints :: OpStructure -> [ErrorMessage]
+checkConstraints os =
+  let g = osGraph os
+      cs = osConstraints os
+  in concatMap (checkNodeInConstraint g) cs
+
+checkNodeInConstraint :: Graph -> Constraint -> [ErrorMessage]
+checkNodeInConstraint g c =
+  checkConstraint [] c
+  where
+  checkConstraint msgs (BoolExprConstraint expr) =
+    checkBoolExpr msgs expr
+  checkBoolExpr msgs (EqExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (NEqExpr lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (GTExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (GEExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (LTExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (LEExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkBoolExpr msgs (AndExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr msgs lhs) rhs
+  checkBoolExpr msgs (OrExpr  lhs rhs) =
+    checkBoolExpr (checkBoolExpr msgs lhs) rhs
+  checkBoolExpr msgs (ImpExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr msgs lhs) rhs
+  checkBoolExpr msgs (EqvExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr msgs lhs) rhs
+  checkBoolExpr msgs (NotExpr expr) =
+    checkBoolExpr msgs expr
+  checkBoolExpr msgs (InSetExpr lhs rhs) =
+    checkSetExpr (checkSetElemExpr msgs lhs) rhs
+  checkBoolExpr msgs (FallThroughFromMatchToBlockExpr expr) =
+    checkBlockExpr msgs expr
+  checkNumExpr msgs (PlusExpr lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkNumExpr msgs (MinusExpr lhs rhs) =
+    checkNumExpr (checkNumExpr msgs lhs) rhs
+  checkNumExpr msgs (Int2NumExpr expr) =
+    checkIntExpr msgs expr
+  checkNumExpr msgs (Bool2NumExpr expr) =
+    checkBoolExpr msgs expr
+  checkNumExpr msgs (Node2NumExpr expr) =
+    checkNodeExpr msgs expr
+  checkNumExpr msgs (Match2NumExpr expr) =
+    checkMatchExpr msgs expr
+  checkNumExpr msgs (Instruction2NumExpr expr) =
+    checkInstructionExpr msgs expr
+  checkNumExpr msgs (Block2NumExpr expr) =
+    checkBlockExpr msgs expr
+  checkNumExpr msgs (Location2NumExpr expr) =
+    checkLocationExpr msgs expr
+  checkIntExpr msgs (AnIntegerExpr _) =
+    msgs
+  checkNodeExpr msgs (ANodeIDExpr nid) =
+    msgs ++
+    checkNodeExists ( "constraint " ++ toLispExpr c ++ " with node ID " ++
+                      pShow nid
+                    )
+                    g
+                    nid
+  checkNodeExpr msgs (ANodeArrayIndexExpr _) =
+    msgs
+  checkNodeExpr msgs (NodeSelectedForOperandExpr expr) =
+    checkOperandExpr msgs expr
+  checkOperandExpr msgs (AnOperandIDExpr _) =
+    msgs
+  checkOperandExpr msgs (AnOperandArrayIndexExpr _) =
+    msgs
+  checkMatchExpr msgs (AMatchIDExpr _) =
+    msgs
+  checkMatchExpr msgs (AMatchArrayIndexExpr _) =
+    msgs
+  checkMatchExpr msgs (ThisMatchExpr) =
+    msgs
+  checkInstructionExpr msgs (AnInstructionIDExpr _) =
+    msgs
+  checkInstructionExpr msgs (AnInstructionArrayIndexExpr _) =
+    msgs
+  checkInstructionExpr msgs (InstructionOfMatchExpr expr) =
+    checkMatchExpr msgs expr
+  checkBlockExpr msgs (BlockOfBlockNodeExpr expr) =
+    checkNodeExpr msgs expr
+  checkLocationExpr msgs (ALocationIDExpr _) =
+    msgs
+  checkLocationExpr msgs (ALocationArrayIndexExpr _) =
+    msgs
+  checkLocationExpr msgs (LocationOfValueNodeExpr expr) =
+    checkNodeExpr msgs expr
+  checkLocationExpr msgs (TheNullLocationExpr) =
+    msgs
+  checkSetExpr msgs (UnionSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr msgs lhs) rhs
+  checkSetExpr msgs (IntersectSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr msgs lhs) rhs
+  checkSetExpr msgs (DiffSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr msgs lhs) rhs
+  checkSetExpr msgs (LocationClassExpr expr) =
+    concatMap (checkLocationExpr msgs) expr
+  checkSetElemExpr msgs (Block2SetElemExpr expr) =
+    checkBlockExpr msgs expr
+  checkSetElemExpr msgs (Location2SetElemExpr expr) =
+    checkLocationExpr msgs expr
