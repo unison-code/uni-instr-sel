@@ -98,8 +98,7 @@ insertCopy g0 df_edge =
                    in head $
                       dropWhile (`elem` origins) $
                       map (\i -> prefix ++ show i) $
-                      ([1..] :: [Integer]) -- Cast is needed or GHC will
-                                           -- complain
+                      ([1..] :: [Integer])
       (g2, new_d_node) =
         insertNewNodeAlongEdge (ValueNode new_dt new_origin)
                                (head $ getOutEdges g1 new_cp_node)

@@ -132,8 +132,6 @@ insertCopyAlongEdge g0 df_edge =
                    in head $ dropWhile (`elem` origins)
                                        ( map (\i -> prefix ++ show i)
                                              ([1..] :: [Integer])
-                                             -- Cast is needed or GHC will
-                                             -- complain
                                        )
       new_e = let es = getOutEdges g1 new_cp_node
               in if length es == 1
@@ -212,8 +210,6 @@ assignMissingBlockNames f =
       ok_names = filter (`notElem` existing_names)
                          ( map (\i -> BlockName $ "bb" ++ show i)
                                ([0..] :: [Integer])
-                                -- The type cast is to inhibit a compilation
-                                -- warning
                          )
       new_g =
         foldl ( \g' (l, n) ->
