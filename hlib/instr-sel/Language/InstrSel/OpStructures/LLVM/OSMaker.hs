@@ -461,16 +461,16 @@ mkPatternDFGBuilder =
                   of "setreg"          -> mkPatternDFGFromSetregCall b st i
                      "param"           -> mkPatternDFGFromParamCall b st i
                      "call"            -> mkPatternDFGFromFunCall b st i
-                     "uncond-br"       -> return st
-                                          -- Will be processed in the CFG
-                     "cond-br-or-fall" -> return st
-                                          -- Will be processed in the CFG
-                     "return"          -> return st
-                                          -- Will be processed in the CFG
-                     _ -> mkFunctionDFGFromInstruction b st i
-                          -- Let the default builder handle it
-             else mkFunctionDFGFromInstruction b st i
-                  -- Let the default builder handle it
+                     "uncond-br"       -> -- Will be processed in the CFG
+                                          return st
+                     "cond-br-or-fall" -> -- Will be processed in the CFG
+                                          return st
+                     "return"          -> -- Will be processed in the CFG
+                                          return st
+                     _ -> -- Let the default builder handle it
+                          mkFunctionDFGFromInstruction b st i
+             else -- Let the default builder handle it
+                  mkFunctionDFGFromInstruction b st i
         newInstrMk b st i = mkFunctionDFGFromInstruction b st i
         newNamedMk b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
           -- Unnamed calls to functions that returns some value must not yield a
@@ -485,8 +485,8 @@ mkPatternDFGBuilder =
                      let new_g = G.delNode ret_n g
                      st2 <- updateOSGraph st1 new_g
                      return st2
-        newNamedMk b st i = mkFunctionDFGFromNamed b st i
-                            -- Let the default builder handle it
+        newNamedMk b st i = -- Let the default builder handle it
+                            mkFunctionDFGFromNamed b st i
 
 -- | Constructs a 'Builder' that will construct a pattern control-flow graph.
 mkPatternCFGBuilder :: Builder
@@ -502,10 +502,10 @@ mkPatternCFGBuilder =
             of "return"          -> mkPatternCFGFromReturnCall b st i
                "uncond-br"       -> mkPatternCFGFromUncondBrCall b st i
                "cond-br-or-fall" -> mkPatternCFGFromCondBrOrFallCall b st i
-               _ -> mkFunctionCFGFromInstruction b st i
-                    -- Let the default builder handle it
-       else mkFunctionCFGFromInstruction b st i
-            -- Let the default builder handle it
+               _ -> -- Let the default builder handle it
+                    mkFunctionCFGFromInstruction b st i
+       else -- Let the default builder handle it
+            mkFunctionCFGFromInstruction b st i
   newInstrMk b st i = mkFunctionCFGFromInstruction b st i
   newTermMk _ st (LLVM.Ret { LLVM.returnOperand = Nothing }) = return st
   newTermMk _ _ (LLVM.Ret { LLVM.returnOperand = Just _ }) =
@@ -694,7 +694,6 @@ mkPatternCFGFromUncondBrCall
   do f_name <- getFunctionName i
      let label = "%" ++ extractFunctionLabelPart f_name
      st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
-            -- Signature on last argument needed to please GHC...
      br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 $ F.toBlockName label
      dst_node <- getLastTouchedBlockNode st2
@@ -1043,29 +1042,28 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
      let st1 = last operand_node_sts
      st2 <- addNewNode st1 G.PhiNode
      phi_node <- getLastTouchedPhiNode st2
-     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns phi_node
-     st4 <- foldM ( \st (n, name) ->
-                    let g = getOSGraph st
-                        dfe = head $
-                              filter G.isDataFlowEdge $
-                              G.getEdgesBetween g n phi_node
-                    in addPendingDatumToBlockDef st
-                                                 ( G.getNodeID n, name
-                                                 , G.getOutEdgeNr dfe
+     st3 <- foldM ( \st (n, name) ->
+                    do let g = getOSGraph st
+                           (g', new_e) = G.addNewDtFlowEdge (n, phi_node) g
+                       st' <- updateOSGraph st g'
+                       addPendingDatumToBlockDef st'
+                                                 ( G.getNodeID n
+                                                 , name
+                                                 , G.getEdgeOutNr new_e
                                                  )
                   )
-                  st3
+                  st2
                   (zip operand_ns block_names)
-     op_t <- toOpDataType t
-     st5 <- addNewNode st4 (G.ValueNode op_t Nothing)
-     d_node <- getLastTouchedValueNode st5
-     st6 <- addNewEdge st5 G.DataFlowEdge phi_node d_node
-     current_b <- getCurrentBlock st6
-     st7 <- addPendingBlockToDatumDef st6 (current_b, G.getNodeID d_node, 0)
-            -- Since we've just created the value node and only added a
-            -- single data-flow edge to it, we are guaranteed that the in-edge
+     dt <- toOpDataType t
+     st4 <- addNewNode st3 (G.ValueNode dt Nothing)
+     d_node <- getLastTouchedValueNode st4
+     st5 <- addNewEdge st4 G.DataFlowEdge phi_node d_node
+     current_b <- getCurrentBlock st5
+     st6 <- -- Since we've just created the value node and only added a
+            -- single data-flow edge to it, we are guaranteed that the edge-in
             -- number of that data-flow edge is 0.
-     return st7
+            addPendingBlockToDatumDef st5 (current_b, G.getNodeID d_node, 0)
+     return st6
 mkFunctionDFGFromInstruction _ _ i =
   Left $ "mkFunctionDFGFromInstruction: not implemented for " ++ show i
 
@@ -1374,7 +1372,6 @@ mkFunctionCFGFromTerminator b st (LLVM.Ret op _) =
   mkFunctionCFGFromControlOp b st Op.Ret (maybeToList op)
 mkFunctionCFGFromTerminator b st0 (LLVM.Br dst _) =
   do st1 <- mkFunctionCFGFromControlOp b st0 Op.Br ([] :: [LLVM.Operand])
-            -- Signature on last argument needed to please GHC...
      br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 (F.BlockName $ nameToString dst)
      dst_node <- getLastTouchedBlockNode st2
@@ -1780,8 +1777,7 @@ addPendingBlockToDatumDefEdges st =
                    do dn <- getNodeWithID st dn_id
                       bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (bn, dn) g
-                          new_el = (G.getEdgeLabel new_e) { G.inEdgeNr = nr }
-                          g'' = G.updateEdgeLabel new_el new_e g'
+                          g'' = G.updateEdgeInNr nr new_e g'
                       return g''
                  )
                  g0
@@ -1798,8 +1794,7 @@ addPendingDatumToBlockDefEdges st =
                    do dn <- getNodeWithID st dn_id
                       bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (dn, bn) g
-                          new_el = (G.getEdgeLabel new_e) { G.outEdgeNr = nr }
-                          g'' = G.updateEdgeLabel new_el new_e g'
+                          g'' = G.updateEdgeOutNr nr new_e g'
                       return g''
                  )
                  g0

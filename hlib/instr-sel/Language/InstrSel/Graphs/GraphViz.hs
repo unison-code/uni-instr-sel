@@ -174,7 +174,7 @@ noMoreEdgeAttr _ = []
 showEdgeNrsAttr :: Edge -> GV.Attributes
 showEdgeNrsAttr =
   ( \e ->
-    [ GVA.TailLabel (GV.toLabelValue $ pShow $ getOutEdgeNr e)
-    , GVA.HeadLabel (GV.toLabelValue $ pShow $ getInEdgeNr e)
+    [ GVA.TailLabel (GV.toLabelValue $ pShow $ getEdgeOutNr e)
+    , GVA.HeadLabel (GV.toLabelValue $ pShow $ getEdgeInNr e)
     ]
   )

@@ -178,6 +178,12 @@ parseArgs =
         enum [ TransformNothing
                  &= auto
                  &= ignore
+             , FixPhisInFunctionGraph
+                 &= name "fix-phis-in-fun"
+                 &= explicit
+                 &= help ( "Fixes phi nodes which have multiple data-flow " ++
+                           "edges to the same value node."
+                         )
              , LowerPointersInFunctionGraph
                  &= name "lower-pointers-in-fun"
                  &= explicit

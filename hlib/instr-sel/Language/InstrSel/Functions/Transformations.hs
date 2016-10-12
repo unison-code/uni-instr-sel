@@ -15,6 +15,7 @@ module Language.InstrSel.Functions.Transformations
   , combineConstants
   , alternativeExtend
   , lowerPointers
+  , fixPhis
   )
 where
 
@@ -34,7 +35,6 @@ import Language.InstrSel.TargetMachines
   ( TargetMachine (..) )
 import Language.InstrSel.Utils
   ( groupBy )
-import Language.InstrSel.Utils.Range
 
 import Data.Maybe
   ( fromJust
@@ -42,7 +42,9 @@ import Data.Maybe
   , isNothing
   )
 import Data.List
-  ( partition )
+  ( intersect
+  , nub
+  )
 
 
 
@@ -98,9 +100,9 @@ insertCopyAlongEdge g0 df_edge =
       old_d_origin = originOfValue $ getNodeType old_d_node
       old_op_n = getTargetNode g0 df_edge
       def_edge = if isPhiNode old_op_n
-                 then let es = filter ( \n -> getOutEdgeNr n
+                 then let es = filter ( \n -> getEdgeOutNr n
                                               ==
-                                              getOutEdgeNr df_edge
+                                              getEdgeOutNr df_edge
                                       ) $
                                filter isDefEdge $
                                getOutEdges g0 old_d_node
@@ -111,12 +113,12 @@ insertCopyAlongEdge g0 df_edge =
                                            show old_d_node ++ " has no " ++
                                            "outgoing definition edge with " ++
                                            "out edge number " ++
-                                           pShow (getOutEdgeNr df_edge)
+                                           pShow (getEdgeOutNr df_edge)
                               else error $ "insertCopyAlongEdge: " ++
                                            show old_d_node ++ " has " ++
                                            "multiple outgoing definition " ++
                                            "edges with out edge number " ++
-                                           pShow (getOutEdgeNr df_edge)
+                                           pShow (getEdgeOutNr df_edge)
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
       new_dt = mkNewDataType $ getDataTypeOfValueNode old_d_node
@@ -279,19 +281,11 @@ combineConstants :: Function -> Function
 combineConstants f =
   let g = getGraph f
       const_ns = filter isValueNodeWithConstValue (getAllNodes g)
-      isSameConstant (IntConstType { intConstValue = r1 })
-                     (IntConstType { intConstValue = r2 }) =
-        isRangeSingleton r1 && isRangeSingleton r2 && r1 == r2
-      isSameConstant _ _ = False
-      haveSameConstants n1 n2 =
-        (getDataTypeOfValueNode n1) `isSameConstant` (getDataTypeOfValueNode n2)
-      partitionNodes [] = []
-      partitionNodes [n] = [[n]]
-      partitionNodes (n:ns) =
-        let (eq_n, neq_n) = partition (haveSameConstants n) ns
-        in [n:eq_n] ++ partitionNodes neq_n
-      partitioned_ns = partitionNodes const_ns
-  in foldl combineValueNodes f partitioned_ns
+      haveSameConstants n1 n2 = (getDataTypeOfValueNode n1)
+                                `areSameConstants`
+                                (getDataTypeOfValueNode n2)
+      grouped_ns = groupBy haveSameConstants const_ns
+  in foldl combineValueNodes f grouped_ns
 
 combineValueNodes :: Function -> [Node] -> Function
 combineValueNodes f nodes =
@@ -417,15 +411,13 @@ insertAlternativeEdges vs g0 =
                            -- where there should be exactly one edge between
                            -- nodes i and o. At this point we also know for sure
                            -- that there is exactly one such edge
-                  orig_in_nr = inEdgeNr $ getEdgeLabel $ orig_e
+                  orig_in_nr = getEdgeInNr orig_e
                   insertEdge v g3 =
                     let (g4, new_e) = addNewDtFlowEdge (v, o) g3
-                        label = getEdgeLabel new_e
-                        new_label = label { inEdgeNr = orig_in_nr }
-                        g5 = updateEdgeLabel new_label new_e g4
+                        g5 = updateEdgeInNr orig_in_nr new_e g4
                     in if isPhiNode o
-                       then let orig_out_nr = outEdgeNr $ getEdgeLabel $ orig_e
-                                es = filter ((==) orig_out_nr . getOutEdgeNr) $
+                       then let orig_out_nr = getEdgeOutNr orig_e
+                                es = filter ((==) orig_out_nr . getEdgeOutNr) $
                                      filter isDefEdge $
                                      getOutEdges g0 i
                                      -- Remember to get edges from g0
@@ -448,11 +440,8 @@ insertAlternativeEdges vs g0 =
                                                      pShow orig_out_nr
                                 b_node = getTargetNode g0 orig_d_e
                                 (g6, new_d_e) = addNewDefEdge (v, b_node) g5
-                                d_label = getEdgeLabel new_d_e
-                                new_out_nr = outEdgeNr $ getEdgeLabel $ new_e
-                                new_d_label =
-                                  d_label { outEdgeNr = new_out_nr }
-                                g7 = updateEdgeLabel new_d_label new_d_e g6
+                                new_out_nr = getEdgeOutNr new_e
+                                g7 = updateEdgeOutNr new_out_nr new_d_e g6
                             in g7
                        else g5
               in foldr insertEdge g2 alts
@@ -478,3 +467,95 @@ lowerPointers tm f =
   let os0 = functionOS f
       os1 = OS.lowerPointers (tmPointerSize tm) (tmNullPointerValue tm) os0
   in f { functionOS = os1 }
+
+-- | Fixes phi nodes in a given function graph that have multiple data-flow
+-- edges to the same value node by only keeping one data-flow edge and replacing
+-- all concerned definition edges with a single definition edge to the last
+-- block that dominates the blocks of the replaced definition edges.
+fixPhis :: Function -> Function
+fixPhis f =
+  let g = getGraph f
+      entry = osEntryBlockNode $ functionOS f
+  in if isJust entry
+     then let entry_n = findNodesWithNodeID g (fromJust entry)
+          in if length entry_n == 1
+             then updateGraph (fixPhisInGraph g (head entry_n)) f
+             else if length entry_n == 0
+                  then error $ "fixPhis: function has no block node with ID " ++
+                               pShow entry
+                  else error $ "fixPhis: function has multiple block nodes " ++
+                               "with ID " ++ pShow entry
+     else error $ "fixPhis: function has no entry block"
+
+fixPhisInGraph
+  :: Graph
+  -> Node
+     -- ^ The root (entry) block of the given graph.
+  -> Graph
+fixPhisInGraph g root =
+  let cfg = extractCFG g
+      ns = filter ( \n ->
+                    let es = getDtFlowInEdges g n
+                        vs = nub $
+                             map (getSourceNode g) $
+                             es
+                    in length es /= length vs
+                  ) $
+           filter isPhiNode $
+           getAllNodes g
+      fix phi_n g0 =
+        let dt_es = getDtFlowInEdges g0 phi_n
+            def_es = map ( \e ->
+                           let v = getSourceNode g0 e
+                               out_nr = getEdgeOutNr e
+                               def_e = filter (\e' -> getEdgeOutNr e' == out_nr)
+                                              (getDefOutEdges g0 v)
+                           in if length def_e == 1
+                              then head def_e
+                              else error $ "fixPhisInGraph: " ++ show v ++
+                                           " has no definition edge " ++
+                                           "with out-edge number " ++
+                                           pShow out_nr
+                         )
+                         dt_es
+            vb_ps = map ( \(dt_e, def_e) ->
+                          (getSourceNode g0 dt_e, getTargetNode g0 def_e)
+                        ) $
+                    zip dt_es def_es
+            grouped_vb_ps = groupBy (\(v1, _) (v2, _) -> v1 == v2) vb_ps
+            fixed_vb_ps = map ( \ps ->
+                                if length ps == 1
+                                then head ps
+                                else ( fst $ head ps
+                                     , getDomOf cfg root $ map snd ps
+                                     )
+                              ) $
+                          grouped_vb_ps
+            g1 = foldr delEdge g0 dt_es
+            g2 = foldr delEdge g1 def_es
+            g3 = foldr ( \(v, b) g' ->
+                         let (g'', dt_e) = addNewDtFlowEdge (v, phi_n) g'
+                             out_nr = getEdgeOutNr dt_e
+                             (g''', def_e) = addNewDefEdge (v, b) g''
+                             g'''' = updateEdgeOutNr out_nr def_e g'''
+                         in g''''
+                       )
+                       g2
+                       fixed_vb_ps
+        in g3
+  in foldr fix g ns
+
+-- | From a given control-flow graph and list of block nodes, gets the block
+-- that is the closest dominator of all given blocks.
+getDomOf
+  :: Graph
+  -> Node
+     -- ^ The root (entry) block of the given control-flow graph.
+  -> [Node]
+  -> Node
+getDomOf g root bs =
+  let domsets = map domSet $
+                filter (\d -> (domNode d) `elem` bs) $
+                computeDomSets g root
+      doms = foldr intersect (head domsets) domsets
+  in head doms

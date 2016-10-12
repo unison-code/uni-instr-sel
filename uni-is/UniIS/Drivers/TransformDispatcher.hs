@@ -34,7 +34,8 @@ dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =
       reportErrorAndExit "No transform action provided."
-  | a `elem` [ CopyExtendFunctionGraph
+  | a `elem` [ FixPhisInFunctionGraph
+             , CopyExtendFunctionGraph
              , BranchExtendFunctionGraph
              , CombineConstantsInFunctionGraph
              , AlternativeExtendFunctionGraph

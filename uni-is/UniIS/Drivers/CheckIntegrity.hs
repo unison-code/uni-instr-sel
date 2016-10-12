@@ -325,11 +325,11 @@ checkGraphInvariants c g =
             ctrl_es = filter isControlFlowEdge es
         in if isOperationNode n
            then let msg0 = checkNumberOrder n "inbound data-flow edges" $
-                           map getInEdgeNr dt_es
+                           map getEdgeInNr dt_es
                     msg1 = checkNumberOrder n "inbound state-flow edges" $
-                           map getInEdgeNr st_es
+                           map getEdgeInNr st_es
                     msg2 = checkNumberOrder n "inbound control-flow edges" $
-                           map getInEdgeNr ctrl_es
+                           map getEdgeInNr ctrl_es
                 in concat [msg0, msg1, msg2]
            else []
       outEdgeOrderCheck n es =
@@ -338,15 +338,15 @@ checkGraphInvariants c g =
             ctrl_es = filter isControlFlowEdge es
         in if isOperationNode n
            then let msg0 = checkNumberOrder n "outbound data-flow edges" $
-                           map getOutEdgeNr dt_es
+                           map getEdgeOutNr dt_es
                     msg1 = checkNumberOrder n "outbound state-flow edges" $
-                           map getOutEdgeNr st_es
+                           map getEdgeOutNr st_es
                     msg2 = checkNumberOrder n "outbound control-flow edges" $
-                           map getOutEdgeNr ctrl_es
+                           map getEdgeOutNr ctrl_es
                 in concat [msg0, msg1, msg2]
            else if isBlockNode n
                 then checkNumberOrder n "outbound control-flow edges" $
-                     map getOutEdgeNr ctrl_es
+                     map getEdgeOutNr ctrl_es
                 else []
       checkNumberOrder _ _ [] = []
       checkNumberOrder n e_type ns =
@@ -490,9 +490,9 @@ checkPhiDefEdges g n =
       out_es = getDtFlowOutEdges g n
       checkInEdge e =
         let src = getSourceNode g e
-            nr = getOutEdgeNr e
+            nr = getEdgeOutNr e
             num_def_es = length $
-                         filter (\e' -> getOutEdgeNr e' == nr) $
+                         filter (\e' -> getEdgeOutNr e' == nr) $
                          getDefOutEdges g src
         in if num_def_es /= 1
            then [ "Wrong number of outbound definition edges: " ++ show src ++

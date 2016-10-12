@@ -81,7 +81,7 @@ module Language.InstrSel.Graphs.Base
   , getEdges
   , getEdgesBetween
   , getEdgeLabel
-  , getInEdgeNr
+  , getEdgeInNr
   , getInEdges
   , getLastAddedNode
   , getNeighbors
@@ -94,7 +94,7 @@ module Language.InstrSel.Graphs.Base
   , getNameOfBlockNode
   , getCompOpOfComputationNode
   , getOriginOfValueNode
-  , getOutEdgeNr
+  , getEdgeOutNr
   , getOutEdges
   , getPredecessors
   , getSourceNode
@@ -159,6 +159,8 @@ module Language.InstrSel.Graphs.Base
   , updateEdgeLabel
   , updateEdgeSource
   , updateEdgeTarget
+  , updateEdgeInNr
+  , updateEdgeOutNr
   , updateNameOfCallNode
   , updateNodeID
   , updateNodeLabel
@@ -955,12 +957,36 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
               )
   in Graph (I.insEdge new_e (I.delLEdge e g))
 
+-- | Updates the in number of an edge.
+updateEdgeInNr
+  :: EdgeNr
+     -- ^ New number.
+  -> Edge
+     -- ^ The edge to update.
+  -> Graph
+  -> Graph
+updateEdgeInNr new_nr e@(Edge (_, _, l)) g =
+  let new_l = l { inEdgeNr = new_nr }
+  in updateEdgeLabel new_l e g
+
+-- | Updates the out number of an edge.
+updateEdgeOutNr
+  :: EdgeNr
+     -- ^ New number.
+  -> Edge
+     -- ^ The edge to update.
+  -> Graph
+  -> Graph
+updateEdgeOutNr new_nr e@(Edge (_, _, l)) g =
+  let new_l = l { outEdgeNr = new_nr }
+  in updateEdgeLabel new_l e g
+
 -- | Gets the next input edge number to use for a given node, only regarding the
 -- edges that pass the user-provided check function. The function can be used to
 -- the next edge number for a particular edge type.
 getNextInEdgeNr :: IntGraph -> I.Node -> (Edge -> Bool) -> EdgeNr
 getNextInEdgeNr g int f =
-  let existing_numbers = map getInEdgeNr (filter f $ map toEdge (I.inn g int))
+  let existing_numbers = map getEdgeInNr (filter f $ map toEdge (I.inn g int))
   in if length existing_numbers > 0
      then maximum existing_numbers + 1
      else 0
@@ -970,7 +996,7 @@ getNextInEdgeNr g int f =
 -- used to the next edge number for a particular edge type.
 getNextOutEdgeNr :: IntGraph -> I.Node -> (Edge -> Bool) -> EdgeNr
 getNextOutEdgeNr g int f =
-  let existing_numbers = map getOutEdgeNr (filter f $ map toEdge (I.out g int))
+  let existing_numbers = map getEdgeOutNr (filter f $ map toEdge (I.out g int))
   in if length existing_numbers > 0
      then maximum existing_numbers + 1
      else 0
@@ -978,11 +1004,11 @@ getNextOutEdgeNr g int f =
 getEdgeLabel :: Edge -> EdgeLabel
 getEdgeLabel (Edge (_, _, l)) = l
 
-getInEdgeNr :: Edge -> EdgeNr
-getInEdgeNr = inEdgeNr . getEdgeLabel
+getEdgeInNr :: Edge -> EdgeNr
+getEdgeInNr = inEdgeNr . getEdgeLabel
 
-getOutEdgeNr :: Edge -> EdgeNr
-getOutEdgeNr = outEdgeNr . getEdgeLabel
+getEdgeOutNr :: Edge -> EdgeNr
+getEdgeOutNr = outEdgeNr . getEdgeLabel
 
 getEdgeType :: Edge -> EdgeType
 getEdgeType = edgeType . getEdgeLabel
@@ -1258,32 +1284,32 @@ doNumEdgesMatch fg pg fn pn =
       f_out_es = getOutEdges fg fn
       p_out_es = getOutEdges pg pn
   in checkEdges (\e -> doesNumCFInEdgesMatter pg pn && isControlFlowEdge e)
-                getInEdgeNr
+                getEdgeInNr
                 f_in_es
                 p_in_es
      &&
      checkEdges (\e -> doesNumCFOutEdgesMatter pg pn && isControlFlowEdge e)
-                getOutEdgeNr
+                getEdgeOutNr
                 f_out_es
                 p_out_es
      &&
      checkEdges (\e -> doesNumDFInEdgesMatter pg pn && isDataFlowEdge e)
-                getInEdgeNr
+                getEdgeInNr
                 f_in_es
                 p_in_es
      &&
      checkEdges (\e -> doesNumDFOutEdgesMatter pg pn && isDataFlowEdge e)
-                getOutEdgeNr
+                getEdgeOutNr
                 f_out_es
                 p_out_es
      &&
      checkEdges (\e -> doesNumSFInEdgesMatter pg pn && isStateFlowEdge e)
-                getInEdgeNr
+                getEdgeInNr
                 f_in_es
                 p_in_es
      &&
      checkEdges (\e -> doesNumSFOutEdgesMatter pg pn && isStateFlowEdge e)
-                getOutEdgeNr
+                getEdgeOutNr
                 f_out_es
                 p_out_es
 
@@ -1385,7 +1411,7 @@ doInEdgeListsMatch
      -- ^ In-edges from the pattern graph.
   -> Bool
 doInEdgeListsMatch _ pg fes pes =
-  let checkEdges f = doEdgeNrsMatch getInEdgeNr (filter f fes) (filter f pes)
+  let checkEdges f = doEdgeNrsMatch getEdgeInNr (filter f fes) (filter f pes)
       pn = getTargetNode pg (head pes)
   in (not (doesOrderCFInEdgesMatter pg pn) || checkEdges isControlFlowEdge) &&
      (not (doesOrderDFInEdgesMatter pg pn) || checkEdges isDataFlowEdge) &&
@@ -1403,7 +1429,7 @@ doOutEdgeListsMatch
      -- ^ In-edges from the pattern graph.
   -> Bool
 doOutEdgeListsMatch _ pg fes pes =
-  let checkEdges f = doEdgeNrsMatch getOutEdgeNr (filter f fes) (filter f pes)
+  let checkEdges f = doEdgeNrsMatch getEdgeOutNr (filter f fes) (filter f pes)
       pn = getSourceNode pg (head pes)
   in (not (doesOrderCFOutEdgesMatter pg pn) || checkEdges isControlFlowEdge) &&
      (not (doesOrderDFOutEdgesMatter pg pn) || checkEdges isDataFlowEdge) &&
@@ -1542,7 +1568,7 @@ areInEdgesEquivalent
 areInEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2 &&
   (getNodeID $ getTargetNode g e1) == (getNodeID $ getTargetNode g e2) &&
-  getInEdgeNr e1 == getInEdgeNr e2
+  getEdgeInNr e1 == getEdgeInNr e2
 
 -- | Checks if two out-edges are equivalent, meaning they must be of the same
 -- edge type, have source nodes with the same node ID, and have the same
@@ -1556,7 +1582,7 @@ areOutEdgesEquivalent
 areOutEdgesEquivalent g e1 e2 =
   getEdgeType e1 == getEdgeType e2 &&
   (getNodeID $ getSourceNode g e1) == (getNodeID $ getSourceNode g e2) &&
-  getOutEdgeNr e1 == getOutEdgeNr e2
+  getEdgeOutNr e1 == getEdgeOutNr e2
 
 -- | Same as 'findPNsInMapping'.
 findPNsInMatch
@@ -1752,8 +1778,8 @@ subGraph g ns =
 
 -- | Checks if two edges have the same in-edge numbers.
 haveSameInEdgeNrs :: Edge -> Edge -> Bool
-haveSameInEdgeNrs e1 e2 = getInEdgeNr e1 == getInEdgeNr e2
+haveSameInEdgeNrs e1 e2 = getEdgeInNr e1 == getEdgeInNr e2
 
 -- | Checks if two edges have the same out-edge numbers.
 haveSameOutEdgeNrs :: Edge -> Edge -> Bool
-haveSameOutEdgeNrs e1 e2 = getOutEdgeNr e1 == getOutEdgeNr e2
+haveSameOutEdgeNrs e1 e2 = getEdgeOutNr e1 == getEdgeOutNr e2

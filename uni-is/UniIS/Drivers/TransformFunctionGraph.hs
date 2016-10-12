@@ -32,6 +32,10 @@ import Language.InstrSel.Utils.IO
 
 run :: TransformAction -> Function -> Maybe TargetMachine -> IO [Output]
 
+run FixPhisInFunctionGraph f _ =
+  do let new_f = fixPhis f
+     return [toOutput $ toJson new_f]
+
 run LowerPointersInFunctionGraph f (Just tm) =
   do let new_f = lowerPointers tm f
      return [toOutput $ toJson new_f]

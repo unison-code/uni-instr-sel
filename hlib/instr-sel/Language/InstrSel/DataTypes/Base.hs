@@ -26,6 +26,7 @@ module Language.InstrSel.DataTypes.Base
   , isCompatibleWith
   , hasSameBitWidth
   , parseDataTypeFromJson
+  , areSameConstants
   )
 where
 
@@ -295,3 +296,9 @@ isTypeAConstValue t = isIntConstType t || isPointerNullType t
 -- | Checks if a given data type represents a pointer.
 isTypeAPointer :: DataType -> Bool
 isTypeAPointer t = isPointerTempType t || isPointerNullType t
+
+-- | Checks if two data types represent the same constant.
+areSameConstants :: DataType -> DataType -> Bool
+areSameConstants d1 d2 = isTypeAConstValue d1 &&
+                         isTypeAConstValue d2 &&
+                         d1 == d2

@@ -83,7 +83,7 @@ insertCopy g0 df_edge =
                           def_edges = filter isDefEdge d_node_edges
                       in Just $
                          head $
-                         filter (\n -> getOutEdgeNr n == getOutEdgeNr df_edge) $
+                         filter (\n -> getEdgeOutNr n == getEdgeOutNr df_edge) $
                          def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0

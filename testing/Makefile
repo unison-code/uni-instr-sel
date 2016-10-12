@@ -243,10 +243,10 @@ run-regression-tests-for-target:
 %.ssa-f.dot: %.f.json
 	$(UNI_IS_CMD) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.lp.ce.cc.ae.be.f.json %.lp.ce.cc.ae.be.p.json
+%.cov.dot: %.ph.lp.ce.cc.ae.be.f.json %.ph.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
-                  -f $*.lp.ce.cc.ae.be.f.json \
-                  -p $*.lp.ce.cc.ae.be.p.json \
+                  -f $*.ph.lp.ce.cc.ae.be.f.json \
+                  -p $*.ph.lp.ce.cc.ae.be.p.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -260,31 +260,31 @@ pattern.dot:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.lp.ce.cc.ae.be.f.json %.lp.ce.cc.ae.be.p.json
+%.all-cover-plots: %.ph.lp.ce.cc.ae.be.f.json %.ph.lp.ce.cc.ae.be.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
-                  -f $*.lp.ce.cc.ae.be.f.json \
-                  -p $*.lp.ce.cc.ae.be.p.json \
+                  -f $*.ph.lp.ce.cc.ae.be.f.json \
+                  -p $*.ph.lp.ce.cc.ae.be.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
         $(RM) $${f%.*}.dot; \
     done
 
-%.model.dump: %.lp.ce.cc.ae.be.f.json \
+%.model.dump: %.ph.lp.ce.cc.ae.be.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
-                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -f $*.ph.lp.ce.cc.ae.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -o $@
 
-%.sol.dump: %.lp.ce.cc.ae.be.f.json \
+%.sol.dump: %.ph.lp.ce.cc.ae.be.f.json \
             %.presolved.aimaps.json \
             %.presolved.ll.model.json \
             %.presolved.ll.sol.json
 	$(UNI_IS_CMD) make --dump-low-level-solution-info \
-                  -f $*.lp.ce.cc.ae.be.f.json \
+                  -f $*.ph.lp.ce.cc.ae.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -s $*.presolved.ll.sol.json \
@@ -299,10 +299,11 @@ pattern.dot:
 %.run-checks:
 	@echo "$(BLUE)* CHECKING INTEGRITY$(NC)"
 	@for f in $*.f.json \
-			  $*.lp.f.json \
-			  $*.lp.ce.f.json \
-			  $*.lp.ce.cc.f.json \
-			  $*.lp.ce.cc.ae.f.json \
+			  $*.ph.f.json \
+			  $*.ph.lp.f.json \
+			  $*.ph.lp.ce.f.json \
+			  $*.ph.lp.ce.cc.f.json \
+			  $*.ph.lp.ce.cc.ae.f.json \
 			  ; do \
 		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
@@ -320,13 +321,13 @@ pattern.dot:
 		fi \
 	done
 	@echo "$(BLUE)* CHECKING COVERABILITY$(NC)"
-	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
-	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
-		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+	@echo -n "    $*.ph.lp.ce.cc.ae.be.f.json "
+	@if [ -f $*.ph.lp.ce.cc.ae.be.f.json ]; then \
+		if [ -f $*.ph.lp.ce.cc.ae.be.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
-			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json \
+			                   -f $*.ph.lp.ce.cc.ae.be.f.json \
+			                   -p $*.ph.lp.ce.cc.ae.be.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
@@ -341,13 +342,13 @@ pattern.dot:
 		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
 	fi
 	@echo "$(BLUE)* CHECKING OVERLAP OF DATA LOCATIONS$(NC)"
-	@echo -n "    $*.lp.ce.cc.ae.be.f.json "
-	@if [ -f $*.lp.ce.cc.ae.be.f.json ]; then \
-		if [ -f $*.lp.ce.cc.ae.be.p.json ]; then \
+	@echo -n "    $*.ph.lp.ce.cc.ae.be.f.json "
+	@if [ -f $*.ph.lp.ce.cc.ae.be.f.json ]; then \
+		if [ -f $*.ph.lp.ce.cc.ae.be.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
-			                   -f $*.lp.ce.cc.ae.be.f.json \
-			                   -p $*.lp.ce.cc.ae.be.p.json \
+			                   -f $*.ph.lp.ce.cc.ae.be.f.json \
+			                   -p $*.ph.lp.ce.cc.ae.be.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
