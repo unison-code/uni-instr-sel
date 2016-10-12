@@ -479,7 +479,9 @@ fixPhis f =
   in if isJust entry
      then let entry_n = findNodesWithNodeID g (fromJust entry)
           in if length entry_n == 1
-             then updateGraph (fixPhisInGraph g (head entry_n)) f
+             then let g0 = fixPhisInGraph g (head entry_n)
+                      g1 = removeRedundantPhisInGraph g0
+                  in updateGraph g1 f
              else if length entry_n == 0
                   then error $ "fixPhis: function has no block node with ID " ++
                                pShow entry
@@ -565,3 +567,27 @@ getDomOf g root bs =
      head $
      filter (\d -> length (domSet d) == 1) $
      pruned_cs_domsets
+
+-- | Removes phi nodes that has only one input value.
+removeRedundantPhisInGraph :: Graph -> Graph
+removeRedundantPhisInGraph g =
+  let ns = filter (\n -> length (getDtFlowInEdges g n) == 1) $
+           filter isPhiNode $
+           getAllNodes g
+      remove phi_n g0 =
+        let in_e = head $ getInEdges g0 phi_n
+            out_e = head $ getOutEdges g0 phi_n
+            in_v = getSourceNode g0 in_e
+            out_v = getTargetNode g0 out_e
+            in_v_def = head $
+                       filter (\e -> getEdgeOutNr e == getEdgeOutNr in_e) $
+                       getDefOutEdges g0 in_v
+            out_v_def = head $
+                        filter (\e -> getEdgeInNr e == getEdgeInNr out_e) $
+                        getDefInEdges g0 out_v
+            g1 = delNode phi_n g0
+            g2 = delEdge in_v_def g1
+            g3 = delEdge out_v_def g2
+            g4 = mergeNodes in_v out_v g3
+        in g4
+  in foldr remove g ns
