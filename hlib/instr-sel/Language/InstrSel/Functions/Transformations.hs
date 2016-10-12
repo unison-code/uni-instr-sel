@@ -554,8 +554,14 @@ getDomOf
   -> [Node]
   -> Node
 getDomOf g root bs =
-  let domsets = map domSet $
-                filter (\d -> (domNode d) `elem` bs) $
-                computeDomSets g root
-      doms = foldr intersect (head domsets) domsets
-  in head doms
+  let domsets = computeDomSets g root
+      bs_domsets = filter (\d -> (domNode d) `elem` bs) domsets
+      cs = foldr intersect (domSet $ head bs_domsets) $
+           map domSet bs_domsets
+      cs_domsets = filter (\d -> (domNode d) `elem` cs) domsets
+      pruned_cs_domsets = map (\d -> d { domSet = cs `intersect` domSet d}) $
+                          cs_domsets
+  in domNode $
+     head $
+     filter (\d -> length (domSet d) == 1) $
+     pruned_cs_domsets
