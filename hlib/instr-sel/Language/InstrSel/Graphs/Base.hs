@@ -106,6 +106,7 @@ module Language.InstrSel.Graphs.Base
   , haveSameOutEdgeNrs
   , insertNewNodeAlongEdge
   , isCallNode
+  , isIndirCallNode
   , isComputationNode
   , isControlFlowEdge
   , isControlNode
@@ -125,6 +126,7 @@ module Language.InstrSel.Graphs.Base
   , isOperationNode
   , isStateFlowEdge
   , isOfCallNodeType
+  , isOfIndirCallNodeType
   , isOfComputationNodeType
   , isOfControlFlowEdgeType
   , isOfControlNodeType
@@ -241,6 +243,9 @@ data NodeType
   = ComputationNode { compOp :: O.CompOp }
   | ControlNode { ctrlOp :: O.ControlOp }
   | CallNode { nameOfCall :: FunctionName }
+    -- | An indirect call to a function whose address is provided through a
+    -- value node.
+  | IndirCallNode
     -- | Temporary and constant nodes (appearing in IR and pattern code), as
     -- well as register and immediate nodes (appearing only in pattern code),
     -- are all represented as value nodes. What distinguishes one from another
@@ -263,6 +268,7 @@ instance PrettyShow NodeType where
   pShow (ComputationNode op) = "computation node (" ++ pShow op ++ ")"
   pShow (ControlNode op) = "control node (" ++ pShow op ++ ")"
   pShow (CallNode func) = "call node (" ++ pShow func ++ ")"
+  pShow IndirCallNode = "indirect call node"
   pShow (ValueNode dt origin) = "calue node (" ++ pShow dt ++ ", "
                                 ++ pShow origin ++ ")"
   pShow (BlockNode name) = "block node (" ++ pShow name ++ ")"
@@ -382,21 +388,22 @@ instance FromJSON NodeType where
   parseJSON (Object v) =
     do str <- v .: "ntype"
        let typ = unpack str
-       case typ of "comp" -> ComputationNode
-                               <$> v .: "op"
-                   "ctrl" -> ControlNode
-                               <$> v .: "op"
-                   "call" -> CallNode
-                               <$> v .: "func"
-                   "data" -> ValueNode
-                               <$> v .: "dtype"
-                               <*> v .: "origin"
-                   "lab"  -> BlockNode
-                               <$> v .: "block-name"
-                   "phi"  -> return PhiNode
-                   "stat" -> return StateNode
-                   "copy" -> return CopyNode
-                   _      -> mzero
+       case typ of "comp"       -> ComputationNode
+                                     <$> v .: "op"
+                   "ctrl"       -> ControlNode
+                                     <$> v .: "op"
+                   "call"       -> CallNode
+                                     <$> v .: "func"
+                   "indir-call" -> return IndirCallNode
+                   "data"       -> ValueNode
+                                     <$> v .: "dtype"
+                                     <*> v .: "origin"
+                   "lab"        -> BlockNode
+                                     <$> v .: "block-name"
+                   "phi"        -> return PhiNode
+                   "stat"       -> return StateNode
+                   "copy"       -> return CopyNode
+                   _            -> mzero
   parseJSON _ = mzero
 
 instance ToJSON NodeType where
@@ -412,6 +419,8 @@ instance ToJSON NodeType where
     object [ "ntype" .= String "call"
            , "func"    .= toJSON (nameOfCall n)
            ]
+  toJSON IndirCallNode =
+    object [ "ntype" .= String "indir-call" ]
   toJSON n@(ValueNode {}) =
     object [ "ntype"   .= String "data"
            , "dtype"   .= toJSON (typeOfValue n)
@@ -538,6 +547,7 @@ isOperationNode n =
   isComputationNode n ||
   isControlNode n ||
   isCallNode n ||
+  isIndirCallNode n ||
   isPhiNode n ||
   isCopyNode n
 
@@ -557,6 +567,9 @@ isControlNode n = isOfControlNodeType $ getNodeType n
 
 isCallNode :: Node -> Bool
 isCallNode n = isOfCallNodeType $ getNodeType n
+
+isIndirCallNode :: Node -> Bool
+isIndirCallNode n = isOfIndirCallNodeType $ getNodeType n
 
 isRetControlNode :: Node -> Bool
 isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
@@ -610,6 +623,10 @@ isOfComputationNodeType _ = False
 isOfCallNodeType :: NodeType -> Bool
 isOfCallNodeType (CallNode _) = True
 isOfCallNodeType _ = False
+
+isOfIndirCallNodeType :: NodeType -> Bool
+isOfIndirCallNodeType IndirCallNode = True
+isOfIndirCallNodeType _ = False
 
 isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
@@ -1251,6 +1268,7 @@ isNodeTypeCompatibleWith (ComputationNode op1) (ComputationNode op2) =
 isNodeTypeCompatibleWith (ControlNode op1) (ControlNode op2) =
   op1 `O.isCompatibleWith` op2
 isNodeTypeCompatibleWith (CallNode {}) (CallNode {}) = True
+isNodeTypeCompatibleWith IndirCallNode IndirCallNode = True
 isNodeTypeCompatibleWith (ValueNode d1 _) (ValueNode d2 _) =
   d1 `D.isCompatibleWith` d2
 isNodeTypeCompatibleWith (BlockNode {}) (BlockNode {}) = True
@@ -1332,10 +1350,7 @@ doesNumCFOutEdgesMatter _ n
 -- node.
 doesNumDFInEdgesMatter :: Graph -> Node -> Bool
 doesNumDFInEdgesMatter g n
-  | isComputationNode n = True
-  | isControlNode n = True
-  | isCallNode n = True
-  | isPhiNode n = True
+  | isOperationNode n = True
   | isValueNode n = (length $ getDtFlowInEdges g n) > 0
   | otherwise = False
 
@@ -1343,24 +1358,21 @@ doesNumDFInEdgesMatter g n
 -- node.
 doesNumDFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumDFOutEdgesMatter _ n
-  | isComputationNode n = True
-  | isCallNode n = True
+  | isOperationNode n = True
   | otherwise = False
 
 -- | Checks if the number of state flow in-edges matters for a given pattern
 -- node.
 doesNumSFInEdgesMatter :: Graph -> Node -> Bool
 doesNumSFInEdgesMatter _ n
-  | isComputationNode n = True
-  | isCallNode n = True
+  | isOperationNode n = True
   | otherwise = False
 
 -- | Checks if the number of state flow out-edges matters for a given pattern
 -- node.
 doesNumSFOutEdgesMatter :: Graph -> Node -> Bool
 doesNumSFOutEdgesMatter _ n
-  | isComputationNode n = True
-  | isCallNode n = True
+  | isOperationNode n = True
   | otherwise = False
 
 -- | Checks if every edge in a list of edges from the pattern graph has at least
@@ -1453,19 +1465,14 @@ doesOrderCFOutEdgesMatter _ n
 -- node.
 doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFInEdgesMatter _ n
-  | isComputationNode n = True
-  | isControlNode n = True
-  | isPhiNode n = True
-  | isCallNode n = True
-  | isValueNode n = True
+  | isOperationNode n = True
   | otherwise = False
 
 -- | Checks if the order of data-flow out-edges matters for a given pattern
 -- node.
 doesOrderDFOutEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFOutEdgesMatter _ n
-  | isComputationNode n = True
-  | isPhiNode n = True
+  | isOperationNode n = True
   | otherwise = False
 
 -- | Checks if the order of state flow in-edges matters for a given pattern

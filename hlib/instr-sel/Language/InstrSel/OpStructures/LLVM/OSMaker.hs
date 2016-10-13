@@ -283,10 +283,8 @@ class FunctionNameFormable a where
   toFunctionName :: a -> Either String F.FunctionName
 
 instance FunctionNameFormable LLVM.Name where
-  -- TODO: temporary fix
-  toFunctionName n = Right $ F.toFunctionName $ nameToString n
-  -- toFunctionName (LLVM.Name str) = Right $ F.toFunctionName str
-  -- toFunctionName n = Left $ "toFunctionName: not implemented for " ++ show n
+  toFunctionName (LLVM.Name str) = Right $ F.toFunctionName str
+  toFunctionName n = Left $ "toFunctionName: not implemented for " ++ show n
 
 instance FunctionNameFormable LLVMC.Constant where
   toFunctionName (LLVMC.GlobalReference _ n) = toFunctionName n
@@ -539,16 +537,17 @@ getLastTouchedControlNode st =
                          "not a control node: " ++ show n
      else Left "getLastTouchedControlNode: has no last touched node"
 
--- | Gets the last touched node, and checks that it is a call node.
-getLastTouchedCallNode :: BuildState -> Either String G.Node
-getLastTouchedCallNode st =
+-- | Gets the last touched node, and checks that it is either a call node or
+-- indirect call node.
+getLastTouchedCallOrIndirCallNode :: BuildState -> Either String G.Node
+getLastTouchedCallOrIndirCallNode st =
   let maybe_n = lastTouchedNode st
   in if isJust maybe_n
      then let n = fromJust maybe_n
-          in if G.isCallNode n
+          in if G.isCallNode n || G.isIndirCallNode n
              then return n
              else Left $ "getLastTouchedCallNode: last touched node is not " ++
-                         "a call node: " ++ show n
+                         "a call or indirect call node: " ++ show n
      else Left "getLastTouchedCallNode: has no last touched node"
 
 -- | Gets the last touched node, and checks that it is a computation node.
@@ -1010,30 +1009,46 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Store _ addr_op val_op _ _ _) =
      st_n6 <- getLastTouchedStateNode st6
      st7 <- addNewEdge st6 G.StateFlowEdge op_node st_n6
      return st7
-mkFunctionDFGFromInstruction b st0 (LLVM.Call _ _ _ f args _ _) =
-  do sts <- scanlM (build b) st0 $ map fst args
-     operand_ns <- mapM getLastTouchedValueNode (tail sts)
-     let st1 = last sts
-     func_name <- toFunctionName f
-     st2 <- addNewNode st1 (G.CallNode func_name)
-     op_node <- getLastTouchedCallNode st2
-     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-     st4 <- ensureStateNodeHasBeenTouched st3
-     st_n4 <- getLastTouchedStateNode st4
-     st5 <- addNewEdge st4 G.StateFlowEdge st_n4 op_node
-     st6 <- addNewStateNode st5
-     st_n6 <- getLastTouchedStateNode st6
-     st7 <- addNewEdge st6 G.StateFlowEdge op_node st_n6
-     -- Note that the result value node, if any, MUST be inserted last as the
-     -- last touched node in this case must be a value node and not a state
-     -- node.
-     ret_type <- toReturnDataType f
-     if D.isVoidType ret_type
-     then return st7
-     else do st8 <- addNewNode st7 (G.ValueNode ret_type Nothing)
-             d_node <- getLastTouchedValueNode st8
-             st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
-             return st9
+mkFunctionDFGFromInstruction
+  b
+  st
+  ( LLVM.Call _
+              _
+              _
+              f@( Right
+                    ( LLVM.ConstantOperand
+                        ( LLVMC.GlobalReference
+                            _
+                            (LLVM.Name f_name)
+                        )
+                    )
+                )
+              args
+              _
+              _
+  )
+  =
+  do func_name <- toFunctionName f_name
+     let nt = G.CallNode func_name
+     dt <- toReturnDataType f
+     mkFunctionDFGFromCall b st dt nt (map fst args)
+mkFunctionDFGFromInstruction
+  b
+  st
+  ( LLVM.Call _
+              _
+              _
+              f@( Right
+                    addr@(LLVM.LocalReference {})
+                )
+              args
+              _
+              _
+  )
+  =
+  do let nt = G.IndirCallNode
+     dt <- toReturnDataType f
+     mkFunctionDFGFromCall b st dt nt (addr:map fst args)
 mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
   do let (operands, blocks) = unzip phi_operands
          block_names = map (\b_name -> F.BlockName $ nameToString b_name) blocks
@@ -1093,6 +1108,46 @@ mkFunctionDFGFromCompOp b st0 dt op operands =
      d_node <- getLastTouchedValueNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
      return st5
+
+-- | Inserts a new node representing the call along with edges to that call node
+-- from the given operands (which will also be processed). Two state nodes, one
+-- as input and another as output, are also added and connected to the call
+-- node. Lastly, if the call is not of 'D.Void' type, then a new value node
+-- representing the result will be added along with an edge to that value node
+-- from the call node.
+mkFunctionDFGFromCall
+  :: (Buildable o)
+  => Builder
+  -> BuildState
+  -> D.DataType
+     -- ^ The data type of the result.
+  -> G.NodeType
+     -- ^ The type of the node representing the call.
+  -> [o]
+     -- ^ The operands.
+  -> Either String BuildState
+mkFunctionDFGFromCall b st0 dt nt operands =
+  do sts <- scanlM (build b) st0 operands
+     operand_ns <- mapM getLastTouchedValueNode (tail sts)
+     let st1 = last sts
+     st2 <- addNewNode st1 nt
+     op_node <- getLastTouchedCallOrIndirCallNode st2
+     st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
+     st4 <- ensureStateNodeHasBeenTouched st3
+     st_n4 <- getLastTouchedStateNode st4
+     st5 <- addNewEdge st4 G.StateFlowEdge st_n4 op_node
+     st6 <- addNewStateNode st5
+     st_n6 <- getLastTouchedStateNode st6
+     st7 <- addNewEdge st6 G.StateFlowEdge op_node st_n6
+     -- Note that the result value node, if any, MUST be inserted last as the
+     -- last touched node in this case must be a value node and not a state
+     -- node.
+     if D.isVoidType dt
+     then return st7
+     else do st8 <- addNewNode st7 (G.ValueNode dt Nothing)
+             d_node <- getLastTouchedValueNode st8
+             st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
+             return st9
 
 -- | Takes an operand of pointer type and returns the type after the pointer has
 -- been dereferenced.

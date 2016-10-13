@@ -103,6 +103,7 @@ mkNodeShapeAttr :: NodeType -> GV.Attributes
 mkNodeShapeAttr (ComputationNode _) = [GV.shape GV.Circle]
 mkNodeShapeAttr (ControlNode _) = [GV.shape GV.DiamondShape, thickWidthAttr]
 mkNodeShapeAttr (CallNode _) = [GV.shape GV.Circle]
+mkNodeShapeAttr IndirCallNode = [GV.shape GV.Circle]
 mkNodeShapeAttr (ValueNode _ _) = [GV.shape GV.BoxShape]
 mkNodeShapeAttr (BlockNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
 mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
@@ -118,6 +119,7 @@ mkNodeLabelAttr nid nt =
         f (ComputationNode op) = pShow op
         f (ControlNode op) = pShow op
         f (CallNode func) = "call " ++ pShow func
+        f IndirCallNode = "indir-call"
         f (ValueNode dt src) = pShow dt
                                ++
                                ( if not (isTypeAConstValue dt)

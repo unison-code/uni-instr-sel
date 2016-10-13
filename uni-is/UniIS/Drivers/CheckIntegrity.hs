@@ -158,6 +158,12 @@ checkGraphInvariants c g =
                 msg2 = checkNumInCtrlFlowEdges  g n 0
                 msg3 = checkNumOutCtrlFlowEdges g n 0
             in concat [msg0, msg1, msg2, msg3]
+          IndirCallNode ->
+            let msg0 = checkNumInStFlowEdges  g n 1
+                msg1 = checkNumOutStFlowEdges g n 1
+                msg2 = checkNumInCtrlFlowEdges  g n 0
+                msg3 = checkNumOutCtrlFlowEdges g n 0
+            in concat [msg0, msg1, msg2, msg3]
           (ValueNode {}) ->
             let msg0 = if c == FunctionCheck
                        then checkNumInDtFlowEdges g n 1
