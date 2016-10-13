@@ -1,0 +1,10 @@
+entry:
+  %x = ADDIU %n, 10
+  %tmp.1 = SLTi %n, 1
+  BEQ %tmp.1, $0, bb0
+bb3:
+bb2:
+  RetRA %x
+bb0:
+bb1:
+  B bb2

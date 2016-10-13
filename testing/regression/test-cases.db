@@ -18,5 +18,6 @@ indirect-call.ll
 jpeg.jcparam.jpeg_quality_scaling.ll
 jpeg.jutils.jround_up.ll
 mem.ll
+phi.ll
 pointers.ll
 small.ll

@@ -1,0 +1,11 @@
+entry:
+  %const.10.copy.1 = ##10
+  %cmp = cmp.gt(%n, 1)
+  %x = add(%n, %const.10.copy.1)
+  if (%cmp) jump bb0
+bb3:
+bb2:
+  return %x
+bb0:
+bb1:
+  jump bb2
