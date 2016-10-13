@@ -145,6 +145,7 @@ run-regression-tests-for-target:
 	T_ALL=`cat $(REGRESSION_TESTS_DIR)/test-cases.db` ;\
 	T_MAX_LENGTH=0 ;\
 	T_TIME_START=`date +%s` ;\
+	T_PREP_TIME_TOTAL=0 ;\
 	T_SOLV_TIME_TOTAL=0 ;\
 	for T in $$T_ALL; do \
 	    T_NAME=`basename $$T` ;\
@@ -169,6 +170,23 @@ run-regression-tests-for-target:
 			cp $$T $$T_LL ;\
 			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 		    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
+			sol_file="$${T_LL%.*}.presolved.hl.sol.json" ;\
+			if [ -f $$sol_file ]; then \
+				solv_time=`$(REGRESSION_TESTS_DIR)/get-solving-time $$sol_file \
+						   2> /dev/null` ;\
+				T_SOLV_TIME_TOTAL=`echo "scale=2; \
+							 		 t = $$T_SOLV_TIME_TOTAL + $$solv_time; \
+									 if (t < 1) print 0; t" \
+								   | bc` ;\
+				prep_time=`$(REGRESSION_TESTS_DIR)/get-prep-time $$sol_file \
+						   2> /dev/null` ;\
+				T_PREP_TIME_TOTAL=`echo "scale=2; \
+							 		 t = $$T_PREP_TIME_TOTAL + $$prep_time; \
+									 if (t < 1) print 0; t" \
+								   | bc` ;\
+			else \
+				solv_time="?" ;\
+			fi ;\
 			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
 				T_IS_OK=0 ;\
 				for O in $$T_ORACLES; do \
@@ -181,27 +199,15 @@ run-regression-tests-for-target:
 				done ;\
 				if [ "$$T_IS_OK" -ne "0" ]; then \
 				    T_PASSED=`expr $$T_PASSED + 1` ;\
-				    echo -n "[$(GREEN)OK$(NC)] [" ;\
-					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-						  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
-					echo -n "$${time}s" ;\
-				    echo "]" ;\
-					T_SOLV_TIME_TOTAL=`echo "scale=2; \
-								 		 t = $$T_SOLV_TIME_TOTAL + $$time; \
-										 if (t < 1) print 0; t" \
-									   | bc` ;\
+				    echo "[$(GREEN)OK$(NC)] [$${solv_time}s]" ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
-					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-						  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
-					echo "[$(RED)FAILED$(NC)] [$${time}s] (diff)" ;\
+				    echo "[$(RED)FAILED$(NC)] [$${solv_time}s] (diff)" ;\
 					echo "$$T_DIFF" ;\
 				fi \
 			else \
 			    T_FAILED=`expr $$T_FAILED + 1` ;\
-				time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
-					  $${T_LL%.*}.presolved.hl.sol.json 2> /dev/null` ;\
-				echo "[$(RED)FAILED$(NC)] [$${time}s] (no output)" ;\
+			    echo "[$(RED)FAILED$(NC)] [$${solv_time}s] (no output)" ;\
 			fi ;\
 			rm -f $${TEMPFILE}.* ;\
 		else \
@@ -212,6 +218,16 @@ run-regression-tests-for-target:
 	T_TIME_END=`date +%s` ;\
 	T_TIME_TOTAL=`expr $$T_TIME_END - $$T_TIME_START` ;\
 	T_TIME_TOTAL_PRETTY=`date -u -d @"$$T_TIME_TOTAL" +'%-Mm %-Ss'` ;\
+	T_PREP_TIME_TOTAL=`LC_ALL=en_US.UTF-8 printf '%.*f' 0 \
+					   $$T_PREP_TIME_TOTAL` ;\
+	T_PREP_TIME_TOTAL_PRETTY=`date -u -d @"$$T_PREP_TIME_TOTAL" +'%-Mm %-Ss'` ;\
+	T_SOLV_TIME_TOTAL=`LC_ALL=en_US.UTF-8 printf '%.*f' 0 \
+					   $$T_SOLV_TIME_TOTAL` ;\
+	T_SOLV_TIME_TOTAL_PRETTY=`date -u -d @"$$T_SOLV_TIME_TOTAL" +'%-Mm %-Ss'` ;\
+	T_MISC_TIME_TOTAL=`expr $$T_TIME_TOTAL - \
+					   $$T_SOLV_TIME_TOTAL - \
+					   $$T_PREP_TIME_TOTAL` ;\
+	T_MISC_TIME_TOTAL_PRETTY=`date -u -d @"$$T_MISC_TIME_TOTAL" +'%-Mm %-Ss'` ;\
 	echo ;\
 	echo -n "$(BLUE)" ;\
 	echo "==========================================================" ;\
@@ -223,8 +239,12 @@ run-regression-tests-for-target:
 		echo -n ", FAILED $(RED)$$T_FAILED$(BLUE)" ;\
 	fi ;\
 	echo " of $(NC)$$T_TOTAL$(BLUE) TESTS" ;\
+	echo "=" ;\
 	echo "=   TOOK: $(NC)$${T_TIME_TOTAL_PRETTY}$(BLUE)" ;\
-	echo "=   TOTAL SOLVING TIME: $(NC)$${T_SOLV_TIME_TOTAL}s$(BLUE)" ;\
+	echo "=   SOLVING: $(NC)$${T_SOLV_TIME_TOTAL_PRETTY}$(BLUE)" ;\
+	echo -n "=   MODEL PREP (FLATTENING): " ;\
+	echo "$(NC)$${T_PREP_TIME_TOTAL_PRETTY}$(BLUE)" ;\
+	echo "=   OTHER TASKS: $(NC)$${T_MISC_TIME_TOTAL_PRETTY}$(BLUE)" ;\
 	echo "==========================================================" ;\
 	echo -n "$(NC)" ;\
 	echo
