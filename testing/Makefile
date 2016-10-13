@@ -142,7 +142,7 @@ run-regression-tests-for-target:
 	T_PASSED=0 ;\
 	T_IGNORED=0 ;\
 	T_FAILED=0 ;\
-	T_ALL=$(REGRESSION_TESTS_DIR)/*.ll ;\
+	T_ALL=`cat $(REGRESSION_TESTS_DIR)/test-cases.db` ;\
 	T_MAX_LENGTH=0 ;\
 	T_TIME_START=`date +%s` ;\
 	T_SOLV_TIME_TOTAL=0 ;\
@@ -187,9 +187,9 @@ run-regression-tests-for-target:
 					echo -n "$${time}s" ;\
 				    echo "]" ;\
 					T_SOLV_TIME_TOTAL=`echo "scale=2; \
-								 		t = $$T_SOLV_TIME_TOTAL + $$time; \
-										if (t < 1) print 0; t" \
-								  | bc` ;\
+								 		 t = $$T_SOLV_TIME_TOTAL + $$time; \
+										 if (t < 1) print 0; t" \
+									   | bc` ;\
 				else \
 				    T_FAILED=`expr $$T_FAILED + 1` ;\
 					time=`$(REGRESSION_TESTS_DIR)/get-solving-time \
