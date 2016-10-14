@@ -331,7 +331,12 @@ pattern.dot:
 			msg=`$(UNI_IS_CMD) check --check-fun-integrity -f $$f \
 				 > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
-				echo "[$(GREEN)OK$(NC)]" ;\
+				if [ ! -s $$out ]; then \
+					echo "[$(GREEN)OK$(NC)]" ;\
+				else \
+					echo "[$(RED)WARNING$(NC)]" ;\
+					cat $$out ;\
+				fi \
 			else \
 				echo "[$(RED)FAILED$(NC)]" ;\
 				cat $$out ;\

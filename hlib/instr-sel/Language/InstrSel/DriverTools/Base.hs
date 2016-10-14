@@ -20,13 +20,16 @@ module Language.InstrSel.DriverTools.Base
   )
 where
 
+import Language.InstrSel.Utils.IO
+  ( ExitCode (..)
+  , successExitCode
+  )
+
 import Data.Maybe
   ( fromJust
   , isJust
   )
 
-import System.Exit
-  ( ExitCode (..) )
 import System.FilePath
   ( splitExtension
   , takeDirectory
@@ -64,7 +67,7 @@ toOutput
   :: String
      -- ^ The output string.
   -> Output
-toOutput s = toOutput' Nothing ExitSuccess s
+toOutput s = toOutput' Nothing successExitCode s
 
 -- | Creates an output with an ID but no exit code.
 toOutputWithID
@@ -73,7 +76,7 @@ toOutputWithID
   -> String
      -- ^ The output string.
   -> Output
-toOutputWithID oid s = toOutput' (Just oid) ExitSuccess s
+toOutputWithID oid s = toOutput' (Just oid) successExitCode s
 
 -- | Creates an output with an exit code but no ID.
 toOutputWithExitCode

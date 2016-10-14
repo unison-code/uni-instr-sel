@@ -10,13 +10,15 @@ Main authors:
 -}
 
 module Language.InstrSel.Utils.IO
-  ( reportError
+  ( ExitCode (..)
+  , reportError
   , reportErrorAndExit
   , doesFileExist
   , readFileContent
   , when
   , mapMaybeM
   , errorExitCode
+  , successExitCode
   )
 where
 
@@ -78,6 +80,10 @@ mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
 mapMaybeM f as =
   do bs <- mapM f as
      return $ catMaybes bs
+
+-- | Returns an 'ExitCode' that indicates a success.
+successExitCode :: ExitCode
+successExitCode = ExitSuccess
 
 -- | Returns an 'ExitCode' that indicates an error.
 errorExitCode :: ExitCode
