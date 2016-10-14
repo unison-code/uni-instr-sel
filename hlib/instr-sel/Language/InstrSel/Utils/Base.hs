@@ -75,10 +75,10 @@ fromRight _ = error "Either is not Right"
 -- commutative and associative.
 groupBy :: (n -> n -> Bool) -> [n] -> [[n]]
 groupBy f es =
-  foldr (gr f) [] es
-  where gr _ e [] = [[e]]
-        gr f' e (p:ps) = if belongs f' e p then (e:p):ps else p:(gr f' e ps)
-        belongs f'' e' es' = any (f'' e') es'
+  foldr gr [] es
+  where gr e [] = [[e]]
+        gr e (p:ps) = if belongs e p then ((e:p):ps) else (p:gr e ps)
+        belongs e es' = f e (head es')
 
 -- | Splits a given list into a list of sublists at points where a given
 -- delimiter is found (the delimiters themselves are removed from the resulting
