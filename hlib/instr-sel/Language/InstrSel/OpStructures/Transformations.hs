@@ -156,10 +156,44 @@ removeRedundantPtrConversionsInGraph g0 =
                             )
                             ps
       g1 = foldr (\(o, _, _) g -> delNode o g) g0 redundant_ps
-      g2 = foldr (\(_, in_v, out_v) g -> mergeNodes in_v out_v g)
+      g2 = foldr (\(_, in_v, out_v) g -> mergeValueNodes in_v out_v g)
                  g1
                  redundant_ps
   in g2
+
+mergeValueNodes :: Node -> Node -> Graph -> Graph
+mergeValueNodes in_v out_v g0 =
+  -- As a result of these transformations, we may need to fix the out numbers of
+  -- the outgoing definition edges. We do that by first removing the definition
+  -- edges, merge the nodes, and then re-add them with appropriate out numbers
+  let old_def_es = getDefOutEdges g0 out_v
+      old_df_es = getDtFlowOutEdges g0 out_v
+      phi_b_ps = map ( \e ->
+                       let b = getTargetNode g0 e
+                           df_e = head $
+                                  filter ( \e' -> getEdgeOutNr e' ==
+                                                  getEdgeOutNr e
+                                         ) $
+                                  old_df_es
+                           phi = getTargetNode g0 df_e
+                       in (phi, b)
+                     ) $
+                 old_def_es
+      g1 = foldr delEdge g0 old_def_es
+      g2 = mergeNodes in_v out_v g1
+      b_nr_ps = map ( \(phi, b) ->
+                      let es = filter (\e -> getTargetNode g2 e == phi) $
+                               getDtFlowOutEdges g2 in_v
+                      in (b, getEdgeOutNr $ head es)
+                    ) $
+                phi_b_ps
+      g3 = foldr ( \(b, nr) g ->
+                   let (g', new_e) = addNewDefEdge (in_v, b) g
+                   in updateEdgeOutNr nr new_e g'
+                 )
+                 g2
+                 b_nr_ps
+  in g3
 
 transformPtrConversionsInGraph :: Graph -> Graph
 transformPtrConversionsInGraph g =
