@@ -28,7 +28,9 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import qualified Language.InstrSel.OpStructures.Transformations as OS
-  ( lowerPointers )
+  ( fixPhis
+  , lowerPointers
+  )
 import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
@@ -40,10 +42,6 @@ import Data.Maybe
   ( fromJust
   , isJust
   , isNothing
-  )
-import Data.List
-  ( intersect
-  , nub
   )
 
 
@@ -470,120 +468,6 @@ lowerPointers tm f =
 -- block that dominates the blocks of the replaced definition edges.
 fixPhis :: Function -> Function
 fixPhis f =
-  let g = getGraph f
-      entry = osEntryBlockNode $ functionOS f
-  in if isJust entry
-     then let entry_n = findNodesWithNodeID g (fromJust entry)
-          in if length entry_n == 1
-             then let g0 = fixPhisInGraph g (head entry_n)
-                      g1 = removeRedundantPhisInGraph g0
-                  in updateGraph g1 f
-             else if length entry_n == 0
-                  then error $ "fixPhis: function has no block node with ID " ++
-                               pShow entry
-                  else error $ "fixPhis: function has multiple block nodes " ++
-                               "with ID " ++ pShow entry
-     else error $ "fixPhis: function has no entry block"
-
-fixPhisInGraph
-  :: Graph
-  -> Node
-     -- ^ The root (entry) block of the given graph.
-  -> Graph
-fixPhisInGraph g root =
-  let cfg = extractCFG g
-      ns = filter ( \n ->
-                    let es = getDtFlowInEdges g n
-                        vs = nub $
-                             map (getSourceNode g) $
-                             es
-                    in length es /= length vs
-                  ) $
-           filter isPhiNode $
-           getAllNodes g
-      fix phi_n g0 =
-        let dt_es = getDtFlowInEdges g0 phi_n
-            def_es = map ( \e ->
-                           let v = getSourceNode g0 e
-                               out_nr = getEdgeOutNr e
-                               def_e = filter (\e' -> getEdgeOutNr e' == out_nr)
-                                              (getDefOutEdges g0 v)
-                           in if length def_e == 1
-                              then head def_e
-                              else error $ "fixPhisInGraph: " ++ show v ++
-                                           " has no definition edge " ++
-                                           "with out-edge number " ++
-                                           pShow out_nr
-                         )
-                         dt_es
-            vb_ps = map ( \(dt_e, def_e) ->
-                          (getSourceNode g0 dt_e, getTargetNode g0 def_e)
-                        ) $
-                    zip dt_es def_es
-            grouped_vb_ps = groupBy (\(v1, _) (v2, _) -> v1 == v2) vb_ps
-            fixed_vb_ps = map ( \ps ->
-                                if length ps == 1
-                                then head ps
-                                else ( fst $ head ps
-                                     , getDomOf cfg root $ map snd ps
-                                     )
-                              ) $
-                          grouped_vb_ps
-            g1 = foldr delEdge g0 dt_es
-            g2 = foldr delEdge g1 def_es
-            g3 = foldr ( \(v, b) g' ->
-                         let (g'', dt_e) = addNewDtFlowEdge (v, phi_n) g'
-                             out_nr = getEdgeOutNr dt_e
-                             (g''', def_e) = addNewDefEdge (v, b) g''
-                             g'''' = updateEdgeOutNr out_nr def_e g'''
-                         in g''''
-                       )
-                       g2
-                       fixed_vb_ps
-        in g3
-  in foldr fix g ns
-
--- | From a given control-flow graph and list of block nodes, gets the block
--- that is the closest dominator of all given blocks.
-getDomOf
-  :: Graph
-  -> Node
-     -- ^ The root (entry) block of the given control-flow graph.
-  -> [Node]
-  -> Node
-getDomOf g root bs =
-  let domsets = computeDomSets g root
-      bs_domsets = filter (\d -> (domNode d) `elem` bs) domsets
-      cs = foldr intersect (domSet $ head bs_domsets) $
-           map domSet bs_domsets
-      cs_domsets = filter (\d -> (domNode d) `elem` cs) domsets
-      pruned_cs_domsets = map (\d -> d { domSet = cs `intersect` domSet d}) $
-                          cs_domsets
-  in domNode $
-     head $
-     filter (\d -> length (domSet d) == 1) $
-     pruned_cs_domsets
-
--- | Removes phi nodes that has only one input value.
-removeRedundantPhisInGraph :: Graph -> Graph
-removeRedundantPhisInGraph g =
-  let ns = filter (\n -> length (getDtFlowInEdges g n) == 1) $
-           filter isPhiNode $
-           getAllNodes g
-      remove phi_n g0 =
-        let in_e = head $ getInEdges g0 phi_n
-            out_e = head $ getOutEdges g0 phi_n
-            in_v = getSourceNode g0 in_e
-            out_v = getTargetNode g0 out_e
-            in_v_def = head $
-                       filter (\e -> getEdgeOutNr e == getEdgeOutNr in_e) $
-                       getDefOutEdges g0 in_v
-            out_v_def = head $
-                        filter (\e -> getEdgeInNr e == getEdgeInNr out_e) $
-                        getDefInEdges g0 out_v
-            g1 = delNode phi_n g0
-            g2 = delEdge in_v_def g1
-            g3 = delEdge out_v_def g2
-            g4 = mergeNodes in_v out_v g3
-        in g4
-  in foldr remove g ns
+  let os0 = functionOS f
+      os1 = OS.fixPhis os0
+  in f { functionOS = os1 }
