@@ -4,5 +4,6 @@
 ** DONE Lower pointers to integers
 ** DONE Implement a graph invariant checker
 ** DONE Fix bug when processing ghostscript test case
-** TODO Handle indirect function calls
+** DONE Handle indirect function calls
+** TODO Fix exponential explosion bug in alternative extender
 ** TODO Branch-extend patterns
