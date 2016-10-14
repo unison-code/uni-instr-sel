@@ -111,7 +111,8 @@ toNatural x =
   let n = maybeToNatural x
   in if isJust n
      then fromJust n
-     else error "Natural cannot be negative"
+     else error $ "toNatural: negative number: " ++
+                  show (toInteger x :: Integer)
 
 -- | Converts a 'Natural' into an 'Integer'.
 fromNatural :: Natural -> Integer
@@ -123,5 +124,5 @@ sn2nat :: Scientific -> Natural
 sn2nat sn =
   let int_value = round sn
   in if fromInteger int_value /= sn
-     then error "not an integer"
+     then error $ "sn2nat: not an integer: " ++ show sn
      else toNatural int_value
