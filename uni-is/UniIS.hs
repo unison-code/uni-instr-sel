@@ -292,6 +292,11 @@ parseArgs =
                   "plots. Only usable together with " ++
                   "--plot-cover-all-matches option."
                 )
+    , altInsertLimit = def
+        &= name "alt-insert-limit"
+        &= explicit
+        &= typ "ID"
+        &= help "Maximum number of alternatives (per case) to insert."
     , checkAction =
         enum [ CheckNothing
                  &= auto

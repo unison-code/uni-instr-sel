@@ -52,6 +52,7 @@ data Options
       , showEdgeNumbers :: Maybe Bool
       , hideNullInstructions :: Maybe Bool
       , hideInactiveInstructions :: Maybe Bool
+      , altInsertLimit :: Maybe Int
       , checkAction :: CheckAction
       }
   deriving (Data, Typeable)

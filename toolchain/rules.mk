@@ -53,7 +53,8 @@ PRUNE_BAD_MATCHES_CMD ?= @echo 'ERROR: Variable $$PRUNE_BAD_MATCHES_CMD' \
                           exit 1 ;
 SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
                           exit 1 ;
-SOLVER_TIMELIMIT      ?= # In seconds; 0 indicates no timelimit
+ALT_INSERT_LIMIT      ?= # 0 indicates no timelimit
+SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 TARGET                ?=
 
 
@@ -98,7 +99,11 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 	$(UNI_IS_CMD) transform --combine-consts-in-fun -f $< -o $@
 
 %.ph.lp.ce.cc.ae.f.json: %.ph.lp.ce.cc.f.json
-	$(UNI_IS_CMD) transform --alternative-extend-fun -f $< -o $@
+	$(UNI_IS_CMD) transform \
+				  --alternative-extend-fun \
+				  --alt-insert-limit $(ALT_INSERT_LIMIT) \
+				  -f $< \
+				  -o $@
 
 %.ph.lp.ce.cc.ae.be.f.json: %.ph.lp.ce.cc.ae.f.json
 	$(UNI_IS_CMD) transform --branch-extend-fun -f $< -o $@
@@ -170,7 +175,7 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
                   -o $@
 
 %.ll.sol.json: %.ll.model.json
-	$(SOLVER_CMD) -t $(SOLVER_TIMELIMIT) -o $@ $<
+	$(SOLVER_CMD) -t $(SOLVER_TIME_LIMIT) -o $@ $<
 
 %.hl.sol.json: %.hl.model-w-op.json %.ll.sol.json %.aimaps.json
 	$(UNI_IS_CMD) transform --raise-ll-cp-solution \

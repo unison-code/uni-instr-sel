@@ -19,6 +19,7 @@ module UniIS.Drivers.DispatcherTools
   , getShowEdgeNumbersPred
   , getHideNullInstrsPred
   , getHideInactiveInstrsPred
+  , getAltInsertLimit
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
@@ -158,6 +159,15 @@ getHideInactiveInstrsPred :: Options -> IO Bool
 getHideInactiveInstrsPred opts =
   do let p = hideInactiveInstructions opts
      return $ if isJust p then fromJust p else False
+
+-- | Returns the option of how many alternatives, at most per case, to insert as
+-- specified on the command line.
+getAltInsertLimit :: Options -> IO Int
+getAltInsertLimit opts =
+  do let int = altInsertLimit opts
+     when (isNothing int) $
+       reportErrorAndExit "No alternative insertion limit provided."
+     return $ fromJust int
 
 -- | Returns the target machine with given ID. Reports error if no such target
 -- machine exists.

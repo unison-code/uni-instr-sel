@@ -37,6 +37,7 @@ import Language.InstrSel.TargetMachines
   ( TargetMachine (..) )
 import Language.InstrSel.Utils
   ( groupBy )
+import Language.InstrSel.Utils.Natural
 
 import Data.Maybe
   ( fromJust
@@ -351,11 +352,16 @@ replaceValueNode new_n old_n f =
 -- edge will be inserted for each operation that uses one of the copied values.
 -- If the operation is a phi node, alternative definition edges will also be
 -- inserted.
-alternativeExtend :: Function -> Function
-alternativeExtend f = updateGraph (alternativeExtendGraph $ getGraph f) f
+alternativeExtend
+  :: Natural
+     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+  -> Function
+  -> Function
+alternativeExtend limit f =
+  updateGraph (alternativeExtendGraph limit $ getGraph f) f
 
-alternativeExtendGraph :: Graph -> Graph
-alternativeExtendGraph g =
+alternativeExtendGraph :: Natural -> Graph -> Graph
+alternativeExtendGraph limit g =
   let v_ns = filter isValueNode $ getAllNodes g
       copy_related_vs =
         concat $
@@ -387,10 +393,15 @@ alternativeExtendGraph g =
               in grouped_vs
             ) $
         v_ns
-  in foldr insertAlternativeEdges g copy_related_vs
+  in foldr (insertAlternativeEdges limit) g copy_related_vs
 
-insertAlternativeEdges :: [Node] -> Graph -> Graph
-insertAlternativeEdges vs g0 =
+insertAlternativeEdges
+  :: Natural
+     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+  -> [Node]
+  -> Graph
+  -> Graph
+insertAlternativeEdges limit vs g0 =
   -- A this point, every copy-related value node has exactly one outgoing data
   -- flow edge as it is used by exactly one operation
   let processInput i g1 =
@@ -399,7 +410,12 @@ insertAlternativeEdges vs g0 =
                   -- It's very important to get the edges from g0 and not g1, as
                   -- new data-flow edges will continuously be added to g1
             processOp o g2 =
-              let alts = filter (/= i) vs
+              let int_limit = fromIntegral limit
+                  num_to_take = if int_limit == 0 || int_limit > length vs
+                                then length vs
+                                else int_limit
+                  alts = take num_to_take $
+                         filter (/= i) vs
                   orig_e = head $ getEdgesBetween g0 i o
                            -- Here it is also important to get the edge from g0,
                            -- where there should be exactly one edge between
