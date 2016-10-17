@@ -6,5 +6,6 @@
 ** DONE Fix bug when processing ghostscript test case
 ** DONE Handle indirect function calls
 ** DONE Fix exponential explosion bug in alternative extender
-** TODO Optimize pattern matcher
+** TODO Fix exponential explosion in pattern matcher due to alternative edges
+** TODO Fix faculty explosion in pattern matcher when dealing with SIMDs
 ** TODO Branch-extend patterns
