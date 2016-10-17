@@ -23,26 +23,14 @@ module Language.InstrSel.TargetMachines.PatternMatching
 where
 
 import Language.InstrSel.Graphs
-  ( Graph
-  , MatchID
-  , Match (..)
-  , Mapping (fNode)
-  , Node
-  , convertMatchN2ID
-  , extractSSA
-  , subGraph
-  , getAllNodes
-  , fromMatch
-  , delNode
-  , isDatumNode
-  , hasAnyPredecessors
-  )
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.Functions
   ( Function (..) )
+import Language.InstrSel.Functions.IDs
+  ( mkEmptyBlockName )
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils
   ( (===) )
@@ -166,23 +154,29 @@ mkPatternMatchset function target =
 
 processInstr :: Function -> Instruction -> [PatternMatch]
 processInstr f i =
-  concatMap (processInstrPattern f i) (instrPatterns i)
+  let fg = osGraph $ functionOS f
+      dup_fg = duplicateNodes fg
+  in concatMap (processInstrPattern fg dup_fg i) (instrPatterns i)
 
 processInstrPattern
-  :: Function
+  :: Graph
+     -- ^ The original function graph.
+  -> Graph
+     -- ^ The duplicated function graph.
   -> Instruction
   -> InstrPattern
   -> [PatternMatch]
-processInstrPattern function instr pattern =
-  let fg = osGraph $ functionOS function
-      pg = osGraph $ patOS pattern
-      matches = findMatches fg pg
+processInstrPattern fg dup_fg instr pat =
+  let pg = osGraph $ patOS pat
+      dup_pg = duplicateNodes pg
+      matches = map (fixMatch fg pg) $
+                findMatches dup_fg dup_pg
       okay_matches = filter (not . hasCyclicDataDependency fg) matches
       non_sym_matches = if isInstructionSimd instr
                         then pruneSymmetricSimdMatches okay_matches
                         else okay_matches
   in map ( \m -> PatternMatch { pmInstrID = instrID instr
-                              , pmPatternID = patID pattern
+                              , pmPatternID = patID pat
                               , pmMatchID = 0 -- Unique value is assigned later
                               , pmMatch = m
                               }
@@ -225,3 +219,39 @@ pruneSymmetricSimdMatches ms =
             ns2 = map fNode (fromMatch m2)
         in ns1 === ns2
   in nubBy check ms
+
+-- | Sometimes we want pattern nodes to be mapped to the same function
+-- node. However, the VF2 algorithm doesn't allow that. To get around this
+-- limitation, we duplicate these nodes and then remap the pattern nodes after a
+-- match is found.
+duplicateNodes :: Graph -> Graph
+duplicateNodes fg =
+  let ns = getAllNodes fg
+      bs = filter isBlockNode ns
+      bs_with_inout_defs = filter ( \n -> length (getDefInEdges fg n) > 0 &&
+                                          length (getDefOutEdges fg n) > 0
+                                  )
+                                  bs
+      processBlockNode b fg0 =
+        let (fg1, new_b) = addNewNode (BlockNode mkEmptyBlockName) fg0
+            fg2 = updateNodeID (getNodeID b) new_b fg1
+            fg3 = redirectInEdgesWhen isDefEdge new_b b fg2
+        in fg3
+  in foldr processBlockNode fg bs_with_inout_defs
+
+-- | Converts a match found from a function graph and a pattern graph with
+-- duplicated nodes into a mapping for the original graphs.
+fixMatch :: Graph
+            -- ^ Original function graph.
+         -> Graph
+         -- ^ Original pattern graph.
+         -> Match Node
+         -> Match Node
+fixMatch fg pg m =
+  let updatePair p =
+        let new_fn = head $ findNodesWithNodeID fg $ getNodeID $ fNode p
+            new_pn = head $ findNodesWithNodeID pg $ getNodeID $ pNode p
+        in Mapping { fNode = new_fn, pNode = new_pn }
+  in toMatch $
+     map updatePair $
+     fromMatch m

@@ -14,8 +14,6 @@ module Language.InstrSel.Graphs.PatternMatching.VF2
 where
 
 import Language.InstrSel.Graphs.Base
-import Language.InstrSel.Functions.IDs
-  ( mkEmptyBlockName )
 
 import Data.List
   ( intersect
@@ -30,40 +28,6 @@ import Data.Maybe
 -- Functions
 -------------
 
--- | Sometimes we want pattern nodes to be mapped to the same function
--- node. However, the VF2 algorithm doesn't allow that. To get around this
--- limitation, we duplicate these nodes and then remap the pattern nodes after a
--- match is found.
-duplicateNodes :: Graph -> Graph
-duplicateNodes fg =
-  let ns = getAllNodes fg
-      bs = filter isBlockNode ns
-      bs_with_inout_defs = filter ( \n -> length (getDefInEdges fg n) > 0 &&
-                                          length (getDefOutEdges fg n) > 0
-                                  )
-                                  bs
-      processBlockNode b fg0 =
-        let (fg1, new_b) = addNewNode (BlockNode mkEmptyBlockName) fg0
-            fg2 = updateNodeID (getNodeID b) new_b fg1
-            fg3 = redirectInEdgesWhen isDefEdge new_b b fg2
-        in fg3
-  in foldr processBlockNode fg bs_with_inout_defs
-
--- | Converts a mapping found from a function graph and a pattern graph with
--- duplicated nodes into a mapping for the original graphs.
-fixMapping :: Graph
-              -- ^ Original function graph.
-           -> Graph
-              -- ^ Original pattern graph.
-           -> [Mapping Node]
-           -> [Mapping Node]
-fixMapping fg pg m =
-  let updatePair p =
-        let new_fn = head $ findNodesWithNodeID fg $ getNodeID $ fNode p
-            new_pn = head $ findNodesWithNodeID pg $ getNodeID $ pNode p
-        in Mapping { fNode = new_fn, pNode = new_pn }
-  in map updatePair m
-
 -- | Finds all instances where a pattern graph matches within a function graph.
 -- If the pattern graph is empty, then the default behavior is to indicate that
 -- there are no matches.
@@ -77,11 +41,8 @@ findMatches
 findMatches fg pg =
   if isGraphEmpty pg
   then []
-  else let dup_fg = duplicateNodes fg
-           dup_pg = duplicateNodes pg
-       in map toMatch $
-          map (fixMapping fg pg) $
-          match dup_fg dup_pg []
+  else map toMatch $
+       match fg pg []
 
 -- | Implements the VF2 algorithm. The algorithm first finds a set of node
 -- mapping candidates, and then applies a feasibility check on each of
