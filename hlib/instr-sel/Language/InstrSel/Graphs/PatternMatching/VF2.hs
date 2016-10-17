@@ -127,8 +127,8 @@ getCandidates fg pg st =
       t_d_fg = getTDSet fg m_fg
       t_d_pg = getTDSet pg m_pg
       p_out = [ (n, head t_out_pg) | n <- t_out_fg, not (null t_out_pg) ]
-      p_in  = [ (n, head t_in_pg) | n <- t_in_fg, not (null t_in_pg) ]
-      p_d   = [ (n, head t_d_pg) | n <- t_d_fg, not (null t_d_pg) ]
+      p_in  = [ (n, head t_in_pg)  | n <- t_in_fg,  not (null t_in_pg)  ]
+      p_d   = [ (n, head t_d_pg)   | n <- t_d_fg,   not (null t_d_pg)   ]
   in if length p_out > 0
      then map toMapping p_out
      else if length p_in > 0
