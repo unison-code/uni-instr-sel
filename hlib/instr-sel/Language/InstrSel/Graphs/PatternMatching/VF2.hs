@@ -124,8 +124,8 @@ getCandidates fg pg st =
       t_out_pg = getTOutSet pg m_pg
       t_in_fg = getTInSet fg m_fg
       t_in_pg = getTInSet pg m_pg
-      t_d_fg = getTDSet fg m_fg
-      t_d_pg = getTDSet pg m_pg
+      t_d_fg = optimizeTDSet $ getTDSet fg m_fg
+      t_d_pg = optimizeTDSet $ getTDSet pg m_pg
       p_out = [ (n, head t_out_pg) | n <- t_out_fg, not (null t_out_pg) ]
       p_in  = [ (n, head t_in_pg)  | n <- t_in_fg,  not (null t_in_pg)  ]
       p_d   = [ (n, head t_d_pg)   | n <- t_d_fg,   not (null t_d_pg)   ]
@@ -361,3 +361,9 @@ getTDSet
      -- ^ The M set.
   -> [Node]
 getTDSet g ns = filter (`notElem` ns) (getAllNodes g)
+
+-- | Returns an optimized T_D set, which only includes operation and block
+-- nodes. This will result in fewer stupid candidates as these nodes are the
+-- most constrained.
+optimizeTDSet :: [Node] -> [Node]
+optimizeTDSet = filter (\n -> isOperationNode n || isBlockNode n)
