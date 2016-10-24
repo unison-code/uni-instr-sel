@@ -9,7 +9,7 @@ Main authors:
 
 -}
 
-module UniIS.Drivers.MakeCPModelNoOp
+module UniIS.Drivers.MakeCPModel
   ( run )
 where
 
@@ -39,14 +39,14 @@ import Data.Maybe
 
 run :: MakeAction -> Function -> PatternMatchset -> IO [Output]
 
-run MakeHighLevelCPModelNoOp function matchset =
+run MakeHighLevelCPModel function matchset =
   do let target = retrieveTargetMachine $ pmTarget matchset
      when (isNothing target) $
        reportErrorAndExit $ "Unrecognized target machine: " ++
                             (show $ fromJust target)
-     let model = mkHighLevelModelNoOp function
-                                      (fromJust target)
-                                      (pmMatches matchset)
+     let model = mkHighLevelModel function
+                                  (fromJust target)
+                                  (pmMatches matchset)
      return [toOutput $ toJson model]
 
 run _ _ _ = reportErrorAndExit "MakeCPModel: unsupported action"

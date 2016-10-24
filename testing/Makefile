@@ -255,19 +255,19 @@ run-regression-tests-for-target:
 # PLOT AND DUMP RULES
 #=====================
 
-%.full-f.dot: %.f.json
+%.full-f.dot: %.ph.lp.ce.cc.be.f.json
 	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
 
-%.cfg-f.dot: %.f.json
+%.cfg-f.dot: %.f.ph.lp.ce.cc.be.json
 	$(UNI_IS_CMD) plot --plot-fun-cf-graph -f $< -o $@
 
-%.ssa-f.dot: %.f.json
+%.ssa-f.dot: %.f.ph.lp.ce.cc.be.json
 	$(UNI_IS_CMD) plot --plot-fun-ssa-graph -f $< -o $@
 
-%.cov.dot: %.ph.lp.ce.cc.ae.be.f.json %.ph.lp.ce.cc.ae.be.p.json
+%.cov.dot: %.ph.lp.ce.cc.be.f.json %.ph.lp.ce.cc.be.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
-                  -f $*.ph.lp.ce.cc.ae.be.f.json \
-                  -p $*.ph.lp.ce.cc.ae.be.p.json \
+                  -f $*.ph.lp.ce.cc.be.f.json \
+                  -p $*.ph.lp.ce.cc.be.ae.p.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -281,31 +281,31 @@ pattern.dot:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.ph.lp.ce.cc.ae.be.f.json %.ph.lp.ce.cc.ae.be.p.json
+%.all-cover-plots: %.ph.lp.ce.cc.be.f.json %.ph.lp.ce.cc.be.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
-                  -f $*.ph.lp.ce.cc.ae.be.f.json \
-                  -p $*.ph.lp.ce.cc.ae.be.p.json \
+                  -f $*.ph.lp.ce.cc.be.f.json \
+                  -p $*.ph.lp.ce.cc.be.ae.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
         $(RM) $${f%.*}.dot; \
     done
 
-%.model.dump: %.ph.lp.ce.cc.ae.be.f.json \
+%.model.dump: %.ph.lp.ce.cc.be.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
-                  -f $*.ph.lp.ce.cc.ae.be.f.json \
+                  -f $*.ph.lp.ce.cc.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -o $@
 
-%.sol.dump: %.ph.lp.ce.cc.ae.be.f.json \
+%.sol.dump: %.ph.lp.ce.cc.be.f.json \
             %.presolved.aimaps.json \
             %.presolved.ll.model.json \
             %.presolved.ll.sol.json
 	$(UNI_IS_CMD) make --dump-low-level-solution-info \
-                  -f $*.ph.lp.ce.cc.ae.be.f.json \
+                  -f $*.ph.lp.ce.cc.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -s $*.presolved.ll.sol.json \
@@ -324,7 +324,7 @@ pattern.dot:
 			  $*.ph.lp.f.json \
 			  $*.ph.lp.ce.f.json \
 			  $*.ph.lp.ce.cc.f.json \
-			  $*.ph.lp.ce.cc.ae.f.json \
+			  $*.ph.lp.ce.cc.be.f.json \
 			  ; do \
 		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
@@ -347,13 +347,13 @@ pattern.dot:
 		fi \
 	done
 	@echo "$(BLUE)* CHECKING COVERABILITY$(NC)"
-	@echo -n "    $*.ph.lp.ce.cc.ae.be.f.json "
-	@if [ -f $*.ph.lp.ce.cc.ae.be.f.json ]; then \
-		if [ -f $*.ph.lp.ce.cc.ae.be.p.json ]; then \
+	@echo -n "    $*.ph.lp.ce.cc.be.f.json "
+	@if [ -f $*.ph.lp.ce.cc.be.f.json ]; then \
+		if [ -f $*.ph.lp.ce.cc.be.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
-			                   -f $*.ph.lp.ce.cc.ae.be.f.json \
-			                   -p $*.ph.lp.ce.cc.ae.be.p.json \
+			                   -f $*.ph.lp.ce.cc.be.f.json \
+			                   -p $*.ph.lp.ce.cc.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\
@@ -368,13 +368,13 @@ pattern.dot:
 		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
 	fi
 	@echo "$(BLUE)* CHECKING OVERLAP OF DATA LOCATIONS$(NC)"
-	@echo -n "    $*.ph.lp.ce.cc.ae.be.f.json "
-	@if [ -f $*.ph.lp.ce.cc.ae.be.f.json ]; then \
-		if [ -f $*.ph.lp.ce.cc.ae.be.p.json ]; then \
+	@echo -n "    $*.ph.lp.ce.cc.be.f.json "
+	@if [ -f $*.ph.lp.ce.cc.be.f.json ]; then \
+		if [ -f $*.ph.lp.ce.cc.be.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
-			                   -f $*.ph.lp.ce.cc.ae.be.f.json \
-			                   -p $*.ph.lp.ce.cc.ae.be.p.json \
+			                   -f $*.ph.lp.ce.cc.be.f.json \
+			                   -p $*.ph.lp.ce.cc.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(GREEN)OK$(NC)]" ;\

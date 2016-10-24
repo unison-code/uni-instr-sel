@@ -13,7 +13,6 @@ module Language.InstrSel.Functions.Transformations
   ( branchExtend
   , copyExtend
   , combineConstants
-  , alternativeExtend
   , lowerPointers
   , fixPhis
   )
@@ -37,7 +36,6 @@ import Language.InstrSel.TargetMachines
   ( TargetMachine (..) )
 import Language.InstrSel.Utils
   ( groupBy )
-import Language.InstrSel.Utils.Natural
 
 import Data.Maybe
   ( fromJust
@@ -347,116 +345,6 @@ replaceValueNode new_n old_n f =
       new_cs = map (apply recon) (osConstraints old_os)
       new_os = old_os { osGraph = new_g, osConstraints = new_cs }
   in f { functionOS = new_os }
-
--- | For each value node that is copied multiple times, an additional data-flow
--- edge will be inserted for each operation that uses one of the copied values.
--- If the operation is a phi node, alternative definition edges will also be
--- inserted.
-alternativeExtend
-  :: Natural
-     -- ^ Maximum number of alternatives to insert. 0 means no limit.
-  -> Function
-  -> Function
-alternativeExtend limit f =
-  updateGraph (alternativeExtendGraph limit $ getGraph f) f
-
-alternativeExtendGraph :: Natural -> Graph -> Graph
-alternativeExtendGraph limit g =
-  let v_ns = filter isValueNode $ getAllNodes g
-      copy_related_vs =
-        concat $
-        map ( \n ->
-              let es = getDtFlowOutEdges g n
-                  copies = filter isCopyNode $ map (getTargetNode g) es
-                  cp_vs = map ( \n' ->
-                                let es' = getDtFlowOutEdges g n'
-                                in if length es' == 1
-                                   then getTargetNode g (head es')
-                                   else if length es' == 0
-                                        then error $
-                                             "alternativeExtendGraph: " ++
-                                             show n' ++ " has no data-flow " ++
-                                             "edges"
-                                        else error $
-                                             "alternativeExtendGraph: " ++
-                                             show n' ++ " has multiple " ++
-                                             "data-flow edges"
-                              ) $
-                          copies
-                  grouped_vs = filter ((> 1) . length) $
-                               groupBy ( \v1 v2 ->
-                                         getDataTypeOfValueNode v1
-                                         ==
-                                         getDataTypeOfValueNode v2
-                                       ) $
-                               cp_vs
-              in grouped_vs
-            ) $
-        v_ns
-  in foldr (insertAlternativeEdges limit) g copy_related_vs
-
-insertAlternativeEdges
-  :: Natural
-     -- ^ Maximum number of alternatives to insert. 0 means no limit.
-  -> [Node]
-  -> Graph
-  -> Graph
-insertAlternativeEdges limit vs g0 =
-  -- A this point, every copy-related value node has exactly one outgoing data
-  -- flow edge as it is used by exactly one operation
-  let processInput i g1 =
-        let ops = map (getTargetNode g0) $
-                  getDtFlowOutEdges g0 i
-                  -- It's very important to get the edges from g0 and not g1, as
-                  -- new data-flow edges will continuously be added to g1
-            processOp o g2 =
-              let int_limit = fromIntegral limit
-                  num_to_take = if int_limit == 0 || int_limit > length vs
-                                then length vs
-                                else int_limit
-                  alts = take num_to_take $
-                         filter (/= i) vs
-                  orig_e = head $ getEdgesBetween g0 i o
-                           -- Here it is also important to get the edge from g0,
-                           -- where there should be exactly one edge between
-                           -- nodes i and o. At this point we also know for sure
-                           -- that there is exactly one such edge
-                  orig_in_nr = getEdgeInNr orig_e
-                  insertEdge v g3 =
-                    let (g4, new_e) = addNewDtFlowEdge (v, o) g3
-                        g5 = updateEdgeInNr orig_in_nr new_e g4
-                    in if isPhiNode o
-                       then let orig_out_nr = getEdgeOutNr orig_e
-                                es = filter ((==) orig_out_nr . getEdgeOutNr) $
-                                     filter isDefEdge $
-                                     getOutEdges g0 i
-                                     -- Remember to get edges from g0
-                                orig_d_e = if length es == 1
-                                           then head es
-                                           else if length es == 0
-                                                then error $
-                                                     "insertAlternative" ++
-                                                     "Edges: " ++ show i ++
-                                                     "has no outgoing " ++
-                                                     "definition edge with " ++
-                                                     "out-edge number " ++
-                                                     pShow orig_out_nr
-                                                else error $
-                                                     "insertAlternative" ++
-                                                     "Edges: " ++ show i ++
-                                                     "has multiple outgoing " ++
-                                                     "definition edges with " ++
-                                                     "out-edge number " ++
-                                                     pShow orig_out_nr
-                                b_node = getTargetNode g0 orig_d_e
-                                (g6, new_d_e) = addNewDefEdge (v, b_node) g5
-                                new_out_nr = getEdgeOutNr new_e
-                                g7 = updateEdgeOutNr new_out_nr new_d_e g6
-                            in g7
-                       else g5
-              in foldr insertEdge g2 alts
-        in foldr processOp g1 ops
-  in foldr processInput g0 vs
 
 -- | Applies a transformation on the graph in a given function.
 getGraph :: Function -> Graph

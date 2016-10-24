@@ -33,7 +33,7 @@ import Data.List
 mkArrayIndexMaplists
   :: Function
   -> TargetMachine
-  -> HighLevelModelWOp
+  -> HighLevelModel
   -> ArrayIndexMaplists
 mkArrayIndexMaplists function tm model =
   let g = osGraph $ functionOS function
@@ -41,9 +41,9 @@ mkArrayIndexMaplists function tm model =
       o_nodes = sort $ filter isOperationNode nodes
       e_nodes = sort $ filter isDatumNode nodes
       l_nodes = sort $ filter isBlockNode nodes
-      match_params = hlWOpMatchParams model
-      match_ids = sort $ map hlWOpMatchID match_params
-      op_ids = sort $ concatMap ((map fst) . hlWOpOperandNodeMaps) match_params
+      match_params = hlMatchParams model
+      match_ids = sort $ map hlMatchID match_params
+      op_ids = sort $ concatMap ((map fst) . hlOperandNodeMaps) match_params
       locations = tmLocations tm
       instructions = tmInstructions tm
   in ArrayIndexMaplists { ai2OperationNodeIDs = map getNodeID o_nodes

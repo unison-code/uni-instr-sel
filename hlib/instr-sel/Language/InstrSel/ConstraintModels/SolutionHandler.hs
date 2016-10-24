@@ -32,7 +32,7 @@ import Language.InstrSel.OpStructures
 -- | Raises a low-level CP model solution to a high-level CP model solution.
 raiseLowLevelSolution
   :: LowLevelSolution
-  -> HighLevelModelWOp
+  -> HighLevelModel
   -> TargetMachine
   -> ArrayIndexMaplists
   -> HighLevelSolution
@@ -103,7 +103,7 @@ raiseLowLevelSolution NoLowLevelSolution _ _ _ = NoHighLevelSolution
 -- a model limitation, this can happen if empty blocks are placed in between the
 -- unconditional branch and the target block)
 deleteExplicitFallthroughs
-    :: HighLevelModelWOp
+    :: HighLevelModel
     -> TargetMachine
     -> HighLevelSolution
     -> HighLevelSolution
@@ -122,12 +122,12 @@ deleteExplicitFallthroughs
 
 deleteExplicitFallthroughs _ _ NoHighLevelSolution = NoHighLevelSolution
 
-isUnconditionalBranch :: HighLevelModelWOp -> TargetMachine -> MatchID -> Bool
+isUnconditionalBranch :: HighLevelModel -> TargetMachine -> MatchID -> Bool
 isUnconditionalBranch model tm match =
-  let mp = getHLMatchParams (hlWOpMatchParams model) match
+  let mp = getHLMatchParams (hlMatchParams model) match
       os = patOS $ getInstrPattern tm
-                                   (hlWOpMatchInstructionID mp)
-                                   (hlWOpMatchPatternID mp)
+                                   (hlMatchInstructionID mp)
+                                   (hlMatchPatternID mp)
       ns = getAllNodes $ osGraph os
    -- TODO: there might be a more elegant/robust way of characterizing
   -- unconditional branches, this is mostly a hack for the CP2015 paper
@@ -138,15 +138,15 @@ isUnconditionalBranch model tm match =
 
 isExplicitFallthrough
   :: HighLevelSolution
-  -> HighLevelModelWOp
+  -> HighLevelModel
   -> MatchID
   -> Bool
 isExplicitFallthrough sol model match =
-  let mp = getHLMatchParams (hlWOpMatchParams model) match
+  let mp = getHLMatchParams (hlMatchParams model) match
       -- TODO: we assume here that the first spanned block is the source block
       -- and the second spanned block is the destination block, is this
       -- assumption safe?
-      [s, d] = hlWOpMatchSpannedBlocks mp
+      [s, d] = hlMatchSpannedBlocks mp
       bs = hlSolOrderOfBlocks sol
       between = takeWhile (\b -> b /= d) $ tail $ dropWhile (\b -> b /= s) bs
   in precedes s d bs && all (isEmptyBlock sol) between
@@ -160,16 +160,16 @@ precedes p s l =
   in s `elem` l'
 
 removeMatch
-  :: HighLevelModelWOp
+  :: HighLevelModel
   -> HighLevelSolution
   -> MatchID
   -> HighLevelSolution
 removeMatch model sol match =
-  let mps = getHLMatchParams (hlWOpMatchParams model) match
-      b = fromJust $ hlWOpMatchEntryBlock mps
+  let mps = getHLMatchParams (hlMatchParams model) match
+      b = fromJust $ hlMatchEntryBlock mps
       -- TODO: replace when optimizing for code size
-      l = hlWOpMatchLatency mps
-      bps = hlFunBlockParams $ hlWOpFunctionParams model
+      l = hlMatchLatency mps
+      bps = hlFunBlockParams $ hlFunctionParams model
       f = hlBlockExecFrequency $
           fromJust $
           find (\bp -> hlBlockNode bp == b) bps
@@ -193,13 +193,13 @@ getMatchesPlacedInBlock sol n =
   map fst $ filter (\t -> snd t == n) $ hlSolBlocksOfSelMatches sol
 
 
--- | Retrieves the 'HighLevelMatchParamsWOp' entity with matching match ID. It
+-- | Retrieves the 'HighLevelMatchParams' entity with matching match ID. It
 -- is assumed that exactly one such entity always exists in the given list.
 getHLMatchParams
-  :: [HighLevelMatchParamsWOp]
+  :: [HighLevelMatchParams]
   -> MatchID
-  -> HighLevelMatchParamsWOp
-getHLMatchParams ps mid = head $ filter (\p -> hlWOpMatchID p == mid) ps
+  -> HighLevelMatchParams
+getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
 
 -- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
 -- that such an entity always exists in the given list.

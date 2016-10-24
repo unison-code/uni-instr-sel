@@ -20,6 +20,8 @@ import UniIS.Drivers.DispatcherTools
 import qualified UniIS.Drivers.TransformFunctionGraph as TransformFunctionGraph
 import qualified UniIS.Drivers.TransformCPModel as TransformCPModel
 import qualified UniIS.Drivers.TransformCPSolution as TransformCPSolution
+import qualified UniIS.Drivers.TransformPatternMatchset
+  as TransformPatternMatchset
 
 import Language.InstrSel.Utils.Natural
 
@@ -43,19 +45,21 @@ dispatch a opts
              ] =
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
-         TransformFunctionGraph.run a function Nothing Nothing
+         TransformFunctionGraph.run a function Nothing
 
-  | a `elem` [ AlternativeExtendFunctionGraph ] =
-      do content <- loadFunctionFileContent opts
-         function <- loadFromJson content
-         limit <- getAltInsertLimit opts
-         TransformFunctionGraph.run a function Nothing (Just $ toNatural limit)
   | a `elem` [ LowerPointersInFunctionGraph ] =
       do content <- loadFunctionFileContent opts
-         function <- loadFromJson content
+         f <- loadFromJson content
          tid <- getSelectedTargetMachineID opts
          target <- loadTargetMachine tid
-         TransformFunctionGraph.run a function (Just target) Nothing
+         TransformFunctionGraph.run a f (Just target)
+  | a `elem` [ AlternativeExtendPatternMatchset ] =
+      do f_content <- loadFunctionFileContent opts
+         f <- loadFromJson f_content
+         p_content <- loadPatternMatchsetFileContent opts
+         p <- loadFromJson p_content
+         limit <- getAltInsertLimit opts
+         TransformPatternMatchset.run a f p (toNatural limit)
   | a `elem` [LowerHighLevelCPModel] =
       do m_content <- loadModelFileContent opts
          ai_maps <- loadArrayIndexMaplistsFromJson opts

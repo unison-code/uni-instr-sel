@@ -17,7 +17,7 @@ import UniIS.Drivers.Base
 import UniIS.Drivers.DispatcherTools
   ( loadTargetMachine )
 import Language.InstrSel.ConstraintModels
-  ( HighLevelModelWOp (..)
+  ( HighLevelModel (..)
   , HighLevelMachineParams (..)
   )
 import Language.InstrSel.ConstraintModels.ArrayIndexMaplistsMaker
@@ -34,10 +34,10 @@ import Language.InstrSel.Utils.IO
 -- Functions
 -------------
 
-run :: MakeAction -> Function -> HighLevelModelWOp -> IO [Output]
+run :: MakeAction -> Function -> HighLevelModel -> IO [Output]
 
 run MakeArrayIndexMaplists function model =
-  do tm <- loadTargetMachine (hlMachineID $ hlWOpMachineParams model)
+  do tm <- loadTargetMachine (hlMachineID $ hlMachineParams model)
      let mapset = mkArrayIndexMaplists function tm model
      return [toOutput $ toJson mapset]
 

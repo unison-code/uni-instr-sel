@@ -86,7 +86,6 @@ module Language.InstrSel.Graphs.Base
   , getLastAddedNode
   , getNeighbors
   , getNodeID
-  , getNodeIDs
   , getNodeLabel
   , getNodeType
   , getNumNodes
@@ -185,8 +184,7 @@ import Language.InstrSel.Utils.JSON
 import qualified Data.Graph.Inductive as I
 
 import Data.List
-  ( nub
-  , nubBy
+  ( nubBy
   , sortBy
   )
 import Data.Maybe
@@ -1240,10 +1238,6 @@ convertMappingN2ID m =
 convertMatchN2ID :: Match Node -> Match NodeID
 convertMatchN2ID (Match ms) =
   Match (S.fromList $ map convertMappingN2ID (S.toList ms))
-
--- | Gets the node IDs of a list of nodes. Duplicate node IDs are removed.
-getNodeIDs :: [Node] -> [NodeID]
-getNodeIDs = nub . map getNodeID
 
 -- | Checks if a node matches another node. Two nodes match if they are of
 -- compatible node types and, depending on the node type, they have the same

@@ -10,8 +10,7 @@ Main authors:
 -}
 
 module Language.InstrSel.ConstraintModels.ModelHandler
-  ( mkHighLevelModelNoOp
-  , mkHighLevelModelWOp
+  ( mkHighLevelModel
   , lowerHighLevelModel
   )
 where
@@ -35,10 +34,7 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..) )
-import Language.InstrSel.Utils
-  ( (===) )
 import Language.InstrSel.Utils.Range
-import Language.InstrSel.PrettyShow
 
 import Data.List
   ( elemIndex
@@ -61,29 +57,16 @@ import Data.Maybe
 
 -- | Constructs the corresponding high-level CP model instance from the given
 -- target machine, function graph, and pattern matches.
-mkHighLevelModelNoOp
+mkHighLevelModel
   :: Function
   -> TargetMachine
   -> [PatternMatch]
-  -> HighLevelModelNoOp
-mkHighLevelModelNoOp function target matches =
-  HighLevelModelNoOp
-    { hlNoOpFunctionParams = mkHLFunctionParams function target
-    , hlNoOpMachineParams = mkHLMachineParams target
-    , hlNoOpMatchParams = mkHLMatchParamsNoOpList target matches
-    }
-
--- | Creates a 'HighLevelModelWOp' from a a 'HighLevelModelNoOp'.
-mkHighLevelModelWOp
-  :: HighLevelModelNoOp
-  -> [PatternMatch]
-  -> HighLevelModelWOp
-mkHighLevelModelWOp model matches =
-  HighLevelModelWOp
-    { hlWOpFunctionParams = hlNoOpFunctionParams model
-    , hlWOpMachineParams = hlNoOpMachineParams model
-    , hlWOpMatchParams =
-        mkHLMatchParamsWOpList matches (hlNoOpMatchParams model)
+  -> HighLevelModel
+mkHighLevelModel function target matches =
+  HighLevelModel
+    { hlFunctionParams = mkHLFunctionParams function target
+    , hlMachineParams = mkHLMachineParams target
+    , hlMatchParams = mkHLMatchParamsList target matches
     }
 
 mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
@@ -91,7 +74,8 @@ mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
       entry_block = fromJust $ osEntryBlockNode $ functionOS function
       all_ns = getAllNodes graph
-      nodeIDsByType f = getNodeIDs $ filter f all_ns
+      nodeIDsByType f = map getNodeID $
+                        filter f all_ns
       domsets = computeDomSets graph entry_block
       getExecFreq n = fromJust $
                       lookup (nameOfBlock $ getNodeType n)
@@ -168,7 +152,7 @@ mkHLFunctionParams function target =
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
-       , hlFunInterchangeableData = map getNodeIDs interch_data
+       , hlFunInterchangeableData = map (nub . map getNodeID) interch_data
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = entry_block
@@ -189,30 +173,46 @@ mkHLMachineParams target =
     , hlMachineLocations = map locID (tmLocations target)
     }
 
--- | First constructs a 'HighLevelMatchParamsNoOp' for each
--- 'PatternMatch'.
-mkHLMatchParamsNoOpList
+-- | First constructs a 'HighLevelMatchParams' for each 'PatternMatch'.
+mkHLMatchParamsList
   :: TargetMachine
   -> [PatternMatch]
-  -> [HighLevelMatchParamsNoOp]
-mkHLMatchParamsNoOpList target matches =
-  map (mkHLMatchParamsNoOp target) matches
+  -> [HighLevelMatchParams]
+mkHLMatchParamsList target matches =
+  fst $
+  foldr ( \p (ps, oid) ->
+            let (new_p, next_oid) = mkHLMatchParams target p oid
+            in ((new_p:ps), next_oid)
+        )
+        ([], 0)
+        matches
 
-mkHLMatchParamsNoOp :: TargetMachine -> PatternMatch -> HighLevelMatchParamsNoOp
-mkHLMatchParamsNoOp target match =
+mkHLMatchParams
+  :: TargetMachine
+  -> PatternMatch
+  -> OperandID
+     -- ^ The next operand ID to use in processing 'Match'.
+  -> (HighLevelMatchParams, OperandID)
+     -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
+     -- processing the next 'Match'.
+mkHLMatchParams target match oid =
   let instr = fromJust $ findInstruction (tmInstructions target)
                                          (pmInstrID match)
       pat = fromJust $ findInstrPattern (instrPatterns instr)
                                         (pmPatternID match)
-  in processMatch instr pat (pmMatch match) (pmMatchID match)
+  in processMatch instr pat (pmMatch match) (pmMatchID match) oid
 
 processMatch
   :: Instruction
   -> InstrPattern
   -> Match NodeID
   -> MatchID
-  -> HighLevelMatchParamsNoOp
-processMatch instr pat match mid =
+  -> OperandID
+     -- ^ The next operand ID to use in processing 'Match'.
+  -> (HighLevelMatchParams, OperandID)
+     -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
+     -- processing the next 'Match'.
+processMatch instr pat match mid oid =
   let graph = osGraph $ patOS pat
       all_ns = getAllNodes graph
       o_ns = filter isOperationNode all_ns
@@ -249,76 +249,95 @@ processMatch instr pat match mid =
                             ) $
                         d_def_by_phi_ns
       entry_b_node_id = osEntryBlockNode $ patOS pat
-      i_props = instrProps instr
-      emit_maps = computeEmitStrNodeMaps (patEmitString pat) match
-      valid_locs = map (\(pn, ls) -> (head $ findFNInMatch match pn, ls)) $
-                   osValidLocations $ patOS pat
+      pn2oid_maps = zip (nub $ map getNodeID d_ns) [oid..]
+      oid2fn_maps = map (\(pn, o) -> (o, findFNInMatch match pn)) $
+                    pn2oid_maps
+      next_oid = oid + (toOperandID $ length pn2oid_maps)
+      getOpIDForPatternDataNodeID n = fromJust $ lookup n pn2oid_maps
+      getOpIDForPatternDataNode = getOpIDForPatternDataNodeID . getNodeID
+      getOpIDsForPatternDataNodes ns = map getOpIDForPatternDataNode ns
       getMappedFNs pns =
-        let fns = findFNsInMatch match pns
+        let fns = findFNsInMatch match $
+                  map getNodeID pns
             getSingleFN ns = if length ns == 1
                              then head ns
                              else if length ns == 0
                                   then error $ "processMatch: no mapping"
                                   else error $ "processMatch: multiple mappings"
         in map getSingleFN fns
-  in HighLevelMatchParamsNoOp
-       { hlNoOpMatchInstructionID = instrID instr
-       , hlNoOpMatchPatternID = patID pat
-       , hlNoOpMatchID = mid
-       , hlNoOpMatchOperationsCovered = getMappedFNs (getNodeIDs o_ns)
-       , hlNoOpMatchDataDefined = getMappedFNs (getNodeIDs d_def_ns)
-       , hlNoOpMatchDataUsed = getMappedFNs (getNodeIDs d_use_ns)
-       , hlNoOpMatchExternalData = getMappedFNs (getNodeIDs d_ext_ns)
-       , hlNoOpMatchInternalData = getMappedFNs (getNodeIDs d_int_ns)
-       , hlNoOpMatchValidValueLocs = valid_locs
-       , hlNoOpMatchEntryBlock =
-           maybe Nothing (Just . head . findFNInMatch match) entry_b_node_id
-       , hlNoOpMatchSpannedBlocks =
-           if isJust entry_b
-           then getMappedFNs (getNodeIDs b_ns)
-           else []
-       , hlNoOpMatchConsumedBlocks = getMappedFNs (getNodeIDs b_ns_consumed)
-       , hlNoOpMatchConstraints =
-           map ( (replaceThisMatchExprInC mid) .
-                 (replaceNodeIDsFromP2FInC match)
-               ) $
-           osConstraints $ patOS pat
-       , hlNoOpMatchIsPhiInstruction = isInstructionPhi $ instr
-       , hlNoOpMatchIsCopyInstruction = isInstructionCopy $ instr
-       , hlNoOpMatchIsInactiveInstruction = isInstructionInactive $ instr
-       , hlNoOpMatchIsNullInstruction = isInstructionNull instr
-       , hlNoOpMatchHasControlFlow = length c_ns > 0
-       , hlNoOpMatchCodeSize = instrCodeSize i_props
-       , hlNoOpMatchLatency = instrLatency i_props
-       , hlNoOpMatchDataUsedByPhis =
-           zip (getMappedFNs $ getNodeIDs b_use_by_phi_ns)
-               (getMappedFNs $ getNodeIDs d_use_by_phi_ns)
-       , hlNoOpMatchDataDefinedByPhis =
-           zip (getMappedFNs $ getNodeIDs b_def_by_phi_ns)
-               (getMappedFNs $ getNodeIDs d_def_by_phi_ns)
-       , hlNoOpMatchEmitStrNodeMaplist = emit_maps
-       }
+      valid_locs = map (\(pn, ls) -> (getOpIDForPatternDataNodeID pn, ls)) $
+                   osValidLocations $ patOS pat
+      i_props = instrProps instr
+  in ( HighLevelMatchParams
+         { hlMatchInstructionID = instrID instr
+         , hlMatchPatternID = patID pat
+         , hlMatchID = mid
+         , hlOperandNodeMaps = oid2fn_maps
+         , hlMatchOperationsCovered =  nub $ getMappedFNs o_ns
+         , hlMatchOperandsDefined = nub $ getOpIDsForPatternDataNodes d_def_ns
+         , hlMatchOperandsUsed = nub $ getOpIDsForPatternDataNodes d_use_ns
+         , hlMatchExternalOperands = nub $ getOpIDsForPatternDataNodes d_ext_ns
+         , hlMatchInternalOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
+         , hlMatchValidValueLocs = valid_locs
+         , hlMatchEntryBlock =
+             maybe Nothing (Just . head . findFNInMatch match) entry_b_node_id
+         , hlMatchSpannedBlocks =
+             if isJust entry_b
+             then nub $ getMappedFNs b_ns
+             else []
+         , hlMatchConsumedBlocks = nub $ getMappedFNs b_ns_consumed
+         , hlMatchConstraints =
+             map ( (replaceThisMatchExprInC mid) .
+                   (replaceNodeIDsFromP2FInC match) .
+                   (replaceNodeIDsWithOperandIDs pn2oid_maps)
+                 ) $
+             osConstraints $ patOS pat
+         , hlMatchIsPhiInstruction = isInstructionPhi $ instr
+         , hlMatchIsCopyInstruction = isInstructionCopy $ instr
+         , hlMatchIsInactiveInstruction = isInstructionInactive $ instr
+         , hlMatchIsNullInstruction = isInstructionNull instr
+         , hlMatchHasControlFlow = length c_ns > 0
+         , hlMatchCodeSize = instrCodeSize i_props
+         , hlMatchLatency = instrLatency i_props
+         , hlMatchOperandsUsedByPhis =
+             zip (getMappedFNs b_use_by_phi_ns)
+                 (getOpIDsForPatternDataNodes d_use_by_phi_ns)
+         , hlMatchOperandsDefinedByPhis =
+             zip (getMappedFNs b_def_by_phi_ns)
+                 (getOpIDsForPatternDataNodes d_def_by_phi_ns)
+         , hlMatchEmitStrNodeMaplist =
+             computeEmitStrNodeMaps (patEmitString pat) pn2oid_maps match
+         }
+       , next_oid
+       )
 
 -- | Computes the emit string node ID mappings, which is done as follows: if the
--- assembly string part contains a node ID, take the node ID from the
--- corresponding node in the function graph. Otherwise use 'Nothing'.
+-- assembly string part contains a node ID, take the corresponding operand ID if
+-- such a mapping exist, or the node ID from the corresponding node in the
+-- function graph. Otherwise use 'Nothing'.
 computeEmitStrNodeMaps
   :: EmitStringTemplate
+  -> [(NodeID, OperandID)]
   -> Match NodeID
-  -> [[Maybe NodeID]]
-computeEmitStrNodeMaps (EmitStringTemplate ts) m =
+  -> [[Maybe (Either OperandID NodeID)]]
+computeEmitStrNodeMaps (EmitStringTemplate ts) pn2oid_maps m =
   map (map f) ts
   where f (ESVerbatim            _) = Nothing
-        f (ESLocationOfValueNode n) = getSingleFN n
-        f (ESIntConstOfValueNode n) = getSingleFN n
-        f (ESNameOfBlockNode     n) = getSingleFN n
-        f (ESBlockOfValueNode    n) = getSingleFN n
+        f (ESLocationOfValueNode n) = Just $ getOperandOrNodeID n
+        f (ESIntConstOfValueNode n) = Just $ getOperandOrNodeID n
+        f (ESNameOfBlockNode     n) = Just $ getOperandOrNodeID n
+        f (ESBlockOfValueNode    n) = Just $ getOperandOrNodeID n
         f (ESLocalTemporary      _) = Nothing
-        f (ESFuncOfCallNode      n) = getSingleFN n
+        f (ESFuncOfCallNode      n) = Just $ getOperandOrNodeID n
+        getOperandOrNodeID pn =
+          let oid = lookup pn pn2oid_maps
+          in if isJust oid
+             then Left $ fromJust oid
+             else Right $ getSingleFN pn
         getSingleFN pn =
           let fn = findFNInMatch m pn
           in if length fn == 1
-             then Just $ head fn
+             then head fn
              else if length fn == 0
                   then error "computeEmitStrNodeMaps: no mapping"
                   else error "computeEmitStrNodeMaps: multiple mappings"
@@ -349,126 +368,16 @@ replaceNodeIDsFromP2FInC m c =
       new_r = def_r { mkNodeExprF = mkNodeExpr }
   in apply new_r c
 
--- | First constructs a 'HighLevelMatchParamsWOp' for each
--- 'HighLevelMatchParamsNoOp', and then merges 'HighLevelMatchParamsWOp' that
--- are derived from the same pattern graph and cover the same operations but use
--- different value nodes as input. 'HighLevelMatchParamsWOp' that cover no
--- operations are never considered to be similar.
-mkHLMatchParamsWOpList
-  :: [PatternMatch]
-  -> [HighLevelMatchParamsNoOp]
-  -> [HighLevelMatchParamsWOp]
-mkHLMatchParamsWOpList matches params =
-  let getMatch mid =
-        let match = filter (\m -> pmMatchID m == mid) matches
-        in if length match == 1
-           then head match
-           else error $ "mkHighLevelModelWOp: no or multiple PatternMatches " ++
-                        "found with match ID " ++ pShow mid
-      f (p1, _) (p2, _) =
-        let iid1 = hlWOpMatchInstructionID p1
-            iid2 = hlWOpMatchInstructionID p2
-            pid1 = hlWOpMatchPatternID p1
-            pid2 = hlWOpMatchPatternID p2
-            mid1 = hlWOpMatchID p1
-            mid2 = hlWOpMatchID p2
-            covs1 = hlWOpMatchOperationsCovered p1
-            covs2 = hlWOpMatchOperationsCovered p2
-        in if iid1 == iid2 &&
-              pid1 == pid2 &&
-              length covs1 > 0 &&
-              covs1 === covs2
-           then EQ
-           else compare mid1 mid2
-      new_params = fst $
-                   foldl ( \(ps, next_oid) p ->
-                           let (new_p, next_oid') =
-                                 mkHLMatchParamsWOp p next_oid
-                           in (ps ++ [new_p], next_oid')
-                         )
-                         ([], 0)
-                         params
-      new_params_w_matches =
-        map (\p -> (p, getMatch $ hlWOpMatchID p)) new_params
-      merged_params = map mergeSimilarHighLevelMatchParamsWOps $
-                      groupBy (\p1 p2 -> f p1 p2 == EQ) $
-                      sortBy f new_params_w_matches
-  in merged_params
-
-mkHLMatchParamsWOp
-  :: HighLevelMatchParamsNoOp
-  -> OperandID
-     -- ^ The next operand ID to use when processing this
-     -- 'HighLevelMatchParamsNoOp'.
-  -> (HighLevelMatchParamsWOp, OperandID)
-     -- ^ The created 'HighLevelMatchParamsWOp' and the 'OperandID' to use when
-     -- processing the next group.
-mkHLMatchParamsWOp p oid =
-  let value_nodes = nub $ hlNoOpMatchDataDefined p ++ hlNoOpMatchDataUsed p
-      op_node_maps = zip [oid..] $ map (\n -> [n]) value_nodes
-      getOpIDFromNodeID = fromJust . findOpIDFromNodeID op_node_maps
-  in ( HighLevelMatchParamsWOp
-         { hlWOpMatchInstructionID = hlNoOpMatchInstructionID p
-         , hlWOpMatchPatternID = hlNoOpMatchPatternID p
-         , hlWOpMatchID = hlNoOpMatchID p
-         , hlWOpOperandNodeMaps = op_node_maps
-         , hlWOpMatchOperationsCovered = hlNoOpMatchOperationsCovered p
-         , hlWOpMatchOperandsDefined =
-             map getOpIDFromNodeID $ hlNoOpMatchDataDefined p
-         , hlWOpMatchOperandsUsed =
-             map getOpIDFromNodeID $ hlNoOpMatchDataUsed p
-         , hlWOpMatchExternalOperands =
-             map getOpIDFromNodeID $ hlNoOpMatchExternalData p
-         , hlWOpMatchInternalOperands =
-             map getOpIDFromNodeID $ hlNoOpMatchInternalData p
-         , hlWOpMatchValidValueLocs =
-             map (\(n, ls) -> (getOpIDFromNodeID n, ls)) $
-             hlNoOpMatchValidValueLocs p
-         , hlWOpMatchEntryBlock = hlNoOpMatchEntryBlock p
-         , hlWOpMatchSpannedBlocks = hlNoOpMatchSpannedBlocks p
-         , hlWOpMatchConsumedBlocks = hlNoOpMatchConsumedBlocks p
-         , hlWOpMatchCodeSize = hlNoOpMatchCodeSize p
-         , hlWOpMatchLatency = hlNoOpMatchLatency p
-         , hlWOpMatchConstraints =
-             map (replaceNodeIDsWithOperandIDs op_node_maps)
-                 (hlNoOpMatchConstraints p)
-         , hlWOpMatchIsPhiInstruction = hlNoOpMatchIsPhiInstruction p
-         , hlWOpMatchIsCopyInstruction = hlNoOpMatchIsCopyInstruction p
-         , hlWOpMatchIsInactiveInstruction = hlNoOpMatchIsInactiveInstruction p
-         , hlWOpMatchIsNullInstruction = hlNoOpMatchIsNullInstruction p
-         , hlWOpMatchHasControlFlow = hlNoOpMatchHasControlFlow p
-         , hlWOpMatchOperandsUsedByPhis =
-             map (\(b, v) -> (b, getOpIDFromNodeID v))
-                 (hlNoOpMatchDataUsedByPhis p)
-         , hlWOpMatchOperandsDefinedByPhis =
-             map (\(b, v) -> (b, getOpIDFromNodeID v))
-                 (hlNoOpMatchDataDefinedByPhis p)
-         , hlWOpMatchEmitStrNodeMaplist =
-             map ( map ( \n ->
-                        if isJust n
-                        then let oid' = findOpIDFromNodeID op_node_maps $
-                                        fromJust n
-                             in Just $ if isJust oid'
-                                       then Left $ fromJust oid'
-                                       else Right $ fromJust n
-                        else Nothing
-                      )
-                 )
-                 (hlNoOpMatchEmitStrNodeMaplist p)
-         }
-     , oid + (toOperandID $ length op_node_maps)
-     )
-
 -- | Converts any node IDs appearing in a constraint that has an operand ID with
 -- the corresponding operand ID.
 replaceNodeIDsWithOperandIDs
-  :: [(OperandID, [NodeID])]
+  :: [(NodeID, OperandID)]
   -> Constraint
   -> Constraint
 replaceNodeIDsWithOperandIDs maps c =
   let def_r = mkDefaultReconstructor
       mkNodeExpr _ expr@(ANodeIDExpr nid) =
-        let oid = findOpIDFromNodeID maps nid
+        let oid = lookup nid maps
         in if isJust oid
            then NodeSelectedForOperandExpr $ AnOperandIDExpr $ fromJust oid
            else expr
@@ -476,48 +385,9 @@ replaceNodeIDsWithOperandIDs maps c =
       new_r = def_r { mkNodeExprF = mkNodeExpr }
   in apply new_r c
 
-findOpIDFromNodeID :: [(OperandID, [NodeID])] -> NodeID -> Maybe OperandID
-findOpIDFromNodeID maps nid =
-  let ms = filter (elem nid . snd) maps
-  in if length ms > 0
-     then Just $ fst $ head ms
-     else Nothing
-
-mergeSimilarHighLevelMatchParamsWOps
-  :: [(HighLevelMatchParamsWOp, PatternMatch)]
-  -> HighLevelMatchParamsWOp
-     -- ^ The created 'HighLevelMatchParamsWOp' and the 'OperandID' to use when
-     -- processing the next group.
-mergeSimilarHighLevelMatchParamsWOps pps =
-  let compareTuples (p1, _) (p2, _) =
-        compare (hlWOpMatchID p1) (hlWOpMatchID p2)
-      findNode pm1 fn1 pm2 fns =
-        let m1 = pmMatch pm1
-            m2 = pmMatch pm2
-            pn = fromJust $ findPNInMatch m1 fn1
-            fn2 = head $ findFNInMatch m2 pn
-        in if [fn2] `elem` fns
-           then [fn2]
-           else []
-      mergeTuples (p, m) (p', m') =
-        let maps = hlWOpOperandNodeMaps p
-            maps' = hlWOpOperandNodeMaps p'
-            ns' = map snd maps'
-            new_maps = map ( \(oid, ns) ->
-                             (oid, nub $ ns ++ findNode m (head ns) m' ns')
-                           )
-                           maps
-        in ( p { hlWOpOperandNodeMaps = new_maps }
-           , m
-           )
-      sorted_pps = sortBy compareTuples pps
-      pp = head sorted_pps
-      pps_wo_pp = filter ((EQ /=) . compareTuples pp) pps
-  in fst $ foldl mergeTuples pp pps_wo_pp
-
 -- | Computes the corresponding low-level version of a high-level CP model
 -- instance.
-lowerHighLevelModel :: HighLevelModelWOp -> ArrayIndexMaplists -> LowLevelModel
+lowerHighLevelModel :: HighLevelModel -> ArrayIndexMaplists -> LowLevelModel
 lowerHighLevelModel model ai_maps =
   let getAIForOperationNodeID nid =
         fromJust $ findAIWithOperationNodeID ai_maps nid
@@ -531,21 +401,21 @@ lowerHighLevelModel model ai_maps =
         map snd ( sortBy (\(ai1, _) (ai2, _) -> compare ai1 ai2)
                          (pairWithAI get_ai_f nids)
                 )
-      f_params = hlWOpFunctionParams model
-      tm_params = hlWOpMachineParams model
-      m_params = sortByAI (getAIForMatchID . hlWOpMatchID)
-                          (hlWOpMatchParams model)
+      f_params = hlFunctionParams model
+      tm_params = hlMachineParams model
+      m_params = sortByAI (getAIForMatchID . hlMatchID)
+                          (hlMatchParams model)
       operands = sortByAI (getAIForOperandID . fst)
-                          (concatMap (hlWOpOperandNodeMaps) m_params)
+                          (concatMap (hlOperandNodeMaps) m_params)
       blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
       in_def_edges =
         concatMap ( \m ->
                     concatMap ( \b ->
-                                if hlWOpMatchIsPhiInstruction m
+                                if hlMatchIsPhiInstruction m
                                 then let ops = map snd $
                                                filter ((==) b . fst) $
-                                               hlWOpMatchOperandsUsedByPhis m
-                                     in map (\o -> (hlWOpMatchID m, b, o)) ops
+                                               hlMatchOperandsUsedByPhis m
+                                     in map (\o -> (hlMatchID m, b, o)) ops
                                 else []
                               ) $
                     blocks
@@ -554,11 +424,11 @@ lowerHighLevelModel model ai_maps =
       out_def_edges =
         concatMap ( \m ->
                     concatMap ( \b ->
-                                if hlWOpMatchIsPhiInstruction m
+                                if hlMatchIsPhiInstruction m
                                 then let ops = map snd $
                                                filter ((==) b . fst) $
-                                               hlWOpMatchOperandsDefinedByPhis m
-                                     in map (\o -> (hlWOpMatchID m, b, o)) ops
+                                               hlMatchOperandsDefinedByPhis m
+                                     in map (\o -> (hlMatchID m, b, o)) ops
                                 else []
                               ) $
                     blocks
@@ -570,9 +440,9 @@ lowerHighLevelModel model ai_maps =
       m_valid_locs =
         concatMap ( \m ->
                     concatMap ( \(o, ls) ->
-                                map (\l -> (hlWOpMatchID m, o, l)) ls
+                                map (\l -> (hlMatchID m, o, l)) ls
                               ) $
-                    hlWOpMatchValidValueLocs m
+                    hlMatchValidValueLocs m
                   ) $
         m_params
   in LowLevelModel
@@ -611,16 +481,16 @@ lowerHighLevelModel model ai_maps =
        , llNumOperands = toInteger $ length $ map fst $ operands
        , llOperandAlternatives = map (map getAIForDatumNodeID . snd) operands
        , llMatchOperationsCovered =
-           map (map getAIForOperationNodeID . hlWOpMatchOperationsCovered) $
+           map (map getAIForOperationNodeID . hlMatchOperationsCovered) $
            m_params
        , llMatchOperandsDefined =
-           map (map getAIForOperandID . hlWOpMatchOperandsDefined) m_params
+           map (map getAIForOperandID . hlMatchOperandsDefined) m_params
        , llMatchOperandsUsed =
-           map (map getAIForOperandID . hlWOpMatchOperandsUsed) m_params
+           map (map getAIForOperandID . hlMatchOperandsUsed) m_params
        , llMatchExternalOperands =
-           map (map getAIForOperandID . hlWOpMatchExternalOperands) m_params
+           map (map getAIForOperandID . hlMatchExternalOperands) m_params
        , llMatchInternalOperands =
-           map (map getAIForOperandID . hlWOpMatchInternalOperands) m_params
+           map (map getAIForOperandID . hlMatchInternalOperands) m_params
        , llMatchValidValueLocs =
            map ( \(m, o, l) -> ( getAIForMatchID m
                                , getAIForOperandID o
@@ -630,12 +500,12 @@ lowerHighLevelModel model ai_maps =
            m_valid_locs
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID)) $
-           map hlWOpMatchEntryBlock m_params
+           map hlMatchEntryBlock m_params
        , llMatchSpannedBlocks = map (map getAIForBlockNodeID) $
-                                map hlWOpMatchSpannedBlocks $
+                                map hlMatchSpannedBlocks $
                                 m_params
        , llMatchConsumedBlocks = map (map getAIForBlockNodeID) $
-                                 map hlWOpMatchConsumedBlocks $
+                                 map hlMatchConsumedBlocks $
                                  m_params
        , llMatchInputDefinitionEdges =
            map ( \(m, b, o) -> ( getAIForMatchID m
@@ -651,30 +521,30 @@ lowerHighLevelModel model ai_maps =
                                )
                ) $
            out_def_edges
-       , llMatchCodeSizes = map hlWOpMatchCodeSize m_params
-       , llMatchLatencies = map hlWOpMatchLatency m_params
+       , llMatchCodeSizes = map hlMatchCodeSize m_params
+       , llMatchLatencies = map hlMatchLatency m_params
        , llMatchPhiInstructions =
-           map (getAIForMatchID . hlWOpMatchID) $
-           filter hlWOpMatchIsPhiInstruction $
+           map (getAIForMatchID . hlMatchID) $
+           filter hlMatchIsPhiInstruction $
            m_params
        , llMatchCopyInstructions =
-           map (getAIForMatchID . hlWOpMatchID) $
-           filter hlWOpMatchIsCopyInstruction $
+           map (getAIForMatchID . hlMatchID) $
+           filter hlMatchIsCopyInstruction $
            m_params
        , llMatchInactiveInstructions =
-           map (getAIForMatchID . hlWOpMatchID) $
-           filter hlWOpMatchIsInactiveInstruction $
+           map (getAIForMatchID . hlMatchID) $
+           filter hlMatchIsInactiveInstruction $
            m_params
        , llMatchNullInstructions =
-           map (getAIForMatchID . hlWOpMatchID) $
-           filter hlWOpMatchIsNullInstruction $
+           map (getAIForMatchID . hlMatchID) $
+           filter hlMatchIsNullInstruction $
            m_params
        , llMatchConstraints =
            map (map (replaceIDsWithArrayIndexes ai_maps)) $
-           map hlWOpMatchConstraints $
+           map hlMatchConstraints $
            m_params
-       , llMatchPatternIDs = map hlWOpMatchPatternID m_params
-       , llMatchInstructionIDs = map hlWOpMatchInstructionID m_params
+       , llMatchPatternIDs = map hlMatchPatternID m_params
+       , llMatchInstructionIDs = map hlMatchInstructionID m_params
        , llTMID = hlMachineID tm_params
        }
 

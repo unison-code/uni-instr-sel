@@ -12,16 +12,22 @@ Main authors:
 module Language.InstrSel.TargetMachines.Transformations
   ( copyExtend
   , lowerPointers
+  , alternativeExtend
   )
 where
 
 import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
+import Language.InstrSel.Functions
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import qualified Language.InstrSel.OpStructures.Transformations as OS
   ( lowerPointers )
+import Language.InstrSel.TargetMachines.PatternMatching
+import Language.InstrSel.Utils
+  ( groupBy )
+import Language.InstrSel.Utils.Natural
 
 import Data.Maybe
   ( fromJust
@@ -121,3 +127,77 @@ lowerPointers tm =
         i { instrPatterns = map lowerPat (instrPatterns i) }
       new_instrs = map lowerInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
+
+-- | For each value node that is copied multiple times, an additional mapping
+-- will be inserted for each pattern value node that is mapped to one of the
+-- copied values.
+alternativeExtend
+  :: Function
+  -> Natural
+     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+  -> PatternMatchset
+  -> PatternMatchset
+alternativeExtend f limit p =
+  let g = osGraph $ functionOS f
+      v_ns = filter isValueNode $ getAllNodes g
+      copy_related_vs =
+        map (map getNodeID) $
+        concat $
+        map ( \n ->
+              let es = getDtFlowOutEdges g n
+                  copies = filter isCopyNode $ map (getTargetNode g) es
+                  cp_vs = map ( \n' ->
+                                let es' = getDtFlowOutEdges g n'
+                                in if length es' == 1
+                                   then getTargetNode g (head es')
+                                   else if length es' == 0
+                                        then error $
+                                             "alternativeExtend: " ++
+                                             show n' ++ " has no data-flow " ++
+                                             "edges"
+                                        else error $
+                                             "alternativeExtend: " ++
+                                             show n' ++ " has multiple " ++
+                                             "data-flow edges"
+                              ) $
+                          copies
+                  grouped_vs = filter ((> 1) . length) $
+                               groupBy ( \v1 v2 ->
+                                         getDataTypeOfValueNode v1
+                                         ==
+                                         getDataTypeOfValueNode v2
+                                       ) $
+                               cp_vs
+              in grouped_vs
+            ) $
+        v_ns
+  in foldr (insertAlternativeMappings limit) p copy_related_vs
+
+insertAlternativeMappings
+  :: Natural
+     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+  -> [NodeID]
+  -> PatternMatchset
+  -> PatternMatchset
+insertAlternativeMappings limit vs p =
+  let processPatternMatch m = m { pmMatch = processMatch $ pmMatch m }
+      processMatch m =
+        toMatch $
+        concatMap processMapping $
+        fromMatch m
+      processMapping m =
+        let fn = fNode m
+            pn = pNode m
+        in if fn `elem` vs
+           then let int_limit = fromIntegral limit
+                    num_to_take = if int_limit == 0 || int_limit > length vs
+                                  then length vs
+                                  else int_limit
+                    alts = take num_to_take $
+                           filter (/= fn) vs
+                    alt_maps = map (\n -> Mapping { fNode = n, pNode = pn }) $
+                               alts
+                in (m:alt_maps)
+           else [m]
+      new_matches = map processPatternMatch $ pmMatches p
+  in p { pmMatches = new_matches }

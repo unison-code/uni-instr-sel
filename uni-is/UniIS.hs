@@ -152,19 +152,11 @@ parseArgs =
                  &= help ( "Dumps useful information about the low-level CP " ++
                            "solution instance."
                          )
-             , MakeHighLevelCPModelNoOp
-                 &= name "construct-hl-cp-model-no-op"
+             , MakeHighLevelCPModel
+                 &= name "construct-hl-cp-model"
                  &= explicit
-                 &= help ( "Constructs a high-level CP model instance " ++
-                           "without operands from the " ++
-                           "given function graph and pattern matchset ."
-                         )
-             , MakeHighLevelCPModelWOp
-                 &= name "construct-hl-cp-model-w-op"
-                 &= explicit
-                 &= help ( "Constructs a high-level CP model instance with " ++
-                           "operands from the high-level CP model without" ++
-                           "operands and pattern matchset ."
+                 &= help ( "Constructs a high-level CP model instance from " ++
+                           "the given function graph and pattern matchset ."
                          )
              , MakeAssemblyCode
                  &= name "generate-asm"
@@ -207,11 +199,11 @@ parseArgs =
                  &= help ( "Combines data nodes in the given function that " ++
                            "represent the same constant."
                          )
-             , AlternativeExtendFunctionGraph
-                 &= name "alternative-extend-fun"
+             , AlternativeExtendPatternMatchset
+                 &= name "alternative-extend-pat"
                  &= explicit
-                 &= help ( "Inserts alternative edges for operations that " ++
-                           "could take its input values from multiple " ++
+                 &= help ( "Inserts alternative mappings for value nodes " ++
+                           "that could take its value from multiple " ++
                            "copy-related value nodes."
                          )
              , RaiseLowLevelCPSolution
