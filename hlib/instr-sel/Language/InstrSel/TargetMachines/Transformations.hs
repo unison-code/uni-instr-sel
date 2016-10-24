@@ -24,6 +24,7 @@ import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import qualified Language.InstrSel.OpStructures.Transformations as OS
   ( lowerPointers )
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils
   ( groupBy )
@@ -133,11 +134,12 @@ lowerPointers tm =
 -- copied values.
 alternativeExtend
   :: Function
+  -> TargetMachine
   -> Natural
      -- ^ Maximum number of alternatives to insert. 0 means no limit.
   -> PatternMatchset
   -> PatternMatchset
-alternativeExtend f limit p =
+alternativeExtend f t limit p =
   let g = osGraph $ functionOS f
       v_ns = filter isValueNode $ getAllNodes g
       copy_related_vs =
@@ -171,33 +173,48 @@ alternativeExtend f limit p =
               in grouped_vs
             ) $
         v_ns
-  in foldr (insertAlternativeMappings limit) p copy_related_vs
+  in foldr (insertAlternativeMappings t limit) p copy_related_vs
 
 insertAlternativeMappings
-  :: Natural
+  :: TargetMachine
+  -> Natural
      -- ^ Maximum number of alternatives to insert. 0 means no limit.
   -> [NodeID]
   -> PatternMatchset
   -> PatternMatchset
-insertAlternativeMappings limit vs p =
-  let processPatternMatch m = m { pmMatch = processMatch $ pmMatch m }
-      processMatch m =
+insertAlternativeMappings t limit vs pm =
+  let processPatternMatch m =
+        let iid = pmInstrID m
+            pid = pmPatternID m
+            p = do instr <- findInstruction (tmInstructions t) iid
+                   findInstrPattern (instrPatterns instr) pid
+        in if isJust p
+           then m { pmMatch = processMatch (fromJust p) (pmMatch m) }
+           else error $ "insertAlternativeMappings: no instruction with ID " ++
+                        pShow iid ++ " with pattern graph with ID " ++ pShow pid
+      processMatch p m =
         toMatch $
-        concatMap processMapping $
+        concatMap (processMapping p) $
         fromMatch m
-      processMapping m =
-        let fn = fNode m
-            pn = pNode m
-        in if fn `elem` vs
+      processMapping p m =
+        let fn_id = fNode m
+            pn_id = pNode m
+            g = osGraph $ patOS p
+            pn = let n = findNodesWithNodeID g pn_id
+                 in if length n > 0
+                    then head n
+                    else error $ "insertAlternativeMappings: no pattern " ++
+                                 "node with ID " ++ pShow pn_id
+        in if fn_id `elem` vs && not (hasAnyPredecessors g pn)
            then let int_limit = fromIntegral limit
                     num_to_take = if int_limit == 0 || int_limit > length vs
                                   then length vs
                                   else int_limit
                     alts = take num_to_take $
-                           filter (/= fn) vs
-                    alt_maps = map (\n -> Mapping { fNode = n, pNode = pn }) $
-                               alts
+                           filter (/= fn_id) vs
+                    alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
+                                   alts
                 in (m:alt_maps)
            else [m]
-      new_matches = map processPatternMatch $ pmMatches p
-  in p { pmMatches = new_matches }
+      new_matches = map processPatternMatch $ pmMatches pm
+  in pm { pmMatches = new_matches }

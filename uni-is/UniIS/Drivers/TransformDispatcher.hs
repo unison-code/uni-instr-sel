@@ -23,6 +23,8 @@ import qualified UniIS.Drivers.TransformCPSolution as TransformCPSolution
 import qualified UniIS.Drivers.TransformPatternMatchset
   as TransformPatternMatchset
 
+import Language.InstrSel.TargetMachines.PatternMatching
+  ( PatternMatchset (..) )
 import Language.InstrSel.Utils.Natural
 
 
@@ -58,8 +60,9 @@ dispatch a opts
          f <- loadFromJson f_content
          p_content <- loadPatternMatchsetFileContent opts
          p <- loadFromJson p_content
+         t <- loadTargetMachine $ pmTarget p
          limit <- getAltInsertLimit opts
-         TransformPatternMatchset.run a f p (toNatural limit)
+         TransformPatternMatchset.run a f t p (toNatural limit)
   | a `elem` [LowerHighLevelCPModel] =
       do m_content <- loadModelFileContent opts
          ai_maps <- loadArrayIndexMaplistsFromJson opts

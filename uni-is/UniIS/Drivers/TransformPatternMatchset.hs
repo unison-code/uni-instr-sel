@@ -15,6 +15,8 @@ where
 
 import UniIS.Drivers.Base
 import Language.InstrSel.Functions
+import Language.InstrSel.TargetMachines
+  ( TargetMachine )
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset )
 import Language.InstrSel.TargetMachines.Transformations
@@ -33,12 +35,14 @@ import Language.InstrSel.Utils.Natural
 
 run :: TransformAction
     -> Function
+    -> TargetMachine
     -> PatternMatchset
     -> Natural
     -> IO [Output]
 
-run AlternativeExtendPatternMatchset f p limit =
-  do let new_p = alternativeExtend f limit p
+run AlternativeExtendPatternMatchset f t p limit =
+  do let new_p = alternativeExtend f t limit p
      return [toOutput $ toJson new_p]
 
-run _ _ _ _ = reportErrorAndExit "TransformPatternMatchset: unsupported action"
+run _ _ _ _ _ =
+  reportErrorAndExit "TransformPatternMatchset: unsupported action"
