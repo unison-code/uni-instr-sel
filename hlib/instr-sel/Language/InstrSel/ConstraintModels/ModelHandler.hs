@@ -180,9 +180,9 @@ mkHLMatchParamsList
   -> [HighLevelMatchParams]
 mkHLMatchParamsList target matches =
   fst $
-  foldr ( \p (ps, oid) ->
+  foldl ( \(ps, oid) p ->
             let (new_p, next_oid) = mkHLMatchParams target p oid
-            in ((new_p:ps), next_oid)
+            in (ps ++ [new_p], next_oid)
         )
         ([], 0)
         matches
