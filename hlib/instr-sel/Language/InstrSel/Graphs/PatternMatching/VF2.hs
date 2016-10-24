@@ -19,8 +19,6 @@ import Data.List
   ( intersect
   , nub
   )
-import Data.Maybe
-  ( fromJust )
 
 
 
@@ -99,7 +97,13 @@ getCandidates fg pg st =
 -- | From a mapping state and a pattern node, get the corresponding function
 -- node. It is assumed that there is always such a mapping.
 getFNFromState :: [Mapping Node] -> Node -> Node
-getFNFromState st pn = fromJust $ findFNInMapping st pn
+getFNFromState st pn =
+  let fn = findFNInMapping st pn
+  in if length fn == 1
+     then head fn
+     else if length fn == 0
+          then error "getFNFromState: no mapping"
+          else error "getFNFromState: multiple mappings"
 
 -- | Checks that the node mapping is feasible by comparing their semantics and
 -- syntax.

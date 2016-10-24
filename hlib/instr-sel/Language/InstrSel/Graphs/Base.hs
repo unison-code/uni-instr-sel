@@ -327,7 +327,9 @@ instance (PrettyShow a) => PrettyShow (Mapping a) where
   -- and the 'pNode' is the second element.
   pShow m = pShow (fNode m, pNode m)
 
--- | Represents a match between two graphs.
+-- | Represents a match between a function graph and a pattern graph. Note that
+-- it is allowed that a node in the pattern graph be mapped to multiple nodes in
+-- the function graph, but not vice versa.
 newtype Match n
   = Match (S.Set (Mapping n))
   deriving (Show, Eq)
@@ -1531,10 +1533,18 @@ checkPhiValBlockMappings
      -- check.
   -> Bool
 checkPhiValBlockMappings fg pg st pe =
-  let v_pn = getSourceNode pg pe
-      v_fn = findFNInMapping st v_pn
+  let findSingleFNInSt pn =
+        let n = findFNInMapping st pn
+        in if length n == 1
+           then Just $ head n
+           else if length n == 0
+                then Nothing
+                else error $ "checkPhiValBlockMappings: multiple mappings " ++
+                             "for pattern node " ++ show pn
+      v_pn = getSourceNode pg pe
+      v_fn = findSingleFNInSt v_pn
       p_pn = getTargetNode pg pe
-      p_fn = findFNInMapping st p_pn
+      p_fn = findSingleFNInSt p_pn
       def_pes = filter (haveSameOutEdgeNrs pe) $
                 filter isDefEdge $
                 getOutEdges pg v_pn
@@ -1548,7 +1558,7 @@ checkPhiValBlockMappings fg pg st pe =
                                  show pe ++ " in pattern graph has more " ++
                                  "than one matching definition edge"
       b_pn = getTargetNode pg def_pe
-      b_fn = findFNInMapping st b_pn
+      b_fn = findSingleFNInSt b_pn
   in if isJust p_fn && isJust v_fn && isJust b_fn
         -- Check if all necessary nodes have been mapped
      then let df_fes = filter isDataFlowEdge $
@@ -1598,9 +1608,16 @@ findPNsInMatch
      -- ^ The match.
   -> [n]
      -- ^ List of function nodes.
-  -> [n]
+  -> [Maybe n]
      -- ^ List of corresponding pattern nodes.
-findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
+findPNsInMatch (Match m) fns =
+  let pns = findPNsInMapping (S.toList m) fns
+      getSingleNode ns = if length ns == 1
+                         then Just $ head ns
+                         else if length ns == 0
+                              then Nothing
+                              else error $ "findPNsInMatch: multiple mappings"
+  in map getSingleNode pns
 
 -- | Same as 'findFNsInMapping'.
 findFNsInMatch
@@ -1609,7 +1626,7 @@ findFNsInMatch
      -- ^ The match.
   -> [n]
      -- ^ List of pattern nodes.
-  -> [n]
+  -> [[n]]
      -- ^ List of corresponding function nodes.
 findFNsInMatch (Match m) = findFNsInMapping (S.toList m)
 
@@ -1622,7 +1639,13 @@ findPNInMatch
      -- ^ Function node.
   -> Maybe n
      -- ^ Corresponding pattern node.
-findPNInMatch (Match m) = findPNInMapping (S.toList m)
+findPNInMatch (Match m) fn =
+  let pn = findPNInMapping (S.toList m) fn
+  in if length pn == 1
+     then Just $ head pn
+     else if length pn == 0
+          then Nothing
+          else error $ "findPNInMatch: multiple mappings"
 
 -- | Same as 'findFNInMapping'.
 findFNInMatch
@@ -1631,8 +1654,8 @@ findFNInMatch
      -- ^ The current mapping state.
   -> n
      -- ^ Pattern node.
-  -> Maybe n
-     -- ^ Corresponding pattern node.
+  -> [n]
+     -- ^ Corresponding function nodes.
 findFNInMatch (Match m) = findFNInMapping (S.toList m)
 
 -- | From a match and a list of function nodes, get the list of corresponding
@@ -1644,9 +1667,9 @@ findPNsInMapping
      -- ^ The current mapping state.
   -> [n]
      -- ^ List of function nodes.
-  -> [n]
+  -> [[n]]
      -- ^ List of corresponding pattern nodes.
-findPNsInMapping m fns = mapMaybe (findPNInMapping m) fns
+findPNsInMapping m fns = map (findPNInMapping m) fns
 
 -- | From a match and a list of pattern nodes, get the list of corresponding
 -- function nodes for which there exists a mapping. The order of the list will
@@ -1657,41 +1680,33 @@ findFNsInMapping
      -- ^ The current mapping state.
   -> [n]
      -- ^ List of pattern nodes.
-  -> [n]
+  -> [[n]]
      -- ^ List of corresponding function nodes.
-findFNsInMapping m pns = mapMaybe (findFNInMapping m) pns
+findFNsInMapping m pns = map (findFNInMapping m) pns
 
 -- | From a mapping state and a function node, get the corresponding pattern
--- node if there exists a such a mapping.
+-- nodes if there exist such mappings.
 findPNInMapping
   :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> n
      -- ^ Function node.
-  -> Maybe n
-     -- ^ Corresponding pattern node.
-findPNInMapping st fn =
-  let found = [ pNode m | m <- st, fn == fNode m ]
-  in if length found > 0
-     then Just $ head found
-     else Nothing
+  -> [n]
+     -- ^ Corresponding pattern nodes.
+findPNInMapping st fn = [ pNode m | m <- st, fn == fNode m ]
 
 -- | From a mapping state and a pattern node, get the corresponding function
--- node if there exists a such a mapping.
+-- nodes if there exist such mappings.
 findFNInMapping
   :: (Eq n)
   => [Mapping n]
      -- ^ The current mapping state.
   -> n
      -- ^ Pattern node.
-  -> Maybe n
-     -- ^ Corresponding function node.
-findFNInMapping st pn =
-  let found = [ fNode m | m <- st, pn == pNode m ]
-  in if length found > 0
-     then Just $ head found
-     else Nothing
+  -> [n]
+     -- ^ Corresponding function nodes.
+findFNInMapping st pn = [ fNode m | m <- st, pn == pNode m ]
 
 -- | Computes the dominator sets for a given graph and root node.
 computeDomSets :: Graph -> Node -> [DomSet Node]

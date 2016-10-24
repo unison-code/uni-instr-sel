@@ -202,9 +202,9 @@ mkHLMatchParamsNoOp :: TargetMachine -> PatternMatch -> HighLevelMatchParamsNoOp
 mkHLMatchParamsNoOp target match =
   let instr = fromJust $ findInstruction (tmInstructions target)
                                          (pmInstrID match)
-      pattern = fromJust $ findInstrPattern (instrPatterns instr)
-                                            (pmPatternID match)
-  in processMatch instr pattern (pmMatch match) (pmMatchID match)
+      pat = fromJust $ findInstrPattern (instrPatterns instr)
+                                        (pmPatternID match)
+  in processMatch instr pat (pmMatch match) (pmMatchID match)
 
 processMatch
   :: Instruction
@@ -212,25 +212,25 @@ processMatch
   -> Match NodeID
   -> MatchID
   -> HighLevelMatchParamsNoOp
-processMatch instr pattern match mid =
-  let graph = osGraph $ patOS pattern
-      ns = getAllNodes graph
-      o_ns = filter isOperationNode ns
-      d_ns = filter isDatumNode ns
-      b_ns = filter isBlockNode ns
-      entry_b = osEntryBlockNode $ patOS pattern
+processMatch instr pat match mid =
+  let graph = osGraph $ patOS pat
+      all_ns = getAllNodes graph
+      o_ns = filter isOperationNode all_ns
+      d_ns = filter isDatumNode all_ns
+      b_ns = filter isBlockNode all_ns
+      entry_b = osEntryBlockNode $ patOS pat
       b_ns_consumed = if isJust entry_b
                       then filter ( \n -> hasAnyPredecessors graph n
                                           && hasAnySuccessors graph n
                                   )
                                   b_ns
                       else []
-      c_ns = filter isControlNode ns
+      c_ns = filter isControlNode all_ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
-      d_ext_ns = filter (\n -> (getNodeID n) `elem` patExternalData pattern)
+      d_ext_ns = filter (\n -> (getNodeID n) `elem` patExternalData pat)
                         d_ns
-      d_int_ns = filter (\n -> (getNodeID n) `notElem` patExternalData pattern)
+      d_int_ns = filter (\n -> (getNodeID n) `notElem` patExternalData pat)
                         d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
@@ -248,33 +248,41 @@ processMatch instr pattern match mid =
                               . getInEdges graph
                             ) $
                         d_def_by_phi_ns
-      entry_b_node_id = osEntryBlockNode $ patOS pattern
+      entry_b_node_id = osEntryBlockNode $ patOS pat
       i_props = instrProps instr
-      emit_maps = computeEmitStrNodeMaps (patEmitString pattern) match
-      valid_locs = map (\(pn, ls) -> (fromJust $ findFNInMatch match pn, ls)) $
-                   osValidLocations $ patOS pattern
+      emit_maps = computeEmitStrNodeMaps (patEmitString pat) match
+      valid_locs = map (\(pn, ls) -> (head $ findFNInMatch match pn, ls)) $
+                   osValidLocations $ patOS pat
+      getMappedFNs pns =
+        let fns = findFNsInMatch match pns
+            getSingleFN ns = if length ns == 1
+                             then head ns
+                             else if length ns == 0
+                                  then error $ "processMatch: no mapping"
+                                  else error $ "processMatch: multiple mappings"
+        in map getSingleFN fns
   in HighLevelMatchParamsNoOp
        { hlNoOpMatchInstructionID = instrID instr
-       , hlNoOpMatchPatternID = patID pattern
+       , hlNoOpMatchPatternID = patID pat
        , hlNoOpMatchID = mid
-       , hlNoOpMatchOperationsCovered = findFNsInMatch match (getNodeIDs o_ns)
-       , hlNoOpMatchDataDefined = findFNsInMatch match (getNodeIDs d_def_ns)
-       , hlNoOpMatchDataUsed = findFNsInMatch match (getNodeIDs d_use_ns)
-       , hlNoOpMatchExternalData = findFNsInMatch match (getNodeIDs d_ext_ns)
-       , hlNoOpMatchInternalData = findFNsInMatch match (getNodeIDs d_int_ns)
+       , hlNoOpMatchOperationsCovered = getMappedFNs (getNodeIDs o_ns)
+       , hlNoOpMatchDataDefined = getMappedFNs (getNodeIDs d_def_ns)
+       , hlNoOpMatchDataUsed = getMappedFNs (getNodeIDs d_use_ns)
+       , hlNoOpMatchExternalData = getMappedFNs (getNodeIDs d_ext_ns)
+       , hlNoOpMatchInternalData = getMappedFNs (getNodeIDs d_int_ns)
        , hlNoOpMatchValidValueLocs = valid_locs
        , hlNoOpMatchEntryBlock =
-           maybe Nothing (findFNInMatch match) entry_b_node_id
+           maybe Nothing (Just . head . findFNInMatch match) entry_b_node_id
        , hlNoOpMatchSpannedBlocks =
            if isJust entry_b
-           then findFNsInMatch match (getNodeIDs b_ns)
+           then getMappedFNs (getNodeIDs b_ns)
            else []
-       , hlNoOpMatchConsumedBlocks =
-           findFNsInMatch match (getNodeIDs b_ns_consumed)
+       , hlNoOpMatchConsumedBlocks = getMappedFNs (getNodeIDs b_ns_consumed)
        , hlNoOpMatchConstraints =
-           map
-             ((replaceThisMatchExprInC mid) . (replaceNodeIDsFromP2FInC match))
-             (osConstraints $ patOS pattern)
+           map ( (replaceThisMatchExprInC mid) .
+                 (replaceNodeIDsFromP2FInC match)
+               ) $
+           osConstraints $ patOS pat
        , hlNoOpMatchIsPhiInstruction = isInstructionPhi $ instr
        , hlNoOpMatchIsCopyInstruction = isInstructionCopy $ instr
        , hlNoOpMatchIsInactiveInstruction = isInstructionInactive $ instr
@@ -283,11 +291,11 @@ processMatch instr pattern match mid =
        , hlNoOpMatchCodeSize = instrCodeSize i_props
        , hlNoOpMatchLatency = instrLatency i_props
        , hlNoOpMatchDataUsedByPhis =
-           zip (findFNsInMatch match $ getNodeIDs b_use_by_phi_ns)
-               (findFNsInMatch match $ getNodeIDs d_use_by_phi_ns)
+           zip (getMappedFNs $ getNodeIDs b_use_by_phi_ns)
+               (getMappedFNs $ getNodeIDs d_use_by_phi_ns)
        , hlNoOpMatchDataDefinedByPhis =
-           zip (findFNsInMatch match $ getNodeIDs b_def_by_phi_ns)
-               (findFNsInMatch match $ getNodeIDs d_def_by_phi_ns)
+           zip (getMappedFNs $ getNodeIDs b_def_by_phi_ns)
+               (getMappedFNs $ getNodeIDs d_def_by_phi_ns)
        , hlNoOpMatchEmitStrNodeMaplist = emit_maps
        }
 
@@ -301,12 +309,19 @@ computeEmitStrNodeMaps
 computeEmitStrNodeMaps (EmitStringTemplate ts) m =
   map (map f) ts
   where f (ESVerbatim            _) = Nothing
-        f (ESLocationOfValueNode n) = findFNInMatch m n
-        f (ESIntConstOfValueNode n) = findFNInMatch m n
-        f (ESNameOfBlockNode     n) = findFNInMatch m n
-        f (ESBlockOfValueNode    n) = findFNInMatch m n
+        f (ESLocationOfValueNode n) = getSingleFN n
+        f (ESIntConstOfValueNode n) = getSingleFN n
+        f (ESNameOfBlockNode     n) = getSingleFN n
+        f (ESBlockOfValueNode    n) = getSingleFN n
         f (ESLocalTemporary      _) = Nothing
-        f (ESFuncOfCallNode      n) = findFNInMatch m n
+        f (ESFuncOfCallNode      n) = getSingleFN n
+        getSingleFN pn =
+          let fn = findFNInMatch m pn
+          in if length fn == 1
+             then Just $ head fn
+             else if length fn == 0
+                  then error "computeEmitStrNodeMaps: no mapping"
+                  else error "computeEmitStrNodeMaps: multiple mappings"
 
 -- | Replaces occurrences of 'ThisMatchExpr' in a constraint with the given
 -- match ID.
@@ -321,10 +336,15 @@ replaceThisMatchExprInC mid c =
 -- | Replaces the node IDs used in the constraint from matched pattern node IDs
 -- to the corresponding function node IDs.
 replaceNodeIDsFromP2FInC :: Match NodeID -> Constraint -> Constraint
-replaceNodeIDsFromP2FInC match c =
+replaceNodeIDsFromP2FInC m c =
   let def_r = mkDefaultReconstructor
-      mkNodeExpr _ (ANodeIDExpr nid) =
-        ANodeIDExpr (fromJust $ findFNInMatch match nid)
+      mkNodeExpr _ (ANodeIDExpr n) =
+        let fn = findFNInMatch m n
+        in if length fn == 1
+           then ANodeIDExpr (head fn)
+           else if length fn == 0
+                then error "replaceNodeIDsFromP2FInC: no mapping"
+                else error "replaceNodeIDsFromP2FInC: multiple mappings"
       mkNodeExpr r expr = (mkNodeExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr }
   in apply new_r c
@@ -475,7 +495,7 @@ mergeSimilarHighLevelMatchParamsWOps pps =
         let m1 = pmMatch pm1
             m2 = pmMatch pm2
             pn = fromJust $ findPNInMatch m1 fn1
-            fn2 = fromJust $ findFNInMatch m2 pn
+            fn2 = head $ findFNInMatch m2 pn
         in if [fn2] `elem` fns
            then [fn2]
            else []
