@@ -39,6 +39,8 @@ import Language.InstrSel.Utils
   ( splitOn
   , toLower
   )
+import Language.InstrSel.Utils.IO
+  ( successExitCode )
 
 import System.Console.CmdArgs
 import System.Console.CmdArgs.Text
@@ -378,4 +380,7 @@ main =
            error $ "Unrecognized command: " ++ show cmd
      emit <- mkEmitFunction opts
      mapM_ emit output
-     exitWith $ oExitCode $ last output
+     let e_code = if length output > 0
+                  then oExitCode $ last output
+                  else successExitCode
+     exitWith e_code

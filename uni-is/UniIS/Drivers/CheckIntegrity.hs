@@ -107,7 +107,7 @@ run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 -- | Makes an 'Output' from a given output log. An empty log indicates no
 -- errors.
 mkOutput :: [Message] -> [Output]
-mkOutput [] = [toOutput ""]
+mkOutput [] = []
 mkOutput msgs =
   let code = if any isErrorMessage msgs
              then errorExitCode
