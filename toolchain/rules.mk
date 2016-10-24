@@ -126,7 +126,7 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
                                       %.aimaps.json
 	$(PRUNE_BAD_MATCHES_CMD) -d $*.ph.lp.ce.cc.be.dom.json \
 							 -i $*.ph.lp.ce.cc.be.ill.json \
-							 -p $*.ph.lp.ce.cc.be.p.json \
+							 -p $*.ph.lp.ce.cc.be.ae.p.json \
 							 -a $*.aimaps.json \
 							 > $@
 
