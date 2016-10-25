@@ -1,0 +1,24 @@
+0:
+  %1 = ADD $0, %a
+  %4 = SLTi %a -32768
+  %2 = SLT %a, r0
+  BNE $0, $%2, bb0
+bb1:
+6:
+  %7 = PHI (%1, 0) (%., .selectcont)
+  %8 = ANDi %7, 255
+  %tmp.1 = SLL %8, 16
+  %tmp.2 = SRA %tmp.1, 16
+  RetRA %tmp.2
+bb0:
+3:
+  %5 = SUBU r0, %1
+  BNE $0, $%4, bb2
+bb3:
+.selectcont:
+  %. = PHI (%const.32767.copy.1, .selecttrue) (%5, 3)
+  B 6
+bb2:
+.selecttrue:
+  %const.32767.copy.1 = ADDiu $0, 32767
+  B .selectcont
