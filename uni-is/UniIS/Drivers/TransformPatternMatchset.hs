@@ -18,7 +18,7 @@ import Language.InstrSel.Functions
 import Language.InstrSel.TargetMachines
   ( TargetMachine )
 import Language.InstrSel.TargetMachines.PatternMatching
-  ( PatternMatchset )
+  ( PatternMatchset (..) )
 import Language.InstrSel.TargetMachines.Transformations
   ( alternativeExtend )
 import Language.InstrSel.Utils.IO
@@ -26,6 +26,15 @@ import Language.InstrSel.Utils.IO
 import Language.InstrSel.Utils.JSON
   ( toJson )
 import Language.InstrSel.Utils.Natural
+import Language.InstrSel.Utils.Time
+
+import Control.DeepSeq
+  ( deepseq )
+
+import Data.Maybe
+  ( isJust
+  , fromJust
+  )
 
 
 
@@ -40,9 +49,17 @@ run :: TransformAction
     -> Natural
     -> IO [Output]
 
-run AlternativeExtendPatternMatchset f t p limit =
-  do let new_p = alternativeExtend f t limit p
-     return [toOutput $ toJson new_p]
+run AlternativeExtendPatternMatchset f t pmset0 limit =
+  do start <- getTime
+     let pmset1 = alternativeExtend f t limit pmset0
+     end <- pmset1 `deepseq` getTime
+     let time = start `secondsBetween` end
+         old_time = pmTime pmset0
+         new_time = if isJust old_time
+                    then (fromJust old_time) + time
+                    else time
+         pmset2 = pmset1 { pmTime = Just new_time }
+     return [toOutput $ toJson pmset2]
 
 run _ _ _ _ _ =
   reportErrorAndExit "TransformPatternMatchset: unsupported action"
