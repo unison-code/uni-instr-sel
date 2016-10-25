@@ -75,11 +75,12 @@ library
 
     Language.InstrSel.Utils
     Language.InstrSel.Utils.Base
-    Language.InstrSel.Utils.Natural
-    Language.InstrSel.Utils.Range
+    Language.InstrSel.Utils.IO
     Language.InstrSel.Utils.JSON
     Language.InstrSel.Utils.Lisp
-    Language.InstrSel.Utils.IO
+    Language.InstrSel.Utils.Natural
+    Language.InstrSel.Utils.Range
+    Language.InstrSel.Utils.Time
 
   other-extensions:  FlexibleInstances,
                      GeneralizedNewtypeDeriving,

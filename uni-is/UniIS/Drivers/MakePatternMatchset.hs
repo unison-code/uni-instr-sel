@@ -22,15 +22,13 @@ import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatchset (..), mkPatternMatchset )
 import Language.InstrSel.Utils.JSON
-
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
-
-import System.Clock
-  ( TimeSpec, getTime, Clock(..), sec, nsec )
+import Language.InstrSel.Utils.Time
 
 import Control.DeepSeq
   ( deepseq )
+
 
 
 -------------
@@ -40,19 +38,13 @@ import Control.DeepSeq
 run :: MakeAction -> Function -> TargetMachine -> IO [Output]
 
 run MakePatternMatchset function target =
-  do start <- getTime Realtime
-     let matches = mkPatternMatchset function target
-     -- In order to use 'deepseq', all data types used within @matches@ must
-     -- be an instance of the 'Control.DeepSeq.NFData' type class
-     end <- matches `deepseq` getTime Realtime
-     let time = seconds start end
-         matches' = matches {pmTime = Just time}
-     return [toOutput $ toJson matches']
+  do start <- getTime
+     let pmset0 = mkPatternMatchset function target
+     -- In order to use 'deepseq', all data types used within @pmset0@ must be
+     -- an instance of the 'Control.DeepSeq.NFData' type class
+     end <- pmset0 `deepseq` getTime
+     let time = start `secondsBetween` end
+         pmset1 = pmset0 { pmTime = Just time }
+     return [toOutput $ toJson pmset1]
 
 run _ _ _ = reportErrorAndExit "MakePatternMatchset: unsupported action"
-
-seconds ::  TimeSpec -> TimeSpec -> Double
-seconds start end =
-    let secs  = sec end - sec start
-        nsecs = nsec end - nsec start
-    in fromIntegral secs + ((fromIntegral nsecs) / 1000000000)
