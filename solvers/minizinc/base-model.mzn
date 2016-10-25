@@ -603,8 +603,7 @@ constraint
 % Constrain the cost that can be incurred by each operation.
 constraint
   forall (op in allOperationsInFunction)
-  ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix)
-  );
+  ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix) );
 
 % The total cost is the sum of the costs incurred by all operations.
 constraint
