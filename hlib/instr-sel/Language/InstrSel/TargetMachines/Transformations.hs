@@ -30,6 +30,8 @@ import Language.InstrSel.Utils
   ( groupBy )
 import Language.InstrSel.Utils.Natural
 
+import Data.List
+  ( sortBy )
 import Data.Maybe
   ( fromJust
   , isJust
@@ -183,15 +185,10 @@ insertAlternativeMappings
   -> PatternMatchset
   -> PatternMatchset
 insertAlternativeMappings t limit vs pm =
-  let processPatternMatch m =
-        let iid = pmInstrID m
-            pid = pmPatternID m
-            p = do instr <- findInstruction (tmInstructions t) iid
-                   findInstrPattern (instrPatterns instr) pid
-        in if isJust p
-           then m { pmMatch = processMatch (fromJust p) (pmMatch m) }
-           else error $ "insertAlternativeMappings: no instruction with ID " ++
-                        pShow iid ++ " with pattern graph with ID " ++ pShow pid
+  let sorted_vs = sortValueNodesByReusability t pm vs
+      processPatternMatch m =
+        let p = getInstrPatternFromPatternMatch t m
+        in m { pmMatch = processMatch p (pmMatch m) }
       processMatch p m =
         toMatch $
         concatMap (processMapping p) $
@@ -205,16 +202,55 @@ insertAlternativeMappings t limit vs pm =
                     then head n
                     else error $ "insertAlternativeMappings: no pattern " ++
                                  "node with ID " ++ pShow pn_id
-        in if fn_id `elem` vs && not (hasAnyPredecessors g pn)
+        in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
            then let int_limit = fromIntegral limit
-                    num_to_take = if int_limit == 0 || int_limit > length vs
-                                  then length vs
+                    num_to_take = if int_limit == 0 ||
+                                     int_limit > length sorted_vs
+                                  then length sorted_vs
                                   else int_limit
                     alts = take num_to_take $
-                           filter (/= fn_id) vs
+                           filter (/= fn_id) sorted_vs
                     alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
                                    alts
                 in (m:alt_maps)
            else [m]
       new_matches = map processPatternMatch $ pmMatches pm
   in pm { pmMatches = new_matches }
+
+-- | Arranges the nodes in decreasing order of reusability. A node has high
+-- reusability if it appears in few matches which, if selected, would make the
+-- value unreusable. A value becomes unreusable if the match both uses and
+-- defines the value and does not make it externally available.
+sortValueNodesByReusability
+  :: TargetMachine
+  -> PatternMatchset
+  -> [NodeID]
+  -> [NodeID]
+sortValueNodesByReusability t pm vs =
+  let computeConsumption v = length $
+                             filter (consumesValue v) $
+                             pmMatches pm
+      consumesValue v m =
+        let pn = findPNInMatch (pmMatch m) v
+            p = getInstrPatternFromPatternMatch t m
+        in if isJust pn
+           then not $ (fromJust pn) `elem` (patExternalData p)
+           else False
+      vs_r = map (\v -> (v, computeConsumption v)) vs
+      sorted_vs_r = sortBy (\(_, r1) (_, r2) -> compare r1 r2) vs_r
+  in map fst sorted_vs_r
+
+getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
+getInstrPatternFromPatternMatch t m =
+  let iid = pmInstrID m
+      pid = pmPatternID m
+      i = findInstruction (tmInstructions t) iid
+      p = findInstrPattern (instrPatterns $ fromJust i) pid
+  in if isJust i
+     then if isJust p
+          then fromJust p
+          else error $ "getInstrPatternFromPatternMatch: target machine " ++
+                       "with instruction ID " ++ pShow iid ++ " has no " ++
+                       "pattern with ID " ++ pShow pid
+     else error $ "getInstrPatternFromPatternMatch: target machine has no " ++
+                  "instruction with ID " ++ pShow iid
