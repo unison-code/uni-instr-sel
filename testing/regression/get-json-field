@@ -55,19 +55,23 @@ def error(msg):
 #=============
 
 # Check arguments
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
     sys.stderr.write("No JSON file provided\n")
     sys.exit(1)
-if len(sys.argv) > 2:
+if len(sys.argv) > 3:
     error("Too many arguments\n")
 json_file = sys.argv[1]
 if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")
+json_field = sys.argv[2]
 
 # Read JSON file
 json_data = []
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
-# Print prep time
-print json_data["prep-time"]
+# Print field
+if json_field not in json_data:
+    error("Field '" + json_field +"' not found in JSON file " +
+          "'" + json_file + "'")
+print json_data[json_field]

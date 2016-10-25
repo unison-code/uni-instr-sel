@@ -139,10 +139,12 @@ run-regression-tests-for-target:
 	@echo
 	@echo "$(BLUE)* EXECUTING REGRESSION TESTS$:$(NC)"
 	@\
+	T_INDENT="    " ;\
 	T_TOTAL=0 ;\
 	T_PASSED=0 ;\
 	T_IGNORED=0 ;\
 	T_FAILED=0 ;\
+	T_WARN=0 ;\
 	T_ALL=`cat $(REGRESSION_TESTS_DIR)/test-cases.db` ;\
 	T_MAX_LENGTH=0 ;\
 	T_TIME_START=`date +%s` ;\
@@ -157,63 +159,90 @@ run-regression-tests-for-target:
 	for T in $$T_ALL; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
 	    T_NAME=`basename $$T` ;\
-		echo -n "    $$T_NAME" ;\
+		echo -n "$$T_INDENT$$T_NAME" ;\
 		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
 			echo -n " " ;\
 		done ;\
 		TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
 		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
+		T_COST=`cat $$RT_TARGET_DIR/$${T_NAME%.*}.cost 2> /dev/null` ;\
 		T_ORACLES=`ls $$RT_TARGET_DIR/$${T_NAME%.*}.s.* 2> /dev/null` ;\
-		if [ -n "$$T_ORACLES" ]; then \
-			TEMPFILE=$$(basename `mktemp`) ;\
-			T_LL=$${TEMPFILE}.ll ;\
-		    T_ASM=$${TEMPFILE}.s ;\
-			cp $$T $$T_LL ;\
-			$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
-		    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
-			sol_file="$${T_LL%.*}.presolved.hl.sol.json" ;\
-			if [ -f $$sol_file ]; then \
-				solv_time=`$(REGRESSION_TESTS_DIR)/get-solving-time $$sol_file \
-						   2> /dev/null` ;\
-				T_SOLV_TIME_TOTAL=`echo "scale=2; \
-							 		 t = $$T_SOLV_TIME_TOTAL + $$solv_time; \
-									 if (t < 1) print 0; t" \
-								   | bc` ;\
-				prep_time=`$(REGRESSION_TESTS_DIR)/get-prep-time $$sol_file \
-						   2> /dev/null` ;\
-				T_PREP_TIME_TOTAL=`echo "scale=2; \
-							 		 t = $$T_PREP_TIME_TOTAL + $$prep_time; \
-									 if (t < 1) print 0; t" \
-								   | bc` ;\
-			else \
-				solv_time="?" ;\
-			fi ;\
-			if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
-				T_IS_OK=0 ;\
-				for O in $$T_ORACLES; do \
-					if [ "$$T_IS_OK" -eq "0" ]; then \
-						T_DIFF=`diff $$T_ASM $$O` ;\
-						if [ -z "$$T_DIFF" ]; then \
-							T_IS_OK=1 ;\
-						fi \
-					fi \
-				done ;\
-				if [ "$$T_IS_OK" -ne "0" ]; then \
-				    T_PASSED=`expr $$T_PASSED + 1` ;\
-				    echo "[$(GREEN)OK$(NC)] [$${solv_time}s]" ;\
+		if [ -n "$$T_COST" ]; then \
+			if [ -n "$$T_ORACLES" ]; then \
+				TEMPFILE=$$(basename `mktemp`) ;\
+				T_LL=$${TEMPFILE}.ll ;\
+			    T_ASM=$${TEMPFILE}.s ;\
+				cp $$T $$T_LL ;\
+				$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
+			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
+				sol_file="$${T_LL%.*}.presolved.hl.sol.json" ;\
+				if [ -f $$sol_file ]; then \
+					cost=`$(REGRESSION_TESTS_DIR)/get-json-field \
+						  "$$sol_file" "cost" 2> /dev/null` ;\
+					solv_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
+							   "$$sol_file" "solving-time" 2> /dev/null` ;\
+					T_SOLV_TIME_TOTAL=`echo "scale=2; \
+								 			 t = $$T_SOLV_TIME_TOTAL + \
+												 $$solv_time; \
+											 if (t < 1) print 0; t" \
+									   | bc` ;\
+					prep_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
+							   "$$sol_file" "prep-time" 2> /dev/null` ;\
+					T_PREP_TIME_TOTAL=`echo "scale=2; \
+								 			 t = $$T_PREP_TIME_TOTAL + \
+												 $$prep_time; \
+											 if (t < 1) print 0; t" \
+									   | bc` ;\
 				else \
-				    T_FAILED=`expr $$T_FAILED + 1` ;\
-				    echo "[$(RED)FAILED$(NC)] [$${solv_time}s] (diff)" ;\
-					echo "$$T_DIFF" ;\
-				fi \
+					cost="-1" ;\
+					solv_time="?" ;\
+				fi ;\
+				if [ "$$cost" -eq "$$T_COST" ]; then \
+					if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
+						T_IS_OK=0 ;\
+						for O in $$T_ORACLES; do \
+							if [ "$$T_IS_OK" -eq "0" ]; then \
+								T_DIFF=`diff $$T_ASM $$O` ;\
+								if [ -z "$$T_DIFF" ]; then \
+									T_IS_OK=1 ;\
+								fi \
+							fi \
+						done ;\
+						if [ "$$T_IS_OK" -ne "0" ]; then \
+							T_PASSED=`expr $$T_PASSED + 1` ;\
+							echo "[$(GREEN)OK$(NC)] [$${solv_time}s]" ;\
+						else \
+							T_WARN=`expr $$T_WARN + 1` ;\
+							echo -n "[$(RED)WARNING$(NC)] [$${solv_time}s] " ;\
+							echo    "(diff output)" ;\
+							echo "$$T_DIFF" ;\
+						fi \
+					else \
+						T_FAILED=`expr $$T_FAILED + 1` ;\
+						echo -n "[$(RED)FAILED$(NC)] [$${solv_time}s] " ;\
+						echo    "(no output)" ;\
+					fi ;\
+				else \
+					T_FAILED=`expr $$T_FAILED + 1` ;\
+					echo -n "[$(RED)FAILED$(NC)] [$${solv_time}s] " ;\
+					echo    "(diff costs)" ;\
+					for i in `seq 0 $$T_MAX_LENGTH`; do \
+						echo -n " " ;\
+					done ;\
+					echo "$${T_INDENT}Expected: $$T_COST" ;\
+					for i in `seq 0 $$T_MAX_LENGTH`; do \
+						echo -n " " ;\
+					done ;\
+					echo "$${T_INDENT}Actual: $$cost" ;\
+				fi ;\
+				rm -f $${TEMPFILE}.* ;\
 			else \
-			    T_FAILED=`expr $$T_FAILED + 1` ;\
-			    echo "[$(RED)FAILED$(NC)] [$${solv_time}s] (no output)" ;\
+			    T_IGNORED=`expr $$T_IGNORED + 1` ;\
+				echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
 			fi ;\
-			rm -f $${TEMPFILE}.* ;\
 		else \
 		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
-			echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
+			echo "[$(YELLOW)IGNORED$(NC)] (has no cost)" ;\
 		fi ;\
 	done ;\
 	T_TIME_END=`date +%s` ;\
@@ -235,6 +264,9 @@ run-regression-tests-for-target:
 	echo -n "=   PASSED $(GREEN)$$T_PASSED$(BLUE)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
 		echo -n ", IGNORED $(YELLOW)$$T_IGNORED$(BLUE)" ;\
+	fi ;\
+	if [ "$$T_WARN" -ne "0" ]; then \
+		echo -n ", WARNED $(RED)$$T_WARN$(BLUE)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
 		echo -n ", FAILED $(RED)$$T_FAILED$(BLUE)" ;\
