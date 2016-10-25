@@ -198,7 +198,7 @@ hasCyclicDataDependency fg m =
       ssa_fg = extractSSA fg
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
       ssa_fg' = subGraph ssa_fg f_ns
-      -- Data nodes which act as input to the pattern should not be included
+      -- Data nodes which act as input to the pattern must not be included
       ssa_fg'' = foldr delNode ssa_fg' $
                  filter ( \n -> isDatumNode n &&
                                 not (hasAnyPredecessors ssa_fg' n)
