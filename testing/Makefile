@@ -215,7 +215,15 @@ run-regression-tests-for-target:
 							T_WARN=`expr $$T_WARN + 1` ;\
 							echo -n "[$(RED)WARNING$(NC)] [$${solv_time}s] " ;\
 							echo    "(diff output)" ;\
+							for i in `seq 1 58`; do \
+								echo -n "-" ;\
+							done ;\
+							echo ;\
 							echo "$$T_DIFF" ;\
+							for i in `seq 1 58`; do \
+								echo -n "-" ;\
+							done ;\
+							echo ;\
 						fi \
 					else \
 						T_FAILED=`expr $$T_FAILED + 1` ;\
