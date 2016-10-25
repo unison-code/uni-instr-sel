@@ -480,7 +480,9 @@ constraint
 
 % If a match representing a null instruction is selected, then the data used by
 % the match must be defined in the same block wherein the match is placed.
-% ASSERT: such matches cover at least one operation.
+%
+% [MC]: Assumes that matches which use some data cover at least one operation.
+% [GHB]: This assumption should always hold.
 constraint
   forall ( m in nullInstrMatches
          , o in operandsUsedByMatch[m]
@@ -552,7 +554,9 @@ constraint
 %     ( dplace[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
-% ASSERT: matches that use some data cover at least one operation.
+%
+% [MC]: Assumes that matches which use some data cover at least one operation.
+% [GHB]: This assumption should always hold.
 constraint
   forall (p in nonNullNonPhiUseOperands)
   ( table([uplace[p], dplace[Alt(p)]], domRelMatrix) );
