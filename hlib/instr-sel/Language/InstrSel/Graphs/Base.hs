@@ -330,7 +330,7 @@ instance (PrettyShow a) => PrettyShow (Mapping a) where
 -- the function graph, but not vice versa.
 newtype Match n
   = Match (S.Set (Mapping n))
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 instance (PrettyShow a) => PrettyShow (Match a) where
   pShow (Match s) = pShow s

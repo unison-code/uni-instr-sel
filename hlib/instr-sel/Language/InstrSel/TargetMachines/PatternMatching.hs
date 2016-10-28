@@ -34,13 +34,17 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils
-  ( combinations )
+  ( combinations
+  , toPair
+  )
 import Language.InstrSel.Utils.JSON
 
 import Data.Maybe
   ( fromJust
   , isJust
   )
+
+import qualified Data.Map as M
 
 import Control.DeepSeq
   ( NFData
@@ -83,6 +87,9 @@ data IntPatternMatch
       { ipmInstrID :: InstructionID
       , ipmPatternID :: PatternID
       , ipmMatch :: Match Node
+      , ipmHasCheckedCyclicDataDep :: Bool
+        -- ^ Whether a cyclic data dependency check has already been done on
+        -- this match.
       }
   deriving (Show)
 
@@ -193,32 +200,41 @@ processInstrPattern
 processInstrPattern fg dup_fg instr pat =
   let pg = osGraph $ patOS pat
       dup_pg = duplicateNodes pg
-      matches = map (fixMatch fg pg) $
-                if not (isInstructionSimd instr)
-                then findMatches dup_fg dup_pg
+      matches = if not (isInstructionSimd instr)
+                then map (\m -> (m, False)) $
+                     map (fixMatch fg pg) $
+                     findMatches dup_fg dup_pg
                 else let pg_cs = componentsOf dup_pg
                          sub_pg = head pg_cs
                          sub_matches = findMatches dup_fg sub_pg
-                     in mkSimdMatches sub_pg sub_matches (tail pg_cs)
-  in map ( \m -> IntPatternMatch { ipmInstrID = instrID instr
-                                 , ipmPatternID = patID pat
-                                 , ipmMatch = m
-                                 }
+                     in map (\m -> (m, True)) $
+                        map (fixMatch fg pg) $
+                        mkSimdMatches dup_fg sub_pg sub_matches (tail pg_cs)
+  in map ( \(m, b) -> IntPatternMatch { ipmInstrID = instrID instr
+                                      , ipmPatternID = patID pat
+                                      , ipmMatch = m
+                                      , ipmHasCheckedCyclicDataDep = b
+                                      }
          ) $
      matches
 
 -- | Constructs a list of matches for the entire SIMD pattern graph based on its
--- components and list of matches for a single component.
+-- components and list of matches for a single component. Each match is also
+-- checked that it does not result in a cyclic data dependency between any of
+-- the components.
 mkSimdMatches
   :: Graph
+     -- ^ The function graph.
+  -> Graph
      -- ^ A component of the SIMD pattern graph.
   -> [Match Node]
      -- ^ List of matches found for the component above in the function graph.
   -> [Graph]
      -- ^ List of components remaining in the SIMD pattern graph.
   -> [Match Node]
-     -- ^ List of matches for the entire SIMD pattern graph.
-mkSimdMatches sub_pg sub_matches pg_remaining_cs =
+     -- ^ List of (non-cyclic data dependency) matches for the entire SIMD
+     -- pattern graph.
+mkSimdMatches fg sub_pg sub_matches pg_remaining_cs =
   let reassignMatch (pg_c_m, sub_m) =
         let reassign m =
               let pn = pNode m
@@ -239,7 +255,15 @@ mkSimdMatches sub_pg sub_matches pg_remaining_cs =
                               ) $
                           map (findMatches sub_pg) $
                           pg_remaining_cs
-      m_combs = combinations (1 + (length pg_remaining_cs)) sub_matches
+      cdd_rel = computeMatchCyclicDataDepRelSet fg sub_matches
+      m_combs = filter ( \ms ->
+                         let ps = map toPair $ combinations 2 ms
+                         in all ( \(m1, m2) -> M.notMember (m1, m2) cdd_rel &&
+                                               M.notMember (m2, m1) cdd_rel
+                                )
+                            ps
+                       ) $
+                combinations (1 + (length pg_remaining_cs)) sub_matches
       simd_ms = map ( \(m:ms) ->
                       let fixed_ms = map reassignMatch $
                                      zip sub_pg_cs_matches ms
@@ -256,7 +280,10 @@ removeMatchesWithCyclicDataDeps
   -> [IntPatternMatch]
 removeMatchesWithCyclicDataDeps fg pms =
   let ssa_fg = extractSSA fg
-  in filter (\pm -> not $ hasMatchCyclicDataDep ssa_fg (ipmMatch pm)) $
+  in filter ( \pm -> if ipmHasCheckedCyclicDataDep pm
+                     then True
+                     else not $ hasMatchCyclicDataDep ssa_fg (ipmMatch pm)
+            ) $
      pms
 
 -- | Checks if a given match will result in a cyclic data dependency in the
@@ -267,27 +294,60 @@ removeMatchesWithCyclicDataDeps fg pms =
 -- dependency. However, components that are only reachable via an input node to
 -- the pattern is not considered a dependency. Due to this, such data nodes are
 -- removed prior to extracting the components.
+--
+-- TODO: should PHI operations not covered by @m@ be removed from @ssa_fg@?
 hasMatchCyclicDataDep
   :: Graph
      -- The corresponding SSA graph of the function graph.
   -> Match Node
   -> Bool
-hasMatchCyclicDataDep fg m =
+hasMatchCyclicDataDep ssa_fg m =
   let f_ns = map fNode (fromMatch m)
-      ssa_fg = extractSSA fg
-      -- TODO: should PHI operations not covered by m be removed from ssa_fg?
-      ssa_fg' = subGraph ssa_fg f_ns
-      -- Data nodes which act as input to the pattern must not be included
-      ssa_fg'' = foldr delNode ssa_fg' $
-                 filter ( \n -> isDatumNode n &&
-                                not (hasAnyPredecessors ssa_fg' n)
-                        ) $
-                 getAllNodes ssa_fg'
-      mcs = componentsOf ssa_fg''
+      sub_fg = removeInputNodes $
+               subGraph ssa_fg f_ns
+      mcs = componentsOf sub_fg
       cdd = or [ isReachableComponent ssa_fg c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
   in cdd
+
+-- | For a given function graph and list of matches, computes a relation R(m1,
+-- m2) which holds if two matches m1 and m2 have a cyclic data dependency
+-- between them. The returned relation is not commutative, meaning both
+-- combinations need to be checked.
+computeMatchCyclicDataDepRelSet
+  :: Graph
+  -> [Match Node]
+  -> M.Map (Match Node, Match Node) Bool
+     -- ^ A relation between two matches that holds if there is a cyclic data
+     -- dependency between them.
+computeMatchCyclicDataDepRelSet fg ms =
+  let ssa_fg = extractSSA fg
+      m_sub_fgs = zip ms $
+                  map ( \m -> removeInputNodes $
+                              subGraph ssa_fg $
+                              map fNode (fromMatch m)
+                      ) $
+                  ms
+      hasDep (m1, m2) set =
+        let sub_fg1 = fromJust $ lookup m1 m_sub_fgs
+            sub_fg2 = fromJust $ lookup m2 m_sub_fgs
+            has_dep = isReachableComponent ssa_fg sub_fg1 sub_fg2 ||
+                      isReachableComponent ssa_fg sub_fg2 sub_fg1
+        in if has_dep
+           then M.insert (m1, m2) True set
+           else set
+      m_ps = map toPair $ combinations 2 ms
+  in foldr hasDep M.empty m_ps
+
+-- | Removes all data nodes from the given graph that act as input.
+removeInputNodes :: Graph -> Graph
+removeInputNodes g =
+  foldr delNode g $
+  filter ( \n -> isDatumNode n &&
+                 not (hasAnyPredecessors g n)
+         ) $
+  getAllNodes g
 
 -- | Sometimes we want pattern nodes to be mapped to the same function
 -- node. However, the VF2 algorithm doesn't allow that. To get around this

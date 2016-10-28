@@ -28,6 +28,7 @@ module Language.InstrSel.Utils.Base
   , (===)
   , scanlM
   , combinations
+  , toPair
   )
 where
 
@@ -187,3 +188,9 @@ combinations n xs = let l = length xs
        combinations' (x:xs') =
          let next = combinations' xs'
          in zipWith (++) ([]:next) (map (map (x:)) next ++ [[]])
+
+-- | Converts a list of 2-element into a pair.
+toPair :: [a] -> (a, a)
+toPair xs = if length xs == 2
+            then (head xs, last xs)
+            else error "toPairs: list has not 2 elements"
