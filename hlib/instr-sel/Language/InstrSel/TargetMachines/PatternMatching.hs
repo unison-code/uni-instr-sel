@@ -77,6 +77,15 @@ data PatternMatch
       }
   deriving (Show)
 
+-- | Intermediate data structure for producing a 'PatternMatch'
+data IntPatternMatch
+  = IntPatternMatch
+      { ipmInstrID :: InstructionID
+      , ipmPatternID :: PatternID
+      , ipmMatch :: Match Node
+      }
+  deriving (Show)
+
 
 
 --------------------------------
@@ -147,15 +156,27 @@ findPatternMatchesWithMatchID pms mid =
 -- | Produces the pattern matchset for a given function and target machine.
 mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
 mkPatternMatchset function target =
-  let matches = concatMap (processInstr function) (tmInstructions target)
-      matches_with_IDs =
-        map (\(m, mid) -> m { pmMatchID = mid }) $ zip matches [0..]
+  let fg = osGraph $ functionOS function
+      int_matches = removeMatchesWithCyclicDataDeps fg $
+                    concatMap (processInstr function) (tmInstructions target)
+      matches = mkPatternMatches int_matches
   in PatternMatchset { pmTarget = tmID target
-                     , pmMatches = matches_with_IDs
+                     , pmMatches = matches
                      , pmTime = Nothing
                      }
 
-processInstr :: Function -> Instruction -> [PatternMatch]
+mkPatternMatches :: [IntPatternMatch] -> [PatternMatch]
+mkPatternMatches int_ms =
+  let int_ms_ps = zip int_ms [0..]
+      mkPatternMatch (m, mid) =
+        PatternMatch { pmInstrID = ipmInstrID m
+                     , pmPatternID = ipmPatternID m
+                     , pmMatchID = mid
+                     , pmMatch = convertMatchN2ID $ ipmMatch m
+                     }
+  in map mkPatternMatch int_ms_ps
+
+processInstr :: Function -> Instruction -> [IntPatternMatch]
 processInstr f i =
   let fg = osGraph $ functionOS f
       dup_fg = duplicateNodes fg
@@ -168,7 +189,7 @@ processInstrPattern
      -- ^ The duplicated function graph.
   -> Instruction
   -> InstrPattern
-  -> [PatternMatch]
+  -> [IntPatternMatch]
 processInstrPattern fg dup_fg instr pat =
   let pg = osGraph $ patOS pat
       dup_pg = duplicateNodes pg
@@ -179,15 +200,12 @@ processInstrPattern fg dup_fg instr pat =
                          sub_pg = head pg_cs
                          sub_matches = findMatches dup_fg sub_pg
                      in mkSimdMatches sub_pg sub_matches (tail pg_cs)
-      okay_matches = filter (not . hasCyclicDataDependency fg) matches
-  in map ( \m -> PatternMatch { pmInstrID = instrID instr
-                              , pmPatternID = patID pat
-                              , pmMatchID = 0 -- Unique value is assigned later
-                              , pmMatch = m
-                              }
+  in map ( \m -> IntPatternMatch { ipmInstrID = instrID instr
+                                 , ipmPatternID = patID pat
+                                 , ipmMatch = m
+                                 }
          ) $
-     map convertMatchN2ID $
-     okay_matches
+     matches
 
 -- | Constructs a list of matches for the entire SIMD pattern graph based on its
 -- components and list of matches for a single component.
@@ -230,6 +248,17 @@ mkSimdMatches sub_pg sub_matches pg_remaining_cs =
                     m_combs
   in simd_ms
 
+-- | Removes 'PatternMatch's which have cyclic data dependencies, and are
+-- therefore illegal matches.
+removeMatchesWithCyclicDataDeps
+  :: Graph
+  -> [IntPatternMatch]
+  -> [IntPatternMatch]
+removeMatchesWithCyclicDataDeps fg pms =
+  let ssa_fg = extractSSA fg
+  in filter (\pm -> not $ hasMatchCyclicDataDep ssa_fg (ipmMatch pm)) $
+     pms
+
 -- | Checks if a given match will result in a cyclic data dependency in the
 -- function graph. The check works as follows: first the subgraph of the
 -- function covered by the match is extracted. From this subgraph, each
@@ -238,8 +267,12 @@ mkSimdMatches sub_pg sub_matches pg_remaining_cs =
 -- dependency. However, components that are only reachable via an input node to
 -- the pattern is not considered a dependency. Due to this, such data nodes are
 -- removed prior to extracting the components.
-hasCyclicDataDependency :: Graph -> Match Node -> Bool
-hasCyclicDataDependency fg m =
+hasMatchCyclicDataDep
+  :: Graph
+     -- The corresponding SSA graph of the function graph.
+  -> Match Node
+  -> Bool
+hasMatchCyclicDataDep fg m =
   let f_ns = map fNode (fromMatch m)
       ssa_fg = extractSSA fg
       -- TODO: should PHI operations not covered by m be removed from ssa_fg?
