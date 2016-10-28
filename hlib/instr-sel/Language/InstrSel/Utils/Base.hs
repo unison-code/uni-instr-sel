@@ -27,6 +27,7 @@ module Language.InstrSel.Utils.Base
   , removeAt
   , (===)
   , scanlM
+  , combinations
   )
 where
 
@@ -173,3 +174,16 @@ scanlM f q xs =
           do q'' <- f q' x'
              qs'' <- scanlM' q'' xs'
              return (q'':qs'')
+
+-- | Returns a list of combinations, each of length @n@ with elements taken from
+-- a given list.
+--
+-- Written by Bergi:
+-- http://stackoverflow.com/a/21288092/426092
+combinations :: Int -> [a] -> [[a]]
+combinations n xs = let l = length xs
+                    in if n > l then [] else combinations' xs !! (l-n)
+ where combinations' [] = [[[]]]
+       combinations' (x:xs') =
+         let next = combinations' xs'
+         in zipWith (++) ([]:next) (map (map (x:)) next ++ [[]])

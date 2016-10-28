@@ -22,27 +22,30 @@ module Language.InstrSel.TargetMachines.PatternMatching
   )
 where
 
+import Language.InstrSel.Functions
+  ( Function (..) )
+import Language.InstrSel.Functions.IDs
+  ( mkEmptyBlockName )
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.Graphs.PatternMatching.VF2
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
-import Language.InstrSel.Functions
-  ( Function (..) )
-import Language.InstrSel.Functions.IDs
-  ( mkEmptyBlockName )
+import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils
-  ( (===) )
+  ( combinations )
 import Language.InstrSel.Utils.JSON
+
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
 
 import Control.DeepSeq
   ( NFData
   , rnf
   )
-
-import Data.List
-  ( nubBy )
 
 
 
@@ -170,11 +173,13 @@ processInstrPattern fg dup_fg instr pat =
   let pg = osGraph $ patOS pat
       dup_pg = duplicateNodes pg
       matches = map (fixMatch fg pg) $
-                findMatches dup_fg dup_pg
+                if not (isInstructionSimd instr)
+                then findMatches dup_fg dup_pg
+                else let pg_cs = componentsOf dup_pg
+                         sub_pg = head pg_cs
+                         sub_matches = findMatches dup_fg sub_pg
+                     in mkSimdMatches sub_pg sub_matches (tail pg_cs)
       okay_matches = filter (not . hasCyclicDataDependency fg) matches
-      non_sym_matches = if isInstructionSimd instr
-                        then pruneSymmetricSimdMatches okay_matches
-                        else okay_matches
   in map ( \m -> PatternMatch { pmInstrID = instrID instr
                               , pmPatternID = patID pat
                               , pmMatchID = 0 -- Unique value is assigned later
@@ -182,7 +187,48 @@ processInstrPattern fg dup_fg instr pat =
                               }
          ) $
      map convertMatchN2ID $
-     non_sym_matches
+     okay_matches
+
+-- | Constructs a list of matches for the entire SIMD pattern graph based on its
+-- components and list of matches for a single component.
+mkSimdMatches
+  :: Graph
+     -- ^ A component of the SIMD pattern graph.
+  -> [Match Node]
+     -- ^ List of matches found for the component above in the function graph.
+  -> [Graph]
+     -- ^ List of components remaining in the SIMD pattern graph.
+  -> [Match Node]
+     -- ^ List of matches for the entire SIMD pattern graph.
+mkSimdMatches sub_pg sub_matches pg_remaining_cs =
+  let reassignMatch (pg_c_m, sub_m) =
+        let reassign m =
+              let pn = pNode m
+                  fn = fNode m
+                  new_pn = findPNInMatch pg_c_m pn
+              in if isJust new_pn
+                 then Mapping { fNode = fn, pNode = fromJust new_pn }
+                 else error $ "mkSimdMatches: could not find a mapping for " ++
+                              "function node with ID " ++ (pShow $ getNodeID pn)
+        in toMatch $
+           map reassign $
+           fromMatch sub_m
+      sub_pg_cs_matches = map ( \ms -> if length ms == 1
+                                       then head ms
+                                       else error $ "mkSimdMatches: " ++
+                                                    "unexpected number of " ++
+                                                    "matches found"
+                              ) $
+                          map (findMatches sub_pg) $
+                          pg_remaining_cs
+      m_combs = combinations (1 + (length pg_remaining_cs)) sub_matches
+      simd_ms = map ( \(m:ms) ->
+                      let fixed_ms = map reassignMatch $
+                                     zip sub_pg_cs_matches ms
+                      in toMatch $ concatMap fromMatch (m:fixed_ms)
+                    )
+                    m_combs
+  in simd_ms
 
 -- | Checks if a given match will result in a cyclic data dependency in the
 -- function graph. The check works as follows: first the subgraph of the
@@ -209,16 +255,6 @@ hasCyclicDataDependency fg m =
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
   in cdd
-
--- | Removes matches that cover the same nodes in the function graph. It is
--- assumed that the matches originate from a SIMD instruction.
-pruneSymmetricSimdMatches :: [Match Node] -> [Match Node]
-pruneSymmetricSimdMatches ms =
-  let check m1 m2 =
-        let ns1 = map fNode (fromMatch m1)
-            ns2 = map fNode (fromMatch m2)
-        in ns1 === ns2
-  in nubBy check ms
 
 -- | Sometimes we want pattern nodes to be mapped to the same function
 -- node. However, the VF2 algorithm doesn't allow that. To get around this
