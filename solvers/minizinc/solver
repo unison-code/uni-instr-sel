@@ -80,11 +80,18 @@ MINIZINC_TIMELIMIT=""
 # HELP FUNCTIONS
 #================
 
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[1;34m'
-NC='\033[0m' # No Color
+# Bold green
+C_OK="\033[1;32m"
+# Bold red
+C_ERROR="\033[1;31m"
+# Normal red
+C_WARNING="\033[0;31m"
+# Bold yellow
+C_IGNORED="\033[1;33m"
+# Bold blue
+C_INFO="\033[1;34m"
+# No color
+C_NONE="\033[0m"
 
 function echoerr {
     echo -e "$@" 1>&2
@@ -107,7 +114,7 @@ function exe {
         DEL_ERROR_LOG=0
     fi
     cmd="$1 2> $ERROR_LOG"
-    echo -e "  [${YELLOW}EXECUTING${NC}] $cmd"
+    echo -e "  [${C_INFO}EXECUTING${C_NONE}] $cmd"
     eval "$cmd"
     status=$?
     if [ -f "$ERROR_LOG" ]; then
@@ -144,31 +151,31 @@ function ensureFileExists {
 }
 
 function reportError {
-    echoerr "  [${RED}ERROR${NC}] $@"
+    echoerr "  [${C_ERROR}ERROR${C_NONE}] $@"
 }
 
 function reportWarning {
-    echowarn "  [${RED}WARNING${NC}] $@"
+    echowarn "  [${C_WARNING}WARNING${C_NONE}] $@"
 }
 
 function reportTask {
     msg=`echo "$@" | tr [a-z] [A-Z]`
     echo
-    echo -e "${BLUE}* $msg...${NC}"
+    echo -e "${C_INFO}* $msg...${C_NONE}"
 }
 
 function reportNewEntity {
-    echo -e "  [${GREEN}CREATED${NC}] $@"
+    echo -e "  [${C_OK}CREATED${C_NONE}] $@"
 }
 
 function reportUpdatedEntity {
-    echo -e "  [${GREEN}UPDATED${NC}] $@"
+    echo -e "  [${C_OK}UPDATED${C_NONE}] $@"
 }
 
 function reportLatestTimeFromStats {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     time=`tail -n 1 $stats_filepath | sed -n 's/^[^:]*: //p'`
-    echo -e "  [${YELLOW}TOOK${NC}] $time"
+    echo -e "  [${C_INFO}TOOK${C_NONE}] $time"
 }
 
 function flattenModelFile {

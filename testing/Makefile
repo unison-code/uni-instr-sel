@@ -57,11 +57,18 @@ TARGET := mips32
 
 REGRESSION_TESTS_DIR := ./regression
 
-RED=\033[1;31m
-GREEN=\033[1;32m
-YELLOW=\033[1;33m
-BLUE=\033[1;34m
-NC=\033[0m# No color
+# Bold green
+C_OK=\033[1;32m
+# Bold red
+C_ERROR=\033[1;31m
+# Normal red
+C_WARNING=\033[0;31m
+# Bold yellow
+C_IGNORED=\033[1;33m
+# Bold blue
+C_INFO=\033[1;34m
+# No color
+C_NONE=\033[0m
 
 
 
@@ -129,15 +136,15 @@ run-regression-tests:
 .PHONY: run-regression-tests-for-target
 run-regression-tests-for-target:
 	@echo
-	@echo -n "$(BLUE)"
+	@echo -n "$(C_INFO)"
 	@echo "=========================================================="
-	@echo "=   REGRESSION TESTS FOR TARGET: $(NC)$(TARGET)$(BLUE)"
+	@echo "=   REGRESSION TESTS FOR TARGET: $(C_NONE)$(TARGET)$(C_INFO)"
 	@echo "=========================================================="
-	@echo -n "$(NC)"
+	@echo -n "$(C_NONE)"
 	@echo
-	@echo "$(BLUE)NOTE: Solving time is given in brackets$(NC)"
+	@echo "$(C_INFO)NOTE: Solving time is given in brackets$(C_NONE)"
 	@echo
-	@echo "$(BLUE)* EXECUTING REGRESSION TESTS$:$(NC)"
+	@echo "$(C_INFO)* EXECUTING REGRESSION TESTS$:$(C_NONE)"
 	@\
 	T_INDENT="    " ;\
 	T_TOTAL=0 ;\
@@ -223,10 +230,11 @@ run-regression-tests-for-target:
 						done ;\
 						if [ "$$T_IS_OK" -ne "0" ]; then \
 							T_PASSED=`expr $$T_PASSED + 1` ;\
-							echo "[$(GREEN)OK$(NC)] [$${solv_time}s]" ;\
+							echo "[$(C_OK)OK$(C_NONE)] [$${solv_time}s]" ;\
 						else \
 							T_WARN=`expr $$T_WARN + 1` ;\
-							echo -n "[$(RED)WARNING$(NC)] [$${solv_time}s] " ;\
+							echo -n "[$(C_WARNING)WARNING$(C_NONE)] " ;\
+							echo -n "[$${solv_time}s] " ;\
 							echo    "(diff output)" ;\
 							for i in `seq 1 58`; do \
 								echo -n "-" ;\
@@ -240,12 +248,13 @@ run-regression-tests-for-target:
 						fi \
 					else \
 						T_FAILED=`expr $$T_FAILED + 1` ;\
-						echo -n "[$(RED)FAILED$(NC)] [$${solv_time}s] " ;\
+						echo -n "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+						echo -n "[$${solv_time}s] " ;\
 						echo    "(no output)" ;\
 					fi ;\
 				else \
 					T_FAILED=`expr $$T_FAILED + 1` ;\
-					echo -n "[$(RED)FAILED$(NC)] [$${solv_time}s] " ;\
+					echo -n "[$(C_ERROR)FAILED$(C_NONE)] [$${solv_time}s] " ;\
 					echo    "(diff costs)" ;\
 					for i in `seq 0 $$T_MAX_LENGTH`; do \
 						echo -n " " ;\
@@ -259,11 +268,11 @@ run-regression-tests-for-target:
 				rm -f $${TEMPFILE}.* ;\
 			else \
 			    T_IGNORED=`expr $$T_IGNORED + 1` ;\
-				echo "[$(YELLOW)IGNORED$(NC)] (has no oracles)" ;\
+				echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no oracles)" ;\
 			fi ;\
 		else \
 		    T_IGNORED=`expr $$T_IGNORED + 1` ;\
-			echo "[$(YELLOW)IGNORED$(NC)] (has no cost)" ;\
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no cost)" ;\
 		fi ;\
 	done ;\
 	T_TIME_END=`date +%s` ;\
@@ -288,36 +297,36 @@ run-regression-tests-for-target:
 	T_SOLV_TIME_PERCENT=`expr $$T_SOLV_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
 	T_MISC_TIME_PERCENT=`expr $$T_MISC_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
 	echo ;\
-	echo -n "$(BLUE)" ;\
+	echo -n "$(C_INFO)" ;\
 	echo "==========================================================" ;\
-	echo -n "=   PASSED $(GREEN)$$T_PASSED$(BLUE)" ;\
+	echo -n "=   PASSED $(C_OK)$$T_PASSED$(C_INFO)" ;\
 	if [ "$$T_IGNORED" -ne "0" ]; then \
-		echo -n ", IGNORED $(YELLOW)$$T_IGNORED$(BLUE)" ;\
+		echo -n ", IGNORED $(C_IGNORED)$$T_IGNORED$(C_INFO)" ;\
 	fi ;\
 	if [ "$$T_WARN" -ne "0" ]; then \
-		echo -n ", WARNED $(RED)$$T_WARN$(BLUE)" ;\
+		echo -n ", WARNED $(C_WARNING)$$T_WARN$(C_INFO)" ;\
 	fi ;\
 	if [ "$$T_FAILED" -ne "0" ]; then \
-		echo -n ", FAILED $(RED)$$T_FAILED$(BLUE)" ;\
+		echo -n ", FAILED $(C_ERROR)$$T_FAILED$(C_INFO)" ;\
 	fi ;\
-	echo " of $(NC)$$T_TOTAL$(BLUE) TESTS" ;\
+	echo " of $(C_NONE)$$T_TOTAL$(C_INFO) TESTS" ;\
 	echo "=" ;\
 	echo -n "=   TOTAL TIME:              " ;\
-	echo    "$(NC)$${T_TIME_TOTAL_PRETTY}$(BLUE)" ;\
+	echo    "$(C_NONE)$${T_TIME_TOTAL_PRETTY}$(C_INFO)" ;\
 	echo -n "=   SOLVING:                 " ;\
-	echo -n      "$(NC)$${T_SOLV_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_SOLV_TIME_PERCENT}%)$(BLUE)" ;\
+	echo -n      "$(C_NONE)$${T_SOLV_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_SOLV_TIME_PERCENT}%)$(C_INFO)" ;\
 	echo -n "=   MODEL PREP (FLATTENING): " ;\
-	echo -n      "$(NC)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_PREP_TIME_PERCENT}%)$(BLUE)" ;\
+	echo -n      "$(C_NONE)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_PREP_TIME_PERCENT}%)$(C_INFO)" ;\
 	echo -n "=   PATTERN MATCHING:        " ;\
-	echo -n      "$(NC)$${T_PMAT_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_PMAT_TIME_PERCENT}%)$(BLUE)" ;\
+	echo -n      "$(C_NONE)$${T_PMAT_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_PMAT_TIME_PERCENT}%)$(C_INFO)" ;\
 	echo -n "=   OTHER TASKS:             " ;\
-	echo -n      "$(NC)$${T_MISC_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_MISC_TIME_PERCENT}%)$(BLUE)" ;\
+	echo -n      "$(C_NONE)$${T_MISC_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_MISC_TIME_PERCENT}%)$(C_INFO)" ;\
 	echo "==========================================================" ;\
-	echo -n "$(NC)" ;\
+	echo -n "$(C_NONE)" ;\
 	echo
 
 
@@ -388,7 +397,7 @@ pattern.dot:
 #==============
 
 %.run-checks:
-	@echo "$(BLUE)* CHECKING INTEGRITY$(NC)"
+	@echo "$(C_INFO)* CHECKING INTEGRITY$(C_NONE)"
 	@for f in $*.f.json \
 			  $*.ph.f.json \
 			  $*.ph.lp.f.json \
@@ -403,20 +412,20 @@ pattern.dot:
 				 > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				if [ ! -s $$out ]; then \
-					echo "[$(GREEN)OK$(NC)]" ;\
+					echo "[$(C_OK)OK$(C_NONE)]" ;\
 				else \
-					echo "[$(RED)WARNING$(NC)]" ;\
+					echo "[$(C_WARNING)WARNING$(C_NONE)]" ;\
 					cat $$out ;\
 				fi \
 			else \
-				echo "[$(RED)FAILED$(NC)]" ;\
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
 				cat $$out ;\
 			fi \
 		else \
-			echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 		fi \
 	done
-	@echo "$(BLUE)* CHECKING COVERABILITY$(NC)"
+	@echo "$(C_INFO)* CHECKING COVERABILITY$(C_NONE)"
 	@echo -n "    $*.ph.lp.ce.cc.be.f.json "
 	@if [ -f $*.ph.lp.ce.cc.be.f.json ]; then \
 		if [ -f $*.ph.lp.ce.cc.be.ae.p.json ]; then \
@@ -426,18 +435,18 @@ pattern.dot:
 			                   -p $*.ph.lp.ce.cc.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
-				echo "[$(GREEN)OK$(NC)]" ;\
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
 			else \
-				echo "[$(RED)FAILED$(NC)]" ;\
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
 				cat $$out ;\
 			fi \
 		else \
-			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
 		fi \
 	else \
-		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
-	@echo "$(BLUE)* CHECKING OVERLAP OF DATA LOCATIONS$(NC)"
+	@echo "$(C_INFO)* CHECKING OVERLAP OF DATA LOCATIONS$(C_NONE)"
 	@echo -n "    $*.ph.lp.ce.cc.be.f.json "
 	@if [ -f $*.ph.lp.ce.cc.be.f.json ]; then \
 		if [ -f $*.ph.lp.ce.cc.be.ae.p.json ]; then \
@@ -447,16 +456,16 @@ pattern.dot:
 			                   -p $*.ph.lp.ce.cc.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
-				echo "[$(GREEN)OK$(NC)]" ;\
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
 			else \
-				echo "[$(RED)FAILED$(NC)]" ;\
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
 				cat $$out ;\
 			fi \
 		else \
-			echo "[$(YELLOW)IGNORED$(NC)] (has no pattern matchset)" ;\
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
 		fi \
 	else \
-		echo "[$(YELLOW)IGNORED$(NC)] (not found)" ;\
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
 
 %.run-bugpoint:
