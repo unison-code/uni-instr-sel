@@ -225,6 +225,10 @@ instance ConstantFormable LLVMC.Constant where
                                         , globalRefName = sym
                                         }
   toConstant (LLVMC.Null (LLVM.PointerType {})) = Right NullConstant
+  toConstant (LLVMC.Undef ( LLVM.IntegerType b )) =
+    Right $ IntConstant { intBitWidth = fromIntegral b
+                        , signedIntValue = 0
+                        }
   toConstant l = Left $ "toConstant: not implemented for " ++ show l
 
 -- | Class for converting an LLVM operand into a corresponding operand
