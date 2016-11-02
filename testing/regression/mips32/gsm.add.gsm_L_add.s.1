@@ -30,14 +30,12 @@ bb0:
   BEQ %tmp.2, $0, bb2
 bb3:
 6:
-  %const.-1.copy.3 = ADDi $0, -1
-  %8 = XOR %b, %const.-1.copy.3
-  %7 = XOR %a, %const.-1.copy.3
+  (%8, %7) = XORi2 (%b, -1), (%a, -1)
   %const.-2.copy.1 = ADDi $0, -2
   %tmp.3 = LUi 2147483646[31:16]
   %const.2147483646.copy.1 = ORi %tmp.3, 2147483646[15:0]
   %9 = ADDU %8, %7
-  %11 = SUB %const.-2.copy.1, %9
+  %11 = SUBU %const.-2.copy.1, %9
   BGTU $%9, $%const.2147483646.copy.1, bb4
 bb5:
 .selectcont:
