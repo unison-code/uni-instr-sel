@@ -218,26 +218,45 @@ insertAlternativeMappings t limit vs pm =
   in pm { pmMatches = new_matches }
 
 -- | Arranges the nodes in decreasing order of reusability. A node has high
--- reusability if it appears in few matches which, if selected, would make the
--- value unreusable. A value becomes unreusable if the match both uses and
--- defines the value and does not make it externally available.
+-- reusability if the ratio between the number of matches that use the node and
+-- the number of matches that would make the value unreusable. A value becomes
+-- unreusable if the match both uses and defines the value and does not make it
+-- externally available.
 sortValueNodesByReusability
   :: TargetMachine
   -> PatternMatchset
   -> [NodeID]
   -> [NodeID]
 sortValueNodesByReusability t pm vs =
-  let computeConsumption v = length $
-                             filter (consumesValue v) $
-                             pmMatches pm
+  let computeScore v =
+        let num_uses = length $
+                       filter (usesValue v) $
+                       pmMatches pm
+            num_consumps = length $
+                           filter (consumesValue v) $
+                           pmMatches pm
+            ratio = fromIntegral num_uses / fromIntegral num_consumps
+        in ratio :: Float
+      usesValue v m =
+        let pn = findPNInMatch (pmMatch m) v
+            g = osGraph $ patOS $ getInstrPatternFromPatternMatch t m
+        in if length pn > 0
+           then any ( \nid ->
+                      let isUse n = let succs = getSuccessors g n
+                                    in length succs > 0
+                      in any isUse (findNodesWithNodeID g nid)
+                    )
+                    pn
+           else False
       consumesValue v m =
         let pn = findPNInMatch (pmMatch m) v
             p = getInstrPatternFromPatternMatch t m
-        in if isJust pn
-           then not $ (fromJust pn) `elem` (patExternalData p)
+        in if length pn > 0
+           then any (\n -> not $ n `elem` (patExternalData p)) pn
            else False
-      vs_r = map (\v -> (v, computeConsumption v)) vs
-      sorted_vs_r = sortBy (\(_, r1) (_, r2) -> compare r1 r2) vs_r
+      vs_r = map (\v -> (v, computeScore v)) vs
+      -- Sorted in decreasing score order
+      sorted_vs_r = sortBy (\(_, r1) (_, r2) -> compare r2 r1) vs_r
   in map fst sorted_vs_r
 
 getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
