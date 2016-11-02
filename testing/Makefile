@@ -180,7 +180,7 @@ run-regression-tests-for-target:
 				TEMPFILE=$$(basename `mktemp`) ;\
 				T_LL=$${TEMPFILE}.ll ;\
 			    T_ASM=$${TEMPFILE}.s ;\
-				cp $$T $$T_LL ;\
+				cp $(REGRESSION_TESTS_DIR)/$$T $$T_LL ;\
 				$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 				pmatch_file="$${T_LL%.*}.ph.lp.ce.cc.be.ae.presolved.p.json" ;\
