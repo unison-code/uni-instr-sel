@@ -40,9 +40,7 @@ import Language.InstrSel.Utils
 import Language.InstrSel.Utils.JSON
 
 import Data.Maybe
-  ( fromJust
-  , isJust
-  )
+  ( fromJust )
 
 import qualified Data.Map as M
 
@@ -240,10 +238,15 @@ mkSimdMatches fg sub_pg sub_matches pg_remaining_cs =
               let pn = pNode m
                   fn = fNode m
                   new_pn = findPNInMatch pg_c_m pn
-              in if isJust new_pn
-                 then Mapping { fNode = fn, pNode = fromJust new_pn }
-                 else error $ "mkSimdMatches: could not find a mapping for " ++
-                              "function node with ID " ++ (pShow $ getNodeID pn)
+              in if length new_pn == 1
+                 then Mapping { fNode = fn, pNode = head new_pn }
+                 else if length new_pn == 0
+                      then  error $ "mkSimdMatches: could not find a mapping "++
+                                    "for function node with ID " ++
+                                    (pShow $ getNodeID pn)
+                      else  error $ "mkSimdMatches: found multiple mappings "++
+                                    "for function node with ID " ++
+                                    (pShow $ getNodeID pn)
         in toMatch $
            map reassign $
            fromMatch sub_m

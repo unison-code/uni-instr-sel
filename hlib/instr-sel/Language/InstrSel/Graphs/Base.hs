@@ -326,8 +326,8 @@ instance (PrettyShow a) => PrettyShow (Mapping a) where
   pShow m = pShow (fNode m, pNode m)
 
 -- | Represents a match between a function graph and a pattern graph. Note that
--- it is allowed that a node in the pattern graph be mapped to multiple nodes in
--- the function graph, but not vice versa.
+-- it is allowed that a node in the pattern graph may be mapped to multiple
+-- nodes in the function graph, and vice versa.
 newtype Match n
   = Match (S.Set (Mapping n))
   deriving (Show, Eq, Ord)
@@ -1602,16 +1602,9 @@ findPNsInMatch
      -- ^ The match.
   -> [n]
      -- ^ List of function nodes.
-  -> [Maybe n]
+  -> [[n]]
      -- ^ List of corresponding pattern nodes.
-findPNsInMatch (Match m) fns =
-  let pns = findPNsInMapping (S.toList m) fns
-      getSingleNode ns = if length ns == 1
-                         then Just $ head ns
-                         else if length ns == 0
-                              then Nothing
-                              else error $ "findPNsInMatch: multiple mappings"
-  in map getSingleNode pns
+findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
 
 -- | Same as 'findFNsInMapping'.
 findFNsInMatch
@@ -1631,15 +1624,9 @@ findPNInMatch
      -- ^ The current mapping state.
   -> n
      -- ^ Function node.
-  -> Maybe n
-     -- ^ Corresponding pattern node.
-findPNInMatch (Match m) fn =
-  let pn = findPNInMapping (S.toList m) fn
-  in if length pn == 1
-     then Just $ head pn
-     else if length pn == 0
-          then Nothing
-          else error $ "findPNInMatch: multiple mappings"
+  -> [n]
+     -- ^ Corresponding pattern nodes.
+findPNInMatch (Match m) = findPNInMapping (S.toList m)
 
 -- | Same as 'findFNInMapping'.
 findFNInMatch

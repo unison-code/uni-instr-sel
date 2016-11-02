@@ -58,7 +58,8 @@ run CheckFunctionGraphCoverage function matchset _ =
       op_nodes = map getNodeID $ filter isOperationNode $ getAllNodes g
       matches = pmMatches matchset
       isNodeCoverable n =
-        any (isJust . (flip findPNInMatch) n . pmMatch) matches
+        any (\m -> length (findPNInMatch (pmMatch m) n) > 0)
+            matches
       uncovered_nodes = filter (not . isNodeCoverable) op_nodes
   in if length uncovered_nodes > 0
      then return [ toOutputWithExitCode
@@ -96,29 +97,39 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
            else []
       hasNodeOverlappingLocs n =
         let def_locs =
-              concatMap ( \pm -> let m = pmMatch pm
-                                     pn = findPNInMatch m n
-                                     os = getPatternGraph pm
-                                 in if isJust pn
-                                    then getDefLocationsForNode os (fromJust pn)
-                                    else []
+              S.unions $
+              map ( \pm -> let m = pmMatch pm
+                               pn = findPNInMatch m n
+                               os = getPatternGraph pm
+                               locs = map ( S.fromList .
+                                            getDefLocationsForNode os
+                                          )
+                                          pn
+                           in foldr (\s1 s2 -> s1 `S.intersection` s2)
+                                    (head locs)
+                                    (tail locs)
                         ) $
               matches
             use_locs =
-              concatMap ( \pm -> let m = pmMatch pm
-                                     pn = findPNInMatch m n
-                                     os = getPatternGraph pm
-                                 in if isJust pn
-                                    then getUseLocationsForNode os (fromJust pn)
-                                    else []
+              S.unions $
+              map ( \pm -> let m = pmMatch pm
+                               pn = findPNInMatch m n
+                               os = getPatternGraph pm
+                               locs = map ( S.fromList .
+                                            getUseLocationsForNode os
+                                          )
+                                          pn
+                           in foldr (\s1 s2 -> s1 `S.intersection` s2)
+                                    (head locs)
+                                    (tail locs)
                         ) $
               matches
         in -- If either list is empty, it means there are no restrictions on the
            -- locations and thus there is automatically an overlap
-           if length def_locs > 0 && length use_locs > 0
+           if S.size def_locs > 0 && S.size use_locs > 0
            then not $
                 S.null $
-                (S.fromList def_locs) `S.intersection` (S.fromList use_locs)
+                def_locs `S.intersection` use_locs
            else True
       non_overlapping_nodes = filter (not . hasNodeOverlappingLocs) data_nodes
   in if length non_overlapping_nodes > 0

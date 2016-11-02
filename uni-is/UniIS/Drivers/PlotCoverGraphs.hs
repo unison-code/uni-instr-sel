@@ -108,7 +108,8 @@ run _ _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
 mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO String
 mkCoveragePlot show_edge_nrs function matches =
-  do let hasMatch n = any (\m -> isJust $ findPNInMatch m (getNodeID n)) matches
+  do let hasMatch n = any (\m -> length (findPNInMatch m $ getNodeID n) > 0)
+                          matches
          nf n = [ GV.style GV.filled
                 , if hasMatch n
                   then GV.fillColor GV.Green
