@@ -39,8 +39,15 @@ import Language.InstrSel.Utils
   )
 import Language.InstrSel.Utils.JSON
 
+import Data.List
+  ( elemIndex
+  , nub
+  )
+import qualified Data.Set as S
 import Data.Maybe
-  ( fromJust )
+  ( isJust
+  , fromJust
+  )
 
 import qualified Data.Map as M
 
@@ -48,6 +55,9 @@ import Control.DeepSeq
   ( NFData
   , rnf
   )
+
+-- TODO: remove
+import Debug.Trace
 
 
 
@@ -183,19 +193,32 @@ mkPatternMatches int_ms =
 
 processInstr :: Function -> Instruction -> [IntPatternMatch]
 processInstr f i =
-  let fg = osGraph $ functionOS f
+  let os = functionOS f
+      fg = osGraph os
       dup_fg = duplicateNodes fg
-  in concatMap (processInstrPattern fg dup_fg i) (instrPatterns i)
+      entry = let e = osEntryBlockNode os
+                  n = findNodesWithNodeID fg (fromJust e)
+              in if isJust e
+                 then if length n == 1
+                      then head n
+                      else if length n == 0
+                           then error $ "processInstr: function graph has " ++
+                                        "no node with ID " ++ pShow (fromJust e)
+                           else error $ "processInstr: function graph has " ++
+                                        "multiple nodes with ID " ++
+                                        pShow (fromJust e)
+                 else error "processInstr: function has no entry block node"
+  in concatMap (processInstrPattern (fg, entry) dup_fg i) (instrPatterns i)
 
 processInstrPattern
-  :: Graph
-     -- ^ The original function graph.
+  :: (Graph, Node)
+     -- ^ The original function graph, together with its entry block node.
   -> Graph
      -- ^ The duplicated function graph.
   -> Instruction
   -> InstrPattern
   -> [IntPatternMatch]
-processInstrPattern fg dup_fg instr pat =
+processInstrPattern (fg, entry) dup_fg instr pat =
   let pg = osGraph $ patOS pat
       dup_pg = duplicateNodes pg
       matches = if not (isInstructionSimd instr)
@@ -206,6 +229,7 @@ processInstrPattern fg dup_fg instr pat =
                          sub_pg = head pg_cs
                          sub_matches = findMatches dup_fg sub_pg
                      in map (\m -> (m, True)) $
+                        pruneNonselectableSimdMatches fg entry $
                         map (fixMatch fg pg) $
                         mkSimdMatches dup_fg sub_pg sub_matches (tail pg_cs)
   in map ( \(m, b) -> IntPatternMatch { ipmInstrID = instrID instr
@@ -387,3 +411,139 @@ fixMatch fg pg m =
   in toMatch $
      map updatePair $
      fromMatch m
+
+-- | Removes SIMD matches that will never be selected becuase not all operations
+-- can be moved to the same block.
+pruneNonselectableSimdMatches :: Graph -> Node -> [Match Node] -> [Match Node]
+pruneNonselectableSimdMatches fg entry ms =
+  trace (show $ length ms) $
+  let cfg_fg = extractCFG fg
+      doms = computeDomSets cfg_fg entry
+      all_bs = filter isBlockNode $
+               getAllNodes cfg_fg
+      ssa_fg = extractSSA fg
+      all_ds = filter isDatumNode $
+               getAllNodes ssa_fg
+      d_bs_sets_init = map (\n -> (n, S.fromList all_bs)) all_ds
+      in_def_sets = concatMap ( \n -> map (\b -> (n, b)) $
+                                      map (getSourceNode fg) $
+                                      getDefInEdges fg n
+                              ) $
+                    all_ds
+      out_def_sets = concatMap ( \n -> map (\b -> (n, b)) $
+                                       map (getTargetNode fg) $
+                                       getDefOutEdges fg n
+                               ) $
+                     all_ds
+      d_bs_sets = let st0 = d_bs_sets_init
+                      st1 = computeDSetsDown ssa_fg doms in_def_sets st0
+                      st2 = computeDSetsUp ssa_fg doms out_def_sets st1
+                  in st2
+      op_bs_sets = map (\(d, bs) -> (head $ getPredecessors fg d, bs)) d_bs_sets
+      isSelectable m =
+        let ops = filter isOperationNode $
+                  nub $
+                  map fNode $
+                  fromMatch m
+            place_cands = map (\n -> fromJust $ lookup n op_bs_sets) ops
+            place_common = intersections place_cands
+        in S.size place_common > 0
+  in filter isSelectable ms
+
+updateDSet
+  :: Node
+  -> S.Set Node
+  -> [(Node, S.Set Node)]
+  -> [(Node, S.Set Node)]
+updateDSet d new_bs st =
+  let ind = fromJust $ d `elemIndex` (map fst st)
+  in take ind st ++ [(d, new_bs)] ++ drop (ind + 1) st
+
+computeDSetsDown
+  :: Graph
+  -> [DomSet Node]
+  -> [(Node, Node)]
+  -> [(Node, S.Set Node)]
+  -> [(Node, S.Set Node)]
+computeDSetsDown g doms ps st = foldr (computeDSetsDown' g doms) st ps
+
+computeDSetsDown'
+  :: Graph
+  -> [DomSet Node]
+  -> (Node, Node)
+  -> [(Node, S.Set Node)]
+  -> [(Node, S.Set Node)]
+computeDSetsDown' g doms (d, b) st0 =
+  let processOutDatum in_d_set out_d st =
+        let out_d_set = fromJust $ lookup out_d st
+            new_out_d_set = out_d_set `S.intersection` in_d_set
+            st' = updateDSet out_d new_out_d_set st
+        in processInDatum out_d st'
+      processOp o st =
+        if isPhiNode o
+        then st
+        else let in_ds = map (getSourceNode g) $
+                         getDtFlowInEdges g o
+                 in_d_sets = map (\n -> fromJust $ lookup n st) in_ds
+                 merged_in_d_set = intersections in_d_sets
+                 out_ds = map (getTargetNode g) $
+                          getDtFlowOutEdges g o
+             in foldr (processOutDatum merged_in_d_set) st out_ds
+      processInDatum in_d st =
+        let ops_using_d = map (getTargetNode g) $
+                           getDtFlowOutEdges g in_d
+        in foldr processOp st ops_using_d
+  in let dominated_by_b = [ domNode s | s <- doms
+                                      , b `elem` domSet s
+                          ]
+         st1 = updateDSet d (S.fromList dominated_by_b) st0
+         st2 = processInDatum d st1
+         st3 = updateDSet d (S.fromList [b]) st2
+      in st3
+
+computeDSetsUp
+  :: Graph
+  -> [DomSet Node]
+  -> [(Node, Node)]
+  -> [(Node, S.Set Node)]
+  -> [(Node, S.Set Node)]
+computeDSetsUp g doms ps st = foldr (computeDSetsUp' g doms) st ps
+
+computeDSetsUp'
+  :: Graph
+  -> [DomSet Node]
+  -> (Node, Node)
+  -> [(Node, S.Set Node)]
+  -> [(Node, S.Set Node)]
+computeDSetsUp' g doms (d, b) st0 =
+  let processInDatum out_d_set in_d st =
+        let in_d_set = fromJust $ lookup in_d st
+            new_in_d_set = in_d_set `S.intersection` out_d_set
+            st' = updateDSet in_d new_in_d_set st
+        in processOutDatum in_d st'
+      processOutDatum out_d st =
+        let in_es = getDtFlowInEdges g out_d
+            o = getSourceNode g $
+                head $
+                in_es
+        in if length in_es == 0 || isPhiNode o || not (isOperationNode o)
+           then st
+           else let in_ds = map (getSourceNode g) $
+                            getDtFlowInEdges g o
+                    out_d_set = fromJust $ lookup out_d st
+                in foldr (processInDatum out_d_set) st in_ds
+  in let dominates_b = head $
+                       [ domSet s | s <- doms
+                                  , domNode s == b
+                       ]
+         st1 = updateDSet d (S.fromList dominates_b) st0
+         st2 = processOutDatum d st1
+         st3 = updateDSet d (S.fromList [b]) st2
+      in st3
+
+intersections :: (Ord a) => [S.Set a] -> S.Set a
+intersections [] = S.empty
+intersections ss =
+  foldr (\s1 s2 -> s1 `S.intersection` s2)
+        (head ss)
+        (tail ss)
