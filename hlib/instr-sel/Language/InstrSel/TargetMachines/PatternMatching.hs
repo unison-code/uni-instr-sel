@@ -56,9 +56,6 @@ import Control.DeepSeq
   , rnf
   )
 
--- TODO: remove
-import Debug.Trace
-
 
 
 --------------
@@ -416,7 +413,6 @@ fixMatch fg pg m =
 -- can be moved to the same block.
 pruneNonselectableSimdMatches :: Graph -> Node -> [Match Node] -> [Match Node]
 pruneNonselectableSimdMatches fg entry ms =
-  trace (show $ length ms) $
   let cfg_fg = extractCFG fg
       doms = computeDomSets cfg_fg entry
       all_bs = filter isBlockNode $
