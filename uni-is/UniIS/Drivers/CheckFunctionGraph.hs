@@ -25,13 +25,11 @@ import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..)
   , PatternMatchset (..)
   )
-
+import qualified Language.InstrSel.Utils.Set as S
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit
   , errorExitCode
   )
-
-import qualified Data.Set as S
 
 import Data.List
   ( intercalate )
@@ -105,9 +103,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
                                             getDefLocationsForNode os
                                           )
                                           pn
-                           in foldr (\s1 s2 -> s1 `S.intersection` s2)
-                                    (head locs)
-                                    (tail locs)
+                           in S.intersections locs
                         ) $
               matches
             use_locs =
@@ -119,9 +115,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
                                             getUseLocationsForNode os
                                           )
                                           pn
-                           in foldr (\s1 s2 -> s1 `S.intersection` s2)
-                                    (head locs)
-                                    (tail locs)
+                           in S.intersections locs
                         ) $
               matches
         in -- If either list is empty, it means there are no restrictions on the

@@ -80,6 +80,7 @@ library
     Language.InstrSel.Utils.Lisp
     Language.InstrSel.Utils.Natural
     Language.InstrSel.Utils.Range
+    Language.InstrSel.Utils.Set
     Language.InstrSel.Utils.Time
 
   other-extensions:  FlexibleInstances,

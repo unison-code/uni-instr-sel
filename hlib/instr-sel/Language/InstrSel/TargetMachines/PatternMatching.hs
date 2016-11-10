@@ -37,13 +37,13 @@ import Language.InstrSel.Utils
   ( combinations
   , toPair
   )
+import qualified Language.InstrSel.Utils.Set as S
 import Language.InstrSel.Utils.JSON
 
 import Data.List
   ( elemIndex
   , nub
   )
-import qualified Data.Set as S
 import Data.Maybe
   ( isJust
   , fromJust
@@ -442,7 +442,7 @@ pruneNonselectableSimdMatches fg entry ms =
                   map fNode $
                   fromMatch m
             place_cands = map (\n -> fromJust $ lookup n op_bs_sets) ops
-            place_common = intersections place_cands
+            place_common = S.intersections place_cands
         in S.size place_common > 0
   in filter isSelectable ms
 
@@ -481,7 +481,7 @@ computeDSetsDown' g doms (d, b) st0 =
         else let in_ds = map (getSourceNode g) $
                          getDtFlowInEdges g o
                  in_d_sets = map (\n -> fromJust $ lookup n st) in_ds
-                 merged_in_d_set = intersections in_d_sets
+                 merged_in_d_set = S.intersections in_d_sets
                  out_ds = map (getTargetNode g) $
                           getDtFlowOutEdges g o
              in foldr (processOutDatum merged_in_d_set) st out_ds
@@ -536,10 +536,3 @@ computeDSetsUp' g doms (d, b) st0 =
          st2 = processOutDatum d st1
          st3 = updateDSet d (S.fromList [b]) st2
       in st3
-
-intersections :: (Ord a) => [S.Set a] -> S.Set a
-intersections [] = S.empty
-intersections ss =
-  foldr (\s1 s2 -> s1 `S.intersection` s2)
-        (head ss)
-        (tail ss)
