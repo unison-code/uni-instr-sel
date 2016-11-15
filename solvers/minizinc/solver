@@ -119,7 +119,7 @@ function exe {
         error_log=`mktemp`
         del_error_log=1
     else
-        error_log="$2"
+        error_log="$3"
         del_error_log=0
     fi
 
