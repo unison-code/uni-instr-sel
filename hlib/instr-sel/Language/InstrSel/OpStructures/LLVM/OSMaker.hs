@@ -12,8 +12,7 @@ Main authors:
 {-# LANGUAGE FlexibleInstances, RankNTypes #-}
 
 module Language.InstrSel.OpStructures.LLVM.OSMaker
-  ( SymbolFormable (..)
-  , mkFunctionOS
+  ( mkFunctionOS
   , mkPatternOS
   )
 where
