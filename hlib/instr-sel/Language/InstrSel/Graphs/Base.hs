@@ -220,6 +220,10 @@ instance Ord Node where
 instance Eq Node where
   (Node (n1, _)) == (Node (n2, _)) = n1 == n2
 
+instance PrettyShow Node where
+  pShow n = "{ID: " ++ pShow (getNodeID n) ++ ", " ++ pShow (getNodeType n) ++
+            "}"
+
 -- | A synonym for indicating the source node of an edge.
 type SrcNode = Node
 

@@ -10,26 +10,34 @@ Main authors:
 -}
 
 module Language.InstrSel.DriverTools.Base
-  ( Output (..)
+  ( Log (..)
+  , LogMessage (..)
+  , Output (..)
+  , concatLogs
+  , emptyLog
+  , toLog
   , emitToStdout
   , emitToFile
   , toOutput
   , toOutputWithID
   , toOutputWithExitCode
   , toOutputWithIDAndExitCode
+  , mkOutputFromLog
   )
 where
 
 import Language.InstrSel.Utils.IO
   ( ExitCode (..)
+  , errorExitCode
   , successExitCode
   )
 
+import Data.List
+  ( intercalate )
 import Data.Maybe
   ( fromJust
   , isJust
   )
-
 import System.FilePath
   ( splitExtension
   , takeDirectory
@@ -54,6 +62,16 @@ data Output
       , oData :: String
         -- ^ The produced output.
       }
+
+-- | Contains an log, which is a list of 'LogMessage's.
+newtype Log
+  = Log { msgList :: [LogMessage] }
+
+-- | A representation for producing log messages, which in turn will later be
+-- turned into 'Output'.
+data LogMessage
+  = ErrorMessage String
+  | WarningMessage String
 
 
 
@@ -125,3 +143,35 @@ emitToFile fp o =
                  ) ++
                  ext
   in writeFile filename (oData o)
+
+-- | Creates an empty log.
+emptyLog :: Log
+emptyLog = Log []
+
+-- | Converts a 'LogMessage' into a 'Log.
+toLog :: LogMessage -> Log
+toLog msg = Log [msg]
+
+-- | Concatenates a list of 'Log's into a single 'Log'.
+concatLogs :: [Log] -> Log
+concatLogs logs = Log $ concat $ map msgList logs
+
+isErrorMessage :: LogMessage -> Bool
+isErrorMessage (ErrorMessage {}) = True
+isErrorMessage _ = False
+
+-- | Converts a 'LogMessage' to a 'String'
+msg2Str :: LogMessage -> String
+msg2Str (ErrorMessage str) = str
+msg2Str (WarningMessage str) = str
+
+-- | Makes an 'Output' from a given 'Log'. An empty log indicates no errors.
+mkOutputFromLog :: Log -> [Output]
+mkOutputFromLog (Log []) = []
+mkOutputFromLog (Log msgs) =
+  let code = if any isErrorMessage msgs
+             then errorExitCode
+             else successExitCode
+      msgs_str = intercalate "\n\n" $
+                 map msg2Str msgs
+  in [toOutputWithExitCode code msgs_str]

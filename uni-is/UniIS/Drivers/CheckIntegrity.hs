@@ -26,14 +26,10 @@ import Language.InstrSel.TargetMachines
   ( InstrPattern (..) )
 
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit
-  , errorExitCode
-  , successExitCode
-  )
+  ( reportErrorAndExit )
 
 import Data.List
-  ( intercalate
-  , nubBy
+  ( nubBy
   , sort
   )
 
@@ -47,10 +43,6 @@ import Data.Maybe
 --------------
 -- Data types
 --------------
-
-data Message
-  = ErrorMessage String
-  | WarningMessage String
 
 data CheckType
   = FunctionCheck
@@ -71,152 +63,142 @@ run
 run CheckFunctionIntegrity (Left fun) =
   do let os = functionOS fun
          g = osGraph os
-         msg0 = checkGraphInvariants FunctionCheck g
-         msg1 = concatMap ( \nid ->
-                            checkNodeExists ( "function input with node ID " ++
-                                              pShow nid
-                                            )
-                                            g
-                                            nid
-                          )
-                          (functionInputs fun)
-         msg2 = checkEntryBlock os
-         msg3 = checkValueLocations os
-         msg4 = checkConstraints os
-     return $ mkOutput $ concat [msg0, msg1, msg2, msg3, msg4]
+         log0 = checkGraphInvariants FunctionCheck g
+         log1 = concatLogs $
+                map ( \nid ->
+                      checkNodeExists ( "function input with node ID " ++
+                                        pShow nid
+                                      )
+                                      g
+                                      nid
+                    )
+                    (functionInputs fun)
+         log2 = checkEntryBlock os
+         log3 = checkValueLocations os
+         log4 = checkConstraints os
+     return $ mkOutputFromLog $ concatLogs [log0, log1, log2, log3, log4]
 
 run CheckPatternIntegrity (Right pat) =
   do let os = patOS pat
          g = osGraph os
-         msg0 = checkGraphInvariants PatternCheck g
-         msg1 = concatMap ( \nid ->
-                            checkNodeExists ( "external data with ID " ++
-                                              pShow nid
-                                            )
-                                            g
-                                            nid
-                          )
-                          (patExternalData pat)
-         msg2 = checkEntryBlock os
-         msg3 = checkValueLocations os
-         msg4 = checkConstraints os
-     return $ mkOutput $ concat [msg0, msg1, msg2, msg3, msg4]
+         log0 = checkGraphInvariants PatternCheck g
+         log1 = concatLogs $
+                map ( \nid ->
+                      checkNodeExists ("external data with ID " ++ pShow nid)
+                                      g
+                                      nid
+                    )
+                    (patExternalData pat)
+         log2 = checkEntryBlock os
+         log3 = checkValueLocations os
+         log4 = checkConstraints os
+     return $ mkOutputFromLog $ concatLogs [log0, log1, log2, log3, log4]
 
 run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 
--- | Makes an 'Output' from a given output log. An empty log indicates no
--- errors.
-mkOutput :: [Message] -> [Output]
-mkOutput [] = []
-mkOutput msgs =
-  let code = if any isErrorMessage msgs
-             then errorExitCode
-             else successExitCode
-      msgs_str = intercalate "\n\n" $
-                 map toString msgs
-  in [toOutputWithExitCode code msgs_str]
-
-checkNodeExists :: String -> Graph -> NodeID -> [Message]
+checkNodeExists :: String -> Graph -> NodeID -> Log
 checkNodeExists msg g nid =
   let ns = findNodesWithNodeID g nid
   in if length ns == 0
-     then [ ErrorMessage $ "Non-existing node: " ++ msg ]
-     else []
+     then Log [ ErrorMessage $ "Non-existing node: " ++ msg ]
+     else emptyLog
 
-checkGraphInvariants :: CheckType -> Graph -> [Message]
+checkGraphInvariants :: CheckType -> Graph -> Log
 checkGraphInvariants c g =
   let check n =
-        let msg0 = nodeCheck n
+        let log0 = nodeCheck n
             in_edges = getInEdges g n
-            msg1 = concatMap edgeNodeCheck in_edges
-            msg2 = inEdgeOrderCheck n in_edges
+            log1 = concatLogs $
+                   map edgeNodeCheck in_edges
+            log2 = inEdgeOrderCheck n in_edges
             out_edges = getOutEdges g n
-            msg3 = concatMap edgeNodeCheck out_edges
-            msg4 = outEdgeOrderCheck n out_edges
-        in concat [msg0, msg1, msg2, msg3, msg4]
+            log3 = concatLogs $
+                   map edgeNodeCheck out_edges
+            log4 = outEdgeOrderCheck n out_edges
+        in concatLogs [log0, log1, log2, log3, log4]
       nodeCheck n =
         case (getNodeType n) of
           (ComputationNode op) ->
-            let msg0 = checkNumInDtFlowEdges  g n (numOperands op)
-                msg1 = checkNumOutDtFlowEdges g n ( if producesValue op
+            let log0 = checkNumInDtFlowEdges  g n (numOperands op)
+                log1 = checkNumOutDtFlowEdges g n ( if producesValue op
                                                     then 1 else 0 )
-                msg2 = checkNumInStFlowEdges  g n ( if requiresState op
+                log2 = checkNumInStFlowEdges  g n ( if requiresState op
                                                     then 1 else 0 )
-                msg3 = checkNumOutStFlowEdges g n ( if requiresState op
+                log3 = checkNumOutStFlowEdges g n ( if requiresState op
                                                     then 1 else 0 )
-                msg4 = checkNumInCtrlFlowEdges  g n 0
-                msg5 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+                log4 = checkNumInCtrlFlowEdges  g n 0
+                log5 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3, log4, log5]
           (ControlNode op) ->
-            let msg0 = if op /= Ret
+            let log0 = if op /= Ret
                        then checkNumInDtFlowEdges  g n (numOperands op)
-                       else []
-                msg1 = checkNumOutDtFlowEdges g n ( if producesValue op
+                       else emptyLog
+                log1 = checkNumOutDtFlowEdges g n ( if producesValue op
                                                     then 1 else 0 )
-                msg2 = checkNumInStFlowEdges  g n ( if requiresState op
+                log2 = checkNumInStFlowEdges  g n ( if requiresState op
                                                     then 1 else 0 )
-                msg3 = checkNumOutStFlowEdges g n ( if requiresState op
+                log3 = checkNumOutStFlowEdges g n ( if requiresState op
                                                     then 1 else 0 )
-                msg4 = checkNumInCtrlFlowEdges  g n (numInCtrlFlows op)
-                msg5 = checkNumOutCtrlFlowEdges g n (numOutCtrlFlows op)
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+                log4 = checkNumInCtrlFlowEdges  g n (numInCtrlFlows op)
+                log5 = checkNumOutCtrlFlowEdges g n (numOutCtrlFlows op)
+            in concatLogs [log0, log1, log2, log3, log4, log5]
           (CallNode {}) ->
-            let msg0 = checkNumInStFlowEdges  g n 1
-                msg1 = checkNumOutStFlowEdges g n 1
-                msg2 = checkNumInCtrlFlowEdges  g n 0
-                msg3 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3]
+            let log0 = checkNumInStFlowEdges  g n 1
+                log1 = checkNumOutStFlowEdges g n 1
+                log2 = checkNumInCtrlFlowEdges  g n 0
+                log3 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3]
           IndirCallNode ->
-            let msg0 = checkNumInStFlowEdges  g n 1
-                msg1 = checkNumOutStFlowEdges g n 1
-                msg2 = checkNumInCtrlFlowEdges  g n 0
-                msg3 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3]
+            let log0 = checkNumInStFlowEdges  g n 1
+                log1 = checkNumOutStFlowEdges g n 1
+                log2 = checkNumInCtrlFlowEdges  g n 0
+                log3 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3]
           (ValueNode {}) ->
-            let msg0 = if c == FunctionCheck
+            let log0 = if c == FunctionCheck
                        then checkNumInDtFlowEdges g n 1
-                       else []
-                msg1 = if c == FunctionCheck
+                       else emptyLog
+                log1 = if c == FunctionCheck
                        then checkNumOutDtFlowEdgesAtLeast g n 1 True
-                       else []
-                msg2 = checkNumInStFlowEdges  g n 0
-                msg3 = checkNumOutStFlowEdges g n 0
-                msg4 = checkNumInCtrlFlowEdges  g n 0
-                msg5 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+                       else emptyLog
+                log2 = checkNumInStFlowEdges  g n 0
+                log3 = checkNumOutStFlowEdges g n 0
+                log4 = checkNumInCtrlFlowEdges  g n 0
+                log5 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3, log4, log5]
           (BlockNode {}) ->
-            let msg0 = checkNumInDtFlowEdges  g n 0
-                msg1 = checkNumInStFlowEdges  g n 0
-            in concat [msg0, msg1]
+            let log0 = checkNumInDtFlowEdges  g n 0
+                log1 = checkNumInStFlowEdges  g n 0
+            in concatLogs [log0, log1]
           PhiNode ->
-            let msg0 = checkNumInDtFlowEdgesAtLeast g n 1
-                msg1 = checkNumOutDtFlowEdges g n 1
-                msg2 = checkNumInStFlowEdges  g n 0
-                msg3 = checkNumOutStFlowEdges g n 0
-                msg4 = checkNumInCtrlFlowEdges  g n 0
-                msg5 = checkNumOutCtrlFlowEdges g n 0
-                msg6 = checkPhiDefEdges g n
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5, msg6]
+            let log0 = checkNumInDtFlowEdgesAtLeast g n 1
+                log1 = checkNumOutDtFlowEdges g n 1
+                log2 = checkNumInStFlowEdges  g n 0
+                log3 = checkNumOutStFlowEdges g n 0
+                log4 = checkNumInCtrlFlowEdges  g n 0
+                log5 = checkNumOutCtrlFlowEdges g n 0
+                log6 = checkPhiDefEdges g n
+            in concatLogs [log0, log1, log2, log3, log4, log5, log6]
           StateNode ->
-            let msg0 = if c == FunctionCheck
+            let log0 = if c == FunctionCheck
                        then checkNumInStFlowEdges  g n 1
-                       else []
-                msg1 = if c == FunctionCheck
+                       else emptyLog
+                log1 = if c == FunctionCheck
                        then checkHasOutStFlowEdgeOrInDefEdge g n
-                       else []
-                msg2 = checkNumInDtFlowEdges  g n 0
-                msg3 = checkNumOutDtFlowEdges g n 0
-                msg4 = checkNumInCtrlFlowEdges  g n 0
-                msg5 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+                       else emptyLog
+                log2 = checkNumInDtFlowEdges  g n 0
+                log3 = checkNumOutDtFlowEdges g n 0
+                log4 = checkNumInCtrlFlowEdges  g n 0
+                log5 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3, log4, log5]
           CopyNode ->
-            let msg0 = checkNumInDtFlowEdges  g n 1
-                msg1 = checkNumOutDtFlowEdges g n 1
-                msg2 = checkNumInStFlowEdges  g n 0
-                msg3 = checkNumOutStFlowEdges g n 0
-                msg4 = checkNumInCtrlFlowEdges  g n 0
-                msg5 = checkNumOutCtrlFlowEdges g n 0
-            in concat [msg0, msg1, msg2, msg3, msg4, msg5]
+            let log0 = checkNumInDtFlowEdges  g n 1
+                log1 = checkNumOutDtFlowEdges g n 1
+                log2 = checkNumInStFlowEdges  g n 0
+                log3 = checkNumOutStFlowEdges g n 0
+                log4 = checkNumInCtrlFlowEdges  g n 0
+                log5 = checkNumOutCtrlFlowEdges g n 0
+            in concatLogs [log0, log1, log2, log3, log4, log5]
       edgeNodeCheck e =
         let src = getSourceNode g e
             trg = getTargetNode g e
@@ -225,131 +207,131 @@ checkGraphInvariants c g =
         in case (getEdgeType e) of
             ControlFlowEdge ->
               if not (isBlockNode src || isControlNode src)
-              then [ ErrorMessage $
-                     "Invalid source node type: " ++ show e ++ " has " ++
-                     pShow src_type ++ ", expected either block or control node"
-                   ]
+              then toLog $
+                   ErrorMessage $
+                   "Invalid source node type: " ++ show e ++ " has " ++
+                   pShow src_type ++ ", expected either block or control node"
               else if not (isBlockNode trg || isControlNode trg)
-                   then [ ErrorMessage $
-                          "Invalid target node type: " ++ show e ++ " has " ++
-                          pShow trg_type ++ ", expected either block or " ++
-                          "control node"
-                        ]
+                   then toLog $
+                        ErrorMessage $
+                        "Invalid target node type: " ++ show e ++ " has " ++
+                        pShow trg_type ++ ", expected either block or " ++
+                        "control node"
                    else if isBlockNode src && not (isControlNode trg)
-                        then [ ErrorMessage $
-                               "Invalid target node type: " ++ show e ++
-                               " has " ++ pShow trg_type ++ ", expected " ++
-                               "control node"
-                        ]
+                        then toLog $
+                             ErrorMessage $
+                             "Invalid target node type: " ++ show e ++
+                             " has " ++ pShow trg_type ++ ", expected " ++
+                             "control node"
                         else if isControlNode src && not (isBlockNode trg)
-                             then [ ErrorMessage $
-                                    "Invalid target node type: " ++ show e ++
-                                    " has " ++ pShow trg_type ++ ", " ++
-                                    "expected block node"
-                                  ]
-                             else []
+                             then toLog $
+                                  ErrorMessage $
+                                  "Invalid target node type: " ++ show e ++
+                                  " has " ++ pShow trg_type ++ ", " ++
+                                  "expected block node"
+                             else emptyLog
             DataFlowEdge ->
               if not (isOperationNode src || isBlockNode src || isValueNode src)
-              then [ ErrorMessage $
-                     "Invalid source node type: " ++ show e ++ " has " ++
-                     pShow src_type ++ ", expected either a computation, " ++
-                     "control, call, phi, copy, block, or value node"
-                   ]
+              then toLog $
+                   ErrorMessage $
+                   "Invalid source node type: " ++ show e ++ " has " ++
+                   pShow src_type ++ ", expected either a computation, " ++
+                   "control, call, phi, copy, block, or value node"
               else if not (isOperationNode trg || isValueNode trg)
-                   then [ ErrorMessage $
-                          "Invalid target node type: " ++ show e ++ " has " ++
-                          pShow trg_type ++ ", expected either a " ++
-                          "computation, control, call, phi, copy, or value node"
-                        ]
+                   then toLog $
+                        ErrorMessage $
+                        "Invalid target node type: " ++ show e ++ " has " ++
+                        pShow trg_type ++ ", expected either a " ++
+                        "computation, control, call, phi, copy, or value node"
                    else if isOperationNode src && not (isValueNode trg)
-                        then [ ErrorMessage $
-                               "Invalid target node type: " ++ show e ++
-                               " has " ++ pShow trg_type ++ ", expected " ++
-                               "value node"
-                        ]
+                        then toLog $
+                             ErrorMessage $
+                             "Invalid target node type: " ++ show e ++
+                             " has " ++ pShow trg_type ++ ", expected " ++
+                             "value node"
                         else if isValueNode src && not (isOperationNode trg)
-                             then [ ErrorMessage $
-                                    "Invalid target node type: " ++ show e ++
-                                    " has " ++ pShow trg_type ++ ", " ++
-                                    "expected computation, control, call, " ++
-                                    "phi, or copy node"
-                                  ]
+                             then toLog $
+                                  ErrorMessage $
+                                  "Invalid target node type: " ++ show e ++
+                                  " has " ++ pShow trg_type ++ ", " ++
+                                  "expected computation, control, call, " ++
+                                  "phi, or copy node"
                              else if isBlockNode src && not (isValueNode trg)
-                                  then [ ErrorMessage $
-                                         "Invalid target node type: " ++
-                                         show e ++ " has " ++ pShow trg_type ++
-                                         ", expected value node"
-                                       ]
-                                  else []
+                                  then toLog $
+                                       ErrorMessage $
+                                       "Invalid target node type: " ++
+                                       show e ++ " has " ++ pShow trg_type ++
+                                       ", expected value node"
+                                  else emptyLog
             StateFlowEdge ->
               if not (isOperationNode src || isBlockNode src || isStateNode src)
-              then [ ErrorMessage $
-                     "Invalid source node type: " ++ show e ++ " has " ++
-                     pShow src_type ++ ", expected either a computation, " ++
-                     "control, call, phi, copy, block or state node"
-                   ]
+              then toLog $
+                   ErrorMessage $
+                   "Invalid source node type: " ++ show e ++ " has " ++
+                   pShow src_type ++ ", expected either a computation, " ++
+                   "control, call, phi, copy, block or state node"
               else if not (isOperationNode trg || isStateNode trg)
-                   then [ ErrorMessage $
-                          "Invalid target node type: " ++ show e ++ " has " ++
-                          pShow trg_type ++ ", expected either a " ++
-                          "computation, control, call, phi, copy, or state node"
-                        ]
+                   then toLog $
+                        ErrorMessage $
+                        "Invalid target node type: " ++ show e ++ " has " ++
+                        pShow trg_type ++ ", expected either a " ++
+                        "computation, control, call, phi, copy, or state node"
                    else if isOperationNode src && not (isStateNode trg)
-                        then [ ErrorMessage $
-                               "Invalid target node type: " ++ show e ++
-                               " has " ++ pShow trg_type ++ ", expected " ++
-                               "state node"
-                        ]
+                        then toLog $
+                             ErrorMessage $
+                             "Invalid target node type: " ++ show e ++
+                             " has " ++ pShow trg_type ++ ", expected " ++
+                             "state node"
                         else if isStateNode src && not (isOperationNode trg)
-                             then [ ErrorMessage $
-                                    "Invalid target node type: " ++ show e ++
-                                    " has " ++ pShow trg_type ++ ", " ++
-                                    "expected computation, control, call, " ++
-                                    "phi, or copy node"
-                                  ]
+                             then toLog $
+                                  ErrorMessage $
+                                  "Invalid target node type: " ++ show e ++
+                                  " has " ++ pShow trg_type ++ ", " ++
+                                  "expected computation, control, call, " ++
+                                  "phi, or copy node"
                              else if isBlockNode src && not (isStateNode trg)
-                                  then [ ErrorMessage $
-                                         "Invalid target node type: " ++
-                                         show e ++ " has " ++ pShow trg_type ++
-                                         ", expected state node"
-                                       ]
-                                  else []
+                                  then toLog $
+                                       ErrorMessage $
+                                       "Invalid target node type: " ++
+                                       show e ++ " has " ++ pShow trg_type ++
+                                       ", expected state node"
+                                  else emptyLog
             DefEdge ->
               if not (isBlockNode src || isValueNode src || isStateNode src)
-              then [ ErrorMessage $
-                     "Invalid source node type: " ++ show e ++ " has " ++
-                     pShow src_type ++ ", expected either block, value or " ++
-                     "state node"
-                   ]
+              then toLog $
+                   ErrorMessage $
+                   "Invalid source node type: " ++ show e ++ " has " ++
+                   pShow src_type ++ ", expected either block, value or " ++
+                   "state node"
               else if not ( isBlockNode src ||
                             isValueNode src ||
                             isStateNode src
                           )
-                   then [ ErrorMessage $
-                          "Invalid target node type: " ++ show e ++ " has " ++
-                          pShow trg_type ++ ", expected either block, value " ++
-                          "or state node"
-                        ]
+                   then toLog $
+                        ErrorMessage $
+                        "Invalid target node type: " ++ show e ++ " has " ++
+                        pShow trg_type ++ ", expected either block, value " ++
+                        "or state node"
                    else if isBlockNode src &&
                            not (isValueNode trg || isStateNode trg)
-                        then [ ErrorMessage $
-                               "Invalid target node type: " ++ show e ++
-                               " has " ++ pShow trg_type ++ ", expected " ++
-                               "value or state node"
-                        ]
+                        then toLog $
+                             ErrorMessage $
+                             "Invalid target node type: " ++ show e ++
+                             " has " ++ pShow trg_type ++ ", expected " ++
+                             "value or state node"
                         else if isValueNode src && not (isBlockNode trg)
-                             then [ ErrorMessage $
-                                    "Invalid target node type: " ++ show e ++
-                                    " has " ++ pShow trg_type ++ ", " ++
-                                    "expected block node"
-                                  ]
+                             then toLog $
+                                  ErrorMessage $
+                                  "Invalid target node type: " ++ show e ++
+                                  " has " ++ pShow trg_type ++ ", " ++
+                                  "expected block node"
                              else if isStateNode src && not (isBlockNode trg)
-                                  then [ ErrorMessage $
-                                         "Invalid target node type: " ++
-                                         show e ++ " has " ++ pShow trg_type ++
-                                         ", expected block node"
-                                       ]
-                                  else []
+                                  then toLog $
+                                       ErrorMessage $
+                                       "Invalid target node type: " ++
+                                       show e ++ " has " ++ pShow trg_type ++
+                                       ", expected block node"
+                                  else emptyLog
       inEdgeOrderCheck n es =
         let dt_es = nubBy haveSameInEdgeNrs $
                     filter isDataFlowEdge $
@@ -357,41 +339,42 @@ checkGraphInvariants c g =
             st_es = filter isStateFlowEdge es
             ctrl_es = filter isControlFlowEdge es
         in if isOperationNode n
-           then let msg0 = checkNumberOrder n "inbound data-flow edges" $
+           then let log0 = checkNumberOrder n "inbound data-flow edges" $
                            map getEdgeInNr dt_es
-                    msg1 = checkNumberOrder n "inbound state-flow edges" $
+                    log1 = checkNumberOrder n "inbound state-flow edges" $
                            map getEdgeInNr st_es
-                    msg2 = checkNumberOrder n "inbound control-flow edges" $
+                    log2 = checkNumberOrder n "inbound control-flow edges" $
                            map getEdgeInNr ctrl_es
-                in concat [msg0, msg1, msg2]
-           else []
+                in concatLogs [log0, log1, log2]
+           else emptyLog
       outEdgeOrderCheck n es =
         let dt_es = filter isDataFlowEdge es
             st_es = filter isStateFlowEdge es
             ctrl_es = filter isControlFlowEdge es
         in if isOperationNode n
-           then let msg0 = checkNumberOrder n "outbound data-flow edges" $
+           then let log0 = checkNumberOrder n "outbound data-flow edges" $
                            map getEdgeOutNr dt_es
-                    msg1 = checkNumberOrder n "outbound state-flow edges" $
+                    log1 = checkNumberOrder n "outbound state-flow edges" $
                            map getEdgeOutNr st_es
-                    msg2 = checkNumberOrder n "outbound control-flow edges" $
+                    log2 = checkNumberOrder n "outbound control-flow edges" $
                            map getEdgeOutNr ctrl_es
-                in concat [msg0, msg1, msg2]
+                in concatLogs [log0, log1, log2]
            else if isBlockNode n
                 then checkNumberOrder n "outbound control-flow edges" $
                      map getEdgeOutNr ctrl_es
-                else []
-      checkNumberOrder _ _ [] = []
+                else emptyLog
+      checkNumberOrder _ _ [] = emptyLog
       checkNumberOrder n e_type ns =
         let sorted = sort $ map fromIntegral ns
         in if length sorted /= (last sorted + 1)
-           then [ ErrorMessage $
-                  "Inconsistent edge order: " ++ show n ++ " has " ++ e_type ++
-                  " edges with order " ++ pShow sorted ++ ", expected " ++
-                  pShow (take (length sorted) [0..] :: [Int])
-                ]
-           else []
-  in concatMap check $
+           then toLog $
+                ErrorMessage $
+                "Inconsistent edge order: " ++ show n ++ " has " ++ e_type ++
+                " edges with order " ++ pShow sorted ++ ", expected " ++
+                pShow (take (length sorted) [0..] :: [Int])
+           else emptyLog
+  in concatLogs $
+     map check $
      getAllNodes g
 
 numInCtrlFlows :: ControlOp -> Int
@@ -404,43 +387,43 @@ numOutCtrlFlows Br = 1
 numOutCtrlFlows CondBr = 2
 numOutCtrlFlows Ret = 0
 
-checkNumInDtFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumInDtFlowEdges :: Graph -> Node -> Int -> Log
 checkNumInDtFlowEdges g n exp_num =
   let act_num = length $
                 nubBy haveSameInEdgeNrs $
                 getDtFlowInEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of inbound data-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of inbound data-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> [Message]
+checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> Log
 checkNumInDtFlowEdgesAtLeast g n exp_num =
   let act_num = length $
                 nubBy haveSameInEdgeNrs $
                 getDtFlowInEdges g n
   in if act_num < exp_num
-     then [ ErrorMessage $
-            "Wrong number of inbound data-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected at least " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of inbound data-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected at least " ++ show exp_num
+     else emptyLog
 
-checkNumOutDtFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumOutDtFlowEdges :: Graph -> Node -> Int -> Log
 checkNumOutDtFlowEdges g n exp_num =
   let act_num = length $
                 nubBy haveSameOutEdgeNrs $
                 getDtFlowOutEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of outbound data-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of outbound data-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> Bool -> [Message]
+checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> Bool -> Log
 checkNumOutDtFlowEdgesAtLeast g n exp_num warn =
   let act_num = length $
                 nubBy haveSameOutEdgeNrs $
@@ -449,85 +432,86 @@ checkNumOutDtFlowEdgesAtLeast g n exp_num warn =
      then let str = "Wrong number of outbound data-flow edges: " ++ show n ++
                     " has " ++ show act_num ++ ", expected at least " ++
                     show exp_num
-          in if warn then [WarningMessage str] else [ErrorMessage str]
-     else []
+          in if warn then Log [WarningMessage str] else Log [ErrorMessage str]
+     else emptyLog
 
-checkNumInCtrlFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumInCtrlFlowEdges :: Graph -> Node -> Int -> Log
 checkNumInCtrlFlowEdges g n exp_num =
   let act_num = length $ getCtrlFlowInEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of inbound control-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of inbound control-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> Log
 checkNumOutCtrlFlowEdges g n exp_num =
   let act_num = length $ getCtrlFlowOutEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of outbound control-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of outbound control-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkNumInStFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumInStFlowEdges :: Graph -> Node -> Int -> Log
 checkNumInStFlowEdges g n exp_num =
   let act_num = length $ getStFlowInEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of inbound state-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of inbound state-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkNumOutStFlowEdges :: Graph -> Node -> Int -> [Message]
+checkNumOutStFlowEdges :: Graph -> Node -> Int -> Log
 checkNumOutStFlowEdges g n exp_num =
   let act_num = length $ getStFlowOutEdges g n
   in if act_num /= exp_num
-     then [ ErrorMessage $
-            "Wrong number of outbound state-flow edges: " ++ show n ++
-            " has " ++ show act_num ++ ", expected " ++ show exp_num
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of outbound state-flow edges: " ++ show n ++
+          " has " ++ show act_num ++ ", expected " ++ show exp_num
+     else emptyLog
 
-checkHasOutStFlowEdgeOrInDefEdge :: Graph -> Node -> [Message]
+checkHasOutStFlowEdgeOrInDefEdge :: Graph -> Node -> Log
 checkHasOutStFlowEdgeOrInDefEdge g n =
   let num_st_es = length $ getStFlowOutEdges g n
       num_def_es = length $ getDefInEdges g n
   in if num_st_es /= 1 && num_def_es /= 1
-     then [ ErrorMessage $
-            "Wrong number of outbound state-flow or inbound definition " ++
-            "edges: " ++
-            show n ++ " has " ++ show num_st_es ++ " state-flow edges and " ++
-            show num_def_es ++ " definition edges, expected either " ++
-            "1 state-flow edge or 1 definition edge (but not both)"
-          ]
-     else []
+     then toLog $
+          ErrorMessage $
+          "Wrong number of outbound state-flow or inbound definition " ++
+          "edges: " ++
+          show n ++ " has " ++ show num_st_es ++ " state-flow edges and " ++
+          show num_def_es ++ " definition edges, expected either " ++
+          "1 state-flow edge or 1 definition edge (but not both)"
+     else emptyLog
 
-checkEntryBlock :: OpStructure -> [Message]
+checkEntryBlock :: OpStructure -> Log
 checkEntryBlock os =
   let g = osGraph os
       entry_n = osEntryBlockNode os
   in if isJust entry_n
      then let nid = fromJust entry_n
           in checkNodeExists ("entry block node with ID " ++ pShow nid) g nid
-     else []
+     else emptyLog
 
-checkValueLocations :: OpStructure -> [Message]
+checkValueLocations :: OpStructure -> Log
 checkValueLocations os =
   let g = osGraph os
-  in concatMap ( \(nid, _) ->
-                 checkNodeExists ( "valid location specification with ID " ++
-                                   pShow nid
-                                 )
-                                 g
-                                 nid
-               )
-               (osValidLocations os)
+  in concatLogs $
+     map ( \(nid, _) ->
+           checkNodeExists ( "valid location specification with ID " ++
+                             pShow nid
+                           )
+                           g
+                           nid
+         )
+         (osValidLocations os)
 
-checkPhiDefEdges :: Graph -> Node -> [Message]
+checkPhiDefEdges :: Graph -> Node -> Log
 checkPhiDefEdges g n =
   let in_es = getDtFlowInEdges g n
       out_es = getDtFlowOutEdges g n
@@ -538,139 +522,137 @@ checkPhiDefEdges g n =
                          filter (\e' -> getEdgeOutNr e' == nr) $
                          getDefOutEdges g src
         in if num_def_es /= 1
-           then [ ErrorMessage $
-                  "Wrong number of outbound definition edges: " ++ show src ++
-                  ", which is predecessor of " ++ show n ++ ", has " ++
-                  pShow num_def_es ++ " definition edges with out-edge-" ++
-                  "number " ++ pShow nr ++ ", expected 1"
-                ]
-           else []
+           then toLog $
+                ErrorMessage $
+                "Wrong number of outbound definition edges: " ++ show src ++
+                ", which is predecessor of " ++ show n ++ ", has " ++
+                pShow num_def_es ++ " definition edges with out-edge-" ++
+                "number " ++ pShow nr ++ ", expected 1"
+           else emptyLog
       checkOutEdge e =
         let trg = getTargetNode g e
             num_def_es = length $ getDefInEdges g trg
         in if num_def_es /= 1
-           then [ ErrorMessage $
-                  "Wrong number of inbound definition edges: " ++ show trg ++
-                  ", which is successor of " ++ show n ++ ", has " ++
-                  pShow num_def_es ++ " definition edges, expected 1"
-                ]
-           else []
-      msg0 = concatMap checkInEdge in_es
-      msg1 = concatMap checkOutEdge out_es
-  in concat [msg0, msg1]
+           then toLog $
+                ErrorMessage $
+                "Wrong number of inbound definition edges: " ++ show trg ++
+                ", which is successor of " ++ show n ++ ", has " ++
+                pShow num_def_es ++ " definition edges, expected 1"
+           else emptyLog
+      log0 = concatLogs $
+             map checkInEdge in_es
+      log1 = concatLogs $
+             map checkOutEdge out_es
+  in concatLogs [log0, log1]
 
-checkConstraints :: OpStructure -> [Message]
+checkConstraints :: OpStructure -> Log
 checkConstraints os =
   let g = osGraph os
       cs = osConstraints os
-  in concatMap (checkNodeInConstraint g) cs
+  in concatLogs $
+     map (checkNodeInConstraint g) cs
 
-checkNodeInConstraint :: Graph -> Constraint -> [Message]
+checkNodeInConstraint :: Graph -> Constraint -> Log
 checkNodeInConstraint g c =
-  checkConstraint [] c
+  checkConstraint emptyLog c
   where
-  checkConstraint msgs (BoolExprConstraint expr) =
-    checkBoolExpr msgs expr
-  checkBoolExpr msgs (EqExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (NEqExpr lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (GTExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (GEExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (LTExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (LEExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkBoolExpr msgs (AndExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr msgs lhs) rhs
-  checkBoolExpr msgs (OrExpr  lhs rhs) =
-    checkBoolExpr (checkBoolExpr msgs lhs) rhs
-  checkBoolExpr msgs (ImpExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr msgs lhs) rhs
-  checkBoolExpr msgs (EqvExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr msgs lhs) rhs
-  checkBoolExpr msgs (NotExpr expr) =
-    checkBoolExpr msgs expr
-  checkBoolExpr msgs (InSetExpr lhs rhs) =
-    checkSetExpr (checkSetElemExpr msgs lhs) rhs
-  checkBoolExpr msgs (FallThroughFromMatchToBlockExpr expr) =
-    checkBlockExpr msgs expr
-  checkNumExpr msgs (PlusExpr lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkNumExpr msgs (MinusExpr lhs rhs) =
-    checkNumExpr (checkNumExpr msgs lhs) rhs
-  checkNumExpr msgs (Int2NumExpr expr) =
-    checkIntExpr msgs expr
-  checkNumExpr msgs (Bool2NumExpr expr) =
-    checkBoolExpr msgs expr
-  checkNumExpr msgs (Node2NumExpr expr) =
-    checkNodeExpr msgs expr
-  checkNumExpr msgs (Match2NumExpr expr) =
-    checkMatchExpr msgs expr
-  checkNumExpr msgs (Instruction2NumExpr expr) =
-    checkInstructionExpr msgs expr
-  checkNumExpr msgs (Block2NumExpr expr) =
-    checkBlockExpr msgs expr
-  checkNumExpr msgs (Location2NumExpr expr) =
-    checkLocationExpr msgs expr
-  checkIntExpr msgs (AnIntegerExpr _) =
-    msgs
-  checkNodeExpr msgs (ANodeIDExpr nid) =
-    msgs ++
-    checkNodeExists ( "constraint " ++ toLispExpr c ++ " with node ID " ++
-                      pShow nid
-                    )
-                    g
-                    nid
-  checkNodeExpr msgs (ANodeArrayIndexExpr _) =
-    msgs
-  checkNodeExpr msgs (NodeSelectedForOperandExpr expr) =
-    checkOperandExpr msgs expr
-  checkOperandExpr msgs (AnOperandIDExpr _) =
-    msgs
-  checkOperandExpr msgs (AnOperandArrayIndexExpr _) =
-    msgs
-  checkMatchExpr msgs (AMatchIDExpr _) =
-    msgs
-  checkMatchExpr msgs (AMatchArrayIndexExpr _) =
-    msgs
-  checkMatchExpr msgs (ThisMatchExpr) =
-    msgs
-  checkInstructionExpr msgs (AnInstructionIDExpr _) =
-    msgs
-  checkInstructionExpr msgs (AnInstructionArrayIndexExpr _) =
-    msgs
-  checkInstructionExpr msgs (InstructionOfMatchExpr expr) =
-    checkMatchExpr msgs expr
-  checkBlockExpr msgs (BlockOfBlockNodeExpr expr) =
-    checkNodeExpr msgs expr
-  checkLocationExpr msgs (ALocationIDExpr _) =
-    msgs
-  checkLocationExpr msgs (ALocationArrayIndexExpr _) =
-    msgs
-  checkLocationExpr msgs (LocationOfValueNodeExpr expr) =
-    checkNodeExpr msgs expr
-  checkLocationExpr msgs (TheNullLocationExpr) =
-    msgs
-  checkSetExpr msgs (UnionSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr msgs lhs) rhs
-  checkSetExpr msgs (IntersectSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr msgs lhs) rhs
-  checkSetExpr msgs (DiffSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr msgs lhs) rhs
-  checkSetExpr msgs (LocationClassExpr expr) =
-    concatMap (checkLocationExpr msgs) expr
-  checkSetElemExpr msgs (Block2SetElemExpr expr) =
-    checkBlockExpr msgs expr
-  checkSetElemExpr msgs (Location2SetElemExpr expr) =
-    checkLocationExpr msgs expr
-
-isErrorMessage :: Message -> Bool
-isErrorMessage (ErrorMessage {}) = True
-isErrorMessage _ = False
-
-toString :: Message -> String
-toString (ErrorMessage str) = str
-toString (WarningMessage str) = str
+  checkConstraint l (BoolExprConstraint expr) =
+    checkBoolExpr l expr
+  checkBoolExpr l (EqExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (NEqExpr lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (GTExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (GEExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (LTExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (LEExpr  lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkBoolExpr l (AndExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr l lhs) rhs
+  checkBoolExpr l (OrExpr  lhs rhs) =
+    checkBoolExpr (checkBoolExpr l lhs) rhs
+  checkBoolExpr l (ImpExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr l lhs) rhs
+  checkBoolExpr l (EqvExpr lhs rhs) =
+    checkBoolExpr (checkBoolExpr l lhs) rhs
+  checkBoolExpr l (NotExpr expr) =
+    checkBoolExpr l expr
+  checkBoolExpr l (InSetExpr lhs rhs) =
+    checkSetExpr (checkSetElemExpr l lhs) rhs
+  checkBoolExpr l (FallThroughFromMatchToBlockExpr expr) =
+    checkBlockExpr l expr
+  checkNumExpr l (PlusExpr lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkNumExpr l (MinusExpr lhs rhs) =
+    checkNumExpr (checkNumExpr l lhs) rhs
+  checkNumExpr l (Int2NumExpr expr) =
+    checkIntExpr l expr
+  checkNumExpr l (Bool2NumExpr expr) =
+    checkBoolExpr l expr
+  checkNumExpr l (Node2NumExpr expr) =
+    checkNodeExpr l expr
+  checkNumExpr l (Match2NumExpr expr) =
+    checkMatchExpr l expr
+  checkNumExpr l (Instruction2NumExpr expr) =
+    checkInstructionExpr l expr
+  checkNumExpr l (Block2NumExpr expr) =
+    checkBlockExpr l expr
+  checkNumExpr l (Location2NumExpr expr) =
+    checkLocationExpr l expr
+  checkIntExpr l (AnIntegerExpr _) =
+    l
+  checkNodeExpr l (ANodeIDExpr nid) =
+    concatLogs $
+    [ l
+    , checkNodeExists ( "constraint " ++ toLispExpr c ++ " with node ID " ++
+                        pShow nid
+                      )
+                      g
+                      nid
+    ]
+  checkNodeExpr l (ANodeArrayIndexExpr _) =
+    l
+  checkNodeExpr l (NodeSelectedForOperandExpr expr) =
+    checkOperandExpr l expr
+  checkOperandExpr l (AnOperandIDExpr _) =
+    l
+  checkOperandExpr l (AnOperandArrayIndexExpr _) =
+    l
+  checkMatchExpr l (AMatchIDExpr _) =
+    l
+  checkMatchExpr l (AMatchArrayIndexExpr _) =
+    l
+  checkMatchExpr l (ThisMatchExpr) =
+    l
+  checkInstructionExpr l (AnInstructionIDExpr _) =
+    l
+  checkInstructionExpr l (AnInstructionArrayIndexExpr _) =
+    l
+  checkInstructionExpr l (InstructionOfMatchExpr expr) =
+    checkMatchExpr l expr
+  checkBlockExpr l (BlockOfBlockNodeExpr expr) =
+    checkNodeExpr l expr
+  checkLocationExpr l (ALocationIDExpr _) =
+    l
+  checkLocationExpr l (ALocationArrayIndexExpr _) =
+    l
+  checkLocationExpr l (LocationOfValueNodeExpr expr) =
+    checkNodeExpr l expr
+  checkLocationExpr l (TheNullLocationExpr) =
+    l
+  checkSetExpr l (UnionSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr l lhs) rhs
+  checkSetExpr l (IntersectSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr l lhs) rhs
+  checkSetExpr l (DiffSetExpr lhs rhs) =
+    checkSetExpr (checkSetExpr l lhs) rhs
+  checkSetExpr l (LocationClassExpr expr) =
+    concatLogs $
+    map (checkLocationExpr l) expr
+  checkSetElemExpr l (Block2SetElemExpr expr) =
+    checkBlockExpr l expr
+  checkSetElemExpr l (Location2SetElemExpr expr) =
+    checkLocationExpr l expr
