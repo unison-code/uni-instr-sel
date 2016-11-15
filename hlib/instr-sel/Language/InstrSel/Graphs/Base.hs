@@ -271,7 +271,7 @@ instance PrettyShow NodeType where
   pShow (ControlNode op) = "control node (" ++ pShow op ++ ")"
   pShow (CallNode func) = "call node (" ++ pShow func ++ ")"
   pShow IndirCallNode = "indirect call node"
-  pShow (ValueNode dt origin) = "calue node (" ++ pShow dt ++ ", "
+  pShow (ValueNode dt origin) = "value node (" ++ pShow dt ++ ", "
                                 ++ pShow origin ++ ")"
   pShow (BlockNode name) = "block node (" ++ pShow name ++ ")"
   pShow PhiNode = "phi node"
