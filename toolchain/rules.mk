@@ -65,6 +65,7 @@ TARGET                ?=
 
 OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
 LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
+BGLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibBreakConstantsGEPs.so
 LGLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerGetElementPtr.so
 AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 
@@ -77,6 +78,7 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 %.low.ll: %.ll
 	$(OPT) -lowerswitch \
 		   -load $(LSLIB) -lowerselect \
+		   -load $(BGLIB) -break-constgeps \
 		   -load $(LGLIB) -lowergetelementptr \
 		   -S $< -o $@
 
