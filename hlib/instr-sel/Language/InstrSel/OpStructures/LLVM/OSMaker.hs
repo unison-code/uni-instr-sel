@@ -241,6 +241,7 @@ instance OperandDataTypeFormable Constant where
                            , D.intConstNumBits = Just $ toNatural w
                            }
   toOpDataType NullConstant = Right D.PointerNullType
+  toOpDataType c@(GlobalReferenceConstant {}) = Right $ globalRefType c
   toOpDataType c = Left $ "toOpDataType: not implemented for " ++ show c
 
 instance OperandDataTypeFormable LLVM.Type where
