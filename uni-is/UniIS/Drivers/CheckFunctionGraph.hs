@@ -27,12 +27,8 @@ import Language.InstrSel.TargetMachines.PatternMatching
   )
 import qualified Language.InstrSel.Utils.Set as S
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit
-  , errorExitCode
-  )
+  ( reportErrorAndExit )
 
-import Data.List
-  ( intercalate )
 import Data.Maybe
   ( fromJust
   , isJust
@@ -53,18 +49,15 @@ run
 
 run CheckFunctionGraphCoverage function matchset _ =
   let g = osGraph $ functionOS function
-      op_nodes = map getNodeID $ filter isOperationNode $ getAllNodes g
+      op_nodes = filter isOperationNode $ getAllNodes g
       matches = pmMatches matchset
       isNodeCoverable n =
-        any (\m -> length (findPNInMatch (pmMatch m) n) > 0)
+        any (\m -> length (findPNInMatch (pmMatch m) (getNodeID n)) > 0)
             matches
-      uncovered_nodes = filter (not . isNodeCoverable) op_nodes
-  in if length uncovered_nodes > 0
-     then return [ toOutputWithExitCode
-                   errorExitCode
-                   ("Non-coverable op nodes: " ++ pShow uncovered_nodes)
-                 ]
-     else return [toOutput ""]
+      uncovered_ops = filter (not . isNodeCoverable) op_nodes
+      l = concatLogs $
+          map (reportUncoveredOp g) uncovered_ops
+  in return $ mkOutputFromLog l
 
 run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
   let getValidLocs os nid =
@@ -73,7 +66,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
            then fromJust locs
            else []
       g = osGraph $ functionOS function
-      data_nodes = map getNodeID $ filter isDatumNode $ getAllNodes g
+      data_nodes = filter isDatumNode $ getAllNodes g
       matches = pmMatches matchset
       getPatternGraph pm =
         let i = findInstruction (tmInstructions tm) (pmInstrID pm)
@@ -94,10 +87,11 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
            then getValidLocs os nid
            else []
       hasNodeOverlappingLocs n =
-        let def_locs =
+        let nid = getNodeID n
+            def_locs =
               S.unions $
               map ( \pm -> let m = pmMatch pm
-                               pn = findPNInMatch m n
+                               pn = findPNInMatch m nid
                                os = getPatternGraph pm
                                locs = map ( S.fromList .
                                             getDefLocationsForNode os
@@ -109,7 +103,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
             use_locs =
               S.unions $
               map ( \pm -> let m = pmMatch pm
-                               pn = findPNInMatch m n
+                               pn = findPNInMatch m nid
                                os = getPatternGraph pm
                                locs = map ( S.fromList .
                                             getUseLocationsForNode os
@@ -126,14 +120,27 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
                 def_locs `S.intersection` use_locs
            else True
       non_overlapping_nodes = filter (not . hasNodeOverlappingLocs) data_nodes
-  in if length non_overlapping_nodes > 0
-     then let node_strs = intercalate ", " $ map pShow non_overlapping_nodes
-          in return [ toOutputWithExitCode
-                      errorExitCode
-                      ( "Data nodes with non-overlapping location " ++
-                        "requirements: " ++ node_strs
-                      )
-                    ]
-     else return [toOutput ""]
+      l = concatLogs $
+          map reportNonOverlappingLocsForDatum non_overlapping_nodes
+  in return $ mkOutputFromLog l
 
 run _ _ _ _ = reportErrorAndExit "CheckFunctionGraph: unsupported action"
+
+reportUncoveredOp :: Graph -> Node -> Log
+reportUncoveredOp g o =
+  let in_ds = filter isDatumNode $
+              map (getSourceNode g) $
+              getDtFlowInEdges g o
+      out_ds = filter isDatumNode $
+               map (getTargetNode g) $
+               getDtFlowOutEdges g o
+  in toLog $
+     ErrorMessage $
+     "Uncovered operation: " ++ pShow o ++ " with in-data " ++ pShow in_ds ++
+     " and out-data " ++ pShow out_ds
+
+reportNonOverlappingLocsForDatum :: Node -> Log
+reportNonOverlappingLocsForDatum n =
+  toLog $
+  ErrorMessage $
+  "Datum node with non-overlapping location requirements: " ++ pShow n
