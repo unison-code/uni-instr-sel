@@ -264,6 +264,8 @@ class ReturnDataTypeFormable a where
 
 instance ReturnDataTypeFormable LLVM.Type where
   -- This is how LLVM wraps the return type of a function
+  toReturnDataType (LLVM.PointerType (LLVM.FunctionType LLVM.VoidType _ _) _) =
+    return D.VoidType
   toReturnDataType (LLVM.PointerType (LLVM.FunctionType t _ _) _) =
     toOpDataType t
   toReturnDataType LLVM.VoidType = return D.VoidType
