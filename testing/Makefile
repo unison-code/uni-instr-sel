@@ -292,10 +292,17 @@ run-regression-tests-for-target:
 					   $$T_PREP_TIME_TOTAL - \
 					   $$T_PMAT_TIME_TOTAL` ;\
 	T_MISC_TIME_TOTAL_PRETTY=`date -u -d @"$$T_MISC_TIME_TOTAL" +'%-Mm %-Ss'` ;\
-	T_PMAT_TIME_PERCENT=`expr $$T_PMAT_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
-	T_PREP_TIME_PERCENT=`expr $$T_PREP_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
-	T_SOLV_TIME_PERCENT=`expr $$T_SOLV_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
-	T_MISC_TIME_PERCENT=`expr $$T_MISC_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
+	if [ "$$T_TIME_TOTAL" -gt "0" ]; then \
+		T_PMAT_TIME_PCENT=`expr $$T_PMAT_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
+		T_PREP_TIME_PCENT=`expr $$T_PREP_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
+		T_SOLV_TIME_PCENT=`expr $$T_SOLV_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
+		T_MISC_TIME_PCENT=`expr $$T_MISC_TIME_TOTAL \* 100 / $$T_TIME_TOTAL` ;\
+	else \
+		T_PMAT_TIME_PCENT=0 ;\
+		T_PREP_TIME_PCENT=0 ;\
+		T_SOLV_TIME_PCENT=0 ;\
+		T_MISC_TIME_PCENT=0 ;\
+	fi ;\
 	echo ;\
 	echo -n "$(C_INFO)" ;\
 	echo "==========================================================" ;\
@@ -315,16 +322,16 @@ run-regression-tests-for-target:
 	echo    "$(C_NONE)$${T_TIME_TOTAL_PRETTY}$(C_INFO)" ;\
 	echo -n "=   SOLVING:                 " ;\
 	echo -n      "$(C_NONE)$${T_SOLV_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_SOLV_TIME_PERCENT}%)$(C_INFO)" ;\
+	echo         "($${T_SOLV_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   MODEL PREP (FLATTENING): " ;\
 	echo -n      "$(C_NONE)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_PREP_TIME_PERCENT}%)$(C_INFO)" ;\
+	echo         "($${T_PREP_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   PATTERN MATCHING:        " ;\
 	echo -n      "$(C_NONE)$${T_PMAT_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_PMAT_TIME_PERCENT}%)$(C_INFO)" ;\
+	echo         "($${T_PMAT_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   OTHER TASKS:             " ;\
 	echo -n      "$(C_NONE)$${T_MISC_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_MISC_TIME_PERCENT}%)$(C_INFO)" ;\
+	echo         "($${T_MISC_TIME_PCENT}%)$(C_INFO)" ;\
 	echo "==========================================================" ;\
 	echo -n "$(C_NONE)" ;\
 	echo
