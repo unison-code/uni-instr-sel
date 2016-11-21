@@ -1,0 +1,69 @@
+0:
+  %const.200.copy.1 = ##200
+  %const.16.copy.1 = ##16
+  %const.8.copy.1 = ##8
+  %const.1.copy.1 = ##1
+  %const.12.copy.1 = ##12
+  %const.28.copy.2 = ##28
+  %const.464.copy.2 = ##464
+  %const.24.copy.2 = ##24
+  %const.20.copy.1 = ##20
+  %const.null.copy.1 = ##0
+  %const.4.copy.1 = ##4
+  %13 = cmp.eq(%structsize, %const.464.copy.2)
+  %2 = cmp.eq(%version, 61)
+  %gep22 = add(%cinfo, %const.16.copy.1)
+  %gep18 = add(%cinfo, %const.20.copy.1)
+  %gep16 = add(%cinfo, %const.8.copy.1)
+  %gep14 = add(%cinfo, %const.12.copy.1)
+  %gep = add(%cinfo, %const.4.copy.1)
+  memb (%gep) = %const.null.copy.1
+  if (%2) jump bb0
+bb1:
+3:
+  %const.164.copy.1 = ##164
+  %const.61.copy.2 = ##61
+  %const.10.copy.1 = ##10
+  %5 = memb (%cinfo)
+  %gep20 = add(%cinfo, %const.164.copy.1)
+  %gep6 = add(%5, %const.28.copy.2)
+  %gep4 = add(%5, %const.24.copy.2)
+  %gep2 = add(%5, %const.20.copy.1)
+  memb (%gep2) = %const.10.copy.1
+  memb (%gep4) = %const.61.copy.2
+  memb (%gep6) = %version
+  %10 = memb (%5)
+  call %10 (%cinfo)
+  jump 12
+bb0:
+12:
+  if (%13) jump bb2
+bb3:
+14:
+  %cinfo.copy.6 = %cinfo
+  %const.19.copy.1 = ##19
+  %16 = memb (%cinfo)
+  %gep12 = add(%16, %const.28.copy.2)
+  %gep10 = add(%16, %const.24.copy.2)
+  %gep8 = add(%16, %const.20.copy.1)
+  memb (%gep8) = %const.19.copy.1
+  memb (%gep10) = %const.464.copy.2
+  memb (%gep12) = %structsize
+  %21 = memb (%16)
+  call %21 (%cinfo)
+  jump .preheader.preheader
+bb2:
+..preheader.preheader_crit_edge:
+  %cinfo.copy.7 = %cinfo
+.preheader.preheader:
+  %.pre-phi = PHI (%cinfo.copy.7, ..preheader.preheader_crit_edge) (%cinfo.copy.6, 14)
+  %24 = memb (%cinfo)
+  memb (%cinfo) = %24
+  memb (%gep14) = %const.1.copy.1
+  call jinit_memory_mgr (%.pre-phi)
+  memb (%gep16) = %const.null.copy.1
+  memb (%gep18) = %const.null.copy.1
+  call jinit_marker_reader (%cinfo)
+  call jinit_input_controller (%cinfo)
+  memb (%gep22) = %const.200.copy.1
+  return
