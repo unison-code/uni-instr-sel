@@ -1159,8 +1159,11 @@ mkFunctionDFGFromCall b st0 dt nt operands =
 -- been dereferenced.
 dereferencePointerOp :: LLVM.Operand -> Either String LLVM.Type
 dereferencePointerOp (LLVM.LocalReference (LLVM.PointerType t _) _) = return t
+dereferencePointerOp ( LLVM.ConstantOperand
+                       (LLVMC.GlobalReference (LLVM.PointerType t _) _)
+                     ) = return t
 dereferencePointerOp o = Left $ "dereferencePointerOp: " ++ show o ++
-                                " is not a pointer"
+                                " is not a pointer of expected format"
 
 -- | Inserts a new memory node representing the operation along with edges to
 -- that computation node from the given operands (which will also be
