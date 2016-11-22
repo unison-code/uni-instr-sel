@@ -238,7 +238,7 @@ run-regression-tests-for-target:
 								echo -n "-" ;\
 							done ;\
 							echo ;\
-							echo "$$T_DIFF" ;\
+							echo "$$T_ASM" ;\
 							for i in `seq 1 58`; do \
 								echo -n "-" ;\
 							done ;\
