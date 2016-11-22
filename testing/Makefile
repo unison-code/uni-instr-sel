@@ -142,7 +142,7 @@ run-regression-tests-for-target:
 	@echo "=========================================================="
 	@echo -n "$(C_NONE)"
 	@echo
-	@echo "$(C_INFO)NOTE: Solving time is given in brackets$(C_NONE)"
+	@echo "$(C_INFO)NOTE: Solving time is given in parentheses$(C_NONE)"
 	@echo
 	@echo "$(C_INFO)* EXECUTING REGRESSION TESTS$:$(C_NONE)"
 	@\
@@ -228,17 +228,21 @@ run-regression-tests-for-target:
 						done ;\
 						if [ "$$T_IS_OK" -ne "0" ]; then \
 							T_PASSED=`expr $$T_PASSED + 1` ;\
-							echo "[$(C_OK)OK$(C_NONE)] [$${solv_time}s]" ;\
+							echo "[$(C_OK)OK$(C_NONE)] ($${solv_time}s)" ;\
 						else \
 							T_WARN=`expr $$T_WARN + 1` ;\
 							echo -n "[$(C_WARNING)WARNING$(C_NONE)] " ;\
-							echo -n "[$${solv_time}s] " ;\
+							echo -n "($${solv_time}s) " ;\
 							echo    "(diff output)" ;\
 							for i in `seq 1 58`; do \
 								echo -n "-" ;\
 							done ;\
-							echo ;\
-							echo "$$T_ASM" ;\
+						    echo ;\
+							echo "- DIFF -";\
+							echo "$$T_DIFF" ;\
+						    echo ;\
+							echo "- FULL OUTPUT -";\
+							cat $$T_ASM ;\
 							for i in `seq 1 58`; do \
 								echo -n "-" ;\
 							done ;\
@@ -247,12 +251,12 @@ run-regression-tests-for-target:
 					else \
 						T_FAILED=`expr $$T_FAILED + 1` ;\
 						echo -n "[$(C_ERROR)FAILED$(C_NONE)]" ;\
-						echo -n "[$${solv_time}s] " ;\
+						echo -n "($${solv_time}s) " ;\
 						echo    "(no output)" ;\
 					fi ;\
 				else \
 					T_FAILED=`expr $$T_FAILED + 1` ;\
-					echo -n "[$(C_ERROR)FAILED$(C_NONE)] [$${solv_time}s] " ;\
+					echo -n "[$(C_ERROR)FAILED$(C_NONE)] ($${solv_time}s) " ;\
 					echo    "(diff costs)" ;\
 					for i in `seq 0 $$T_MAX_LENGTH`; do \
 						echo -n " " ;\
