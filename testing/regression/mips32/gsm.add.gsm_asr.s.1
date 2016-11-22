@@ -14,22 +14,22 @@ bb3:
 bb5:
 15:
   %16 = SRAV %10, %n
-  %17 = ANDi %16, 255
+  %17 = ANDi %16, 32767
   B 18
 bb4:
 11:
   %12 = SUBU r0, %n
   %13 = SLLV %10, %12
-  %14 = ANDi %13, 255
+  %14 = ANDi %13, 32767
   B 18
 bb2:
   B 18
 bb0:
 2:
   %a.lobit = SRL %a, 15
-  %3 = ANDi %a.lobit, 255
+  %3 = ANDi %a.lobit, 32767
   %4 = SUBU r0, %3
-  %5 = ANDi %4, 255
+  %5 = ANDi %4, 32767
 18:
   %.0 = PHI (%5, 2) (%14, 11) (%17, 15) (%const.0.copy.4, 6)
   %tmp.2 = SLL %.0, 16

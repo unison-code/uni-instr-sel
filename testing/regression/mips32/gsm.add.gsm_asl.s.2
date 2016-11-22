@@ -15,20 +15,20 @@ bb3:
 bb5:
 15:
   %17 = SLLV %16, %n
-  %18 = ANDi %17, 255
+  %18 = ANDi %17, 32767
   B gsm_asr.exit
 bb4:
 10:
   %11 = SUBU r0, %n
   %13 = SRAV %12, %11
-  %14 = ANDi %13, 255
+  %14 = ANDi %13, 32767
   B gsm_asr.exit
 bb2:
 4:
   %a.lobit = SRL %a, 15
-  %5 = ANDi %a.lobit, 255
+  %5 = ANDi %a.lobit, 32767
   %6 = SUBU r0, %5
-  %7 = ANDi %6, 255
+  %7 = ANDi %6, 32767
   B gsm_asr.exit
 bb0:
 gsm_asr.exit:

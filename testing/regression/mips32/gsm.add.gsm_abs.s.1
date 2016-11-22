@@ -6,7 +6,7 @@
 bb1:
 6:
   %7 = PHI (%1, 0) (%., .selectcont)
-  %8 = ANDi %7, 255
+  %8 = ANDi %7, 32767
   %tmp.1 = SLL %8, 16
   %tmp.2 = SRA %tmp.1, 16
   RetRA %tmp.2
