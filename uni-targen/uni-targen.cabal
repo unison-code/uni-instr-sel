@@ -31,4 +31,4 @@ executable uni-targen
   ghc-options:       -Wall
                      -- In order to pretty-print the generated Haskell code,
                      -- we must increase the stack space
-                     "-with-rtsopts=-K32m"
+                     "-with-rtsopts=-K128m"
