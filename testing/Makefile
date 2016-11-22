@@ -159,28 +159,26 @@ run-regression-tests-for-target:
 	T_PREP_TIME_TOTAL=0 ;\
 	T_SOLV_TIME_TOTAL=0 ;\
 	for T in $$T_ALL; do \
-	    T_NAME=`basename $$T` ;\
-		if [ "$${#T_NAME}" -gt "$$T_MAX_LENGTH" ]; then \
-			T_MAX_LENGTH=$${#T_NAME} ;\
+		if [ "$${#T}" -gt "$$T_MAX_LENGTH" ]; then \
+			T_MAX_LENGTH=$${#T} ;\
 	    fi \
     done ;\
 	for T in $$T_ALL; do \
 	    T_TOTAL=`expr $$T_TOTAL + 1` ;\
-	    T_NAME=`basename $$T` ;\
-		echo -n "$$T_INDENT$$T_NAME" ;\
-		for i in `seq $${#T_NAME} $$T_MAX_LENGTH`; do \
+		echo -n "$$T_INDENT$$T" ;\
+		for i in `seq $${#T} $$T_MAX_LENGTH`; do \
 			echo -n " " ;\
 		done ;\
 		TARGET_LC=`echo $(TARGET) | tr A-Z a-z` ;\
 		RT_TARGET_DIR=$(REGRESSION_TESTS_DIR)/$$TARGET_LC ;\
-		T_COST=`cat $$RT_TARGET_DIR/$${T_NAME%.*}.cost 2> /dev/null` ;\
-		T_ORACLES=`ls $$RT_TARGET_DIR/$${T_NAME%.*}.s.* 2> /dev/null` ;\
+		T_COST=`cat $$RT_TARGET_DIR/$$T.cost 2> /dev/null` ;\
+		T_ORACLES=`ls $$RT_TARGET_DIR/$$T.s.* 2> /dev/null` ;\
 		if [ -n "$$T_COST" ]; then \
 			if [ -n "$$T_ORACLES" ]; then \
 				TEMPFILE=$$(basename `mktemp`) ;\
 				T_LL=$${TEMPFILE}.ll ;\
 			    T_ASM=$${TEMPFILE}.s ;\
-				cp $(REGRESSION_TESTS_DIR)/$$T $$T_LL ;\
+				cp $(REGRESSION_TESTS_DIR)/$$T.ll $$T_LL ;\
 				$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 				pmatch_file="$${T_LL%.*}.ph.lp.ce.cc.be.ae.presolved.p.json" ;\
