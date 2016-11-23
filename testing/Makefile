@@ -128,17 +128,32 @@ clean:
 	$(RM) *.bc
 	$(RM) tmp.*
 
-.PHONY: run-regression-tests
-run-regression-tests:
-	@$(MAKE) TARGET=Mips32   run-regression-tests-for-target
-	@$(MAKE) TARGET=Hexagon5 run-regression-tests-for-target
+.PHONY: run-all-regression-tests
+run-all-regression-tests:
+	@$(MAKE) run-light-regression-tests
+	@$(MAKE) run-heavy-regression-tests
 
-.PHONY: run-regression-tests-for-target
-run-regression-tests-for-target:
+.PHONY: run-light-regression-tests
+run-light-regression-tests:
+	@$(MAKE) T_ID=LIGHT T_DB=light-test-cases.db \
+			 .run-regression-tests-for-all-targets
+
+.PHONY: run-heavy-regression-tests
+run-heavy-regression-tests:
+	@$(MAKE) T_ID=HEAVY T_DB=heavy-test-cases.db \
+			 .run-regression-tests-for-all-targets
+
+.PHONY: .run-regression-tests-for-all-targets
+.run-regression-tests-for-all-targets:
+	@$(MAKE) TARGET=Mips32   .run-regression-tests
+	@$(MAKE) TARGET=Hexagon5 .run-regression-tests
+
+.PHONY: .run-regression-tests
+.run-regression-tests:
 	@echo
 	@echo -n "$(C_INFO)"
 	@echo "=========================================================="
-	@echo "=   REGRESSION TESTS FOR TARGET: $(C_NONE)$(TARGET)$(C_INFO)"
+	@echo "=   $(T_ID) REGRESSION TESTS FOR TARGET: $(C_NONE)$(TARGET)$(C_INFO)"
 	@echo "=========================================================="
 	@echo -n "$(C_NONE)"
 	@echo
@@ -152,7 +167,7 @@ run-regression-tests-for-target:
 	T_IGNORED=0 ;\
 	T_FAILED=0 ;\
 	T_WARN=0 ;\
-	T_ALL=`cat $(REGRESSION_TESTS_DIR)/test-cases.db` ;\
+	T_ALL=`cat $(REGRESSION_TESTS_DIR)/$(T_DB)` ;\
 	T_MAX_LENGTH=0 ;\
 	T_TIME_START=`date +%s` ;\
 	T_PMAT_TIME_TOTAL=0 ;\
