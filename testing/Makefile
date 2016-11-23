@@ -358,14 +358,8 @@ run-heavy-regression-tests:
 # PLOT AND DUMP RULES
 #=====================
 
-%.full-f.dot: %.ph.lp.ce.cc.be.f.json
+%.f.dot: %.f.json
 	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
-
-%.cfg-f.dot: %.f.ph.lp.ce.cc.be.json
-	$(UNI_IS_CMD) plot --plot-fun-cf-graph -f $< -o $@
-
-%.ssa-f.dot: %.f.ph.lp.ce.cc.be.json
-	$(UNI_IS_CMD) plot --plot-fun-ssa-graph -f $< -o $@
 
 %.cov.dot: %.ph.lp.ce.cc.be.f.json %.ph.lp.ce.cc.be.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
