@@ -440,10 +440,12 @@ pattern.dot:
 				else \
 					echo "[$(C_WARNING)WARNING$(C_NONE)]" ;\
 					cat $$out ;\
+					echo ;\
 				fi \
 			else \
 				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
 				cat $$out ;\
+				echo ;\
 			fi \
 		else \
 			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
