@@ -993,10 +993,9 @@ mkFunctionDFGFromInstruction b st (LLVM.Load _ op1 _ _ _) =
                             dt
                             Op.Load
                             [op1]
-mkFunctionDFGFromInstruction _ st0 (LLVM.Alloca t _ _ _) =
+mkFunctionDFGFromInstruction _ st0 (LLVM.Alloca _ _ _ _) =
   -- TODO: fix with proper handling that includes stack adjustments
-  do dt <- toOpDataType t
-     st1 <- addNewNode st0 (G.ValueNode dt Nothing)
+  do st1 <- addNewNode st0 (G.ValueNode D.PointerTempType Nothing)
      b <- getCurrentBlock st1
      n <- getLastTouchedValueNode st1
      st2 <- addPendingBlockToDatumFlow st1 (b, G.getNodeID n)
