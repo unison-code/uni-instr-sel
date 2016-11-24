@@ -411,9 +411,9 @@ constraint
 % Constrain locations of operands representing values for selected matches.
 constraint
   forall ( m in allMatches
-         , o in allOperands
+         , o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
          )
-  ( let { set of int: locs = { validDataLocsInMatch[i, 3]
+  ( let { set of int: locs = { validDataLocsInMatch[i, 3] 
                              | i in index_set_1of2(validDataLocsInMatch)
                                where validDataLocsInMatch[i, 1] = m
                                      /\
@@ -421,7 +421,7 @@ constraint
                              }
         }
     in if card(locs) > 0
-       then sel[m] -> loc[Alt(o)] in locs
+       then trace("sel[\(m)] -> loc[Alt(\(o))] in \(locs)\n", sel[m] -> loc[Alt(o)] in locs)
        else true
        endif
   );
@@ -773,24 +773,31 @@ constraint
 % dominate the block defining d, and o must be placed in the block defining d.
 constraint
   forall ( o in allOperationsInFunction
-         , d in allDataInFunction
-         , u in allDataInFunction
            where forall (m in matchsetOfOp[o])
                  ( not (m in phiInstrMatches) /\
                    card(spannedBlocksInMatch[m]) = 0
                  )
          )
-  ( if forall (m in matchsetOfOp[o])
-       ( exists (do in operandsDefinedByMatch[m])
-         ( operandAlternatives[do] = {d} )
-         /\
-         exists (uo in operandsUsedByMatch[m])
-         ( operandAlternatives[uo] = {u} )
+  ( let { set of allMatches: M = matchsetOfOp[o],
+          set of allDataInFunction: D = { d | do in operandsDefinedByMatch[min(M)],
+					      d in operandAlternatives[do]
+					},
+          set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)],
+					      u in operandAlternatives[uo]
+					} }
+    in forall (d in D, u in U)
+       ( if forall (m in M)
+	    ( exists (do in operandsDefinedByMatch[m])
+	      ( operandAlternatives[do] = {d} )
+	      /\
+	      exists (uo in operandsUsedByMatch[m])
+	      ( operandAlternatives[uo] = {u} )
+	    )
+	 then table([dplace[d], dplace[u]], domRelMatrix) /\
+	      oplace[o] = dplace[d]
+	 else true
+	 endif
        )
-    then table([dplace[d], dplace[u]], domRelMatrix) /\
-         oplace[o] = dplace[d]
-    else true
-    endif
   );
 
 % If all matches that define some data, does not contain any phi instructions
@@ -798,24 +805,30 @@ constraint
 % the block defining u must dominate the block defining d.
 constraint
   forall ( M in defsetOfDatumOnly
-         , d in allDataInFunction
-         , u in allDataInFunction
            where forall (m in M)
                  ( not (m in phiInstrMatches)
                    /\
                    card(spannedBlocksInMatch[m]) = 0
                  )
          )
-  ( if forall (m in M)
-       ( exists (do in operandsDefinedByMatch[m])
-         ( operandAlternatives[do] = {d} )
-         /\
-         exists (uo in operandsUsedByMatch[m])
-         ( operandAlternatives[uo] = {u} )
+  ( let { set of allDataInFunction: D = { d | do in operandsDefinedByMatch[min(M)],
+					      d in operandAlternatives[do]
+					},
+          set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)],
+					      u in operandAlternatives[uo]
+					} }
+    in forall (d in D, u in U)
+       ( if forall (m in M)
+	    ( exists (do in operandsDefinedByMatch[m])
+	      ( operandAlternatives[do] = {d} )
+	      /\
+	      exists (uo in operandsUsedByMatch[m])
+	      ( operandAlternatives[uo] = {u} )
+	    )
+	 then table([dplace[d], dplace[u]], domRelMatrix)
+	 else true
+	 endif
        )
-    then table([dplace[d], dplace[u]], domRelMatrix)
-    else true
-    endif
   );
 
 % If all matches in the matchset that either covers a particular operation or

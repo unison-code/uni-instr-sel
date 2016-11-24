@@ -410,6 +410,19 @@ for row in json_data["match-valid-value-loc-ranges"]:
 canonical.sort()
 canonical_set = set(canonical)
 
+# [MC] Filter fun-valid-value-locs and match-valid-value-locs wrt. canonical_set
+
+fun_valid_value_locs_canonical = []
+match_valid_value_locs_canonical = []
+
+for row in json_data["fun-valid-value-locs"]:
+    if row[1] in canonical_set:
+        fun_valid_value_locs_canonical.append(row)
+
+for row in json_data["match-valid-value-locs"]:
+    if row[2] in canonical_set:
+        match_valid_value_locs_canonical.append(row)
+
 # [MC] Compute GCD of frequencies
 fqs = json_data["fun-block-exec-freqs"]
 scaled = []
@@ -441,7 +454,7 @@ dumpParams( bumpArr(json_data["fun-branch-ext-blocks"])
 dumpParams( bumpValue(json_data["fun-entry-block"])
           , "entryBlockOfFunction"
           )
-dumpParams( bump2DArrYN(json_data["fun-valid-value-locs"])
+dumpParams( bump2DArrYN(fun_valid_value_locs_canonical)
           , "validDataLocsInFunction"
           , VT_ARRAY2D
           )
@@ -540,7 +553,7 @@ dumpParams( bump2DArrYY(json_data["match-fall-through-block"])
           , "fallThroughBlockOfMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYN(json_data["match-valid-value-locs"])
+dumpParams( bump2DArrYYN(match_valid_value_locs_canonical)
           , "validDataLocsInMatch"
           , VT_ARRAY2D
           )
