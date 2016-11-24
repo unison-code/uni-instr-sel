@@ -413,7 +413,7 @@ constraint
   forall ( m in allMatches
          , o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
          )
-  ( let { set of int: locs = { validDataLocsInMatch[i, 3] 
+  ( let { set of int: locs = { validDataLocsInMatch[i, 3]
                              | i in index_set_1of2(validDataLocsInMatch)
                                where validDataLocsInMatch[i, 1] = m
                                      /\
@@ -421,7 +421,7 @@ constraint
                              }
         }
     in if card(locs) > 0
-       then trace("sel[\(m)] -> loc[Alt(\(o))] in \(locs)\n", sel[m] -> loc[Alt(o)] in locs)
+       then sel[m] -> loc[Alt(o)] in locs
        else true
        endif
   );
@@ -568,13 +568,13 @@ constraint
 constraint
   forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
          , p in operandsUsedByMatch[m]
-	 )
+         )
   ( not sel[m] -> uplace[p] = dplace[Alt(p)] );
 
 constraint
   forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
          , o in operandsUsedByMatch[m]
-	 , c in operationsCoveredByMatch[m]
+         , c in operationsCoveredByMatch[m]
          )
   ( sel[m] -> oplace[c] = uplace[o] );
 
@@ -778,25 +778,27 @@ constraint
                    card(spannedBlocksInMatch[m]) = 0
                  )
          )
-  ( let { set of allMatches: M = matchsetOfOp[o],
-          set of allDataInFunction: D = { d | do in operandsDefinedByMatch[min(M)],
-					      d in operandAlternatives[do]
-					},
-          set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)],
-					      u in operandAlternatives[uo]
-					} }
+  ( let { set of allMatches: M = matchsetOfOp[o]
+        , set of allDataInFunction: D =
+            { d | do in operandsDefinedByMatch[min(M)]
+                , d in operandAlternatives[do]
+            }
+        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)]
+                                            , u in operandAlternatives[uo]
+                                        }
+        }
     in forall (d in D, u in U)
        ( if forall (m in M)
-	    ( exists (do in operandsDefinedByMatch[m])
-	      ( operandAlternatives[do] = {d} )
-	      /\
-	      exists (uo in operandsUsedByMatch[m])
-	      ( operandAlternatives[uo] = {u} )
-	    )
-	 then table([dplace[d], dplace[u]], domRelMatrix) /\
-	      oplace[o] = dplace[d]
-	 else true
-	 endif
+            ( exists (do in operandsDefinedByMatch[m])
+              ( operandAlternatives[do] = {d} )
+              /\
+              exists (uo in operandsUsedByMatch[m])
+              ( operandAlternatives[uo] = {u} )
+            )
+         then table([dplace[d], dplace[u]], domRelMatrix) /\
+              oplace[o] = dplace[d]
+         else true
+         endif
        )
   );
 
@@ -811,23 +813,25 @@ constraint
                    card(spannedBlocksInMatch[m]) = 0
                  )
          )
-  ( let { set of allDataInFunction: D = { d | do in operandsDefinedByMatch[min(M)],
-					      d in operandAlternatives[do]
-					},
-          set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)],
-					      u in operandAlternatives[uo]
-					} }
+  ( let { set of allDataInFunction: D =
+            { d | do in operandsDefinedByMatch[min(M)]
+                , d in operandAlternatives[do]
+            }
+        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)]
+                                            , u in operandAlternatives[uo]
+                                        }
+        }
     in forall (d in D, u in U)
        ( if forall (m in M)
-	    ( exists (do in operandsDefinedByMatch[m])
-	      ( operandAlternatives[do] = {d} )
-	      /\
-	      exists (uo in operandsUsedByMatch[m])
-	      ( operandAlternatives[uo] = {u} )
-	    )
-	 then table([dplace[d], dplace[u]], domRelMatrix)
-	 else true
-	 endif
+            ( exists (do in operandsDefinedByMatch[m])
+              ( operandAlternatives[do] = {d} )
+              /\
+              exists (uo in operandsUsedByMatch[m])
+              ( operandAlternatives[uo] = {u} )
+            )
+         then table([dplace[d], dplace[u]], domRelMatrix)
+         else true
+         endif
        )
   );
 
