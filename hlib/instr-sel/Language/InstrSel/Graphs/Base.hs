@@ -283,6 +283,12 @@ newtype Edge
   = Edge (I.LEdge EdgeLabel)
   deriving (Show, Eq)
 
+instance PrettyShow Edge where
+  pShow (Edge (s, t, l)) =
+    "<" ++ pShow (edgeType l) ++ ", " ++ pShow s ++
+    ": " ++ pShow (outEdgeNr l) ++ " -> " ++ pShow (inEdgeNr l) ++
+    ": " ++ pShow t ++ ">"
+
 -- | Data type for describing how an edge relates to the two nodes.
 data EdgeLabel
   = EdgeLabel
@@ -919,7 +925,7 @@ redirectInEdgesWhen
   -> Graph
 redirectInEdgesWhen p to_n from_n g =
   let es = filter p $ getInEdges g from_n
-  in foldr (updateEdgeTarget to_n) g es
+  in foldr (\e g' -> fst $ updateEdgeTarget to_n e g') g es
 
 -- | Same as 'redirectOutEdges' but takes a predicate for which edges to
 -- redirect.
@@ -934,7 +940,7 @@ redirectOutEdgesWhen
   -> Graph
 redirectOutEdgesWhen p to_n from_n g =
   let es = filter p $ getOutEdges g from_n
-  in foldr (updateEdgeSource to_n) g es
+  in foldr (\e g' -> fst $ updateEdgeSource to_n e g') g es
 
 -- | Updates the target of an edge.
 updateEdgeTarget
@@ -943,7 +949,8 @@ updateEdgeTarget
   -> Edge
      -- ^ The edge to update.
   -> Graph
-  -> Graph
+  -> (Graph, Edge)
+     -- ^ The new graph and the updated edge.
 updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
   let new_trg_id = getIntNodeID new_trg
       new_e = ( src
@@ -955,7 +962,7 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
                                                )
                   }
               )
-  in Graph (I.insEdge new_e (I.delLEdge e g))
+  in (Graph (I.insEdge new_e (I.delLEdge e g)), Edge new_e)
 
 -- | Updates the source of an edge.
 updateEdgeSource
@@ -964,7 +971,8 @@ updateEdgeSource
   -> Edge
      -- ^ The edge to update.
   -> Graph
-  -> Graph
+  -> (Graph, Edge)
+     -- ^ The new graph and the updated edge.
 updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
   let new_src_id = getIntNodeID new_src
       new_e = ( new_src_id
@@ -976,7 +984,7 @@ updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
                                                  )
                   }
               )
-  in Graph (I.insEdge new_e (I.delLEdge e g))
+  in (Graph (I.insEdge new_e (I.delLEdge e g)), Edge new_e)
 
 -- | Updates the in number of an edge.
 updateEdgeInNr
@@ -985,7 +993,8 @@ updateEdgeInNr
   -> Edge
      -- ^ The edge to update.
   -> Graph
-  -> Graph
+  -> (Graph, Edge)
+     -- ^ The new graph and the updated edge.
 updateEdgeInNr new_nr e@(Edge (_, _, l)) g =
   let new_l = l { inEdgeNr = new_nr }
   in updateEdgeLabel new_l e g
@@ -997,7 +1006,8 @@ updateEdgeOutNr
   -> Edge
      -- ^ The edge to update.
   -> Graph
-  -> Graph
+  -> (Graph, Edge)
+     -- ^ The new graph and the updated edge.
 updateEdgeOutNr new_nr e@(Edge (_, _, l)) g =
   let new_l = l { outEdgeNr = new_nr }
   in updateEdgeLabel new_l e g
@@ -1109,12 +1119,17 @@ insertNewNodeAlongEdge
       g4 = I.insEdge new_e2 g3
   in (Graph g4, new_n)
 
--- | Updates the edge label of an already existing edge.
-updateEdgeLabel :: EdgeLabel -> Edge -> Graph -> Graph
+-- | Updates the edge label of an already existing edge
+updateEdgeLabel
+  :: EdgeLabel
+  -> Edge
+  -> Graph
+  -> (Graph, Edge)
+     -- ^ The new graph and the updated edge.
 updateEdgeLabel new_label e@(Edge (src, dst, _)) g =
   let all_edges_but_e = filter (/= e) (getAllEdges g)
       new_e = Edge (src, dst, new_label)
-  in mkGraph (getAllNodes g) (new_e:all_edges_but_e)
+  in (mkGraph (getAllNodes g) (new_e:all_edges_but_e), new_e)
 
 -- | Gets the node that was last added to the graph, which is the node with the
 -- highest internal node ID.

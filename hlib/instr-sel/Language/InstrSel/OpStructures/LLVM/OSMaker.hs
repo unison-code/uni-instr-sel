@@ -1840,7 +1840,7 @@ addPendingBlockToDatumDefEdges st =
                    do dn <- getNodeWithID st dn_id
                       bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (bn, dn) g
-                          g'' = G.updateEdgeInNr nr new_e g'
+                          g'' = fst $ G.updateEdgeInNr nr new_e g'
                       return g''
                  )
                  g0
@@ -1857,7 +1857,7 @@ addPendingDatumToBlockDefEdges st =
                    do dn <- getNodeWithID st dn_id
                       bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (dn, bn) g
-                          g'' = G.updateEdgeOutNr nr new_e g'
+                          g'' = fst $ G.updateEdgeOutNr nr new_e g'
                       return g''
                  )
                  g0

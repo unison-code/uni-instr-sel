@@ -189,7 +189,7 @@ mergeValueNodes in_v out_v g0 =
                 phi_b_ps
       g3 = foldr ( \(b, nr) g ->
                    let (g', new_e) = addNewDefEdge (in_v, b) g
-                   in updateEdgeOutNr nr new_e g'
+                   in fst $ updateEdgeOutNr nr new_e g'
                  )
                  g2
                  b_nr_ps
@@ -300,7 +300,7 @@ fixPhisInGraph g root =
                          let (g'', dt_e) = addNewDtFlowEdge (v, phi_n) g'
                              out_nr = getEdgeOutNr dt_e
                              (g''', def_e) = addNewDefEdge (v, b) g''
-                             g'''' = updateEdgeOutNr out_nr def_e g'''
+                             g'''' = fst $ updateEdgeOutNr out_nr def_e g'''
                          in g''''
                        )
                        g2
