@@ -213,6 +213,90 @@ processMatch
      -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
      -- processing the next 'Match'.
 processMatch instr pat match mid oid =
+  let (pat', match') = enableCopyingForMultUseInputsInPattern pat match
+  in processMatch' instr pat' match' mid oid
+
+-- | TODO: write documentation
+enableCopyingForMultUseInputsInPattern
+  :: InstrPattern
+  -> Match NodeID
+  -> (InstrPattern, Match NodeID)
+enableCopyingForMultUseInputsInPattern pat match =
+  let g = osGraph $ patOS pat
+      mult_use_input_vs =
+        filter ( \n -> isValueNode n &&
+                       not (isValueNodeWithConstValue n) &&
+                       length (getDtFlowInEdges g n) == 0 &&
+                       length (getDtFlowOutEdges g n) > 1
+               ) $
+        getAllNodes g
+      rewrite old_input (old_p, old_m) =
+        let old_os = patOS old_p
+            g0 = osGraph old_os
+            e = head $ getDtFlowOutEdges g0 old_input
+            cp_n = getTargetNode g0 e
+            new_input = let es' = getDtFlowOutEdges g0 cp_n
+                        in if length es' > 0
+                           then getTargetNode g0 $ head $ es'
+                           else error $
+                                "enableCopyingForMultUseInputsInPattern: " ++
+                                "pattern node " ++ show cp_n ++ " has no " ++
+                                "outgoing data-flow edges"
+            old_input_id = getNodeID old_input
+            new_input_id = getNodeID new_input
+            g1 = delNode cp_n g0
+            new_valid_locs = map ( \t@(n, locs) -> if n == old_input_id
+                                                 then (new_input_id, locs)
+                                                 else t
+                                 ) $
+                             osValidLocations old_os
+            new_cs = map (replaceNodeIDsInC old_input_id new_input_id) $
+                     osConstraints old_os
+            new_os = old_os { osGraph = g1
+                            , osValidLocations = new_valid_locs
+                            , osConstraints = new_cs
+                            }
+            new_m = toMatch $
+                    filter (\m -> pNode m /= getNodeID cp_n) $
+                    fromMatch old_m
+            new_emit_str = updateNodeInEmitStrTemplate old_input_id
+                                                       new_input_id
+                                                       (patEmitString old_p)
+            new_p = old_p { patOS = new_os
+                          , patExternalData =
+                              (new_input_id:patExternalData old_p)
+                          , patEmitString = new_emit_str
+                          }
+        in (new_p, new_m)
+  in foldr rewrite (pat, match) mult_use_input_vs
+
+-- | Replaces a node ID found in a given constraint with another node ID.
+replaceNodeIDsInC
+  :: NodeID
+     -- ^ Old node ID.
+  -> NodeID
+     -- ^ New node ID.
+  -> Constraint
+  -> Constraint
+replaceNodeIDsInC old_n new_n c =
+  let def_r = mkDefaultReconstructor
+      mkNodeExpr _ e@(ANodeIDExpr n) =
+        if n == old_n then ANodeIDExpr new_n else e
+      mkNodeExpr r expr = (mkNodeExprF def_r) r expr
+      new_r = def_r { mkNodeExprF = mkNodeExpr }
+  in apply new_r c
+
+processMatch'
+  :: Instruction
+  -> InstrPattern
+  -> Match NodeID
+  -> MatchID
+  -> OperandID
+     -- ^ The next operand ID to use in processing 'Match'.
+  -> (HighLevelMatchParams, OperandID)
+     -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
+     -- processing the next 'Match'.
+processMatch' instr pat match mid oid =
   let graph = osGraph $ patOS pat
       all_ns = getAllNodes graph
       o_ns = filter isOperationNode all_ns
