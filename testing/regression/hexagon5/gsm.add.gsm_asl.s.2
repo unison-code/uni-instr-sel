@@ -5,12 +5,12 @@
 bb1:
 2:
   %const.-15.copy.1 = ##-15
+  %const.0.copy.3 = ##0
   %3 = cmp.lt(%n, %const.-15.copy.1)
   if (%3) jump bb2
 bb3:
 8:
-  %const.0.copy.1 = ##0
-  %9 = cmp.lt(%n, %const.0.copy.1)
+  %9 = cmp.lt(%n, %const.0.copy.3)
   if (%9) jump bb4
 bb5:
 15:
@@ -20,18 +20,17 @@ bb5:
   jump gsm_asr.exit
 bb4:
 10:
-  %11 = sub(%const.0.copy.1, %n)
+  %11 = sub(%const.0.copy.3, %n)
   %12 = sxth(%a)
   %13 = asr(%12, %11)
   %14 = and(%13, #-32768)
   jump gsm_asr.exit
 bb2:
 4:
-  %const.0.copy.2 = ##0
   %tmp.1 = lsr(%a, #15)
   %a.lobit = zxth(%tmp.1)
   %5 = zxth(%a.lobit)
-  %6 = sub(%const.0.copy.2, %5)
+  %6 = sub(%const.0.copy.3, %5)
   %7 = and(%6, #-32768)
   jump gsm_asr.exit
 bb0:

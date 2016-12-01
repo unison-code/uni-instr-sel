@@ -130,17 +130,17 @@ clean:
 
 .PHONY: run-all-regression-tests
 run-all-regression-tests:
-	@$(MAKE) run-light-regression-tests
-	@$(MAKE) run-heavy-regression-tests
+	@$(MAKE) --no-print-directory run-small-regression-tests
+	@$(MAKE) --no-print-directory run-medium-regression-tests
 
-.PHONY: run-light-regression-tests
-run-light-regression-tests:
-	@$(MAKE) T_ID=LIGHT T_DB=light-test-cases.db \
+.PHONY: run-small-regression-tests
+run-small-regression-tests:
+	@$(MAKE) T_ID=SMALL T_DB=small-test-cases.db \
 			 .run-regression-tests-for-all-targets
 
-.PHONY: run-heavy-regression-tests
-run-heavy-regression-tests:
-	@$(MAKE) T_ID=HEAVY T_DB=heavy-test-cases.db \
+.PHONY: run-medium-regression-tests
+run-medium-regression-tests:
+	@$(MAKE) T_ID=MEDIUM T_DB=medium-test-cases.db \
 			 .run-regression-tests-for-all-targets
 
 .PHONY: .run-regression-tests-for-all-targets

@@ -1,0 +1,58 @@
+0:
+  %1 = zxtb(%a_val)
+  %const.85.copy.1 = ##85
+  %const.240.copy.1 = ##240
+  %const.7.copy.1 = ##7
+  %const.1.copy.1 = ##1
+  %const.128.copy.1 = ##128
+  %const.0.copy.3 = ##0
+  %2 = xor(%1, %const.85.copy.1)
+  %5 = lsr(%2, #4)
+  %3 = asl(%2, #4)
+  %4 = and(%3, %const.240.copy.1)
+  %6 = and(%5, %const.7.copy.1)
+  %Pivot = cmp.lt(%6, %const.1.copy.1)
+  %16 = and(%1, %const.128.copy.1)
+  %17 = cmp.ne(%16, 0)
+NodeBlock:
+  if (%Pivot) jump bb0
+bb1:
+LeafBlock1:
+  %SwitchLeaf2 = cmp.eq(%6, 1)
+  if (%SwitchLeaf2) jump bb2
+bb3:
+NewDefault:
+  %const.264.copy.2 = ##264
+  %12 = or(%4, %const.264.copy.2)
+  %const.-1.copy.1 = ##-1
+  %13 = add(%6, %const.-1.copy.1)
+11:
+  %14 = asl(%12, %13)
+15:
+  %t.0 = PHI (%14, 11) (%10, 9) (%8, 7)
+  %18 = sub(%const.0.copy.3, %t.0)
+  if (%17) jump bb6
+bb7:
+.selectcont:
+  %19 = PHI (%t.0.copy.2, .selecttrue) (%18, 15)
+  return %19
+bb6:
+.selecttrue:
+  %t.0.copy.2 = %t.0
+  jump .selectcont
+bb5:
+7:
+  %const.8.copy.1 = ##8
+  %8 = or(%4, %const.8.copy.1)
+  jump 15
+bb0:
+LeafBlock:
+  %SwitchLeaf = cmp.eq(%6, 0)
+  if (%SwitchLeaf) jump bb5
+bb4:
+  jump NewDefault
+bb2:
+9:
+  %const.264.copy.1 = ##264
+  %10 = or(%4, %const.264.copy.1)
+  jump 15

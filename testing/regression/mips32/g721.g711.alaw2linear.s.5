@@ -1,0 +1,45 @@
+0:
+  %1 = ANDi %a_val, 255
+  %2 = XORI %1, 85
+  %5 = SRL %2, 4
+  %3 = SLL %2, 4
+  (%4, %6, %16) = ANDi3 (%3, 240), (%5, 7), (%1, 128)
+  %SwitchLeaf = SLTi %6 0
+  %SwitchLeaf2 = SLTi %6 1
+  %Pivot = SLTI %6, 1
+NodeBlock:
+  BNE $0, $%Pivot, bb0
+bb1:
+LeafBlock1:
+  BNE $0, $%SwitchLeaf2, bb2
+bb3:
+NewDefault:
+  %12 = ORI %4, 264
+  %13 = ADDI %6, -1
+11:
+  %14 = SLLV %12, %13
+15:
+  %t.0 = PHI (%14, 11) (%10, 9) (%8, 7)
+  %18 = SUBU r0, %t.0
+  BNE $%16, $r0, bb6
+bb7:
+.selectcont:
+  %19 = PHI (%t.0.copy.2, .selecttrue) (%18, 15)
+  RetRA %19
+bb6:
+.selecttrue:
+  MFHI $%t.0.copy.2
+  B .selectcont
+bb5:
+7:
+  %8 = ORI %4, 8
+  B 15
+bb0:
+LeafBlock:
+  BNE $0, $%SwitchLeaf, bb5
+bb4:
+  B NewDefault
+bb2:
+9:
+  %10 = ORI %4, 264
+  B 15

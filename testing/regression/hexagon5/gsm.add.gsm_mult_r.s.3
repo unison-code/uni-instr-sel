@@ -1,0 +1,23 @@
+0:
+  %const.-32768.copy.2 = #-32768
+  %const.32767.copy.1 = #32767
+  %1 = cmp.eq(%b, %const.-32768.copy.2)
+  %2 = cmp.eq(%a, %const.-32768.copy.2)
+  %or.cond = and(%1, %2)
+  if (%or.cond) jump bb0
+bb1:
+3:
+  %4 = sxth(%b)
+  %5 = sxth(%a)
+  %const.16384.copy.1 = ##16384
+  %6 = mpy(%5, %4)
+  %7 = add(%6, %const.16384.copy.1)
+  %8 = lsr(%7, #15)
+  %9 = and(%8, #-32768)
+  jump 10
+bb0:
+10:
+  %.0 = PHI (%9, 3) (%const.32767.copy.1, 0)
+  %tmp.1 = aslh(%.0)
+  %tmp.2 = asr(%tmp.1)
+  return %tmp.2

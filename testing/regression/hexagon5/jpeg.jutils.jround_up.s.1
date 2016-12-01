@@ -1,7 +1,6 @@
 0:
   %const.-1.copy.1 = ##-1
-  %1 = add(%a, %const.-1.copy.1)
-  %2 = add(%1, %b)
+  %b += add(%a, %const.-1.copy.1)
   %3 = __hexagon_modsi(%2, %b)
   %4 = sub(%2, %3)
   return %4
