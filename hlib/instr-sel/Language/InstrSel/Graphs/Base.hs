@@ -91,7 +91,7 @@ module Language.InstrSel.Graphs.Base
   , getNumNodes
   , getNameOfCallNode
   , getNameOfBlockNode
-  , getCompOpOfComputationNode
+  , getOpOfComputationNode
   , getOriginOfValueNode
   , getEdgeOutNr
   , getOutEdges
@@ -727,8 +727,8 @@ getDataTypeOfValueNode :: Node -> D.DataType
 getDataTypeOfValueNode n = typeOfValue $ getNodeType n
 
 -- | Gets the operation from a computation node.
-getCompOpOfComputationNode :: Node -> O.CompOp
-getCompOpOfComputationNode n = compOp $ getNodeType n
+getOpOfComputationNode :: Node -> O.CompOp
+getOpOfComputationNode n = compOp $ getNodeType n
 
 -- | Gets the internal node ID from a node.
 getIntNodeID :: Node -> I.Node

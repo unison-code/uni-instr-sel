@@ -138,7 +138,7 @@ transformPtrValueNodesInGraph ptr_size null_value g0 =
 
 removeRedundantPtrConversionsInGraph :: Graph -> Graph
 removeRedundantPtrConversionsInGraph g0 =
-  let ns = filter ( \n -> let op = getCompOpOfComputationNode n
+  let ns = filter ( \n -> let op = getOpOfComputationNode n
                           in isCompTypeConvOp op || isCompTypeCastOp op
                   ) $
            filter isComputationNode $
@@ -197,7 +197,7 @@ mergeValueNodes in_v out_v g0 =
 
 transformPtrConversionsInGraph :: Graph -> Graph
 transformPtrConversionsInGraph g =
-  let ns = filter ( \n -> let op = getCompOpOfComputationNode n
+  let ns = filter ( \n -> let op = getOpOfComputationNode n
                           in if isCompTypeConvOp op
                              then let (CompTypeConvOp op') = op
                                   in op' `elem` [IntToPtr, PtrToInt]
