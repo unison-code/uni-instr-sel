@@ -35,6 +35,7 @@ import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.Utils
   ( combinations
+  , groupBy
   , toPair
   )
 import qualified Language.InstrSel.Utils.Set as S
@@ -43,6 +44,7 @@ import Language.InstrSel.Utils.JSON
 import Data.List
   ( elemIndex
   , nub
+  , sort
   )
 import Data.Maybe
   ( isJust
@@ -170,7 +172,8 @@ mkPatternMatchset :: Function -> TargetMachine -> PatternMatchset
 mkPatternMatchset function target =
   let fg = osGraph $ functionOS function
       int_matches = removeMatchesWithCyclicDataDeps fg $
-                    concatMap (processInstr function) (tmInstructions target)
+                    concatMap (processInstr function) $
+                    tmInstructions target
       matches = mkPatternMatches int_matches
   in PatternMatchset { pmTarget = tmID target
                      , pmMatches = matches
@@ -221,10 +224,12 @@ processInstrPattern (fg, entry) dup_fg instr pat =
       matches = if not (isInstructionSimd instr)
                 then map (\m -> (m, False)) $
                      map (fixMatch fg pg) $
+                     removeDupMatches $
                      findMatches dup_fg dup_pg
                 else let pg_cs = componentsOf dup_pg
                          sub_pg = head pg_cs
-                         sub_matches = findMatches dup_fg sub_pg
+                         sub_matches = removeDupMatches $
+                                       findMatches dup_fg sub_pg
                      in map (\m -> (m, True)) $
                         pruneNonselectableSimdMatches fg entry $
                         map (fixMatch fg pg) $
@@ -408,6 +413,16 @@ fixMatch fg pg m =
   in toMatch $
      map updatePair $
      fromMatch m
+
+-- | Removes duplicate matches that cover the same nodes in the function graph
+-- as some other match.
+removeDupMatches :: [Match Node] -> [Match Node]
+removeDupMatches ms =
+  let fns = map (sort . map fNode . fromMatch) ms
+      ms_fns = zip ms fns
+  in map (fst . head) $
+     groupBy (\(_, f1) (_, f2) -> f1 == f2) $
+     ms_fns
 
 -- | Removes SIMD matches that will never be selected becuase not all operations
 -- can be moved to the same block.

@@ -1480,6 +1480,7 @@ doesOrderCFOutEdgesMatter _ n
 -- node.
 doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFInEdgesMatter _ n
+  | isComputationNode n = not $ O.isCommutative $ getOpOfComputationNode n
   | isOperationNode n = True
   | otherwise = False
 
