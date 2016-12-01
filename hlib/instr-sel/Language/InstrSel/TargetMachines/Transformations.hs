@@ -204,11 +204,8 @@ insertAlternativeMappings t limit vs pm =
                     else error $ "insertAlternativeMappings: no pattern " ++
                                  "node with ID " ++ pShow pn_id
         in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
-           then let int_limit = fromIntegral limit
-                    num_to_take = if int_limit == 0 ||
-                                     int_limit > length sorted_vs
-                                  then length sorted_vs
-                                  else int_limit
+           then let num_to_take =
+                      if limit == 0 then maxBound else fromIntegral limit
                     alts = take num_to_take $
                            filter (/= fn_id) sorted_vs
                     alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
