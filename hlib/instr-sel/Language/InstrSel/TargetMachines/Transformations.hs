@@ -66,16 +66,17 @@ copyExtend tm =
 -- node. Note that definition edges where the target is a value node are not
 -- affected.
 copyExtendGraph :: Graph -> Graph
-copyExtendGraph g =
-  let nodes = filter isValueNode (getAllNodes g)
-      edges = concatMap (getDtFlowOutEdges g) nodes
-      filtered_edges = filter ( \e ->
-                                let src = getSourceNode g e
-                                in length (getDtFlowInEdges g src) > 0 ||
-                                   isValueNodeWithConstValue src
-                              ) $
-                       edges
-  in foldl insertCopy g filtered_edges
+copyExtendGraph g0 =
+  let es = filter ( \e ->
+                    let src = getSourceNode g0 e
+                    in length (getDtFlowInEdges g0 src) > 0 ||
+                       isValueNodeWithConstValue src ||
+                       length (getDtFlowOutEdges g0 src) > 1
+                  ) $
+           concatMap (getDtFlowOutEdges g0) $
+           filter isValueNode $
+           getAllNodes g0
+  in foldl insertCopy g0 es
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
 -- value node is used by a phi node, and there is a definition edge on that
