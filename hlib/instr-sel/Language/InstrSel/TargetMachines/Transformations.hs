@@ -35,6 +35,7 @@ import Data.List
 import Data.Maybe
   ( fromJust
   , isJust
+  , isNothing
   )
 
 
@@ -192,9 +193,9 @@ insertAlternativeMappings t limit vs pm =
         in m { pmMatch = processMatch p (pmMatch m) }
       processMatch p m =
         toMatch $
-        concatMap (processMapping p) $
+        concatMap (processMapping p m) $
         fromMatch m
-      processMapping p m =
+      processMapping p match m =
         let fn_id = fNode m
             pn_id = pNode m
             g = osGraph $ patOS p
@@ -204,10 +205,28 @@ insertAlternativeMappings t limit vs pm =
                     else error $ "insertAlternativeMappings: no pattern " ++
                                  "node with ID " ++ pShow pn_id
         in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
-           then let num_to_take =
+           then let isCandidate n =
+                      let pn_id' = let n' = findFNInMatch match n
+                                   in if length n' > 0
+                                      then Just $ head n'
+                                      else Nothing
+                          pn' = if isJust pn_id'
+                                then let n' = findNodesWithNodeID g $
+                                             fromJust pn_id'
+                                     in if length n' > 0
+                                        then Just $ head n'
+                                        else error $
+                                             "insertAlternativeMappings: " ++
+                                             "no pattern node with ID " ++
+                                             pShow pn_id
+                                else Nothing
+                      in isNothing pn' ||
+                         not (hasAnyPredecessors g (fromJust pn'))
+                    candidate_vs = filter isCandidate sorted_vs
+                    num_to_take =
                       if limit == 0 then maxBound else fromIntegral limit
                     alts = take num_to_take $
-                           filter (/= fn_id) sorted_vs
+                           filter (/= fn_id) candidate_vs
                     alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
                                    alts
                 in (m:alt_maps)
