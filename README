@@ -43,22 +43,24 @@ contains the 'llvm-general' Haskell packages.
 
 Before we can build the 'llvm-general' package, we must ensure that the LLVM
 binaries are available in the default search locations. This is done by
-extending the $PATH variable. Assuming the full path to the LLVM build directory
-is denoted as <LLVM_BUILD> (in this example, it's the folder with basename
-'zapbar-llvm-int-build').
+extending the $PATH variable. The toolchain also requires that the environment
+variable LLVM_INT_IS_BUILD_DIR has been set. Assume the full path to the LLVM
+build directory is denoted as <LLVM_BUILD> (in this example, it's the folder
+with basename 'zapbar-llvm-int-build'). Then:
 
-6. In your ~/.bashrc file, add the following line:
+6. In your ~/.bashrc file, add the following lines:
 
-   export PATH=<LLVM_BUILD>/bin:$PATH
+   export LLVM_INT_IS_BUILD_DIR=<LLVM_BUILD>
+   export PATH=$LLVM_INT_IS_BUILD_DIR/bin:$PATH
 
-To ensure the new $PATH is loaded, either open a new terminal or run following
-command:
+7. To ensure the new $PATH is loaded, either open a new terminal or run
+   following command:
 
    source ~/.bashrc
 
 Now we can build the tool chain.
 
-7. Build tool chain (assuming that your terminal is currently standing in the
+8. Build tool chain (assuming that your terminal is currently standing in the
    <REPO> folder).
 
    make

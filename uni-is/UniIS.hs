@@ -124,10 +124,6 @@ parseArgs =
         enum [ MakeNothing
                  &= auto
                  &= ignore
-             , MakeFunctionGraphFromLLVM
-                 &= name "construct-fun-from-llvm"
-                 &= explicit
-                 &= help "Constructs a function from an LLVM IR file."
              , MakePatternMatchset
                  &= name "compute-pattern-matchset"
                  &= explicit

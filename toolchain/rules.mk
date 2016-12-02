@@ -35,12 +35,14 @@
 #==========================
 
 # Should be set and exported as an environment variable
-UNI_IS_LLVM_BUILD_DIR ?= @echo 'ERROR: Environment variable' \
-                               '$$UNI_IS_LLVM_BUILD_DIR not set!' ; \
+LLVM_INT_IS_BUILD_DIR ?= @echo 'ERROR: Environment variable' \
+                               '$$LLVM_INT_IS_BUILD_DIR not set!' ; \
                          exit 1 ;
 
 # Should be set from within the Makefile
 UNI_IS_CMD            ?= @echo 'ERROR: Variable $$UNI_IS_CMD not set!' ; \
+                          exit 1 ;
+UNI_IS_LLVM_CMD       ?= @echo 'ERROR: Variable $$UNI_IS_LLVM_CMD not set!' ; \
                           exit 1 ;
 CONSTR_CONV_CMD       ?= @echo 'ERROR: Variable $$CONSTR_CONV_CMD not set!' ; \
                           exit 1 ;
@@ -63,11 +65,11 @@ TARGET                ?=
 # INTERNALLY SET VARIABLES
 #==========================
 
-OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
-LCLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLiftConstExprs.so
-LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
-LGLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerGetElementPtr.so
-AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+OPT            := $(LLVM_INT_IS_BUILD_DIR)/bin/opt
+LCLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLiftConstExprs.so
+LSLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerSelect.so
+LGLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerGetElementPtr.so
+AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 
 
 
@@ -86,7 +88,7 @@ AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
 %.f.json: %.low.freq.ll
-	$(UNI_IS_CMD) make --construct-fun-from-llvm -f $< -o $@
+	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@
 
 %.ph.f.json: %.f.json
 	$(UNI_IS_CMD) transform --fix-phis-in-fun -f $< -t $(TARGET) -o $@

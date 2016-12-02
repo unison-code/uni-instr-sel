@@ -9,11 +9,11 @@ Main authors:
 
 -}
 
-module UniIS.Drivers.MakeFunctionFromLLVM
+module UniISLLVM.Drivers.MakeFunctionFromLLVM
   ( run )
 where
 
-import UniIS.Drivers.Base
+import UniISLLVM.Drivers.Base
 import Language.InstrSel.Functions.LLVM
   ( mkFunctionsFromLlvmModule )
 import Language.InstrSel.Utils.JSON

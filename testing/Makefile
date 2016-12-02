@@ -40,7 +40,8 @@ MINIZINC_GLOBALS_DIR   := chuffed
 MINIZINC_BACKEND       := fzn_chuffed
 MINIZINC_BACKEND_FLAGS :=
 
-CLANG                 := $(UNI_IS_LLVM_BUILD_DIR)/bin/clang
+CLANG                 := $(LLVM_INT_IS_BUILD_DIR)/bin/clang
+UNI_IS_LLVM_CMD       := uni-is-llvm
 UNI_IS_CMD            := uni-is
 UNI_TARGEN_CMD        := uni-targen
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
@@ -79,19 +80,23 @@ C_NONE=\033[0m
 
 .PHONY: build
 build:
-	cd .. && make
+	cd .. && make build
 
-.PHONY: uni-is
-uni-is:
-	cd .. && make uni-is
+.PHONY: hlib
+hlib:
+	cd .. && make hlib
 
 .PHONY: uni-targen
 uni-targen:
 	cd .. && make uni-targen
 
-.PHONY: hlib
-hlib:
-	cd .. && make hlib
+.PHONY: uni-is-llvm
+uni-is-llvm:
+	cd .. && make uni-is-llvm
+
+.PHONY: uni-is
+uni-is:
+	cd .. && make uni-is
 
 .PHONY: clean-toolchain
 clean-toolchain:

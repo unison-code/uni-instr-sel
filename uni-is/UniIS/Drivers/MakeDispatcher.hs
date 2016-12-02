@@ -17,7 +17,6 @@ import UniIS.Drivers.DispatcherTools
 import qualified UniIS.Drivers.MakeArrayIndexMaplists as MakeArrayIndexMaplists
 import qualified UniIS.Drivers.MakeAssemblyCode as MakeAssemblyCode
 import qualified UniIS.Drivers.MakeCPModel as MakeCPModel
-import qualified UniIS.Drivers.MakeFunctionFromLLVM as MakeFunctionFromLLVM
 import qualified UniIS.Drivers.MakePatternMatchset as MakePatternMatchset
 import qualified UniIS.Drivers.MakeLowLevelModelDump as MakeLowLevelModelDump
 import qualified UniIS.Drivers.MakeLowLevelSolutionDump
@@ -36,9 +35,6 @@ dispatch :: MakeAction -> Options -> IO [Output]
 dispatch a opts
   | a == MakeNothing =
       reportErrorAndExit "No make action provided."
-  | a `elem` [MakeFunctionGraphFromLLVM] =
-      do content <- loadFunctionFileContent opts
-         MakeFunctionFromLLVM.run a content
   | a `elem` [MakePatternMatchset] =
       do function <- loadFunctionFromJson opts
          tid <- getSelectedTargetMachineID opts

@@ -34,11 +34,12 @@
 # SETTINGS
 #==========
 
-HLIB_PATH       := hlib/instr-sel
-UNI_IS_PATH     := uni-is
-UNI_TARGEN_PATH := uni-targen
-SOLVERS_PATH    := solvers
-TOOLS_PATH      := tools
+HLIB_PATH        := hlib/instr-sel
+UNI_TARGEN_PATH  := uni-targen
+UNI_IS_LLVM_PATH := uni-is-llvm
+UNI_IS_PATH      := uni-is
+SOLVERS_PATH     := solvers
+TOOLS_PATH       := tools
 LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
 LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
@@ -61,10 +62,20 @@ endef
 #=======
 
 .PHONY: build
-build: hlib uni-is uni-targen
+build: hlib \
+	   uni-targen \
+	   uni-is-llvm \
+	   uni-is \
+	   solvers \
+	   tools
 
 .PHONY: docs
-docs: llvm-general-pure-doc llvm-general-doc hlib-doc uni-is-doc uni-targen-doc
+docs: llvm-general-pure-doc \
+	  llvm-general-doc \
+	  hlib-doc \
+	  uni-targen-doc
+	  uni-is-llvm-doc \
+	  uni-is-doc \
 
 .PHONY: hlib
 hlib: llvm-general-pure
@@ -96,31 +107,47 @@ llvm-general: llvm-general-pure
 llvm-general-doc: llvm-general-pure-doc
 	cd $(LLVM_GENERAL_PATH) && cabal configure && cabal haddock
 
-.PHONY: uni-is
-uni-is: hlib llvm-general llvm-general-pure
-	cd $(UNI_IS_PATH) && make
-	cd $(SOLVERS_PATH) && make
-	cd $(TOOLS_PATH) && make
-
-.PHONY: uni-is-doc
-uni-is-doc:
-	cd $(UNI_IS_PATH) && make docs
-
 .PHONY: uni-targen
-uni-targen: hlib llvm-general llvm-general-pure
+uni-targen: llvm-general llvm-general-pure hlib
 	cd $(UNI_TARGEN_PATH) && make
 
 .PHONY: uni-targen-doc
 uni-targen-doc:
 	cd $(UNI_TARGEN_PATH) && make docs
 
+.PHONY: uni-is-llvm
+uni-is-llvm: llvm-general llvm-general-pure hlib
+	cd $(UNI_IS_LLVM_PATH) && make
+
+.PHONY: uni-is-llvm-doc
+uni-is-llvm-doc:
+	cd $(UNI_IS_LLVM_PATH) && make docs
+
+.PHONY: uni-is
+uni-is: hlib
+	cd $(UNI_IS_PATH) && make
+
+.PHONY: uni-is-doc
+uni-is-doc:
+	cd $(UNI_IS_PATH) && make docs
+
+.PHONY: solvers
+solvers:
+	cd $(SOLVERS_PATH) && make
+	cd $(TOOLS_PATH) && make
+
+.PHONY: tools
+tools:
+	cd $(TOOLS_PATH) && make
+
 .PHONY: clean
 clean:
 	cd $(LLVM_GENERAL_PURE_PATH) && $(RM) -r dist
 	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make clean
-	cd $(UNI_IS_PATH) && make clean
 	cd $(UNI_TARGEN_PATH) && make clean
+	cd $(UNI_IS_LLVM_PATH) && make clean
+	cd $(UNI_IS_PATH) && make clean
 	cd $(SOLVERS_PATH) && make clean
 	cd $(TOOLS_PATH) && make clean
 
@@ -129,7 +156,8 @@ distclean:
 	cd $(LLVM_GENERAL_PURE_PATH) && $(RM) -r dist
 	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make distclean
-	cd $(UNI_IS_PATH) && make distclean
 	cd $(UNI_TARGEN_PATH) && make distclean
+	cd $(UNI_IS_LLVM_PATH) && make distclean
+	cd $(UNI_IS_PATH) && make distclean
 	cd $(SOLVERS_PATH) && make distclean
 	cd $(TOOLS_PATH) && make distclean
