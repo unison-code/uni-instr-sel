@@ -336,6 +336,57 @@ def convertConstraint(l):
 
     return fromConstraint(l)
 
+def computeCanonicalDataLocs(json):
+    # [MC] Compute "canonicalDataLocs"
+
+    lid = 0
+    loc_lid = []
+    lids_loc = []
+    canonical = [json["num-locations"]]
+
+    for key, group in groupby( json["fun-valid-value-locs"], lambda x: x[0]):
+        lid = lid+1
+        loc_lid.extend([[row[1],lid] for row in group])
+
+    for key, group in groupby( json["match-valid-value-locs"]
+                             , lambda x: [x[0],x[1]]
+                             ):
+        lid = lid+1
+        loc_lid.extend([[row[2],lid] for row in group])
+
+    for row in json["fun-valid-value-loc-ranges"]:
+        lid = lid+1
+        loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
+
+    for row in json["match-valid-value-loc-ranges"]:
+        lid = lid+1
+        loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
+
+    loc_lid.sort();
+    for key, group in groupby(loc_lid, lambda x: x[0]):
+        lids_loc.append([[row[1] for row in group],key])
+
+    lids_loc.sort();
+    for key, group in groupby(lids_loc, lambda x: x[0]):
+        canonical.append(list(group)[0][1])
+
+    canonical.sort()
+    canonical_set = set(canonical)
+
+    # [MC] Filter fun-valid-value-locs and match-valid-value-locs w.r.t.
+    # canonical_set
+
+    new_fun_valid_value_locs = []
+    new_match_valid_value_locs = []
+    for row in json["fun-valid-value-locs"]:
+        if row[1] in canonical_set:
+            new_fun_valid_value_locs.append(row)
+    for row in json["match-valid-value-locs"]:
+        if row[2] in canonical_set:
+            new_match_valid_value_locs.append(row)
+
+    return canonical_set, new_fun_valid_value_locs, new_match_valid_value_locs
+
 
 
 #=============
@@ -357,103 +408,10 @@ json_data = []
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
-# [MC] Compute "canonicalDataLocs"
-
-# def getStretch(ls):
-#     if len(ls)==1:
-#         return [ls, []]
-#     elif ls[0]+1 == ls[1]:
-#         i = 1
-#         while i<len(ls) and ls[i-1]+1 == ls[i]:
-#             i = i+1
-#         return [[ls[j] for j in range(0,i)], [ls[j] for j in range(i,len(ls))]]
-#     elif ls[0]+2 == ls[1]:
-#         i = 1
-#         while i<len(ls) and ls[i-1]+2 == ls[i]:
-#             i = i+1
-#         return [[ls[j] for j in range(0,i)], [ls[j] for j in range(i,len(ls))]]
-#     else:
-#         return [[ls[0]], [ls[j] for j in range(1,len(ls))]]
-
-# def canonicalFromSet(ls):
-#     stretches = []
-#     value = []
-#     while len(ls)>0:
-#         str_ls = getStretch(ls)
-#         str = str_ls[0]
-#         ls = str_ls[1]
-#         if len(str)==1:
-#             value.extend([str[0], str[0]+1])
-#         elif str[0]+1 == str[1]:
-#             value.extend([str[0], str[len(str)-1]+1])
-#         else:
-#             value.extend([str[0], str[len(str)-1]+2])
-#     return value
-
-# canonical = [0]
-# canonical.append(json_data["num-locations"])
-
-# for key, group in groupby(json_data["fun-valid-value-locs"], lambda x: x[0]):
-#     canonical.extend(canonicalFromSet([row[1] for row in group]))
-
-# for row in json_data["fun-valid-value-loc-ranges"]:
-#     canonical.append(row[2])
-#     canonical.append(row[3] + 1)
-
-# for key, group in groupby(json_data["match-valid-value-locs"], lambda x: [x[0],x[1]]):
-#     canonical.extend(canonicalFromSet([row[2] for row in group]))
-
-# for row in json_data["match-valid-value-loc-ranges"]:
-#     canonical.append(row[2])
-#     canonical.append(row[3] + 1)
-
-# canonical.sort()
-# canonical_set = set(canonical)
-
-lid=0
-loc_lid=[]
-lids_loc=[]
-canonical=[json_data["num-locations"]]
-
-for key, group in groupby(json_data["fun-valid-value-locs"], lambda x: x[0]):
-    lid = lid+1
-    loc_lid.extend([[row[1],lid] for row in group])
-
-for key, group in groupby(json_data["match-valid-value-locs"], lambda x: [x[0],x[1]]):
-    lid = lid+1
-    loc_lid.extend([[row[2],lid] for row in group])
-
-for row in json_data["fun-valid-value-loc-ranges"]:
-    lid = lid+1
-    loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
-
-for row in json_data["match-valid-value-loc-ranges"]:
-    lid = lid+1
-    loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
-
-loc_lid.sort();
-for key, group in groupby(loc_lid, lambda x: x[0]):
-    lids_loc.append([[row[1] for row in group],key])
-
-lids_loc.sort();
-for key, group in groupby(lids_loc, lambda x: x[0]):
-    canonical.append(list(group)[0][1])
-
-canonical.sort()
-canonical_set = set(canonical)
-
-# [MC] Filter fun-valid-value-locs and match-valid-value-locs wrt. canonical_set
-
-fun_valid_value_locs_canonical = []
-match_valid_value_locs_canonical = []
-
-for row in json_data["fun-valid-value-locs"]:
-    if row[1] in canonical_set:
-        fun_valid_value_locs_canonical.append(row)
-
-for row in json_data["match-valid-value-locs"]:
-    if row[2] in canonical_set:
-        match_valid_value_locs_canonical.append(row)
+( canonical_set
+, canonical_fun_valid_value_locs
+, canonical_match_valid_value_locs
+) = computeCanonicalDataLocs(json_data)
 
 # [MC] Compute GCD of frequencies
 fqs = json_data["fun-block-exec-freqs"]
@@ -486,7 +444,7 @@ dumpParams( bumpArr(json_data["fun-branch-ext-blocks"])
 dumpParams( bumpValue(json_data["fun-entry-block"])
           , "entryBlockOfFunction"
           )
-dumpParams( bump2DArrYN(fun_valid_value_locs_canonical)
+dumpParams( bump2DArrYN(canonical_fun_valid_value_locs)
           , "validDataLocsInFunction"
           , VT_ARRAY2D
           )
@@ -585,7 +543,7 @@ dumpParams( bump2DArrYY(json_data["match-fall-through-block"])
           , "fallThroughBlockOfMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYN(match_valid_value_locs_canonical)
+dumpParams( bump2DArrYYN(canonical_match_valid_value_locs)
           , "validDataLocsInMatch"
           , VT_ARRAY2D
           )
