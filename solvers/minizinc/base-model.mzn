@@ -997,47 +997,7 @@ constraint
        ( sel[m] -> uplace[use[i]] = uplace[use[j]] )
   );
 
-% TODO! Wrong and/or obsolete?
-% If a match representing a phi instruction is selected, then its data
-% must be defined in the blocks indicated by the definition edges.
-%
-% Input data d must be placed in some block b that dominates the block b'
-% indicated by the definition d -> b'. However, no two data d1 or d2 must be
-% placed in the same block that dominates both blocks of d1 and d2. The output
-% data must be placed in the block indicated by the definition edge.
-%
-% Input data constraints
-% constraint
-%   forall (m in phiInstrMatches) (
-%     let
-%     { set of int: I = index_set_1of2(inputDefEdgesInMatch)
-%     , array[int] of int: oset = [ inputDefEdgesInMatch[i, 3]
-%                                 | i in I
-%                                 , b in allBlocksInFunction
-%                                   where inputDefEdgesInMatch[i, 1] = m
-%                                         /\ inputDefEdgesInMatch[i, 2] = b
-%                                 ]
-%     , array[int] of int: bset = [ inputDefEdgesInMatch[i, 2]
-%                                 | i in I where inputDefEdgesInMatch[i, 1] = m
-%                                 ]
-%     } in
-%     forall (i in 1..length(oset)) (
-%       (sel[m] -> (dplace[Alt(oset[i])] in domSetOfBlockInFunction[bset[i]]))
-%     )
-%     /\
-%     forall (i,j in 1..length(oset) where i < j) (
-%       let
-%       { set of int: B = domSetOfBlockInFunction[bset[i]]
-%                         intersect
-%                         domSetOfBlockInFunction[bset[j]]
-%       } in
-%       if card(B) = 0 then true
-%       else not sel[m] \/
-%            not (dplace[Alt(oset[i])] in B) \/
-%            not (dplace[Alt(oset[j])] in B)
-%       endif
-%     )
-%   );
+
 
 
 %==================
