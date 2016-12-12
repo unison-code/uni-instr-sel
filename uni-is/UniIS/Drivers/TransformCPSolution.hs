@@ -16,8 +16,7 @@ where
 
 import UniIS.Drivers.Base
 import UniIS.Drivers.DispatcherTools
-  ( loadFromJson
-  , loadTargetMachine)
+  ( loadFromJson )
 import Language.InstrSel.ConstraintModels
 import Language.InstrSel.ConstraintModels.SolutionHandler
 import Language.InstrSel.Utils.JSON
@@ -44,8 +43,7 @@ run
 run RaiseLowLevelCPSolution str mstr ai_maps =
   do sol <- loadFromJson str
      model <- loadFromJson mstr
-     target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
-     let new_sol = raiseLowLevelSolution sol model target ai_maps
+     let new_sol = raiseLowLevelSolution sol model ai_maps
      return [toOutput $ toJson new_sol]
 
 run _ _ _ _ = reportErrorAndExit "TransformCPSolution: unsupported action"

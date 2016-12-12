@@ -525,16 +525,30 @@ constraint
          )
   ( sel[m] -> oplace[o] != b );
 
-% For each selected match m that apply fall-through, enforce that m's
-% fall-through block is the successor of m's entry block.
+% For each selected match m that apply fall-through, enforce either:
+%    - that the fall-through block of m is the immediate successor of the entry
+%      block of m, or
+%    - that the fall-through block of m is one block away from the entry block
+%      of m and the block in between contains no non-null-instructions.
 constraint
   forall (i in index_set_1of2(fallThroughBlockOfMatch))
   ( let { int: m = fallThroughBlockOfMatch[i, 1]
         , int: fall_b = fallThroughBlockOfMatch[i, 2]
         , int: entry_b = min(entryBlockOfMatch[m])
+        , var int: succ_b = succ[entry_b]
         }
-    in sel[m] -> succ[entry_b] = fall_b
+    in sel[m] -> ( succ_b = fall_b \/
+                   ( succ[succ_b] = fall_b /\
+                     forall (o in allOperationsInFunction)
+                     ( oplace[o] != succ_b \/
+                       omatch[o] in nullInstrMatches
+                     )
+                   )
+                 )
   );
+
+%constraint
+%  sel[41] = true;
 
 % Enforce that, for each operation o, exactly one match must be selected such
 % that o is covered.
@@ -722,22 +736,26 @@ constraint
 %=====================
 
 % Two matches can't be both selected if they imply conflicting successor blocks.
-constraint
-  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
-         , j in index_set_1of2(fallThroughBlockOfMatch)
-           where i < j
-         )
-  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
-        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
-        , int: entry_b1 = min(entryBlockOfMatch[m1])
-        , int:       m2 = fallThroughBlockOfMatch[j, 1]
-        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
-        , int: entry_b2 = min(entryBlockOfMatch[m2])
-        }
-    in (fall_b1 = fall_b2 xor entry_b1 = entry_b2)
-       ->
-       (not sel[m1] \/ not sel[m2])
-  );
+%
+% [GHB] This implied constraint prevents fall-through matches eligle through the
+%       clause on line 519 from being selected. Deactivated it until it has been
+%       fixed.
+%constraint
+%  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
+%         , j in index_set_1of2(fallThroughBlockOfMatch)
+%           where i < j
+%         )
+%  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
+%        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
+%        , int: entry_b1 = min(entryBlockOfMatch[m1])
+%        , int:       m2 = fallThroughBlockOfMatch[j, 1]
+%        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
+%        , int: entry_b2 = min(entryBlockOfMatch[m2])
+%        }
+%    in (fall_b1 = fall_b2 xor entry_b1 = entry_b2)
+%       ->
+%       (not sel[m1] \/ not sel[m2])
+%  );
 
 % Two matches can't both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of

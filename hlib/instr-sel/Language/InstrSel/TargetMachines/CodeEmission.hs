@@ -150,9 +150,10 @@ computeAliases op_maps const_ns null_matches =
                 map ( \m -> ( getNodeID $ head $ hlMatchOperandsDefined m
                             , getNodeID $ head $ hlMatchOperandsUsed m
                             )
-                            -- We assume that null instructions uses exactly one
-                            -- datum and defines exactly one datum
                     ) $
+                filter ( \m -> length (hlMatchOperandsDefined m) == 1 &&
+                               length (hlMatchOperandsUsed m) == 1
+                       )
                 null_matches
       normalize as =
         let alias_refs = filter (\(_, b) -> b `elem` (map fst as)) as
