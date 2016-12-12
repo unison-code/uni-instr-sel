@@ -24,8 +24,6 @@ bb4:
   %13 = asl(%10, %12)
   %14 = and(%13, #-32768)
   jump 18
-bb2:
-  jump 18
 bb0:
 2:
   %const.0.copy.3 = ##0
@@ -34,6 +32,7 @@ bb0:
   %3 = zxth(%a.lobit)
   %4 = sub(%const.0.copy.3, %3)
   %5 = and(%4, #-32768)
+bb2:
 18:
   %.0 = PHI (%5, 2) (%14, 11) (%17, 15) (%const.0.copy.4, 6)
   %tmp.2 = aslh(%.0)

@@ -1,18 +1,17 @@
 0:
   %const.-32768.copy.2 = #-32768
   %const.32767.copy.1 = #32767
-  %2 = cmp.eq(%b, %const.-32768.copy.2)
   %1 = cmp.eq(%a, %const.-32768.copy.2)
+  %2 = cmp.eq(%b, %const.-32768.copy.2)
   %or.cond = and(%1, %2)
   if (%or.cond) jump bb0
 bb1:
 3:
-  %5 = sxth(%b)
   %4 = sxth(%a)
+  %5 = sxth(%b)
   %6 = mpy(%5, %4)
   %7 = lsr(%6, #15)
   %8 = and(%7, #-32768)
-  jump 9
 bb0:
 9:
   %.0 = PHI (%8, 3) (%const.32767.copy.1, 0)

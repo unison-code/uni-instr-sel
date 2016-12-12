@@ -19,11 +19,10 @@ bb4:
   %9 = SUBU r0, %n
   %10 = SLLV %a, %9
   B 13
-bb2:
-  B 13
 bb0:
 2:
   %3 = SRA %a, 31
+bb2:
 13:
   %.0 = PHI (%3, 2) (%10, 8) (%12, 11) (%const.0.copy.3, 4)
   RetRA %.0

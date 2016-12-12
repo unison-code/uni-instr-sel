@@ -3,8 +3,8 @@
   if (%1) jump bb0
 bb1:
 4:
-  %const.0.copy.3 = ##0
   %const.-31.copy.1 = ##-31
+  %const.0.copy.3 = ##0
   %5 = cmp.lt(%n, %const.-31.copy.1)
   if (%5) jump bb2
 bb3:
@@ -20,11 +20,10 @@ bb4:
   %9 = sub(%const.0.copy.3, %n)
   %10 = asl(%a, %9)
   jump 13
-bb2:
-  jump 13
 bb0:
 2:
   %3 = asr(%a, #31)
+bb2:
 13:
   %.0 = PHI (%3, 2) (%10, 8) (%12, 11) (%const.0.copy.3, 4)
   return %.0

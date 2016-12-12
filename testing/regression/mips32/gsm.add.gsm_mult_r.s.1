@@ -4,7 +4,7 @@
   %1 = SLTi %b -32768
   %2 = SLTi %a -32768
   %const.32767.copy.1 = ADDi $0, 32767
-  %or.cond = AND %2, %1
+  %or.cond = AND %1, %2
   BNE $0, $%or.cond, bb0
 bb1:
 3:
@@ -12,7 +12,6 @@ bb1:
   %7 = ADDI %6, 16384
   %8 = SRL %7, 15
   %9 = ANDi %8, 32767
-  B 10
 bb0:
 10:
   %.0 = PHI (%9, 3) (%const.32767.copy.1, 0)

@@ -1,8 +1,8 @@
 0:
-  %2 = ADD $0, %b
   %1 = ADD $0, %a
+  %2 = ADD $0, %b
   %const.-32768.copy.2 = ADDi $0, -32768
-  %3 = ADDU %2, %1
+  %3 = ADDU %1, %2
   %4 = SLTI %3, -32768
   BNE $0, $%4, bb0
 bb1:
@@ -14,14 +14,13 @@ bb3:
 .selectcont:
   %7 = PHI (%const.32767.copy.2, .selecttrue) (%3.copy.3, 5)
   %phitmp = ANDi %7, 32767
-  B 8
-bb2:
-.selecttrue:
-  %const.32767.copy.2 = ADDiu $0, 32767
-  B .selectcont
 bb0:
 8:
   %9 = PHI (%const.-32768.copy.2, 0) (%phitmp, .selectcont)
   %tmp.2 = SLL %9, 16
   %tmp.3 = SRA %tmp.2, 16
   RetRA %tmp.3
+bb2:
+.selecttrue:
+  %const.32767.copy.2 = ADDiu $0, 32767
+  B .selectcont

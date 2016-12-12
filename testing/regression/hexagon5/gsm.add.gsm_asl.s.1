@@ -4,8 +4,8 @@
   if (%1) jump bb0
 bb1:
 2:
-  %const.0.copy.3 = ##0
   %const.-15.copy.1 = ##-15
+  %const.0.copy.3 = ##0
   %3 = cmp.lt(%n, %const.-15.copy.1)
   if (%3) jump bb2
 bb3:
@@ -32,7 +32,6 @@ bb2:
   %5 = zxth(%a.lobit)
   %6 = sub(%const.0.copy.3, %5)
   %7 = and(%6, #-32768)
-  jump gsm_asr.exit
 bb0:
 gsm_asr.exit:
   %.0 = PHI (%7, 4) (%18, 15) (%const.0.copy.4, 0) (%14, 10)

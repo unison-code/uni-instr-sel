@@ -1,22 +1,21 @@
 0:
-  %13 = SLTi %structsize 464
   %2 = SLTi %version 61
+  %13 = SLTi %structsize 464
   SW r0, 4(%cinfo)
-  %const.200.copy.1 = ADDiu $0, 200
   %const.1.copy.1 = ADDiu $0, 1
+  %const.200.copy.1 = ADDiu $0, 200
   BNE $0, $%2, bb0
 bb1:
 3:
   %5 = LW 0(%cinfo)
-  %const.61.copy.2 = ADDiu $0, 61
   %const.10.copy.1 = ADDiu $0, 10
   SW %const.10.copy.1, 20(%5)
+  %const.61.copy.2 = ADDiu $0, 61
   SW %const.61.copy.2, 24(%5)
   SW %version, 28(%5)
   %10 = LW 0(%5)
   CALL %10 (%cinfo)
   %gep20 = ADDI %cinfo, 164
-  B 12
 bb0:
 12:
   BNE $0, $%13, bb2
@@ -24,9 +23,9 @@ bb3:
 14:
   MTHI $%cinfo
   %16 = LW 0(%cinfo)
-  %const.464.copy.2 = ADDiu $0, 464
   %const.19.copy.1 = ADDiu $0, 19
   SW %const.19.copy.1, 20(%16)
+  %const.464.copy.2 = ADDiu $0, 464
   SW %const.464.copy.2, 24(%16)
   SW %structsize, 28(%16)
   %21 = LW 0(%16)

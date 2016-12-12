@@ -1,9 +1,9 @@
 0:
-  %2 = sxth(%b)
   %1 = sxth(%a)
+  %2 = sxth(%b)
   %const.-32768.copy.2 = #-32768
   %const.-32768.copy.1 = ##-32768
-  %3 = add(%2, %1)
+  %3 = add(%1, %2)
   %4 = cmp.lt(%3, %const.-32768.copy.1)
   if (%4) jump bb0
 bb1:
@@ -16,14 +16,13 @@ bb3:
 .selectcont:
   %7 = PHI (%const.32767.copy.1, .selecttrue) (%3.copy.3, 5)
   %phitmp = and(%7, #-32768)
-  jump 8
-bb2:
-.selecttrue:
-  %const.32767.copy.1 = ##32767
-  jump .selectcont
 bb0:
 8:
   %9 = PHI (%const.-32768.copy.2, 0) (%phitmp, .selectcont)
   %tmp.1 = aslh(%9)
   %tmp.2 = asr(%tmp.1)
   return %tmp.2
+bb2:
+.selecttrue:
+  %const.32767.copy.1 = ##32767
+  jump .selectcont
