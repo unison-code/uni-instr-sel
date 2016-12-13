@@ -78,7 +78,7 @@ nodeExtractor cg@(cs,g) n
     | otherwise = cg
 
 -- | Tests whether there is a path in the graph @g@ from a node in component
--- @c1@ to a node in compnent @c2@.
+-- @c1@ to a node in component @c2@.
 isReachableComponent
   :: Graph
      -- ^ Graph @g@.
