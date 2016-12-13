@@ -216,7 +216,11 @@ processMatch instr pat match mid oid =
   let (pat', match') = enableCopyingForMultUseInputsInPattern pat match
   in processMatch' instr pat' match' mid oid
 
--- | TODO: write documentation
+-- | If the given match is derived from a pattern graph that has one or more
+-- input values of which the pattern makes multiple uses, this function will
+-- rewrite the pattern graph and match such that one of the copied values will
+-- represent the actual input value. The reason for this is to allow the input
+-- value to be appropriately copied before entering the instruction.
 enableCopyingForMultUseInputsInPattern
   :: InstrPattern
   -> Match NodeID
