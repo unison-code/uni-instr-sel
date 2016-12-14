@@ -547,9 +547,6 @@ constraint
                  )
   );
 
-%constraint
-%  sel[41] = true;
-
 % Enforce that, for each operation o, exactly one match must be selected such
 % that o is covered.
 %
