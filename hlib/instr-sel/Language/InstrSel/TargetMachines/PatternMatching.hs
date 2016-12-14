@@ -19,6 +19,7 @@ module Language.InstrSel.TargetMachines.PatternMatching
   , PatternMatchset (..)
   , mkPatternMatchset
   , findPatternMatchesWithMatchID
+  , getInstrPatternFromPatternMatch
   )
 where
 
@@ -551,3 +552,18 @@ computeDSetsUp' g doms (d, b) st0 =
          st2 = processOutDatum d st1
          st3 = updateDSet d (S.fromList [b]) st2
       in st3
+
+getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
+getInstrPatternFromPatternMatch t m =
+  let iid = pmInstrID m
+      pid = pmPatternID m
+      i = findInstruction (tmInstructions t) iid
+      p = findInstrPattern (instrPatterns $ fromJust i) pid
+  in if isJust i
+     then if isJust p
+          then fromJust p
+          else error $ "getInstrPatternFromPatternMatch: target machine " ++
+                       "with instruction ID " ++ pShow iid ++ " has no " ++
+                       "pattern with ID " ++ pShow pid
+     else error $ "getInstrPatternFromPatternMatch: target machine has no " ++
+                  "instruction with ID " ++ pShow iid

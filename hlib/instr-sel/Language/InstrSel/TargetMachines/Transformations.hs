@@ -275,18 +275,3 @@ sortValueNodesByReusability t pm vs =
       -- Sorted in decreasing score order
       sorted_vs_r = sortBy (\(_, r1) (_, r2) -> compare r2 r1) vs_r
   in map fst sorted_vs_r
-
-getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
-getInstrPatternFromPatternMatch t m =
-  let iid = pmInstrID m
-      pid = pmPatternID m
-      i = findInstruction (tmInstructions t) iid
-      p = findInstrPattern (instrPatterns $ fromJust i) pid
-  in if isJust i
-     then if isJust p
-          then fromJust p
-          else error $ "getInstrPatternFromPatternMatch: target machine " ++
-                       "with instruction ID " ++ pShow iid ++ " has no " ++
-                       "pattern with ID " ++ pShow pid
-     else error $ "getInstrPatternFromPatternMatch: target machine has no " ++
-                  "instruction with ID " ++ pShow iid
