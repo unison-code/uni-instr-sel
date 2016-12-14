@@ -127,11 +127,11 @@ bad_matches = { a_json_data["array-index-to-match-id-maps"][ai]
                 for ai in bad_matches_ai
               }
 
-# Prune dominated matches
-pruned_matches = []
+# Remove dominated matches
+new_match_data = []
 for m in p_json_data["match-data"]:
     if not m["match-id"] in bad_matches:
-        pruned_matches.append(m)
-p_json_data["match-data"] = pruned_matches
+        new_match_data.append(m)
+p_json_data["match-data"] = new_match_data
 
 print json.dumps(p_json_data)
