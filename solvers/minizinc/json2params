@@ -604,6 +604,12 @@ dumpParams( bumpArr(json_data["matches-by-size"])
           , VT_ARRAY1D
           , "allMatches"
           )
+dumpParams( bumpArrOfArr(json_data["illegal-match-combs"])
+          , "illegalMatchCombinations"
+          , VT_ARRAY
+          , "int"
+          , VC_SET
+          )
 dumpParams( canonical_set
           , "canonicalDataLocs"
           , VT_SET

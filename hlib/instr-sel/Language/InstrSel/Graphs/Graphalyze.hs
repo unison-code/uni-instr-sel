@@ -15,6 +15,7 @@ module Language.InstrSel.Graphs.Graphalyze
   ( componentsOf
   , isReachableComponent
   , areGraphsIsomorphic
+  , findCycles
   )
 where
 
@@ -25,9 +26,12 @@ import qualified Data.Graph.Inductive as I
 
 import Control.Arrow
   ( first )
+import Data.Function
+  ( on )
 import Data.List
   ( unfoldr
   , foldl'
+  , nubBy
   )
 
 
@@ -97,3 +101,65 @@ isReachableComponent g c1 c2 =
 -- | Tests if two graphs are isomorphic to each other.
 areGraphsIsomorphic :: Graph -> Graph -> Bool
 areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) == 1
+
+-- | Find all cycles in the given graph, returning just the nodes.
+findCycles :: (I.DynGraph g) => g a b -> [[I.Node]]
+findCycles = concat . unfoldr findCyclesWithNode . mkSimple
+
+-- | Find all cycles containing a chosen node.
+findCyclesWithNode :: (I.DynGraph g) => g a b -> Maybe ([[I.Node]], g a b)
+findCyclesWithNode g
+  | I.isEmpty g = Nothing
+  | otherwise = Just . getCycles . I.matchAny $ g
+  where
+  getCycles (ctx,g') = (cyclesFor (ctx, g'), g')
+
+-- | Find all cycles for the given node.
+cyclesFor :: (I.DynGraph g) => I.GDecomp g a b -> [[I.Node]]
+cyclesFor = map init .
+            filter isCycle .
+            pathTree .
+            first Just
+  where
+  isCycle p = not (single p) && (head p == last p)
+
+-- | Return true if and only if the list contains a single element.
+single :: [a] -> Bool
+single [_] = True
+single  _  = False
+
+-- | Find all possible paths from this given node, avoiding loops,
+--   cycles, etc.
+pathTree :: (I.DynGraph g) => I.Decomp g a b -> [[I.Node]]
+pathTree (Nothing,_) = []
+pathTree (Just ct,g)
+  | I.isEmpty g = []
+  | null sucs = [[n]]
+  | otherwise = (:) [n] . map (n:) . concatMap (subPathTree g') $ sucs
+  where
+  n = I.node' ct
+  sucs = I.suc' ct
+  -- Avoid infinite loops by not letting it continue any further
+  ct' = makeLeaf ct
+  g' = ct' I.& g
+  subPathTree gr n' = pathTree $ I.match n' gr
+
+-- | Remove all outgoing edges
+makeLeaf :: I.Context a b -> I.Context a b
+makeLeaf (p,n,a,_) = (p', n, a, [])
+  where
+  -- Ensure there isn't an edge (n,n)
+  p' = filter (\(_,n') -> n' /= n) p
+
+-- | Makes the graph a simple one, by removing all duplicate edges and loops.
+--   The edges removed if duplicates exist are arbitrary.
+mkSimple :: (I.DynGraph gr) => gr a b -> gr a b
+mkSimple = I.gmap simplify
+    where
+      rmLoops n = filter ((/=) n . snd)
+      rmDups = nubBy ((==) `on` snd)
+      simpleEdges n = rmDups . rmLoops n
+      simplify (p,n,l,s) = (p',n,l,s')
+          where
+            p' = simpleEdges n p
+            s' = simpleEdges n s

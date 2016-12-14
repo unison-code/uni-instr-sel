@@ -85,6 +85,7 @@ array[int, int] of int: operandsWithSameLocInMatch;
 array[int, int] of int: fallThroughBlockOfMatch;
 array[int, int] of int: validDataLocRangesInMatch;
 array[int, int] of int: validDataLocRangesInFunction;
+array[int] of set of int: illegalMatchCombinations;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -614,6 +615,11 @@ constraint
 % first block, and the block of the null block must be placed as the last block.
 constraint
   succ[blockValueForNull] = entryBlockOfFunction;
+
+% Forbid matches in an illegal combination from all being selected.
+constraint
+  forall (c in illegalMatchCombinations)
+  ( sum (m in c) (bool2int(sel[m])) < card(c) );
 
 % Constrain the cost that can be incurred by each operation.
 constraint

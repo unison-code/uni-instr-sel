@@ -19,6 +19,7 @@ module Language.InstrSel.TargetMachines.PatternMatching
   , PatternMatchset (..)
   , mkPatternMatchset
   , findPatternMatchesWithMatchID
+  , getInstructionFromPatternMatch
   , getInstrPatternFromPatternMatch
   )
 where
@@ -323,12 +324,13 @@ removeMatchesWithCyclicDataDeps fg pms =
 -- reachable from any other component. If so, then the match has a cyclic
 -- dependency. However, components that are only reachable via an input node to
 -- the pattern is not considered a dependency. Due to this, such data nodes are
--- removed prior to extracting the components.
+-- removed prior to extracting the components. Also, state-flow edges should not
+-- be included when checking dependencies.
 --
 -- TODO: should PHI operations not covered by @m@ be removed from @ssa_fg@?
 hasMatchCyclicDataDep
   :: Graph
-     -- The corresponding SSA graph of the function graph.
+     -- ^ The corresponding SSA graph of the function graph.
   -> Match Node
   -> Bool
 hasMatchCyclicDataDep ssa_fg m =
@@ -336,7 +338,7 @@ hasMatchCyclicDataDep ssa_fg m =
       sub_fg = removeInputNodes $
                subGraph ssa_fg f_ns
       mcs = componentsOf sub_fg
-      cdd = or [ isReachableComponent ssa_fg c1 c2
+      cdd = or [ isReachableComponent (removeStateFlowEdges ssa_fg) c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
   in cdd
@@ -378,6 +380,13 @@ removeInputNodes g =
                  not (hasAnyPredecessors g n)
          ) $
   getAllNodes g
+
+-- | Removes all state-flow edges from the given graph.
+removeStateFlowEdges :: Graph -> Graph
+removeStateFlowEdges g =
+  foldr delEdge g $
+  filter isStateFlowEdge $
+  getAllEdges g
 
 -- | Sometimes we want pattern nodes to be mapped to the same function
 -- node. However, the VF2 algorithm doesn't allow that. To get around this
@@ -552,6 +561,15 @@ computeDSetsUp' g doms (d, b) st0 =
          st2 = processOutDatum d st1
          st3 = updateDSet d (S.fromList [b]) st2
       in st3
+
+getInstructionFromPatternMatch :: TargetMachine -> PatternMatch -> Instruction
+getInstructionFromPatternMatch t m =
+  let iid = pmInstrID m
+      i = findInstruction (tmInstructions t) iid
+  in if isJust i
+     then fromJust i
+     else error $ "getInstructionFromPatternMatch: target machine has no " ++
+                  "instruction with ID " ++ pShow iid
 
 getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
 getInstrPatternFromPatternMatch t m =

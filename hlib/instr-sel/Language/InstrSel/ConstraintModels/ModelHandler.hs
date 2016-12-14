@@ -26,6 +26,8 @@ import Language.InstrSel.Graphs
   ( computeDomSets )
 import qualified Language.InstrSel.Graphs as G
   ( computeDomSets )
+import Language.InstrSel.Graphs.Graphalyze
+  ( findCycles )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..)
@@ -33,8 +35,15 @@ import Language.InstrSel.Functions
   )
 import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
-  ( PatternMatch (..) )
+  ( PatternMatch (..)
+  , getInstructionFromPatternMatch
+  , getInstrPatternFromPatternMatch
+  )
+import Language.InstrSel.Utils
+  ( combinations )
 import Language.InstrSel.Utils.Range
+
+import qualified Data.Graph.Inductive as I
 
 import Data.List
   ( elemIndex
@@ -67,6 +76,7 @@ mkHighLevelModel function target matches =
     { hlFunctionParams = mkHLFunctionParams function target
     , hlMachineParams = mkHLMachineParams target
     , hlMatchParams = mkHLMatchParamsList target matches
+    , hlIllegalMatchCombs = mkIllegalMatchCombs function target matches
     }
 
 mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
@@ -633,6 +643,8 @@ lowerHighLevelModel model ai_maps =
            m_params
        , llMatchPatternIDs = map hlMatchPatternID m_params
        , llMatchInstructionIDs = map hlMatchInstructionID m_params
+       , llIllegalMatchCombs = map (map getAIForMatchID) $
+                               hlIllegalMatchCombs model
        , llTMID = hlMachineID tm_params
        }
 
@@ -717,3 +729,68 @@ computeDomSets g root_id =
   let cfg = extractCFG g
       root_n = head $ findNodesWithNodeID cfg root_id
   in G.computeDomSets cfg root_n
+
+-- | TODO: write documentation
+mkIllegalMatchCombs
+  :: Function
+  -> TargetMachine
+  -> [PatternMatch]
+  -> [[MatchID]]
+mkIllegalMatchCombs function target matches =
+  let g0 = I.mkGraph (zip [0..] matches) [] :: I.Gr PatternMatch ()
+      getExternalDataNodes ip pm fg =
+        let pg = osGraph $ patOS ip
+            input_ns = filter ( \n -> isValueNode n &&
+                                      not (hasAnyPredecessors pg n)
+                              ) $
+                       getAllNodes pg
+            output_nids = filter ( \nid ->
+                                   nid `notElem` (map getNodeID input_ns)
+                                 ) $
+                          patExternalData ip
+        in ( concatMap (findNodesWithNodeID fg) $
+             concat $
+             findFNsInMatch (pmMatch pm) (map getNodeID input_ns)
+           , concatMap (findNodesWithNodeID fg) $
+             concat $
+             findFNsInMatch (pmMatch pm) output_nids
+           )
+      getMatchNodeFromID g m = head $
+                               map fst $
+                               filter ( \(_, m') ->
+                                        pmMatchID m' == pmMatchID m
+                                      ) $
+                               I.labNodes g
+      addDependencies [m1, m2] g' =
+        let fg = osGraph $ functionOS function
+            p1 = getInstrPatternFromPatternMatch target m1
+            p2 = getInstrPatternFromPatternMatch target m2
+            (m1_in_vs, m1_out_vs)  = getExternalDataNodes p1 m1 fg
+            (m2_in_vs, m2_out_vs)  = getExternalDataNodes p2 m2 fg
+            n1 = getMatchNodeFromID g' m1
+            n2 = getMatchNodeFromID g' m2
+            g'' = if any (\n -> n `elem` m2_in_vs) m1_out_vs
+                  then I.insEdge (n1, n2, ()) g'
+                  else g'
+            g''' = if any (\n -> n `elem` m1_in_vs) m2_out_vs
+                   then I.insEdge (n2, n1, ()) g''
+                   else g''
+        in g'''
+      addDependencies _ _ =
+        error $ "mkIllegalMatchCombs: illegal list length of first argument"
+      g1 = foldr addDependencies g0 (combinations 2 matches)
+      removeGenericPhiMatches m g =
+        if isInstructionPhi $ getInstructionFromPatternMatch target m
+        then I.delNode (getMatchNodeFromID g m) g
+        else g
+      g2 = foldr removeGenericPhiMatches g1 matches
+      forbidden_combs = map (map pmMatchID) $
+                        map ( \ns ->
+                              filter ( not .
+                                       isInstructionCopy .
+                                       getInstructionFromPatternMatch target
+                                     ) $
+                              map (fromJust . I.lab g2) ns
+                            ) $
+                        findCycles g2
+  in forbidden_combs

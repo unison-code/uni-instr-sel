@@ -51,6 +51,7 @@ data HighLevelModel
       { hlFunctionParams :: HighLevelFunctionParams
       , hlMachineParams :: HighLevelMachineParams
       , hlMatchParams :: [HighLevelMatchParams]
+      , hlIllegalMatchCombs :: [[MatchID]]
       }
   deriving (Show)
 
@@ -318,6 +319,9 @@ data LowLevelModel
         -- ^ The instructions from which each match is derived. An index into
         -- the list corresponds to the array index of a particular match. This
         -- information is used for debugging purposes only.
+      , llIllegalMatchCombs :: [[ArrayIndex]]
+        -- ^ Combinations of matches for which it is illegal to select all of
+        -- them.
       , llTMID :: TargetMachineID
         -- ^ ID of the target machine from which the low-level model is
         -- derived. This information is used for debugging purposes only.
@@ -439,13 +443,15 @@ instance FromJSON HighLevelModel where
        <$> v .: "function-params"
        <*> v .: "machine-params"
        <*> v .: "match-params"
+       <*> v .: "illegal-match-combs"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelModel where
   toJSON m@(HighLevelModel {}) =
-    object [ "function-params" .= (hlFunctionParams m)
-           , "machine-params"  .= (hlMachineParams m)
-           , "match-params"    .= (hlMatchParams m)
+    object [ "function-params"     .= (hlFunctionParams m)
+           , "machine-params"      .= (hlMachineParams m)
+           , "match-params"        .= (hlMatchParams m)
+           , "illegal-match-combs" .= (hlIllegalMatchCombs m)
            ]
 
 instance FromJSON HighLevelFunctionParams where
@@ -617,6 +623,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-constraints"
       <*> v .: "match-pattern-ids"
       <*> v .: "match-instruction-ids"
+      <*> v .: "illegal-match-combs"
       <*> v .: "target-machine"
   parseJSON _ = mzero
 
@@ -660,6 +667,7 @@ instance ToJSON LowLevelModel where
            , "match-constraints"        .= (llMatchConstraints m)
            , "match-pattern-ids"        .= (llMatchPatternIDs m)
            , "match-instruction-ids"    .= (llMatchInstructionIDs m)
+           , "illegal-match-combs"      .= (llIllegalMatchCombs m)
            , "target-machine"           .= (llTMID m)
            ]
 
