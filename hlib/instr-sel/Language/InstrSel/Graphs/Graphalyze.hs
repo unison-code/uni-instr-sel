@@ -104,11 +104,10 @@ areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) == 1
 
 -- | Find all cycles in the given graph, returning just the nodes.
 findCycles :: (I.DynGraph g) => g a b -> [[I.Node]]
-findCycles = concat . unfoldr findCyclesWithNode . mkSimple
+findCycles = concat . unfoldr findCycles' . mkSimple
 
--- | Find all cycles containing a chosen node.
-findCyclesWithNode :: (I.DynGraph g) => g a b -> Maybe ([[I.Node]], g a b)
-findCyclesWithNode g
+findCycles' :: (I.DynGraph g) => g a b -> Maybe ([[I.Node]], g a b)
+findCycles' g
   | I.isEmpty g = Nothing
   | otherwise = Just . getCycles . I.matchAny $ g
   where
