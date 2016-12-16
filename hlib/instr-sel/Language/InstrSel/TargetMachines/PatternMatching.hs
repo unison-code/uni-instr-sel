@@ -278,12 +278,7 @@ mkSimdMatches fg sub_pg sub_matches pg_remaining_cs =
         in toMatch $
            map reassign $
            fromMatch sub_m
-      sub_pg_cs_matches = map ( \ms -> if length ms == 1
-                                       then head ms
-                                       else error $ "mkSimdMatches: " ++
-                                                    "unexpected number of " ++
-                                                    "matches found"
-                              ) $
+      sub_pg_cs_matches = map head $
                           map (findMatches sub_pg) $
                           pg_remaining_cs
       cdd_rel = computeMatchCyclicDataDepRelSet fg sub_matches

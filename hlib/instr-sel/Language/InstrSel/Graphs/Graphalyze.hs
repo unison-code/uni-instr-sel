@@ -161,7 +161,7 @@ isReachableComponent' g c1 c2 =
 
 -- | Tests if two graphs are isomorphic to each other.
 areGraphsIsomorphic :: Graph -> Graph -> Bool
-areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) == 1
+areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) > 0
 
 -- | Finds all cycles in a given graph.
 cyclesIn :: Graph -> [[Node]]
