@@ -174,13 +174,13 @@ cyclesIn (Graph g) =
 --
 -- See Donald B. Johnson: Finding All the Elementary Circuits of a Directed
 -- Graph. SIAM Journal on Computing. Volumne 4, Nr. 1 (1975), pp. 77-84.
-cyclesIn' :: (I.DynGraph g, Show (g a b)) => g a b -> [[I.Node]]
+cyclesIn' :: (I.DynGraph g) => g a b -> [[I.Node]]
 cyclesIn' g =
   cisCycles $
   foldr cyclesFor (mkInitCyclesInState g) (I.nodes g)
 
 cyclesFor
-  :: (I.DynGraph g, Show (g a b))
+  :: (I.DynGraph g)
   => I.Node
   -> CyclesInState g a b
   -> CyclesInState g a b
@@ -203,7 +203,7 @@ cyclesFor n st0 =
      else st0 -- Skip to next node
 
 cCircuits
-  :: (I.DynGraph g, Show (g a b))
+  :: (I.DynGraph g)
   => I.Node
   -> CyclesInState g a b
   -> (CyclesInState g a b, Bool)
@@ -244,7 +244,7 @@ cCircuits n st0 =
   in (st4, f)
 
 cUnblock
-  :: (I.DynGraph g, Show (g a b))
+  :: (I.DynGraph g)
   => I.Node
   -> CyclesInState g a b
   -> CyclesInState g a b
@@ -262,7 +262,7 @@ cUnblock n st0 =
                   n_blocked
   in st2
 
-mkInitCyclesInState :: (I.DynGraph g, Show (g a b)) => g a b -> CyclesInState g a b
+mkInitCyclesInState :: (I.DynGraph g) => g a b -> CyclesInState g a b
 mkInitCyclesInState g =
   let ns = I.nodes g
   in CyclesInState { cisCycles = []
@@ -281,7 +281,7 @@ strongComponentsOf (Graph g) = map Graph $ strongComponentsOf' g
 
 -- | Find all strongly connected components of a graph. Implements Tarjan's
 -- algorithm. Returned list is sorted in topological order.
-strongComponentsOf' :: (I.DynGraph g, Show (g a b)) => g a b -> [g a b]
+strongComponentsOf' :: (I.DynGraph g) => g a b -> [g a b]
 strongComponentsOf' g =
   sccComponents $
   foldr ( \n st ->
@@ -292,7 +292,7 @@ strongComponentsOf' g =
         (I.nodes g)
 
 findSCCFor
-  :: (I.DynGraph g, Show (g a b))
+  :: (I.DynGraph g)
   => I.Node
   -> SCCState g a b
   -> SCCState g a b
@@ -358,7 +358,7 @@ findSCCFor n st0 =
             else st2
   in st3
 
-mkInitSCCState :: (I.DynGraph g, Show (g a b)) => g a b -> SCCState g a b
+mkInitSCCState :: (I.DynGraph g) => g a b -> SCCState g a b
 mkInitSCCState g =
   let ns = I.nodes g
   in SCCState { sccComponents = []
