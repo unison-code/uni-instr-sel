@@ -58,9 +58,6 @@ import Data.Maybe
   , mapMaybe
   )
 
--- TODO: remove
-import Debug.Trace
-
 
 
 -------------
@@ -798,5 +795,4 @@ mkIllegalMatchCombs function target matches =
                         map init $ -- Remove last element as it is the same as
                                    -- the first element
                         cyclesIn' g2
-  in trace (show (length forbidden_combs)) $
-     forbidden_combs
+  in forbidden_combs
