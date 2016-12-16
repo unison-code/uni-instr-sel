@@ -730,7 +730,15 @@ computeDomSets g root_id =
       root_n = head $ findNodesWithNodeID cfg root_id
   in G.computeDomSets cfg root_n
 
--- | TODO: write documentation
+-- | Finds combinations of matches that are illegal, meaning they will yield a
+-- cyclic data dependency if all are selected. The cycles are found by first
+-- constructing a dependency graph for all matches, where each node is a match
+-- and each edge represents a data dependency between the two matches. Matches
+-- derived from generic phi patterns are not included in the dependency graph
+-- (as those would always yield a cycle which is not actually a cyclic data
+-- dependency), and matches which are known to never be the root cause of a
+-- cycle -- that is, matches derived from null instructions and copy
+-- instructions -- are also not included.
 mkIllegalMatchCombs
   :: Function
   -> TargetMachine
