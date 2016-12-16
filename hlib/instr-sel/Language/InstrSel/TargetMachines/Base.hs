@@ -283,6 +283,6 @@ isInstructionSimd i =
       isSimdPattern p =
         let os = patOS p
             g = osGraph os
-            cs = componentsOf g
+            cs = weakComponentsOf g
         in length cs > 1 && all (areGraphsIsomorphic (head cs)) (tail cs)
   in all isSimdPattern pats

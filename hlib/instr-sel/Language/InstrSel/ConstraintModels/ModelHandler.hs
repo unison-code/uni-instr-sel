@@ -27,7 +27,7 @@ import Language.InstrSel.Graphs
 import qualified Language.InstrSel.Graphs as G
   ( computeDomSets )
 import Language.InstrSel.Graphs.Graphalyze
-  ( findCycles )
+  ( cyclesIn' )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..)
@@ -57,6 +57,9 @@ import Data.Maybe
   , isNothing
   , mapMaybe
   )
+
+-- TODO: remove
+import Debug.Trace
 
 
 
@@ -792,5 +795,8 @@ mkIllegalMatchCombs function target matches =
                                      ) $
                               map (fromJust . I.lab g2) ns
                             ) $
-                        findCycles g2
-  in forbidden_combs
+                        map init $ -- Remove last element as it is the same as
+                                   -- the first element
+                        cyclesIn' g2
+  in trace (show (length forbidden_combs)) $
+     forbidden_combs

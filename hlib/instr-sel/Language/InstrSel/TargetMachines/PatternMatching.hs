@@ -228,7 +228,7 @@ processInstrPattern (fg, entry) dup_fg instr pat =
                      map (fixMatch fg pg) $
                      removeDupMatches $
                      findMatches dup_fg dup_pg
-                else let pg_cs = componentsOf dup_pg
+                else let pg_cs = weakComponentsOf dup_pg
                          sub_pg = head pg_cs
                          sub_matches = removeDupMatches $
                                        findMatches dup_fg sub_pg
@@ -245,14 +245,14 @@ processInstrPattern (fg, entry) dup_fg instr pat =
      matches
 
 -- | Constructs a list of matches for the entire SIMD pattern graph based on its
--- components and list of matches for a single component. Each match is also
--- checked that it does not result in a cyclic data dependency between any of
--- the components.
+-- weakly connected components and list of matches for a single component. Each
+-- match is also checked that it does not result in a cyclic data dependency
+-- between any of the components.
 mkSimdMatches
   :: Graph
      -- ^ The function graph.
   -> Graph
-     -- ^ A component of the SIMD pattern graph.
+     -- ^ A weakly connected component of the SIMD pattern graph.
   -> [Match Node]
      -- ^ List of matches found for the component above in the function graph.
   -> [Graph]
@@ -319,9 +319,9 @@ removeMatchesWithCyclicDataDeps fg pms =
 
 -- | Checks if a given match will result in a cyclic data dependency in the
 -- function graph. The check works as follows: first the subgraph of the
--- function covered by the match is extracted. From this subgraph, each
--- component is extracted, and then it is checked whether a component is
--- reachable from any other component. If so, then the match has a cyclic
+-- function covered by the match is extracted. From this subgraph, each weakly
+-- connected component is extracted, and then it is checked whether a component
+-- is reachable from any other component. If so, then the match has a cyclic
 -- dependency. However, components that are only reachable via an input node to
 -- the pattern is not considered a dependency. Due to this, such data nodes are
 -- removed prior to extracting the components. Also, state-flow edges should not
@@ -337,7 +337,7 @@ hasMatchCyclicDataDep ssa_fg m =
   let f_ns = map fNode (fromMatch m)
       sub_fg = removeInputNodes $
                subGraph ssa_fg f_ns
-      mcs = componentsOf sub_fg
+      mcs = weakComponentsOf sub_fg
       cdd = or [ isReachableComponent (removeStateFlowEdges ssa_fg) c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
