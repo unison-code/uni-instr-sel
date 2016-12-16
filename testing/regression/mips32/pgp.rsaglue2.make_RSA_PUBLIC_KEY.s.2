@@ -1,0 +1,50 @@
+0:
+  %const.-3.copy.1 = ADDi $0, -3
+  %const.2048.copy.1 = ADDiu $0, 2048
+  %1 = CALL countbits (%n)
+  SW %1, 0(%rpk)
+  BGTU $%1, $%const.2048.copy.1, bb0
+bb1:
+4:
+  %6 = LW 0(%const.@%global_precision)
+  %7 = ADD $0, %6
+  %8 = SLL %7, 1
+  %9 = SLTI %8, 256
+  BNE $0, $%9, bb2
+bb3:
+16:
+  B reg2rsaref.exit
+bb4:
+25:
+  %const.-256.copy.2 = ADDi $0, -256
+  %const.260.copy.2 = ADDiu $0, 260
+  %const.516.copy.1 = ADDiu $0, 516
+  %const.2.copy.2 = ADDiu $0, 2
+  %gep_array = MUL %7, %const.2.copy.2
+  %gep_array16 = MUL %22, %const.2.copy.2
+  %const.0.copy.4 = ADDiu $0, 0
+  %13 = SUBU %const.0.copy.4, %8
+  %28 = SUBU %const.0.copy.4, %23
+  (%gep2, %gep8, %gep12) = ADD3 (%const.260.copy.2, %rpk), (%const.-256.copy.2, %gep6), (%const.516.copy.1, %rpk)
+  (%gep10, %gep14, %gep17) = ADD3 (%const.260.copy.2, %rpk), (%28, %gep12), (%gep_array16, %e)
+  (%gep4, %gep6, %gep19) = ADD3 (%13, %gep2), (%gep_array, %n), (%const.-256.copy.2, %gep17)
+  B reg2rsaref.exit1
+bb2:
+10:
+  %gep = ADDI %rpk, 4
+reg2rsaref.exit:
+  %21 = LW 0(%const.@%global_precision)
+  %22 = ADD $0, %21
+  %23 = SLL %22, 1
+  %24 = SLTI %23, 256
+  BNE $0, $%24, bb4
+bb5:
+31:
+  %const.256.copy.4 = ADDiu $0, 256
+  %11 = SUBU %const.256.copy.4, %8
+  %26 = SUBU %const.256.copy.4, %23
+  %const.0.copy.2 = ADDiu $0, 0
+bb0:
+reg2rsaref.exit1:
+  %.0 = PHI (%const.-3.copy.1, 0) (%const.0.copy.4, 25) (%const.0.copy.2, 31)
+  RetRA %.0
