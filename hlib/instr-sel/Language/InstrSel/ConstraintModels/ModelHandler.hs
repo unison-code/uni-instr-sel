@@ -779,19 +779,33 @@ mkIllegalMatchCombs function target matches =
       addDependencies _ _ =
         error $ "mkIllegalMatchCombs: illegal list length of first argument"
       g1 = foldr addDependencies g0 (combinations 2 matches)
-      removeGenericPhiMatches m g =
-        if isInstructionPhi $ getInstructionFromPatternMatch target m
-        then I.delNode (getMatchNodeFromID g m) g
-        else g
-      g2 = foldr removeGenericPhiMatches g1 matches
-      forbidden_combs = map (map pmMatchID) $
-                        map ( \ns ->
-                              filter ( not .
-                                       isInstructionCopy .
-                                       getInstructionFromPatternMatch target
-                                     ) $
-                              map (fromJust . I.lab g2) ns
-                            ) $
+      delNodeKeepDeps n g =
+        let in_es = I.inn g n
+            out_es = I.out g n
+            g' = I.delNode n g
+            g'' = foldr ( \(src, _, _) h ->
+                          foldr ( \(_, trg, _) h'
+                                  -> let e = (src, trg, ())
+                                     in if not (I.hasLEdge h' e)
+                                        then I.insEdge e h'
+                                        else h'
+                                )
+                                h
+                                out_es
+                        )
+                        g'
+                        in_es
+        in g''
+      removeUninterestingMatches m g =
+        let p = getInstructionFromPatternMatch target m
+            n = getMatchNodeFromID g m
+        in if isInstructionPhi p
+           then I.delNode n g
+           else if isInstructionNull p || isInstructionCopy p
+                then delNodeKeepDeps n g
+                else g
+      g2 = foldr removeUninterestingMatches g1 matches
+      forbidden_combs = map (map pmMatchID . map (fromJust . I.lab g2)) $
                         map init $ -- Remove last element as it is the same as
                                    -- the first element
                         cyclesIn' g2
