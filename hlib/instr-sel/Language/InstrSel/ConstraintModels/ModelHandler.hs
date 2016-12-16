@@ -731,14 +731,18 @@ computeDomSets g root_id =
   in G.computeDomSets cfg root_n
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
--- cyclic data dependency if all are selected. The cycles are found by first
--- constructing a dependency graph for all matches, where each node is a match
--- and each edge represents a data dependency between the two matches. Matches
--- derived from generic phi patterns are not included in the dependency graph
--- (as those would always yield a cycle which is not actually a cyclic data
--- dependency), and matches which are known to never be the root cause of a
--- cycle -- that is, matches derived from null instructions and copy
--- instructions -- are also not included.
+-- cyclic data dependency if all are selected.
+--
+-- The cycles are found by first constructing a dependency graph for all
+-- matches, where each node is a match and each edge represents a data
+-- dependency between the two matches. Matches derived from generic phi patterns
+-- are not included in the dependency graph (as those would always yield a cycle
+-- which is not actually a cyclic data dependency), and matches which are known
+-- to never be the root cause of a cycle -- that is, matches derived from null
+-- instructions and copy instructions -- are also not included. To reduce the
+-- time it takes to find all cycles, all SIMD matches are also removed. This is
+-- because such matches often yield many cycles in large functions, and the CP
+-- solver will forbid such combinations anyhow.
 mkIllegalMatchCombs
   :: Function
   -> TargetMachine
@@ -804,15 +808,15 @@ mkIllegalMatchCombs function target matches =
                         g'
                         in_es
         in g''
-      removeUninterestingMatches m g =
-        let p = getInstructionFromPatternMatch target m
+      excludeMatches m g =
+        let i = getInstructionFromPatternMatch target m
             n = getMatchNodeFromID g m
-        in if isInstructionPhi p
+        in if isInstructionPhi i || isInstructionSimd i
            then I.delNode n g
-           else if isInstructionNull p || isInstructionCopy p
+           else if isInstructionNull i || isInstructionCopy i
                 then delNodeKeepDeps n g
                 else g
-      g2 = foldr removeUninterestingMatches g1 matches
+      g2 = foldr excludeMatches g1 matches
       forbidden_combs = map (map pmMatchID . map (fromJust . I.lab g2)) $
                         map init $ -- Remove last element as it is the same as
                                    -- the first element
