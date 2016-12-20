@@ -45,7 +45,7 @@ LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
 LLVM_GENERAL_NAME := llvm-general-3.8.0.0
 CABAL_INST_FLAGS :=
-CABAL_PROF_FLAGS := --enable-library-profiling --enable-executable-profiling
+CABAL_PROF_FLAGS := --enable-profiling --profiling-detail=all-functions
 
 
 
