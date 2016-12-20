@@ -760,7 +760,13 @@ getAllNodes g = map Node $
 delNode :: Node -> Graph -> Graph
 delNode n g =
   let new_int_g = I.delNode (getIntNodeID n) (intGraph g)
-      new_nmap = M.adjust (filter (/= n)) (getNodeID n) (intNodeMap g)
+      new_nmap = M.update ( \ns -> let new_ns = filter (/= n) ns
+                                   in if not (null new_ns)
+                                      then Just new_ns
+                                      else Nothing
+                          )
+                          (getNodeID n)
+                          (intNodeMap g)
   in Graph { intGraph = new_int_g
            , intNodeMap = new_nmap
            }
@@ -771,7 +777,9 @@ delEdge (Edge e) g = g { intGraph = I.delLEdge e (intGraph g) }
 
 -- | Gets a list of nodes with the same node ID.
 findNodesWithNodeID :: Graph -> NodeID -> [Node]
-findNodesWithNodeID g i = filter ((i ==) . getNodeID) $ getAllNodes g
+findNodesWithNodeID g i =
+  let ns = M.lookup i (intNodeMap g)
+  in if isJust ns then fromJust ns else []
 
 -- | Gets a list of value nodes with the same origin.
 findValueNodesWithOrigin :: Graph -> String -> [Node]
@@ -1844,4 +1852,4 @@ haveSameOutEdgeNrs e1 e2 = getEdgeOutNr e1 == getEdgeOutNr e2
 groupNodesByID :: [Node] -> [(NodeID, [Node])]
 groupNodesByID ns =
   let ns_by_id = groupBy (\n1 n2 -> getNodeID n1 == getNodeID n2) ns
-  in map (\ns' -> (getNodeID $ head ns', ns)) ns_by_id
+  in map (\ns' -> (getNodeID $ head ns', ns')) ns_by_id
