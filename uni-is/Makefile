@@ -35,6 +35,7 @@
 #==========
 
 BIN := uni-is
+CABAL_INST_FLAGS ?=
 
 
 
@@ -42,13 +43,12 @@ BIN := uni-is
 # RULES
 #=======
 
-.PHONY: build
-build:
-	cabal install
+.PHONY: install
+install:
+	cabal install $(CABAL_INST_FLAGS)
 
 .PHONY: docs
 docs:
-	cabal configure
 	cabal haddock --executables
 
 .PHONY: warnings

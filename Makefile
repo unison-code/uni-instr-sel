@@ -44,6 +44,8 @@ LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
 LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
 LLVM_GENERAL_NAME := llvm-general-3.8.0.0
+CABAL_INST_FLAGS :=
+CABAL_PROF_FLAGS := --enable-library-profiling --enable-executable-profiling
 
 
 
@@ -77,39 +79,45 @@ docs: llvm-general-pure-doc \
 	  uni-is-llvm-doc \
 	  uni-is-doc \
 
-.PHONY: hlib
-hlib: llvm-general-pure
-	cd $(HLIB_PATH) && make
-
-.PHONY: hlib-doc
-hlib-doc:
-	cd $(HLIB_PATH) && make docs
-
 .PHONY: llvm-general-pure
 llvm-general-pure:
 	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_PURE_NAME))))
 	if [ -z "$(RES)" ]; then \
-	    cd $(LLVM_GENERAL_PURE_PATH) && cabal install; \
+	    cd $(LLVM_GENERAL_PURE_PATH) && \
+		cabal install $(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS); \
 	fi
 
 .PHONY: llvm-general-pure-doc
 llvm-general-pure-doc:
-	cd $(LLVM_GENERAL_PURE_PATH) && cabal configure && cabal haddock
+	cd $(LLVM_GENERAL_PURE_PATH) && \
+	cabal haddock
 
 .PHONY: llvm-general
 llvm-general: llvm-general-pure
 	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_NAME))))
 	if [ -z "$(RES)" ]; then \
-	    cd $(LLVM_GENERAL_PATH) && cabal install; \
+	    cd $(LLVM_GENERAL_PATH) && \
+		cabal install $(CABAL_INST_FLAGS); \
 	fi
 
 .PHONY: llvm-general-doc
 llvm-general-doc: llvm-general-pure-doc
-	cd $(LLVM_GENERAL_PATH) && cabal configure && cabal haddock
+	cd $(LLVM_GENERAL_PATH) && \
+	cabal haddock
+
+.PHONY: hlib
+hlib: llvm-general-pure
+	cd $(HLIB_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
+
+.PHONY: hlib-doc
+hlib-doc:
+	cd $(HLIB_PATH) && make docs
 
 .PHONY: uni-targen
 uni-targen: llvm-general llvm-general-pure hlib
-	cd $(UNI_TARGEN_PATH) && make
+	cd $(UNI_TARGEN_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
 .PHONY: uni-targen-doc
 uni-targen-doc:
@@ -117,7 +125,8 @@ uni-targen-doc:
 
 .PHONY: uni-is-llvm
 uni-is-llvm: llvm-general llvm-general-pure hlib
-	cd $(UNI_IS_LLVM_PATH) && make
+	cd $(UNI_IS_LLVM_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
 .PHONY: uni-is-llvm-doc
 uni-is-llvm-doc:
@@ -125,7 +134,8 @@ uni-is-llvm-doc:
 
 .PHONY: uni-is
 uni-is: hlib
-	cd $(UNI_IS_PATH) && make
+	cd $(UNI_IS_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
 
 .PHONY: uni-is-doc
 uni-is-doc:
