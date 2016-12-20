@@ -71,6 +71,14 @@ build: hlib \
 	   solvers \
 	   tools
 
+.PHONY: build-prof
+build-prof: hlib-prof \
+			uni-targen \
+			uni-is-llvm \
+			uni-is-prof \
+			solvers \
+			tools
+
 .PHONY: docs
 docs: llvm-general-pure-doc \
 	  llvm-general-doc \
@@ -84,7 +92,7 @@ llvm-general-pure:
 	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_PURE_NAME))))
 	if [ -z "$(RES)" ]; then \
 	    cd $(LLVM_GENERAL_PURE_PATH) && \
-		cabal install $(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS); \
+		cabal install $(CABAL_INST_FLAGS); \
 	fi
 
 .PHONY: llvm-general-pure-doc
@@ -108,7 +116,11 @@ llvm-general-doc: llvm-general-pure-doc
 .PHONY: hlib
 hlib: llvm-general-pure
 	cd $(HLIB_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
+
+.PHONY: hlib-prof
+hlib-prof: CABAL_INST_FLAGS += $(CABAL_PROF_FLAGS)
+hlib-prof: hlib
 
 .PHONY: hlib-doc
 hlib-doc:
@@ -135,7 +147,11 @@ uni-is-llvm-doc:
 .PHONY: uni-is
 uni-is: hlib
 	cd $(UNI_IS_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
+
+.PHONY: uni-is-prof
+uni-is-prof: CABAL_INST_FLAGS += $(CABAL_PROF_FLAGS)
+uni-is-prof: uni-is
 
 .PHONY: uni-is-doc
 uni-is-doc:
