@@ -58,7 +58,9 @@ generateModule tm =
                    \import Language.InstrSel.Utils\n\
                    \import Prelude \n\
                    \  hiding\n\
-                   \  ( LT, GT )\n\n"
+                   \  ( LT, GT )\n\
+                   \import Data.Map\n\
+                   \  ( fromList )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
                     \theTM = " ++ (renameFuncs $ show tm)
       res = parseFileContents $ header_src ++ tm_func_src
