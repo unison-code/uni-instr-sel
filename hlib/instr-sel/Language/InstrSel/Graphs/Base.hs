@@ -83,7 +83,6 @@ module Language.InstrSel.Graphs.Base
   , getEdgeLabel
   , getEdgeInNr
   , getInEdges
-  , getLastAddedNode
   , getNeighbors
   , getNodeID
   , getNodeLabel
@@ -99,6 +98,7 @@ module Language.InstrSel.Graphs.Base
   , getSourceNode
   , getSuccessors
   , getTargetNode
+  , groupNodesByID
   , hasAnyPredecessors
   , hasAnySuccessors
   , haveSameInEdgeNrs
@@ -178,6 +178,8 @@ import Language.InstrSel.Functions.IDs
   )
 import Language.InstrSel.Graphs.IDs
 import qualified Language.InstrSel.OpTypes as O
+import Language.InstrSel.Utils
+  ( groupBy )
 import Language.InstrSel.Utils.Natural
 import Language.InstrSel.Utils.JSON
 
@@ -188,6 +190,7 @@ import Data.List
   , sortBy
   )
 import Data.Maybe
+import qualified Data.Map as M
 import qualified Data.Set as S
 import qualified Data.Vector as V
 
@@ -204,9 +207,12 @@ import Control.DeepSeq
 
 type IntGraph = I.Gr NodeLabel EdgeLabel
 
--- | The outer-most data type which contains the graph itself.
-newtype Graph
-  = Graph { intGraph :: IntGraph }
+-- | The outer-most data type which contains the graph itself. It also caches
+-- all nodes in a map with node IDs as keys for efficient access.
+data Graph
+  = Graph { intGraph :: IntGraph
+          , intNodeMap :: M.Map NodeID [Node]
+          }
   deriving (Show)
 
 -- | Represents a distinct node.
@@ -362,7 +368,12 @@ data DomSet t
 -------------------------------------
 
 instance FromJSON Graph where
-  parseJSON v@(Object _) = Graph <$> parseJSON v
+  parseJSON v@(Object _) =
+    do g <- parseJSON v
+       let ns = map Node $ I.labNodes g
+       return $ Graph { intGraph = g
+                      , intNodeMap = M.fromList $ groupNodesByID ns
+                      }
   parseJSON _ = mzero
 
 instance ToJSON Graph where
@@ -692,11 +703,15 @@ isOfDefEdgeType _ = False
 
 -- | Creates an empty graph.
 mkEmpty :: Graph
-mkEmpty = Graph I.empty
+mkEmpty = Graph { intGraph = I.empty
+                , intNodeMap = M.empty
+                }
 
 -- | Makes a graph from a list of nodes and edges.
 mkGraph :: [Node] -> [Edge] -> Graph
-mkGraph ns es = Graph (I.mkGraph (map fromNode ns) (map fromEdge es))
+mkGraph ns es = Graph { intGraph = I.mkGraph (map fromNode ns) (map fromEdge es)
+                      , intNodeMap = M.fromList $ groupNodesByID ns
+                      }
 
 -- | Gets the next internal node ID which does not already appear in the graph.
 getNextIntNodeID :: IntGraph -> I.Node
@@ -705,10 +720,6 @@ getNextIntNodeID g =
   in if length existing_nodes > 0
      then 1 + maximum existing_nodes
      else 0
-
--- | Gets the next node ID which does not already appear in the graph.
-getNextNodeID :: IntGraph -> NodeID
-getNextNodeID g = toNodeID $ toInteger $ getNextIntNodeID g
 
 -- | Gets the node ID from a node.
 getNodeID :: Node -> NodeID
@@ -740,16 +751,23 @@ getNumNodes g = length $ getAllNodes g
 
 -- | Gets a list of all nodes.
 getAllNodes :: Graph -> [Node]
-getAllNodes (Graph g) = map Node (I.labNodes g)
+getAllNodes g = map Node $
+                I.labNodes $
+                intGraph g
 
 -- | Deletes a node from the graph. Any edges involving the given node will be
 -- removed.
 delNode :: Node -> Graph -> Graph
-delNode n (Graph g) = Graph (I.delNode (getIntNodeID n) g)
+delNode n g =
+  let new_int_g = I.delNode (getIntNodeID n) (intGraph g)
+      new_nmap = M.adjust (filter (/= n)) (getNodeID n) (intNodeMap g)
+  in Graph { intGraph = new_int_g
+           , intNodeMap = new_nmap
+           }
 
 -- | Deletes an edge from the graph.
 delEdge :: Edge -> Graph -> Graph
-delEdge (Edge e) (Graph g) = Graph (I.delLEdge e g)
+delEdge (Edge e) g = g { intGraph = I.delLEdge e (intGraph g) }
 
 -- | Gets a list of nodes with the same node ID.
 findNodesWithNodeID :: Graph -> NodeID -> [Node]
@@ -951,18 +969,21 @@ updateEdgeTarget
   -> Graph
   -> (Graph, Edge)
      -- ^ The new graph and the updated edge.
-updateEdgeTarget new_trg (Edge e@(src, _, l)) (Graph g) =
-  let new_trg_id = getIntNodeID new_trg
+updateEdgeTarget new_trg (Edge e@(src, _, l)) g =
+  let int_g = intGraph g
+      new_trg_id = getIntNodeID new_trg
       new_e = ( src
               , new_trg_id
-              , l { inEdgeNr = getNextInEdgeNr g
+              , l { inEdgeNr = getNextInEdgeNr int_g
                                                new_trg_id
                                                ( \e' ->
                                                  getEdgeType e' == edgeType l
                                                )
                   }
               )
-  in (Graph (I.insEdge new_e (I.delLEdge e g)), Edge new_e)
+  in ( g { intGraph = I.insEdge new_e (I.delLEdge e int_g) }
+     , Edge new_e
+     )
 
 -- | Updates the source of an edge.
 updateEdgeSource
@@ -973,18 +994,21 @@ updateEdgeSource
   -> Graph
   -> (Graph, Edge)
      -- ^ The new graph and the updated edge.
-updateEdgeSource new_src (Edge e@(_, trg, l)) (Graph g) =
-  let new_src_id = getIntNodeID new_src
+updateEdgeSource new_src (Edge e@(_, trg, l)) g =
+  let int_g = intGraph g
+      new_src_id = getIntNodeID new_src
       new_e = ( new_src_id
               , trg
-              , l { outEdgeNr = getNextOutEdgeNr g
+              , l { outEdgeNr = getNextOutEdgeNr int_g
                                                  new_src_id
                                                  ( \e' ->
                                                    getEdgeType e' == edgeType l
                                                  )
                   }
               )
-  in (Graph (I.insEdge new_e (I.delLEdge e g)), Edge new_e)
+  in ( g { intGraph = I.insEdge new_e (I.delLEdge e int_g) }
+     , Edge new_e
+     )
 
 -- | Updates the in number of an edge.
 updateEdgeInNr
@@ -1047,19 +1071,30 @@ getEdgeType = edgeType . getEdgeLabel
 -- | Adds a new node of a given node type to a graph, returning both the new
 -- graph and the new node.
 addNewNode :: NodeType -> Graph -> (Graph, Node)
-addNewNode nt (Graph g) =
-  let new_n = (getNextIntNodeID g, NodeLabel (getNextNodeID g) nt)
-      new_g = Graph (I.insNode new_n g)
-  in (new_g, Node new_n)
+addNewNode nt g =
+  let int_g = intGraph g
+      new_int_id = getNextIntNodeID int_g
+      new_id = toNodeID new_int_id
+      new_int_n = (new_int_id, NodeLabel new_id nt)
+      new_int_g = I.insNode new_int_n int_g
+      new_n = Node new_int_n
+      new_nmap = M.alter ( \ns -> if isJust ns
+                                  then Just $ (new_n:fromJust ns)
+                                  else Just $ [new_n]
+                         )
+                         new_id
+                         (intNodeMap g)
+  in (g { intGraph = new_int_g, intNodeMap = new_nmap }, new_n)
 
 -- | Adds a new edge between two nodes to the graph, returning both the new
 -- graph and the new edge. The edge numberings will be set accordingly.
 addNewEdge :: EdgeType -> (SrcNode, DstNode) -> Graph -> (Graph, Edge)
-addNewEdge et (from_n, to_n) (Graph g) =
-  let from_n_id = getIntNodeID from_n
+addNewEdge et (from_n, to_n) g =
+  let int_g = intGraph g
+      from_n_id = getIntNodeID from_n
       to_n_id = getIntNodeID to_n
-      out_edge_nr = getNextOutEdgeNr g from_n_id (\e -> et == getEdgeType e)
-      in_edge_nr = getNextInEdgeNr g to_n_id (\e -> et == getEdgeType e)
+      out_edge_nr = getNextOutEdgeNr int_g from_n_id (\e -> et == getEdgeType e)
+      in_edge_nr = getNextInEdgeNr int_g to_n_id (\e -> et == getEdgeType e)
       new_e = ( from_n_id
               , to_n_id
               , EdgeLabel { edgeType = et
@@ -1067,8 +1102,8 @@ addNewEdge et (from_n, to_n) (Graph g) =
                           , inEdgeNr = in_edge_nr
                           }
               )
-      new_g = Graph (I.insEdge new_e g)
-  in (new_g, Edge new_e)
+      new_int_g = I.insEdge new_e int_g
+  in (g { intGraph = new_int_g }, Edge new_e)
 
 -- | Adds many new edges between two nodes to the graph. The edges will be
 -- inserted in the order of the list, and the edge numberings will be set
@@ -1108,16 +1143,18 @@ insertNewNodeAlongEdge :: NodeType -> Edge -> Graph -> (Graph, Node)
 insertNewNodeAlongEdge
   nt
   e@(Edge (from_nid, to_nid, el))
-  (Graph g0)
+  g0
   =
-  let ((Graph g1), new_n) = addNewNode nt (Graph g0)
-      (Graph g2) = delEdge e (Graph g1)
+  let (g1, new_n) = addNewNode nt g0
+      g2 = delEdge e g1
       et = edgeType el
       new_e1 = (from_nid, getIntNodeID new_n, EdgeLabel et (outEdgeNr el) 0)
       new_e2 = (getIntNodeID new_n, to_nid, EdgeLabel et 0 (inEdgeNr el))
-      g3 = I.insEdge new_e1 g2
-      g4 = I.insEdge new_e2 g3
-  in (Graph g4, new_n)
+      int_g2 = intGraph g2
+      int_g3 = I.insEdge new_e2 $
+               I.insEdge new_e1 int_g2
+      g3 = g2 { intGraph = int_g3 }
+  in (g3, new_n)
 
 -- | Updates the edge label of an already existing edge
 updateEdgeLabel
@@ -1131,15 +1168,6 @@ updateEdgeLabel new_label e@(Edge (src, dst, _)) g =
       new_e = Edge (src, dst, new_label)
   in (mkGraph (getAllNodes g) (new_e:all_edges_but_e), new_e)
 
--- | Gets the node that was last added to the graph, which is the node with the
--- highest internal node ID.
-getLastAddedNode :: Graph -> Maybe Node
-getLastAddedNode (Graph g) =
-  let ns = I.nodes g
-  in if not $ null ns
-     then getNodeWithIntNodeID g (maximum ns)
-     else Nothing
-
 -- | Gets the corresponding node from an internal node ID.
 getNodeWithIntNodeID :: IntGraph -> I.Node -> Maybe Node
 getNodeWithIntNodeID g nid =
@@ -1148,14 +1176,16 @@ getNodeWithIntNodeID g nid =
 -- | Gets the predecessors (if any) of a given node. A node @n@ is a predecessor
 -- of another node @m@ if there is a directed edge from @m@ to @n@.
 getPredecessors :: Graph -> Node -> [Node]
-getPredecessors (Graph g) n =
-  map (fromJust . getNodeWithIntNodeID g) (I.pre g (getIntNodeID n))
+getPredecessors g n =
+  let int_g = intGraph g
+  in map (fromJust . getNodeWithIntNodeID int_g) (I.pre int_g (getIntNodeID n))
 
 -- | Gets the successors (if any) of a given node. A node @n@ is a successor of
 -- another node @m@ if there is a directed edge from @n@ to @m@.
 getSuccessors :: Graph -> Node -> [Node]
-getSuccessors (Graph g) n =
-  map (fromJust . getNodeWithIntNodeID g) (I.suc g (getIntNodeID n))
+getSuccessors g n =
+  let int_g = intGraph g
+  in map (fromJust . getNodeWithIntNodeID int_g) (I.suc int_g (getIntNodeID n))
 
 -- | Gets both the predecessors and successors of a given node.
 getNeighbors :: Graph -> Node -> [Node]
@@ -1163,15 +1193,15 @@ getNeighbors g n = getPredecessors g n ++ getSuccessors g n
 
 -- | Checks if a given node is within the graph.
 isInGraph :: Graph -> Node -> Bool
-isInGraph (Graph g) n = isJust $ getNodeWithIntNodeID g (getIntNodeID n)
+isInGraph g n = isJust $ getNodeWithIntNodeID (intGraph g) (getIntNodeID n)
 
 -- | Gets a list of all edges.
 getAllEdges :: Graph -> [Edge]
-getAllEdges (Graph g) = map toEdge $ I.labEdges g
+getAllEdges g = map toEdge $ I.labEdges (intGraph g)
 
 -- | Gets all inbound edges (regardless of type) to a particular node.
 getInEdges :: Graph -> Node -> [Edge]
-getInEdges (Graph g) n = map toEdge $ I.inn g (getIntNodeID n)
+getInEdges g n = map toEdge $ I.inn (intGraph g) (getIntNodeID n)
 
 -- | Gets all inbound data-flow edges to a particular node.
 getDtFlowInEdges :: Graph -> Node -> [Edge]
@@ -1191,7 +1221,7 @@ getDefInEdges g n = filter isDefEdge $ getInEdges g n
 
 -- | Gets all outbound edges (regardless of type) from a particular node.
 getOutEdges :: Graph -> Node -> [Edge]
-getOutEdges (Graph g) n = map toEdge $ I.out g (getIntNodeID n)
+getOutEdges g n = map toEdge $ I.out (intGraph g) (getIntNodeID n)
 
 -- | Gets all outbound data-flow edges to a particular node.
 getDtFlowOutEdges :: Graph -> Node -> [Edge]
@@ -1233,11 +1263,13 @@ sortByEdgeNr f = sortBy (\e1 -> \e2 -> if f e1 < f e2 then LT else GT)
 
 -- | Gets the source node of an edge.
 getSourceNode :: Graph -> Edge -> Node
-getSourceNode (Graph g) (Edge (n, _, _)) = fromJust $ getNodeWithIntNodeID g n
+getSourceNode g (Edge (n, _, _)) =
+  fromJust $ getNodeWithIntNodeID (intGraph g) n
 
 -- | Gets the target node of an edge.
 getTargetNode :: Graph -> Edge -> Node
-getTargetNode (Graph g) (Edge (_, n, _)) = fromJust $ getNodeWithIntNodeID g n
+getTargetNode g (Edge (_, n, _)) =
+  fromJust $ getNodeWithIntNodeID (intGraph g) n
 
 -- | Converts a dominator set of nodes into a dominator set of node IDs.
 convertDomSetN2ID :: DomSet Node -> DomSet NodeID
@@ -1711,13 +1743,14 @@ findFNInMapping st pn = [ fNode m | m <- st, pn == pNode m ]
 
 -- | Computes the dominator sets for a given graph and root node.
 computeDomSets :: Graph -> Node -> [DomSet Node]
-computeDomSets (Graph g) n =
-  let toNode = fromJust . getNodeWithIntNodeID g
+computeDomSets g n =
+  let int_g = intGraph g
+      toNode = fromJust . getNodeWithIntNodeID int_g
       doms = map ( \(n1, ns2) -> DomSet { domNode = toNode n1
                                         , domSet = map toNode ns2
                                         }
                  )
-                 (I.dom g (getIntNodeID n))
+                 (I.dom int_g (getIntNodeID n))
   in doms
 
 -- | Checks whether the given graph is empty. A graph is empty if it contains no
@@ -1806,3 +1839,9 @@ haveSameInEdgeNrs e1 e2 = getEdgeInNr e1 == getEdgeInNr e2
 -- | Checks if two edges have the same out-edge numbers.
 haveSameOutEdgeNrs :: Edge -> Edge -> Bool
 haveSameOutEdgeNrs e1 e2 = getEdgeOutNr e1 == getEdgeOutNr e2
+
+-- | Groups a list of nodes into groups according to their node IDs.
+groupNodesByID :: [Node] -> [(NodeID, [Node])]
+groupNodesByID ns =
+  let ns_by_id = groupBy (\n1 n2 -> getNodeID n1 == getNodeID n2) ns
+  in map (\ns' -> (getNodeID $ head ns', ns)) ns_by_id

@@ -94,7 +94,13 @@ data SCCState g a b
 
 -- | Find all weakly connected components of a graph.
 weakComponentsOf :: Graph -> [Graph]
-weakComponentsOf (Graph g) = map Graph $ weakComponentsOf' g
+weakComponentsOf g =
+  map ( \int_g -> let ns = map Node $ I.labNodes int_g
+                  in Graph { intGraph = int_g
+                           , intNodeMap = M.fromList $ groupNodesByID ns
+                           }
+      ) $
+  weakComponentsOf' (intGraph g)
 
 -- | Find all weakly connected components of a graph.
 weakComponentsOf' :: (I.DynGraph g) => g a b -> [g a b]
@@ -137,8 +143,8 @@ isReachableComponent
   -> Graph
      -- ^ Component @c2@.
   -> Bool
-isReachableComponent (Graph g) (Graph c1) (Graph c2) =
-  isReachableComponent' g c1 c2
+isReachableComponent g c1 c2 =
+  isReachableComponent' (intGraph g) (intGraph c1) (intGraph c2)
 
 -- | Tests whether there is a path in the graph @g@ from a node in component
 -- @c1@ to a node in component @c2@.
@@ -165,9 +171,10 @@ areGraphsIsomorphic g1 g2 = length (findMatches g1 g2) > 0
 
 -- | Finds all cycles in a given graph.
 cyclesIn :: Graph -> [[Node]]
-cyclesIn (Graph g) =
-  let cs = cyclesIn' g
-  in map (map (\i -> Node (i, fromJust $ I.lab g i))) cs
+cyclesIn g =
+  let int_g = intGraph g
+      cs = cyclesIn' int_g
+  in map (map (\i -> Node (i, fromJust $ I.lab int_g i))) cs
 
 -- | Finds all cycles in a given graph using Johnson's algorithm. The first and
 -- last elements in an inner list is always the same element.
@@ -277,7 +284,13 @@ mkInitCyclesInState g =
 
 -- | Find all strongly connected components of a graph.
 strongComponentsOf :: Graph -> [Graph]
-strongComponentsOf (Graph g) = map Graph $ strongComponentsOf' g
+strongComponentsOf g =
+  map ( \int_g -> let ns = map Node $ I.labNodes int_g
+                  in Graph { intGraph = int_g
+                           , intNodeMap = M.fromList $ groupNodesByID ns
+                           }
+      ) $
+  strongComponentsOf' (intGraph g)
 
 -- | Find all strongly connected components of a graph. Implements Tarjan's
 -- algorithm. Returned list is sorted in topological order.
