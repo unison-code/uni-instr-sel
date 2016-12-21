@@ -95,6 +95,14 @@ llvm-general-pure:
 		cabal install $(CABAL_INST_FLAGS); \
 	fi
 
+.PHONY: llvm-general-pure-prof
+llvm-general-pure-prof:
+	$(eval RES := $(shell $(call check_pkg,$(LLVM_GENERAL_PURE_NAME))))
+	if [ -z "$(RES)" ]; then \
+	    cd $(LLVM_GENERAL_PURE_PATH) && \
+		cabal install $(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS); \
+	fi
+
 .PHONY: llvm-general-pure-doc
 llvm-general-pure-doc:
 	cd $(LLVM_GENERAL_PURE_PATH) && \
@@ -119,8 +127,9 @@ hlib: llvm-general-pure
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
 .PHONY: hlib-prof
-hlib-prof: CABAL_INST_FLAGS += $(CABAL_PROF_FLAGS)
-hlib-prof: hlib
+hlib-prof: llvm-general-pure-prof
+	cd $(HLIB_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
 
 .PHONY: hlib-doc
 hlib-doc:
@@ -150,8 +159,10 @@ uni-is: hlib
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
 .PHONY: uni-is-prof
-uni-is-prof: CABAL_INST_FLAGS += $(CABAL_PROF_FLAGS)
-uni-is-prof: uni-is
+uni-is-prof: hlib-prof
+	cd $(UNI_IS_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
+
 
 .PHONY: uni-is-doc
 uni-is-doc:
