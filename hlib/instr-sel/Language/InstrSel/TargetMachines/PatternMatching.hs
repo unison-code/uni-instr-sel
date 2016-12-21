@@ -560,7 +560,7 @@ computeDSetsUp' g doms (d, b) st0 =
 getInstructionFromPatternMatch :: TargetMachine -> PatternMatch -> Instruction
 getInstructionFromPatternMatch t m =
   let iid = pmInstrID m
-      i = findInstruction (tmInstructions t) iid
+      i = findInstruction t iid
   in if isJust i
      then fromJust i
      else error $ "getInstructionFromPatternMatch: target machine has no " ++
@@ -570,7 +570,7 @@ getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
 getInstrPatternFromPatternMatch t m =
   let iid = pmInstrID m
       pid = pmPatternID m
-      i = findInstruction (tmInstructions t) iid
+      i = findInstruction t iid
       p = findInstrPattern (instrPatterns $ fromJust i) pid
   in if isJust i
      then if isJust p

@@ -21,15 +21,17 @@ module Language.InstrSel.TargetMachines.Base
   , InstrProperties (..)
   , Location (..)
   , TargetMachine (..)
+  , getAllInstructions
+  , getAllLocations
   , findInstruction
   , findInstrPattern
   , findLocation
-  , updateNodeInEmitStrTemplate
   , isInstructionCopy
   , isInstructionInactive
   , isInstructionNull
   , isInstructionPhi
   , isInstructionSimd
+  , updateNodeInEmitStrTemplate
   )
 where
 
@@ -42,6 +44,8 @@ import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
   ( Natural )
+
+import qualified Data.Map as M
 
 import Data.List
   ( intercalate )
@@ -106,7 +110,10 @@ data Instruction
         -- ^ Patterns which correspond to the instruction. There must be at
         -- least one pattern. Each pattern also has a corresponding ID which
         -- must be globally unique across all patterns and all instructions, but
-        -- not necessarily contiguous.
+        -- not necessarily contiguous. It is assumed that there are only a few
+        -- patterns per instruction (less than ten), hence it is represented as
+        -- a list instead of a map even though it is common to search for a
+        -- pattern with a given ID.
       , instrProps :: InstrProperties
         -- ^ Instruction properties.
       }
@@ -147,13 +154,18 @@ data TargetMachine
   = TargetMachine
       { tmID :: TargetMachineID
         -- ^ The identifier of the target machine.
-      , tmInstructions :: [Instruction]
+      , tmInstructions :: M.Map InstructionID Instruction
         -- ^ The set of assembly instructions supported by the target machine.
-      , tmLocations :: [Location]
+        -- It is assumed there are many instructions per target machine (more
+        -- than a hundred), hence they are represented as a map because it is
+        -- common to search for an instruction with a given ID.
+      , tmLocations :: M.Map LocationID Location
         -- ^ The machine locations, given as pairs of location IDs and location
         -- names (which are needed during instruction emission). Each must be
         -- given a unique location ID, but not necessarily in a contiguous
-        -- order.
+        -- order. It is assumed there are many locations per target machine
+        -- (more than a hundred), hence they are represented as a map because it
+        -- is common to search for an location with a given ID.
       , tmPointerSize :: Natural
        -- ^ The size (in number of bits) of a memory pointer in the target
        -- macine.
@@ -187,15 +199,14 @@ instance PrettyShow Location where
 -- Functions
 -------------
 
--- | Given a list of instructions, the function finds the 'Instruction' entity
--- with matching instruction ID. If there is more than one match, the first
--- found is returned. If no such entity is found, 'Nothing' is returned.
-findInstruction :: [Instruction] -> InstructionID -> Maybe Instruction
-findInstruction is iid =
-  let found = filter (\i -> instrID i == iid) is
-  in if length found > 0
-     then Just $ head found
-     else Nothing
+-- | Gets all instructions from a given target machine.
+getAllInstructions :: TargetMachine -> [Instruction]
+getAllInstructions = M.elems . tmInstructions
+
+-- | Finds an instruction with a given ID within the given target machine. If no
+-- such instruction is found, 'Nothing' is returned.
+findInstruction :: TargetMachine -> InstructionID -> Maybe Instruction
+findInstruction tm iid = M.lookup iid (tmInstructions tm)
 
 -- | Given a list of instruction patterns, the function finds the 'InstrPattern'
 -- entity with matching pattern ID. If there is more than one match, the first
@@ -207,15 +218,14 @@ findInstrPattern ps pid =
      then Just $ head found
      else Nothing
 
--- | Given a list of locations, the function finds the 'Location' with matching
--- location ID. If there is more than one match, the first found is returned. If
--- no such entity is found, 'Nothing' is returned.
-findLocation :: [Location] -> LocationID -> Maybe Location
-findLocation rs rid =
-  let found = filter (\r -> locID r == rid) rs
-  in if length found > 0
-     then Just $ head found
-     else Nothing
+-- | Gets all locations from a given target machine.
+getAllLocations :: TargetMachine -> [Location]
+getAllLocations = M.elems . tmLocations
+
+-- | Finds an location with a given ID within the given target machine. If no
+-- such location is found, 'Nothing' is returned.
+findLocation :: TargetMachine -> LocationID -> Maybe Location
+findLocation tm iid = M.lookup iid (tmLocations tm)
 
 -- | Replaces a node reference used in the template with another reference.
 updateNodeInEmitStrTemplate

@@ -69,7 +69,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
       data_nodes = filter isDatumNode $ getAllNodes g
       matches = pmMatches matchset
       getPatternGraph pm =
-        let i = findInstruction (tmInstructions tm) (pmInstrID pm)
+        let i = findInstruction tm (pmInstrID pm)
             ip = findInstrPattern (instrPatterns $ fromJust i) (pmPatternID pm)
         in if isJust i && isJust ip
            then patOS $ fromJust $ ip

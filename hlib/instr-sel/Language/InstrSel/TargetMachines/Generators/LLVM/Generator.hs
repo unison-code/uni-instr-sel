@@ -40,17 +40,16 @@ import qualified LLVM.General.AST.Name as LLVM
 import Control.Monad
   ( foldM )
 
+import qualified Data.Map as M
 import Data.List
-  ( sort )
-
+  ( intersperse
+  , sort
+  )
 import Data.Maybe
   ( isJust
   , fromJust
   , mapMaybe
   )
-
-import Data.List
-  ( intersperse )
 
 
 
@@ -93,8 +92,10 @@ generateTargetMachine m =
                                        generic_instrs
      return TM.TargetMachine
               { TM.tmID = toTargetMachineID $ capitalize $ LLVM.mdID m
-              , TM.tmInstructions = all_instrs
-              , TM.tmLocations = locs
+              , TM.tmInstructions = M.fromList $
+                                    zip (map TM.instrID all_instrs) all_instrs
+              , TM.tmLocations = M.fromList $
+                                 zip (map TM.locID locs) locs
               , TM.tmPointerSize = LLVM.mdPointerSize m
               , TM.tmNullPointerValue = LLVM.mdNullPointerValue m
               }

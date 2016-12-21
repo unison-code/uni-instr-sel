@@ -121,7 +121,7 @@ mkHLFunctionParams function target =
         -- register
         let okay_locs = map locID $
                         filter (isNothing . locValue) $
-                        tmLocations target
+                        (getAllLocations target)
         in map (\n -> (n, okay_locs)) $
            functionInputs function
       int_const_data =
@@ -180,7 +180,7 @@ mkHLMachineParams :: TargetMachine -> HighLevelMachineParams
 mkHLMachineParams target =
   HighLevelMachineParams
     { hlMachineID = tmID target
-    , hlMachineLocations = map locID (tmLocations target)
+    , hlMachineLocations = map locID (getAllLocations target)
     }
 
 -- | First constructs a 'HighLevelMatchParams' for each 'PatternMatch'.
@@ -206,8 +206,7 @@ mkHLMatchParams
      -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
      -- processing the next 'Match'.
 mkHLMatchParams target match oid =
-  let instr = fromJust $ findInstruction (tmInstructions target)
-                                         (pmInstrID match)
+  let instr = fromJust $ findInstruction target (pmInstrID match)
       pat = fromJust $ findInstrPattern (instrPatterns instr)
                                         (pmPatternID match)
   in processMatch instr pat (pmMatch match) (pmMatchID match) oid

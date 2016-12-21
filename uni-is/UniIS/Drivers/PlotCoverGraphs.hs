@@ -127,9 +127,8 @@ filterMatches
   -> [PatternMatch]
   -> Either String [PatternMatch]
 filterMatches tm p_fun ms =
-  do let is = tmInstructions tm
-     ms' <- mapM ( \m -> let iid = pmInstrID m
-                             i = findInstruction is iid
+  do ms' <- mapM ( \m -> let iid = pmInstrID m
+                             i = findInstruction tm iid
                          in if isJust i
                             then if p_fun $ fromJust i
                                  then return $ Just m

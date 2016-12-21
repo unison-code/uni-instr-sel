@@ -186,7 +186,7 @@ loadInstrPattern
   -> PatternID
   -> IO InstrPattern
 loadInstrPattern tm iid pid =
-  do let instr = findInstruction (tmInstructions tm) iid
+  do let instr = findInstruction tm iid
      when (isNothing instr) $
        reportErrorAndExit $ "No instruction with ID '" ++ (pShow iid) ++
                             "' in target machine '" ++ (pShow $ tmID tm) ++

@@ -168,7 +168,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
               let tm_res = retrieveTargetMachine $ llTMID model
                   tm = fromJust tm_res
                   iid = (llMatchInstructionIDs model) !! (fromIntegral ai)
-                  instr_res = findInstruction (tmInstructions tm) iid
+                  instr_res = findInstruction tm iid
                   instr = if isJust instr_res
                           then fromJust instr_res
                           else error $ "No instruction with ID " ++ (pShow iid)

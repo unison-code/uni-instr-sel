@@ -30,6 +30,7 @@ import Language.InstrSel.Utils
   ( groupBy )
 import Language.InstrSel.Utils.Natural
 
+import qualified Data.Map as M
 import Data.List
   ( sortBy )
 import Data.Maybe
@@ -54,7 +55,7 @@ copyExtend tm =
         in if not is_copy
            then i { instrPatterns = map copyExtendPat (instrPatterns i) }
            else i
-      new_instrs = map copyExtendInstr (tmInstructions tm)
+      new_instrs = M.map copyExtendInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
 -- | Inserts a copy node along every data-flow edge that involves a use of a
@@ -130,7 +131,7 @@ lowerPointers tm =
                      }
       lowerInstr i =
         i { instrPatterns = map lowerPat (instrPatterns i) }
-      new_instrs = map lowerInstr (tmInstructions tm)
+      new_instrs = M.map lowerInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
 -- | For each value node that is copied multiple times, an additional mapping

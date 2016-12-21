@@ -304,7 +304,7 @@ getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
 -- that such an entity always exists in the given list.
 getInstrPattern :: TargetMachine -> InstructionID -> PatternID -> InstrPattern
 getInstrPattern tm iid pid =
-  let instr = findInstruction (tmInstructions tm) iid
+  let instr = findInstruction tm iid
       pat = findInstrPattern (instrPatterns $ fromJust instr) pid
   in fromJust pat
 
@@ -401,7 +401,7 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
   in if isJust reg_id
      then let code = emittedCode st
               (AsmInstruction instr_str) = head code
-              reg = fromJust $ findLocation (tmLocations tm) (fromJust reg_id)
+              reg = fromJust $ findLocation tm (fromJust reg_id)
               origin = lookup n ( hlFunValueOriginData
                                   $ hlFunctionParams model
                                 )
