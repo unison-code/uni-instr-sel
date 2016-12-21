@@ -759,6 +759,32 @@ constraint
 %       ->
 %       (not sel[m1] \/ not sel[m2])
 %  );
+%
+% [MC] salvaged:
+% If two matches selected with same fall-thru blocks but different entry blocks,
+% then one entry block must be the empty successor of the other one.
+% If two matches selected with different fall-thru blocks but same entry blocks,
+% then one fall-thru block must be the successor of the other one, which must be empty.
+constraint
+  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
+         , j in index_set_1of2(fallThroughBlockOfMatch)
+           where i < j
+         )
+  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
+        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
+        , int: entry_b1 = min(entryBlockOfMatch[m1])
+        , int:       m2 = fallThroughBlockOfMatch[j, 1]
+        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
+        , int: entry_b2 = min(entryBlockOfMatch[m2])
+        }
+    in if fall_b1 = fall_b2 /\ entry_b1 != entry_b2
+       then
+        not sel[m1] \/ not sel[m2] \/ succ[entry_b1] = entry_b2 \/ succ[entry_b2] = entry_b1
+       else if fall_b1 != fall_b2 /\ entry_b1 = entry_b2
+       then
+        not sel[m1] \/ not sel[m2] \/ succ[fall_b1] = fall_b2 \/ succ[fall_b2] = fall_b1
+       else true endif endif
+  );
 
 % Two matches can't both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of
