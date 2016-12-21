@@ -1,0 +1,54 @@
+0:
+  %const.2048.copy.1 = ##2048
+  %const.-3.copy.1 = ##-3
+  %1 = call countbits (%n)
+  %3 = cmp.gtu(%1, %const.2048.copy.1)
+  memb (%rpk) = %1
+  if (%3) jump bb0
+bb1:
+4:
+  %const.256.copy.4 = ##256
+  %6 = memb (%const.@%global_precision)
+  %7 = sxth(%6)
+  %8 = asl(%7, #1)
+  %9 = cmp.lt(%8, %const.256.copy.4)
+  if (%9) jump bb2
+bb3:
+16:
+reg2rsaref.exit:
+  %21 = memb (%const.@%global_precision)
+  %22 = sxth(%21)
+  %23 = asl(%22, #1)
+  %24 = cmp.lt(%23, %const.256.copy.4)
+  if (%24) jump bb4
+bb5:
+31:
+  %11 = sub(%const.256.copy.4, %8)
+  %26 = sub(%const.256.copy.4, %23)
+  %const.4.copy.1 = ##4
+  %const.2.copy.1 = ##2
+  %gep_array = mpy(%const.2.copy.1, %7)
+  %gep_array16 = mpy(%const.2.copy.1, %22)
+  %const.-256.copy.1 = ##-256
+  %const.260.copy.2 = ##260
+  %const.516.copy.1 = ##516
+  %const.0.copy.3 = ##0
+  %28 = sub(%const.0.copy.3, %23)
+  %gep = add(%rpk, %const.4.copy.1)
+  %gep2 = add(%rpk, %const.260.copy.2)
+  %gep2 += sub(%const.0.copy.3, %8)
+  %gep10 = add(%rpk, %const.260.copy.2)
+  %const.-256.copy.1 += add(%n, %gep_array)
+  %28 += add(%rpk, %const.516.copy.1)
+  %const.-256.copy.1 += add(%e, %gep_array16)
+bb0:
+reg2rsaref.exit1:
+  %.0 = PHI (%const.-3.copy.1, 0) (%const.0.copy.1, 25) (%const.0.copy.3, 31)
+  return %.0
+bb4:
+25:
+  %const.0.copy.1 = ##0
+  jump reg2rsaref.exit1
+bb2:
+10:
+  jump reg2rsaref.exit
