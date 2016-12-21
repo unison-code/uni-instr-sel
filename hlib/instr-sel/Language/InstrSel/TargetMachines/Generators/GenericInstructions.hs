@@ -122,7 +122,11 @@ mkPhiInstruction mkEmit =
                  , instrPatterns = map mkPat [2..10]
                  , instrProps = InstrProperties { instrCodeSize = 0
                                                 , instrLatency = 0
+                                                , instrIsCopy = False
                                                 , instrIsInactive = False
+                                                , instrIsNull = False
+                                                , instrIsPhi = True
+                                                , instrIsSimd = False
                                                 }
                  }
 
@@ -156,7 +160,11 @@ mkBrFallThroughInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsCopy = False
                                       , instrIsInactive = False
+                                      , instrIsNull = True
+                                      , instrIsPhi = False
+                                      , instrIsSimd = False
                                       }
        }
 
@@ -189,7 +197,11 @@ mkDataDefInstruction =
                          ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsCopy = False
                                       , instrIsInactive = False
+                                      , instrIsNull = True
+                                      , instrIsPhi = False
+                                      , instrIsSimd = False
                                       }
        }
 
@@ -224,7 +236,11 @@ mkTempNullCopyInstruction =
                                              ]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsCopy = True
                                       , instrIsInactive = False
+                                      , instrIsNull = True
+                                      , instrIsPhi = False
+                                      , instrIsSimd = False
                                       }
        }
 
@@ -255,7 +271,11 @@ mkInactiveInstruction =
        , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
+                                      , instrIsCopy = True
                                       , instrIsInactive = True
+                                      , instrIsNull = True
+                                      , instrIsPhi = False
+                                      , instrIsSimd = False
                                       }
        }
 

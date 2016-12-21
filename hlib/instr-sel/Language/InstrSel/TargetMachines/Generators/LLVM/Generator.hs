@@ -19,6 +19,7 @@ import Language.InstrSel.OpStructures.Base
 import Language.InstrSel.OpStructures.LLVM.OSMaker
 import qualified Language.InstrSel.TargetMachines.Base as TM
 import Language.InstrSel.TargetMachines.Generators.GenericInstructions
+import Language.InstrSel.TargetMachines.Generators.PatternAnalysis
 import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Functions.IDs
@@ -118,8 +119,8 @@ mkInstructions m locs =
   mapM processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
   where processInstr (i_id, i) =
           do let instr_id = TM.toInstructionID i_id
-                 props = mkInstrProps i
              patterns <- mkInstrPatterns locs i
+             let props = mkInstrProps i patterns
              return TM.Instruction { TM.instrID = instr_id
                                    , TM.instrPatterns = patterns
                                    , TM.instrProps = props
@@ -307,11 +308,15 @@ mkEmitString i os str =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
 
-mkInstrProps :: LLVM.Instruction -> TM.InstrProperties
-mkInstrProps i=
+mkInstrProps :: LLVM.Instruction -> [TM.InstrPattern] -> TM.InstrProperties
+mkInstrProps i pats =
   TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
                      , TM.instrLatency = LLVM.instrLatency i
+                     , TM.instrIsCopy = arePatternsCopy pats
                      , TM.instrIsInactive = False
+                     , TM.instrIsNull = arePatternsNull pats
+                     , TM.instrIsPhi = arePatternsPhi pats
+                     , TM.instrIsSimd = arePatternsSimd pats
                      }
 
 -- | Gets the operand with a given name of a given instruction. If no such

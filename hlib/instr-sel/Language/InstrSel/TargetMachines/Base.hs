@@ -38,7 +38,6 @@ where
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
 import Language.InstrSel.Graphs
-import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
@@ -127,8 +126,17 @@ data InstrProperties
         -- ^ Instruction code size (in bytes).
       , instrLatency :: Integer
         -- ^ Instruction latency (in cycles).
+      , instrIsCopy :: Bool
+        -- ^ Whether the instruction represents a copy.
       , instrIsInactive :: Bool
         -- ^ Whether the instruction represents an inactive operation.
+      , instrIsNull :: Bool
+        -- ^ Whether the instruction is a null instruction, i.e. does not emit
+        -- anything during code emission.
+      , instrIsPhi :: Bool
+        -- ^ Whether the instruction represents an phi operation.
+      , instrIsSimd :: Bool
+        -- ^ Whether the instruction is a SIMD instruction.
       }
   deriving (Show)
 
@@ -246,53 +254,22 @@ updateNodeInEmitStrTemplate new_n old_n (EmitStringTemplate ts) =
         update p = p
         checkAndReplace nid = if nid == old_n then new_n else nid
 
--- ^ Checks whether the instruction is a null instruction. An instruction is a
--- null instruction if all of its pattern graphs contain at least operation node
--- and does not emit anything during code emission.
+-- ^ Checks whether the instruction is a null instruction.
 isInstructionNull :: Instruction -> Bool
-isInstructionNull i =
-  let pats = instrPatterns i
-      isNullPattern p =
-        let os = patOS p
-            g = osGraph os
-            op_nodes = filter isOperationNode $ getAllNodes g
-            emit_str = patEmitString p
-        in length op_nodes > 0 && length (emitStrParts emit_str) == 0
-  in all isNullPattern pats
+isInstructionNull = instrIsNull . instrProps
 
 -- ^ Checks whether the instruction is a copy instruction.
 isInstructionCopy :: Instruction -> Bool
-isInstructionCopy i =
-  let pats = instrPatterns i
-      isCopyPattern p =
-        let os = patOS p
-            g = osGraph os
-            op_nodes = filter isOperationNode $ getAllNodes g
-        in length op_nodes == 1 && isCopyNode (head op_nodes)
-  in all isCopyPattern pats
+isInstructionCopy = instrIsCopy . instrProps
 
 -- ^ Checks whether the instruction is an inactive instruction.
 isInstructionInactive :: Instruction -> Bool
-isInstructionInactive i = instrIsInactive $ instrProps i
+isInstructionInactive = instrIsInactive . instrProps
 
 -- ^ Checks whether the instruction is a phi instruction.
 isInstructionPhi :: Instruction -> Bool
-isInstructionPhi i =
-  let pats = instrPatterns i
-      isPhiPattern p =
-        let os = patOS p
-            g = osGraph os
-            op_nodes = filter isOperationNode $ getAllNodes g
-        in length op_nodes == 1 && isPhiNode (head op_nodes)
-  in all isPhiPattern pats
+isInstructionPhi = instrIsPhi . instrProps
 
 -- ^ Checks whether the instruction is a SIMD instruction.
 isInstructionSimd :: Instruction -> Bool
-isInstructionSimd i =
-  let pats = instrPatterns i
-      isSimdPattern p =
-        let os = patOS p
-            g = osGraph os
-            cs = weakComponentsOf g
-        in length cs > 1 && all (areGraphsIsomorphic (head cs)) (tail cs)
-  in all isSimdPattern pats
+isInstructionSimd = instrIsSimd . instrProps
