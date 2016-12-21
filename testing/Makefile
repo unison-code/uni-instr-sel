@@ -98,6 +98,10 @@ uni-is-llvm:
 uni-is:
 	cd .. && make uni-is
 
+.PHONY: uni-is-prof
+uni-is-prof:
+	cd .. && make uni-is-prof
+
 .PHONY: clean-toolchain
 clean-toolchain:
 	cd .. && make clean
