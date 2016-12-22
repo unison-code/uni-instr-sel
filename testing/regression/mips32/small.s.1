@@ -1,14 +1,14 @@
 entry:
-  %add = ADDU %a, %a
-  %cmp = SLTi %add 10
-  BNE $0, $%cmp, bb0
+  [%add] <- "ADDU $%add, $%a, $%a" <- [%a, %a]
+  [%cmp] <- "SLTi %cmp, %add, 10" <- [%add]
+  [] <- "BNE $0, $%cmp, bb0" <- [%cmp]
 bb1:
 if.end:
-  MFHI $%add.copy.2
-  B return
+  [%add.copy.2] <- "MFHI $%add.copy.2" <- [%add]
+  [] <- "B return" <- []
 bb0:
 if.then:
-  %const.10.copy.2 = ADDiu $0, 10
+  [%const.10.copy.2] <- "ADDiu %const.10.copy.2, $0, 10" <- []
 return:
-  %retval.0 = PHI (%const.10.copy.2, if.then) (%add.copy.2, if.end)
-  RetRA %retval.0
+  [%retval.0] <- "PHI (%const.10.copy.2, if.then) (%add.copy.2, if.end)" <- [%const.10.copy.2, %add.copy.2]
+  [] <- "RetRA %retval.0" <- [%retval.0]

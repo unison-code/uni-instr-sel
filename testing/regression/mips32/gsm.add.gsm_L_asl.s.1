@@ -1,28 +1,28 @@
 0:
-  %const.0.copy.3 = ADDiu $0, 0
-  %tmp.1 = SLTi %n, 31
-  BEQ %tmp.1, $0, bb0
+  [%const.0.copy.3] <- "ADDiu %const.0.copy.3, $0, 0" <- []
+  [] <- "SLTi %tmp.1, %n, 31" <- [%n]
+  [] <- "BEQ %tmp.1, $0, bb0" <- []
 bb1:
 2:
-  %3 = SLTI %n, -31
-  BNE $0, $%3, bb2
+  [%3] <- "SLTI $%3, $%n, -31" <- [%n]
+  [] <- "BNE $0, $%3, bb2" <- [%3]
 bb3:
 6:
-  %7 = SLTI %n, 0
-  BNE $0, $%7, bb4
+  [%7] <- "SLTI $%7, $%n, 0" <- [%n]
+  [] <- "BNE $0, $%7, bb4" <- [%7]
 bb5:
 11:
-  %12 = SLLV %a, %n
-  B gsm_L_asr.exit
+  [%12] <- "SLLV $%12, $%a, $%n" <- [%a, %n]
+  [] <- "B gsm_L_asr.exit" <- []
 bb4:
 8:
-  %9 = SUBU r0, %n
-  %10 = SRAV %a, %9
-  B gsm_L_asr.exit
+  [%9] <- "SUBU $%9, $r0, $%n" <- [%const.0.copy.2, %n]
+  [%10] <- "SRAV $%10, $%a, $%9" <- [%a, %9]
+  [] <- "B gsm_L_asr.exit" <- []
 bb2:
 4:
-  %5 = SRA %a, 31
+  [%5] <- "SRA $%5, $%a, 31" <- [%a]
 bb0:
 gsm_L_asr.exit:
-  %.0 = PHI (%5, 4) (%12, 11) (%const.0.copy.3, 0) (%10, 8)
-  RetRA %.0
+  [%.0] <- "PHI (%5, 4) (%12, 11) (%const.0.copy.3, 0) (%10, 8)" <- [%5, %12, %const.0.copy.3, %10]
+  [] <- "RetRA %.0" <- [%.0]

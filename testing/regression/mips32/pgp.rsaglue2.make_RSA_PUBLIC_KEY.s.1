@@ -1,50 +1,50 @@
 0:
-  %const.-3.copy.1 = ADDi $0, -3
-  %const.2048.copy.1 = ADDiu $0, 2048
-  r0 = CALL countbits (%n)
-  SW r0, 0(%rpk)
-  BGTU $r0, $%const.2048.copy.1, bb0
+  [%const.-3.copy.1] <- "ADDi %const.-3.copy.1, $0, -3" <- []
+  [%1] <- "CALL countbits" <- [%n]
+  [%3] <- "SLTIU %3, 2048, %1" <- [%1]
+  [] <- "SW %1, 0(%rpk)" <- [%1, %rpk]
+  [] <- "BNE $0, $%3, bb0" <- [%3]
 bb1:
 4:
-  %6 = LW 0(r0)
-  %7 = ADD $0, %6
-  %8 = SLL %7, 1
-  %9 = SLTI %8, 256
-  BNE $0, $%9, bb2
+  [%6] <- "LW %6, 0(%const.@%global_precision)" <- [%const.@%global_precision]
+  [%7] <- "ADD %7, $0, %6" <- [%6]
+  [%8] <- "SLL $%8, $%7, 1" <- [%7]
+  [%9] <- "SLTI $%9, $%8, 256" <- [%8]
+  [] <- "BNE $0, $%9, bb2" <- [%9]
 bb3:
 16:
-  B reg2rsaref.exit
+  [] <- "B reg2rsaref.exit" <- []
 bb2:
 10:
+  [%gep] <- "ADDI $%gep, $%rpk, 4" <- [%rpk]
 reg2rsaref.exit:
-  %21 = LW 0(r0)
-  %22 = ADD $0, %21
-  %23 = SLL %22, 1
-  %24 = SLTI %23, 256
-  BNE $0, $%24, bb4
+  [%21] <- "LW %21, 0(%const.@%global_precision)" <- [%const.@%global_precision]
+  [%22] <- "ADD %22, $0, %21" <- [%21]
+  [%23] <- "SLL $%23, $%22, 1" <- [%22]
+  [%24] <- "SLTI $%24, $%23, 256" <- [%23]
+  [] <- "BNE $0, $%24, bb4" <- [%24]
 bb5:
 31:
-  %const.0.copy.4 = ADDiu $0, 0
-  B reg2rsaref.exit1
+  [%const.0.copy.3] <- "ADDiu %const.0.copy.3, $0, 0" <- []
+  [] <- "B reg2rsaref.exit1" <- []
 bb4:
 25:
-  %13 = SUBU r0, %8
-  %28 = SUBU r0, %23
-  %const.-256.copy.2 = ADDi $0, -256
-  %const.4.copy.1 = ADDiu $0, 4
-  %const.260.copy.2 = ADDiu $0, 260
-  %const.256.copy.4 = ADDiu $0, 256
-  %11 = SUBU %const.256.copy.4, %8
-  %26 = SUBU %const.256.copy.4, %23
-  %const.2.copy.2 = ADDiu $0, 2
-  %gep_array = MUL %7, %const.2.copy.2
-  %gep_array16 = MUL %22, %const.2.copy.2
-  %const.0.copy.3 = ADDiu $0, 0
-  %gep12 = ADDI %rpk, 516
-  (%gep, %gep2, %gep19) = ADD3 (%const.4.copy.1, %rpk), (%const.260.copy.2, %rpk), (%const.-256.copy.2, %gep17)
-  (%gep4, %gep6, %gep14) = ADD3 (%13, %gep2), (%gep_array, %n), (%28, %gep12)
-  (%gep8, %gep10, %gep17) = ADD3 (%const.-256.copy.2, %gep6), (%const.260.copy.2, %rpk), (%gep_array16, %e)
+  [%13] <- "SUBU $%13, $r0, $%8" <- [%const.0.copy.4, %8]
+  [%28] <- "SUBU $%28, $r0, $%23" <- [%const.0.copy.2, %23]
+  [%const.-256.copy.1] <- "ADDi %const.-256.copy.1, $0, -256" <- []
+  [%const.0.copy.1] <- "ADDiu %const.0.copy.1, $0, 0" <- []
+  [%const.2.copy.1] <- "ADDiu %const.2.copy.1, $0, 2" <- []
+  [%gep_array] <- "MUL $%gep_array, $%7, $%const.2.copy.1" <- [%7, %const.2.copy.1]
+  [%gep_array16] <- "MUL $%gep_array16, $%22, $%const.2.copy.1" <- [%22, %const.2.copy.1]
+  [%const.256.copy.4] <- "ADDiu %const.256.copy.4, $0, 256" <- []
+  [%11] <- "SUBU $%11, $%const.256.copy.4, $%8" <- [%const.256.copy.4, %8]
+  [%26] <- "SUBU $%26, $%const.256.copy.4, $%23" <- [%const.256.copy.4, %23]
+  [%gep2] <- "ADDI $%gep2, $%rpk, 260" <- [%rpk]
+  [%gep10] <- "ADDI $%gep10, $%rpk, 260" <- [%rpk]
+  [%gep12] <- "ADDI $%gep12, $%rpk, 516" <- [%rpk]
+  [%gep4, %gep8, %gep17] <- "(%gep4, %gep8, %gep17) = ADD3 (%13, %gep2), (%const.-256.copy.1, %gep6), (%gep_array16, %e)" <- [%e, %gep6, %gep2, %gep_array16, %const.-256.copy.1, %13]
+  [%gep6, %gep14, %gep19] <- "(%gep6, %gep14, %gep19) = ADD3 (%gep_array, %n), (%28, %gep12), (%const.-256.copy.1, %gep17)" <- [%gep17, %gep12, %n, %const.-256.copy.1, %28, %gep_array]
 bb0:
 reg2rsaref.exit1:
-  %.0 = PHI (%const.-3.copy.1, 0) (%const.0.copy.3, 25) (%const.0.copy.4, 31)
-  RetRA %.0
+  [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, 25) (%const.0.copy.3, 31)" <- [%const.-3.copy.1, %const.0.copy.1, %const.0.copy.3]
+  [] <- "RetRA %.0" <- [%.0]
