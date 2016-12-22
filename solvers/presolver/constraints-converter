@@ -102,28 +102,6 @@ with open(json_file, 'r') as file:
 
 json_m_cons = json_data["match-constraints"]
 
-# Extends 'match-same-value-locs' parameters
-params = json_data["match-same-value-locs"]
-for m in range(len(json_m_cons)):
-    new_constraints = []
-    for c in json_m_cons[m]:
-        l = parseSExpr(c)
-        if ( len(l) == 3 and l[0] == "=="
-             and len(l[1]) == 2 and l[1][0] == "loc-to-num"
-             and len(l[1][1]) == 2 and l[1][1][0] == "loc-of-dnode"
-             and len(l[1][1][1]) == 2 and l[1][1][1][0] == "ai"
-             and len(l[2]) == 2 and l[2][0] == "loc-to-num"
-             and len(l[2][1]) == 2 and l[2][1][0] == "loc-of-dnode"
-             and len(l[2][1][1]) == 2 and l[2][1][1][0] == "ai"
-           ):
-            d1 = int(l[1][1][1][1])
-            d2 = int(l[2][1][1][1])
-            params.append([m, d1, d2])
-        else:
-            new_constraints.append(c)
-    json_m_cons[m] = new_constraints
-json_data["match-same-value-locs"] = params
-
 # Produce 'match-fall-through-block' parameters
 params = []
 for m in range(len(json_m_cons)):
