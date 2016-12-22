@@ -63,7 +63,8 @@ generateModule tm =
                    \  ( fromList )\n\n"
       tm_func_src = "theTM :: TargetMachine\n\
                     \theTM = " ++ (renameFuncs $ show tm)
-      res = parseFileContents $ header_src ++ tm_func_src
+      haskell_code = header_src ++ tm_func_src
+      res = parseFileContents haskell_code
       prettify m = prettyPrintStyleMode (style { lineLength = 80 })
                                         defaultMode m
   in case res

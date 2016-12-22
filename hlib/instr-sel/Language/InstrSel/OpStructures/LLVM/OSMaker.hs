@@ -1279,11 +1279,12 @@ mkPatternDFGFromSetregCall
      st1 <- updateOSGraph st0 g1
      st2 <- if do_merge
             then replaceNodeIDInBuildState (G.getNodeID n1) (G.getNodeID n2) st1
-            else do let os = C.addSameDataLocConstraints [ G.getNodeID n1
-                                                         , G.getNodeID n2
-                                                         ]
-                                                         (opStruct st1)
-                        st = st1 { opStruct = os }
+            else do let os0 = opStruct st1
+                        new_same_locs = ( (G.getNodeID n1, G.getNodeID n2)
+                                        : OS.osSameLocations os0
+                                        )
+                        os1 = os0 { OS.osSameLocations = new_same_locs }
+                        st = st1 { opStruct = os1 }
                     addPatExtValue st (G.getNodeID n2)
      return st2
 mkPatternDFGFromSetregCall _ _ i@(LLVM.Call {}) =

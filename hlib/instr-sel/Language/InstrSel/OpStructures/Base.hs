@@ -40,6 +40,8 @@ data OpStructure
       , osEntryBlockNode :: Maybe G.NodeID
       , osValidLocations :: [(G.NodeID, [LocationID])]
         -- ^ The first element represents the ID of a value node.
+      , osSameLocations :: [(G.NodeID, G.NodeID)]
+        -- ^ Pairs of value nodes that must be given the same location.
       , osConstraints :: [Constraint]
       }
   deriving (Show)
@@ -56,6 +58,7 @@ instance FromJSON OpStructure where
       <$> v .: "graph"
       <*> v .: "entry-block-node"
       <*> v .: "valid-locs"
+      <*> v .: "same-locs"
       <*> v .: "constraints"
   parseJSON _ = mzero
 
@@ -64,6 +67,7 @@ instance ToJSON OpStructure where
     object [ "graph"            .= (osGraph os)
            , "entry-block-node" .= (osEntryBlockNode os)
            , "valid-locs"       .= (osValidLocations os)
+           , "same-locs"        .= (osSameLocations os)
            , "constraints"      .= (osConstraints os)
            ]
 
@@ -78,6 +82,7 @@ mkEmpty :: OpStructure
 mkEmpty = OpStructure { osGraph = G.mkEmpty
                       , osEntryBlockNode = Nothing
                       , osValidLocations = []
+                      , osSameLocations = []
                       , osConstraints = []
                       }
 

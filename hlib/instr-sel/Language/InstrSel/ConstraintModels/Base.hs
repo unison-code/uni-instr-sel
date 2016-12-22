@@ -84,6 +84,8 @@ data HighLevelFunctionParams
         -- first element is a block node and the second element is a state node.
       , hlFunValidValueLocs :: [(NodeID, [LocationID])]
         -- ^ The value nodes together with a list of valid locations.
+      , hlFunSameValueLocs :: [(NodeID, NodeID)]
+        -- ^ The value nodes that must be assigned the same location.
       , hlFunValueIntConstData :: [(NodeID, Integer)]
         -- ^ The value nodes which represent integer constants together with
         -- their values.
@@ -127,21 +129,21 @@ data HighLevelMatchParams
         -- ^ The operations in the function graph which are covered by this
         -- match.
       , hlMatchOperandsDefined :: [OperandID]
-        -- ^ The operands in the function graph which are defined by this match.
+        -- ^ The operands which are defined by this match.
       , hlMatchOperandsUsed :: [OperandID]
-        -- ^ The operands in the function graph which are used by this match.
+        -- ^ The operands which are used by this match.
       , hlMatchInputOperands :: [OperandID]
-        -- ^ The operands in the function graph which act as input to this
-        -- match.
+        -- ^ The operands which act as input to this match.
       , hlMatchOutputOperands :: [OperandID]
-        -- ^ The operands in the function graph which act as output of this
-        -- match.
+        -- ^ The operands which act as output of this match.
       , hlMatchInternalOperands :: [OperandID]
-        -- ^ The operands in the function graph which are external to this match
-        -- (i.e. neither input nor output).
+        -- ^ The operands which are external to this match (i.e. neither input
+        -- nor output).
       , hlMatchValidValueLocs :: [(OperandID, [LocationID])]
-        -- ^ The operands in the function graph together with a list of
-        -- locations that are valid for this match.
+        -- ^ The operands together with a list of locations that are valid for
+        -- this match.
+      , hlMatchSameValueLocs :: [(OperandID, OperandID)]
+        -- ^ The operands which must be assigned the same location.
       , hlMatchEntryBlock :: Maybe NodeID
         -- ^ A block in the function graph that appears as entry block
         -- (if there is such a block) of this match.
@@ -169,23 +171,23 @@ data HighLevelMatchParams
         -- ^ Whether the corresponding pattern contains any control flow.
       , hlMatchOperandsUsedByPhis :: [(NodeID, OperandID)]
         -- ^ The operands, together with the blocks that appear in the
-        -- definition edges, in the function graph which are used by phi nodes
-        -- appearing this match. The first element is a block node and the
-        -- second element is a datum node. This information is required for
-        -- adding the necessary constraints as well as during instruction
-        -- emission in order to break cyclic data dependencies.
+        -- definition edges, which are used by phi nodes appearing this
+        -- match. The first element is a block node and the second element is a
+        -- datum node. This information is required for adding the necessary
+        -- constraints as well as during instruction emission in order to break
+        -- cyclic data dependencies.
       , hlMatchOperandsDefinedByPhis :: [(NodeID, OperandID)]
         -- ^ The operands, together with the blocks that appear in the
-        -- definition edges, in the function graph which are defined by phi
-        -- nodes appearing this match. The first element is a block node and the
-        -- second element is a datum node. This information is required for
-        -- adding the necessary constraints.
+        -- definition edges, which are defined by phi nodes appearing this
+        -- match. The first element is a block node and the second element is a
+        -- datum node. This information is required for adding the necessary
+        -- constraints.
       , hlMatchEmitStrNodeMaplist :: [[Maybe (Either OperandID NodeID)]]
         -- ^ A list of mappings of the node IDs that appears in the
         -- instruction's emit string template (which refer to nodes in the
-        -- pattern graph) to the node or operand IDs in the function graph which
-        -- are covered by this pattern. The map list has the following
-        -- appearance: the outer list corresponds to the outer list within the
+        -- pattern graph) to the node or operand IDs which are covered by this
+        -- pattern. The map list has the following appearance: the outer list
+        -- corresponds to the outer list within the
         -- 'Language.InstrSel.TargetMachines.Base.EmitStringTemplate', and each
         -- element in the inner list corresponds to an
         -- 'Language.InstrSel.TargetMachines.Base.EmitStringPart' with the same
@@ -223,9 +225,11 @@ data LowLevelModel
         -- used for symmetry breaking. The outer list represents groups of data
         -- that are interchangeable.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
-        -- ^ The valid locations for each datum in the function graph (an empty
-        -- list means that all locations are valid). The first element is the
-        -- array index of a particular datum, and the second element is a
+        -- ^ The valid locations for each datum in the function graph (no entry
+        -- means that all locations are valid). The first element is the array
+        -- index of a particular datum, and the second element is a location.
+      , llFunSameValueLocs :: [(ArrayIndex, ArrayIndex)]
+        -- ^ The data in the function graph which must be assigned the same
         -- location.
       , llFunEntryBlock :: ArrayIndex
         -- ^ The entry block of the function graph.
@@ -277,6 +281,11 @@ data LowLevelModel
         -- match. The first element is the array index of a particular match,
         -- the second element is an operand, and the third element is a
         -- location.
+      , llMatchSameValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The operands in a certain match that must be assigned the same
+        -- location. The first element is the array index of a particular match,
+        -- and the second and third elements are the array indices of the
+        -- operands.
       , llMatchEntryBlocks :: [Maybe ArrayIndex]
         -- ^ The block in the function graph which is the entry block (if any)
         -- of each match. An index into the list corresponds to the array index
@@ -472,6 +481,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "block-params"
       <*> v .: "state-def-edges"
       <*> v .: "valid-value-locs"
+      <*> v .: "same-value-locs"
       <*> v .: "int-constant-data"
       <*> v .: "value-origin-data"
       <*> v .: "call-name-data"
@@ -492,6 +502,7 @@ instance ToJSON HighLevelFunctionParams where
            , "block-params"             .= (hlFunBlockParams p)
            , "state-def-edges"          .= (hlFunStateDefEdges p)
            , "valid-value-locs"         .= (hlFunValidValueLocs p)
+           , "same-value-locs"          .= (hlFunSameValueLocs p)
            , "int-constant-data"        .= (hlFunValueIntConstData p)
            , "value-origin-data"        .= (hlFunValueOriginData p)
            , "call-name-data"           .= (hlFunCallNameData p)
@@ -529,6 +540,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "output-operands"
       <*> v .: "internal-operands"
       <*> v .: "valid-value-locs"
+      <*> v .: "same-value-locs"
       <*> v .: "entry-block"
       <*> v .: "spanned-blocks"
       <*> v .: "consumed-blocks"
@@ -558,6 +570,7 @@ instance ToJSON HighLevelMatchParams where
            , "output-operands"          .= (hlMatchOutputOperands p)
            , "internal-operands"        .= (hlMatchInternalOperands p)
            , "valid-value-locs"         .= (hlMatchValidValueLocs p)
+           , "same-value-locs"          .= (hlMatchSameValueLocs p)
            , "entry-block"              .= (hlMatchEntryBlock p)
            , "spanned-blocks"           .= (hlMatchSpannedBlocks p)
            , "consumed-blocks"          .= (hlMatchConsumedBlocks p)
@@ -598,6 +611,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-states"
       <*> v .: "fun-interchangeable-data"
       <*> v .: "fun-valid-value-locs"
+      <*> v .: "fun-same-value-locs"
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-block-exec-freqs"
@@ -614,6 +628,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-external-operands"
       <*> v .: "match-internal-operands"
       <*> v .: "match-valid-value-locs"
+      <*> v .: "match-same-value-locs"
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
       <*> v .: "match-consumed-blocks"
@@ -642,6 +657,7 @@ instance ToJSON LowLevelModel where
            , "fun-states"               .= (llFunStates m)
            , "fun-interchangeable-data" .= (llFunInterchangeableData m)
            , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
+           , "fun-same-value-locs"      .= (llFunSameValueLocs m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
            , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
            , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
@@ -658,6 +674,7 @@ instance ToJSON LowLevelModel where
            , "match-external-operands"  .= (llMatchExternalOperands m)
            , "match-internal-operands"  .= (llMatchInternalOperands m)
            , "match-valid-value-locs"   .= (llMatchValidValueLocs m)
+           , "match-same-value-locs"    .= (llMatchSameValueLocs m)
            , "match-entry-blocks"       .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
            , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)

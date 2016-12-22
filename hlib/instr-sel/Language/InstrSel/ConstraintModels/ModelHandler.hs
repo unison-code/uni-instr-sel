@@ -124,6 +124,7 @@ mkHLFunctionParams function target =
                         (getAllLocations target)
         in map (\n -> (n, okay_locs)) $
            functionInputs function
+      same_locs = osSameLocations $ functionOS function
       int_const_data =
         let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub $
@@ -170,6 +171,7 @@ mkHLFunctionParams function target =
        , hlFunBlockParams = bb_params
        , hlFunStateDefEdges = state_def_es
        , hlFunValidValueLocs = valid_locs
+       , hlFunSameValueLocs = same_locs
        , hlFunValueIntConstData = int_const_data
        , hlFunValueOriginData = value_origin_data
        , hlFunCallNameData = call_name_data
@@ -263,10 +265,18 @@ enableCopyingForMultUseInputsInPattern pat match =
                                                  else t
                                  ) $
                              osValidLocations old_os
+            new_same_locs = map ( \t@(n1, n2) -> if n1 == old_input_id
+                                                 then (new_input_id, n2)
+                                                 else if n2 == old_input_id
+                                                      then (n1, new_input_id)
+                                                      else t
+                                ) $
+                            osSameLocations old_os
             new_cs = map (replaceNodeIDsInC old_input_id new_input_id) $
                      osConstraints old_os
             new_os = old_os { osGraph = g1
                             , osValidLocations = new_valid_locs
+                            , osSameLocations = new_same_locs
                             , osConstraints = new_cs
                             }
             new_m = toMatch $
@@ -364,6 +374,11 @@ processMatch' instr pat match mid oid =
         in map getSingleFN fns
       valid_locs = map (\(pn, ls) -> (getOpIDForPatternDataNodeID pn, ls)) $
                    osValidLocations $ patOS pat
+      same_locs = map ( \(pn1, pn2) -> ( getOpIDForPatternDataNodeID pn1
+                                       , getOpIDForPatternDataNodeID pn2
+                                       )
+                      ) $
+                  osSameLocations $ patOS pat
       i_props = instrProps instr
   in ( HighLevelMatchParams
          { hlMatchInstructionID = instrID instr
@@ -377,6 +392,7 @@ processMatch' instr pat match mid oid =
          , hlMatchOutputOperands = nub $ getOpIDsForPatternDataNodes d_out_ns
          , hlMatchInternalOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
          , hlMatchValidValueLocs = valid_locs
+         , hlMatchSameValueLocs = same_locs
          , hlMatchEntryBlock =
              maybe Nothing (Just . head . findFNInMatch match) entry_b_node_id
          , hlMatchSpannedBlocks =
@@ -535,12 +551,17 @@ lowerHighLevelModel model ai_maps =
       f_valid_locs =
         concatMap (\(n, ls) -> map (\l -> (n, l)) ls) $
         hlFunValidValueLocs f_params
+      f_same_locs = hlFunSameValueLocs f_params
       m_valid_locs =
-        concatMap ( \m ->
-                    concatMap ( \(o, ls) ->
-                                map (\l -> (hlMatchID m, o, l)) ls
-                              ) $
-                    hlMatchValidValueLocs m
+        concatMap ( \m -> concatMap ( \(o, ls) ->
+                                      map (\l -> (hlMatchID m, o, l)) ls
+                                    ) $
+                          hlMatchValidValueLocs m
+                  ) $
+        m_params
+      m_same_locs =
+        concatMap ( \m -> map (\(o1, o2) -> (hlMatchID m, o1, o2)) $
+                          hlMatchSameValueLocs m
                   ) $
         m_params
   in LowLevelModel
@@ -556,6 +577,9 @@ lowerHighLevelModel model ai_maps =
        , llFunValidValueLocs =
            map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))$
            f_valid_locs
+       , llFunSameValueLocs =
+           map (\(d1, d2) -> (getAIForDatumNodeID d1, getAIForDatumNodeID d2))$
+           f_same_locs
        , llFunEntryBlock = getAIForBlockNodeID $ hlFunEntryBlock f_params
        , llFunBlockDomSets =
            map (\d -> map getAIForBlockNodeID (domSet d)) $
@@ -601,6 +625,13 @@ lowerHighLevelModel model ai_maps =
                                )
                ) $
            m_valid_locs
+       , llMatchSameValueLocs =
+           map ( \(m, o1, o2) -> ( getAIForMatchID m
+                                 , getAIForOperandID o1
+                                 , getAIForOperandID o2
+                                 )
+               ) $
+           m_same_locs
        , llMatchEntryBlocks =
            map (maybe Nothing (Just . getAIForBlockNodeID)) $
            map hlMatchEntryBlock m_params

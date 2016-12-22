@@ -123,7 +123,7 @@ mkPhiInstruction =
                        ]
         in InstrPattern
              { patID = (toPatternID $ n-2)
-             , patOS = OpStructure g Nothing [] []
+             , patOS = OpStructure g Nothing [] [] []
              , patInputData = [2..n+1]
              , patOutputData = [1]
              , patEmitString = emit_str
@@ -161,7 +161,7 @@ mkBrFallThroughInstruction =
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OpStructure g (Just 1) [] cs
+          , patOS = OpStructure g (Just 1) [] [] cs
           , patInputData = []
           , patOutputData = []
           , patEmitString = EmitStringTemplate []
@@ -197,7 +197,7 @@ mkDataDefInstruction =
       mkInstrPattern pid g cs =
         InstrPattern
           { patID = pid
-          , patOS = OpStructure g (Just 0) [] cs
+          , patOS = OpStructure g (Just 0) [] [] cs
           , patInputData = []
           , patOutputData = [1]
           , patEmitString = EmitStringTemplate []
@@ -233,10 +233,9 @@ mkTempNullCopyInstruction =
                        , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
                        ]
                      )
-      cs = mkSameDataLocConstraints [1, 2]
       pat (pid, dt) = InstrPattern
                        { patID = pid
-                       , patOS = OpStructure (g dt) Nothing [] cs
+                       , patOS = OpStructure (g dt) Nothing [] [(1, 2)] []
                        , patInputData = [1]
                        , patOutputData = [2]
                        , patEmitString = EmitStringTemplate []
@@ -275,7 +274,7 @@ mkInactiveInstruction =
                   )
       pat = InstrPattern
               { patID = 0
-              , patOS = OpStructure g Nothing [] []
+              , patOS = OpStructure g Nothing [] [] []
               , patInputData = [1]
               , patOutputData = [2]
               , patEmitString = EmitStringTemplate []

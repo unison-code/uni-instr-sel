@@ -102,8 +102,8 @@ with open(json_file, 'r') as file:
 
 json_m_cons = json_data["match-constraints"]
 
-# Produce 'match-operands-with-same-loc' parameters
-params = []
+# Extends 'match-same-value-locs' parameters
+params = json_data["match-same-value-locs"]
 for m in range(len(json_m_cons)):
     new_constraints = []
     for c in json_m_cons[m]:
@@ -122,7 +122,7 @@ for m in range(len(json_m_cons)):
         else:
             new_constraints.append(c)
     json_m_cons[m] = new_constraints
-json_data["match-operands-with-same-loc"] = params
+json_data["match-same-value-locs"] = params
 
 # Produce 'match-fall-through-block' parameters
 params = []

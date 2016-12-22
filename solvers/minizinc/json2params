@@ -452,6 +452,10 @@ dumpParams( bump2DArrYNN(json_data["fun-valid-value-loc-ranges"])
           , "validDataLocRangesInFunction"
           , VT_ARRAY2D
           )
+dumpParams( bump2DArrYYY(json_data["fun-same-value-locs"])
+          , "sameDataLocsInFunction"
+          , VT_ARRAY2D
+          )
 dumpParams( json_data["fun-num-blocks"]
           , "numBlocksInFunction"
           )
@@ -553,8 +557,8 @@ dumpParams( bump2DArrYYNN( \
           , "validDataLocRangesInMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYY(json_data["match-operands-with-same-loc"])
-          , "operandsWithSameLocInMatch"
+dumpParams( bump2DArrYYY(json_data["match-same-value-locs"])
+          , "sameDataLocsInMatch"
           , VT_ARRAY2D
           )
 dumpParams( bumpArr(json_data["match-copy-instrs"])

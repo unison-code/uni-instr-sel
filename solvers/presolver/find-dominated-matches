@@ -95,7 +95,7 @@ def isMatchDominated(json, m1):
 
     excl_matches = \
       ( set(json["match-null-instrs"])
-        | set([ int(t[0]) for t in json["match-operands-with-same-loc"] ])
+        | set([ int(t[0]) for t in json["match-same-value-locs"] ])
         | set([ int(t[0]) for t in json["match-fall-through-block"] ])
       )
 

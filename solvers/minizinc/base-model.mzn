@@ -44,7 +44,6 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
-array[int, int] of int: validDataLocsInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
@@ -70,6 +69,7 @@ array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
 array[int, int] of int: validDataLocsInMatch;
+
 array[int, int] of int: inputDefEdgesInMatch;
 array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
@@ -81,10 +81,12 @@ set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
 % Arrays that encode constraints
-array[int, int] of int: operandsWithSameLocInMatch;
-array[int, int] of int: fallThroughBlockOfMatch;
-array[int, int] of int: validDataLocRangesInMatch;
+array[int, int] of int: validDataLocsInFunction;
 array[int, int] of int: validDataLocRangesInFunction;
+array[int, int] of int: sameDataLocsInFunction;
+array[int, int] of int: validDataLocRangesInMatch;
+array[int, int] of int: sameDataLocsInMatch;
+array[int, int] of int: fallThroughBlockOfMatch;
 array[int] of set of int: illegalMatchCombinations;
 
 % These variables will be set by concatenating the definitions to the end of
@@ -359,22 +361,22 @@ constraint
 
 % Constrain locations of data that must be within a specific range.
 constraint
-  forall (i in index_set_1of2(validDataLocRangesInFunction)) (
-    let { int: d = validDataLocRangesInFunction[i, 1]
-        , int: l = validDataLocRangesInFunction[i, 2]
-        , int: u = validDataLocRangesInFunction[i, 3]
-        }
-    in loc[d] in l..u
-  );
-
-% Constrain locations of data that must be within a specific range.
-constraint
   forall (i in index_set_1of2(validDataLocRangesInFunction))
   ( let { int: d = validDataLocRangesInFunction[i, 1]
         , int: l = validDataLocRangesInFunction[i, 2]
         , int: u = validDataLocRangesInFunction[i, 3]
         }
     in loc[d] in l..u
+  );
+
+
+% Constrain locations of data which must be assigned the same location.
+constraint
+  forall (i in index_set_1of2(sameDataLocsInFunction)) (
+    let { int: o1 = sameDataLocsInFunction[i, 1]
+        , int: o2 = sameDataLocsInFunction[i, 2]
+        }
+    in loc[Alt(o1)] = loc[Alt(o2)]
   );
 
 % Constrain alternatives of operands.
@@ -441,10 +443,10 @@ constraint
 % For selected matches that require two or more of its operands to have the same
 % location, enforce them to be the same.
 constraint
-  forall (i in index_set_1of2(operandsWithSameLocInMatch)) (
-    let { int: m = operandsWithSameLocInMatch[i, 1]
-        , int: o1 = operandsWithSameLocInMatch[i, 2]
-        , int: o2 = operandsWithSameLocInMatch[i, 3]
+  forall (i in index_set_1of2(sameDataLocsInMatch)) (
+    let { int: m = sameDataLocsInMatch[i, 1]
+        , int: o1 = sameDataLocsInMatch[i, 2]
+        , int: o2 = sameDataLocsInMatch[i, 3]
         }
     in sel[m] -> loc[Alt(o1)] = loc[Alt(o2)]
   );
@@ -770,10 +772,10 @@ constraint
 % locations are equal, and the second match implies that the intersection of
 % their domains is empty.
 constraint
-  forall (i in index_set_1of2(operandsWithSameLocInMatch))
-  ( let { int: m1 = operandsWithSameLocInMatch[i, 1]
-        , int: o1 = operandsWithSameLocInMatch[i, 2]
-        , int: o2 = operandsWithSameLocInMatch[i, 3]
+  forall (i in index_set_1of2(sameDataLocsInMatch))
+  ( let { int: m1 = sameDataLocsInMatch[i, 1]
+        , int: o1 = sameDataLocsInMatch[i, 2]
+        , int: o2 = sameDataLocsInMatch[i, 3]
         }
     in forall ( j in index_set_1of2(validDataLocRangesInMatch)
               , k in index_set_1of2(validDataLocRangesInMatch)
