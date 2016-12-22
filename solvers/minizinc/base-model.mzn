@@ -771,31 +771,35 @@ constraint
 % Two matches can't both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of
 % their domains is empty.
-constraint
-  forall (i in index_set_1of2(sameDataLocsInMatch))
-  ( let { int: m1 = sameDataLocsInMatch[i, 1]
-        , int: o1 = sameDataLocsInMatch[i, 2]
-        , int: o2 = sameDataLocsInMatch[i, 3]
-        }
-    in forall ( j in index_set_1of2(validDataLocRangesInMatch)
-              , k in index_set_1of2(validDataLocRangesInMatch)
-                where validDataLocRangesInMatch[j, 2] = o1
-                      /\
-                      validDataLocRangesInMatch[k, 1] =
-                      validDataLocRangesInMatch[j, 1]
-                      /\
-                      validDataLocRangesInMatch[k, 2] = o2
-              )
-       ( let { int: m2 = validDataLocRangesInMatch[j, 1] }
-         in card(
-              validDataLocRangesInMatch[j, 3]..validDataLocRangesInMatch[j, 4]
-              intersect
-              validDataLocRangesInMatch[k, 3]..validDataLocRangesInMatch[k, 4]
-            ) = 0
-            ->
-            (not sel[m1] \/ not sel[m2])
-       )
-  );
+%
+% [GHB]: Disabled this constraint as it explodes flattening time.
+%
+%constraint
+%  forall (i in index_set_1of2(sameDataLocsInMatch))
+%  ( let { int: m1 = sameDataLocsInMatch[i, 1]
+%        , int: o1 = sameDataLocsInMatch[i, 2]
+%        , int: o2 = sameDataLocsInMatch[i, 3]
+%        }
+%    in forall ( j in index_set_1of2(validDataLocRangesInMatch)
+%              , k in index_set_1of2(validDataLocRangesInMatch)
+%                where validDataLocRangesInMatch[j, 2] = o1
+%                      /\
+%                      validDataLocRangesInMatch[k, 1] =
+%                      validDataLocRangesInMatch[j, 1]
+%                      /\
+%                      validDataLocRangesInMatch[k, 2] = o2
+%              )
+%       ( let { int: m2 = validDataLocRangesInMatch[j, 1] }
+%         in card(
+%              validDataLocRangesInMatch[j, 3]..validDataLocRangesInMatch[j, 4]
+%              intersect
+%              validDataLocRangesInMatch[k, 3]..validDataLocRangesInMatch[k, 4]
+%            ) = 0
+%            ->
+%            (not sel[m1] \/ not sel[m2])
+%
+%       )
+%  );
 
 % If all matches for operation o are not phi instruction, do not span any
 % blocks, use datum u, and define datum d, then the block defining u must
