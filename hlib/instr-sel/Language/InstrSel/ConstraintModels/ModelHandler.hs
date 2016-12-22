@@ -276,8 +276,8 @@ enableCopyingForMultUseInputsInPattern pat match =
                                                        new_input_id
                                                        (patEmitString old_p)
             new_p = old_p { patOS = new_os
-                          , patExternalData =
-                              (new_input_id:patExternalData old_p)
+                          , patInputData =
+                              (new_input_id:patInputData old_p)
                           , patEmitString = new_emit_str
                           }
         in (new_p, new_m)
@@ -325,10 +325,10 @@ processMatch' instr pat match mid oid =
       c_ns = filter isControlNode all_ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
-      d_ext_ns = filter (\n -> (getNodeID n) `elem` patExternalData pat)
-                        d_ns
-      d_int_ns = filter (\n -> (getNodeID n) `notElem` patExternalData pat)
-                        d_ns
+      d_in_ns = filter (\n -> (getNodeID n) `elem` (patInputData pat)) d_ns
+      d_out_ns = filter (\n -> (getNodeID n) `elem` (patOutputData pat)) d_ns
+      p_ext_ns = patInputData pat ++ patOutputData pat
+      d_int_ns = filter (\n -> (getNodeID n) `notElem` p_ext_ns) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
       b_use_by_phi_ns = map ( getTargetNode graph
@@ -373,7 +373,8 @@ processMatch' instr pat match mid oid =
          , hlMatchOperationsCovered =  nub $ getMappedFNs o_ns
          , hlMatchOperandsDefined = nub $ getOpIDsForPatternDataNodes d_def_ns
          , hlMatchOperandsUsed = nub $ getOpIDsForPatternDataNodes d_use_ns
-         , hlMatchExternalOperands = nub $ getOpIDsForPatternDataNodes d_ext_ns
+         , hlMatchInputOperands = nub $ getOpIDsForPatternDataNodes d_in_ns
+         , hlMatchOutputOperands = nub $ getOpIDsForPatternDataNodes d_out_ns
          , hlMatchInternalOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
          , hlMatchValidValueLocs = valid_locs
          , hlMatchEntryBlock =
@@ -585,7 +586,12 @@ lowerHighLevelModel model ai_maps =
        , llMatchOperandsUsed =
            map (map getAIForOperandID . hlMatchOperandsUsed) m_params
        , llMatchExternalOperands =
-           map (map getAIForOperandID . hlMatchExternalOperands) m_params
+           map ( \p ->
+                 map getAIForOperandID $
+                 nub $
+                 hlMatchInputOperands p ++ hlMatchOutputOperands p
+               )
+               m_params
        , llMatchInternalOperands =
            map (map getAIForOperandID . hlMatchInternalOperands) m_params
        , llMatchValidValueLocs =
@@ -755,10 +761,7 @@ mkIllegalMatchCombs function target matches =
                                       not (hasAnyPredecessors pg n)
                               ) $
                        getAllNodes pg
-            output_nids = filter ( \nid ->
-                                   nid `notElem` (map getNodeID input_ns)
-                                 ) $
-                          patExternalData ip
+            output_nids = patOutputData ip
         in ( concatMap (findNodesWithNodeID fg) $
              concat $
              findFNsInMatch (pmMatch pm) (map getNodeID input_ns)

@@ -31,6 +31,9 @@ import Language.InstrSel.OpTypes
   ( ControlOp (Br) )
 import Language.InstrSel.TargetMachines.Base
 
+import Data.List
+  ( intersperse )
+
 
 
 -------------
@@ -54,18 +57,8 @@ mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 -- | Creates an instruction for handling the generic cases where
 -- 'PhiNode's appear. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkPhiInstruction
-  :: (    [NodeID]
-       -> NodeID
-       -> EmitStringTemplate
-     )
-     -- ^ Function for creating the emit string for the generic phi
-     -- instructions. The first argument is a list of 'NodeID's for the value
-     -- nodes which serve as input to the phi operation, and the second argument
-     -- is the 'NodeID's of the value node representing the output from the phi
-     -- operation.
-  -> Instruction
-mkPhiInstruction mkEmit =
+mkPhiInstruction :: Instruction
+mkPhiInstruction =
   let mkPat n =
         let g = mkGraph ( map Node $
                           ( [ ( 0, NodeLabel 0 PhiNode )
@@ -112,11 +105,28 @@ mkPhiInstruction mkEmit =
                                 [2..n+1]
                           )
                         )
+            emit_str = EmitStringTemplate $
+                       [ [ ESVerbatim "PHI "
+                         ]
+                         ++
+                         ( concat $
+                           intersperse [ESVerbatim " "] $
+                           map ( \nid -> [ ESVerbatim "("
+                                         , ESLocationOfValueNode nid
+                                         , ESVerbatim ", "
+                                         , ESBlockOfValueNode nid
+                                         , ESVerbatim ")"
+                                         ]
+                               ) $
+                           [2..n+1]
+                         )
+                       ]
         in InstrPattern
              { patID = (toPatternID $ n-2)
              , patOS = OpStructure g Nothing [] []
-             , patExternalData = [1..n+1]
-             , patEmitString = mkEmit (map toNodeID [2..n+1]) 1
+             , patInputData = [2..n+1]
+             , patOutputData = [1]
+             , patEmitString = emit_str
              }
   in Instruction { instrID = 0
                  , instrPatterns = map mkPat [2..10]
@@ -152,7 +162,8 @@ mkBrFallThroughInstruction =
         InstrPattern
           { patID = 0
           , patOS = OpStructure g (Just 1) [] cs
-          , patExternalData = []
+          , patInputData = []
+          , patOutputData = []
           , patEmitString = EmitStringTemplate []
           }
   in Instruction
@@ -187,7 +198,8 @@ mkDataDefInstruction =
         InstrPattern
           { patID = pid
           , patOS = OpStructure g (Just 0) [] cs
-          , patExternalData = [1]
+          , patInputData = []
+          , patOutputData = [1]
           , patEmitString = EmitStringTemplate []
           }
   in Instruction
@@ -225,7 +237,8 @@ mkTempNullCopyInstruction =
       pat (pid, dt) = InstrPattern
                        { patID = pid
                        , patOS = OpStructure (g dt) Nothing [] cs
-                       , patExternalData = [1, 2]
+                       , patInputData = [1]
+                       , patOutputData = [2]
                        , patEmitString = EmitStringTemplate []
                        }
   in Instruction
@@ -263,7 +276,8 @@ mkInactiveInstruction =
       pat = InstrPattern
               { patID = 0
               , patOS = OpStructure g Nothing [] []
-              , patExternalData = [1, 2]
+              , patInputData = [1]
+              , patOutputData = [2]
               , patEmitString = EmitStringTemplate []
               }
   in Instruction

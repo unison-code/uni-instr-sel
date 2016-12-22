@@ -130,9 +130,12 @@ data HighLevelMatchParams
         -- ^ The operands in the function graph which are defined by this match.
       , hlMatchOperandsUsed :: [OperandID]
         -- ^ The operands in the function graph which are used by this match.
-      , hlMatchExternalOperands :: [OperandID]
-        -- ^ The operands in the function graph which are external to this match
-        -- (i.e. either input or output).
+      , hlMatchInputOperands :: [OperandID]
+        -- ^ The operands in the function graph which act as input to this
+        -- match.
+      , hlMatchOutputOperands :: [OperandID]
+        -- ^ The operands in the function graph which act as output of this
+        -- match.
       , hlMatchInternalOperands :: [OperandID]
         -- ^ The operands in the function graph which are external to this match
         -- (i.e. neither input nor output).
@@ -522,7 +525,8 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "operations-covered"
       <*> v .: "operands-defined"
       <*> v .: "operands-used"
-      <*> v .: "external-operands"
+      <*> v .: "input-operands"
+      <*> v .: "output-operands"
       <*> v .: "internal-operands"
       <*> v .: "valid-value-locs"
       <*> v .: "entry-block"
@@ -550,7 +554,8 @@ instance ToJSON HighLevelMatchParams where
            , "operations-covered"       .= (hlMatchOperationsCovered p)
            , "operands-defined"         .= (hlMatchOperandsDefined p)
            , "operands-used"            .= (hlMatchOperandsUsed p)
-           , "external-operands"        .= (hlMatchExternalOperands p)
+           , "input-operands"           .= (hlMatchInputOperands p)
+           , "output-operands"          .= (hlMatchOutputOperands p)
            , "internal-operands"        .= (hlMatchInternalOperands p)
            , "valid-value-locs"         .= (hlMatchValidValueLocs p)
            , "entry-block"              .= (hlMatchEntryBlock p)

@@ -269,8 +269,9 @@ sortValueNodesByReusability t pm vs =
       consumesValue v m =
         let pn = findPNInMatch (pmMatch m) v
             p = getInstrPatternFromPatternMatch t m
+            ext_ns = patInputData p ++ patOutputData p
         in if length pn > 0
-           then any (\n -> not $ n `elem` (patExternalData p)) pn
+           then any (\n -> not $ n `elem` ext_ns) pn
            else False
       vs_r = map (\v -> (v, computeScore v)) vs
       -- Sorted in decreasing score order

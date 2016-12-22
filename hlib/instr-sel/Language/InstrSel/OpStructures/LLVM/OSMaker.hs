@@ -375,10 +375,12 @@ mkFunctionOS f@(LLVM.Function {}) =
      return $ (opStruct st7, funcInputValues st7)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
--- | Builds an 'OpStructure', together with the external value nodes, from an
--- instruction pattern. If the definition is not a 'Function', or any other
--- error occurs, an error message is returned.
-mkPatternOS :: LLVM.Global -> Either String (OS.OpStructure, [G.NodeID])
+-- | Builds an 'OpStructure', together with the input and output value nodes,
+-- from an instruction pattern. If the definition is not a 'Function', or any
+-- other error occurs, an error message is returned.
+mkPatternOS
+  :: LLVM.Global
+  -> Either String (OS.OpStructure, [G.NodeID], [G.NodeID])
 mkPatternOS f@(LLVM.Function {}) =
   do st0 <- mkInitBuildState
      st1 <- build mkPatternDFGBuilder st0 f
@@ -390,7 +392,17 @@ mkPatternOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
      st7 <- removeUnusedBlockNodes st6
-     return $ (opStruct st7, patExtValues st7)
+     in_values <- foldM ( \ns nid ->
+                          do n <- getNodeWithID st7 nid
+                             let g = getOSGraph st7
+                             return $ if not (G.hasAnyPredecessors g n)
+                                      then (nid:ns)
+                                      else ns
+                        )
+                        []
+                        (patExtValues st7)
+     let out_values = [ nid | nid <- patExtValues st7, nid `notElem` in_values ]
+     return $ (opStruct st7, in_values, out_values)
 mkPatternOS _ = Left "mkPattern: not a Function"
 
 -- | Creates an initial 'BuildState'.

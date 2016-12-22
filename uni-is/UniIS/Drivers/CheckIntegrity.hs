@@ -84,15 +84,22 @@ run CheckPatternIntegrity (Right pat) =
          log0 = checkGraphInvariants PatternCheck g
          log1 = concatLogs $
                 map ( \nid ->
-                      checkNodeExists ("external data with ID " ++ pShow nid)
+                      checkNodeExists ("input data with ID " ++ pShow nid)
                                       g
                                       nid
                     )
-                    (patExternalData pat)
-         log2 = checkEntryBlock os
-         log3 = checkValueLocations os
-         log4 = checkConstraints os
-     return $ mkOutputFromLog $ concatLogs [log0, log1, log2, log3, log4]
+                    (patInputData pat)
+         log2 = concatLogs $
+                map ( \nid ->
+                      checkNodeExists ("output data with ID " ++ pShow nid)
+                                      g
+                                      nid
+                    )
+                    (patOutputData pat)
+         log3 = checkEntryBlock os
+         log4 = checkValueLocations os
+         log5 = checkConstraints os
+     return $ mkOutputFromLog $ concatLogs [log0, log1, log2, log3, log4, log5]
 
 run _ _ = reportErrorAndExit "CheckIntegrity: unsupported action"
 

@@ -27,6 +27,9 @@ import Language.InstrSel.TargetMachines.CodeEmission
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 
+import Data.List
+  ( intercalate )
+
 
 
 -------------
@@ -46,4 +49,8 @@ run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"
 -- | Flattens the assembly code into a string.
 showCode :: AssemblyCode -> String
 showCode (AsmBlock str) = str ++ ":"
-showCode (AsmInstruction str) = "  " ++ str
+showCode i@(AsmInstruction {}) =
+  "  " ++
+  "[" ++ intercalate ", " (asmOutput i) ++ "] <- " ++
+  "\"" ++ asmString i ++ "\"" ++
+  " <- [" ++ intercalate ", " (asmInput i) ++ "]"

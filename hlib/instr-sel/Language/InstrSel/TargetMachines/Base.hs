@@ -148,9 +148,12 @@ data InstrPattern
         -- instruction, but not necessarily contiguous.
       , patOS :: OpStructure
         -- ^ The operation structure of the pattern.
-      , patExternalData :: [NodeID]
-        -- ^ The value nodes in the pattern graph that represent either input or
-        -- output values to the instruction (i.e. they are not internal values).
+      , patInputData :: [NodeID]
+        -- ^ The value nodes in the pattern graph that represent input values of
+        -- the instruction.
+      , patOutputData :: [NodeID]
+        -- ^ The value nodes in the pattern graph that represent output values
+        -- of the instruction.
       , patEmitString :: EmitStringTemplate
         -- ^ The emit string from which the assembly instruction will be
         -- produced upon code emission if this pattern is selected.

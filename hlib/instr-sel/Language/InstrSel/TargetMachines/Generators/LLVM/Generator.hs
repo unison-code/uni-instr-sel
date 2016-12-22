@@ -43,9 +43,7 @@ import Control.Monad
 
 import qualified Data.Map as M
 import Data.List
-  ( intersperse
-  , sort
-  )
+  ( sort )
 import Data.Maybe
   ( isJust
   , fromJust
@@ -63,26 +61,8 @@ generateTargetMachine
   -> Either String TM.TargetMachine
      -- ^ An error message or the generated target machine.
 generateTargetMachine m =
-  do let mkPhiInstrEmitTemplate arg_ids ret_id =
-           TM.EmitStringTemplate $
-           [ [ TM.ESLocationOfValueNode ret_id
-             , TM.ESVerbatim " = PHI "
-             ]
-             ++
-             ( concat $
-               intersperse [TM.ESVerbatim " "] $
-               map ( \n -> [ TM.ESVerbatim "("
-                           , TM.ESLocationOfValueNode n
-                           , TM.ESVerbatim ", "
-                           , TM.ESBlockOfValueNode n
-                           , TM.ESVerbatim ")"
-                           ]
-                   ) $
-               arg_ids
-             )
-           ]
-         locs = mkLocations m
-         generic_instrs = [mkPhiInstruction mkPhiInstrEmitTemplate] ++
+  do let locs = mkLocations m
+         generic_instrs = [mkPhiInstruction] ++
                           [mkBrFallThroughInstruction] ++
                           [mkDataDefInstruction] ++
                           [mkTempNullCopyInstruction] ++
@@ -137,12 +117,13 @@ mkInstrPatterns locs i =
           processSemantics p_num (LLVM.instrSemantics p) (LLVM.instrOperands p)
         processSemantics p_num p ops =
           do let p_id = TM.toPatternID p_num
-             (os0, ext_values) <-mkOpStructure p
+             (os0, in_values, out_values) <- mkOpStructure p
              os1 <- addOperandConstraints ops locs os0
              tmpl <- mkEmitString i os1 (LLVM.instrEmitString i)
              return TM.InstrPattern { TM.patID = p_id
                                     , TM.patOS = os1
-                                    , TM.patExternalData = ext_values
+                                    , TM.patInputData = in_values
+                                    , TM.patOutputData = out_values
                                     , TM.patEmitString = tmpl
                                     }
 
@@ -226,8 +207,9 @@ addOperandConstraints ops all_locs os =
 
 mkOpStructure
   :: LLVM.InstrSemantics
-  -> Either String (OpStructure, [NodeID])
-     -- ^ An error message or the generated 'OpStructure'.
+  -> Either String (OpStructure, [NodeID], [NodeID])
+     -- ^ An error message or the generated 'OpStructure' together with its
+     -- input and output value nodes.
 mkOpStructure (LLVM.InstrSemantics (Right m)) =
   let m_defs = LLVM.moduleDefinitions m
       getFunction d =

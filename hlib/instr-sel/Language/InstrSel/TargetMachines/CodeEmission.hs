@@ -40,7 +40,13 @@ import Data.Maybe
 -- instruction.
 data AssemblyCode
   = AsmBlock String
-  | AsmInstruction String
+  | AsmInstruction { asmInput :: [String]
+                     -- ^ The input values to this instruction.
+                   , asmString :: String
+                     -- ^ The assembly string.
+                   , asmOutput :: [String]
+                     -- ^ The output values produced by this instruction.
+                   }
   deriving (Show)
 
 -- | A data type representing a DAG where the nodes represent selected
@@ -319,32 +325,63 @@ emitInstructionsOfMatch
   -> MatchID
   -> EmissionState
 emitInstructionsOfMatch model sol tm st0 mid =
-  let replaceAliases Nothing = Nothing
-      replaceAliases (Just n) = let alias = lookup n $ valueNodeAliases st0
-                                in if isJust alias then alias else (Just n)
-      fetchNodeID (Just (Right nid)) = Just nid
-      fetchNodeID (Just (Left oid)) =
+  let replaceAliases n = let alias = lookup n $ valueNodeAliases st0
+                         in if isJust alias then fromJust alias else n
+      getNodeIDFromOpID oid =
         let nid = lookup oid (hlSolNodesOfOperands sol)
         in if isJust nid
-           then nid
-           else error $ "fetchNodeID: no mapping for operand ID " ++ pShow oid
+           then fromJust nid
+           else error $ "emitInstructionsOfMatch: no mapping for operand ID " ++
+                pShow oid
+      fetchNodeID (Just (Right nid)) = Just nid
+      fetchNodeID (Just (Left oid)) = Just $ getNodeIDFromOpID oid
       fetchNodeID Nothing = Nothing
       match = getHLMatchParams (hlMatchParams model) mid
       pat_data = getInstrPattern tm
                                  (hlMatchInstructionID match)
                                  (hlMatchPatternID match)
       emit_parts = updateNodeIDsInEmitStrParts
-                     (emitStrParts $ patEmitString pat_data)
-                     ( map (map (replaceAliases . fetchNodeID))
-                           (hlMatchEmitStrNodeMaplist match)
-                     )
-  in foldl ( \st1 parts ->
-             foldl (emitInstructionPart model sol tm)
-                   (st1 { emittedCode = (AsmInstruction "":emittedCode st1) }) $
-             parts
+                     (emitStrParts $ patEmitString pat_data) $
+                   map ( map ( maybe Nothing (Just . replaceAliases) .
+                               fetchNodeID
+                             )
+                       ) $
+                   hlMatchEmitStrNodeMaplist match
+  in foldl ( \st1 (i, parts) ->
+             let st2 = st1 { emittedCode = (mkEmptyAsmInstr:emittedCode st1) }
+                 st3 = foldl (emitInstructionPart model sol tm) st2 parts
+                 st4 = if i == 1
+                       then let isConstValueNode n =
+                                  n `elem` ( map fst $
+                                             hlFunValueIntConstData $
+                                             hlFunctionParams model
+                                           )
+                                origins = map (getOriginOfValueNode model) $
+                                          filter (not . isConstValueNode) $
+                                          map ( replaceAliases .
+                                                getNodeIDFromOpID
+                                              ) $
+                                          hlMatchInputOperands match
+                                code = emittedCode st3
+                                instr = head code
+                                new_instr = instr { asmInput = origins }
+                            in st3 { emittedCode = (new_instr:tail code) }
+                       else st3
+                 st5 = if i == length emit_parts
+                       then let origins = map ( getOriginOfValueNode model .
+                                                replaceAliases .
+                                                getNodeIDFromOpID
+                                              ) $
+                                          hlMatchOutputOperands match
+                                code = emittedCode st4
+                                instr = head code
+                                new_instr = instr { asmOutput = origins }
+                            in st4 { emittedCode = (new_instr:tail code) }
+                       else st4
+             in st5
            )
            st0
-           emit_parts
+           (zip ([1..] :: [Int]) emit_parts)
 
 -- | Updates the pattern graph node IDs appearing in the content of an
 -- 'EmitStringTemplate' with the corresponding function graph node IDs.
@@ -384,15 +421,13 @@ emitInstructionPart
   -> EmissionState
 emitInstructionPart _ _ _ st (ESVerbatim s) =
   let code = emittedCode st
-      (AsmInstruction instr_str) = head code
-      new_instr = AsmInstruction $ instr_str ++ s
+      new_instr = head code $++ s
   in st { emittedCode = (new_instr:tail code) }
 emitInstructionPart model _ _ st (ESIntConstOfValueNode n) =
   let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
   in if isJust i
      then let code = emittedCode st
-              (AsmInstruction instr_str) = head code
-              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust i)
+              new_instr = head code $++ pShow (fromJust i)
           in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no integer constant found for " ++
                   "function node " ++ pShow n
@@ -400,29 +435,22 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
   let reg_id = lookup n $ hlSolLocationsOfData sol
   in if isJust reg_id
      then let code = emittedCode st
-              (AsmInstruction instr_str) = head code
+              instr = head code
               reg = fromJust $ findLocation tm (fromJust reg_id)
-              origin = lookup n ( hlFunValueOriginData
-                                  $ hlFunctionParams model
-                                )
           in if (isJust $ locValue reg)
-             then let new_instr = AsmInstruction $ instr_str
-                                  ++ (pShow $ locName reg)
+             then let new_instr = instr $++ pShow (locName reg)
                   in st { emittedCode = (new_instr:tail code) }
-             else if isJust origin
-                  then let new_instr = AsmInstruction $ instr_str
-                                       ++ fromJust origin
+             else let origin = getOriginOfValueNode model n
+                      new_instr = instr $++ origin
                   in st { emittedCode = (new_instr:tail code) }
-                  else error $ "emitInstructionPart: no origin found for " ++
-                               "function node " ++ pShow n
      else error $ "emitInstructionPart: no location found for "
                   ++ "function node " ++ pShow n
 emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
   let l = findNameOfBlockNode model n
   in if isJust l
      then let code = emittedCode st
-              (AsmInstruction instr_str) = head code
-              new_instr = AsmInstruction $ instr_str ++ (pShow $ fromJust l)
+              instr = head code
+              new_instr = instr $++ pShow (fromJust l)
           in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no block name found for function " ++
                   "node " ++ pShow n
@@ -444,14 +472,14 @@ emitInstructionPart model sol m st (ESBlockOfValueNode n) =
                   " is not part of the function's data nodes"
 emitInstructionPart _ _ _ st (ESLocalTemporary i) =
   let code = emittedCode st
-      (AsmInstruction instr_str) = head code
+      instr = head code
       name = lookup i (tmpToVarNameMaps st)
   in if isJust name
-     then let new_instr = AsmInstruction $ instr_str ++ (fromJust name)
+     then let new_instr = instr $++ (fromJust name)
           in st { emittedCode = (new_instr:tail code) }
      else let names_in_use = varNamesInUse st
               new_name = getUniqueVarName names_in_use
-              new_instr = AsmInstruction $ instr_str ++ new_name
+              new_instr = instr $++ new_name
           in st { emittedCode = (new_instr:tail code)
                 , varNamesInUse = (new_name:names_in_use)
                 , tmpToVarNameMaps = ((i, new_name):tmpToVarNameMaps st)
@@ -460,8 +488,8 @@ emitInstructionPart model _ _ st (ESFuncOfCallNode n) =
   let f = lookup n (hlFunCallNameData $ hlFunctionParams model)
   in if isJust f
      then let code = emittedCode st
-              (AsmInstruction instr_str) = head code
-              new_instr = AsmInstruction $ instr_str ++ (fromJust f)
+              instr = head code
+              new_instr = instr $++ (fromJust f)
           in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no function name found for " ++
                   "function call node " ++ pShow n
@@ -473,6 +501,14 @@ getUniqueVarName used =
   dropWhile (`elem` used) $
   map (\i -> "%tmp." ++ show i) $
   ([1..] :: [Integer]) -- Cast is needed or GHC will complain
+
+getOriginOfValueNode :: HighLevelModel -> NodeID -> String
+getOriginOfValueNode model nid =
+  let origin = lookup nid (hlFunValueOriginData $ hlFunctionParams model)
+  in if isJust origin
+     then fromJust origin
+     else error $ "getOriginOfValueNode: no origin found for function node " ++
+                  pShow nid
 
 -- | Takes the node ID of a datum, and returns the selected match that defines
 -- that datum.
@@ -500,3 +536,15 @@ getDefinerOfData model sol n =
      then head selected
      else error $ "getDefinerOfData: no or multiple matches found that " ++
                   "define data with node ID " ++ pShow n
+
+mkEmptyAsmInstr :: AssemblyCode
+mkEmptyAsmInstr =
+  AsmInstruction { asmInput = []
+                 , asmString = ""
+                 , asmOutput = []
+                 }
+
+-- | Appends a given string to a given 'AsmInstruction'.
+($++) :: AssemblyCode -> String -> AssemblyCode
+i@(AsmInstruction {}) $++ s = i { asmString = asmString i ++ s }
+_ $++ _ = error $ "$++: Unexpected AssemblyCode argument"
