@@ -297,23 +297,19 @@ combineValueNodes f nodes =
                        (getOriginOfValueNode $ head ns)
              -- Note that the bitwidth is not copied
         (g1, new_n) = addNewNode nt g0
-        entry_node_id = let nid = osEntryBlockNode $
-                                  functionOS f
-                        in if isJust nid
-                           then fromJust nid
-                           else error $ "combineValueNodes: function has no " ++
-                                        "entry block node"
-        entry_node = let ns' = findNodesWithNodeID g1 entry_node_id
-
-                     in if length ns' == 1
-                        then head ns'
-                        else if length ns' == 0
-                             then error $ "combineValueNodes: found no node " ++
-                                          "with ID " ++ pShow entry_node_id
-                             else error $ "combineValueNodes: found " ++
-                                          "multiple nodes with ID " ++
-                                          pShow entry_node_id
-
+        entry_node = -- We assume all constant value nodes have an inbound
+                     -- data-flow edge from the entry block
+                     let n = head ns
+                         in_es = getDtFlowInEdges g0 n
+                     in if length in_es == 1
+                        then getSourceNode g0 (head in_es)
+                        else if length in_es == 0
+                             then error $ "combineValueNodes: constant " ++
+                                          "value node " ++ pShow n ++ " has " ++
+                                          "no inbound data-flow edges"
+                             else error $ "combineValueNodes: constant " ++
+                                          "value node " ++ pShow n ++ " has " ++
+                                          "multiple inbound data-flow edges"
         (g2, _) = addNewEdge DataFlowEdge (entry_node, new_n) g1
     in foldr (replaceValueNode new_n) (updateGraph g2 f) ns
   mkNewDataType IntConstType { intConstValue = r } =
