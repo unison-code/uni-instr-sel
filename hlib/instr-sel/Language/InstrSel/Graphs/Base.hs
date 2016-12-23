@@ -82,6 +82,7 @@ module Language.InstrSel.Graphs.Base
   , getEdgesBetween
   , getEdgeLabel
   , getEdgeInNr
+  , getEdgeOutNr
   , getInEdges
   , getNeighbors
   , getNodeID
@@ -92,7 +93,6 @@ module Language.InstrSel.Graphs.Base
   , getNameOfBlockNode
   , getOpOfComputationNode
   , getOriginOfValueNode
-  , getEdgeOutNr
   , getOutEdges
   , getPredecessors
   , getSourceNode
@@ -895,7 +895,8 @@ mergeNodes n_to_keep n_to_discard g
                                  (foldr delEdge g edges_to_ignore)
                  )
 
--- | Redirects all edges involving one node to another node.
+-- | Redirects all edges involving one node to another node. Edge number
+-- invariants between data-flow and definition edges are maintained.
 redirectEdges
   :: Node
      -- ^ Node to redirect edges to.
@@ -915,7 +916,8 @@ redirectInEdges
   -> Graph
 redirectInEdges = redirectInEdgesWhen (\_ -> True)
 
--- | Redirects the outbound edges from one node to another.
+-- | Redirects the outbound edges from one node to another. Edge number
+-- invariants between data-flow and definition edges are maintained.
 redirectOutEdges
   :: Node
      -- ^ Node to redirect edges to.
@@ -949,9 +951,50 @@ redirectInEdgesWhen
      -- ^ Node to redirect edges from.
   -> Graph
   -> Graph
-redirectInEdgesWhen p to_n from_n g =
-  let es = filter p $ getInEdges g from_n
-  in foldr (\e g' -> fst $ updateEdgeTarget to_n e g') g es
+redirectInEdgesWhen p to_n from_n g0 =
+  let es = filter p $ getInEdges g0 from_n
+      df_def_es = map ( \e ->
+                        let df_es = filter ( \e' ->
+                                             getEdgeInNr e == getEdgeInNr e'
+                                           )
+                                           es
+                        in if length df_es == 1
+                           then (head df_es, e)
+                           else if length df_es == 0
+                                then error $ "redirectInEdgesWhen: " ++
+                                             "no data-flow edge that " ++
+                                             "matches definition edge " ++
+                                             pShow e
+                                else error $ "redirectInEdgesWhen: " ++
+                                             "multiple data-flow edges that " ++
+                                             "matches definition edge " ++
+                                             pShow e
+                      ) $
+                  filter isDefEdge $
+                  es
+      -- Redirect all edges not related to the definition edges
+      g1 = foldr (\e g' -> fst $ updateEdgeTarget to_n e g') g0 $
+           filter ( \e -> e `notElem` map fst df_def_es &&
+                          e `notElem` map snd df_def_es
+                  ) $
+           es
+      -- Redirect data-flow and related definition edge, making sure the edge
+      -- numbers are consistent
+      (g2, new_df_es) = foldr ( \e (g', new_es) ->
+                                let (g'', e') = updateEdgeTarget to_n e g'
+                                in (g'', (e':new_es))
+                              )
+                              (g1, []) $
+                        map fst df_def_es
+      g3 = foldr ( \(e, df_e) g' ->
+                   let (g'', e') = updateEdgeTarget to_n e g'
+                       (g''', _) = updateEdgeInNr (getEdgeInNr df_e) e' g''
+                   in g'''
+                 )
+                 g2 $
+           zip new_df_es $
+           map snd df_def_es
+  in g3
 
 -- | Same as 'redirectOutEdges' but takes a predicate for which edges to
 -- redirect.
@@ -964,9 +1007,50 @@ redirectOutEdgesWhen
      -- ^ Node to redirect edges from.
   -> Graph
   -> Graph
-redirectOutEdgesWhen p to_n from_n g =
-  let es = filter p $ getOutEdges g from_n
-  in foldr (\e g' -> fst $ updateEdgeSource to_n e g') g es
+redirectOutEdgesWhen p to_n from_n g0 =
+  let es = filter p $ getOutEdges g0 from_n
+      df_def_es = map ( \e ->
+                        let df_es = filter ( \e' ->
+                                             getEdgeOutNr e == getEdgeOutNr e'
+                                           )
+                                           es
+                        in if length df_es == 1
+                           then (head df_es, e)
+                           else if length df_es == 0
+                                then error $ "redirectOutEdgesWhen: " ++
+                                             "no data-flow edge that " ++
+                                             "matches definition edge " ++
+                                             pShow e
+                                else error $ "redirectOutEdgesWhen: " ++
+                                             "multiple data-flow edges that " ++
+                                             "matches definition edge " ++
+                                             pShow e
+                      ) $
+                  filter isDefEdge $
+                  es
+      -- Redirect all edges not related to the definition edges
+      g1 = foldr (\e g' -> fst $ updateEdgeSource to_n e g') g0 $
+           filter ( \e -> e `notElem` map fst df_def_es &&
+                          e `notElem` map snd df_def_es
+                  ) $
+           es
+      -- Redirect data-flow and related definition edge, making sure the edge
+      -- numbers are consistent
+      (g2, new_df_es) = foldr ( \e (g', new_es) ->
+                                let (g'', e') = updateEdgeSource to_n e g'
+                                in (g'', (e':new_es))
+                              )
+                              (g1, []) $
+                        map fst df_def_es
+      g3 = foldr ( \(e, df_e) g' ->
+                   let (g'', e') = updateEdgeSource to_n e g'
+                       (g''', _) = updateEdgeOutNr (getEdgeOutNr df_e) e' g''
+                   in g'''
+                 )
+                 g2 $
+           zip new_df_es $
+           map snd df_def_es
+  in g3
 
 -- | Updates the target of an edge.
 updateEdgeTarget
