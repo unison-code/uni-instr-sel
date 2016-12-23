@@ -71,8 +71,9 @@ run opts =
      tm0 <- generateTM parsed_m
      let tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
-         code = generateModule tm2
-     return [toOutputWithID ((fromTargetMachineID $ tmID tm2) ++ ".hs") code]
+         tm3 = combineConstants tm2
+         code = generateModule tm3
+     return [toOutputWithID ((fromTargetMachineID $ tmID tm3) ++ ".hs") code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.

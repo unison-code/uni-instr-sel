@@ -316,37 +316,26 @@ combineValueNodes f nodes =
     IntConstType { intConstValue = r, intConstNumBits = Nothing }
   mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
                             show d
+  replaceValueNode new_n old_n f' =
+    let old_os = functionOS f'
+        old_g = osGraph old_os
+        new_g = delNode old_n $ redirectOutEdges new_n old_n old_g
+        def_recon = mkDefaultReconstructor
+        mkNodeExpr _ expr@(ANodeIDExpr n) =
+          if n == getNodeID old_n
+          then ANodeIDExpr $ getNodeID new_n
+          else expr
+        mkNodeExpr r expr = (mkNodeExprF def_recon) r expr
+        recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
+        new_cs = map (apply recon) (osConstraints old_os)
+        new_os = old_os { osGraph = new_g, osConstraints = new_cs }
+    in f' { functionOS = new_os }
 
--- | Replaces a value node in the function graph with another value node, but
--- all inbound edges to the value node to be removed will be ignored and thus
--- disappear.
-replaceValueNode
-  :: Node
-     -- ^ The new node.
-  -> Node
-     -- ^ The old node.
-  -> Function
-  -> Function
-replaceValueNode new_n old_n f =
-  let old_os = functionOS f
-      old_g = osGraph old_os
-      new_g = delNode old_n $ redirectOutEdges new_n old_n old_g
-      def_recon = mkDefaultReconstructor
-      mkNodeExpr _ expr@(ANodeIDExpr n) =
-        if n == getNodeID old_n
-        then ANodeIDExpr $ getNodeID new_n
-        else expr
-      mkNodeExpr r expr = (mkNodeExprF def_recon) r expr
-      recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
-      new_cs = map (apply recon) (osConstraints old_os)
-      new_os = old_os { osGraph = new_g, osConstraints = new_cs }
-  in f { functionOS = new_os }
-
--- | Applies a transformation on the graph in a given function.
+-- | Gets the graph of the given function.
 getGraph :: Function -> Graph
 getGraph = osGraph . functionOS
 
--- | Replaces the current graph in a function with a new graph.
+-- | Replaces the graph in the given function with a new graph.
 updateGraph :: Graph -> Function -> Function
 updateGraph new_g f =
   let os = functionOS f

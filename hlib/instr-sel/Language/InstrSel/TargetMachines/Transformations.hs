@@ -10,13 +10,15 @@ Main authors:
 -}
 
 module Language.InstrSel.TargetMachines.Transformations
-  ( copyExtend
+  ( combineConstants
+  , copyExtend
   , lowerPointers
   , alternativeExtend
   )
 where
 
-import Language.InstrSel.TargetMachines.Base
+import Language.InstrSel.Constraints
+import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Functions
@@ -25,6 +27,7 @@ import Language.InstrSel.OpStructures
 import qualified Language.InstrSel.OpStructures.Transformations as OS
   ( lowerPointers )
 import Language.InstrSel.PrettyShow
+import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils
   ( groupBy )
@@ -133,6 +136,113 @@ lowerPointers tm =
         i { instrPatterns = map lowerPat (instrPatterns i) }
       new_instrs = M.map lowerInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
+
+-- | Combines value nodes in every pattern graph that represent the same
+-- constant.
+combineConstants :: TargetMachine -> TargetMachine
+combineConstants tm =
+  let processInstr i = i { instrPatterns = map combineConstantsInPattern
+                                               (instrPatterns i)
+                         }
+      new_instrs = M.map processInstr (tmInstructions tm)
+  in tm { tmInstructions = new_instrs }
+
+combineConstantsInPattern :: InstrPattern -> InstrPattern
+combineConstantsInPattern p =
+  let g = getGraph p
+      const_ns = filter isValueNodeWithConstValue (getAllNodes g)
+      haveSameConstants n1 n2 = (getDataTypeOfValueNode n1)
+                                `areSameConstants`
+                                (getDataTypeOfValueNode n2)
+      grouped_ns = groupBy haveSameConstants const_ns
+  in foldl combineValueNodes p grouped_ns
+
+combineValueNodes :: InstrPattern -> [Node] -> InstrPattern
+combineValueNodes p nodes =
+  cc nodes
+  where
+  cc [] = p
+  cc [n] =
+    let g = getGraph p
+        dt_wo_bitwidth = mkNewDataType $ getDataTypeOfValueNode n
+        new_g = updateDataTypeOfValueNode dt_wo_bitwidth n g
+    in updateGraph new_g p
+  cc ns =
+    let nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns)
+                       (getOriginOfValueNode $ head ns)
+             -- Note that the bitwidth is not copied
+        g0 = getGraph p
+        (g1, new_n) = addNewNode nt g0
+        new_p = foldr (replaceValueNode new_n) (updateGraph g1 p) ns
+    in new_p
+  mkNewDataType IntConstType { intConstValue = r } =
+    IntConstType { intConstValue = r, intConstNumBits = Nothing }
+  mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
+                            show d
+  replaceValueNode new_n old_n p' =
+    let old_os = patOS p'
+        old_g = osGraph old_os
+        new_g = delNode old_n $ redirectOutEdges new_n old_n old_g
+        def_recon = mkDefaultReconstructor
+        mkNodeExpr _ expr@(ANodeIDExpr n) =
+          if n == getNodeID old_n
+          then ANodeIDExpr $ getNodeID new_n
+          else expr
+        mkNodeExpr r expr = (mkNodeExprF def_recon) r expr
+        recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
+        new_cs = map (apply recon) (osConstraints old_os)
+        new_os = old_os { osGraph = new_g, osConstraints = new_cs }
+        old_emit_str = patEmitString p
+        new_emit_str = replaceNodeIDInEmitString (getNodeID old_n)
+                                                 (getNodeID new_n)
+                                                 old_emit_str
+    in p' { patOS = new_os
+          , patEmitString = new_emit_str
+          }
+
+-- | Gets the graph of the given pattern.
+getGraph :: InstrPattern -> Graph
+getGraph = osGraph . patOS
+
+-- | Replaces the graph in the given pattern with a new graph.
+updateGraph :: Graph -> InstrPattern -> InstrPattern
+updateGraph new_g p =
+  let os = patOS p
+      new_os = os { osGraph = new_g }
+      new_p = p { patOS = new_os }
+  in new_p
+
+-- | Replaces a given node ID in the given 'EmitStringTemplate'.
+replaceNodeIDInEmitString
+  :: NodeID
+     -- ^ The node ID to replace.
+  -> NodeID
+     -- ^ The node ID to replace with.
+  -> EmitStringTemplate
+  -> EmitStringTemplate
+replaceNodeIDInEmitString old_n new_n str =
+  EmitStringTemplate { emitStrParts = map processOuter $
+                                      emitStrParts str
+                     }
+  where
+  processOuter = map processPart
+  processPart p@(ESVerbatim {})           = p
+  processPart p@(ESLocationOfValueNode n) = if n == old_n
+                                            then ESLocationOfValueNode new_n
+                                            else p
+  processPart p@(ESIntConstOfValueNode n) = if n == old_n
+                                            then ESIntConstOfValueNode new_n
+                                            else p
+  processPart p@(ESNameOfBlockNode     n) = if n == old_n
+                                            then ESNameOfBlockNode new_n
+                                            else p
+  processPart p@(ESBlockOfValueNode    n) = if n == old_n
+                                            then ESBlockOfValueNode new_n
+                                            else p
+  processPart p@(ESFuncOfCallNode      n) = if n == old_n
+                                            then ESFuncOfCallNode new_n
+                                            else p
+  processPart p@(ESLocalTemporary {})   = p
 
 -- | For each value node that is copied multiple times, an additional mapping
 -- will be inserted for each pattern value node that is mapped to one of the

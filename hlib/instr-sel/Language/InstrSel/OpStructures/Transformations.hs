@@ -16,11 +16,11 @@ module Language.InstrSel.OpStructures.Transformations
   )
 where
 
+import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.PatternMatching.VF2
-import Language.InstrSel.DataTypes
-import Language.InstrSel.OpTypes
 import Language.InstrSel.OpStructures.Base
+import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils
   ( Natural
