@@ -8,4 +8,6 @@
 ** DONE Fix exponential explosion bug in alternative extender
 ** DONE Fix exponential explosion in pattern matcher due to alternative edges
 ** DONE Fix faculty explosion in pattern matcher when dealing with SIMDs
+** DONE Combine constants in patterns
+** TODO Fix uni-targen bug when SETREG assignes an immediate to a register
 ** TODO Branch-extend patterns
