@@ -192,7 +192,7 @@ combineValueNodes p nodes =
         recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
         new_cs = map (apply recon) (osConstraints old_os)
         new_os = old_os { osGraph = new_g, osConstraints = new_cs }
-        old_emit_str = patEmitString p
+        old_emit_str = patEmitString p'
         new_emit_str = replaceNodeIDInEmitString (getNodeID old_n)
                                                  (getNodeID new_n)
                                                  old_emit_str
