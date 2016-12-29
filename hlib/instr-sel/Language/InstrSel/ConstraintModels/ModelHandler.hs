@@ -422,8 +422,8 @@ processMatch' instr pat match mid oid =
          , hlMatchEmitStrNodeMaplist =
              computeEmitStrNodeMaps (patEmitString pat) pn2oid_maps match
          }
-       , next_oid
-       )
+     , next_oid
+     )
 
 -- | Computes the emit string node ID mappings, which is done as follows: if the
 -- assembly string part contains a node ID, take the corresponding operand ID if
