@@ -26,6 +26,7 @@ module Language.InstrSel.DataTypes.Base
   , isCompatibleWith
   , hasSameBitWidth
   , parseDataTypeFromJson
+  , isSingletonConstant
   , areSameConstants
   )
 where
@@ -302,3 +303,9 @@ areSameConstants :: DataType -> DataType -> Bool
 areSameConstants d1 d2 = isTypeAConstValue d1 &&
                          isTypeAConstValue d2 &&
                          d1 == d2
+
+-- | Checks if a data type represents a constant with a singleton range.
+isSingletonConstant :: DataType -> Bool
+isSingletonConstant (IntConstType r _) = isRangeSingleton r
+isSingletonConstant PointerNullType = True
+isSingletonConstant _ = False

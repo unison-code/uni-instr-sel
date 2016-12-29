@@ -151,9 +151,12 @@ combineConstantsInPattern :: InstrPattern -> InstrPattern
 combineConstantsInPattern p =
   let g = getGraph p
       const_ns = filter isValueNodeWithConstValue (getAllNodes g)
-      haveSameConstants n1 n2 = (getDataTypeOfValueNode n1)
-                                `areSameConstants`
-                                (getDataTypeOfValueNode n2)
+      haveSameConstants n1 n2 =
+        let d1 = getDataTypeOfValueNode n1
+            d2 = getDataTypeOfValueNode n2
+        in isSingletonConstant d1 &&
+           isSingletonConstant d2 &&
+           d1 `areSameConstants` d2
       grouped_ns = groupBy haveSameConstants const_ns
   in foldl combineValueNodes p grouped_ns
 
