@@ -34,10 +34,9 @@ bb3:
   [%7] <- "%7 = xor(%a, %const.-1.copy.3)" <- [%a, %const.-1.copy.3]
   [%8] <- "%8 = xor(%b, %const.-1.copy.3)" <- [%b, %const.-1.copy.3]
   [%const.2147483646.copy.1] <- "%const.2147483646.copy.1 = ##2147483646" <- []
-  [%const.-2.copy.1] <- "%const.-2.copy.1 = ##-2" <- []
   [%9] <- "%9 = add(%7, %8)" <- [%7, %8]
   [%10] <- "%10 = cmp.gtu(%9, %const.2147483646.copy.1)" <- [%9, %const.2147483646.copy.1]
-  [%11] <- "%11 = sub(%const.-2.copy.1, %9)" <- [%const.-2.copy.1, %9]
+  [%11] <- "%11 = sub(#-2, %9)" <- [%9]
   [] <- "if (%10) jump bb4" <- [%10]
 bb5:
 .selectcont:

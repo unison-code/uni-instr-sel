@@ -5,12 +5,12 @@
 bb1:
 2:
   [%const.-15.copy.1] <- "%const.-15.copy.1 = ##-15" <- []
-  [%const.0.copy.3] <- "%const.0.copy.3 = ##0" <- []
   [%3] <- "%3 = cmp.lt(%n, %const.-15.copy.1)" <- [%n, %const.-15.copy.1]
   [] <- "if (%3) jump bb2" <- [%3]
 bb3:
 8:
-  [%9] <- "%9 = cmp.lt(%n, %const.0.copy.3)" <- [%n, %const.0.copy.3]
+  [%const.0.copy.2] <- "%const.0.copy.2 = ##0" <- []
+  [%9] <- "%9 = cmp.lt(%n, %const.0.copy.2)" <- [%n, %const.0.copy.2]
   [] <- "if (%9) jump bb4" <- [%9]
 bb5:
 15:
@@ -20,7 +20,7 @@ bb5:
   [] <- "jump gsm_asr.exit" <- []
 bb4:
 10:
-  [%11] <- "%11 = sub(%const.0.copy.3, %n)" <- [%const.0.copy.3, %n]
+  [%11] <- "%11 = sub(#0, %n)" <- [%n]
   [%12] <- "%12 = sxth(%a)" <- [%a]
   [%13] <- "%13 = asr(%12, %11)" <- [%12, %11]
   [%14] <- "%14 = and(%13, #-32768)" <- [%13]
@@ -30,7 +30,7 @@ bb2:
   [] <- "%tmp.1 = lsr(%a, #15)" <- [%a]
   [%a.lobit] <- "%a.lobit = zxth(%tmp.1)" <- []
   [%5] <- "%5 = zxth(%a.lobit)" <- [%a.lobit]
-  [%6] <- "%6 = sub(%const.0.copy.3, %5)" <- [%const.0.copy.3, %5]
+  [%6] <- "%6 = sub(#0, %5)" <- [%5]
   [%7] <- "%7 = and(%6, #-32768)" <- [%6]
 bb0:
 gsm_asr.exit:

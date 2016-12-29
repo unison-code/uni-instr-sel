@@ -15,9 +15,8 @@ bb3:
   [] <- "if (%3) jump bb4" <- [%3]
 bb5:
 6:
-  [%const.200.copy.1] <- "%const.200.copy.1 = ##200" <- []
   [%7] <- "%7 = asl(%..quality, #1)" <- [%..quality]
-  [%8] <- "%8 = sub(%const.200.copy.1, %7)" <- [%const.200.copy.1, %7]
+  [%8] <- "%8 = sub(#200, %7)" <- [%7]
   [] <- "jump 9" <- []
 bb4:
 4:
