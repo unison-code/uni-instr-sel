@@ -229,10 +229,15 @@ transformPtrConversionsInGraph g =
            g
            ps
 
--- | Fixes phi nodes in a given 'OpStructure' that have multiple data-flow edges
--- to the same value node by only keeping one data-flow edge and replacing all
--- concerned definition edges with a single definition edge to the last block
--- that dominates the blocks of the replaced definition edges.
+-- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph
+-- invariants. Such fixes include:
+--    - Phi nodes with multiple data-flow edges to the same value node are
+--      transformed such that only one data-flow edge is kept. Concerned
+--      definition edges are also replaced with a single definition edge to the
+--      last block that dominates the blocks of the replaced definition edges.
+--    - Phi nodes with multiple values that originate from the same block are
+--      transformed such that only a single value is kept.
+--    - Phi nodes that take only a single value as input are removed.
 fixPhis :: OpStructure -> OpStructure
 fixPhis os =
   let g = osGraph os
@@ -240,9 +245,10 @@ fixPhis os =
   in if isJust entry
      then let entry_n = findNodesWithNodeID g (fromJust entry)
           in if length entry_n == 1
-             then let g0 = fixPhisInGraph g (head entry_n)
-                      g1 = removeRedundantPhisInGraph g0
-                  in os { osGraph = g1 }
+             then let g0 = ensureSingleValueUseInPhisInGraph g (head entry_n)
+                      g1 = ensureSingleBlockUseInPhisInGraph g0
+                      g2 = removeRedundantPhisInGraph g1
+                  in os { osGraph = g2 }
              else if length entry_n == 0
                   then error $ "fixPhis: op-structure has no block node " ++
                                "with ID " ++ pShow entry
@@ -250,12 +256,12 @@ fixPhis os =
                                "nodes with ID " ++ pShow entry
      else error $ "fixPhis: op-structure has no entry block"
 
-fixPhisInGraph
+ensureSingleValueUseInPhisInGraph
   :: Graph
   -> Node
      -- ^ The root (entry) block of the given graph.
   -> Graph
-fixPhisInGraph g root =
+ensureSingleValueUseInPhisInGraph g root =
   let cfg = extractCFG g
       ns = filter ( \n ->
                     let es = getDtFlowInEdges g n
@@ -275,10 +281,10 @@ fixPhisInGraph g root =
                                               (getDefOutEdges g0 v)
                            in if length def_e == 1
                               then head def_e
-                              else error $ "fixPhisInGraph: " ++ show v ++
-                                           " has no definition edge " ++
-                                           "with out-edge number " ++
-                                           pShow out_nr
+                              else error $
+                                   "ensureSingleValueUseInPhisInGraph: " ++
+                                   show v ++ " has no definition edge with " ++
+                                   "out-edge number " ++ pShow out_nr
                          )
                          dt_es
             vb_ps = map ( \(dt_e, def_e) ->
@@ -307,6 +313,37 @@ fixPhisInGraph g root =
                        fixed_vb_ps
         in g3
   in foldr fix g ns
+
+ensureSingleBlockUseInPhisInGraph :: Graph -> Graph
+ensureSingleBlockUseInPhisInGraph g =
+  let transformPhi phi_n g0 =
+        let dt_es = getDtFlowInEdges g0 phi_n
+            def_es = map ( \e ->
+                           let v = getSourceNode g0 e
+                               out_nr = getEdgeOutNr e
+                               def_e = filter (\e' -> getEdgeOutNr e' == out_nr)
+                                              (getDefOutEdges g0 v)
+                           in if length def_e == 1
+                              then head def_e
+                              else error $
+                                   "ensureSingleBlockUseInPhisInGraph: " ++
+                                   show v ++ " has no definition edge with " ++
+                                   "out-edge number " ++ pShow out_nr
+                         )
+                         dt_es
+            dt_def_ps = zip dt_es def_es
+            grouped_ps = groupBy ( \(_, e1) (_, e2) ->
+                                   getTargetNode g0 e1 == getTargetNode g0 e2
+                                 )
+                                 dt_def_ps
+            edges_to_remove = concatMap (\ps -> map fst ps ++ map snd ps) $
+                              map tail $
+                              grouped_ps
+            g1 = foldr delEdge g0 edges_to_remove
+        in g1
+      phi_ns = filter isPhiNode $
+               getAllNodes g
+  in foldr transformPhi g phi_ns
 
 -- | From a given control-flow graph and list of block nodes, gets the block
 -- that is the closest dominator of all given blocks.
