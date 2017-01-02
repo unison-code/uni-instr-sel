@@ -90,19 +90,19 @@ AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 %.f.json: %.low.freq.ll
 	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@
 
-%.ph.f.json: %.f.json
-	$(UNI_IS_CMD) transform --fix-phis-in-fun -f $< -t $(TARGET) -o $@
-
-%.ph.lp.f.json: %.ph.f.json
+%.lp.f.json: %.f.json
 	$(UNI_IS_CMD) transform --lower-pointers-in-fun -f $< -t $(TARGET) -o $@
 
-%.ph.lp.ce.f.json: %.ph.lp.f.json
+%.lp.ph.f.json: %.lp.f.json
+	$(UNI_IS_CMD) transform --fix-phis-in-fun -f $< -t $(TARGET) -o $@
+
+%.lp.ph.ce.f.json: %.lp.ph.f.json
 	$(UNI_IS_CMD) transform --copy-extend-fun -f $< -o $@
 
-%.ph.lp.ce.cc.f.json: %.ph.lp.ce.f.json
+%.lp.ph.ce.cc.f.json: %.lp.ph.ce.f.json
 	$(UNI_IS_CMD) transform --combine-consts-in-fun -f $< -o $@
 
-%.ph.lp.ce.cc.be.f.json: %.ph.lp.ce.cc.f.json
+%.lp.ph.ce.cc.be.f.json: %.lp.ph.ce.cc.f.json
 	$(UNI_IS_CMD) transform --branch-extend-fun -f $< -o $@
 
 %.p.json: %.f.json
@@ -116,46 +116,46 @@ AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 				  -p $*.p.json \
 				  -o $@
 
-%.ph.lp.ce.cc.be.dom.json: %.ll.model.json
+%.lp.ph.ce.cc.be.dom.json: %.ll.model.json
 	$(CONSTR_CONV_CMD) $< > $@.temp
 	$(DOM_MATCHES_CMD) $@.temp > $@
 	$(RM) $@.temp
 
-%.ph.lp.ce.cc.be.ill.json: %.ll.model.json
+%.lp.ph.ce.cc.be.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
 
-%.ph.lp.ce.cc.be.ae.presolved.p.json: %.ph.lp.ce.cc.be.ae.p.json \
-                                      %.ph.lp.ce.cc.be.dom.json \
-                                      %.ph.lp.ce.cc.be.ill.json \
+%.lp.ph.ce.cc.be.ae.presolved.p.json: %.lp.ph.ce.cc.be.ae.p.json \
+                                      %.lp.ph.ce.cc.be.dom.json \
+                                      %.lp.ph.ce.cc.be.ill.json \
                                       %.aimaps.json
-	$(PRUNE_BAD_MATCHES_CMD) -d $*.ph.lp.ce.cc.be.dom.json \
-							 -i $*.ph.lp.ce.cc.be.ill.json \
-							 -p $*.ph.lp.ce.cc.be.ae.p.json \
+	$(PRUNE_BAD_MATCHES_CMD) -d $*.lp.ph.ce.cc.be.dom.json \
+							 -i $*.lp.ph.ce.cc.be.ill.json \
+							 -p $*.lp.ph.ce.cc.be.ae.p.json \
 							 -a $*.aimaps.json \
 							 > $@
 
-%.presolved.hl.model.json: %.ph.lp.ce.cc.be.f.json \
-                           %.ph.lp.ce.cc.be.ae.presolved.p.json
+%.presolved.hl.model.json: %.lp.ph.ce.cc.be.f.json \
+                           %.lp.ph.ce.cc.be.ae.presolved.p.json
 	$(UNI_IS_CMD) make --construct-hl-cp-model \
-				  -f $*.ph.lp.ce.cc.be.f.json \
-				  -p $*.ph.lp.ce.cc.be.ae.presolved.p.json \
+				  -f $*.lp.ph.ce.cc.be.f.json \
+				  -p $*.lp.ph.ce.cc.be.ae.presolved.p.json \
 				  -o $@
 
-%.hl.model.json: %.ph.lp.ce.cc.be.f.json %.ph.lp.ce.cc.be.ae.p.json
+%.hl.model.json: %.lp.ph.ce.cc.be.f.json %.lp.ph.ce.cc.be.ae.p.json
 	$(UNI_IS_CMD) make --construct-hl-cp-model \
-				  -f $*.ph.lp.ce.cc.be.f.json \
-				  -p $*.ph.lp.ce.cc.be.ae.p.json \
+				  -f $*.lp.ph.ce.cc.be.f.json \
+				  -p $*.lp.ph.ce.cc.be.ae.p.json \
 				  -o $@
 
-%.presolved.aimaps.json: %.ph.lp.ce.cc.be.f.json %.presolved.hl.model.json
+%.presolved.aimaps.json: %.lp.ph.ce.cc.be.f.json %.presolved.hl.model.json
 	$(UNI_IS_CMD) make --compute-array-index-maplists \
-				  -f $*.ph.lp.ce.cc.be.f.json \
+				  -f $*.lp.ph.ce.cc.be.f.json \
 				  -m $*.presolved.hl.model.json \
 				  -o $@
 
-%.aimaps.json: %.ph.lp.ce.cc.be.f.json %.hl.model.json
+%.aimaps.json: %.lp.ph.ce.cc.be.f.json %.hl.model.json
 	$(UNI_IS_CMD) make --compute-array-index-maplists \
-				  -f $*.ph.lp.ce.cc.be.f.json \
+				  -f $*.lp.ph.ce.cc.be.f.json \
 				  -m $*.hl.model.json \
 				  -o $@
 
