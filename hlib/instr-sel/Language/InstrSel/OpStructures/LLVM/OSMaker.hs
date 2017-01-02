@@ -18,8 +18,11 @@ module Language.InstrSel.OpStructures.LLVM.OSMaker
 where
 
 import qualified Language.InstrSel.Constraints as C
-  ( Constraint )
+  ( NodeExpr (..)
+  , Constraint
+  )
 import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
+import qualified Language.InstrSel.Constraints.ConstraintFolder as C
 import qualified Language.InstrSel.DataTypes as D
 import qualified Language.InstrSel.Graphs as G
 import qualified Language.InstrSel.OpStructures as OS
@@ -372,7 +375,8 @@ mkFunctionOS f@(LLVM.Function {}) =
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
      st7 <- addPendingDatumToBlockDefEdges st6
-     return $ (opStruct st7, funcInputValues st7)
+     st8 <- removeDeadCode st7
+     return $ (opStruct st8, funcInputValues st8)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
 -- | Builds an 'OpStructure', together with the input and output value nodes,
@@ -1918,6 +1922,63 @@ removeUnusedBlockNodes st =
                                  new_os { OS.osEntryBlockNode = Nothing }
                              , entryBlock = Nothing
                              }
+
+-- | Removes all value nodes from a 'BuildState' which have no edges and its
+-- concerning operation nodes. The function runs until fix point.
+removeDeadCode :: BuildState -> Either String BuildState
+removeDeadCode st0 =
+  do (st1, p) <- removeDeadCode' st0
+     st2 <- if p
+            then removeDeadCode st1
+            else return st1
+     return st2
+
+removeDeadCode' :: BuildState -> Either String (BuildState, Bool)
+removeDeadCode' st0 =
+  do let os = opStruct st0
+         g = OS.osGraph os
+         unused = filter (\n -> length (G.getSuccessors g n) == 0) $
+                  filter G.isValueNode $
+                  G.getAllNodes g
+     return $
+       if length unused > 0
+       then let v_n = head unused
+                pred_n = let ns = map (G.getSourceNode g) $
+                                  G.getDtFlowInEdges g v_n
+                         in if length ns == 1
+                            then head ns
+                            else error $ "removeDeadCode: value node " ++
+                                         pShow v_n ++ "has unexpected " ++
+                                         "number of inbound data-flow edges"
+                v_nid = G.getNodeID v_n
+                g1 = G.delNode v_n g
+                g2 = if G.isOperationNode pred_n
+                     then G.delNode pred_n g1
+                     else g1
+                valid_locs = OS.osValidLocations os
+                new_valid_locs = filter (\(n, _) -> n /= v_nid) valid_locs
+                same_locs = OS.osSameLocations os
+                new_same_locs = filter (\(n1, n2) -> n1 /= v_nid && n2 /= v_nid)
+                                       same_locs
+                cs = OS.osConstraints os
+                new_cs = let def_f = C.mkDefaultFolder True (&&)
+                             foldNodeExpr _ (C.ANodeIDExpr n) =
+                               n /= v_nid
+                             foldNodeExpr f expr =
+                               (C.foldNodeExprF def_f) f expr
+                             new_f = def_f { C.foldNodeExprF = foldNodeExpr }
+                         in filter (C.apply new_f) cs
+                new_os = os { OS.osGraph = g2
+                            , OS.osValidLocations = new_valid_locs
+                            , OS.osSameLocations = new_same_locs
+                            , OS.osConstraints = new_cs
+                            }
+                st1 = st0 { opStruct = new_os }
+                func_values = funcInputValues st1
+                new_func_values = filter (/= v_nid) func_values
+                st2 = st1 { funcInputValues = new_func_values }
+            in (st2, True)
+       else (st0, False)
 
 -- | Converts an 'LLVM.Named' entity into a 'String'.
 nameToString :: LLVM.Name -> String
