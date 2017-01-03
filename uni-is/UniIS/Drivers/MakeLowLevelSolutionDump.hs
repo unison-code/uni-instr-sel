@@ -58,7 +58,12 @@ run :: MakeAction
     -> IO [Output]
 
 run MakeLowLevelSolutionDump function model ai_maps sol =
-  let addPadding ai = (take (length $ pShow ai) $ repeat ' ') ++ "    "
+  let tm_id = llTMID model
+      tm_res = retrieveTargetMachine tm_id
+      tm = if isJust tm_res
+           then fromJust tm_res
+           else error $ "run: found no target machine with ID " ++ pShow tm_id
+      addPadding ai = (take (length $ pShow ai) $ repeat ' ') ++ "    "
       function_g = osGraph $ functionOS function
       mkNodeInfo n ai =
         "Node ID: " ++ pShow n
@@ -95,8 +100,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                      -- Cast needed to prevent compiler warning
       dumpDataNodes ns =
         let isNodeAnOpAlt n ops =
-              any ( \o -> n `elem` ( (llOperandAlternatives model)
-                                     !!
+              any ( \o -> n `elem` ( (llOperandAlternatives model) !!
                                      (fromIntegral o)
                                    )
                   )
@@ -132,6 +136,27 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                 zip (llMatchOperandsUsed model) ([0..] :: [ArrayIndex])
                 -- Cast needed to prevent compiler warning
               )
+              ++
+              "\n"
+              ++
+              addPadding ai
+              ++
+              "Assigned location: "
+              ++
+              ( let i = fromIntegral ai
+                    sol_ai = if llSolHasDatumLocation sol !! i
+                             then Just $ llSolLocationsOfData sol !! i
+                             else Nothing
+                in if isJust sol_ai
+                   then let loc_id = ai2LocationIDs ai_maps !!
+                                     (fromIntegral $ fromJust sol_ai)
+                            loc = findLocation tm loc_id
+                        in if isJust loc
+                           then pShow loc
+                           else error $ "run: found no location with ID " ++
+                                        pShow loc_id
+                   else "NULL"
+              )
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
@@ -165,14 +190,13 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                      -- Cast needed to prevent compiler warning
       dumpMatches ms =
         let mkMatchInfo m ai =
-              let tm_res = retrieveTargetMachine $ llTMID model
-                  tm = fromJust tm_res
-                  iid = (llMatchInstructionIDs model) !! (fromIntegral ai)
+              let i = fromIntegral ai
+                  iid = (llMatchInstructionIDs model) !! i
                   instr_res = findInstruction tm iid
                   instr = if isJust instr_res
                           then fromJust instr_res
                           else error $ "No instruction with ID " ++ (pShow iid)
-                  pid = (llMatchPatternIDs model) !! (fromIntegral ai)
+                  pid = (llMatchPatternIDs model) !! i
                   pat_res = findInstrPattern (instrPatterns instr) pid
                   pat = if isJust instr_res
                         then fromJust pat_res
@@ -187,7 +211,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  "Operations covered: "
                  ++
-                 (pShow $ (llMatchOperationsCovered model) !! (fromIntegral ai))
+                 (pShow $ (llMatchOperationsCovered model) !! i)
                  ++
                  "\n"
                  ++
@@ -198,12 +222,12 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
-                   (llMatchOperandsDefined model) !! (fromIntegral ai)
+                   (llMatchOperandsDefined model) !! i
                  )
                  ++
                  " / "
                  ++
-                 (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
+                 (pShow $ (llMatchOperandsDefined model) !! i)
                  ++
                  "\n"
                  ++
@@ -214,12 +238,12 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
-                   (llMatchOperandsUsed model) !! (fromIntegral ai)
+                   (llMatchOperandsUsed model) !! i
                  )
                  ++
                  " / "
                  ++
-                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
+                 (pShow $ (llMatchOperandsUsed model) !! i)
                  ++
                  "\n"
                  ++
@@ -227,7 +251,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  "Blocks spanned: "
                  ++
-                 (pShow $ (llMatchSpannedBlocks model) !! (fromIntegral ai))
+                 (pShow $ (llMatchSpannedBlocks model) !! i)
                  ++
                  "\n"
                  ++
@@ -251,7 +275,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  "Latency: "
                  ++
-                 (pShow $ (llMatchLatencies model) !! (fromIntegral ai))
+                 (pShow $ (llMatchLatencies model) !! i)
                  ++
                  "\n"
                  ++
@@ -259,7 +283,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  "Code size: "
                  ++
-                 (pShow $ (llMatchCodeSizes model) !! (fromIntegral ai))
+                 (pShow $ (llMatchCodeSizes model) !! i)
                  ++
                  "\n"
                  ++
