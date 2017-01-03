@@ -127,7 +127,7 @@ set of int: allBlocksInFunction = 1..numBlocksInFunction;
 set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
 set of int: allMatches = 1..numMatches;
 set of int: allOperands = 1..numOperands;
-set of int: allLocValues = 0..numLocValues-1;
+set of int: allLocValues = { x | x in canonicalDataLocs ++ [locValueForNull] };
 
 % Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
 % of 0 for the null block.
@@ -287,7 +287,7 @@ array[allDataInFunction] of var allBlocksInFunction: dplace;
 array[allOperationsInFunction] of var allBlocksInFunction: oplace;
 
 % Data locations.
-array[allDataInFunction] of var canonicalDataLocs: loc;
+array[allDataInFunction] of var allLocValues: loc;
 
 % Data selected for the operands.
 array[allOperands] of var allDataInFunction: alt;

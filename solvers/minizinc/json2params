@@ -39,7 +39,7 @@ import sexparser
 import os.path
 import sys
 import fractions
-from itertools import groupby
+
 
 
 #================
@@ -67,24 +67,6 @@ def bumpArr(json):
 
 def bumpArrOfArr(json):
     return [ bumpArr(x) for x in json ]
-
-def bump2DArrYY(json):
-    return [ [x[0] + 1, x[1] + 1] for x in json ]
-
-def bump2DArrYN(json):
-    return [ [x[0] + 1, x[1]] for x in json ]
-
-def bump2DArrYYY(json):
-    return [ [x[0] + 1, x[1] + 1, x[2] + 1] for x in json ]
-
-def bump2DArrYYN(json):
-    return [ [x[0] + 1, x[1] + 1, x[2]] for x in json ]
-
-def bump2DArrYNN(json):
-    return [ [x[0] + 1, x[1], x[2]] for x in json ]
-
-def bump2DArrYYNN(json):
-    return [ [x[0] + 1, x[1] + 1, x[2], x[3]] for x in json ]
 
 VT_PLAIN = 0
 VT_ARRAY1D = 1
@@ -324,57 +306,6 @@ def convertConstraint(l):
 
     return fromConstraint(l)
 
-def computeCanonicalDataLocs(json):
-    # [MC] Compute "canonicalDataLocs"
-
-    lid = 0
-    loc_lid = []
-    lids_loc = []
-    canonical = [json["num-locations"]]
-
-    for key, group in groupby( json["fun-valid-value-locs"], lambda x: x[0]):
-        lid = lid+1
-        loc_lid.extend([[row[1],lid] for row in group])
-
-    for key, group in groupby( json["match-valid-value-locs"]
-                             , lambda x: [x[0],x[1]]
-                             ):
-        lid = lid+1
-        loc_lid.extend([[row[2],lid] for row in group])
-
-    for row in json["fun-valid-value-loc-ranges"]:
-        lid = lid+1
-        loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
-
-    for row in json["match-valid-value-loc-ranges"]:
-        lid = lid+1
-        loc_lid.extend([[x,lid] for x in range(row[2],row[3]+1)])
-
-    loc_lid.sort();
-    for key, group in groupby(loc_lid, lambda x: x[0]):
-        lids_loc.append([[row[1] for row in group],key])
-
-    lids_loc.sort();
-    for key, group in groupby(lids_loc, lambda x: x[0]):
-        canonical.append(list(group)[0][1])
-
-    canonical.sort()
-    canonical_set = set(canonical)
-
-    # [MC] Filter fun-valid-value-locs and match-valid-value-locs w.r.t.
-    # canonical_set
-
-    new_fun_valid_value_locs = []
-    new_match_valid_value_locs = []
-    for row in json["fun-valid-value-locs"]:
-        if row[1] in canonical_set:
-            new_fun_valid_value_locs.append(row)
-    for row in json["match-valid-value-locs"]:
-        if row[2] in canonical_set:
-            new_match_valid_value_locs.append(row)
-
-    return canonical_set, new_fun_valid_value_locs, new_match_valid_value_locs
-
 
 
 #=============
@@ -395,11 +326,6 @@ if not os.path.isfile(json_file):
 json_data = []
 with open(json_file, 'r') as file:
     json_data = json.load(file)
-
-( canonical_set
-, canonical_fun_valid_value_locs
-, canonical_match_valid_value_locs
-) = computeCanonicalDataLocs(json_data)
 
 # [MC] Compute GCD of frequencies
 fqs = json_data["fun-block-exec-freqs"]
@@ -432,15 +358,15 @@ dumpParams( bumpArr(json_data["fun-branch-ext-blocks"])
 dumpParams( bumpValue(json_data["fun-entry-block"])
           , "entryBlockOfFunction"
           )
-dumpParams( bump2DArrYN(canonical_fun_valid_value_locs)
+dumpParams( bumpArrOfArr(json_data["fun-valid-value-locs"])
           , "validDataLocsInFunction"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYNN(json_data["fun-valid-value-loc-ranges"])
+dumpParams( bumpArrOfArr(json_data["fun-valid-value-loc-ranges"])
           , "validDataLocRangesInFunction"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYY(json_data["fun-same-value-locs"])
+dumpParams( bumpArrOfArr(json_data["fun-same-value-locs"])
           , "sameDataLocsInFunction"
           , VT_ARRAY2D
           )
@@ -471,7 +397,7 @@ dumpParams( bumpArr(json_data["fun-states"])
           , "statesInFunction"
           , VT_SET
           )
-dumpParams( bump2DArrYY(json_data["fun-state-def-edges"])
+dumpParams( bumpArrOfArr(json_data["fun-state-def-edges"])
           , "stateDefEdgesForBlocksInFunction"
           , VT_ARRAY2D
           )
@@ -481,11 +407,11 @@ dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
           , "allMatches"
           , VC_SET
           )
-dumpParams( bump2DArrYYY(json_data["match-input-def-edges"])
+dumpParams( bumpArrOfArr(json_data["match-input-def-edges"])
           , "inputDefEdgesInMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYY(json_data["match-output-def-edges"])
+dumpParams( bumpArrOfArr(json_data["match-output-def-edges"])
           , "outputDefEdgesInMatch"
           , VT_ARRAY2D
           )
@@ -531,19 +457,19 @@ dumpParams( bumpArrOfArr(json_data["match-consumed-blocks"])
           , "allMatches"
           , VC_SET
           )
-dumpParams( bump2DArrYY(json_data["match-fall-through-block"])
+dumpParams( bumpArrOfArr(json_data["match-fall-through-block"])
           , "fallThroughBlockOfMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYN(canonical_match_valid_value_locs)
+dumpParams( bumpArrOfArr(json_data["match-valid-value-locs"])
           , "validDataLocsInMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYNN(json_data["match-valid-value-loc-ranges"])
+dumpParams( bumpArrOfArr(json_data["match-valid-value-loc-ranges"])
           , "validDataLocRangesInMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYY(json_data["match-same-value-locs"])
+dumpParams( bumpArrOfArr(json_data["match-same-value-locs"])
           , "sameDataLocsInMatch"
           , VT_ARRAY2D
           )
@@ -600,7 +526,7 @@ dumpParams( bumpArrOfArr(json_data["illegal-match-combs"])
           , "int"
           , VC_SET
           )
-dumpParams( canonical_set
+dumpParams( bumpArr(json_data["canonical-locs"])
           , "canonicalDataLocs"
           , VT_SET
           )
