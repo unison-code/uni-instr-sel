@@ -149,18 +149,6 @@ def convData(d, var_conv):
     else:
         return str(d)
 
-def fixLocationValues(lst):
-    new_lst = []
-    for l in lst:
-        new_l = []
-        for v in l:
-            if v is None:
-                new_l.append("locValueForNull")
-            else:
-                new_l.append(v)
-        new_lst.append(new_l)
-    return new_lst
-
 def convert2Bool(lst):
     new_lst = []
     for l in lst:
@@ -551,9 +539,7 @@ dumpParams( bump2DArrYYN(canonical_match_valid_value_locs)
           , "validDataLocsInMatch"
           , VT_ARRAY2D
           )
-dumpParams( bump2DArrYYNN( \
-              fixLocationValues(json_data["match-valid-value-loc-ranges"])
-            )
+dumpParams( bump2DArrYYNN(json_data["match-valid-value-loc-ranges"])
           , "validDataLocRangesInMatch"
           , VT_ARRAY2D
           )
