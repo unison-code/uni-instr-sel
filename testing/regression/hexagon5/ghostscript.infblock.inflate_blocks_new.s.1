@@ -1,0 +1,49 @@
+0:
+  [%const.60.copy.1] <- "%const.60.copy.1 = ##60" <- []
+  [%const.32.copy.2] <- "%const.32.copy.2 = ##32" <- []
+  [%const.1.copy.2] <- "%const.1.copy.2 = ##1" <- []
+  [%const.40.copy.4] <- "%const.40.copy.4 = ##40" <- []
+  [%gep] <- "%gep = add(%z, %const.32.copy.2)" <- [%z, %const.32.copy.2]
+  [%2] <- "%2 = memb (%gep)" <- [%gep]
+  [%gep2] <- "%gep2 = add(%z, %const.40.copy.4)" <- [%z, %const.40.copy.4]
+  [%4] <- "%4 = memb (%gep2)" <- [%gep2]
+  [%5] <- "call %2" <- [%const.60.copy.1, %const.1.copy.2, %4, %2]
+  [%7] <- "%7 = cmp.eq(%5, 0)" <- [%5]
+  [] <- "if (%7) jump bb0" <- [%7]
+bb1:
+8:
+  [%const.36.copy.2] <- "%const.36.copy.2 = ##36" <- []
+  [%sunkaddr1] <- "%sunkaddr1 = add(%z, %const.32.copy.2)" <- [%z, %const.32.copy.2]
+  [%9] <- "%9 = memb (%sunkaddr1)" <- [%sunkaddr1]
+  [%sunkaddr4] <- "%sunkaddr4 = add(%z, %const.40.copy.4)" <- [%z, %const.40.copy.4]
+  [%10] <- "%10 = memb (%sunkaddr4)" <- [%sunkaddr4]
+  [%11] <- "call %9" <- [%w, %const.1.copy.2, %10, %9]
+  [%14] <- "%14 = cmp.eq(%11, 0)" <- [%11]
+  [%gep4] <- "%gep4 = add(%5, %const.36.copy.2)" <- [%5, %const.36.copy.2]
+  [] <- "memb (%gep4) = %11" <- [%11, %gep4]
+  [] <- "if (%14) jump bb2" <- [%14]
+bb3:
+19:
+  [%const.52.copy.1] <- "%const.52.copy.1 = ##52" <- []
+  [%const.56.copy.1] <- "%const.56.copy.1 = ##56" <- []
+  [%const.null.copy.3] <- "%const.null.copy.3 = ##0" <- []
+  [%gep8] <- "%gep8 = add(%w, %11)" <- [%w, %11]
+  [%gep12] <- "%gep12 = add(%5, %const.52.copy.1)" <- [%5, %const.52.copy.1]
+  [] <- "memb (%gep12) = %c" <- [%c, %gep12]
+  [%gep10] <- "memw (%5 ++ %const.40.copy.4) = %const.null.copy.3" <- [%const.null.copy.3, %5, %const.40.copy.4, %5]
+  [] <- "memb (%gep10) = %gep8" <- [%gep8, %gep10]
+  [%gep14] <- "%gep14 = add(%5, %const.56.copy.1)" <- [%5, %const.56.copy.1]
+  [] <- "call inflate_blocks_reset" <- [%gep14, %z, %5]
+bb0:
+29:
+  [%.0] <- "PHI (%5, 0) (%const.0.copy.1, 15)" <- [%5, %const.0.copy.1]
+  [] <- "return %.0" <- [%.0]
+bb2:
+15:
+  [%const.0.copy.1] <- "%const.0.copy.1 = ##0" <- []
+  [%gep6] <- "%gep6 = add(%z, %const.36.copy.2)" <- [%z, %const.36.copy.2]
+  [%17] <- "%17 = memb (%gep6)" <- [%gep6]
+  [%sunkaddr7] <- "%sunkaddr7 = add(%z, %const.40.copy.4)" <- [%z, %const.40.copy.4]
+  [%18] <- "%18 = memb (%sunkaddr7)" <- [%sunkaddr7]
+  [] <- "call %17" <- [%5, %18, %17]
+  [] <- "jump 29" <- []

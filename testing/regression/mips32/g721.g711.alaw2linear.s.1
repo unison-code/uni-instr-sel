@@ -20,8 +20,8 @@ NewDefault:
   [%14] <- "SLLV $%14, $%12, $%13" <- [%12, %13]
 15:
   [%t.0] <- "PHI (%14, 11) (%10, 9) (%8, 7)" <- [%14, %10, %8]
-  [%18] <- "SUBU $%18, $r0, $%t.0" <- [%const.0.copy.2, %t.0]
-  [] <- "BNE $%16, $r0, bb6" <- [%16, %const.0.copy.3]
+  [%18] <- "SUBU $%18, $%const.0.copy.2, $%t.0" <- [%const.0.copy.2, %t.0]
+  [] <- "BNE $%16, $%const.0.copy.3, bb6" <- [%16, %const.0.copy.3]
 bb7:
 .selectcont:
   [%19] <- "PHI (%t.0.copy.2, .selecttrue) (%18, 15)" <- [%t.0.copy.2, %18]

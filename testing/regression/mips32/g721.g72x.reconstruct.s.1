@@ -7,7 +7,7 @@
 bb1:
 4:
   [%const.0.copy.4] <- "ADDiu %const.0.copy.4, $0, 0" <- []
-  [] <- "BNE $%sign, $r0, bb2" <- [%sign, %const.0.copy.2]
+  [] <- "BNE $%sign, $%const.0.copy.2, bb2" <- [%sign, %const.0.copy.2]
 bb3:
 .selectcont:
   [%6] <- "PHI (%const.-32768.copy.1, .selecttrue) (%const.0.copy.4, 4)" <- [%const.-32768.copy.1, %const.0.copy.4]
@@ -25,7 +25,7 @@ bb0:
   [%14] <- "SRLV $%14, $%12, $%13" <- [%12, %13]
   [%sext1] <- "SLL $%sext1, $%14, 16" <- [%14]
   [%16] <- "SRA $%16, $%sext1, 16" <- [%sext1]
-  [] <- "BNE $%sign, $r0, bb4" <- [%sign, %const.0.copy.3]
+  [] <- "BNE $%sign, $%const.0.copy.3, bb4" <- [%sign, %const.0.copy.3]
 bb5:
 .selectcont1:
   [%18] <- "PHI (%17, .selecttrue2) (%16, 7)" <- [%17, %16]

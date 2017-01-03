@@ -18,6 +18,7 @@ indirect-call
 jpeg.jcparam.jpeg_quality_scaling
 jpeg.jutils.jround_up
 mem
+pgp.rsaglue2.make_RSA_PUBLIC_KEY
 phi
 pointers
 small

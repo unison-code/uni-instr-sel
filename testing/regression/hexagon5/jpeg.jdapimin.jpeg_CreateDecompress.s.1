@@ -34,10 +34,8 @@ bb0:
   [] <- "if (%13) jump bb2" <- [%13]
 bb3:
 14:
-  [%cinfo.copy.7] <- "%cinfo.copy.7 = %cinfo" <- [%cinfo]
   [%const.19.copy.1] <- "%const.19.copy.1 = ##19" <- []
-  [%const.164.copy.1] <- "%const.164.copy.1 = ##164" <- []
-  [%gep20, %16] <- "%16 = memw (%cinfo ++ %const.164.copy.1)" <- [%cinfo, %const.164.copy.1, %cinfo]
+  [%16] <- "%16 = memb (%cinfo)" <- [%cinfo]
   [%gep8] <- "%gep8 = add(%16, %const.20.copy.3)" <- [%16, %const.20.copy.3]
   [] <- "memb (%gep8) = %const.19.copy.1" <- [%const.19.copy.1, %gep8]
   [%gep10] <- "%gep10 = add(%16, %const.24.copy.2)" <- [%16, %const.24.copy.2]
@@ -48,13 +46,11 @@ bb3:
   [] <- "jump .preheader.preheader" <- []
 bb2:
 ..preheader.preheader_crit_edge:
-  [%cinfo.copy.6] <- "%cinfo.copy.6 = %cinfo" <- [%cinfo]
 .preheader.preheader:
-  [%.pre-phi] <- "PHI (%cinfo.copy.6, ..preheader.preheader_crit_edge) (%cinfo.copy.7, 14)" <- [%cinfo.copy.6, %cinfo.copy.7]
   [%gep14, %24] <- "%24 = memw (%cinfo ++ %const.12.copy.1)" <- [%cinfo, %const.12.copy.1, %cinfo]
   [%gep16] <- "memw (%cinfo ++ %const.8.copy.1) = %24" <- [%24, %cinfo, %const.8.copy.1, %cinfo]
   [] <- "memb (%gep14) = %const.1.copy.1" <- [%const.1.copy.1, %gep14]
-  [] <- "call jinit_memory_mgr" <- [%.pre-phi]
+  [] <- "call jinit_memory_mgr" <- [%cinfo]
   [] <- "memb (%gep16) = %const.null.copy.3" <- [%const.null.copy.3, %gep16]
   [] <- "memb (%gep18) = %const.null.copy.3" <- [%const.null.copy.3, %gep18]
   [] <- "call jinit_marker_reader" <- [%cinfo]

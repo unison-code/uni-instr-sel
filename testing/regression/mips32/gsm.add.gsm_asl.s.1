@@ -19,7 +19,7 @@ bb5:
   [] <- "B gsm_asr.exit" <- []
 bb4:
 10:
-  [%11] <- "SUBU $%11, $r0, $%n" <- [%const.0.copy.3, %n]
+  [%11] <- "SUBU $%11, $%const.0.copy.3, $%n" <- [%const.0.copy.3, %n]
   [%13] <- "SRAV $%13, $%12, $%11" <- [%12, %11]
   [%14] <- "ANDi %14, %13, 32767" <- [%13]
   [] <- "B gsm_asr.exit" <- []
@@ -27,7 +27,7 @@ bb2:
 4:
   [%a.lobit] <- "SRL $%a.lobit, $%a, 15" <- [%a]
   [%5] <- "ANDi %5, %a.lobit, 32767" <- [%a.lobit]
-  [%6] <- "SUBU $%6, $r0, $%5" <- [%const.0.copy.3, %5]
+  [%6] <- "SUBU $%6, $%const.0.copy.3, $%5" <- [%const.0.copy.3, %5]
   [%7] <- "ANDi %7, %6, 32767" <- [%6]
 bb0:
 gsm_asr.exit:
