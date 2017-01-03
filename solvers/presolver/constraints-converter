@@ -70,7 +70,7 @@ def extractValueRanges(loc_data):
         # Check if the list is a contiguous range
         loc_min = locs[0]
         loc_max = locs[-1]
-        if len(locs) - 1 == loc_max - loc_min:
+        if len(locs) > 1 and len(locs) - 1 == loc_max - loc_min:
             ranges.append([v, loc_min, loc_max])
         else:
             for l in locs:
