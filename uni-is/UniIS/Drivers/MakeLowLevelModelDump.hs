@@ -184,6 +184,22 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  addPadding ai
                  ++
+                 "Data / operands used: "
+                 ++
+                 ( pShow $
+                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                       ) $
+                   (llMatchOperandsUsed model) !! (fromIntegral ai)
+                 )
+                 ++
+                 " / "
+                 ++
+                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
                  "Operations covered: "
                  ++
                  (pShow $ (llMatchOperationsCovered model) !! (fromIntegral ai))
@@ -203,22 +219,6 @@ run MakeLowLevelModelDump function model ai_maps =
                  " / "
                  ++
                  (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
-                 ++
-                 "\n"
-                 ++
-                 addPadding ai
-                 ++
-                 "Data / operands used: "
-                 ++
-                 ( pShow $
-                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
-                       ) $
-                   (llMatchOperandsUsed model) !! (fromIntegral ai)
-                 )
-                 ++
-                 " / "
-                 ++
-                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
                  ++
                  "\n"
                  ++

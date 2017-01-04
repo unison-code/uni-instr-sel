@@ -209,6 +209,22 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  ++
                  addPadding ai
                  ++
+                 "Data / operands used: "
+                 ++
+                 ( pShow $
+                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                       ) $
+                   (llMatchOperandsUsed model) !! i
+                 )
+                 ++
+                 " / "
+                 ++
+                 (pShow $ (llMatchOperandsUsed model) !! i)
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
                  "Operations covered: "
                  ++
                  (pShow $ (llMatchOperationsCovered model) !! i)
@@ -228,22 +244,6 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  " / "
                  ++
                  (pShow $ (llMatchOperandsDefined model) !! i)
-                 ++
-                 "\n"
-                 ++
-                 addPadding ai
-                 ++
-                 "Data / operands used: "
-                 ++
-                 ( pShow $
-                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
-                       ) $
-                   (llMatchOperandsUsed model) !! i
-                 )
-                 ++
-                 " / "
-                 ++
-                 (pShow $ (llMatchOperandsUsed model) !! i)
                  ++
                  "\n"
                  ++
