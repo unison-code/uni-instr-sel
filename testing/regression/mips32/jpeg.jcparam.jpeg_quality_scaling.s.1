@@ -21,8 +21,9 @@ bb4:
 4:
   [%const.5000.copy.1] <- "ADDiu %const.5000.copy.1, $0, 5000" <- []
   [%5] <- "DIV %const.5000.copy.1, %..quality" <- [%const.5000.copy.1, %..quality]
+  [%5.copy.1] <- "MFLO $%5.copy.1" <- [%5]
 9:
-  [%.0] <- "PHI (%5, 4) (%8, 6)" <- [%5, %8]
+  [%.0] <- "PHI (%5.copy.1, 4) (%8, 6)" <- [%5.copy.1, %8]
   [] <- "RetRA %.0" <- [%.0]
 bb2:
 .selectcont.selecttrue:

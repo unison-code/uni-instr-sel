@@ -4,7 +4,7 @@ entry:
   [] <- "BNE $0, $%cmp, bb0" <- [%cmp]
 bb1:
 if.end:
-  [%add.copy.2] <- "MFHI $%add.copy.2" <- [%add]
+  [%add.copy.2] <- "MOV %add.copy.2, %add" <- [%add]
   [] <- "B return" <- []
 bb0:
 if.then:
