@@ -134,26 +134,6 @@ class ConstraintParser {
     parseBlockExpr(std::string& str);
 
     /**
-     * Parses a location expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed expression.
-     */
-    LocationExpr*
-    parseLocationExpr(std::string& str);
-
-    /**
-     * Parses a list of location expression.
-     *
-     * @param str
-     *        String to parse. This will be modified as part of parsing.
-     * @returns Parsed list of expression.
-     */
-    std::list<const LocationExpr*>
-    parseListOfLocationExpr(std::string& str);
-
-    /**
      * Parses a set expression.
      *
      * @param str

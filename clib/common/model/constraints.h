@@ -271,19 +271,6 @@ class BlockExpr : public Expr {
 };
 
 /**
- * Base class for a location expression.
- */
-class LocationExpr : public Expr {
-  public:
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~LocationExpr(void)
-    =0;
-};
-
-/**
  * Base class for a set element expression.
  */
 class SetElemExpr : public Expr {
@@ -991,31 +978,6 @@ class BlockToNumExpr
 };
 
 /**
- * Converts a location into a numerical expression.
- */
-class LocationToNumExpr
-    : public UnaryExpr<NumExpr, LocationToNumExpr, LocationExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    LocationToNumExpr(const LocationExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~LocationToNumExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Introduces the ID of a node to be part of an expression.
  */
 class ANodeIDExpr : public WithStrName<NodeExpr, ANodeIDExpr> {
@@ -1284,125 +1246,6 @@ class AnInstructionArrayIndexExpr
 };
 
 /**
- * Introduces the ID of a location to be part of an expression.
- */
-class ALocationIDExpr : public WithStrName<LocationExpr, ALocationIDExpr> {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param id
-     *        The location ID.
-     */
-    ALocationIDExpr(const ID& id);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~ALocationIDExpr(void);
-
-    /**
-     * Gets the location ID.
-     *
-     * @returns The ID.
-     */
-    ID
-    getID(void) const;
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-
-  private:
-    ID id_;
-};
-
-/**
- * Introduces the array index of a location to be part of an expression.
- */
-class ALocationArrayIndexExpr
-    : public WithStrName<LocationExpr, ALocationArrayIndexExpr>
-{
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param i
-     *        The location array index.
-     */
-    ALocationArrayIndexExpr(const ArrayIndex& i);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~ALocationArrayIndexExpr(void);
-
-    /**
-     * Gets the location array index.
-     *
-     * @returns The array index.
-     */
-    ArrayIndex
-    getArrayIndex(void) const;
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-
-  private:
-    ArrayIndex i_;
-};
-
-/**
- * Represents the null location.
- */
-class TheNullLocationExpr
-    : public WithStrName<LocationExpr, TheNullLocationExpr>
-{
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     */
-    TheNullLocationExpr(void);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~TheNullLocationExpr(void);
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Represents the match where this is declared.
  */
 class ThisMatchExpr
@@ -1584,31 +1427,6 @@ class BlockOfBlockNodeExpr
 };
 
 /**
- * Represents the location of a data node.
- */
-class LocationOfDataNodeExpr
-    : public UnaryExpr<LocationExpr, LocationOfDataNodeExpr, NodeExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    LocationOfDataNodeExpr(const NodeExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~LocationOfDataNodeExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Union set expression.
  */
 class UnionSetExpr : public BinaryExpr<SetExpr, UnionSetExpr, SetExpr> {
@@ -1678,49 +1496,6 @@ class DiffSetExpr : public BinaryExpr<SetExpr, DiffSetExpr, SetExpr> {
 };
 
 /**
- * Location class expression.
- */
-class LocationClassExpr : public WithStrName<SetExpr, LocationClassExpr> {
-  public:
-    /**
-     * \copydoc Expr::Expr()
-     *
-     * @param expr
-     *        The list of expressions.
-     */
-    LocationClassExpr(const std::list<const LocationExpr*>& expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~LocationClassExpr(void);
-
-    /**
-     * Gets the list of expressions.
-     *
-     * @return The list of expressions.
-     */
-    const std::list<const LocationExpr*>&
-    getExprList(void) const;
-
-    /**
-     * \copydoc Constraint::toLisp() const
-     */
-    virtual std::string
-    toLisp(void) const;
-
-  private:
-    std::list<const LocationExpr*> expr_;
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
  * Converts a block into a set element expression.
  */
 class BlockToSetElemExpr
@@ -1737,31 +1512,6 @@ class BlockToSetElemExpr
      */
     virtual
     ~BlockToSetElemExpr(void);
-
-  public:
-    /**
-     * @see WithStrName::getStrName() const
-     */
-    static const std::string STRNAME;
-};
-
-/**
- * Converts a location into a set element expression.
- */
-class LocationToSetElemExpr
-    : public UnaryExpr<SetElemExpr, LocationToSetElemExpr, LocationExpr>
-{
-  public:
-    /**
-     * \copydoc UnaryExpr::UnaryExpr(const Arg*)
-     */
-    LocationToSetElemExpr(const LocationExpr* expr);
-
-    /**
-     * \copydoc ~Expr::Expr()
-     */
-    virtual
-    ~LocationToSetElemExpr(void);
 
   public:
     /**

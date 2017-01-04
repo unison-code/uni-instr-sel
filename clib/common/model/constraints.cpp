@@ -91,8 +91,6 @@ InstructionExpr::~InstructionExpr(void) {}
 
 BlockExpr::~BlockExpr(void) {}
 
-LocationExpr::~LocationExpr(void) {}
-
 SetElemExpr::~SetElemExpr(void) {}
 
 SetExpr::~SetExpr(void) {}
@@ -241,12 +239,6 @@ BlockToNumExpr::BlockToNumExpr(const BlockExpr* expr)
 
 BlockToNumExpr::~BlockToNumExpr(void) {}
 
-LocationToNumExpr::LocationToNumExpr(const LocationExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-LocationToNumExpr::~LocationToNumExpr(void) {}
-
 ANodeIDExpr::ANodeIDExpr(const ID& id)
     : id_(id)
 {}
@@ -311,22 +303,6 @@ AnInstructionArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
 }
 
-ALocationIDExpr::ALocationIDExpr(const ID& id)
-    : id_(id)
-{}
-
-ALocationIDExpr::~ALocationIDExpr(void) {}
-
-ID
-ALocationIDExpr::getID(void) const {
-    return id_;
-}
-
-string
-ALocationIDExpr::toLisp(void) const {
-    return string("(") + getStrName() + " " + Utils::toString(id_) + ")";
-}
-
 ANodeArrayIndexExpr::ANodeArrayIndexExpr(const ArrayIndex& i)
     : i_(i)
 {}
@@ -357,31 +333,6 @@ AMatchArrayIndexExpr::getArrayIndex(void) const {
 string
 AMatchArrayIndexExpr::toLisp(void) const {
     return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
-}
-
-ALocationArrayIndexExpr::ALocationArrayIndexExpr(const ArrayIndex& i)
-    : i_(i)
-{}
-
-ALocationArrayIndexExpr::~ALocationArrayIndexExpr(void) {}
-
-ArrayIndex
-ALocationArrayIndexExpr::getArrayIndex(void) const {
-    return i_;
-}
-
-string
-ALocationArrayIndexExpr::toLisp(void) const {
-    return string("(") + getStrName() + " " + Utils::toString(i_) + ")";
-}
-
-TheNullLocationExpr::TheNullLocationExpr(void) {}
-
-TheNullLocationExpr::~TheNullLocationExpr(void) {}
-
-string
-TheNullLocationExpr::toLisp(void) const {
-    return getStrName();
 }
 
 ThisMatchExpr::ThisMatchExpr(void) {}
@@ -431,13 +382,6 @@ BlockOfBlockNodeExpr::BlockOfBlockNodeExpr(const NodeExpr* expr)
 
 BlockOfBlockNodeExpr::~BlockOfBlockNodeExpr(void) {}
 
-LocationOfDataNodeExpr::LocationOfDataNodeExpr(
-    const NodeExpr* expr
-) : UnaryExpr(expr)
-{}
-
-LocationOfDataNodeExpr::~LocationOfDataNodeExpr(void) {}
-
 UnionSetExpr::UnionSetExpr(const SetExpr* lhs, const SetExpr* rhs)
     : BinaryExpr(lhs, rhs)
 {}
@@ -456,47 +400,11 @@ DiffSetExpr::DiffSetExpr(const SetExpr* lhs, const SetExpr* rhs)
 
 DiffSetExpr::~DiffSetExpr(void) {}
 
-LocationClassExpr::LocationClassExpr(const std::list<const LocationExpr*>& expr)
-    : expr_(expr)
-{}
-
-LocationClassExpr::~LocationClassExpr(void) {
-    for (auto e : expr_) {
-        delete e;
-    }
-}
-
-const list<const LocationExpr*>&
-LocationClassExpr::getExprList(void) const {
-    return expr_;
-}
-
-string
-LocationClassExpr::toLisp(void) const {
-    string str;
-    str += "(" + getStrName() + " ";
-    str += "(";
-    list<string> exprs;
-    for (auto& expr : getExprList()) {
-        exprs.push_back(expr->toLisp());
-    }
-    str += Utils::join(exprs, " ");
-    str += ")";
-    str += ")";
-    return str;
-}
-
 BlockToSetElemExpr::BlockToSetElemExpr(const BlockExpr* expr)
     : UnaryExpr(expr)
 {}
 
 BlockToSetElemExpr::~BlockToSetElemExpr(void) {}
-
-LocationToSetElemExpr::LocationToSetElemExpr(const LocationExpr* expr)
-    : UnaryExpr(expr)
-{}
-
-LocationToSetElemExpr::~LocationToSetElemExpr(void) {}
 
 const string BoolExprConstraint::STRNAME = "";
 const string EqExpr::STRNAME = "==";
@@ -521,16 +429,12 @@ const string NodeToNumExpr::STRNAME = "node-to-num";
 const string MatchToNumExpr::STRNAME = "match-to-num";
 const string InstructionToNumExpr::STRNAME = "instr-to-num";
 const string BlockToNumExpr::STRNAME = "block-to-num";
-const string LocationToNumExpr::STRNAME = "loc-to-num";
 const string ANodeIDExpr::STRNAME = "id";
 const string AMatchIDExpr::STRNAME = "id";
 const string AnInstructionIDExpr::STRNAME = "id";
-const string ALocationIDExpr::STRNAME = "id";
 const string ANodeArrayIndexExpr::STRNAME = "ai";
 const string AMatchArrayIndexExpr::STRNAME = "ai";
-const string ALocationArrayIndexExpr::STRNAME = "ai";
 const string AnInstructionArrayIndexExpr::STRNAME = "ai";
-const string TheNullLocationExpr::STRNAME = "null";
 const string ThisMatchExpr::STRNAME = "this";
 const string CovererOfOperationNodeExpr::STRNAME = "cov-of-onode";
 const string DefinerOfDataNodeExpr::STRNAME = "def-of-dnode";
@@ -539,10 +443,7 @@ const string InstructionOfMatchExpr::STRNAME = "instr-of-match";
 const string BlockWhereinMatchIsPlacedExpr::STRNAME =
   "block-wherein-match-is-placed";
 const string BlockOfBlockNodeExpr::STRNAME = "block-of-bnode";
-const string LocationOfDataNodeExpr::STRNAME = "loc-of-dnode";
 const string UnionSetExpr::STRNAME = "union";
 const string IntersectSetExpr::STRNAME = "intersect";
 const string DiffSetExpr::STRNAME = "diff";
-const string LocationClassExpr::STRNAME = "loc-class";
 const string BlockToSetElemExpr::STRNAME = "block-to-set-elem";
-const string LocationToSetElemExpr::STRNAME = "loc-to-set-elem";

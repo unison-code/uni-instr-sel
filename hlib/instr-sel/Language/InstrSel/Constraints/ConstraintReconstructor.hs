@@ -43,7 +43,6 @@ data Reconstructor
                            -> InstructionExpr
                            -> InstructionExpr
       , mkBlockExprF       :: Reconstructor -> BlockExpr -> BlockExpr
-      , mkLocationExprF    :: Reconstructor -> LocationExpr -> LocationExpr
       , mkSetExprF         :: Reconstructor -> SetExpr -> SetExpr
       , mkSetElemExprF     :: Reconstructor -> SetElemExpr -> SetElemExpr
       }
@@ -103,8 +102,6 @@ mkDefaultReconstructor =
         Instruction2NumExpr ((mkInstructionExprF r) r expr)
       mkNumExpr r (Block2NumExpr expr) =
         Block2NumExpr ((mkBlockExprF r) r expr)
-      mkNumExpr r (Location2NumExpr expr) =
-        Location2NumExpr ((mkLocationExprF r) r expr)
       mkIntExpr _ expr@(AnIntegerExpr _) =
         expr
       mkNodeExpr _ expr@(ANodeIDExpr _) =
@@ -131,26 +128,14 @@ mkDefaultReconstructor =
         InstructionOfMatchExpr ((mkMatchExprF r) r expr)
       mkBlockExpr r (BlockOfBlockNodeExpr expr) =
         BlockOfBlockNodeExpr ((mkNodeExprF r) r expr)
-      mkLocationExpr _ expr@(ALocationIDExpr _) =
-        expr
-      mkLocationExpr _ expr@(ALocationArrayIndexExpr _) =
-        expr
-      mkLocationExpr r (LocationOfValueNodeExpr expr) =
-        LocationOfValueNodeExpr ((mkNodeExprF r) r expr)
-      mkLocationExpr _ expr@(TheNullLocationExpr) =
-        expr
       mkSetExpr r (UnionSetExpr lhs rhs) =
         UnionSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (IntersectSetExpr lhs rhs) =
         IntersectSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
       mkSetExpr r (DiffSetExpr lhs rhs) =
         DiffSetExpr ((mkSetExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkSetExpr r (LocationClassExpr exprs) =
-        LocationClassExpr (map ((mkLocationExprF r) r) exprs)
       mkSetElemExpr r (Block2SetElemExpr expr) =
         Block2SetElemExpr ((mkBlockExprF r) r expr)
-      mkSetElemExpr r (Location2SetElemExpr expr) =
-        Location2SetElemExpr ((mkLocationExprF r) r expr)
   in Reconstructor
        { mkConstraintF = mkConstraint
        , mkBoolExprF = mkBoolExpr
@@ -161,7 +146,6 @@ mkDefaultReconstructor =
        , mkMatchExprF = mkMatchExpr
        , mkInstructionExprF = mkInstructionExpr
        , mkBlockExprF = mkBlockExpr
-       , mkLocationExprF = mkLocationExpr
        , mkSetExprF = mkSetExpr
        , mkSetElemExprF = mkSetElemExpr
        }

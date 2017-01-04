@@ -607,8 +607,6 @@ checkNodeInConstraint g c =
     checkInstructionExpr l expr
   checkNumExpr l (Block2NumExpr expr) =
     checkBlockExpr l expr
-  checkNumExpr l (Location2NumExpr expr) =
-    checkLocationExpr l expr
   checkIntExpr l (AnIntegerExpr _) =
     l
   checkNodeExpr l (ANodeIDExpr nid) =
@@ -642,24 +640,11 @@ checkNodeInConstraint g c =
     checkMatchExpr l expr
   checkBlockExpr l (BlockOfBlockNodeExpr expr) =
     checkNodeExpr l expr
-  checkLocationExpr l (ALocationIDExpr _) =
-    l
-  checkLocationExpr l (ALocationArrayIndexExpr _) =
-    l
-  checkLocationExpr l (LocationOfValueNodeExpr expr) =
-    checkNodeExpr l expr
-  checkLocationExpr l (TheNullLocationExpr) =
-    l
   checkSetExpr l (UnionSetExpr lhs rhs) =
     checkSetExpr (checkSetExpr l lhs) rhs
   checkSetExpr l (IntersectSetExpr lhs rhs) =
     checkSetExpr (checkSetExpr l lhs) rhs
   checkSetExpr l (DiffSetExpr lhs rhs) =
     checkSetExpr (checkSetExpr l lhs) rhs
-  checkSetExpr l (LocationClassExpr expr) =
-    concatLogs $
-    map (checkLocationExpr l) expr
   checkSetElemExpr l (Block2SetElemExpr expr) =
     checkBlockExpr l expr
-  checkSetElemExpr l (Location2SetElemExpr expr) =
-    checkLocationExpr l expr

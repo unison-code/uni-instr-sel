@@ -704,16 +704,12 @@ replaceIDsWithArrayIndexes ai_maps c =
       mkOperandExpr _ (AnOperandIDExpr oid) =
         AnOperandArrayIndexExpr $ getAIForOperandID oid
       mkOperandExpr r expr = (mkOperandExprF def_r) r expr
-      mkLocationExpr _ (ALocationIDExpr nid) =
-        ALocationArrayIndexExpr $ getAIForLocationID nid
-      mkLocationExpr r expr = (mkLocationExprF def_r) r expr
       mkInstructionExpr _ (AnInstructionIDExpr nid) =
         AnInstructionArrayIndexExpr $ getAIForInstructionID nid
       mkInstructionExpr r expr = (mkInstructionExprF def_r) r expr
       new_r = def_r { mkNodeExprF = mkNodeExpr
                     , mkOperandExprF = mkOperandExpr
                     , mkMatchExprF = mkMatchExpr
-                    , mkLocationExprF = mkLocationExpr
                     , mkInstructionExprF = mkInstructionExpr
                     }
   in apply new_r c

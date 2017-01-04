@@ -21,7 +21,6 @@ module Language.InstrSel.Constraints.Base
   , NodeExpr (..)
   , OperandExpr (..)
   , NumExpr (..)
-  , LocationExpr (..)
   , SetElemExpr (..)
   , SetExpr (..)
   , fromLispExpr
@@ -106,8 +105,6 @@ data NumExpr
   | Instruction2NumExpr InstructionExpr
     -- | Converts a block to a numerical expression.
   | Block2NumExpr BlockExpr
-    -- | Converts a location to a numerical expression.
-  | Location2NumExpr LocationExpr
   deriving (Show)
 
 -- | Integer value expressions.
@@ -160,18 +157,6 @@ data BlockExpr
   = BlockOfBlockNodeExpr NodeExpr
   deriving (Show)
 
--- | Location expressions.
-data LocationExpr
-    -- | Introduces the ID of a location.
-  = ALocationIDExpr LocationID
-    -- | Introduces the array index of a location.
-  | ALocationArrayIndexExpr ArrayIndex
-    -- | Retrieves the of the location of a value node.
-  | LocationOfValueNodeExpr NodeExpr
-    -- | Denotes the null location.
-  | TheNullLocationExpr
-  deriving (Show)
-
 -- | Set construction expressions.
 data SetExpr =
     UnionSetExpr SetExpr SetExpr
@@ -179,16 +164,12 @@ data SetExpr =
     -- | @A diff B@. The first field represents @A@ and the second field
     -- @B@.
   | DiffSetExpr SetExpr SetExpr
-    -- | Converts a list of locations into a set.
-  | LocationClassExpr [LocationExpr]
   deriving (Show)
 
 -- | Set element expressions.
 data SetElemExpr
     -- | Converts a block to a set element expression.
   = Block2SetElemExpr BlockExpr
-    -- | Converts a location to a set element expression.
-  | Location2SetElemExpr LocationExpr
   deriving (Show)
 
 
@@ -262,7 +243,6 @@ instance FromLisp NumExpr where
     <|> struct "match-to-num" Match2NumExpr e
     <|> struct "instr-to-num" Instruction2NumExpr e
     <|> struct "block-to-num" Block2NumExpr e
-    <|> struct "loc-to-num" Location2NumExpr e
 
 instance ToLisp NumExpr where
   toLisp (PlusExpr  lhs rhs)     = mkStruct "+" [toLisp lhs, toLisp rhs]
@@ -273,7 +253,6 @@ instance ToLisp NumExpr where
   toLisp (Match2NumExpr e)       = mkStruct "match-to-num" [toLisp e]
   toLisp (Instruction2NumExpr e) = mkStruct "instr-to-num" [toLisp e]
   toLisp (Block2NumExpr e)       = mkStruct "block-to-num" [toLisp e]
-  toLisp (Location2NumExpr e)    = mkStruct "loc-to-num" [toLisp e]
 
 instance FromLisp IntExpr where
   parseLisp e =
@@ -331,26 +310,11 @@ instance FromLisp BlockExpr where
 instance ToLisp BlockExpr where
   toLisp (BlockOfBlockNodeExpr e) = mkStruct "block-of-bnode" [toLisp e]
 
-instance FromLisp LocationExpr where
-  parseLisp (Lisp.Symbol "null") = return TheNullLocationExpr
-  parseLisp e =
-        struct "id" ALocationIDExpr e
-    <|> struct "ai" ALocationArrayIndexExpr e
-    <|> struct "loc-of-dnode" LocationOfValueNodeExpr e
-
-instance ToLisp LocationExpr where
-  toLisp TheNullLocationExpr = Lisp.Symbol "null"
-  toLisp (ALocationIDExpr rid) = mkStruct "id" [toLisp rid]
-  toLisp (ALocationArrayIndexExpr ai) = mkStruct "ai" [toLisp ai]
-  toLisp (LocationOfValueNodeExpr e) =
-    mkStruct "loc-of-dnode" [toLisp e]
-
 instance FromLisp SetExpr where
   parseLisp e =
         struct "union" UnionSetExpr e
     <|> struct "intersect" IntersectSetExpr e
     <|> struct "diff" DiffSetExpr e
-    <|> struct "loc-class" LocationClassExpr e
 
 instance ToLisp SetExpr where
   toLisp (UnionSetExpr lhs rhs) =
@@ -359,17 +323,13 @@ instance ToLisp SetExpr where
     mkStruct "intersect" [toLisp lhs, toLisp rhs]
   toLisp (DiffSetExpr lhs rhs) =
     mkStruct "diff" [toLisp lhs, toLisp rhs]
-  toLisp (LocationClassExpr es) =
-    mkStruct "loc-class" [Lisp.List (map toLisp es)]
 
 instance FromLisp SetElemExpr where
   parseLisp e =
         struct "block-to-set-elem" Block2SetElemExpr e
-    <|> struct "loc-to-set-elem" Location2SetElemExpr e
 
 instance ToLisp SetElemExpr where
   toLisp (Block2SetElemExpr e)    = mkStruct "block-to-set-elem" [toLisp e]
-  toLisp (Location2SetElemExpr e) = mkStruct "loc-to-set-elem" [toLisp e]
 
 
 

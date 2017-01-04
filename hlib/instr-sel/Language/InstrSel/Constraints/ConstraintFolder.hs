@@ -41,7 +41,6 @@ data Folder a
       , foldMatchExprF       :: Folder a -> MatchExpr -> a
       , foldInstructionExprF :: Folder a -> InstructionExpr -> a
       , foldBlockExprF       :: Folder a -> BlockExpr -> a
-      , foldLocationExprF    :: Folder a -> LocationExpr -> a
       , foldSetExprF         :: Folder a -> SetExpr -> a
       , foldSetElemExprF     :: Folder a -> SetElemExpr -> a
       , foldDefValue         :: a
@@ -107,8 +106,6 @@ mkDefaultFolder def_v fold_f =
         (foldInstructionExprF f) f expr
       foldNumExpr f (Block2NumExpr expr) =
         (foldBlockExprF f) f expr
-      foldNumExpr f (Location2NumExpr expr) =
-        (foldLocationExprF f) f expr
       foldIntExpr f (AnIntegerExpr _) =
         foldDefValue f
       foldNodeExpr f (ANodeIDExpr _) =
@@ -135,27 +132,14 @@ mkDefaultFolder def_v fold_f =
         (foldMatchExprF f) f expr
       foldBlockExpr f (BlockOfBlockNodeExpr expr) =
         (foldNodeExprF f) f expr
-      foldLocationExpr f (ALocationIDExpr _) =
-        foldDefValue f
-      foldLocationExpr f (ALocationArrayIndexExpr _) =
-        foldDefValue f
-      foldLocationExpr f (LocationOfValueNodeExpr expr) =
-        (foldNodeExprF f) f expr
-      foldLocationExpr f (TheNullLocationExpr) =
-        foldDefValue f
       foldSetExpr f (UnionSetExpr lhs rhs) =
         (foldValuesF f) ((foldSetExprF f) f lhs) ((foldSetExprF f) f rhs)
       foldSetExpr f (IntersectSetExpr lhs rhs) =
         (foldValuesF f) ((foldSetExprF f) f lhs) ((foldSetExprF f) f rhs)
       foldSetExpr f (DiffSetExpr lhs rhs) =
         (foldValuesF f) ((foldSetExprF f) f lhs) ((foldSetExprF f) f rhs)
-      foldSetExpr f (LocationClassExpr exprs) =
-        let vs = map ((foldLocationExprF f) f) exprs
-        in foldl (foldValuesF f) (head vs) (tail vs)
       foldSetElemExpr f (Block2SetElemExpr expr) =
         (foldBlockExprF f) f expr
-      foldSetElemExpr f (Location2SetElemExpr expr) =
-        (foldLocationExprF f) f expr
   in Folder
        { foldConstraintF = foldConstraint
        , foldBoolExprF = foldBoolExpr
@@ -166,7 +150,6 @@ mkDefaultFolder def_v fold_f =
        , foldMatchExprF = foldMatchExpr
        , foldInstructionExprF = foldInstructionExpr
        , foldBlockExprF = foldBlockExpr
-       , foldLocationExprF = foldLocationExpr
        , foldSetExprF = foldSetExpr
        , foldSetElemExprF = foldSetElemExpr
        , foldDefValue = def_v

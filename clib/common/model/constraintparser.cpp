@@ -187,10 +187,6 @@ ConstraintParser::parseNumExpr(string& str) {
             auto e = parseBlockExpr(str);
             expr = new BlockToNumExpr(e);
         }
-        else if (eatType<LocationToNumExpr>(str)) {
-            auto e = parseLocationExpr(str);
-            expr = new LocationToNumExpr(e);
-        }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
         }
@@ -385,64 +381,6 @@ ConstraintParser::parseBlockExpr(string& str) {
     return expr;
 }
 
-LocationExpr*
-ConstraintParser::parseLocationExpr(string& str) {
-    LocationExpr* expr = NULL;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        eatWhitespace(str);
-        if (eatType<ALocationIDExpr>(str)) {
-            ID id = eatID(str);
-            expr = new ALocationIDExpr(id);
-        }
-        else if (eatType<ALocationArrayIndexExpr>(str)) {
-            ArrayIndex i = eatArrayIndex(str);
-            expr = new ALocationArrayIndexExpr(i);
-        }
-        else if (eatType<LocationOfDataNodeExpr>(str)) {
-            auto e = parseNodeExpr(str);
-            expr = new LocationOfDataNodeExpr(e);
-        }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
-        }
-
-        eatWhitespace(str);
-        if (!eat(")", str)) {
-            THROW(Exception,
-                  "Invalid constraint expression (missing ')' char)");
-        }
-    }
-    else {
-        if (eatType<TheNullLocationExpr>(str)) {
-            expr = new TheNullLocationExpr;
-        }
-        else {
-            THROW(Exception, "Invalid constraint expression (unknown keyword)");
-        }
-    }
-
-    return expr;
-}
-
-list<const LocationExpr*>
-ConstraintParser::parseListOfLocationExpr(string& str) {
-    list<const LocationExpr*> expr;
-
-    eatWhitespace(str);
-    if (eat("(", str)) {
-        while (true) {
-            eatWhitespace(str);
-            expr.push_back(parseLocationExpr(str));
-            if (eat(" ", str)) continue;
-            if (eat(")", str)) break;
-        }
-    }
-
-    return expr;
-}
-
 SetExpr*
 ConstraintParser::parseSetExpr(string& str) {
     SetExpr* expr = NULL;
@@ -464,10 +402,6 @@ ConstraintParser::parseSetExpr(string& str) {
             auto lhs = parseSetExpr(str);
             auto rhs = parseSetExpr(str);
             expr = new DiffSetExpr(lhs, rhs);
-        }
-        else if (eatType<LocationClassExpr>(str)) {
-            auto es = parseListOfLocationExpr(str);
-            expr = new LocationClassExpr(es);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
@@ -496,10 +430,6 @@ ConstraintParser::parseSetElemExpr(string& str) {
         if (eatType<BlockToSetElemExpr>(str)) {
             auto e = parseBlockExpr(str);
             expr = new BlockToSetElemExpr(e);
-        }
-        else if (eatType<LocationToSetElemExpr>(str)) {
-            auto e = parseLocationExpr(str);
-            expr = new LocationToSetElemExpr(e);
         }
         else {
             THROW(Exception, "Invalid constraint expression (unknown keyword)");
