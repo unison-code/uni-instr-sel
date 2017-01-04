@@ -426,7 +426,7 @@ pattern.dot:
 %.run-checks:
 	@echo "$(C_INFO)* CHECKING INTEGRITY$(C_NONE)"
 	@for f in $*.f.json \
-			  $*.ph.f.json \
+			  $*.lp.f.json \
 			  $*.lp.ph.f.json \
 			  $*.lp.ph.ce.f.json \
 			  $*.lp.ph.ce.cc.f.json \
