@@ -59,16 +59,36 @@ def error(msg):
 #    - both matches have the same entry block,
 #    - both matches span across the same blocks,
 #    - both matches apply the def-dom-use constraint,
-#    - if m2 defines any constraints in the parameter
-#      "match-valid-value-loc-ranges", then m1 defines constraints that are at
-#      least as strong,
+#    - if m2 defines any constraints in the parameters "match-valid-value-locs"
+#      or "match-valid-value-loc-ranges", then m1 defines constraints that are
+#      at least as strong,
 #      and
 #    - both matches have exactly the same auxiliary constraints (TODO: relax?).
 def isMatchDominated(json, m1):
     def IsLocDomainAtLeastAsStrong(json, m2):
+        O = json["operand-alternatives"]
+
+        # Check match-valid-value-locs constraints
+        locs = json["match-valid-value-locs"]
+        R = range(len(locs))
+        for i in [ i for i in R if locs[i][0] == m2]:
+            # Find constraint in m1 that is at least as strong
+            found = False
+            for j in [ j for j in R if locs[j][0] == m1 ]:
+                if sorted(O[locs[i][1]]) == sorted(O[locs[j][1]]):
+                    reg2 = locs[j][2]
+                    reg1 = locs[i][2]
+                    if reg1 == reg2:
+                        found = True
+                        break
+
+            # No such constraint found
+            if not found:
+                return False
+
+        # Check match-valid-value-loc-ranges constraints
         loc_ranges = json["match-valid-value-loc-ranges"]
         R = range(len(loc_ranges))
-        O = json["operand-alternatives"]
         for i in [ i for i in R if loc_ranges[i][0] == m2]:
             # Find constraint in m1 that is at least as strong
             found = False
