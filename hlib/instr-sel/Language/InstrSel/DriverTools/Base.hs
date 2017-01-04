@@ -13,6 +13,7 @@ module Language.InstrSel.DriverTools.Base
   ( Log (..)
   , LogMessage (..)
   , Output (..)
+  , appendLog
   , concatLogs
   , emptyLog
   , toLog
@@ -148,13 +149,22 @@ emitToFile fp o =
 emptyLog :: Log
 emptyLog = Log []
 
--- | Converts a 'LogMessage' into a 'Log.
+-- | Converts a 'LogMessage' into a 'Log'.
 toLog :: LogMessage -> Log
 toLog msg = Log [msg]
 
 -- | Concatenates a list of 'Log's into a single 'Log'.
 concatLogs :: [Log] -> Log
 concatLogs logs = Log $ concat $ map msgList logs
+
+-- | Appends log @l2@ to the end of log @l1@.
+appendLog
+  :: Log
+     -- ^ Log to append to.
+  -> Log
+     -- ^ Log to append with.
+  -> Log
+appendLog l1 l2 = Log $ msgList l1 ++ msgList l2
 
 isErrorMessage :: LogMessage -> Bool
 isErrorMessage (ErrorMessage {}) = True

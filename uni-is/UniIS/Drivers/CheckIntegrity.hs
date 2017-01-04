@@ -15,6 +15,7 @@ where
 
 import UniIS.Drivers.Base
 import Language.InstrSel.Constraints
+import Language.InstrSel.Constraints.ConstraintFolder
 import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.Graphs
@@ -561,90 +562,14 @@ checkConstraints os =
 
 checkNodeInConstraint :: Graph -> Constraint -> Log
 checkNodeInConstraint g c =
-  checkConstraint emptyLog c
-  where
-  checkConstraint l (BoolExprConstraint expr) =
-    checkBoolExpr l expr
-  checkBoolExpr l (EqExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (NEqExpr lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (GTExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (GEExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (LTExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (LEExpr  lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkBoolExpr l (AndExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr l lhs) rhs
-  checkBoolExpr l (OrExpr  lhs rhs) =
-    checkBoolExpr (checkBoolExpr l lhs) rhs
-  checkBoolExpr l (ImpExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr l lhs) rhs
-  checkBoolExpr l (EqvExpr lhs rhs) =
-    checkBoolExpr (checkBoolExpr l lhs) rhs
-  checkBoolExpr l (NotExpr expr) =
-    checkBoolExpr l expr
-  checkBoolExpr l (InSetExpr lhs rhs) =
-    checkSetExpr (checkSetElemExpr l lhs) rhs
-  checkBoolExpr l (FallThroughFromMatchToBlockExpr expr) =
-    checkBlockExpr l expr
-  checkNumExpr l (PlusExpr lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkNumExpr l (MinusExpr lhs rhs) =
-    checkNumExpr (checkNumExpr l lhs) rhs
-  checkNumExpr l (Int2NumExpr expr) =
-    checkIntExpr l expr
-  checkNumExpr l (Bool2NumExpr expr) =
-    checkBoolExpr l expr
-  checkNumExpr l (Node2NumExpr expr) =
-    checkNodeExpr l expr
-  checkNumExpr l (Match2NumExpr expr) =
-    checkMatchExpr l expr
-  checkNumExpr l (Instruction2NumExpr expr) =
-    checkInstructionExpr l expr
-  checkNumExpr l (Block2NumExpr expr) =
-    checkBlockExpr l expr
-  checkIntExpr l (AnIntegerExpr _) =
-    l
-  checkNodeExpr l (ANodeIDExpr nid) =
-    concatLogs $
-    [ l
-    , checkNodeExists ( "constraint " ++ toLispExpr c ++ " with node ID " ++
-                        pShow nid
-                      )
-                      g
-                      nid
-    ]
-  checkNodeExpr l (ANodeArrayIndexExpr _) =
-    l
-  checkNodeExpr l (NodeSelectedForOperandExpr expr) =
-    checkOperandExpr l expr
-  checkOperandExpr l (AnOperandIDExpr _) =
-    l
-  checkOperandExpr l (AnOperandArrayIndexExpr _) =
-    l
-  checkMatchExpr l (AMatchIDExpr _) =
-    l
-  checkMatchExpr l (AMatchArrayIndexExpr _) =
-    l
-  checkMatchExpr l (ThisMatchExpr) =
-    l
-  checkInstructionExpr l (AnInstructionIDExpr _) =
-    l
-  checkInstructionExpr l (AnInstructionArrayIndexExpr _) =
-    l
-  checkInstructionExpr l (InstructionOfMatchExpr expr) =
-    checkMatchExpr l expr
-  checkBlockExpr l (BlockOfBlockNodeExpr expr) =
-    checkNodeExpr l expr
-  checkSetExpr l (UnionSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr l lhs) rhs
-  checkSetExpr l (IntersectSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr l lhs) rhs
-  checkSetExpr l (DiffSetExpr lhs rhs) =
-    checkSetExpr (checkSetExpr l lhs) rhs
-  checkSetElemExpr l (Block2SetElemExpr expr) =
-    checkBlockExpr l expr
+  let def_f = mkDefaultFolder emptyLog appendLog
+      foldNodeExpr _ (ANodeIDExpr n) =
+        checkNodeExists ( "constraint " ++ toLispExpr c ++ " with node ID " ++
+                          pShow n
+                        )
+                        g
+                        n
+      foldNodeExpr f expr =
+        (foldNodeExprF def_f) f expr
+      new_f = def_f { foldNodeExprF = foldNodeExpr }
+  in apply new_f c
