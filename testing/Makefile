@@ -144,12 +144,12 @@ run-all-regression-tests:
 
 .PHONY: run-small-regression-tests
 run-small-regression-tests:
-	@$(MAKE) T_ID=SMALL T_DB=small-test-cases.db \
+	@$(MAKE) --no-print-directory T_ID=SMALL T_DB=small-test-cases.db \
 			 .run-regression-tests-for-all-targets
 
 .PHONY: run-medium-regression-tests
 run-medium-regression-tests:
-	@$(MAKE) T_ID=MEDIUM T_DB=medium-test-cases.db \
+	@$(MAKE) --no-print-directory T_ID=MEDIUM T_DB=medium-test-cases.db \
 			 .run-regression-tests-for-all-targets
 
 .PHONY: .run-regression-tests-for-all-targets
@@ -346,15 +346,15 @@ run-medium-regression-tests:
 	echo "=" ;\
 	echo -n "=   TOTAL TIME:              " ;\
 	echo    "$(C_NONE)$${T_TIME_TOTAL_PRETTY}$(C_INFO)" ;\
-	echo -n "=   SOLVING:                 " ;\
-	echo -n      "$(C_NONE)$${T_SOLV_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_SOLV_TIME_PCENT}%)$(C_INFO)" ;\
-	echo -n "=   MODEL PREP (FLATTENING): " ;\
-	echo -n      "$(C_NONE)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
-	echo         "($${T_PREP_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   PATTERN MATCHING:        " ;\
 	echo -n      "$(C_NONE)$${T_PMAT_TIME_TOTAL_PRETTY} " ;\
 	echo         "($${T_PMAT_TIME_PCENT}%)$(C_INFO)" ;\
+	echo -n "=   MODEL PREP (FLATTENING): " ;\
+	echo -n      "$(C_NONE)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_PREP_TIME_PCENT}%)$(C_INFO)" ;\
+	echo -n "=   SOLVING:                 " ;\
+	echo -n      "$(C_NONE)$${T_SOLV_TIME_TOTAL_PRETTY} " ;\
+	echo         "($${T_SOLV_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   OTHER TASKS:             " ;\
 	echo -n      "$(C_NONE)$${T_MISC_TIME_TOTAL_PRETTY} " ;\
 	echo         "($${T_MISC_TIME_PCENT}%)$(C_INFO)" ;\
