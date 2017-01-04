@@ -168,12 +168,16 @@ parseArgs =
         enum [ TransformNothing
                  &= auto
                  &= ignore
-             , FixPhisInFunctionGraph
-                 &= name "fix-phis-in-fun"
+             , EnforcePhiNodeInvariantsInFunctionGraph
+                 &= name "enforce-phi-invariants-in-fun"
                  &= explicit
-                 &= help ( "Fixes phi nodes which have multiple data-flow " ++
-                           "edges to the same value node."
+                 &= help ( "Transforms phi nodes such that graph invariants " ++
+                           "are maintained."
                          )
+             , RemovePhiNodeRedundanciesInFunctionGraph
+                 &= name "remove-phi-redundancies-in-fun"
+                 &= explicit
+                 &= help "Removes redundancies concerning phi nodes."
              , LowerPointersInFunctionGraph
                  &= name "lower-pointers-in-fun"
                  &= explicit

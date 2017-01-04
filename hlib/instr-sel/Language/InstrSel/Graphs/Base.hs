@@ -68,6 +68,8 @@ module Language.InstrSel.Graphs.Base
   , fromEdgeNr
   , getAllNodes
   , getAllEdges
+  , findDefEdgeOfDtInEdge
+  , findDefEdgeOfDtOutEdge
   , getCtrlFlowInEdges
   , getCtrlFlowOutEdges
   , getDataTypeOfValueNode
@@ -876,7 +878,8 @@ copyNodeLabel to_n from_n g
 
 -- | Merges two nodes by redirecting the edges to the node to merge to, and then
 -- removes the merged node. If the two nodes are actually the same node, nothing
--- happens. Any edges already involving the two nodes will be removed.
+-- happens. Any edges already involving the two nodes will be removed. Edge
+-- number invariants between data-flow and definition edges are maintained.
 mergeNodes
   :: Node
      -- ^ Node to merge with (will be kept).
@@ -1937,3 +1940,23 @@ groupNodesByID :: [Node] -> [(NodeID, [Node])]
 groupNodesByID ns =
   let ns_by_id = groupBy (\n1 n2 -> getNodeID n1 == getNodeID n2) ns
   in map (\ns' -> (getNodeID $ head ns', ns')) ns_by_id
+
+-- | Returns the definition edges with matching edge-in number as the given
+-- edge.
+findDefEdgeOfDtInEdge :: Graph -> Edge -> [Edge]
+findDefEdgeOfDtInEdge g e =
+  let v = getTargetNode g e
+      nr = getEdgeInNr e
+      def_es = filter (\e' -> getEdgeInNr e' == nr) $
+               getDefInEdges g v
+  in def_es
+
+-- | Returns the definition edges with matching edge-out number as the given
+-- edge.
+findDefEdgeOfDtOutEdge :: Graph -> Edge -> [Edge]
+findDefEdgeOfDtOutEdge g e =
+  let v = getSourceNode g e
+      nr = getEdgeOutNr e
+      def_es = filter (\e' -> getEdgeOutNr e' == nr) $
+               getDefOutEdges g v
+  in def_es

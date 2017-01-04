@@ -70,7 +70,8 @@ data MakeAction
 
 data TransformAction
   = TransformNothing
-  | FixPhisInFunctionGraph
+  | EnforcePhiNodeInvariantsInFunctionGraph
+  | RemovePhiNodeRedundanciesInFunctionGraph
   | LowerPointersInFunctionGraph
   | CopyExtendFunctionGraph
   | BranchExtendFunctionGraph

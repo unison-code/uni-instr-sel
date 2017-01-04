@@ -13,8 +13,9 @@ module Language.InstrSel.Functions.Transformations
   ( branchExtend
   , copyExtend
   , combineConstants
+  , enforcePhiNodeInvariants
   , lowerPointers
-  , fixPhis
+  , removePhiNodeRedundancies
   )
 where
 
@@ -27,8 +28,9 @@ import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import qualified Language.InstrSel.OpStructures.Transformations as OS
-  ( fixPhis
+  ( enforcePhiNodeInvariants
   , lowerPointers
+  , removePhiNodeRedundancies
   )
 import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
@@ -345,18 +347,36 @@ updateGraph new_g f =
 
 -- | Lowers pointers in a given function graph into corresponding integer values
 -- for the given target machine.
+--
+-- See also 'OS.lowerPointers'.
 lowerPointers :: TargetMachine -> Function -> Function
 lowerPointers tm f =
   let os0 = functionOS f
       os1 = OS.lowerPointers (tmPointerSize tm) (tmNullPointerValue tm) os0
   in f { functionOS = os1 }
 
--- | Fixes phi nodes in a given function graph that have multiple data-flow
--- edges to the same value node by only keeping one data-flow edge and replacing
--- all concerned definition edges with a single definition edge to the last
--- block that dominates the blocks of the replaced definition edges.
-fixPhis :: Function -> Function
-fixPhis f =
+-- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph
+-- invariants:
+--    - Phi nodes with multiple data-flow edges to the same value node are
+--      transformed such that only one data-flow edge is kept. Concerned
+--      definition edges are also replaced with a single definition edge to the
+--      last block that dominates the blocks of the replaced definition edges.
+--    - Phi nodes with multiple values that originate from the same block are
+--      transformed such that only a single value is kept.
+--
+-- See also 'OS.enforcePhiNodeInvariants'.
+enforcePhiNodeInvariants :: Function -> Function
+enforcePhiNodeInvariants f =
   let os0 = functionOS f
-      os1 = OS.fixPhis os0
+      os1 = OS.enforcePhiNodeInvariants os0
+  in f { functionOS = os1 }
+
+-- | Replaces copies of the same value that act as input to a phi node with a
+-- single value, and removes phi nodes that takes only one value.
+--
+-- See also 'OS.removePhiNodeRedundancies'.
+removePhiNodeRedundancies :: Function -> Function
+removePhiNodeRedundancies f =
+  let os0 = functionOS f
+      os1 = OS.removePhiNodeRedundancies os0
   in f { functionOS = os1 }

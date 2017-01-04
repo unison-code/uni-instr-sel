@@ -11,11 +11,13 @@ Main authors:
 
 module Language.InstrSel.OpStructures.Transformations
   ( canonicalizeCopies
+  , enforcePhiNodeInvariants
   , lowerPointers
-  , fixPhis
+  , removePhiNodeRedundancies
   )
 where
 
+import Language.InstrSel.Constraints.ConstraintBuilder
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.PatternMatching.VF2
@@ -114,17 +116,14 @@ lowerPointers
   -> OpStructure
   -> OpStructure
 lowerPointers ptr_size null_value os =
-  -- TODO: check that these transformations do not cause inconsistencies,
-  -- for example that something refers to the deleted value nodes
-  let g0 = osGraph os
-      g1 = transformPtrValueNodesInGraph ptr_size null_value g0
-      g2 = removeRedundantPtrConversionsInGraph g1
-      g3 = transformPtrConversionsInGraph g2
-  in os { osGraph = g3 }
+  transformPtrConversions $
+  removeRedundantPtrConversions $
+  transformPtrValueNodes ptr_size null_value os
 
-transformPtrValueNodesInGraph :: Natural -> Integer -> Graph -> Graph
-transformPtrValueNodesInGraph ptr_size null_value g0 =
-  let new_temp_dt = IntTempType { intTempNumBits = ptr_size }
+transformPtrValueNodes :: Natural -> Integer -> OpStructure -> OpStructure
+transformPtrValueNodes ptr_size null_value os =
+  let g0 = osGraph os
+      new_temp_dt = IntTempType { intTempNumBits = ptr_size }
       new_null_dt = IntConstType { intConstValue = rangeFromSingleton null_value
                                  , intConstNumBits = Just ptr_size
                                  }
@@ -134,11 +133,12 @@ transformPtrValueNodesInGraph ptr_size null_value g0 =
       null_ptr_ns = filter (isPointerNullType . getDataTypeOfValueNode) ns
       g1 = foldr (updateDataTypeOfValueNode new_temp_dt) g0 temp_ptr_ns
       g2 = foldr (updateDataTypeOfValueNode new_null_dt) g1 null_ptr_ns
-  in g2
+  in os { osGraph = g2 }
 
-removeRedundantPtrConversionsInGraph :: Graph -> Graph
-removeRedundantPtrConversionsInGraph g0 =
-  let ns = filter ( \n -> let op = getOpOfComputationNode n
+removeRedundantPtrConversions :: OpStructure -> OpStructure
+removeRedundantPtrConversions os0 =
+  let g0 = osGraph os0
+      ns = filter ( \n -> let op = getOpOfComputationNode n
                           in isCompTypeConvOp op || isCompTypeCastOp op
                   ) $
            filter isComputationNode $
@@ -156,14 +156,24 @@ removeRedundantPtrConversionsInGraph g0 =
                             )
                             ps
       g1 = foldr (\(o, _, _) g -> delNode o g) g0 redundant_ps
-      g2 = foldr (\(_, in_v, out_v) g -> mergeNodes in_v out_v g)
-                 g1
-                 redundant_ps
-  in g2
+      os1 = os0 { osGraph = g1 }
+      os2 = foldr ( \(_, in_v, out_v) os ->
+                    let g = osGraph os
+                        g' = mergeNodes in_v out_v g
+                        os' = os { osGraph = g' }
+                        os'' = replaceNodeIDInOS (getNodeID out_v)
+                                                 (getNodeID in_v)
+                                                 os'
+                    in os''
+                  )
+                  os1
+                  redundant_ps
+  in os2
 
-transformPtrConversionsInGraph :: Graph -> Graph
-transformPtrConversionsInGraph g =
-  let ns = filter ( \n -> let op = getOpOfComputationNode n
+transformPtrConversions :: OpStructure -> OpStructure
+transformPtrConversions os =
+  let g = osGraph os
+      ns = filter ( \n -> let op = getOpOfComputationNode n
                           in if isCompTypeConvOp op
                              then let (CompTypeConvOp op') = op
                                   in op' `elem` [IntToPtr, PtrToInt]
@@ -179,56 +189,61 @@ transformPtrConversionsInGraph g =
                        in if isJust w1
                           then if isJust w2
                                then (n, fromJust w1, fromJust w2)
-                               else error $ "transformPtrConversionsInGraph:" ++
+                               else error $ "transformPtrConversions:" ++
                                             " data type of node has no bit " ++
                                             "width: " ++ show v2
-                          else error $ "transformPtrConversionsInGraph:" ++
+                          else error $ "transformPtrConversions:" ++
                                        " data type of node has no bit " ++
                                        "width: " ++ show v1
                )
                ns
-  in foldr ( \(n, w1, w2) g' ->
-             if w1 < w2
-             then updateOpOfComputationNode (CompTypeConvOp ZExt) n g'
-             else updateOpOfComputationNode (CompTypeConvOp Trunc) n g'
+  in foldr ( \(n, w1, w2) os' ->
+             let g0 = osGraph os'
+                 g1 = if w1 < w2
+                      then updateOpOfComputationNode (CompTypeConvOp ZExt) n g0
+                      else updateOpOfComputationNode (CompTypeConvOp Trunc) n g0
+             in os' { osGraph = g1 }
            )
-           g
+           os
            ps
 
 -- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph
--- invariants. Such fixes include:
+-- invariants:
 --    - Phi nodes with multiple data-flow edges to the same value node are
 --      transformed such that only one data-flow edge is kept. Concerned
 --      definition edges are also replaced with a single definition edge to the
 --      last block that dominates the blocks of the replaced definition edges.
 --    - Phi nodes with multiple values that originate from the same block are
 --      transformed such that only a single value is kept.
---    - Phi nodes that take only a single value as input are removed.
-fixPhis :: OpStructure -> OpStructure
-fixPhis os =
+enforcePhiNodeInvariants :: OpStructure -> OpStructure
+enforcePhiNodeInvariants = ensureSingleBlockUseInPhis .
+                           ensureSingleValueUseInPhis
+
+ensureSingleValueUseInPhis :: OpStructure -> OpStructure
+ensureSingleValueUseInPhis os =
   let g = osGraph os
       entry = osEntryBlockNode os
   in if isJust entry
      then let entry_n = findNodesWithNodeID g (fromJust entry)
           in if length entry_n == 1
-             then let g0 = ensureSingleValueUseInPhisInGraph g (head entry_n)
-                      g1 = ensureSingleBlockUseInPhisInGraph g0
-                      g2 = removeRedundantPhisInGraph g1
-                  in os { osGraph = g2 }
+             then ensureSingleValueUseInPhis' (head entry_n) os
              else if length entry_n == 0
-                  then error $ "fixPhis: op-structure has no block node " ++
-                               "with ID " ++ pShow entry
-                  else error $ "fixPhis: op-structure has multiple block " ++
-                               "nodes with ID " ++ pShow entry
-     else error $ "fixPhis: op-structure has no entry block"
+                  then error $ "ensureSingleValueUseInPhis: op-structure " ++
+                               "has no block node with ID " ++ pShow entry
+                  else error $ "ensureSingleValueUseInPhis: op-structure " ++
+                               "has multiple block nodes with ID " ++
+                               pShow entry
+     else error $ "ensureSingleValueUseInPhis: op-structure has no entry block"
 
-ensureSingleValueUseInPhisInGraph
-  :: Graph
-  -> Node
+
+ensureSingleValueUseInPhis'
+  :: Node
      -- ^ The root (entry) block of the given graph.
-  -> Graph
-ensureSingleValueUseInPhisInGraph g root =
-  let cfg = extractCFG g
+  -> OpStructure
+  -> OpStructure
+ensureSingleValueUseInPhis' root os =
+  let g = osGraph os
+      cfg = extractCFG g
       ns = filter ( \n ->
                     let es = getDtFlowInEdges g n
                         vs = nub $
@@ -238,27 +253,15 @@ ensureSingleValueUseInPhisInGraph g root =
                   ) $
            filter isPhiNode $
            getAllNodes g
-      fix phi_n g0 =
+      transform phi_n g0 =
         let dt_es = getDtFlowInEdges g0 phi_n
-            def_es = map ( \e ->
-                           let v = getSourceNode g0 e
-                               out_nr = getEdgeOutNr e
-                               def_e = filter (\e' -> getEdgeOutNr e' == out_nr)
-                                              (getDefOutEdges g0 v)
-                           in if length def_e == 1
-                              then head def_e
-                              else error $
-                                   "ensureSingleValueUseInPhisInGraph: " ++
-                                   show v ++ " has no definition edge with " ++
-                                   "out-edge number " ++ pShow out_nr
-                         )
-                         dt_es
+            def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
             vb_ps = map ( \(dt_e, def_e) ->
                           (getSourceNode g0 dt_e, getTargetNode g0 def_e)
                         ) $
                     zip dt_es def_es
             grouped_vb_ps = groupBy (\(v1, _) (v2, _) -> v1 == v2) vb_ps
-            fixed_vb_ps = map ( \ps ->
+            new_vb_ps = map ( \ps ->
                                 if length ps == 1
                                 then head ps
                                 else ( fst $ head ps
@@ -276,27 +279,16 @@ ensureSingleValueUseInPhisInGraph g root =
                          in g''''
                        )
                        g2
-                       fixed_vb_ps
+                       new_vb_ps
         in g3
-  in foldr fix g ns
+  in os { osGraph = foldr transform g ns }
 
-ensureSingleBlockUseInPhisInGraph :: Graph -> Graph
-ensureSingleBlockUseInPhisInGraph g =
-  let transformPhi phi_n g0 =
+ensureSingleBlockUseInPhis :: OpStructure -> OpStructure
+ensureSingleBlockUseInPhis os =
+  let g = osGraph os
+      transformPhi phi_n g0 =
         let dt_es = getDtFlowInEdges g0 phi_n
-            def_es = map ( \e ->
-                           let v = getSourceNode g0 e
-                               out_nr = getEdgeOutNr e
-                               def_e = filter (\e' -> getEdgeOutNr e' == out_nr)
-                                              (getDefOutEdges g0 v)
-                           in if length def_e == 1
-                              then head def_e
-                              else error $
-                                   "ensureSingleBlockUseInPhisInGraph: " ++
-                                   show v ++ " has no definition edge with " ++
-                                   "out-edge number " ++ pShow out_nr
-                         )
-                         dt_es
+            def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
             dt_def_ps = zip dt_es def_es
             grouped_ps = groupBy ( \(_, e1) (_, e2) ->
                                    getTargetNode g0 e1 == getTargetNode g0 e2
@@ -309,7 +301,7 @@ ensureSingleBlockUseInPhisInGraph g =
         in g1
       phi_ns = filter isPhiNode $
                getAllNodes g
-  in foldr transformPhi g phi_ns
+  in os { osGraph = foldr transformPhi g phi_ns }
 
 -- | From a given control-flow graph and list of block nodes, gets the block
 -- that is the closest dominator of all given blocks.
@@ -325,21 +317,113 @@ getDomOf g root bs =
       cs = foldr intersect (domSet $ head bs_domsets) $
            map domSet bs_domsets
       cs_domsets = filter (\d -> (domNode d) `elem` cs) domsets
-      pruned_cs_domsets = map (\d -> d { domSet = cs `intersect` domSet d}) $
-                          cs_domsets
-  in domNode $
-     head $
-     filter (\d -> length (domSet d) == 1) $
-     pruned_cs_domsets
+      closest_dom = domNode $
+                    head $
+                    filter ( \d ->
+                             let n = domNode d
+                             in all (\d' -> n `notElem` domSet d') $
+                                filter (\d' -> domNode d' /= n) $
+                                cs_domsets
+                           ) $
+                    cs_domsets
+  in closest_dom
 
--- | Removes phi nodes that has only one input value.
-removeRedundantPhisInGraph :: Graph -> Graph
-removeRedundantPhisInGraph g =
-  let ns = filter (\n -> length (getDtFlowInEdges g n) == 1) $
+-- | Replaces copies of the same value that act as input to a phi node with a
+-- single value, and removes phi nodes that takes only one value.
+removePhiNodeRedundancies :: OpStructure -> OpStructure
+removePhiNodeRedundancies = -- TODO: eliminate dead code
+                            ensureSingleBlockUseInPhis .
+                            removeSingleValuePhiNodes .
+                            replaceCopiedValuesInPhiNodes
+
+replaceCopiedValuesInPhiNodes :: OpStructure -> OpStructure
+replaceCopiedValuesInPhiNodes os =
+  let g = osGraph os
+      entry = osEntryBlockNode os
+  in if isJust entry
+     then let entry_n = findNodesWithNodeID g (fromJust entry)
+          in if length entry_n == 1
+             then replaceCopiedValuesInPhiNodes' (head entry_n) os
+             else if length entry_n == 0
+                  then error $ "replaceCopiedValuesInPhiNodes: op-structure " ++
+                               "has no block node with ID " ++ pShow entry
+                  else error $ "replaceCopiedValuesInPhiNodes: op-structure " ++
+                               "has multiple block nodes with ID " ++
+                               pShow entry
+     else error $ "replaceCopiedValuesInPhiNodes: op-structure has no entry " ++
+                  "block"
+
+replaceCopiedValuesInPhiNodes' :: Node -> OpStructure -> OpStructure
+replaceCopiedValuesInPhiNodes' root os =
+  let g = osGraph os
+      cfg = extractCFG g
+      ns = filter isPhiNode $
+           getAllNodes g
+      findSourceOfCopiedValue g' n =
+        do let n_dt_es = getDtFlowInEdges g' n
+           cp <- if length n_dt_es > 0
+                 then let o = getSourceNode g' (head n_dt_es)
+                      in if isCopyNode o then Just o else Nothing
+                 else Nothing
+           let cp_dt_es = getDtFlowInEdges g' cp
+           v <- if length cp_dt_es > 0
+                 then Just $ getSourceNode g' (head cp_dt_es)
+                 else Nothing
+           return v
+      replace dt_es os' =
+        let g0 = osGraph os'
+            def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
+            new_b = getDomOf cfg root $
+                    map (getTargetNode g0) $
+                    def_es
+            kept_dt_e = head dt_es
+            g1 = foldr delEdge g0 (tail dt_es)
+            g2 = foldr delEdge g1 def_es
+            (g3, new_def_e) = addNewDefEdge (getSourceNode g0 kept_dt_e, new_b)
+                                            g2
+            old_def_e = head def_es
+            (g4, _) = updateEdgeOutNr (getEdgeOutNr old_def_e) new_def_e g3
+        in os' { osGraph = g4 }
+      transform phi_n os0 =
+        let g0 = osGraph os0
+            dt_es = getDtFlowInEdges g0 phi_n
+            grouped_dt_es = filter (\l -> length l >= 2) $
+                            groupBy ( \e1 e2 ->
+                                      let v1 = getSourceNode g0 e1
+                                          v2 = getSourceNode g0 e2
+                                          o1 = findSourceOfCopiedValue g0 v1
+                                          o2 = findSourceOfCopiedValue g0 v2
+                                      in isJust o1 && isJust o2 && o1 == o2
+                                    )
+                                    dt_es
+            os1 = foldr replace os0 grouped_dt_es
+            g1 = osGraph os1
+            g2 = renumberInEdgesOfPhi phi_n g1
+            os2 = os1 { osGraph = g2 }
+        in os2
+  in foldr transform os ns
+
+renumberInEdgesOfPhi :: Node -> Graph -> Graph
+renumberInEdgesOfPhi n g0 =
+  let dt_es = getDtFlowInEdges g0 n
+      def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
+  in foldr ( \(dt_e, def_e, new_nr) g' ->
+             let (g'', _) = updateEdgeOutNr new_nr dt_e g'
+                 (g''', _) = updateEdgeOutNr new_nr def_e g''
+             in g'''
+           )
+           g0 $
+     zip3 dt_es def_es ([0..] :: [EdgeNr])
+
+removeSingleValuePhiNodes :: OpStructure -> OpStructure
+removeSingleValuePhiNodes os =
+  let g = osGraph os
+      ns = filter (\n -> length (getDtFlowInEdges g n) == 1) $
            filter isPhiNode $
            getAllNodes g
-      remove phi_n g0 =
-        let in_e = head $ getInEdges g0 phi_n
+      remove phi_n os0 =
+        let g0 = osGraph os0
+            in_e = head $ getInEdges g0 phi_n
             out_e = head $ getOutEdges g0 phi_n
             in_v = getSourceNode g0 in_e
             out_v = getTargetNode g0 out_e
@@ -353,5 +437,52 @@ removeRedundantPhisInGraph g =
             g2 = delEdge in_v_def g1
             g3 = delEdge out_v_def g2
             g4 = mergeNodes in_v out_v g3
-        in g4
-  in foldr remove g ns
+            os1 = os0 { osGraph = g4 }
+            os2 = replaceNodeIDInOS (getNodeID out_v) (getNodeID in_v) os1
+        in os2
+  in foldr remove os ns
+
+replaceNodeIDInOS
+  :: NodeID
+     -- ^ Node ID to replace.
+  -> NodeID
+     -- ^ Node ID to replace with.
+  -> OpStructure
+  -> OpStructure
+replaceNodeIDInOS old_n new_n os =
+  let old_entry_n = osEntryBlockNode os
+      new_entry_n = if isJust old_entry_n && fromJust old_entry_n == old_n
+                    then Just new_n
+                    else old_entry_n
+      old_valid_locs = osValidLocations os
+      new_valid_locs = map ( \p@(n, locs) ->
+                             if n == old_n then (new_n, locs) else p
+                           )
+                           old_valid_locs
+      old_same_locs = osSameLocations os
+      new_same_locs = map ( \p@(n1, n2) ->
+                            if n1 == old_n
+                            then (new_n, n2)
+                            else if n2 == old_n
+                                 then (n1, new_n)
+                                 else p
+                          )
+                          old_same_locs
+      old_cs = osConstraints os
+      new_cs = map (replaceNodeID old_n new_n) old_cs
+  in os { osEntryBlockNode = new_entry_n
+        , osValidLocations = new_valid_locs
+        , osSameLocations = new_same_locs
+        , osConstraints = new_cs
+        }
+
+getDefEdgeOfDtOutEdge :: Graph -> Edge -> Edge
+getDefEdgeOfDtOutEdge g e =
+  let es = findDefEdgeOfDtOutEdge g e
+  in if length es == 1
+     then head es
+     else if length es == 0
+          then error $ "getDefEdgeOfDtOutEdge: " ++ pShow e ++ " has no " ++
+               "matching definition edge"
+          else error $ "getDefEdgeOfDtOutEdge: " ++ pShow e ++ " has " ++
+               "multiple matching definition edges"

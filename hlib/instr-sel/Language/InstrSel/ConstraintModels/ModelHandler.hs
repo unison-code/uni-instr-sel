@@ -19,6 +19,7 @@ import Language.InstrSel.ConstraintModels.Base
 import Language.InstrSel.ConstraintModels.IDs
 
 import Language.InstrSel.Constraints
+import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
@@ -272,7 +273,7 @@ enableCopyingForMultUseInputsInPattern pat match =
                                                       else t
                                 ) $
                             osSameLocations old_os
-            new_cs = map (replaceNodeIDsInC old_input_id new_input_id) $
+            new_cs = map (C.replaceNodeID old_input_id new_input_id) $
                      osConstraints old_os
             new_os = old_os { osGraph = g1
                             , osValidLocations = new_valid_locs
@@ -292,22 +293,6 @@ enableCopyingForMultUseInputsInPattern pat match =
                           }
         in (new_p, new_m)
   in foldr rewrite (pat, match) mult_use_input_vs
-
--- | Replaces a node ID found in a given constraint with another node ID.
-replaceNodeIDsInC
-  :: NodeID
-     -- ^ Old node ID.
-  -> NodeID
-     -- ^ New node ID.
-  -> Constraint
-  -> Constraint
-replaceNodeIDsInC old_n new_n c =
-  let def_r = mkDefaultReconstructor
-      mkNodeExpr _ e@(ANodeIDExpr n) =
-        if n == old_n then ANodeIDExpr new_n else e
-      mkNodeExpr r expr = (mkNodeExprF def_r) r expr
-      new_r = def_r { mkNodeExprF = mkNodeExpr }
-  in apply new_r c
 
 processMatch'
   :: Instruction
@@ -691,7 +676,6 @@ replaceIDsWithArrayIndexes ai_maps c =
   let getAIForAnyNodeID nid = fromJust $ findAIWithAnyNodeID ai_maps nid
       getAIForMatchID mid = fromJust $ findAIWithMatchID ai_maps mid
       getAIForOperandID oid = fromJust $ findAIWithOperandID ai_maps oid
-      getAIForLocationID rid = fromJust $ findAIWithLocationID ai_maps rid
       getAIForInstructionID iid =
         fromJust $ findAIWithInstructionID ai_maps iid
       def_r = mkDefaultReconstructor

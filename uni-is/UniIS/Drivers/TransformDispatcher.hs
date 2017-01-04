@@ -40,7 +40,8 @@ dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =
       reportErrorAndExit "No transform action provided."
-  | a `elem` [ FixPhisInFunctionGraph
+  | a `elem` [ EnforcePhiNodeInvariantsInFunctionGraph
+             , RemovePhiNodeRedundanciesInFunctionGraph
              , CopyExtendFunctionGraph
              , BranchExtendFunctionGraph
              , CombineConstantsInFunctionGraph
@@ -48,7 +49,6 @@ dispatch a opts
       do content <- loadFunctionFileContent opts
          function <- loadFromJson content
          TransformFunctionGraph.run a function Nothing
-
   | a `elem` [ LowerPointersInFunctionGraph ] =
       do content <- loadFunctionFileContent opts
          f <- loadFromJson content
