@@ -386,8 +386,9 @@ constraint
 
 % All operands external to a match, and which are not states, must not be
 % located in the null location.
+% [MC 1] Exclude inactive matches from this constraint.
 constraint
-  forall ( m in allMatches
+  forall ( m in allMatches diff inactiveInstrMatches
          , o in operandsExternalToMatch[m]
            where not (operandAlternatives[o] subset statesInFunction)
          )
@@ -593,20 +594,46 @@ constraint
   ( sel[m] -> oplace[c] = uplace[o] );
 
 % If a datum d is used by at least one operand in at least one selected match,
-% then d must not be defined by any inactive match (and hence cannot be
-% selected).
+% then d must not be defined by any inactive match.  Otherwise, d must be
+% defined by an inactive match.
+% constraint
+%   forall ( mi in inactiveInstrMatches
+%          , oi in operandsDefinedByMatch[mi]
+%          , d in operandAlternatives[oi]
+%          )
+%   ( exists ( m in allMatches
+%            , o in operandsUsedByMatch[m]
+%              where d in operandAlternatives[o]
+%            )
+%     ( sel[m] /\ alt[o] = d )
+%     <->
+%     not sel[mi]
+%   );
+% [MC 1]
+% If and only if a datum d is used by at least one operand in at least
+% one selected match, then d must not be defined by any inactive
+% match.  If and only if d is used by at least one external operand in
+% at least one selected match, then d must not placed in the null
+% location.
 constraint
   forall ( mi in inactiveInstrMatches
          , oi in operandsDefinedByMatch[mi]
          , d in operandAlternatives[oi]
          )
-  ( exists ( m in allMatches
-           , o in operandsUsedByMatch[m]
-             where d in operandAlternatives[o]
-           )
-    ( sel[m] /\ alt[o] = d )
-    <->
-    not sel[mi]
+  ( let { var bool: ui,
+          var bool: ue } in
+    ( ui <-> exists ( m in allMatches
+                    , o in operandsUsedByMatch[m] intersect operandsInternalToMatch[m]
+                    where d in operandAlternatives[o]
+		    )
+             ( sel[m] /\ alt[o] = d ) ) /\
+    ( ue <-> exists ( m in allMatches
+                    , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
+                    where d in operandAlternatives[o]
+		    )
+             ( sel[m] /\ alt[o] = d ) ) /\
+    ( sel[mi] <-> not ui /\ not ue ) /\
+    ( loc[d] != locValueForNull <-> ue )
   );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
@@ -733,8 +760,6 @@ constraint
        else value_precede_chain(chain, [alt[y] | y in ixset])
        endif
   );
-
-
 
 %=====================
 % IMPLIED CONSTRAINTS
@@ -1030,8 +1055,24 @@ constraint
        ( sel[m] -> uplace[use[i]] = uplace[use[j]] )
   );
 
-
-
+% [MC 2]
+% If all matches in the matchset that either covers a particular operation or
+% defines a datum use some datum d in an external operand, then d
+% cannot be placed in the null location.
+constraint
+  forall(M in matchsetOfOp ++ defsetOfDatumOnly)(
+    let {set of int: uses1 = operandsUsedByMatch[min(M)] intersect operandsExternalToMatch[min(M)]} in
+      forall(use1 in uses1)(
+        let {set of int: data1 = operandAlternatives[use1]} in
+	  if forall(m in M where m>min(M))(
+	       exists(use2 in operandsUsedByMatch[m] intersect operandsExternalToMatch[m])(
+		 operandAlternatives[use2] = data1
+	       )
+	     )
+	  then exists(d in data1)(loc[d] != locValueForNull)
+	  else true endif
+      )
+  );
 
 %==================
 % SOLVE AND OUTPUT
