@@ -95,7 +95,8 @@ loc_tag.sort();
 for key, group in groupby(loc_tag, lambda x: x[0]):
     tags_loc.append([[r[1] for r in group], key])
 
-# Select canonical location value for each group of tags
+# Select canonical location value for each group of tags (the selected value is
+# the first value in the first group, which is assumed to be sorted)
 tags_loc.sort();
 canonical_locs = []
 for key, group in groupby(tags_loc, lambda x: x[0]):
