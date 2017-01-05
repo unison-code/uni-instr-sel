@@ -623,14 +623,16 @@ constraint
   ( let { var bool: ui,
           var bool: ue } in
     ( ui <-> exists ( m in allMatches
-                    , o in operandsUsedByMatch[m] intersect operandsInternalToMatch[m]
+                    , o in operandsUsedByMatch[m] intersect
+                           operandsInternalToMatch[m]
                     where d in operandAlternatives[o]
-		    )
+                    )
              ( sel[m] /\ alt[o] = d ) ) /\
     ( ue <-> exists ( m in allMatches
-                    , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
+                    , o in operandsUsedByMatch[m] intersect
+                           operandsExternalToMatch[m]
                     where d in operandAlternatives[o]
-		    )
+                    )
              ( sel[m] /\ alt[o] = d ) ) /\
     ( sel[mi] <-> not ui /\ not ue ) /\
     ( loc[d] != locValueForNull <-> ue )
@@ -793,7 +795,7 @@ constraint
        endif
   );
 
-% Two matches can't both be selected if the first match implies that two
+% Two matches cannot both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of
 % their domains is empty.
 %
@@ -1056,48 +1058,60 @@ constraint
   );
 
 % [MC 2]
+%
 % If all matches in the matchset that either covers a particular operation or
-% defines a datum use some datum d in an external operand, then d
+% defines a datum, and use some datum d in an external operand, then d
 % cannot be placed in the null location.
 constraint
-  forall(M in matchsetOfOp ++ defsetOfDatumOnly)(
-    let {set of int: uses1 = operandsUsedByMatch[min(M)] intersect operandsExternalToMatch[min(M)]} in
-      forall(use1 in uses1)(
-        let {set of int: data1 = operandAlternatives[use1]} in
-	  if forall(m in M where m>min(M))(
-	       exists(use2 in operandsUsedByMatch[m] intersect operandsExternalToMatch[m])(
-		 operandAlternatives[use2] = data1
-	       )
-	     )
-	  then exists(d in data1)(loc[d] != locValueForNull)
-	  else true endif
-      )
+  forall ( M in matchsetOfOp ++ defsetOfDatumOnly )
+  ( let { set of int: uses1 = operandsUsedByMatch[min(M)] intersect
+                              operandsExternalToMatch[min(M)]
+        }
+    in forall (use1 in uses1)
+       ( let { set of int: data1 = operandAlternatives[use1] }
+         in if forall ( m in M where m > min(M) )
+               ( exists ( use2 in operandsUsedByMatch[m] intersect
+                                  operandsExternalToMatch[m]
+                        )
+                 ( operandAlternatives[use2] = data1 )
+               )
+            then exists (d in data1)
+                 ( loc[d] != locValueForNull )
+            else true
+            endif
+       )
   );
 
 % [MC 3]
-% If all matches in the matchset that defines a non-state datum d are active and
-% define it in an external operand, then d must not be placed in the null location.
+%
+% If all matches in the matchset that defines a non-state datum d, are active,
+% and define it in an external operand, then d must not be placed in the null
+% location.
+%
 % [MC 3] does not dominate [MC 2], nor vice versa.
 constraint
-  forall(d in allDataInFunction diff statesInFunction)(
-    if forall(m in defsetOfDatum[d])(
-         not(m in inactiveInstrMatches) /\
-	 exists(use2 in operandsDefinedByMatch[m] intersect operandsExternalToMatch[m])(
-	   operandAlternatives[use2] = {d}
-	 )
+  forall (d in allDataInFunction diff statesInFunction )
+  ( if forall ( m in defsetOfDatum[d] )
+       ( not (m in inactiveInstrMatches) /\
+         exists ( use2 in operandsDefinedByMatch[m] intersect
+                          operandsExternalToMatch[m]
+                )
+         ( operandAlternatives[use2] = {d} )
        )
     then loc[d] != locValueForNull
-    else true endif
+    else true
+    endif
   );
 
 % [MC 4]
-% If an external operand does not take its min value, then its match must be selected,
-% and hence the datum can't be in the null location.
+%
+% If an external operand does not take its min value, then its match must be
+% selected and hence the datum cannot be in the null location.
 constraint
   forall ( m in allMatches
          , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
-	 where card(operandAlternatives[o]) > 1
-	 )
+                where card(operandAlternatives[o]) > 1
+         )
   ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
 
 %==================
