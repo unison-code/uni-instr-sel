@@ -341,9 +341,7 @@ checkGraphInvariants c g =
                                        ", expected block node"
                                   else emptyLog
       inEdgeOrderCheck n es =
-        let dt_es = nubBy haveSameInEdgeNrs $
-                    filter isDataFlowEdge $
-                    es
+        let dt_es = filter isDataFlowEdge es
             st_es = filter isStateFlowEdge es
             ctrl_es = filter isControlFlowEdge es
         in if isOperationNode n
