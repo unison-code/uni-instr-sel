@@ -13,11 +13,15 @@ module Language.InstrSel.OpStructures.Transformations
   ( canonicalizeCopies
   , enforcePhiNodeInvariants
   , lowerPointers
+  , removeDeadCode
   , removePhiNodeRedundancies
   )
 where
 
+import Language.InstrSel.Constraints
+  ( NodeExpr (..) )
 import Language.InstrSel.Constraints.ConstraintBuilder
+import Language.InstrSel.Constraints.ConstraintFolder
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.PatternMatching.VF2
@@ -331,8 +335,7 @@ getDomOf g root bs =
 -- | Replaces copies of the same value that act as input to a phi node with a
 -- single value, and removes phi nodes that takes only one value.
 removePhiNodeRedundancies :: OpStructure -> OpStructure
-removePhiNodeRedundancies = -- TODO: eliminate dead code
-                            ensureSingleBlockUseInPhis .
+removePhiNodeRedundancies = ensureSingleBlockUseInPhis .
                             removeSingleValuePhiNodes .
                             replaceCopiedValuesInPhiNodes
 
@@ -486,3 +489,53 @@ getDefEdgeOfDtOutEdge g e =
                "matching definition edge"
           else error $ "getDefEdgeOfDtOutEdge: " ++ pShow e ++ " has " ++
                "multiple matching definition edges"
+
+-- | Removes operation and value nodes whose result are not observable.
+removeDeadCode :: OpStructure -> OpStructure
+removeDeadCode os0 =
+  let (os1, p) = removeDeadCode' os0
+      os2 = if p
+            then removeDeadCode os1
+            else os1
+  in os2
+
+removeDeadCode' :: OpStructure -> (OpStructure, Bool)
+removeDeadCode' os =
+  let g = osGraph os
+      unused = filter (\n -> length (getSuccessors g n) == 0) $
+               filter isValueNode $
+               getAllNodes g
+  in if length unused > 0
+     then let v_n = head unused
+              pred_n = let ns = map (getSourceNode g) $
+                                getDtFlowInEdges g v_n
+                       in if length ns == 1
+                          then head ns
+                          else error $ "removeDeadCode: value node " ++
+                                       pShow v_n ++ " has unexpected " ++
+                                       "number of inbound data-flow edges"
+              v_nid = getNodeID v_n
+              g1 = delNode v_n g
+              g2 = if isOperationNode pred_n
+                   then delNode pred_n g1
+                   else g1
+              valid_locs = osValidLocations os
+              new_valid_locs = filter (\(n, _) -> n /= v_nid) valid_locs
+              same_locs = osSameLocations os
+              new_same_locs = filter (\(n1, n2) -> n1 /= v_nid && n2 /= v_nid)
+                                     same_locs
+              cs = osConstraints os
+              new_cs = let def_f = mkDefaultFolder True (&&)
+                           foldNodeExpr _ (ANodeIDExpr n) =
+                             n /= v_nid
+                           foldNodeExpr f expr =
+                             (foldNodeExprF def_f) f expr
+                           new_f = def_f { foldNodeExprF = foldNodeExpr }
+                       in filter (apply new_f) cs
+              new_os = os { osGraph = g2
+                          , osValidLocations = new_valid_locs
+                          , osSameLocations = new_same_locs
+                          , osConstraints = new_cs
+                          }
+          in (new_os, True)
+     else (os, False)

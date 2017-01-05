@@ -12,6 +12,7 @@ Main authors:
 module Language.InstrSel.Utils.Base
   ( fromLeft
   , fromRight
+  , group
   , groupBy
   , isLeft
   , isRight
@@ -71,6 +72,15 @@ fromRight :: Either l r -> r
 fromRight (Right r) = r
 fromRight _ = error "Either is not Right"
 
+-- | Groups elements such that a set of elements, for which equality holds for
+-- every element pair in that set, are grouped together.
+group :: (Eq n) => [n] -> [[n]]
+group es =
+  foldr gr [] es
+  where gr e [] = [[e]]
+        gr e (p:ps) = if belongs e p then ((e:p):ps) else (p:gr e ps)
+        belongs e es' = e == (head es')
+
 -- | Groups elements according to a predicate function such that a set of
 -- elements, for which the predicate holds for every element pair in that set,
 -- are grouped together. It is assumed that the predicate function is
@@ -80,7 +90,7 @@ groupBy f es =
   foldr gr [] es
   where gr e [] = [[e]]
         gr e (p:ps) = if belongs e p then ((e:p):ps) else (p:gr e ps)
-        belongs e es' = f e (head es')
+        belongs e es' = e `f` (head es')
 
 -- | Splits a given list into a list of sublists at points where a given
 -- delimiter is found (the delimiters themselves are removed from the resulting

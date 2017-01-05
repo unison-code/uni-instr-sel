@@ -15,6 +15,7 @@ module Language.InstrSel.Functions.Transformations
   , combineConstants
   , enforcePhiNodeInvariants
   , lowerPointers
+  , removeDeadCode
   , removePhiNodeRedundancies
   )
 where
@@ -30,6 +31,7 @@ import Language.InstrSel.OpStructures
 import qualified Language.InstrSel.OpStructures.Transformations as OS
   ( enforcePhiNodeInvariants
   , lowerPointers
+  , removeDeadCode
   , removePhiNodeRedundancies
   )
 import Language.InstrSel.OpTypes
@@ -380,3 +382,19 @@ removePhiNodeRedundancies f =
   let os0 = functionOS f
       os1 = OS.removePhiNodeRedundancies os0
   in f { functionOS = os1 }
+
+-- | Removes operation and value nodes whose result are not observable.
+--
+-- See also 'OS.removeDeadCode'.
+removeDeadCode :: Function -> Function
+removeDeadCode f =
+  let os0 = functionOS f
+      os1 = OS.removeDeadCode os0
+      g1 = osGraph os1
+      ns = map getNodeID $
+           getAllNodes g1
+      func_inputs = functionInputs f
+      new_func_inputs = filter (`elem` ns) func_inputs
+  in f { functionOS = os1
+       , functionInputs = new_func_inputs
+       }
