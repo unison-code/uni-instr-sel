@@ -25,6 +25,8 @@ import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
   ( InstrPattern (..) )
+import Language.InstrSel.Utils
+  ( group )
 
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
@@ -217,24 +219,24 @@ checkGraphInvariants c g =
               if not (isBlockNode src || isControlNode src)
               then toLog $
                    ErrorMessage $
-                   "Invalid source node type: " ++ show e ++ " has " ++
+                   "Invalid source node type: " ++ pShow e ++ " has " ++
                    pShow src_type ++ ", expected either block or control node"
               else if not (isBlockNode trg || isControlNode trg)
                    then toLog $
                         ErrorMessage $
-                        "Invalid target node type: " ++ show e ++ " has " ++
+                        "Invalid target node type: " ++ pShow e ++ " has " ++
                         pShow trg_type ++ ", expected either block or " ++
                         "control node"
                    else if isBlockNode src && not (isControlNode trg)
                         then toLog $
                              ErrorMessage $
-                             "Invalid target node type: " ++ show e ++
+                             "Invalid target node type: " ++ pShow e ++
                              " has " ++ pShow trg_type ++ ", expected " ++
                              "control node"
                         else if isControlNode src && not (isBlockNode trg)
                              then toLog $
                                   ErrorMessage $
-                                  "Invalid target node type: " ++ show e ++
+                                  "Invalid target node type: " ++ pShow e ++
                                   " has " ++ pShow trg_type ++ ", " ++
                                   "expected block node"
                              else emptyLog
@@ -242,25 +244,25 @@ checkGraphInvariants c g =
               if not (isOperationNode src || isBlockNode src || isValueNode src)
               then toLog $
                    ErrorMessage $
-                   "Invalid source node type: " ++ show e ++ " has " ++
+                   "Invalid source node type: " ++ pShow e ++ " has " ++
                    pShow src_type ++ ", expected either a computation, " ++
                    "control, call, phi, copy, block, or value node"
               else if not (isOperationNode trg || isValueNode trg)
                    then toLog $
                         ErrorMessage $
-                        "Invalid target node type: " ++ show e ++ " has " ++
+                        "Invalid target node type: " ++ pShow e ++ " has " ++
                         pShow trg_type ++ ", expected either a " ++
                         "computation, control, call, phi, copy, or value node"
                    else if isOperationNode src && not (isValueNode trg)
                         then toLog $
                              ErrorMessage $
-                             "Invalid target node type: " ++ show e ++
+                             "Invalid target node type: " ++ pShow e ++
                              " has " ++ pShow trg_type ++ ", expected " ++
                              "value node"
                         else if isValueNode src && not (isOperationNode trg)
                              then toLog $
                                   ErrorMessage $
-                                  "Invalid target node type: " ++ show e ++
+                                  "Invalid target node type: " ++ pShow e ++
                                   " has " ++ pShow trg_type ++ ", " ++
                                   "expected computation, control, call, " ++
                                   "phi, or copy node"
@@ -268,32 +270,32 @@ checkGraphInvariants c g =
                                   then toLog $
                                        ErrorMessage $
                                        "Invalid target node type: " ++
-                                       show e ++ " has " ++ pShow trg_type ++
+                                       pShow e ++ " has " ++ pShow trg_type ++
                                        ", expected value node"
                                   else emptyLog
             StateFlowEdge ->
               if not (isOperationNode src || isBlockNode src || isStateNode src)
               then toLog $
                    ErrorMessage $
-                   "Invalid source node type: " ++ show e ++ " has " ++
+                   "Invalid source node type: " ++ pShow e ++ " has " ++
                    pShow src_type ++ ", expected either a computation, " ++
                    "control, call, phi, copy, block or state node"
               else if not (isOperationNode trg || isStateNode trg)
                    then toLog $
                         ErrorMessage $
-                        "Invalid target node type: " ++ show e ++ " has " ++
+                        "Invalid target node type: " ++ pShow e ++ " has " ++
                         pShow trg_type ++ ", expected either a " ++
                         "computation, control, call, phi, copy, or state node"
                    else if isOperationNode src && not (isStateNode trg)
                         then toLog $
                              ErrorMessage $
-                             "Invalid target node type: " ++ show e ++
+                             "Invalid target node type: " ++ pShow e ++
                              " has " ++ pShow trg_type ++ ", expected " ++
                              "state node"
                         else if isStateNode src && not (isOperationNode trg)
                              then toLog $
                                   ErrorMessage $
-                                  "Invalid target node type: " ++ show e ++
+                                  "Invalid target node type: " ++ pShow e ++
                                   " has " ++ pShow trg_type ++ ", " ++
                                   "expected computation, control, call, " ++
                                   "phi, or copy node"
@@ -301,14 +303,14 @@ checkGraphInvariants c g =
                                   then toLog $
                                        ErrorMessage $
                                        "Invalid target node type: " ++
-                                       show e ++ " has " ++ pShow trg_type ++
+                                       pShow e ++ " has " ++ pShow trg_type ++
                                        ", expected state node"
                                   else emptyLog
             DefEdge ->
               if not (isBlockNode src || isValueNode src || isStateNode src)
               then toLog $
                    ErrorMessage $
-                   "Invalid source node type: " ++ show e ++ " has " ++
+                   "Invalid source node type: " ++ pShow e ++ " has " ++
                    pShow src_type ++ ", expected either block, value or " ++
                    "state node"
               else if not ( isBlockNode src ||
@@ -317,65 +319,100 @@ checkGraphInvariants c g =
                           )
                    then toLog $
                         ErrorMessage $
-                        "Invalid target node type: " ++ show e ++ " has " ++
+                        "Invalid target node type: " ++ pShow e ++ " has " ++
                         pShow trg_type ++ ", expected either block, value " ++
                         "or state node"
                    else if isBlockNode src &&
                            not (isValueNode trg || isStateNode trg)
                         then toLog $
                              ErrorMessage $
-                             "Invalid target node type: " ++ show e ++
+                             "Invalid target node type: " ++ pShow e ++
                              " has " ++ pShow trg_type ++ ", expected " ++
                              "value or state node"
                         else if isValueNode src && not (isBlockNode trg)
                              then toLog $
                                   ErrorMessage $
-                                  "Invalid target node type: " ++ show e ++
+                                  "Invalid target node type: " ++ pShow e ++
                                   " has " ++ pShow trg_type ++ ", " ++
                                   "expected block node"
                              else if isStateNode src && not (isBlockNode trg)
                                   then toLog $
                                        ErrorMessage $
                                        "Invalid target node type: " ++
-                                       show e ++ " has " ++ pShow trg_type ++
+                                       pShow e ++ " has " ++ pShow trg_type ++
                                        ", expected block node"
                                   else emptyLog
       inEdgeOrderCheck n es =
         let dt_es = filter isDataFlowEdge es
             st_es = filter isStateFlowEdge es
             ctrl_es = filter isControlFlowEdge es
+            def_es = filter isDefEdge es
+            log0 = checkDuplicateNumbers n "inbound data-flow edges" $
+                   map getEdgeInNr dt_es
+            log1 = checkDuplicateNumbers n "inbound state-flow edges" $
+                   map getEdgeInNr st_es
+            log2 = checkDuplicateNumbers n "inbound control-flow edges" $
+                   map getEdgeInNr ctrl_es
+            log3 = checkDuplicateNumbers n "inbound definition edges" $
+                   map getEdgeInNr def_es
         in if isOperationNode n
-           then let log0 = checkNumberOrder n "inbound data-flow edges" $
+           then let log4 = checkNumberOrder n "inbound data-flow edges" $
                            map getEdgeInNr dt_es
-                    log1 = checkNumberOrder n "inbound state-flow edges" $
+                    log5 = checkNumberOrder n "inbound state-flow edges" $
                            map getEdgeInNr st_es
-                    log2 = checkNumberOrder n "inbound control-flow edges" $
+                    log6 = checkNumberOrder n "inbound control-flow edges" $
                            map getEdgeInNr ctrl_es
-                in concatLogs [log0, log1, log2]
-           else emptyLog
+                in concatLogs [log0, log1, log2, log3, log4, log5, log6]
+           else concatLogs [log0, log1, log2, log3]
       outEdgeOrderCheck n es =
         let dt_es = filter isDataFlowEdge es
             st_es = filter isStateFlowEdge es
             ctrl_es = filter isControlFlowEdge es
+            def_es = filter isDefEdge es
+            log0 = checkDuplicateNumbers n "outbound data-flow edges" $
+                   map getEdgeOutNr dt_es
+            log1 = checkDuplicateNumbers n "outbound state-flow edges" $
+                   map getEdgeOutNr st_es
+            log2 = checkDuplicateNumbers n "outbound control-flow edges" $
+                   map getEdgeOutNr ctrl_es
+            log3 = checkDuplicateNumbers n "outbound definition edges" $
+                   map getEdgeOutNr def_es
         in if isOperationNode n
-           then let log0 = checkNumberOrder n "outbound data-flow edges" $
+           then let log4 = checkNumberOrder n "outbound data-flow edges" $
                            map getEdgeOutNr dt_es
-                    log1 = checkNumberOrder n "outbound state-flow edges" $
+                    log5 = checkNumberOrder n "outbound state-flow edges" $
                            map getEdgeOutNr st_es
-                    log2 = checkNumberOrder n "outbound control-flow edges" $
+                    log6 = checkNumberOrder n "outbound control-flow edges" $
                            map getEdgeOutNr ctrl_es
-                in concatLogs [log0, log1, log2]
+                in concatLogs [log0, log1, log2, log3, log4, log5, log6]
            else if isBlockNode n
-                then checkNumberOrder n "outbound control-flow edges" $
-                     map getEdgeOutNr ctrl_es
-                else emptyLog
+                then let log4 = checkNumberOrder n ( "outbound control-flow " ++
+                                                     "edges"
+                                                   ) $
+                                map getEdgeOutNr ctrl_es
+                     in concatLogs [log0, log1, log2, log3, log4]
+                else concatLogs [log0, log1, log2, log3]
+      checkDuplicateNumbers n e_type ns =
+        let grouped = group ns
+        in concatLogs $
+           map ( \ns' ->
+                 if length ns' > 1
+                 then toLog $
+                      ErrorMessage $
+                      "Inconsistent edge order: " ++ pShow n ++
+                      " has multiple " ++ e_type ++ " edges the same edge " ++
+                      "number " ++ pShow (head ns') ++ ", expected at most " ++
+                      "one edge"
+                 else emptyLog
+               ) $
+           grouped
       checkNumberOrder _ _ [] = emptyLog
       checkNumberOrder n e_type ns =
         let sorted = sort $ map fromIntegral ns
         in if length sorted /= (last sorted + 1)
            then toLog $
                 ErrorMessage $
-                "Inconsistent edge order: " ++ show n ++ " has " ++ e_type ++
+                "Inconsistent edge order: " ++ pShow n ++ " has " ++ e_type ++
                 " edges with order " ++ pShow sorted ++ ", expected " ++
                 pShow (take (length sorted) [0..] :: [Int])
            else emptyLog
@@ -401,8 +438,8 @@ checkNumInDtFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of inbound data-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of inbound data-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkNumInDtFlowEdgesAtLeast :: Graph -> Node -> Int -> Log
@@ -413,8 +450,8 @@ checkNumInDtFlowEdgesAtLeast g n exp_num =
   in if act_num < exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of inbound data-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected at least " ++ show exp_num
+          "Wrong number of inbound data-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected at least " ++ pShow exp_num
      else emptyLog
 
 checkNumOutDtFlowEdges :: Graph -> Node -> Int -> Log
@@ -425,8 +462,8 @@ checkNumOutDtFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of outbound data-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of outbound data-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkNumOutDtFlowEdgesAtLeast :: Graph -> Node -> Int -> Bool -> Log
@@ -435,9 +472,9 @@ checkNumOutDtFlowEdgesAtLeast g n exp_num warn =
                 nubBy haveSameOutEdgeNrs $
                 getDtFlowOutEdges g n
   in if act_num < exp_num
-     then let str = "Wrong number of outbound data-flow edges: " ++ show n ++
-                    " has " ++ show act_num ++ ", expected at least " ++
-                    show exp_num
+     then let str = "Wrong number of outbound data-flow edges: " ++ pShow n ++
+                    " has " ++ pShow act_num ++ ", expected at least " ++
+                    pShow exp_num
           in if warn then Log [WarningMessage str] else Log [ErrorMessage str]
      else emptyLog
 
@@ -447,8 +484,8 @@ checkNumInCtrlFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of inbound control-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of inbound control-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkNumOutCtrlFlowEdges :: Graph -> Node -> Int -> Log
@@ -457,8 +494,8 @@ checkNumOutCtrlFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of outbound control-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of outbound control-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkNumInStFlowEdges :: Graph -> Node -> Int -> Log
@@ -467,8 +504,8 @@ checkNumInStFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of inbound state-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of inbound state-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkNumOutStFlowEdges :: Graph -> Node -> Int -> Log
@@ -477,8 +514,8 @@ checkNumOutStFlowEdges g n exp_num =
   in if act_num /= exp_num
      then toLog $
           ErrorMessage $
-          "Wrong number of outbound state-flow edges: " ++ show n ++
-          " has " ++ show act_num ++ ", expected " ++ show exp_num
+          "Wrong number of outbound state-flow edges: " ++ pShow n ++
+          " has " ++ pShow act_num ++ ", expected " ++ pShow exp_num
      else emptyLog
 
 checkHasOutStFlowEdgeOrInDefEdge :: Graph -> Node -> Log
@@ -490,8 +527,8 @@ checkHasOutStFlowEdgeOrInDefEdge g n =
           ErrorMessage $
           "Wrong number of outbound state-flow or inbound definition " ++
           "edges: " ++
-          show n ++ " has " ++ show num_st_es ++ " state-flow edges and " ++
-          show num_def_es ++ " definition edges, expected either " ++
+          pShow n ++ " has " ++ pShow num_st_es ++ " state-flow edges and " ++
+          pShow num_def_es ++ " definition edges, expected either " ++
           "1 state-flow edge or 1 definition edge (but not both)"
      else emptyLog
 
@@ -530,8 +567,8 @@ checkPhiDefEdges g n =
         in if num_def_es /= 1
            then toLog $
                 ErrorMessage $
-                "Wrong number of outbound definition edges: " ++ show src ++
-                ", which is predecessor of " ++ show n ++ ", has " ++
+                "Wrong number of outbound definition edges: " ++ pShow src ++
+                ", which is predecessor of " ++ pShow n ++ ", has " ++
                 pShow num_def_es ++ " definition edges with out-edge-" ++
                 "number " ++ pShow nr ++ ", expected 1"
            else emptyLog
@@ -541,8 +578,8 @@ checkPhiDefEdges g n =
         in if num_def_es /= 1
            then toLog $
                 ErrorMessage $
-                "Wrong number of inbound definition edges: " ++ show trg ++
-                ", which is successor of " ++ show n ++ ", has " ++
+                "Wrong number of inbound definition edges: " ++ pShow trg ++
+                ", which is successor of " ++ pShow n ++ ", has " ++
                 pShow num_def_es ++ " definition edges, expected 1"
            else emptyLog
       log0 = concatLogs $
