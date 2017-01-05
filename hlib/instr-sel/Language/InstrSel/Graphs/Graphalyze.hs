@@ -1,13 +1,16 @@
 {-|
-Copyright   :  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
-License     :  BSD3 (see the LICENSE file)
-Maintainer  :  ghb@kth.se
+Copyright  :  Copyright (c) 2008, 2012-2017,
+              Ivan Lazar Miljenovic <Ivan.Miljenovic@gmail.com>,
+              Gabriel Hjort Blindell <ghb@kth.se>
+License    :  BSD3 (see the LICENSE file)
+Maintainer :  ghb@kth.se
 
 Mainly functions copied from the Graphalyze package, but also includes other,
 useful functions.
 -}
 {-
 Main authors:
+  Ivan Lazar Miljenovic <Ivan.Miljenovic@gmail.com>
   Gabriel Hjort Blindell <ghb@kth.se>
 
 -}
