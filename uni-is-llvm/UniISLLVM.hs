@@ -4,7 +4,7 @@ Main authors:
 
 -}
 {-
-Copyright (c) 2014-2015, Gabriel Hjort Blindell <ghb@kth.se>
+Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

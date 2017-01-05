@@ -6,7 +6,7 @@
 %  Contributing authors:
 %    Roberto Castaneda Lozano <rcas@sics.se>
 %
-%  Copyright (c) 2012-2016, Gabriel Hjort Blindell <ghb@kth.se>
+%  Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
 %  All rights reserved.
 %
 %  Redistribution and use in source and binary forms, with or without
