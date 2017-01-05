@@ -22,12 +22,12 @@ bb1:
   [%const.10.copy.1] <- "%const.10.copy.1 = ##10" <- []
   [%const.61.copy.2] <- "%const.61.copy.2 = ##61" <- []
   [%5] <- "%5 = memb (%cinfo)" <- [%cinfo]
-  [%gep2] <- "%gep2 = add(%5, %const.20.copy.3)" <- [%5, %const.20.copy.3]
-  [] <- "memb (%gep2) = %const.10.copy.1" <- [%const.10.copy.1, %gep2]
   [%gep4] <- "%gep4 = add(%5, %const.24.copy.2)" <- [%5, %const.24.copy.2]
-  [] <- "memb (%gep4) = %const.61.copy.2" <- [%const.61.copy.2, %gep4]
+  [%gep6] <- "%gep6 = add(%5, %const.28.copy.2)" <- [%5, %const.28.copy.2]
   [] <- "memb (%gep6) = %version" <- [%version, %gep6]
-  [%gep6, %10] <- "%10 = memw (%5 ++ %const.28.copy.2)" <- [%5, %const.28.copy.2, %5]
+  [%gep2, %10] <- "%10 = memw (%5 ++ %const.20.copy.3)" <- [%5, %const.20.copy.3, %5]
+  [] <- "memb (%gep2) = %const.10.copy.1" <- [%const.10.copy.1, %gep2]
+  [] <- "memb (%gep4) = %const.61.copy.2" <- [%const.61.copy.2, %gep4]
   [] <- "call %10" <- [%cinfo, %10]
 bb0:
 12:
@@ -36,12 +36,12 @@ bb3:
 14:
   [%const.19.copy.1] <- "%const.19.copy.1 = ##19" <- []
   [%16] <- "%16 = memb (%cinfo)" <- [%cinfo]
-  [%gep8] <- "%gep8 = add(%16, %const.20.copy.3)" <- [%16, %const.20.copy.3]
-  [] <- "memb (%gep8) = %const.19.copy.1" <- [%const.19.copy.1, %gep8]
   [%gep10] <- "%gep10 = add(%16, %const.24.copy.2)" <- [%16, %const.24.copy.2]
-  [] <- "memb (%gep10) = %const.464.copy.2" <- [%const.464.copy.2, %gep10]
+  [%gep12] <- "%gep12 = add(%16, %const.28.copy.2)" <- [%16, %const.28.copy.2]
   [] <- "memb (%gep12) = %structsize" <- [%structsize, %gep12]
-  [%gep12, %21] <- "%21 = memw (%16 ++ %const.28.copy.2)" <- [%16, %const.28.copy.2, %16]
+  [%gep8, %21] <- "%21 = memw (%16 ++ %const.20.copy.3)" <- [%16, %const.20.copy.3, %16]
+  [] <- "memb (%gep8) = %const.19.copy.1" <- [%const.19.copy.1, %gep8]
+  [] <- "memb (%gep10) = %const.464.copy.2" <- [%const.464.copy.2, %gep10]
   [] <- "call %21" <- [%cinfo, %21]
   [] <- "jump .preheader.preheader" <- []
 bb2:

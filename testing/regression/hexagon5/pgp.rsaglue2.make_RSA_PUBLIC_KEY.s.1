@@ -19,6 +19,7 @@ bb3:
 bb2:
 10:
 reg2rsaref.exit:
+  [%const.0.copy.1] <- "%const.0.copy.1 = ##0" <- []
   [%21] <- "%21 = memb (%const.@%global_precision)" <- [%const.@%global_precision]
   [%22] <- "%22 = sxth(%21)" <- [%21]
   [%23] <- "%23 = asl(%22, #1)" <- [%22]
@@ -26,12 +27,10 @@ reg2rsaref.exit:
   [] <- "if (%24) jump bb4" <- [%24]
 bb5:
 31:
-  [%const.0.copy.2] <- "%const.0.copy.2 = ##0" <- []
   [] <- "jump reg2rsaref.exit1" <- []
 bb4:
 25:
-  [%const.0.copy.1] <- "%const.0.copy.1 = ##0" <- []
 bb0:
 reg2rsaref.exit1:
-  [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, 25) (%const.0.copy.2, 31)" <- [%const.-3.copy.1, %const.0.copy.1, %const.0.copy.2]
+  [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, reg2rsaref.exit)" <- [%const.-3.copy.1, %const.0.copy.1]
   [] <- "return %.0" <- [%.0]
