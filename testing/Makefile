@@ -432,10 +432,10 @@ pattern.dot:
 	@for f in $*.f.json \
 			  $*.de.f.json \
 			  $*.de.lp.f.json \
-			  $*.de.lp.ph.f.json \
-			  $*.de.lp.ph.ce.f.json \
-			  $*.de.lp.ph.ce.cc.f.json \
-			  $*.de.lp.ph.ce.cc.ph.f.json \
+			  $*.de.lp.ep.f.json \
+			  $*.de.lp.ep.ce.f.json \
+			  $*.de.lp.ep.ce.cc.f.json \
+			  $*.de.lp.ep.ce.cc.rp.f.json \
 			  $*.de.lp.ep.ce.cc.rp.de.f.json \
 			  $*.de.lp.ep.ce.cc.rp.de.be.f.json \
 			  ; do \
