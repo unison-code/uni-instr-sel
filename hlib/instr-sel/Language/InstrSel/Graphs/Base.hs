@@ -941,7 +941,8 @@ redirectEdgesWhen
   -> Graph
   -> Graph
 redirectEdgesWhen p to_n from_n g =
-  redirectInEdgesWhen p to_n from_n (redirectOutEdgesWhen p to_n from_n g)
+  redirectInEdgesWhen p to_n from_n $
+  redirectOutEdgesWhen p to_n from_n g
 
 -- | Same as 'redirectInEdges' but takes a predicate for which edges to
 -- redirect.
@@ -959,8 +960,9 @@ redirectInEdgesWhen p to_n from_n g0 =
       df_def_es = map ( \e ->
                         let df_es = filter ( \e' ->
                                              getEdgeInNr e == getEdgeInNr e'
-                                           )
-                                           es
+                                           ) $
+                                    filter isDataFlowEdge $
+                                    es
                         in if length df_es == 1
                            then (head df_es, e)
                            else if length df_es == 0
@@ -976,7 +978,7 @@ redirectInEdgesWhen p to_n from_n g0 =
                   filter isDefEdge $
                   es
       -- Redirect all edges not related to the definition edges
-      g1 = foldr (\e g' -> fst $ updateEdgeTarget to_n e g') g0 $
+      g1 = foldr (\e g -> fst $ updateEdgeTarget to_n e g) g0 $
            filter ( \e -> e `notElem` map fst df_def_es &&
                           e `notElem` map snd df_def_es
                   ) $
@@ -1031,12 +1033,14 @@ redirectOutEdgesWhen p to_n from_n g0 =
                       ) $
                   filter isDefEdge $
                   es
+
       -- Redirect all edges not related to the definition edges
-      g1 = foldr (\e g' -> fst $ updateEdgeSource to_n e g') g0 $
+      g1 = foldr (\e g -> fst $ updateEdgeSource to_n e g) g0 $
            filter ( \e -> e `notElem` map fst df_def_es &&
                           e `notElem` map snd df_def_es
                   ) $
            es
+
       -- Redirect data-flow and related definition edge, making sure the edge
       -- numbers are consistent
       (g2, new_df_es) = foldr ( \e (g', new_es) ->
@@ -1055,7 +1059,8 @@ redirectOutEdgesWhen p to_n from_n g0 =
            map snd df_def_es
   in g3
 
--- | Updates the target of an edge.
+-- | Updates the target of an edge. The edge-in number is also set to the next,
+-- unused edge number.
 updateEdgeTarget
   :: Node
      -- ^ New target.
@@ -1080,7 +1085,8 @@ updateEdgeTarget new_trg (Edge e@(src, _, l)) g =
      , Edge new_e
      )
 
--- | Updates the source of an edge.
+-- | Updates the source of an edge. The edge-out number is also set to the next,
+-- unused edge number.
 updateEdgeSource
   :: Node
      -- ^ New source.
