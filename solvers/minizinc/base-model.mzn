@@ -1074,6 +1074,32 @@ constraint
       )
   );
 
+% [MC 3]
+% If all matches in the matchset that defines a non-state datum d are active and
+% define it in an external operand, then d must not be placed in the null location.
+% [MC 3] does not dominate [MC 2], nor vice versa.
+constraint
+  forall(d in allDataInFunction diff statesInFunction)(
+    if forall(m in defsetOfDatum[d])(
+         not(m in inactiveInstrMatches) /\
+	 exists(use2 in operandsDefinedByMatch[m] intersect operandsExternalToMatch[m])(
+	   operandAlternatives[use2] = {d}
+	 )
+       )
+    then loc[d] != locValueForNull
+    else true endif
+  );
+
+% [MC 4]
+% If an external operand does not take its min value, then its match must be selected,
+% and hence the datum can't be in the null location.
+constraint
+  forall ( m in allMatches
+         , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
+	 where card(operandAlternatives[o]) > 1
+	 )
+  ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
+
 %==================
 % SOLVE AND OUTPUT
 %==================
