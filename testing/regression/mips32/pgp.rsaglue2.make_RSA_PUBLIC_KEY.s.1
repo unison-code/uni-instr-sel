@@ -1,35 +1,36 @@
 0:
-  [%const.-3.copy.1] <- "ADDi %const.-3.copy.1, $0, -3" <- []
-  [%const.2048.copy.1] <- "ADDiu %const.2048.copy.1, $0, 2048" <- []
-  [%1] <- "CALL countbits" <- [%n]
-  [] <- "SW %1, 0(%rpk)" <- [%1, %rpk]
-  [] <- "BGTU $%1, $%const.2048.copy.1, bb0" <- [%1, %const.2048.copy.1]
+  [%const.2048.copy.1] <- "%const.2048.copy.1 = ##2048" <- []
+  [%const.-3.copy.1] <- "%const.-3.copy.1 = ##-3" <- []
+  [%1] <- "call countbits" <- [%n]
+  [%3] <- "%3 = cmp.gtu(%1, %const.2048.copy.1)" <- [%1, %const.2048.copy.1]
+  [] <- "memb (%rpk) = %1" <- [%1, %rpk]
+  [] <- "if (%3) jump bb0" <- [%3]
 bb1:
 4:
-  [%6] <- "LW %6, 0(%const.@%global_precision)" <- [%const.@%global_precision]
-  [%7] <- "ADD %7, $0, %6" <- [%6]
-  [%8] <- "SLL $%8, $%7, 1" <- [%7]
-  [%9] <- "SLTI $%9, $%8, 256" <- [%8]
-  [] <- "BNE $0, $%9, bb2" <- [%9]
+  [%const.256.copy.2] <- "%const.256.copy.2 = ##256" <- []
+  [%6] <- "%6 = memb (%const.@%global_precision)" <- [%const.@%global_precision]
+  [%7] <- "%7 = sxth(%6)" <- [%6]
+  [%8] <- "%8 = asl(%7, #1)" <- [%7]
+  [%9] <- "%9 = cmp.lt(%8, %const.256.copy.2)" <- [%8, %const.256.copy.2]
+  [] <- "if (%9) jump bb2" <- [%9]
 bb3:
 16:
-  [] <- "B reg2rsaref.exit" <- []
+  [] <- "jump reg2rsaref.exit" <- []
 bb2:
 10:
 reg2rsaref.exit:
-  [%21] <- "LW %21, 0(%const.@%global_precision)" <- [%const.@%global_precision]
-  [%22] <- "ADD %22, $0, %21" <- [%21]
-  [%23] <- "SLL $%23, $%22, 1" <- [%22]
-  [%24] <- "SLTI $%24, $%23, 256" <- [%23]
-  [] <- "BNE $0, $%24, bb4" <- [%24]
+  [%const.0.copy.1] <- "%const.0.copy.1 = ##0" <- []
+  [%21] <- "%21 = memb (%const.@%global_precision)" <- [%const.@%global_precision]
+  [%22] <- "%22 = sxth(%21)" <- [%21]
+  [%23] <- "%23 = asl(%22, #1)" <- [%22]
+  [%24] <- "%24 = cmp.lt(%23, %const.256.copy.2)" <- [%23, %const.256.copy.2]
+  [] <- "if (%24) jump bb4" <- [%24]
 bb5:
 31:
-  [%const.0.copy.2] <- "ADDiu %const.0.copy.2, $0, 0" <- []
-  [] <- "B reg2rsaref.exit1" <- []
+  [] <- "jump reg2rsaref.exit1" <- []
 bb4:
 25:
-  [%const.0.copy.1] <- "ADDiu %const.0.copy.1, $0, 0" <- []
 bb0:
 reg2rsaref.exit1:
-  [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, 25) (%const.0.copy.2, 31)" <- [%const.-3.copy.1, %const.0.copy.1, %const.0.copy.2]
-  [] <- "RetRA %.0" <- [%.0]
+  [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, reg2rsaref.exit)" <- [%const.-3.copy.1, %const.0.copy.1]
+  [] <- "return %.0" <- [%.0]
