@@ -168,6 +168,10 @@ parseArgs =
         enum [ TransformNothing
                  &= auto
                  &= ignore
+             , RemoveDeadCodeInFunctionGraph
+                 &= name "remove-dead-code-in-fun"
+                 &= explicit
+                 &= help "Removes dead code in function graph."
              , EnforcePhiNodeInvariantsInFunctionGraph
                  &= name "enforce-phi-invariants-in-fun"
                  &= explicit

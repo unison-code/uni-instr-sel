@@ -40,7 +40,8 @@ dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =
       reportErrorAndExit "No transform action provided."
-  | a `elem` [ EnforcePhiNodeInvariantsInFunctionGraph
+  | a `elem` [ RemoveDeadCodeInFunctionGraph
+             , EnforcePhiNodeInvariantsInFunctionGraph
              , RemovePhiNodeRedundanciesInFunctionGraph
              , CopyExtendFunctionGraph
              , BranchExtendFunctionGraph

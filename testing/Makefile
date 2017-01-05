@@ -205,7 +205,7 @@ run-medium-regression-tests:
 				cp $(REGRESSION_TESTS_DIR)/$$T.ll $$T_LL ;\
 				$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
 			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
-				subfix=".lp.ep.ce.cc.rp.be.ae.presolved.p.json" ;\
+				subfix=".de.lp.ep.ce.cc.rp.de.be.ae.presolved.p.json" ;\
 				pmatch_file="$${T_LL%.*}$$subfix" ;\
 				if [ -f $$pmatch_file ]; then \
 					pmatch_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
@@ -372,10 +372,11 @@ run-medium-regression-tests:
 %.f.dot: %.f.json
 	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
 
-%.cov.dot: %.lp.ep.ce.cc.rp.be.f.json %.lp.ep.ce.cc.rp.be.ae.p.json
+%.cov.dot: %.de.lp.ep.ce.cc.rp.de.be.f.json \
+           %.de.lp.ep.ce.cc.rp.de.be.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
-                  -f $*.lp.ep.ce.cc.rp.be.f.json \
-                  -p $*.lp.ep.ce.cc.rp.be.ae.p.json \
+                  -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
+                  -p $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -389,31 +390,32 @@ pattern.dot:
 %.pdf: %.dot
 	dot -Tpdf $< -o $@
 
-%.all-cover-plots: %.lp.ep.ce.cc.rp.be.f.json %.lp.ep.ce.cc.rp.be.ae.p.json
+%.all-cover-plots: %.de.lp.ep.ce.cc.rp.de.be.f.json \
+                   %.de.lp.ep.ce.cc.rp.de.be.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
-                  -f $*.lp.ep.ce.cc.rp.be.f.json \
-                  -p $*.lp.ep.ce.cc.rp.be.ae.p.json \
+                  -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
+                  -p $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
         $(RM) $${f%.*}.dot; \
     done
 
-%.model.dump: %.lp.ep.ce.cc.rp.be.f.json \
+%.model.dump: %.de.lp.ep.ce.cc.rp.de.be.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
-                  -f $*.lp.ep.ce.cc.rp.be.f.json \
+                  -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -o $@
 
-%.sol.dump: %.lp.ep.ce.cc.rp.be.f.json \
+%.sol.dump: %.de.lp.ep.ce.cc.rp.de.be.f.json \
             %.presolved.aimaps.json \
             %.presolved.ll.model.json \
             %.presolved.ll.sol.json
 	$(UNI_IS_CMD) make --dump-low-level-solution-info \
-                  -f $*.lp.ep.ce.cc.rp.be.f.json \
+                  -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
                   -m $*.presolved.ll.model.json \
                   -a $*.presolved.aimaps.json \
                   -s $*.presolved.ll.sol.json \
@@ -428,12 +430,14 @@ pattern.dot:
 %.run-checks:
 	@echo "$(C_INFO)* CHECKING INTEGRITY$(C_NONE)"
 	@for f in $*.f.json \
-			  $*.lp.f.json \
-			  $*.lp.ph.f.json \
-			  $*.lp.ph.ce.f.json \
-			  $*.lp.ph.ce.cc.f.json \
-			  $*.lp.ph.ce.cc.ph.f.json \
-			  $*.lp.ep.ce.cc.rp.be.f.json \
+			  $*.de.f.json \
+			  $*.de.lp.f.json \
+			  $*.de.lp.ph.f.json \
+			  $*.de.lp.ph.ce.f.json \
+			  $*.de.lp.ph.ce.cc.f.json \
+			  $*.de.lp.ph.ce.cc.ph.f.json \
+			  $*.de.lp.ep.ce.cc.rp.de.f.json \
+			  $*.de.lp.ep.ce.cc.rp.de.be.f.json \
 			  ; do \
 		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
@@ -458,13 +462,13 @@ pattern.dot:
 		fi \
 	done
 	@echo "$(C_INFO)* CHECKING COVERABILITY$(C_NONE)"
-	@echo -n "    $*.lp.ep.ce.cc.rp.be.f.json "
-	@if [ -f $*.lp.ep.ce.cc.rp.be.f.json ]; then \
-		if [ -f $*.lp.ep.ce.cc.rp.be.ae.p.json ]; then \
+	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.be.f.json "
+	@if [ -f $*.de.lp.ep.ce.cc.rp.de.be.f.json ]; then \
+		if [ -f $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
-			                   -f $*.lp.ep.ce.cc.rp.be.f.json \
-			                   -p $*.lp.ep.ce.cc.rp.be.ae.p.json \
+			                   -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
+			                   -p $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\
@@ -479,13 +483,13 @@ pattern.dot:
 		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
 	@echo "$(C_INFO)* CHECKING OVERLAP OF DATA LOCATIONS$(C_NONE)"
-	@echo -n "    $*.lp.ep.ce.cc.rp.be.f.json "
-	@if [ -f $*.lp.ep.ce.cc.rp.be.f.json ]; then \
-		if [ -f $*.lp.ep.ce.cc.rp.be.ae.p.json ]; then \
+	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.be.f.json "
+	@if [ -f $*.de.lp.ep.ce.cc.rp.de.be.f.json ]; then \
+		if [ -f $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
-			                   -f $*.lp.ep.ce.cc.rp.be.f.json \
-			                   -p $*.lp.ep.ce.cc.rp.be.ae.p.json \
+			                   -f $*.de.lp.ep.ce.cc.rp.de.be.f.json \
+			                   -p $*.de.lp.ep.ce.cc.rp.de.be.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\

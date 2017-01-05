@@ -34,6 +34,10 @@ run :: TransformAction
     -> Maybe TargetMachine
     -> IO [Output]
 
+run RemoveDeadCodeInFunctionGraph f _ =
+  do let new_f = removeDeadCode f
+     return [toOutput $ toJson new_f]
+
 run EnforcePhiNodeInvariantsInFunctionGraph f _ =
   do let new_f = enforcePhiNodeInvariants f
      return [toOutput $ toJson new_f]

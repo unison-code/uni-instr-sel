@@ -70,6 +70,7 @@ data MakeAction
 
 data TransformAction
   = TransformNothing
+  | RemoveDeadCodeInFunctionGraph
   | EnforcePhiNodeInvariantsInFunctionGraph
   | RemovePhiNodeRedundanciesInFunctionGraph
   | LowerPointersInFunctionGraph
