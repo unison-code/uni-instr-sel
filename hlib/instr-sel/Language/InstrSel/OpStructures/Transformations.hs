@@ -409,14 +409,8 @@ replaceCopiedValuesInPhiNodes' root os =
 renumberInEdgesOfPhi :: Node -> Graph -> Graph
 renumberInEdgesOfPhi n g0 =
   let dt_es = getDtFlowInEdges g0 n
-      def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
-  in foldr ( \(dt_e, def_e, new_nr) g' ->
-             let (g'', _) = updateEdgeOutNr new_nr dt_e g'
-                 (g''', _) = updateEdgeOutNr new_nr def_e g''
-             in g'''
-           )
-           g0 $
-     zip3 dt_es def_es ([0..] :: [EdgeNr])
+  in foldr (\(e, new_nr) g' -> fst $ updateEdgeInNr new_nr e g') g0 $
+     zip dt_es ([0..] :: [EdgeNr])
 
 removeSingleValuePhiNodes :: OpStructure -> OpStructure
 removeSingleValuePhiNodes os =
