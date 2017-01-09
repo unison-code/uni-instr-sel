@@ -387,6 +387,10 @@ replaceCopiedValuesInPhiNodes' root os =
             old_def_e = head def_es
             (g4, _) = updateEdgeOutNr (getEdgeOutNr old_def_e) new_def_e g3
         in os' { osGraph = g4 }
+      renumberInEdgesOfPhi n g0 =
+        let dt_es = getDtFlowInEdges g0 n
+        in foldr (\(e, new_nr) g' -> fst $ updateEdgeInNr new_nr e g') g0 $
+           zip dt_es ([0..] :: [EdgeNr])
       transform phi_n os0 =
         let g0 = osGraph os0
             dt_es = getDtFlowInEdges g0 phi_n
@@ -405,12 +409,6 @@ replaceCopiedValuesInPhiNodes' root os =
             os2 = os1 { osGraph = g2 }
         in os2
   in foldr transform os ns
-
-renumberInEdgesOfPhi :: Node -> Graph -> Graph
-renumberInEdgesOfPhi n g0 =
-  let dt_es = getDtFlowInEdges g0 n
-  in foldr (\(e, new_nr) g' -> fst $ updateEdgeInNr new_nr e g') g0 $
-     zip dt_es ([0..] :: [EdgeNr])
 
 removeSingleValuePhiNodes :: OpStructure -> OpStructure
 removeSingleValuePhiNodes os =
