@@ -15,10 +15,10 @@ bb7:
   [] <- "if (%16) jump bb8" <- [%16]
 bb9:
 .selectcont1:
-  [%17] <- "PHI (%const.2147483647.copy.1, .selecttrue2) (%14.copy.3, 15)" <- [%const.2147483647.copy.1, %14.copy.3]
+  [%17] <- "PHI (%14.copy.3, 15) (%const.2147483647.copy.1, .selecttrue2)" <- [%14.copy.3, %const.2147483647.copy.1]
 bb6:
 18:
-  [%.0] <- "PHI (%5, 4) (%., .selectcont) (%17, .selectcont1) (%14, 12)" <- [%5, %., %17, %14]
+  [%.0] <- "PHI (%5, 4) (%., .selectcont) (%14, 12) (%17, .selectcont1)" <- [%5, %., %14, %17]
   [] <- "return %.0" <- [%.0]
 bb8:
 .selecttrue2:
@@ -40,7 +40,7 @@ bb3:
   [] <- "if (%10) jump bb4" <- [%10]
 bb5:
 .selectcont:
-  [%.] <- "PHI (%const.-2147483648.copy.1, .selecttrue) (%11, 6)" <- [%const.-2147483648.copy.1, %11]
+  [%.] <- "PHI (%11, 6) (%const.-2147483648.copy.1, .selecttrue)" <- [%11, %const.-2147483648.copy.1]
   [] <- "jump 18" <- []
 bb4:
 .selecttrue:

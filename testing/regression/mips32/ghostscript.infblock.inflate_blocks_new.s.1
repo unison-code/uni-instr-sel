@@ -19,7 +19,7 @@ bb3:
   [%gep8] <- "ADDU $%gep8, $%w, $%11" <- [%w, %11]
   [] <- "SW $%gep8, 40($%5)" <- [%gep8, %5]
   [] <- "SW $%c, 52($%5)" <- [%c, %5]
-  [] <- "SW %const.0.copy.1, 0(%5)" <- [%const.0.copy.1, %5]
+  [] <- "SW r0, 0(%5)" <- [%const.0.copy.1, %5]
   [%gep14] <- "ADDI $%gep14, $%5, 56" <- [%5]
   [] <- "CALL inflate_blocks_reset" <- [%gep14, %z, %5]
 bb0:

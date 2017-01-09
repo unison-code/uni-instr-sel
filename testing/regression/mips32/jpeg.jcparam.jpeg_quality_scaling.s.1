@@ -3,12 +3,12 @@
   [] <- "BNE $0, $%1, bb0" <- [%1]
 bb1:
 .selectcont:
-  [%.quality] <- "PHI (%const.1.copy.2, .selecttrue) (%quality, 0)" <- [%const.1.copy.2, %quality]
+  [%.quality] <- "PHI (%quality, 0) (%const.1.copy.2, .selecttrue)" <- [%quality, %const.1.copy.2]
   [] <- "SLTi %tmp.1, %.quality, 100" <- [%.quality]
   [] <- "BEQ %tmp.1, $0, bb2" <- []
 bb3:
 .selectcont.selectcont:
-  [%..quality] <- "PHI (%const.100.copy.2, .selectcont.selecttrue) (%.quality, .selectcont)" <- [%const.100.copy.2, %.quality]
+  [%..quality] <- "PHI (%.quality, .selectcont) (%const.100.copy.2, .selectcont.selecttrue)" <- [%.quality, %const.100.copy.2]
   [%3] <- "SLTI $%3, $%..quality, 50" <- [%..quality]
   [] <- "BNE $0, $%3, bb4" <- [%3]
 bb5:

@@ -1,12 +1,11 @@
 0:
-  [%10] <- "SLTi %10, %need_full_buffer, 0" <- [%need_full_buffer]
   [%1] <- "LW $%1, 4($%cinfo)" <- [%cinfo]
   [%2] <- "LW %2, 0(%1)" <- [%1]
   [%const.64.copy.1] <- "ADDiu %const.64.copy.1, $0, 64" <- []
   [%const.1.copy.3] <- "ADDiu %const.1.copy.3, $0, 1" <- []
   [%4] <- "CALL %2" <- [%const.64.copy.1, %const.1.copy.3, %cinfo, %2]
   [] <- "SW $%4, 328($%cinfo)" <- [%4, %cinfo]
-  [] <- "SW %const.@%start_pass_main, 0(%4)" <- [%const.@%start_pass_main, %4]
+  [] <- "SW r0, 0(%4)" <- [%const.@%start_pass_main, %4]
   [%7] <- "LW $%7, 168($%cinfo)" <- [%cinfo]
   [%8] <- "SLTi %8, %7, 0" <- [%7]
   [] <- "BNE $0, $%8, bb0" <- [%8]
@@ -49,7 +48,7 @@ bb4:
   [] <- "B .loopexit" <- []
 bb0:
 9:
-  [] <- "BNE $0, $%10, bb2" <- [%10]
+  [] <- "BEQ $%need_full_buffer, $r0, bb2" <- [%need_full_buffer, %const.0.copy.2]
 bb3:
 11:
   [%14] <- "LW %14, 0(%cinfo)" <- [%cinfo]

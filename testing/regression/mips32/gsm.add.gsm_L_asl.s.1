@@ -16,7 +16,7 @@ bb5:
   [] <- "B gsm_L_asr.exit" <- []
 bb4:
 8:
-  [%9] <- "SUBU $%9, $%const.0.copy.2, $%n" <- [%const.0.copy.2, %n]
+  [%9] <- "SUBU $%9, $r0, $%n" <- [%const.0.copy.2, %n]
   [%10] <- "SRAV $%10, $%a, $%9" <- [%a, %9]
   [] <- "B gsm_L_asr.exit" <- []
 bb2:
@@ -24,5 +24,5 @@ bb2:
   [%5] <- "SRA $%5, $%a, 31" <- [%a]
 bb0:
 gsm_L_asr.exit:
-  [%.0] <- "PHI (%5, 4) (%12, 11) (%const.0.copy.3, 0) (%10, 8)" <- [%5, %12, %const.0.copy.3, %10]
+  [%.0] <- "PHI (%5, 4) (%10, 8) (%12, 11) (%const.0.copy.3, 0)" <- [%5, %10, %12, %const.0.copy.3]
   [] <- "RetRA %.0" <- [%.0]

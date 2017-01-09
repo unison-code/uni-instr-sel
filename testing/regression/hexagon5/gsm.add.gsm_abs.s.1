@@ -18,7 +18,7 @@ bb0:
   [] <- "if (%4) jump bb2" <- [%4]
 bb3:
 .selectcont:
-  [%.] <- "PHI (%const.32767.copy.1, .selecttrue) (%5, 3)" <- [%const.32767.copy.1, %5]
+  [%.] <- "PHI (%5, 3) (%const.32767.copy.1, .selecttrue)" <- [%5, %const.32767.copy.1]
   [] <- "jump 6" <- []
 bb2:
 .selecttrue:

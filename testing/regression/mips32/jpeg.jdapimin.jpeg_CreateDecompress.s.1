@@ -1,7 +1,7 @@
 0:
   [%2] <- "SLTi %2, %version, 61" <- [%version]
   [%13] <- "SLTi %13, %structsize, 464" <- [%structsize]
-  [] <- "SW $%const.null.copy.3, 4($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.3, %cinfo]
   [] <- "BNE $0, $%2, bb0" <- [%2]
 bb1:
 3:
@@ -33,8 +33,8 @@ bb3:
   [] <- "SW $%const.1.copy.1, 12($%cinfo)" <- [%const.1.copy.1, %cinfo]
   [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
   [] <- "CALL jinit_memory_mgr" <- [%cinfo]
-  [] <- "SW $%const.null.copy.3, 8($%cinfo)" <- [%const.null.copy.3, %cinfo]
-  [] <- "SW $%const.null.copy.3, 20($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.3, %cinfo]
   [] <- "CALL jinit_marker_reader" <- [%cinfo]
   [] <- "CALL jinit_input_controller" <- [%cinfo]
   [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]

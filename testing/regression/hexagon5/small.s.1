@@ -10,5 +10,5 @@ bb0:
 if.then:
   [%const.10.copy.2] <- "%const.10.copy.2 = ##10" <- []
 return:
-  [%retval.0] <- "PHI (%const.10.copy.2, if.then) (%add.copy.2, if.end)" <- [%const.10.copy.2, %add.copy.2]
+  [%retval.0] <- "PHI (%add.copy.2, if.end) (%const.10.copy.2, if.then)" <- [%add.copy.2, %const.10.copy.2]
   [] <- "return %retval.0" <- [%retval.0]

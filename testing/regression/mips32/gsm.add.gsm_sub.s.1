@@ -12,11 +12,11 @@ bb1:
   [] <- "BEQ %tmp.1, $0, bb2" <- []
 bb3:
 .selectcont:
-  [%7] <- "PHI (%const.32767.copy.2, .selecttrue) (%3.copy.3, 5)" <- [%const.32767.copy.2, %3.copy.3]
+  [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.2, .selecttrue)" <- [%3.copy.3, %const.32767.copy.2]
   [%phitmp] <- "ANDi %phitmp, %7, 32767" <- [%7]
 bb0:
 8:
-  [%9] <- "PHI (%const.-32768.copy.2, 0) (%phitmp, .selectcont)" <- [%const.-32768.copy.2, %phitmp]
+  [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
   [] <- "SLL %tmp.2, %9, 16" <- [%9]
   [] <- "SRA %tmp.3, %tmp.2, 16" <- []
   [] <- "RetRA %tmp.3" <- []

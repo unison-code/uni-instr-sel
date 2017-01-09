@@ -19,7 +19,7 @@ bb5:
   [] <- "B gsm_asr.exit" <- []
 bb4:
 10:
-  [%11] <- "SUBU $%11, $%const.0.copy.3, $%n" <- [%const.0.copy.3, %n]
+  [%11] <- "SUBU $%11, $r0, $%n" <- [%const.0.copy.3, %n]
   [%13] <- "SRAV $%13, $%12, $%11" <- [%12, %11]
   [%14] <- "ANDi %14, %13, 32767" <- [%13]
   [] <- "B gsm_asr.exit" <- []
@@ -27,11 +27,11 @@ bb2:
 4:
   [%a.lobit] <- "SRL $%a.lobit, $%a, 15" <- [%a]
   [%5] <- "ANDi %5, %a.lobit, 32767" <- [%a.lobit]
-  [%6] <- "SUBU $%6, $%const.0.copy.1, $%5" <- [%const.0.copy.1, %5]
+  [%6] <- "SUBU $%6, $r0, $%5" <- [%const.0.copy.1, %5]
   [%7] <- "ANDi %7, %6, 32767" <- [%6]
 bb0:
 gsm_asr.exit:
-  [%.0] <- "PHI (%7, 4) (%18, 15) (%const.0.copy.4, 0) (%14, 10)" <- [%7, %18, %const.0.copy.4, %14]
+  [%.0] <- "PHI (%7, 4) (%14, 10) (%18, 15) (%const.0.copy.4, 0)" <- [%7, %14, %18, %const.0.copy.4]
   [] <- "SLL %tmp.2, %.0, 16" <- [%.0]
   [] <- "SRA %tmp.3, %tmp.2, 16" <- []
   [] <- "RetRA %tmp.3" <- []

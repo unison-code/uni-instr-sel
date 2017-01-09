@@ -14,11 +14,11 @@ bb1:
   [] <- "if (%6) jump bb2" <- [%6]
 bb3:
 .selectcont:
-  [%7] <- "PHI (%const.32767.copy.1, .selecttrue) (%3.copy.3, 5)" <- [%const.32767.copy.1, %3.copy.3]
+  [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.1, .selecttrue)" <- [%3.copy.3, %const.32767.copy.1]
   [%phitmp] <- "%phitmp = and(%7, #-32768)" <- [%7]
 bb0:
 8:
-  [%9] <- "PHI (%const.-32768.copy.2, 0) (%phitmp, .selectcont)" <- [%const.-32768.copy.2, %phitmp]
+  [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
   [] <- "%tmp.1 = aslh(%9)" <- [%9]
   [] <- "%tmp.2 = asr(%tmp.1)" <- []
   [] <- "return %tmp.2" <- []

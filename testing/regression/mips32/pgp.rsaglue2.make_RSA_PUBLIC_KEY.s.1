@@ -6,7 +6,7 @@
   [] <- "BGTU $%1, $%const.2048.copy.1, bb0" <- [%1, %const.2048.copy.1]
 bb1:
 4:
-  [%6] <- "LW %6, 0(%const.@%global_precision)" <- [%const.@%global_precision]
+  [%6] <- "LW %6, 0(r0)" <- [%const.@%global_precision]
   [%7] <- "ADD %7, $0, %6" <- [%6]
   [%8] <- "SLL $%8, $%7, 1" <- [%7]
   [%9] <- "SLTI $%9, $%8, 256" <- [%8]
@@ -17,7 +17,7 @@ bb3:
 bb2:
 10:
 reg2rsaref.exit:
-  [%21] <- "LW %21, 0(%const.@%global_precision)" <- [%const.@%global_precision]
+  [%21] <- "LW %21, 0(r0)" <- [%const.@%global_precision]
   [%22] <- "ADD %22, $0, %21" <- [%21]
   [%23] <- "SLL $%23, $%22, 1" <- [%22]
   [%24] <- "SLTI $%24, $%23, 256" <- [%23]
