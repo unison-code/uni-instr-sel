@@ -157,7 +157,12 @@ all_data.append(["optimal", found_optimal])
 # [MC] Convert data to 0-based indexing
 for d in all_data:
     name = d[0]
-    if name == "alt" or name == "dplace" or name == "place" or name == "succ":
+    if ( name == "alt" or
+         name == "dplace" or
+         name == "loc" or
+         name == "place" or
+         name == "succ"
+       ):
         d[1] = [x-1 for x in d[1]]
     elif name == "block_value_for_null" or name == "alt_value_for_null":
         d[1] = d[1]-1
