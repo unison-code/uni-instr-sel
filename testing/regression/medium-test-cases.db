@@ -2,3 +2,4 @@ ghostscript.infblock.inflate_blocks_new
 jpeg.jcmainct.jinit_c_main_controller
 jpeg.jdapimin.jpeg_CreateDecompress
 jpeg.jdatasrc.jpeg_stdio_src
+jpeg.jdmainct.process_data_simple_main
