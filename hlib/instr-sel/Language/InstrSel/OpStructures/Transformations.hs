@@ -502,7 +502,13 @@ removeDeadCode os0 =
 removeDeadCode' :: OpStructure -> (OpStructure, Bool)
 removeDeadCode' os =
   let g = osGraph os
-      unused = filter (\n -> length (getSuccessors g n) == 0) $
+      unused = filter ( \n ->
+                        let preds = map (getSourceNode g) $
+                                    getDtFlowInEdges g n
+                            succs = map (getTargetNode g) $
+                                    getDtFlowOutEdges g n
+                         in length succs == 0 && not (isCallNode $ head preds)
+                      ) $
                filter isValueNode $
                getAllNodes g
   in if length unused > 0
