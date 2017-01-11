@@ -7,12 +7,12 @@ bb1:
   [] <- "BNE $0, $%13, bb6" <- [%13]
 bb7:
 16:
-  [%const.-1.copy.4] <- "ADDi %const.-1.copy.4, $0, -1" <- []
-  [%17] <- "XOR $%17, $%a, $%const.-1.copy.4" <- [%a, %const.-1.copy.4]
+  [%const.-1.copy.5] <- "ADDi %const.-1.copy.5, $0, -1" <- []
+  [%17] <- "XOR $%17, $%a, $%const.-1.copy.5" <- [%a, %const.-1.copy.5]
   [] <- "LUi %tmp.2, 2147483646[31:16]" <- []
   [%const.2147483646.copy.2] <- "ORi %const.2147483646.copy.2, %tmp.2, 2147483646[15:0]" <- []
   [%18] <- "ADDU $%18, $%b, $%17" <- [%b, %17]
-  [%20] <- "XOR $%20, $%18, $%const.-1.copy.4" <- [%18, %const.-1.copy.4]
+  [%20] <- "XOR $%20, $%18, $%const.-1.copy.5" <- [%18, %const.-1.copy.5]
   [] <- "BGTU $%18, $%const.2147483646.copy.2, bb8" <- [%18, %const.2147483646.copy.2]
 bb9:
 .selectcont1:
@@ -32,8 +32,8 @@ bb0:
   [] <- "BEQ %tmp.3, $0, bb2" <- []
 bb3:
 6:
-  [%const.-1.copy.5] <- "ADDi %const.-1.copy.5, $0, -1" <- []
-  [%7] <- "XOR $%7, $%b, $%const.-1.copy.5" <- [%b, %const.-1.copy.5]
+  [%const.-1.copy.4] <- "ADDi %const.-1.copy.4, $0, -1" <- []
+  [%7] <- "XOR $%7, $%b, $%const.-1.copy.4" <- [%b, %const.-1.copy.4]
   [] <- "LUi %tmp.4, 2147483646[31:16]" <- []
   [%const.2147483646.copy.1] <- "ORi %const.2147483646.copy.1, %tmp.4, 2147483646[15:0]" <- []
   [%8] <- "ADDU $%8, $%a, $%7" <- [%a, %7]

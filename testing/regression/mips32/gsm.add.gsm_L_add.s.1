@@ -29,7 +29,9 @@ bb0:
   [] <- "BEQ %tmp.2, $0, bb2" <- []
 bb3:
 6:
-  [%7, %8] <- "(%7, %8) = XORi2 (%a, -1), (%b, -1)" <- [%b, %a]
+  [%const.-1.copy.3] <- "ADDi %const.-1.copy.3, $0, -1" <- []
+  [%7] <- "XOR $%7, $%a, $%const.-1.copy.3" <- [%a, %const.-1.copy.3]
+  [%8] <- "XOR $%8, $%b, $%const.-1.copy.3" <- [%b, %const.-1.copy.3]
   [%const.-2.copy.1] <- "ADDi %const.-2.copy.1, $0, -2" <- []
   [] <- "LUi %tmp.3, 2147483646[31:16]" <- []
   [%const.2147483646.copy.1] <- "ORi %const.2147483646.copy.1, %tmp.3, 2147483646[15:0]" <- []

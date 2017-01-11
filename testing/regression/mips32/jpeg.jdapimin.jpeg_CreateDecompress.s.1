@@ -26,6 +26,9 @@ bb3:
   [] <- "SW $%structsize, 28($%16)" <- [%structsize, %16]
   [%21] <- "LW %21, 0(%16)" <- [%16]
   [] <- "CALL %21" <- [%cinfo, %21]
+  [] <- "B .preheader.preheader" <- []
+bb2:
+..preheader.preheader_crit_edge:
 .preheader.preheader:
   [%24] <- "LW %24, 0(%cinfo)" <- [%cinfo]
   [] <- "SW %24, 0(%cinfo)" <- [%24, %cinfo]
@@ -39,6 +42,3 @@ bb3:
   [] <- "CALL jinit_input_controller" <- [%cinfo]
   [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]
   [] <- "Ret" <- []
-bb2:
-..preheader.preheader_crit_edge:
-  [] <- "B .preheader.preheader" <- []

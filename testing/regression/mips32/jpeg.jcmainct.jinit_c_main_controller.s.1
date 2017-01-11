@@ -1,22 +1,20 @@
 0:
+  [%10] <- "SLTi %10, %need_full_buffer, 0" <- [%need_full_buffer]
   [%1] <- "LW $%1, 4($%cinfo)" <- [%cinfo]
   [%2] <- "LW %2, 0(%1)" <- [%1]
   [%const.64.copy.1] <- "ADDiu %const.64.copy.1, $0, 64" <- []
-  [%const.1.copy.3] <- "ADDiu %const.1.copy.3, $0, 1" <- []
-  [%4] <- "CALL %2" <- [%const.64.copy.1, %const.1.copy.3, %cinfo, %2]
+  [%const.1.copy.2] <- "ADDiu %const.1.copy.2, $0, 1" <- []
+  [%4] <- "CALL %2" <- [%const.64.copy.1, %const.1.copy.2, %cinfo, %2]
   [] <- "SW $%4, 328($%cinfo)" <- [%4, %cinfo]
   [] <- "SW r0, 0(%4)" <- [%const.@%start_pass_main, %4]
   [%7] <- "LW $%7, 168($%cinfo)" <- [%cinfo]
-  [%8] <- "SLTi %8, %7, 0" <- [%7]
-  [] <- "BNE $0, $%8, bb0" <- [%8]
+  [] <- "BEQ $%7, $r0, bb0" <- [%7, %const.0.copy.1]
 bb1:
   [] <- "B .loopexit" <- []
 bb5:
 .lr.ph:
   [%21] <- "LW $%21, 60($%cinfo)" <- [%cinfo]
-  [%const.4.copy.2] <- "ADDiu %const.4.copy.2, $0, 4" <- []
   [%const.0.copy.4] <- "ADDiu %const.0.copy.4, $0, 0" <- []
-  [%const.84.copy.1] <- "ADDiu %const.84.copy.1, $0, 84" <- []
   [%gep12] <- "ADDI $%gep12, $%21, 28" <- [%21]
   [%gep14] <- "ADDI $%gep14, $%4, 24" <- [%4]
 bb7:
@@ -30,11 +28,13 @@ bb7:
   [%28] <- "SLL $%28, $%27, 3" <- [%27]
   [%29] <- "LW $%29, -16($%lsr.iv)" <- [%lsr.iv]
   [%30] <- "SLL $%30, $%29, 3" <- [%29]
-  [%31] <- "CALL %26" <- [%30, %28, %const.1.copy.3, %cinfo, %26]
+  [%31] <- "CALL %26" <- [%30, %28, %const.1.copy.2, %cinfo, %26]
   [] <- "SW %31, 0(%lsr.iv6)" <- [%31, %lsr.iv6]
   [%33] <- "LW $%33, 52($%cinfo)" <- [%cinfo]
-  [%32, %gep24, %gep26] <- "(%32, %gep24, %gep26) = ADD3 (%const.1.copy.3, %ci.01), (%const.84.copy.1, %lsr.iv), (%const.4.copy.2, %lsr.iv6)" <- [%lsr.iv6, %lsr.iv, %ci.01, %const.4.copy.2, %const.84.copy.1, %const.1.copy.3]
+  [%32] <- "ADDI $%32, $%ci.01, 1" <- [%ci.01]
   [%34] <- "SLT $%34, $%32, $%33" <- [%32, %33]
+  [%gep24] <- "ADDI $%gep24, $%lsr.iv, 84" <- [%lsr.iv]
+  [%gep26] <- "ADDI $%gep26, $%lsr.iv6, 4" <- [%lsr.iv6]
   [] <- "BNE $0, $%34, bb7" <- [%34]
 bb6:
 .loopexit:
@@ -48,12 +48,12 @@ bb4:
   [] <- "B .loopexit" <- []
 bb0:
 9:
-  [] <- "BEQ $%need_full_buffer, $r0, bb2" <- [%need_full_buffer, %const.0.copy.2]
+  [] <- "BNE $0, $%10, bb2" <- [%10]
 bb3:
 11:
   [%14] <- "LW %14, 0(%cinfo)" <- [%cinfo]
-  [%const.4.copy.4] <- "ADDiu %const.4.copy.4, $0, 4" <- []
-  [] <- "SW $%const.4.copy.4, 20($%14)" <- [%const.4.copy.4, %14]
+  [%const.4.copy.2] <- "ADDiu %const.4.copy.2, $0, 4" <- []
+  [] <- "SW $%const.4.copy.2, 20($%14)" <- [%const.4.copy.2, %14]
   [%15] <- "LW %15, 0(%14)" <- [%14]
   [] <- "CALL %15" <- [%cinfo, %15]
   [] <- "Ret" <- []
