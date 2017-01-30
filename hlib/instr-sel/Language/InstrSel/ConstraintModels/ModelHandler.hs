@@ -287,8 +287,7 @@ enableCopyingForMultUseInputsInPattern pat match =
                                                        new_input_id
                                                        (patEmitString old_p)
             new_p = old_p { patOS = new_os
-                          , patInputData =
-                              (new_input_id:patInputData old_p)
+                          , patInputData = (new_input_id:patInputData old_p)
                           , patEmitString = new_emit_str
                           }
         in (new_p, new_m)
@@ -322,7 +321,10 @@ processMatch' instr pat match mid oid =
       d_use_ns = filter (hasAnySuccessors graph) d_ns
       d_in_ns = filter (\n -> (getNodeID n) `elem` (patInputData pat)) d_ns
       d_out_ns = filter (\n -> (getNodeID n) `elem` (patOutputData pat)) d_ns
-      p_ext_ns = patInputData pat ++ patOutputData pat
+      p_ext_ns = nub $
+                 patInputData pat ++
+                 patOutputData pat ++
+                 (map getNodeID $ filter isValueNodeWithConstValue d_ns)
       d_int_ns = filter (\n -> (getNodeID n) `notElem` p_ext_ns) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
                                d_use_ns
