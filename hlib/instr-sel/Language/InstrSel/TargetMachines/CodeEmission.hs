@@ -395,7 +395,7 @@ emitInstructionsOfMatch model sol tm st0 mid =
                        else st4
                  st6 = if i == length emit_parts
                        then let lat = hlMatchLatency match
-                                code = emittedCode st4
+                                code = emittedCode st5
                                 instr = head code
                                 new_instr = instr { asmLatency = lat }
                             in st5 { emittedCode = (new_instr:tail code) }
