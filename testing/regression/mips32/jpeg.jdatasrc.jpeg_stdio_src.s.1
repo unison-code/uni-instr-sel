@@ -1,32 +1,32 @@
-0:
-  [%1] <- "LW $%1, 20($%cinfo)" <- [%cinfo]
-  [%2] <- "SLTi %2, %1, 0" <- [%1]
-  [] <- "BNE $0, $%2, bb0" <- [%2]
-bb1:
-._crit_edge:
-  [%1.copy.2] <- "MOV %1.copy.2, %1" <- [%1]
-15:
-  [%16] <- "PHI (%1.copy.2, ._crit_edge) (%.pre, 4)" <- [%1.copy.2, %.pre]
-  [] <- "SW $r0, 8($%16)" <- [%const.@%init_source, %16]
-  [] <- "SW $r0, 12($%16)" <- [%const.@%fill_input_buffer, %16]
-  [] <- "SW $r0, 16($%16)" <- [%const.@%skip_input_data, %16]
-  [] <- "SW $r0, 20($%16)" <- [%const.@%jpeg_resync_to_restart, %16]
-  [] <- "SW $r0, 24($%16)" <- [%const.@%term_source, %16]
-  [] <- "SW $%infile, 28($%16)" <- [%infile, %16]
-  [] <- "SW $r0, 4($%16)" <- [%const.0.copy.2, %16]
-  [] <- "SW r0, 0(%16)" <- [%const.0.copy.1, %16]
-  [] <- "Ret" <- []
-bb0:
-4:
-  [%7] <- "LW $%7, 4($%cinfo)" <- [%cinfo]
-  [%8] <- "LW %8, 0(%7)" <- [%7]
-  [%const.40.copy.1] <- "ADDiu %const.40.copy.1, $0, 40" <- []
-  [%const.4096.copy.1] <- "ADDiu %const.4096.copy.1, $0, 4096" <- []
-  [%10] <- "CALL %8" <- [%const.40.copy.1, %const.0.copy.3, %cinfo, %8]
-  [] <- "SW $%10, 20($%cinfo)" <- [%10, %cinfo]
-  [%11] <- "LW $%11, 4($%cinfo)" <- [%cinfo]
-  [%12] <- "LW %12, 0(%11)" <- [%11]
-  [%13] <- "CALL %12" <- [%const.4096.copy.1, %const.null.copy.2, %cinfo, %12]
-  [] <- "SW $%13, 32($%10)" <- [%13, %10]
-  [%.pre] <- "LW $%.pre, 20($%cinfo)" <- [%cinfo]
-  [] <- "B 15" <- []
+ 21  0:
+  1    [%1] <- "LW $%1, 20($%cinfo)" <- [%cinfo]
+  0    [%2] <- "SLTi %2, %1, 0" <- [%1]
+  1    [] <- "BNE $0, $%2, bb0" <- [%2]
+ 21  bb1:
+ 13  ._crit_edge:
+  1    [%1.copy.2] <- "MOV %1.copy.2, %1" <- [%1]
+ 21  15:
+  0    [%16] <- "PHI (%1.copy.2, ._crit_edge) (%.pre, 4)" <- [%1.copy.2, %.pre]
+  1    [] <- "SW $r0, 8($%16)" <- [%const.@%init_source, %16]
+  1    [] <- "SW $r0, 12($%16)" <- [%const.@%fill_input_buffer, %16]
+  1    [] <- "SW $r0, 16($%16)" <- [%const.@%skip_input_data, %16]
+  1    [] <- "SW $r0, 20($%16)" <- [%const.@%jpeg_resync_to_restart, %16]
+  1    [] <- "SW $r0, 24($%16)" <- [%const.@%term_source, %16]
+  1    [] <- "SW $%infile, 28($%16)" <- [%infile, %16]
+  1    [] <- "SW $r0, 4($%16)" <- [%const.0.copy.2, %16]
+  1    [] <- "SW r0, 0(%16)" <- [%const.0.copy.1, %16]
+  1    [] <- "Ret" <- []
+ 21  bb0:
+  8  4:
+  1    [%7] <- "LW $%7, 4($%cinfo)" <- [%cinfo]
+  1    [%8] <- "LW %8, 0(%7)" <- [%7]
+  1    [%const.40.copy.1] <- "ADDiu %const.40.copy.1, $0, 40" <- []
+  1    [%const.4096.copy.1] <- "ADDiu %const.4096.copy.1, $0, 4096" <- []
+  1    [%10] <- "CALL %8" <- [%const.40.copy.1, %const.0.copy.3, %cinfo, %8]
+  1    [] <- "SW $%10, 20($%cinfo)" <- [%10, %cinfo]
+  1    [%11] <- "LW $%11, 4($%cinfo)" <- [%cinfo]
+  1    [%12] <- "LW %12, 0(%11)" <- [%11]
+  1    [%13] <- "CALL %12" <- [%const.4096.copy.1, %const.null.copy.2, %cinfo, %12]
+  1    [] <- "SW $%13, 32($%10)" <- [%13, %10]
+  1    [%.pre] <- "LW $%.pre, 20($%cinfo)" <- [%cinfo]
+  1    [] <- "B 15" <- []

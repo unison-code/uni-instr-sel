@@ -1,26 +1,26 @@
-0:
-  [%1] <- "ADD %1, $0, %a" <- [%a]
-  [%2] <- "ADD %2, $0, %b" <- [%b]
-  [%const.-32768.copy.2] <- "ADDi %const.-32768.copy.2, $0, -32768" <- []
-  [%3] <- "ADDU $%3, $%1, $%2" <- [%1, %2]
-  [%4] <- "SLTI $%4, $%3, -32768" <- [%3]
-  [] <- "BNE $0, $%4, bb0" <- [%4]
-bb1:
-5:
-  [%3.copy.3] <- "MOV %3.copy.3, %3" <- [%3]
-  [] <- "SLTi %tmp.1, %3, 32767" <- [%3]
-  [] <- "BEQ %tmp.1, $0, bb2" <- []
-bb3:
-.selectcont:
-  [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.2, .selecttrue)" <- [%3.copy.3, %const.32767.copy.2]
-  [%phitmp] <- "ANDi %phitmp, %7, 32767" <- [%7]
-bb0:
-8:
-  [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
-  [] <- "SLL %tmp.2, %9, 16" <- [%9]
-  [] <- "SRA %tmp.3, %tmp.2, 16" <- []
-  [] <- "RetRA %tmp.3" <- []
-bb2:
-.selecttrue:
-  [%const.32767.copy.2] <- "ADDiu %const.32767.copy.2, $0, 32767" <- []
-  [] <- "B .selectcont" <- []
+ 32  0:
+  0    [%1] <- "ADD %1, $0, %a" <- [%a]
+  0    [%2] <- "ADD %2, $0, %b" <- [%b]
+  1    [%const.-32768.copy.2] <- "ADDi %const.-32768.copy.2, $0, -32768" <- []
+  1    [%3] <- "ADDU $%3, $%1, $%2" <- [%1, %2]
+  1    [%4] <- "SLTI $%4, $%3, -32768" <- [%3]
+  1    [] <- "BNE $0, $%4, bb0" <- [%4]
+ 32  bb1:
+ 16  5:
+  1    [%3.copy.3] <- "MOV %3.copy.3, %3" <- [%3]
+  0    [] <- "SLTi %tmp.1, %3, 32767" <- [%3]
+  1    [] <- "BEQ %tmp.1, $0, bb2" <- []
+ 16  bb3:
+ 16  .selectcont:
+  0    [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.2, .selecttrue)" <- [%3.copy.3, %const.32767.copy.2]
+  0    [%phitmp] <- "ANDi %phitmp, %7, 32767" <- [%7]
+ 32  bb0:
+ 32  8:
+  0    [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
+  0    [] <- "SLL %tmp.2, %9, 16" <- [%9]
+  0    [] <- "SRA %tmp.3, %tmp.2, 16" <- []
+  2    [] <- "RetRA %tmp.3" <- []
+ 16  bb2:
+  8  .selecttrue:
+  1    [%const.32767.copy.2] <- "ADDiu %const.32767.copy.2, $0, 32767" <- []
+  1    [] <- "B .selectcont" <- []

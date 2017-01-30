@@ -1,11 +1,11 @@
-entry:
-  [%const.10.copy.1] <- "%const.10.copy.1 = ##10" <- []
-  [%cmp] <- "%cmp = cmp.gt(%n, 1)" <- [%n]
-  [%x] <- "%x = add(%n, %const.10.copy.1)" <- [%n, %const.10.copy.1]
-  [] <- "if (%cmp) jump bb0" <- [%cmp]
-bb3:
-bb2:
-  [] <- "return %x" <- [%x]
-bb0:
-bb1:
-  [] <- "jump bb2" <- []
+ 16  entry:
+  1    [%const.10.copy.1] <- "%const.10.copy.1 = ##10" <- []
+  1    [%cmp] <- "%cmp = cmp.gt(%n, 1)" <- [%n]
+  1    [%x] <- "%x = add(%n, %const.10.copy.1)" <- [%n, %const.10.copy.1]
+  1    [] <- "if (%cmp) jump bb0" <- [%cmp]
+ 16  bb3:
+ 16  bb2:
+  1    [] <- "return %x" <- [%x]
+ 16  bb0:
+  8  bb1:
+  1    [] <- "jump bb2" <- []

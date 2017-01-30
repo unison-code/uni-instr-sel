@@ -1,6 +1,6 @@
-entry:
-  [%const.1.copy.1] <- "%const.1.copy.1 = ##1" <- []
-  [%0] <- "%0 = memb (%a)" <- [%a]
-  [%add] <- "%add = add(%0, %const.1.copy.1)" <- [%0, %const.1.copy.1]
-  [] <- "memb (%a) = %add" <- [%add, %a]
-  [] <- "return %add" <- [%add]
+  8  entry:
+  1    [%const.1.copy.1] <- "%const.1.copy.1 = ##1" <- []
+  1    [%0] <- "%0 = memb (%a)" <- [%a]
+  1    [%add] <- "%add = add(%0, %const.1.copy.1)" <- [%0, %const.1.copy.1]
+  1    [] <- "memb (%a) = %add" <- [%add, %a]
+  1    [] <- "return %add" <- [%add]

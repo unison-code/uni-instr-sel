@@ -1,47 +1,47 @@
-0:
-  [%const.32768.copy.1] <- "%const.32768.copy.1 = ##32768" <- []
-  [%1] <- "%1 = lsr(%y, #2)" <- [%y]
-  [%2] <- "%2 = add(%dqln, %1)" <- [%dqln, %1]
-  [%sext.mask] <- "%sext.mask = and(%2, %const.32768.copy.1)" <- [%2, %const.32768.copy.1]
-  [%3] <- "%3 = cmp.eq(%sext.mask, 0)" <- [%sext.mask]
-  [] <- "if (%3) jump bb0" <- [%3]
-bb1:
-4:
-  [%const.0.copy.3] <- "%const.0.copy.3 = ##0" <- []
-  [%5] <- "%5 = cmp.ne(%sign, 0)" <- [%sign]
-  [] <- "if (%5) jump bb2" <- [%5]
-bb3:
-.selectcont:
-  [%6] <- "PHI (%const.-32768.copy.1, .selecttrue) (%const.0.copy.3, 4)" <- [%const.-32768.copy.1, %const.0.copy.3]
-19:
-  [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
-  [] <- "return %.0" <- [%.0]
-bb0:
-7:
-  [%const.15.copy.1] <- "%const.15.copy.1 = ##15" <- []
-  [%const.16256.copy.1] <- "%const.16256.copy.1 = ##16256" <- []
-  [%const.16384.copy.1] <- "%const.16384.copy.1 = ##16384" <- []
-  [%8] <- "%8 = lsr(%2, #7)" <- [%2]
-  [%15] <- "%15 = cmp.ne(%sign, 0)" <- [%sign]
-  [%10] <- "%10 = asl(%2, #7)" <- [%2]
-  [%9] <- "%9 = and(%8, %const.15.copy.1)" <- [%8, %const.15.copy.1]
-  [%13] <- "%13 = sub(#14, %9)" <- [%9]
-  [%11] <- "%11 = and(%10, %const.16256.copy.1)" <- [%10, %const.16256.copy.1]
-  [%12] <- "%12 = or(%11, %const.16384.copy.1)" <- [%11, %const.16384.copy.1]
-  [%14] <- "%14 = lsr(%12, %13)" <- [%12, %13]
-  [%sext1] <- "%sext1 = asl(%14, #16)" <- [%14]
-  [%16] <- "%16 = asr(%sext1, #16)" <- [%sext1]
-  [] <- "if (%15) jump bb4" <- [%15]
-bb5:
-.selectcont1:
-  [%18] <- "PHI (%16, 7) (%17, .selecttrue2)" <- [%16, %17]
-  [] <- "jump 19" <- []
-bb4:
-.selecttrue2:
-  [%const.-32768.copy.2] <- "%const.-32768.copy.2 = ##-32768" <- []
-  [%17] <- "%17 = add(%16, %const.-32768.copy.2)" <- [%16, %const.-32768.copy.2]
-  [] <- "jump .selectcont1" <- []
-bb2:
-.selecttrue:
-  [%const.-32768.copy.1] <- "%const.-32768.copy.1 = ##-32768" <- []
-  [] <- "jump .selectcont" <- []
+ 25  0:
+  1    [%const.32768.copy.1] <- "%const.32768.copy.1 = ##32768" <- []
+  1    [%1] <- "%1 = lsr(%y, #2)" <- [%y]
+  1    [%2] <- "%2 = add(%dqln, %1)" <- [%dqln, %1]
+  1    [%sext.mask] <- "%sext.mask = and(%2, %const.32768.copy.1)" <- [%2, %const.32768.copy.1]
+  1    [%3] <- "%3 = cmp.eq(%sext.mask, 0)" <- [%sext.mask]
+  1    [] <- "if (%3) jump bb0" <- [%3]
+ 25  bb1:
+ 12  4:
+  1    [%const.0.copy.3] <- "%const.0.copy.3 = ##0" <- []
+  1    [%5] <- "%5 = cmp.ne(%sign, 0)" <- [%sign]
+  1    [] <- "if (%5) jump bb2" <- [%5]
+ 12  bb3:
+ 12  .selectcont:
+  0    [%6] <- "PHI (%const.-32768.copy.1, .selecttrue) (%const.0.copy.3, 4)" <- [%const.-32768.copy.1, %const.0.copy.3]
+ 25  19:
+  0    [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
+  1    [] <- "return %.0" <- [%.0]
+ 25  bb0:
+ 12  7:
+  1    [%const.15.copy.1] <- "%const.15.copy.1 = ##15" <- []
+  1    [%const.16256.copy.1] <- "%const.16256.copy.1 = ##16256" <- []
+  1    [%const.16384.copy.1] <- "%const.16384.copy.1 = ##16384" <- []
+  1    [%8] <- "%8 = lsr(%2, #7)" <- [%2]
+  1    [%15] <- "%15 = cmp.ne(%sign, 0)" <- [%sign]
+  1    [%10] <- "%10 = asl(%2, #7)" <- [%2]
+  1    [%9] <- "%9 = and(%8, %const.15.copy.1)" <- [%8, %const.15.copy.1]
+  1    [%13] <- "%13 = sub(#14, %9)" <- [%9]
+  1    [%11] <- "%11 = and(%10, %const.16256.copy.1)" <- [%10, %const.16256.copy.1]
+  1    [%12] <- "%12 = or(%11, %const.16384.copy.1)" <- [%11, %const.16384.copy.1]
+  1    [%14] <- "%14 = lsr(%12, %13)" <- [%12, %13]
+  1    [%sext1] <- "%sext1 = asl(%14, #16)" <- [%14]
+  1    [%16] <- "%16 = asr(%sext1, #16)" <- [%sext1]
+  1    [] <- "if (%15) jump bb4" <- [%15]
+ 12  bb5:
+ 12  .selectcont1:
+  0    [%18] <- "PHI (%16, 7) (%17, .selecttrue2)" <- [%16, %17]
+  1    [] <- "jump 19" <- []
+ 12  bb4:
+  8  .selecttrue2:
+  1    [%const.-32768.copy.2] <- "%const.-32768.copy.2 = ##-32768" <- []
+  1    [%17] <- "%17 = add(%16, %const.-32768.copy.2)" <- [%16, %const.-32768.copy.2]
+  1    [] <- "jump .selectcont1" <- []
+ 12  bb2:
+  8  .selecttrue:
+  1    [%const.-32768.copy.1] <- "%const.-32768.copy.1 = ##-32768" <- []
+  1    [] <- "jump .selectcont" <- []

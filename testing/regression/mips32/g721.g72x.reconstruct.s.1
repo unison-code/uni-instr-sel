@@ -1,41 +1,39 @@
-0:
-  [%1] <- "SRL $%1, $%y, 2" <- [%y]
-  [%2] <- "ADDU $%2, $%dqln, $%1" <- [%dqln, %1]
-  [%sext.mask] <- "ANDI $%sext.mask, $%2, 32768" <- [%2]
-  [%3] <- "SLTi %3, %sext.mask, 0" <- [%sext.mask]
-  [] <- "BNE $0, $%3, bb0" <- [%3]
-bb1:
-4:
-  [%const.0.copy.4] <- "ADDiu %const.0.copy.4, $0, 0" <- []
-  [] <- "BNE $%sign, $r0, bb2" <- [%sign, %const.0.copy.2]
-bb3:
-.selectcont:
-  [%6] <- "PHI (%const.-32768.copy.1, .selecttrue) (%const.0.copy.4, 4)" <- [%const.-32768.copy.1, %const.0.copy.4]
-19:
-  [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
-  [] <- "RetRA %.0" <- [%.0]
-bb0:
-7:
-  [%8] <- "SRL $%8, $%2, 7" <- [%2]
-  [%10] <- "SLL $%10, $%2, 7" <- [%2]
-  [%const.14.copy.1] <- "ADDiu %const.14.copy.1, $0, 14" <- []
-  [%9] <- "ANDI $%9, $%8, 15" <- [%8]
-  [%13] <- "SUBU $%13, $%const.14.copy.1, $%9" <- [%const.14.copy.1, %9]
-  [%11] <- "ANDI $%11, $%10, 16256" <- [%10]
-  [%12] <- "ORI $%12, $%11, 16384" <- [%11]
-  [%14] <- "SRLV $%14, $%12, $%13" <- [%12, %13]
-  [%sext1] <- "SLL $%sext1, $%14, 16" <- [%14]
-  [%16] <- "SRA $%16, $%sext1, 16" <- [%sext1]
-  [] <- "BNE $%sign, $r0, bb4" <- [%sign, %const.0.copy.3]
-bb5:
-.selectcont1:
-  [%18] <- "PHI (%16, 7) (%17, .selecttrue2)" <- [%16, %17]
-  [] <- "B 19" <- []
-bb4:
-.selecttrue2:
-  [%17] <- "ADDI $%17, $%16, -32768" <- [%16]
-  [] <- "B .selectcont1" <- []
-bb2:
-.selecttrue:
-  [%const.-32768.copy.1] <- "ADDi %const.-32768.copy.1, $0, -32768" <- []
-  [] <- "B .selectcont" <- []
+ 25  0:
+  1    [%1] <- "SRL $%1, $%y, 2" <- [%y]
+  1    [%2] <- "ADDU $%2, $%dqln, $%1" <- [%dqln, %1]
+  1    [%sext.mask] <- "ANDI $%sext.mask, $%2, 32768" <- [%2]
+  0    [%3] <- "SLTi %3, %sext.mask, 0" <- [%sext.mask]
+  1    [] <- "BNE $0, $%3, bb0" <- [%3]
+ 25  bb1:
+ 12  4:
+  1    [%const.0.copy.4] <- "ADDiu %const.0.copy.4, $0, 0" <- []
+  1    [] <- "BNE $%sign, $r0, bb2" <- [%sign, %const.0.copy.2]
+ 12  bb3:
+ 12  .selectcont:
+  0    [%6] <- "PHI (%const.-32768.copy.1, .selecttrue) (%const.0.copy.4, 4)" <- [%const.-32768.copy.1, %const.0.copy.4]
+ 25  19:
+  0    [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
+  0    [] <- "RetRA %.0" <- [%.0]
+ 25  bb0:
+ 12  7:
+  1    [%10] <- "SLL $%10, $%2, 7" <- [%2]
+  1    [%const.14.copy.1] <- "ADDiu %const.14.copy.1, $0, 14" <- []
+  1    [%9] <- "EXT %2, 7, 4" <- [%2]
+  1    [%13] <- "SUBU $%13, $%const.14.copy.1, $%9" <- [%const.14.copy.1, %9]
+  1    [%11] <- "ANDI $%11, $%10, 16256" <- [%10]
+  1    [%12] <- "ORI $%12, $%11, 16384" <- [%11]
+  1    [%14] <- "SRLV $%14, $%12, $%13" <- [%12, %13]
+  0    [%16] <- "SEH %16, %14" <- [%14]
+  1    [] <- "BNE $%sign, $r0, bb4" <- [%sign, %const.0.copy.3]
+ 12  bb5:
+ 12  .selectcont1:
+  0    [%18] <- "PHI (%16, 7) (%17, .selecttrue2)" <- [%16, %17]
+  1    [] <- "B 19" <- []
+ 12  bb4:
+  8  .selecttrue2:
+  1    [%17] <- "ADDI $%17, $%16, -32768" <- [%16]
+  1    [] <- "B .selectcont1" <- []
+ 12  bb2:
+  8  .selecttrue:
+  1    [%const.-32768.copy.1] <- "ADDi %const.-32768.copy.1, $0, -32768" <- []
+  1    [] <- "B .selectcont" <- []

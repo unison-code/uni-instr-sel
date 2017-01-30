@@ -1,44 +1,44 @@
-0:
-  [%2] <- "SLTi %2, %version, 61" <- [%version]
-  [%13] <- "SLTi %13, %structsize, 464" <- [%structsize]
-  [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.3, %cinfo]
-  [] <- "BNE $0, $%2, bb0" <- [%2]
-bb1:
-3:
-  [%5] <- "LW %5, 0(%cinfo)" <- [%cinfo]
-  [%const.10.copy.1] <- "ADDiu %const.10.copy.1, $0, 10" <- []
-  [] <- "SW $%const.10.copy.1, 20($%5)" <- [%const.10.copy.1, %5]
-  [%const.61.copy.2] <- "ADDiu %const.61.copy.2, $0, 61" <- []
-  [] <- "SW $%const.61.copy.2, 24($%5)" <- [%const.61.copy.2, %5]
-  [] <- "SW $%version, 28($%5)" <- [%version, %5]
-  [%10] <- "LW %10, 0(%5)" <- [%5]
-  [] <- "CALL %10" <- [%cinfo, %10]
-bb0:
-12:
-  [] <- "BNE $0, $%13, bb2" <- [%13]
-bb3:
-14:
-  [%16] <- "LW %16, 0(%cinfo)" <- [%cinfo]
-  [%const.19.copy.1] <- "ADDiu %const.19.copy.1, $0, 19" <- []
-  [] <- "SW $%const.19.copy.1, 20($%16)" <- [%const.19.copy.1, %16]
-  [%const.464.copy.2] <- "ADDiu %const.464.copy.2, $0, 464" <- []
-  [] <- "SW $%const.464.copy.2, 24($%16)" <- [%const.464.copy.2, %16]
-  [] <- "SW $%structsize, 28($%16)" <- [%structsize, %16]
-  [%21] <- "LW %21, 0(%16)" <- [%16]
-  [] <- "CALL %21" <- [%cinfo, %21]
-  [] <- "B .preheader.preheader" <- []
-bb2:
-..preheader.preheader_crit_edge:
-.preheader.preheader:
-  [%24] <- "LW %24, 0(%cinfo)" <- [%cinfo]
-  [] <- "SW %24, 0(%cinfo)" <- [%24, %cinfo]
-  [%const.1.copy.1] <- "ADDiu %const.1.copy.1, $0, 1" <- []
-  [] <- "SW $%const.1.copy.1, 12($%cinfo)" <- [%const.1.copy.1, %cinfo]
-  [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
-  [] <- "CALL jinit_memory_mgr" <- [%cinfo]
-  [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.3, %cinfo]
-  [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.3, %cinfo]
-  [] <- "CALL jinit_marker_reader" <- [%cinfo]
-  [] <- "CALL jinit_input_controller" <- [%cinfo]
-  [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]
-  [] <- "Ret" <- []
+ 16  0:
+  0    [%2] <- "SLTi %2, %version, 61" <- [%version]
+  0    [%13] <- "SLTi %13, %structsize, 464" <- [%structsize]
+  1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  1    [] <- "BNE $0, $%2, bb0" <- [%2]
+ 16  bb1:
+  8  3:
+  1    [%5] <- "LW %5, 0(%cinfo)" <- [%cinfo]
+  1    [%const.10.copy.1] <- "ADDiu %const.10.copy.1, $0, 10" <- []
+  1    [] <- "SW $%const.10.copy.1, 20($%5)" <- [%const.10.copy.1, %5]
+  1    [%const.61.copy.2] <- "ADDiu %const.61.copy.2, $0, 61" <- []
+  1    [] <- "SW $%const.61.copy.2, 24($%5)" <- [%const.61.copy.2, %5]
+  1    [] <- "SW $%version, 28($%5)" <- [%version, %5]
+  1    [%10] <- "LW %10, 0(%5)" <- [%5]
+  1    [] <- "CALL %10" <- [%cinfo, %10]
+ 16  bb0:
+ 16  12:
+  1    [] <- "BNE $0, $%13, bb2" <- [%13]
+ 16  bb3:
+  8  14:
+  1    [%16] <- "LW %16, 0(%cinfo)" <- [%cinfo]
+  1    [%const.19.copy.1] <- "ADDiu %const.19.copy.1, $0, 19" <- []
+  1    [] <- "SW $%const.19.copy.1, 20($%16)" <- [%const.19.copy.1, %16]
+  1    [%const.464.copy.2] <- "ADDiu %const.464.copy.2, $0, 464" <- []
+  1    [] <- "SW $%const.464.copy.2, 24($%16)" <- [%const.464.copy.2, %16]
+  1    [] <- "SW $%structsize, 28($%16)" <- [%structsize, %16]
+  1    [%21] <- "LW %21, 0(%16)" <- [%16]
+  1    [] <- "CALL %21" <- [%cinfo, %21]
+  1    [] <- "B .preheader.preheader" <- []
+ 16  bb2:
+  8  ..preheader.preheader_crit_edge:
+ 16  .preheader.preheader:
+  1    [%24] <- "LW %24, 0(%cinfo)" <- [%cinfo]
+  1    [] <- "SW %24, 0(%cinfo)" <- [%24, %cinfo]
+  1    [%const.1.copy.1] <- "ADDiu %const.1.copy.1, $0, 1" <- []
+  1    [] <- "SW $%const.1.copy.1, 12($%cinfo)" <- [%const.1.copy.1, %cinfo]
+  1    [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
+  1    [] <- "CALL jinit_memory_mgr" <- [%cinfo]
+  1    [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  1    [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  1    [] <- "CALL jinit_marker_reader" <- [%cinfo]
+  1    [] <- "CALL jinit_input_controller" <- [%cinfo]
+  1    [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]
+  1    [] <- "Ret" <- []
