@@ -19,7 +19,7 @@ import Language.InstrSel.ConstraintModels
 import Language.InstrSel.Graphs.IDs
   ( MatchID )
 import Language.InstrSel.Functions
-  ( BlockName )
+  ( ExecFreq )
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
@@ -39,13 +39,16 @@ import Data.Maybe
 -- | Represents a piece of assembly code, which is either a block or an assembly
 -- instruction.
 data AssemblyCode
-  = AsmBlock String
+  = AsmBlock { asmString :: String
+             , asmExecFreq :: ExecFreq
+             }
   | AsmInstruction { asmInput :: [String]
                      -- ^ The input values to this instruction.
                    , asmString :: String
                      -- ^ The assembly string.
                    , asmOutput :: [String]
                      -- ^ The output values produced by this instruction.
+                   , asmLatency :: Integer
                    }
   deriving (Show)
 
@@ -102,8 +105,13 @@ generateCode target model sol@(HighLevelSolution {}) =
   foldl ( \st0 b ->
           let matches = getMatchesPlacedInBlock sol b
               sorted_matches = sortMatchesByFlow sol model matches
-              block_name = fromJust $ findNameOfBlockNode model b
-              code = AsmBlock $ pShow block_name
+              params = findHighLevelBlockParamsWithNodeID model b
+              code = AsmBlock { asmString = pShow $
+                                            hlBlockName $
+                                            fromJust params
+                              , asmExecFreq = hlBlockExecFrequency $
+                                              fromJust params
+                              }
               st1 = st0 { emittedCode = (code:emittedCode st0) }
               st2 = foldl ( \st' m ->
                             emitInstructionsOfMatch
@@ -115,7 +123,11 @@ generateCode target model sol@(HighLevelSolution {}) =
                           )
                           st1
                           sorted_matches
-          in st2
+          in if isJust params
+             then st2
+             else error $ "generateCode: no block params found for " ++
+                          "function node " ++ pShow b
+
         )
         (mkInitState sol model)
         (hlSolOrderOfBlocks sol)
@@ -187,14 +199,17 @@ getMatchesPlacedInBlock sol n =
 getVarNamesInUse :: HighLevelModel -> [String]
 getVarNamesInUse m = map snd $ hlFunValueOriginData $ hlFunctionParams m
 
--- | Gets the block name for a given block node. If no such block can be found,
--- 'Nothing' is returned.
-findNameOfBlockNode :: HighLevelModel -> NodeID -> Maybe BlockName
-findNameOfBlockNode model n =
+-- | Gets the 'HighLevelBlockParams' for a given block node. If no such block
+-- can be found, 'Nothing' is returned.
+findHighLevelBlockParamsWithNodeID
+  :: HighLevelModel
+  -> NodeID
+  -> Maybe HighLevelBlockParams
+findHighLevelBlockParamsWithNodeID model n =
   let bb_params = hlFunBlockParams $ hlFunctionParams model
       found_bbs = filter (\m -> hlBlockNode m == n) bb_params
   in if length found_bbs > 0
-     then Just $ hlBlockName $ head found_bbs
+     then Just $ head found_bbs
      else Nothing
 
 -- | Sorts a list of matches according to their flow dependencies. This is done
@@ -378,7 +393,14 @@ emitInstructionsOfMatch model sol tm st0 mid =
                                 new_instr = instr { asmOutput = origins }
                             in st4 { emittedCode = (new_instr:tail code) }
                        else st4
-             in st5
+                 st6 = if i == length emit_parts
+                       then let lat = hlMatchLatency match
+                                code = emittedCode st4
+                                instr = head code
+                                new_instr = instr { asmLatency = lat }
+                            in st5 { emittedCode = (new_instr:tail code) }
+                       else st5
+             in st6
            )
            st0
            (zip ([1..] :: [Int]) emit_parts)
@@ -446,13 +468,13 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
      else error $ "emitInstructionPart: no location found for "
                   ++ "function node " ++ pShow n
 emitInstructionPart model _ _ st (ESNameOfBlockNode n) =
-  let l = findNameOfBlockNode model n
-  in if isJust l
+  let p = findHighLevelBlockParamsWithNodeID model n
+  in if isJust p
      then let code = emittedCode st
               instr = head code
-              new_instr = instr $++ pShow (fromJust l)
+              new_instr = instr $++ pShow (hlBlockName $ fromJust p)
           in st { emittedCode = (new_instr:tail code) }
-     else error $ "emitInstructionPart: no block name found for function " ++
+     else error $ "emitInstructionPart: no block params found for function " ++
                   "node " ++ pShow n
 emitInstructionPart model sol m st (ESBlockOfValueNode n) =
   let function = hlFunctionParams model
@@ -542,6 +564,7 @@ mkEmptyAsmInstr =
   AsmInstruction { asmInput = []
                  , asmString = ""
                  , asmOutput = []
+                 , asmLatency = 0
                  }
 
 -- | Appends a given string to a given 'AsmInstruction'.

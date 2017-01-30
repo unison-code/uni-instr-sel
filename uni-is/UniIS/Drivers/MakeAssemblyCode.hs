@@ -48,9 +48,24 @@ run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"
 
 -- | Flattens the assembly code into a string.
 showCode :: AssemblyCode -> String
-showCode (AsmBlock str) = str ++ ":"
+showCode b@(AsmBlock {}) = formatNum 3 (asmExecFreq b) ++ "  " ++
+                           asmString b ++ ":"
 showCode i@(AsmInstruction {}) =
+  formatNum 3 (asmLatency i) ++ "  " ++
   "  " ++
   "[" ++ intercalate ", " (asmOutput i) ++ "] <- " ++
   "\"" ++ asmString i ++ "\"" ++
   " <- [" ++ intercalate ", " (asmInput i) ++ "]"
+
+-- | Prints a number with right-justified alignment.
+formatNum
+  :: (Show i, Integral i)
+  => Int
+     -- ^ Desired width of string.
+  -> i
+     -- ^ Number to format.
+  -> String
+formatNum w i =
+  let s = show $ toInteger i
+      pad = take (w - length s) $ repeat ' '
+  in pad ++ s
