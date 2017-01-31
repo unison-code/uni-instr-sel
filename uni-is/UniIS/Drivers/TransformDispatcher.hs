@@ -63,7 +63,7 @@ dispatch a opts
          p_content <- loadPatternMatchsetFileContent opts
          p <- loadFromJson p_content
          t <- loadTargetMachine $ pmTarget p
-         limit <- getAltInsertLimit opts
+         limit <- getAltLimit opts
          TransformPatternMatchset.run a f t p (toNatural limit)
   | a `elem` [LowerHighLevelCPModel] =
       do m_content <- loadModelFileContent opts

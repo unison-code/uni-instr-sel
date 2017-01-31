@@ -51,7 +51,7 @@ PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 SOLVER_CMD            := ../solvers/minizinc/solver \
                          -g $(MINIZINC_GLOBALS_DIR) \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
-ALT_INSERT_LIMIT      := 0 # 0 indicates no limit
+ALT_LIMIT             := 0 # 0 indicates no limit
 SOLVER_TIME_LIMIT     := 0 # In seconds; 0 indicates no timelimit
 
 TARGET := mips32

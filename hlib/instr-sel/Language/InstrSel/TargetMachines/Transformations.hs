@@ -254,7 +254,7 @@ alternativeExtend
   :: Function
   -> TargetMachine
   -> Natural
-     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+     -- ^ Maximum number of alternatives per case. 0 means no limit.
   -> PatternMatchset
   -> PatternMatchset
 alternativeExtend f t limit p =
@@ -296,7 +296,7 @@ alternativeExtend f t limit p =
 insertAlternativeMappings
   :: TargetMachine
   -> Natural
-     -- ^ Maximum number of alternatives to insert. 0 means no limit.
+     -- ^ Maximum number of alternatives per case. 0 means no limit.
   -> [NodeID]
   -> PatternMatchset
   -> PatternMatchset
@@ -338,7 +338,7 @@ insertAlternativeMappings t limit vs pm =
                          not (hasAnyPredecessors g (fromJust pn'))
                     candidate_vs = filter isCandidate sorted_vs
                     num_to_take =
-                      if limit == 0 then maxBound else fromIntegral limit
+                      if limit == 0 then maxBound else fromIntegral limit - 1
                     alts = take num_to_take $
                            filter (/= fn_id) candidate_vs
                     alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })

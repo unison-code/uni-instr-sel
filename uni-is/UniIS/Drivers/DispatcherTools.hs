@@ -19,7 +19,7 @@ module UniIS.Drivers.DispatcherTools
   , getShowEdgeNumbersPred
   , getHideNullInstrsPred
   , getHideInactiveInstrsPred
-  , getAltInsertLimit
+  , getAltLimit
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
   , loadFunctionFileContent
@@ -160,11 +160,11 @@ getHideInactiveInstrsPred opts =
   do let p = hideInactiveInstructions opts
      return $ if isJust p then fromJust p else False
 
--- | Returns the option of how many alternatives, at most per case, to insert as
+-- | Returns the option of how many alternatives are allowed at most per case as
 -- specified on the command line.
-getAltInsertLimit :: Options -> IO Int
-getAltInsertLimit opts =
-  do let int = altInsertLimit opts
+getAltLimit :: Options -> IO Int
+getAltLimit opts =
+  do let int = altLimit opts
      when (isNothing int) $
        reportErrorAndExit "No alternative insertion limit provided."
      return $ fromJust int

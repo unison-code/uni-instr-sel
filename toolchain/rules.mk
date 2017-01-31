@@ -55,7 +55,7 @@ PRUNE_BAD_MATCHES_CMD ?= @echo 'ERROR: Variable $$PRUNE_BAD_MATCHES_CMD' \
                           exit 1 ;
 SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
                           exit 1 ;
-ALT_INSERT_LIMIT      ?= # 0 indicates no timelimit
+ALT_LIMIT             ?= # 0 indicates no limit
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 TARGET                ?=
 
@@ -127,7 +127,7 @@ AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 %.ae.p.json: %.f.json %.p.json
 	$(UNI_IS_CMD) transform \
 				  --alternative-extend-pat \
-				  --alt-insert-limit $(ALT_INSERT_LIMIT) \
+				  --alt-limit $(ALT_LIMIT) \
 				  -f $*.f.json \
 				  -p $*.p.json \
 				  -o $@
