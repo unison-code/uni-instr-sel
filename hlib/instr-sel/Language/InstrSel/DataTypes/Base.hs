@@ -155,7 +155,6 @@ isVoidType :: DataType -> Bool
 isVoidType VoidType = True
 isVoidType _ = False
 
-
 -- | Checks if a given data type is 'AnyType'.
 isAnyType :: DataType -> Bool
 isAnyType AnyType = True
