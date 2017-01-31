@@ -1,5 +1,4 @@
  91  0:
-  0    [%10] <- "SLTi %10, %need_full_buffer, 0" <- [%need_full_buffer]
   1    [%1] <- "LW $%1, 4($%cinfo)" <- [%cinfo]
   1    [%2] <- "LW %2, 0(%1)" <- [%1]
   1    [%const.64.copy.1] <- "ADDiu %const.64.copy.1, $0, 64" <- []
@@ -8,7 +7,7 @@
   1    [] <- "SW $%4, 328($%cinfo)" <- [%4, %cinfo]
   1    [] <- "SW r0, 0(%4)" <- [%const.@%start_pass_main, %4]
   1    [%7] <- "LW $%7, 168($%cinfo)" <- [%cinfo]
-  1    [] <- "BEQ $%7, $r0, bb0" <- [%7, %const.0.copy.1]
+  1    [] <- "BEQ $%7, $r0, bb0" <- [%7, %const.0.copy.2]
  91  bb1:
   1    [] <- "B .loopexit" <- []
  12  bb5:
@@ -42,13 +41,12 @@
  34  bb2:
  12  16:
   1    [%18] <- "LW $%18, 52($%cinfo)" <- [%cinfo]
-  0    [] <- "SLTi %tmp.1, %18, 0" <- [%18]
-  1    [] <- "BEQ %tmp.1, $0, bb5" <- []
+  1    [] <- "BGT $%18, $r0, bb5" <- [%18, %const.0.copy.1]
  12  bb4:
   1    [] <- "B .loopexit" <- []
  91  bb0:
  34  9:
-  1    [] <- "BNE $0, $%10, bb2" <- [%10]
+  1    [] <- "BEQ $%need_full_buffer, $r0, bb2" <- [%need_full_buffer, %const.0.copy.3]
  34  bb3:
  21  11:
   1    [%14] <- "LW %14, 0(%cinfo)" <- [%cinfo]

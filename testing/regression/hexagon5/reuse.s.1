@@ -1,0 +1,4 @@
+  8  entry:
+  1    [%const.100000.copy.2] <- "%const.100000.copy.2 = ##100000" <- []
+  1    [%c] <- "%const.100000.copy.2 += add(%a, %const.100000.copy.2)" <- [%const.100000.copy.2, %a, %const.100000.copy.2]
+  1    [] <- "return %c" <- [%c]

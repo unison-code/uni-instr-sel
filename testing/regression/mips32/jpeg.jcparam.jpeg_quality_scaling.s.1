@@ -1,5 +1,5 @@
  21  0:
-  1    [%1] <- "SLTI $%1, $%quality, 1" <- [%quality]
+  0    [%1] <- "SLTI $%1, $%quality, 1" <- [%quality]
   1    [] <- "BNE $0, $%1, bb0" <- [%1]
  21  bb1:
  21  .selectcont:
@@ -9,7 +9,7 @@
  21  bb3:
  21  .selectcont.selectcont:
   0    [%..quality] <- "PHI (%.quality, .selectcont) (%const.100.copy.2, .selectcont.selecttrue)" <- [%.quality, %const.100.copy.2]
-  1    [%3] <- "SLTI $%3, $%..quality, 50" <- [%..quality]
+  0    [%3] <- "SLTI $%3, $%..quality, 50" <- [%..quality]
   1    [] <- "BNE $0, $%3, bb4" <- [%3]
  21  bb5:
  10  6:

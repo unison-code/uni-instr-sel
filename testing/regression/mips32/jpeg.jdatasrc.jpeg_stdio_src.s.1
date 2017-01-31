@@ -1,7 +1,6 @@
  21  0:
   1    [%1] <- "LW $%1, 20($%cinfo)" <- [%cinfo]
-  0    [%2] <- "SLTi %2, %1, 0" <- [%1]
-  1    [] <- "BNE $0, $%2, bb0" <- [%2]
+  1    [] <- "BEQ $%1, $r0, bb0" <- [%1, %const.null.copy.2]
  21  bb1:
  13  ._crit_edge:
   1    [%1.copy.2] <- "MOV %1.copy.2, %1" <- [%1]
@@ -13,8 +12,8 @@
   1    [] <- "SW $r0, 20($%16)" <- [%const.@%jpeg_resync_to_restart, %16]
   1    [] <- "SW $r0, 24($%16)" <- [%const.@%term_source, %16]
   1    [] <- "SW $%infile, 28($%16)" <- [%infile, %16]
-  1    [] <- "SW $r0, 4($%16)" <- [%const.0.copy.2, %16]
-  1    [] <- "SW r0, 0(%16)" <- [%const.0.copy.1, %16]
+  1    [] <- "SW $r0, 4($%16)" <- [%const.0.copy.1, %16]
+  1    [] <- "SW r0, 0(%16)" <- [%const.null.copy.1, %16]
   1    [] <- "Ret" <- []
  21  bb0:
   8  4:
@@ -22,11 +21,11 @@
   1    [%8] <- "LW %8, 0(%7)" <- [%7]
   1    [%const.40.copy.1] <- "ADDiu %const.40.copy.1, $0, 40" <- []
   1    [%const.4096.copy.1] <- "ADDiu %const.4096.copy.1, $0, 4096" <- []
-  1    [%10] <- "CALL %8" <- [%const.40.copy.1, %const.0.copy.3, %cinfo, %8]
+  1    [%10] <- "CALL %8" <- [%const.40.copy.1, %const.0.copy.2, %cinfo, %8]
   1    [] <- "SW $%10, 20($%cinfo)" <- [%10, %cinfo]
   1    [%11] <- "LW $%11, 4($%cinfo)" <- [%cinfo]
   1    [%12] <- "LW %12, 0(%11)" <- [%11]
-  1    [%13] <- "CALL %12" <- [%const.4096.copy.1, %const.null.copy.2, %cinfo, %12]
+  1    [%13] <- "CALL %12" <- [%const.4096.copy.1, %const.0.copy.3, %cinfo, %12]
   1    [] <- "SW $%13, 32($%10)" <- [%13, %10]
   1    [%.pre] <- "LW $%.pre, 20($%cinfo)" <- [%cinfo]
   1    [] <- "B 15" <- []
