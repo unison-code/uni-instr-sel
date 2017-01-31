@@ -17,6 +17,7 @@ module Language.InstrSel.Functions.Transformations
   , lowerPointers
   , removeDeadCode
   , removePhiNodeRedundancies
+  , removeRedundantConversions
   )
 where
 
@@ -33,6 +34,7 @@ import qualified Language.InstrSel.OpStructures.Transformations as OS
   , lowerPointers
   , removeDeadCode
   , removePhiNodeRedundancies
+  , removeRedundantConversions
   )
 import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
@@ -398,3 +400,12 @@ removeDeadCode f =
   in f { functionOS = os1
        , functionInputs = new_func_inputs
        }
+
+-- | Removes redundant type conversions.
+--
+-- See also 'OS.removeRedundantConversions'.
+removeRedundantConversions :: Function -> Function
+removeRedundantConversions f =
+  let os0 = functionOS f
+      os1 = OS.removeRedundantConversions os0
+  in f { functionOS = os1 }

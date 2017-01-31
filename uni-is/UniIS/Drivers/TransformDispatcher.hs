@@ -41,6 +41,7 @@ dispatch a opts
   | a == TransformNothing =
       reportErrorAndExit "No transform action provided."
   | a `elem` [ RemoveDeadCodeInFunctionGraph
+             , RemoveRedundantConversionsInFunctionGraph
              , EnforcePhiNodeInvariantsInFunctionGraph
              , RemovePhiNodeRedundanciesInFunctionGraph
              , CopyExtendFunctionGraph

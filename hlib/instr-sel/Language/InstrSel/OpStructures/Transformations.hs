@@ -15,6 +15,7 @@ module Language.InstrSel.OpStructures.Transformations
   , lowerPointers
   , removeDeadCode
   , removePhiNodeRedundancies
+  , removeRedundantConversions
   )
 where
 
@@ -30,6 +31,7 @@ import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.Utils
   ( Natural
+  , Range (..)
   , rangeFromSingleton
   , groupBy
   )
@@ -537,3 +539,63 @@ removeDeadCode' os =
                           }
           in (new_os, True)
      else (os, False)
+
+-- | Removes conversion operations that are redundant. Such a conversion is
+-- redundant if its result is immediately masked to leave the same bits as
+-- before the conversion.
+removeRedundantConversions :: OpStructure -> OpStructure
+removeRedundantConversions os0 =
+  let g = osGraph os0
+      convs = filter (isCompTypeConvOp . getOpOfComputationNode) $
+              filter isComputationNode $
+              getAllNodes g
+      transform n os1 =
+        let arg_n = head $ getPredecessors g n
+            arg_n_t = getDataTypeOfValueNode arg_n
+            bits = intTempNumBits arg_n_t
+            uses_of_arg_n = getPredecessors g arg_n
+            (CompTypeConvOp op) = getOpOfComputationNode n
+            value = head $ getSuccessors g n
+            uses = getSuccessors g value
+            (use, use_v1) = -- Skip over any copy node encountered
+                            if isCopyNode (head uses)
+                            then let v = head $
+                                         getSuccessors g $
+                                         head uses
+                                     u = head $
+                                         getSuccessors g v
+                                 in (u, v)
+                            else (head uses, value)
+            use_op = getOpOfComputationNode use
+            (CompArithOp ar_op) = use_op
+            arith_op = getArithOpType ar_op
+            use_v2 = -- Skip over any copy node encountered
+                     let v = head $
+                             filter (/= use_v1) $
+                             getPredecessors g use
+                         v_pred = getSourceNode g $
+                                  head $
+                                  getDtFlowInEdges g v
+                     in if isCopyNode v_pred
+                        then head $ getPredecessors g v_pred
+                        else v
+            use_v2_t = getDataTypeOfValueNode use_v2
+            imm = lowerBound $ intConstValue use_v2_t
+        in if length uses_of_arg_n < 2 &&
+              isIntTempType arg_n_t &&
+              op `elem` [ZExt, SExt] &&
+              length uses == 1 &&
+              isComputationNode use &&
+              isCompArithOp use_op &&
+              arith_op `elem` [XOr, And] &&
+              isValueNodeWithConstValue use_v2 &&
+              ( ( bits ==  8 && imm == 255 ) ||
+                ( bits == 16 && imm == 65535 )
+              )
+           then let old_l = getNodeLabel n
+                    new_l = old_l { nodeType = CopyNode }
+                    g' = updateNodeLabel new_l n g
+                    os2 = os1 { osGraph = g' }
+                in os2
+           else os1
+  in foldr transform os0 convs

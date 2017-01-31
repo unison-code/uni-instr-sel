@@ -38,6 +38,10 @@ run RemoveDeadCodeInFunctionGraph f _ =
   do let new_f = removeDeadCode f
      return [toOutput $ toJson new_f]
 
+run RemoveRedundantConversionsInFunctionGraph f _ =
+  do let new_f = removeRedundantConversions f
+     return [toOutput $ toJson new_f]
+
 run EnforcePhiNodeInvariantsInFunctionGraph f _ =
   do let new_f = enforcePhiNodeInvariants f
      return [toOutput $ toJson new_f]

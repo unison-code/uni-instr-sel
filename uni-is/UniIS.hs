@@ -172,6 +172,10 @@ parseArgs =
                  &= name "remove-dead-code-in-fun"
                  &= explicit
                  &= help "Removes dead code in function graph."
+             , RemoveRedundantConversionsInFunctionGraph
+                 &= name "remove-conv-redundancies-in-fun"
+                 &= explicit
+                 &= help "Removes redundant type conversions in function graph."
              , EnforcePhiNodeInvariantsInFunctionGraph
                  &= name "enforce-phi-invariants-in-fun"
                  &= explicit
