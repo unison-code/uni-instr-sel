@@ -189,7 +189,7 @@ function flattenModelFile {
     reportTask "Flattening MiniZinc model file"
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "FLATTENING TIME: " > $stats_filepath
-    command="`which time` -ap -o $stats_filepath --format %es"
+    command="`which time` -pqao $stats_filepath --format %es"
     command="$command mzn2fzn -G $MINIZINC_GLOBALS_DIR"
     command="$command ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
     exe "$command"
@@ -247,7 +247,7 @@ function executeSolver {
     reportTask "Running solver"
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "SOLVING TIME: " >> $stats_filepath
-    command="`which time` -ap -o $stats_filepath --format %es"
+    command="`which time` -pqao $stats_filepath --format %es"
     if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
         command="$command timeout ${MINIZINC_TIMELIMIT}s"
     fi
