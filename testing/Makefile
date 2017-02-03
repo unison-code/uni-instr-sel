@@ -51,10 +51,10 @@ PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 SOLVER_CMD            := ../solvers/minizinc/solver \
                          -g $(MINIZINC_GLOBALS_DIR) \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
-ALT_LIMIT             := 0 # 0 indicates no limit
-SOLVER_TIME_LIMIT     := 0 # In seconds; 0 indicates no timelimit
+ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
+SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
 
-TARGET := mips32
+TARGET := hexagon5
 
 REGRESSION_TESTS_DIR := ./regression
 

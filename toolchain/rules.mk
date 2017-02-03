@@ -55,7 +55,7 @@ PRUNE_BAD_MATCHES_CMD ?= @echo 'ERROR: Variable $$PRUNE_BAD_MATCHES_CMD' \
                           exit 1 ;
 SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
                           exit 1 ;
-ALT_LIMIT             ?= # 0 indicates no limit
+ALT_LIMIT             ?= # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 TARGET                ?=
 
