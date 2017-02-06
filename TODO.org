@@ -9,6 +9,7 @@
 ** DONE Fix exponential explosion in pattern matcher due to alternative edges
 ** DONE Fix faculty explosion in pattern matcher when dealing with SIMDs
 ** DONE Combine constants in patterns
+** TODO Get upper bound from LLVM
 ** TODO Investigate presolving technique (see Mats' email)
 ** TODO Fix uni-targen bug when SETREG assignes an immediate to a register
 ** TODO Branch-extend patterns
