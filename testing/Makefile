@@ -54,7 +54,11 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
 
-TARGET := hexagon5
+TARGET := mips32
+# Mips32
+LLC_TARGET_FLAGS := -march=mips
+# Hexagon5
+#LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
 
 REGRESSION_TESTS_DIR := ./regression
 

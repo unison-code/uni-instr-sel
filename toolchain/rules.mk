@@ -58,6 +58,7 @@ SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
 ALT_LIMIT             ?= # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 TARGET                ?=
+LLC_TARGET_FLAGS      ?=
 
 
 
@@ -66,10 +67,12 @@ TARGET                ?=
 #==========================
 
 OPT            := $(LLVM_INT_IS_BUILD_DIR)/bin/opt
+LLC            := $(LLVM_INT_IS_BUILD_DIR)/bin/llc
 LCLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLiftConstExprs.so
 LSLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerSelect.so
 LGLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerGetElementPtr.so
 AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 
 
 
@@ -86,6 +89,9 @@ AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
 
 %.low.freq.ll: %.low.ll
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
+
+%.llvm.json: %.low.freq.ll
+	$(LLC) $(LLC_ISEL_FLAGS) -print-isel-cost $< -o /dev/null > $@ 2> /dev/null
 
 %.f.json: %.low.freq.ll
 	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@
