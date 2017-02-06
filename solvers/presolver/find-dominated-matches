@@ -49,6 +49,7 @@ def error(msg):
     sys.exit(1)
 
 # A match m1 is dominated if there exists some other match m2 where:
+#    - neither is a null instruction,
 #    - neither match occurs in the parameters "same-loc", "in-block", and
 #      "in-block-succ" (TODO: relax?),
 #    - the tuple <latency of m2, index of m2> is lexicographically smaller than
@@ -125,7 +126,7 @@ def isMatchDominated(json, m1):
 
     # Check all eligable matches
     for m2 in [ m for m in range(json["num-matches"])
-                if m != m1 and m not in excl_matches
+                      if m != m1 and m not in excl_matches
               ]:
         if ( ( json["match-latencies"][m2] < json["match-latencies"][m1]
                or

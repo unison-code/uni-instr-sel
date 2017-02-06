@@ -93,7 +93,6 @@ for m in range(num_matches):
                                  if {d} == operand_alt_sets[o]
                          ]
 
-
 # Compute set of matches that cover a particular operation
 num_operands = json_data["fun-num-operations"]
 o_matches = [[]] * num_operands
@@ -128,7 +127,6 @@ for i in range(num_data):
         if i == j: continue
         if len(d_matches[i]) > 0 and d_matches[i] <= d_matches[j]:
             illegal_matches |= d_matches[j] - d_matches[i]
-
 
 # If all matches in domain[i] use some datum d, then all inactive instructions
 # that define d are not selectable
