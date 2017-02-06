@@ -36,12 +36,24 @@ dispatch a opts
   | a `elem` [ CheckFunctionGraphCoverage ] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
-         CheckFunctionGraph.run a function matchset Nothing
+         hide_null_instrs <- getHideNullInstrsPred opts
+         hide_inactive_instrs <- getHideInactiveInstrsPred opts
+         CheckFunctionGraph.run a
+                                hide_null_instrs
+                                hide_inactive_instrs
+                                function
+                                matchset
+                                Nothing
   | a `elem` [ CheckFunctionGraphLocationOverlap ] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          tm <- loadTargetMachine $ pmTarget matchset
-         CheckFunctionGraph.run a function matchset (Just tm)
+         CheckFunctionGraph.run a
+                                False
+                                False
+                                function
+                                matchset
+                                (Just tm)
   | a `elem` [ CheckFunctionIntegrity ] =
       do function <- loadFunctionFromJson opts
          CheckIntegrity.run a (Left function)

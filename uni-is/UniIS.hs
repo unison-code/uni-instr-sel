@@ -284,15 +284,15 @@ parseArgs =
         &= name "hide-null-instrs"
         &= explicit
         &= help ( "Whether to exclude null instructions in the cover plots." ++
-                  " Only usable together with --plot-cover-all-matches " ++
-                  "option."
+                  " Only usable together with --plot-cover-all-matches and " ++
+                  "--check-fun-coverage options."
                 )
     , hideInactiveInstructions = def
         &= name "hide-inactive-instrs"
         &= explicit
         &= help ( "Whether to exclude inactive instructions in the cover " ++
                   "plots. Only usable together with " ++
-                  "--plot-cover-all-matches option."
+                  "--plot-cover-all-matches and --check-fun-coverage options."
                 )
     , altLimit = def
         &= name "alt-limit"

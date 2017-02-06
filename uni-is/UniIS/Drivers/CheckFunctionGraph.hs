@@ -14,6 +14,7 @@ module UniIS.Drivers.CheckFunctionGraph
 where
 
 import UniIS.Drivers.Base
+import UniIS.Targets
 import Language.InstrSel.Functions
   ( Function (..) )
 import Language.InstrSel.Graphs
@@ -26,12 +27,21 @@ import Language.InstrSel.TargetMachines.PatternMatching
   , PatternMatchset (..)
   )
 import qualified Language.InstrSel.Utils.Set as S
+import Language.InstrSel.Utils
+  ( isLeft
+  , fromLeft
+  , fromRight
+  )
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit )
+  ( reportErrorAndExit
+  , when
+  )
 
 import Data.Maybe
-  ( fromJust
+  ( catMaybes
+  , fromJust
   , isJust
+  , isNothing
   )
 
 
@@ -42,24 +52,55 @@ import Data.Maybe
 
 run
   :: CheckAction
+  -> Bool
+     -- ^ Whether to hide null instructions.
+  -> Bool
+     -- ^ Whether to hide inactive instructions.
   -> Function
   -> PatternMatchset
   -> Maybe TargetMachine
   -> IO [Output]
 
-run CheckFunctionGraphCoverage function matchset _ =
-  let g = osGraph $ functionOS function
-      op_nodes = filter isOperationNode $ getAllNodes g
-      matches = pmMatches matchset
-      isNodeCoverable n =
-        any (\m -> length (findPNInMatch (pmMatch m) (getNodeID n)) > 0)
-            matches
-      uncovered_ops = filter (not . isNodeCoverable) op_nodes
-      l = concatLogs $
-          map (reportUncoveredOp g) uncovered_ops
-  in return $ mkOutputFromLog l
+run CheckFunctionGraphCoverage
+    hide_null_instrs
+    hide_inactive_instrs
+    function
+    matchset
+    _
+  =
+  do let tid = pmTarget matchset
+         tm_res = retrieveTargetMachine tid
+     when (isNothing tm_res) $
+       reportErrorAndExit $ "Unrecognized target machine: " ++ (pShow tid)
+     let tm = fromJust tm_res
+         ms0 = pmMatches matchset
+         matches_res = do ms1 <- if hide_null_instrs
+                                 then filterMatches tm
+                                                    (not . isInstructionNull)
+                                                    ms0
+                                 else return ms0
+                          ms2 <- if hide_inactive_instrs
+                                 then filterMatches tm
+                                                    ( not
+                                                      . isInstructionInactive
+                                                    )
+                                                    ms1
+                                 else return ms1
+                          return ms2
+     when (isLeft matches_res) $
+       reportErrorAndExit $ fromLeft matches_res
+     let matches = fromRight matches_res
+         g = osGraph $ functionOS function
+         op_nodes = filter isOperationNode $ getAllNodes g
+         isNodeCoverable n =
+           any (\m -> length (findPNInMatch (pmMatch m) (getNodeID n)) > 0)
+               matches
+         uncovered_ops = filter (not . isNodeCoverable) op_nodes
+         l = concatLogs $
+             map (reportUncoveredOp g) uncovered_ops
+     return $ mkOutputFromLog l
 
-run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
+run CheckFunctionGraphLocationOverlap _ _ function matchset (Just tm) =
   let getValidLocs os nid =
         let locs = lookup nid $ osValidLocations os
         in if isJust locs
@@ -124,7 +165,7 @@ run CheckFunctionGraphLocationOverlap function matchset (Just tm) =
           map reportNonOverlappingLocsForDatum non_overlapping_nodes
   in return $ mkOutputFromLog l
 
-run _ _ _ _ = reportErrorAndExit "CheckFunctionGraph: unsupported action"
+run _ _ _ _ _ _ = reportErrorAndExit "CheckFunctionGraph: unsupported action"
 
 reportUncoveredOp :: Graph -> Node -> Log
 reportUncoveredOp g o =
@@ -144,3 +185,21 @@ reportNonOverlappingLocsForDatum n =
   toLog $
   ErrorMessage $
   "Datum node with non-overlapping location requirements: " ++ pShow n
+
+filterMatches
+  :: TargetMachine
+  -> (Instruction -> Bool)
+  -> [PatternMatch]
+  -> Either String [PatternMatch]
+filterMatches tm p_fun ms =
+  do ms' <- mapM ( \m -> let iid = pmInstrID m
+                             i = findInstruction tm iid
+                         in if isJust i
+                            then if p_fun $ fromJust i
+                                 then return $ Just m
+                                 else return Nothing
+                            else Left $ "No instruction with ID "
+                                        ++ pShow iid
+                 ) $
+            ms
+     return $ catMaybes ms'

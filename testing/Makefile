@@ -463,13 +463,35 @@ pattern.dot:
 		fi \
 	done
 	@echo "$(C_INFO)* CHECKING COVERABILITY$(C_NONE)"
-	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json "
-	@if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json ]; then \
-		if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.be.ae.p.json ]; then \
+	@f=$*.de.lp.ep.ce.cc.rp.de.rt.be.f.json ;\
+	p=$*.de.lp.ep.ce.cc.rp.de.rt.be.ae.p.json ;\
+	echo -n "    $$f " ;\
+	if [ -f $$f ]; then \
+		if [ -f $$p ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
-			                   -f $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json \
-			                   -p $*.de.lp.ep.ce.cc.rp.de.rt.be.ae.p.json \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
+			else \
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+				cat $$out ;\
+			fi \
+		else \
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
+	fi ;\
+	echo -n "    $$f (no null instrs) " ;\
+	if [ -f $$f ]; then \
+		if [ -f $$p ]; then \
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-coverage --hide-null-instrs \
+			                   -f $$f \
+			                   -p $$p \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\
@@ -483,15 +505,36 @@ pattern.dot:
 	else \
 		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
-	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json (presolved) "
-	@if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json ]; then \
-		if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.be.ae.presolved.p.json ]; then \
+	@f=$*.de.lp.ep.ce.cc.rp.de.rt.be.f.json ;\
+	p=$*.de.lp.ep.ce.cc.rp.de.rt.be.ae.presolved.p.json ;\
+	echo -n "    $$f (presolved) " ;\
+	if [ -f $$f ]; then \
+		if [ -f $$p ]; then \
 			out=`mktemp` ;\
-			msg=`$(UNI_IS_CMD) \
-					 check --check-fun-coverage \
-			         -f $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json \
-			         -p $*.de.lp.ep.ce.cc.rp.de.rt.be.ae.presolved.p.json \
-					 > $$out 2>&1` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-coverage \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
+			else \
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+				cat $$out ;\
+			fi \
+		else \
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
+	fi ;\
+	echo -n "    $$f (presolved, no null instrs) " ;\
+	if [ -f $$f ]; then \
+		if [ -f $$p ]; then \
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-coverage --hide-null-instrs \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\
 			else \
@@ -504,7 +547,6 @@ pattern.dot:
 	else \
 		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
-
 	@echo "$(C_INFO)* CHECKING OVERLAP OF DATA LOCATIONS$(C_NONE)"
 	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json "
 	@if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.be.f.json ]; then \
