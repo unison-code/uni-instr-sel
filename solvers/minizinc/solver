@@ -72,7 +72,8 @@ MINIZINC_STATS_FILEPATH=""
 MINIZINC_ERROR_FILEPATH=""
 MINIZINC_SOLVER_BIN=""
 MINIZINC_GLOBALS_DIR=""
-MINIZINC_TIMELIMIT=""
+MINIZINC_TIME_LIMIT=""
+MINIZINC_UPPER_BOUND=""
 
 
 
@@ -248,11 +249,11 @@ function executeSolver {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "SOLVING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
-    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
-        command="$command timeout ${MINIZINC_TIMELIMIT}s"
+    if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
+        command="$command timeout ${MINIZINC_TIME_LIMIT}s"
     fi
     command="$command $MINIZINC_SOLVER_BIN"
-    if [[ $MINIZINC_TIMELIMIT > 0 ]]; then
+    if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
         command="$command -a"
     fi
     command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
@@ -291,6 +292,10 @@ do
     key="$1"
 
     case $key in
+        -i|--input)
+            JSON_INPUT_FILEPATH="$2"
+            shift
+        ;;
         -o|--output)
             JSON_OUTPUT_FILEPATH="$2"
             shift
@@ -304,11 +309,12 @@ do
             shift
         ;;
         -t|--timelimit)
-            MINIZINC_TIMELIMIT="$2"
+            MINIZINC_TIME_LIMIT="$2"
             shift
         ;;
-        -d|--compute-dom)
-            COMPUTE_DOM_MATCHES=1
+        -u|--upper-bound)
+            MINIZINC_UPPER_BOUND="$2"
+            shift
         ;;
         *)
             reportError "Unknown argument switch '$1'"
@@ -317,11 +323,9 @@ do
     esac
     shift
 done
-if [[ $# == 1 ]]; then
-    JSON_INPUT_FILEPATH="$1"
-fi
-if [ -z $MINIZINC_TIMELIMIT ]; then
-    MINIZINC_TIMELIMIT=0
+if [[ $# > 1 ]]; then
+    reportError "Unknown trailing argument '$1'"
+    exit 1
 fi
 
 # Check arguments
@@ -349,6 +353,12 @@ if [ -z "$MINIZINC_GLOBALS_DIR" ]; then
     reportError "No globals directory specified (use -g or --globals switch)"
     exit 1
 fi
+if [ -z "$MINIZINC_TIME_LIMIT" ]; then
+    MINIZINC_TIME_LIMIT=0
+fi
+if [ -z "$MINIZINC_UPPER_BOUND" ]; then
+    MINIZINC_UPPER_BOUND=0
+fi
 
 reportTask "Creating temporary directory"
 TMP_DIR=`mktemp -d`
@@ -364,6 +374,7 @@ JSON_OUTPUT_DIR="$(dirname $JSON_OUTPUT_FILEPATH)"
 JSON_EXT_FILEPATH="$JSON_OUTPUT_DIR/$JSON_INPUT_FILENAME.ext1.json"
 JSON_EXT2_FILEPATH="$JSON_OUTPUT_DIR/$JSON_INPUT_FILENAME.ext2.json"
 JSON_EXT3_FILEPATH="$JSON_OUTPUT_DIR/$JSON_INPUT_FILENAME.ext3.json"
+JSON_EXT4_FILEPATH="$JSON_OUTPUT_DIR/$JSON_INPUT_FILENAME.ext4.json"
 JSON_SOLUTION_FILEPATH="$TMP_DIR/$JSON_SOLUTION_FILENAME"
 JSON_STATS_FILEPATH="$TMP_DIR/$JSON_STATS_FILENAME"
 MINIZINC_PARAMS_FILEPATH="$TMP_DIR/$MINIZINC_PARAMS_FILENAME"
@@ -388,8 +399,14 @@ cmd="$THIS_DIR/canonicalize-locations $JSON_EXT2_FILEPATH \
 exe "$cmd"
 reportNewEntity $JSON_EXT3_FILEPATH
 
+reportTask "Attaching upper bound"
+cmd="$THIS_DIR/attach-upper-bound $JSON_EXT3_FILEPATH $MINIZINC_UPPER_BOUND \
+     > $JSON_EXT4_FILEPATH"
+exe "$cmd"
+reportNewEntity $JSON_EXT4_FILEPATH
+
 reportTask "Generating MiniZinc parameter file"
-exe "$THIS_DIR/json2params $JSON_EXT3_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
+exe "$THIS_DIR/json2params $JSON_EXT4_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
 reportTask "Generating MiniZinc model file"

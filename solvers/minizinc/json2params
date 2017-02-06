@@ -39,6 +39,7 @@ import sexparser
 import os.path
 import sys
 import fractions
+import math
 
 
 
@@ -529,6 +530,9 @@ dumpParams( bumpArrOfArr(json_data["illegal-match-combs"])
 dumpParams( bumpArr(json_data["canonical-locs"])
           , "canonicalDataLocs"
           , VT_SET
+          )
+dumpParams( int(math.ceil(json_data["upper-bound"] / g))
+          , "costUpperBound"
           )
 
 # Dump constraints

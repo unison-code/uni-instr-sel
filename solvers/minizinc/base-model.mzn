@@ -80,6 +80,8 @@ set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
+int: costUpperBound;
+
 % Arrays that encode constraints
 array[int, int] of int: validDataLocsInFunction;
 array[int, int] of int: validDataLocRangesInFunction;
@@ -660,6 +662,13 @@ constraint
 % The total cost is the sum of the costs incurred by all operations.
 constraint
   totalcost = sum(opcosts);
+
+% Constraint the upper bound of the cost (retrieved from LLVM).
+constraint
+  if costUpperBound > 0
+  then totalcost <= costUpperBound
+  else true
+  endif;
 
 
 

@@ -60,6 +60,9 @@ SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 TARGET                ?=
 LLC_TARGET_FLAGS      ?=
 
+GET_JSON_FIELD        ?= @echo 'ERROR: Variable $$GET_JSON_FIELD' \
+                               'not set!' ; \
+
 
 
 #==========================
@@ -92,6 +95,9 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 
 %.llvm.json: %.low.freq.ll
 	$(LLC) $(LLC_ISEL_FLAGS) -print-isel-cost $< -o /dev/null > $@ 2> /dev/null
+
+%.ub.json: %.llvm.json
+	$(GET_JSON_FIELD) "$<" cycles > $@
 
 %.f.json: %.low.freq.ll
 	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@
@@ -190,14 +196,18 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 				  -a $*.aimaps.json \
 				  -o $@
 
-%.ll.sol.json: %.ll.model.json
-	$(SOLVER_CMD) -t $(SOLVER_TIME_LIMIT) -o $@ $<
+%.presolved.ll.sol.json: %.presolved.ll.model.json %.ub.json
+	$(SOLVER_CMD) -i $*.presolved.ll.model.json \
+				  -t $(SOLVER_TIME_LIMIT) \
+				  -u $(shell cat $*.ub.json) \
+				  -o $@
 
-%.hl.sol.json: %.hl.model.json %.ll.sol.json %.aimaps.json
+%.presolved.hl.sol.json: %.presolved.hl.model.json \
+                         %.presolved.ll.sol.json %.aimaps.json
 	$(UNI_IS_CMD) transform --raise-ll-cp-solution \
-				  -m $*.hl.model.json \
-				  -s $*.ll.sol.json \
-				  -a $*.aimaps.json \
+				  -m $*.presolved.hl.model.json \
+				  -s $*.presolved.ll.sol.json \
+				  -a $*.presolved.aimaps.json \
 				  -o $@
 
 %.s: %.presolved.hl.model.json %.presolved.hl.sol.json

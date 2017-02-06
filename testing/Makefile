@@ -48,6 +48,7 @@ CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
 PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
+GET_JSON_FIELD        := ../tools/get-json-field
 SOLVER_CMD            := ../solvers/minizinc/solver \
                          -g $(MINIZINC_GLOBALS_DIR) \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
@@ -212,7 +213,7 @@ run-medium-regression-tests:
 				subfix=".de.lp.ep.ce.cc.rp.de.rt.be.ae.presolved.p.json" ;\
 				pmatch_file="$${T_LL%.*}$$subfix" ;\
 				if [ -f $$pmatch_file ]; then \
-					pmatch_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
+					pmatch_time=`$(GET_JSON_FIELD) \
 								 "$$pmatch_file" "time" 2> /dev/null` ;\
 				else \
 					pmatch_time=0 ;\
@@ -224,16 +225,15 @@ run-medium-regression-tests:
 								   | bc` ;\
 				sol_file="$${T_LL%.*}.presolved.hl.sol.json" ;\
 				if [ -f $$sol_file ]; then \
-					cost=`$(REGRESSION_TESTS_DIR)/get-json-field \
-						  "$$sol_file" "cost" 2> /dev/null` ;\
-					solv_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
+					cost=`$(GET_JSON_FIELD) "$$sol_file" "cost" 2> /dev/null` ;\
+					solv_time=`$(GET_JSON_FIELD) \
 							   "$$sol_file" "solving-time" 2> /dev/null` ;\
 					T_SOLV_TIME_TOTAL=`echo "scale=2; \
 								 			 t = $$T_SOLV_TIME_TOTAL + \
 												 $$solv_time; \
 											 if (t < 1) print 0; t" \
 									   | bc` ;\
-					prep_time=`$(REGRESSION_TESTS_DIR)/get-json-field \
+					prep_time=`$(GET_JSON_FIELD) \
 							   "$$sol_file" "prep-time" 2> /dev/null` ;\
 					T_PREP_TIME_TOTAL=`echo "scale=2; \
 								 			 t = $$T_PREP_TIME_TOTAL + \
