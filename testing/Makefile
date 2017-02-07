@@ -55,6 +55,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     := 0 # In seconds; 0 indicates no timelimit
 DISABLE_UPPER_BOUND   := 1
+NUM_THREADS           := 4
 
 TARGET := mips32
 # Mips32
@@ -370,6 +371,28 @@ run-medium-regression-tests:
 	echo "==========================================================" ;\
 	echo -n "$(C_NONE)" ;\
 	echo
+
+.PHONY: update-all-regression-tests
+REG_TEST_CASES := $(shell cat regression/small-test-cases.db) \
+				  $(shell cat regression/medium-test-cases.db)
+REG_TEST_CASES_LL_PATHS := $(addprefix ./regression/, \
+									   $(addsuffix .ll, $(REG_TEST_CASES)) \
+							)
+REG_TEST_CASES_S := $(addsuffix .s, $(REG_TEST_CASES))
+update-all-regression-tests: SOLVER_TIME_LIMIT := 0
+update-all-regression-tests: DISABLE_UPPER_BOUND := 1
+update-all-regression-tests:
+	cp $(REG_TEST_CASES_LL_PATHS) .
+	for t in mips32 hexagon5; do \
+		$(MAKE) clean; \
+		$(MAKE) -j $(NUM_THREADS) $(REG_TEST_CASES_S); \
+		for f in $(REG_TEST_CASES); do \
+			cp $$f.s regression/$$t/$$f.s.1 && \
+			$(GET_JSON_FIELD) $$f.presolved.hl.sol.json cost \
+				> regression/$$t/$$f.cost; \
+		done; \
+	done
+
 
 
 #=====================
