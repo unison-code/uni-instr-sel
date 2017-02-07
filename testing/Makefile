@@ -385,7 +385,7 @@ update-all-regression-tests:
 	cp $(REG_TEST_CASES_LL_PATHS) .
 	for t in mips32 hexagon5; do \
 		$(MAKE) clean; \
-		$(MAKE) -j $(NUM_THREADS) $(REG_TEST_CASES_S); \
+		$(MAKE) TARGET=$$t -j $(NUM_THREADS) $(REG_TEST_CASES_S); \
 		for f in $(REG_TEST_CASES); do \
 			cp $$f.s regression/$$t/$$f.s.1 && \
 			$(GET_JSON_FIELD) $$f.presolved.hl.sol.json cost \
