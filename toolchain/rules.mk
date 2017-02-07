@@ -57,6 +57,7 @@ SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
                           exit 1 ;
 ALT_LIMIT             ?= # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
+DISABLE_UPPER_BOUND   ?= 0 # 1 disables use of upper bound
 TARGET                ?=
 LLC_TARGET_FLAGS      ?=
 
@@ -97,7 +98,11 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 	$(LLC) $(LLC_ISEL_FLAGS) -print-isel-cost $< -o /dev/null > $@ 2> /dev/null
 
 %.ub.json: %.llvm.json
-	$(GET_JSON_FIELD) "$<" cycles > $@
+	if [ $(DISABLE_UPPER_BOUND) -eq 0 ]; then \
+		$(GET_JSON_FIELD) "$<" cycles > $@; \
+	else \
+		echo "0" > $@; \
+	fi
 
 %.f.json: %.low.freq.ll
 	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@

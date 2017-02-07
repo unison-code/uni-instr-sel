@@ -53,7 +53,8 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -g $(MINIZINC_GLOBALS_DIR) \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
-SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
+SOLVER_TIME_LIMIT     := 0 # In seconds; 0 indicates no timelimit
+DISABLE_UPPER_BOUND   := 1
 
 TARGET := mips32
 # Mips32
@@ -163,6 +164,8 @@ run-medium-regression-tests:
 	@$(MAKE) TARGET=Hexagon5 .run-regression-tests
 
 .PHONY: .run-regression-tests
+.run-regression-tests: SOLVER_TIME_LIMIT := 0
+.run-regression-tests: DISABLE_UPPER_BOUND := 1
 .run-regression-tests:
 	@echo
 	@echo -n "$(C_INFO)"
