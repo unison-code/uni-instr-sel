@@ -1,7 +1,6 @@
  42  0:
   1    [%1] <- "%1 = sxth(%a)" <- [%a]
-  1    [%const.0.copy.1] <- "%const.0.copy.1 = #0" <- []
-  1    [%2] <- "%2 = cmp.lt(%a, %const.0.copy.1)" <- [%a, %const.0.copy.1]
+  1    [%2] <- "%2 = cmp.lt(%a, #0)" <- [%a]
   1    [] <- "if (%2) jump bb0" <- [%2]
  42  bb1:
  42  6:

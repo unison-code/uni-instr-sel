@@ -1,7 +1,6 @@
  16  0:
   1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.2, %cinfo]
   1    [%const.61.copy.1] <- "ADDiu %const.61.copy.1, $0, 61" <- []
-  1    [%const.464.copy.1] <- "ADDiu %const.464.copy.1, $0, 464" <- []
   1    [] <- "BEQ $%version, $%const.61.copy.1, bb0" <- [%version, %const.61.copy.1]
  16  bb1:
   8  3:
@@ -14,13 +13,14 @@
   1    [] <- "CALL %10" <- [%cinfo, %10]
  16  bb0:
  16  12:
-  1    [] <- "BEQ $%structsize, $%const.464.copy.1, bb2" <- [%structsize, %const.464.copy.1]
+  1    [%const.464.copy.2] <- "ADDiu %const.464.copy.2, $0, 464" <- []
+  1    [] <- "BEQ $%structsize, $%const.464.copy.2, bb2" <- [%structsize, %const.464.copy.2]
  16  bb3:
   8  14:
   1    [%16] <- "LW %16, 0(%cinfo)" <- [%cinfo]
   1    [%const.19.copy.1] <- "ADDiu %const.19.copy.1, $0, 19" <- []
   1    [] <- "SW $%const.19.copy.1, 20($%16)" <- [%const.19.copy.1, %16]
-  1    [] <- "SW $%const.464.copy.1, 24($%16)" <- [%const.464.copy.1, %16]
+  1    [] <- "SW $%const.464.copy.2, 24($%16)" <- [%const.464.copy.2, %16]
   1    [] <- "SW $%structsize, 28($%16)" <- [%structsize, %16]
   1    [%21] <- "LW %21, 0(%16)" <- [%16]
   1    [] <- "CALL %21" <- [%cinfo, %21]

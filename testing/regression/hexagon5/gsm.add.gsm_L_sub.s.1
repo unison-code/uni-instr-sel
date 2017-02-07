@@ -3,8 +3,7 @@
   1    [] <- "if (%1) jump bb0" <- [%1]
  68  bb1:
  25  12:
-  1    [%const.1.copy.2] <- "%const.1.copy.2 = ##1" <- []
-  1    [%13] <- "%13 = cmp.lt(%b, %const.1.copy.2)" <- [%b, %const.1.copy.2]
+  1    [%13] <- "%13 = cmp.lt(%b, #1)" <- [%b]
   1    [] <- "if (%13) jump bb6" <- [%13]
  25  bb7:
  16  16:
@@ -34,12 +33,11 @@
  42  bb3:
  16  6:
   1    [%const.2147483646.copy.1] <- "%const.2147483646.copy.1 = ##2147483646" <- []
-  1    [%const.1.copy.1] <- "%const.1.copy.1 = ##1" <- []
   1    [%const.-1.copy.4] <- "%const.-1.copy.4 = ##-1" <- []
   1    [%7] <- "%7 = xor(%b, %const.-1.copy.4)" <- [%b, %const.-1.copy.4]
   1    [%8] <- "%8 = add(%a, %7)" <- [%a, %7]
   1    [%9] <- "%9 = cmp.gtu(%8, %const.2147483646.copy.1)" <- [%8, %const.2147483646.copy.1]
-  1    [%10] <- "%10 = add(%8, %const.1.copy.1)" <- [%8, %const.1.copy.1]
+  1    [%10] <- "%10 = add(%8, #1)" <- [%8]
   1    [] <- "if (%9) jump bb4" <- [%9]
  16  bb5:
  16  .selectcont:

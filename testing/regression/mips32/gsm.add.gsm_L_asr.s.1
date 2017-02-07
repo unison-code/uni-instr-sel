@@ -1,8 +1,8 @@
  85  0:
   0    [%5] <- "SLTI $%5, $%n, -31" <- [%n]
   0    [%7] <- "SLTI $%7, $%n, 0" <- [%n]
-  0    [] <- "SLTi %tmp.1, %n, 31" <- [%n]
-  1    [] <- "BEQ %tmp.1, $0, bb0" <- []
+  1    [%const.31.copy.1] <- "ADDiu %const.31.copy.1, $0, 31" <- []
+  1    [] <- "BGT $%n, $%const.31.copy.1, bb0" <- [%n, %const.31.copy.1]
  85  bb1:
  42  4:
   1    [%const.0.copy.3] <- "ADDiu %const.0.copy.3, $0, 0" <- []

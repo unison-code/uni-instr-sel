@@ -3,13 +3,12 @@
   1    [] <- "if (%1) jump bb0" <- [%1]
  85  bb1:
  42  4:
-  1    [%const.-31.copy.1] <- "%const.-31.copy.1 = ##-31" <- []
   1    [%const.0.copy.3] <- "%const.0.copy.3 = ##0" <- []
-  1    [%5] <- "%5 = cmp.lt(%n, %const.-31.copy.1)" <- [%n, %const.-31.copy.1]
+  1    [%5] <- "%5 = cmp.lt(%n, #-31)" <- [%n]
   1    [] <- "if (%5) jump bb2" <- [%5]
  42  bb3:
  21  6:
-  1    [%7] <- "%7 = cmp.lt(%n, %const.0.copy.3)" <- [%n, %const.0.copy.3]
+  1    [%7] <- "%7 = cmp.lt(%n, #0)" <- [%n]
   1    [] <- "if (%7) jump bb4" <- [%7]
  21  bb5:
  13  11:

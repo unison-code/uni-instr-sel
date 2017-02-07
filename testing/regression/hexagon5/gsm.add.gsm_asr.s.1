@@ -4,14 +4,12 @@
  85  bb1:
  42  6:
   1    [%const.0.copy.4] <- "%const.0.copy.4 = #0" <- []
-  1    [%const.-15.copy.1] <- "%const.-15.copy.1 = ##-15" <- []
-  1    [%7] <- "%7 = cmp.lt(%n, %const.-15.copy.1)" <- [%n, %const.-15.copy.1]
+  1    [%7] <- "%7 = cmp.lt(%n, #-15)" <- [%n]
   1    [] <- "if (%7) jump bb2" <- [%7]
  42  bb3:
  21  8:
   1    [%10] <- "%10 = sxth(%a)" <- [%a]
-  1    [%const.0.copy.2] <- "%const.0.copy.2 = ##0" <- []
-  1    [%9] <- "%9 = cmp.lt(%n, %const.0.copy.2)" <- [%n, %const.0.copy.2]
+  1    [%9] <- "%9 = cmp.lt(%n, #0)" <- [%n]
   1    [] <- "if (%9) jump bb4" <- [%9]
  21  bb5:
  13  15:

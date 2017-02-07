@@ -1,17 +1,15 @@
  21  0:
-  1    [%const.1.copy.2] <- "%const.1.copy.2 = ##1" <- []
-  1    [%const.50.copy.1] <- "%const.50.copy.1 = ##50" <- []
-  1    [%1] <- "%1 = cmp.lt(%quality, %const.1.copy.2)" <- [%quality, %const.1.copy.2]
+  1    [%1] <- "%1 = cmp.lt(%quality, #1)" <- [%quality]
   1    [] <- "if (%1) jump bb0" <- [%1]
  21  bb1:
  21  .selectcont:
-  0    [%.quality] <- "PHI (%quality, 0) (%const.1.copy.1, .selecttrue)" <- [%quality, %const.1.copy.1]
+  0    [%.quality] <- "PHI (%quality, 0) (%const.1.copy.2, .selecttrue)" <- [%quality, %const.1.copy.2]
   1    [%2] <- "%2 = cmp.gt(%.quality, 100)" <- [%.quality]
   1    [] <- "if (%2) jump bb2" <- [%2]
  21  bb3:
  21  .selectcont.selectcont:
   0    [%..quality] <- "PHI (%.quality, .selectcont) (%const.100.copy.2, .selectcont.selecttrue)" <- [%.quality, %const.100.copy.2]
-  1    [%3] <- "%3 = cmp.lt(%..quality, %const.50.copy.1)" <- [%..quality, %const.50.copy.1]
+  1    [%3] <- "%3 = cmp.lt(%..quality, #50)" <- [%..quality]
   1    [] <- "if (%3) jump bb4" <- [%3]
  21  bb5:
  10  6:
@@ -21,7 +19,9 @@
  21  bb4:
  10  4:
   1    [%const.5000.copy.1] <- "%const.5000.copy.1 = ##5000" <- []
-  0    [%5] <- "%5 = __hexagon_divsi(%const.5000.copy.1, %..quality)" <- [%..quality, %const.5000.copy.1]
+  0    [] <- "ADJCALLSTACKDOWN" <- [%..quality, %const.5000.copy.1]
+  0    [] <- "%5 = __hexagon_divsi(%const.5000.copy.1, %..quality)" <- []
+  3    [%5] <- "ADJCALLSTACKDOWN" <- []
  21  9:
   0    [%.0] <- "PHI (%5, 4) (%8, 6)" <- [%5, %8]
   1    [] <- "return %.0" <- [%.0]
@@ -31,5 +31,5 @@
   1    [] <- "jump .selectcont.selectcont" <- []
  21  bb0:
   8  .selecttrue:
-  1    [%const.1.copy.1] <- "%const.1.copy.1 = ##1" <- []
+  1    [%const.1.copy.2] <- "%const.1.copy.2 = ##1" <- []
   1    [] <- "jump .selectcont" <- []

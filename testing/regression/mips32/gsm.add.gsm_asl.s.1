@@ -4,8 +4,8 @@
   0    [%12] <- "ADD %12, $0, %a" <- [%a]
   0    [%16] <- "ADD %16, $0, %a" <- [%a]
   1    [%const.0.copy.4] <- "ADDi %const.0.copy.4, $0, 0" <- []
-  0    [] <- "SLTi %tmp.1, %n, 15" <- [%n]
-  1    [] <- "BEQ %tmp.1, $0, bb0" <- []
+  1    [%const.15.copy.1] <- "ADDiu %const.15.copy.1, $0, 15" <- []
+  1    [] <- "BGT $%n, $%const.15.copy.1, bb0" <- [%n, %const.15.copy.1]
  85  bb1:
  42  2:
   1    [] <- "BNE $0, $%3, bb2" <- [%3]
@@ -32,5 +32,5 @@
  85  bb0:
  85  gsm_asr.exit:
   0    [%.0] <- "PHI (%7, 4) (%14, 10) (%18, 15) (%const.0.copy.4, 0)" <- [%7, %14, %18, %const.0.copy.4]
-  0    [] <- "SEH %tmp.2, %.0" <- [%.0]
-  0    [] <- "RetRA %tmp.2" <- []
+  0    [] <- "SEH %tmp.1, %.0" <- [%.0]
+  0    [] <- "RetRA %tmp.1" <- []

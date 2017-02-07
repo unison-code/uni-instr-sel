@@ -7,9 +7,9 @@
   1    [] <- "BNE $0, $%4, bb0" <- [%4]
  32  bb1:
  16  5:
+  1    [%6] <- "SLTI %6, 32767, %3" <- [%3]
   1    [%3.copy.3] <- "MOV %3.copy.3, %3" <- [%3]
-  0    [] <- "SLTi %tmp.1, %3, 32767" <- [%3]
-  1    [] <- "BEQ %tmp.1, $0, bb2" <- []
+  1    [] <- "BNE $0, $%6, bb2" <- [%6]
  16  bb3:
  16  .selectcont:
   0    [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.2, .selecttrue)" <- [%3.copy.3, %const.32767.copy.2]
@@ -17,8 +17,8 @@
  32  bb0:
  32  8:
   0    [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
-  0    [] <- "SEH %tmp.2, %9" <- [%9]
-  0    [] <- "RetRA %tmp.2" <- []
+  0    [] <- "SEH %tmp.1, %9" <- [%9]
+  0    [] <- "RetRA %tmp.1" <- []
  16  bb2:
   8  .selecttrue:
   1    [%const.32767.copy.2] <- "ADDiu %const.32767.copy.2, $0, 32767" <- []
