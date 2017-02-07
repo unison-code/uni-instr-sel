@@ -212,7 +212,9 @@ run-medium-regression-tests:
 				T_LL=$${TEMPFILE}.ll ;\
 			    T_ASM=$${TEMPFILE}.s ;\
 				cp $(REGRESSION_TESTS_DIR)/$$T.ll $$T_LL ;\
-				$(MAKE) $$T_ASM > /dev/null 2>&1 ;\
+				$(MAKE) SOLVER_TIME_LIMIT=$(SOLVER_TIME_LIMIT) \
+						DISABLE_UPPER_BOUND=$(DISABLE_UPPER_BOUND) \
+						$$T_ASM > /dev/null 2>&1 ;\
 			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
 				subfix=".de.lp.ep.ce.cc.rp.de.rt.be.ae.presolved.p.json" ;\
 				pmatch_file="$${T_LL%.*}$$subfix" ;\
