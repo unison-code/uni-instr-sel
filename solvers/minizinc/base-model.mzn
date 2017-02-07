@@ -666,7 +666,7 @@ constraint
 % Constraint the upper bound of the cost (retrieved from LLVM).
 constraint
   if costUpperBound > 0
-  then totalcost <= costUpperBound
+  then totalcost < costUpperBound
   else true
   endif;
 
