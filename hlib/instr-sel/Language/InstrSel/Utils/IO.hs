@@ -15,7 +15,10 @@ module Language.InstrSel.Utils.IO
   , reportErrorAndExit
   , doesFileExist
   , readFileContent
+  , foldM
+  , foldM_
   , when
+  , catMaybeM
   , mapMaybeM
   , errorExitCode
   , successExitCode
@@ -25,7 +28,10 @@ where
 
 
 import Control.Monad
-  ( when )
+  ( foldM
+  , foldM_
+  , when
+  )
 
 import System.IO
   ( hPutStrLn
@@ -73,6 +79,12 @@ readFileContent file =
      when (not exists_file) $
        reportErrorAndExit $ "File " ++ show file ++ " does not exist."
      readFile file
+
+-- | Throws away 'Nothing' elements.
+catMaybeM :: Monad m => m [Maybe a] -> m [a]
+catMaybeM as =
+  do as' <- as
+     return $ catMaybes as'
 
 -- | Same as 'mapM' but also throws away elements which have been evaluted to
 -- 'Nothing'.
