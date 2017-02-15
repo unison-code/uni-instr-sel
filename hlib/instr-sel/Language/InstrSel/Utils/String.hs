@@ -18,6 +18,7 @@ module Language.InstrSel.Utils.String
   , splitStartingOn
   , toLower
   , toUpper
+  , trim
   )
 where
 
@@ -29,6 +30,11 @@ import qualified Data.Char as Char
   , toUpper
   , isDigit
   )
+import qualified Data.Text as Text
+  ( pack
+  , unpack
+  , strip
+  )
 import Safe
   ( readMay )
 
@@ -37,6 +43,10 @@ import Safe
 -------------
 -- Functions
 -------------
+
+-- | Trims whitespace from both ends of a given 'String'.
+trim :: String -> String
+trim = Text.unpack . Text.strip . Text.pack
 
 -- | Splits a given list into a list of sublists at points where a given
 -- delimiter is found (the delimiters themselves are removed from the resulting

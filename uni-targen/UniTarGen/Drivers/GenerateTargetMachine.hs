@@ -40,6 +40,8 @@ import Language.InstrSel.Utils.IO
   , readFileContent
   , foldM
   )
+import Language.InstrSel.Utils.String
+  ( trim )
 
 import LLVM.General
 import qualified LLVM.General.AST as AST
@@ -114,7 +116,7 @@ parseSemanticsInMD err_id m =
                                         "instruction with emit string\n" ++
                                         "--- '" ++
                                         instrEmitString i ++ "':\n" ++
-                                        fromLeft r ++ "\n" ++
+                                        trim (fromLeft r) ++ "\n" ++
                                         "Skipping to next pattern.\n"
                                       return (e' + 1, rs)
                             )
