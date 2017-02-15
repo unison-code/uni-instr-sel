@@ -12,7 +12,7 @@ Main authors:
 module Language.InstrSel.Utils.Range where
 
 import Language.InstrSel.PrettyShow
-import Language.InstrSel.Utils.Base
+import Language.InstrSel.Utils.String
   ( maybeRead )
 import Language.InstrSel.Utils.JSON
 import Data.Maybe

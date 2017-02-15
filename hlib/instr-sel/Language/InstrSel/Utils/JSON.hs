@@ -24,7 +24,7 @@ module Language.InstrSel.Utils.JSON
   )
 where
 
-import Language.InstrSel.Utils.Base
+import Language.InstrSel.Utils.String
   ( replace )
 
 import Data.Aeson
