@@ -15,7 +15,7 @@ import Language.InstrSel.TargetMachines.Base
   ( TargetMachine (tmID)
   , fromTargetMachineID
   )
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.String
   ( replace )
 
 import Language.Haskell.Exts

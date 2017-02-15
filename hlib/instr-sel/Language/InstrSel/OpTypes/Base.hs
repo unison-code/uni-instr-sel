@@ -17,13 +17,13 @@ Contributing authors:
 module Language.InstrSel.OpTypes.Base where
 
 import Language.InstrSel.PrettyShow
-import Language.InstrSel.Utils
-  ( splitOn )
 import Language.InstrSel.Utils.JSON
 import Data.Maybe
   ( fromJust
   , isJust
   )
+import Language.InstrSel.Utils.String
+  ( splitOn )
 
 import Prelude
   hiding

@@ -23,11 +23,11 @@ import Language.InstrSel.TargetMachines.Generators.PatternAnalysis
 import qualified Language.InstrSel.TargetMachines.Generators.LLVM.Base as LLVM
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Functions.IDs
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.String
   ( capitalize
+  , isNumeric
   , splitOn
   , splitStartingOn
-  , isNumeric
   )
 
 import qualified LLVM.General.AST as LLVM

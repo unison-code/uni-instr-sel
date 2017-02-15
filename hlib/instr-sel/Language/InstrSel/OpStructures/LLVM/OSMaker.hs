@@ -30,9 +30,10 @@ import qualified Language.InstrSel.Functions as F
 import Language.InstrSel.Utils
   ( rangeFromSingleton
   , toNatural
-  , splitOn
   , scanlM
   )
+import Language.InstrSel.Utils.String
+  ( splitOn )
 
 import qualified LLVM.General.AST as LLVM
 import qualified LLVM.General.AST.Constant as LLVMC

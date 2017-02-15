@@ -32,13 +32,13 @@ module Language.InstrSel.DataTypes.Base
 where
 
 import Language.InstrSel.PrettyShow
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.JSON
+import Language.InstrSel.Utils.Natural
+import Language.InstrSel.Utils.Range
+import Language.InstrSel.Utils.String
   ( maybeRead
   , splitOn
   )
-import Language.InstrSel.Utils.Natural
-import Language.InstrSel.Utils.Range
-import Language.InstrSel.Utils.JSON
 
 import Data.Maybe
   ( catMaybes
