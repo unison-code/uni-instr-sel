@@ -14,7 +14,7 @@ module UniIS.Targets.Base
 where
 
 import Language.InstrSel.TargetMachines.Base
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.String
   ( toLower )
 
 import qualified UniIS.Targets.Mips32 as Mips32

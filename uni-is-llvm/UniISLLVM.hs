@@ -32,12 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import UniISLLVM.Drivers
 import qualified UniISLLVM.Drivers.MakeDispatcher as Make
 
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.IO
+  ( successExitCode )
+import Language.InstrSel.Utils.String
   ( splitOn
   , toLower
   )
-import Language.InstrSel.Utils.IO
-  ( successExitCode )
 
 import System.Console.CmdArgs
 import System.Console.CmdArgs.Text

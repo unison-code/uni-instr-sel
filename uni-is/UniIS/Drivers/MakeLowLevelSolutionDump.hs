@@ -31,10 +31,10 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
-import Language.InstrSel.Utils
-  ( replace )
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
+import Language.InstrSel.Utils.String
+  ( replace )
 
 import Data.Maybe
   ( isJust

@@ -35,12 +35,12 @@ import qualified UniIS.Drivers.MakeDispatcher as Make
 import qualified UniIS.Drivers.PlotDispatcher as Plot
 import qualified UniIS.Drivers.TransformDispatcher as Transform
 
-import Language.InstrSel.Utils
+import Language.InstrSel.Utils.IO
+  ( successExitCode )
+import Language.InstrSel.Utils.String
   ( splitOn
   , toLower
   )
-import Language.InstrSel.Utils.IO
-  ( successExitCode )
 
 import System.Console.CmdArgs
 import System.Console.CmdArgs.Text
