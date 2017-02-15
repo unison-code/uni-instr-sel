@@ -83,6 +83,7 @@ library
     Language.InstrSel.Utils.Natural
     Language.InstrSel.Utils.Range
     Language.InstrSel.Utils.Set
+    Language.InstrSel.Utils.String
     Language.InstrSel.Utils.Time
 
   other-extensions:  FlexibleInstances,
