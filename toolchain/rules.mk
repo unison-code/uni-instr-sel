@@ -218,7 +218,8 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 				  -o $@
 
 %.s: %.ll %.presolved.hl.model.json %.presolved.hl.sol.json
-	HAS_SOL=`$(GET_JSON_FIELD) $*.presolved.hl.sol.json "has-solution"`; \
+	HAS_SOL=`$(GET_JSON_FIELD) $*.presolved.hl.sol.json "has-solution" | \
+			 tr '[:upper:]' '[:lower:]'`; \
 	if [ "$$HAS_SOL" = "true" ]; then \
 		$(UNI_IS_CMD) make --generate-asm \
 					  -m $*.presolved.hl.model.json \

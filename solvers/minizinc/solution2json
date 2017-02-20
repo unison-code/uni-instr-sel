@@ -136,20 +136,20 @@ for l in orig_content:
         content.append(line)
 
 # Check if no solution was found
-no_sol = False
+has_sol = True
 unsat = False
 sol_error = ""
 if ( len(content) == 0
      or content[0].strip() == "=====UNBOUNDED====="
      or content[0].strip() == "=====UNKNOWN====="
    ):
-    no_sol = True
+    has_sol = False
     sol_error = "No solution found (reason unknown)"
 elif content[0].strip() == "=====UNSATISFIABLE=====":
-    no_sol = True
+    has_sol = False
     unsat = True
     sol_error = "No solution found because model was reported as unsatisfiable"
-if no_sol:
+if not has_sol:
     if not do_fall_back:
         error(sol_error)
 
@@ -172,7 +172,7 @@ for line in content:
 all_data.append(["optimal", found_optimal])
 
 # Abort if no solution found
-if no_sol:
+if not has_sol:
     json_data = {}
     json_data["has-solution"] = False
     json_data["unsatisfiable"] = unsat
