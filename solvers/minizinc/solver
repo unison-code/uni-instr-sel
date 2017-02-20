@@ -74,6 +74,7 @@ MINIZINC_SOLVER_BIN=""
 MINIZINC_GLOBALS_DIR=""
 MINIZINC_TIME_LIMIT=""
 MINIZINC_UPPER_BOUND=""
+MINIZINC_FALL_BACK_TO_LLVM=""
 
 
 
@@ -316,6 +317,10 @@ do
             MINIZINC_UPPER_BOUND="$2"
             shift
         ;;
+        -l|--fall-back-to-llvm)
+            MINIZINC_FALL_BACK_TO_LLVM="$2"
+            shift
+        ;;
         *)
             reportError "Unknown argument switch '$1'"
             exit 1
@@ -433,7 +438,8 @@ inflateSolutionFile
 cd "$prev_dir"
 
 reportTask "Converting MiniZinc solution to JSON format"
-cmd="$THIS_DIR/solution2json $MINIZINC_SOLUTION_FILEPATH \
+arg=`[[ "$MINIZINC_FALL_BACK_TO_LLVM" -eq "1" ]] && echo "-fb" || echo ""`
+cmd="$THIS_DIR/solution2json $arg $MINIZINC_SOLUTION_FILEPATH \
      > $JSON_SOLUTION_FILEPATH"
 exe "$cmd"
 reportNewEntity "$JSON_SOLUTION_FILEPATH"

@@ -104,7 +104,15 @@ def getRequiredDataByName(data, name):
 # MAIN SCRIPT
 #=============
 
-# Check arguments
+# Parse command-line arguments
+solution_file = ""
+do_fall_back = False
+sys_argv = sys.argv[:]
+for arg in sys.argv:
+    if arg == "-fb":
+        do_fall_back = True
+        sys_argv.remove(arg)
+sys.argv = sys_argv
 if len(sys.argv) < 2:
     sys.stderr.write("No Minizinc solution file provided\n")
     sys.exit(1)
@@ -128,13 +136,22 @@ for l in orig_content:
         content.append(line)
 
 # Check if no solution was found
+no_sol = False
+unsat = False
+sol_error = ""
 if ( len(content) == 0
      or content[0].strip() == "=====UNBOUNDED====="
      or content[0].strip() == "=====UNKNOWN====="
    ):
-    error("No solution found (reason unknown)")
+    no_sol = True
+    sol_error = "No solution found (reason unknown)"
 elif content[0].strip() == "=====UNSATISFIABLE=====":
-    error("No solution found because model was reported as unsatisfiable")
+    no_sol = True
+    unsat = True
+    sol_error = "No solution found because model was reported as unsatisfiable"
+if no_sol:
+    if not do_fall_back:
+        error(sol_error)
 
 # Extract data
 all_data = []
@@ -153,6 +170,14 @@ for line in content:
         error("Duplicate entries with name '" + name + "'")
     all_data.append([name, data])
 all_data.append(["optimal", found_optimal])
+
+# Abort if no solution found
+if no_sol:
+    json_data = {}
+    json_data["has-solution"] = False
+    json_data["unsatisfiable"] = unsat
+    print json.dumps(json_data)
+    sys.exit(0)
 
 # [MC] Convert data to 0-based indexing
 for d in all_data:

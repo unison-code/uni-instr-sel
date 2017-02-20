@@ -368,6 +368,13 @@ data HighLevelSolution
         -- ^ Time to prepare the model before solving.
       }
   | NoHighLevelSolution
+      { hlIsUnsatisfiable :: Bool
+        -- ^ Whether the model was proven to be unsatisfiable.
+      , hlSolTime :: Double
+        -- ^ Time to solve the constraint model.
+      , hlPrepTime :: Double
+        -- ^ Time to prepare the constraint model.
+      }
   deriving (Show)
 
 -- | Contains a solution to a low-level CP model instance.
@@ -412,6 +419,13 @@ data LowLevelSolution
         -- ^ Time to prepare the constraint model.
       }
   | NoLowLevelSolution
+      { llIsUnsatisfiable :: Bool
+        -- ^ Whether the model was proven to be unsatisfiable.
+      , llSolTime :: Double
+        -- ^ Time to solve the constraint model.
+      , llPrepTime :: Double
+        -- ^ Time to prepare the constraint model.
+      }
   deriving (Show)
 
 -- | Contains mappings from an array index to some ID. This is used when
@@ -707,7 +721,10 @@ instance FromJSON HighLevelSolution where
               <*> v .: "is-solution-optimal"
               <*> v .: "solving-time"
               <*> v .: "prep-time"
-       else return NoHighLevelSolution
+       else NoHighLevelSolution
+              <$> v .: "unsatisfiable"
+              <*> v .: "solving-time"
+              <*> v .: "prep-time"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelSolution where
@@ -723,8 +740,12 @@ instance ToJSON HighLevelSolution where
            , "solving-time"          .= (hlSolTime s)
            , "prep-time"             .= (hlPrepTime s)
            ]
-  toJSON NoHighLevelSolution =
-    object [ "has-solution" .= False ]
+  toJSON s@(NoHighLevelSolution {}) =
+    object [ "has-solution"  .= False
+           , "unsatisfiable" .= (hlIsUnsatisfiable s)
+           , "solving-time"  .= (hlSolTime s)
+           , "prep-time"     .= (hlPrepTime s)
+           ]
 
 instance FromJSON LowLevelSolution where
   parseJSON (Object v) =
@@ -742,7 +763,10 @@ instance FromJSON LowLevelSolution where
               <*> v .: "is-solution-optimal"
               <*> v .: "solving-time"
               <*> v .: "prep-time"
-       else return NoLowLevelSolution
+       else NoLowLevelSolution
+              <$> v .: "unsatisfiable"
+              <*> v .: "solving-time"
+              <*> v .: "prep-time"
   parseJSON _ = mzero
 
 instance ToJSON ArrayIndexMaplists where

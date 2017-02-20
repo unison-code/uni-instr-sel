@@ -132,7 +132,7 @@ generateCode target model sol@(HighLevelSolution {}) =
         (mkInitState sol model)
         (hlSolOrderOfBlocks sol)
 
-generateCode _ _ NoHighLevelSolution =
+generateCode _ _ (NoHighLevelSolution {}) =
   error "generateCode: cannot generate code from no solution"
 
 -- | Returns an initial emission state.

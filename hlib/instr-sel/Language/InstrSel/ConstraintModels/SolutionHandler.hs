@@ -88,4 +88,8 @@ raiseLowLevelSolution
                        , hlPrepTime = llPrepTime sol
                        }
 
-raiseLowLevelSolution NoLowLevelSolution _ _ = NoHighLevelSolution
+raiseLowLevelSolution sol@(NoLowLevelSolution {}) _ _ =
+  NoHighLevelSolution { hlIsUnsatisfiable = llIsUnsatisfiable sol
+                      , hlSolTime = llSolTime sol
+                      , hlPrepTime = llPrepTime sol
+                      }

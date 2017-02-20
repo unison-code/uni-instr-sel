@@ -53,15 +53,17 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -g $(MINIZINC_GLOBALS_DIR) \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
-SOLVER_TIME_LIMIT     := 0 # In seconds; 0 indicates no timelimit
-DISABLE_UPPER_BOUND   := 1
+SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
+DISABLE_UPPER_BOUND   := 0
+FALL_BACK_TO_LLVM     := 1
+
 NUM_THREADS           := 4
 
-TARGET := mips32
+TARGET := hexagon5
 # Mips32
-LLC_TARGET_FLAGS := -march=mips
+#LLC_TARGET_FLAGS := -march=mips
 # Hexagon5
-#LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
+LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
 
 REGRESSION_TESTS_DIR := ./regression
 
