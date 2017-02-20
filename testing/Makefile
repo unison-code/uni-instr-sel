@@ -63,7 +63,21 @@ TARGET := hexagon5
 # Mips32
 #LLC_TARGET_FLAGS := -march=mips
 # Hexagon5
-LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
+LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5 \
+                    -disable-ifcvt-diamond \
+                    -disable-ifcvt-simple \
+                    -disable-ifcvt-simple-false \
+                    -disable-ifcvt-triangle \
+                    -disable-ifcvt-triangle-false \
+                    -disable-ifcvt-triangle-false-rev \
+                    -disable-ifcvt-triangle-rev \
+                    -hexagon-gen-pred=false \
+                    -hexagon-loop-resched=false \
+                    -hexagon-bit=false \
+                    -hexagon-insert=false \
+                    -hexagon-eif=false \
+                    -disable-hsdr \
+                    -disable-hexagon-peephole
 
 REGRESSION_TESTS_DIR := ./regression
 

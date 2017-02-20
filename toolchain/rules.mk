@@ -217,8 +217,14 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 				  -a $*.presolved.aimaps.json \
 				  -o $@
 
-%.s: %.presolved.hl.model.json %.presolved.hl.sol.json
-	$(UNI_IS_CMD) make --generate-asm \
-				  -m $*.presolved.hl.model.json \
-				  -s $*.presolved.hl.sol.json \
-				  -o $@
+%.s: %.ll %.presolved.hl.model.json %.presolved.hl.sol.json
+	HAS_SOL=`$(GET_JSON_FIELD) $*.presolved.hl.sol.json "has-solution"`; \
+	if [ "$$HAS_SOL" = "true" ]; then \
+		$(UNI_IS_CMD) make --generate-asm \
+					  -m $*.presolved.hl.model.json \
+					  -s $*.presolved.hl.sol.json \
+					  -o $@; \
+	else \
+		$(LLC) $(LLC_ISEL_FLAGS) -dump-isel-w-costs -disable-combiner \
+			$*.low.freq.ll -o /dev/null > $@; \
+	fi
