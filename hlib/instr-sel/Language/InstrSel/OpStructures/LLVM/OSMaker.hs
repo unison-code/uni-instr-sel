@@ -482,6 +482,8 @@ mkPatternDFGBuilder =
                                           return st
                      "cond-br-or-fall" -> -- Will be processed in the CFG
                                           return st
+                     "not-cond-br-or-fall" -> -- Will be processed in the CFG
+                                          return st
                      "return"          -> -- Will be processed in the CFG
                                           return st
                      _ -> -- Let the default builder handle it
@@ -519,8 +521,10 @@ mkPatternCFGBuilder =
             of "return"          -> mkPatternCFGFromReturnCall b st i
                "uncond-br"       -> mkPatternCFGFromUncondBrCall b st i
                "cond-br-or-fall" -> mkPatternCFGFromCondBrOrFallCall b st i
+               "not-cond-br-or-fall" ->
+                 mkPatternCFGFromNotCondBrOrFallCall b st i
                _ -> -- Let the default builder handle it
-                    mkFunctionCFGFromInstruction b st i
+                 mkFunctionCFGFromInstruction b st i
        else -- Let the default builder handle it
             mkFunctionCFGFromInstruction b st i
   newInstrMk b st i = mkFunctionCFGFromInstruction b st i
@@ -750,6 +754,34 @@ mkPatternCFGFromCondBrOrFallCall
      return st5
 mkPatternCFGFromCondBrOrFallCall _ _ i =
   Left $ "mkPatternCFGFromCondBrOrFallCall: not implemented for " ++ show i
+
+mkPatternCFGFromNotCondBrOrFallCall
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> Either String BuildState
+mkPatternCFGFromNotCondBrOrFallCall
+  b
+  st0
+  i@(LLVM.Call { LLVM.arguments = [(arg@(LLVM.LocalReference _ _), _)] })
+  =
+  do f_name <- getFunctionName i
+     let t_label = "%" ++ extractFunctionLabelPart f_name
+     st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
+     br_node <- getLastTouchedControlNode st1
+     st2 <- ensureBlockNodeExists st1 $ F.toBlockName t_label
+     f_dst_node <- getLastTouchedBlockNode st2
+     st3 <- ensureBlockNodeExists st2 F.mkEmptyBlockName
+     t_dst_node <- getLastTouchedBlockNode st3
+     st4 <- addNewEdgesManyDests st3
+                                 G.ControlFlowEdge
+                                 br_node
+                                 [t_dst_node, f_dst_node]
+     st5 <- addConstraints st4 $
+            C.mkFallThroughConstraints (G.getNodeID f_dst_node)
+     return st5
+mkPatternCFGFromNotCondBrOrFallCall _ _ i =
+  Left $ "mkPatternCFGFromNotCondBrOrFallCall: not implemented for " ++ show i
 
 mkFunctionDFGFromGlobal
   :: Builder
