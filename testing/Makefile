@@ -61,7 +61,7 @@ NUM_THREADS           := 4
 
 TARGET := hexagon5
 # Mips32
-#LLC_TARGET_FLAGS := -march=mips
+# LLC_TARGET_FLAGS := -march=mips
 # Hexagon5
 LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5 \
                     -disable-ifcvt-diamond \
@@ -93,7 +93,6 @@ C_IGNORED=\033[1;33m
 C_INFO=\033[1;34m
 # No color
 C_NONE=\033[0m
-
 
 
 
