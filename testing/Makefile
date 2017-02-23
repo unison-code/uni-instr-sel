@@ -54,8 +54,8 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
-DISABLE_UPPER_BOUND   := 0
-FALL_BACK_TO_LLVM     := 1
+DISABLE_UPPER_BOUND   := 1
+FALL_BACK_TO_LLVM     := 0
 
 NUM_THREADS           := 4
 
