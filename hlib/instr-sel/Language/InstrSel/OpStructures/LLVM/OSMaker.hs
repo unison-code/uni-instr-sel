@@ -770,13 +770,13 @@ mkPatternCFGFromNotCondBrOrFallCall
      st1 <- mkFunctionCFGFromControlOp b st0 Op.CondBr [arg]
      br_node <- getLastTouchedControlNode st1
      st2 <- ensureBlockNodeExists st1 $ F.toBlockName t_label
-     f_dst_node <- getLastTouchedBlockNode st2
+     t_dst_node <- getLastTouchedBlockNode st2
      st3 <- ensureBlockNodeExists st2 F.mkEmptyBlockName
-     t_dst_node <- getLastTouchedBlockNode st3
+     f_dst_node <- getLastTouchedBlockNode st3
      st4 <- addNewEdgesManyDests st3
                                  G.ControlFlowEdge
                                  br_node
-                                 [t_dst_node, f_dst_node]
+                                 [f_dst_node, t_dst_node]
      st5 <- addConstraints st4 $
             C.mkFallThroughConstraints (G.getNodeID f_dst_node)
      return st5
