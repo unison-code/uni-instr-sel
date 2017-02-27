@@ -38,7 +38,6 @@ HLIB_PATH        := hlib/instr-sel
 UNI_TARGEN_PATH  := uni-targen
 UNI_IS_LLVM_PATH := uni-is-llvm
 UNI_IS_PATH      := uni-is
-TOOLS_PATH       := tools
 LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
 LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
@@ -66,15 +65,13 @@ endef
 build: hlib \
 	   uni-targen \
 	   uni-is-llvm \
-	   uni-is \
-	   tools
+	   uni-is
 
 .PHONY: build-prof
 build-prof: hlib-prof \
 			uni-targen \
 			uni-is-llvm \
-			uni-is-prof \
-			tools
+			uni-is-prof
 
 .PHONY: docs
 docs: llvm-general-pure-doc \
@@ -165,10 +162,6 @@ uni-is-prof: hlib-prof
 uni-is-doc:
 	cd $(UNI_IS_PATH) && make docs
 
-.PHONY: tools
-tools:
-	cd $(TOOLS_PATH) && make
-
 .PHONY: clean
 clean:
 	cd $(LLVM_GENERAL_PURE_PATH) && $(RM) -r dist
@@ -177,7 +170,6 @@ clean:
 	cd $(UNI_TARGEN_PATH) && make clean
 	cd $(UNI_IS_LLVM_PATH) && make clean
 	cd $(UNI_IS_PATH) && make clean
-	cd $(TOOLS_PATH) && make clean
 
 .PHONY: distclean
 distclean:
@@ -187,4 +179,3 @@ distclean:
 	cd $(UNI_TARGEN_PATH) && make distclean
 	cd $(UNI_IS_LLVM_PATH) && make distclean
 	cd $(UNI_IS_PATH) && make distclean
-	cd $(TOOLS_PATH) && make distclean
