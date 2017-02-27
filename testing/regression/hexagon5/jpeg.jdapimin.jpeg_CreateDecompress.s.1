@@ -16,7 +16,7 @@
   8  3:
   1    [%const.10.copy.1] <- "%const.10.copy.1 = ##10" <- []
   1    [%const.61.copy.2] <- "%const.61.copy.2 = ##61" <- []
-  1    [%5] <- "%5 = memb (%cinfo)" <- [%cinfo]
+  1    [%5] <- "%5 = memw (%cinfo)" <- [%cinfo]
   1    [%gep4] <- "%gep4 = add(%5, #24)" <- [%5]
   1    [%gep6] <- "%gep6 = add(%5, #28)" <- [%5]
   1    [] <- "memb (%gep6) = %version" <- [%version, %gep6]
@@ -30,7 +30,7 @@
  16  bb3:
   8  14:
   1    [%const.19.copy.1] <- "%const.19.copy.1 = ##19" <- []
-  1    [%16] <- "%16 = memb (%cinfo)" <- [%cinfo]
+  1    [%16] <- "%16 = memw (%cinfo)" <- [%cinfo]
   1    [%gep10] <- "%gep10 = add(%16, #24)" <- [%16]
   1    [%gep12] <- "%gep12 = add(%16, #28)" <- [%16]
   1    [] <- "memb (%gep12) = %structsize" <- [%structsize, %gep12]

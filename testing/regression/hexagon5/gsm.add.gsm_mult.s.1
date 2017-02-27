@@ -1,8 +1,12 @@
  16  0:
   1    [%const.-32768.copy.2] <- "%const.-32768.copy.2 = #-32768" <- []
   1    [%const.32767.copy.1] <- "%const.32767.copy.1 = #32767" <- []
-  1    [%1] <- "%1 = cmp.eq(%a, %const.-32768.copy.2)" <- [%a, %const.-32768.copy.2]
-  1    [%2] <- "%2 = cmp.eq(%b, %const.-32768.copy.2)" <- [%b, %const.-32768.copy.2]
+  0    [] <- "%tmp.1 = zxth %const.-32768.copy.2" <- [%a, %const.-32768.copy.2]
+  0    [] <- "%tmp.2 = zxth %a" <- []
+  3    [%1] <- "%1 = cmp.eq(%tmp.1, %tmp.2)" <- []
+  0    [] <- "%tmp.3 = zxth %const.-32768.copy.2" <- [%b, %const.-32768.copy.2]
+  0    [] <- "%tmp.4 = zxth %b" <- []
+  3    [%2] <- "%2 = cmp.eq(%tmp.3, %tmp.4)" <- []
   1    [%or.cond] <- "%or.cond = and(%1, %2)" <- [%1, %2]
   1    [] <- "if (%or.cond) jump bb0" <- [%or.cond]
  16  bb1:
@@ -15,6 +19,5 @@
  16  bb0:
  16  9:
   0    [%.0] <- "PHI (%8, 3) (%const.32767.copy.1, 0)" <- [%8, %const.32767.copy.1]
-  0    [] <- "%tmp.1 = aslh(%.0)" <- [%.0]
-  0    [] <- "%tmp.2 = asr(%tmp.1)" <- []
-  1    [] <- "return %tmp.2" <- []
+  0    [] <- "%tmp.5 = zxth(%.0)" <- [%.0]
+  2    [] <- "return %tmp.5" <- []

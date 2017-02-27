@@ -1,5 +1,5 @@
  16  0:
-  1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.2, %cinfo]
+  1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.1, %cinfo]
   1    [%const.61.copy.1] <- "ADDiu %const.61.copy.1, $0, 61" <- []
   1    [] <- "BEQ $%version, $%const.61.copy.1, bb0" <- [%version, %const.61.copy.1]
  16  bb1:
@@ -34,8 +34,8 @@
   1    [] <- "SW $%const.1.copy.1, 12($%cinfo)" <- [%const.1.copy.1, %cinfo]
   1    [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
   1    [] <- "CALL jinit_memory_mgr" <- [%cinfo]
-  1    [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.2, %cinfo]
-  1    [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.2, %cinfo]
+  1    [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.1, %cinfo]
+  1    [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.1, %cinfo]
   1    [] <- "CALL jinit_marker_reader" <- [%cinfo]
   1    [] <- "CALL jinit_input_controller" <- [%cinfo]
   1    [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]
