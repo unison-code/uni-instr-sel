@@ -222,30 +222,27 @@ mkDataDefInstruction =
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
 mkTempNullCopyInstruction :: Instruction
 mkTempNullCopyInstruction =
-  let g dt = mkGraph ( map Node $
-                       [ ( 0, NodeLabel 0 CopyNode )
-                       , ( 1, NodeLabel 1 $ mkValueNode dt)
-                       , ( 2, NodeLabel 2 $ mkValueNode dt)
-                       ]
-                     )
-                     ( map Edge $
-                       [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-                       , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
-                       ]
-                     )
-      pat (pid, dt) = InstrPattern
-                       { patID = pid
-                       , patOS = OpStructure (g dt) Nothing [] [(1, 2)] []
-                       , patInputData = [1]
-                       , patOutputData = [2]
-                       , patEmitString = EmitStringTemplate []
-                       }
+  let g = mkGraph ( map Node $
+                    [ ( 0, NodeLabel 0 CopyNode )
+                    , ( 1, NodeLabel 1 $ mkValueNode IntTempTypeAnyWidth)
+                    , ( 2, NodeLabel 2 $ mkValueNode IntTempTypeAnyWidth)
+                    ]
+                  )
+                  ( map Edge $
+                    [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                    , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
+                    ]
+                  )
+      pat = InstrPattern
+             { patID = 0
+             , patOS = OpStructure g Nothing [] [(1, 2)] []
+             , patInputData = [1]
+             , patOutputData = [2]
+             , patEmitString = EmitStringTemplate []
+             }
   in Instruction
        { instrID = 0
-       , instrPatterns = map pat $ zip [0..] [ IntTempTypeAnyWidth
-                                             , PointerTempType
-                                             , PointerNullType
-                                             ]
+       , instrPatterns = [pat]
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = True
