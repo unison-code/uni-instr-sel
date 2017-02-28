@@ -213,16 +213,6 @@ function inflateSolutionFile {
     reportUpdatedEntity "$MINIZINC_SOLUTION_FILEPATH"
 }
 
-function purgeIntermediateSolutions {
-    tmp_file="$MINIZINC_SOLUTION_FILEPATH.tmp"
-    reportTask "Purging intermediate solutions"
-    cmd="$THIS_DIR/purge-intermediate-solutions $MINIZINC_SOLUTION_FILEPATH \
-         > $tmp_file"
-    exe "$cmd"
-    exe "mv $tmp_file $MINIZINC_SOLUTION_FILEPATH"
-    reportUpdatedEntity "$MINIZINC_SOLUTION_FILEPATH"
-}
-
 function cleanupErrorFile {
     touch "$MINIZINC_ERROR_FILEPATH"
     mv "$MINIZINC_ERROR_FILEPATH" "$MINIZINC_ERROR_FILEPATH.tmp"
@@ -250,12 +240,9 @@ function executeSolver {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "SOLVING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
-    if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
-        command="$command timeout ${MINIZINC_TIME_LIMIT}s"
-    fi
     command="$command $MINIZINC_SOLVER_BIN"
     if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
-        command="$command -a"
+        command="$command --time-out ${MINIZINC_TIME_LIMIT}"
     fi
     command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     command="$command > $MINIZINC_SOLUTION_FILEPATH"
@@ -277,8 +264,6 @@ function executeSolver {
     fi
     reportNewEntity "$MINIZINC_SOLUTION_FILEPATH"
     reportUpdatedEntity "$stats_filepath"
-
-    purgeIntermediateSolutions
 }
 
 
