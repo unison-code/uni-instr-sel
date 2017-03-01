@@ -38,12 +38,6 @@
 255  bb6:
  69  .loopexit:
   1    [] <- "Ret" <- []
- 34  bb2:
- 12  16:
-  1    [%18] <- "LW $%18, 52($%cinfo)" <- [%cinfo]
-  1    [] <- "BGT $%18, $r0, bb5" <- [%18, %const.0.copy.1]
- 12  bb4:
-  1    [] <- "B .loopexit" <- []
  91  bb0:
  34  9:
   1    [] <- "BEQ $%need_full_buffer, $r0, bb2" <- [%need_full_buffer, %const.0.copy.3]
@@ -55,3 +49,9 @@
   1    [%15] <- "LW %15, 0(%14)" <- [%14]
   1    [] <- "CALL %15" <- [%cinfo, %15]
   1    [] <- "Ret" <- []
+ 34  bb2:
+ 12  16:
+  1    [%18] <- "LW $%18, 52($%cinfo)" <- [%cinfo]
+  1    [] <- "BGT $%18, $r0, bb5" <- [%18, %const.0.copy.1]
+ 12  bb4:
+  1    [] <- "B .loopexit" <- []
