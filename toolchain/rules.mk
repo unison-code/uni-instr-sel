@@ -151,9 +151,9 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 				  -o $@
 
 %.de.lp.ep.ce.cc.rp.de.rt.be.dom.json: %.ll.model.json
-	$(CONSTR_CONV_CMD) $< > $@.temp
-	$(DOM_MATCHES_CMD) $@.temp > $@
-	$(RM) $@.temp
+	$(CONSTR_CONV_CMD) $< > $<.temp
+	$(DOM_MATCHES_CMD) $<.temp > $@
+	$(RM) $<.temp
 
 %.de.lp.ep.ce.cc.rp.de.rt.be.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
