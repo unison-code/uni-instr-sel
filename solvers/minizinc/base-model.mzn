@@ -126,18 +126,9 @@ int: blockValueForNull = numBlockValues;
 set of int: allOperationsInFunction = 1..numOperationsInFunction;
 set of int: allDataInFunction = 1..numDataInFunction;
 set of int: allBlocksInFunction = 1..numBlocksInFunction;
-set of int: allBlocksInFunctionPlusNull = 1..numBlockValues;
 set of int: allMatches = 1..numMatches;
 set of int: allOperands = 1..numOperands;
 set of int: allLocValues = { x | x in canonicalDataLocs ++ [locValueForNull] };
-
-% Extends the external parameter 'execFrequencyOfBlockInFunction' with a value
-% of 0 for the null block.
-array[allBlocksInFunctionPlusNull] of int: execFrequencyOfBlocksPlusNull =
-  array1d( allBlocksInFunctionPlusNull
-         , execFrequencyOfBlockInFunction
-           ++ array1d(blockValueForNull..blockValueForNull, [0])
-         );
 
 % The 'domRelMatrix' matrix is a 2D matrix with 2 columns:
 %    col 1: a block i
@@ -153,24 +144,6 @@ array[1..numDomMatrixRows, 1..2] of allBlocksInFunction: domRelMatrix =
          , [ if k = 1 then i else j endif | i in allBlocksInFunction
                                           , j in domSetOfBlockInFunction[i]
                                           , k in 1..2
-           ]
-         );
-
-% Same as 'domRelMatrix' but includes the null block.
-%
-% TODO: remove when obsolete
-int: numDomRel2Rows =
-  sum (b in allBlocksInFunctionPlusNull)
-  ( card(domSetOfBlockInFunctionPlusNull[b]) );
-array[1..numDomRel2Rows, 1..2] of allBlocksInFunctionPlusNull:
-  domRelMatrixPlusNull =
-  array2d( 1..numDomRel2Rows
-         , 1..2
-         , [ if k = 1
-             then i
-             else j endif | i in allBlocksInFunctionPlusNull
-                          , j in domSetOfBlockInFunctionPlusNull[i]
-                          , k in 1..2
            ]
          );
 
@@ -239,7 +212,7 @@ array[int] of int: costPerOpList =
     else if k = 2 then m
     else if k = 3 then b
     else let
-         { int: prod = latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[b]
+         { int: prod = latencyOfMatch[m] * execFrequencyOfBlockInFunction[b]
          , int: d = card(operationsCoveredByMatch[m])
          , int: q = prod div d
          , int: r = prod mod d
@@ -250,9 +223,8 @@ array[int] of int: costPerOpList =
     endif
   | o in allOperationsInFunction
   , m in allMatches
-  , b in if card(entryBlockOfMatch[m]) > 0 then
-            entryBlockOfMatch[m] union {blockValueForNull}
-         else allBlocksInFunctionPlusNull
+  , b in if card(entryBlockOfMatch[m]) > 0 then entryBlockOfMatch[m]
+         else allBlocksInFunction
          endif
   , k in 1..4
     where o in operationsCoveredByMatch[m]
@@ -296,7 +268,7 @@ array[allOperands] of var allDataInFunction: alt;
 
 % Block ordering (succ[b] is the block appearing immeditely after block b in the
 % generated code).
-array[allBlocksInFunctionPlusNull] of var allBlocksInFunctionPlusNull: succ;
+array[allBlocksInFunction] of var allBlocksInFunction: succ;
 
 % Cost.
 var int: totalcost;
@@ -642,12 +614,10 @@ constraint
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
 constraint
-  circuit(succ) :: domain;
-
-% The block of the entry block (i.e. function entry point) must be placed as the
-% first block, and the block of the null block must be placed as the last block.
-constraint
-  succ[blockValueForNull] = entryBlockOfFunction;
+  if card(allBlocksInFunction) > 1
+  then circuit(succ) :: domain
+  else true
+  endif;
 
 % Forbid matches in an illegal combination from all being selected.
 constraint

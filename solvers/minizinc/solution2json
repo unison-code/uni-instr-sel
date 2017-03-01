@@ -199,10 +199,10 @@ try:
     null_block = int(null_block)
 except ValueError:
     error("Value of 'block_value_for_null' is not an int")
-if null_block < 0 or null_block >= len(succ_data):
+if null_block < 0 or null_block > len(succ_data):
     error("Value of 'block_value_for_null' is out of bounds")
-ord_data = [succ_data[null_block]]
-while succ_data[ord_data[-1]] != null_block:
+ord_data = [0]
+while succ_data[ord_data[-1]] != 0:
     ord_data.append(succ_data[ord_data[-1]])
 all_data.append(["ord", ord_data])
 
