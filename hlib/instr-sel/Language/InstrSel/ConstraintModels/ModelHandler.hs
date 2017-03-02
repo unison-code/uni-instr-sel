@@ -158,21 +158,6 @@ mkHLFunctionParams function target =
                )
                ns
       used_once_data = filter ( \n ->
-                                if isValueNode n
-                                then let n_es = getDtFlowInEdges graph n
-                                         n_preds = map (getSourceNode graph) $
-                                                   n_es
-                                         p = head n_preds
-                                         p_es = getDtFlowInEdges graph p
-                                         pp = getSourceNode graph $ head p_es
-                                         pp_es = getDtFlowOutEdges graph pp
-                                     in not ( length n_preds > 0 &&
-                                              length p_es > 0 &&
-                                              length pp_es > 1
-                                            )
-                                else True
-                              ) $
-                       filter ( \n ->
                                 let es = getDtFlowOutEdges graph n ++
                                          getStFlowOutEdges graph n
                                 in length es > 0
