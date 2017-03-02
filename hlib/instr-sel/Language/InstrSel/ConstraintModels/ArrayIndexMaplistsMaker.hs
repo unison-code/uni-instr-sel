@@ -22,7 +22,9 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.TargetMachines
 
 import Data.List
-  ( sort )
+  ( sort
+  , sortBy
+  )
 
 
 
@@ -41,8 +43,11 @@ mkArrayIndexMaplists function tm model =
       o_nodes = sort $ filter isOperationNode nodes
       e_nodes = sort $ filter isDatumNode nodes
       l_nodes = sort $ filter isBlockNode nodes
-      match_params = hlMatchParams model
-      match_ids = sort $ map hlMatchID match_params
+      match_params = sortBy ( \m1 m2 -> compare (hlMatchLatency m1)
+                                                (hlMatchLatency m2)
+                            ) $
+                     hlMatchParams model
+      match_ids = map hlMatchID match_params
       op_ids = sort $ concatMap ((map fst) . hlOperandNodeMaps) match_params
       locations = getAllLocations tm
       instructions = getAllInstructions tm
