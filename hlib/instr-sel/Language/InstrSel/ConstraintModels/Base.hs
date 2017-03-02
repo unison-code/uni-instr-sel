@@ -69,6 +69,10 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
+      , hlFunDataUsedAtLeastOnce :: [NodeID]
+        -- ^ The data in the function graph which will be used at least once by
+        -- some selected match. This information is used in an implied
+        -- constraint.
       , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
       , hlFunBlocks :: [NodeID]
@@ -218,6 +222,10 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunDataUsedAtLeastOnce :: [ArrayIndex]
+        -- ^ The data in the function graph which will be used at least once by
+        -- some selected match. This information is used in an implied
+        -- constraint.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
         -- ^ The valid locations for each datum in the function graph (no entry
         -- means that all locations are valid). The first element is the array
@@ -483,6 +491,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
+      <*> v .: "data-used-at-least-once"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
@@ -499,22 +508,23 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON p =
-    object [ "operations"        .= (hlFunOperations p)
-           , "copies"            .= (hlFunCopies p)
-           , "control-ops"       .= (hlFunControlOps p)
-           , "data"              .= (hlFunData p)
-           , "states"            .= (hlFunStates p)
-           , "blocks"            .= (hlFunBlocks p)
-           , "entry-block"       .= (hlFunEntryBlock p)
-           , "block-dom-sets"    .= (hlFunBlockDomSets p)
-           , "block-params"      .= (hlFunBlockParams p)
-           , "state-def-edges"   .= (hlFunStateDefEdges p)
-           , "valid-value-locs"  .= (hlFunValidValueLocs p)
-           , "same-value-locs"   .= (hlFunSameValueLocs p)
-           , "int-constant-data" .= (hlFunValueIntConstData p)
-           , "value-origin-data" .= (hlFunValueOriginData p)
-           , "call-name-data"    .= (hlFunCallNameData p)
-           , "constraints"       .= (hlFunConstraints p)
+    object [ "operations"               .= (hlFunOperations p)
+           , "copies"                   .= (hlFunCopies p)
+           , "control-ops"              .= (hlFunControlOps p)
+           , "data"                     .= (hlFunData p)
+           , "data-used-at-least-once"  .= (hlFunDataUsedAtLeastOnce p)
+           , "states"                   .= (hlFunStates p)
+           , "blocks"                   .= (hlFunBlocks p)
+           , "entry-block"              .= (hlFunEntryBlock p)
+           , "block-dom-sets"           .= (hlFunBlockDomSets p)
+           , "block-params"             .= (hlFunBlockParams p)
+           , "state-def-edges"          .= (hlFunStateDefEdges p)
+           , "valid-value-locs"         .= (hlFunValidValueLocs p)
+           , "same-value-locs"          .= (hlFunSameValueLocs p)
+           , "int-constant-data"        .= (hlFunValueIntConstData p)
+           , "value-origin-data"        .= (hlFunValueOriginData p)
+           , "call-name-data"           .= (hlFunCallNameData p)
+           , "constraints"              .= (hlFunConstraints p)
            ]
 
 instance FromJSON HighLevelBlockParams where
@@ -615,6 +625,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
+      <*> v .: "fun-data-used-at-least-once"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-same-value-locs"
       <*> v .: "fun-entry-block"
@@ -654,47 +665,48 @@ instance FromJSON LowLevelModel where
 
 instance ToJSON LowLevelModel where
   toJSON m =
-    object [ "fun-num-operations"       .= (llFunNumOperations m)
-           , "fun-num-data"             .= (llFunNumData m)
-           , "fun-num-blocks"           .= (llFunNumBlocks m)
-           , "fun-copies"               .= (llFunCopies m)
-           , "fun-control-ops"          .= (llFunControlOps m)
-           , "fun-states"               .= (llFunStates m)
-           , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
-           , "fun-same-value-locs"      .= (llFunSameValueLocs m)
-           , "fun-entry-block"          .= (llFunEntryBlock m)
-           , "fun-block-dom-sets"       .= (llFunBlockDomSets m)
-           , "fun-block-exec-freqs"     .= (llFunBBExecFreqs m)
-           , "fun-branch-ext-blocks"    .= (llFunBranchExtBlocks m)
-           , "fun-state-def-edges"      .= (llFunStateDefEdges m)
-           , "fun-constraints"          .= (llFunConstraints m)
-           , "num-locations"            .= (llNumLocations m)
-           , "num-matches"              .= (llNumMatches m)
-           , "num-operands"             .= (llNumOperands m)
-           , "operand-alternatives"     .= (llOperandAlternatives m)
-           , "match-operations-covered" .= (llMatchOperationsCovered m)
-           , "match-operands-defined"   .= (llMatchOperandsDefined m)
-           , "match-operands-used"      .= (llMatchOperandsUsed m)
-           , "match-external-operands"  .= (llMatchExternalOperands m)
-           , "match-internal-operands"  .= (llMatchInternalOperands m)
-           , "match-valid-value-locs"   .= (llMatchValidValueLocs m)
-           , "match-same-value-locs"    .= (llMatchSameValueLocs m)
-           , "match-entry-blocks"       .= (llMatchEntryBlocks m)
-           , "match-spanned-blocks"     .= (llMatchSpannedBlocks m)
-           , "match-consumed-blocks"    .= (llMatchConsumedBlocks m)
-           , "match-input-def-edges"    .= (llMatchInputDefinitionEdges m)
-           , "match-output-def-edges"   .= (llMatchOutputDefinitionEdges m)
-           , "match-code-sizes"         .= (llMatchCodeSizes m)
-           , "match-latencies"          .= (llMatchLatencies m)
-           , "match-copy-instrs"        .= (llMatchCopyInstructions m)
-           , "match-kill-instrs"        .= (llMatchKillInstructions m)
-           , "match-null-instrs"        .= (llMatchNullInstructions m)
-           , "match-phi-instrs"         .= (llMatchPhiInstructions m)
-           , "match-constraints"        .= (llMatchConstraints m)
-           , "match-instruction-ids"    .= (llMatchInstructionIDs m)
-           , "illegal-match-combs"      .= (llIllegalMatchCombs m)
-           , "interchangeable-data"     .= (llInterchangeableData m)
-           , "target-machine"           .= (llTMID m)
+    object [ "fun-num-operations"          .= (llFunNumOperations m)
+           , "fun-num-data"                .= (llFunNumData m)
+           , "fun-num-blocks"              .= (llFunNumBlocks m)
+           , "fun-copies"                  .= (llFunCopies m)
+           , "fun-control-ops"             .= (llFunControlOps m)
+           , "fun-states"                  .= (llFunStates m)
+           , "fun-data-used-at-least-once" .= (llFunDataUsedAtLeastOnce m)
+           , "fun-valid-value-locs"        .= (llFunValidValueLocs m)
+           , "fun-same-value-locs"         .= (llFunSameValueLocs m)
+           , "fun-entry-block"             .= (llFunEntryBlock m)
+           , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
+           , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
+           , "fun-branch-ext-blocks"       .= (llFunBranchExtBlocks m)
+           , "fun-state-def-edges"         .= (llFunStateDefEdges m)
+           , "fun-constraints"             .= (llFunConstraints m)
+           , "num-locations"               .= (llNumLocations m)
+           , "num-matches"                 .= (llNumMatches m)
+           , "num-operands"                .= (llNumOperands m)
+           , "operand-alternatives"        .= (llOperandAlternatives m)
+           , "match-operations-covered"    .= (llMatchOperationsCovered m)
+           , "match-operands-defined"      .= (llMatchOperandsDefined m)
+           , "match-operands-used"         .= (llMatchOperandsUsed m)
+           , "match-external-operands"     .= (llMatchExternalOperands m)
+           , "match-internal-operands"     .= (llMatchInternalOperands m)
+           , "match-valid-value-locs"      .= (llMatchValidValueLocs m)
+           , "match-same-value-locs"       .= (llMatchSameValueLocs m)
+           , "match-entry-blocks"          .= (llMatchEntryBlocks m)
+           , "match-spanned-blocks"        .= (llMatchSpannedBlocks m)
+           , "match-consumed-blocks"       .= (llMatchConsumedBlocks m)
+           , "match-input-def-edges"       .= (llMatchInputDefinitionEdges m)
+           , "match-output-def-edges"      .= (llMatchOutputDefinitionEdges m)
+           , "match-code-sizes"            .= (llMatchCodeSizes m)
+           , "match-latencies"             .= (llMatchLatencies m)
+           , "match-copy-instrs"           .= (llMatchCopyInstructions m)
+           , "match-inactive-instrs"       .= (llMatchInactiveInstructions m)
+           , "match-null-instrs"           .= (llMatchNullInstructions m)
+           , "match-phi-instrs"            .= (llMatchPhiInstructions m)
+           , "match-constraints"           .= (llMatchConstraints m)
+           , "match-pattern-ids"           .= (llMatchPatternIDs m)
+           , "match-instruction-ids"       .= (llMatchInstructionIDs m)
+           , "illegal-match-combs"         .= (llIllegalMatchCombs m)
+           , "target-machine"              .= (llTMID m)
            ]
 
 instance FromJSON HighLevelSolution where

@@ -51,6 +51,7 @@ array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 set of allBlocksInFunction: branchExtBlocksInFunction;
 array[int] of set of int: interchangeableDataInFunction;
+set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
 
 % Target machine data.
 int: numLocations;
