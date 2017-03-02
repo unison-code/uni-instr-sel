@@ -188,7 +188,7 @@ array[allOperands] of int: matchOfO =
 % The total cost is computed as:
 %
 %   sum (m in allMatches)
-%   ( latencyOfMatch[m] * execFrequencyOfBlocksPlusNull[place[m]] )
+%   ( latencyOfMatch[m] * execFrequencyOfBlocks[place[m]] )
 %
 % but this implementation yields poor propagation. To improve propagation, we
 % use the cost per operation instead of cost per selected match.
@@ -540,7 +540,7 @@ constraint
 %            , o in operandsUsedByMatch[m]
 %              where not (m in phiInstrMatches)
 %            )
-%     ( dplace[alt[o]] in domSetOfBlockInFunctionPlusNull[place[m]] );
+%     ( dplace[alt[o]] in domSetOfBlockInFunction[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
 %
