@@ -301,9 +301,7 @@ array[allOperands] of var allBlocksInFunction: uplace;
 % GLOBAL CONSTRAINTS
 %====================
 
-include "circuit.mzn";
-include "table.mzn";
-include "value_precede_chain.mzn";
+include "globals.mzn";
 
 
 
@@ -498,11 +496,21 @@ constraint
   forall (i in index_set_1of2(fallThroughBlockOfMatch))
   ( let { int: m = fallThroughBlockOfMatch[i, 1]
         , int: fall_b = fallThroughBlockOfMatch[i, 2]
-        , int: entry_b = min(entryBlockOfMatch[m])
-        , var int: succ_b = succ[entry_b]
         }
-    in sel[m] -> succ_b = fall_b
+    in sel[m] -> falls_through(m, fall_b)
   );
+
+predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
+  let { int: entry_b = min(entryBlockOfMatch[m])
+      , var int: succ_b = succ[entry_b]
+      }
+  in  succ_b = fall_b \/
+      ( succ[succ_b] = fall_b /\
+	forall (o in allOperationsInFunction)
+	( oplace[o] != succ_b \/
+	  omatch[o] in nullInstrMatches
+	)
+      );
 
 % Enforce that, for each operation o, exactly one match must be selected such
 % that o is covered.
@@ -1075,6 +1083,79 @@ constraint
                 where card(operandAlternatives[o]) > 1
          )
   ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
+
+% [MC 5]
+%
+% Constrain the location of d to be where its definers can put it.
+% Also, disable users that would access it elsewhere.
+constraint
+  forall(d in allDataInFunction diff statesInFunction)(
+    let {array[int] of int: O = [o | m in defsetOfDatum[d] diff inactiveInstrMatches,
+				     o in operandsDefinedByMatch[m]
+				where d in operandAlternatives[o]
+				],
+	 array[int] of int: X = [ i | i in index_set_1of2(validDataLocRangesInMatch)
+	 	       	      	where validDataLocRangesInMatch[i,2] in {o | o in O}
+				]}
+    in if length(O)=length(X) then
+	  let {set of int: D = { addr | addr in canonicalDataLocs, i in X
+			       where addr in validDataLocRangesInMatch[i,3]..validDataLocRangesInMatch[i,4]
+			       }}
+	  in if card(D)<card(canonicalDataLocs) then
+	       knock_out_users(d, D union {locValueForNull}) /\
+	       loc[d] in D union {locValueForNull}
+	  else true endif
+       else true endif
+  );
+
+predicate knock_out_users(allDataInFunction: d, set of allLocValues: D) =
+  let {array[int] of int: O = [ o | o in array_union(operandsUsedByMatch) diff inactiveOperands
+			      where d in operandAlternatives[o]
+			      ],
+       array[int] of int: I = [i | i in index_set_1of2(validDataLocRangesInMatch)
+                              where validDataLocRangesInMatch[i,2] in {o | o in O} /\
+	  		            card(validDataLocRangesInMatch[i,3]..validDataLocRangesInMatch[i,4] intersect D)=0
+			      ]}
+  in forall(i in I)(not sel[validDataLocRangesInMatch[i,1]])
+  ;
+
+set of int: inactiveOperands = array_union([operandsDefinedByMatch[m] | m in inactiveInstrMatches] ++
+       	    		       		   [operandsUsedByMatch[m] | m in inactiveInstrMatches]);
+
+% [MC 6]
+% 
+% Constrain the location of d to be where its users can access it.
+% Also, disable definers that would put it elsewhere.
+% Valid for such d that are used at least once.
+constraint
+  forall(d in dataInFunctionUsedAtLeastOnce)(
+    let {array[int] of int: O = [ o | o in array_union(operandsUsedByMatch) diff inactiveOperands
+    		       	        where d in operandAlternatives[o]
+				],
+	 array[int] of int: X = [ i | i in index_set_1of2(validDataLocRangesInMatch)
+	 	       	      	where    validDataLocRangesInMatch[i,2] in {o | o in O}
+				]}
+    in if length(O)=length(X) then
+	  let {set of int: D = { addr | addr in canonicalDataLocs, i in X
+			       where addr in validDataLocRangesInMatch[i,3]..validDataLocRangesInMatch[i,4]
+			       }}
+	  in if card(D)<card(canonicalDataLocs) then
+	       knock_out_definers(d, D union {locValueForNull}) /\
+	       loc[d] in D union {locValueForNull}
+	     else true endif
+       else true endif
+  );
+
+predicate knock_out_definers(allDataInFunction: d, set of allLocValues: D) =
+  forall(m in defsetOfDatum[d])(
+    let {array[int] of int: O = [o | o in operandsDefinedByMatch[m] where d in operandAlternatives[o]]}
+    in if exists(i in index_set_1of2(validDataLocRangesInMatch))(
+            validDataLocRangesInMatch[i,2] in {o | o in O} /\
+	    card(validDataLocRangesInMatch[i,3]..validDataLocRangesInMatch[i,4] intersect D)=0
+	  ) then
+        not sel[m]
+      else true endif
+  );
 
 %==================
 % SOLVE AND OUTPUT
