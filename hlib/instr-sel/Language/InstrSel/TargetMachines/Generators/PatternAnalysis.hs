@@ -92,8 +92,11 @@ arePatternsCondBranch pats =
   let isCondBranchPattern p =
         let os = patOS p
             g = osGraph os
-            op_nodes = filter isOperationNode $ getAllNodes g
-        in length op_nodes == 1 && isCondBrControlNode (head op_nodes)
+            pointsAtExits n =
+              let bs = getSuccessors g n
+              in all (\b -> null $ getCtrlFlowOutEdges g b) bs
+            ctrl_nodes = filter isCondBrControlNode $ getAllNodes g
+        in length ctrl_nodes > 0 && any pointsAtExits ctrl_nodes
   in all isCondBranchPattern pats
 
 -- ^ Checks whether all patterns contain exactly one conditional branch with
