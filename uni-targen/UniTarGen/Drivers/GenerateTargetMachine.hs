@@ -25,8 +25,9 @@ import Language.InstrSel.TargetMachines.Generators.LLVM.Base
   , InstrSemantics (..)
   )
 import Language.InstrSel.TargetMachines.Transformations
-import Language.InstrSel.TargetMachines.Generators.LLVM.Generator
 import Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator
+import Language.InstrSel.TargetMachines.Generators.InstructionSynthesizer
+import Language.InstrSel.TargetMachines.Generators.LLVM.Generator
 import Language.InstrSel.Utils.Base
   ( isLeft
   , isRight
@@ -185,5 +186,13 @@ generateTM err_id md =
              )
              err_id
              bad_instrs_with_err
-     let tm = generateTargetMachine $ md { mdInstructions = okay_instrs }
-     return $ (next_err_id, fromRight tm)
+     let tm0 = fromRight $
+               generateTargetMachine $
+               md { mdInstructions = okay_instrs }
+     tm1 <- do let res = addDualTargetBranchInstructions tm0
+               when (isLeft res) $
+                 reportError $ "--- WARNING: Failed to synthesize " ++
+                               "dual-target branch instructions:\n" ++
+                               fromLeft res
+               return $ if isRight res then fromRight res else tm0
+     return $ (next_err_id, tm1)

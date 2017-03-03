@@ -67,6 +67,7 @@ library
     Language.InstrSel.TargetMachines.CodeEmission
     Language.InstrSel.TargetMachines.Generators.GenericInstructions
     Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator
+    Language.InstrSel.TargetMachines.Generators.InstructionSynthesizer
     Language.InstrSel.TargetMachines.Generators.PatternAnalysis
     Language.InstrSel.TargetMachines.Generators.LLVM
     Language.InstrSel.TargetMachines.Generators.LLVM.Base

@@ -31,6 +31,8 @@ module Language.InstrSel.TargetMachines.Base
   , isInstructionNull
   , isInstructionPhi
   , isInstructionSimd
+  , replaceAllInstructions
+  , replaceAllLocations
   , updateNodeInEmitStrTemplate
   )
 where
@@ -214,6 +216,12 @@ instance PrettyShow Location where
 getAllInstructions :: TargetMachine -> [Instruction]
 getAllInstructions = M.elems . tmInstructions
 
+-- | Replaces all instructions in a given target machine.
+replaceAllInstructions :: [Instruction] -> TargetMachine -> TargetMachine
+replaceAllInstructions is tm = tm { tmInstructions = M.fromList $
+                                                     zip (map instrID is) is
+                                  }
+
 -- | Finds an instruction with a given ID within the given target machine. If no
 -- such instruction is found, 'Nothing' is returned.
 findInstruction :: TargetMachine -> InstructionID -> Maybe Instruction
@@ -232,6 +240,12 @@ findInstrPattern ps pid =
 -- | Gets all locations from a given target machine.
 getAllLocations :: TargetMachine -> [Location]
 getAllLocations = M.elems . tmLocations
+
+-- | Replaces all locations in a given target machine.
+replaceAllLocations :: [Location] -> TargetMachine -> TargetMachine
+replaceAllLocations ls tm = tm { tmLocations = M.fromList $
+                                               zip (map locID ls) ls
+                               }
 
 -- | Finds an location with a given ID within the given target machine. If no
 -- such location is found, 'Nothing' is returned.
