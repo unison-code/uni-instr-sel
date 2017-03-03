@@ -11,7 +11,9 @@ Main authors:
 
 module Language.InstrSel.TargetMachines.Generators.InstructionSynthesizer
   ( addDualTargetBranchInstructions
+  , addEntryTargetBranchInstructions
   , mkDualTargetBranchInstructions
+  , mkEntryTargetBranchInstructions
   )
 where
 
@@ -27,6 +29,11 @@ import Language.InstrSel.TargetMachines.Generators.PatternAnalysis
   , arePatternsCondBranchWithFallthrough
   )
 
+import Data.Maybe
+  ( fromJust
+  , isJust
+  )
+
 
 
 -------------
@@ -35,9 +42,9 @@ import Language.InstrSel.TargetMachines.Generators.PatternAnalysis
 
 -- | From a given target machine, constructs a new target machine that contains
 -- synthesized branch instructions that can jump to both the true and the false
--- branch. These are synthesized using the branch instructions already in the
--- target machine. This assumes that all unconditional branch instructions are
--- equally suitable.
+-- branch. These are synthesized using the conditional and unconditional branch
+-- instructions already in the target machine. This assumes that all
+-- unconditional branch instructions are equally suitable.
 addDualTargetBranchInstructions :: TargetMachine -> Either String TargetMachine
 addDualTargetBranchInstructions tm =
   do let is = getAllInstructions tm
@@ -120,7 +127,8 @@ convertFallthroughToBranch br_instr i =
                               ( ANodeIDExpr n )
                             )
                           ) = Right n
-                  getNode _ = Left $ "Unexpected fall-through constraint " ++
+                  getNode _ = Left $ error_head ++
+                                     "Unexpected fall-through constraint " ++
                                      "structure"
               ft_b_node <- getNode ft_c
               let new_cs = filter (not . isFallThroughConstraint) cs
@@ -141,4 +149,89 @@ convertFallthroughToBranch br_instr i =
      return $ Instruction { instrID = 0
                           , instrPatterns = new_ps
                           , instrProps = new_props
+                          }
+
+-- | From a given target machine, constructs a new target machine that contains
+-- synthesized branch instructions that can jump back to the current block.
+-- These are synthesized using the conditional branch instructions already in
+-- the target machine.
+addEntryTargetBranchInstructions :: TargetMachine -> Either String TargetMachine
+addEntryTargetBranchInstructions tm =
+  do let is = getAllInstructions tm
+     entry_br_is <- mkEntryTargetBranchInstructions is
+--   let new_is = reassignInstrIDs 0 (is ++ entry_br_is)
+     let new_is = reassignInstrIDs 0 entry_br_is
+--
+     return $ replaceAllInstructions new_is tm
+
+-- | From a given list of instructions, constructs new conditional branch
+-- instructions that can jump back to the current block. These are synthesized
+-- using the conditional branch instructions already in the list of
+-- instructions.
+mkEntryTargetBranchInstructions
+  :: [Instruction]
+     -- ^ List of existing instructions.
+  -> Either String [Instruction]
+     -- ^ The synthesized instructions if successful, otherwise an error
+     -- message.
+mkEntryTargetBranchInstructions is =
+  do let cbr_instrs = filter ( arePatternsCondBranchWithFallthrough .
+                               instrPatterns
+                             ) $
+                      is
+     entry_cbr_instrs <- mapM redirectTargetBlockToEntry cbr_instrs
+     return entry_cbr_instrs
+
+redirectTargetBlockToEntry
+  :: Instruction
+     -- ^ The conditional branch instruction with fall-through to convert.
+  -> Either String Instruction
+     -- ^ The new instruction if successful, otherwise an error message.
+redirectTargetBlockToEntry i =
+  do let mkNewInstrPatterns p =
+           do let error_head = "In instruction with emit string:\n" ++
+                               pShow (patEmitString p) ++ ":\n"
+                  os = patOS p
+                  cs = osConstraints os
+                  ft_cs = filter isFallThroughConstraint cs
+              let getNode ( FallThroughFromMatchToBlockConstraint
+                            ( BlockOfBlockNodeExpr
+                              ( ANodeIDExpr n )
+                            )
+                          ) = Right n
+                  getNode _ = Left $ error_head ++
+                                     "Unexpected fall-through constraint " ++
+                                     "structure"
+              ft_b_nodes <- mapM getNode ft_cs
+              entry_b <- if isJust (osEntryBlockNode os)
+                         then Right $ fromJust $ osEntryBlockNode os
+                         else Left $ error_head ++ "Has no entry block node"
+              let g = osGraph os
+              entry_b_node <- let ns = findNodesWithNodeID g entry_b
+                              in if length ns == 1
+                                 then Right $ head ns
+                                 else Left $ "No or multiple nodes with ID " ++
+                                             pShow entry_b ++ " found"
+              let b_ns = [ n | n <- filter isBlockNode $ getAllNodes g
+                             , getNodeID n `notElem` ft_b_nodes
+                             , length (getCtrlFlowOutEdges g n) == 0
+                         ]
+                  new_ps = map ( \n ->
+                                 let new_g = mergeNodes entry_b_node n g
+                                     new_os = os { osGraph = new_g }
+                                     new_emit_str = updateNodeInEmitStrTemplate
+                                                      entry_b
+                                                      (getNodeID n)
+                                                      (patEmitString p)
+                                 in p { patOS = new_os
+                                      , patEmitString = new_emit_str
+                                      }
+                               ) $
+                           b_ns
+              return new_ps
+     new_pss <- mapM mkNewInstrPatterns $ instrPatterns i
+     let new_ps = concat new_pss
+     return $ Instruction { instrID = 0
+                          , instrPatterns = new_ps
+                          , instrProps = instrProps i
                           }
