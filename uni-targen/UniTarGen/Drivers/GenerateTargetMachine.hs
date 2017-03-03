@@ -72,11 +72,12 @@ run opts =
      let m = fromRight m_str
      (err_id, parsed_m) <- parseSemanticsInMD 1 m
      (_, tm0) <- generateTM err_id parsed_m
-     let tm1 = lowerPointers tm0
+     let file = fromTargetMachineID (tmID tm0) ++ ".hs"
+         tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
          code = generateModule tm3
-     return [toOutputWithID ((fromTargetMachineID $ tmID tm3) ++ ".hs") code]
+     return [toOutputWithID file code]
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.
