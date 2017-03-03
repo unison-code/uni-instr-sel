@@ -21,8 +21,7 @@ module Language.InstrSel.TargetMachines.Generators.PatternAnalysis
 where
 
 import Language.InstrSel.Constraints
-  ( BoolExpr (FallThroughFromMatchToBlockExpr) )
-import Language.InstrSel.Constraints.ConstraintFolder
+  ( isFallThroughConstraint )
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.OpStructures
@@ -104,10 +103,6 @@ arePatternsCondBranchWithFallthrough pats =
   let hasFallthrough p =
         let os = patOS p
             cs = osConstraints os
-            def_f = mkDefaultFolder False (||)
-            foldBoolExpr _ (FallThroughFromMatchToBlockExpr _) = True
-            foldBoolExpr f expr = (foldBoolExprF def_f) f expr
-            new_f = def_f { foldBoolExprF = foldBoolExpr }
-        in any (apply new_f) cs
+        in length (filter isFallThroughConstraint cs) > 0
   in arePatternsCondBranch pats &&
      all hasFallthrough pats

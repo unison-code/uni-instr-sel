@@ -25,6 +25,8 @@ module Language.InstrSel.Constraints.Base
   , SetExpr (..)
   , fromLispExpr
   , toLispExpr
+  , isBoolConstraint
+  , isFallThroughConstraint
   )
 where
 
@@ -349,3 +351,14 @@ fromLispExpr = fromLispExprStr
 -- | Converts a 'Constraint' into a lispian expression.
 toLispExpr :: Constraint -> String
 toLispExpr = toLispExprStr
+
+-- | Checks whether a given constraint is a 'BoolExprConstraint' constraint.
+isBoolConstraint :: Constraint -> Bool
+isBoolConstraint (BoolExprConstraint {}) = True
+isBoolConstraint _ = False
+
+-- | Checks whether a given constraint is a
+-- 'FallThroughFromMatchToBlockConstraint' constraint.
+isFallThroughConstraint :: Constraint -> Bool
+isFallThroughConstraint (FallThroughFromMatchToBlockConstraint {}) = True
+isFallThroughConstraint _ = False

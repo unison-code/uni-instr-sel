@@ -21,6 +21,7 @@ module Language.InstrSel.TargetMachines.Base
   , InstrProperties (..)
   , Location (..)
   , TargetMachine (..)
+  , concatEmitStrings
   , getAllInstructions
   , getAllLocations
   , findInstruction
@@ -271,22 +272,30 @@ updateNodeInEmitStrTemplate new_n old_n (EmitStringTemplate ts) =
         update p = p
         checkAndReplace nid = if nid == old_n then new_n else nid
 
--- ^ Checks whether the instruction is a null instruction.
+-- | Checks whether the instruction is a null instruction.
 isInstructionNull :: Instruction -> Bool
 isInstructionNull = instrIsNull . instrProps
 
--- ^ Checks whether the instruction is a copy instruction.
+-- | Checks whether the instruction is a copy instruction.
 isInstructionCopy :: Instruction -> Bool
 isInstructionCopy = instrIsCopy . instrProps
 
--- ^ Checks whether the instruction is an inactive instruction.
+-- | Checks whether the instruction is an inactive instruction.
 isInstructionInactive :: Instruction -> Bool
 isInstructionInactive = instrIsInactive . instrProps
 
--- ^ Checks whether the instruction is a phi instruction.
+-- | Checks whether the instruction is a phi instruction.
 isInstructionPhi :: Instruction -> Bool
 isInstructionPhi = instrIsPhi . instrProps
 
--- ^ Checks whether the instruction is a SIMD instruction.
+-- | Checks whether the instruction is a SIMD instruction.
 isInstructionSimd :: Instruction -> Bool
 isInstructionSimd = instrIsSimd . instrProps
+
+-- | Concatenates one emit string to another.
+concatEmitStrings ::
+  EmitStringTemplate ->
+  EmitStringTemplate ->
+  EmitStringTemplate
+concatEmitStrings str1 str2 =
+  EmitStringTemplate { emitStrParts = emitStrParts str1 ++ emitStrParts str2 }
