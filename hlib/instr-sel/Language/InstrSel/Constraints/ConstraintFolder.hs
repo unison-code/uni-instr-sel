@@ -64,6 +64,8 @@ mkDefaultFolder
 mkDefaultFolder def_v fold_f =
   let foldConstraint f (BoolExprConstraint expr) =
         (foldBoolExprF f) f expr
+      foldConstraint f (FallThroughFromMatchToBlockConstraint expr) =
+        (foldBlockExprF f) f expr
       foldBoolExpr f (EqExpr  lhs rhs) =
         (foldValuesF f) ((foldNumExprF f) f lhs) ((foldNumExprF f) f rhs)
       foldBoolExpr f (NEqExpr lhs rhs) =
@@ -88,8 +90,6 @@ mkDefaultFolder def_v fold_f =
         (foldBoolExprF f) f expr
       foldBoolExpr f (InSetExpr lhs rhs) =
         (foldValuesF f) ((foldSetElemExprF f) f lhs) ((foldSetExprF f) f rhs)
-      foldBoolExpr f (FallThroughFromMatchToBlockExpr expr) =
-        (foldBlockExprF f) f expr
       foldNumExpr f (PlusExpr lhs rhs) =
         (foldValuesF f) ((foldNumExprF f) f lhs) ((foldNumExprF f) f rhs)
       foldNumExpr f (MinusExpr lhs rhs) =

@@ -60,6 +60,8 @@ mkDefaultReconstructor :: Reconstructor
 mkDefaultReconstructor =
   let mkConstraint r (BoolExprConstraint expr) =
         BoolExprConstraint ((mkBoolExprF r) r expr)
+      mkConstraint r (FallThroughFromMatchToBlockConstraint expr) =
+        FallThroughFromMatchToBlockConstraint ((mkBlockExprF r) r expr)
       mkBoolExpr r (EqExpr  lhs rhs) =
         EqExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkBoolExpr r (NEqExpr lhs rhs) =
@@ -84,8 +86,6 @@ mkDefaultReconstructor =
         NotExpr ((mkBoolExprF r) r expr)
       mkBoolExpr r (InSetExpr lhs rhs) =
         InSetExpr ((mkSetElemExprF r) r lhs) ((mkSetExprF r) r rhs)
-      mkBoolExpr r (FallThroughFromMatchToBlockExpr expr) =
-        FallThroughFromMatchToBlockExpr ((mkBlockExprF r) r expr)
       mkNumExpr r (PlusExpr lhs rhs) =
         PlusExpr ((mkNumExprF r) r lhs) ((mkNumExprF r) r rhs)
       mkNumExpr r (MinusExpr lhs rhs) =

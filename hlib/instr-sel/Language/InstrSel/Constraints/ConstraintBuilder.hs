@@ -39,8 +39,7 @@ mkFallThroughConstraints
      -- ^ A block node.
   -> [Constraint]
 mkFallThroughConstraints l =
-  [ BoolExprConstraint $
-    FallThroughFromMatchToBlockExpr $
+  [ FallThroughFromMatchToBlockConstraint $
     BlockOfBlockNodeExpr $
     ANodeIDExpr l
   ]

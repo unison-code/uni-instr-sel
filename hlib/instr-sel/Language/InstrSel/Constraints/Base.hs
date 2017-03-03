@@ -56,6 +56,11 @@ import qualified Language.InstrSel.Utils.JSON as JSON
 data Constraint
     -- | A constraint represented as a Boolean expression.
   = BoolExprConstraint { boolExpr :: BoolExpr }
+    -- | Denotes a fall-through constraint between the match in which this
+    -- constraint appears and a given block. In other words, the block in which
+    -- the match is placed must be appear immediately before the other block of
+    -- the generated code.
+  | FallThroughFromMatchToBlockConstraint BlockExpr
   deriving (Show)
 
 -- | Boolean expressions. For binary operations the first argument is always the
@@ -81,11 +86,6 @@ data BoolExpr
   | EqvExpr BoolExpr BoolExpr
   | NotExpr BoolExpr
   | InSetExpr SetElemExpr SetExpr
-    -- | Denotes a fall-through constraint between the match in which this
-    -- constraint appears and a given block. In other words, the block in which
-    -- the match is placed must be appear immediately before the other block of
-    -- the generated code.
-  | FallThroughFromMatchToBlockExpr BlockExpr
   deriving (Show)
 
 -- | Numerical expressions. For binary operations the first argument is always
@@ -196,10 +196,14 @@ instance ToJSON Constraint where
 -------------------------------------
 
 instance FromLisp Constraint where
-  parseLisp = wrapStruct BoolExprConstraint
+  parseLisp e =
+        wrapStruct BoolExprConstraint e
+    <|> struct "fall-through" FallThroughFromMatchToBlockConstraint e
 
 instance ToLisp Constraint where
   toLisp (BoolExprConstraint e) = toLisp e
+  toLisp (FallThroughFromMatchToBlockConstraint e) =
+    mkStruct "fall-through" [toLisp e]
 
 instance FromLisp BoolExpr where
   parseLisp e =
@@ -215,7 +219,6 @@ instance FromLisp BoolExpr where
     <|> struct "<->" EqvExpr e
     <|> struct "!"   NotExpr e
     <|> struct "in-set" InSetExpr e
-    <|> struct "fall-through" FallThroughFromMatchToBlockExpr e
 
 instance ToLisp BoolExpr where
   toLisp (EqExpr  lhs rhs) = mkStruct "==" [toLisp lhs, toLisp rhs]
@@ -230,8 +233,6 @@ instance ToLisp BoolExpr where
   toLisp (EqvExpr lhs rhs) = mkStruct "<->" [toLisp lhs, toLisp rhs]
   toLisp (NotExpr lhs) = mkStruct "!" [toLisp lhs]
   toLisp (InSetExpr lhs rhs) = mkStruct "in-set" [toLisp lhs, toLisp rhs]
-  toLisp (FallThroughFromMatchToBlockExpr e) =
-    mkStruct "fall-through" [toLisp e]
 
 instance FromLisp NumExpr where
   parseLisp e =
