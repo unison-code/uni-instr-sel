@@ -1443,8 +1443,8 @@ isNodeTypeCompatibleWith _ _ = False
 isBlockNodeAndIntermediate :: Graph -> Node -> Bool
 isBlockNodeAndIntermediate g n
   | ( isBlockNode n &&
-      (length $ filter isControlFlowEdge $ getInEdges g n) > 0 &&
-      (length $ filter isControlFlowEdge $ getOutEdges g n) > 0
+      (length $ getCtrlFlowInEdges g n) > 0 &&
+      (length $ getCtrlFlowOutEdges g n) > 0
     ) = True
   | otherwise = False
 
