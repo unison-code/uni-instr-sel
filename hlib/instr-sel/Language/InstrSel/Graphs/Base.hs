@@ -106,6 +106,8 @@ module Language.InstrSel.Graphs.Base
   , haveSameInEdgeNrs
   , haveSameOutEdgeNrs
   , insertNewNodeAlongEdge
+  , isBrControlNode
+  , isCondBrControlNode
   , isCallNode
   , isIndirCallNode
   , isComputationNode
@@ -596,6 +598,12 @@ isIndirCallNode n = isOfIndirCallNodeType $ getNodeType n
 
 isRetControlNode :: Node -> Bool
 isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
+
+isBrControlNode :: Node -> Bool
+isBrControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Br
+
+isCondBrControlNode :: Node -> Bool
+isCondBrControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.CondBr
 
 isValueNode :: Node -> Bool
 isValueNode n = isOfValueNodeType $ getNodeType n
