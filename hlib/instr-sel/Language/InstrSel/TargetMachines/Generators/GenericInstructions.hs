@@ -105,6 +105,7 @@ mkPhiInstruction =
                                 [2..n+1]
                           )
                         )
+                        Nothing
             emit_str = EmitStringTemplate $
                        [ [ ESVerbatim "PHI "
                          ]
@@ -123,7 +124,7 @@ mkPhiInstruction =
                        ]
         in InstrPattern
              { patID = (toPatternID $ n-2)
-             , patOS = OpStructure g Nothing [] [] []
+             , patOS = OpStructure g [] [] []
              , patInputData = [2..n+1]
              , patOutputData = [1]
              , patEmitString = emit_str
@@ -146,9 +147,10 @@ mkPhiInstruction =
 -- they must be reassigned afterwards.
 mkBrFallThroughInstruction :: Instruction
 mkBrFallThroughInstruction =
-  let g = mkGraph ( map Node $
+  let entry = ( 1, NodeLabel 1 mkGenericBlockNodeType )
+      g = mkGraph ( map Node $
                     [ ( 0, NodeLabel 0 (ControlNode Br) )
-                    , ( 1, NodeLabel 1 mkGenericBlockNodeType )
+                    , entry
                     , ( 2, NodeLabel 2 mkGenericBlockNodeType )
                     ]
                   )
@@ -157,11 +159,12 @@ mkBrFallThroughInstruction =
                     , ( 0, 2, EdgeLabel ControlFlowEdge 0 0 )
                     ]
                   )
+                  (Just $ Node entry)
       cs = mkFallThroughConstraints 2
       pat =
         InstrPattern
           { patID = 0
-          , patOS = OpStructure g (Just 1) [] [] cs
+          , patOS = OpStructure g [] [] cs
           , patInputData = []
           , patOutputData = []
           , patEmitString = EmitStringTemplate []
@@ -183,21 +186,23 @@ mkBrFallThroughInstruction =
 -- constants and function arguments.
 mkDataDefInstruction :: Instruction
 mkDataDefInstruction =
-  let mkPatternGraph datum flow_type =
+  let entry = ( 0, NodeLabel 0 mkGenericBlockNodeType )
+      mkPatternGraph datum flow_type =
         mkGraph ( map Node $
-                  [ ( 0, NodeLabel 0 mkGenericBlockNodeType )
+                  [ entry
                   , ( 1, NodeLabel 1 datum )
                   ]
                 )
                 ( map Edge $
                   [ ( 0, 1, EdgeLabel flow_type 0 0 ) ]
                 )
+                (Just $ Node entry)
       g1 = mkPatternGraph mkGenericValueNodeType DataFlowEdge
       g2 = mkPatternGraph StateNode StateFlowEdge
       mkInstrPattern pid g cs =
         InstrPattern
           { patID = pid
-          , patOS = OpStructure g (Just 0) [] [] cs
+          , patOS = OpStructure g [] [] cs
           , patInputData = []
           , patOutputData = [1]
           , patEmitString = EmitStringTemplate []
@@ -233,9 +238,10 @@ mkTempNullCopyInstruction =
                     , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
                     ]
                   )
+                  Nothing
       pat = InstrPattern
              { patID = 0
-             , patOS = OpStructure g Nothing [] [(1, 2)] []
+             , patOS = OpStructure g [] [(1, 2)] []
              , patInputData = [1]
              , patOutputData = [2]
              , patEmitString = EmitStringTemplate []
@@ -269,9 +275,10 @@ mkInactiveInstruction =
                     , ( 0, 2, EdgeLabel DataFlowEdge 0 0 )
                     ]
                   )
+                  Nothing
       pat = InstrPattern
               { patID = 0
-              , patOS = OpStructure g Nothing [] [] []
+              , patOS = OpStructure g [] [] []
               , patInputData = [1]
               , patOutputData = [2]
               , patEmitString = EmitStringTemplate []

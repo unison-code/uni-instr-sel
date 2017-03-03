@@ -37,7 +37,6 @@ import Language.InstrSel.Utils.JSON
 data OpStructure
   = OpStructure
       { osGraph :: G.Graph
-      , osEntryBlockNode :: Maybe G.NodeID
       , osValidLocations :: [(G.NodeID, [LocationID])]
         -- ^ The first element represents the ID of a value node.
       , osSameLocations :: [(G.NodeID, G.NodeID)]
@@ -56,7 +55,6 @@ instance FromJSON OpStructure where
   parseJSON (Object v) =
     OpStructure
       <$> v .: "graph"
-      <*> v .: "entry-block-node"
       <*> v .: "valid-locs"
       <*> v .: "same-locs"
       <*> v .: "constraints"
@@ -65,7 +63,6 @@ instance FromJSON OpStructure where
 instance ToJSON OpStructure where
   toJSON os =
     object [ "graph"            .= (osGraph os)
-           , "entry-block-node" .= (osEntryBlockNode os)
            , "valid-locs"       .= (osValidLocations os)
            , "same-locs"        .= (osSameLocations os)
            , "constraints"      .= (osConstraints os)
@@ -80,7 +77,6 @@ instance ToJSON OpStructure where
 -- | Creates an empty operation structure.
 mkEmpty :: OpStructure
 mkEmpty = OpStructure { osGraph = G.mkEmpty
-                      , osEntryBlockNode = Nothing
                       , osValidLocations = []
                       , osSameLocations = []
                       , osConstraints = []

@@ -83,7 +83,7 @@ mkHighLevelModel function target matches =
 mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
 mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
-      entry_block = fromJust $ osEntryBlockNode $ functionOS function
+      entry_block = fromJust $ entryBlockNode graph
       all_ns = getAllNodes graph
       nodeIDsByType f = map getNodeID $
                         filter f all_ns
@@ -167,7 +167,7 @@ mkHLFunctionParams function target =
        , hlFunInterchangeableData = map (nub . map getNodeID) interch_data
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
-       , hlFunEntryBlock = entry_block
+       , hlFunEntryBlock = getNodeID entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID domsets
        , hlFunBlockParams = bb_params
        , hlFunStateDefEdges = state_def_es
@@ -309,7 +309,7 @@ processMatch' instr pat match mid oid =
       o_ns = filter isOperationNode all_ns
       d_ns = filter isDatumNode all_ns
       b_ns = filter isBlockNode all_ns
-      entry_b = osEntryBlockNode $ patOS pat
+      entry_b = entryBlockNode graph
       b_ns_consumed = if isJust entry_b
                       then filter ( \n -> hasAnyPredecessors graph n
                                           && hasAnySuccessors graph n
@@ -342,7 +342,6 @@ processMatch' instr pat match mid oid =
                               . getInEdges graph
                             ) $
                         d_def_by_phi_ns
-      entry_b_node_id = osEntryBlockNode $ patOS pat
       pn2oid_maps = zip (nub $ map getNodeID d_ns) [oid..]
       oid2fn_maps = map (\(pn, o) -> (o, findFNInMatch match pn)) $
                     pn2oid_maps
@@ -381,7 +380,9 @@ processMatch' instr pat match mid oid =
          , hlMatchValidValueLocs = valid_locs
          , hlMatchSameValueLocs = same_locs
          , hlMatchEntryBlock =
-             maybe Nothing (Just . head . findFNInMatch match) entry_b_node_id
+             maybe Nothing
+                   (Just . head . findFNInMatch match . getNodeID)
+                   entry_b
          , hlMatchSpannedBlocks =
              if isJust entry_b
              then nub $ getMappedFNs b_ns
@@ -742,11 +743,10 @@ findArrayIndexInList ai_list nid =
      then Just $ toArrayIndex $ fromJust index
      else Nothing
 
-computeDomSets :: Graph -> NodeID -> [DomSet Node]
-computeDomSets g root_id =
+computeDomSets :: Graph -> Node -> [DomSet Node]
+computeDomSets g root =
   let cfg = extractCFG g
-      root_n = head $ findNodesWithNodeID cfg root_id
-  in G.computeDomSets cfg root_n
+  in G.computeDomSets cfg root
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
 -- cyclic data dependency if all are selected.

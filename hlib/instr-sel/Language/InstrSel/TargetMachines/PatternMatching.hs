@@ -198,17 +198,9 @@ processInstr f i =
   let os = functionOS f
       fg = osGraph os
       dup_fg = duplicateNodes fg
-      entry = let e = osEntryBlockNode os
-                  n = findNodesWithNodeID fg (fromJust e)
+      entry = let e = entryBlockNode fg
               in if isJust e
-                 then if length n == 1
-                      then head n
-                      else if length n == 0
-                           then error $ "processInstr: function graph has " ++
-                                        "no node with ID " ++ pShow (fromJust e)
-                           else error $ "processInstr: function graph has " ++
-                                        "multiple nodes with ID " ++
-                                        pShow (fromJust e)
+                 then fromJust e
                  else error "processInstr: function has no entry block node"
   in concatMap (processInstrPattern (fg, entry) dup_fg i) (instrPatterns i)
 

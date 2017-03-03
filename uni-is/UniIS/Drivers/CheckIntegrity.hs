@@ -535,9 +535,9 @@ checkHasOutStFlowEdgeOrInDefEdge g n =
 checkEntryBlock :: OpStructure -> Log
 checkEntryBlock os =
   let g = osGraph os
-      entry_n = osEntryBlockNode os
+      entry_n = entryBlockNode g
   in if isJust entry_n
-     then let nid = fromJust entry_n
+     then let nid = getNodeID $ fromJust entry_n
           in checkNodeExists ("entry block node with ID " ++ pShow nid) g nid
      else emptyLog
 

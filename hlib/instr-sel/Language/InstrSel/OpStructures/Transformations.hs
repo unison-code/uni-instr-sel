@@ -88,6 +88,7 @@ canonicalizeCopies os =
                          ]
                   )
                 )
+                Nothing
       cp_patterns = concatMap (\(op, c) -> [mkPat op c False, mkPat op c True])
                               [ (IntOp Add,  0)
                               , (IntOp Mul,  1)
@@ -228,19 +229,10 @@ enforcePhiNodeInvariants = ensureSingleBlockUseInPhis .
 ensureSingleValueUseInPhis :: OpStructure -> OpStructure
 ensureSingleValueUseInPhis os =
   let g = osGraph os
-      entry = osEntryBlockNode os
+      entry = entryBlockNode g
   in if isJust entry
-     then let entry_n = findNodesWithNodeID g (fromJust entry)
-          in if length entry_n == 1
-             then ensureSingleValueUseInPhis' (head entry_n) os
-             else if length entry_n == 0
-                  then error $ "ensureSingleValueUseInPhis: op-structure " ++
-                               "has no block node with ID " ++ pShow entry
-                  else error $ "ensureSingleValueUseInPhis: op-structure " ++
-                               "has multiple block nodes with ID " ++
-                               pShow entry
-     else error $ "ensureSingleValueUseInPhis: op-structure has no entry block"
-
+     then ensureSingleValueUseInPhis' (fromJust entry) os
+     else error $ "ensureSingleValueUseInPhis: graph has no entry block"
 
 ensureSingleValueUseInPhis'
   :: Node
@@ -344,19 +336,10 @@ removePhiNodeRedundancies = ensureSingleBlockUseInPhis .
 replaceCopiedValuesInPhiNodes :: OpStructure -> OpStructure
 replaceCopiedValuesInPhiNodes os =
   let g = osGraph os
-      entry = osEntryBlockNode os
+      entry = entryBlockNode g
   in if isJust entry
-     then let entry_n = findNodesWithNodeID g (fromJust entry)
-          in if length entry_n == 1
-             then replaceCopiedValuesInPhiNodes' (head entry_n) os
-             else if length entry_n == 0
-                  then error $ "replaceCopiedValuesInPhiNodes: op-structure " ++
-                               "has no block node with ID " ++ pShow entry
-                  else error $ "replaceCopiedValuesInPhiNodes: op-structure " ++
-                               "has multiple block nodes with ID " ++
-                               pShow entry
-     else error $ "replaceCopiedValuesInPhiNodes: op-structure has no entry " ++
-                  "block"
+     then replaceCopiedValuesInPhiNodes' (fromJust entry) os
+     else error $ "replaceCopiedValuesInPhiNodes: graph has no entry block"
 
 replaceCopiedValuesInPhiNodes' :: Node -> OpStructure -> OpStructure
 replaceCopiedValuesInPhiNodes' root os =
@@ -447,11 +430,7 @@ replaceNodeIDInOS
   -> OpStructure
   -> OpStructure
 replaceNodeIDInOS old_n new_n os =
-  let old_entry_n = osEntryBlockNode os
-      new_entry_n = if isJust old_entry_n && fromJust old_entry_n == old_n
-                    then Just new_n
-                    else old_entry_n
-      old_valid_locs = osValidLocations os
+  let old_valid_locs = osValidLocations os
       new_valid_locs = map ( \p@(n, locs) ->
                              if n == old_n then (new_n, locs) else p
                            )
@@ -467,8 +446,7 @@ replaceNodeIDInOS old_n new_n os =
                           old_same_locs
       old_cs = osConstraints os
       new_cs = map (replaceNodeID old_n new_n) old_cs
-  in os { osEntryBlockNode = new_entry_n
-        , osValidLocations = new_valid_locs
+  in os { osValidLocations = new_valid_locs
         , osSameLocations = new_same_locs
         , osConstraints = new_cs
         }

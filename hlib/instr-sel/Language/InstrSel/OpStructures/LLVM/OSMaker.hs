@@ -368,7 +368,7 @@ mkFunctionOS f@(LLVM.Function {}) =
      st2 <- build mkFunctionCFGBuilder st1 f
      entry_name <- getEntryBlock st2
      entry_node <- getBlockNodeWithName st2 entry_name
-     st3 <- updateOSEntryBlockNode st2 entry_node
+     st3 <- updateEntryBlockNode st2 entry_node
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
@@ -388,7 +388,7 @@ mkPatternOS f@(LLVM.Function {}) =
      st2 <- build mkPatternCFGBuilder st1 f
      entry_name <- getEntryBlock st2
      entry_node <- getBlockNodeWithName st2 entry_name
-     st3 <- updateOSEntryBlockNode st2 entry_node
+     st3 <- updateEntryBlockNode st2 entry_node
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumDefEdges st4
      st6 <- addPendingDatumToBlockDefEdges st5
@@ -1572,13 +1572,14 @@ updateOSGraph st g =
   let os = opStruct st
   in return $ st { opStruct = os { OS.osGraph = g } }
 
--- | Updates the OS entry block node contained by the operation structure in a
--- given state.
-updateOSEntryBlockNode :: BuildState -> G.Node -> Either String BuildState
-updateOSEntryBlockNode st n =
-  let nid = G.getNodeID n
-      os = opStruct st
-  in return $ st { opStruct = os { OS.osEntryBlockNode = Just nid } }
+-- | Updates the entry block node of the graph contained by the operation
+-- structure in a given state.
+updateEntryBlockNode :: BuildState -> G.Node -> Either String BuildState
+updateEntryBlockNode st n =
+  let os = opStruct st
+      g = OS.osGraph os
+      new_g = g { G.entryBlockNode = Just n }
+  in updateOSGraph st new_g
 
 -- | Updates the last touched node information.
 touchNode :: BuildState -> G.Node -> Either String BuildState
@@ -1946,11 +1947,7 @@ removeUnusedBlockNodes st =
                     else []
      return $ if length entry_ns > 0
               then new_st
-              else let new_os = opStruct new_st
-                   in new_st { opStruct =
-                                 new_os { OS.osEntryBlockNode = Nothing }
-                             , entryBlock = Nothing
-                             }
+              else new_st { entryBlock = Nothing }
 
 -- | Converts an 'LLVM.Named' entity into a 'String'.
 nameToString :: LLVM.Name -> String

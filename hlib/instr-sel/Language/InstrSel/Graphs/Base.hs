@@ -216,6 +216,7 @@ type IntGraph = I.Gr NodeLabel EdgeLabel
 data Graph
   = Graph { intGraph :: IntGraph
           , intNodeMap :: M.Map NodeID [Node]
+          , entryBlockNode :: Maybe Node
           }
   deriving (Show)
 
@@ -372,16 +373,27 @@ data DomSet t
 -------------------------------------
 
 instance FromJSON Graph where
-  parseJSON v@(Object _) =
-    do g <- parseJSON v
+  parseJSON (Object v) =
+    do g <- v .: "graph"
+       entry <- v .:? "entry-block-node"
        let ns = map Node $ I.labNodes g
        return $ Graph { intGraph = g
                       , intNodeMap = M.fromList $ groupNodesByID ns
+                      , entryBlockNode = if isJust entry
+                                         then Just $ toNode $ fromJust entry
+                                         else Nothing
                       }
   parseJSON _ = mzero
 
 instance ToJSON Graph where
-  toJSON g = toJSON $ intGraph g
+  toJSON g =
+    let entry = entryBlockNode g
+    in object [ "graph" .= (intGraph g)
+              , "entry-block-node" .= ( if isJust entry
+                                        then Just $ fromNode $ fromJust entry
+                                        else Nothing
+                                      )
+              ]
 
 instance FromJSON IntGraph where
   parseJSON (Object v) =
@@ -552,6 +564,9 @@ instance NFData n => NFData (Match n) where
 -- Functions
 -------------
 
+toNode :: I.LNode NodeLabel -> Node
+toNode = Node
+
 fromNode :: Node -> I.LNode NodeLabel
 fromNode (Node n) = n
 
@@ -715,13 +730,16 @@ isOfDefEdgeType _ = False
 mkEmpty :: Graph
 mkEmpty = Graph { intGraph = I.empty
                 , intNodeMap = M.empty
+                , entryBlockNode = Nothing
                 }
 
 -- | Makes a graph from a list of nodes and edges.
-mkGraph :: [Node] -> [Edge] -> Graph
-mkGraph ns es = Graph { intGraph = I.mkGraph (map fromNode ns) (map fromEdge es)
-                      , intNodeMap = M.fromList $ groupNodesByID ns
-                      }
+mkGraph :: [Node] -> [Edge] -> Maybe Node -> Graph
+mkGraph ns es entry =
+  Graph { intGraph = I.mkGraph (map fromNode ns) (map fromEdge es)
+        , intNodeMap = M.fromList $ groupNodesByID ns
+        , entryBlockNode = entry
+        }
 
 -- | Gets the next internal node ID which does not already appear in the graph.
 getNextIntNodeID :: IntGraph -> I.Node
@@ -777,8 +795,13 @@ delNode n g =
                           )
                           (getNodeID n)
                           (intNodeMap g)
+      entry = entryBlockNode g
+      new_entry = if isJust entry && (fromJust entry) == n
+                  then Nothing
+                  else entry
   in Graph { intGraph = new_int_g
            , intNodeMap = new_nmap
+           , entryBlockNode = new_entry
            }
 
 -- | Deletes an edge from the graph.
@@ -850,7 +873,11 @@ updateNodeLabel :: NodeLabel -> Node -> Graph -> Graph
 updateNodeLabel new_label n g =
   let all_nodes_but_n = filter (/= n) (getAllNodes g)
       new_n = Node (getIntNodeID n, new_label)
-  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g)
+      entry = entryBlockNode g
+      new_entry = if isJust entry && (fromJust entry) == n
+                  then Just new_n
+                  else entry
+  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g) new_entry
 
 -- | Updates the node type of a node.
 updateNodeType :: NodeType -> Node -> Graph -> Graph
@@ -861,15 +888,22 @@ updateNodeType new_type n g =
                                , nodeType = new_type
                                }
                    )
-  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g)
+      entry = entryBlockNode g
+      new_entry = if isJust entry && (fromJust entry) == n
+                  then Just new_n
+                  else entry
+  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g) new_entry
 
 -- | Updates the node ID of an already existing node.
 updateNodeID :: NodeID -> Node -> Graph -> Graph
 updateNodeID new_id n g =
   let all_nodes_but_n = filter (/= n) (getAllNodes g)
-  in mkGraph
-       (Node (getIntNodeID n, NodeLabel new_id (getNodeType n)):all_nodes_but_n)
-       (getAllEdges g)
+      new_n = Node (getIntNodeID n, NodeLabel new_id (getNodeType n))
+      entry = entryBlockNode g
+      new_entry = if isJust entry && (fromJust entry) == n
+                  then Just new_n
+                  else entry
+  in mkGraph (new_n:all_nodes_but_n) (getAllEdges g) new_entry
 
 -- | Copies the node label from one node to another node. If the two nodes are
 -- actually the same node, nothing happens.
@@ -1269,7 +1303,7 @@ insertNewNodeAlongEdge
       g3 = g2 { intGraph = int_g3 }
   in (g3, new_n)
 
--- | Updates the edge label of an already existing edge
+-- | Updates the edge label of an already existing edge.
 updateEdgeLabel
   :: EdgeLabel
   -> Edge
@@ -1279,7 +1313,7 @@ updateEdgeLabel
 updateEdgeLabel new_label e@(Edge (src, dst, _)) g =
   let all_edges_but_e = filter (/= e) (getAllEdges g)
       new_e = Edge (src, dst, new_label)
-  in (mkGraph (getAllNodes g) (new_e:all_edges_but_e), new_e)
+  in (mkGraph (getAllNodes g) (new_e:all_edges_but_e) (entryBlockNode g), new_e)
 
 -- | Gets the corresponding node from an internal node ID.
 getNodeWithIntNodeID :: IntGraph -> I.Node -> Maybe Node
@@ -1858,9 +1892,9 @@ findFNInMapping st pn = [ fNode m | m <- st, pn == pNode m ]
 computeDomSets :: Graph -> Node -> [DomSet Node]
 computeDomSets g n =
   let int_g = intGraph g
-      toNode = fromJust . getNodeWithIntNodeID int_g
-      doms = map ( \(n1, ns2) -> DomSet { domNode = toNode n1
-                                        , domSet = map toNode ns2
+      mkNode = fromJust . getNodeWithIntNodeID int_g
+      doms = map ( \(n1, ns2) -> DomSet { domNode = mkNode n1
+                                        , domSet = map mkNode ns2
                                         }
                  )
                  (I.dom int_g (getIntNodeID n))
@@ -1943,7 +1977,11 @@ subGraph g ns =
                              getTargetNode g e `elem` ns
                      ) $
               getAllEdges g
-    in mkGraph sns ses
+        entry = entryBlockNode g
+        new_entry = if isJust entry && (fromJust entry) `elem` sns
+                    then entry
+                    else Nothing
+    in mkGraph sns ses new_entry
 
 -- | Checks if two edges have the same in-edge numbers.
 haveSameInEdgeNrs :: Edge -> Edge -> Bool
