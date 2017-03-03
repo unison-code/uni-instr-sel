@@ -14,9 +14,15 @@ module Language.InstrSel.TargetMachines.Generators.PatternAnalysis
   , arePatternsNull
   , arePatternsPhi
   , arePatternsSimd
+  , arePatternsUncondBranch
+  , arePatternsCondBranch
+  , arePatternsCondBranchWithFallthrough
   )
 where
 
+import Language.InstrSel.Constraints
+  ( BoolExpr (FallThroughFromMatchToBlockExpr) )
+import Language.InstrSel.Constraints.ConstraintFolder
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Graphalyze
 import Language.InstrSel.OpStructures
@@ -70,3 +76,38 @@ arePatternsSimd pats =
             cs = weakComponentsOf g
         in length cs > 1 && all (areGraphsIsomorphic (head cs)) (tail cs)
   in all isSimdPattern pats
+
+-- ^ Checks whether all patterns contain exactly one unconditional branch.
+arePatternsUncondBranch :: [InstrPattern] -> Bool
+arePatternsUncondBranch pats =
+  let isUncondBranchPattern p =
+        let os = patOS p
+            g = osGraph os
+            op_nodes = filter isOperationNode $ getAllNodes g
+        in length op_nodes == 1 && isBrControlNode (head op_nodes)
+  in all isUncondBranchPattern pats
+
+-- ^ Checks whether all patterns contain exactly one conditional branch.
+arePatternsCondBranch :: [InstrPattern] -> Bool
+arePatternsCondBranch pats =
+  let isCondBranchPattern p =
+        let os = patOS p
+            g = osGraph os
+            op_nodes = filter isOperationNode $ getAllNodes g
+        in length op_nodes == 1 && isCondBrControlNode (head op_nodes)
+  in all isCondBranchPattern pats
+
+-- ^ Checks whether all patterns contain exactly one conditional branch with
+-- fall-through constraint.
+arePatternsCondBranchWithFallthrough :: [InstrPattern] -> Bool
+arePatternsCondBranchWithFallthrough pats =
+  let hasFallthrough p =
+        let os = patOS p
+            cs = osConstraints os
+            def_f = mkDefaultFolder False (||)
+            foldBoolExpr _ (FallThroughFromMatchToBlockExpr _) = True
+            foldBoolExpr f expr = (foldBoolExprF def_f) f expr
+            new_f = def_f { foldBoolExprF = foldBoolExpr }
+        in any (apply new_f) cs
+  in arePatternsCondBranch pats &&
+     all hasFallthrough pats
