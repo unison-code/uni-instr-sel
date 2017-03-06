@@ -101,6 +101,7 @@ weakComponentsOf g =
   map ( \int_g -> let ns = map Node $ I.labNodes int_g
                   in Graph { intGraph = int_g
                            , intNodeMap = M.fromList $ groupNodesByID ns
+                           , entryBlockNode = Nothing
                            }
       ) $
   weakComponentsOf' (intGraph g)
@@ -291,6 +292,7 @@ strongComponentsOf g =
   map ( \int_g -> let ns = map Node $ I.labNodes int_g
                   in Graph { intGraph = int_g
                            , intNodeMap = M.fromList $ groupNodesByID ns
+                           , entryBlockNode = Nothing
                            }
       ) $
   strongComponentsOf' (intGraph g)
