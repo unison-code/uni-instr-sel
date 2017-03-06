@@ -311,8 +311,9 @@ processMatch' instr pat match mid oid =
       b_ns = filter isBlockNode all_ns
       entry_b = entryBlockNode graph
       b_ns_consumed = if isJust entry_b
-                      then filter ( \n -> hasAnyPredecessors graph n
-                                          && hasAnySuccessors graph n
+                      then filter ( \n -> n /= fromJust entry_b &&
+                                          hasAnyPredecessors graph n &&
+                                          hasAnySuccessors graph n
                                   )
                                   b_ns
                       else []
