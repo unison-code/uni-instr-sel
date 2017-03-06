@@ -62,9 +62,9 @@ generateTargetMachine
      -- ^ An error message or the generated target machine.
 generateTargetMachine m =
   do let locs = mkLocations m
-         generic_instrs = [mkPhiInstruction] ++
+         generic_instrs = mkPhiInstructions ++
                           [mkBrFallThroughInstruction] ++
-                          [mkDataDefInstruction] ++
+                          mkDataDefInstructions ++
                           [mkTempNullCopyInstruction] ++
                           [mkInactiveInstruction]
      instrs <- mkInstructions m locs
@@ -96,36 +96,25 @@ mkInstructions
   -> Either String [TM.Instruction]
      -- ^ An error message or the generated instructions.
 mkInstructions m locs =
-  mapM processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
+  do is <- mapM processInstr $ zip ([0..] :: [Integer]) (LLVM.mdInstructions m)
+     return $ concat is
   where processInstr (i_id, i) =
-          do let instr_id = TM.toInstructionID i_id
-             patterns <- mkInstrPatterns locs i
-             let props = mkInstrProps i patterns
-             return TM.Instruction { TM.instrID = instr_id
-                                   , TM.instrPatterns = patterns
+          mapM (processInstrPattern (TM.toInstructionID i_id) i) $
+          LLVM.instrPatterns i
+        processInstrPattern i_id i p =
+          do let s = LLVM.instrSemantics p
+                 ops = LLVM.instrOperands p
+             (os0, in_values, out_values) <- mkOpStructure s
+             os1 <- addOperandConstraints ops locs os0
+             str <- mkEmitString i os1 (LLVM.instrEmitString i)
+             let props = mkInstrProps i os1 in_values out_values str
+             return TM.Instruction { TM.instrID = i_id
+                                   , TM.instrOS = os1
+                                   , TM.instrInputData = in_values
+                                   , TM.instrOutputData = out_values
+                                   , TM.instrEmitString = str
                                    , TM.instrProps = props
                                    }
-
-mkInstrPatterns
-  :: [TM.Location]
-  -> LLVM.Instruction
-  -> Either String [TM.InstrPattern]
-     -- ^ An error message or the generated instruction patterns.
-mkInstrPatterns locs i =
-  mapM processInstrPattern $ zip ([0..] :: [Integer]) (LLVM.instrPatterns i)
-  where processInstrPattern (p_num, p) =
-          processSemantics p_num (LLVM.instrSemantics p) (LLVM.instrOperands p)
-        processSemantics p_num p ops =
-          do let p_id = TM.toPatternID p_num
-             (os0, in_values, out_values) <- mkOpStructure p
-             os1 <- addOperandConstraints ops locs os0
-             tmpl <- mkEmitString i os1 (LLVM.instrEmitString i)
-             return TM.InstrPattern { TM.patID = p_id
-                                    , TM.patOS = os1
-                                    , TM.patInputData = in_values
-                                    , TM.patOutputData = out_values
-                                    , TM.patEmitString = tmpl
-                                    }
 
 addOperandConstraints
   :: [LLVM.InstrOperand]
@@ -290,16 +279,37 @@ mkEmitString i os str =
     mergeVerbatims (TM.ESVerbatim (s1 ++ s2):ss)
   mergeVerbatims (s:ss) = (s:mergeVerbatims ss)
 
-mkInstrProps :: LLVM.Instruction -> [TM.InstrPattern] -> TM.InstrProperties
-mkInstrProps i pats =
-  TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize i
-                     , TM.instrLatency = LLVM.instrLatency i
-                     , TM.instrIsCopy = arePatternsCopy pats
-                     , TM.instrIsInactive = False
-                     , TM.instrIsNull = arePatternsNull pats
-                     , TM.instrIsPhi = arePatternsPhi pats
-                     , TM.instrIsSimd = arePatternsSimd pats
-                     }
+mkInstrProps
+  :: LLVM.Instruction
+  -> OpStructure
+  -> [NodeID]
+  -> [NodeID]
+  -> TM.EmitStringTemplate
+  -> TM.InstrProperties
+mkInstrProps md_i os in_values out_values str =
+  let tmp_props = TM.InstrProperties { TM.instrCodeSize = 0
+                                     , TM.instrLatency = 0
+                                     , TM.instrIsCopy = False
+                                     , TM.instrIsInactive = False
+                                     , TM.instrIsNull = False
+                                     , TM.instrIsPhi = False
+                                     , TM.instrIsSimd = False
+                                     }
+      tm_i = TM.Instruction { TM.instrID = 0
+                            , TM.instrOS = os
+                            , TM.instrInputData = in_values
+                            , TM.instrOutputData = out_values
+                            , TM.instrEmitString = str
+                            , TM.instrProps = tmp_props
+                            }
+  in TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize md_i
+                        , TM.instrLatency = LLVM.instrLatency md_i
+                        , TM.instrIsCopy = isInstructionCopy tm_i
+                        , TM.instrIsInactive = False
+                        , TM.instrIsNull = isInstructionNull tm_i
+                        , TM.instrIsPhi = isInstructionPhi tm_i
+                        , TM.instrIsSimd = isInstructionSimd tm_i
+                        }
 
 -- | Gets the operand with a given name of a given instruction. If no such
 -- operand is found, 'Nothing' is returned.

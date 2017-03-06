@@ -119,8 +119,6 @@ data HighLevelMatchParams
   = HighLevelMatchParams
       { hlMatchInstructionID :: InstructionID
         -- ^ The instruction ID of this match.
-      , hlMatchPatternID :: PatternID
-        -- ^ The pattern ID of this match.
       , hlMatchID :: MatchID
         -- ^ The matchset ID of this match.
       , hlOperandNodeMaps :: [(OperandID, [NodeID])]
@@ -323,10 +321,6 @@ data LowLevelModel
       , llMatchConstraints :: [[Constraint]]
         -- ^ The list of constraints for each match. An index into the outer
         -- list corresponds to the array index of a particular match.
-      , llMatchPatternIDs :: [PatternID]
-        -- ^ The patterns from which each match is derived. An index into the
-        -- list corresponds to the array index of a particular match. This
-        -- information is used for debugging purposes only.
       , llMatchInstructionIDs :: [InstructionID]
         -- ^ The instructions from which each match is derived. An index into
         -- the list corresponds to the array index of a particular match. This
@@ -544,7 +538,6 @@ instance FromJSON HighLevelMatchParams where
   parseJSON (Object v) =
     HighLevelMatchParams
       <$> v .: "instruction-id"
-      <*> v .: "pattern-id"
       <*> v .: "match-id"
       <*> v .: "operand-node-maps"
       <*> v .: "operations-covered"
@@ -574,7 +567,6 @@ instance FromJSON HighLevelMatchParams where
 instance ToJSON HighLevelMatchParams where
   toJSON p@(HighLevelMatchParams {}) =
     object [ "instruction-id"           .= (hlMatchInstructionID p)
-           , "pattern-id"               .= (hlMatchPatternID p)
            , "match-id"                 .= (hlMatchID p)
            , "operand-node-maps"        .= (hlOperandNodeMaps p)
            , "operations-covered"       .= (hlMatchOperationsCovered p)
@@ -655,7 +647,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-null-instrs"
       <*> v .: "match-phi-instrs"
       <*> v .: "match-constraints"
-      <*> v .: "match-pattern-ids"
       <*> v .: "match-instruction-ids"
       <*> v .: "illegal-match-combs"
       <*> v .: "target-machine"
@@ -701,7 +692,6 @@ instance ToJSON LowLevelModel where
            , "match-null-instrs"        .= (llMatchNullInstructions m)
            , "match-phi-instrs"         .= (llMatchPhiInstructions m)
            , "match-constraints"        .= (llMatchConstraints m)
-           , "match-pattern-ids"        .= (llMatchPatternIDs m)
            , "match-instruction-ids"    .= (llMatchInstructionIDs m)
            , "illegal-match-combs"      .= (llIllegalMatchCombs m)
            , "target-machine"           .= (llTMID m)

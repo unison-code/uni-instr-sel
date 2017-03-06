@@ -321,13 +321,12 @@ getHLMatchParams
   -> HighLevelMatchParams
 getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
 
--- | Retrieves the 'InstrPattern' entity with matching pattern ID. It is assumed
--- that such an entity always exists in the given list.
-getInstrPattern :: TargetMachine -> InstructionID -> PatternID -> InstrPattern
-getInstrPattern tm iid pid =
+-- | Retrieves the 'Instruction' entity with matching instruction ID. It is
+-- assumed that such an entity always exists in the given list.
+getInstruction :: TargetMachine -> InstructionID -> Instruction
+getInstruction tm iid =
   let instr = findInstruction tm iid
-      pat = findInstrPattern (instrPatterns $ fromJust instr) pid
-  in fromJust pat
+  in fromJust instr
 
 -- | Emits the instructions for a given match. Each part of the code is emitted
 -- by appending strings to the instruction currently at the head of the list of
@@ -352,11 +351,9 @@ emitInstructionsOfMatch model sol tm st0 mid =
       fetchNodeID (Just (Left oid)) = Just $ getNodeIDFromOpID oid
       fetchNodeID Nothing = Nothing
       match = getHLMatchParams (hlMatchParams model) mid
-      pat_data = getInstrPattern tm
-                                 (hlMatchInstructionID match)
-                                 (hlMatchPatternID match)
+      instr_data = getInstruction tm (hlMatchInstructionID match)
       emit_parts = updateNodeIDsInEmitStrParts
-                     (emitStrParts $ patEmitString pat_data) $
+                     (emitStrParts $ instrEmitString instr_data) $
                    map ( map ( maybe Nothing (Just . replaceAliases) .
                                fetchNodeID
                              )

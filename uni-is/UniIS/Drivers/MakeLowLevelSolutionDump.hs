@@ -196,13 +196,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                   instr = if isJust instr_res
                           then fromJust instr_res
                           else error $ "No instruction with ID " ++ (pShow iid)
-                  pid = (llMatchPatternIDs model) !! i
-                  pat_res = findInstrPattern (instrPatterns instr) pid
-                  pat = if isJust instr_res
-                        then fromJust pat_res
-                        else error $ "No pattern with ID " ++ (pShow pid) ++
-                                     " in instruction with ID " ++ (pShow iid)
-                  emit_str = patEmitString pat
+                  emit_str = instrEmitString instr
               in "Match ID: " ++ pShow m
                  ++
                  "\n"
@@ -260,14 +254,6 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  "Instruction ID: "
                  ++
                  (pShow iid)
-                 ++
-                 "\n"
-                 ++
-                 addPadding ai
-                 ++
-                 "Pattern ID: "
-                 ++
-                 (pShow pid)
                  ++
                  "\n"
                  ++

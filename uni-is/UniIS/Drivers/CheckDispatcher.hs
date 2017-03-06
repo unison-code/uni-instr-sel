@@ -61,8 +61,7 @@ dispatch a opts
       do tmid <- getSelectedTargetMachineID opts
          tm <- loadTargetMachine tmid
          iid <- getSelectedInstructionID opts
-         pid <- getSelectedPatternID opts
-         pat <- loadInstrPattern tm iid pid
-         CheckIntegrity.run a (Right pat)
+         instr <- loadInstruction tm iid
+         CheckIntegrity.run a (Right instr)
   | otherwise =
       reportErrorAndExit "CheckDispatcher: unsupported action"

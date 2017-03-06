@@ -38,7 +38,6 @@ import Language.InstrSel.TargetMachines
 import Language.InstrSel.TargetMachines.PatternMatching
   ( PatternMatch (..)
   , getInstructionFromPatternMatch
-  , getInstrPatternFromPatternMatch
   )
 import Language.InstrSel.Utils
   ( combinations )
@@ -210,13 +209,10 @@ mkHLMatchParams
      -- processing the next 'Match'.
 mkHLMatchParams target match oid =
   let instr = fromJust $ findInstruction target (pmInstrID match)
-      pat = fromJust $ findInstrPattern (instrPatterns instr)
-                                        (pmPatternID match)
-  in processMatch instr pat (pmMatch match) (pmMatchID match) oid
+  in processMatch instr (pmMatch match) (pmMatchID match) oid
 
 processMatch
   :: Instruction
-  -> InstrPattern
   -> Match NodeID
   -> MatchID
   -> OperandID
@@ -224,9 +220,9 @@ processMatch
   -> (HighLevelMatchParams, OperandID)
      -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
      -- processing the next 'Match'.
-processMatch instr pat match mid oid =
-  let (pat', match') = enableCopyingForMultUseInputsInPattern pat match
-  in processMatch' instr pat' match' mid oid
+processMatch instr match mid oid =
+  let (instr', match') = enableCopyingForMultUseInputsInPattern instr match
+  in processMatch' instr' match' mid oid
 
 -- | If the given match is derived from a pattern graph that has one or more
 -- input values of which the pattern makes multiple uses, this function will
@@ -234,11 +230,11 @@ processMatch instr pat match mid oid =
 -- represent the actual input value. The reason for this is to allow the input
 -- value to be appropriately copied before entering the instruction.
 enableCopyingForMultUseInputsInPattern
-  :: InstrPattern
+  :: Instruction
   -> Match NodeID
-  -> (InstrPattern, Match NodeID)
-enableCopyingForMultUseInputsInPattern pat match =
-  let g = osGraph $ patOS pat
+  -> (Instruction, Match NodeID)
+enableCopyingForMultUseInputsInPattern instr match =
+  let g = osGraph $ instrOS instr
       mult_use_input_vs =
         filter ( \n -> isValueNode n &&
                        not (isValueNodeWithConstValue n) &&
@@ -246,8 +242,8 @@ enableCopyingForMultUseInputsInPattern pat match =
                        length (getDtFlowOutEdges g n) > 1
                ) $
         getAllNodes g
-      rewrite old_input (old_p, old_m) =
-        let old_os = patOS old_p
+      rewrite old_input (old_i, old_m) =
+        let old_os = instrOS old_i
             g0 = osGraph old_os
             e = head $ getDtFlowOutEdges g0 old_input
             cp_n = getTargetNode g0 e
@@ -285,17 +281,16 @@ enableCopyingForMultUseInputsInPattern pat match =
                     fromMatch old_m
             new_emit_str = updateNodeInEmitStrTemplate old_input_id
                                                        new_input_id
-                                                       (patEmitString old_p)
-            new_p = old_p { patOS = new_os
-                          , patInputData = (new_input_id:patInputData old_p)
-                          , patEmitString = new_emit_str
+                                                       (instrEmitString old_i)
+            new_i = old_i { instrOS = new_os
+                          , instrInputData = (new_input_id:instrInputData old_i)
+                          , instrEmitString = new_emit_str
                           }
-        in (new_p, new_m)
-  in foldr rewrite (pat, match) mult_use_input_vs
+        in (new_i, new_m)
+  in foldr rewrite (instr, match) mult_use_input_vs
 
 processMatch'
   :: Instruction
-  -> InstrPattern
   -> Match NodeID
   -> MatchID
   -> OperandID
@@ -303,8 +298,9 @@ processMatch'
   -> (HighLevelMatchParams, OperandID)
      -- ^ The created 'HighLevelMatchParams' and the new 'OperandID' to use when
      -- processing the next 'Match'.
-processMatch' instr pat match mid oid =
-  let graph = osGraph $ patOS pat
+processMatch' instr match mid oid =
+  let os = instrOS instr
+      graph = osGraph os
       all_ns = getAllNodes graph
       o_ns = filter isOperationNode all_ns
       d_ns = filter isDatumNode all_ns
@@ -320,11 +316,12 @@ processMatch' instr pat match mid oid =
       c_ns = filter isControlNode all_ns
       d_def_ns = filter (hasAnyPredecessors graph) d_ns
       d_use_ns = filter (hasAnySuccessors graph) d_ns
-      d_in_ns = filter (\n -> (getNodeID n) `elem` (patInputData pat)) d_ns
-      d_out_ns = filter (\n -> (getNodeID n) `elem` (patOutputData pat)) d_ns
+      d_in_ns = filter (\n -> (getNodeID n) `elem` (instrInputData instr)) d_ns
+      d_out_ns = filter (\n -> (getNodeID n) `elem` (instrOutputData instr)) $
+                 d_ns
       p_ext_ns = nub $
-                 patInputData pat ++
-                 patOutputData pat ++
+                 instrInputData instr ++
+                 instrOutputData instr ++
                  (map getNodeID $ filter isValueNodeWithConstValue d_ns)
       d_int_ns = filter (\n -> (getNodeID n) `notElem` p_ext_ns) d_ns
       d_use_by_phi_ns = filter (\n -> any isPhiNode (getSuccessors graph n))
@@ -360,16 +357,15 @@ processMatch' instr pat match mid oid =
                                   else error $ "processMatch: multiple mappings"
         in map getSingleFN fns
       valid_locs = map (\(pn, ls) -> (getOpIDForPatternDataNodeID pn, ls)) $
-                   osValidLocations $ patOS pat
+                   osValidLocations $ instrOS instr
       same_locs = map ( \(pn1, pn2) -> ( getOpIDForPatternDataNodeID pn1
                                        , getOpIDForPatternDataNodeID pn2
                                        )
                       ) $
-                  osSameLocations $ patOS pat
+                  osSameLocations $ instrOS instr
       i_props = instrProps instr
   in ( HighLevelMatchParams
          { hlMatchInstructionID = instrID instr
-         , hlMatchPatternID = patID pat
          , hlMatchID = mid
          , hlOperandNodeMaps = oid2fn_maps
          , hlMatchOperationsCovered =  nub $ getMappedFNs o_ns
@@ -394,7 +390,7 @@ processMatch' instr pat match mid oid =
                    (replaceNodeIDsFromP2FInC match) .
                    (replaceNodeIDsWithOperandIDs pn2oid_maps)
                  ) $
-             osConstraints $ patOS pat
+             osConstraints os
          , hlMatchIsPhiInstruction = isInstructionPhi $ instr
          , hlMatchIsCopyInstruction = isInstructionCopy $ instr
          , hlMatchIsInactiveInstruction = isInstructionInactive $ instr
@@ -409,7 +405,7 @@ processMatch' instr pat match mid oid =
              zip (getMappedFNs b_def_by_phi_ns)
                  (getOpIDsForPatternDataNodes d_def_by_phi_ns)
          , hlMatchEmitStrNodeMaplist =
-             computeEmitStrNodeMaps (patEmitString pat) pn2oid_maps match
+             computeEmitStrNodeMaps (instrEmitString instr) pn2oid_maps match
          }
      , next_oid
      )
@@ -666,7 +662,6 @@ lowerHighLevelModel model ai_maps =
            map (map (replaceIDsWithArrayIndexes ai_maps)) $
            map hlMatchConstraints $
            m_params
-       , llMatchPatternIDs = map hlMatchPatternID m_params
        , llMatchInstructionIDs = map hlMatchInstructionID m_params
        , llIllegalMatchCombs = map (map getAIForMatchID) $
                                hlIllegalMatchCombs model
@@ -769,13 +764,13 @@ mkIllegalMatchCombs
   -> [[MatchID]]
 mkIllegalMatchCombs function target matches =
   let g0 = I.mkGraph (zip [0..] matches) [] :: I.Gr PatternMatch ()
-      getExternalDataNodes ip pm fg =
-        let pg = osGraph $ patOS ip
+      getExternalDataNodes i pm fg =
+        let pg = osGraph $ instrOS i
             input_ns = filter ( \n -> isValueNode n &&
                                       not (hasAnyPredecessors pg n)
                               ) $
                        getAllNodes pg
-            output_nids = patOutputData ip
+            output_nids = instrOutputData i
         in ( concatMap (findNodesWithNodeID fg) $
              concat $
              findFNsInMatch (pmMatch pm) (map getNodeID input_ns)
@@ -791,10 +786,10 @@ mkIllegalMatchCombs function target matches =
                                I.labNodes g
       addDependencies [m1, m2] g' =
         let fg = osGraph $ functionOS function
-            p1 = getInstrPatternFromPatternMatch target m1
-            p2 = getInstrPatternFromPatternMatch target m2
-            (m1_in_vs, m1_out_vs)  = getExternalDataNodes p1 m1 fg
-            (m2_in_vs, m2_out_vs)  = getExternalDataNodes p2 m2 fg
+            i1 = getInstructionFromPatternMatch target m1
+            i2 = getInstructionFromPatternMatch target m2
+            (m1_in_vs, m1_out_vs)  = getExternalDataNodes i1 m1 fg
+            (m2_in_vs, m2_out_vs)  = getExternalDataNodes i2 m2 fg
             n1 = getMatchNodeFromID g' m1
             n2 = getMatchNodeFromID g' m2
             g'' = if any (\n -> n `elem` m2_in_vs) m1_out_vs

@@ -24,7 +24,7 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.OpTypes
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
-  ( InstrPattern (..) )
+  ( Instruction (..) )
 import Language.InstrSel.Utils
   ( group )
 
@@ -60,7 +60,7 @@ data CheckType
 
 run
   :: CheckAction
-  -> Either Function InstrPattern
+  -> Either Function Instruction
   -> IO [Output]
 
 run CheckFunctionIntegrity (Left fun) =
@@ -81,8 +81,8 @@ run CheckFunctionIntegrity (Left fun) =
          log4 = checkConstraints os
      return $ mkOutputFromLog $ concatLogs [log0, log1, log2, log3, log4]
 
-run CheckPatternIntegrity (Right pat) =
-  do let os = patOS pat
+run CheckPatternIntegrity (Right instr) =
+  do let os = instrOS instr
          g = osGraph os
          log0 = checkGraphInvariants PatternCheck g
          log1 = concatLogs $
@@ -91,14 +91,14 @@ run CheckPatternIntegrity (Right pat) =
                                       g
                                       nid
                     )
-                    (patInputData pat)
+                    (instrInputData instr)
          log2 = concatLogs $
                 map ( \nid ->
                       checkNodeExists ("output data with ID " ++ pShow nid)
                                       g
                                       nid
                     )
-                    (patOutputData pat)
+                    (instrOutputData instr)
          log3 = checkEntryBlock os
          log4 = checkValueLocations os
          log5 = checkConstraints os

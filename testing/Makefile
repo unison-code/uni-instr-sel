@@ -433,7 +433,6 @@ pattern.dot:
 	$(UNI_IS_CMD) plot --plot-pat-full-graph \
                   -t $(TARGET) \
 				  --instruction $(INSTR) \
-				  --pattern $(PAT) \
                   -o $@
 
 %.pdf: %.dot

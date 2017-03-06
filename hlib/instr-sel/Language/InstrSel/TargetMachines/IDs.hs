@@ -14,17 +14,14 @@ Main authors:
 
 module Language.InstrSel.TargetMachines.IDs
   ( InstructionID (..)
-  , PatternID (..)
   , LocationID (..)
   , LocationName (..)
   , TargetMachineID (..)
   , fromInstructionID
-  , fromPatternID
   , fromLocationID
   , fromLocationName
   , fromTargetMachineID
   , toInstructionID
-  , toPatternID
   , toLocationID
   , toLocationName
   , toTargetMachineID
@@ -61,13 +58,6 @@ newtype InstructionID
 instance PrettyShow InstructionID where
   pShow (InstructionID i) = pShow i
 
-newtype PatternID
-  = PatternID Natural
-  deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
-
-instance PrettyShow PatternID where
-  pShow (PatternID i) = pShow i
-
 newtype LocationID
   = LocationID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
@@ -102,13 +92,6 @@ instance FromJSON InstructionID where
 instance ToJSON InstructionID where
   toJSON iid = toJSON (fromInstructionID iid)
 
-instance FromJSON PatternID where
-  parseJSON (JSON.Number sn) = return $ toPatternID $ sn2nat sn
-  parseJSON _ = mzero
-
-instance ToJSON PatternID where
-  toJSON pid = toJSON (fromPatternID pid)
-
 instance FromJSON LocationID where
   parseJSON (JSON.Number sn) = return $ toLocationID $ sn2nat sn
   parseJSON _ = mzero
@@ -136,13 +119,6 @@ instance FromLisp InstructionID where
 instance ToLisp InstructionID where
   toLisp (InstructionID nid) = Lisp.Number (I (fromNatural nid))
 
-instance FromLisp PatternID where
-  parseLisp (Lisp.Number (I n)) = return $ toPatternID n
-  parseLisp _ = mzero
-
-instance ToLisp PatternID where
-  toLisp (PatternID nid) = Lisp.Number (I (fromNatural nid))
-
 instance FromLisp LocationID where
   parseLisp (Lisp.Number (I n)) = return $ toLocationID n
   parseLisp _ = mzero
@@ -163,9 +139,6 @@ instance ToLisp LocationID where
 instance NFData InstructionID where
   rnf (InstructionID a) = rnf a
 
-instance NFData PatternID where
-  rnf (PatternID a) = rnf a
-
 instance NFData TargetMachineID where
   rnf (TargetMachineID a) = rnf a
 
@@ -174,12 +147,6 @@ instance NFData TargetMachineID where
 -------------
 -- Functions
 -------------
-
-fromPatternID :: PatternID -> Natural
-fromPatternID (PatternID i) = i
-
-toPatternID :: (Integral i) => i -> PatternID
-toPatternID = PatternID . toNatural
 
 fromLocationID :: LocationID -> Natural
 fromLocationID (LocationID i) = i

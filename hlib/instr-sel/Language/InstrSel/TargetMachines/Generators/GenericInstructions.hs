@@ -11,8 +11,8 @@ Main authors:
 
 module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   ( mkBrFallThroughInstruction
-  , mkPhiInstruction
-  , mkDataDefInstruction
+  , mkPhiInstructions
+  , mkDataDefInstructions
   , mkTempNullCopyInstruction
   , mkInactiveInstruction
   , reassignInstrIDs
@@ -54,12 +54,12 @@ mkGenericValueNodeType = ValueNode { typeOfValue = AnyType
 mkGenericBlockNodeType :: NodeType
 mkGenericBlockNodeType = BlockNode mkEmptyBlockName
 
--- | Creates an instruction for handling the generic cases where
--- 'PhiNode's appear. Note that the 'InstructionID's of all instructions will be
+-- | Creates instructions for handling the generic cases where 'PhiNode's
+-- appear. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkPhiInstruction :: Instruction
-mkPhiInstruction =
-  let mkPat n =
+mkPhiInstructions :: [Instruction]
+mkPhiInstructions =
+  let mkInstr n =
         let g = mkGraph ( map Node $
                           ( [ ( 0, NodeLabel 0 PhiNode )
                             , ( 1, NodeLabel 1 mkGenericValueNodeType )
@@ -122,24 +122,22 @@ mkPhiInstruction =
                            [2..n+1]
                          )
                        ]
-        in InstrPattern
-             { patID = (toPatternID $ n-2)
-             , patOS = OpStructure g [] [] []
-             , patInputData = [2..n+1]
-             , patOutputData = [1]
-             , patEmitString = emit_str
+        in Instruction
+             { instrID = 0
+             , instrOS = OpStructure g [] [] []
+             , instrInputData = [2..n+1]
+             , instrOutputData = [1]
+             , instrEmitString = emit_str
+             , instrProps = InstrProperties { instrCodeSize = 0
+                                            , instrLatency = 0
+                                            , instrIsCopy = False
+                                            , instrIsInactive = False
+                                            , instrIsNull = False
+                                            , instrIsPhi = True
+                                            , instrIsSimd = False
+                                            }
              }
-  in Instruction { instrID = 0
-                 , instrPatterns = map mkPat [2..10]
-                 , instrProps = InstrProperties { instrCodeSize = 0
-                                                , instrLatency = 0
-                                                , instrIsCopy = False
-                                                , instrIsInactive = False
-                                                , instrIsNull = False
-                                                , instrIsPhi = True
-                                                , instrIsSimd = False
-                                                }
-                 }
+  in map mkInstr [2..10]
 
 -- | Creates an instruction for handling unconditional branching to the
 -- immediately following block (that is, fallthroughs). Note that the
@@ -161,17 +159,12 @@ mkBrFallThroughInstruction =
                   )
                   (Just $ Node entry)
       cs = mkFallThroughConstraints 2
-      pat =
-        InstrPattern
-          { patID = 0
-          , patOS = OpStructure g [] [] cs
-          , patInputData = []
-          , patOutputData = []
-          , patEmitString = EmitStringTemplate []
-          }
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat]
+       , instrOS = OpStructure g [] [] cs
+       , instrInputData = []
+       , instrOutputData = []
+       , instrEmitString = EmitStringTemplate []
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = False
@@ -182,10 +175,12 @@ mkBrFallThroughInstruction =
                                       }
        }
 
--- | Creates an instruction for handling definition of data that represent
--- constants and function arguments.
-mkDataDefInstruction :: Instruction
-mkDataDefInstruction =
+-- | Creates instructions for handling definition of data that represent
+-- constants and function arguments. Note that the 'InstructionID's of all
+-- instructions will be (incorrectly) set to 0, meaning they must be reassigned
+-- afterwards.
+mkDataDefInstructions :: [Instruction]
+mkDataDefInstructions =
   let entry = ( 0, NodeLabel 0 mkGenericBlockNodeType )
       mkPatternGraph datum flow_type =
         mkGraph ( map Node $
@@ -199,28 +194,25 @@ mkDataDefInstruction =
                 (Just $ Node entry)
       g1 = mkPatternGraph mkGenericValueNodeType DataFlowEdge
       g2 = mkPatternGraph StateNode StateFlowEdge
-      mkInstrPattern pid g cs =
-        InstrPattern
-          { patID = pid
-          , patOS = OpStructure g [] [] cs
-          , patInputData = []
-          , patOutputData = [1]
-          , patEmitString = EmitStringTemplate []
+      mkInstr g cs =
+        Instruction
+          { instrID = 0
+          , instrOS = OpStructure g [] [] cs
+          , instrInputData = []
+          , instrOutputData = [1]
+          , instrEmitString = EmitStringTemplate []
+          , instrProps = InstrProperties { instrCodeSize = 0
+                                         , instrLatency = 0
+                                         , instrIsCopy = False
+                                         , instrIsInactive = False
+                                         , instrIsNull = True
+                                         , instrIsPhi = False
+                                         , instrIsSimd = False
+                                         }
           }
-  in Instruction
-       { instrID = 0
-       , instrPatterns = [ mkInstrPattern 0 g1 []
-                         , mkInstrPattern 1 g2 []
-                         ]
-       , instrProps = InstrProperties { instrCodeSize = 0
-                                      , instrLatency = 0
-                                      , instrIsCopy = False
-                                      , instrIsInactive = False
-                                      , instrIsNull = True
-                                      , instrIsPhi = False
-                                      , instrIsSimd = False
-                                      }
-       }
+  in [ mkInstr g1 []
+     , mkInstr g2 []
+     ]
 
 -- | Creates an instruction for handling null-copy operations regarding
 -- temporaries. Note that the 'InstructionID's of all instructions will be
@@ -239,16 +231,12 @@ mkTempNullCopyInstruction =
                     ]
                   )
                   Nothing
-      pat = InstrPattern
-             { patID = 0
-             , patOS = OpStructure g [] [(1, 2)] []
-             , patInputData = [1]
-             , patOutputData = [2]
-             , patEmitString = EmitStringTemplate []
-             }
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat]
+       , instrOS = OpStructure g [] [(1, 2)] []
+       , instrInputData = [1]
+       , instrOutputData = [2]
+       , instrEmitString = EmitStringTemplate []
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = True
@@ -276,16 +264,12 @@ mkInactiveInstruction =
                     ]
                   )
                   Nothing
-      pat = InstrPattern
-              { patID = 0
-              , patOS = OpStructure g [] [] []
-              , patInputData = [1]
-              , patOutputData = [2]
-              , patEmitString = EmitStringTemplate []
-              }
   in Instruction
        { instrID = 0
-       , instrPatterns = [pat]
+       , instrOS = OpStructure g [] [] []
+       , instrInputData = [1]
+       , instrOutputData = [2]
+       , instrEmitString = EmitStringTemplate []
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = True

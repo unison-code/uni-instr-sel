@@ -20,7 +20,6 @@ module Language.InstrSel.TargetMachines.PatternMatching
   , mkPatternMatchset
   , findPatternMatchesWithMatchID
   , getInstructionFromPatternMatch
-  , getInstrPatternFromPatternMatch
   )
 where
 
@@ -84,7 +83,6 @@ data PatternMatchset
 data PatternMatch
   = PatternMatch
       { pmInstrID :: InstructionID
-      , pmPatternID :: PatternID
       , pmMatchID :: MatchID
       , pmMatch :: Match NodeID
       }
@@ -94,7 +92,6 @@ data PatternMatch
 data IntPatternMatch
   = IntPatternMatch
       { ipmInstrID :: InstructionID
-      , ipmPatternID :: PatternID
       , ipmMatch :: Match Node
       , ipmHasCheckedCyclicDataDep :: Bool
         -- ^ Whether a cyclic data dependency check has already been done on
@@ -127,7 +124,6 @@ instance FromJSON PatternMatch where
   parseJSON (Object v) =
     PatternMatch
       <$> v .: "instr-id"
-      <*> v .: "pattern-id"
       <*> v .: "match-id"
       <*> v .: "match"
   parseJSON _ = mzero
@@ -135,7 +131,6 @@ instance FromJSON PatternMatch where
 instance ToJSON PatternMatch where
   toJSON m =
     object [ "instr-id"   .= (pmInstrID m)
-           , "pattern-id" .= (pmPatternID m)
            , "match-id"   .= (pmMatchID m)
            , "match"      .= (pmMatch m)
            ]
@@ -154,7 +149,7 @@ instance NFData PatternMatchset where
   rnf (PatternMatchset a b c) = rnf a `seq` rnf b `seq` rnf c
 
 instance NFData PatternMatch where
-  rnf (PatternMatch a b c d) = rnf a `seq` rnf b `seq` rnf c `seq` rnf d
+  rnf (PatternMatch a b c) = rnf a `seq` rnf b `seq` rnf c
 
 
 
@@ -187,33 +182,21 @@ mkPatternMatches int_ms =
   let int_ms_ps = zip int_ms [0..]
       mkPatternMatch (m, mid) =
         PatternMatch { pmInstrID = ipmInstrID m
-                     , pmPatternID = ipmPatternID m
                      , pmMatchID = mid
                      , pmMatch = convertMatchN2ID $ ipmMatch m
                      }
   in map mkPatternMatch int_ms_ps
 
 processInstr :: Function -> Instruction -> [IntPatternMatch]
-processInstr f i =
-  let os = functionOS f
+processInstr fun instr =
+  let os = functionOS fun
       fg = osGraph os
       dup_fg = duplicateNodes fg
       entry = let e = entryBlockNode fg
               in if isJust e
                  then fromJust e
                  else error "processInstr: function has no entry block node"
-  in concatMap (processInstrPattern (fg, entry) dup_fg i) (instrPatterns i)
-
-processInstrPattern
-  :: (Graph, Node)
-     -- ^ The original function graph, together with its entry block node.
-  -> Graph
-     -- ^ The duplicated function graph.
-  -> Instruction
-  -> InstrPattern
-  -> [IntPatternMatch]
-processInstrPattern (fg, entry) dup_fg instr pat =
-  let pg = osGraph $ patOS pat
+      pg = osGraph $ instrOS instr
       dup_pg = duplicateNodes pg
       matches = if not (isInstructionSimd instr)
                 then map (\m -> (m, False)) $
@@ -229,7 +212,6 @@ processInstrPattern (fg, entry) dup_fg instr pat =
                         map (fixMatch fg pg) $
                         mkSimdMatches dup_fg sub_pg sub_matches (tail pg_cs)
   in map ( \(m, b) -> IntPatternMatch { ipmInstrID = instrID instr
-                                      , ipmPatternID = patID pat
                                       , ipmMatch = m
                                       , ipmHasCheckedCyclicDataDep = b
                                       }
@@ -556,19 +538,4 @@ getInstructionFromPatternMatch t m =
   in if isJust i
      then fromJust i
      else error $ "getInstructionFromPatternMatch: target machine has no " ++
-                  "instruction with ID " ++ pShow iid
-
-getInstrPatternFromPatternMatch :: TargetMachine -> PatternMatch -> InstrPattern
-getInstrPatternFromPatternMatch t m =
-  let iid = pmInstrID m
-      pid = pmPatternID m
-      i = findInstruction t iid
-      p = findInstrPattern (instrPatterns $ fromJust i) pid
-  in if isJust i
-     then if isJust p
-          then fromJust p
-          else error $ "getInstrPatternFromPatternMatch: target machine " ++
-                       "with instruction ID " ++ pShow iid ++ " has no " ++
-                       "pattern with ID " ++ pShow pid
-     else error $ "getInstrPatternFromPatternMatch: target machine has no " ++
                   "instruction with ID " ++ pShow iid

@@ -115,11 +115,6 @@ parseArgs =
         &= explicit
         &= typ "ID"
         &= help "ID of an instruction."
-    , patternID = def
-        &= name "pattern"
-        &= explicit
-        &= typ "ID"
-        &= help "ID of a pattern."
     , makeAction =
         enum [ MakeNothing
                  &= auto

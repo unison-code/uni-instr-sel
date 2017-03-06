@@ -52,11 +52,10 @@ import Data.Maybe
 copyExtend :: TargetMachine -> TargetMachine
 copyExtend tm =
   let copyExtendOS os = os { osGraph = copyExtendGraph $ osGraph os }
-      copyExtendPat p = p { patOS = copyExtendOS $ patOS p }
       copyExtendInstr i =
         let is_copy = isInstructionCopy i
         in if not is_copy
-           then i { instrPatterns = map copyExtendPat (instrPatterns i) }
+           then i { instrOS = copyExtendOS $ instrOS i }
            else i
       new_instrs = M.map copyExtendInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
@@ -128,12 +127,10 @@ insertCopy g0 df_edge =
 -- | Lowers pointers in every instruction in the given target machine.
 lowerPointers :: TargetMachine -> TargetMachine
 lowerPointers tm =
-  let lowerPat p = p { patOS = OS.lowerPointers (tmPointerSize tm)
-                                                (tmNullPointerValue tm)
-                                                (patOS p)
-                     }
-      lowerInstr i =
-        i { instrPatterns = map lowerPat (instrPatterns i) }
+  let lowerInstr i = i { instrOS = OS.lowerPointers (tmPointerSize tm)
+                                                    (tmNullPointerValue tm)
+                                                    (instrOS i)
+                       }
       new_instrs = M.map lowerInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
@@ -141,15 +138,12 @@ lowerPointers tm =
 -- constant.
 combineConstants :: TargetMachine -> TargetMachine
 combineConstants tm =
-  let processInstr i = i { instrPatterns = map combineConstantsInPattern
-                                               (instrPatterns i)
-                         }
-      new_instrs = M.map processInstr (tmInstructions tm)
+  let new_instrs = M.map combineConstantsInInstruction (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
-combineConstantsInPattern :: InstrPattern -> InstrPattern
-combineConstantsInPattern p =
-  let g = getGraph p
+combineConstantsInInstruction :: Instruction -> Instruction
+combineConstantsInInstruction i =
+  let g = getGraph i
       const_ns = filter isValueNodeWithConstValue (getAllNodes g)
       haveSameConstants n1 n2 =
         let d1 = getDataTypeOfValueNode n1
@@ -158,32 +152,32 @@ combineConstantsInPattern p =
            isSingletonConstant d2 &&
            d1 `areSameConstants` d2
       grouped_ns = groupBy haveSameConstants const_ns
-  in foldl combineValueNodes p grouped_ns
+  in foldl combineValueNodes i grouped_ns
 
-combineValueNodes :: InstrPattern -> [Node] -> InstrPattern
-combineValueNodes p nodes =
+combineValueNodes :: Instruction -> [Node] -> Instruction
+combineValueNodes i nodes =
   cc nodes
   where
-  cc [] = p
+  cc [] = i
   cc [n] =
-    let g = getGraph p
+    let g = getGraph i
         dt_wo_bitwidth = mkNewDataType $ getDataTypeOfValueNode n
         new_g = updateDataTypeOfValueNode dt_wo_bitwidth n g
-    in updateGraph new_g p
+    in updateGraph new_g i
   cc ns =
     let nt = ValueNode (mkNewDataType $ getDataTypeOfValueNode $ head ns)
                        (getOriginOfValueNode $ head ns)
              -- Note that the bitwidth is not copied
-        g0 = getGraph p
+        g0 = getGraph i
         (g1, new_n) = addNewNode nt g0
-        new_p = foldr (replaceValueNode new_n) (updateGraph g1 p) ns
-    in new_p
+        new_i = foldr (replaceValueNode new_n) (updateGraph g1 i) ns
+    in new_i
   mkNewDataType IntConstType { intConstValue = r } =
     IntConstType { intConstValue = r, intConstNumBits = Nothing }
   mkNewDataType d = error $ "combineValueNodes: unsupported data type " ++
                             show d
-  replaceValueNode new_n old_n p' =
-    let old_os = patOS p'
+  replaceValueNode new_n old_n i' =
+    let old_os = instrOS i'
         old_g = osGraph old_os
         new_g = delNode old_n $ redirectOutEdges new_n old_n old_g
         def_recon = mkDefaultReconstructor
@@ -195,25 +189,24 @@ combineValueNodes p nodes =
         recon = mkDefaultReconstructor { mkNodeExprF = mkNodeExpr }
         new_cs = map (apply recon) (osConstraints old_os)
         new_os = old_os { osGraph = new_g, osConstraints = new_cs }
-        old_emit_str = patEmitString p'
+        old_emit_str = instrEmitString i'
         new_emit_str = replaceNodeIDInEmitString (getNodeID old_n)
                                                  (getNodeID new_n)
                                                  old_emit_str
-    in p' { patOS = new_os
-          , patEmitString = new_emit_str
+    in i' { instrOS = new_os
+          , instrEmitString = new_emit_str
           }
 
--- | Gets the graph of the given pattern.
-getGraph :: InstrPattern -> Graph
-getGraph = osGraph . patOS
+-- | Gets the graph of the given instruction.
+getGraph :: Instruction -> Graph
+getGraph = osGraph . instrOS
 
--- | Replaces the graph in the given pattern with a new graph.
-updateGraph :: Graph -> InstrPattern -> InstrPattern
-updateGraph new_g p =
-  let os = patOS p
+-- | Replaces the graph in the given instruction with a new graph.
+updateGraph :: Graph -> Instruction -> Instruction
+updateGraph new_g i =
+  let os = instrOS i
       new_os = os { osGraph = new_g }
-      new_p = p { patOS = new_os }
-  in new_p
+  in i { instrOS = new_os }
 
 -- | Replaces a given node ID in the given 'EmitStringTemplate'.
 replaceNodeIDInEmitString
@@ -303,16 +296,16 @@ insertAlternativeMappings
 insertAlternativeMappings t limit vs pm =
   let sorted_vs = sortValueNodesByReusability t pm vs
       processPatternMatch m =
-        let p = getInstrPatternFromPatternMatch t m
-        in m { pmMatch = processMatch p (pmMatch m) }
-      processMatch p m =
+        let i = getInstructionFromPatternMatch t m
+        in m { pmMatch = processMatch i (pmMatch m) }
+      processMatch i m =
         toMatch $
-        concatMap (processMapping p m) $
+        concatMap (processMapping i m) $
         fromMatch m
-      processMapping p match m =
+      processMapping i match m =
         let fn_id = fNode m
             pn_id = pNode m
-            g = osGraph $ patOS p
+            g = getGraph i
             pn = let n = findNodesWithNodeID g pn_id
                  in if length n > 0
                     then head n
@@ -370,7 +363,7 @@ sortValueNodesByReusability t pm vs =
         in ratio :: Float
       usesValue v m =
         let pn = findPNInMatch (pmMatch m) v
-            g = osGraph $ patOS $ getInstrPatternFromPatternMatch t m
+            g = getGraph $ getInstructionFromPatternMatch t m
         in if length pn > 0
            then any ( \nid ->
                       let isUse n = let succs = getSuccessors g n
@@ -381,8 +374,8 @@ sortValueNodesByReusability t pm vs =
            else False
       consumesValue v m =
         let pn = findPNInMatch (pmMatch m) v
-            p = getInstrPatternFromPatternMatch t m
-            ext_ns = patInputData p ++ patOutputData p
+            i = getInstructionFromPatternMatch t m
+            ext_ns = instrInputData i ++ instrOutputData i
         in if length pn > 0
            then any (\n -> not $ n `elem` ext_ns) pn
            else False

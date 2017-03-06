@@ -98,8 +98,7 @@ run PlotCoverPerMatch show_edge_nrs _ _ function matchset =
        ( \m ->
           do dot <- mkCoveragePlot show_edge_nrs function [pmMatch m]
              let oid = "m" ++ pShow (pmMatchID m) ++ "-" ++
-                       "i" ++ pShow (pmInstrID m) ++ "-" ++
-                       "p" ++ pShow (pmPatternID m)
+                       "i" ++ pShow (pmInstrID m)
              return $ toOutputWithID oid dot
        )
        matches

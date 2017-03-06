@@ -20,7 +20,7 @@ import Language.InstrSel.Graphs
   , extractSSA
   )
 import Language.InstrSel.TargetMachines
-  ( InstrPattern (..) )
+  ( Instruction (..) )
 import Language.InstrSel.OpStructures
 
 import Language.InstrSel.Graphs.GraphViz
@@ -36,9 +36,9 @@ import Language.InstrSel.Utils.IO
 
 -- | Produces DOT data as output by applying a given graph-to-graph function on
 -- the given 'InstrPattern'.
-produceDotOutputWith :: Bool -> (Graph -> Graph) -> InstrPattern -> IO [Output]
-produceDotOutputWith show_edge_nrs f pat =
-  do let g = f $ osGraph $ patOS pat
+produceDotOutputWith :: Bool -> (Graph -> Graph) -> Instruction -> IO [Output]
+produceDotOutputWith show_edge_nrs f i =
+  do let g = f $ osGraph $ instrOS i
          ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
          dot = toDotStringWith noMoreNodeAttr ef g
      return [toOutput dot]
@@ -46,16 +46,16 @@ produceDotOutputWith show_edge_nrs f pat =
 run :: PlotAction
     -> Bool
        -- ^ Whether to show edge numbers.
-    -> InstrPattern
+    -> Instruction
     -> IO [Output]
 
-run PlotPatternFullGraph show_edge_nrs p =
-  produceDotOutputWith show_edge_nrs id p
+run PlotPatternFullGraph show_edge_nrs i =
+  produceDotOutputWith show_edge_nrs id i
 
-run PlotPatternControlFlowGraph show_edge_nrs p =
-  produceDotOutputWith show_edge_nrs extractCFG p
+run PlotPatternControlFlowGraph show_edge_nrs i =
+  produceDotOutputWith show_edge_nrs extractCFG i
 
-run PlotPatternSSAGraph show_edge_nrs p =
-  produceDotOutputWith show_edge_nrs extractSSA p
+run PlotPatternSSAGraph show_edge_nrs i =
+  produceDotOutputWith show_edge_nrs extractSSA i
 
 run _ _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"

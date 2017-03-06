@@ -15,7 +15,6 @@ module UniIS.Drivers.DispatcherTools
   , module Language.InstrSel.Utils.IO
   , getSelectedTargetMachineID
   , getSelectedInstructionID
-  , getSelectedPatternID
   , getShowEdgeNumbersPred
   , getHideNullInstrsPred
   , getHideInactiveInstrsPred
@@ -27,7 +26,7 @@ module UniIS.Drivers.DispatcherTools
   , loadPatternMatchsetFileContent
   , loadSolutionFileContent
   , loadTargetMachine
-  , loadInstrPattern
+  , loadInstruction
   , loadFromJson
   , loadFunctionFromJson
   , loadPatternMatchsetFromJson
@@ -49,11 +48,7 @@ import Language.InstrSel.TargetMachines
   , Instruction (..)
   , InstructionID
   , toInstructionID
-  , PatternID
-  , toPatternID
-  , InstrPattern
   , findInstruction
-  , findInstrPattern
   )
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.PatternMatching
@@ -130,15 +125,6 @@ getSelectedInstructionID opts =
        reportErrorAndExit "No instruction ID provided."
      return $ toInstructionID $ fromJust iid
 
--- | Returns the pattern ID specified on the command line. Reports error
--- if no pattern is specified.
-getSelectedPatternID :: Options -> IO PatternID
-getSelectedPatternID opts =
-  do let pid = patternID opts
-     when (isNothing pid) $
-       reportErrorAndExit "No pattern ID provided."
-     return $ toPatternID $ fromJust pid
-
 -- | Returns the option whether to show edge numbers as specified on the command
 -- line.
 getShowEdgeNumbersPred :: Options -> IO Bool
@@ -178,26 +164,19 @@ loadTargetMachine tid =
        reportErrorAndExit $ "Unrecognized target machine: " ++ (pShow tid)
      return $ fromJust target
 
--- | Returns the instruction pattern with given ID. Reports error if no such
--- instruction or pattern exists.
-loadInstrPattern
+-- | Returns the instruction with given ID. Reports error if no such instruction
+-- or pattern exists.
+loadInstruction
   :: TargetMachine
   -> InstructionID
-  -> PatternID
-  -> IO InstrPattern
-loadInstrPattern tm iid pid =
+  -> IO Instruction
+loadInstruction tm iid =
   do let instr = findInstruction tm iid
      when (isNothing instr) $
        reportErrorAndExit $ "No instruction with ID '" ++ (pShow iid) ++
                             "' in target machine '" ++ (pShow $ tmID tm) ++
                             "'"
-     let pattern = findInstrPattern (instrPatterns $ fromJust instr) pid
-     when (isNothing pattern) $
-       reportErrorAndExit $ "No pattern with ID '" ++ (pShow pid) ++
-                            "' in instruction '" ++ (pShow iid) ++ "'" ++
-                            "' in target machine '" ++ (pShow $ tmID tm) ++
-                            "'"
-     return $ fromJust pattern
+     return $ fromJust instr
 
 -- | Parses a given JSON string and loads its content. Reports error if this
 -- fails.

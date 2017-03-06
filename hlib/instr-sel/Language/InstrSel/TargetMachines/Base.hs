@@ -17,7 +17,6 @@ module Language.InstrSel.TargetMachines.Base
   , EmitStringTemplate (..)
   , EmitStringPart (..)
   , Instruction (..)
-  , InstrPattern (..)
   , InstrProperties (..)
   , Location (..)
   , TargetMachine (..)
@@ -25,7 +24,6 @@ module Language.InstrSel.TargetMachines.Base
   , getAllInstructions
   , getAllLocations
   , findInstruction
-  , findInstrPattern
   , findLocation
   , isInstructionCopy
   , isInstructionInactive
@@ -108,14 +106,17 @@ data Instruction
       { instrID :: InstructionID
         -- ^ The ID of this instruction. The ID must be globally unique across
         -- all instructions, but not necessarily contiguous.
-      , instrPatterns :: [InstrPattern]
-        -- ^ Patterns which correspond to the instruction. There must be at
-        -- least one pattern. Each pattern also has a corresponding ID which
-        -- must be globally unique across all patterns and all instructions, but
-        -- not necessarily contiguous. It is assumed that there are only a few
-        -- patterns per instruction (less than ten), hence it is represented as
-        -- a list instead of a map even though it is common to search for a
-        -- pattern with a given ID.
+      , instrOS :: OpStructure
+        -- ^ The operation structure of the instruction.
+      , instrInputData :: [NodeID]
+        -- ^ The value nodes in the pattern graph that represent input values of
+        -- the instruction.
+      , instrOutputData :: [NodeID]
+        -- ^ The value nodes in the pattern graph that represent output values
+        -- of the instruction.
+      , instrEmitString :: EmitStringTemplate
+        -- ^ The emit string from which the assembly instruction will be
+        -- produced upon code emission if this instruction is selected.
       , instrProps :: InstrProperties
         -- ^ Instruction properties.
       }
@@ -140,26 +141,6 @@ data InstrProperties
         -- ^ Whether the instruction represents an phi operation.
       , instrIsSimd :: Bool
         -- ^ Whether the instruction is a SIMD instruction.
-      }
-  deriving (Show)
-
--- | Defines a pattern for a machine instruction.
-data InstrPattern
-  = InstrPattern
-      { patID :: PatternID
-        -- ^ The ID of this pattern. The ID must be unique within the same
-        -- instruction, but not necessarily contiguous.
-      , patOS :: OpStructure
-        -- ^ The operation structure of the pattern.
-      , patInputData :: [NodeID]
-        -- ^ The value nodes in the pattern graph that represent input values of
-        -- the instruction.
-      , patOutputData :: [NodeID]
-        -- ^ The value nodes in the pattern graph that represent output values
-        -- of the instruction.
-      , patEmitString :: EmitStringTemplate
-        -- ^ The emit string from which the assembly instruction will be
-        -- produced upon code emission if this pattern is selected.
       }
   deriving (Show)
 
@@ -227,16 +208,6 @@ replaceAllInstructions is tm = tm { tmInstructions = M.fromList $
 -- such instruction is found, 'Nothing' is returned.
 findInstruction :: TargetMachine -> InstructionID -> Maybe Instruction
 findInstruction tm iid = M.lookup iid (tmInstructions tm)
-
--- | Given a list of instruction patterns, the function finds the 'InstrPattern'
--- entity with matching pattern ID. If there is more than one match, the first
--- found is returned. If no such entity is found, 'Nothing' is returned.
-findInstrPattern :: [InstrPattern] -> PatternID -> Maybe InstrPattern
-findInstrPattern ps pid =
-  let found = filter (\p -> patID p == pid) ps
-  in if length found > 0
-     then Just $ head found
-     else Nothing
 
 -- | Gets all locations from a given target machine.
 getAllLocations :: TargetMachine -> [Location]

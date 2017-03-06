@@ -227,9 +227,8 @@ reportNonOverlappingLocsForDatum n =
 getPatternGraph :: TargetMachine -> PatternMatch -> OpStructure
 getPatternGraph tm pm =
   let i = findInstruction tm (pmInstrID pm)
-      ip = findInstrPattern (instrPatterns $ fromJust i) (pmPatternID pm)
-  in if isJust i && isJust ip
-     then patOS $ fromJust $ ip
+  in if isJust i
+     then instrOS $ fromJust $ i
      else error "run: no instruction or pattern with matching ID"
 
 filterMatches

@@ -45,10 +45,9 @@ dispatch a opts
       do tmid <- getSelectedTargetMachineID opts
          tm <- loadTargetMachine tmid
          iid <- getSelectedInstructionID opts
-         pid <- getSelectedPatternID opts
-         pattern <- loadInstrPattern tm iid pid
+         i <- loadInstruction tm iid
          show_edge_nrs <- getShowEdgeNumbersPred opts
-         PlotPatternGraphs.run a show_edge_nrs pattern
+         PlotPatternGraphs.run a show_edge_nrs i
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
