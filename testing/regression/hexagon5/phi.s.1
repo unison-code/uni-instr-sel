@@ -1,9 +1,7 @@
  16  entry:
   1    [%cmp] <- "%cmp = cmp.gt(%n, 1)" <- [%n]
   1    [%x] <- "%x = add(%n, #10)" <- [%n]
-  1    [] <- "if (!%cmp) jump bb3" <- [%cmp]
- 16  bb0:
+  1    [] <- "if (!%cmp) jump bb2" <- [%cmp]
   8  bb1:
- 16  bb3:
  16  bb2:
   1    [] <- "return %x" <- [%x]

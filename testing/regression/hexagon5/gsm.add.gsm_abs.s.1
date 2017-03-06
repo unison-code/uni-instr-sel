@@ -2,22 +2,18 @@
   1    [%1] <- "%1 = sxth(%a)" <- [%a]
   0    [] <- "%tmp.1 = zxth %a" <- [%a]
   2    [%2] <- "%2 = cmp.lt(%tmp.1, 0)" <- []
-  1    [] <- "if (!%2) jump bb1" <- [%2]
- 42  bb0:
+  1    [] <- "if (!%2) jump 6" <- [%2]
  16  3:
   1    [%5] <- "%5 = sub(#0, %1)" <- [%1]
   1    [%const.-32768.copy.1] <- "%const.-32768.copy.1 = #-32768" <- []
   0    [] <- "%tmp.2 = zxth %const.-32768.copy.1" <- [%a, %const.-32768.copy.1]
   0    [] <- "%tmp.3 = zxth %a" <- []
   3    [%4] <- "%4 = cmp.eq(%tmp.2, %tmp.3)" <- []
-  1    [] <- "if (!%4) jump bb3" <- [%4]
- 16  bb2:
+  1    [] <- "if (!%4) jump .selectcont" <- [%4]
   8  .selecttrue:
   1    [%const.32767.copy.1] <- "%const.32767.copy.1 = ##32767" <- []
- 16  bb3:
  16  .selectcont:
   0    [%.] <- "PHI (%5, 3) (%const.32767.copy.1, .selecttrue)" <- [%5, %const.32767.copy.1]
- 42  bb1:
  42  6:
   0    [%7] <- "PHI (%1, 0) (%., .selectcont)" <- [%1, %.]
   1    [%8] <- "%8 = and(%7, #-32768)" <- [%7]

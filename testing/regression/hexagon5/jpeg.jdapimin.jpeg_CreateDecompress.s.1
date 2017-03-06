@@ -11,8 +11,7 @@
   1    [] <- "memb (%gep) = %const.null.copy.3" <- [%const.null.copy.3, %gep]
   1    [%gep14] <- "%gep14 = add(%cinfo, #12)" <- [%cinfo]
   1    [%gep16] <- "%gep16 = add(%cinfo, #8)" <- [%cinfo]
-  1    [] <- "if (%2) jump bb0" <- [%2]
- 16  bb1:
+  1    [] <- "if (%2) jump 12" <- [%2]
   8  3:
   1    [%const.10.copy.1] <- "%const.10.copy.1 = ##10" <- []
   1    [%const.61.copy.2] <- "%const.61.copy.2 = ##61" <- []
@@ -24,10 +23,8 @@
   1    [] <- "memb (%gep2) = %const.10.copy.1" <- [%const.10.copy.1, %gep2]
   1    [] <- "memb (%gep4) = %const.61.copy.2" <- [%const.61.copy.2, %gep4]
   1    [] <- "call %10" <- [%cinfo, %10]
- 16  bb0:
  16  12:
-  1    [] <- "if (%13) jump bb2" <- [%13]
- 16  bb3:
+  1    [] <- "if (%13) jump ..preheader.preheader_crit_edge" <- [%13]
   8  14:
   1    [%const.19.copy.1] <- "%const.19.copy.1 = ##19" <- []
   1    [%16] <- "%16 = memw (%cinfo)" <- [%cinfo]
@@ -39,7 +36,6 @@
   1    [] <- "memb (%gep10) = %const.464.copy.2" <- [%const.464.copy.2, %gep10]
   1    [] <- "call %21" <- [%cinfo, %21]
   1    [] <- "jump .preheader.preheader" <- []
- 16  bb2:
   8  ..preheader.preheader_crit_edge:
  16  .preheader.preheader:
   1    [%gep22, %24] <- "%24 = memw (%cinfo ++ %const.16.copy.1)" <- [%cinfo, %const.16.copy.1, %cinfo]

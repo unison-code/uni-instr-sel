@@ -10,13 +10,19 @@
   1    [%16] <- "%16 = and(%1, #128)" <- [%1]
   1    [%17] <- "%17 = cmp.ne(%16, 0)" <- [%16]
  56  NodeBlock:
-  1    [] <- "if (!%Pivot) jump bb1" <- [%Pivot]
- 56  bb0:
+  1    [] <- "if (!%Pivot) jump LeafBlock1" <- [%Pivot]
  21  LeafBlock:
   1    [%SwitchLeaf] <- "%SwitchLeaf = cmp.eq(%6, 0)" <- [%6]
-  1    [] <- "if (%SwitchLeaf) jump bb5" <- [%SwitchLeaf]
- 21  bb4:
- 35  bb3:
+  1    [] <- "if (!%SwitchLeaf) jump NewDefault" <- [%SwitchLeaf]
+  8  7:
+  1    [%8] <- "%8 = or(%4, #8)" <- [%4]
+  1    [] <- "jump 15" <- []
+ 17  9:
+  1    [%10] <- "%10 = or(%4, #264)" <- [%4]
+  1    [] <- "jump 15" <- []
+ 35  LeafBlock1:
+  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, 1)" <- [%6]
+  1    [] <- "if (%SwitchLeaf2) jump 9" <- [%SwitchLeaf2]
  31  NewDefault:
   1    [%12] <- "%12 = or(%4, #264)" <- [%4]
   1    [%13] <- "%13 = add(%6, #-1)" <- [%6]
@@ -25,23 +31,9 @@
  56  15:
   0    [%t.0] <- "PHI (%8, 7) (%10, 9) (%14, 11)" <- [%8, %10, %14]
   1    [%18] <- "%18 = sub(#0, %t.0)" <- [%t.0]
-  1    [] <- "if (!%17) jump bb7" <- [%17]
- 56  bb6:
+  1    [] <- "if (!%17) jump .selectcont" <- [%17]
  28  .selecttrue:
   1    [%t.0.copy.2] <- "%t.0.copy.2 = %t.0" <- [%t.0]
- 56  bb7:
  56  .selectcont:
   0    [%19] <- "PHI (%t.0.copy.2, .selecttrue) (%18, 15)" <- [%t.0.copy.2, %18]
   1    [] <- "return %19" <- [%19]
- 21  bb5:
-  8  7:
-  1    [%8] <- "%8 = or(%4, #8)" <- [%4]
-  1    [] <- "jump 15" <- []
- 56  bb1:
- 35  LeafBlock1:
-  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, 1)" <- [%6]
-  1    [] <- "if (!%SwitchLeaf2) jump bb3" <- [%SwitchLeaf2]
- 35  bb2:
- 17  9:
-  1    [%10] <- "%10 = or(%4, #264)" <- [%4]
-  1    [] <- "jump 15" <- []

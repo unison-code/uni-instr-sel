@@ -1,12 +1,10 @@
  16  entry:
   1    [%add] <- "%add = add(%a, %a)" <- [%a, %a]
   1    [%cmp] <- "%cmp = cmp.eq(%add, 10)" <- [%add]
-  1    [] <- "if (%cmp) jump bb0" <- [%cmp]
- 16  bb1:
+  1    [] <- "if (%cmp) jump if.then" <- [%cmp]
   8  if.end:
   1    [%add.copy.2] <- "%add.copy.2 = %add" <- [%add]
   1    [] <- "jump return" <- []
- 16  bb0:
   8  if.then:
   1    [%const.10.copy.2] <- "%const.10.copy.2 = ##10" <- []
  16  return:

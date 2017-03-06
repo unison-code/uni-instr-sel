@@ -4,15 +4,13 @@
   1    [%const.60.copy.1] <- "ADDiu %const.60.copy.1, $0, 60" <- []
   1    [%const.1.copy.2] <- "ADDiu %const.1.copy.2, $0, 1" <- []
   1    [%5] <- "CALL %2" <- [%const.60.copy.1, %const.1.copy.2, %4, %2]
-  1    [] <- "BEQ $%5, $r0, bb0" <- [%5, %const.null.copy.2]
- 34  bb1:
+  1    [] <- "BEQ $%5, $r0, 29" <- [%5, %const.null.copy.2]
  21  8:
   1    [%9] <- "LW $%9, 32($%z)" <- [%z]
   1    [%10] <- "LW $%10, 40($%z)" <- [%z]
   1    [%11] <- "CALL %9" <- [%w, %const.1.copy.2, %10, %9]
   1    [] <- "SW $%11, 36($%5)" <- [%11, %5]
-  1    [] <- "BEQ $%11, $r0, bb2" <- [%11, %const.0.copy.1]
- 21  bb3:
+  1    [] <- "BEQ $%11, $r0, 15" <- [%11, %const.0.copy.1]
  13  19:
   1    [%gep8] <- "ADDU $%gep8, $%w, $%11" <- [%w, %11]
   1    [] <- "SW $%gep8, 40($%5)" <- [%gep8, %5]
@@ -20,11 +18,9 @@
   1    [] <- "SW r0, 0(%5)" <- [%const.null.copy.1, %5]
   1    [%gep14] <- "ADDI $%gep14, $%5, 56" <- [%5]
   1    [] <- "CALL inflate_blocks_reset" <- [%gep14, %z, %5]
- 34  bb0:
  34  29:
   0    [%.0] <- "PHI (%5, 0) (%const.null.copy.3, 15)" <- [%5, %const.null.copy.3]
   0    [] <- "RetRA %.0" <- [%.0]
- 21  bb2:
   8  15:
   1    [%17] <- "LW $%17, 36($%z)" <- [%z]
   1    [%18] <- "LW $%18, 40($%z)" <- [%z]

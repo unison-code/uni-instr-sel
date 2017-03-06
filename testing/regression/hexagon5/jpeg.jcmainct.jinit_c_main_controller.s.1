@@ -1,35 +1,27 @@
  91  0:
-  1    [%const.1.copy.1] <- "%const.1.copy.1 = ##1" <- []
   1    [%const.64.copy.1] <- "%const.64.copy.1 = ##64" <- []
+  1    [%const.1.copy.2] <- "%const.1.copy.2 = ##1" <- []
   1    [%1] <- "%1 = memw (%cinfo + #4)" <- [%cinfo]
   1    [%2] <- "%2 = memw (%1)" <- [%1]
-  1    [%4] <- "call %2" <- [%const.64.copy.1, %const.1.copy.1, %cinfo, %2]
+  1    [%4] <- "call %2" <- [%const.64.copy.1, %const.1.copy.2, %cinfo, %2]
   1    [%gep2] <- "%gep2 = add(%cinfo, #328)" <- [%cinfo]
   1    [] <- "memb (%gep2) = %4" <- [%4, %gep2]
   1    [] <- "memb (%4) = %const.@%start_pass_main" <- [%const.@%start_pass_main, %4]
   1    [%7] <- "%7 = memw (%cinfo + #168)" <- [%cinfo]
   1    [%8] <- "%8 = cmp.eq(%7, 0)" <- [%7]
-  1    [] <- "if (!%8) jump bb1" <- [%8]
- 91  bb0:
+  1    [] <- "if (!%8) jump .loopexit" <- [%8]
  34  9:
   1    [%10] <- "%10 = cmp.eq(%need_full_buffer, 0)" <- [%need_full_buffer]
-  1    [] <- "if (%10) jump bb2" <- [%10]
- 34  bb3:
- 21  11:
-  1    [%const.4.copy.2] <- "%const.4.copy.2 = ##4" <- []
-  1    [%14] <- "%14 = memw (%cinfo)" <- [%cinfo]
-  1    [%gep6] <- "%gep6 = add(%14, #20)" <- [%14]
-  1    [] <- "memb (%gep6) = %const.4.copy.2" <- [%const.4.copy.2, %gep6]
-  1    [%15] <- "%15 = memw (%14)" <- [%14]
-  1    [] <- "call %15" <- [%cinfo, %15]
-  1    [] <- "return" <- []
- 12  bb5:
+  1    [] <- "if (!%10) jump 11" <- [%10]
+ 12  16:
+  1    [%18] <- "%18 = memw (%cinfo + #52)" <- [%cinfo]
+  1    [%19] <- "%19 = cmp.gt(%18, 0)" <- [%18]
+  1    [] <- "if (!%19) jump .loopexit" <- [%19]
   8  .lr.ph:
   1    [%const.0.copy.4] <- "%const.0.copy.4 = ##0" <- []
   1    [%21] <- "%21 = memw (%cinfo + #60)" <- [%cinfo]
   1    [%gep12] <- "%gep12 = add(%21, #28)" <- [%21]
   1    [%gep14] <- "%gep14 = add(%4, #24)" <- [%4]
-255  bb7:
 255  22:
   0    [%lsr.iv6] <- "PHI (%gep14, .lr.ph) (%gep26, 22)" <- [%gep14, %gep26]
   0    [%lsr.iv] <- "PHI (%gep12, .lr.ph) (%gep24, 22)" <- [%gep12, %gep24]
@@ -40,22 +32,21 @@
   1    [%29] <- "%29 = memw (%lsr.iv + #-16)" <- [%lsr.iv]
   1    [%28] <- "%28 = asl(%27, #3)" <- [%27]
   1    [%30] <- "%30 = asl(%29, #3)" <- [%29]
-  1    [%31] <- "call %26" <- [%30, %28, %const.1.copy.1, %cinfo, %26]
+  1    [%31] <- "call %26" <- [%30, %28, %const.1.copy.2, %cinfo, %26]
   1    [] <- "memb (%lsr.iv6) = %31" <- [%31, %lsr.iv6]
   1    [%33] <- "%33 = memw (%cinfo + #52)" <- [%cinfo]
   1    [%32] <- "%32 = add(%ci.01, #1)" <- [%ci.01]
   1    [%34] <- "%34 = cmp.lt(%32, %33)" <- [%32, %33]
   1    [%gep24] <- "%gep24 = add(%lsr.iv, #84)" <- [%lsr.iv]
   1    [%gep26] <- "%gep26 = add(%lsr.iv6, #4)" <- [%lsr.iv6]
-  1    [] <- "if (%34) jump bb7" <- [%34]
-255  bb6:
- 91  bb1:
+  1    [] <- "if (%34) jump 22" <- [%34]
  69  .loopexit:
   1    [] <- "return" <- []
- 34  bb2:
- 12  16:
-  1    [%18] <- "%18 = memw (%cinfo + #52)" <- [%cinfo]
-  1    [%19] <- "%19 = cmp.gt(%18, 0)" <- [%18]
-  1    [] <- "if (%19) jump bb5" <- [%19]
- 12  bb4:
-  1    [] <- "jump .loopexit" <- []
+ 21  11:
+  1    [%const.20.copy.1] <- "%const.20.copy.1 = ##20" <- []
+  1    [%const.4.copy.2] <- "%const.4.copy.2 = ##4" <- []
+  1    [%14] <- "%14 = memw (%cinfo)" <- [%cinfo]
+  1    [%gep6, %15] <- "%15 = memw (%14 ++ %const.20.copy.1)" <- [%14, %const.20.copy.1, %14]
+  1    [] <- "memb (%gep6) = %const.4.copy.2" <- [%const.4.copy.2, %gep6]
+  1    [] <- "call %15" <- [%cinfo, %15]
+  1    [] <- "return" <- []

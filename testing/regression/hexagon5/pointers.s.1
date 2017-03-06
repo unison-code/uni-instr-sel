@@ -1,7 +1,6 @@
  12  entry:
   1    [%0] <- "%0 = cmp.eq(%a, 0)" <- [%a]
-  1    [] <- "if (%0) jump bb0" <- [%0]
- 12  bb1:
+  1    [] <- "if (%0) jump end" <- [%0]
   8  load:
   1    [%const.255.copy.1] <- "%const.255.copy.1 = #255" <- []
   0    [%1] <- "%1 <- %const.255.copy.1" <- [%const.255.copy.1]
@@ -10,6 +9,5 @@
   1    [%4] <- "%4 = memw (%const.255.copy.2)" <- [%const.255.copy.2]
   1    [%5] <- "%5 = add(%3, %4)" <- [%3, %4]
   1    [] <- "memb (%a) = %5" <- [%5, %a]
- 12  bb0:
  12  end:
   1    [] <- "return" <- []

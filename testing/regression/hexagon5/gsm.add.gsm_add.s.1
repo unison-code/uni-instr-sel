@@ -5,21 +5,17 @@
   1    [%const.-32768.copy.1] <- "%const.-32768.copy.1 = ##-32768" <- []
   1    [%3] <- "%3 = add(%1, %2)" <- [%1, %2]
   1    [%4] <- "%4 = cmp.lt(%3, %const.-32768.copy.1)" <- [%3, %const.-32768.copy.1]
-  1    [] <- "if (%4) jump bb0" <- [%4]
- 32  bb1:
+  1    [] <- "if (%4) jump 8" <- [%4]
  16  5:
   1    [%3.copy.3] <- "%3.copy.3 = %3" <- [%3]
   1    [%const.32767.copy.2] <- "%const.32767.copy.2 = ##32767" <- []
   1    [%6] <- "%6 = cmp.gt(%3, %const.32767.copy.2)" <- [%3, %const.32767.copy.2]
-  1    [] <- "if (!%6) jump bb3" <- [%6]
- 16  bb2:
+  1    [] <- "if (!%6) jump .selectcont" <- [%6]
   8  .selecttrue:
   1    [%const.32767.copy.1] <- "%const.32767.copy.1 = ##32767" <- []
- 16  bb3:
  16  .selectcont:
   0    [%7] <- "PHI (%3.copy.3, 5) (%const.32767.copy.1, .selecttrue)" <- [%3.copy.3, %const.32767.copy.1]
   1    [%phitmp] <- "%phitmp = and(%7, #-32768)" <- [%7]
- 32  bb0:
  32  8:
   0    [%9] <- "PHI (%phitmp, .selectcont) (%const.-32768.copy.2, 0)" <- [%phitmp, %const.-32768.copy.2]
   0    [] <- "%tmp.1 = zxth(%9)" <- [%9]

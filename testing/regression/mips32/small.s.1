@@ -1,12 +1,10 @@
  16  entry:
   1    [%const.10.copy.2] <- "ADDiu %const.10.copy.2, $0, 10" <- []
   1    [%add] <- "ADDU $%add, $%a, $%a" <- [%a, %a]
-  1    [] <- "BEQ $%add, $%const.10.copy.2, bb0" <- [%add, %const.10.copy.2]
- 16  bb1:
+  1    [] <- "BEQ $%add, $%const.10.copy.2, if.then" <- [%add, %const.10.copy.2]
   8  if.end:
   1    [%add.copy.2] <- "MOV %add.copy.2, %add" <- [%add]
   1    [] <- "B return" <- []
- 16  bb0:
   8  if.then:
   1    [%const.10.copy.1] <- "ADDiu %const.10.copy.1, $0, 10" <- []
  16  return:

@@ -1,14 +1,13 @@
   8  entry:
-256  for.cond:
-  0    [%res.0] <- "PHI (%n, entry) (%mul, for.inc)" <- [%n, %mul]
-  0    [%n.addr.0] <- "PHI (%n, entry) (%dec, for.inc)" <- [%n, %dec]
-  1    [%cmp] <- "%cmp = cmp.gt(%n.addr.0, 1)" <- [%n.addr.0]
-  1    [] <- "if (%cmp) jump bb0" <- [%cmp]
-256  bb1:
-  8  for.end:
-  1    [] <- "return %res.0" <- [%res.0]
-256  bb0:
+  1    [] <- "jump for.cond" <- []
 248  for.body:
 248  for.inc:
   1    [%mul] <- "%mul = mpy(%res.0, %n.addr.0)" <- [%res.0, %n.addr.0]
   1    [%dec] <- "%dec = add(%n.addr.0, #-1)" <- [%n.addr.0]
+256  for.cond:
+  0    [%res.0] <- "PHI (%n, entry) (%mul, for.inc)" <- [%n, %mul]
+  0    [%n.addr.0] <- "PHI (%n, entry) (%dec, for.inc)" <- [%n, %dec]
+  1    [%cmp] <- "%cmp = cmp.gt(%n.addr.0, 1)" <- [%n.addr.0]
+  1    [] <- "if (%cmp) jump for.body" <- [%cmp]
+  8  for.end:
+  1    [] <- "return %res.0" <- [%res.0]

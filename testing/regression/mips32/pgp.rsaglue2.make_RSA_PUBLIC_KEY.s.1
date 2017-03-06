@@ -3,18 +3,19 @@
   1    [%const.2048.copy.1] <- "ADDiu %const.2048.copy.1, $0, 2048" <- []
   1    [%1] <- "CALL countbits" <- [%n]
   1    [] <- "SW %1, 0(%rpk)" <- [%1, %rpk]
-  1    [] <- "BGTU $%1, $%const.2048.copy.1, bb0" <- [%1, %const.2048.copy.1]
- 32  bb1:
+  1    [] <- "BGTU $%1, $%const.2048.copy.1, reg2rsaref.exit1" <- [%1, %const.2048.copy.1]
  16  4:
   1    [%6] <- "LW %6, 0(r0)" <- [%const.@%global_precision]
   0    [%7] <- "ADD %7, $0, %6" <- [%6]
   1    [%8] <- "SLL $%8, $%7, 1" <- [%7]
   0    [%9] <- "SLTI $%9, $%8, 256" <- [%8]
-  1    [] <- "BNE $0, $%9, bb2" <- [%9]
- 16  bb3:
+  1    [] <- "BNE $0, $%9, 10" <- [%9]
   8  16:
   1    [] <- "B reg2rsaref.exit" <- []
- 16  bb2:
+  8  25:
+ 32  reg2rsaref.exit1:
+  0    [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, reg2rsaref.exit)" <- [%const.-3.copy.1, %const.0.copy.1]
+  0    [] <- "RetRA %.0" <- [%.0]
   8  10:
  16  reg2rsaref.exit:
   1    [%21] <- "LW %21, 0(r0)" <- [%const.@%global_precision]
@@ -22,13 +23,6 @@
   1    [%23] <- "SLL $%23, $%22, 1" <- [%22]
   0    [%24] <- "SLTI $%24, $%23, 256" <- [%23]
   1    [%const.0.copy.1] <- "ADDiu %const.0.copy.1, $0, 0" <- []
-  1    [] <- "BNE $0, $%24, bb4" <- [%24]
- 16  bb5:
+  1    [] <- "BNE $0, $%24, 25" <- [%24]
   8  31:
   1    [] <- "B reg2rsaref.exit1" <- []
- 16  bb4:
-  8  25:
- 32  bb0:
- 32  reg2rsaref.exit1:
-  0    [%.0] <- "PHI (%const.-3.copy.1, 0) (%const.0.copy.1, reg2rsaref.exit)" <- [%const.-3.copy.1, %const.0.copy.1]
-  0    [] <- "RetRA %.0" <- [%.0]

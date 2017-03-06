@@ -1,23 +1,18 @@
  42  0:
-  0    [%2] <- "SLTI $%2, $%a, 0" <- [%a]
   0    [%1] <- "ADD %1, $0, %a" <- [%a]
-  1    [] <- "BNE $0, $%2, bb0" <- [%2]
- 42  bb1:
+  1    [] <- "BLTZ %a, 3" <- [%a]
  42  6:
   0    [%7] <- "PHI (%1, 0) (%., .selectcont)" <- [%1, %.]
   0    [%8] <- "ANDi %8, %7, 32767" <- [%7]
   0    [] <- "SEH %tmp.1, %8" <- [%8]
   0    [] <- "RetRA %tmp.1" <- []
- 42  bb0:
- 16  3:
-  1    [%5] <- "SUBU $%5, $r0, $%1" <- [%const.0.copy.2, %1]
-  1    [%const.-32768.copy.1] <- "ADDi %const.-32768.copy.1, $0, -32768" <- []
-  1    [] <- "BEQ $%a, $%const.-32768.copy.1, bb2" <- [%a, %const.-32768.copy.1]
- 16  bb3:
- 16  .selectcont:
-  0    [%.] <- "PHI (%5, 3) (%const.32767.copy.1, .selecttrue)" <- [%5, %const.32767.copy.1]
-  1    [] <- "B 6" <- []
- 16  bb2:
   8  .selecttrue:
   1    [%const.32767.copy.1] <- "ADDiu %const.32767.copy.1, $0, 32767" <- []
   1    [] <- "B .selectcont" <- []
+ 16  3:
+  1    [%5] <- "SUBU $%5, $r0, $%1" <- [%const.0.copy.2, %1]
+  1    [%const.-32768.copy.1] <- "ADDi %const.-32768.copy.1, $0, -32768" <- []
+  1    [] <- "BEQ $%a, $%const.-32768.copy.1, .selecttrue" <- [%a, %const.-32768.copy.1]
+ 16  .selectcont:
+  0    [%.] <- "PHI (%5, 3) (%const.32767.copy.1, .selecttrue)" <- [%5, %const.32767.copy.1]
+  1    [] <- "B 6" <- []
