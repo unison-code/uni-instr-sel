@@ -45,7 +45,6 @@ dispatch a opts
              , EnforcePhiNodeInvariantsInFunctionGraph
              , RemovePhiNodeRedundanciesInFunctionGraph
              , CopyExtendFunctionGraph
-             , BranchExtendFunctionGraph
              , CombineConstantsInFunctionGraph
              ] =
       do content <- loadFunctionFileContent opts

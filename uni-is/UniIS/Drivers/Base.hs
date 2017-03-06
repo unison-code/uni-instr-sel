@@ -76,7 +76,6 @@ data TransformAction
   | RemovePhiNodeRedundanciesInFunctionGraph
   | LowerPointersInFunctionGraph
   | CopyExtendFunctionGraph
-  | BranchExtendFunctionGraph
   | CombineConstantsInFunctionGraph
   | AlternativeExtendPatternMatchset
   | AddOperandsToHighLevelCPModel

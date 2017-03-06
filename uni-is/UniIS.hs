@@ -196,13 +196,6 @@ parseArgs =
                  &= name "copy-extend-fun"
                  &= explicit
                  &= help "Extends the given function with copies."
-             , BranchExtendFunctionGraph
-                 &= name "branch-extend-fun"
-                 &= explicit
-                 &= help ( "Extends the given function with additional " ++
-                           "branches alone every conditional control flow " ++
-                           "edge."
-                         )
              , CombineConstantsInFunctionGraph
                  &= name "combine-consts-in-fun"
                  &= explicit

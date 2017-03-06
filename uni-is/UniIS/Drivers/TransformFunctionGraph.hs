@@ -58,10 +58,6 @@ run CopyExtendFunctionGraph f _ =
   do let new_f = copyExtend f
      return [toOutput $ toJson new_f]
 
-run BranchExtendFunctionGraph f _ =
-  do let new_f = branchExtend f
-     return [toOutput $ toJson new_f]
-
 run CombineConstantsInFunctionGraph f _ =
   do let new_f = combineConstants f
      return [toOutput $ toJson new_f]
