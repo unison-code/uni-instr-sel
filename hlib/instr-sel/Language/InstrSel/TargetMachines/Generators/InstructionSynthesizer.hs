@@ -159,9 +159,7 @@ addEntryTargetBranchInstructions :: TargetMachine -> Either String TargetMachine
 addEntryTargetBranchInstructions tm =
   do let is = getAllInstructions tm
      entry_br_is <- mkEntryTargetBranchInstructions is
---   let new_is = reassignInstrIDs 0 (is ++ entry_br_is)
-     let new_is = reassignInstrIDs 0 entry_br_is
---
+     let new_is = reassignInstrIDs 0 (is ++ entry_br_is)
      return $ replaceAllInstructions new_is tm
 
 -- | From a given list of instructions, constructs new conditional branch
@@ -192,6 +190,7 @@ redirectTargetBlockToEntry i =
            do let error_head = "In instruction with emit string:\n" ++
                                pShow (patEmitString p) ++ ":\n"
                   os = patOS p
+                  g = osGraph os
                   cs = osConstraints os
                   ft_cs = filter isFallThroughConstraint cs
               let getNode ( FallThroughFromMatchToBlockConstraint
@@ -203,24 +202,18 @@ redirectTargetBlockToEntry i =
                                      "Unexpected fall-through constraint " ++
                                      "structure"
               ft_b_nodes <- mapM getNode ft_cs
-              entry_b <- if isJust (osEntryBlockNode os)
-                         then Right $ fromJust $ osEntryBlockNode os
+              entry_b <- if isJust (entryBlockNode g)
+                         then Right $ fromJust $ entryBlockNode g
                          else Left $ error_head ++ "Has no entry block node"
-              let g = osGraph os
-              entry_b_node <- let ns = findNodesWithNodeID g entry_b
-                              in if length ns == 1
-                                 then Right $ head ns
-                                 else Left $ "No or multiple nodes with ID " ++
-                                             pShow entry_b ++ " found"
               let b_ns = [ n | n <- filter isBlockNode $ getAllNodes g
                              , getNodeID n `notElem` ft_b_nodes
                              , length (getCtrlFlowOutEdges g n) == 0
                          ]
                   new_ps = map ( \n ->
-                                 let new_g = mergeNodes entry_b_node n g
+                                 let new_g = mergeNodes entry_b n g
                                      new_os = os { osGraph = new_g }
                                      new_emit_str = updateNodeInEmitStrTemplate
-                                                      entry_b
+                                                      (getNodeID entry_b)
                                                       (getNodeID n)
                                                       (patEmitString p)
                                  in p { patOS = new_os
