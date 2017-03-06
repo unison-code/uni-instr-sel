@@ -503,11 +503,8 @@ constraint
          )
   ( sel[m] -> oplace[o] != b );
 
-% For each selected match m that apply fall-through, enforce either:
-%    - that the fall-through block of m is the immediate successor of the entry
-%      block of m, or
-%    - that the fall-through block of m is one block away from the entry block
-%      of m and the block in between contains no non-null-instructions.
+% For each selected match m that apply fall-through, enforce that the
+% fall-through block of m is the immediate successor of the entry block of m.
 constraint
   forall (i in index_set_1of2(fallThroughBlockOfMatch))
   ( let { int: m = fallThroughBlockOfMatch[i, 1]
@@ -515,14 +512,7 @@ constraint
         , int: entry_b = min(entryBlockOfMatch[m])
         , var int: succ_b = succ[entry_b]
         }
-    in sel[m] -> ( succ_b = fall_b \/
-                   ( succ[succ_b] = fall_b /\
-                     forall (o in allOperationsInFunction)
-                     ( oplace[o] != succ_b \/
-                       omatch[o] in nullInstrMatches
-                     )
-                   )
-                 )
+    in sel[m] -> succ_b = fall_b
   );
 
 % Enforce that, for each operation o, exactly one match must be selected such
