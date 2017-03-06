@@ -128,8 +128,8 @@ for i in range(num_data):
         if len(d_matches[i]) > 0 and d_matches[i] <= d_matches[j]:
             illegal_matches |= d_matches[j] - d_matches[i]
 
-# If all matches in domain[i] use some datum d, then all inactive instructions
-# that define d are not selectable
+# If all matches in domain[i] use some datum d, then all kill instructions that
+# define d are not selectable
 domain = o_matches + d_matches
 for i in range(len(domain)):
     M = domain[i]
@@ -140,7 +140,7 @@ for i in range(len(domain)):
                 all_matches_use_d = False
                 break
         if all_matches_use_d:
-            illegal_matches |= { m for m in json_data["match-inactive-instrs"]
+            illegal_matches |= { m for m in json_data["match-kill-instrs"]
                                        if d in match_data_defined[m]
                                }
 

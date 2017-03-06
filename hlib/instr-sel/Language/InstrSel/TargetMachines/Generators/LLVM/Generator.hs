@@ -66,7 +66,7 @@ generateTargetMachine m =
                           [mkBrFallThroughInstruction] ++
                           mkDataDefInstructions ++
                           [mkTempNullCopyInstruction] ++
-                          [mkInactiveInstruction]
+                          [mkKillInstruction]
      instrs <- mkInstructions m locs
      let all_instrs = instrs ++
                       reassignInstrIDs (toInstructionID $ length instrs)
@@ -290,7 +290,7 @@ mkInstrProps md_i os in_values out_values str =
   let tmp_props = TM.InstrProperties { TM.instrCodeSize = 0
                                      , TM.instrLatency = 0
                                      , TM.instrIsCopy = False
-                                     , TM.instrIsInactive = False
+                                     , TM.instrIsKill = False
                                      , TM.instrIsNull = False
                                      , TM.instrIsPhi = False
                                      , TM.instrIsSimd = False
@@ -305,7 +305,7 @@ mkInstrProps md_i os in_values out_values str =
   in TM.InstrProperties { TM.instrCodeSize = LLVM.instrSize md_i
                         , TM.instrLatency = LLVM.instrLatency md_i
                         , TM.instrIsCopy = isInstructionCopy tm_i
-                        , TM.instrIsInactive = False
+                        , TM.instrIsKill = False
                         , TM.instrIsNull = isInstructionNull tm_i
                         , TM.instrIsPhi = isInstructionPhi tm_i
                         , TM.instrIsSimd = isInstructionSimd tm_i

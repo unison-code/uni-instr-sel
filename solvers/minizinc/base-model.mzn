@@ -75,7 +75,7 @@ array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 set of allMatches: copyInstrMatches;
-set of allMatches: inactiveInstrMatches;
+set of allMatches: killInstrMatches;
 set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
@@ -360,9 +360,9 @@ constraint
 
 % All operands external to a match, and which are not states, must not be
 % located in the null location.
-% [MC 1] Exclude inactive matches from this constraint.
+% [MC 1] Exclude kill matches from this constraint.
 constraint
-  forall ( m in allMatches diff inactiveInstrMatches
+  forall ( m in allMatches diff killInstrMatches
          , o in operandsExternalToMatch[m]
            where not (operandAlternatives[o] subset statesInFunction)
          )
@@ -558,10 +558,10 @@ constraint
   ( sel[m] -> oplace[c] = uplace[o] );
 
 % If a datum d is used by at least one operand in at least one selected match,
-% then d must not be defined by any inactive match.  Otherwise, d must be
-% defined by an inactive match.
+% then d must not be defined by any kill match.  Otherwise, d must be
+% defined by an kill match.
 % constraint
-%   forall ( mi in inactiveInstrMatches
+%   forall ( mi in killInstrMatches
 %          , oi in operandsDefinedByMatch[mi]
 %          , d in operandAlternatives[oi]
 %          )
@@ -575,12 +575,12 @@ constraint
 %   );
 % [MC 1]
 % If and only if a datum d is used by at least one operand in at least
-% one selected match, then d must not be defined by any inactive
+% one selected match, then d must not be defined by any kill
 % match.  If and only if d is used by at least one external operand in
 % at least one selected match, then d must not placed in the null
 % location.
 constraint
-  forall ( mi in inactiveInstrMatches
+  forall ( mi in killInstrMatches
          , oi in operandsDefinedByMatch[mi]
          , d in operandAlternatives[oi]
          )
@@ -1061,7 +1061,7 @@ constraint
 constraint
   forall (d in allDataInFunction diff statesInFunction )
   ( if forall ( m in defsetOfDatum[d] )
-       ( not (m in inactiveInstrMatches) /\
+       ( not (m in killInstrMatches) /\
          exists ( use2 in operandsDefinedByMatch[m] intersect
                           operandsExternalToMatch[m]
                 )

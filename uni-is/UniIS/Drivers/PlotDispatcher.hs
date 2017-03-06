@@ -53,11 +53,11 @@ dispatch a opts
          matchset <- loadPatternMatchsetFromJson opts
          show_edge_nrs <- getShowEdgeNumbersPred opts
          hide_null_instrs <- getHideNullInstrsPred opts
-         hide_inactive_instrs <- getHideInactiveInstrsPred opts
+         hide_kill_instrs <- getHideKillInstrsPred opts
          PlotCoverGraphs.run a
                              show_edge_nrs
                              hide_null_instrs
-                             hide_inactive_instrs
+                             hide_kill_instrs
                              function
                              matchset
   | otherwise =

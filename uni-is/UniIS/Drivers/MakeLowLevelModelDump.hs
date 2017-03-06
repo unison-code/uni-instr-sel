@@ -268,9 +268,9 @@ run MakeLowLevelModelDump function model ai_maps =
                  ++
                  addPadding ai
                  ++
-                 "Is inactive instruction: "
+                 "Is kill instruction: "
                  ++
-                 (pShow $ ai `elem` (llMatchInactiveInstructions model))
+                 (pShow $ ai `elem` (llMatchKillInstructions model))
         in concatMap (\(m, i) -> pShow i ++ " -> " ++ mkMatchInfo m i ++ "\n\n")
                      (zip ms ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning

@@ -37,10 +37,10 @@ dispatch a opts
       do function <- loadFunctionFromJson opts
          matchset <- loadPatternMatchsetFromJson opts
          hide_null_instrs <- getHideNullInstrsPred opts
-         hide_inactive_instrs <- getHideInactiveInstrsPred opts
+         hide_kill_instrs <- getHideKillInstrsPred opts
          CheckFunctionGraph.run a
                                 hide_null_instrs
-                                hide_inactive_instrs
+                                hide_kill_instrs
                                 function
                                 matchset
                                 Nothing

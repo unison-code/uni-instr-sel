@@ -14,7 +14,7 @@ module Language.InstrSel.TargetMachines.Generators.GenericInstructions
   , mkPhiInstructions
   , mkDataDefInstructions
   , mkTempNullCopyInstruction
-  , mkInactiveInstruction
+  , mkKillInstruction
   , reassignInstrIDs
   )
 where
@@ -131,7 +131,7 @@ mkPhiInstructions =
              , instrProps = InstrProperties { instrCodeSize = 0
                                             , instrLatency = 0
                                             , instrIsCopy = False
-                                            , instrIsInactive = False
+                                            , instrIsKill = False
                                             , instrIsNull = False
                                             , instrIsPhi = True
                                             , instrIsSimd = False
@@ -168,7 +168,7 @@ mkBrFallThroughInstruction =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = False
-                                      , instrIsInactive = False
+                                      , instrIsKill = False
                                       , instrIsNull = True
                                       , instrIsPhi = False
                                       , instrIsSimd = False
@@ -204,7 +204,7 @@ mkDataDefInstructions =
           , instrProps = InstrProperties { instrCodeSize = 0
                                          , instrLatency = 0
                                          , instrIsCopy = False
-                                         , instrIsInactive = False
+                                         , instrIsKill = False
                                          , instrIsNull = True
                                          , instrIsPhi = False
                                          , instrIsSimd = False
@@ -240,18 +240,18 @@ mkTempNullCopyInstruction =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = True
-                                      , instrIsInactive = False
+                                      , instrIsKill = False
                                       , instrIsNull = True
                                       , instrIsPhi = False
                                       , instrIsSimd = False
                                       }
        }
 
--- | Creates an instruction to be selected for operations that are
+-- | Creates an instruction to be selected to define data that are
 -- inactive. Note that the 'InstructionID's of all instructions will be
 -- (incorrectly) set to 0, meaning they must be reassigned afterwards.
-mkInactiveInstruction :: Instruction
-mkInactiveInstruction =
+mkKillInstruction :: Instruction
+mkKillInstruction =
   let g = mkGraph ( map Node $
                     [ ( 0, NodeLabel 0 CopyNode )
                     , ( 1, NodeLabel 1 mkGenericValueNodeType )
@@ -273,7 +273,7 @@ mkInactiveInstruction =
        , instrProps = InstrProperties { instrCodeSize = 0
                                       , instrLatency = 0
                                       , instrIsCopy = True
-                                      , instrIsInactive = True
+                                      , instrIsKill = True
                                       , instrIsNull = True
                                       , instrIsPhi = False
                                       , instrIsSimd = False

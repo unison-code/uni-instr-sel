@@ -17,7 +17,7 @@ module UniIS.Drivers.DispatcherTools
   , getSelectedInstructionID
   , getShowEdgeNumbersPred
   , getHideNullInstrsPred
-  , getHideInactiveInstrsPred
+  , getHideKillInstrsPred
   , getAltLimit
   , loadFileContent
   , loadArrayIndexMaplistsFileContent
@@ -139,11 +139,11 @@ getHideNullInstrsPred opts =
   do let p = hideNullInstructions opts
      return $ if isJust p then fromJust p else False
 
--- | Returns the option whether to hide inactive instructions as specified on
--- the command line.
-getHideInactiveInstrsPred :: Options -> IO Bool
-getHideInactiveInstrsPred opts =
-  do let p = hideInactiveInstructions opts
+-- | Returns the option whether to hide kill instructions as specified on the
+-- command line.
+getHideKillInstrsPred :: Options -> IO Bool
+getHideKillInstrsPred opts =
+  do let p = hideKillInstructions opts
      return $ if isJust p then fromJust p else False
 
 -- | Returns the option of how many alternatives are allowed at most per case as

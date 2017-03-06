@@ -161,8 +161,8 @@ data HighLevelMatchParams
         -- ^ Whether the corresponding instruction is a phi instruction.
       , hlMatchIsCopyInstruction :: Bool
         -- ^ Whether the corresponding instruction is a copy instruction.
-      , hlMatchIsInactiveInstruction :: Bool
-        -- ^ Whether the corresponding instruction is an inactive instruction.
+      , hlMatchIsKillInstruction :: Bool
+        -- ^ Whether the corresponding instruction is a kill instruction.
       , hlMatchIsNullInstruction :: Bool
         -- ^ Whether the corresponding instruction is a null instruction.
       , hlMatchHasControlFlow :: Bool
@@ -312,8 +312,8 @@ data LowLevelModel
         -- the array index of a particular match.
       , llMatchCopyInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to copy instructions.
-      , llMatchInactiveInstructions :: [ArrayIndex]
-        -- ^ The matches that correspond to inactive instructions.
+      , llMatchKillInstructions :: [ArrayIndex]
+        -- ^ The matches that correspond to kill instructions.
       , llMatchNullInstructions :: [ArrayIndex]
         -- ^ The matches that correspond to null instructions.
       , llMatchPhiInstructions :: [ArrayIndex]
@@ -556,7 +556,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "constraints"
       <*> v .: "is-phi-instr"
       <*> v .: "is-copy-instr"
-      <*> v .: "is-inactive-instr"
+      <*> v .: "is-kill-instr"
       <*> v .: "is-null-instr"
       <*> v .: "has-control-flow"
       <*> v .: "operands-used-by-phis"
@@ -585,7 +585,7 @@ instance ToJSON HighLevelMatchParams where
            , "constraints"              .= (hlMatchConstraints p)
            , "is-phi-instr"             .= (hlMatchIsPhiInstruction p)
            , "is-copy-instr"            .= (hlMatchIsCopyInstruction p)
-           , "is-inactive-instr"        .= (hlMatchIsInactiveInstruction p)
+           , "is-kill-instr"            .= (hlMatchIsKillInstruction p)
            , "is-null-instr"            .= (hlMatchIsNullInstruction p)
            , "has-control-flow"         .= (hlMatchHasControlFlow p)
            , "operands-used-by-phis"    .= (hlMatchOperandsUsedByPhis p)
@@ -643,7 +643,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-copy-instrs"
-      <*> v .: "match-inactive-instrs"
+      <*> v .: "match-kill-instrs"
       <*> v .: "match-null-instrs"
       <*> v .: "match-phi-instrs"
       <*> v .: "match-constraints"
@@ -688,7 +688,7 @@ instance ToJSON LowLevelModel where
            , "match-code-sizes"         .= (llMatchCodeSizes m)
            , "match-latencies"          .= (llMatchLatencies m)
            , "match-copy-instrs"        .= (llMatchCopyInstructions m)
-           , "match-inactive-instrs"    .= (llMatchInactiveInstructions m)
+           , "match-kill-instrs"        .= (llMatchKillInstructions m)
            , "match-null-instrs"        .= (llMatchNullInstructions m)
            , "match-phi-instrs"         .= (llMatchPhiInstructions m)
            , "match-constraints"        .= (llMatchConstraints m)

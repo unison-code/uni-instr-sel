@@ -50,7 +50,7 @@ data Options
       , plotAction :: PlotAction
       , showEdgeNumbers :: Maybe Bool
       , hideNullInstructions :: Maybe Bool
-      , hideInactiveInstructions :: Maybe Bool
+      , hideKillInstructions :: Maybe Bool
       , altLimit :: Maybe Int
       , checkAction :: CheckAction
       }

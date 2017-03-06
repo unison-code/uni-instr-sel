@@ -55,7 +55,7 @@ run :: PlotAction
     -> Bool
        -- ^ Whether to hide null instructions.
     -> Bool
-       -- ^ Whether to hide inactive instructions.
+       -- ^ Whether to hide kill instructions.
     -> Function
     -> PatternMatchset
     -> IO [Output]
@@ -63,7 +63,7 @@ run :: PlotAction
 run PlotCoverAllMatches
     show_edge_nrs
     hide_null_instrs
-    hide_inactive_instrs
+    hide_kill_instrs
     function
     matchset
   =
@@ -78,10 +78,10 @@ run PlotCoverAllMatches
                                                     (not . isInstructionNull)
                                                     ms0
                                  else return ms0
-                          ms2 <- if hide_inactive_instrs
+                          ms2 <- if hide_kill_instrs
                                  then filterMatches tm
                                                     ( not
-                                                      . isInstructionInactive
+                                                      . isInstructionKill
                                                     )
                                                     ms1
                                  else return ms1

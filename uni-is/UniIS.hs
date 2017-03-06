@@ -275,10 +275,10 @@ parseArgs =
                   " Only usable together with --plot-cover-all-matches and " ++
                   "--check-fun-coverage options."
                 )
-    , hideInactiveInstructions = def
-        &= name "hide-inactive-instrs"
+    , hideKillInstructions = def
+        &= name "hide-kill-instrs"
         &= explicit
-        &= help ( "Whether to exclude inactive instructions in the cover " ++
+        &= help ( "Whether to exclude kill instructions in the cover " ++
                   "plots. Only usable together with " ++
                   "--plot-cover-all-matches and --check-fun-coverage options."
                 )

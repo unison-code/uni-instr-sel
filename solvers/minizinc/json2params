@@ -478,8 +478,8 @@ dumpParams( bumpArr(json_data["match-copy-instrs"])
           , "copyInstrMatches"
           , VT_SET
           )
-dumpParams( bumpArr(json_data["match-inactive-instrs"])
-          , "inactiveInstrMatches"
+dumpParams( bumpArr(json_data["match-kill-instrs"])
+          , "killInstrMatches"
           , VT_SET
           )
 dumpParams( bumpArr(json_data["match-null-instrs"])

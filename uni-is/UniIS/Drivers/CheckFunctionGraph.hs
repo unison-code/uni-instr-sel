@@ -55,7 +55,7 @@ run
   -> Bool
      -- ^ Whether to hide null instructions.
   -> Bool
-     -- ^ Whether to hide inactive instructions.
+     -- ^ Whether to hide kill instructions.
   -> Function
   -> PatternMatchset
   -> Maybe TargetMachine
@@ -63,7 +63,7 @@ run
 
 run CheckFunctionGraphCoverage
     hide_null_instrs
-    hide_inactive_instrs
+    hide_kill_instrs
     function
     matchset
     _
@@ -79,10 +79,10 @@ run CheckFunctionGraphCoverage
                                                     (not . isInstructionNull)
                                                     ms0
                                  else return ms0
-                          ms2 <- if hide_inactive_instrs
+                          ms2 <- if hide_kill_instrs
                                  then filterMatches tm
                                                     ( not
-                                                      . isInstructionInactive
+                                                      . isInstructionKill
                                                     )
                                                     ms1
                                  else return ms1

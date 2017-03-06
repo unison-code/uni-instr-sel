@@ -391,9 +391,9 @@ processMatch' instr match mid oid =
                    (replaceNodeIDsWithOperandIDs pn2oid_maps)
                  ) $
              osConstraints os
-         , hlMatchIsPhiInstruction = isInstructionPhi $ instr
-         , hlMatchIsCopyInstruction = isInstructionCopy $ instr
-         , hlMatchIsInactiveInstruction = isInstructionInactive $ instr
+         , hlMatchIsPhiInstruction = isInstructionPhi instr
+         , hlMatchIsCopyInstruction = isInstructionCopy instr
+         , hlMatchIsKillInstruction = isInstructionKill instr
          , hlMatchIsNullInstruction = isInstructionNull instr
          , hlMatchHasControlFlow = length c_ns > 0
          , hlMatchCodeSize = instrCodeSize i_props
@@ -650,9 +650,9 @@ lowerHighLevelModel model ai_maps =
            map (getAIForMatchID . hlMatchID) $
            filter hlMatchIsCopyInstruction $
            m_params
-       , llMatchInactiveInstructions =
+       , llMatchKillInstructions =
            map (getAIForMatchID . hlMatchID) $
-           filter hlMatchIsInactiveInstruction $
+           filter hlMatchIsKillInstruction $
            m_params
        , llMatchNullInstructions =
            map (getAIForMatchID . hlMatchID) $

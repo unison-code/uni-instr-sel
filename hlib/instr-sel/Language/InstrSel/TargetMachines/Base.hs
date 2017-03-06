@@ -26,7 +26,7 @@ module Language.InstrSel.TargetMachines.Base
   , findInstruction
   , findLocation
   , isInstructionCopy
-  , isInstructionInactive
+  , isInstructionKill
   , isInstructionNull
   , isInstructionPhi
   , isInstructionSimd
@@ -132,8 +132,8 @@ data InstrProperties
         -- ^ Instruction latency (in cycles).
       , instrIsCopy :: Bool
         -- ^ Whether the instruction represents a copy.
-      , instrIsInactive :: Bool
-        -- ^ Whether the instruction represents an inactive operation.
+      , instrIsKill :: Bool
+        -- ^ Whether the instruction represents a kill operation.
       , instrIsNull :: Bool
         -- ^ Whether the instruction is a null instruction, i.e. does not emit
         -- anything during code emission.
@@ -251,9 +251,9 @@ isInstructionNull = instrIsNull . instrProps
 isInstructionCopy :: Instruction -> Bool
 isInstructionCopy = instrIsCopy . instrProps
 
--- | Checks whether the instruction is an inactive instruction.
-isInstructionInactive :: Instruction -> Bool
-isInstructionInactive = instrIsInactive . instrProps
+-- | Checks whether the instruction is a kill instruction.
+isInstructionKill :: Instruction -> Bool
+isInstructionKill = instrIsKill . instrProps
 
 -- | Checks whether the instruction is a phi instruction.
 isInstructionPhi :: Instruction -> Bool
