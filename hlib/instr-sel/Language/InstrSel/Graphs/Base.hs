@@ -123,7 +123,6 @@ module Language.InstrSel.Graphs.Base
   , isDefEdge
   , isInGraph
   , isBlockNode
-  , isBlockNodeAndIntermediate
   , isGraphEmpty
   , isNodeInGraph
   , isOperationNode
@@ -1477,6 +1476,10 @@ isNodeTypeCompatibleWith _ _ = False
 isBlockNodeAndIntermediate :: Graph -> Node -> Bool
 isBlockNodeAndIntermediate g n
   | ( isBlockNode n &&
+      ( not ( isJust (entryBlockNode g) &&
+              n == fromJust (entryBlockNode g)
+            )
+      ) &&
       (length $ getCtrlFlowInEdges g n) > 0 &&
       (length $ getCtrlFlowOutEdges g n) > 0
     ) = True
