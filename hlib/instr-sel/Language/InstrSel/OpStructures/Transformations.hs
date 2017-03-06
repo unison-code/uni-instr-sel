@@ -522,26 +522,26 @@ removeDeadCode' os =
 -- redundant if its result is immediately masked to leave the same bits as
 -- before the conversion.
 removeRedundantConversions :: OpStructure -> OpStructure
-removeRedundantConversions os0 =
-  let g = osGraph os0
+removeRedundantConversions os =
+  let g0 = osGraph os
       convs = filter (isCompTypeConvOp . getOpOfComputationNode) $
               filter isComputationNode $
-              getAllNodes g
-      transform n os1 =
-        let arg_n = head $ getPredecessors g n
+              getAllNodes g0
+      transform n g1 =
+        let arg_n = head $ getPredecessors g1 n
             arg_n_t = getDataTypeOfValueNode arg_n
             bits = intTempNumBits arg_n_t
-            uses_of_arg_n = getPredecessors g arg_n
+            uses_of_arg_n = getPredecessors g1 arg_n
             (CompTypeConvOp op) = getOpOfComputationNode n
-            value = head $ getSuccessors g n
-            uses = getSuccessors g value
+            value = head $ getSuccessors g1 n
+            uses = getSuccessors g1 value
             (use, use_v1) = -- Skip over any copy node encountered
                             if isCopyNode (head uses)
                             then let v = head $
-                                         getSuccessors g $
+                                         getSuccessors g1 $
                                          head uses
                                      u = head $
-                                         getSuccessors g v
+                                         getSuccessors g1 v
                                  in (u, v)
                             else (head uses, value)
             use_op = getOpOfComputationNode use
@@ -550,12 +550,12 @@ removeRedundantConversions os0 =
             use_v2 = -- Skip over any copy node encountered
                      let v = head $
                              filter (/= use_v1) $
-                             getPredecessors g use
-                         v_pred = getSourceNode g $
+                             getPredecessors g1 use
+                         v_pred = getSourceNode g1 $
                                   head $
-                                  getDtFlowInEdges g v
+                                  getDtFlowInEdges g1 v
                      in if isCopyNode v_pred
-                        then head $ getPredecessors g v_pred
+                        then head $ getPredecessors g1 v_pred
                         else v
             use_v2_t = getDataTypeOfValueNode use_v2
             imm = lowerBound $ intConstValue use_v2_t
@@ -572,8 +572,7 @@ removeRedundantConversions os0 =
               )
            then let old_l = getNodeLabel n
                     new_l = old_l { nodeType = CopyNode }
-                    g' = updateNodeLabel new_l n g
-                    os2 = os1 { osGraph = g' }
-                in os2
-           else os1
-  in foldr transform os0 convs
+                    g2 = updateNodeLabel new_l n g1
+                in g2
+           else g1
+  in os { osGraph = foldr transform g0 convs }
