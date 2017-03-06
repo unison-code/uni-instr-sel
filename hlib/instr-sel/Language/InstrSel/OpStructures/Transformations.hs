@@ -229,18 +229,11 @@ enforcePhiNodeInvariants = ensureSingleBlockUseInPhis .
 ensureSingleValueUseInPhis :: OpStructure -> OpStructure
 ensureSingleValueUseInPhis os =
   let g = osGraph os
-      entry = entryBlockNode g
-  in if isJust entry
-     then ensureSingleValueUseInPhis' (fromJust entry) os
-     else error $ "ensureSingleValueUseInPhis: graph has no entry block"
-
-ensureSingleValueUseInPhis'
-  :: Node
-     -- ^ The root (entry) block of the given graph.
-  -> OpStructure
-  -> OpStructure
-ensureSingleValueUseInPhis' root os =
-  let g = osGraph os
+      entry = let n = entryBlockNode g
+              in if isJust n
+                 then fromJust n
+                 else error $ "ensureSingleValueUseInPhis: graph has no " ++
+                              "entry block"
       cfg = extractCFG g
       ns = filter ( \n ->
                     let es = getDtFlowInEdges g n
@@ -263,7 +256,7 @@ ensureSingleValueUseInPhis' root os =
                                 if length ps == 1
                                 then head ps
                                 else ( fst $ head ps
-                                     , getDomOf cfg root $ map snd ps
+                                     , getDomOf cfg entry $ map snd ps
                                      )
                               ) $
                           grouped_vb_ps
@@ -336,14 +329,11 @@ removePhiNodeRedundancies = ensureSingleBlockUseInPhis .
 replaceCopiedValuesInPhiNodes :: OpStructure -> OpStructure
 replaceCopiedValuesInPhiNodes os =
   let g = osGraph os
-      entry = entryBlockNode g
-  in if isJust entry
-     then replaceCopiedValuesInPhiNodes' (fromJust entry) os
-     else error $ "replaceCopiedValuesInPhiNodes: graph has no entry block"
-
-replaceCopiedValuesInPhiNodes' :: Node -> OpStructure -> OpStructure
-replaceCopiedValuesInPhiNodes' root os =
-  let g = osGraph os
+      entry = let n = entryBlockNode g
+              in if isJust n
+                 then fromJust n
+                 else error $ "replaceCopiedValuesInPhiNodes: graph has no " ++
+                              "entry block"
       cfg = extractCFG g
       ns = filter isPhiNode $
            getAllNodes g
@@ -361,7 +351,7 @@ replaceCopiedValuesInPhiNodes' root os =
       replace dt_es os' =
         let g0 = osGraph os'
             def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
-            new_b = getDomOf cfg root $
+            new_b = getDomOf cfg entry $
                     map (getTargetNode g0) $
                     def_es
             kept_dt_e = head dt_es
