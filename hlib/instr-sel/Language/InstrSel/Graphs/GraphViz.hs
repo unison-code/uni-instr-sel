@@ -33,6 +33,11 @@ import qualified Data.GraphViz.Attributes.Complete as GVA
 import qualified Data.GraphViz.Printing as GVP
 import qualified Data.Text.Lazy as T
 
+import Data.Maybe
+  ( isJust
+  , fromJust
+  )
+
 
 
 -------------
@@ -47,12 +52,12 @@ toDotGraph = toDotGraphWith noMoreNodeAttr noMoreEdgeAttr
 -- the appearance of the nodes and edges. This is done by adding additional
 -- attributes to the nodes and edges.
 toDotGraphWith
-  :: (Node -> GV.Attributes)
-  -> (Edge -> GV.Attributes)
+  :: (Graph -> Node -> GV.Attributes)
+  -> (Graph -> Edge -> GV.Attributes)
   -> Graph
   -> GV.DotGraph I.Node
 toDotGraphWith nf ef g =
-  GV.graphToDot (mkParams nf ef) (intGraph g)
+  GV.graphToDot (mkParams g nf ef) (intGraph g)
 
 -- | Converts a graph into GraphViz's DotGraph string format, which can then be
 -- written to file.
@@ -63,8 +68,8 @@ toDotString = toDotStringWith noMoreNodeAttr noMoreEdgeAttr
 -- the appearance of the nodes and edges. This is done by adding additional
 -- attributes to the nodes and edges.
 toDotStringWith
-  :: (Node -> GV.Attributes)
-  -> (Edge -> GV.Attributes)
+  :: (Graph -> Node -> GV.Attributes)
+  -> (Graph -> Edge -> GV.Attributes)
   -> Graph
   -> String
 toDotStringWith nf ef g =
@@ -75,40 +80,46 @@ toDotStringWith nf ef g =
 -- | Constructs the dot graph parameters, including the attributes for the nodes
 -- and edges.
 mkParams
-  :: (Node -> GV.Attributes)
-  -> (Edge -> GV.Attributes)
+  :: Graph
+  -> (Graph -> Node -> GV.Attributes)
+  -> (Graph -> Edge -> GV.Attributes)
   -> GV.GraphvizParams I.Node NodeLabel EdgeLabel () NodeLabel
-mkParams nf ef =
-  let mkNodeAttr n = mkDefaultNodeAttr n ++ nf (Node n)
-      mkEdgeAttr e = mkDefaultEdgeAttr e ++ ef (Edge e)
+mkParams g nf ef =
+  let mkNodeAttr n = mkDefaultNodeAttr g n ++ nf g (Node n)
+      mkEdgeAttr e = mkDefaultEdgeAttr g e ++ ef g (Edge e)
   in GV.nonClusteredParams
        { GV.fmtNode = mkNodeAttr
        , GV.fmtEdge = mkEdgeAttr
        }
 
 -- | Constructs the default node attributes, depending on the node type.
-mkDefaultNodeAttr :: (I.LNode NodeLabel) -> GV.Attributes
-mkDefaultNodeAttr i_n =
+mkDefaultNodeAttr :: Graph -> (I.LNode NodeLabel) -> GV.Attributes
+mkDefaultNodeAttr g i_n =
   let n = Node i_n
       nt = getNodeType n
       nid = getNodeID n
-  in mkNodeShapeAttr nt ++ mkNodeLabelAttr nid nt
+  in mkNodeShapeAttr g n nt ++ mkNodeLabelAttr nid nt
 
 -- | Creates attribute for drawing thick lines.
 thickWidthAttr :: GV.Attribute
 thickWidthAttr = GV.penWidth 3.0
 
 -- | Constructs the node shape attributes based on the given node type.
-mkNodeShapeAttr :: NodeType -> GV.Attributes
-mkNodeShapeAttr (ComputationNode _) = [GV.shape GV.Circle]
-mkNodeShapeAttr (ControlNode _) = [GV.shape GV.DiamondShape, thickWidthAttr]
-mkNodeShapeAttr (CallNode _) = [GV.shape GV.Circle]
-mkNodeShapeAttr IndirCallNode = [GV.shape GV.Circle]
-mkNodeShapeAttr (ValueNode _ _) = [GV.shape GV.BoxShape]
-mkNodeShapeAttr (BlockNode _) = [GV.shape GV.BoxShape, thickWidthAttr]
-mkNodeShapeAttr PhiNode = [GV.shape GV.Circle]
-mkNodeShapeAttr StateNode = [GV.shape GV.BoxShape]
-mkNodeShapeAttr CopyNode = [GV.shape GV.Circle]
+mkNodeShapeAttr :: Graph -> Node -> NodeType -> GV.Attributes
+mkNodeShapeAttr _ _ (ComputationNode _) = [GV.shape GV.Circle]
+mkNodeShapeAttr _ _ (ControlNode _) = [GV.shape GV.DiamondShape, thickWidthAttr]
+mkNodeShapeAttr _ _ (CallNode _) = [GV.shape GV.Circle]
+mkNodeShapeAttr _ _ IndirCallNode = [GV.shape GV.Circle]
+mkNodeShapeAttr _ _ (ValueNode _ _) = [GV.shape GV.BoxShape]
+mkNodeShapeAttr g n (BlockNode _) =
+  let attr = [GV.shape GV.BoxShape, thickWidthAttr]
+      entry = entryBlockNode g
+  in if isJust entry && fromJust entry == n
+     then attr ++ [GVA.Peripheries 2]
+     else attr
+mkNodeShapeAttr _ _ PhiNode = [GV.shape GV.Circle]
+mkNodeShapeAttr _ _ StateNode = [GV.shape GV.BoxShape]
+mkNodeShapeAttr _ _ CopyNode = [GV.shape GV.Circle]
 
 -- | Constructs a label attribute based on the node ID and node type.
 mkNodeLabelAttr :: NodeID -> NodeType -> GV.Attributes
@@ -133,14 +144,14 @@ mkNodeLabelAttr nid nt =
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
-noMoreNodeAttr :: Node -> GV.Attributes
-noMoreNodeAttr _ = []
+noMoreNodeAttr :: Graph -> Node -> GV.Attributes
+noMoreNodeAttr _ _ = []
 
 -- | Constructs the default edge attributes.
-mkDefaultEdgeAttr :: (I.LEdge EdgeLabel) -> GV.Attributes
-mkDefaultEdgeAttr e = mkEdgeAttrByType (getEdgeType (Edge e))
-                      ++
-                      mkEdgeNrAttributes e
+mkDefaultEdgeAttr :: Graph -> (I.LEdge EdgeLabel) -> GV.Attributes
+mkDefaultEdgeAttr _ e = mkEdgeAttrByType (getEdgeType (Edge e))
+                        ++
+                        mkEdgeNrAttributes e
 
 -- | Constructs attributes for the edge numbers.
 mkEdgeNrAttributes :: (I.LEdge EdgeLabel) -> GV.Attributes
@@ -168,14 +179,14 @@ mkDefEdgeAttr = [GV.style GV.dotted]
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
-noMoreEdgeAttr :: Edge -> GV.Attributes
-noMoreEdgeAttr _ = []
+noMoreEdgeAttr :: Graph -> Edge -> GV.Attributes
+noMoreEdgeAttr _ _ = []
 
 -- | Returns a function that constructs attributes for showing an edge's edge
 -- numbers.
-showEdgeNrsAttr :: Edge -> GV.Attributes
+showEdgeNrsAttr :: Graph -> Edge -> GV.Attributes
 showEdgeNrsAttr =
-  ( \e ->
+  ( \_ e ->
     [ GVA.TailLabel (GV.toLabelValue $ pShow $ getEdgeOutNr e)
     , GVA.HeadLabel (GV.toLabelValue $ pShow $ getEdgeInNr e)
     ]

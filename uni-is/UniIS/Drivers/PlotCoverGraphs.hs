@@ -109,11 +109,11 @@ mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO String
 mkCoveragePlot show_edge_nrs function matches =
   do let hasMatch n = any (\m -> length (findPNInMatch m $ getNodeID n) > 0)
                           matches
-         nf n = [ GV.style GV.filled
-                , if hasMatch n
-                  then GV.fillColor GV.Green
-                  else GV.fillColor GV.Red
-                ]
+         nf _ n = [ GV.style GV.filled
+                  , if hasMatch n
+                    then GV.fillColor GV.Green
+                    else GV.fillColor GV.Red
+                  ]
          ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
          dot = (toDotStringWith nf ef) $
                osGraph $
