@@ -456,18 +456,6 @@ constraint
     in dplace[d] = b
   );
 
-% If a match representing a null instruction is selected, then the data used by
-% the match must be defined in the same block wherein the match is placed.
-%
-% [MC]: Assumes that matches which use some data cover at least one operation.
-% [GHB]: This assumption should always hold.
-constraint
-  forall ( m in nullInstrMatches
-         , o in operandsUsedByMatch[m]
-         , c in operationsCoveredByMatch[m]
-         )
-  ( sel[m] -> dplace[Alt(o)] = oplace[c] );
-
 % If a selected match m has an entry block b, then all operations covered by m
 % must be placed in b.
 %
