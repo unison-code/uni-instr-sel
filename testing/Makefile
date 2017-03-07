@@ -266,7 +266,9 @@ run-medium-regression-tests:
 					solv_time="?" ;\
 				fi ;\
 				if [ -f "$$T_ASM" ] && [ -n "$$T_ASM_TXT" ]; then \
-					if [ "$$cost" -eq "$$T_COST" ]; then \
+					if [ \( "$$cost" -ne "-1" \) -a \
+						 \( "$$cost" -le "$$T_COST" \) \
+					   ]; then \
 						T_IS_OK=0 ;\
 						for O in $$T_ORACLES; do \
 							if [ "$$T_IS_OK" -eq "0" ]; then \
@@ -283,26 +285,38 @@ run-medium-regression-tests:
 							T_WARN=`expr $$T_WARN + 1` ;\
 							echo -n "[$(C_WARNING)WARNING$(C_NONE)] " ;\
 							echo -n "($${solv_time}s) " ;\
-							echo    "(diff output)" ;\
-							for i in `seq 1 58`; do \
-								echo -n "-" ;\
-							done ;\
-						    echo ;\
-							echo "- DIFF -";\
-							echo "$$T_DIFF" ;\
-						    echo ;\
-							echo "- FULL OUTPUT -";\
-							cat $$T_ASM ;\
-							for i in `seq 1 58`; do \
-								echo -n "-" ;\
-							done ;\
-							echo ;\
+							if [ "$$cost" -lt "$$T_COST" ]; then \
+								echo "(lesser cost)" ;\
+								for i in `seq 0 $$T_MAX_LENGTH`; do \
+									echo -n " " ;\
+								done ;\
+								echo "$${T_INDENT}Expected: $$T_COST" ;\
+								for i in `seq 0 $$T_MAX_LENGTH`; do \
+									echo -n " " ;\
+								done ;\
+								echo "$${T_INDENT}Actual: $$cost" ;\
+							else \
+								echo "(diff output)" ;\
+								for i in `seq 1 58`; do \
+									echo -n "-" ;\
+								done ;\
+							    echo ;\
+								echo "- DIFF -";\
+								echo "$$T_DIFF" ;\
+							    echo ;\
+								echo "- FULL OUTPUT -";\
+								cat $$T_ASM ;\
+								for i in `seq 1 58`; do \
+									echo -n "-" ;\
+								done ;\
+								echo ;\
+							fi \
 						fi \
 					else \
 						T_FAILED=`expr $$T_FAILED + 1` ;\
 						echo -n "[$(C_ERROR)FAILED$(C_NONE)] " ;\
 						echo -n "($${solv_time}s) " ;\
-						echo    "(diff costs)" ;\
+						echo    "(greater cost)" ;\
 						for i in `seq 0 $$T_MAX_LENGTH`; do \
 							echo -n " " ;\
 						done ;\
