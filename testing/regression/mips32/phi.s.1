@@ -1,8 +1,8 @@
  16  entry:
   1    [%x] <- "ADDI $%x, $%n, 10" <- [%n]
-  0    [] <- "SLTi %tmp.1, %n, 1" <- [%n]
-  2    [] <- "BEQ %tmp.1, $0, bb1" <- []
+  1    [] <- "BNE $0, $%cmp, bb1" <- [%cmp]
  16  bb2:
   0    [] <- "RetRA %x" <- [%x]
   8  bb1:
+  1    [%cmp] <- "SLTI %cmp, 1, %n" <- [%n]
   1    [] <- "B bb2" <- []

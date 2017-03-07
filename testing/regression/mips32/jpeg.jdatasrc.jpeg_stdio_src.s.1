@@ -2,9 +2,8 @@
   1    [%1] <- "LW $%1, 20($%cinfo)" <- [%cinfo]
   1    [] <- "BEQ $%1, $r0, 4" <- [%1, %const.null.copy.2]
  13  ._crit_edge:
-  1    [%1.copy.2] <- "MOV %1.copy.2, %1" <- [%1]
  21  15:
-  0    [%16] <- "PHI (%1.copy.2, ._crit_edge) (%.pre, 4)" <- [%1.copy.2, %.pre]
+  0    [%16] <- "PHI (%1, 0) (%.pre, 4)" <- [%1, %.pre]
   1    [] <- "SW $r0, 8($%16)" <- [%const.@%init_source, %16]
   1    [] <- "SW $r0, 12($%16)" <- [%const.@%fill_input_buffer, %16]
   1    [] <- "SW $r0, 16($%16)" <- [%const.@%skip_input_data, %16]

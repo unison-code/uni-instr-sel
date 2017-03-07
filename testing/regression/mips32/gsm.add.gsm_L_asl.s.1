@@ -1,9 +1,8 @@
  85  0:
   0    [%3] <- "SLTI $%3, $%n, -31" <- [%n]
   0    [%7] <- "SLTI $%7, $%n, 0" <- [%n]
-  1    [%const.31.copy.1] <- "ADDiu %const.31.copy.1, $0, 31" <- []
   1    [%const.0.copy.3] <- "ADDiu %const.0.copy.3, $0, 0" <- []
-  1    [] <- "BGT $%n, $%const.31.copy.1, gsm_L_asr.exit" <- [%n, %const.31.copy.1]
+  1    [] <- "BNE $0, $%1, gsm_L_asr.exit" <- [%1]
  42  2:
   1    [] <- "BNE $0, $%3, 4" <- [%3]
  21  6:
@@ -19,4 +18,5 @@
   8  8:
   1    [%9] <- "SUBU $%9, $r0, $%n" <- [%const.0.copy.2, %n]
   1    [%10] <- "SRAV $%10, $%a, $%9" <- [%a, %9]
+  1    [%1] <- "SLTI %1, 31, %n" <- [%n]
   1    [] <- "B gsm_L_asr.exit" <- []

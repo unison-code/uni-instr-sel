@@ -1,9 +1,6 @@
  16  0:
-  1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.1, %cinfo]
+  1    [] <- "SW $r0, 4($%cinfo)" <- [%const.null.copy.2, %cinfo]
   1    [%const.61.copy.2] <- "ADDiu %const.61.copy.2, $0, 61" <- []
-  1    [%const.464.copy.2] <- "ADDiu %const.464.copy.2, $0, 464" <- []
-  1    [%const.1.copy.1] <- "ADDiu %const.1.copy.1, $0, 1" <- []
-  1    [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
   1    [] <- "BEQ $%version, $%const.61.copy.2, 12" <- [%version, %const.61.copy.2]
   8  3:
   1    [%5] <- "LW %5, 0(%cinfo)" <- [%cinfo]
@@ -14,6 +11,7 @@
   1    [%10] <- "LW %10, 0(%5)" <- [%5]
   1    [] <- "CALL %10" <- [%cinfo, %10]
  16  12:
+  1    [%const.464.copy.2] <- "ADDiu %const.464.copy.2, $0, 464" <- []
   1    [] <- "BEQ $%structsize, $%const.464.copy.2, ..preheader.preheader_crit_edge" <- [%structsize, %const.464.copy.2]
   8  14:
   1    [%16] <- "LW %16, 0(%cinfo)" <- [%cinfo]
@@ -23,16 +21,18 @@
   1    [] <- "SW $%structsize, 28($%16)" <- [%structsize, %16]
   1    [%21] <- "LW %21, 0(%16)" <- [%16]
   1    [] <- "CALL %21" <- [%cinfo, %21]
-  1    [] <- "B .preheader.preheader" <- []
-  8  ..preheader.preheader_crit_edge:
  16  .preheader.preheader:
   1    [%24] <- "LW %24, 0(%cinfo)" <- [%cinfo]
   1    [] <- "SW %24, 0(%cinfo)" <- [%24, %cinfo]
+  1    [%const.1.copy.1] <- "ADDiu %const.1.copy.1, $0, 1" <- []
   1    [] <- "SW $%const.1.copy.1, 12($%cinfo)" <- [%const.1.copy.1, %cinfo]
+  1    [%const.200.copy.1] <- "ADDiu %const.200.copy.1, $0, 200" <- []
   1    [] <- "CALL jinit_memory_mgr" <- [%cinfo]
   1    [] <- "SW $r0, 8($%cinfo)" <- [%const.null.copy.2, %cinfo]
-  1    [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.3, %cinfo]
+  1    [] <- "SW $r0, 20($%cinfo)" <- [%const.null.copy.2, %cinfo]
   1    [] <- "CALL jinit_marker_reader" <- [%cinfo]
   1    [] <- "CALL jinit_input_controller" <- [%cinfo]
   1    [] <- "SW $%const.200.copy.1, 16($%cinfo)" <- [%const.200.copy.1, %cinfo]
   1    [] <- "Ret" <- []
+  8  ..preheader.preheader_crit_edge:
+  1    [] <- "B .preheader.preheader" <- []
