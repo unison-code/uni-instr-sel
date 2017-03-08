@@ -316,6 +316,22 @@ var allDataInFunction: Alt(allOperands: o) =
   in if card(operandAlternatives[o]) = 1 then d else alt[o] endif;
 
 
+% True if operand o for sure can't be in the null location.
+test oLocCantBeNull(allOperands: o) =
+  exists(i in index_set_1of2(validDataLocRangesInMatch))(
+    validDataLocRangesInMatch[i,2] = o /\
+    validDataLocRangesInMatch[i,4] < locValueForNull
+  );
+
+% True if datum d for sure can't be in the null location.
+test dLocCantBeNull(allDataInFunction: d) =
+  forall ( m in defsetOfDatum[d] )
+	 ( not (m in inactiveInstrMatches) /\
+	   exists ( use2 in operandsDefinedByMatch[m] intersect
+			    operandsExternalToMatch[m]
+		  )
+	   ( operandAlternatives[use2] = {d} )
+	 );
 
 %==================
 % BASE CONSTRAINTS
@@ -364,8 +380,12 @@ constraint
   forall ( m in allMatches diff killInstrMatches
          , o in operandsExternalToMatch[m]
            where not (operandAlternatives[o] subset statesInFunction)
+	      /\ not oLocCantBeNull(o)
          )
-  ( sel[m] -> loc[Alt(o)] != locValueForNull );
+  ( if forall(d in operandAlternatives[o])(dLocCantBeNull(d)) then true else
+      sel[m] -> loc[Alt(o)] != locValueForNull
+    endif
+  );
 
 % All operands internal to a match must be located in the null location.
 constraint
@@ -733,15 +753,51 @@ constraint
        endif
   );
 
+% A consequence of symmetry breaking
+constraint
+  forall ( chain in interchangeableDataInFunction
+         where forall(d in chain)(defsetOfDatum[d] subset copyInstrMatches)
+	 )
+  ( let {array[int] of int: inactives = [min(defsetOfDatum[d] intersect inactiveInstrMatches) | d in chain]}
+    in increasing(m in inactives)(sel[m])
+  );
+
 %=====================
 % IMPLIED CONSTRAINTS
 %=====================
 
-% If two matches selected with same fall-thru blocks but different entry blocks,
-% then one entry block must be the empty successor of the other one.
-% If two matches selected with different fall-thru blocks but same entry blocks,
-% then one fall-thru block must be the successor of the other one, which must be
-% empty.
+% % LOGIC FOR FALL THROUGH WITH EMPTY BLOCKS.
+% % If two matches selected with same fall-thru blocks but different entry blocks,
+% % then one entry block must be the empty successor of the other one.
+% % If two matches selected with different fall-thru blocks but same entry blocks,
+% % then one fall-thru block must be the successor of the other one, which must be
+% % empty.
+% constraint
+%   forall ( i in index_set_1of2(fallThroughBlockOfMatch)
+%          , j in index_set_1of2(fallThroughBlockOfMatch)
+%            where i < j
+%          )
+%   ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
+%         , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
+%         , int: entry_b1 = min(entryBlockOfMatch[m1])
+%         , int:       m2 = fallThroughBlockOfMatch[j, 1]
+%         , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
+%         , int: entry_b2 = min(entryBlockOfMatch[m2])
+%         }
+%     in if fall_b1 = fall_b2 /\ entry_b1 != entry_b2
+%        then not sel[m1] \/ not sel[m2] \/
+%             succ[entry_b1] = entry_b2 \/ succ[entry_b2] = entry_b1
+%        else if fall_b1 != fall_b2 /\ entry_b1 = entry_b2
+%             then not sel[m1] \/ not sel[m2] \/
+%                  succ[fall_b1] = fall_b2 \/ succ[fall_b2] = fall_b1
+%             else true
+%             endif
+%        endif
+%   );
+
+% LOGIC FOR FALL THROUGH WITHOUT EMPTY BLOCKS.
+% Two matches can't be selected with same fall-thru blocks but different entry blocks.
+% Two matches can't be selected with different fall-thru blocks but same entry blocks.
 constraint
   forall ( i in index_set_1of2(fallThroughBlockOfMatch)
          , j in index_set_1of2(fallThroughBlockOfMatch)
@@ -754,15 +810,9 @@ constraint
         , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
         , int: entry_b2 = min(entryBlockOfMatch[m2])
         }
-    in if fall_b1 = fall_b2 /\ entry_b1 != entry_b2
-       then not sel[m1] \/ not sel[m2] \/
-            succ[entry_b1] = entry_b2 \/ succ[entry_b2] = entry_b1
-       else if fall_b1 != fall_b2 /\ entry_b1 = entry_b2
-            then not sel[m1] \/ not sel[m2] \/
-                 succ[fall_b1] = fall_b2 \/ succ[fall_b2] = fall_b1
-            else true
-            endif
-       endif
+    in if (fall_b1 = fall_b2) xor (entry_b1 = entry_b2)
+       then not sel[m1] \/ not sel[m2]
+    else true endif
   );
 
 % Two matches cannot both be selected if the first match implies that two
@@ -1044,7 +1094,8 @@ constraint
                                   operandsExternalToMatch[m]
                         )
                  ( operandAlternatives[use2] = data1 )
-               )
+               ) /\
+               forall (d in data1)(not dLocCantBeNull(d))
             then exists (d in data1)
                  ( loc[d] != locValueForNull )
             else true
@@ -1061,13 +1112,7 @@ constraint
 % [MC 3] does not dominate [MC 2], nor vice versa.
 constraint
   forall (d in allDataInFunction diff statesInFunction )
-  ( if forall ( m in defsetOfDatum[d] )
-       ( not (m in killInstrMatches) /\
-         exists ( use2 in operandsDefinedByMatch[m] intersect
-                          operandsExternalToMatch[m]
-                )
-         ( operandAlternatives[use2] = {d} )
-       )
+  ( if dLocCantBeNull(d)
     then loc[d] != locValueForNull
     else true
     endif
@@ -1081,6 +1126,7 @@ constraint
   forall ( m in allMatches
          , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
                 where card(operandAlternatives[o]) > 1
+	           /\ not oLocCantBeNull(o)
          )
   ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
 
