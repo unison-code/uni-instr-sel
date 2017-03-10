@@ -48,15 +48,18 @@ import qualified Data.Graph.Inductive as I
 import Data.List
   ( elemIndex
   , nub
-  , groupBy
+  , sort
   , sortBy
   )
+import qualified Data.Map as M
 import Data.Maybe
   ( fromJust
   , isJust
   , isNothing
   , mapMaybe
   )
+import Data.Tuple
+  ( swap )
 
 
 
@@ -72,12 +75,17 @@ mkHighLevelModel
   -> [PatternMatch]
   -> HighLevelModel
 mkHighLevelModel function target matches =
-  HighLevelModel
-    { hlFunctionParams = mkHLFunctionParams function target
-    , hlMachineParams = mkHLMachineParams target
-    , hlMatchParams = mkHLMatchParamsList target matches
-    , hlIllegalMatchCombs = mkIllegalMatchCombs function target matches
-    }
+  let f_params = mkHLFunctionParams function target
+      machine_params = mkHLMachineParams target
+      match_params = mkHLMatchParamsList target matches
+      ill_m_combs = mkIllegalMatchCombs function target matches
+      interch_data = mkInterchangeableData match_params
+  in HighLevelModel { hlFunctionParams = f_params
+                    , hlMachineParams = machine_params
+                    , hlMatchParams = match_params
+                    , hlIllegalMatchCombs = ill_m_combs
+                    , hlInterchangeableData = interch_data
+                    }
 
 mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
 mkHLFunctionParams function target =
@@ -149,21 +157,11 @@ mkHLFunctionParams function target =
                        )
                )
                ns
-      cp_ns = filter isCopyNode all_ns
-      cp_groups = filter (\ns -> length ns > 1) $
-                  groupBy ( \n1 n2 ->
-                            let d1 = head $ getPredecessors graph n1
-                                d2 = head $ getPredecessors graph n2
-                            in d1 == d2
-                          )
-                          cp_ns
-      interch_data = map (map (head . getSuccessors graph)) cp_groups
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
-       , hlFunInterchangeableData = map (nub . map getNodeID) interch_data
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = getNodeID entry_block
@@ -557,8 +555,6 @@ lowerHighLevelModel model ai_maps =
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
-       , llFunInterchangeableData =
-           map (map getAIForDatumNodeID) (hlFunInterchangeableData f_params)
        , llFunValidValueLocs =
            map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))$
            f_valid_locs
@@ -665,6 +661,8 @@ lowerHighLevelModel model ai_maps =
        , llMatchInstructionIDs = map hlMatchInstructionID m_params
        , llIllegalMatchCombs = map (map getAIForMatchID) $
                                hlIllegalMatchCombs model
+       , llInterchangeableData =
+           map (map getAIForDatumNodeID) (hlInterchangeableData model)
        , llTMID = hlMachineID tm_params
        }
 
@@ -833,3 +831,30 @@ mkIllegalMatchCombs function target matches =
                                    -- the first element
                         cyclesIn' g2
   in forbidden_combs
+
+-- | Finds the sets of data that are interchangeable. Data are interchangeable
+-- if they can be globally swapped within a solution without changing the
+-- program semantics.
+--
+-- TODO: describe how they are computed
+mkInterchangeableData :: [HighLevelMatchParams] -> [[NodeID]]
+mkInterchangeableData params =
+  let all_alt_uses =
+        concatMap ( \m ->
+                    let use_ops = hlMatchOperandsUsed m
+                    in map (\p -> fromJust $ lookup p (hlOperandNodeMaps m)) $
+                       use_ops
+                  ) $
+        params
+      unary_uses_set = M.fromList $
+                       map swap $
+                       zip (repeat True) $
+                       nub $
+                       concat $
+                       filter (\l -> length l == 1) $
+                       all_alt_uses
+      interch_data = nub $
+                     map sort $
+                     filter (not . any (\n -> M.member n unary_uses_set)) $
+                     all_alt_uses
+  in interch_data

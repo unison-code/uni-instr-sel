@@ -388,7 +388,7 @@ dumpParams( bumpArr(json_data["fun-control-ops"])
           , "controlOpsInFunction"
           , VT_SET
           )
-dumpParams( bumpArrOfArr(json_data["fun-interchangeable-data"])
+dumpParams( bumpArrOfArr(json_data["interchangeable-data"])
           , "interchangeableDataInFunction"
           , VT_ARRAY
           , "int"

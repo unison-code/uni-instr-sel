@@ -52,6 +52,9 @@ data HighLevelModel
       , hlMachineParams :: HighLevelMachineParams
       , hlMatchParams :: [HighLevelMatchParams]
       , hlIllegalMatchCombs :: [[MatchID]]
+      , hlInterchangeableData :: [[NodeID]]
+        -- ^ The data that are interchangeable. This is used for symmetry
+        -- breaking.
       }
   deriving (Show)
 
@@ -66,9 +69,6 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
-      , hlFunInterchangeableData :: [[NodeID]]
-        -- ^ The data in the function graph that are interchangeable. This is
-        -- used for symmetry breaking.
       , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
       , hlFunBlocks :: [NodeID]
@@ -218,10 +218,6 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
-      , llFunInterchangeableData :: [[ArrayIndex]]
-        -- ^ The data in the function graph that are interchangeable. This is
-        -- used for symmetry breaking. The outer list represents groups of data
-        -- that are interchangeable.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
         -- ^ The valid locations for each datum in the function graph (no entry
         -- means that all locations are valid). The first element is the array
@@ -328,6 +324,10 @@ data LowLevelModel
       , llIllegalMatchCombs :: [[ArrayIndex]]
         -- ^ Combinations of matches for which it is illegal to select all of
         -- them.
+      , llInterchangeableData :: [[ArrayIndex]]
+        -- ^ The data that are interchangeable. This is used for symmetry
+        -- breaking. The outer list represents groups of data that are
+        -- interchangeable.
       , llTMID :: TargetMachineID
         -- ^ ID of the target machine from which the low-level model is
         -- derived. This information is used for debugging purposes only.
@@ -464,14 +464,16 @@ instance FromJSON HighLevelModel where
        <*> v .: "machine-params"
        <*> v .: "match-params"
        <*> v .: "illegal-match-combs"
+       <*> v .: "interchangeable-data"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelModel where
   toJSON m@(HighLevelModel {}) =
-    object [ "function-params"     .= (hlFunctionParams m)
-           , "machine-params"      .= (hlMachineParams m)
-           , "match-params"        .= (hlMatchParams m)
-           , "illegal-match-combs" .= (hlIllegalMatchCombs m)
+    object [ "function-params"      .= (hlFunctionParams m)
+           , "machine-params"       .= (hlMachineParams m)
+           , "match-params"         .= (hlMatchParams m)
+           , "illegal-match-combs"  .= (hlIllegalMatchCombs m)
+           , "interchangeable-data" .= (hlInterchangeableData m)
            ]
 
 instance FromJSON HighLevelFunctionParams where
@@ -481,7 +483,6 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
-      <*> v .: "interchangeable-data"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
@@ -498,23 +499,22 @@ instance FromJSON HighLevelFunctionParams where
 
 instance ToJSON HighLevelFunctionParams where
   toJSON p =
-    object [ "operations"               .= (hlFunOperations p)
-           , "copies"                   .= (hlFunCopies p)
-           , "control-ops"              .= (hlFunControlOps p)
-           , "data"                     .= (hlFunData p)
-           , "interchangeable-data"     .= (hlFunInterchangeableData p)
-           , "states"                   .= (hlFunStates p)
-           , "blocks"                   .= (hlFunBlocks p)
-           , "entry-block"              .= (hlFunEntryBlock p)
-           , "block-dom-sets"           .= (hlFunBlockDomSets p)
-           , "block-params"             .= (hlFunBlockParams p)
-           , "state-def-edges"          .= (hlFunStateDefEdges p)
-           , "valid-value-locs"         .= (hlFunValidValueLocs p)
-           , "same-value-locs"          .= (hlFunSameValueLocs p)
-           , "int-constant-data"        .= (hlFunValueIntConstData p)
-           , "value-origin-data"        .= (hlFunValueOriginData p)
-           , "call-name-data"           .= (hlFunCallNameData p)
-           , "constraints"              .= (hlFunConstraints p)
+    object [ "operations"        .= (hlFunOperations p)
+           , "copies"            .= (hlFunCopies p)
+           , "control-ops"       .= (hlFunControlOps p)
+           , "data"              .= (hlFunData p)
+           , "states"            .= (hlFunStates p)
+           , "blocks"            .= (hlFunBlocks p)
+           , "entry-block"       .= (hlFunEntryBlock p)
+           , "block-dom-sets"    .= (hlFunBlockDomSets p)
+           , "block-params"      .= (hlFunBlockParams p)
+           , "state-def-edges"   .= (hlFunStateDefEdges p)
+           , "valid-value-locs"  .= (hlFunValidValueLocs p)
+           , "same-value-locs"   .= (hlFunSameValueLocs p)
+           , "int-constant-data" .= (hlFunValueIntConstData p)
+           , "value-origin-data" .= (hlFunValueOriginData p)
+           , "call-name-data"    .= (hlFunCallNameData p)
+           , "constraints"       .= (hlFunConstraints p)
            ]
 
 instance FromJSON HighLevelBlockParams where
@@ -615,7 +615,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
-      <*> v .: "fun-interchangeable-data"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-same-value-locs"
       <*> v .: "fun-entry-block"
@@ -649,6 +648,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-constraints"
       <*> v .: "match-instruction-ids"
       <*> v .: "illegal-match-combs"
+      <*> v .: "interchangeable-data"
       <*> v .: "target-machine"
   parseJSON _ = mzero
 
@@ -660,7 +660,6 @@ instance ToJSON LowLevelModel where
            , "fun-copies"               .= (llFunCopies m)
            , "fun-control-ops"          .= (llFunControlOps m)
            , "fun-states"               .= (llFunStates m)
-           , "fun-interchangeable-data" .= (llFunInterchangeableData m)
            , "fun-valid-value-locs"     .= (llFunValidValueLocs m)
            , "fun-same-value-locs"      .= (llFunSameValueLocs m)
            , "fun-entry-block"          .= (llFunEntryBlock m)
@@ -694,6 +693,7 @@ instance ToJSON LowLevelModel where
            , "match-constraints"        .= (llMatchConstraints m)
            , "match-instruction-ids"    .= (llMatchInstructionIDs m)
            , "illegal-match-combs"      .= (llIllegalMatchCombs m)
+           , "interchangeable-data"     .= (llInterchangeableData m)
            , "target-machine"           .= (llTMID m)
            ]
 
