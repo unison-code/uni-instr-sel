@@ -38,7 +38,7 @@ BUGPOINTSCRIPT := ./bugpoint/compile-from-bc
 
 MINIZINC_GLOBALS_DIR   := chuffed
 MINIZINC_BACKEND       := fzn-chuffed
-MINIZINC_BACKEND_FLAGS := -f
+MINIZINC_BACKEND_FLAGS := -f --rnd-seed 3218642
 
 CLANG                 := $(LLVM_INT_IS_BUILD_DIR)/bin/clang
 UNI_IS_LLVM_CMD       := uni-is-llvm
