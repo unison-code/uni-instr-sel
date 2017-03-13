@@ -247,6 +247,9 @@ run-medium-regression-tests:
 				sol_file="$${T_LL%.*}.presolved.hl.sol.json" ;\
 				if [ -f $$sol_file ]; then \
 					cost=`$(GET_JSON_FIELD) "$$sol_file" "cost" 2> /dev/null` ;\
+					if [ -z "$$cost" ]; then \
+						cost="-1" ;\
+					fi ;\
 					solv_time=`$(GET_JSON_FIELD) \
 							   "$$sol_file" "solving-time" 2> /dev/null` ;\
 					T_SOLV_TIME_TOTAL=`echo "scale=2; \
