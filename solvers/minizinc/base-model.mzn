@@ -326,7 +326,7 @@ test oLocCantBeNull(allOperands: o) =
 % True if datum d for sure can't be in the null location.
 test dLocCantBeNull(allDataInFunction: d) =
   forall ( m in defsetOfDatum[d] )
-	 ( not (m in inactiveInstrMatches) /\
+	 ( not (m in killInstrMatches) /\
 	   exists ( use2 in operandsDefinedByMatch[m] intersect
 			    operandsExternalToMatch[m]
 		  )
@@ -758,8 +758,8 @@ constraint
   forall ( chain in interchangeableDataInFunction
          where forall(d in chain)(defsetOfDatum[d] subset copyInstrMatches)
 	 )
-  ( let {array[int] of int: inactives = [min(defsetOfDatum[d] intersect inactiveInstrMatches) | d in chain]}
-    in increasing(m in inactives)(sel[m])
+  ( let {array[int] of int: kills = [min(defsetOfDatum[d] intersect killInstrMatches) | d in chain]}
+    in increasing(m in kills)(sel[m])
   );
 
 %=====================
