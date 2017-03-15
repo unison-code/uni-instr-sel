@@ -43,6 +43,10 @@ mkArrayIndexMaplists function tm model =
       o_nodes = sort $ filter isOperationNode nodes
       e_nodes = sort $ filter isDatumNode nodes
       l_nodes = sort $ filter isBlockNode nodes
+      -- We sort the match parameters in increasing order of latency because
+      -- chuffed (the constraint solver we use) will most likely attempt to
+      -- select the matches in variable order, and doing this sorting will
+      -- thereby, at least in principle, assist the solving.
       match_params = sortBy ( \m1 m2 -> compare (hlMatchLatency m1)
                                                 (hlMatchLatency m2)
                             ) $
