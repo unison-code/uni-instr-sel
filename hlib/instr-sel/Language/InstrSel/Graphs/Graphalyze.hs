@@ -184,7 +184,7 @@ cyclesIn g =
 -- last elements in an inner list is always the same element.
 --
 -- See Donald B. Johnson: Finding All the Elementary Circuits of a Directed
--- Graph. SIAM Journal on Computing. Volumne 4, Nr. 1 (1975), pp. 77-84.
+-- Graph. SIAM Journal on Computing. Volume 4, Nr. 1 (1975), pp. 77-84.
 cyclesIn' :: (I.DynGraph g) => g a b -> [[I.Node]]
 cyclesIn' g =
   cisCycles $
