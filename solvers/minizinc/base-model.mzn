@@ -769,7 +769,7 @@ constraint
 %
 % [GHB] This could remove potential optimal solutions in situations where data
 % is interchangeable WITHIN a group of matches, but not BETWEEN groups of
-% matches. Have yet to see such an occurrance, tough.
+% matches. Have yet to see such an occurrance, though.
 constraint
   forall ( chain in interchangeableDataInFunction )
   ( let { set of int: ixset = { y | y in nonPhiUseOperands
