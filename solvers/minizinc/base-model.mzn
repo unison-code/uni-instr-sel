@@ -785,7 +785,8 @@ constraint
 % A consequence of symmetry breaking.
 constraint
   forall ( chain in interchangeableDataInFunction
-           where forall(d in chain)(defsetOfDatum[d] subset copyInstrMatches)
+           where forall (d in chain)
+                 ( defsetOfDatum[d] subset copyInstrMatches )
          )
   ( let { array[int] of int: kills =
             [ min(defsetOfDatum[d] intersect killInstrMatches) | d in chain ]
