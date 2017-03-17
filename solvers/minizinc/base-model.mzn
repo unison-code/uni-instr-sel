@@ -495,6 +495,15 @@ constraint
     in dplace[d] = b
   );
 
+% If a match is selected, then all operations covered by that match must be
+% placed in the same block.
+constraint
+  forall ( m in allMatches
+         , o in operationsCoveredByMatch[m]
+           where o != opOfM[m]
+         )
+  ( sel[m] -> oplace[opOfM[m]] = oplace[o] );
+
 % If a selected match m has an entry block b, then all operations covered by m
 % must be placed in b.
 %
