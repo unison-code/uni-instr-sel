@@ -388,6 +388,18 @@ dumpParams( bumpArr(json_data["fun-control-ops"])
           , "controlOpsInFunction"
           , VT_SET
           )
+dumpParams( bumpArrOfArr(json_data["fun-potential-op-places"])
+          , "potPlacesOfOpsInFunction"
+          , VT_ARRAY
+          , "allOperationsInFunction"
+          , VC_SET
+          )
+dumpParams( bumpArrOfArr(json_data["fun-potential-data-places"])
+          , "potPlacesOfDataInFunction"
+          , VT_ARRAY
+          , "allDataInFunction"
+          , VC_SET
+          )
 dumpParams( bumpArr(json_data["fun-data-used-at-least-once"])
           , "dataInFunctionUsedAtLeastOnce"
           , VT_SET

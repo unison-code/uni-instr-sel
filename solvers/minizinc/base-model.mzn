@@ -52,6 +52,8 @@ array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 set of allBlocksInFunction: branchExtBlocksInFunction;
 array[int] of set of int: interchangeableDataInFunction;
 set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
+array[allOperationsInFunction] of set of int: potPlacesOfOpsInFunction;
+array[allDataInFunction] of set of int: potPlacesOfDataInFunction;
 
 % Target machine data.
 int: numLocations;
@@ -344,6 +346,16 @@ test dLocCantBeNull(allDataInFunction: d) =
 %==================
 % BASE CONSTRAINTS
 %==================
+
+% Constrain the places of operations.
+constraint
+  forall (o in allOperationsInFunction)
+  ( oplace[o] in potPlacesOfOpsInFunction[o] );
+
+% Constrain the places of data.
+constraint
+  forall (d in allDataInFunction)
+  ( dplace[d] in potPlacesOfDataInFunction[d] );
 
 % Constrain locations of data representing values.
 constraint

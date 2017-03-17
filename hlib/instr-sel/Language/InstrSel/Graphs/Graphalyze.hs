@@ -17,6 +17,7 @@ Main authors:
 
 module Language.InstrSel.Graphs.Graphalyze
   ( areGraphsIsomorphic
+  , computeBlockPlacements
   , cyclesIn
   , cyclesIn'
   , isReachableComponent
@@ -30,6 +31,7 @@ where
 
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.PatternMatching.VF2
+import qualified Language.InstrSel.Utils.Set as S
 
 import qualified Data.Graph.Inductive as I
 
@@ -385,3 +387,133 @@ mkInitSCCState g =
               , sccNodeInfo = M.fromList $ zip ns (repeat (False, -1, -1))
               , sccGraph = g
               }
+
+-- | The data that is passed around when computing the block placements.
+type BlockPlaceState = M.Map Node (S.Set Node)
+
+-- | Computes, for each node, the blocks in which it could potentially be placed
+-- without breaking program semantics.
+computeBlockPlacements
+  :: Graph
+  -> Node
+     -- ^ The entry block.
+  -> [(Node, [Node])]
+computeBlockPlacements g entry =
+  let all_ns = getAllNodes g
+      all_bs = filter isBlockNode all_ns
+      -- Initialize placements of all non-block nodes to include all blocks
+      st0 = M.fromList $
+            map ( \n -> ( n, if isBlockNode n
+                             then S.fromList [n]
+                             else S.fromList all_bs
+                        )
+                ) $
+            all_ns
+      all_def_edges = filter isDefEdge $
+                      getAllEdges g
+      -- Restrict placements of data that participates in a definition edge
+      st1 = foldr ( \e st' ->
+                    let n1 = getSourceNode g e
+                        n2 = getTargetNode g e
+                        b_d = if isBlockNode n1 then (n1, n2) else (n2, n1)
+                    in M.insert (snd b_d) (S.fromList [fst b_d]) st'
+                  )
+                  st0 $
+            all_def_edges
+      -- Restrict placements of operations concerning control flow
+      st2 = foldr ( \n st' ->
+                    let b = getSourceNode g $ head $ getCtrlFlowInEdges g n
+                    in M.insert n (S.fromList [b]) st'
+                  )
+                  st1 $
+            filter isControlNode $
+            all_ns
+      -- Restrict placements of phi operations
+      st3 = foldr ( \n st' ->
+                    let d = getTargetNode g $ head $ getDtFlowOutEdges g n
+                    in M.insert n (st' M.! d) st'
+                  )
+                  st2 $
+            filter isPhiNode $
+            all_ns
+      cfg = extractCFG g
+      doms = computeDomSets cfg entry
+      isInDefEdge n = n `elem` ( map (getSourceNode g) all_def_edges ++
+                                 map (getTargetNode g) all_def_edges
+                               )
+      node_order = filter (not . isBlockNode) $
+                   filter (not . isInDefEdge) $
+                   filter (not . isControlNode) $
+                   filter (not . isPhiNode) $
+                   all_ns
+      st4 = computeBlockPlacements' g doms node_order st3
+      ns_sets = M.toList st4
+  in map (\(n, s) -> (n, S.toList s)) ns_sets
+
+computeBlockPlacements'
+  :: Graph
+  -> [DomSet Node]
+  -> [Node]
+  -> BlockPlaceState
+  -> BlockPlaceState
+computeBlockPlacements' g doms ns st0 =
+  let computeForNode n st =
+        if isOperationNode n
+        then computeBlockPlacementsForOp g doms n st
+        else computeBlockPlacementsForDatum g doms n st
+      (st1, changed) = foldr ( \n (st', b) ->
+                               let (st'', b') = computeForNode n st'
+                               in (st'', b || b')
+                             )
+                             (st0, False)
+                             (reverse ns)
+  in if changed then computeBlockPlacements' g doms ns st1 else st1
+
+computeBlockPlacementsForOp
+  :: Graph
+  -> [DomSet Node]
+  -> Node
+  -> BlockPlaceState
+  -> (BlockPlaceState, Bool)
+computeBlockPlacementsForOp g doms n st0 =
+  let old_op_places = st0 M.! n
+      defs = getSuccessors g n
+      def_places = map (st0 M.!) defs
+      uses = getPredecessors g n
+      use_places = map (st0 M.!) uses
+      dominatedBy n' = [ domNode s | s <- doms, n' `elem` domSet s ]
+      dom_use_places = map ( \ps -> S.fromList $
+                                    concatMap dominatedBy $
+                                    ps
+                           ) $
+                       use_places
+      new_op_places = S.intersections $
+                      [old_op_places] ++ def_places ++ dom_use_places
+      st1 = M.insert n new_op_places st0
+      changed = old_op_places /= new_op_places
+  in (st1, changed)
+
+computeBlockPlacementsForDatum
+  :: Graph
+  -> [DomSet Node]
+  -> Node
+  -> BlockPlaceState
+  -> (BlockPlaceState, Bool)
+computeBlockPlacementsForDatum g doms n st0 =
+  let old_d_places = st0 M.! n
+      defs = filter (\n' -> isOperationNode n' || isBlockNode n') $
+             getPredecessors g n
+      def_places = map (st0 M.!) defs
+      uses = getSuccessors g n
+      use_places = map (st0 M.!) uses
+      dominates n' = head $ [ domSet s | s <- doms, n' == domNode s ]
+      dom_use_places = map ( \ps -> S.fromList $
+                                    concatMap dominates $
+                                    ps
+                           ) $
+                       use_places
+      new_d_places = S.intersections $
+                     [old_d_places] ++ def_places ++ dom_use_places
+      st1 = M.insert n new_d_places st0
+      changed = old_d_places /= new_d_places
+  in (st1, changed)

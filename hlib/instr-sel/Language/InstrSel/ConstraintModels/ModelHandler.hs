@@ -28,7 +28,9 @@ import Language.InstrSel.Graphs
 import qualified Language.InstrSel.Graphs as G
   ( computeDomSets )
 import Language.InstrSel.Graphs.Graphalyze
-  ( cyclesIn' )
+  ( computeBlockPlacements
+  , cyclesIn'
+  )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..)
@@ -168,12 +170,21 @@ mkHLFunctionParams function target =
                               ) $
                        filter isDatumNode $
                        all_ns
+      pot_n_places = computeBlockPlacements graph entry_block
+      pot_op_places = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
+                      filter (isOperationNode . fst) $
+                      pot_n_places
+      pot_data_places = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
+                        filter (isDatumNode . fst) $
+                        pot_n_places
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
        , hlFunDataUsedAtLeastOnce = map getNodeID used_once_data
+       , hlFunPotOpPlaces = pot_op_places
+       , hlFunPotDataPlaces = pot_data_places
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = getNodeID entry_block
@@ -516,6 +527,8 @@ lowerHighLevelModel model ai_maps =
                           (hlMatchParams model)
       operands = sortByAI (getAIForOperandID . fst)
                           (concatMap (hlOperandNodeMaps) m_params)
+      op_ns = sortByAI getAIForOperationNodeID $ hlFunOperations f_params
+      data_ns = sortByAI getAIForDatumNodeID $ hlFunData f_params
       blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
       in_def_edges =
         concatMap ( \m ->
@@ -569,6 +582,16 @@ lowerHighLevelModel model ai_maps =
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunDataUsedAtLeastOnce = map getAIForDatumNodeID $
                                     hlFunDataUsedAtLeastOnce f_params
+       , llFunPotOpPlaces = map ( \n -> map getAIForBlockNodeID $
+                                        fromJust $
+                                        lookup n (hlFunPotOpPlaces f_params)
+                                ) $
+                            op_ns
+       , llFunPotDataPlaces = map ( \n -> map getAIForBlockNodeID $
+                                          fromJust $
+                                          lookup n (hlFunPotDataPlaces f_params)
+                                  ) $
+                              data_ns
        , llFunValidValueLocs =
            map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))$
            f_valid_locs
