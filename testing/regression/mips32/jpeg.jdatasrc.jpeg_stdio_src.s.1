@@ -14,10 +14,10 @@
   1    [] <- "SW r0, 0(%16)" <- [%const.null.copy.1, %16]
   1    [] <- "Ret" <- []
   8  4:
-  1    [%7] <- "LW $%7, 4($%cinfo)" <- [%cinfo]
-  1    [%8] <- "LW %8, 0(%7)" <- [%7]
   1    [%const.40.copy.1] <- "ADDiu %const.40.copy.1, $0, 40" <- []
   1    [%const.4096.copy.1] <- "ADDiu %const.4096.copy.1, $0, 4096" <- []
+  1    [%7] <- "LW $%7, 4($%cinfo)" <- [%cinfo]
+  1    [%8] <- "LW %8, 0(%7)" <- [%7]
   1    [%10] <- "CALL %8" <- [%const.40.copy.1, %const.0.copy.2, %cinfo, %8]
   1    [] <- "SW $%10, 20($%cinfo)" <- [%10, %cinfo]
   1    [%11] <- "LW $%11, 4($%cinfo)" <- [%cinfo]

@@ -1,16 +1,16 @@
  32  0:
-  1    [%const.2048.copy.1] <- "%const.2048.copy.1 = ##2048" <- []
-  1    [%const.-3.copy.1] <- "%const.-3.copy.1 = ##-3" <- []
   1    [%1] <- "call countbits" <- [%n]
+  1    [] <- "memb(%rpk) = %1" <- [%1, %rpk]
+  1    [%const.2048.copy.1] <- "%const.2048.copy.1 = ##2048" <- []
   1    [%3] <- "%3 = cmp.gtu(%1, %const.2048.copy.1)" <- [%1, %const.2048.copy.1]
-  1    [] <- "memb (%rpk) = %1" <- [%1, %rpk]
+  1    [%const.-3.copy.1] <- "%const.-3.copy.1 = ##-3" <- []
   1    [] <- "if (%3) jump reg2rsaref.exit1" <- [%3]
  16  4:
-  1    [%const.256.copy.2] <- "%const.256.copy.2 = ##256" <- []
-  1    [%6] <- "%6 = memh (%const.@%global_precision)" <- [%const.@%global_precision]
+  1    [%const.256.copy.1] <- "%const.256.copy.1 = ##256" <- []
+  1    [%6] <- "%6 = memh(%const.@%global_precision)" <- [%const.@%global_precision]
   1    [%7] <- "%7 = sxth(%6)" <- [%6]
   1    [%8] <- "%8 = asl(%7, #1)" <- [%7]
-  1    [%9] <- "%9 = cmp.lt(%8, %const.256.copy.2)" <- [%8, %const.256.copy.2]
+  1    [%9] <- "%9 = cmp.lt(%8, %const.256.copy.1)" <- [%8, %const.256.copy.1]
   1    [] <- "if (%9) jump 10" <- [%9]
   8  16:
   1    [] <- "jump reg2rsaref.exit" <- []
@@ -21,10 +21,10 @@
   8  10:
  16  reg2rsaref.exit:
   1    [%const.0.copy.1] <- "%const.0.copy.1 = ##0" <- []
-  1    [%21] <- "%21 = memh (%const.@%global_precision)" <- [%const.@%global_precision]
+  1    [%21] <- "%21 = memh(%const.@%global_precision)" <- [%const.@%global_precision]
   1    [%22] <- "%22 = sxth(%21)" <- [%21]
   1    [%23] <- "%23 = asl(%22, #1)" <- [%22]
-  1    [%24] <- "%24 = cmp.lt(%23, %const.256.copy.2)" <- [%23, %const.256.copy.2]
+  1    [%24] <- "%24 = cmp.lt(%23, %const.256.copy.1)" <- [%23, %const.256.copy.1]
   1    [] <- "if (%24) jump 25" <- [%24]
   8  31:
   1    [] <- "jump reg2rsaref.exit1" <- []

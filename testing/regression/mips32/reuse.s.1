@@ -1,6 +1,6 @@
   8  entry:
   0    [] <- "LUi %tmp.1, 100000[31:16]" <- []
-  2    [%const.100000.copy.2] <- "ORi %const.100000.copy.2, %tmp.1, 100000[15:0]" <- []
-  1    [%b] <- "ADDU $%b, $%a, $%const.100000.copy.2" <- [%a, %const.100000.copy.2]
-  1    [%c] <- "ADDU $%c, $%b, $%const.100000.copy.2" <- [%b, %const.100000.copy.2]
+  2    [%const.100000.copy.1] <- "ORi %const.100000.copy.1, %tmp.1, 100000[15:0]" <- []
+  1    [%b] <- "ADDU $%b, $%a, $%const.100000.copy.1" <- [%a, %const.100000.copy.1]
+  1    [%c] <- "ADDU $%c, $%b, $%const.100000.copy.1" <- [%b, %const.100000.copy.1]
   0    [] <- "RetRA %c" <- [%c]

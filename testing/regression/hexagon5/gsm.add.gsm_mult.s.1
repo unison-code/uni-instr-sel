@@ -1,10 +1,10 @@
  16  0:
-  1    [%const.-32768.copy.2] <- "%const.-32768.copy.2 = #-32768" <- []
   1    [%const.32767.copy.1] <- "%const.32767.copy.1 = #32767" <- []
-  0    [] <- "%tmp.1 = zxth %const.-32768.copy.2" <- [%a, %const.-32768.copy.2]
+  1    [%const.-32768.copy.1] <- "%const.-32768.copy.1 = #-32768" <- []
+  0    [] <- "%tmp.1 = zxth %const.-32768.copy.1" <- [%a, %const.-32768.copy.1]
   0    [] <- "%tmp.2 = zxth %a" <- []
   3    [%1] <- "%1 = cmp.eq(%tmp.1, %tmp.2)" <- []
-  0    [] <- "%tmp.3 = zxth %const.-32768.copy.2" <- [%b, %const.-32768.copy.2]
+  0    [] <- "%tmp.3 = zxth %const.-32768.copy.1" <- [%b, %const.-32768.copy.1]
   0    [] <- "%tmp.4 = zxth %b" <- []
   3    [%2] <- "%2 = cmp.eq(%tmp.3, %tmp.4)" <- []
   1    [%or.cond] <- "%or.cond = and(%1, %2)" <- [%1, %2]
