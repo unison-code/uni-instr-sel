@@ -90,7 +90,11 @@ mkHighLevelModel function target matches =
 mkHLFunctionParams :: Function -> TargetMachine -> HighLevelFunctionParams
 mkHLFunctionParams function target =
   let graph = osGraph $ functionOS function
-      entry_block = fromJust $ entryBlockNode graph
+      entry_block = let n = entryBlockNode graph
+                    in if isJust n
+                       then fromJust n
+                       else error $ "mkHLFunctionParams: function has no " ++
+                                    "entry block"
       all_ns = getAllNodes graph
       nodeIDsByType f = map getNodeID $
                         filter f all_ns
