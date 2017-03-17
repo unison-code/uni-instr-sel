@@ -43,7 +43,8 @@ int: numDataInFunction;
 int: numBlocksInFunction;
 int: entryBlockOfFunction;
 int: execFrequencyGCD;
-array[allBlocksInFunction] of set of int: domSetOfBlockInFunction;
+array[allBlocksInFunction] of set of int: domSetsOfBlocksInFunction;
+array[allDataInFunction] of set of int: domSetsOfDataInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
@@ -52,8 +53,6 @@ array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 set of allBlocksInFunction: branchExtBlocksInFunction;
 array[int] of set of int: interchangeableDataInFunction;
 set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
-array[allOperationsInFunction] of set of int: potPlacesOfOpsInFunction;
-array[allDataInFunction] of set of int: potPlacesOfDataInFunction;
 
 % Target machine data.
 int: numLocations;
@@ -137,15 +136,15 @@ set of int: allLocValues = { x | x in canonicalDataLocs ++ [locValueForNull] };
 %    col 1: a block i
 %        2: a block j that dominates i
 % In other words, domRelMatrix has a row [i, j] if and only if j belongs to
-% domSetOfBlockInFunction[i].
+% domSetsOfBlocksInFunction[i].
 int: numDomMatrixRows =
   sum (b in allBlocksInFunction)
-  ( card(domSetOfBlockInFunction[b]) );
+  ( card(domSetsOfBlocksInFunction[b]) );
 array[1..numDomMatrixRows, 1..2] of allBlocksInFunction: domRelMatrix =
   array2d( 1..numDomMatrixRows
          , 1..2
          , [ if k = 1 then i else j endif | i in allBlocksInFunction
-                                          , j in domSetOfBlockInFunction[i]
+                                          , j in domSetsOfBlocksInFunction[i]
                                           , k in 1..2
            ]
          );
@@ -346,16 +345,6 @@ test dLocCantBeNull(allDataInFunction: d) =
 %==================
 % BASE CONSTRAINTS
 %==================
-
-% Constrain the places of operations.
-constraint
-  forall (o in allOperationsInFunction)
-  ( oplace[o] in potPlacesOfOpsInFunction[o] );
-
-% Constrain the places of data.
-constraint
-  forall (d in allDataInFunction)
-  ( dplace[d] in potPlacesOfDataInFunction[d] );
 
 % Constrain locations of data representing values.
 constraint
@@ -576,7 +565,7 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
 %            , o in operandsUsedByMatch[m]
 %              where not (m in phiInstrMatches)
 %            )
-%     ( dplace[alt[o]] in domSetOfBlockInFunction[place[m]] );
+%     ( dplace[alt[o]] in domSetsOfBlocksInFunction[place[m]] );
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
 %

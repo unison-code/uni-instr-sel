@@ -23,14 +23,8 @@ import qualified Language.InstrSel.Constraints.ConstraintBuilder as C
 import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
-  hiding
-  ( computeDomSets )
-import qualified Language.InstrSel.Graphs as G
-  ( computeDomSets )
 import Language.InstrSel.Graphs.Graphalyze
-  ( computeBlockPlacements
-  , cyclesIn'
-  )
+  ( cyclesIn' )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..)
@@ -100,7 +94,8 @@ mkHLFunctionParams function target =
       all_ns = getAllNodes graph
       nodeIDsByType f = map getNodeID $
                         filter f all_ns
-      domsets = computeDomSets graph entry_block
+      block_domsets = computeBlockDomSets graph entry_block
+      data_domsets = computeDataDomSets graph entry_block
       getExecFreq n = fromJust $
                       lookup (nameOfBlock $ getNodeType n)
                              (functionBBExecFreq function)
@@ -170,25 +165,17 @@ mkHLFunctionParams function target =
                               ) $
                        filter isDatumNode $
                        all_ns
-      pot_n_places = computeBlockPlacements graph entry_block
-      pot_op_places = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
-                      filter (isOperationNode . fst) $
-                      pot_n_places
-      pot_data_places = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
-                        filter (isDatumNode . fst) $
-                        pot_n_places
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
+       , hlFunDataDomSets = map convertDomSetN2ID data_domsets
        , hlFunDataUsedAtLeastOnce = map getNodeID used_once_data
-       , hlFunPotOpPlaces = pot_op_places
-       , hlFunPotDataPlaces = pot_data_places
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
        , hlFunEntryBlock = getNodeID entry_block
-       , hlFunBlockDomSets = map convertDomSetN2ID domsets
+       , hlFunBlockDomSets = map convertDomSetN2ID block_domsets
        , hlFunBlockParams = bb_params
        , hlFunStateDefEdges = state_def_es
        , hlFunValidValueLocs = valid_locs
@@ -527,8 +514,6 @@ lowerHighLevelModel model ai_maps =
                           (hlMatchParams model)
       operands = sortByAI (getAIForOperandID . fst)
                           (concatMap (hlOperandNodeMaps) m_params)
-      op_ns = sortByAI getAIForOperationNodeID $ hlFunOperations f_params
-      data_ns = sortByAI getAIForDatumNodeID $ hlFunData f_params
       blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
       in_def_edges =
         concatMap ( \m ->
@@ -580,18 +565,12 @@ lowerHighLevelModel model ai_maps =
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
+       , llFunDataDomSets =
+           map (\d -> map getAIForDatumNodeID (domSet d)) $
+           sortByAI (getAIForDatumNodeID . domNode) $
+           hlFunDataDomSets f_params
        , llFunDataUsedAtLeastOnce = map getAIForDatumNodeID $
                                     hlFunDataUsedAtLeastOnce f_params
-       , llFunPotOpPlaces = map ( \n -> map getAIForBlockNodeID $
-                                        fromJust $
-                                        lookup n (hlFunPotOpPlaces f_params)
-                                ) $
-                            op_ns
-       , llFunPotDataPlaces = map ( \n -> map getAIForBlockNodeID $
-                                          fromJust $
-                                          lookup n (hlFunPotDataPlaces f_params)
-                                  ) $
-                              data_ns
        , llFunValidValueLocs =
            map (\(d, l) -> (getAIForDatumNodeID d, getAIForLocationID l))$
            f_valid_locs
@@ -774,10 +753,44 @@ findArrayIndexInList ai_list nid =
      then Just $ toArrayIndex $ fromJust index
      else Nothing
 
-computeDomSets :: Graph -> Node -> [DomSet Node]
-computeDomSets g root =
+computeBlockDomSets :: Graph -> Node -> [DomSet Node]
+computeBlockDomSets g root =
   let cfg = extractCFG g
-  in G.computeDomSets cfg root
+  in computeDomSets cfg root
+
+computeDataDomSets :: Graph -> Node -> [DomSet Node]
+computeDataDomSets g0 root =
+  let all_ns = getAllNodes g0
+      all_blocks_but_root = filter (/= root) $
+                            filter isBlockNode $
+                            all_ns
+      all_ctrl_ops = filter isControlNode $
+                     all_ns
+      all_ops_but_ctrl = filter (not . isControlNode) $
+                         filter isOperationNode $
+                         all_ns
+      all_root_states = filter (\n -> any isBlockNode $ getPredecessors g0 n) $
+                        filter isStateNode $
+                        all_ns
+      -- Remove nodes such that only data nodes remain, keeping the dependencies
+      -- intact
+      g1 = foldr delNode g0 $
+           all_blocks_but_root ++ all_ctrl_ops
+      g2 = foldr delNodeKeepEdges g1 $
+           all_ops_but_ctrl
+      -- Reconnect dangling root states to the entry block
+      g3 = foldr (\n g -> fst $ addNewStFlowEdge (root, n) g) g2 $
+           all_root_states
+      doms = computeDomSets g3 root
+      -- Remove entry node from the dom sets
+      fixed_doms = map ( \d -> DomSet { domNode = domNode d
+                                      , domSet = filter (/= root) $
+                                                 domSet d
+                                      }
+                       ) $
+                   filter (\d -> domNode d /= root) $
+                   doms
+  in fixed_doms
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
 -- cyclic data dependency if all are selected.

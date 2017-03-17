@@ -69,20 +69,12 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
+      , hlFunDataDomSets :: [DomSet NodeID]
+        -- ^ The dominator sets of the data in the function graph.
       , hlFunDataUsedAtLeastOnce :: [NodeID]
         -- ^ The data in the function graph which will be used at least once by
         -- some selected match. This information is used in an implied
         -- constraint.
-      , hlFunPotOpPlaces :: [(NodeID, [NodeID])]
-        -- ^ The potential block placements of each operation. The first element
-        -- in the tuple represents the operation, and the second element
-        -- represents the block candidates. This information is used to reduce
-        -- the domain of the placement variables.
-      , hlFunPotDataPlaces :: [(NodeID, [NodeID])]
-        -- ^ The potential block placements of each datum. The first element in
-        -- the tuple represents the datum, and the second element represents the
-        -- block candidates. This information is used to reduce the domain of
-        -- the placement variables.
       , hlFunStates :: [NodeID]
         -- ^ The state nodes in the function graph.
       , hlFunBlocks :: [NodeID]
@@ -90,7 +82,7 @@ data HighLevelFunctionParams
       , hlFunEntryBlock :: NodeID
         -- ^ The entry block of the function graph.
       , hlFunBlockDomSets :: [DomSet NodeID]
-        -- ^ The dominator sets of the block in the function graph.
+        -- ^ The dominator sets of the blocks in the function graph.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
       , hlFunStateDefEdges :: [(NodeID, NodeID)]
@@ -232,20 +224,14 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunDataDomSets :: [[ArrayIndex]]
+        -- ^ The dominator set for each data in the function graph. An index
+        -- into the outer list corresponds to the array index of a particular
+        -- data.
       , llFunDataUsedAtLeastOnce :: [ArrayIndex]
         -- ^ The data in the function graph which will be used at least once by
         -- some selected match. This information is used in an implied
         -- constraint.
-      , llFunPotOpPlaces :: [[ArrayIndex]]
-        -- ^ The potential block placements of each operation. An index into the
-        -- outer list corresponds to the array index of a particular operation.
-        -- This information is used to reduce the domain of the placement
-        -- variables.
-      , llFunPotDataPlaces :: [[ArrayIndex]]
-        -- ^ The potential block placements of each datum. An index into the
-        -- outer list corresponds to the array index of a particular datum.
-        -- This information is used to reduce the domain of the placement
-        -- variables.
       , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
         -- ^ The valid locations for each datum in the function graph (no entry
         -- means that all locations are valid). The first element is the array
@@ -511,9 +497,8 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
+      <*> v .: "data-dom-sets"
       <*> v .: "data-used-at-least-once"
-      <*> v .: "potential-op-places"
-      <*> v .: "potential-data-places"
       <*> v .: "states"
       <*> v .: "blocks"
       <*> v .: "entry-block"
@@ -534,9 +519,8 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
+           , "data-dom-sets"            .= (hlFunDataDomSets p)
            , "data-used-at-least-once"  .= (hlFunDataUsedAtLeastOnce p)
-           , "potential-op-places"      .= (hlFunPotOpPlaces p)
-           , "potential-data-places"    .= (hlFunPotDataPlaces p)
            , "states"                   .= (hlFunStates p)
            , "blocks"                   .= (hlFunBlocks p)
            , "entry-block"              .= (hlFunEntryBlock p)
@@ -649,9 +633,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
+      <*> v .: "fun-data-dom-sets"
       <*> v .: "fun-data-used-at-least-once"
-      <*> v .: "fun-potential-op-places"
-      <*> v .: "fun-potential-data-places"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-same-value-locs"
       <*> v .: "fun-entry-block"
@@ -697,9 +680,8 @@ instance ToJSON LowLevelModel where
            , "fun-copies"                  .= (llFunCopies m)
            , "fun-control-ops"             .= (llFunControlOps m)
            , "fun-states"                  .= (llFunStates m)
+           , "fun-data-dom-sets"           .= (llFunDataDomSets m)
            , "fun-data-used-at-least-once" .= (llFunDataUsedAtLeastOnce m)
-           , "fun-potential-op-places"     .= (llFunPotOpPlaces m)
-           , "fun-potential-data-places"   .= (llFunPotDataPlaces m)
            , "fun-valid-value-locs"        .= (llFunValidValueLocs m)
            , "fun-same-value-locs"         .= (llFunSameValueLocs m)
            , "fun-entry-block"             .= (llFunEntryBlock m)
