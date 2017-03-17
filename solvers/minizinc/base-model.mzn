@@ -241,10 +241,10 @@ set of int: allOpCosts = { costPerOpMatrix[i, 4]
                          | i in 1..numCostPerOpMatrixRows
                          };
 
-% The set of all non-null, non-phi instruction use operands.
-set of int: nonNullNonPhiUseOperands =
+% The set of all non-phi instruction use operands.
+set of int: nonPhiUseOperands =
   { p
-  | m in allMatches diff phiInstrMatches diff nullInstrMatches
+  | m in allMatches diff phiInstrMatches
   , p in operandsUsedByMatch[m]
   };
 
@@ -574,21 +574,21 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
 % [MC] Assumes that matches which use some data cover at least one operation.
 % [GHB] This assumption should always hold.
 constraint
-  forall (p in nonNullNonPhiUseOperands)
+  forall (p in nonPhiUseOperands)
   ( table([uplace[p], dplace[Alt(p)]], domRelMatrix) );
 
 constraint
-  forall (p in allOperands diff nonNullNonPhiUseOperands)
+  forall (p in allOperands diff nonPhiUseOperands)
   ( uplace[p] = 1 );
 
 constraint
-  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+  forall ( m in allMatches diff phiInstrMatches
          , p in operandsUsedByMatch[m]
          )
   ( not sel[m] -> uplace[p] = dplace[Alt(p)] );
 
 constraint
-  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+  forall ( m in allMatches diff phiInstrMatches
          , o in operandsUsedByMatch[m]
          , c in operationsCoveredByMatch[m]
          )
@@ -763,7 +763,7 @@ constraint
 % matches. Have yet to see such an occurrance, tough.
 constraint
   forall ( chain in interchangeableDataInFunction )
-  ( let { set of int: ixset = { y | y in nonNullNonPhiUseOperands
+  ( let { set of int: ixset = { y | y in nonPhiUseOperands
                                     where operandAlternatives[y] = chain
                               }
         }
@@ -1031,10 +1031,10 @@ constraint
        endif
      );
 
-% For non-null, non-phi matches, no spanned blocks:
+% For non-phi matches, no spanned blocks:
 % if selected, blocks of outputs and blocks of use of inputs must be all equal.
 constraint
-  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+  forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) = 0
          )
   ( let { array[int] of int: defs = [x | x in operandsDefinedByMatch[m]]
@@ -1060,10 +1060,10 @@ constraint
        ( sel[m] -> uplace[usonly[i]] = dplace[Alt(defs[j])] )
   );
 
-% For non-null, non-phi matches, spanned blocks:
+% For non-phi matches, spanned blocks:
 % if selected, blocks of use of inputs must be all equal.
 constraint
-  forall ( m in allMatches diff phiInstrMatches diff nullInstrMatches
+  forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) > 0
          )
   ( let { array[int] of int: use = [x | x in operandsUsedByMatch[m]] }
