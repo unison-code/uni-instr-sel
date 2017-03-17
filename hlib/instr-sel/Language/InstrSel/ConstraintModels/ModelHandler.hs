@@ -846,7 +846,8 @@ mkIllegalMatchCombs function target matches =
 -- if they can be globally swapped within a solution without changing the
 -- program semantics.
 --
--- TODO: describe how they are computed
+-- This first gathers all sets of data that can be used, removing those that
+-- contain a datum that appears as the only element in some set.
 mkInterchangeableData :: [HighLevelMatchParams] -> [[NodeID]]
 mkInterchangeableData params =
   let all_alt_uses =
