@@ -38,6 +38,7 @@ import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils
   ( combinations )
 import Language.InstrSel.Utils.Range
+import qualified Language.InstrSel.Utils.Set as S
 
 import qualified Data.Graph.Inductive as I
 
@@ -95,7 +96,8 @@ mkHLFunctionParams function target =
       nodeIDsByType f = map getNodeID $
                         filter f all_ns
       block_domsets = computeBlockDomSets graph entry_block
-      data_domsets = computeDataDomSets graph entry_block
+      data_deps = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
+                  computeDataDependencies graph
       getExecFreq n = fromJust $
                       lookup (nameOfBlock $ getNodeType n)
                              (functionBBExecFreq function)
@@ -170,7 +172,7 @@ mkHLFunctionParams function target =
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
-       , hlFunDataDomSets = map convertDomSetN2ID data_domsets
+       , hlFunDataDependencies = data_deps
        , hlFunDataUsedAtLeastOnce = map getNodeID used_once_data
        , hlFunStates = nodeIDsByType isStateNode
        , hlFunBlocks = nodeIDsByType isBlockNode
@@ -565,10 +567,10 @@ lowerHighLevelModel model ai_maps =
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
-       , llFunDataDomSets =
-           map (\d -> map getAIForDatumNodeID (domSet d)) $
-           sortByAI (getAIForDatumNodeID . domNode) $
-           hlFunDataDomSets f_params
+       , llFunDataDependencies =
+           map (\(_, ns) -> map getAIForDatumNodeID ns) $
+           sortByAI (getAIForDatumNodeID . fst) $
+           hlFunDataDependencies f_params
        , llFunDataUsedAtLeastOnce = map getAIForDatumNodeID $
                                     hlFunDataUsedAtLeastOnce f_params
        , llFunValidValueLocs =
@@ -758,39 +760,42 @@ computeBlockDomSets g root =
   let cfg = extractCFG g
   in computeDomSets cfg root
 
-computeDataDomSets :: Graph -> Node -> [DomSet Node]
-computeDataDomSets g0 root =
-  let all_ns = getAllNodes g0
-      all_blocks_but_root = filter (/= root) $
-                            filter isBlockNode $
-                            all_ns
-      all_ctrl_ops = filter isControlNode $
-                     all_ns
-      all_ops_but_ctrl = filter (not . isControlNode) $
+computeDataDependencies :: Graph -> [(Node, [Node])]
+computeDataDependencies g0 =
+  let g1 = extractSSAG g0
+      all_ns = getAllNodes g1
+      -- Remove all phi nodes and concerned edges to eliminate cycles
+      all_phis = filter isPhiNode all_ns
+      g2 = foldr delNode g1 all_phis
+      -- Remove all operations but keep the edges
+      all_ops_but_phis = filter (not . isPhiNode) $
                          filter isOperationNode $
                          all_ns
-      all_root_states = filter (\n -> any isBlockNode $ getPredecessors g0 n) $
-                        filter isStateNode $
-                        all_ns
-      -- Remove nodes such that only data nodes remain, keeping the dependencies
-      -- intact
-      g1 = foldr delNode g0 $
-           all_blocks_but_root ++ all_ctrl_ops
-      g2 = foldr delNodeKeepEdges g1 $
-           all_ops_but_ctrl
-      -- Reconnect dangling root states to the entry block
-      g3 = foldr (\n g -> fst $ addNewStFlowEdge (root, n) g) g2 $
-           all_root_states
-      doms = computeDomSets g3 root
-      -- Remove entry node from the dom sets
-      fixed_doms = map ( \d -> DomSet { domNode = domNode d
-                                      , domSet = filter (/= root) $
-                                                 domSet d
-                                      }
-                       ) $
-                   filter (\d -> domNode d /= root) $
-                   doms
-  in fixed_doms
+      g3 = foldr delNodeKeepEdges g2 all_ops_but_phis
+      -- Compute data dependencies
+      all_ds = filter isDatumNode all_ns
+      deps = map (\(n, n_set) -> (n, S.toList n_set)) $
+             M.toList $
+             foldr (computeDepsForDatum g3) M.empty all_ds
+  in deps
+
+-- | Computes the dependency sets for a given datum. A datum @d1@, which is
+-- defined by an operation @o@ that uses data @d2@, ..., @dn@, depends on
+-- @d2@, ..., @dn@ and the data which @d2@, ..., @dn@ depend on.
+computeDepsForDatum
+  :: Graph
+  -> Node
+  -> M.Map Node (S.Set Node)
+  -> M.Map Node (S.Set Node)
+computeDepsForDatum g n st0 =
+  if M.member n st0
+  then st0
+  else let preds = getPredecessors g n
+           st1 = foldr (computeDepsForDatum g) st0 preds
+           preds_deps = map (st1 M.!) preds
+           n_deps = S.unions $ (S.fromList preds:preds_deps)
+           st2 = M.insert n n_deps st1
+       in st2
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
 -- cyclic data dependency if all are selected.

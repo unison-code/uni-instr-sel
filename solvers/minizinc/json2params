@@ -338,8 +338,8 @@ for x in fqs:
     scaled.append(x / g)
 
 # Dump parameters [MC] for 1-based solver
-dumpParams( bumpArrOfArr(json_data["fun-data-dom-sets"])
-          , "domSetsOfDataInFunction"
+dumpParams( bumpArrOfArr(json_data["fun-data-dependencies"])
+          , "depsOfDataInFunction"
           , VT_ARRAY1D
           , "allDataInFunction"
           , VC_SET

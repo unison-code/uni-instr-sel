@@ -69,8 +69,10 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
-      , hlFunDataDomSets :: [DomSet NodeID]
-        -- ^ The dominator sets of the data in the function graph.
+      , hlFunDataDependencies :: [(NodeID, [NodeID])]
+        -- ^ The dependency sets for the data in the function graph. The first
+        -- element in the tuple represents a datum, and the second element
+        -- represents the set of data that the datum depends on.
       , hlFunDataUsedAtLeastOnce :: [NodeID]
         -- ^ The data in the function graph which will be used at least once by
         -- some selected match. This information is used in an implied
@@ -224,8 +226,8 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
-      , llFunDataDomSets :: [[ArrayIndex]]
-        -- ^ The dominator set for each data in the function graph. An index
+      , llFunDataDependencies :: [[ArrayIndex]]
+        -- ^ The dependency set for each data in the function graph. An index
         -- into the outer list corresponds to the array index of a particular
         -- data.
       , llFunDataUsedAtLeastOnce :: [ArrayIndex]
@@ -497,7 +499,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
-      <*> v .: "data-dom-sets"
+      <*> v .: "data-dependencies"
       <*> v .: "data-used-at-least-once"
       <*> v .: "states"
       <*> v .: "blocks"
@@ -519,7 +521,7 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
-           , "data-dom-sets"            .= (hlFunDataDomSets p)
+           , "data-dependencies"        .= (hlFunDataDependencies p)
            , "data-used-at-least-once"  .= (hlFunDataUsedAtLeastOnce p)
            , "states"                   .= (hlFunStates p)
            , "blocks"                   .= (hlFunBlocks p)
@@ -633,7 +635,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
-      <*> v .: "fun-data-dom-sets"
+      <*> v .: "fun-data-dependencies"
       <*> v .: "fun-data-used-at-least-once"
       <*> v .: "fun-valid-value-locs"
       <*> v .: "fun-same-value-locs"
@@ -680,7 +682,7 @@ instance ToJSON LowLevelModel where
            , "fun-copies"                  .= (llFunCopies m)
            , "fun-control-ops"             .= (llFunControlOps m)
            , "fun-states"                  .= (llFunStates m)
-           , "fun-data-dom-sets"           .= (llFunDataDomSets m)
+           , "fun-data-dependencies"       .= (llFunDataDependencies m)
            , "fun-data-used-at-least-once" .= (llFunDataUsedAtLeastOnce m)
            , "fun-valid-value-locs"        .= (llFunValidValueLocs m)
            , "fun-same-value-locs"         .= (llFunSameValueLocs m)

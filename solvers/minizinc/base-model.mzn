@@ -44,7 +44,7 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetsOfBlocksInFunction;
-array[allDataInFunction] of set of int: domSetsOfDataInFunction;
+array[allDataInFunction] of set of int: depsOfDataInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
