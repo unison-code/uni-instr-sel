@@ -148,13 +148,13 @@ run CheckFunctionGraphLocationOverlap _ _ function matchset (Just tm) =
       data_nodes = filter isDatumNode $ getAllNodes g
       matches = pmMatches matchset
       getDefLocationsForNode os nid =
-        let ssa_g = extractSSA $ osGraph os
+        let ssa_g = extractSSAG $ osGraph os
             n = head $ findNodesWithNodeID ssa_g nid
         in if length (getDtFlowInEdges ssa_g n) > 0
            then getValidLocs os nid
            else []
       getUseLocationsForNode os nid =
-        let ssa_g = extractSSA $ osGraph os
+        let ssa_g = extractSSAG $ osGraph os
             n = head $ findNodesWithNodeID ssa_g nid
         in if length (getDtFlowInEdges ssa_g n) == 0
            then getValidLocs os nid

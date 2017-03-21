@@ -52,7 +52,7 @@ module Language.InstrSel.Graphs.Base
   , doEdgeListsMatch
   , doNodesMatch
   , extractCFG
-  , extractSSA
+  , extractSSAG
   , findFNInMapping
   , findFNInMatch
   , findFNsInMapping
@@ -1923,8 +1923,8 @@ extractCFG g =
 -- | Extracts the SSA graph (including nodes which represent data) from a
 -- graph. If there are no operation nodes in the graph, an empty graph is
 -- returned.
-extractSSA :: Graph -> Graph
-extractSSA g =
+extractSSAG :: Graph -> Graph
+extractSSAG g =
   let nodes_to_remove =
         filter ( \n -> not (isOperationNode n || isDatumNode n) ||
                        (isControlNode n && not (isRetControlNode n))

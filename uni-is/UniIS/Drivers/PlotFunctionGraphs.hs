@@ -17,7 +17,7 @@ import UniIS.Drivers.Base
 import Language.InstrSel.Graphs
   ( Graph
   , extractCFG
-  , extractSSA
+  , extractSSAG
   )
 import Language.InstrSel.Functions
 import Language.InstrSel.OpStructures
@@ -55,6 +55,6 @@ run PlotFunctionControlFlowGraph show_edge_nrs fun =
   produceDotOutputWith show_edge_nrs extractCFG fun
 
 run PlotFunctionSSAGraph show_edge_nrs fun =
-  produceDotOutputWith show_edge_nrs extractSSA fun
+  produceDotOutputWith show_edge_nrs extractSSAG fun
 
 run _ _ _ = reportErrorAndExit "PlotFunctionGraphs: unsupported action"

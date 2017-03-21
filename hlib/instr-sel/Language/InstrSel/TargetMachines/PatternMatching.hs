@@ -278,7 +278,7 @@ removeMatchesWithCyclicDataDeps
   -> [IntPatternMatch]
   -> [IntPatternMatch]
 removeMatchesWithCyclicDataDeps fg pms =
-  let ssa_fg = extractSSA fg
+  let ssa_fg = extractSSAG fg
   in filter ( \pm -> if ipmHasCheckedCyclicDataDep pm
                      then True
                      else not $ hasMatchCyclicDataDep ssa_fg (ipmMatch pm)
@@ -322,7 +322,7 @@ computeMatchCyclicDataDepRelSet
      -- ^ A relation between two matches that holds if there is a cyclic data
      -- dependency between them.
 computeMatchCyclicDataDepRelSet fg ms =
-  let ssa_fg = extractSSA fg
+  let ssa_fg = extractSSAG fg
       m_sub_fgs = zip ms $
                   map ( \m -> removeInputNodes $
                               subGraph ssa_fg $

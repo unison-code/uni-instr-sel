@@ -17,7 +17,7 @@ import UniIS.Drivers.Base
 import Language.InstrSel.Graphs
   ( Graph
   , extractCFG
-  , extractSSA
+  , extractSSAG
   )
 import Language.InstrSel.TargetMachines
   ( Instruction (..) )
@@ -56,6 +56,6 @@ run PlotPatternControlFlowGraph show_edge_nrs i =
   produceDotOutputWith show_edge_nrs extractCFG i
 
 run PlotPatternSSAGraph show_edge_nrs i =
-  produceDotOutputWith show_edge_nrs extractSSA i
+  produceDotOutputWith show_edge_nrs extractSSAG i
 
 run _ _ _ = reportErrorAndExit "PlotPatternGraphs: unsupported action"
