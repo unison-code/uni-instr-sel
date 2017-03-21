@@ -50,7 +50,6 @@ set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
-set of allBlocksInFunction: branchExtBlocksInFunction;
 array[int] of set of int: interchangeableDataInFunction;
 set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
 
@@ -738,21 +737,6 @@ constraint
            where card(operandAlternatives[o]) > 1
          )
   ( not sel[m] -> alt[o] = min(operandAlternatives[o]) );
-
-% No data may be defined in a branch-extension block.
-constraint
-  forall ( b in branchExtBlocksInFunction
-         , d in allDataInFunction
-         )
-  ( dplace[d] != b );
-
-% If a block b is a branch-extension block, then only control operations may be
-% placed in that block.
-constraint
-  forall ( b in branchExtBlocksInFunction
-         , o in allOperationsInFunction diff controlOpsInFunction
-         )
-  ( oplace[o] != b );
 
 % Break symmetries introduced by interchangeable data.
 %

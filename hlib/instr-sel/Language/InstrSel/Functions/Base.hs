@@ -56,8 +56,6 @@ data Function
         -- semantics have been derived.
       , functionBBExecFreq :: [(BlockName, ExecFreq)]
         -- ^ The execution frequency of the blocks.
-      , functionBEBlocks :: [BlockName]
-        -- ^ The blocks introduced as part of branch extension.
       }
   deriving (Show)
 
@@ -74,7 +72,6 @@ instance FromJSON Function where
       <*> v .: "op-struct"
       <*> v .: "inputs"
       <*> v .: "bb-exec-freqs"
-      <*> v .: "branch-ext-blocks"
   parseJSON _ = mzero
 
 instance ToJSON Function where
@@ -83,7 +80,6 @@ instance ToJSON Function where
            , "op-struct"         .= (functionOS f)
            , "inputs"            .= (functionInputs f)
            , "bb-exec-freqs"     .= (functionBBExecFreq f)
-           , "branch-ext-blocks" .= (functionBEBlocks f)
            ]
 
 instance FromJSON ExecFreq where

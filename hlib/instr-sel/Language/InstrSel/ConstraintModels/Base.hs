@@ -118,8 +118,6 @@ data HighLevelBlockParams
         -- ^ The ID of the node representing this block.
       , hlBlockExecFrequency :: ExecFreq
         -- ^ The execution frequency of this block.
-      , hlBlockIsBEBlock :: Bool
-        -- ^ Whether this block was introduced as part of branch extension.
       }
   deriving (Show)
 
@@ -252,8 +250,6 @@ data LowLevelModel
         -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular block in the function
         -- graph.
-      , llFunBranchExtBlocks :: [ArrayIndex]
-        -- ^ The blocks that were introduced as part of branch extension.
       , llFunStateDefEdges :: [(ArrayIndex, ArrayIndex)]
         -- ^ The state definition edges that appear in this match. The first
         -- element is the array index of a particular block, and the second
@@ -544,7 +540,6 @@ instance FromJSON HighLevelBlockParams where
       <$> v .: "block-name"
       <*> v .: "block-node"
       <*> v .: "exec-frequency"
-      <*> v .: "is-branch-ext-block"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelBlockParams where
@@ -552,7 +547,6 @@ instance ToJSON HighLevelBlockParams where
     object [ "block-name"          .= (hlBlockName p)
            , "block-node"          .= (hlBlockNode p)
            , "exec-frequency"      .= (hlBlockExecFrequency p)
-           , "is-branch-ext-block" .= (hlBlockIsBEBlock p)
            ]
 
 instance FromJSON HighLevelMatchParams where
@@ -643,7 +637,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-block-exec-freqs"
-      <*> v .: "fun-branch-ext-blocks"
       <*> v .: "fun-state-def-edges"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
@@ -690,7 +683,6 @@ instance ToJSON LowLevelModel where
            , "fun-entry-block"             .= (llFunEntryBlock m)
            , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
            , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
-           , "fun-branch-ext-blocks"       .= (llFunBranchExtBlocks m)
            , "fun-state-def-edges"         .= (llFunStateDefEdges m)
            , "fun-constraints"             .= (llFunConstraints m)
            , "num-locations"               .= (llNumLocations m)

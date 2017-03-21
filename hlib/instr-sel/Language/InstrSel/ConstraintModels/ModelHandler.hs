@@ -106,9 +106,6 @@ mkHLFunctionParams function target =
                       { hlBlockName = getNameOfBlockNode n
                       , hlBlockNode = getNodeID n
                       , hlBlockExecFrequency = getExecFreq n
-                      , hlBlockIsBEBlock = (getNameOfBlockNode n)
-                                           `elem`
-                                           (functionBEBlocks function)
                       }
             )
             (filter isBlockNode (getAllNodes graph))
@@ -587,10 +584,6 @@ lowerHighLevelModel model ai_maps =
        , llFunBBExecFreqs =
            map hlBlockExecFrequency $
            sortByAI (getAIForBlockNodeID . hlBlockNode) $
-           hlFunBlockParams f_params
-       , llFunBranchExtBlocks =
-           map (getAIForBlockNodeID . hlBlockNode) $
-           filter hlBlockIsBEBlock $
            hlFunBlockParams f_params
        , llFunStateDefEdges =
            map (\(b, s) -> (getAIForBlockNodeID b, getAIForDatumNodeID s)) $
