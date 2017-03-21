@@ -790,6 +790,8 @@ constraint
 % IMPLIED CONSTRAINTS
 %=====================
 
+% TODO: add constraint that makes use of depsOfDataInFunction
+
 % Two matches cannot be selected with same fall-thru blocks but different entry
 % blocks. Two matches cannot be selected with different fall-thru blocks but
 % same entry blocks.
