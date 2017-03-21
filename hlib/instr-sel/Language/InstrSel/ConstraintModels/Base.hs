@@ -72,7 +72,8 @@ data HighLevelFunctionParams
       , hlFunDataDependencies :: [(NodeID, [NodeID])]
         -- ^ The dependency sets for the data in the function graph. The first
         -- element in the tuple represents a datum, and the second element
-        -- represents the set of data that the datum depends on.
+        -- represents the set of data that the datum depends on. This
+        -- information is used in an implied constraint.
       , hlFunDataUsedAtLeastOnce :: [NodeID]
         -- ^ The data in the function graph which will be used at least once by
         -- some selected match. This information is used in an implied
@@ -229,7 +230,7 @@ data LowLevelModel
       , llFunDataDependencies :: [[ArrayIndex]]
         -- ^ The dependency set for each data in the function graph. An index
         -- into the outer list corresponds to the array index of a particular
-        -- data.
+        -- data. This information is used in an implied constraint.
       , llFunDataUsedAtLeastOnce :: [ArrayIndex]
         -- ^ The data in the function graph which will be used at least once by
         -- some selected match. This information is used in an implied
