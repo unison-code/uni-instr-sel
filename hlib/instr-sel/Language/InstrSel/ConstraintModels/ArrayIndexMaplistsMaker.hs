@@ -46,10 +46,14 @@ mkArrayIndexMaplists function tm model =
       -- We sort the match parameters in increasing order of latency because
       -- chuffed (the constraint solver we use) will most likely attempt to
       -- select the matches in variable order, and doing this sorting will
-      -- thereby, at least in principle, assist the solving.
-      match_params = sortBy ( \m1 m2 -> compare (hlMatchLatency m1)
-                                                (hlMatchLatency m2)
-                            ) $
+      -- thereby, at least in principle, assist the solving. In addition, if the
+      -- latencies are equal and one of them is a kill match, then the kill
+      -- match comes first.
+      compareMatches m1 m2
+        | hlMatchIsKillInstruction m1 = LT
+        | hlMatchIsKillInstruction m2 = GT
+        | otherwise = compare (hlMatchLatency m1) (hlMatchLatency m2)
+      match_params = sortBy compareMatches $
                      hlMatchParams model
       match_ids = map hlMatchID match_params
       op_ids = sort $ concatMap ((map fst) . hlOperandNodeMaps) match_params
