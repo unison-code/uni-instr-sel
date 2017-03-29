@@ -203,7 +203,7 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 	$(SOLVER_CMD) -i $*.presolved.ll.model.json \
 				  -t $(SOLVER_TIME_LIMIT) \
 				  -u $(shell cat $*.ub.json) \
-				  -l $(FALL_BACK_TO_LLVM) \
+				  -f $(FALL_BACK_TO_LLVM) \
 				  -o $@
 
 %.presolved.hl.sol.json: %.presolved.hl.model.json \

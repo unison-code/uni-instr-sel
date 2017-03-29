@@ -302,7 +302,7 @@ do
             MINIZINC_UPPER_BOUND="$2"
             shift
         ;;
-        -l|--fall-back-to-llvm)
+        -f|--fall-back-to-llvm)
             MINIZINC_FALL_BACK_TO_LLVM="$2"
             shift
         ;;
