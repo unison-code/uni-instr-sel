@@ -38,7 +38,6 @@ import Language.InstrSel.TargetMachines.PatternMatching
 import Language.InstrSel.Utils
   ( combinations )
 import Language.InstrSel.Utils.Range
-import qualified Language.InstrSel.Utils.Set as S
 
 import qualified Data.Graph.Inductive as I
 
@@ -757,38 +756,24 @@ computeDataDependencies :: Graph -> [(Node, [Node])]
 computeDataDependencies g0 =
   let g1 = extractSSAG g0
       all_ns = getAllNodes g1
-      -- Remove all phi nodes and concerned edges to eliminate cycles
-      all_phis = filter isPhiNode all_ns
-      g2 = foldr delNode g1 all_phis
       -- Remove all operations but keep the edges
-      all_ops_but_phis = filter (not . isPhiNode) $
-                         filter isOperationNode $
-                         all_ns
-      g3 = foldr delNodeKeepEdges g2 all_ops_but_phis
+      all_ops = filter isOperationNode $
+                all_ns
+      g2 = foldr delNodeKeepEdges g1 all_ops
       -- Compute data dependencies
       all_ds = filter isDatumNode all_ns
-      deps = map (\(n, n_set) -> (n, S.toList n_set)) $
-             M.toList $
-             foldr (computeDepsForDatum g3) M.empty all_ds
+      deps = map (\n -> (n, computeDepsForDatum g2 n)) $
+             all_ds
   in deps
 
 -- | Computes the dependency sets for a given datum. A datum @d1@, which is
 -- defined by an operation @o@ that uses data @d2@, ..., @dn@, depends on
--- @d2@, ..., @dn@ and the data which @d2@, ..., @dn@ depend on.
+-- @d2@, ..., @dn@.
 computeDepsForDatum
   :: Graph
   -> Node
-  -> M.Map Node (S.Set Node)
-  -> M.Map Node (S.Set Node)
-computeDepsForDatum g n st0 =
-  if M.member n st0
-  then st0
-  else let preds = getPredecessors g n
-           st1 = foldr (computeDepsForDatum g) st0 preds
-           preds_deps = map (st1 M.!) preds
-           n_deps = S.unions $ (S.fromList preds:preds_deps)
-           st2 = M.insert n n_deps st1
-       in st2
+  -> [Node]
+computeDepsForDatum = getPredecessors
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
 -- cyclic data dependency if all are selected.
