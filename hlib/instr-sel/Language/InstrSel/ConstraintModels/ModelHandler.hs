@@ -756,13 +756,9 @@ computeDataDependencies :: Graph -> [(Node, [Node])]
 computeDataDependencies g0 =
   let g1 = extractSSAG g0
       all_ns = getAllNodes g1
-      -- Remove all operations but keep the edges
-      all_ops = filter isOperationNode $
-                all_ns
-      g2 = foldr delNodeKeepEdges g1 all_ops
       -- Compute data dependencies
       all_ds = filter isDatumNode all_ns
-      deps = map (\n -> (n, computeDepsForDatum g2 n)) $
+      deps = map (\n -> (n, computeDepsForDatum g1 n)) $
              all_ds
   in deps
 
@@ -773,7 +769,11 @@ computeDepsForDatum
   :: Graph
   -> Node
   -> [Node]
-computeDepsForDatum = getPredecessors
+computeDepsForDatum g n =
+  let preds = getPredecessors g n
+  in if length preds > 0
+     then getPredecessors g $ head preds
+     else []
 
 -- | Finds combinations of matches that are illegal, meaning they will yield a
 -- cyclic data dependency if all are selected.
