@@ -338,6 +338,12 @@ for x in fqs:
     scaled.append(x / g)
 
 # Dump parameters [MC] for 1-based solver
+dumpParams( bumpArrOfArr(json_data["fun-non-copy-op-dependencies"])
+          , "depsOfNonCopyOpsInFunction"
+          , VT_ARRAY
+          , "int"
+          , VC_SET
+          )
 dumpParams( bumpArrOfArr(json_data["fun-data-dependencies"])
           , "depsOfDataInFunction"
           , VT_ARRAY1D
