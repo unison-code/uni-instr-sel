@@ -69,12 +69,11 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
-      , hlFunNonCopyOpDependencies :: [(NodeID, [NodeID])]
-        -- ^ The dependency sets for the non-copy operations in the function
-        -- graph. The first element in the tuple represents an operation, and
-        -- the second element represents the set of operations that the
-        -- operation depends on. This information is used in an implied
-        -- constraint.
+      , hlFunOpDependencies :: [(NodeID, [NodeID])]
+        -- ^ The dependency sets for the operations in the function graph. The
+        -- first element in the tuple represents an operation, and the second
+        -- element represents the set of operations that the operation depends
+        -- on. This information is used in an implied constraint.
       , hlFunDataDependencies :: [(NodeID, [NodeID])]
         -- ^ The dependency sets for the data in the function graph. The first
         -- element in the tuple represents a datum, and the second element
@@ -231,10 +230,10 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
-      , llFunNonCopyOpDependencies :: [[ArrayIndex]]
-        -- ^ The dependency set for each non-copy operation in the function
-        -- graph. An index into the outer list corresponds to the array index of
-        -- a particular operation. This information is used in an implied
+      , llFunOpDependencies :: [[ArrayIndex]]
+        -- ^ The dependency set for each operation in the function graph. An
+        -- index into the outer list corresponds to the array index of a
+        -- particular operation. This information is used in an implied
         -- constraint.
       , llFunDataDependencies :: [[ArrayIndex]]
         -- ^ The dependency set for each datum in the function graph. An index
@@ -507,7 +506,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
-      <*> v .: "non-copy-op-dependencies"
+      <*> v .: "op-dependencies"
       <*> v .: "data-dependencies"
       <*> v .: "data-used-at-least-once"
       <*> v .: "states"
@@ -530,7 +529,7 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
-           , "non-copy-op-dependencies" .= (hlFunNonCopyOpDependencies p)
+           , "op-dependencies"          .= (hlFunOpDependencies p)
            , "data-dependencies"        .= (hlFunDataDependencies p)
            , "data-used-at-least-once"  .= (hlFunDataUsedAtLeastOnce p)
            , "states"                   .= (hlFunStates p)
@@ -643,7 +642,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-states"
-      <*> v .: "fun-non-copy-op-dependencies"
+      <*> v .: "fun-op-dependencies"
       <*> v .: "fun-data-dependencies"
       <*> v .: "fun-data-used-at-least-once"
       <*> v .: "fun-valid-value-locs"
@@ -690,7 +689,7 @@ instance ToJSON LowLevelModel where
            , "fun-copies"                   .= (llFunCopies m)
            , "fun-control-ops"              .= (llFunControlOps m)
            , "fun-states"                   .= (llFunStates m)
-           , "fun-non-copy-op-dependencies" .= (llFunNonCopyOpDependencies m)
+           , "fun-op-dependencies"          .= (llFunOpDependencies m)
            , "fun-data-dependencies"        .= (llFunDataDependencies m)
            , "fun-data-used-at-least-once"  .= (llFunDataUsedAtLeastOnce m)
            , "fun-valid-value-locs"         .= (llFunValidValueLocs m)

@@ -96,7 +96,7 @@ mkHLFunctionParams function target =
                         filter f all_ns
       block_domsets = computeBlockDomSets graph entry_block
       op_deps = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
-                computeNonCopyOpDependencies graph
+                computeOpDependencies graph
       data_deps = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
                   computeDataDependencies graph
       getExecFreq n = fromJust $
@@ -170,7 +170,7 @@ mkHLFunctionParams function target =
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
-       , hlFunNonCopyOpDependencies = op_deps
+       , hlFunOpDependencies = op_deps
        , hlFunDataDependencies = data_deps
        , hlFunDataUsedAtLeastOnce = map getNodeID used_once_data
        , hlFunStates = nodeIDsByType isStateNode
@@ -566,10 +566,10 @@ lowerHighLevelModel model ai_maps =
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
-       , llFunNonCopyOpDependencies =
+       , llFunOpDependencies =
            map (\(_, ns) -> map getAIForOperationNodeID ns) $
            sortByAI (getAIForOperationNodeID . fst) $
-           hlFunNonCopyOpDependencies f_params
+           hlFunOpDependencies f_params
        , llFunDataDependencies =
            map (\(_, ns) -> map getAIForDatumNodeID ns) $
            sortByAI (getAIForDatumNodeID . fst) $
@@ -759,23 +759,26 @@ computeBlockDomSets g root =
   let cfg = extractCFG g
   in computeDomSets cfg root
 
--- | Computes the dependency sets for all non-copy operations. An operation @o@,
--- which is uses data defined by operations @o1@, ..., @on@, depends on @o1@,
--- ..., @on@. If any operation is a copy, then the operation defining the data
--- used by the copy is applied instead.
-computeNonCopyOpDependencies :: Graph -> [(Node, [Node])]
-computeNonCopyOpDependencies g0 =
-  let g1 = extractSSAG g0
-      all_ns = getAllNodes g1
+-- | Computes the dependency sets for all operations. An operation @o@, which is
+-- uses data defined by operations @o1@, ..., @on@, depends on @o1@, ...,
+-- @on@. If any operation is a copy, then the operation defining the data used
+-- by the copy is applied instead.
+computeOpDependencies :: Graph -> [(Node, [Node])]
+computeOpDependencies g0 =
+  let all_ns = getAllNodes g0
+      -- Remove all blocks
+      all_bs = filter isBlockNode all_ns
+      g1 = foldr delNode g0 all_bs
       -- Remove all copy operations and data (but keep the dependencies)
       all_cps = filter isCopyNode all_ns
       g2 = foldr delNodeKeepEdges g1 all_cps
       all_data = filter isDatumNode all_ns
       g3 = foldr delNodeKeepEdges g2 all_data
       -- Compute op dependencies
-      all_ops = filter isOperationNode all_ns
+      all_non_copy_ops = filter (not . isCopyNode) $
+                         filter isOperationNode all_ns
       non_copy_deps = map (\n -> (n, getPredecessors g3 n)) $
-                      all_ops
+                      all_non_copy_ops
       -- Include dependencies for copies
       copy_deps = map (\n -> (n, [])) $
                   all_cps
