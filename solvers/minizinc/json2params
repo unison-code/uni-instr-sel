@@ -340,8 +340,8 @@ for x in fqs:
 # Dump parameters [MC] for 1-based solver
 dumpParams( bumpArrOfArr(json_data["fun-non-copy-op-dependencies"])
           , "depsOfNonCopyOpsInFunction"
-          , VT_ARRAY
-          , "int"
+          , VT_ARRAY1D
+          , "allOperationsInFunction"
           , VC_SET
           )
 dumpParams( bumpArrOfArr(json_data["fun-data-dependencies"])

@@ -774,8 +774,12 @@ computeNonCopyOpDependencies g0 =
       g3 = foldr delNodeKeepEdges g2 all_data
       -- Compute op dependencies
       all_ops = filter isOperationNode all_ns
-      deps = map (\n -> (n, getPredecessors g3 n)) $
-             all_ops
+      non_copy_deps = map (\n -> (n, getPredecessors g3 n)) $
+                      all_ops
+      -- Include dependencies for copies
+      copy_deps = map (\n -> (n, [])) $
+                  all_cps
+      deps = non_copy_deps ++ copy_deps
   in deps
 
 -- | Computes the dependency sets for all data. A datum @d@, which is defined by
