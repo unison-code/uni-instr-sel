@@ -120,27 +120,39 @@ lowerPointers
      -- ^ Size (in number of bits) of a pointer value.
   -> Integer
      -- ^ Value of a null-pointer reference.
+  -> Range Integer
+     -- ^ Value range for pointer symbols.
   -> OpStructure
   -> OpStructure
-lowerPointers ptr_size null_value os =
+lowerPointers ptr_size null_value ptr_sym_range os =
   transformPtrConversions $
   removeRedundantPtrConversions $
-  transformPtrValueNodes ptr_size null_value os
+  transformPtrValueNodes ptr_size null_value ptr_sym_range os
 
-transformPtrValueNodes :: Natural -> Integer -> OpStructure -> OpStructure
-transformPtrValueNodes ptr_size null_value os =
+transformPtrValueNodes
+  :: Natural
+  -> Integer
+  -> Range Integer
+  -> OpStructure
+  -> OpStructure
+transformPtrValueNodes ptr_size null_value ptr_sym_range os =
   let g0 = osGraph os
       new_temp_dt = IntTempType { intTempNumBits = ptr_size }
       new_null_dt = IntConstType { intConstValue = rangeFromSingleton null_value
                                  , intConstNumBits = Just ptr_size
                                  }
+      new_sym_dt = IntConstType { intConstValue = ptr_sym_range
+                                , intConstNumBits = Just ptr_size
+                                }
       ns = filter isValueNodeWithPointerDataType $
            getAllNodes g0
       temp_ptr_ns = filter (isPointerTempType . getDataTypeOfValueNode) ns
       null_ptr_ns = filter (isPointerNullType . getDataTypeOfValueNode) ns
+      sym_ptr_ns  = filter (isPointerConstType . getDataTypeOfValueNode) ns
       g1 = foldr (updateDataTypeOfValueNode new_temp_dt) g0 temp_ptr_ns
       g2 = foldr (updateDataTypeOfValueNode new_null_dt) g1 null_ptr_ns
-  in os { osGraph = g2 }
+      g3 = foldr (updateDataTypeOfValueNode new_sym_dt) g2 sym_ptr_ns
+  in os { osGraph = g3 }
 
 removeRedundantPtrConversions :: OpStructure -> OpStructure
 removeRedundantPtrConversions os0 =

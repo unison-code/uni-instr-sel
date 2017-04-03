@@ -219,7 +219,10 @@ instance ConstantFormable LLVMC.Constant where
                         , signedIntValue = LLVMC.signedIntegerValue i
                         }
   toConstant (LLVMC.GlobalReference t n) =
-    do rt <- toOpDataType t
+    do rt' <- toOpDataType t
+       let rt = if D.isTypeAPointer rt'
+                then D.PointerConstType
+                else rt'
        sym <- toSymbol n
        return $ GlobalReferenceConstant { globalRefType = rt
                                         , globalRefName = sym
@@ -1608,9 +1611,6 @@ addConstraints st cs =
   let os = opStruct st
       new_os = OS.addConstraints os cs
   in return $ st { opStruct = new_os }
-
-mkVarNameForConst :: Constant -> String
-mkVarNameForConst c = "%const." ++ (pShow c)
 
 -- | Adds a new value node representing a particular constant to a given state.
 addNewValueNodeWithConstant :: BuildState

@@ -126,7 +126,7 @@ insertCopyAlongEdge g0 df_edge =
                                  filter isValueNodeWithOrigin $
                                  getAllNodes g1
                        prefix = if isJust old_d_origin
-                                then (fromJust old_d_origin) ++ ".copy."
+                                then "%" ++ fromJust old_d_origin ++ ".copy."
                                 else "%copy."
                    in head $ dropWhile (`elem` origins)
                                        ( map (\i -> prefix ++ show i)
@@ -233,7 +233,10 @@ updateGraph new_g f =
 lowerPointers :: TargetMachine -> Function -> Function
 lowerPointers tm f =
   let os0 = functionOS f
-      os1 = OS.lowerPointers (tmPointerSize tm) (tmNullPointerValue tm) os0
+      os1 = OS.lowerPointers (tmPointerSize tm)
+                             (tmNullPointerValue tm)
+                             (tmPointerSymbolRange tm)
+                             os0
   in f { functionOS = os1 }
 
 -- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph

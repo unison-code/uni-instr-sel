@@ -143,7 +143,7 @@ mkInitState sol model =
                      map (getHLMatchParams (hlMatchParams model)) $
                      sel_matches
       op_maps = hlSolNodesOfOperands sol
-      const_ns = map fst $ hlFunValueIntConstData $ hlFunctionParams model
+      const_ns = map fst $ hlFunValueConstData $ hlFunctionParams model
       aliases = computeAliases op_maps const_ns null_matches
   in EmissionState { emittedCode = []
                    , varNamesInUse = getVarNamesInUse model
@@ -365,7 +365,7 @@ emitInstructionsOfMatch model sol tm st0 mid =
                  st4 = if i == 1
                        then let isConstValueNode n =
                                   n `elem` ( map fst $
-                                             hlFunValueIntConstData $
+                                             hlFunValueConstData $
                                              hlFunctionParams model
                                            )
                                 origins = map (getOriginOfValueNode model) $
@@ -443,10 +443,10 @@ emitInstructionPart _ _ _ st (ESVerbatim s) =
       new_instr = head code $++ s
   in st { emittedCode = (new_instr:tail code) }
 emitInstructionPart model _ _ st (ESIntConstOfValueNode n) =
-  let i = lookup n (hlFunValueIntConstData $ hlFunctionParams model)
-  in if isJust i
+  let c = lookup n (hlFunValueConstData $ hlFunctionParams model)
+  in if isJust c
      then let code = emittedCode st
-              new_instr = head code $++ pShow (fromJust i)
+              new_instr = head code $++ fromJust c
           in st { emittedCode = (new_instr:tail code) }
      else error $ "emitInstructionPart: no integer constant found for " ++
                   "function node " ++ pShow n

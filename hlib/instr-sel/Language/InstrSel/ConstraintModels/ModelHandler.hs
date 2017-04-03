@@ -134,14 +134,19 @@ mkHLFunctionParams function target =
         in map (\n -> (n, okay_locs)) $
            functionInputs function
       same_locs = osSameLocations $ functionOS function
-      int_const_data =
+      const_data =
         let ns = filter isValueNodeWithConstValue (getAllNodes graph)
         in nub $
            mapMaybe ( \n -> let nid = getNodeID n
                                 dt = getDataTypeOfValueNode n
                                 r = intConstValue dt
-                            in if isIntConstType dt && isRangeSingleton r
-                               then Just (nid, lowerBound r)
+                                o = getOriginOfValueNode n
+                            in if isIntConstType dt
+                               then if isRangeSingleton r
+                                    then Just (nid, show $ lowerBound r)
+                                    else if isJust o
+                                         then Just (nid, fromJust o)
+                                         else Nothing
                                else Nothing
                      )
                      ns
@@ -181,7 +186,7 @@ mkHLFunctionParams function target =
        , hlFunStateDefEdges = state_def_es
        , hlFunValidValueLocs = valid_locs
        , hlFunSameValueLocs = same_locs
-       , hlFunValueIntConstData = int_const_data
+       , hlFunValueConstData = const_data
        , hlFunValueOriginData = value_origin_data
        , hlFunCallNameData = call_name_data
        , hlFunConstraints = osConstraints $ functionOS function

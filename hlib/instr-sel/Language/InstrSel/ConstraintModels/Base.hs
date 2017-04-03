@@ -100,7 +100,7 @@ data HighLevelFunctionParams
         -- ^ The value nodes together with a list of valid locations.
       , hlFunSameValueLocs :: [(NodeID, NodeID)]
         -- ^ The value nodes that must be assigned the same location.
-      , hlFunValueIntConstData :: [(NodeID, Integer)]
+      , hlFunValueConstData :: [(NodeID, String)]
         -- ^ The value nodes which represent integer constants together with
         -- their values.
       , hlFunValueOriginData :: [(NodeID, String)]
@@ -517,7 +517,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "state-def-edges"
       <*> v .: "valid-value-locs"
       <*> v .: "same-value-locs"
-      <*> v .: "int-constant-data"
+      <*> v .: "constant-data"
       <*> v .: "value-origin-data"
       <*> v .: "call-name-data"
       <*> v .: "constraints"
@@ -540,7 +540,7 @@ instance ToJSON HighLevelFunctionParams where
            , "state-def-edges"          .= (hlFunStateDefEdges p)
            , "valid-value-locs"         .= (hlFunValidValueLocs p)
            , "same-value-locs"          .= (hlFunSameValueLocs p)
-           , "int-constant-data"        .= (hlFunValueIntConstData p)
+           , "constant-data"            .= (hlFunValueConstData p)
            , "value-origin-data"        .= (hlFunValueOriginData p)
            , "call-name-data"           .= (hlFunCallNameData p)
            , "constraints"              .= (hlFunConstraints p)

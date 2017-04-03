@@ -129,6 +129,7 @@ lowerPointers :: TargetMachine -> TargetMachine
 lowerPointers tm =
   let lowerInstr i = i { instrOS = OS.lowerPointers (tmPointerSize tm)
                                                     (tmNullPointerValue tm)
+                                                    (tmPointerSymbolRange tm)
                                                     (instrOS i)
                        }
       new_instrs = M.map lowerInstr (tmInstructions tm)

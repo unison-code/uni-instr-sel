@@ -87,7 +87,7 @@ isRangeSingleton :: Eq t => Range t -> Bool
 isRangeSingleton r = lowerBound r == upperBound r
 
 -- | Parses a string into a 'Range'.
-parseRangeStr :: Read t => String -> Maybe (Range t)
+parseRangeStr :: (Read t, Show t) => String -> Maybe (Range t)
 parseRangeStr str =
   let singleton = maybeRead str
       tuple = maybeRead str

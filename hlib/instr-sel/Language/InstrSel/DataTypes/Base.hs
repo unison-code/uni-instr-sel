@@ -19,6 +19,7 @@ module Language.InstrSel.DataTypes.Base
   , isIntConstType
   , isPointerTempType
   , isPointerNullType
+  , isPointerConstType
   , isAnyType
   , isVoidType
   , isTypeAConstValue
@@ -98,7 +99,7 @@ instance PrettyShow DataType where
   pShow d@(IntConstType {}) =
     let b = intConstNumBits d
     in pShow (intConstValue d) ++
-       if isJust b then " i" ++ (pShow $ fromJust b) else ""
+       if isJust b then "#i" ++ (pShow $ fromJust b) else ""
   pShow PointerTempType = "ptr"
   pShow PointerNullType = "null"
   pShow PointerConstType = "cnstptr"
@@ -249,7 +250,7 @@ parseIntTempTypeAnyWidthFromJson str =
 -- returned.
 parseIntConstTypeFromJson :: String -> Maybe DataType
 parseIntConstTypeFromJson str =
-  let parts = splitOn " " str
+  let parts = splitOn "#" str
   in if length parts == 1 || length parts == 2
      then let value = parseRangeStr (head parts)
               numbits_str = last parts
