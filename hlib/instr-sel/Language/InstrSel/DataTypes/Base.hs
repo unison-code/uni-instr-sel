@@ -78,6 +78,8 @@ data DataType
   | PointerTempType
     -- | Represents a null pointer value.
   | PointerNullType
+    -- | Represents a pointer constant.
+  | PointerConstType
     -- | When there is no data type.
   | VoidType
     -- | When the data type does not matter.
@@ -99,6 +101,7 @@ instance PrettyShow DataType where
        if isJust b then " i" ++ (pShow $ fromJust b) else ""
   pShow PointerTempType = "ptr"
   pShow PointerNullType = "null"
+  pShow PointerConstType = "cnstptr"
   pShow VoidType = "void"
   pShow AnyType = "any"
 
@@ -150,6 +153,11 @@ isPointerNullType :: DataType -> Bool
 isPointerNullType PointerNullType = True
 isPointerNullType _ = False
 
+-- | Checks if a given data type is 'PointerConstType'.
+isPointerConstType :: DataType -> Bool
+isPointerConstType PointerConstType = True
+isPointerConstType _ = False
+
 -- | Checks if a given data type is 'VoidType'.
 isVoidType :: DataType -> Bool
 isVoidType VoidType = True
@@ -169,9 +177,8 @@ isCompatibleWith IntTempTypeAnyWidth (IntTempType {}) = True
 isCompatibleWith d1@(IntConstType {}) d2@(IntConstType {}) =
   (intConstValue d1) `contains` (intConstValue d2)
 isCompatibleWith PointerTempType PointerTempType = True
-isCompatibleWith PointerTempType PointerNullType = True
-isCompatibleWith PointerNullType PointerTempType = True
 isCompatibleWith PointerNullType PointerNullType = True
+isCompatibleWith PointerConstType PointerConstType = True
 isCompatibleWith VoidType VoidType = True
 isCompatibleWith AnyType _ = True
 isCompatibleWith _ _ = False
@@ -210,6 +217,7 @@ parseDataTypeFromJson str =
                       , parseIntConstTypeFromJson str
                       , parsePointerTempTypeFromJson str
                       , parsePointerNullTypeFromJson str
+                      , parsePointerConstTypeFromJson str
                       , parseVoidTypeFromJson str
                       , parseAnyTypeFromJson str
                       ]
@@ -289,13 +297,25 @@ parsePointerNullTypeFromJson str =
   then Just PointerNullType
   else Nothing
 
+-- | Parses a 'PointerConstType' from a JSON string. If parsing fails, 'Nothing'
+-- is returned.
+parsePointerConstTypeFromJson :: String -> Maybe DataType
+parsePointerConstTypeFromJson str =
+  if str == pShow PointerConstType
+  then Just PointerConstType
+  else Nothing
+
 -- | Checks if a given data type represents a constant value.
 isTypeAConstValue :: DataType -> Bool
-isTypeAConstValue t = isIntConstType t || isPointerNullType t
+isTypeAConstValue t = isIntConstType t ||
+                      isPointerNullType t ||
+                      isPointerConstType t
 
 -- | Checks if a given data type represents a pointer.
 isTypeAPointer :: DataType -> Bool
-isTypeAPointer t = isPointerTempType t || isPointerNullType t
+isTypeAPointer t = isPointerTempType t ||
+                   isPointerNullType t ||
+                   isPointerConstType t
 
 -- | Checks if two data types represent the same constant.
 areSameConstants :: DataType -> DataType -> Bool

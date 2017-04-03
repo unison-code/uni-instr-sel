@@ -79,6 +79,7 @@ generateTargetMachine m =
                                  zip (map TM.locID locs) locs
               , TM.tmPointerSize = LLVM.mdPointerSize m
               , TM.tmNullPointerValue = LLVM.mdNullPointerValue m
+              , TM.tmPointerSymbolRange = LLVM.mdPointerSymbolRange m
               }
 
 mkLocations :: LLVM.MachineDescription -> [TM.Location]

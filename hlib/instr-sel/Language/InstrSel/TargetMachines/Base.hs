@@ -43,7 +43,9 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.IDs
 import Language.InstrSel.Utils
-  ( Natural )
+  ( Natural
+  , Range
+  )
 
 import qualified Data.Map as M
 
@@ -162,10 +164,14 @@ data TargetMachine
         -- (more than a hundred), hence they are represented as a map because it
         -- is common to search for an location with a given ID.
       , tmPointerSize :: Natural
-       -- ^ The size (in number of bits) of a memory pointer in the target
-       -- macine.
+        -- ^ The size (in number of bits) of a memory pointer in the target
+        -- macine.
       , tmNullPointerValue :: Integer
-       -- ^ The integer value representing a null-pointer in the target machine.
+        -- ^ The integer value representing a null-pointer in the target
+        -- machine.
+      , tmPointerSymbolRange :: Range Integer
+        -- ^ The range of values that a pointer symbol can take in the target
+        -- machine.
       }
   deriving (Show)
 

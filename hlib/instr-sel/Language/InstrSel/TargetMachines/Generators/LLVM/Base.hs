@@ -38,10 +38,14 @@ data MachineDescription
       , mdLocations :: [Location]
         -- ^ The locations available on the target machine.
       , mdPointerSize :: Natural
-       -- ^ The size (in number of bits) of a memory pointer in the target
-       -- macine.
+        -- ^ The size (in number of bits) of a memory pointer in the target
+        -- macine.
       , mdNullPointerValue :: Integer
-       -- ^ The integer value representing a null-pointer in the target machine.
+        -- ^ The integer value representing a null-pointer in the target
+        -- machine.
+      , mdPointerSymbolRange :: Range Integer
+        -- ^ The range of values that a pointer symbol can take in the target
+        -- machine.
       }
   deriving (Show)
 
@@ -130,6 +134,7 @@ instance FromJSON MachineDescription where
       <*> v .: "locations"
       <*> v .: "pointer-size"
       <*> v .: "null-pointer-value"
+      <*> v .: "pointer-symbol-range"
   parseJSON _ = mzero
 
 instance FromJSON Instruction where
