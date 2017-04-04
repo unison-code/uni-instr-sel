@@ -320,8 +320,8 @@ isTypeAPointer t = isPointerTempType t ||
 
 -- | Checks if two data types represent the same constant.
 areSameConstants :: DataType -> DataType -> Bool
-areSameConstants d1 d2 = isTypeAConstValue d1 &&
-                         isTypeAConstValue d2 &&
+areSameConstants d1 d2 = isSingletonConstant d1 &&
+                         isSingletonConstant d2 &&
                          d1 == d2
 
 -- | Checks if a data type represents a constant with a singleton range.
