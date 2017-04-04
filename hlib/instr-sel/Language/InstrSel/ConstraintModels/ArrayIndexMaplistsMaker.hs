@@ -41,8 +41,8 @@ mkArrayIndexMaplists function tm model =
   let g = osGraph $ functionOS function
       nodes = getAllNodes g
       o_nodes = sort $ filter isOperationNode nodes
-      e_nodes = sort $ filter isDatumNode nodes
-      l_nodes = sort $ filter isBlockNode nodes
+      d_nodes = sort $ filter isDatumNode nodes
+      b_nodes = sort $ filter isBlockNode nodes
       -- We sort the match parameters in increasing order of latency because
       -- chuffed (the constraint solver we use) will most likely attempt to
       -- select the matches in variable order, and doing this sorting will
@@ -60,9 +60,9 @@ mkArrayIndexMaplists function tm model =
       locations = getAllLocations tm
       instructions = getAllInstructions tm
   in ArrayIndexMaplists { ai2OperationNodeIDs = map getNodeID o_nodes
-                        , ai2DatumNodeIDs = map getNodeID e_nodes
+                        , ai2DatumNodeIDs = map getNodeID d_nodes
                         , ai2OperandIDs = op_ids
-                        , ai2BlockNodeIDs = map getNodeID l_nodes
+                        , ai2BlockNodeIDs = map getNodeID b_nodes
                         , ai2MatchIDs = match_ids
                         , ai2LocationIDs = map locID locations
                         , ai2InstructionIDs = map instrID instructions
