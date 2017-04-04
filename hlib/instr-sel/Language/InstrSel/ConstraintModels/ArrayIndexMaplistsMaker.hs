@@ -21,6 +21,8 @@ import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import Language.InstrSel.TargetMachines
 
+import Data.Maybe
+  ( fromJust )
 import Data.List
   ( sort
   , sortBy
@@ -42,13 +44,24 @@ mkArrayIndexMaplists function tm model =
       nodes = getAllNodes g
       o_nodes = sort $ filter isOperationNode nodes
       d_nodes = sort $ filter isDatumNode nodes
-      b_nodes = sort $ filter isBlockNode nodes
-      -- We sort the match parameters in increasing order of latency because
+      -- We sort the blocks in increasing order of execution frequence because
       -- chuffed (the constraint solver we use) will most likely attempt to
       -- select the matches in variable order, and doing this sorting will
-      -- thereby, at least in principle, assist the solving. In addition, if the
-      -- latencies are equal and one of them is a kill match, then the kill
-      -- match comes first.
+      -- thereby, at least in principle, assist the solving.
+      compareBlocks b1 b2 =
+        compare ( fromJust $
+                  lookup (getNameOfBlockNode b1) $
+                  functionBBExecFreq function
+                )
+                ( fromJust $
+                  lookup (getNameOfBlockNode b2) $
+                  functionBBExecFreq function
+                )
+      b_nodes = sortBy compareBlocks $
+                filter isBlockNode nodes
+      -- For the same reason, we sort the match parameters in increasing order
+      -- of latency. In addition, if the latencies are equal and one of them is
+      -- a kill match, then the kill match comes first.
       compareMatches m1 m2
         | hlMatchIsKillInstruction m1 = LT
         | hlMatchIsKillInstruction m2 = GT
