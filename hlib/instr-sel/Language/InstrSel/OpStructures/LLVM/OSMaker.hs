@@ -117,7 +117,7 @@ data Constant
 instance PrettyShow Constant where
   pShow IntConstant { signedIntValue = v } = pShow v
   pShow FloatConstant { floatValue = v } = pShow v
-  pShow GlobalReferenceConstant { globalRefName = s } = "@" ++ pShow s
+  pShow GlobalReferenceConstant { globalRefName = s } = pShow s
   pShow NullConstant = "null"
 
 -- | Represents the intermediate build data.
@@ -218,12 +218,12 @@ instance ConstantFormable LLVMC.Constant where
     Right $ IntConstant { intBitWidth = fromIntegral b
                         , signedIntValue = LLVMC.signedIntegerValue i
                         }
-  toConstant (LLVMC.GlobalReference t n) =
+  toConstant (LLVMC.GlobalReference t (LLVM.Name str)) =
     do rt' <- toOpDataType t
        let rt = if D.isTypeAPointer rt'
                 then D.PointerConstType
                 else rt'
-       sym <- toSymbol n
+           sym = GlobalStringSymbol str
        return $ GlobalReferenceConstant { globalRefType = rt
                                         , globalRefName = sym
                                         }
