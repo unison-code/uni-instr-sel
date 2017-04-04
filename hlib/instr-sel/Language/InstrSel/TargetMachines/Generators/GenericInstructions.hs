@@ -42,12 +42,12 @@ import Data.List
 
 -- | Creates a value node without specified origin.
 mkValueNode :: DataType -> NodeType
-mkValueNode dt = ValueNode { typeOfValue = dt, originOfValue = Nothing }
+mkValueNode dt = ValueNode { typeOfValue = dt, originOfValue = [] }
 
 -- | Creates a value node type with no value or origin.
 mkGenericValueNodeType :: NodeType
 mkGenericValueNodeType = ValueNode { typeOfValue = AnyType
-                                   , originOfValue = Nothing
+                                   , originOfValue = []
                                    }
 
 -- | Creates a generic block node type.

@@ -144,15 +144,15 @@ mkHLFunctionParams function target =
                             in if isIntConstType dt
                                then if isRangeSingleton r
                                     then Just (nid, show $ lowerBound r)
-                                    else if isJust o
-                                         then Just (nid, fromJust o)
+                                    else if length o > 0
+                                         then Just (nid, head o)
                                          else Nothing
                                else Nothing
                      )
                      ns
       value_origin_data =
         let ns = filter isValueNodeWithOrigin (getAllNodes graph)
-        in map (\n -> (getNodeID n, fromJust $ originOfValue $ getNodeType n))
+        in map (\n -> (getNodeID n, head $ originOfValue $ getNodeType n))
                ns
       call_name_data =
         let ns = filter isCallNode (getAllNodes graph)

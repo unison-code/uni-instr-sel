@@ -121,12 +121,11 @@ insertCopyAlongEdge g0 df_edge =
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
       new_dt = mkNewDataType $ getDataTypeOfValueNode old_d_node
-      new_origin = Just $
-                   let origins = map (fromJust . getOriginOfValueNode) $
+      new_origin = let origins = concatMap getOriginOfValueNode $
                                  filter isValueNodeWithOrigin $
                                  getAllNodes g1
-                       prefix = if isJust old_d_origin
-                                then "%" ++ fromJust old_d_origin ++ ".copy."
+                       prefix = if length old_d_origin > 0
+                                then "%" ++ head old_d_origin ++ ".copy."
                                 else "%copy."
                    in head $ dropWhile (`elem` origins)
                                        ( map (\i -> prefix ++ show i)
@@ -143,7 +142,7 @@ insertCopyAlongEdge g0 df_edge =
                                    "outgoing edges"
 
       (g2, new_d_node) =
-        insertNewNodeAlongEdge (ValueNode new_dt new_origin) new_e g1
+        insertNewNodeAlongEdge (ValueNode new_dt [new_origin]) new_e g1
       g3 = if isJust def_edge
            then let e = fromJust def_edge
                 in fst $ addNewDefEdge (new_d_node, getTargetNode g2 e)

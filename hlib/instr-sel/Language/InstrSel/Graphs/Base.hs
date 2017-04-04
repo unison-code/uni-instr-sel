@@ -38,6 +38,7 @@ module Language.InstrSel.Graphs.Base
   , addNewStFlowEdge
   , addNewStFlowEdges
   , addNewNode
+  , addOriginToValueNode
   , areInEdgesEquivalent
   , areOutEdgesEquivalent
   , computeDomSets
@@ -169,7 +170,6 @@ module Language.InstrSel.Graphs.Base
   , updateNodeID
   , updateNodeLabel
   , updateNodeType
-  , updateOriginOfValueNode
   )
 where
 
@@ -264,11 +264,12 @@ data NodeType
     -- are the constraints applied to it.
   | ValueNode
       { typeOfValue :: D.DataType
-      , originOfValue :: Maybe String
+      , originOfValue :: [String]
         -- ^ If the value node represents a particular temporary or variable or
         -- which is specified in the source code, then the name of that item can
-        -- be given here as a string. This will only be used for debugging and
-        -- pretty-printing purposes.
+        -- be given here as a string. A value node is allowed to have any number
+        -- of origins, but the most current origin should always be placed first
+        -- in the list.
       }
   | BlockNode { nameOfBlock :: BlockName }
   | PhiNode
@@ -637,10 +638,10 @@ isValueNodeWithPointerDataType n =
 isValueNodeWithOrigin :: Node -> Bool
 isValueNodeWithOrigin n =
   if isValueNode n
-  then isJust $ originOfValue $ getNodeType n
+  then length (originOfValue $ getNodeType n) > 0
   else False
 
-getOriginOfValueNode :: Node -> Maybe String
+getOriginOfValueNode :: Node -> [String]
 getOriginOfValueNode = originOfValue . getNodeType
 
 getNameOfBlockNode :: Node -> BlockName
@@ -817,7 +818,7 @@ findNodesWithNodeID g i =
 findValueNodesWithOrigin :: Graph -> String -> [Node]
 findValueNodesWithOrigin g o =
   let vs = filter isValueNodeWithOrigin $ getAllNodes g
-  in filter ((==) o . fromJust . getOriginOfValueNode) vs
+  in filter (\v -> o `elem` getOriginOfValueNode v) vs
 
 -- | Gets a list of block nodes with the same block name.
 findBlockNodesWithName :: Graph -> BlockName -> [Node]
@@ -849,13 +850,13 @@ updateNameOfCallNode new_name n g =
                 _ -> error $ "updateNameOfCallNode: node " ++ show n ++
                              " is not a call node"
 
--- | Updates the origin of an already existing value node.
-updateOriginOfValueNode :: Maybe String -> Node -> Graph -> Graph
-updateOriginOfValueNode new_origin n g =
+-- | Adds a new origin to an already existing value node.
+addOriginToValueNode :: String -> Node -> Graph -> Graph
+addOriginToValueNode new_origin n g =
   let nt = getNodeType n
-      new_nt = nt { originOfValue = new_origin }
+      new_nt = nt { originOfValue = (new_origin:originOfValue nt) }
   in case nt of (ValueNode {}) -> updateNodeType new_nt n g
-                _ -> error $ "updateOriginOfValueNode: node " ++ show n ++
+                _ -> error $ "addOriginToValueNode: node " ++ show n ++
                              " is not a value node"
 
 -- | Updates the operation of an already existing computation node.

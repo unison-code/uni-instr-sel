@@ -58,14 +58,14 @@ canonicalizeCopies :: OpStructure -> OpStructure
 canonicalizeCopies os =
   let mkTempValueNode =
         ValueNode { typeOfValue = AnyType
-                  , originOfValue = Nothing
+                  , originOfValue = []
                   }
       mkIntConstValueNode c_val =
         ValueNode { typeOfValue = IntConstType
                                     { intConstValue = rangeFromSingleton c_val
                                     , intConstNumBits = Nothing
                                     }
-                  , originOfValue = Nothing
+                  , originOfValue = []
                   }
       mkCompNode op = ComputationNode { compOp = CompArithOp op }
       mkPat op c_val swap_ops =

@@ -1043,7 +1043,7 @@ mkFunctionDFGFromInstruction b st (LLVM.Load _ op1 _ _ _) =
                             [op1]
 mkFunctionDFGFromInstruction _ st0 (LLVM.Alloca _ _ _ _) =
   -- TODO: fix with proper handling that includes stack adjustments
-  do st1 <- addNewNode st0 (G.ValueNode D.PointerTempType Nothing)
+  do st1 <- addNewNode st0 (G.ValueNode D.PointerTempType [])
      b <- getCurrentBlock st1
      n <- getLastTouchedValueNode st1
      st2 <- addPendingBlockToDatumFlow st1 (b, G.getNodeID n)
@@ -1123,7 +1123,7 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
                   st2
                   (zip operand_ns block_names)
      dt <- toOpDataType t
-     st4 <- addNewNode st3 (G.ValueNode dt Nothing)
+     st4 <- addNewNode st3 (G.ValueNode dt [])
      d_node <- getLastTouchedValueNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge phi_node d_node
      current_b <- getCurrentBlock st5
@@ -1157,7 +1157,7 @@ mkFunctionDFGFromCompOp b st0 dt op operands =
      st2 <- addNewNode st1 (G.ComputationNode op)
      op_node <- getLastTouchedComputationNode st2
      st3 <- addNewEdgesManySources st2 G.DataFlowEdge operand_ns op_node
-     st4 <- addNewNode st3 (G.ValueNode dt Nothing)
+     st4 <- addNewNode st3 (G.ValueNode dt [])
      d_node <- getLastTouchedValueNode st4
      st5 <- addNewEdge st4 G.DataFlowEdge op_node d_node
      return st5
@@ -1197,7 +1197,7 @@ mkFunctionDFGFromCall b st0 dt nt operands =
      -- node.
      if D.isVoidType dt
      then return st7
-     else do st8 <- addNewNode st7 (G.ValueNode dt Nothing)
+     else do st8 <- addNewNode st7 (G.ValueNode dt [])
              d_node <- getLastTouchedValueNode st8
              st9 <- addNewEdge st8 G.DataFlowEdge op_node d_node
              return st9
@@ -1305,12 +1305,12 @@ mkPatternDFGFromSetregCall
            then do let g = G.mergeNodes n2 n1 g0
                    sym1 <- toSymbol arg1
                    n1_origin <- let o = G.getOriginOfValueNode n1
-                                in if isJust o
-                                   then return $ fromJust o
+                                in if length o > 0
+                                   then return $ head o
                                    else Left $ "mkPatternDFGFromSetregCall: " ++
                                                "node mapped symbol '" ++
                                                pShow sym1 ++ "' has no origin"
-                   return $ G.updateOriginOfValueNode n1_origin n2 g
+                   return $ G.addOriginToValueNode n1_origin n2 g
            else return g0
      st1 <- updateOSGraph st0 g1
      st2 <- if do_merge
@@ -1357,7 +1357,7 @@ mkPatternDFGFromParamCall _ st0 i@(LLVM.Call {}) =
                      _ -> Left $ "mkPatternDFGFromParamCall: unexpected " ++
                                  "instruction: " ++ show i
      dt <- toOpDataType rt
-     st1 <- addNewNode st0 (G.ValueNode dt Nothing)
+     st1 <- addNewNode st0 (G.ValueNode dt [])
      n <- getLastTouchedValueNode st1
      st2 <- addPatExtValue st1 (G.getNodeID n)
      return st2
@@ -1617,8 +1617,8 @@ addNewValueNodeWithConstant :: BuildState
                             -> Constant
                             -> Either String BuildState
 addNewValueNodeWithConstant st0 c =
-  do op_t <- toOpDataType c
-     st1 <- addNewNode st0 $ G.ValueNode op_t (Just $ mkVarNameForConst c)
+  do dt <- toOpDataType c
+     st1 <- addNewNode st0 $ G.ValueNode dt [pShow c]
      new_n <- getLastTouchedValueNode st1
      entry_b <- getEntryBlock st1
      st2 <- addPendingBlockToDatumFlow st1 (entry_b, G.getNodeID new_n)
@@ -1785,7 +1785,7 @@ ensureValueNodeWithSymExists st0 sym dt =
                   else Left $ "ensureValueNodeWithSymExists: found multiple " ++
                               "value nodes with ID " ++ pShow (fromJust nid) ++
                               ", mapped from symbol '" ++ pShow sym ++ "'"
-     else do st1 <- addNewNode st0 (G.ValueNode dt (Just $ toOrigin sym))
+     else do st1 <- addNewNode st0 (G.ValueNode dt [toOrigin sym])
              new_n <- getLastTouchedValueNode st1
              st2 <- addSymMap st1 (sym, G.getNodeID new_n)
              return st2

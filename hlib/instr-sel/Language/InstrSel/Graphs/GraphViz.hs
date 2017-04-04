@@ -131,10 +131,15 @@ mkNodeLabelAttr nid nt =
         f (ControlNode op) = pShow op
         f (CallNode func) = "call " ++ pShow func
         f IndirCallNode = "indir-call"
-        f (ValueNode dt src) = pShow dt
+        f (ValueNode dt origin) = pShow dt
                                ++
                                ( if not (isTypeAConstValue dt)
-                                 then maybe "" (" " ++) src
+                                 then if length origin > 0
+                                      then " " ++
+                                           if length origin == 1
+                                           then head origin
+                                           else show origin
+                                      else ""
                                  else ""
                                )
         f (BlockNode l) = pShow l
