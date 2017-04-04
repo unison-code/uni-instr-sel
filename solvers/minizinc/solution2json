@@ -190,7 +190,7 @@ for d in all_data:
        ):
         d[1] = [x-1 for x in d[1]]
     elif name == "block_value_for_null" or name == "alt_value_for_null":
-        d[1] = d[1]-1
+        d[1] = d[1] - 1
 
 # Construct block order data from block successor data
 succ_data = getRequiredDataByName(all_data, "succ")
@@ -201,8 +201,13 @@ except ValueError:
     error("Value of 'block_value_for_null' is not an int")
 if null_block < 0 or null_block > len(succ_data):
     error("Value of 'block_value_for_null' is out of bounds")
-ord_data = [0]
-while succ_data[ord_data[-1]] != 0:
+entry_block = getRequiredDataByName(all_data, "entry")
+try:
+    entry_block = int(entry_block) - 1 # Convert to 0-based indexing
+except ValueError:
+    error("Value of 'entry' is not an int")
+ord_data = [entry_block]
+while succ_data[ord_data[-1]] != entry_block:
     ord_data.append(succ_data[ord_data[-1]])
 all_data.append(["ord", ord_data])
 

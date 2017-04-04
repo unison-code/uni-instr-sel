@@ -362,7 +362,8 @@ data HighLevelSolution
   = HighLevelSolution
       { hlSolOrderOfBlocks :: [NodeID]
         -- ^ The order of blocks (represented by the node ID of the
-        -- corresponding block).
+        -- corresponding block). The first block is always the entry block of
+        -- the function.
       , hlSolSelMatches :: [MatchID]
         -- ^ The selected matchs.
       , hlSolNodesOfOperands :: [(OperandID, NodeID)]
@@ -400,7 +401,8 @@ data LowLevelSolution
       { llSolOrderOfBlocks :: [ArrayIndex]
         -- ^ The order of blocks. An index into the list corresponds to the
         -- array index of the node in the function graph which represents a
-        -- particular block.
+        -- particular block. The first element is always the array index of the
+        -- entry block of the function.
       , llSolIsMatchSelected :: [Bool]
         -- ^ Indicates whether a particular match was selected. An index into
         -- the list corresponds to the array index of a particular match.
