@@ -51,7 +51,6 @@ set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
 array[int, int] of int: stateDefEdgesForBlocksInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
-set of allBlocksInFunction: branchExtBlocksInFunction;
 array[int] of set of int: interchangeableDataInFunction;
 set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
 
@@ -84,7 +83,6 @@ set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
 int: costUpperBound;
-bool: useOldObjectiveFunction;
 
 % Arrays that encode constraints
 array[int, int] of int: validDataLocsInFunction;
@@ -530,11 +528,8 @@ constraint
          )
   ( sel[m] -> oplace[o] != b );
 
-% For each selected match m that apply fall-through, enforce either:
-%    - that the fall-through block of m is the immediate successor of the entry
-%      block of m, or
-%    - that the fall-through block of m is one block away from the entry block
-%      of m and the block in between contains no non-null-instructions.
+% For each selected match m that apply fall-through, enforce that the
+% fall-through block of m is the immediate successor of the entry block of m.
 constraint
   forall (i in index_set_1of2(fallThroughBlockOfMatch))
   ( let { int: m = fallThroughBlockOfMatch[i, 1]
@@ -547,13 +542,7 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
   let { int: entry_b = min(entryBlockOfMatch[m])
       , var int: succ_b = succ[entry_b]
       }
-  in succ_b = fall_b \/
-     ( succ[succ_b] = fall_b /\
-       forall (o in allOperationsInFunction)
-       ( oplace[o] != succ_b \/
-         omatch[o] in nullInstrMatches
-       )
-     );
+  in  succ_b = fall_b;
 
 % Enforce that, for each operation o, exactly one match must be selected such
 % that o is covered.
@@ -656,22 +645,12 @@ constraint
 
 % Constrain the cost that can be incurred by each operation.
 constraint
-  if not useOldObjectiveFunction
-  then forall (op in allOperationsInFunction)
-       ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix) )
-  else true
-  endif;
+  forall (op in allOperationsInFunction)
+  ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix) );
 
 % The total cost is the sum of the costs incurred by all operations.
 constraint
-  if not useOldObjectiveFunction
-  then totalcost = sum(opcosts)
-  else totalcost = sum (m in allMatches where latencyOfMatch[m] > 0 )
-                   ( bool2int(sel[m])
-                   * latencyOfMatch[m]
-                   * execFrequencyOfBlockInFunction[oplace[opOfM[m]]]
-                   )
-  endif;
+  totalcost = sum(opcosts);
 
 % Constraint the upper bound of the cost (retrieved from LLVM).
 constraint
@@ -754,21 +733,6 @@ constraint
          )
   ( not sel[m] -> alt[o] = min(operandAlternatives[o]) );
 
-% No data may be defined in a branch-extension block.
-constraint
-  forall ( b in branchExtBlocksInFunction
-         , d in allDataInFunction
-         )
-  ( dplace[d] != b );
-
-% If a block b is a branch-extension block, then only control operations may be
-% placed in that block.
-constraint
-  forall ( b in branchExtBlocksInFunction
-         , o in allOperationsInFunction diff controlOpsInFunction
-         )
-  ( oplace[o] != b );
-
 % Break symmetries introduced by interchangeable data.
 %
 % [GHB] This could remove potential optimal solutions in situations where data
@@ -805,31 +769,28 @@ constraint
 % IMPLIED CONSTRAINTS
 %=====================
 
-%% TODO: add constraint that makes use of depsOfDataInFunction
+% TODO: add constraint that makes use of depsOfDataInFunction
 
-%% Two matches cannot be selected with same fall-thru blocks but different entry
-%% blocks. Two matches cannot be selected with different fall-thru blocks but
-%% same entry blocks.
-%
-% [GHB] Disabled this constraint as it removes optimal solutions.
-%
-%constraint
-%  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
-%         , j in index_set_1of2(fallThroughBlockOfMatch)
-%           where i < j
-%         )
-%  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
-%        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
-%        , int: entry_b1 = min(entryBlockOfMatch[m1])
-%        , int:       m2 = fallThroughBlockOfMatch[j, 1]
-%        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
-%        , int: entry_b2 = min(entryBlockOfMatch[m2])
-%        }
-%    in if (fall_b1 = fall_b2) xor (entry_b1 = entry_b2)
-%       then not sel[m1] \/ not sel[m2]
-%       else true
-%       endif
-%  );
+% Two matches cannot be selected with same fall-thru blocks but different entry
+% blocks. Two matches cannot be selected with different fall-thru blocks but
+% same entry blocks.
+constraint
+  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
+         , j in index_set_1of2(fallThroughBlockOfMatch)
+           where i < j
+         )
+  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
+        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
+        , int: entry_b1 = min(entryBlockOfMatch[m1])
+        , int:       m2 = fallThroughBlockOfMatch[j, 1]
+        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
+        , int: entry_b2 = min(entryBlockOfMatch[m2])
+        }
+    in if (fall_b1 = fall_b2) xor (entry_b1 = entry_b2)
+       then not sel[m1] \/ not sel[m2]
+       else true
+       endif
+  );
 
 % Two matches cannot both be selected if the first match implies that two
 % locations are equal, and the second match implies that the intersection of
