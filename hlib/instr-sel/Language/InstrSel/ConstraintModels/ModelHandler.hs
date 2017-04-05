@@ -570,6 +570,8 @@ lowerHighLevelModel model ai_maps =
        , llFunCopies = map getAIForOperationNodeID (hlFunCopies f_params)
        , llFunControlOps =
            map getAIForOperationNodeID (hlFunControlOps f_params)
+       , llFunConstData = map (getAIForDatumNodeID . fst) $
+                          hlFunValueConstData f_params
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
        , llFunOpDependencies =
            map (\(_, ns) -> map getAIForOperationNodeID ns) $
