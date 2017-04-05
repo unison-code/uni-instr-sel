@@ -86,11 +86,11 @@ match_data_used = [[]] * num_matches
 for m in range(num_matches):
     match_data_defined[m] = [ d for d in range(num_data)
                                 for o in json_data["match-operands-defined"][m]
-                                    if {d} == operand_alt_sets[o]
+                                    if d in operand_alt_sets[o]
                             ]
     match_data_used[m] = [ d for d in range(num_data)
                              for o in json_data["match-operands-used"][m]
-                                 if {d} == operand_alt_sets[o]
+                                 if d in operand_alt_sets[o]
                          ]
 
 copy_matches = json_data["match-copy-instrs"]
