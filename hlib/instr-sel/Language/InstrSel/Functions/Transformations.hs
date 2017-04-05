@@ -156,10 +156,13 @@ combineConstants :: Function -> Function
 combineConstants f =
   let g = getGraph f
       const_ns = filter isValueNodeWithConstValue (getAllNodes g)
-      haveSameConstants n1 n2 = (getDataTypeOfValueNode n1)
-                                `areSameConstants`
-                                (getDataTypeOfValueNode n2)
-      grouped_ns = groupBy haveSameConstants const_ns
+      areSameValues n1 n2 =
+        let d1 = getDataTypeOfValueNode n1
+            d2 = getDataTypeOfValueNode n2
+            o1 = getOriginOfValueNode n1
+            o2 = getOriginOfValueNode n2
+        in d1 `areSameConstants` d2 || o1 == o2
+      grouped_ns = groupBy areSameValues const_ns
   in foldl combineValueNodes f grouped_ns
 
 combineValueNodes :: Function -> [Node] -> Function
