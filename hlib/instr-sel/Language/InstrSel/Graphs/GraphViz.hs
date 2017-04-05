@@ -22,7 +22,9 @@ where
 
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.DataTypes
-  ( isTypeAConstValue )
+  ( isSingletonConstant
+  , isTypeAConstValue
+  )
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
@@ -134,18 +136,21 @@ mkNodeLabelAttr nid nt =
         f (ValueNode dt origin) = pShow dt
                                ++
                                ( if not (isTypeAConstValue dt)
-                                 then if length origin > 0
-                                      then " " ++
-                                           if length origin == 1
-                                           then head origin
-                                           else show origin
+                                 then appendOrigin origin
+                                 else if not (isSingletonConstant dt)
+                                      then appendOrigin origin
                                       else ""
-                                 else ""
                                )
         f (BlockNode l) = pShow l
         f PhiNode = "phi"
         f StateNode = ""
         f CopyNode = "cp"
+        appendOrigin o = if length o > 0
+                         then " " ++
+                              if length o == 1
+                              then head o
+                              else show o
+                         else ""
 
 -- | A function that produces an empty list of attributes, no matter the
 -- argument.
