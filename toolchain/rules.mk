@@ -36,25 +36,27 @@
 
 # Should be set and exported as an environment variable
 LLVM_INT_IS_BUILD_DIR ?= @echo 'ERROR: Environment variable' \
-                               '$$LLVM_INT_IS_BUILD_DIR not set!' ; \
-                         exit 1 ;
+                               '$$LLVM_INT_IS_BUILD_DIR not set!'; \
+                         exit 1;
 
 # Should be set from within the Makefile
-UNI_IS_CMD            ?= @echo 'ERROR: Variable $$UNI_IS_CMD not set!' ; \
-                          exit 1 ;
-UNI_IS_LLVM_CMD       ?= @echo 'ERROR: Variable $$UNI_IS_LLVM_CMD not set!' ; \
-                          exit 1 ;
-CONSTR_CONV_CMD       ?= @echo 'ERROR: Variable $$CONSTR_CONV_CMD not set!' ; \
-                          exit 1 ;
-DOM_MATCHES_CMD       ?= @echo 'ERROR: Variable $$DOM_MATCHES_CMD not set!' ; \
-                          exit 1 ;
-ILL_MATCHES_CMD       ?= @echo 'ERROR: Variable $$ILL_MATCHES_CMD not set!' ; \
-                          exit 1 ;
+UNI_IS_CMD            ?= @echo 'ERROR: Variable $$UNI_IS_CMD not set!'; \
+                          exit 1;
+UNI_IS_LLVM_CMD       ?= @echo 'ERROR: Variable $$UNI_IS_LLVM_CMD not set!'; \
+                          exit 1;
+CONSTR_CONV_CMD       ?= @echo 'ERROR: Variable $$CONSTR_CONV_CMD not set!'; \
+                          exit 1;
+DOM_MATCHES_CMD       ?= @echo 'ERROR: Variable $$DOM_MATCHES_CMD not set!'; \
+                          exit 1;
+ILL_MATCHES_CMD       ?= @echo 'ERROR: Variable $$ILL_MATCHES_CMD not set!'; \
+                          exit 1;
+REDUN_MATCHES_CMD     ?= @echo 'ERROR: Variable $$REDUN_MATCHES_CMD not set!'; \
+                          exit 1;
 PRUNE_BAD_MATCHES_CMD ?= @echo 'ERROR: Variable $$PRUNE_BAD_MATCHES_CMD' \
-                               'not set!' ; \
-                          exit 1 ;
-SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!' ; \
-                          exit 1 ;
+                               'not set!'; \
+                          exit 1;
+SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!'; \
+                          exit 1;
 ALT_LIMIT             ?= # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
 DISABLE_UPPER_BOUND   ?= 0 # 1 disables use of upper bound
@@ -63,7 +65,7 @@ TARGET                ?=
 LLC_TARGET_FLAGS      ?=
 
 GET_JSON_FIELD        ?= @echo 'ERROR: Variable $$GET_JSON_FIELD' \
-                               'not set!' ; \
+                               'not set!';
 
 
 
@@ -155,13 +157,18 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 %.de.lp.ep.ce.cc.rp.de.rt.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
 
+%.de.lp.ep.ce.cc.rp.de.rt.redun.json: %.ll.model.json
+	$(REDUN_MATCHES_CMD) $< > $@
+
 %.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json: \
         %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
         %.de.lp.ep.ce.cc.rp.de.rt.dom.json \
         %.de.lp.ep.ce.cc.rp.de.rt.ill.json \
+        %.de.lp.ep.ce.cc.rp.de.rt.redun.json \
         %.aimaps.json
 	$(PRUNE_BAD_MATCHES_CMD) -d $*.de.lp.ep.ce.cc.rp.de.rt.dom.json \
 							 -i $*.de.lp.ep.ce.cc.rp.de.rt.ill.json \
+							 -r $*.de.lp.ep.ce.cc.rp.de.rt.redun.json \
 							 -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
 							 -a $*.aimaps.json \
 							 > $@

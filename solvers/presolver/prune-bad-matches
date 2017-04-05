@@ -72,6 +72,11 @@ parser.add_argument( "-i"
                    , metavar="JSON"
                    , help="Illegal matches JSON file"
                    )
+parser.add_argument( "-r"
+                   , dest="redundant"
+                   , metavar="JSON"
+                   , help="Redundant copy matches JSON file"
+                   )
 parser.add_argument( "-a"
                    , dest="aimaps"
                    , metavar="JSON"
@@ -98,6 +103,12 @@ if i_json_file is None:
     sys.exit(1)
 if not os.path.isfile(i_json_file):
     error("JSON file '" + i_json_file +"' not found")
+r_json_file = args.redundant
+if r_json_file is None:
+    sys.stderr.write("No redundant-copy matches JSON file given\n")
+    sys.exit(1)
+if not os.path.isfile(r_json_file):
+    error("JSON file '" + r_json_file +"' not found")
 a_json_file = args.aimaps
 if a_json_file is None:
     sys.stderr.write("No array index mapping JSON file given\n")
@@ -115,12 +126,16 @@ with open(d_json_file, 'r') as file:
 i_json_data = []
 with open(i_json_file, 'r') as file:
     i_json_data = json.load(file)
+r_json_data = []
+with open(r_json_file, 'r') as file:
+    r_json_data = json.load(file)
 a_json_data = []
 with open(a_json_file, 'r') as file:
     a_json_data = json.load(file)
 
 bad_matches_ai = set(d_json_data["dominated-matches-ai"]) | \
-                 set(i_json_data["illegal-matches-ai"])
+                 set(i_json_data["illegal-matches-ai"]) | \
+                 set(r_json_data["redundant-copy-matches-ai"])
 
 # Map match array indices to match IDs
 bad_matches = { a_json_data["array-index-to-match-id-maps"][ai]

@@ -1,0 +1,177 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check arguments
+if len(sys.argv) < 2:
+    sys.stderr.write("No JSON file given\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    sys.stderr.write("Too many arguments\n")
+    sys.exit(1)
+json_file = sys.argv[1]
+if not os.path.isfile(json_file):
+    error("JSON file '" + json_file +"' not found")
+
+# Read JSON file
+json_data = {}
+with open(json_file, 'r') as file:
+    json_data = json.load(file)
+
+# Setup convenience variables
+num_matches = json_data["num-matches"]
+num_data = json_data["fun-num-data"]
+num_operands = json_data["num-operands"]
+
+# Convert lists of operand alternatives into sets
+operand_alt_sets = [[]] * num_operands
+for o in range(num_operands):
+    operand_alt_sets[o] = set(json_data["operand-alternatives"][o])
+
+# Compute set of data defined and set of data used per match
+match_data_defined = [[]] * num_matches
+match_data_used = [[]] * num_matches
+for m in range(num_matches):
+    match_data_defined[m] = [ d for d in range(num_data)
+                                for o in json_data["match-operands-defined"][m]
+                                    if {d} == operand_alt_sets[o]
+                            ]
+    match_data_used[m] = [ d for d in range(num_data)
+                             for o in json_data["match-operands-used"][m]
+                                 if {d} == operand_alt_sets[o]
+                         ]
+
+copy_matches = json_data["match-copy-instrs"]
+null_matches = json_data["match-null-instrs"]
+
+# Compute set of valid locations per datum per match
+match_data_locations = []
+for m in range(num_matches):
+    match_data_locations.append([None] * num_data)
+
+loc_data = json_data["match-valid-value-locs"]
+R = range(len(loc_data))
+for i in range(len(R)):
+    m = loc_data[i][0]
+    o = loc_data[i][1]
+    l = loc_data[i][2]
+    for d in operand_alt_sets[o]:
+        if match_data_locations[m][d] is None:
+            match_data_locations[m][d] = set([l])
+        else:
+            match_data_locations[m][d].add(l)
+
+# Compute set of matches that define a particular datum
+def_matches = [[]] * num_data
+for d in range(num_data):
+    def_matches[d] = { m for m in range(num_matches)
+                             if d in match_data_defined[m]
+                     }
+
+# Compute set of matches that use a particular datum
+use_matches = [[]] * num_data
+for d in range(num_data):
+    use_matches[d] = { m for m in range(num_matches)
+                             if d in match_data_used[m]
+                     }
+
+# For each datum, compute the intersection of the locations of all of its defs
+data_def_locs = [None] * num_data
+for d in range(len(data_def_locs)):
+    first = True
+    for m in def_matches[d]:
+        if m in copy_matches:
+            continue
+        locs = match_data_locations[m][d]
+        if locs is not None:
+            if first:
+                data_def_locs[d] = locs
+                first = False
+            else:
+                data_def_locs[d].intersection(locs)
+
+# For each datum, compute the intersection of the locations of all of its uses
+data_use_locs = [None] * num_data
+for d in range(len(data_use_locs)):
+    first = True
+    for m in use_matches[d]:
+        if m in copy_matches:
+            continue
+        locs = match_data_locations[m][d]
+        if locs is not None:
+            if first:
+                data_use_locs[d] = locs
+                first = False
+            else:
+                data_use_locs[d].intersection(locs)
+
+redundant_matches = set()
+
+# For each non-null copy match, check if there is (full or partial) overlap
+# between the datum it uses and the datum it defines. If there is, then the
+# match is redundant
+for m in copy_matches:
+    if m in null_matches:
+        continue
+    locs1 = data_def_locs[match_data_used[m][0]]
+    locs2 = data_use_locs[match_data_defined[m][0]]
+    if locs1 is not None and locs2 is not None:
+        if len(locs1 & locs2) > 0:
+            redundant_matches.add(m)
+
+# Print JSON
+r_json_data = {}
+r_json_data["redundant-copy-matches-ai"] = list(redundant_matches)
+print json.dumps(r_json_data)

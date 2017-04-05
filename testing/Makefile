@@ -47,6 +47,7 @@ UNI_TARGEN_CMD        := uni-targen
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
+REDUN_MATCHES_CMD     := ../solvers/presolver/find-redundant-copy-matches
 PRUNE_BAD_MATCHES_CMD := ../solvers/presolver/prune-bad-matches
 GET_JSON_FIELD        := ../tools/get-json-field
 SOLVER_CMD            := ../solvers/minizinc/solver \
