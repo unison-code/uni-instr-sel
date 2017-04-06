@@ -56,23 +56,24 @@ copyExtend :: Function -> Function
 copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
 
 -- | Inserts a copy node along every data-flow edge that involves a use of a
--- value node. This also updates the definition edges to retain the same
--- semantics of the original graph. This means that if there is a definition
--- edge $e$ that involves a value node used by a phi node, then upon copy
--- extension $e$ will be moved to the new value node. Otherwise $e$ will remain
--- on the original value node. Note that definition edges where the target is a
--- value node are not affected.
+-- value node, and the target is not a copy node. This also updates the
+-- definition edges to retain the same semantics of the original graph. This
+-- means that if there is a definition edge $e$ that involves a value node used
+-- by a phi node, then upon copy extension $e$ will be moved to the new value
+-- node. Otherwise $e$ will remain on the original value node. Note that
+-- definition edges where the target is a value node are not affected.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph g =
   let nodes = filter isValueNode (getAllNodes g)
   in foldl insertCopies g nodes
 
 -- | Inserts a new copy and value node along each outgoing data-flow edge from
--- the given value node.
+-- the given value node, where the target is not a copy node.
 insertCopies :: Graph -> Node -> Graph
 insertCopies g0 n =
-  let old_edges = getDtFlowOutEdges g0 n
-      g1 = foldl insertCopyAlongEdge g0 old_edges
+  let es = filter (not . isCopyNode . getTargetNode g0) $
+           getDtFlowOutEdges g0 n
+      g1 = foldl insertCopyAlongEdge g0 es
   in g1
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
