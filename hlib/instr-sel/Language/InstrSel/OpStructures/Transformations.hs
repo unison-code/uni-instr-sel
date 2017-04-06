@@ -40,10 +40,10 @@ import Data.Maybe
   ( isJust
   , fromJust
   )
-
 import Data.List
   ( intersect
   , nub
+  , nubBy
   )
 
 
@@ -68,7 +68,7 @@ canonicalizeCopies os =
                   , originOfValue = []
                   }
       mkCompNode op = ComputationNode { compOp = CompArithOp op }
-      mkPat op c_val swap_ops =
+      mkPat op c_val =
         mkGraph ( map Node $
                   [ ( 0, NodeLabel 0 (mkCompNode op) )
                   , ( 1, NodeLabel 1 mkTempValueNode )
@@ -77,39 +77,50 @@ canonicalizeCopies os =
                   ]
                 )
                 ( map Edge $
-                  ( [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 ) ]
-                    ++
-                    if not swap_ops
-                    then [ ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
-                         , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
-                         ]
-                    else [ ( 1, 0, EdgeLabel DataFlowEdge 0 1 )
-                         , ( 2, 0, EdgeLabel DataFlowEdge 0 0 )
-                         ]
+                  ( [ ( 0, 3, EdgeLabel DataFlowEdge 0 0 )
+                    , ( 1, 0, EdgeLabel DataFlowEdge 0 0 )
+                    , ( 2, 0, EdgeLabel DataFlowEdge 0 1 )
+                    ]
                   )
                 )
                 Nothing
-      cp_patterns = concatMap (\(op, c) -> [mkPat op c False, mkPat op c True])
-                              [ (IntOp Add,  0)
-                              , (IntOp Mul,  1)
-                              , (IntOp  Or,  0)
-                              , (IntOp And, -1)
-                              ]
+      cp_patterns = map (\(op, c) -> mkPat op c)
+                        [ (IntOp Add,  0)
+                        , (IntOp Mul,  1)
+                        , (IntOp  Or,  0)
+                        , (IntOp And, -1)
+                        ]
       fg = osGraph os
-      matches = concatMap (findMatches fg) cp_patterns
+      matches = nubBy ( \m1 m2 ->
+                        let p1_ns = map pNode $ fromMatch m1
+                            p2_ns = map pNode $ fromMatch m2
+                            comp_pn1 = head $ filter isComputationNode p1_ns
+                            comp_pn2 = head $ filter isComputationNode p2_ns
+                            comp_fn1 = head $ findFNInMatch m1 comp_pn1
+                            comp_fn2 = head $ findFNInMatch m2 comp_pn2
+                        in comp_fn1 == comp_fn2
+                      ) $
+                -- If both input arguments are constants, then the same match
+                -- will be found twice
+                concatMap (findMatches fg) cp_patterns
       process m os' =
         let g0 = osGraph os'
-            f_ns = map fNode $ fromMatch m
-            comp_n = head $ filter isComputationNode f_ns
-            const_n = head $ filter isValueNodeWithConstValue f_ns
-            -- There is only one value node with constant value in each pattern,
-            -- so we expected there to be exactly one such node in the
-            -- match. Same goes for the computation node
-            g1 = foldr delEdge g0 $ getEdgesBetween g0 const_n comp_n
-            g2 = updateNodeType CopyNode comp_n g1
-            dt_es = getDtFlowOutEdges g2 const_n
-            g3 = if length dt_es == 0 then delNode const_n g2 else g2
-        in os' { osGraph = g3 }
+            p_ns = map pNode $ fromMatch m
+            comp_pn = head $ filter isComputationNode p_ns
+            const_pn = head $ filter isValueNodeWithConstValue p_ns
+            comp_fn = head $ findFNInMatch m comp_pn
+            const_fn = head $ findFNInMatch m const_pn
+            temp_fn = head $
+                      filter (/= const_fn) $
+                      getPredecessors g0 comp_fn
+            es = getDtFlowInEdges g0 comp_fn
+            g1 = foldr delEdge g0 es
+            (g2, _) = addNewDtFlowEdge (temp_fn, comp_fn) g1
+            g3 = updateNodeType CopyNode comp_fn g2
+            g4 = if length (getEdges g3 const_fn) == 0
+                 then delNode const_fn g3
+                 else g3
+        in os' { osGraph = g4 }
   in foldr process os matches
 
 -- | Lowers pointer value nodes into corresponding integer values. Computation
