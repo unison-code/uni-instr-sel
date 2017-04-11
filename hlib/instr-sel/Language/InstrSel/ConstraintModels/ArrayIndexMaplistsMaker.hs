@@ -60,12 +60,19 @@ mkArrayIndexMaplists function tm model =
       b_nodes = sortBy compareBlocks $
                 filter isBlockNode nodes
       -- For the same reason, we sort the match parameters in increasing order
-      -- of latency. In addition, if the latencies are equal and one of them is
-      -- a kill match, then the kill match comes first.
+      -- of latency (if there is a tie, higher priority is given to the match
+      -- covering the most matches). In addition, if the latencies are equal and
+      -- one of them is a kill match, then the kill match comes first.
       compareMatches m1 m2
         | hlMatchIsKillInstruction m1 = LT
         | hlMatchIsKillInstruction m2 = GT
-        | otherwise = compare (hlMatchLatency m1) (hlMatchLatency m2)
+        | otherwise = let l1 = hlMatchLatency m1
+                          l2 = hlMatchLatency m2
+                          numops1 = length $ hlMatchOperationsCovered m1
+                          numops2 = length $ hlMatchOperationsCovered m2
+                      in if l1 /= l2
+                         then compare l1 l2
+                         else compare (negate numops1) (negate numops2)
       match_params = sortBy compareMatches $
                      hlMatchParams model
       match_ids = map hlMatchID match_params
