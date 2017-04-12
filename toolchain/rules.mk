@@ -63,6 +63,7 @@ DISABLE_UPPER_BOUND   ?= 0 # 1 disables use of upper bound
 FALL_BACK_TO_LLVM     ?= 0 # 1 enables use of LLVM to always provide a solution
 TARGET                ?=
 LLC_TARGET_FLAGS      ?=
+LLC_MORE_ISEL_FLAGS   ?=
 
 GET_JSON_FIELD        ?= @echo 'ERROR: Variable $$GET_JSON_FIELD' \
                                'not set!';
@@ -79,8 +80,9 @@ LCLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLiftConstExprs.so
 LSLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerSelect.so
 LGLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerGetElementPtr.so
 AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
-LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
-
+LLC_ISEL_FLAGS      = -O0 $(LLC_TARGET_FLAGS) $(LLC_ISEL_MORE_FLAGS) \
+					  -fast-isel=false
+LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 
 
 #=================
@@ -98,7 +100,8 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
 %.llvm.json: %.low.freq.ll
-	$(LLC) $(LLC_ISEL_FLAGS) -print-isel-cost $< -o /dev/null > $@ 2> /dev/null
+	$(LLC) $(LLC_DUMP_ISEL_FLAGS) -print-isel-cost \
+		   $< -o /dev/null > $@ 2> /dev/null
 
 %.ub.json: %.llvm.json
 	if [ $(DISABLE_UPPER_BOUND) -eq 0 ]; then \
@@ -230,6 +233,6 @@ LLC_ISEL_FLAGS := -O0 $(LLC_TARGET_FLAGS) -fast-isel=false
 					  -s $*.presolved.hl.sol.json \
 					  -o $@; \
 	else \
-		$(LLC) $(LLC_ISEL_FLAGS) -dump-isel-w-costs -disable-combiner \
-			$*.low.freq.ll -o /dev/null > $@; \
+		$(LLC) $(LLC_DUMP_ISEL_FLAGS) -dump-isel-w-costs -disable-combiner \
+			   $*.low.freq.ll -o /dev/null > $@; \
 	fi

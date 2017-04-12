@@ -79,6 +79,11 @@ LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5 \
                     -hexagon-eif=false \
                     -disable-hsdr \
                     -disable-hexagon-peephole
+LLC_ISEL_MORE_FLAGS := -hexagon-commgep=false \
+					   -hexagon-extract=false \
+					   -hexagon-loop-resched=false \
+					   -hexagon-eif=false \
+					   -disable-hsdr
 
 REGRESSION_TESTS_DIR := ./regression
 
