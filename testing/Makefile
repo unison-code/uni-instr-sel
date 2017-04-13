@@ -60,10 +60,11 @@ FALL_BACK_TO_LLVM     := 0
 
 NUM_THREADS           := 4
 
-TARGET := hexagon5
 # Mips32
+# TARGET := mips32
 # LLC_TARGET_FLAGS := -march=mips
 # Hexagon5
+TARGET := hexagon5
 LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5 \
                     -disable-ifcvt-diamond \
                     -disable-ifcvt-simple \
