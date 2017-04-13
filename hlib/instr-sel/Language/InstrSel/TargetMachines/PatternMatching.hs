@@ -292,10 +292,9 @@ removeMatchesWithCyclicDataDeps fg pms =
 -- is reachable from any other component. If so, then the match has a cyclic
 -- dependency. However, components that are only reachable via an input node to
 -- the pattern is not considered a dependency. Due to this, such data nodes are
--- removed prior to extracting the components. Also, state-flow edges should not
--- be included when checking dependencies.
---
--- TODO: should PHI operations not covered by @m@ be removed from @ssa_fg@?
+-- removed prior to extracting the components. Also, phi nodes not covered by
+-- the match as well as any state-flow edges should not be included when
+-- checking dependencies.
 hasMatchCyclicDataDep
   :: Graph
      -- ^ The corresponding SSA graph of the function graph.
