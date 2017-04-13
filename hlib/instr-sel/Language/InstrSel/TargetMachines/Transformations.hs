@@ -115,7 +115,7 @@ insertCopyAlongEdge g0 df_edge =
                                  getAllNodes g1
                        fst_chr = head $ head old_d_origin
                        prefix = if length old_d_origin > 0
-                                then if fst_chr /= '%' then "%" else ""
+                                then (if fst_chr /= '%' then "%" else "")
                                      ++ head old_d_origin ++ ".copy."
                                 else "%copy."
                    in head $
