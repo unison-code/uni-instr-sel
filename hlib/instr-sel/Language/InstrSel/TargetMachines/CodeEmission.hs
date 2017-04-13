@@ -48,7 +48,8 @@ data AssemblyCode
                      -- ^ The assembly string.
                    , asmOutput :: [String]
                      -- ^ The output values produced by this instruction.
-                   , asmLatency :: Integer
+                   , asmLatency :: String
+                     -- ^ The latency value.
                    }
   deriving (Show)
 
@@ -394,7 +395,7 @@ emitInstructionsOfMatch model sol tm st0 mid =
                        then let lat = hlMatchLatency match
                                 code = emittedCode st5
                                 instr = head code
-                                new_instr = instr { asmLatency = lat }
+                                new_instr = instr { asmLatency = show lat }
                             in st5 { emittedCode = (new_instr:tail code) }
                        else st5
              in st6
@@ -561,7 +562,7 @@ mkEmptyAsmInstr =
   AsmInstruction { asmInput = []
                  , asmString = ""
                  , asmOutput = []
-                 , asmLatency = 0
+                 , asmLatency = ""
                  }
 
 -- | Appends a given string to a given 'AsmInstruction'.
