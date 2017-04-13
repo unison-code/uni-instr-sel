@@ -498,6 +498,9 @@ pattern.dot:
 # MISC TARGETS
 #==============
 
+%.get-cost:
+	$(GET_JSON_FIELD) $*.presolved.hl.sol.json cost
+
 %.run-checks:
 	@echo "$(C_INFO)* CHECKING INTEGRITY$(C_NONE)"
 	@for f in $*.f.json \
@@ -687,11 +690,13 @@ FUN_PLOTS_TARGETS  := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
 FUN_MDUMP_TARGETS  := $(addsuffix .model.dump, $(FUN_NAMES))
 FUN_SDUMP_TARGETS := $(addsuffix .sol.dump, $(FUN_NAMES))
 FUN_CHECK_TARGETS  := $(addsuffix .run-checks, $(FUN_NAMES))
+FUN_GET_COST_TARGETS  := $(addsuffix .get-cost, $(FUN_NAMES))
 FUN_BUGPOINT_TARGETS := $(addsuffix .run-bugpoint, $(FUN_NAMES))
 
 $(FUN_ASM_TARGETS):
 $(FUN_PLOTS_TARGETS):
 $(FUN_MDUMP_TARGETS):
 $(FUN_SDUMP_TARGETS):
+$(FUN_GET_COST_TARGETS):
 $(FUN_CHECK_TARGETS):
 $(FUN_BUGPOINT_TARGETS):
