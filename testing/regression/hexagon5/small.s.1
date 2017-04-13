@@ -1,11 +1,10 @@
  16  entry:
   1    [%add] <- "%add = add(%a, %a)" <- [%a, %a]
-  1    [%cmp] <- "%cmp = cmp.eq(%add, 10)" <- [%add]
-  1    [] <- "if (%cmp) jump if.then" <- [%cmp]
-  8  if.end:
-  1    [] <- "jump return" <- []
+  1    [%cmp] <- "%cmp = cmp.eq(%add, ##10)" <- [%add]
+  1    [] <- "if (!%cmp) jump if.end" <- [%cmp]
   8  if.then:
-  1    [%const.10.copy.2] <- "%const.10.copy.2 = ##10" <- []
+  1    [%10.copy.2] <- "%10.copy.2 = ##10" <- []
+  8  if.end:
  16  return:
-  0    [%retval.0] <- "PHI (%add, entry) (%const.10.copy.2, if.then)" <- [%add, %const.10.copy.2]
+  0    [%retval.0] <- "PHI (%add, entry) (%10.copy.2, if.then)" <- [%add, %10.copy.2]
   1    [] <- "return %retval.0" <- [%retval.0]

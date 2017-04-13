@@ -1,5 +1,5 @@
   8  entry:
   1    [%0] <- "%0 = memw(%a)" <- [%a]
   1    [%add] <- "%add = add(%0, #1)" <- [%0]
-  1    [] <- "memb(%a) = %add" <- [%add, %a]
+  1    [] <- "memw(%a) = %add" <- [%add, %a]
   1    [] <- "return %add" <- [%add]

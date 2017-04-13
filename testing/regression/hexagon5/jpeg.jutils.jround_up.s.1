@@ -1,7 +1,7 @@
   8  0:
   1    [%2] <- "%b += add(%a, #-1)" <- [%b, %a]
-  0    [] <- "ADJCALLSTACKDOWN" <- [%b, %2]
-  0    [] <- "%3 = __hexagon_modsi(%2, %b)" <- []
+       [] <- "ADJCALLSTACKDOWN" <- [%b, %2]
+       [] <- "%3 = __hexagon_modsi(%2, %b)" <- []
   3    [%3] <- "ADJCALLSTACKDOWN" <- []
   1    [%4] <- "%4 = sub(%2, %3)" <- [%2, %3]
   1    [] <- "return %4" <- [%4]

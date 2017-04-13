@@ -1,6 +1,7 @@
  16  0:
   1    [] <- "memb(%cinfo + #4) = #0" <- [%cinfo]
-  1    [%2] <- "%2 = cmp.eq(%version, 61)" <- [%version]
+  1    [%2] <- "%2 = cmp.eq(%version, ##61)" <- [%version]
+  1    [%13] <- "%13 = cmp.eq(%structsize, ##464)" <- [%structsize]
   1    [] <- "if (%2) jump 12" <- [%2]
   8  3:
   1    [%5] <- "%5 = memw(%cinfo)" <- [%cinfo]
@@ -10,27 +11,23 @@
   1    [%10] <- "%10 = memw(%5)" <- [%5]
   1    [] <- "call %10" <- [%cinfo, %10]
  16  12:
-  1    [%const.464.copy.1] <- "%const.464.copy.1 = ##464" <- []
-  1    [%const.200.copy.1] <- "%const.200.copy.1 = ##200" <- []
-  1    [%13] <- "%13 = cmp.eq(%structsize, %const.464.copy.1)" <- [%structsize, %const.464.copy.1]
-  1    [] <- "if (!%13) jump 14" <- [%13]
-  8  ..preheader.preheader_crit_edge:
-  1    [] <- "jump .preheader.preheader" <- []
+  1    [] <- "if (%13) jump ..preheader.preheader_crit_edge" <- [%13]
   8  14:
   1    [%16] <- "%16 = memw(%cinfo)" <- [%cinfo]
   1    [] <- "memb(%16 + #20) = #19" <- [%16]
-  1    [] <- "memw(%16 + #24) = %const.464.copy.1" <- [%const.464.copy.1, %16]
+  1    [] <- "memb(%16 + #24) = #464" <- [%16]
   1    [] <- "memw(%16 + #28) = %structsize" <- [%structsize, %16]
   1    [%21] <- "%21 = memw(%16)" <- [%16]
   1    [] <- "call %21" <- [%cinfo, %21]
+  8  ..preheader.preheader_crit_edge:
  16  .preheader.preheader:
   1    [%24] <- "%24 = memw(%cinfo)" <- [%cinfo]
-  1    [] <- "memb(%cinfo) = %24" <- [%24, %cinfo]
+  1    [] <- "memw(%cinfo) = %24" <- [%24, %cinfo]
   1    [] <- "memb(%cinfo + #12) = #1" <- [%cinfo]
   1    [] <- "call jinit_memory_mgr" <- [%cinfo]
   1    [] <- "memb(%cinfo + #8) = #0" <- [%cinfo]
   1    [] <- "memb(%cinfo + #20) = #0" <- [%cinfo]
   1    [] <- "call jinit_marker_reader" <- [%cinfo]
   1    [] <- "call jinit_input_controller" <- [%cinfo]
-  1    [] <- "memw(%cinfo + #16) = %const.200.copy.1" <- [%const.200.copy.1, %cinfo]
+  1    [] <- "memb(%cinfo + #16) = #200" <- [%cinfo]
   1    [] <- "return" <- []

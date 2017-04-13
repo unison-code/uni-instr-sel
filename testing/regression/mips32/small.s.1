@@ -1,11 +1,11 @@
  16  entry:
+  1    [%10.copy.2] <- "ADDiu %10.copy.2, $0, 10" <- []
   1    [%add] <- "ADDU $%add, $%a, $%a" <- [%a, %a]
-  1    [%const.10.copy.2] <- "ADDiu %const.10.copy.2, $0, 10" <- []
-  1    [] <- "BEQ $%add, $%const.10.copy.2, if.then" <- [%add, %const.10.copy.2]
+  1    [] <- "BEQ $%add, $%10.copy.2, if.then" <- [%add, %10.copy.2]
   8  if.end:
   1    [] <- "B return" <- []
   8  if.then:
-  1    [%const.10.copy.1] <- "ADDiu %const.10.copy.1, $0, 10" <- []
+  1    [%10.copy.1] <- "ADDiu %10.copy.1, $0, 10" <- []
  16  return:
-  0    [%retval.0] <- "PHI (%add, entry) (%const.10.copy.1, if.then)" <- [%add, %const.10.copy.1]
+  0    [%retval.0] <- "PHI (%add, entry) (%10.copy.1, if.then)" <- [%add, %10.copy.1]
   0    [] <- "RetRA %retval.0" <- [%retval.0]

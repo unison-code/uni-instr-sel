@@ -1,5 +1,5 @@
   8  entry:
-  1    [%const.1.copy.1] <- "ADDiu %const.1.copy.1, $0, 1" <- []
+  1    [%1.copy.1] <- "ADDiu %1.copy.1, $0, 1" <- []
   1    [] <- "B for.cond" <- []
 248  for.body:
  17    [%mul] <- "MUL $%mul, $%res.0, $%n.addr.0" <- [%res.0, %n.addr.0]
@@ -8,6 +8,6 @@
 256  for.cond:
   0    [%res.0] <- "PHI (%n, entry) (%mul, for.body)" <- [%n, %mul]
   0    [%n.addr.0] <- "PHI (%n, entry) (%dec, for.body)" <- [%n, %dec]
-  1    [] <- "BGT $%n.addr.0, $%const.1.copy.1, for.body" <- [%n.addr.0, %const.1.copy.1]
+  1    [] <- "BGT $%n.addr.0, $%1.copy.1, for.body" <- [%n.addr.0, %1.copy.1]
   8  for.end:
   0    [] <- "RetRA %res.0" <- [%res.0]
