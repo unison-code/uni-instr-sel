@@ -306,7 +306,12 @@ hasMatchCyclicDataDep ssa_fg m =
       sub_fg = removeInputNodes $
                subGraph ssa_fg f_ns
       mcs = weakComponentsOf sub_fg
-      cdd = or [ isReachableComponent (removeStateFlowEdges ssa_fg) c1 c2
+      noncov_phi_ns = filter (null . findPNInMatch m) $
+                      filter isPhiNode $
+                      getAllNodes ssa_fg
+      ssa_fg_to_query = removeStateFlowEdges $
+                        foldr delNode ssa_fg noncov_phi_ns
+      cdd = or [ isReachableComponent ssa_fg_to_query c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
   in cdd
