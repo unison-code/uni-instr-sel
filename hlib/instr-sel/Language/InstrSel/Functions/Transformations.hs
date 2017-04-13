@@ -125,8 +125,10 @@ insertCopyAlongEdge g0 df_edge =
       new_origin = let origins = concatMap getOriginOfValueNode $
                                  filter isValueNodeWithOrigin $
                                  getAllNodes g1
+                       fst_chr = head $ head old_d_origin
                        prefix = if length old_d_origin > 0
-                                then "%" ++ head old_d_origin ++ ".copy."
+                                then if fst_chr /= '%' then "%" else ""
+                                     ++ head old_d_origin ++ ".copy."
                                 else "%copy."
                    in head $ dropWhile (`elem` origins)
                                        ( map (\i -> prefix ++ show i)
