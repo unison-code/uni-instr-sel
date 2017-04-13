@@ -52,43 +52,51 @@ import Data.Maybe
 copyExtend :: TargetMachine -> TargetMachine
 copyExtend tm =
   let copyExtendOS os = os { osGraph = copyExtendGraph $ osGraph os }
-      copyExtendInstr i =
-        let is_copy = isInstructionCopy i
-        in if not is_copy
-           then i { instrOS = copyExtendOS $ instrOS i }
-           else i
+      copyExtendInstr i = i { instrOS = copyExtendOS $ instrOS i }
       new_instrs = M.map copyExtendInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
--- | Inserts a copy node along every data-flow edge that involves a use of a
--- value node except those edges where the value node has no definition (that
--- is, no parents) unless the value node represents a constant value. This also
--- updates the definition edges to retain the same semantics of the original
--- graph. This means that if there is a definition edge $e$ that involves a
--- value node used by a phi node, then upon copy extension $e$ will be moved to
--- the new value node. Otherwise $e$ will remain on the original value
--- node. Note that definition edges where the target is a value node are not
--- affected.
+-- | For every value node that either has at least one inbound data-flow edge or
+-- represents a constant value, inserts a copy node along every data-flow edge
+-- (except for edges where the target is a copy node or the source already has
+-- already been copy extended). This also updates the definition edges to retain
+-- the same semantics of the original graph. This means that if there is a
+-- definition edge $e$ that involves a value node used by a phi node, then upon
+-- copy extension $e$ will be moved to the new value node. Otherwise $e$ will
+-- remain on the original value node. Note that definition edges where the
+-- target is a value node are not affected.
 copyExtendGraph :: Graph -> Graph
-copyExtendGraph g0 =
-  let es = filter ( \e ->
-                    let src = getSourceNode g0 e
-                    in length (getDtFlowInEdges g0 src) > 0 ||
-                       isValueNodeWithConstValue src ||
-                       length (getDtFlowOutEdges g0 src) > 1
-                  ) $
-           concatMap (getDtFlowOutEdges g0) $
-           filter isValueNode $
-           getAllNodes g0
-  in foldl insertCopy g0 es
+copyExtendGraph g =
+  let nodes = filter ( \n ->
+                       let es = getDtFlowInEdges g n
+                       in if length es > 0
+                          then not $ isCopyNode $ getSourceNode g $ head es
+                          else True
+                     ) $
+              filter ( \n -> length (getDtFlowInEdges g n) > 0 ||
+                             isValueNodeWithConstValue n
+                     ) $
+              filter isValueNode $
+              getAllNodes g
+  in foldl insertCopies g nodes
+
+-- | Inserts a new copy and value node along each outgoing data-flow edge from
+-- the given value node (except for edges where the target is already a copy
+-- node).
+insertCopies :: Graph -> Node -> Graph
+insertCopies g0 n =
+  let es = filter (not . isCopyNode . getTargetNode g0) $
+           getDtFlowOutEdges g0 n
+      g1 = foldl insertCopyAlongEdge g0 es
+  in g1
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
 -- value node is used by a phi node, and there is a definition edge on that
 -- value node, then the definition edge with matching out-edge number will be
 -- moved to the new data node. Note that definition edges where the target is a
 -- value node are not affected.
-insertCopy :: Graph -> Edge -> Graph
-insertCopy g0 df_edge =
+insertCopyAlongEdge :: Graph -> Edge -> Graph
+insertCopyAlongEdge g0 df_edge =
   let old_d_node = getSourceNode g0 df_edge
       old_d_origin = originOfValue $ getNodeType old_d_node
       old_op_n = getTargetNode g0 df_edge
@@ -105,8 +113,10 @@ insertCopy g0 df_edge =
       new_origin = let origins = concatMap getOriginOfValueNode $
                                  filter isValueNodeWithOrigin $
                                  getAllNodes g1
+                       fst_chr = head $ head old_d_origin
                        prefix = if length old_d_origin > 0
-                                then head old_d_origin ++ ".copy."
+                                then if fst_chr /= '%' then "%" else ""
+                                     ++ head old_d_origin ++ ".copy."
                                 else "%copy."
                    in head $
                       dropWhile (`elem` origins) $
