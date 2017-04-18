@@ -58,6 +58,8 @@ import Control.DeepSeq
   , rnf
   )
 
+-- TODO: remove
+import Debug.Trace
 
 
 --------------
@@ -313,7 +315,8 @@ hasMatchCyclicDataDep ssa_fg m =
       cdd = or [ isReachableComponent ssa_fg_to_query c1 c2
                | c1 <- mcs, c2 <- mcs, getAllNodes c1 /= getAllNodes c2
                ]
-  in cdd
+  in trace (show m ) $
+     cdd
 
 -- | For a given function graph and list of matches, computes a relation R(m1,
 -- m2) which holds if two matches m1 and m2 have a cyclic data dependency
