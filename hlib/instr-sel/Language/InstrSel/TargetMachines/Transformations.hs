@@ -56,15 +56,16 @@ copyExtend tm =
       new_instrs = M.map copyExtendInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
--- | For every value node that either has at least one inbound data-flow edge or
--- represents a constant value, inserts a copy node along every data-flow edge
--- (except for edges where the target is a copy node or the source already has
--- already been copy extended). This also updates the definition edges to retain
--- the same semantics of the original graph. This means that if there is a
--- definition edge $e$ that involves a value node used by a phi node, then upon
--- copy extension $e$ will be moved to the new value node. Otherwise $e$ will
--- remain on the original value node. Note that definition edges where the
--- target is a value node are not affected.
+-- | For every value node that either has at least one inbound data-flow edge,
+-- represents a constant value, or has at least two outbound data-flow edges,
+-- insert a copy node along every data-flow edge (except for edges where the
+-- target is a copy node or the source already has already been copy
+-- extended). This also updates the definition edges to retain the same
+-- semantics of the original graph. This means that if there is a definition
+-- edge $e$ that involves a value node used by a phi node, then upon copy
+-- extension $e$ will be moved to the new value node. Otherwise $e$ will remain
+-- on the original value node. Note that definition edges where the target is a
+-- value node are not affected.
 copyExtendGraph :: Graph -> Graph
 copyExtendGraph g =
   let nodes = filter ( \n ->
@@ -74,7 +75,11 @@ copyExtendGraph g =
                           else True
                      ) $
               filter ( \n -> length (getDtFlowInEdges g n) > 0 ||
-                             isValueNodeWithConstValue n
+                             -- To handle input values that are constants
+                             isValueNodeWithConstValue n ||
+                             -- To handle intput values that are used multiple
+                             -- times
+                             length (getDtFlowOutEdges g n) > 1
                      ) $
               filter isValueNode $
               getAllNodes g
