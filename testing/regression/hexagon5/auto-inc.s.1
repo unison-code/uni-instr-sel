@@ -1,0 +1,9 @@
+  8  0:
+255  loop:
+  0    [%.012.prol] <- "PHI (%buf, 0) (%gep, loop)" <- [%buf, %gep]
+  1    [%gep, %1] <- "%1 = memb(%.012.prol ++ #1)" <- [%.012.prol, %.012.prol]
+       [] <- "%tmp.1 = zxtb %1" <- [%1]
+  2    [%cmp] <- "%cmp = cmp.eq(%tmp.1, ##0)" <- []
+  1    [] <- "if (!%cmp) jump loop" <- [%cmp]
+  8  exit:
+  1    [] <- "return %count" <- [%count]

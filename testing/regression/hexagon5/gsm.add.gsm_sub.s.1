@@ -15,5 +15,4 @@
   1    [%phitmp] <- "%phitmp = and(%7, #-32768)" <- [%7]
  32  8:
   0    [%9] <- "PHI (%phitmp, .selectcont) (%-32768.copy.2, 0)" <- [%phitmp, %-32768.copy.2]
-       [] <- "%tmp.1 = zxth(%9)" <- [%9]
-  2    [] <- "return %tmp.1" <- []
+  1    [] <- "return %9" <- [%9]
