@@ -102,7 +102,21 @@ insertCopies g0 n =
 -- value node are not affected.
 insertCopyAlongEdge :: Graph -> Edge -> Graph
 insertCopyAlongEdge g0 df_edge =
-  let old_d_node = getSourceNode g0 df_edge
+  let mkNewDataType d@(IntTempType {}) = d
+      mkNewDataType (IntConstType { intConstNumBits = Just b }) =
+        IntTempType { intTempNumBits = b }
+      mkNewDataType d@(PointerTempType {}) = d
+      mkNewDataType d@(PointerNullType {}) = d
+      mkNewDataType AnyType = AnyType
+      mkNewDataType d = error $ "insertCopyAlongEdge: " ++ show d ++ " not " ++
+                                "supported"
+                        -- This happens if copy extension is attempted before
+                        -- constants have been combined. In many cases, the bit
+                        -- width for a constant is known somewhere in a pattern
+                        -- but not everywhere. By combining all equal constants
+                        -- afterwards, this information is propagated such that
+                        -- no constant has unknown bit width.
+      old_d_node = getSourceNode g0 df_edge
       old_d_origin = originOfValue $ getNodeType old_d_node
       old_op_n = getTargetNode g0 df_edge
       def_edge = if isPhiNode old_op_n
@@ -114,7 +128,7 @@ insertCopyAlongEdge g0 df_edge =
                          def_edges
                  else Nothing
       (g1, new_cp_node) = insertNewNodeAlongEdge CopyNode df_edge g0
-      new_dt = AnyType
+      new_dt = mkNewDataType $ getDataTypeOfValueNode old_d_node
       new_origin = let origins = concatMap getOriginOfValueNode $
                                  filter isValueNodeWithOrigin $
                                  getAllNodes g1
