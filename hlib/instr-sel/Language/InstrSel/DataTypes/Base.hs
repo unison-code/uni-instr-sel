@@ -318,11 +318,17 @@ isTypeAPointer t = isPointerTempType t ||
                    isPointerNullType t ||
                    isPointerConstType t
 
--- | Checks if two data types represent the same constant.
+-- | Checks if two data types represent the same (non-range) constant. Bit
+-- widths, if available, are not taken into consideration.
 areSameConstants :: DataType -> DataType -> Bool
-areSameConstants d1 d2 = isSingletonConstant d1 &&
-                         isSingletonConstant d2 &&
-                         d1 == d2
+areSameConstants d1 d2 =
+  isSingletonConstant d1 &&
+  isSingletonConstant d2 &&
+  d1 `matches` d2
+  where
+  matches (IntConstType {}) (IntConstType {}) =
+    (intConstValue d1) == (intConstValue d2)
+  matches _ _ = False
 
 -- | Checks if a data type represents a constant with a singleton range.
 isSingletonConstant :: DataType -> Bool

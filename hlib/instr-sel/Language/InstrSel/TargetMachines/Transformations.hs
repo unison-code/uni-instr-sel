@@ -177,9 +177,7 @@ combineConstantsInInstruction i =
       haveSameConstants n1 n2 =
         let d1 = getDataTypeOfValueNode n1
             d2 = getDataTypeOfValueNode n2
-        in isSingletonConstant d1 &&
-           isSingletonConstant d2 &&
-           d1 `areSameConstants` d2
+        in d1 `areSameConstants` d2
       grouped_ns = groupBy haveSameConstants const_ns
   in foldl combineValueNodes i grouped_ns
 
