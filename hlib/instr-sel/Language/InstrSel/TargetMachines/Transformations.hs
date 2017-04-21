@@ -340,7 +340,7 @@ insertAlternativeMappings t limit vs pm =
                                  "node with ID " ++ pShow pn_id
         in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
            then let isCandidate n =
-                      let pn_id' = let n' = findFNInMatch match n
+                      let pn_id' = let n' = findPNInMatch match n
                                    in if length n' > 0
                                       then Just $ head n'
                                       else Nothing
@@ -352,7 +352,7 @@ insertAlternativeMappings t limit vs pm =
                                         else error $
                                              "insertAlternativeMappings: " ++
                                              "no pattern node with ID " ++
-                                             pShow pn_id
+                                             pShow pn_id'
                                 else Nothing
                       in isNothing pn' ||
                          not (hasAnyPredecessors g (fromJust pn'))
