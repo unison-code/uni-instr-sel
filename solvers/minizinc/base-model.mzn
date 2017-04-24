@@ -1236,9 +1236,13 @@ predicate knock_out_definers(allDataInFunction: d, set of allLocValues: D) =
 %==================
 
 solve
-  :: % Try the smallest cost for the operation that incurs the largest cost.
-     int_search(opcosts, largest, indomain_min, complete)
-minimize totalcost;
+  :: seq_search(
+       [ % Try the smallest cost for the operation that incurs the largest cost.
+         int_search(opcosts, largest, indomain_min, complete)
+       , % Find a block order.
+         int_search(succ, smallest, indomain_min, complete)
+       ])
+  minimize totalcost;
 
 % oplace, omatch, dmatch are handy for debugging
 output [ "sel=", show(sel), "\n"
