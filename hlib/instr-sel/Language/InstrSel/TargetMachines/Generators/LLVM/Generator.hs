@@ -226,7 +226,7 @@ mkEmitString
      -- ^ An error message or the generated 'TM.EmitStringTemplate'.
 mkEmitString i os str =
   do let ls = splitOn "\n" str
-         ls_parts = map (splitStartingOn "% ,()[]<>{}=!#&/") ls
+         ls_parts = map (splitStartingOn "% .,:()[]<>{}=!#&/") ls
      t_parts <- mapM (mapM mkES) ls_parts
      let merged_t_parts = filter (\l -> l /= []) $
                           map mergeVerbatims t_parts
