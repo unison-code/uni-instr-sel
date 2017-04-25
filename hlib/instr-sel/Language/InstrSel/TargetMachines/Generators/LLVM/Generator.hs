@@ -135,11 +135,15 @@ addOperandConstraints ops all_locs os =
         processOp os' (LLVM.ImmInstrOperand op_name range) =
           do n <- getValueNode os' op_name
              let old_dt = getDataTypeOfValueNode n
-                 -- It is assumed that the value node for an immediate is always
-                 -- a temporary at this point
+                 -- It is assumed that the value node for an immediate is
+                 -- represented as a temporary here
                  new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
                  new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
-             return os' { osGraph = new_g }
+             if D.isIntTempType old_dt
+             then return os' { osGraph = new_g }
+             else Left $ "addOperandConstraints: " ++ op_name ++ " is not " ++
+                         "represented as an IntTempType (was " ++ show old_dt ++
+                         ")"
         processOp os' (LLVM.AbsAddrInstrOperand op_name range) =
           do n <- getValueOrBlockOrCallNode os' op_name
              addAddressConstraints os' n range
@@ -182,12 +186,15 @@ addOperandConstraints ops all_locs os =
                               "'" ++ name ++ "'"
         addAddressConstraints os' n range
           | isValueNode n =
-              -- It is assumed that the value node for an immediate is always a
-              -- temporary at this point
+              -- It is assumed that the value node for an immediate is
+              -- represented as a temporary at this point
               let old_dt = getDataTypeOfValueNode n
                   new_dt = D.IntConstType range (Just $ D.intTempNumBits old_dt)
                   new_g = updateDataTypeOfValueNode new_dt n (osGraph os')
-              in return os' { osGraph = new_g }
+              in if D.isIntTempType old_dt
+                 then return os' { osGraph = new_g }
+                 else Left $ "addOperandConstraints: expected data type of " ++
+                             show n ++ " to be a IntTempType"
           | isBlockNode n =
               -- TODO: implement
               return os'
