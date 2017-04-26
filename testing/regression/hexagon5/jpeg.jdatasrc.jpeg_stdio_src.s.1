@@ -18,12 +18,12 @@
  13  ._crit_edge:
  21  15:
   0    [%16] <- "PHI (%1, 0) (%.pre, 4)" <- [%1, %.pre]
-  1    [] <- "memb(%16 + #8) = #@init_source" <- [%16]
-  1    [] <- "memb(%16 + #12) = #@fill_input_buffer" <- [%16]
-  1    [] <- "memb(%16 + #16) = #@skip_input_data" <- [%16]
-  1    [] <- "memb(%16 + #20) = #@jpeg_resync_to_restart" <- [%16]
-  1    [] <- "memb(%16 + #24) = #@term_source" <- [%16]
+  1    [] <- "memw(%16 + #8) = #@init_source" <- [%16]
+  1    [] <- "memw(%16 + #12) = #@fill_input_buffer" <- [%16]
+  1    [] <- "memw(%16 + #16) = #@skip_input_data" <- [%16]
+  1    [] <- "memw(%16 + #20) = #@jpeg_resync_to_restart" <- [%16]
+  1    [] <- "memw(%16 + #24) = #@term_source" <- [%16]
   1    [] <- "memw(%16 + #28) = %infile" <- [%infile, %16]
-  1    [] <- "memb(%16 + #4) = #0" <- [%16]
+  1    [] <- "memw(%16 + #4) = #0" <- [%16]
   1    [] <- "memw(%16) = %null.copy.2" <- [%null.copy.2, %16]
   1    [] <- "return" <- []
