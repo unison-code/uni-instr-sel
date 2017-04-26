@@ -103,4 +103,4 @@ isInstructionCondBranchWithFallthrough :: Instruction -> Bool
 isInstructionCondBranchWithFallthrough i =
   let os = instrOS i
       cs = osConstraints os
-  in length (filter isFallThroughConstraint cs) > 0
+  in isInstructionCondBranch i && length (filter isFallThroughConstraint cs) > 0
