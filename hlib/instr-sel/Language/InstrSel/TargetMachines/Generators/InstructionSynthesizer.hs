@@ -25,12 +25,14 @@ import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.TargetMachines.Generators.GenericInstructions
   ( reassignInstrIDs )
 import Language.InstrSel.TargetMachines.Generators.PatternAnalysis
-  ( isInstructionUncondBranch
+  ( isInstructionCondBranch
   , isInstructionCondBranchWithFallthrough
+  , isInstructionUncondBranch
   )
 
 import Data.Maybe
-  ( fromJust
+  ( catMaybes
+  , fromJust
   , isJust
   )
 
@@ -143,8 +145,8 @@ convertFallthroughToBranch br_instr cond_br_instr =
 
 -- | From a given target machine, constructs a new target machine that contains
 -- synthesized branch instructions that can jump back to the current block.
--- These are synthesized using the conditional branch instructions already in
--- the target machine.
+-- These are synthesized using the branch instructions already in the target
+-- machine.
 addEntryTargetBranchInstructions :: TargetMachine -> Either String TargetMachine
 addEntryTargetBranchInstructions tm =
   do let is = getAllInstructions tm
@@ -152,10 +154,9 @@ addEntryTargetBranchInstructions tm =
      let new_is = reassignInstrIDs 0 (is ++ entry_br_is)
      return $ replaceAllInstructions new_is tm
 
--- | From a given list of instructions, constructs new conditional branch
--- instructions that can jump back to the current block. These are synthesized
--- using the conditional branch instructions already in the list of
--- instructions.
+-- | From a given list of instructions, constructs new branch instructions that
+-- can jump back to the current block. These are synthesized using the branch
+-- instructions already in the list of instructions.
 mkEntryTargetBranchInstructions
   :: [Instruction]
      -- ^ List of existing instructions.
@@ -163,13 +164,16 @@ mkEntryTargetBranchInstructions
      -- ^ The synthesized instructions if successful, otherwise an error
      -- message.
 mkEntryTargetBranchInstructions is =
-  do let cbr_instrs = filter isInstructionCondBranchWithFallthrough is
-     entry_cbr_instrs <- mapM redirectTargetBlockToEntry cbr_instrs
-     return $ concat entry_cbr_instrs
+  do let br_instrs = filter ( \i -> isInstructionUncondBranch i ||
+                                    isInstructionCondBranch i
+                            ) $
+                     is
+     new_br_instrs <- mapM redirectTargetBlockToEntry br_instrs
+     return $ concat new_br_instrs
 
 redirectTargetBlockToEntry
   :: Instruction
-     -- ^ The conditional branch instruction with fall-through to convert.
+     -- ^ The branch instruction from which to synthesize new instructions.
   -> Either String [Instruction]
      -- ^ The set of new instructions if successful, otherwise an error message.
 redirectTargetBlockToEntry i =
@@ -183,11 +187,12 @@ redirectTargetBlockToEntry i =
                    ( BlockOfBlockNodeExpr
                      ( ANodeIDExpr n )
                    )
-                 ) = Right n
-         getNode _ = Left $ error_head ++
-                            "Unexpected fall-through constraint " ++
-                            "structure"
-     ft_b_nodes <- mapM getNode ft_cs
+                 ) = Right $ Just n
+         getNode (FallThroughFromMatchToBlockConstraint _) =
+           Left $ error_head ++ "Unexpected fall-through constraint structure"
+         getNode _ = Right $ Nothing
+     ft_b_nodes_in_cs <- mapM getNode ft_cs
+     let ft_b_nodes = catMaybes ft_b_nodes_in_cs
      entry_b <- if isJust (entryBlockNode g)
                 then Right $ fromJust $ entryBlockNode g
                 else Left $ error_head ++ "Has no entry block node"

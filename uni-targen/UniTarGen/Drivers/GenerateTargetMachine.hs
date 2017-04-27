@@ -189,16 +189,16 @@ generateTM err_id md =
      let tm0 = fromRight $
                generateTargetMachine $
                md { mdInstructions = okay_instrs }
-     tm1 <- do let res = addEntryTargetBranchInstructions tm0
-               when (isLeft res) $
-                 reportError $ "--- WARNING: Failed to synthesize " ++
-                               "entry-target branch instructions:\n" ++
-                               fromLeft res
-               return $ if isRight res then fromRight res else tm0
-     tm2 <- do let res = addDualTargetBranchInstructions tm1
+     tm1 <- do let res = addDualTargetBranchInstructions tm0
                when (isLeft res) $
                  reportError $ "--- WARNING: Failed to synthesize " ++
                                "dual-target branch instructions:\n" ++
+                               fromLeft res
+               return $ if isRight res then fromRight res else tm0
+     tm2 <- do let res = addEntryTargetBranchInstructions tm1
+               when (isLeft res) $
+                 reportError $ "--- WARNING: Failed to synthesize " ++
+                               "entry-target branch instructions:\n" ++
                                fromLeft res
                return $ if isRight res then fromRight res else tm1
      return $ (next_err_id, tm2)

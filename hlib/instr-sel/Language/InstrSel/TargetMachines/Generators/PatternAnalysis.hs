@@ -85,8 +85,9 @@ isInstructionUncondBranch i =
       op_nodes = filter isOperationNode $ getAllNodes g
   in length op_nodes == 1 && isBrControlNode (head op_nodes)
 
--- ^ Checks whether the instruction's pattern graph contains exactly one
--- conditional branch.
+-- ^ Checks whether the instruction's pattern graph contains any control
+-- operations, and if so, these must consist of exactly one conditional branch
+-- with at least one exit block.
 isInstructionCondBranch :: Instruction -> Bool
 isInstructionCondBranch i =
   let os = instrOS i
@@ -95,7 +96,7 @@ isInstructionCondBranch i =
         let bs = getSuccessors g n
         in all (\b -> null $ getCtrlFlowOutEdges g b) bs
       ctrl_nodes = filter isCondBrControlNode $ getAllNodes g
-  in length ctrl_nodes > 0 && any pointsAtExits ctrl_nodes
+  in length ctrl_nodes == 1 && any pointsAtExits ctrl_nodes
 
 -- ^ Checks whether the instruction's pattern graph contains exactly one
 -- conditional branch with fall-through constraint.
