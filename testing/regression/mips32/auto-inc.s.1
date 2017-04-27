@@ -1,0 +1,10 @@
+  8  0:
+255  loop:
+  0    [%.012.prol] <- "PHI (%buf, 0) (%gep, loop)" <- [%buf, %gep]
+  1    [%1] <- "LW %1, 0(%.012.prol)" <- [%.012.prol]
+  1    [%gep] <- "ADDI $%gep, $%.012.prol, 1" <- [%.012.prol]
+       [] <- "BEQ $%1, $r0, exit" <- [%1, %0.copy.1]
+  2    [] <- "B loop" <- []
+  8  exit:
+       [] <- "SEH %tmp.1, %count" <- [%count]
+  0    [] <- "RetRA %tmp.1" <- []
