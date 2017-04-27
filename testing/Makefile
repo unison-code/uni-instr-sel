@@ -425,10 +425,10 @@ update-all-regression-tests: DISABLE_UPPER_BOUND := 1
 update-all-regression-tests:
 	cp $(REG_TEST_CASES_LL_PATHS) .
 	for t in mips32 hexagon5; do \
-		$(MAKE) clean; \
+		$(MAKE) clean && \
 		$(MAKE) SOLVER_TIME_LIMIT=$(SOLVER_TIME_LIMIT) \
 				DISABLE_UPPER_BOUND=$(DISABLE_UPPER_BOUND) \
-				TARGET=$$t -j $(NUM_THREADS) $(REG_TEST_CASES_S); \
+				TARGET=$$t -j $(NUM_THREADS) $(REG_TEST_CASES_S) && \
 		for f in $(REG_TEST_CASES); do \
 			cp $$f.s regression/$$t/$$f.s.1 && \
 			$(GET_JSON_FIELD) $$f.presolved.hl.sol.json cost \
