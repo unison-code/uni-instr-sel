@@ -66,7 +66,7 @@ def error(msg):
 #      at least as strong,
 #      and
 #    - both matches have exactly the same auxiliary constraints (TODO: relax?).
-def matchesDominatedBy(json, m1):
+def matchesDominatedBy(json, m1, dominable_matches):
     def IsLocDomainAtLeastAsStrong(json, m2):
         O = json["operand-alternatives"]
 
@@ -115,21 +115,9 @@ def matchesDominatedBy(json, m1):
         ln2 = [ sorted(O[o]) for o in lo2 ]
         return ln1 == ln2
 
-    excl_matches = \
-      ( set(json["match-null-instrs"])
-        | set([ int(t[0]) for t in json["match-same-value-locs"] ])
-        | set([ int(t[0]) for t in json["match-fall-through-block"] ])
-      )
-
-    # Check if m1 is eligible as a dominator
-    if m1 in excl_matches:
-        return []
-
     # Check all eligable matches
     dom_matches = []
-    for m2 in [ m for m in range(json["num-matches"])
-                      if m != m1 and m not in excl_matches
-              ]:
+    for m2 in [m for m in dominable_matches if m != m1]:
         if ( ( json["match-latencies"][m1] < json["match-latencies"][m2]
                or
                ( json["match-latencies"][m1] == json["match-latencies"][m2]
@@ -190,9 +178,20 @@ json_data = {}
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
+# Gather matches eligable for domination
+excl_matches = \
+  ( set(json_data["match-null-instrs"])
+    | set([ int(t[0]) for t in json_data["match-same-value-locs"] ])
+    | set([ int(t[0]) for t in json_data["match-fall-through-block"] ])
+  )
+dominator_candidates = [ m for m in range(json_data["num-matches"])
+                                    if m not in excl_matches
+                       ]
+dominable_matches = dominator_candidates
+
 # Computed dominated matches
-dominated_match_sublists = [ matchesDominatedBy(json_data, m)
-                             for m in range(json_data["num-matches"])
+dominated_match_sublists = [ matchesDominatedBy(json_data, m, dominable_matches)
+                             for m in dominator_candidates
                            ]
 dominated_match_set = set([ m for ms in dominated_match_sublists for m in ms])
 
