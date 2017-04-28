@@ -67,6 +67,42 @@ def error(msg):
 #      and
 #    - both matches have exactly the same auxiliary constraints (TODO: relax?).
 def matchesDominatedBy(json, m1, dominable_matches):
+    def computeDominableMatchsetCandidates():
+        def findMatchesCovering(ops_to_cover, m_cands, selected_ms):
+            if len(ops_to_cover) == 0:
+                return selected_ms
+
+            all_solutions = []
+            for i in range(len(m_cands)):
+                m = m_cands[i]
+                m_op_cover_set = set(json["match-operations-covered"][m])
+                if m_op_cover_set <= ops_to_cover:
+                    remaining_ops = ops_to_cover - m_op_cover_set
+                    remaining_ms = [n for n in m_cands if n != m]
+                    if len(selected_ms) > 0:
+                        new_selected_ms = [ ms + [m] for ms in selected_ms ]
+                    else:
+                        new_selected_ms = [[m]]
+                    solutions = findMatchesCovering(remaining_ops,
+                                                    remaining_ms,
+                                                    new_selected_ms)
+                    all_solutions = ( all_solutions +
+                                      [ set(ms) for ms in solutions
+                                        if set(ms) not in all_solutions
+                                      ]
+                                    )
+            return [ list(ms) for ms in all_solutions ]
+
+        # Gather combinations of matches that collectively cover the same
+        # operations as m1
+        m1_op_cover_set = set(json["match-operations-covered"][m1])
+        ms_covering_same_ops = [ m for m in dominable_matches
+                                 if m != m1 and
+                                    set(json["match-operations-covered"][m]) <=
+                                    m1_op_cover_set
+                               ]
+        return findMatchesCovering(m1_op_cover_set, ms_covering_same_ops, [])
+
     def IsLocDomainAtLeastAsStrong(json, m2):
         O = json["operand-alternatives"]
 
@@ -114,6 +150,12 @@ def matchesDominatedBy(json, m1, dominable_matches):
         ln1 = [ sorted(O[o]) for o in lo1 ]
         ln2 = [ sorted(O[o]) for o in lo2 ]
         return ln1 == ln2
+
+    dominable_matchset_candidates = computeDominableMatchsetCandidates()
+
+    # Check that no intermediate values of the dominator match are used by any
+    # matches not in the dominable matchsets
+    # TODO: implement
 
     # Check all eligable matches
     dom_matches = []
@@ -180,9 +222,12 @@ with open(json_file, 'r') as file:
 
 # Gather matches eligable for domination
 excl_matches = \
-  ( set(json_data["match-null-instrs"])
-    | set([ int(t[0]) for t in json_data["match-same-value-locs"] ])
-    | set([ int(t[0]) for t in json_data["match-fall-through-block"] ])
+  ( set(json_data["match-null-instrs"]) |
+    set([ int(t[0]) for t in json_data["match-same-value-locs"] ]) |
+    set([ int(t[0]) for t in json_data["match-fall-through-block"] ]) |
+    set([ m for m in range(json_data["num-matches"])
+          if len(json_data["match-operations-covered"][m]) == 0
+        ])
   )
 dominator_candidates = [ m for m in range(json_data["num-matches"])
                                     if m not in excl_matches
