@@ -143,10 +143,7 @@ def matchesDominatedBy(json, m1, dominable_matches):
                         ])
                   )
         f_def_blocks = set()
-        for t in json["fun-value-def-edges"]:
-            if t[1] in m1_data:
-                f_def_blocks.add(t[0])
-        for t in json["fun-state-def-edges"]:
+        for t in json["fun-def-edges"]:
             if t[1] in m1_data:
                 f_def_blocks.add(t[0])
 
