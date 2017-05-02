@@ -93,6 +93,10 @@ data HighLevelFunctionParams
         -- ^ The dominator sets of the blocks in the function graph.
       , hlFunBlockParams :: [HighLevelBlockParams]
         -- ^ The block information.
+      , hlFunValueDefEdges :: [(NodeID, NodeID)]
+        -- ^ The definition edges in the function graph that involve value
+        -- nodes. The first element is a block node and the second element is a
+        -- value node.
       , hlFunStateDefEdges :: [(NodeID, NodeID)]
         -- ^ The definition edges in the function graph that involve states. The
         -- first element is a block node and the second element is a state node.
@@ -262,6 +266,10 @@ data LowLevelModel
         -- ^ The execution frequency of each block. An index into the list
         -- corresponds to the array index of a particular block in the function
         -- graph.
+      , llFunValueDefEdges :: [(ArrayIndex, ArrayIndex)]
+        -- ^ The value definition edges that appear in this match. The first
+        -- element is the array index of a particular block, and the second
+        -- element is the array index of a particular value node.
       , llFunStateDefEdges :: [(ArrayIndex, ArrayIndex)]
         -- ^ The state definition edges that appear in this match. The first
         -- element is the array index of a particular block, and the second
@@ -518,6 +526,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "entry-block"
       <*> v .: "block-dom-sets"
       <*> v .: "block-params"
+      <*> v .: "value-def-edges"
       <*> v .: "state-def-edges"
       <*> v .: "valid-value-locs"
       <*> v .: "same-value-locs"
@@ -541,6 +550,7 @@ instance ToJSON HighLevelFunctionParams where
            , "entry-block"              .= (hlFunEntryBlock p)
            , "block-dom-sets"           .= (hlFunBlockDomSets p)
            , "block-params"             .= (hlFunBlockParams p)
+           , "value-def-edges"          .= (hlFunValueDefEdges p)
            , "state-def-edges"          .= (hlFunStateDefEdges p)
            , "valid-value-locs"         .= (hlFunValidValueLocs p)
            , "same-value-locs"          .= (hlFunSameValueLocs p)
@@ -655,6 +665,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-entry-block"
       <*> v .: "fun-block-dom-sets"
       <*> v .: "fun-block-exec-freqs"
+      <*> v .: "fun-value-def-edges"
       <*> v .: "fun-state-def-edges"
       <*> v .: "fun-constraints"
       <*> v .: "num-locations"
@@ -703,6 +714,7 @@ instance ToJSON LowLevelModel where
            , "fun-entry-block"             .= (llFunEntryBlock m)
            , "fun-block-dom-sets"          .= (llFunBlockDomSets m)
            , "fun-block-exec-freqs"        .= (llFunBBExecFreqs m)
+           , "fun-value-def-edges"         .= (llFunValueDefEdges m)
            , "fun-state-def-edges"         .= (llFunStateDefEdges m)
            , "fun-constraints"             .= (llFunConstraints m)
            , "num-locations"               .= (llNumLocations m)

@@ -110,6 +110,20 @@ mkHLFunctionParams function target =
                       }
             )
             (filter isBlockNode (getAllNodes graph))
+      value_def_es = map ( \e ->
+                           let s = getSourceNode graph e
+                               t = getTargetNode graph e
+                               s_id = getNodeID s
+                               t_id = getNodeID t
+                           in if isValueNode s
+                              then (t_id, s_id)
+                              else (s_id, t_id)
+                         ) $
+                     filter ( \e -> isValueNode (getSourceNode graph e)
+                                    || isValueNode (getTargetNode graph e)
+                          ) $
+                     filter isDefEdge $
+                     getAllEdges graph
       state_def_es = map ( \e ->
                            let s = getSourceNode graph e
                                t = getTargetNode graph e
@@ -183,6 +197,7 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = getNodeID entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID block_domsets
        , hlFunBlockParams = bb_params
+       , hlFunValueDefEdges = value_def_es
        , hlFunStateDefEdges = state_def_es
        , hlFunValidValueLocs = valid_locs
        , hlFunSameValueLocs = same_locs
@@ -598,6 +613,9 @@ lowerHighLevelModel model ai_maps =
            map hlBlockExecFrequency $
            sortByAI (getAIForBlockNodeID . hlBlockNode) $
            hlFunBlockParams f_params
+       , llFunValueDefEdges =
+           map (\(b, s) -> (getAIForBlockNodeID b, getAIForDatumNodeID s)) $
+           hlFunValueDefEdges f_params
        , llFunStateDefEdges =
            map (\(b, s) -> (getAIForBlockNodeID b, getAIForDatumNodeID s)) $
            hlFunStateDefEdges f_params
