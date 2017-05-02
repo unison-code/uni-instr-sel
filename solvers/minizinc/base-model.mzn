@@ -49,8 +49,7 @@ array[allDataInFunction] of set of int: depsOfDataInFunction;
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
-array[int, int] of int: valueDefEdgesForBlocksInFunction;
-array[int, int] of int: stateDefEdgesForBlocksInFunction;
+array[int, int] of int: defEdgesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 array[int] of set of int: interchangeableDataInFunction;
 set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
@@ -475,22 +474,12 @@ constraint
     in sel[m] -> dplace[Alt(o)] = b
   );
 
-% A value datum with a definition edge with a block must be defined in the block
+% A datum with a definition edge must be defined in the block
 % of that edge.
 constraint
-  forall (i in index_set_1of2(valueDefEdgesForBlocksInFunction)) (
-    let { int: b = valueDefEdgesForBlocksInFunction[i, 1]
-        , int: d = valueDefEdgesForBlocksInFunction[i, 2]
-        }
-    in dplace[d] = b
-  );
-
-% A state datum with a definition edge with a block must be defined in the block
-% of that edge.
-constraint
-  forall (i in index_set_1of2(stateDefEdgesForBlocksInFunction)) (
-    let { int: b = stateDefEdgesForBlocksInFunction[i, 1]
-        , int: d = stateDefEdgesForBlocksInFunction[i, 2]
+  forall (i in index_set_1of2(defEdgesInFunction)) (
+    let { int: b = defEdgesInFunction[i, 1]
+        , int: d = defEdgesInFunction[i, 2]
         }
     in dplace[d] = b
   );

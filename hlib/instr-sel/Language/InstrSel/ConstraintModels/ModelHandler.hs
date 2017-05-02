@@ -110,34 +110,17 @@ mkHLFunctionParams function target =
                       }
             )
             (filter isBlockNode (getAllNodes graph))
-      value_def_es = map ( \e ->
-                           let s = getSourceNode graph e
-                               t = getTargetNode graph e
-                               s_id = getNodeID s
-                               t_id = getNodeID t
-                           in if isValueNode s
-                              then (t_id, s_id)
-                              else (s_id, t_id)
-                         ) $
-                     filter ( \e -> isValueNode (getSourceNode graph e)
-                                    || isValueNode (getTargetNode graph e)
-                          ) $
-                     filter isDefEdge $
-                     getAllEdges graph
-      state_def_es = map ( \e ->
-                           let s = getSourceNode graph e
-                               t = getTargetNode graph e
-                               s_id = getNodeID s
-                               t_id = getNodeID t
-                           in if isStateNode s
-                              then (t_id, s_id)
-                              else (s_id, t_id)
-                         ) $
-                     filter ( \e -> isStateNode (getSourceNode graph e)
-                                    || isStateNode (getTargetNode graph e)
-                          ) $
-                     filter isDefEdge $
-                     getAllEdges graph
+      def_es = map ( \e ->
+                     let s = getSourceNode graph e
+                         t = getTargetNode graph e
+                         s_id = getNodeID s
+                         t_id = getNodeID t
+                     in if isDatumNode s
+                        then (t_id, s_id)
+                        else (s_id, t_id)
+                   ) $
+               filter isDefEdge $
+               getAllEdges graph
       valid_locs =
         -- TODO: do a proper implemention. Right now it's just a quick hack to
         -- prevent the input arguments from being located in a fixed-value
@@ -197,8 +180,7 @@ mkHLFunctionParams function target =
        , hlFunEntryBlock = getNodeID entry_block
        , hlFunBlockDomSets = map convertDomSetN2ID block_domsets
        , hlFunBlockParams = bb_params
-       , hlFunValueDefEdges = value_def_es
-       , hlFunStateDefEdges = state_def_es
+       , hlFunDefEdges = def_es
        , hlFunValidValueLocs = valid_locs
        , hlFunSameValueLocs = same_locs
        , hlFunValueConstData = const_data
@@ -613,12 +595,9 @@ lowerHighLevelModel model ai_maps =
            map hlBlockExecFrequency $
            sortByAI (getAIForBlockNodeID . hlBlockNode) $
            hlFunBlockParams f_params
-       , llFunValueDefEdges =
+       , llFunDefEdges =
            map (\(b, s) -> (getAIForBlockNodeID b, getAIForDatumNodeID s)) $
-           hlFunValueDefEdges f_params
-       , llFunStateDefEdges =
-           map (\(b, s) -> (getAIForBlockNodeID b, getAIForDatumNodeID s)) $
-           hlFunStateDefEdges f_params
+           hlFunDefEdges f_params
        , llFunConstraints =
            map (replaceIDsWithArrayIndexes ai_maps) (hlFunConstraints f_params)
        , llNumLocations = toInteger $ length $ hlMachineLocations tm_params

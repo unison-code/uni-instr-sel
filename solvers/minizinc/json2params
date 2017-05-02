@@ -410,12 +410,8 @@ dumpParams( bumpArr(json_data["fun-states"])
           , "statesInFunction"
           , VT_SET
           )
-dumpParams( bumpArrOfArr(json_data["fun-value-def-edges"])
-          , "valueDefEdgesForBlocksInFunction"
-          , VT_ARRAY2D
-          )
-dumpParams( bumpArrOfArr(json_data["fun-state-def-edges"])
-          , "stateDefEdgesForBlocksInFunction"
+dumpParams( bumpArrOfArr(json_data["fun-def-edges"])
+          , "defEdgesInFunction"
           , VT_ARRAY2D
           )
 dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
