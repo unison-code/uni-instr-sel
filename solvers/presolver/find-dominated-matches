@@ -104,12 +104,40 @@ def matchesDominatedBy(json, m1, dominable_matches):
         return findMatchesCovering(m1_op_cover_set, ms_covering_same_ops, [])
 
     def hasLessOrEqualCost(ms):
-        ms_cost = 0
+        # Compute maximum cost of selecting m1
+        m1_ops = json["match-operations-covered"][m1]
+        m1_places = set(range(0, json["fun-num-blocks"]))
+        for o in m1_ops:
+            m1_places = m1_places & set(json["fun-op-placements"][o])
+        if len(m1_places) == 0:
+            # m1 can never be selected
+            return False
+        m1_latency = json["match-latencies"][m1]
+        m1_max_cost = 0
+        for b in m1_places:
+            c = m1_latency * json["fun-block-exec-freqs"][b]
+            m1_max_cost = max(m1_max_cost, c)
+
+        # Compute minimum cost of selecting ms
+        ms_min_cost = 0
         for m2 in ms:
-            ms_cost = ms_cost + json["match-latencies"][m2]
-        return ( json["match-latencies"][m1] < ms_cost or
-                 ( json["match-latencies"][m1] == ms_cost and
-                   ( len(ms) > 1 or m1 < m2 )
+            m2_ops = json["match-operations-covered"][m2]
+            m2_places = set(range(0, json["fun-num-blocks"]))
+            for o in m2_ops:
+                m2_places = m2_places & set(json["fun-op-placements"][o])
+            if len(m2_places) == 0:
+                # m2 can never be selected
+                return False
+            m2_latency = json["match-latencies"][m2]
+            m2_min_cost = 0
+            for b in m2_places:
+                c = m2_latency * json["fun-block-exec-freqs"][b]
+                m2_min_cost = max(m2_min_cost, c)
+            ms_min_cost = ms_min_cost + m2_min_cost
+
+        return ( m1_max_cost < ms_min_cost or
+                 ( m1_max_cost == ms_min_cost and
+                   ( len(ms) > 1 or m1 < ms[0] )
                  )
                )
 
@@ -158,49 +186,59 @@ def matchesDominatedBy(json, m1, dominable_matches):
         return (len(f_def_blocks) < 2 and len(ms_def_blocks) < 2)
 
     def areLocDomainsAtLeastAsStrong(ms):
-        # TODO: implement
-        return False
+        O = json["operand-alternatives"]
 
-#        O = json["operand-alternatives"]
-#
-#        # Check match-valid-value-locs constraints
-#        locs = json["match-valid-value-locs"]
-#        R = range(len(locs))
-#        for i in [ i for i in R if locs[i][0] == m1]:
-#            # Find constraint in m2 that is at least as strong
-#            found = False
-#            for j in [ j for j in R if locs[j][0] == m2 ]:
-#                if sorted(O[locs[i][1]]) == sorted(O[locs[j][1]]):
-#                    reg2 = locs[j][2]
-#                    reg1 = locs[i][2]
-#                    if reg1 == reg2:
-#                        found = True
-#                        break
-#
-#            # No such constraint found
-#            if not found:
-#                return False
-#
-#        # Check match-valid-value-loc-ranges constraints
-#        loc_ranges = json["match-valid-value-loc-ranges"]
-#        R = range(len(loc_ranges))
-#        for i in [ i for i in R if loc_ranges[i][0] == m1]:
-#            # Find constraint in m2 that is at least as strong
-#            found = False
-#            for j in [ j for j in R if loc_ranges[j][0] == m2 ]:
-#                if sorted(O[loc_ranges[i][1]]) == sorted(O[loc_ranges[j][1]]):
-#                    regs2 = set(range(loc_ranges[j][2], loc_ranges[j][3]+1))
-#                    regs1 = set(range(loc_ranges[i][2], loc_ranges[i][3]+1))
-#                    if regs2.issubset(regs1):
-#                        found = True
-#                        break
-#
-#            # No such constraint found
-#            if not found:
-#                return False
-#
-#        # All checks have passed
-#        return True
+        # Gather m1 operands to check
+        m1_def_ops = set(json["match-operands-defined"][m1])
+        m1_use_ops = set(json["match-operands-used"][m1])
+        m1_ops = ( (m1_def_ops | m1_use_ops) -
+                   set(json["match-internal-operands"][m1])
+                 )
+
+        # Check match-valid-value-locs constraints
+        locs = json["match-valid-value-locs"]
+        m1_locs = [t for t in locs if t[0] == m1]
+        for m1_t in m1_locs:
+            # Find constraint in ms that is at least as strong
+            found = False
+            for m2_t in [t for t in locs if t[0] in ms]:
+                if set(O[m1_t[1]]) <= set(O[m2_t[1]]):
+                    m1_r = m1_t[2]
+                    m2_r = m2_t[2]
+                    if m1_r == m2_r:
+                        # Matching constraint
+                        found = True
+                    else:
+                        # Conflicting constraint
+                        return False
+
+            # No such constraint found
+            if not found:
+                return False
+
+        # Check match-valid-value-loc-ranges constraints
+        loc_ranges = json["match-valid-value-loc-ranges"]
+        m1_loc_ranges = [t for t in loc_ranges if t[0] == m1]
+        for m1_t in m1_loc_ranges:
+            # Find constraint in m2 that is at least as strong
+            found = False
+            for m2_t in [t for t in loc_ranges if t[0] in ms]:
+                if set(O[m1_t[1]]) <= set(O[m2_t[1]]):
+                    m1_rs = set(range(m1_t[2], m1_t[3]+1))
+                    m2_rs = set(range(m2_t[2], m2_t[3]+1))
+                    if m2_rs <= m1_rs:
+                        # Matching constraint
+                        found = True
+                    else:
+                        # Conflicting constraint
+                        return False
+
+            # No such constraint found
+            if not found:
+                return False
+
+        # All checks have passed
+        return True
 
     def hasSameConstraints(ms):
         m1_cons = set(json["match-constraints"][m1])
@@ -212,6 +250,21 @@ def matchesDominatedBy(json, m1, dominable_matches):
 
 
     dominable_matchset_candidates = computeDominableMatchsetCandidates()
+    all_dom_ms = set([ m for ms in dominable_matchset_candidates for m in ms ])
+
+    # Check that there is no potential coverage overlap with any match not
+    # appearing in the candidate set
+    m1_ops = json["match-operations-covered"][m1]
+    for o in m1_ops:
+        other_ms = [ m for m in range(json_data["num-matches"])
+                     if ( o in json["match-operations-covered"][m] and
+                          m != m1 and
+                          m not in all_dom_ms
+                        )
+                   ]
+        if len(other_ms) > 0:
+            # Potential overlap; m1 is not eligable as dominator
+            return []
 
     # Check that no internal values of the dominator match are used by any
     # matches not in the dominable matchsets
@@ -219,7 +272,6 @@ def matchesDominatedBy(json, m1, dominable_matches):
     m1_int_values = set([ d for p in json["match-internal-operands"][m1]
                             for d in json["operand-alternatives"][p]
                         ])
-    all_dom_ms = set([ m for ms in dominable_matchset_candidates for m in ms ])
     for m2 in [m for m in dominable_matches if m != m1 and m not in all_dom_ms]:
         for p in json["match-operands-used"][m2]:
             d = json["operand-alternatives"][p]
@@ -227,8 +279,9 @@ def matchesDominatedBy(json, m1, dominable_matches):
                 # Use of m1's internal values; m1 is not eligable as a dominator
                 return []
 
-    # Check all eligable matches
-    dom_matches = set()
+    # Check for dominance
+    dominated_ms = []
+    not_dominated_ms = []
     for ms in [ms for ms in dominable_matchset_candidates]:
         if ( hasLessOrEqualCost(ms) and
              hasSameEntry(ms) and
@@ -237,7 +290,32 @@ def matchesDominatedBy(json, m1, dominable_matches):
              areLocDomainsAtLeastAsStrong(ms) and
              hasSameConstraints(ms)
            ):
-            dom_matches.update(ms)
+            dominated_ms.append(ms)
+        else:
+            not_dominated_ms.append(ms)
+
+    # Gather matches which appear in a dominated set and not in any
+    # non-dominated set
+    illegal_dom_matches = set()
+    for ms in not_dominated_ms:
+        illegal_dom_matches.update(ms)
+    dom_matches = set()
+    for ms in dominated_ms:
+        ms_okay = True
+        for m in ms:
+            if m in illegal_dom_matches:
+                ms_okay = False
+                break
+
+        if ms_okay:
+            if m1 == 290:
+                print ms
+            for m in ms:
+                dom_matches.add(m)
+
+    for m in dom_matches:
+        if m in [119, 135, 150, 282, 305, 316]:
+            print str(m) + " dominated by " + str(m1)
 
     return list(dom_matches)
 
@@ -264,18 +342,26 @@ with open(json_file, 'r') as file:
     json_data = json.load(file)
 
 # Gather matches eligable for domination
-excl_matches = \
-  ( set(json_data["match-null-instrs"]) |
-    set([ int(t[0]) for t in json_data["match-same-value-locs"] ]) |
-    set([ int(t[0]) for t in json_data["match-fall-through-block"] ]) |
-    set([ m for m in range(json_data["num-matches"])
-          if len(json_data["match-operations-covered"][m]) == 0
-        ])
-  )
+illegal_dominators = \
+    ( set(json_data["match-null-instrs"]) |
+      set([ int(t[0]) for t in json_data["match-same-value-locs"] ]) |
+      set([ int(t[0]) for t in json_data["match-fall-through-block"] ]) |
+      set([ m for m in range(json_data["num-matches"])
+            if len(json_data["match-operations-covered"][m]) == 0
+          ])
+    )
 dominator_candidates = [ m for m in range(json_data["num-matches"])
-                                    if m not in excl_matches
+                         if m not in illegal_dominators
                        ]
-dominable_matches = dominator_candidates
+illegal_dominatees = \
+    ( set(json_data["match-kill-instrs"]) |
+      set([ m for m in range(json_data["num-matches"])
+            if len(json_data["match-operations-covered"][m]) == 0
+          ])
+    )
+dominable_matches = [ m for m in range(json_data["num-matches"])
+                      if m not in illegal_dominatees
+                    ]
 
 # Computed dominated matches
 dominated_match_sublists = [ matchesDominatedBy(json_data, m, dominable_matches)
@@ -285,6 +371,10 @@ dominated_match_set = set([ m for ms in dominated_match_sublists for m in ms])
 
 d_json_data = {}
 d_json_data["dominated-matches-ai"] = list(dominated_match_set)
+
+# TODO: remove
+#d_json_data["dominated-matches-ai"] = \
+#[119, 135, 150, 282, 305, 316]
 
 # Print JSON
 print json.dumps(d_json_data)

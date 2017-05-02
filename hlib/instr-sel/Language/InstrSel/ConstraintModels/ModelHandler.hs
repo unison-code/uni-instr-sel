@@ -24,7 +24,9 @@ import Language.InstrSel.Constraints.ConstraintReconstructor
 import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs
 import Language.InstrSel.Graphs.Graphalyze
-  ( cyclesIn' )
+  ( computeBlockPlacements
+  , cyclesIn'
+  )
 import Language.InstrSel.OpStructures
 import Language.InstrSel.Functions
   ( Function (..)
@@ -95,6 +97,12 @@ mkHLFunctionParams function target =
       nodeIDsByType f = map getNodeID $
                         filter f all_ns
       block_domsets = computeBlockDomSets graph entry_block
+      n_places = computeBlockPlacements graph entry_block
+      op_bs_places = map ( \(op_n, bs_ns) ->
+                           (getNodeID op_n, map getNodeID bs_ns)
+                         ) $
+                     filter (isOperationNode . fst) $
+                     n_places
       op_deps = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
                 computeOpDependencies graph
       data_deps = map (\(n, ns) -> (getNodeID n, map getNodeID ns)) $
@@ -172,6 +180,7 @@ mkHLFunctionParams function target =
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
+       , hlFunOpPlacements = op_bs_places
        , hlFunOpDependencies = op_deps
        , hlFunDataDependencies = data_deps
        , hlFunDataUsedAtLeastOnce = map getNodeID used_once_data
@@ -570,6 +579,10 @@ lowerHighLevelModel model ai_maps =
        , llFunConstData = map (getAIForDatumNodeID . fst) $
                           hlFunValueConstData f_params
        , llFunStates = map getAIForDatumNodeID (hlFunStates f_params)
+       , llFunOpPlacements =
+           map (\(_, ns) -> map getAIForBlockNodeID ns) $
+           sortByAI (getAIForOperationNodeID . fst) $
+           hlFunOpPlacements f_params
        , llFunOpDependencies =
            map (\(_, ns) -> map getAIForOperationNodeID ns) $
            sortByAI (getAIForOperationNodeID . fst) $

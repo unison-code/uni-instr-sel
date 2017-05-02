@@ -69,6 +69,11 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
+      , hlFunOpPlacements :: [(NodeID, [NodeID])]
+        -- ^ The set of blocks in which a given operation could potentially be
+        -- placed. The first element in the tuple represents an operation, and
+        -- the second element represents a set of blocks. This information is
+        -- used in presolving.
       , hlFunOpDependencies :: [(NodeID, [NodeID])]
         -- ^ The dependency sets for the operations in the function graph. The
         -- first element in the tuple represents an operation, and the second
@@ -232,6 +237,10 @@ data LowLevelModel
         -- ^ The data that are constant value nodes in the function graph.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
+      , llFunOpPlacements :: [[ArrayIndex]]
+        -- ^ The set of blocks in which a given operation could potentially be
+        -- placed.  An index into the outer list corresponds to the array index
+        -- of a particular operation. This information is used in presolving.
       , llFunOpDependencies :: [[ArrayIndex]]
         -- ^ The dependency set for each operation in the function graph. An
         -- index into the outer list corresponds to the array index of a
@@ -510,6 +519,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
+      <*> v .: "op-placements"
       <*> v .: "op-dependencies"
       <*> v .: "data-dependencies"
       <*> v .: "data-used-at-least-once"
@@ -533,6 +543,7 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
+           , "op-placements"            .= (hlFunOpPlacements p)
            , "op-dependencies"          .= (hlFunOpDependencies p)
            , "data-dependencies"        .= (hlFunDataDependencies p)
            , "data-used-at-least-once"  .= (hlFunDataUsedAtLeastOnce p)
@@ -647,6 +658,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-control-ops"
       <*> v .: "fun-const-data"
       <*> v .: "fun-states"
+      <*> v .: "fun-op-placements"
       <*> v .: "fun-op-dependencies"
       <*> v .: "fun-data-dependencies"
       <*> v .: "fun-data-used-at-least-once"
@@ -695,6 +707,7 @@ instance ToJSON LowLevelModel where
            , "fun-control-ops"             .= (llFunControlOps m)
            , "fun-const-data"              .= (llFunConstData m)
            , "fun-states"                  .= (llFunStates m)
+           , "fun-op-placements"           .= (llFunOpPlacements m)
            , "fun-op-dependencies"         .= (llFunOpDependencies m)
            , "fun-data-dependencies"       .= (llFunDataDependencies m)
            , "fun-data-used-at-least-once" .= (llFunDataUsedAtLeastOnce m)
