@@ -239,8 +239,9 @@ data LowLevelModel
         -- ^ The data that are state nodes of the function graph.
       , llFunOpPlacements :: [[ArrayIndex]]
         -- ^ The set of blocks in which a given operation could potentially be
-        -- placed.  An index into the outer list corresponds to the array index
-        -- of a particular operation. This information is used in presolving.
+        -- placed. An index into the outer list corresponds to the array index
+        -- of a particular operation. This information is used in presolving and
+        -- computing lower cost bound.
       , llFunOpDependencies :: [[ArrayIndex]]
         -- ^ The dependency set for each operation in the function graph. An
         -- index into the outer list corresponds to the array index of a
