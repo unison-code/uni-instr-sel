@@ -44,6 +44,9 @@ UNI_IS_CMD            ?= @echo 'ERROR: Variable $$UNI_IS_CMD not set!'; \
                           exit 1;
 UNI_IS_LLVM_CMD       ?= @echo 'ERROR: Variable $$UNI_IS_LLVM_CMD not set!'; \
                           exit 1;
+COMPUTE_LOWER_BOUND_CMD ?= @echo 'ERROR: Variable $$COMPUTE_LOWER_BOUND_CMD \
+								  not set!'; \
+                           exit 1;
 CONSTR_CONV_CMD       ?= @echo 'ERROR: Variable $$CONSTR_CONV_CMD not set!'; \
                           exit 1;
 DOM_MATCHES_CMD       ?= @echo 'ERROR: Variable $$DOM_MATCHES_CMD not set!'; \
@@ -104,11 +107,13 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 		   $< -o /dev/null > $@ 2> /dev/null
 
 %.ub.json: %.llvm.json
+	echo -n "{\"upper-bound\": " > $@
 	if [ $(DISABLE_UPPER_BOUND) -eq 0 ]; then \
-		$(GET_JSON_FIELD) "$<" cycles > $@; \
+		$(GET_JSON_FIELD) "$<" cycles >> $@; \
 	else \
-		echo "0" > $@; \
+		echo "0" >> $@; \
 	fi
+	echo -n "}" >> $@
 
 %.f.json: %.low.freq.ll
 	$(UNI_IS_LLVM_CMD) make --construct-fun-from-llvm -f $< -o $@
@@ -151,6 +156,13 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 				  -f $*.f.json \
 				  -p $*.p.json \
 				  -o $@
+
+%.lb.json: %.ll.model.json
+	if [ $(DISABLE_UPPER_BOUND) -eq 0 ]; then \
+		$(COMPUTE_LOWER_BOUND_CMD) "$<" > $@; \
+	else \
+		echo "{\"lower-bound\": 0}" > $@; \
+	fi
 
 %.de.lp.ep.ce.cc.rp.de.rt.dom.json: %.ll.model.json
 	$(CONSTR_CONV_CMD) $< > $<.temp
@@ -209,10 +221,11 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 				  -a $*.aimaps.json \
 				  -o $@
 
-%.presolved.ll.sol.json: %.presolved.ll.model.json %.ub.json
+%.presolved.ll.sol.json: %.presolved.ll.model.json %.lb.json %.ub.json
 	$(SOLVER_CMD) -i $*.presolved.ll.model.json \
 				  -t $(SOLVER_TIME_LIMIT) \
-				  -u $(shell cat $*.ub.json) \
+				  -l $(shell $(GET_JSON_FIELD) $*.lb.json "lower-bound") \
+				  -u $(shell $(GET_JSON_FIELD) $*.ub.json "upper-bound") \
 				  -f $(FALL_BACK_TO_LLVM) \
 				  -o $@
 

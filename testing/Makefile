@@ -44,6 +44,7 @@ CLANG                 := $(LLVM_INT_IS_BUILD_DIR)/bin/clang
 UNI_IS_LLVM_CMD       := uni-is-llvm
 UNI_IS_CMD            := uni-is
 UNI_TARGEN_CMD        := uni-targen
+COMPUTE_LOWER_BOUND_CMD := ../solvers/presolver/compute-lower-bound
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches

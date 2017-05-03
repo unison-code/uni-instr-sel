@@ -54,34 +54,55 @@ def error(msg):
 # MAIN SCRIPT
 #=============
 
-# Check files
+# Check arguments
 if len(sys.argv) < 2:
     sys.stderr.write("No JSON file given\n")
     sys.exit(1)
-if len(sys.argv) < 3:
-    sys.stderr.write("No upper bound given\n")
-    sys.exit(1)
-if len(sys.argv) > 3:
+if len(sys.argv) > 2:
     sys.stderr.write("Too many arguments\n")
     sys.exit(1)
 json_file = sys.argv[1]
-upper_bound = sys.argv[2]
 if not os.path.isfile(json_file):
-    error("JSON file '" + json_file + "' not found")
-try:
-    upper_bound = int(upper_bound)
-    if upper_bound < 0:
-        error("Upper bound cannot be negative")
-except ValueError:
-    error("Not a number: '" + upper_bound + "'")
+    error("JSON file '" + json_file +"' not found")
 
 # Read JSON file
-json_data = []
+json_data = {}
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
-# Update JSON content
-json_data["upper-bound"] = upper_bound
+# For each operation, select the cheapest match to cover it (allowing overlaps)
+# and place it in the block with lowest frequency
+min_cost = 0
+op_queue = range(json_data["fun-num-operations"])
+while len(op_queue) > 0:
+    o = op_queue[0]
+    ms = [ m for m in range(json_data["num-matches"])
+           if o in json_data["match-operations-covered"][m]
+         ]
+
+    # Select match with least latency
+    selected_m = -1
+    min_latency = sys.maxint
+    for m in ms:
+        m_latency = json_data["match-latencies"][m]
+        if m_latency < min_latency:
+            min_latency = m_latency
+            selected_m = m
+
+    # Compute cost
+    bs = json_data["fun-op-placements"][o]
+    min_freq = sys.maxint
+    for b in bs:
+        min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
+    min_cost = min_cost + min_latency * min_freq
+
+    # Remove covered operations from queue
+    for o in json_data["match-operations-covered"][selected_m]:
+        if o in op_queue:
+            op_queue.remove(o)
+
+lb_json_data = {}
+lb_json_data["lower-bound"] = min_cost
 
 # Print JSON
-print json.dumps(json_data)
+print json.dumps(lb_json_data)

@@ -73,6 +73,7 @@ MINIZINC_ERROR_FILEPATH=""
 MINIZINC_SOLVER_BIN=""
 MINIZINC_GLOBALS_DIR=""
 MINIZINC_TIME_LIMIT=""
+MINIZINC_LOWER_BOUND=""
 MINIZINC_UPPER_BOUND=""
 MINIZINC_FALL_BACK_TO_LLVM=""
 
@@ -298,6 +299,10 @@ do
             MINIZINC_TIME_LIMIT="$2"
             shift
         ;;
+        -l|--lower-bound)
+            MINIZINC_LOWER_BOUND="$2"
+            shift
+        ;;
         -u|--upper-bound)
             MINIZINC_UPPER_BOUND="$2"
             shift
@@ -346,6 +351,9 @@ fi
 if [ -z "$MINIZINC_TIME_LIMIT" ]; then
     MINIZINC_TIME_LIMIT=0
 fi
+if [ -z "$MINIZINC_LOWER_BOUND" ]; then
+    MINIZINC_LOWER_BOUND=0
+fi
 if [ -z "$MINIZINC_UPPER_BOUND" ]; then
     MINIZINC_UPPER_BOUND=0
 fi
@@ -389,8 +397,9 @@ cmd="$THIS_DIR/canonicalize-locations $JSON_EXT2_FILEPATH \
 exe "$cmd"
 reportNewEntity $JSON_EXT3_FILEPATH
 
-reportTask "Attaching upper bound"
-cmd="$THIS_DIR/attach-upper-bound $JSON_EXT3_FILEPATH $MINIZINC_UPPER_BOUND \
+reportTask "Attaching bounds"
+cmd="$THIS_DIR/attach-bounds $JSON_EXT3_FILEPATH \
+         $MINIZINC_LOWER_BOUND $MINIZINC_UPPER_BOUND \
      > $JSON_EXT4_FILEPATH"
 exe "$cmd"
 reportNewEntity $JSON_EXT4_FILEPATH

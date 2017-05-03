@@ -543,6 +543,9 @@ dumpParams( bumpArr(json_data["canonical-locs"])
           , "canonicalDataLocs"
           , VT_SET
           )
+dumpParams( int(math.floor(json_data["lower-bound"] / g))
+          , "costLowerBound"
+          )
 dumpParams( int(math.ceil(json_data["upper-bound"] / g))
           , "costUpperBound"
           )

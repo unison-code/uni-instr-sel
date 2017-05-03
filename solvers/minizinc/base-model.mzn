@@ -82,6 +82,7 @@ set of allMatches: nullInstrMatches;
 set of allMatches: phiInstrMatches;
 array[allMatches] of allMatches: allMatchesBySize;
 
+int: costLowerBound;
 int: costUpperBound;
 
 % Arrays that encode constraints
@@ -660,6 +661,13 @@ constraint
 % The total cost is the sum of the costs incurred by all operations.
 constraint
   totalcost = sum(opcosts);
+
+% Constraint the lower bound of the cost.
+constraint
+  if costLowerBound > 0
+  then totalcost >= costLowerBound
+  else true
+  endif;
 
 % Constraint the upper bound of the cost (retrieved from LLVM).
 constraint
