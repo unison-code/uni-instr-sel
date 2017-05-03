@@ -1,0 +1,94 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check arguments
+if len(sys.argv) < 2:
+    sys.stderr.write("No Minizinc stats file provided\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    error("Too many arguments\n")
+stats_file = sys.argv[1]
+if not os.path.isfile(stats_file):
+    error("Minizinc stats file '" + stats_file +"' not found")
+
+# Read stats file
+content = []
+with open(stats_file, 'r') as file:
+    content = file.readlines()
+
+# Extract data
+found_flat_time = False
+found_solv_time = False
+for l in content:
+    line = l.strip().split(':')
+    if line[0] == "FLATTENING TIME":
+        time_str = line[1][:-1] # Strip away the unit
+        flat_time = float(time_str)
+        found_flat_time = True
+    elif line[0] == "SOLVING TIME":
+        time_str = line[1][:-1] # Strip away the unit
+        solv_time = float(time_str)
+        found_solv_time = True
+
+# Turn desirable data into JSON
+json_data = {}
+if found_flat_time:
+    json_data["prep-time"] = flat_time
+if found_solv_time:
+    json_data["solving-time"] = solv_time
+
+# Print JSON
+print json.dumps(json_data)

@@ -1,0 +1,189 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+import fractions
+import math
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+def bumpValue(v):
+    return v + 1
+
+def bumpArr(json):
+    return [ x + 1 for x in json ]
+
+def bumpArrOfArr(json):
+    return [ bumpArr(x) for x in json ]
+
+VT_PLAIN = 0
+VT_ARRAY1D = 1
+VT_ARRAY2D = 2
+VT_SET = 3
+VT_ARRAY = 4
+VC_AS_IS = 0
+VC_SET = 1
+VC_SINGLETON = 2
+def dumpParams(
+    json,
+    var_name,
+    var_type = VT_PLAIN,
+    var_range = "",
+    var_conv = VC_AS_IS
+):
+    sys.stdout.write(var_name)
+    sys.stdout.write(" = ")
+    if var_type == VT_PLAIN:
+        sys.stdout.write(convData(json, var_conv))
+    elif var_type == VT_ARRAY:
+        sys.stdout.write("[")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("]")
+
+    elif var_type == VT_ARRAY1D:
+        sys.stdout.write("array1d(")
+        sys.stdout.write(var_range)
+        sys.stdout.write(", [")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("])")
+    elif var_type == VT_ARRAY2D:
+        sys.stdout.write("[|")
+        rows = []
+        for d in json:
+            rows.append(", ".join([ convData(e, var_conv) for e in d ]))
+        s = ", |".join(rows)
+        sys.stdout.write(s)
+        sys.stdout.write("|]")
+    elif var_type == VT_SET:
+        sys.stdout.write("{")
+        lst = ", ".join([ convData(d, var_conv) for d in json ])
+        sys.stdout.write(lst)
+        sys.stdout.write("}")
+    else:
+        error("unknown variable type")
+    sys.stdout.write(";\n\n")
+
+def convData(d, var_conv):
+    if var_conv == VC_SET:
+        if hasattr(d, "__iter__"):
+            return "{" + ", ".join([ str(e) for e in d ]) + "}"
+        else:
+            return "{" + str(d) + "}"
+    elif var_conv == VC_SINGLETON:
+        if d is None:
+            return "{}"
+        else:
+            return "{" + str(d) + "}"
+    else:
+        return str(d)
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Check arguments
+if len(sys.argv) < 2:
+    sys.stderr.write("No JSON file provided\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    error("Too many arguments\n")
+json_file = sys.argv[1]
+if not os.path.isfile(json_file):
+    error("JSON file '" + json_file +"' not found")
+
+# Read JSON file
+json_data = []
+with open(json_file, 'r') as file:
+    json_data = json.load(file)
+
+# [MC] Compute GCD of frequencies
+fqs = json_data["fun-block-exec-freqs"]
+scaled = []
+g = fqs[0]
+for x in fqs:
+    g = fractions.gcd(g, x)
+for x in fqs:
+    scaled.append(x / g)
+
+# Compute cover cost for operations
+cover_costs = []
+for o in range(json_data["fun-num-operations"]):
+    bs = json_data["fun-op-placements"][o]
+    min_freq = sys.maxint
+    for b in bs:
+        min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
+    cover_costs.append(min_freq)
+
+# Dump parameters [MC] for 1-based solver
+dumpParams( json_data["fun-num-operations"]
+          , "numOperationsInFunction"
+          )
+dumpParams( json_data["num-matches"]
+          , "numMatches"
+          )
+dumpParams( g
+          , "execFrequencyGCD"
+          )
+dumpParams( cover_costs
+          , "coverCostOfOperationInFunction"
+          , VT_ARRAY1D
+          , "allOperationsInFunction"
+          )
+dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
+          , "operationsCoveredByMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SET
+          )
+dumpParams( json_data["match-latencies"]
+          , "latencyOfMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          )

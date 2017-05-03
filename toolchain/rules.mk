@@ -62,6 +62,7 @@ SOLVER_CMD            ?= @echo 'ERROR: Variable $$SOLVER_CMD not set!'; \
                           exit 1;
 ALT_LIMIT             ?= # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     ?= # In seconds; 0 indicates no timelimit
+DISABLE_LOWER_BOUND   ?= 0 # 1 disables use of lower bound
 DISABLE_UPPER_BOUND   ?= 0 # 1 disables use of upper bound
 FALL_BACK_TO_LLVM     ?= 0 # 1 enables use of LLVM to always provide a solution
 TARGET                ?=
@@ -157,9 +158,9 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 				  -p $*.p.json \
 				  -o $@
 
-%.lb.json: %.ll.model.json
-	if [ $(DISABLE_UPPER_BOUND) -eq 0 ]; then \
-		$(COMPUTE_LOWER_BOUND_CMD) "$<" > $@; \
+%.lb.json: %.presolved.ll.model.json
+	if [ $(DISABLE_LOWER_BOUND) -eq 0 ]; then \
+		$(COMPUTE_LOWER_BOUND_CMD) -i "$<" -o $@; \
 	else \
 		echo "{\"lower-bound\": 0}" > $@; \
 	fi

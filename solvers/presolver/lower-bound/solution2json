@@ -1,0 +1,184 @@
+#!/usr/bin/python
+
+#  Main authors:
+#    Gabriel Hjort Blindell <ghb@kth.se>
+#
+#  Copyright (c) 2012-2017, Gabriel Hjort Blindell <ghb@kth.se>
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+#  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+#  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+#=========
+# IMPORTS
+#=========
+
+import json
+import os.path
+import sys
+
+
+
+#================
+# HELP FUNCTIONS
+#================
+
+def error(msg):
+    sys.stderr.write("ERROR: " + msg + "\n")
+    sys.exit(1)
+
+def extractData(line):
+    pos = line.find("=")
+    if pos < 0:
+        raise SyntaxError("Expected '=' not found")
+    name = line[:pos].strip()
+    data = toValue(line[pos + 1:].strip())
+    return name, data
+
+def toValue(s):
+    s = s.strip()
+    if len(s) == 0:
+        raise SyntaxError("No data")
+    if s[0] == '[':
+        if not s[-1] == ']':
+            raise SyntaxError("Expected ']' not found")
+        values = []
+        for t in s[1:-1].split(','):
+            if len(t) == 0:
+                continue
+            values.append(toValue(t))
+        return values
+    else:
+        if s == "true":
+            return True
+        elif s == "false":
+            return False
+        elif s.isdigit() or (s.startswith("-") and s[1:].isdigit()):
+            return int(s)
+        else:
+            return s
+
+def consistsOnlyOf(s, ch):
+    if len(s) == 0:
+        return False
+    for c in s:
+        if c != ch:
+            return False
+    return True
+
+def getDataByName(data, name):
+    for d in data:
+        if d[0] == name:
+            return d[1]
+
+def getRequiredDataByName(data, name):
+    d = getDataByName(data, name)
+    if d == None:
+        error("Required data '" + name + "' not found")
+    return d
+
+
+
+#=============
+# MAIN SCRIPT
+#=============
+
+# Parse command-line arguments
+solution_file = ""
+if len(sys.argv) < 2:
+    sys.stderr.write("No Minizinc solution file provided\n")
+    sys.exit(1)
+if len(sys.argv) > 2:
+    error("Too many arguments\n")
+solution_file = sys.argv[1]
+if not os.path.isfile(solution_file):
+    error("Minizinc solution file '" + solution_file +"' not found")
+
+# Read solution file
+content = []
+with open(solution_file, 'r') as file:
+    content = file.readlines()
+
+# Clean up solution data
+orig_content = content
+content = []
+for l in orig_content:
+    line = l.strip()
+    if len(line) > 0 and line[0] != '%':
+        content.append(line)
+
+# Check if no solution was found
+has_sol = True
+unsat = False
+sol_error = ""
+if ( len(content) == 0
+     or content[0].strip() == "=====UNBOUNDED====="
+     or content[0].strip() == "=====UNKNOWN====="
+   ):
+    has_sol = False
+    sol_error = "No solution found (reason unknown)"
+elif content[0].strip() == "=====UNSATISFIABLE=====":
+    has_sol = False
+    unsat = True
+    sol_error = "No solution found because model was reported as unsatisfiable"
+if not has_sol:
+    error(sol_error)
+
+# Extract data
+all_data = []
+for line in content:
+    if ( len(line) == 0 or
+         line[0] == '%' or
+         consistsOnlyOf(line, '-') or
+         consistsOnlyOf(line, '=')
+       ):
+        continue
+    try:
+        name, data = extractData(line)
+    except SyntaxError as e:
+        error(str(e))
+    if getDataByName(all_data, name) != None:
+        error("Duplicate entries with name '" + name + "'")
+    all_data.append([name, data])
+
+# Turn desirable data into JSON
+data_table = [ ["cost", "lower-bound"] ]
+keep_table = [ d[0] for d in data_table ]
+replace_table = [ d[1] for d in data_table ]
+json_data = {}
+for d in all_data:
+    name = d[0]
+    for i in range(len(keep_table)):
+        if name == keep_table[i]:
+            json_data[replace_table[i]] = d[1]
+            del keep_table[i]
+            del replace_table[i]
+            break
+
+# Check if any required data is missing
+if len(keep_table) > 0:
+    error("Required data '" + keep_table[0] + "' not found")
+
+# Print JSON
+print json.dumps(json_data)

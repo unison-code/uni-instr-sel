@@ -44,7 +44,9 @@ CLANG                 := $(LLVM_INT_IS_BUILD_DIR)/bin/clang
 UNI_IS_LLVM_CMD       := uni-is-llvm
 UNI_IS_CMD            := uni-is
 UNI_TARGEN_CMD        := uni-targen
-COMPUTE_LOWER_BOUND_CMD := ../solvers/presolver/compute-lower-bound
+COMPUTE_LOWER_BOUND_CMD := ../solvers/presolver/lower-bound/solver \
+                           -g $(MINIZINC_GLOBALS_DIR) \
+                           -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 CONSTR_CONV_CMD       := ../solvers/presolver/constraints-converter
 DOM_MATCHES_CMD       := ../solvers/presolver/find-dominated-matches
 ILL_MATCHES_CMD       := ../solvers/presolver/find-illegal-matches
@@ -56,6 +58,7 @@ SOLVER_CMD            := ../solvers/minizinc/solver \
                          -s "$(MINIZINC_BACKEND) $(MINIZINC_BACKEND_FLAGS)"
 ALT_LIMIT             := 0 # 0 indicates no limit, 1 indicates no inserts
 SOLVER_TIME_LIMIT     := 60 # In seconds; 0 indicates no timelimit
+DISABLE_LOWER_BOUND   := 1
 DISABLE_UPPER_BOUND   := 1
 FALL_BACK_TO_LLVM     := 0
 
@@ -190,6 +193,7 @@ run-medium-regression-tests:
 .PHONY: .run-regression-tests
 .run-regression-tests: SOLVER_TIME_LIMIT := 0
 .run-regression-tests: DISABLE_UPPER_BOUND := 1
+.run-regression-tests: DISABLE_LOWER_BOUND := 1
 .run-regression-tests:
 	@echo
 	@echo -n "$(C_INFO)"
@@ -236,6 +240,7 @@ run-medium-regression-tests:
 			    T_ASM=$${TEMPFILE}.s ;\
 				cp $(REGRESSION_TESTS_DIR)/$$T.ll $$T_LL ;\
 				$(MAKE) SOLVER_TIME_LIMIT=$(SOLVER_TIME_LIMIT) \
+						DISABLE_LOWER_BOUND=$(DISABLE_LOWER_BOUND) \
 						DISABLE_UPPER_BOUND=$(DISABLE_UPPER_BOUND) \
 						$$T_ASM > /dev/null 2>&1 ;\
 			    T_ASM_TXT=`cat $$T_ASM 2> /dev/null` ;\
@@ -422,12 +427,14 @@ REG_TEST_CASES_LL_PATHS := $(addprefix ./regression/, \
 							)
 REG_TEST_CASES_S := $(addsuffix .s, $(REG_TEST_CASES))
 update-all-regression-tests: SOLVER_TIME_LIMIT := 0
+update-all-regression-tests: DISABLE_LOWER_BOUND := 1
 update-all-regression-tests: DISABLE_UPPER_BOUND := 1
 update-all-regression-tests:
 	cp $(REG_TEST_CASES_LL_PATHS) .
 	for t in mips32 hexagon5; do \
 		$(MAKE) clean && \
 		$(MAKE) SOLVER_TIME_LIMIT=$(SOLVER_TIME_LIMIT) \
+				DISABLE_LOWER_BOUND=$(DISABLE_LOWER_BOUND) \
 				DISABLE_UPPER_BOUND=$(DISABLE_UPPER_BOUND) \
 				TARGET=$$t -j $(NUM_THREADS) $(REG_TEST_CASES_S) && \
 		for f in $(REG_TEST_CASES); do \
