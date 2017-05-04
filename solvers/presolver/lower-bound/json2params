@@ -34,11 +34,12 @@
 # IMPORTS
 #=========
 
-import json
-import os.path
-import sys
 import fractions
+import json
 import math
+import os.path
+import sexparser
+import sys
 
 
 
@@ -49,6 +50,15 @@ import math
 def error(msg):
     sys.stderr.write("ERROR: " + msg + "\n")
     sys.exit(1)
+
+def bumpArrOfSing(json):
+    output = []
+    for d in json:
+        if d is None:
+            output.append(d)
+        else:
+            output.append(d+1)
+    return output
 
 def bumpValue(v):
     return v + 1
@@ -122,6 +132,9 @@ def convData(d, var_conv):
     else:
         return str(d)
 
+def parseSExpr(s):
+    return sexparser.parse(s)
+
 
 
 #=============
@@ -161,9 +174,28 @@ for o in range(json_data["fun-num-operations"]):
         min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
     cover_costs.append(min_freq)
 
+# Produce 'match-fall-through-block' parameters
+params = []
+for m in range(json_data["num-matches"]):
+    for c in json_data["match-constraints"][m]:
+        l = parseSExpr(c)
+        if ( len(l) == 2 and l[0] == "fall-through"
+             and len(l[1]) == 2 and l[1][0] == "block-of-bnode"
+             and len(l[1][1]) == 2 and l[1][1][0] == "ai"
+           ):
+            fall_b = int(l[1][1][1])
+            params.append([m, fall_b])
+json_data["match-fall-through-block"] = params
+
+# Remove matches that are useless for this model
+# TODO: implement
+
 # Dump parameters [MC] for 1-based solver
 dumpParams( json_data["fun-num-operations"]
           , "numOperationsInFunction"
+          )
+dumpParams( json_data["fun-num-blocks"]
+          , "numBlocksInFunction"
           )
 dumpParams( json_data["num-matches"]
           , "numMatches"
@@ -181,6 +213,16 @@ dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
+          )
+dumpParams( bumpArrOfSing(json_data["match-entry-blocks"])
+          , "entryBlockOfMatch"
+          , VT_ARRAY1D
+          , "allMatches"
+          , VC_SINGLETON
+          )
+dumpParams( bumpArrOfArr(json_data["match-fall-through-block"])
+          , "fallThroughBlockOfMatch"
+          , VT_ARRAY2D
           )
 dumpParams( json_data["match-latencies"]
           , "latencyOfMatch"

@@ -36,12 +36,17 @@
 % Function data.
 int: numOperationsInFunction;
 array[allOperationsInFunction] of int: coverCostOfOperationInFunction;
+int: numBlocksInFunction;
 int: execFrequencyGCD;
 
 % Match data.
 int: numMatches;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of int: latencyOfMatch;
+array[allMatches] of set of int: entryBlockOfMatch;
+
+% Arrays that encode constraints
+array[int, int] of int: fallThroughBlockOfMatch;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
@@ -54,6 +59,7 @@ array[allMatches] of int: latencyOfMatch;
 
 % Sets to be used as array ranges.
 set of int: allOperationsInFunction = 1..numOperationsInFunction;
+set of int: allBlocksInFunction = 1..numBlocksInFunction;
 set of int: allMatches = 1..numMatches;
 
 % The set of matches that can cover a particular operation.
@@ -127,6 +133,10 @@ array[allMatches] of var bool: sel;
 % The match that covers a particular operation.
 array[allOperationsInFunction] of var allMatches: omatch;
 
+% Block ordering (succ[b] is the block appearing immeditely after block b in the
+% generated code).
+array[allBlocksInFunction] of var allBlocksInFunction: succ;
+
 % Cost.
 var int: totalcost;
 array[allOperationsInFunction] of var allOpCosts: opcosts;
@@ -155,6 +165,32 @@ constraint
     ( omatch[o] = m <-> sel[m] )
   );
 
+% For each selected match m that apply fall-through, enforce either:
+%    - that the fall-through block of m is the immediate successor of the entry
+%      block of m, or
+%    - that the fall-through block of m is one block away from the entry block
+%      of m.
+constraint
+  forall (i in index_set_1of2(fallThroughBlockOfMatch))
+  ( let { int: m = fallThroughBlockOfMatch[i, 1]
+        , int: fall_b = fallThroughBlockOfMatch[i, 2]
+        }
+    in sel[m] -> falls_through(m, fall_b)
+  );
+
+predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
+  let { int: entry_b = min(entryBlockOfMatch[m])
+      , var int: succ_b = succ[entry_b]
+      }
+  in succ_b = fall_b \/ succ[succ_b] = fall_b;
+
+% Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
+constraint
+  if card(allBlocksInFunction) > 1
+  then circuit(succ) :: domain
+  else true
+  endif;
+
 % Constrain the cost that can be incurred by each operation.
 constraint
   forall (op in allOperationsInFunction)
@@ -170,11 +206,16 @@ constraint
 % SOLVE AND OUTPUT
 %==================
 
-solve ::
-  int_search(opcosts, largest, indomain_min, complete)
+solve
+  :: seq_search(
+       [ % Try the smallest cost for the operation that incurs the largest cost.
+         int_search(opcosts, largest, indomain_min, complete)
+       , % Find a block order.
+         int_search(succ, smallest, indomain_min, complete)
+       ])
   minimize totalcost;
 
-% oplace, omatch, dmatch are handy for debugging
+% sel is handy for debugging
 output [ "sel=", show(sel), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];
