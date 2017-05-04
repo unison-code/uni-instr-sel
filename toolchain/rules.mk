@@ -222,6 +222,12 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 				  -a $*.aimaps.json \
 				  -o $@
 
+%.presolved.ll.model.json: %.presolved.hl.model.json %.presolved.aimaps.json
+	$(UNI_IS_CMD) transform --lower-hl-cp-model \
+				  -m $*.presolved.hl.model.json \
+				  -a $*.presolved.aimaps.json \
+				  -o $@
+
 %.presolved.ll.sol.json: %.presolved.ll.model.json %.lb.json %.ub.json
 	$(SOLVER_CMD) -i $*.presolved.ll.model.json \
 				  -t $(SOLVER_TIME_LIMIT) \
