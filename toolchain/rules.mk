@@ -189,13 +189,6 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 							 -a $*.aimaps.json \
 							 > $@
 
-%.presolved.hl.model.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                           %.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json
-	$(UNI_IS_CMD) make --construct-hl-cp-model \
-				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-				  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json \
-				  -o $@
-
 %.hl.model.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
                  %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json
 	$(UNI_IS_CMD) make --construct-hl-cp-model \
@@ -203,17 +196,24 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 				  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
 				  -o $@
 
-%.presolved.aimaps.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                         %.presolved.hl.model.json
-	$(UNI_IS_CMD) make --compute-array-index-maplists \
+%.presolved.hl.model.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                           %.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json
+	$(UNI_IS_CMD) make --construct-hl-cp-model \
 				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-				  -m $*.presolved.hl.model.json \
+				  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json \
 				  -o $@
 
 %.aimaps.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json %.hl.model.json
 	$(UNI_IS_CMD) make --compute-array-index-maplists \
 				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
 				  -m $*.hl.model.json \
+				  -o $@
+
+%.presolved.aimaps.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                         %.presolved.hl.model.json
+	$(UNI_IS_CMD) make --compute-array-index-maplists \
+				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
+				  -m $*.presolved.hl.model.json \
 				  -o $@
 
 %.ll.model.json: %.hl.model.json %.aimaps.json
