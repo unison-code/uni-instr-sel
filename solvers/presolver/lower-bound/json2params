@@ -135,6 +135,20 @@ def convData(d, var_conv):
 def parseSExpr(s):
     return sexparser.parse(s)
 
+def removeMatch(json, m):
+    json["num-matches"] = json["num-matches"] - 1
+    del json["match-operations-covered"][m]
+    del json["match-latencies"][m]
+    del json["match-entry-blocks"][m]
+    new_match_fall_through_params = []
+    for t in json["match-fall-through-block"]:
+        if t[0] != m:
+            if t[0] > m:
+                t[0] = t[0] - 1
+            new_match_fall_through_params.append(t)
+    json["match-fall-through-block"] = new_match_fall_through_params
+    return json
+
 
 
 #=============
@@ -188,7 +202,12 @@ for m in range(json_data["num-matches"]):
 json_data["match-fall-through-block"] = params
 
 # Remove matches that are useless for this model
-# TODO: implement
+queue = range(json_data["num-matches"])
+while len(queue) > 0:
+    m = queue.pop(0)
+    if len(json_data["match-operations-covered"][m]) == 0:
+        json_data = removeMatch(json_data, m)
+        queue = [n-1 for n in queue]
 
 # Dump parameters for 1-based solver
 dumpParams( json_data["fun-num-operations"]
