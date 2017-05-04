@@ -156,7 +156,7 @@ json_data = []
 with open(json_file, 'r') as file:
     json_data = json.load(file)
 
-# [MC] Compute GCD of frequencies
+# Compute GCD of frequencies
 fqs = json_data["fun-block-exec-freqs"]
 scaled = []
 g = fqs[0]
@@ -172,7 +172,7 @@ for o in range(json_data["fun-num-operations"]):
     min_freq = sys.maxint
     for b in bs:
         min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
-    cover_costs.append(min_freq)
+    cover_costs.append(min_freq / g)
 
 # Produce 'match-fall-through-block' parameters
 params = []
@@ -190,7 +190,7 @@ json_data["match-fall-through-block"] = params
 # Remove matches that are useless for this model
 # TODO: implement
 
-# Dump parameters [MC] for 1-based solver
+# Dump parameters for 1-based solver
 dumpParams( json_data["fun-num-operations"]
           , "numOperationsInFunction"
           )
