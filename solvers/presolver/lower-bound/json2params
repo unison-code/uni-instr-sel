@@ -149,6 +149,24 @@ def removeMatch(json, m):
     json["match-fall-through-block"] = new_match_fall_through_params
     return json
 
+def computeOpCoverageDict(json):
+    D = {}
+    for m in range(json["num-matches"]):
+        key = getOpCoverageKey(json["match-operations-covered"][m])
+        m_cost = json["match-latencies"][m]
+        if key in D:
+            best_m = D[key]
+            best_cost = json["match-latencies"][best_m]
+        else:
+            best_cost = sys.maxint
+        if m_cost < best_cost:
+            D[key] = m
+    return D
+
+def getOpCoverageKey(os):
+    key = ""
+    os_str = map(str, os)
+    return ",".join(os_str)
 
 
 #=============
@@ -208,6 +226,32 @@ while len(queue) > 0:
     if len(json_data["match-operations-covered"][m]) == 0:
         json_data = removeMatch(json_data, m)
         queue = [n-1 for n in queue]
+
+# Sort operation coverage information
+for i in range(len(json_data["match-operations-covered"])):
+    os = json_data["match-operations-covered"][i]
+    json_data["match-operations-covered"][i] = sorted(os)
+
+# Remove matches that cover the same operations at equal or greater cost (but
+# does not enforce any fall-through).
+D = computeOpCoverageDict(json_data)
+dominated_ms = []
+for m in range(json_data["num-matches"]):
+    skip = False
+    for t in json_data["match-fall-through-block"]:
+        if t[0] == m:
+            skip = True
+            break
+    if skip:
+        continue
+    key = getOpCoverageKey(json_data["match-operations-covered"][m])
+    if D[key] != m:
+        dominated_ms.append(m)
+queue = dominated_ms
+while len(queue) > 0:
+    m = queue.pop(0)
+    json_data = removeMatch(json_data, m)
+    queue = [n-1 for n in queue]
 
 # Dump parameters for 1-based solver
 dumpParams( json_data["fun-num-operations"]
