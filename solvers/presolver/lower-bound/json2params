@@ -197,10 +197,11 @@ for x in fqs:
 for x in fqs:
     scaled.append(x / g)
 
-# Remove all copy operations, as they can always be covered using a null pattern
+# Remove all copy operations that is coverable by a zero-cost pattern
 copy_ops = set()
 for m in json_data["match-copy-instrs"]:
-    copy_ops = copy_ops | set(json_data["match-operations-covered"][m])
+    if json_data["match-latencies"][m] == 0:
+        copy_ops = copy_ops | set(json_data["match-operations-covered"][m])
 for m in range(json_data["num-matches"]):
     new_ops_covered = []
     for p in json_data["match-operations-covered"][m]:
