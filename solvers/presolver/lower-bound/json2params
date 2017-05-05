@@ -197,6 +197,19 @@ for x in fqs:
 for x in fqs:
     scaled.append(x / g)
 
+# Remove all copy operations, as they can always be covered using a null pattern
+copy_ops = set()
+for m in json_data["match-copy-instrs"]:
+    copy_ops = copy_ops | set(json_data["match-operations-covered"][m])
+for m in range(json_data["num-matches"]):
+    new_ops_covered = []
+    for p in json_data["match-operations-covered"][m]:
+        if p not in copy_ops:
+            new_ops_covered.append(p - len([ q for q in copy_ops if q < p ]))
+    json_data["match-operations-covered"][m] = new_ops_covered
+json_data["fun-num-operations"] = \
+    json_data["fun-num-operations"] - len(copy_ops)
+
 # Compute cover cost for operations
 cover_costs = []
 for o in range(json_data["fun-num-operations"]):
