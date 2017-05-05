@@ -215,8 +215,10 @@ solve
        ])
   minimize totalcost;
 
-% sel is handy for debugging
-output [ "sel=", show(sel), "\n"
+% omatch, opcosts, and sel is handy for debugging
+output [ "omatch=", show(omatch), "\n"
+       , "opcosts=", show(opcosts), "\n"
+       , "sel=", show(sel), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];
 
