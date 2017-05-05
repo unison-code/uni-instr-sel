@@ -245,14 +245,16 @@ for i in range(len(json_data["match-operations-covered"])):
     os = json_data["match-operations-covered"][i]
     json_data["match-operations-covered"][i] = sorted(os)
 
-# Remove matches that cover the same operations at equal or greater cost (but
-# does not enforce any fall-through).
+# Remove matches that span no blocks and cover the same operations at equal or
+# greater cost
 D = computeOpCoverageDict(json_data)
 dominated_ms = []
-ms_with_fallthrough = \
-    set([ t[0] for t in json_data["match-fall-through-block"] ])
+spanning_ms = \
+    set([ m for m in range(json_data["num-matches"])
+          if len(json_data["match-spanned-blocks"][m]) == 0
+        ])
 for m in range(json_data["num-matches"]):
-    if m in ms_with_fallthrough:
+    if m in spanning_ms:
         continue
     key = getOpCoverageKey(json_data["match-operations-covered"][m])
     if D[key] != m:
