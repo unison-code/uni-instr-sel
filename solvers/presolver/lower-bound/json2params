@@ -249,13 +249,10 @@ for i in range(len(json_data["match-operations-covered"])):
 # does not enforce any fall-through).
 D = computeOpCoverageDict(json_data)
 dominated_ms = []
+ms_with_fallthrough = \
+    set([ t[0] for t in json_data["match-fall-through-block"] ])
 for m in range(json_data["num-matches"]):
-    skip = False
-    for t in json_data["match-fall-through-block"]:
-        if t[0] == m:
-            skip = True
-            break
-    if skip:
+    if m in ms_with_fallthrough:
         continue
     key = getOpCoverageKey(json_data["match-operations-covered"][m])
     if D[key] != m:
