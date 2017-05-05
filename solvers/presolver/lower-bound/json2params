@@ -208,6 +208,13 @@ for m in range(json_data["num-matches"]):
         if p not in copy_ops:
             new_ops_covered.append(p - len([ q for q in copy_ops if q < p ]))
     json_data["match-operations-covered"][m] = new_ops_covered
+op_places = json_data["fun-op-placements"]
+offset = 0
+for o in copy_ops:
+    i = o - offset
+    del op_places[i]
+    offset = offset + 1
+json_data["fun-op-placements"] = op_places
 json_data["fun-num-operations"] = \
     json_data["fun-num-operations"] - len(copy_ops)
 
