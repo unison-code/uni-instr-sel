@@ -135,18 +135,75 @@ def convData(d, var_conv):
 def parseSExpr(s):
     return sexparser.parse(s)
 
+def removeOperation(json, o):
+    def updateOpSet(os):
+        return [ p-1 if p < o else p for p in os if p != o ]
+
+    json["fun-num-operations"] = json_data["fun-num-operations"] - 1
+    json["fun-copies"] = updateOpSet(json["fun-copies"])
+    json["fun-control-ops"] = updateOpSet(json["fun-control-ops"])
+    del json["fun-op-placements"][o]
+
+    deps = json["fun-op-dependencies"]
+    o_deps = deps[o]
+    deps = [ os + o_deps if o in ms else os for os in deps ]
+    del deps[o]
+    deps = [ updateOpSet(os) for os in deps ]
+    json["fun-op-dependencies"] = deps
+
+    json["match-operations-covered"] = \
+       [ updateOpSet(os) for os in json["match-operations-covered"] ]
+    del json["match-operations-covered"][o]
+
+    return json
+
 def removeMatch(json, m):
+    def updateMatchSet(ms):
+        return [ n-1 if n < m else n for n in ms if n != m ]
+
+    # Assumes that the first element in each tuple represents the match
+    def updateTupleSet(ts):
+        new_ts = []
+        for t in ts:
+            if t[0] == m:
+                continue
+            if m < t[0]:
+                t[0] = t[0] - 1
+            new_ts.append(t)
+        return new_ts
+
     json["num-matches"] = json["num-matches"] - 1
     del json["match-operations-covered"][m]
-    del json["match-latencies"][m]
+    del json["match-operands-defined"][m]
+    del json["match-operands-used"][m]
+    del json["match-external-operands"][m]
+    del json["match-internal-operands"][m]
     del json["match-entry-blocks"][m]
-    new_match_fall_through_params = []
-    for t in json["match-fall-through-block"]:
-        if t[0] != m:
-            if t[0] > m:
-                t[0] = t[0] - 1
-            new_match_fall_through_params.append(t)
-    json["match-fall-through-block"] = new_match_fall_through_params
+    del json["match-spanned-blocks"][m]
+    del json["match-consumed-blocks"][m]
+    del json["match-code-sizes"][m]
+    del json["match-latencies"][m]
+    del json["match-constraints"][m]
+    del json["match-instruction-ids"][m]
+
+    json["match-copy-instrs"] = updateMatchSet(json["match-copy-instrs"])
+    json["match-kill-instrs"] = updateMatchSet(json["match-kill-instrs"])
+    json["match-null-instrs"] = updateMatchSet(json["match-null-instrs"])
+    json["match-phi-instrs"] = updateMatchSet(json["match-phi-instrs"])
+    new_ill_combs = [ updateMatchSet(ms) for ms in json["illegal-match-combs"] ]
+    json["illegal-match-combs"] = [ ms for ms in new_ill_combs if len(ms) > 1 ]
+
+    json["match-valid-value-locs"] = \
+        updateTupleSet(json["match-valid-value-locs"])
+    json["match-same-value-locs"] = \
+        updateTupleSet(json["match-same-value-locs"])
+    json["match-input-def-edges"] = \
+        updateTupleSet(json["match-input-def-edges"])
+    json["match-output-def-edges"] = \
+        updateTupleSet(json["match-output-def-edges"])
+    json["match-fall-through-block"] = \
+        updateTupleSet(json["match-fall-through-block"])
+
     return json
 
 def computeOpCoverageDict(json):
