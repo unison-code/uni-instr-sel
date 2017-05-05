@@ -259,7 +259,7 @@ D = computeOpCoverageDict(json_data)
 dominated_ms = []
 spanning_ms = \
     set([ m for m in range(json_data["num-matches"])
-          if len(json_data["match-spanned-blocks"][m]) == 0
+          if len(json_data["match-spanned-blocks"][m]) > 0
         ])
 for m in range(json_data["num-matches"]):
     if m in spanning_ms:
