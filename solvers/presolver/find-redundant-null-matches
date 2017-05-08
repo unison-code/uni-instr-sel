@@ -206,9 +206,10 @@ for m in json_data["match-phi-instrs"]:
 
 redundant_matches = set()
 
+kill_matches = set(json_data["match-kill-instrs"])
+
 # For each copy operation o, check if there is a null copy match to cover it. If
 # so, then the kill match covering o is redundant
-kill_matches = set(json_data["match-kill-instrs"])
 null_copy_ops = set()
 for m in copy_matches & null_matches - kill_matches:
     null_copy_ops = \
@@ -216,6 +217,14 @@ for m in copy_matches & null_matches - kill_matches:
 for m in kill_matches:
     os = set(json_data["match-operations-covered"][m])
     if os <= null_copy_ops:
+        redundant_matches.add(m)
+
+# For each kill match defining a datum d, if d has no alternatives then the kill
+# match is redundant
+for m in kill_matches:
+    d = match_data_used[m][0]
+    ms = [ n for n in kill_matches if n != m and d in match_data_used[n] ]
+    if len(ms) == 0:
         redundant_matches.add(m)
 
 # For each non-null copy match, check if there is (full or partial) overlap
