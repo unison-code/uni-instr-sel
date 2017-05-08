@@ -135,7 +135,7 @@ with open(a_json_file, 'r') as file:
 
 bad_matches_ai = set(d_json_data["dominated-matches-ai"]) | \
                  set(i_json_data["illegal-matches-ai"]) | \
-                 set(r_json_data["redundant-copy-matches-ai"])
+                 set(r_json_data["redundant-null-matches-ai"])
 
 # Map match array indices to match IDs
 bad_matches = { a_json_data["array-index-to-match-id-maps"][ai]

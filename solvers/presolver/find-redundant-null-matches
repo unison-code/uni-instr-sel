@@ -93,8 +93,8 @@ for m in range(num_matches):
                                  if d in operand_alt_sets[o]
                          ]
 
-copy_matches = json_data["match-copy-instrs"]
-null_matches = json_data["match-null-instrs"]
+copy_matches = set(json_data["match-copy-instrs"])
+null_matches = set(json_data["match-null-instrs"])
 
 # Compute set of valid locations per datum from function
 fun_data_locations = [None] * num_data
@@ -196,8 +196,6 @@ for m in json_data["match-phi-instrs"]:
     for d in d_uses:
         data_use_locs[d] = new_locs
 
-redundant_matches = set()
-
 # Find the data that belong phi operations
 phi_data = set()
 for m in json_data["match-phi-instrs"]:
@@ -206,12 +204,24 @@ for m in json_data["match-phi-instrs"]:
     phi_data = phi_data.union(set(d_defs))
     phi_data = phi_data.union(set(d_uses))
 
+redundant_matches = set()
+
+# For each copy operation o, check if there is a null copy match to cover it. If
+# so, then the kill match covering o is redundant
+kill_matches = set(json_data["match-kill-instrs"])
+null_copy_ops = set()
+for m in copy_matches & null_matches - kill_matches:
+    null_copy_ops = \
+        null_copy_ops | set(json_data["match-operations-covered"][m])
+for m in kill_matches:
+    os = set(json_data["match-operations-covered"][m])
+    if os <= null_copy_ops:
+        redundant_matches.add(m)
+
 # For each non-null copy match, check if there is (full or partial) overlap
 # between the datum it uses and the datum it defines. If there is, then the
 # match is redundant
-for m in copy_matches:
-    if m in null_matches:
-        continue
+for m in copy_matches - null_matches:
     use_d = match_data_used[m][0]
     def_d = match_data_defined[m][0]
 
@@ -233,5 +243,5 @@ for m in copy_matches:
 
 # Print JSON
 r_json_data = {}
-r_json_data["redundant-copy-matches-ai"] = list(redundant_matches)
+r_json_data["redundant-null-matches-ai"] = list(redundant_matches)
 print json.dumps(r_json_data)
