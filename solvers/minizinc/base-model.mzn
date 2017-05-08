@@ -767,20 +767,46 @@ constraint
        endif
   );
 
-% TODO: fix, this causes an arithmetic infinity error
-%
-%% A consequence of symmetry breaking.
-%constraint
-%  forall ( chain in interchangeableDataInFunction
-%           where forall (d in chain)
-%                 ( defsetOfDatum[d] subset copyInstrMatches )
-%         )
-%  ( let { array[int] of int: kills =
-%            [ min(defsetOfDatum[d] intersect killInstrMatches) | d in chain ]
-%        }
-%    in increasing (m in kills)
-%       ( sel[m] )
-%  );
+% A consequence of symmetry breaking (concerns selection of null copies).
+constraint
+  forall ( chain in interchangeableDataInFunction
+           where forall (d in chain)
+                 ( defsetOfDatum[d] subset copyInstrMatches )
+         )
+  ( let { array[int] of int: copies =
+            [ min( defsetOfDatum[d] intersect
+                   nullInstrMatches diff
+                   killInstrMatches
+                 )
+            | d in chain
+              where card( defsetOfDatum[d] intersect
+                          nullInstrMatches diff
+                          killInstrMatches
+                        ) > 0
+            ]
+        }
+    in increasing (m in copies)
+       ( sel[m] )
+  );
+
+% A consequence of symmetry breaking (concerns selection of kill matches).
+constraint
+  forall ( chain in interchangeableDataInFunction
+           where forall (d in chain)
+                 ( defsetOfDatum[d] subset copyInstrMatches )
+         )
+  ( let { array[int] of int: kills =
+            [ min(defsetOfDatum[d] intersect killInstrMatches)
+            | d in chain
+              where card(defsetOfDatum[d] intersect killInstrMatches) > 0
+            ]
+        }
+  in if length(kills) > 0
+     then increasing (m in kills)
+          ( sel[m] )
+     else true
+     endif
+  );
 
 
 
