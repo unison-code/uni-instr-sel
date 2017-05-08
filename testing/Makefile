@@ -193,7 +193,7 @@ run-medium-regression-tests:
 .PHONY: .run-regression-tests
 .run-regression-tests: SOLVER_TIME_LIMIT := 0
 .run-regression-tests: DISABLE_UPPER_BOUND := 1
-.run-regression-tests: DISABLE_LOWER_BOUND := 1
+.run-regression-tests: DISABLE_LOWER_BOUND := 0
 .run-regression-tests:
 	@echo
 	@echo -n "$(C_INFO)"
