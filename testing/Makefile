@@ -482,6 +482,15 @@ pattern.dot:
     done
 
 %.model.dump: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
+              %.aimaps.json \
+              %.ll.model.json
+	$(UNI_IS_CMD) make --dump-low-level-model-info \
+                  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                  -m $*.ll.model.json \
+                  -a $*.aimaps.json \
+                  -o $@
+
+%.presolved.model.dump: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
               %.presolved.aimaps.json \
               %.presolved.ll.model.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
