@@ -72,6 +72,7 @@ MINIZINC_STATS_FILEPATH=""
 MINIZINC_ERROR_FILEPATH=""
 MINIZINC_SOLVER_BIN=""
 MINIZINC_GLOBALS_DIR=""
+MINIZINC_TIME_LIMIT=""
 
 
 
@@ -238,6 +239,9 @@ function executeSolver {
     echo -n "SOLVING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
     command="$command $MINIZINC_SOLVER_BIN"
+    if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
+        command="$command --time-out ${MINIZINC_TIME_LIMIT}"
+    fi
     command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
     command="$command > $MINIZINC_SOLUTION_FILEPATH"
     exe "$command" 0 "$MINIZINC_ERROR_FILEPATH"
@@ -286,6 +290,10 @@ do
         ;;
         -g|--globals)
             MINIZINC_GLOBALS_DIR="$2"
+            shift
+        ;;
+        -t|--timelimit)
+            MINIZINC_TIME_LIMIT="$2"
             shift
         ;;
         *)

@@ -147,12 +147,12 @@ if not has_sol:
 
 # Extract data
 all_data = []
+found_optimal = False
 for line in content:
-    if ( len(line) == 0 or
-         line[0] == '%' or
-         consistsOnlyOf(line, '-') or
-         consistsOnlyOf(line, '=')
-       ):
+    if len(line) == 0 or line[0] == '%' or consistsOnlyOf(line, '-'):
+        continue
+    if consistsOnlyOf(line, '='):
+        found_optimal=True
         continue
     try:
         name, data = extractData(line)
@@ -179,6 +179,10 @@ for d in all_data:
 # Check if any required data is missing
 if len(keep_table) > 0:
     error("Required data '" + keep_table[0] + "' not found")
+
+# If the solution is not optimal, disable lower bound
+if not found_optimal:
+    json_data["lower-bound"] = 0
 
 # Print JSON
 print json.dumps(json_data)
