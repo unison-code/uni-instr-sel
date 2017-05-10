@@ -761,9 +761,9 @@ constraint
                                     where operandAlternatives[y] = chain
                               }
         }
-    in if card(ixset) = 0
-       then true
-       else value_precede_chain(chain, [alt[y] | y in ixset])
+    in if card(ixset) > 0
+       then value_precede_chain(chain, [alt[y] | y in ixset])
+       else true
        endif
   );
 
