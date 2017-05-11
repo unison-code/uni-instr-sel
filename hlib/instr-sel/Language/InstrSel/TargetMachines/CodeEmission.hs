@@ -105,7 +105,7 @@ generateCode target model sol@(HighLevelSolution {}) =
   emittedCode $
   foldl ( \st0 b ->
           let matches = getMatchesPlacedInBlock sol b
-              sorted_matches = sortMatchesByFlow sol model matches
+              sorted_matches = sortMatchesByFlow target sol model matches
               params = findHighLevelBlockParamsWithNodeID model b
               code = AsmBlock { asmString = pShow $
                                             hlBlockName $
@@ -215,15 +215,26 @@ findHighLevelBlockParamsWithNodeID model n =
 
 -- | Sorts a list of matches according to their flow dependencies. This is done
 -- by first constructing the corresponding 'FlowDAG' for the matches, and then
--- performing a topological sort on that DAG.
+-- performing a topological sort on that DAG, with the phi matches appearing
+-- first.
 sortMatchesByFlow
-  :: HighLevelSolution
+  :: TargetMachine
+  -> HighLevelSolution
   -> HighLevelModel
   -> [MatchID]
   -> [MatchID]
-sortMatchesByFlow sol model ms =
-  let dag = mkFlowDAG sol model ms
-  in I.topsort' (getIntDag dag)
+sortMatchesByFlow tm sol model ms0 =
+  let dag = mkFlowDAG sol model ms0
+      ms1 = I.topsort' (getIntDag dag)
+      phi_ms = filter ( \mid ->
+                        let m = getHLMatchParams model mid
+                            i = getInstruction tm (hlMatchInstructionID m)
+                        in isInstructionPhi i
+                      ) $
+               ms1
+      ms2 = filter (`notElem` phi_ms) $
+            ms1
+  in phi_ms ++ ms2
 
 -- | Takes a CP solution data set and a list of match IDs, and produces a
 -- control and data dependency DAG such that every match ID is represented by a
