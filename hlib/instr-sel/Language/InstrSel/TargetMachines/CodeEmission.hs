@@ -141,7 +141,7 @@ mkInitState :: HighLevelSolution -> HighLevelModel -> EmissionState
 mkInitState sol model =
   let sel_matches = hlSolSelMatches sol
       null_matches = filter hlMatchIsNullInstruction $
-                     map (getHLMatchParams (hlMatchParams model)) $
+                     map (getHLMatchParams model) $
                      sel_matches
       op_maps = hlSolNodesOfOperands sol
       const_ns = map fst $ hlFunValueConstData $ hlFunctionParams model
@@ -254,9 +254,8 @@ addUseEdgesToDAG
   -> IFlowDAG
 addUseEdgesToDAG sol model mid g0 =
   let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
-      ds = hlMatchParams model
       match_node = fromJust $ getNodeOfMatch g0 mid
-      match = getHLMatchParams ds mid
+      match = getHLMatchParams model mid
       ns = I.labNodes g0
       op_uses_of_m = filter ( `notElem` ( map snd
                                           $ hlMatchOperandsUsedByPhis match
@@ -267,7 +266,7 @@ addUseEdgesToDAG sol model mid g0 =
       defs_of_m =
         map ( \(n, i) -> ( n
                          , map getNodeID
-                           $ hlMatchOperandsDefined $ getHLMatchParams ds i
+                           $ hlMatchOperandsDefined $ getHLMatchParams model i
                          )
             ) $
         ns
@@ -306,7 +305,7 @@ addControlEdgesToDAG
   -> IFlowDAG
   -> IFlowDAG
 addControlEdgesToDAG _ model mid g =
-  let match = getHLMatchParams (hlMatchParams model) mid
+  let match = getHLMatchParams model mid
   in if hlMatchHasControlFlow match
      then let ns = I.labNodes g
               pi_n = fst $ head $ filter (\(_, i) -> i == mid) ns
@@ -314,20 +313,27 @@ addControlEdgesToDAG _ model mid g =
           in foldr (\n' g' -> I.insEdge (n', pi_n, ()) g') g other_ns
      else g
 
--- | Retrieves the 'HighLevelMatchParams' entity with matching match ID. It
--- is assumed that exactly one such entity always exists in the given list.
+-- | Retrieves the 'HighLevelMatchParams' entity with matching match ID in a
+-- given 'HighLevelModel'
 getHLMatchParams
-  :: [HighLevelMatchParams]
+  :: HighLevelModel
   -> MatchID
   -> HighLevelMatchParams
-getHLMatchParams ps mid = head $ filter (\p -> hlMatchID p == mid) ps
+getHLMatchParams model mid =
+  let m = filter (\p -> hlMatchID p == mid) $
+          hlMatchParams model
+  in if length m == 1
+     then head m
+     else error $ "getHLMatchParams: no params found with match ID " ++
+                  pShow mid
 
--- | Retrieves the 'Instruction' entity with matching instruction ID. It is
--- assumed that such an entity always exists in the given list.
+-- | Retrieves the 'Instruction' entity with matching instruction ID.
 getInstruction :: TargetMachine -> InstructionID -> Instruction
 getInstruction tm iid =
   let instr = findInstruction tm iid
-  in fromJust instr
+  in if isJust instr
+     then fromJust instr
+     else error $ "getInstruction: no instruction found with ID " ++ pShow iid
 
 -- | Emits the instructions for a given match. Each part of the code is emitted
 -- by appending strings to the instruction currently at the head of the list of
@@ -351,7 +357,7 @@ emitInstructionsOfMatch model sol tm st0 mid =
       fetchNodeID (Just (Right nid)) = Just nid
       fetchNodeID (Just (Left oid)) = Just $ getNodeIDFromOpID oid
       fetchNodeID Nothing = Nothing
-      match = getHLMatchParams (hlMatchParams model) mid
+      match = getHLMatchParams model mid
       instr_data = getInstruction tm (hlMatchInstructionID match)
       emit_parts = updateNodeIDsInEmitStrParts
                      (emitStrParts $ instrEmitString instr_data) $
