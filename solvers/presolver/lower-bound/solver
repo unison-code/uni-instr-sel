@@ -188,7 +188,7 @@ function flattenModelFile {
     fzn_filepath="${MINIZINC_FULL_MODEL_FILEPATH%.*}.fzn"
     reportTask "Flattening MiniZinc model file"
     stats_filepath="$MINIZINC_STATS_FILEPATH"
-    echo -n "FLATTENING TIME: " > $stats_filepath
+    echo -n "FLATTENING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
     command="$command mzn2fzn -G $MINIZINC_GLOBALS_DIR"
     command="$command ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
@@ -354,7 +354,13 @@ MINIZINC_STATS_FILEPATH="$TMP_DIR/$MINIZINC_STATS_FILENAME"
 MINIZINC_ERROR_FILEPATH="$TMP_DIR/$MINIZINC_ERROR_FILENAME"
 
 reportTask "Generating MiniZinc parameter file"
-exe "$THIS_DIR/json2params $JSON_INPUT_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
+stats_filepath="$MINIZINC_STATS_FILEPATH"
+echo -n "PARAMS-GENERATION TIME: " >> $stats_filepath
+command="`which time` -pqao $stats_filepath --format %es"
+command="$command \
+         $THIS_DIR/json2params $JSON_INPUT_FILEPATH > $MINIZINC_PARAMS_FILEPATH"
+exe "$command"
+reportLatestTimeFromStats
 reportNewEntity $MINIZINC_PARAMS_FILEPATH
 
 reportTask "Generating MiniZinc model file"

@@ -70,6 +70,7 @@ with open(stats_file, 'r') as file:
     content = file.readlines()
 
 # Extract data
+found_paramsgen_time = False
 found_flat_time = False
 found_solv_time = False
 for l in content:
@@ -82,13 +83,27 @@ for l in content:
         time_str = line[1][:-1] # Strip away the unit
         solv_time = float(time_str)
         found_solv_time = True
+    elif line[0] == "PARAMS-GENERATION TIME":
+        time_str = line[1][:-1] # Strip away the unit
+        paramsgen_time = float(time_str)
+        found_paramsgen_time = True
 
 # Turn desirable data into JSON
 json_data = {}
+prep_time = 0
+if found_paramsgen_time:
+    prep_time = prep_time + paramsgen_time
+else:
+    error("No params-generation time found")
 if found_flat_time:
-    json_data["prep-time"] = flat_time
+    prep_time = prep_time + flat_time
+else:
+    error("No flattening time time found")
+json_data["prep-time"] = prep_time
 if found_solv_time:
     json_data["solving-time"] = solv_time
+else:
+    error("No solving time found")
 
 # Print JSON
 print json.dumps(json_data)
