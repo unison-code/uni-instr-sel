@@ -190,8 +190,10 @@ function flattenModelFile {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "FLATTENING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
-    command="$command mzn2fzn -G $MINIZINC_GLOBALS_DIR"
-    command="$command ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
+    command="$command \
+             mzn2fzn -G $MINIZINC_GLOBALS_DIR"
+    command="$command \
+             ${MINIZINC_FULL_MODEL_FILEPATH##*/}"
     exe "$command"
     reportLatestTimeFromStats
     reportNewEntity "$fzn_filepath"
@@ -238,12 +240,16 @@ function executeSolver {
     stats_filepath="$MINIZINC_STATS_FILEPATH"
     echo -n "SOLVING TIME: " >> $stats_filepath
     command="`which time` -pqao $stats_filepath --format %es"
-    command="$command $MINIZINC_SOLVER_BIN"
+    command="$command \
+             $MINIZINC_SOLVER_BIN"
     if [[ $MINIZINC_TIME_LIMIT > 0 ]]; then
-        command="$command --time-out ${MINIZINC_TIME_LIMIT}"
+        command="$command \
+                 --time-out ${MINIZINC_TIME_LIMIT}"
     fi
-    command="$command ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
-    command="$command > $MINIZINC_SOLUTION_FILEPATH"
+    command="$command \
+             ${MINIZINC_FULL_MODEL_FILENAME%.*}.fzn"
+    command="$command \
+             > $MINIZINC_SOLUTION_FILEPATH"
     exe "$command" 0 "$MINIZINC_ERROR_FILEPATH"
     exit_status=$?
     reportLatestTimeFromStats
