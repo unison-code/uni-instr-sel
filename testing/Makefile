@@ -408,7 +408,7 @@ run-medium-regression-tests:
 	echo -n "=   PATTERN MATCHING:        " ;\
 	echo -n      "$(C_NONE)$${T_PMAT_TIME_TOTAL_PRETTY} " ;\
 	echo         "($${T_PMAT_TIME_PCENT}%)$(C_INFO)" ;\
-	echo -n "=   MODEL PREP (FLATTENING): " ;\
+	echo -n "=   MODEL PREP:              " ;\
 	echo -n      "$(C_NONE)$${T_PREP_TIME_TOTAL_PRETTY} " ;\
 	echo         "($${T_PREP_TIME_PCENT}%)$(C_INFO)" ;\
 	echo -n "=   SOLVING:                 " ;\
