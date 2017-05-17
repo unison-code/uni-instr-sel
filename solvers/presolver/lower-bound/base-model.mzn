@@ -208,7 +208,8 @@ constraint
 
 solve
   :: seq_search(
-       [ % Try the smallest cost for the operation that incurs the largest cost.
+       [ % Try the smallest cost for the operation with the largest difference
+         % between its two smallest values.
          int_search(opcosts, max_regret, indomain_min, complete)
        , % Find a block order.
          int_search(succ, first_fail, indomain_min, complete)
