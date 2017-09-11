@@ -178,7 +178,8 @@ checkSyntax fg pg st c =
   checkSyntaxPred fg pg st c &&
   checkSyntaxSucc fg pg st c &&
   checkSyntaxIn   fg pg st c &&
-  checkSyntaxOut  fg pg st c
+  checkSyntaxOut  fg pg st c &&
+  checkSyntaxNew  fg pg st c
 
 -- | Checks that for each predecessor of the matched pattern node that appears
 -- in the current mapping state, there exists a node mapping for the
@@ -293,6 +294,45 @@ checkSyntaxOut fg pg st c =
      ( S.size (preds_fn `S.intersection` t_out_fg)
        >=
        S.size (preds_pn `S.intersection` t_out_pg)
+     )
+
+-- | Similar to checkSyntaxOut and checkSyntaxIn but one step further (equation
+-- 7 in the paper). This is a 2-look-ahead check.
+checkSyntaxNew
+  :: Graph
+     -- ^ The function graph.
+  -> Graph
+     -- ^ The pattern graph.
+  -> [Mapping Node]
+     -- ^ Current mapping state.
+  -> Mapping Node
+     -- ^ Candidate mapping.
+  -> Bool
+checkSyntaxNew fg pg st c =
+  let m_fg = S.fromList $ map fNode st
+      m_pg = S.fromList $ map pNode st
+      fn = fNode c
+      pn = pNode c
+      preds_fn = getPredSet fg fn
+      preds_pn = getPredSet pg pn
+      succs_fn = getSuccSet fg fn
+      succs_pn = getSuccSet pg pn
+      t_in_fg = getTInSet fg m_fg
+      t_in_pg = getTInSet pg m_pg
+      t_out_fg = getTOutSet fg m_fg
+      t_out_pg = getTOutSet pg m_pg
+      t_fg = t_in_fg `S.union` t_out_fg
+      t_pg = t_in_pg `S.union` t_out_pg
+      neg_n_fg = (S.fromList $ getAllNodes fg) S.\\ m_fg S.\\ t_fg
+      neg_n_pg = (S.fromList $ getAllNodes pg) S.\\ m_pg S.\\ t_pg
+  in ( S.size (neg_n_fg `S.intersection` preds_fn)
+       >=
+       S.size (neg_n_pg `S.intersection` preds_pn)
+     )
+     &&
+     ( S.size (neg_n_fg `S.intersection` succs_fn)
+       >=
+       S.size (neg_n_pg `S.intersection` succs_pn)
      )
 
 -- | Gets the set of predecessor nodes for a given graph and node.
