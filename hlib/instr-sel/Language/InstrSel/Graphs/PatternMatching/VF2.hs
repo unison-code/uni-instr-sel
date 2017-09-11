@@ -15,10 +15,7 @@ where
 
 import Language.InstrSel.Graphs.Base
 
-import Data.List
-  ( intersect
-  , nub
-  )
+import qualified Data.Set as S
 
 
 
@@ -77,14 +74,14 @@ getCandidates
      -- ^ Potential candidates.
 getCandidates fg pg st =
   let toMapping (fn, pn) = Mapping { fNode = fn, pNode = pn }
-      m_fg = map fNode st
-      m_pg = map pNode st
-      t_out_fg = getTOutSet fg m_fg
-      t_out_pg = getTOutSet pg m_pg
-      t_in_fg = getTInSet fg m_fg
-      t_in_pg = getTInSet pg m_pg
-      t_d_fg = optimizePDSet $ getPDSet fg m_fg
-      t_d_pg = optimizePDSet $ getPDSet pg m_pg
+      m_fg = S.fromList $ map fNode st
+      m_pg = S.fromList $ map pNode st
+      t_out_fg = S.toList $ getTOutSet fg m_fg
+      t_out_pg = S.toList $ getTOutSet pg m_pg
+      t_in_fg = S.toList $ getTInSet fg m_fg
+      t_in_pg = S.toList $ getTInSet pg m_pg
+      t_d_fg = S.toList $ optimizePDSet $ getPDSet fg m_fg
+      t_d_pg = S.toList $ optimizePDSet $ getPDSet pg m_pg
       p_out = [ (n, head t_out_pg) | n <- t_out_fg, not (null t_out_pg) ]
       p_in  = [ (n, head t_in_pg)  | n <- t_in_fg,  not (null t_in_pg)  ]
       p_d   = [ (n, head t_d_pg)   | n <- t_d_fg,   not (null t_d_pg)   ]
@@ -201,10 +198,10 @@ checkSyntaxPred
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxPred fg pg st c =
-  let m_pg = map pNode st
-      preds_fn = getPredecessors fg (fNode c)
-      preds_pn = getPredecessors pg (pNode c)
-      preds_pn_in_m = preds_pn `intersect` m_pg
+  let m_pg = S.fromList $ map pNode st
+      preds_fn = getPredSet fg (fNode c)
+      preds_pn = getPredSet pg (pNode c)
+      preds_pn_in_m = preds_pn `S.intersection` m_pg
   in all ( \pn -> any (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
                       preds_fn
          )
@@ -223,10 +220,10 @@ checkSyntaxSucc
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxSucc fg pg st c =
-  let m_pg = map pNode st
-      succs_fn = getSuccessors fg (fNode c)
-      succs_pn = getSuccessors pg (pNode c)
-      succs_pn_in_m = succs_pn `intersect` m_pg
+  let m_pg = S.fromList $ map pNode st
+      succs_fn = getSuccSet fg (fNode c)
+      succs_pn = getSuccSet pg (pNode c)
+      succs_pn_in_m = succs_pn `S.intersection` m_pg
   in all ( \pn -> any (\fn -> (Mapping { fNode = fn, pNode = pn }) `elem` st)
                       succs_fn
          )
@@ -246,24 +243,24 @@ checkSyntaxIn
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxIn fg pg st c =
-  let m_fg = map fNode st
-      m_pg = map pNode st
+  let m_fg = S.fromList $ map fNode st
+      m_pg = S.fromList $ map pNode st
       fn = fNode c
       pn = pNode c
-      preds_fn = getPredecessors fg fn
-      preds_pn = getPredecessors pg pn
-      succs_fn = getSuccessors fg fn
-      succs_pn = getSuccessors pg pn
+      preds_fn = getPredSet fg fn
+      preds_pn = getPredSet pg pn
+      succs_fn = getSuccSet fg fn
+      succs_pn = getSuccSet pg pn
       t_in_fg = getTInSet fg m_fg
       t_in_pg = getTInSet pg m_pg
-  in ( length (succs_fn `intersect` t_in_fg)
+  in ( S.size (succs_fn `S.intersection` t_in_fg)
        >=
-       length (succs_pn `intersect` t_in_pg)
+       S.size (succs_pn `S.intersection` t_in_pg)
      )
      &&
-     ( length (preds_fn `intersect` t_in_fg)
+     ( S.size (preds_fn `S.intersection` t_in_fg)
        >=
-       length (preds_pn `intersect` t_in_pg)
+       S.size (preds_pn `S.intersection` t_in_pg)
      )
 
 -- | Same as checkSyntaxIn but for successors (equation 6 in the paper).
@@ -278,57 +275,67 @@ checkSyntaxOut
      -- ^ Candidate mapping.
   -> Bool
 checkSyntaxOut fg pg st c =
-  let m_fg = map fNode st
-      m_pg = map pNode st
+  let m_fg = S.fromList $ map fNode st
+      m_pg = S.fromList $ map pNode st
       fn = fNode c
       pn = pNode c
-      preds_fn = getPredecessors fg fn
-      preds_pn = getPredecessors pg pn
-      succs_fn = getSuccessors fg fn
-      succs_pn = getSuccessors pg pn
+      preds_fn = getPredSet fg fn
+      preds_pn = getPredSet pg pn
+      succs_fn = getSuccSet fg fn
+      succs_pn = getSuccSet pg pn
       t_out_fg = getTOutSet fg m_fg
       t_out_pg = getTOutSet pg m_pg
-  in ( length (succs_fn `intersect` t_out_fg)
+  in ( S.size (succs_fn `S.intersection` t_out_fg)
        >=
-       length (succs_pn `intersect` t_out_pg)
+       S.size (succs_pn `S.intersection` t_out_pg)
      )
      &&
-     ( length (preds_fn `intersect` t_out_fg)
+     ( S.size (preds_fn `S.intersection` t_out_fg)
        >=
-       length (preds_pn `intersect` t_out_pg)
+       S.size (preds_pn `S.intersection` t_out_pg)
      )
+
+-- | Gets the set of predecessor nodes for a given graph and node.
+getPredSet :: Graph -> Node -> S.Set Node
+getPredSet g n = S.fromList $ getPredecessors g n
+
+-- | Gets the set of successor nodes for a given graph and node.
+getSuccSet :: Graph -> Node -> S.Set Node
+getSuccSet g n = S.fromList $ getSuccessors g n
 
 -- | Gets the T_out set.
 getTOutSet
   :: Graph
      -- ^ Graph in which the nodes of M belong.
-  -> [Node]
+  -> S.Set Node
      -- ^ The M set.
-  -> [Node]
-getTOutSet g ns =
-  nub $ filter (`notElem` ns) (concatMap (getSuccessors g) ns)
+  -> S.Set Node
+getTOutSet g m =
+  let t_out = S.foldr (\n t -> t `S.union` getSuccSet g n) S.empty m
+  in t_out S.\\ m
 
 -- | Gets the T_in set.
 getTInSet
   :: Graph
      -- ^ Graph in which the nodes of M belong.
-  -> [Node]
+  -> S.Set Node
      -- ^ The M set.
-  -> [Node]
-getTInSet g ns =
-  nub $ filter (`notElem` ns) (concatMap (getPredecessors g) ns)
+  -> S.Set Node
+getTInSet g m =
+  let t_out = S.foldr (\n t -> t `S.union` getPredSet g n) S.empty m
+  in t_out S.\\ m
 
 -- | Gets the P_D set.
 getPDSet
   :: Graph
      -- ^ Graph in which the nodes of M belong.
-  -> [Node]
+  -> S.Set Node
      -- ^ The M set.
-  -> [Node]
-getPDSet g ns = filter (`notElem` ns) (getAllNodes g)
+  -> S.Set Node
+getPDSet g m = (S.fromList $ getAllNodes g) S.\\ m
 
 -- | Returns an optimized P_D set, which only includes operation and block
 -- nodes. This will result in fewer stupid candidates as these nodes are the
 -- most constrained.
-optimizePDSet :: [Node] -> [Node]
-optimizePDSet = filter (\n -> isOperationNode n || isBlockNode n)
+optimizePDSet :: S.Set Node -> S.Set Node
+optimizePDSet = S.filter (\n -> isOperationNode n || isBlockNode n)
