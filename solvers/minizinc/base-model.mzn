@@ -523,8 +523,8 @@ constraint
 % No operations may be placed in a block which is consumed by some selected
 % match.
 constraint
-  forall ( o in allOperationsInFunction
-         , m in allMatches
+  forall ( m in allMatches
+         , o in allOperationsInFunction diff operationsCoveredByMatch[m]
          , b in consumedBlocksInMatch[m]
          )
   ( sel[m] -> oplace[o] != b );
