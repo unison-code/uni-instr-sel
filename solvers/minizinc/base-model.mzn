@@ -215,12 +215,13 @@ array[int] of int: costPerOpList =
     else if k = 2 then m
     else if k = 3 then b
     else let
-         { int: prod = latencyOfMatch[m] * execFrequencyOfBlockInFunction[b]
-         , int: d = card(operationsCoveredByMatch[m])
-         , int: q = prod div d
-         , int: r = prod mod d
-         } in
-         if operationsCoveredByMatch[m][r+1] > o then q+1 else q endif
+         { int: d = card(operationsCoveredByMatch[m])
+         , int: q = latencyOfMatch[m] div d
+         , int: r = latencyOfMatch[m] mod d
+         } in if operationsCoveredByMatch[m][r+1] > o
+              then (q+1) * execFrequencyOfBlockInFunction[b]
+              else q * execFrequencyOfBlockInFunction[b]
+              endif
     endif
     endif
     endif
