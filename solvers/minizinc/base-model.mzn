@@ -885,11 +885,14 @@ constraint
                  )
          )
   ( let { set of allMatches: M = matchsetOfOp[o]
+        , int: mo = min({ m | m in M
+                              where card(operationsCoveredByMatch[m]) = 1
+                        })
         , set of allDataInFunction: D =
-            { d | do in operandsDefinedByMatch[min(M)]
+            { d | do in operandsDefinedByMatch[mo]
                 , d in operandAlternatives[do]
             }
-        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)]
+        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[mo]
                                             , u in operandAlternatives[uo]
                                         }
         }
@@ -908,12 +911,11 @@ constraint
        )
   );
 
-% If all matches in the matchset that either covers a particular operation or
-% defines a datum, does not contain any phi instructions, have identical entry
-% blocks, and use datum u, then the block defining u must dominate the entry
-% block.
+% If all matches in the matchset that either covers a particular operation do
+% not contain any phi instructions, have identical entry blocks, and use datum
+% u, then the block defining u must dominate the entry block.
 constraint
-  forall ( M in matchsetOfOp ++ defsetOfDatumOnly
+  forall ( M in matchsetOfOp
          , u in allDataInFunction
            where forall (m in M)
                  ( not (m in phiInstrMatches)
