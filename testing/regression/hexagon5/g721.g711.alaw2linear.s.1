@@ -10,19 +10,19 @@
   1    [%Pivot] <- "%Pivot = !cmp.gt(%6, ##<1 - 1>)" <- [%6]
   1    [%17] <- "%17 = !cmp.eq(%16, ##0)" <- [%16]
  56  NodeBlock:
-  1    [] <- "if (%Pivot) jump LeafBlock" <- [%Pivot]
- 35  LeafBlock1:
-  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, ##1)" <- [%6]
-  1    [] <- "if (!%SwitchLeaf2) jump NewDefault" <- [%SwitchLeaf2]
- 17  9:
-  1    [%10] <- "%10 = or(%4, #264)" <- [%4]
-  1    [] <- "jump 15" <- []
+  1    [] <- "if (!%Pivot) jump LeafBlock1" <- [%Pivot]
+ 21  LeafBlock:
+  1    [%SwitchLeaf] <- "%SwitchLeaf = cmp.eq(%6, ##0)" <- [%6]
+  1    [] <- "if (!%SwitchLeaf) jump NewDefault" <- [%SwitchLeaf]
   8  7:
   1    [%8] <- "%8 = or(%4, #8)" <- [%4]
   1    [] <- "jump 15" <- []
- 21  LeafBlock:
-  1    [%SwitchLeaf] <- "%SwitchLeaf = cmp.eq(%6, ##0)" <- [%6]
-  1    [] <- "if (%SwitchLeaf) jump 7" <- [%SwitchLeaf]
+ 17  9:
+  1    [%10] <- "%10 = or(%4, #264)" <- [%4]
+  1    [] <- "jump 15" <- []
+ 35  LeafBlock1:
+  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, ##1)" <- [%6]
+  1    [] <- "if (%SwitchLeaf2) jump 9" <- [%SwitchLeaf2]
  31  NewDefault:
   1    [%12] <- "%12 = or(%4, #264)" <- [%4]
   1    [%13] <- "%13 = add(%6, #-1)" <- [%6]

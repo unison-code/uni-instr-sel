@@ -1,11 +1,12 @@
  21  0:
-  1    [%100.copy.2] <- "ADDiu %100.copy.2, $0, 100" <- []
-  1    [] <- "BLEZ %quality, .selecttrue" <- [%quality]
+  1    [%100.copy.1] <- "ADDiu %100.copy.1, $0, 100" <- []
+  0    [%1] <- "SLTI $%1, $%quality, 1" <- [%quality]
+  1    [] <- "BNE $0, $%1, .selecttrue" <- [%1]
  21  .selectcont:
   0    [%.quality] <- "PHI (%quality, 0) (%1.copy.3, .selecttrue)" <- [%quality, %1.copy.3]
-  1    [] <- "BGT $%.quality, $%100.copy.2, .selectcont.selecttrue" <- [%.quality, %100.copy.2]
+  1    [] <- "BGT $%.quality, $%100.copy.1, .selectcont.selecttrue" <- [%.quality, %100.copy.1]
  21  .selectcont.selectcont:
-  0    [%..quality] <- "PHI (%.quality, .selectcont) (%100.copy.1, .selectcont.selecttrue)" <- [%.quality, %100.copy.1]
+  0    [%..quality] <- "PHI (%.quality, .selectcont) (%100.copy.2, .selectcont.selecttrue)" <- [%.quality, %100.copy.2]
   0    [%3] <- "SLTI $%3, $%..quality, 50" <- [%..quality]
   1    [] <- "BNE $0, $%3, 4" <- [%3]
  10  6:
@@ -13,9 +14,6 @@
   1    [%7] <- "SLL $%7, $%..quality, 1" <- [%..quality]
   1    [%8] <- "SUBU $%8, $%200.copy.1, $%7" <- [%200.copy.1, %7]
   1    [] <- "B 9" <- []
- 10  .selectcont.selecttrue:
-  1    [%100.copy.1] <- "ADDiu %100.copy.1, $0, 100" <- []
-  1    [] <- "B .selectcont.selectcont" <- []
   8  .selecttrue:
   1    [%1.copy.3] <- "ADDiu %1.copy.3, $0, 1" <- []
   1    [] <- "B .selectcont" <- []
@@ -26,3 +24,6 @@
  21  9:
   0    [%.0] <- "PHI (%5.copy.1, 4) (%8, 6)" <- [%5.copy.1, %8]
   0    [] <- "RetRA %.0" <- [%.0]
+ 10  .selectcont.selecttrue:
+  1    [%100.copy.2] <- "ADDiu %100.copy.2, $0, 100" <- []
+  1    [] <- "B .selectcont.selectcont" <- []

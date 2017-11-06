@@ -1,7 +1,7 @@
  16  entry:
+  1    [%1.copy.1] <- "ADDiu %1.copy.1, $0, 1" <- []
   1    [%x] <- "ADDI $%x, $%n, 10" <- [%n]
-       [] <- "SLTi %tmp.1, %n, 1" <- [%n]
-  2    [] <- "BEQ %tmp.1, $0, bb1" <- []
+  1    [] <- "BGT $%n, $%1.copy.1, bb1" <- [%n, %1.copy.1]
   8  bb1:
  16  bb2:
   0    [] <- "RetRA %x" <- [%x]

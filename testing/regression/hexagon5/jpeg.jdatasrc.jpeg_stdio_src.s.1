@@ -1,7 +1,7 @@
  21  0:
   1    [%null.copy.2] <- "%null.copy.2 = ##0" <- []
   1    [%1] <- "%1 = memw(%cinfo + #20)" <- [%cinfo]
-  1    [%2] <- "%2 = cmp.eq(%1, ##0)" <- [%1]
+  1    [%2] <- "%2 = cmp.eq(%1, %null.copy.2)" <- [%1, %null.copy.2]
   1    [] <- "if (!%2) jump ._crit_edge" <- [%2]
   8  4:
   1    [%40.copy.1] <- "%40.copy.1 = ##40" <- []
