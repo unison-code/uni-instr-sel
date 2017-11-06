@@ -934,11 +934,11 @@ constraint
        endif
   );
 
-% If all matches in the matchset that either covers a particular operation or
-% defines a datum, have identical spanned blocks, and define datum d, then d
-% must be placed in a spanned block.
+% If all matches in the matchset that cover a particular operation have
+% identical spanned blocks, and define datum d, then d must be placed in a
+% spanned block.
 constraint
-  forall ( M in matchsetOfOp ++ defsetOfDatumOnly
+  forall ( M in matchsetOfOp
          , d in allDataInFunction,
            where forall (m in M)
                  ( card(spannedBlocksInMatch[m]) > 0 )
