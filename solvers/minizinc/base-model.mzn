@@ -908,39 +908,6 @@ constraint
        )
   );
 
-% If all matches that define some data, does not contain any phi instructions
-% nor instructions that span any blocks, use datum u and define datum d, then
-% the block defining u must dominate the block defining d.
-constraint
-  forall ( M in defsetOfDatumOnly
-           where forall (m in M)
-                 ( not (m in phiInstrMatches)
-                   /\
-                   card(spannedBlocksInMatch[m]) = 0
-                 )
-         )
-  ( let { set of allDataInFunction: D =
-            { d | do in operandsDefinedByMatch[min(M)]
-                , d in operandAlternatives[do]
-            }
-        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[min(M)]
-                                            , u in operandAlternatives[uo]
-                                        }
-        }
-    in forall (d in D, u in U)
-       ( if forall (m in M)
-            ( exists (do in operandsDefinedByMatch[m])
-              ( operandAlternatives[do] = {d} )
-              /\
-              exists (uo in operandsUsedByMatch[m])
-              ( operandAlternatives[uo] = {u} )
-            )
-         then table([dplace[d], dplace[u]], domRelMatrix)
-         else true
-         endif
-       )
-  );
-
 % If all matches in the matchset that either covers a particular operation or
 % defines a datum, does not contain any phi instructions, have identical entry
 % blocks, and use datum u, then the block defining u must dominate the entry
