@@ -874,8 +874,8 @@ constraint
 %       )
 %  );
 
-% If all matches for operation o are not phi instruction, do not span any
-% blocks, use datum u, and define datum d, then the block defining u must
+% If all matches covering an operation o are not phi instruction, do not span
+% any blocks, use datum u, and define datum d, then the block defining u must
 % dominate the block defining d, and o must be placed in the block defining d.
 constraint
   forall ( o in allOperationsInFunction
@@ -911,16 +911,16 @@ constraint
        )
   );
 
-% If all matches in the matchset that either covers a particular operation do
-% not contain any phi instructions, have identical entry blocks, and use datum
-% u, then the block defining u must dominate the entry block.
+% If all matches in the matchset covering a particular operation have
+% identical entry blocks, and use datum u,
+% then the block defining u must dominate the entry block.
 constraint
   forall ( M in matchsetOfOp
          , u in allDataInFunction
            where forall (m in M)
                  ( not (m in phiInstrMatches)
                    /\
-                   card(spannedBlocksInMatch[m])>0
+                   card(spannedBlocksInMatch[m]) > 0
                  )
          )
   ( let { int: Entry = min(entryBlockOfMatch[min(M)]) }
