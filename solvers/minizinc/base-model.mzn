@@ -1079,22 +1079,26 @@ constraint
 
 % [MC 2]
 %
-% If all matches in the matchset that either covers a particular operation or
-% defines a datum, and use some datum d in an external operand, then d
-% cannot be placed in the null location.
+% If all matches in the matchset covering a particular operation uses some
+% datum d as input, then d cannot be placed in the null location.
 constraint
   forall ( M in matchsetOfOp )
-  ( let { set of int: uses1 = operandsUsedByMatch[min(M)] intersect
-                              operandsExternalToMatch[min(M)]
+  ( let { int: mo = min(M)
+        , set of int: uses1 = operandsUsedByMatch[mo] diff
+                              operandsDefinedByMatch[mo]
         }
     in forall (use1 in uses1)
        ( let { set of int: data1 = operandAlternatives[use1] }
-         in if forall ( m in M where m > min(M) )
-               ( exists ( use2 in operandsUsedByMatch[m] intersect
-                                  operandsExternalToMatch[m]
+         in if forall (d in data1)
+               ( not (d in statesInFunction) )
+               /\
+               forall ( m in M where m != mo )
+               ( exists ( use2 in operandsUsedByMatch[m] diff
+                                  operandsDefinedByMatch[m]
                         )
                  ( operandAlternatives[use2] = data1 )
-               ) /\
+               )
+               /\
                forall (d in data1)
                ( not dLocCantBeNull(d) )
             then exists (d in data1)
