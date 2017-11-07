@@ -1083,7 +1083,7 @@ constraint
 % defines a datum, and use some datum d in an external operand, then d
 % cannot be placed in the null location.
 constraint
-  forall ( M in matchsetOfOp ++ defsetOfDatumOnly )
+  forall ( M in matchsetOfOp )
   ( let { set of int: uses1 = operandsUsedByMatch[min(M)] intersect
                               operandsExternalToMatch[min(M)]
         }
