@@ -1064,7 +1064,10 @@ constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) > 0
          )
-  ( let { array[int] of int: use = [x | x in operandsUsedByMatch[m]] }
+  ( let { array[int] of int: use = [ x | x in operandsUsedByMatch[m]
+                                         diff operandsDefinedByMatch[m]
+                                   ]
+        }
     in forall ( i in index_set(use)
               , j in index_set(use)
                 where i < j
