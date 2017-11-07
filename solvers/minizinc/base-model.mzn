@@ -969,9 +969,9 @@ constraint
        endif
   );
 
-% If all matches for an operation o are all phi instructions and have the same
-% def operand, then the def operand as well as o itself must all be placed in
-% the block mentioned in the output def edge.
+% If all matches covering an operation o are all phi instructions and have the
+% same def operand, then o must be placed in the block mentioned in the output
+% def edge.
 constraint
   forall ( o in allOperationsInFunction
          , d in allDataInFunction
@@ -990,7 +990,7 @@ constraint
         }
     in if card(BO) = 1 /\ forall (do in DO)
                           ( operandAlternatives[do] = {d} )
-       then dplace[d] = min(BO) /\ oplace[o] = min(BO)
+       then oplace[o] = min(BO)
        else true
        endif
   );
