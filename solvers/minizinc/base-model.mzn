@@ -393,8 +393,10 @@ constraint
            where not (operandAlternatives[o] subset statesInFunction)
               /\ not oLocCantBeNull(o)
          )
-  ( if forall(d in operandAlternatives[o])(dLocCantBeNull(d)) then true else
-      sel[m] -> loc[Alt(o)] != locValueForNull
+  ( if forall (d in operandAlternatives[o])
+       ( dLocCantBeNull(d) )
+    then true
+    else sel[m] -> loc[Alt(o)] != locValueForNull
     endif
   );
 
@@ -1093,7 +1095,8 @@ constraint
                         )
                  ( operandAlternatives[use2] = data1 )
                ) /\
-               forall (d in data1)(not dLocCantBeNull(d))
+               forall (d in data1)
+               ( not dLocCantBeNull(d) )
             then exists (d in data1)
                  ( loc[d] != locValueForNull )
             else true
