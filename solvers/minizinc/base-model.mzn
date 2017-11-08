@@ -44,7 +44,7 @@ int: entryBlockOfFunction;
 int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetsOfBlocksInFunction;
 array[allOperationsInFunction] of set of int: depsOfOpsInFunction;
-array[allDataInFunction] of set of int: depsOfDataInFunction;
+array[allDataInFunction] of set of int: depsOfDataInFunction; % NOT USED
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
@@ -157,8 +157,8 @@ array[allOperationsInFunction] of set of allMatches: matchsetOfOp =
 % The set of matches that can define a particular datum.
 array[allDataInFunction] of set of allMatches: defsetOfDatum =
   [ { m | m in allMatches
-        , o in operandsDefinedByMatch[m]
-          where d in operandAlternatives[o]
+        , p in operandsDefinedByMatch[m]
+          where d in operandAlternatives[p]
     }
   | d in allDataInFunction
   ];
@@ -180,10 +180,10 @@ array[allMatches] of int: opOfM =
 
 % Maps an operand to a match. This is only needed for figuring out which
 % operands have not been assigned a datum.
-array[allOperands] of int: matchOfO =
-  [ m
-  | o in allOperands, m in allMatches
-    where o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+array[allOperands] of int: matchOfP =
+  [ m | p in allOperands
+      , m in allMatches
+        where p in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
   ];
 
 % The total cost is computed as:
@@ -294,9 +294,9 @@ array[allOperationsInFunction] of var allMatches: omatch;
 array[allDataInFunction] of var allMatches: dmatch;
 
 % For selected, non-null, non-phi instruction use operands:
-%   block where a given operand is used.
+%   block where the datum of a given operand is used.
 % For non-selected, non-null, non-phi instruction use operands:
-%   block where a given operand is defined.
+%   block where the datum of a given operand is defined.
 % For other operands:
 %   1.
 array[allOperands] of var allBlocksInFunction: uplace;
@@ -315,18 +315,18 @@ include "globals.mzn";
 
 % Bypasses the alt[.] variable if the given operand only has one alternative.
 % Valid under the assumption that its operation was selected.
-var allDataInFunction: Alt(allOperands: o) =
-  let { allDataInFunction: d = min(operandAlternatives[o]) }
-  in if card(operandAlternatives[o]) = 1 then d else alt[o] endif;
+var allDataInFunction: Alt(allOperands: p) =
+  let { allDataInFunction: d = min(operandAlternatives[p]) }
+  in if card(operandAlternatives[p]) = 1 then d else alt[p] endif;
 
-% True if operand o for sure cannot be in the null location.
-test oLocCantBeNull(allOperands: o) =
+% True if an operand for sure cannot be in the null location.
+test pLocCantBeNull(allOperands: p) =
   exists(i in index_set_1of2(validDataLocRangesInMatch))(
-    validDataLocRangesInMatch[i,2] = o /\
+    validDataLocRangesInMatch[i,2] = p /\
     validDataLocRangesInMatch[i,4] < locValueForNull
   );
 
-% True if datum d for sure cannot be in the null location.
+% True if a datum for sure cannot be in the null location.
 test dLocCantBeNull(allDataInFunction: d) =
   forall ( m in defsetOfDatum[d] )
          ( not (m in killInstrMatches) /\
@@ -380,49 +380,49 @@ constraint
 % states, must not be located in the null location.
 constraint
   forall ( m in allMatches diff killInstrMatches
-         , o in operandsExternalToMatch[m]
-           where not (operandAlternatives[o] subset statesInFunction)
-              /\ not oLocCantBeNull(o)
+         , p in operandsExternalToMatch[m]
+           where not (operandAlternatives[p] subset statesInFunction)
+              /\ not pLocCantBeNull(p)
          )
-  ( if forall (d in operandAlternatives[o])
+  ( if forall (d in operandAlternatives[p])
        ( dLocCantBeNull(d) )
     then true
-    else sel[m] -> loc[Alt(o)] != locValueForNull
+    else sel[m] -> loc[Alt(p)] != locValueForNull
     endif
   );
 
 % All operands internal to a match must be located in the null location.
 constraint
   forall ( m in allMatches
-         , o in operandsInternalToMatch[m]
-           where not (operandAlternatives[o] subset statesInFunction)
+         , p in operandsInternalToMatch[m]
+           where not (operandAlternatives[p] subset statesInFunction)
          )
-  ( sel[m] -> loc[Alt(o)] = locValueForNull );
+  ( sel[m] -> loc[Alt(p)] = locValueForNull );
 
 % If a match representing a phi instruction is selected, then its operands
 % must be placed in the same location.
 constraint
   forall ( m in phiInstrMatches
-         , o1 in operandsExternalToMatch[m]
+         , p1 in operandsExternalToMatch[m]
          )
-  ( let { int: o2 = min(operandsExternalToMatch[m]) }
-    in if o1 != o2 then sel[m] -> loc[Alt(o1)] = loc[Alt(o2)] else true endif
+  ( let { int: p2 = min(operandsExternalToMatch[m]) }
+    in if p1 != p2 then sel[m] -> loc[Alt(p1)] = loc[Alt(p2)] else true endif
   );
 
 % Constrain locations of operands representing values for selected matches.
 constraint
   forall ( m in allMatches
-         , o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+         , p in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
          )
   ( let { set of int: locs = { validDataLocsInMatch[i, 3]
                              | i in index_set_1of2(validDataLocsInMatch)
                                where validDataLocsInMatch[i, 1] = m
                                      /\
-                                     validDataLocsInMatch[i, 2] = o
+                                     validDataLocsInMatch[i, 2] = p
                              }
         }
     in if card(locs) > 0
-       then sel[m] -> loc[Alt(o)] in locs
+       then sel[m] -> loc[Alt(p)] in locs
        else true
        endif
   );
@@ -431,11 +431,11 @@ constraint
 constraint
   forall (i in index_set_1of2(validDataLocRangesInMatch)) (
     let { int: m = validDataLocRangesInMatch[i, 1]
-        , int: o = validDataLocRangesInMatch[i, 2]
+        , int: p = validDataLocRangesInMatch[i, 2]
         , int: l = validDataLocRangesInMatch[i, 3]
         , int: u = validDataLocRangesInMatch[i, 4]
         }
-    in sel[m] -> loc[Alt(o)] in l..u
+    in sel[m] -> loc[Alt(p)] in l..u
   );
 
 % For selected matches that require two or more of its operands to have the same
@@ -443,10 +443,10 @@ constraint
 constraint
   forall (i in index_set_1of2(sameDataLocsInMatch)) (
     let { int: m = sameDataLocsInMatch[i, 1]
-        , int: o1 = sameDataLocsInMatch[i, 2]
-        , int: o2 = sameDataLocsInMatch[i, 3]
+        , int: p1 = sameDataLocsInMatch[i, 2]
+        , int: p2 = sameDataLocsInMatch[i, 3]
         }
-    in sel[m] -> loc[Alt(o1)] = loc[Alt(o2)]
+    in sel[m] -> loc[Alt(p1)] = loc[Alt(p2)]
   );
 
 % If a match representing a phi instruction is selected, then its data must be
@@ -505,12 +505,12 @@ constraint
 % spanned by m, or the block wherein the operations covered by m are placed.
 constraint
   forall ( m in allMatches
-         , o in operandsDefinedByMatch[m]
+         , p in operandsDefinedByMatch[m]
          )
   ( sel[m] -> if card(spannedBlocksInMatch[m]) > 0
-              then dplace[Alt(o)] in spannedBlocksInMatch[m]
-              else forall (op in operationsCoveredByMatch[m])
-                   ( dplace[Alt(o)] = oplace[op] )
+              then dplace[Alt(p)] in spannedBlocksInMatch[m]
+              else forall (o in operationsCoveredByMatch[m])
+                   ( dplace[Alt(p)] = oplace[o] )
               endif
   );
 
@@ -558,17 +558,19 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
 % the generic phi patterns, nor to null instructions.
 %
 % This used to be enforced by the following constraint:
+%
 %   constraint
 %     forall ( m in allMatches
-%            , o in operandsUsedByMatch[m]
+%            , p in operandsUsedByMatch[m]
 %              where not (m in phiInstrMatches)
 %            )
-%     ( dplace[alt[o]] in domSetsOfBlocksInFunction[place[m]] );
+%     ( dplace[alt[p]] in domSetsOfBlocksInFunction[place[m]] );
+%
 % but it has been reformulated using table constraints to avoid the use of set
 % variables.
 %
-% [MC] Assumes that matches which use some data cover at least one operation.
-% [GHB] This assumption should always hold.
+% This assumes that matches which use some data cover at least one operation,
+% which should always hold.
 constraint
   forall (p in nonPhiUseOperands)
   ( table([uplace[p], dplace[Alt(p)]], domRelMatrix) );
@@ -585,27 +587,27 @@ constraint
 
 constraint
   forall ( m in allMatches diff phiInstrMatches
-         , o in operandsUsedByMatch[m]
-         , c in operationsCoveredByMatch[m]
+         , p in operandsUsedByMatch[m]
+         , o in operationsCoveredByMatch[m]
          )
-  ( sel[m] -> oplace[c] = uplace[o] );
+  ( sel[m] -> oplace[o] = uplace[p] );
 
 % If a datum d is used by at least one operand in at least one selected match,
 % then d must not be defined by any kill match.  Otherwise, d must be
 % defined by an kill match. This was previously formulated as
 %
 %   constraint
-%     forall ( mi in killInstrMatches
-%            , oi in operandsDefinedByMatch[mi]
-%            , d in operandAlternatives[oi]
+%     forall ( m1 in killInstrMatches
+%            , p1 in operandsDefinedByMatch[m1]
+%            , d in operandAlternatives[o1]
 %            )
-%     ( exists ( m in allMatches
-%              , o in operandsUsedByMatch[m]
-%                where d in operandAlternatives[o]
+%     ( exists ( m2 in allMatches
+%              , p2 in operandsUsedByMatch[m2]
+%                where d in operandAlternatives[p2]
 %              )
-%       ( sel[m] /\ alt[o] = d )
+%       not sel[m1]
 %       <->
-%       not sel[mi]
+%       ( sel[m2] /\ alt[p2] = d )
 %     );
 %
 % but Mats reformulated this as follows. If and only if a datum d is used by at
@@ -613,25 +615,27 @@ constraint
 % by any kill match.  If and only if d is used by at least one external operand
 % in at least one selected match, then d must not placed in the null location.
 constraint
-  forall ( mi in killInstrMatches
-         , oi in operandsDefinedByMatch[mi]
-         , d in operandAlternatives[oi]
+  forall ( m1 in killInstrMatches
+         , o1 in operandsDefinedByMatch[m1]
+         , d in operandAlternatives[o1]
          )
   ( let { var bool: ui,
           var bool: ue } in
-    ( ui <-> exists ( m in allMatches
-                    , o in operandsUsedByMatch[m] intersect
-                           operandsInternalToMatch[m]
-                    where d in operandAlternatives[o]
+    ( ui <-> exists ( m2 in allMatches
+                    , p2 in operandsUsedByMatch[m2]
+                            intersect
+                            operandsInternalToMatch[m2]
+                    where d in operandAlternatives[p2]
                     )
-             ( sel[m] /\ alt[o] = d ) ) /\
-    ( ue <-> exists ( m in allMatches
-                    , o in operandsUsedByMatch[m] intersect
-                           operandsExternalToMatch[m]
-                    where d in operandAlternatives[o]
+             ( sel[m2] /\ alt[p2] = d ) ) /\
+    ( ue <-> exists ( m2 in allMatches
+                    , p2 in operandsUsedByMatch[m2]
+                            intersect
+                            operandsExternalToMatch[m2]
+                    where d in operandAlternatives[p2]
                     )
-             ( sel[m] /\ alt[o] = d ) ) /\
-    ( sel[mi] <-> not ui /\ not ue ) /\
+             ( sel[m2] /\ alt[p2] = d ) ) /\
+    ( sel[m1] <-> not ui /\ not ue ) /\
     ( loc[d] != locValueForNull <-> ue )
   );
 
@@ -649,8 +653,8 @@ constraint
 
 % Constrain the cost that can be incurred by each operation.
 constraint
-  forall (op in allOperationsInFunction)
-  ( table([op, omatch[op], oplace[op], opcosts[op]], costPerOpMatrix) );
+  forall (o in allOperationsInFunction)
+  ( table([o, omatch[o], oplace[o], opcosts[o]], costPerOpMatrix) );
 
 % The total cost is the sum of the costs incurred by all operations.
 constraint
@@ -705,8 +709,8 @@ constraint
 %   constraint
 %     forall (d in allDataInFunction)
 %     ( let { set of int: mset = { m | m in allMatches
-%                                    , o in operandsDefinedByMatch[m]
-%                                      where d in operandAlternatives[o]
+%                                    , p in operandsDefinedByMatch[m]
+%                                      where d in operandAlternatives[p]
 %                                }
 %           }
 %       in sum (m in mset) (bool2int(sel[m])) = 1
@@ -737,24 +741,24 @@ constraint
 % Fix operand value if match was not selected.
 constraint
   forall ( m in allMatches
-         , o in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
-           where card(operandAlternatives[o]) > 1
+         , p in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
+           where card(operandAlternatives[p]) > 1
          )
-  ( not sel[m] -> alt[o] = min(operandAlternatives[o]) );
+  ( not sel[m] -> alt[p] = min(operandAlternatives[p]) );
 
 % Break symmetries introduced by interchangeable data.
 %
-% [GHB] This could remove potential optimal solutions in situations where data
-% is interchangeable WITHIN a group of matches, but not BETWEEN groups of
-% matches. Have yet to see such an occurrance, though.
+% This could remove potential optimal solutions in situations where data is
+% interchangeable WITHIN a group of matches, but not BETWEEN groups of matches.
+% Have yet to see such an occurrance, though.
 constraint
   forall ( chain in interchangeableDataInFunction )
-  ( let { set of int: ixset = { y | y in nonPhiUseOperands
-                                    where operandAlternatives[y] = chain
-                              }
+  ( let { set of int: xset = { p | p in nonPhiUseOperands
+                                   where operandAlternatives[p] = chain
+                             }
         }
-    in if card(ixset) > 0
-       then value_precede_chain(chain, [alt[y] | y in ixset])
+    in if card(xset) > 0
+       then value_precede_chain(chain, [alt[p] | p in xset])
        else true
        endif
   );
@@ -805,68 +809,9 @@ constraint
 % IMPLIED CONSTRAINTS
 %=====================
 
-% TODO: add constraint that makes use of depsOfDataInFunction
-
-% Two matches cannot be selected with same fall-thru blocks but different entry
-% blocks. Two matches cannot be selected with different fall-thru blocks but
-% same entry blocks.
-%
-% [GHB] Disabled this constraint as it removes optimal solutions.
-%
-%constraint
-%  forall ( i in index_set_1of2(fallThroughBlockOfMatch)
-%         , j in index_set_1of2(fallThroughBlockOfMatch)
-%           where i < j
-%         )
-%  ( let { int:       m1 = fallThroughBlockOfMatch[i, 1]
-%        , int:  fall_b1 = fallThroughBlockOfMatch[i, 2]
-%        , int: entry_b1 = min(entryBlockOfMatch[m1])
-%        , int:       m2 = fallThroughBlockOfMatch[j, 1]
-%        , int:  fall_b2 = fallThroughBlockOfMatch[j, 2]
-%        , int: entry_b2 = min(entryBlockOfMatch[m2])
-%        }
-%    in if (fall_b1 = fall_b2) xor (entry_b1 = entry_b2)
-%       then not sel[m1] \/ not sel[m2]
-%       else true
-%       endif
-%  );
-
-% Two matches cannot both be selected if the first match implies that two
-% locations are equal, and the second match implies that the intersection of
-% their domains is empty.
-%
-% [GHB] Disabled this constraint as it explodes flattening time.
-%
-%constraint
-%  forall (i in index_set_1of2(sameDataLocsInMatch))
-%  ( let { int: m1 = sameDataLocsInMatch[i, 1]
-%        , int: o1 = sameDataLocsInMatch[i, 2]
-%        , int: o2 = sameDataLocsInMatch[i, 3]
-%        }
-%    in forall ( j in index_set_1of2(validDataLocRangesInMatch)
-%              , k in index_set_1of2(validDataLocRangesInMatch)
-%                where validDataLocRangesInMatch[j, 2] = o1
-%                      /\
-%                      validDataLocRangesInMatch[k, 1] =
-%                      validDataLocRangesInMatch[j, 1]
-%                      /\
-%                      validDataLocRangesInMatch[k, 2] = o2
-%              )
-%       ( let { int: m2 = validDataLocRangesInMatch[j, 1] }
-%         in card(
-%              validDataLocRangesInMatch[j, 3]..validDataLocRangesInMatch[j, 4]
-%              intersect
-%              validDataLocRangesInMatch[k, 3]..validDataLocRangesInMatch[k, 4]
-%            ) = 0
-%            ->
-%            (not sel[m1] \/ not sel[m2])
-%
-%       )
-%  );
-
 % If all matches covering an operation o are not phi instruction, do not span
-% any blocks, use datum u, and define datum d, then the block defining u must
-% dominate the block defining d, and o must be placed in the block defining d.
+% any blocks, use datum du, and define datum dd, then the block defining du must
+% dominate the block defining dd, and o must be placed in the block defining dd.
 constraint
   forall ( o in allOperationsInFunction
            where forall (m in matchsetOfOp[o])
@@ -878,35 +823,35 @@ constraint
         , int: mo = min({ m | m in M
                               where card(operationsCoveredByMatch[m]) = 1
                         })
-        , set of allDataInFunction: D =
-            { d | do in operandsDefinedByMatch[mo]
-                , d in operandAlternatives[do]
+        , set of allDataInFunction: DD =
+            { d | p in operandsDefinedByMatch[mo]
+                , d in operandAlternatives[p]
             }
-        , set of allDataInFunction: U = { u | uo in operandsUsedByMatch[mo]
-                                            , u in operandAlternatives[uo]
-                                        }
+        , set of allDataInFunction: DU = { d | p in operandsUsedByMatch[mo]
+                                             , d in operandAlternatives[p]
+                                         }
         }
-    in forall (d in D, u in U)
+    in forall (dd in DD, du in DU)
        ( if forall (m in M)
-            ( exists (do in operandsDefinedByMatch[m])
-              ( operandAlternatives[do] = {d} )
+            ( exists (p in operandsDefinedByMatch[m])
+              ( operandAlternatives[p] = {dd} )
               /\
-              exists (uo in operandsUsedByMatch[m])
-              ( operandAlternatives[uo] = {u} )
+              exists (p in operandsUsedByMatch[m])
+              ( operandAlternatives[p] = {du} )
             )
-         then table([dplace[d], dplace[u]], domRelMatrix) /\
-              oplace[o] = dplace[d]
+         then table([dplace[dd], dplace[du]], domRelMatrix) /\
+              oplace[o] = dplace[dd]
          else true
          endif
        )
   );
 
 % If all matches in the matchset covering a particular operation have
-% identical entry blocks, and use datum u,
-% then the block defining u must dominate the entry block.
+% identical entry blocks, and use datum d, then the block defining d must
+% dominate the entry block.
 constraint
   forall ( M in matchsetOfOp
-         , u in allDataInFunction
+         , d in allDataInFunction
            where forall (m in M)
                  ( not (m in phiInstrMatches)
                    /\
@@ -916,10 +861,10 @@ constraint
   ( let { int: Entry = min(entryBlockOfMatch[min(M)]) }
     in if forall (m in M)
           ( min(entryBlockOfMatch[m]) = Entry /\
-            exists (uo in operandsUsedByMatch[m])
-            ( operandAlternatives[uo] = {u} )
+            exists (p in operandsUsedByMatch[m])
+            ( operandAlternatives[p] = {d} )
           )
-       then table([Entry, dplace[u]], domRelMatrix)
+       then table([Entry, dplace[d]], domRelMatrix)
        else true
        endif
   );
@@ -936,8 +881,8 @@ constraint
   ( let { set of int: Spanned = spannedBlocksInMatch[min(M)] }
     in if forall (m in M)
           ( spannedBlocksInMatch[m] = Spanned /\
-            exists (do in operandsDefinedByMatch[m])
-            ( operandAlternatives[do] = {d} )
+            exists (p in operandsDefinedByMatch[m])
+            ( operandAlternatives[p] = {d} )
           )
        then dplace[d] in Spanned
        else true
@@ -1025,9 +970,10 @@ constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) = 0
          )
-  ( let { array[int] of int: defs = [x | x in operandsDefinedByMatch[m]]
-        , array[int] of int: usonly = [ x | x in operandsUsedByMatch[m]
-                                            diff operandsDefinedByMatch[m]
+  ( let { array[int] of int: defs = [p | p in operandsDefinedByMatch[m]]
+        , array[int] of int: usonly = [ p | p in operandsUsedByMatch[m]
+                                                 diff
+                                                 operandsDefinedByMatch[m]
                                       ]
         }
     in forall ( i in index_set(usonly)
@@ -1054,8 +1000,9 @@ constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) > 0
          )
-  ( let { array[int] of int: use = [ x | x in operandsUsedByMatch[m]
-                                         diff operandsDefinedByMatch[m]
+  ( let { array[int] of int: use = [ p | p in operandsUsedByMatch[m]
+                                              diff
+                                              operandsDefinedByMatch[m]
                                    ]
         }
     in forall ( i in index_set(use)
@@ -1113,36 +1060,36 @@ constraint
 % selected and hence the datum cannot be in the null location.
 constraint
   forall ( m in allMatches
-         , o in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
-                where card(operandAlternatives[o]) > 1
-                   /\ not oLocCantBeNull(o)
+         , p in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
+                where card(operandAlternatives[p]) > 1
+                   /\ not pLocCantBeNull(p)
          )
-  ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
+  ( alt[p] != min(operandAlternatives[p]) -> loc[alt[p]] != locValueForNull );
 
 % Constrain the location of d to be where its definers can put it.
 constraint
   forall (d in allDataInFunction diff statesInFunction)
-  ( let { array[int] of int: O =
-            [o | m in defsetOfDatum[d] diff killInstrMatches
-               , o in operandsDefinedByMatch[m]
-                 where d in operandAlternatives[o]
+  ( let { array[int] of int: P =
+            [p | m in defsetOfDatum[d] diff killInstrMatches
+               , p in operandsDefinedByMatch[m]
+                 where d in operandAlternatives[p]
             ]
-        , array[int] of int: X =
+        , array[int] of int: I =
             [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                  where validDataLocRangesInMatch[i, 2] in {o | o in O}
+                  where validDataLocRangesInMatch[i, 2] in {p | p in P}
             ]
         }
-    in if length(O) = length(X)
-       then let { set of int: D =
-                    { addr | addr in canonicalDataLocs
-                           , i in X
-                             where addr in validDataLocRangesInMatch[i, 3]
-                                           ..
-                                           validDataLocRangesInMatch[i, 4]
+    in if length(P) = length(I)
+       then let { set of int: L =
+                    { l | l in canonicalDataLocs
+                        , i in I
+                          where l in validDataLocRangesInMatch[i, 3]
+                                     ..
+                                     validDataLocRangesInMatch[i, 4]
                     }
                 }
-            in if card(D) < card(canonicalDataLocs)
-               then loc[d] in D union {locValueForNull}
+            in if card(L) < card(canonicalDataLocs)
+               then loc[d] in L union {locValueForNull}
                else true
                endif
        else true
@@ -1200,26 +1147,26 @@ constraint
 % such d that are used at least once.
 constraint
   forall (d in dataInFunctionUsedAtLeastOnce)
-  ( let { array[int] of int: O =
-            [ o | o in array_union(operandsUsedByMatch) diff killOperands
-                  where d in operandAlternatives[o]
+  ( let { array[int] of int: P =
+            [ p | p in array_union(operandsUsedByMatch) diff killOperands
+                  where d in operandAlternatives[p]
             ]
-        , array[int] of int: X =
+        , array[int] of int: I =
             [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                  where validDataLocRangesInMatch[i,2] in {o | o in O}
+                  where validDataLocRangesInMatch[i,2] in {p | p in P}
             ]
         }
-    in if length(O) = length(X)
-       then let { set of int: D =
+    in if length(P) = length(I)
+       then let { set of int: L =
                     { l | l in canonicalDataLocs
-                        , i in X
+                        , i in I
                           where l in validDataLocRangesInMatch[i, 3]
                                      ..
                                      validDataLocRangesInMatch[i, 4]
                     }
                 }
-            in if card(D) < card(canonicalDataLocs)
-               then loc[d] in D union {locValueForNull}
+            in if card(L) < card(canonicalDataLocs)
+               then loc[d] in L union {locValueForNull}
                else true
                endif
        else true
@@ -1292,10 +1239,10 @@ solve
 
 % oplace, omatch, dmatch are handy for debugging
 output [ "sel=", show(sel), "\n"
-       , "alt=", show([ if not fix(sel[matchOfO[o]])
+       , "alt=", show([ if not fix(sel[matchOfP[p]])
                         then datumValueForNull
-                        else alt[o] endif
-                      | o in allOperands
+                        else alt[p] endif
+                      | p in allOperands
                       ]), "\n"
        , "dplace=", show(dplace), "\n"
        , "loc=", show(loc), "\n"
