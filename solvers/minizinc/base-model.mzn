@@ -32,7 +32,6 @@
 %  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-
 %=====================
 % EXTERNAL PARAMETERS
 %=====================
@@ -96,7 +95,6 @@ array[int] of set of int: illegalMatchCombinations;
 
 % These variables will be set by concatenating the definitions to the end of
 % this file.
-
 
 
 %=====================
@@ -257,8 +255,6 @@ set of int: killOperands =
              );
 
 
-
-
 %===========
 % VARIABLES
 %===========
@@ -287,7 +283,6 @@ var int: totalcost;
 array[allOperationsInFunction] of var allOpCosts: opcosts;
 
 
-
 %================
 % DUAL VARIABLES
 %================
@@ -307,13 +302,11 @@ array[allDataInFunction] of var allMatches: dmatch;
 array[allOperands] of var allBlocksInFunction: uplace;
 
 
-
 %====================
 % GLOBAL CONSTRAINTS
 %====================
 
 include "globals.mzn";
-
 
 
 %===========
@@ -325,7 +318,6 @@ include "globals.mzn";
 var allDataInFunction: Alt(allOperands: o) =
   let { allDataInFunction: d = min(operandAlternatives[o]) }
   in if card(operandAlternatives[o]) = 1 then d else alt[o] endif;
-
 
 % True if operand o for sure cannot be in the null location.
 test oLocCantBeNull(allOperands: o) =
@@ -343,6 +335,7 @@ test dLocCantBeNull(allDataInFunction: d) =
                   )
            ( operandAlternatives[use2] = {d} )
          );
+
 
 %==================
 % BASE CONSTRAINTS
@@ -368,7 +361,6 @@ constraint
         }
     in loc[d] in l..u
   );
-
 
 % Constrain locations of data which must be assigned the same location.
 constraint
@@ -679,7 +671,6 @@ constraint
   endif;
 
 
-
 %===========================
 % DUAL VARIABLE CONSTRAINTS
 %===========================
@@ -732,7 +723,6 @@ constraint
     forall (m in defsetOfDatum[d])
     ( dmatch[d] = m <-> sel[m] )
   );
-
 
 
 %=======================
@@ -809,7 +799,6 @@ constraint
      else true
      endif
   );
-
 
 
 %=====================
@@ -1287,7 +1276,6 @@ constraint
   );
 
 
-
 %==================
 % SOLVE AND OUTPUT
 %==================
@@ -1330,7 +1318,6 @@ output [ "sel=", show(sel), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];
-
 
 
 % Local Variables:
