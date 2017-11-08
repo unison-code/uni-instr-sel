@@ -428,6 +428,9 @@ constraint
   );
 
 % Constrain locations of operands that must be within a specific range.
+%
+% If no entry appears in validDataLocRangesInMatch for a given match and
+% operand, then it means no location restrictions are applied.
 constraint
   forall (i in index_set_1of2(validDataLocRangesInMatch)) (
     let { int: m = validDataLocRangesInMatch[i, 1]
