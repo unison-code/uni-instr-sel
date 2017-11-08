@@ -384,9 +384,8 @@ constraint
   forall (o in allOperands)
   ( alt[o] in operandAlternatives[o] );
 
-% All operands external to a match, and which are not states, must not be
-% located in the null location.
-% [MC 1] Exclude kill matches from this constraint.
+% All operands external to a match (excluding kill matches), and which are not
+% states, must not be located in the null location.
 constraint
   forall ( m in allMatches diff killInstrMatches
          , o in operandsExternalToMatch[m]
@@ -601,26 +600,26 @@ constraint
 
 % If a datum d is used by at least one operand in at least one selected match,
 % then d must not be defined by any kill match.  Otherwise, d must be
-% defined by an kill match.
-% constraint
-%   forall ( mi in killInstrMatches
-%          , oi in operandsDefinedByMatch[mi]
-%          , d in operandAlternatives[oi]
-%          )
-%   ( exists ( m in allMatches
-%            , o in operandsUsedByMatch[m]
-%              where d in operandAlternatives[o]
+% defined by an kill match. This was previously formulated as
+%
+%   constraint
+%     forall ( mi in killInstrMatches
+%            , oi in operandsDefinedByMatch[mi]
+%            , d in operandAlternatives[oi]
 %            )
-%     ( sel[m] /\ alt[o] = d )
-%     <->
-%     not sel[mi]
-%   );
-% [MC 1]
-% If and only if a datum d is used by at least one operand in at least
-% one selected match, then d must not be defined by any kill
-% match.  If and only if d is used by at least one external operand in
-% at least one selected match, then d must not placed in the null
-% location.
+%     ( exists ( m in allMatches
+%              , o in operandsUsedByMatch[m]
+%                where d in operandAlternatives[o]
+%              )
+%       ( sel[m] /\ alt[o] = d )
+%       <->
+%       not sel[mi]
+%     );
+%
+% but Mats reformulated this as follows. If and only if a datum d is used by at
+% least one operand in at least one selected match, then d must not be defined
+% by any kill match.  If and only if d is used by at least one external operand
+% in at least one selected match, then d must not placed in the null location.
 constraint
   forall ( mi in killInstrMatches
          , oi in operandsDefinedByMatch[mi]
@@ -1108,13 +1107,11 @@ constraint
        )
   );
 
-% [MC 3]
-%
 % If all matches in the matchset that defines a non-state datum d, are active,
 % and define it in an external operand, then d must not be placed in the null
 % location.
 %
-% [MC 3] does not dominate [MC 2], nor vice versa.
+% This constraint does not dominate [MC 2], nor vice versa.
 constraint
   forall (d in allDataInFunction diff statesInFunction )
   ( if dLocCantBeNull(d)
@@ -1123,8 +1120,6 @@ constraint
     endif
   );
 
-% [MC 4]
-%
 % If an external operand does not take its min value, then its match must be
 % selected and hence the datum cannot be in the null location.
 constraint
@@ -1135,8 +1130,6 @@ constraint
          )
   ( alt[o] != min(operandAlternatives[o]) -> loc[alt[o]] != locValueForNull );
 
-% [MC 5]
-%
 % Constrain the location of d to be where its definers can put it.
 constraint
   forall (d in allDataInFunction diff statesInFunction)
@@ -1167,8 +1160,6 @@ constraint
        endif
   );
 
-% [GHB]
-%
 % Disable users of input data that would access it elsewhere to where its
 % definers can put them.
 constraint
@@ -1216,8 +1207,6 @@ constraint
     endif
   );
 
-% [MC 6]
-%
 % Constrain the location of d to be where its users can access it. Valid for
 % such d that are used at least once.
 constraint
@@ -1248,8 +1237,6 @@ constraint
        endif
   );
 
-% [GHB]
-%
 % Disable definers of output data that would put it elsewhere to where its
 % users can access them. Valid for data that are used at least once.
 constraint
