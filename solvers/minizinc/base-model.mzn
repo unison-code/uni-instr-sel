@@ -628,14 +628,14 @@ constraint
                     , p2 in operandsUsedByMatch[m2]
                             intersect
                             operandsInternalToMatch[m2]
-                    where d in operandAlternatives[p2]
+                      where d in operandAlternatives[p2]
                     )
              ( sel[m2] /\ alt[p2] = d ) ) /\
     ( ue <-> exists ( m2 in allMatches
                     , p2 in operandsUsedByMatch[m2]
                             intersect
                             operandsExternalToMatch[m2]
-                    where d in operandAlternatives[p2]
+                      where d in operandAlternatives[p2]
                     )
              ( sel[m2] /\ alt[p2] = d ) ) /\
     ( sel[m1] <-> not ui /\ not ue ) /\
