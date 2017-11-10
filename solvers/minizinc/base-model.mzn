@@ -994,7 +994,8 @@ constraint
 % [MC 2]
 %
 % If all matches in the matchset covering a particular operation uses some
-% datum d as input, then d cannot be placed in the intermediate value location.
+% datum d as input, then d cannot be placed in the intermediate value nor
+% killed location.
 constraint
   forall ( M in matchsetOfOp )
   ( let { int: mo = min(M)
@@ -1016,7 +1017,7 @@ constraint
                forall (d in data1)
                ( not valueMustBeAvailable(d) )
             then exists (d in data1)
-                 ( loc[d] != locValueForInt )
+                 ( loc[d] != locValueForInt /\ loc[d] != locValueForKilled )
             else true
             endif
        )
@@ -1024,26 +1025,30 @@ constraint
 
 % If all matches in the matchset that defines a non-state datum d, are active,
 % and define it in an exterior operand, then d must not be placed in the
-% intermediate value location.
+% intermediate value nor killed location.
 %
 % This constraint does not dominate [MC 2], nor vice versa.
 constraint
   forall (d in allDataInFunction diff statesInFunction )
   ( if valueMustBeAvailable(d)
-    then loc[d] != locValueForInt
+    then loc[d] != locValueForInt /\ loc[d] != locValueForKilled
     else true
     endif
   );
 
 % If an exterior operand does not take its min value, then its match must be
-% selected and hence the datum cannot be in the intermediate value location.
+% selected and hence the datum cannot be in the intermediate value nor killed
+% location.
 constraint
   forall ( m in allMatches
          , p in operandsUsedByMatch[m] intersect operandsExteriorToMatch[m]
                 where card(operandAlternatives[p]) > 1
                    /\ not valueOfOpMustBeAvailable(p)
          )
-  ( alt[p] != min(operandAlternatives[p]) -> loc[alt[p]] != locValueForInt );
+  ( alt[p] != min(operandAlternatives[p])
+    ->
+    (loc[alt[p]] != locValueForInt /\ loc[alt[p]] != locValueForKilled)
+  );
 
 % Constrain the location of d to be where its definers can put it.
 constraint
