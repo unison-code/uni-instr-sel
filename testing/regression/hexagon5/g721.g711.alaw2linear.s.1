@@ -2,37 +2,37 @@
   1    [%85.copy.1] <- "%85.copy.1 = ##85" <- []
   1    [%1] <- "%1 = zxtb %a_val" <- [%a_val]
   1    [%2] <- "%2 = xor(%1, %85.copy.1)" <- [%1, %85.copy.1]
-  1    [%16] <- "%16 = and(%1, #128)" <- [%1]
-  1    [%5] <- "%5 = lsr(%2, #4)" <- [%2]
   1    [%3] <- "%3 = asl(%2, #4)" <- [%2]
+  1    [%5] <- "%5 = lsr(%2, #4)" <- [%2]
   1    [%4] <- "%4 = and(%3, #240)" <- [%3]
   1    [%6] <- "%6 = and(%5, #7)" <- [%5]
-  1    [%Pivot] <- "%Pivot = !cmp.gt(%6, ##<1 - 1>)" <- [%6]
-  1    [%17] <- "%17 = !cmp.eq(%16, ##0)" <- [%16]
  56  NodeBlock:
-  1    [] <- "if (!%Pivot) jump LeafBlock1" <- [%Pivot]
- 21  LeafBlock:
-  1    [%SwitchLeaf] <- "%SwitchLeaf = cmp.eq(%6, ##0)" <- [%6]
-  1    [] <- "if (!%SwitchLeaf) jump NewDefault" <- [%SwitchLeaf]
-  8  7:
-  1    [%8] <- "%8 = or(%4, #8)" <- [%4]
-  1    [] <- "jump 15" <- []
+  1    [%Pivot] <- "%Pivot = !cmp.gt(%6, ##<1 - 1>)" <- [%6]
+  1    [%16] <- "%16 = and(%1, #128)" <- [%1]
+  1    [%17] <- "%17 = !cmp.eq(%16, ##0)" <- [%16]
+  1    [] <- "if (%Pivot) jump LeafBlock" <- [%Pivot]
+ 35  LeafBlock1:
+  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, ##1)" <- [%6]
+  1    [] <- "if (!%SwitchLeaf2) jump NewDefault" <- [%SwitchLeaf2]
  17  9:
   1    [%10] <- "%10 = or(%4, #264)" <- [%4]
   1    [] <- "jump 15" <- []
- 35  LeafBlock1:
-  1    [%SwitchLeaf2] <- "%SwitchLeaf2 = cmp.eq(%6, ##1)" <- [%6]
-  1    [] <- "if (%SwitchLeaf2) jump 9" <- [%SwitchLeaf2]
  31  NewDefault:
-  1    [%12] <- "%12 = or(%4, #264)" <- [%4]
   1    [%13] <- "%13 = add(%6, #-1)" <- [%6]
-  1    [%14] <- "%14 = asl(%12, %13)" <- [%12, %13]
  31  11:
+  1    [%12] <- "%12 = or(%4, #264)" <- [%4]
+  1    [%14] <- "%14 = asl(%12, %13)" <- [%12, %13]
  56  15:
-  0    [%t.0] <- "PHI (%8, 7) (%10, 9) (%14, NewDefault)" <- [%8, %10, %14]
+  0    [%t.0] <- "PHI (%8, 7) (%10, 9) (%14, 11)" <- [%8, %10, %14]
   1    [%18] <- "%18 = sub(#0, %t.0)" <- [%t.0]
   1    [] <- "if (!%17) jump .selectcont" <- [%17]
  28  .selecttrue:
  56  .selectcont:
   0    [%19] <- "PHI (%t.0, 15) (%18, 15)" <- [%t.0, %18]
   1    [] <- "return %19" <- [%19]
+ 21  LeafBlock:
+  1    [%SwitchLeaf] <- "%SwitchLeaf = cmp.eq(%6, ##0)" <- [%6]
+  1    [] <- "if (!%SwitchLeaf) jump NewDefault" <- [%SwitchLeaf]
+  8  7:
+  1    [%8] <- "%8 = or(%4, #8)" <- [%4]
+  1    [] <- "jump 15" <- []

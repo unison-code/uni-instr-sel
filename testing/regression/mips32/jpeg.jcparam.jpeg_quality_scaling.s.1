@@ -14,9 +14,9 @@
   1    [%7] <- "SLL $%7, $%..quality, 1" <- [%..quality]
   1    [%8] <- "SUBU $%8, $%200.copy.1, $%7" <- [%200.copy.1, %7]
   1    [] <- "B 9" <- []
-  8  .selecttrue:
-  1    [%1.copy.3] <- "ADDiu %1.copy.3, $0, 1" <- []
-  1    [] <- "B .selectcont" <- []
+ 10  .selectcont.selecttrue:
+  1    [%100.copy.2] <- "ADDiu %100.copy.2, $0, 100" <- []
+  1    [] <- "B .selectcont.selectcont" <- []
  10  4:
   1    [%5000.copy.1] <- "ADDiu %5000.copy.1, $0, 5000" <- []
  38    [%5] <- "DIV %5000.copy.1, %..quality" <- [%5000.copy.1, %..quality]
@@ -24,6 +24,6 @@
  21  9:
   0    [%.0] <- "PHI (%5.copy.1, 4) (%8, 6)" <- [%5.copy.1, %8]
   0    [] <- "RetRA %.0" <- [%.0]
- 10  .selectcont.selecttrue:
-  1    [%100.copy.2] <- "ADDiu %100.copy.2, $0, 100" <- []
-  1    [] <- "B .selectcont.selectcont" <- []
+  8  .selecttrue:
+  1    [%1.copy.3] <- "ADDiu %1.copy.3, $0, 1" <- []
+  1    [] <- "B .selectcont" <- []
