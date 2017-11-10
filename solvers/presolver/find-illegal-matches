@@ -71,6 +71,7 @@ with open(json_file, 'r') as file:
     json_data = json.load(file)
 
 # Setup convenience variables
+num_locations = json_data["num-locations"]
 num_matches = json_data["num-matches"]
 num_data = json_data["fun-num-data"]
 num_operands = json_data["num-operands"]
@@ -143,6 +144,106 @@ for i in range(len(domain)):
             illegal_matches |= { m for m in json_data["match-kill-instrs"]
                                        if d in match_data_defined[m]
                                }
+
+all_matches = set(range(num_matches))
+kill_matches = set(json_data["match-kill-instrs"])
+null_matches = set(json_data["match-null-instrs"])
+phi_matches = set(json_data["match-phi-instrs"])
+
+# If a match m (excluding null and phi matches) defines some datum d in a set of
+# locations that is not accessible by any of the matches (excluding null and phi
+# matches) using d, then m is not selectable
+for m1 in (all_matches - null_matches - phi_matches):
+    for p1 in ( set(json_data["match-operands-defined"][m1]) &
+                set(json_data["match-exterior-operands"][m1])
+             ):
+        locs = json_data["match-valid-value-locs"]
+
+        # Accumulate set of locations wherein m defines the datum of p
+        m_p_locs = set()
+        for t in locs:
+            if t[1] == p1:
+                m_p_locs |= {t[2]}
+        if len(m_p_locs) == 0:
+            continue
+
+        no_overlap_for_any_d = True
+        for d in operand_alt_sets[p1]:
+            # Accumulate the set of use operands that can be connected to d
+            ops_using_d = set()
+            for m2 in all_matches - kill_matches:
+                m2_def_ops = set(json_data["match-operands-defined"][m2])
+                m2_use_ops = set(json_data["match-operands-used"][m2])
+                for p2 in m2_use_ops - m2_def_ops:
+                    if d in operand_alt_sets[p2]:
+                        ops_using_d |= {p2}
+
+            # Accumulate the set of locations from which d can be used
+            use_locs_of_d = set()
+            for p2 in ops_using_d:
+                found_loc = False
+                for t in locs:
+                    if t[1] == p2:
+                        use_locs_of_d |= {t[2]}
+                        found_loc = True
+                if not found_loc:
+                    use_locs_of_d |= set(range(num_locations))
+                    break
+
+            if len(m_p_locs & use_locs_of_d) > 0:
+                no_overlap_for_any_d = False
+                break
+
+        if no_overlap_for_any_d:
+            illegal_matches |= {m1}
+            break
+
+# If a match m (excluding null and phi matches) uses some datum d and requires
+# that is in a location that is not writable by any of the matches (excluding
+# kill matches) defining d, then m is not selectable
+for m1 in (all_matches - null_matches - phi_matches):
+    for p1 in ( set(json_data["match-operands-used"][m1]) -
+                set(json_data["match-operands-defined"][m1])
+             ):
+        locs = json_data["match-valid-value-locs"]
+
+        # Accumulate set of locations wherein m uses the datum of p
+        m_p_locs = set()
+        for t in locs:
+            if t[1] == p1:
+                m_p_locs |= {t[2]}
+        if len(m_p_locs) == 0:
+            continue
+
+        no_overlap_for_any_d = True
+        for d in operand_alt_sets[p1]:
+            # Accumulate the set of def operands that can be connected to d
+            ops_defining_d = set()
+            for m2 in all_matches - kill_matches:
+                m2_def_ops = set(json_data["match-operands-defined"][m2])
+                for p2 in m2_def_ops:
+                    if d in operand_alt_sets[p2]:
+                        ops_defining_d |= {p2}
+
+            # Accumulate the set of locations in which d can be defined
+            def_locs_of_d = set()
+            for p2 in ops_defining_d:
+                found_loc = False
+                for t in locs:
+                    if t[1] == p2:
+                        def_locs_of_d |= {t[2]}
+                        found_loc = True
+                if not found_loc:
+                    def_locs_of_d |= set(range(num_locations))
+                    break
+
+            if len(m_p_locs & def_locs_of_d) > 0:
+                no_overlap_for_any_d = False
+                break
+
+        if no_overlap_for_any_d:
+            illegal_matches |= {m1}
+            break
 
 # Print JSON
 i_json_data = {}

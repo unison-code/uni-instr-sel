@@ -1080,53 +1080,6 @@ constraint
        endif
   );
 
-% Disable users of input data that would access it elsewhere to where its
-% definers can put them.
-constraint
-  forall (m in allMatches diff killInstrMatches)
-  ( if exists (p in operandsUsedByMatch[m] diff operandsDefinedByMatch[m])
-      ( forall (d in operandAlternatives[p])
-        ( let { array[int] of int: UI =
-                  [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                        where validDataLocRangesInMatch[i, 2] = p
-                  ]
-              , array[int] of int: DP =
-                  [ q | dm in defsetOfDatum[d] diff killInstrMatches
-                      , q in operandsDefinedByMatch[dm] intersect
-                             operandsExteriorToMatch[dm]
-                        where d in operandAlternatives[q]
-                  ]
-              , array[int] of int: DI =
-                  [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                        where validDataLocRangesInMatch[i, 2] in {q | q in DP}
-                  ]
-             }
-          in if length(UI) > 0 /\ length(DP) = length(DI)
-             then let { set of int: UL =
-                          { l | l in canonicalDataLocs
-                              , i in UI
-                                where l in validDataLocRangesInMatch[i, 3]
-                                           ..
-                                           validDataLocRangesInMatch[i, 4]
-                          }
-                      , set of int: DL =
-                          { l | l in canonicalDataLocs
-                              , i in DI
-                                where l in validDataLocRangesInMatch[i, 3]
-                                           ..
-                                           validDataLocRangesInMatch[i, 4]
-                          }
-                      }
-                  in card(UL intersect DL) = 0
-             else false
-             endif
-        )
-      )
-    then not sel[m]
-    else true
-    endif
-  );
-
 % Constrain the location of d to be where its users can access it. Valid for
 % such d that are used at least once.
 constraint
@@ -1155,55 +1108,6 @@ constraint
                endif
        else true
        endif
-  );
-
-% Disable definers of output data that would put it elsewhere to where its
-% users can access them. Valid for data that are used at least once.
-constraint
-  forall (m in allMatches diff killInstrMatches)
-  ( if exists (p in operandsDefinedByMatch[m]
-                    intersect
-                    operandsExteriorToMatch[m])
-      ( forall (d in operandAlternatives[p])
-        ( let { array[int] of int: DI =
-                  [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                        where validDataLocRangesInMatch[i, 2] = p
-                  ]
-              , array[int] of int: UP =
-                  [ q | um in allMatches diff killInstrMatches
-                      , q in operandsUsedByMatch[um] diff
-                             operandsDefinedByMatch[um]
-                        where d in operandAlternatives[q]
-                  ]
-              , array[int] of int: UI =
-                  [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                        where validDataLocRangesInMatch[i, 2] in {q | q in UP}
-                  ]
-             }
-          in if length(DI) > 0 /\ length(UP) = length(UI)
-             then let { set of int: UL =
-                          { l | l in canonicalDataLocs
-                              , i in UI
-                                where l in validDataLocRangesInMatch[i, 3]
-                                           ..
-                                           validDataLocRangesInMatch[i, 4]
-                          }
-                      , set of int: DL =
-                          { l | l in canonicalDataLocs
-                              , i in DI
-                                where l in validDataLocRangesInMatch[i, 3]
-                                           ..
-                                           validDataLocRangesInMatch[i, 4]
-                          }
-                      }
-                  in card(UL intersect DL) = 0
-             else false
-             endif
-        )
-      )
-    then not sel[m]
-    else true
-    endif
   );
 
 
