@@ -602,7 +602,7 @@ constraint
 %   constraint
 %     forall ( m1 in killInstrMatches
 %            , p1 in operandsDefinedByMatch[m1]
-%            , d in operandAlternatives[o1]
+%            , d in operandAlternatives[p1]
 %            )
 %     ( exists ( m2 in allMatches
 %              , p2 in operandsUsedByMatch[m2]
@@ -615,12 +615,12 @@ constraint
 %
 % but Mats reformulated this as follows. If and only if a datum d is used by at
 % least one operand in at least one selected match, then d must not be defined
-% by any kill match.  If and only if d is used by at least one external operand
+% by any kill match. If and only if d is used by at least one external operand
 % in at least one selected match, then d must not placed in the null location.
 constraint
   forall ( m1 in killInstrMatches
-         , o1 in operandsDefinedByMatch[m1]
-         , d in operandAlternatives[o1]
+         , p1 in operandsDefinedByMatch[m1]
+         , d in operandAlternatives[p1]
          )
   ( let { var bool: ui,
           var bool: ue } in
