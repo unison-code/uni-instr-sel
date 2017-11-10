@@ -101,26 +101,26 @@ array[int] of set of int: illegalMatchCombinations;
 % INTERNAL PARAMETERS
 %=====================
 
-% Total number of location values (an additional value will be needed for
-% representing the null location, for when the datum cannot be reused by other
-% matches).
+% Total number of location values. An additional value will be needed for
+% representing the intermediate value location (for when the datum cannot be
+% reused by other matches).
 int: numLocValues = numLocations + 1;
 
-% Reference to to the null-location value.
-int: locValueForNull = numLocValues - 1;
+% Reference to to the intermediate value location.
+int: locValueForInt = numLocValues;
 
-% Total number of data values (an additional value will be needed for
-% representing the null datum, for operands used in non-selected matches).
+% Total number of data values. An additional value will be needed for
+% representing the null datum (for operands used in non-selected matches).
 int: numDataValues = numDataInFunction + 1;
 
-% Reference to to the null-datum value.
+% Reference to to the null datum.
 int: datumValueForNull = numDataValues;
 
-% Total number of blocks values (an additional value will be needed for
-% representing the null block, to which non-selected matches will be placed).
+% Total number of blocks values. An additional value will be needed for
+% representing the null block (to which non-selected matches will be placed).
 int: numBlockValues = numBlocksInFunction + 1;
 
-% Reference to the null-block value.
+% Reference to the null block.
 int: blockValueForNull = numBlockValues;
 
 % Sets to be used as array ranges.
@@ -129,7 +129,10 @@ set of int: allDataInFunction = 1..numDataInFunction;
 set of int: allBlocksInFunction = 1..numBlocksInFunction;
 set of int: allMatches = 1..numMatches;
 set of int: allOperands = 1..numOperands;
-set of int: allLocValues = { x | x in canonicalDataLocs ++ [locValueForNull] };
+set of int: allLocValues = { x | x in canonicalDataLocs ++ [ locValueForInt
+                                                           , locValueForKilled
+                                                           ]
+                           };
 
 % The 'domRelMatrix' matrix is a 2D matrix with 2 columns:
 %    col 1: a block i
@@ -319,22 +322,22 @@ var allDataInFunction: Alt(allOperands: p) =
   let { allDataInFunction: d = min(operandAlternatives[p]) }
   in if card(operandAlternatives[p]) = 1 then d else alt[p] endif;
 
-% True if an operand for sure cannot be in the null location.
-test pLocCantBeNull(allOperands: p) =
-  exists(i in index_set_1of2(validDataLocRangesInMatch))(
-    validDataLocRangesInMatch[i,2] = p /\
-    validDataLocRangesInMatch[i,4] < locValueForNull
+% True if an operand for sure cannot be in the intermediate value location.
+test pLocCantBeInt(allOperands: p) =
+  exists (i in index_set_1of2(validDataLocRangesInMatch))
+  ( validDataLocRangesInMatch[i, 2] = p /\
+    validDataLocRangesInMatch[i, 4] < locValueForInt
   );
 
-% True if a datum for sure cannot be in the null location.
-test dLocCantBeNull(allDataInFunction: d) =
+% True if a datum for sure cannot be in the intermediate value location.
+test dLocCantBeInt(allDataInFunction: d) =
   forall ( m in defsetOfDatum[d] )
-         ( not (m in killInstrMatches) /\
-           exists ( use2 in operandsDefinedByMatch[m] intersect
-                            operandsExteriorToMatch[m]
-                  )
-           ( operandAlternatives[use2] = {d} )
-         );
+  ( not (m in killInstrMatches) /\
+    exists ( use2 in operandsDefinedByMatch[m] intersect
+                     operandsExteriorToMatch[m]
+           )
+    ( operandAlternatives[use2] = {d} )
+  );
 
 
 %==================
@@ -377,27 +380,28 @@ constraint
   ( alt[o] in operandAlternatives[o] );
 
 % All operands exterior to a match (excluding kill matches), and which are not
-% states, must not be located in the null location.
+% states, must not be located in the intermediate value location.
 constraint
   forall ( m in allMatches diff killInstrMatches
          , p in operandsExteriorToMatch[m]
            where not (operandAlternatives[p] subset statesInFunction)
-              /\ not pLocCantBeNull(p)
+              /\ not pLocCantBeInt(p)
          )
   ( if forall (d in operandAlternatives[p])
-       ( dLocCantBeNull(d) )
+       ( dLocCantBeInt(d) )
     then true
-    else sel[m] -> loc[Alt(p)] != locValueForNull
+    else sel[m] -> loc[Alt(p)] != locValueForInt
     endif
   );
 
-% All operands intermediate to a match must be located in the null location.
+% All operands intermediate to a match must be located in the intermediate value
+% location.
 constraint
   forall ( m in allMatches
          , p in operandsIntermediateToMatch[m]
            where not (operandAlternatives[p] subset statesInFunction)
          )
-  ( sel[m] -> loc[Alt(p)] = locValueForNull );
+  ( sel[m] -> loc[Alt(p)] = locValueForInt );
 
 % If a match representing a phi instruction is selected, then its operands
 % must be placed in the same location.
@@ -616,7 +620,8 @@ constraint
 % but Mats reformulated this as follows. If and only if a datum d is used by at
 % least one operand in at least one selected match, then d must not be defined
 % by any kill match. If and only if d is used by at least one exterior operand
-% in at least one selected match, then d must not placed in the null location.
+% in at least one selected match, then d must not placed in the intermediate
+% value location.
 constraint
   forall ( m1 in killInstrMatches
          , p1 in operandsDefinedByMatch[m1]
@@ -639,7 +644,7 @@ constraint
                     )
              ( sel[m2] /\ alt[p2] = d ) ) /\
     ( sel[m1] <-> not ui /\ not ue ) /\
-    ( loc[d] != locValueForNull <-> ue )
+    ( loc[d] != locValueForInt <-> ue )
   );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
@@ -739,7 +744,7 @@ constraint
 % Constrain the loc value for all data that are states.
 constraint
   forall (d in statesInFunction)
-  ( loc[d] = locValueForNull );
+  ( loc[d] = locValueForInt );
 
 % Fix operand value if match was not selected.
 constraint
@@ -1018,7 +1023,7 @@ constraint
 % [MC 2]
 %
 % If all matches in the matchset covering a particular operation uses some
-% datum d as input, then d cannot be placed in the null location.
+% datum d as input, then d cannot be placed in the intermediate value location.
 constraint
   forall ( M in matchsetOfOp )
   ( let { int: mo = min(M)
@@ -1038,36 +1043,36 @@ constraint
                )
                /\
                forall (d in data1)
-               ( not dLocCantBeNull(d) )
+               ( not dLocCantBeInt(d) )
             then exists (d in data1)
-                 ( loc[d] != locValueForNull )
+                 ( loc[d] != locValueForInt )
             else true
             endif
        )
   );
 
 % If all matches in the matchset that defines a non-state datum d, are active,
-% and define it in an exterior operand, then d must not be placed in the null
-% location.
+% and define it in an exterior operand, then d must not be placed in the
+% intermediate value location.
 %
 % This constraint does not dominate [MC 2], nor vice versa.
 constraint
   forall (d in allDataInFunction diff statesInFunction )
-  ( if dLocCantBeNull(d)
-    then loc[d] != locValueForNull
+  ( if dLocCantBeInt(d)
+    then loc[d] != locValueForInt
     else true
     endif
   );
 
 % If an exterior operand does not take its min value, then its match must be
-% selected and hence the datum cannot be in the null location.
+% selected and hence the datum cannot be in the intermediate value location.
 constraint
   forall ( m in allMatches
          , p in operandsUsedByMatch[m] intersect operandsExteriorToMatch[m]
                 where card(operandAlternatives[p]) > 1
-                   /\ not pLocCantBeNull(p)
+                   /\ not pLocCantBeInt(p)
          )
-  ( alt[p] != min(operandAlternatives[p]) -> loc[alt[p]] != locValueForNull );
+  ( alt[p] != min(operandAlternatives[p]) -> loc[alt[p]] != locValueForInt );
 
 % Constrain the location of d to be where its definers can put it.
 constraint
@@ -1092,7 +1097,7 @@ constraint
                     }
                 }
             in if card(L) < card(canonicalDataLocs)
-               then loc[d] in L union {locValueForNull}
+               then loc[d] in L union {locValueForInt}
                else true
                endif
        else true
@@ -1169,7 +1174,7 @@ constraint
                     }
                 }
             in if card(L) < card(canonicalDataLocs)
-               then loc[d] in L union {locValueForNull}
+               then loc[d] in L union {locValueForInt}
                else true
                endif
        else true
@@ -1263,7 +1268,7 @@ output [ "sel=", show(sel), "\n"
        , "succ=", show(succ), "\n"
        , "entry=", show(entryBlockOfFunction), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
-       , "loc_value_for_null=", show(locValueForNull), "\n"
+       , "loc_value_for_int=", show(locValueForInt), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];

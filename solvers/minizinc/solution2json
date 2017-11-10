@@ -179,7 +179,7 @@ if not has_sol:
     print json.dumps(json_data)
     sys.exit(0)
 
-# [MC] Convert data to 0-based indexing
+# Convert data to 0-based indexing
 for d in all_data:
     name = d[0]
     if ( name == "alt" or
@@ -189,7 +189,10 @@ for d in all_data:
          name == "succ"
        ):
         d[1] = [x-1 for x in d[1]]
-    elif name == "block_value_for_null" or name == "alt_value_for_null":
+    elif ( name == "loc_value_for_int" or
+           name == "block_value_for_null" or
+           name == "alt_value_for_null"
+         ):
         d[1] = d[1] - 1
 
 # Construct block order data from block successor data
@@ -213,11 +216,11 @@ all_data.append(["ord", ord_data])
 
 # Add 'has_d_loc' array to data
 loc_data = getRequiredDataByName(all_data, "loc")
-loc_value_for_null = \
-  getRequiredDataByName(all_data, "loc_value_for_null")
+loc_value_for_int = \
+  getRequiredDataByName(all_data, "loc_value_for_int")
 has_d_loc_data = []
 for loc in loc_data:
-    has_d_loc_data.append(loc != loc_value_for_null)
+    has_d_loc_data.append(loc != loc_value_for_int)
 all_data.append(["has_d_loc", has_d_loc_data])
 
 # Add 'has_o_alt' array to data
