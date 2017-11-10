@@ -393,7 +393,7 @@ processMatch' instr match mid oid =
          , hlMatchOperandsUsed = nub $ getOpIDsForPatternDataNodes d_use_ns
          , hlMatchInputOperands = nub $ getOpIDsForPatternDataNodes d_in_ns
          , hlMatchOutputOperands = nub $ getOpIDsForPatternDataNodes d_out_ns
-         , hlMatchInternalOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
+         , hlMatchIntermediateOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
          , hlMatchValidValueLocs = valid_locs
          , hlMatchSameValueLocs = same_locs
          , hlMatchEntryBlock =
@@ -624,15 +624,15 @@ lowerHighLevelModel model ai_maps =
            map (map getAIForOperandID . hlMatchOperandsDefined) m_params
        , llMatchOperandsUsed =
            map (map getAIForOperandID . hlMatchOperandsUsed) m_params
-       , llMatchExternalOperands =
+       , llMatchExteriorOperands =
            map ( \p ->
                  map getAIForOperandID $
                  nub $
                  hlMatchInputOperands p ++ hlMatchOutputOperands p
                )
                m_params
-       , llMatchInternalOperands =
-           map (map getAIForOperandID . hlMatchInternalOperands) m_params
+       , llMatchIntermediateOperands =
+           map (map getAIForOperandID . hlMatchIntermediateOperands) m_params
        , llMatchValidValueLocs =
            map ( \(m, o, l) -> ( getAIForMatchID m
                                , getAIForOperandID o
@@ -837,7 +837,7 @@ mkIllegalMatchCombs
   -> [[MatchID]]
 mkIllegalMatchCombs function target matches =
   let g0 = I.mkGraph (zip [0..] matches) [] :: I.Gr PatternMatch ()
-      getExternalDataNodes i pm fg =
+      getExteriorDataNodes i pm fg =
         let pg = osGraph $ instrOS i
             input_ns = filter ( \n -> isValueNode n &&
                                       not (hasAnyPredecessors pg n)
@@ -861,8 +861,8 @@ mkIllegalMatchCombs function target matches =
         let fg = osGraph $ functionOS function
             i1 = getInstructionFromPatternMatch target m1
             i2 = getInstructionFromPatternMatch target m2
-            (m1_in_vs, m1_out_vs)  = getExternalDataNodes i1 m1 fg
-            (m2_in_vs, m2_out_vs)  = getExternalDataNodes i2 m2 fg
+            (m1_in_vs, m1_out_vs)  = getExteriorDataNodes i1 m1 fg
+            (m2_in_vs, m2_out_vs)  = getExteriorDataNodes i2 m2 fg
             n1 = getMatchNodeFromID g' m1
             n2 = getMatchNodeFromID g' m2
             g'' = if any (\n -> n `elem` m2_in_vs) m1_out_vs

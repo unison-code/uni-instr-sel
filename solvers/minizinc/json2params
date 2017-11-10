@@ -440,14 +440,14 @@ dumpParams( bumpArrOfArr(json_data["match-operands-used"])
           , "allMatches"
           , VC_SET
           )
-dumpParams( bumpArrOfArr(json_data["match-external-operands"])
-          , "operandsExternalToMatch"
+dumpParams( bumpArrOfArr(json_data["match-exterior-operands"])
+          , "operandsExteriorToMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET
           )
-dumpParams( bumpArrOfArr(json_data["match-internal-operands"])
-          , "operandsInternalToMatch"
+dumpParams( bumpArrOfArr(json_data["match-intermediate-operands"])
+          , "operandsIntermediateToMatch"
           , VT_ARRAY1D
           , "allMatches"
           , VC_SET

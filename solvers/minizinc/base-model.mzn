@@ -64,8 +64,8 @@ array[allOperands] of set of int: operandAlternatives;
 array[allMatches] of set of int: operationsCoveredByMatch;
 array[allMatches] of set of int: operandsDefinedByMatch;
 array[allMatches] of set of int: operandsUsedByMatch;
-array[allMatches] of set of int: operandsExternalToMatch;
-array[allMatches] of set of int: operandsInternalToMatch;
+array[allMatches] of set of int: operandsExteriorToMatch;
+array[allMatches] of set of int: operandsIntermediateToMatch;
 array[allMatches] of set of int: entryBlockOfMatch;
 array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
@@ -331,7 +331,7 @@ test dLocCantBeNull(allDataInFunction: d) =
   forall ( m in defsetOfDatum[d] )
          ( not (m in killInstrMatches) /\
            exists ( use2 in operandsDefinedByMatch[m] intersect
-                            operandsExternalToMatch[m]
+                            operandsExteriorToMatch[m]
                   )
            ( operandAlternatives[use2] = {d} )
          );
@@ -376,11 +376,11 @@ constraint
   forall (o in allOperands)
   ( alt[o] in operandAlternatives[o] );
 
-% All operands external to a match (excluding kill matches), and which are not
+% All operands exterior to a match (excluding kill matches), and which are not
 % states, must not be located in the null location.
 constraint
   forall ( m in allMatches diff killInstrMatches
-         , p in operandsExternalToMatch[m]
+         , p in operandsExteriorToMatch[m]
            where not (operandAlternatives[p] subset statesInFunction)
               /\ not pLocCantBeNull(p)
          )
@@ -391,10 +391,10 @@ constraint
     endif
   );
 
-% All operands internal to a match must be located in the null location.
+% All operands intermediate to a match must be located in the null location.
 constraint
   forall ( m in allMatches
-         , p in operandsInternalToMatch[m]
+         , p in operandsIntermediateToMatch[m]
            where not (operandAlternatives[p] subset statesInFunction)
          )
   ( sel[m] -> loc[Alt(p)] = locValueForNull );
@@ -403,9 +403,9 @@ constraint
 % must be placed in the same location.
 constraint
   forall ( m in phiInstrMatches
-         , p1 in operandsExternalToMatch[m]
+         , p1 in operandsExteriorToMatch[m]
          )
-  ( let { int: p2 = min(operandsExternalToMatch[m]) }
+  ( let { int: p2 = min(operandsExteriorToMatch[m]) }
     in if p1 != p2 then sel[m] -> loc[Alt(p1)] = loc[Alt(p2)] else true endif
   );
 
@@ -615,7 +615,7 @@ constraint
 %
 % but Mats reformulated this as follows. If and only if a datum d is used by at
 % least one operand in at least one selected match, then d must not be defined
-% by any kill match. If and only if d is used by at least one external operand
+% by any kill match. If and only if d is used by at least one exterior operand
 % in at least one selected match, then d must not placed in the null location.
 constraint
   forall ( m1 in killInstrMatches
@@ -627,14 +627,14 @@ constraint
     ( ui <-> exists ( m2 in allMatches
                     , p2 in operandsUsedByMatch[m2]
                             intersect
-                            operandsInternalToMatch[m2]
+                            operandsIntermediateToMatch[m2]
                       where d in operandAlternatives[p2]
                     )
              ( sel[m2] /\ alt[p2] = d ) ) /\
     ( ue <-> exists ( m2 in allMatches
                     , p2 in operandsUsedByMatch[m2]
                             intersect
-                            operandsExternalToMatch[m2]
+                            operandsExteriorToMatch[m2]
                       where d in operandAlternatives[p2]
                     )
              ( sel[m2] /\ alt[p2] = d ) ) /\
@@ -1047,7 +1047,7 @@ constraint
   );
 
 % If all matches in the matchset that defines a non-state datum d, are active,
-% and define it in an external operand, then d must not be placed in the null
+% and define it in an exterior operand, then d must not be placed in the null
 % location.
 %
 % This constraint does not dominate [MC 2], nor vice versa.
@@ -1059,11 +1059,11 @@ constraint
     endif
   );
 
-% If an external operand does not take its min value, then its match must be
+% If an exterior operand does not take its min value, then its match must be
 % selected and hence the datum cannot be in the null location.
 constraint
   forall ( m in allMatches
-         , p in operandsUsedByMatch[m] intersect operandsExternalToMatch[m]
+         , p in operandsUsedByMatch[m] intersect operandsExteriorToMatch[m]
                 where card(operandAlternatives[p]) > 1
                    /\ not pLocCantBeNull(p)
          )
@@ -1112,7 +1112,7 @@ constraint
               , array[int] of int: DP =
                   [ q | dm in defsetOfDatum[d] diff killInstrMatches
                       , q in operandsDefinedByMatch[dm] intersect
-                             operandsExternalToMatch[dm]
+                             operandsExteriorToMatch[dm]
                         where d in operandAlternatives[q]
                   ]
               , array[int] of int: DI =
@@ -1182,7 +1182,7 @@ constraint
   forall (m in allMatches diff killInstrMatches)
   ( if exists (p in operandsDefinedByMatch[m]
                     intersect
-                    operandsExternalToMatch[m])
+                    operandsExteriorToMatch[m])
       ( forall (d in operandAlternatives[p])
         ( let { array[int] of int: DI =
                   [ i | i in index_set_1of2(validDataLocRangesInMatch)

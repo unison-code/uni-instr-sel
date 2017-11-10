@@ -151,8 +151,8 @@ data HighLevelMatchParams
         -- ^ The operands which act as input to this match.
       , hlMatchOutputOperands :: [OperandID]
         -- ^ The operands which act as output of this match.
-      , hlMatchInternalOperands :: [OperandID]
-        -- ^ The operands which are external to this match (i.e. neither input
+      , hlMatchIntermediateOperands :: [OperandID]
+        -- ^ The operands which are exterior to this match (i.e. neither input
         -- nor output).
       , hlMatchValidValueLocs :: [(OperandID, [LocationID])]
         -- ^ The operands together with a list of locations that are valid for
@@ -299,12 +299,13 @@ data LowLevelModel
       , llMatchOperandsUsed :: [[ArrayIndex]]
         -- ^ The list of operands that are used by each match. An index into the
         -- outer list corresponds to the array index of a particular match.
-      , llMatchExternalOperands :: [[ArrayIndex]]
-        -- ^ The list of operands that are external to each match. An index into
+      , llMatchExteriorOperands :: [[ArrayIndex]]
+        -- ^ The list of operands that are exterior to each match. An index into
         -- the outer list corresponds to the array index of a particular match.
-      , llMatchInternalOperands :: [[ArrayIndex]]
-        -- ^ The list of operands that are internal to each match. An index into
-        -- the outer list corresponds to the array index of a particular match.
+      , llMatchIntermediateOperands :: [[ArrayIndex]]
+        -- ^ The list of operands that are intermediate to each match. An index
+        -- into the outer list corresponds to the array index of a particular
+        -- match.
       , llMatchValidValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
         -- ^ The locations that are valid for a particular operand in a certain
         -- match. The first element is the array index of a particular match,
@@ -588,7 +589,7 @@ instance FromJSON HighLevelMatchParams where
       <*> v .: "operands-used"
       <*> v .: "input-operands"
       <*> v .: "output-operands"
-      <*> v .: "internal-operands"
+      <*> v .: "intermediate-operands"
       <*> v .: "valid-value-locs"
       <*> v .: "same-value-locs"
       <*> v .: "entry-block"
@@ -617,7 +618,7 @@ instance ToJSON HighLevelMatchParams where
            , "operands-used"            .= (hlMatchOperandsUsed p)
            , "input-operands"           .= (hlMatchInputOperands p)
            , "output-operands"          .= (hlMatchOutputOperands p)
-           , "internal-operands"        .= (hlMatchInternalOperands p)
+           , "intermediate-operands"    .= (hlMatchIntermediateOperands p)
            , "valid-value-locs"         .= (hlMatchValidValueLocs p)
            , "same-value-locs"          .= (hlMatchSameValueLocs p)
            , "entry-block"              .= (hlMatchEntryBlock p)
@@ -677,8 +678,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-operations-covered"
       <*> v .: "match-operands-defined"
       <*> v .: "match-operands-used"
-      <*> v .: "match-external-operands"
-      <*> v .: "match-internal-operands"
+      <*> v .: "match-exterior-operands"
+      <*> v .: "match-intermediate-operands"
       <*> v .: "match-valid-value-locs"
       <*> v .: "match-same-value-locs"
       <*> v .: "match-entry-blocks"
@@ -726,8 +727,8 @@ instance ToJSON LowLevelModel where
            , "match-operations-covered"    .= (llMatchOperationsCovered m)
            , "match-operands-defined"      .= (llMatchOperandsDefined m)
            , "match-operands-used"         .= (llMatchOperandsUsed m)
-           , "match-external-operands"     .= (llMatchExternalOperands m)
-           , "match-internal-operands"     .= (llMatchInternalOperands m)
+           , "match-exterior-operands"     .= (llMatchExteriorOperands m)
+           , "match-intermediate-operands" .= (llMatchIntermediateOperands m)
            , "match-valid-value-locs"      .= (llMatchValidValueLocs m)
            , "match-same-value-locs"       .= (llMatchSameValueLocs m)
            , "match-entry-blocks"          .= (llMatchEntryBlocks m)

@@ -128,9 +128,9 @@ def matchesDominatedBy(json, m1, dominable_matches):
         # All checks passed
         return False
 
-    def useOfInternalValuesByOtherMatches(ms_set):
+    def useOfIntermediateValuesByOtherMatches(ms_set):
         all_dom_ms = set([ m for ms in ms_set for m in ms ])
-        m1_int_values = set([ d for p in json["match-internal-operands"][m1]
+        m1_int_values = set([ d for p in json["match-intermediate-operands"][m1]
                                 for d in json["operand-alternatives"][p]
                             ])
         other_ms = [ m for m in range(json_data["num-matches"])
@@ -140,7 +140,7 @@ def matchesDominatedBy(json, m1, dominable_matches):
             for p in json["match-operands-used"][m2]:
                 d = json["operand-alternatives"][p]
                 if set(d) <= m1_int_values:
-                    # Use of m1's internal values; m1 can only dominate
+                    # Use of m1's intermediate values; m1 can only dominate
                     # single-match candidates
                     return True
 
@@ -236,7 +236,7 @@ def matchesDominatedBy(json, m1, dominable_matches):
         m1_def_ops = set(json["match-operands-defined"][m1])
         m1_use_ops = set(json["match-operands-used"][m1])
         m1_ops = ( (m1_def_ops | m1_use_ops) -
-                   set(json["match-internal-operands"][m1])
+                   set(json["match-intermediate-operands"][m1])
                  )
 
         # Check match-valid-value-locs constraints
@@ -297,7 +297,7 @@ def matchesDominatedBy(json, m1, dominable_matches):
     potential_overlap = \
         hasPotentialOverlapWithOtherMatches(dominable_matchset_candidates)
     use_of_int_values = \
-        useOfInternalValuesByOtherMatches(dominable_matchset_candidates)
+        useOfIntermediateValuesByOtherMatches(dominable_matchset_candidates)
 
     # Check for dominance
     dominated_ms = []
