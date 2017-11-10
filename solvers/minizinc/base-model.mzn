@@ -101,13 +101,17 @@ array[int] of set of int: illegalMatchCombinations;
 % INTERNAL PARAMETERS
 %=====================
 
-% Total number of location values. An additional value will be needed for
+% Total number of location values. Two additional values will be needed for
 % representing the intermediate value location (for when the datum cannot be
-% reused by other matches).
-int: numLocValues = numLocations + 1;
+% reused by other matches) and the killed location (for when the datum is
+% defined by a kill match).
+int: numLocValues = numLocations + 2;
 
 % Reference to to the intermediate value location.
-int: locValueForInt = numLocValues;
+int: locValueForInt = numLocValues - 1;
+
+% Reference to to the killed location.
+int: locValueForKilled = numLocValues;
 
 % Total number of data values. An additional value will be needed for
 % representing the null datum (for operands used in non-selected matches).
@@ -322,15 +326,19 @@ var allDataInFunction: Alt(allOperands: p) =
   let { allDataInFunction: d = min(operandAlternatives[p]) }
   in if card(operandAlternatives[p]) = 1 then d else alt[p] endif;
 
-% True if an operand for sure cannot be in the intermediate value location.
-test pLocCantBeInt(allOperands: p) =
+% True if the value of a given operand for sure must not be in the intermediate
+% value nor in the killed location.
+test valueOfOpMustBeAvailable(allOperands: p) =
   exists (i in index_set_1of2(validDataLocRangesInMatch))
   ( validDataLocRangesInMatch[i, 2] = p /\
     validDataLocRangesInMatch[i, 4] < locValueForInt
+    % Since locValueForInt < locValueForKilled, this also entails that the
+    % range does not include locValueForKilled
   );
 
-% True if a datum for sure cannot be in the intermediate value location.
-test dLocCantBeInt(allDataInFunction: d) =
+% True if a datum for sure must not be in the intermediate value nor in the
+% killed location.
+test valueMustBeAvailable(allDataInFunction: d) =
   forall ( m in defsetOfDatum[d] )
   ( not (m in killInstrMatches) /\
     exists ( use2 in operandsDefinedByMatch[m] intersect
@@ -380,17 +388,20 @@ constraint
   ( alt[o] in operandAlternatives[o] );
 
 % All operands exterior to a match (excluding kill matches), and which are not
-% states, must not be located in the intermediate value location.
+% states, must not be located in the intermediate value location nor the killed
+% location.
 constraint
   forall ( m in allMatches diff killInstrMatches
          , p in operandsExteriorToMatch[m]
            where not (operandAlternatives[p] subset statesInFunction)
-              /\ not pLocCantBeInt(p)
+              /\ not valueOfOpMustBeAvailable(p)
          )
   ( if forall (d in operandAlternatives[p])
-       ( dLocCantBeInt(d) )
+       ( valueMustBeAvailable(d) )
     then true
-    else sel[m] -> loc[Alt(p)] != locValueForInt
+    else sel[m] -> ( loc[Alt(p)] != locValueForInt /\
+                     loc[Alt(p)] != locValueForKilled
+                   )
     endif
   );
 
@@ -599,53 +610,13 @@ constraint
          )
   ( sel[m] -> oplace[o] = uplace[p] );
 
-% If a datum d is used by at least one operand in at least one selected match,
-% then d must not be defined by any kill match.  Otherwise, d must be
-% defined by an kill match. This was previously formulated as
-%
-%   constraint
-%     forall ( m1 in killInstrMatches
-%            , p1 in operandsDefinedByMatch[m1]
-%            , d in operandAlternatives[p1]
-%            )
-%     ( exists ( m2 in allMatches
-%              , p2 in operandsUsedByMatch[m2]
-%                where d in operandAlternatives[p2]
-%              )
-%       not sel[m1]
-%       <->
-%       ( sel[m2] /\ alt[p2] = d )
-%     );
-%
-% but Mats reformulated this as follows. If and only if a datum d is used by at
-% least one operand in at least one selected match, then d must not be defined
-% by any kill match. If and only if d is used by at least one exterior operand
-% in at least one selected match, then d must not placed in the intermediate
-% value location.
+% A kill match is selected if and only if the location of the defined datum is
+% in the killed location.
 constraint
-  forall ( m1 in killInstrMatches
-         , p1 in operandsDefinedByMatch[m1]
-         , d in operandAlternatives[p1]
+  forall ( m in killInstrMatches
+         , p in operandsDefinedByMatch[m]
          )
-  ( let { var bool: ui,
-          var bool: ue } in
-    ( ui <-> exists ( m2 in allMatches
-                    , p2 in operandsUsedByMatch[m2]
-                            intersect
-                            operandsIntermediateToMatch[m2]
-                      where d in operandAlternatives[p2]
-                    )
-             ( sel[m2] /\ alt[p2] = d ) ) /\
-    ( ue <-> exists ( m2 in allMatches
-                    , p2 in operandsUsedByMatch[m2]
-                            intersect
-                            operandsExteriorToMatch[m2]
-                      where d in operandAlternatives[p2]
-                    )
-             ( sel[m2] /\ alt[p2] = d ) ) /\
-    ( sel[m1] <-> not ui /\ not ue ) /\
-    ( loc[d] != locValueForInt <-> ue )
-  );
+  ( sel[m] <-> loc[Alt(p)] = locValueForKilled );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
 constraint
@@ -1043,7 +1014,7 @@ constraint
                )
                /\
                forall (d in data1)
-               ( not dLocCantBeInt(d) )
+               ( not valueMustBeAvailable(d) )
             then exists (d in data1)
                  ( loc[d] != locValueForInt )
             else true
@@ -1058,7 +1029,7 @@ constraint
 % This constraint does not dominate [MC 2], nor vice versa.
 constraint
   forall (d in allDataInFunction diff statesInFunction )
-  ( if dLocCantBeInt(d)
+  ( if valueMustBeAvailable(d)
     then loc[d] != locValueForInt
     else true
     endif
@@ -1070,7 +1041,7 @@ constraint
   forall ( m in allMatches
          , p in operandsUsedByMatch[m] intersect operandsExteriorToMatch[m]
                 where card(operandAlternatives[p]) > 1
-                   /\ not pLocCantBeInt(p)
+                   /\ not valueOfOpMustBeAvailable(p)
          )
   ( alt[p] != min(operandAlternatives[p]) -> loc[alt[p]] != locValueForInt );
 
@@ -1097,7 +1068,7 @@ constraint
                     }
                 }
             in if card(L) < card(canonicalDataLocs)
-               then loc[d] in L union {locValueForInt}
+               then loc[d] in L union {locValueForInt, locValueForKilled}
                else true
                endif
        else true
@@ -1174,7 +1145,7 @@ constraint
                     }
                 }
             in if card(L) < card(canonicalDataLocs)
-               then loc[d] in L union {locValueForInt}
+               then loc[d] in L union {locValueForInt, locValueForKilled}
                else true
                endif
        else true
@@ -1269,6 +1240,7 @@ output [ "sel=", show(sel), "\n"
        , "entry=", show(entryBlockOfFunction), "\n"
        , "block_value_for_null=", show(blockValueForNull), "\n"
        , "loc_value_for_int=", show(locValueForInt), "\n"
+       , "loc_value_for_killed=", show(locValueForKilled), "\n"
        , "alt_value_for_null=", show(datumValueForNull), "\n"
        , "cost=", show(execFrequencyGCD * totalcost), "\n"
        ];

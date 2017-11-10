@@ -189,8 +189,9 @@ for d in all_data:
          name == "succ"
        ):
         d[1] = [x-1 for x in d[1]]
-    elif ( name == "loc_value_for_int" or
-           name == "block_value_for_null" or
+    elif ( name == "block_value_for_null" or
+           name == "loc_value_for_int" or
+           name == "loc_value_for_killed" or
            name == "alt_value_for_null"
          ):
         d[1] = d[1] - 1
@@ -218,9 +219,13 @@ all_data.append(["ord", ord_data])
 loc_data = getRequiredDataByName(all_data, "loc")
 loc_value_for_int = \
   getRequiredDataByName(all_data, "loc_value_for_int")
+loc_value_for_killed = \
+  getRequiredDataByName(all_data, "loc_value_for_killed")
 has_d_loc_data = []
 for loc in loc_data:
-    has_d_loc_data.append(loc != loc_value_for_int)
+    has_d_loc_data.append( loc != loc_value_for_int and
+                           loc != loc_value_for_killed
+                         )
 all_data.append(["has_d_loc", has_d_loc_data])
 
 # Add 'has_o_alt' array to data
