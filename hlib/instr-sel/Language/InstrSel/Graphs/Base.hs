@@ -1665,7 +1665,6 @@ doesOrderDFInEdgesMatter :: Graph -> Node -> Bool
 doesOrderDFInEdgesMatter _ n
   | isComputationNode n = not $ O.isCommutative $ getOpOfComputationNode n
   | isOperationNode n = True
-  | isPhiNode n = True
   | otherwise = False
 
 -- | Checks if the order of data-flow out-edges matters for a given pattern

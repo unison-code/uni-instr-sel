@@ -72,6 +72,14 @@ mkPhiInstructions =
                                   )
                                 )
                                 [2..n+1]
+                            ++
+                            map ( \n' ->
+                                  ( fromIntegral n'
+                                  , NodeLabel (toNodeID n')
+                                              mkGenericBlockNodeType
+                                  )
+                                )
+                                [n+2..2*n+2]
                           )
                         )
                         ( map Edge $
@@ -82,6 +90,17 @@ mkPhiInstructions =
                                   , 0
                                   , EdgeLabel DataFlowEdge 0 ((toEdgeNr n')-2)
                                   )
+                                )
+                                [2..n+1]
+                            ++
+                            [ ( fromIntegral n + 2, 1, EdgeLabel DefEdge 0 0 ) ]
+                            ++
+                            map ( \n' ->
+                                    let int = fromIntegral n'
+                                    in ( int
+                                       , int + fromIntegral n + 1
+                                       , EdgeLabel DefEdge 0 0
+                                       )
                                 )
                                 [2..n+1]
                           )

@@ -328,6 +328,14 @@ data LowLevelModel
         -- ^ The blocks in the function graph consumed by each match. An index
         -- into the outer list corresponds to the array index of a particular
         -- match.
+      , llMatchInputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The input definition edges that appear in a particular match. The
+        -- first element is the array index of a particular match, the second
+        -- element is a block, and the third element is an operand.
+      , llMatchOutputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
+        -- ^ The output definition edges that appear in a particular match. The
+        -- first element is the array index of a particular match, the second
+        -- element is a block, and the third element is an operand.
       , llMatchCodeSizes :: [Integer]
         -- ^ The code size of each match. An index into the list corresponds to
         -- the array index of a particular match.
@@ -677,6 +685,8 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-entry-blocks"
       <*> v .: "match-spanned-blocks"
       <*> v .: "match-consumed-blocks"
+      <*> v .: "match-input-def-edges"
+      <*> v .: "match-output-def-edges"
       <*> v .: "match-code-sizes"
       <*> v .: "match-latencies"
       <*> v .: "match-copy-instrs"
@@ -724,6 +734,8 @@ instance ToJSON LowLevelModel where
            , "match-entry-blocks"          .= (llMatchEntryBlocks m)
            , "match-spanned-blocks"        .= (llMatchSpannedBlocks m)
            , "match-consumed-blocks"       .= (llMatchConsumedBlocks m)
+           , "match-input-def-edges"       .= (llMatchInputDefinitionEdges m)
+           , "match-output-def-edges"      .= (llMatchOutputDefinitionEdges m)
            , "match-code-sizes"            .= (llMatchCodeSizes m)
            , "match-latencies"             .= (llMatchLatencies m)
            , "match-copy-instrs"           .= (llMatchCopyInstructions m)

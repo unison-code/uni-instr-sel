@@ -527,6 +527,32 @@ lowerHighLevelModel model ai_maps =
       operands = sortByAI (getAIForOperandID . fst)
                           (concatMap (hlOperandNodeMaps) m_params)
       blocks = sortByAI getAIForBlockNodeID $ hlFunBlocks f_params
+      in_def_edges =
+        concatMap ( \m ->
+                    concatMap ( \b ->
+                                if hlMatchIsPhiInstruction m
+                                then let ops = map snd $
+                                               filter ((==) b . fst) $
+                                               hlMatchOperandsUsedByPhis m
+                                     in map (\o -> (hlMatchID m, b, o)) ops
+                                else []
+                              ) $
+                    blocks
+                  ) $
+        m_params
+      out_def_edges =
+        concatMap ( \m ->
+                    concatMap ( \b ->
+                                if hlMatchIsPhiInstruction m
+                                then let ops = map snd $
+                                               filter ((==) b . fst) $
+                                               hlMatchOperandsDefinedByPhis m
+                                     in map (\o -> (hlMatchID m, b, o)) ops
+                                else []
+                              ) $
+                    blocks
+                  ) $
+        m_params
       f_valid_locs =
         concatMap (\(n, ls) -> map (\l -> (n, l)) ls) $
         hlFunValidValueLocs f_params
@@ -630,6 +656,20 @@ lowerHighLevelModel model ai_maps =
        , llMatchConsumedBlocks = map (map getAIForBlockNodeID) $
                                  map hlMatchConsumedBlocks $
                                  m_params
+       , llMatchInputDefinitionEdges =
+           map ( \(m, b, o) -> ( getAIForMatchID m
+                               , getAIForBlockNodeID b
+                               , getAIForOperandID o
+                               )
+               ) $
+           in_def_edges
+       , llMatchOutputDefinitionEdges =
+           map ( \(m, b, o) -> ( getAIForMatchID m
+                               , getAIForBlockNodeID b
+                               , getAIForOperandID o
+                               )
+               ) $
+           out_def_edges
        , llMatchCodeSizes = map hlMatchCodeSize m_params
        , llMatchLatencies = map hlMatchLatency m_params
        , llMatchPhiInstructions =

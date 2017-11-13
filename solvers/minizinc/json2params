@@ -420,6 +420,14 @@ dumpParams( bumpArrOfArr(json_data["match-operations-covered"])
           , "allMatches"
           , VC_SET
           )
+dumpParams( bumpArrOfArr(json_data["match-input-def-edges"])
+          , "inputDefEdgesInMatch"
+          , VT_ARRAY2D
+          )
+dumpParams( bumpArrOfArr(json_data["match-output-def-edges"])
+          , "outputDefEdgesInMatch"
+          , VT_ARRAY2D
+          )
 dumpParams( bumpArrOfArr(json_data["match-operands-defined"])
           , "operandsDefinedByMatch"
           , VT_ARRAY1D
