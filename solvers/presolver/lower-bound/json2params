@@ -197,10 +197,6 @@ def removeMatch(json, m):
         updateTupleSet(json["match-valid-value-locs"])
     json["match-same-value-locs"] = \
         updateTupleSet(json["match-same-value-locs"])
-    json["match-input-def-edges"] = \
-        updateTupleSet(json["match-input-def-edges"])
-    json["match-output-def-edges"] = \
-        updateTupleSet(json["match-output-def-edges"])
     json["match-fall-through-block"] = \
         updateTupleSet(json["match-fall-through-block"])
 

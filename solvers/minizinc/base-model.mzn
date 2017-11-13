@@ -71,8 +71,6 @@ array[allMatches] of set of int: spannedBlocksInMatch;
 array[allMatches] of set of int: consumedBlocksInMatch;
 array[int, int] of int: validDataLocsInMatch;
 
-array[int, int] of int: inputDefEdgesInMatch;
-array[int, int] of int: outputDefEdgesInMatch;
 array[allMatches] of int: codeSizeOfMatch;
 array[allMatches] of int: latencyOfMatch;
 set of allMatches: copyInstrMatches;
@@ -465,26 +463,6 @@ constraint
         , int: p2 = sameDataLocsInMatch[i, 3]
         }
     in sel[m] -> loc[Alt(p1)] = loc[Alt(p2)]
-  );
-
-% If a match representing a phi instruction is selected, then its data must be
-% defined in the blocks indicated by the definition edges.
-constraint
-  forall (i in index_set_1of2(inputDefEdgesInMatch)) (
-    let { int: m = inputDefEdgesInMatch[i, 1]
-        , int: b = inputDefEdgesInMatch[i, 2]
-        , int: o = inputDefEdgesInMatch[i, 3]
-        }
-    in sel[m] -> dplace[Alt(o)] = b
-  );
-
-constraint
-  forall (i in index_set_1of2(outputDefEdgesInMatch)) (
-    let { int: m = outputDefEdgesInMatch[i, 1]
-        , int: b = outputDefEdgesInMatch[i, 2]
-        , int: o = outputDefEdgesInMatch[i, 3]
-        }
-    in sel[m] -> dplace[Alt(o)] = b
   );
 
 % A datum with a definition edge must be defined in the block
@@ -883,27 +861,21 @@ constraint
        endif
   );
 
-% If all matches covering an operation o are all phi instructions and have the
-% same def operand, then o must be placed in the block mentioned in the output
-% def edge.
+% If all matches covering an operation o are all phi instructions, then o must
+% be placed in the same block as the datum defined by the matches.
 constraint
   forall ( o in allOperationsInFunction
          , d in allDataInFunction
            where matchsetOfOp[o] subset phiInstrMatches
+                 /\
+                 defsetOfDatum[d] = matchsetOfOp[o]
          )
-  ( let { set of int: BO = { outputDefEdgesInMatch[j, 2]
-                           | j in index_set_1of2(outputDefEdgesInMatch)
-                             where outputDefEdgesInMatch[j, 1] in
-                                   matchsetOfOp[o]
-                           }
-        , set of int: DO = { outputDefEdgesInMatch[j, 3]
-                           | j in index_set_1of2(outputDefEdgesInMatch)
-                             where outputDefEdgesInMatch[j, 1] in
-                                   matchsetOfOp[o]
+  ( let { set of int: BO = { defEdgesInFunction[i, 1]
+                           | i in index_set_1of2(defEdgesInFunction)
+                             where d = defEdgesInFunction[i, 2]
                            }
         }
-    in if card(BO) = 1 /\ forall (do in DO)
-                          ( operandAlternatives[do] = {d} )
+    in if card(BO) = 1
        then oplace[o] = min(BO)
        else true
        endif

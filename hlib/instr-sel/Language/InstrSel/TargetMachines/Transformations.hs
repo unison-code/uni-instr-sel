@@ -269,7 +269,8 @@ replaceNodeIDInEmitString old_n new_n str =
 
 -- | For each value node that is copied multiple times, an additional mapping
 -- will be inserted for each pattern value node that is mapped to one of the
--- copied values.
+-- copied values. Exceptions are value nodes used by phi instructions, which are
+-- not alternative-extended as that would break program semantics.
 alternativeExtend
   :: Function
   -> TargetMachine
@@ -324,7 +325,9 @@ insertAlternativeMappings t limit vs pm =
   let sorted_vs = sortValueNodesByReusability t pm vs
       processPatternMatch m =
         let i = getInstructionFromPatternMatch t m
-        in m { pmMatch = processMatch i (pmMatch m) }
+        in if not (isInstructionPhi i)
+           then m { pmMatch = processMatch i (pmMatch m) }
+           else m
       processMatch i m =
         toMatch $
         concatMap (processMapping i m) $
