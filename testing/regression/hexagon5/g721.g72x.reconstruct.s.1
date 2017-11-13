@@ -25,13 +25,13 @@
   0    [%18] <- "PHI (%16, 7) (%17, .selecttrue2)" <- [%16, %17]
   1    [] <- "jump 19" <- []
  12  4:
-  1    [%0.copy.3] <- "%0.copy.3 = ##0" <- []
-  1    [%5] <- "%5 = !cmp.eq(%sign, %0.copy.3)" <- [%sign, %0.copy.3]
+  1    [%0.copy.2] <- "%0.copy.2 = ##0" <- []
+  1    [%5] <- "%5 = !cmp.eq(%sign, %0.copy.2)" <- [%sign, %0.copy.2]
   1    [] <- "if (!%5) jump .selectcont" <- [%5]
   8  .selecttrue:
   1    [%-32768.copy.1] <- "%-32768.copy.1 = ##-32768" <- []
  12  .selectcont:
-  0    [%6] <- "PHI (%-32768.copy.1, .selecttrue) (%0.copy.3, 4)" <- [%-32768.copy.1, %0.copy.3]
+  0    [%6] <- "PHI (%-32768.copy.1, .selecttrue) (%0.copy.2, 4)" <- [%-32768.copy.1, %0.copy.2]
  25  19:
   0    [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
   1    [] <- "return %.0" <- [%.0]
