@@ -931,22 +931,19 @@ constraint
      );
 
 % For non-phi matches, no spanned blocks:
-% if selected, blocks of outputs and blocks of use of inputs must be all equal.
+% if selected, blocks of used and defined data must be equal.
 constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) = 0
          )
-  ( let { array[int] of int: defs = [p | p in operandsDefinedByMatch[m]]
-        , array[int] of int: usonly = [ p | p in operandsUsedByMatch[m]
-                                                 diff
-                                                 operandsDefinedByMatch[m]
-                                      ]
+  ( let { array[int] of int: uses = [p | p in operandsUsedByMatch[m]]
+        , array[int] of int: defs = [p | p in operandsDefinedByMatch[m]]
         }
-    in forall ( i in index_set(usonly)
-              , j in index_set(usonly)
+    in forall ( i in index_set(uses)
+              , j in index_set(uses)
                 where i < j
               )
-       ( sel[m] -> uplace[usonly[i]] = uplace[usonly[j]] )
+       ( sel[m] -> uplace[uses[i]] = uplace[uses[j]] )
        /\
        forall ( i in index_set(defs)
               , j in index_set(defs)
@@ -954,10 +951,10 @@ constraint
               )
        ( sel[m] -> dplace[Alt(defs[i])] = dplace[Alt(defs[j])] )
        /\
-       forall ( i in index_set(usonly)
+       forall ( i in index_set(uses)
               , j in index_set(defs)
               )
-       ( sel[m] -> uplace[usonly[i]] = dplace[Alt(defs[j])] )
+       ( sel[m] -> uplace[uses[i]] = dplace[Alt(defs[j])] )
   );
 
 % For non-phi matches, spanned blocks:
