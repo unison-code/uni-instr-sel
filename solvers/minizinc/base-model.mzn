@@ -43,8 +43,8 @@ int: numBlocksInFunction;
 int: entryBlockOfFunction;
 int: execFrequencyGCD;
 array[allBlocksInFunction] of set of int: domSetsOfBlocksInFunction;
-array[allOperationsInFunction] of set of int: depsOfOpsInFunction;
-array[allDataInFunction] of set of int: depsOfDataInFunction; % NOT USED
+array[allOperationsInFunction] of set of int: depsOfOpsInFunction; % NOT IN USE
+array[allDataInFunction] of set of int: depsOfDataInFunction; % NOT IN USE
 set of allOperationsInFunction: copiesInFunction;
 set of allOperationsInFunction: controlOpsInFunction;
 set of allDataInFunction: statesInFunction;
@@ -477,7 +477,6 @@ constraint
         }
     in sel[m] -> dplace[Alt(o)] = b
   );
-
 constraint
   forall (i in index_set_1of2(outputDefEdgesInMatch)) (
     let { int: m = outputDefEdgesInMatch[i, 1]
