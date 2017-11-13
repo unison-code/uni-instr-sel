@@ -51,7 +51,7 @@ set of allDataInFunction: statesInFunction;
 array[int, int] of int: defEdgesInFunction;
 array[allBlocksInFunction] of int: execFrequencyOfBlockInFunction;
 array[int] of set of int: interchangeableDataInFunction;
-set of allDataInFunction: dataInFunctionUsedAtLeastOnce;
+set of allDataInFunction: dataInFunctionUsedAtLeastOnce; % NOT IN USE
 
 % Target machine data.
 int: numLocations;
@@ -1067,7 +1067,7 @@ constraint
 % Constrain the location of d to be where its users can access it. Valid for
 % such d that are used at least once.
 constraint
-  forall (d in dataInFunctionUsedAtLeastOnce)
+  forall (d in allDataInFunction)
   ( let { array[int] of int: P =
             [ p | p in array_union(operandsUsedByMatch) diff killOperands
                   where d in operandAlternatives[p]
