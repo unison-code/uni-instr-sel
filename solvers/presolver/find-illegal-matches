@@ -220,8 +220,7 @@ for m1 in (all_matches - null_matches - phi_matches):
             # Accumulate the set of def operands that can be connected to d
             ops_defining_d = set()
             for m2 in all_matches - kill_matches:
-                m2_def_ops = set(json_data["match-operands-defined"][m2])
-                for p2 in m2_def_ops:
+                for p2 in json_data["match-operands-defined"][m2]:
                     if d in operand_alt_sets[p2]:
                         ops_defining_d |= {p2}
 
