@@ -883,28 +883,16 @@ constraint
        endif
   );
 
-% If all matches covering an operation o are all phi instructions and have the
-% same def operand, then o must be placed in the block mentioned in the output
-% def edge.
+% If all matches covering an operation o are all phi instructions and define
+% the same datum, then o must be placed in the same block as the datum.
 constraint
-  forall ( o in allOperationsInFunction
-         , d in allDataInFunction
-           where matchsetOfOp[o] subset phiInstrMatches
-         )
-  ( let { set of int: BO = { outputDefEdgesInMatch[j, 2]
-                           | j in index_set_1of2(outputDefEdgesInMatch)
-                             where outputDefEdgesInMatch[j, 1] in
-                                   matchsetOfOp[o]
-                           }
-        , set of int: DO = { outputDefEdgesInMatch[j, 3]
-                           | j in index_set_1of2(outputDefEdgesInMatch)
-                             where outputDefEdgesInMatch[j, 1] in
-                                   matchsetOfOp[o]
-                           }
+  forall (i in index_set_1of2(defEdgesInFunction)) (
+    let { int: b = defEdgesInFunction[i, 1]
+        , int: d = defEdgesInFunction[i, 2]
         }
-    in if card(BO) = 1 /\ forall (do in DO)
-                          ( operandAlternatives[do] = {d} )
-       then oplace[o] = min(BO)
+    in if defsetOfDatum[d] subset phiInstrMatches
+       then forall (o in operationsCoveredByMatch[min(defsetOfDatum[d])])
+            ( oplace[o] = b )
        else true
        endif
   );
