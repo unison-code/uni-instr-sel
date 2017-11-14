@@ -74,9 +74,10 @@ with open(json_file, 'r') as file:
 num_locations = json_data["num-locations"]
 num_matches = json_data["num-matches"]
 num_data = json_data["fun-num-data"]
-num_operands = json_data["num-operands"]
+num_operations = json_data["fun-num-operations"]
 
 # Convert lists of operand alternatives into sets
+num_operands = json_data["num-operands"]
 operand_alt_sets = [[]] * num_operands
 for o in range(num_operands):
     operand_alt_sets[o] = set(json_data["operand-alternatives"][o])
@@ -95,9 +96,8 @@ for m in range(num_matches):
                          ]
 
 # Compute set of matches that cover a particular operation
-num_operands = json_data["fun-num-operations"]
-o_matches = [[]] * num_operands
-for o in range(num_operands):
+o_matches = [[]] * num_operations
+for o in range(num_operations):
     o_matches[o] = { m for m in range(num_matches)
                            if o in json_data["match-operations-covered"][m]
                    }
@@ -114,8 +114,8 @@ illegal_matches = set()
 # Forbid matches that, if selected, would leave some operations uncoverable.
 # Empty matchsets (due to lack of patterns) are ignored as those would otherwise
 # cause everything to become an illegal match
-for i in range(num_operands):
-    for j in range(num_operands):
+for i in range(num_operations):
+    for j in range(num_operations):
         if i == j: continue
         if len(o_matches[i]) > 0 and o_matches[i] <= o_matches[j]:
             illegal_matches |= o_matches[j] - o_matches[i]
