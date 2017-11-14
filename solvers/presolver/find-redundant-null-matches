@@ -167,34 +167,41 @@ for d in range(len(data_use_locs)):
                 data_use_locs[d] = data_use_locs[d].intersection(locs)
 
 # Propagate location information involved in phi operations
-for m in json_data["match-phi-instrs"]:
-    d_defs = match_data_defined[m]
-    d_uses = match_data_used[m]
+locs_updated = True
+while locs_updated:
+    locs_updated = False
+    for m in json_data["match-phi-instrs"]:
+        d_defs = match_data_defined[m]
+        d_uses = match_data_used[m]
 
-    new_locs = None
+        new_locs = None
 
-    # Compute intersection of all use and def locations
-    for d in d_defs:
-        locs = data_def_locs[d]
-        if locs is not None:
-            if new_locs is None:
-                new_locs = locs
-            else:
-                new_locs = new_locs.intersection(locs)
+        # Compute intersection of all use and def locations
+        for d in d_defs:
+            locs = data_def_locs[d]
+            if locs is not None:
+                if new_locs is None:
+                    new_locs = locs
+                else:
+                    new_locs = new_locs.intersection(locs)
 
-    for d in d_uses:
-        locs = data_use_locs[d]
-        if locs is not None:
-            if new_locs is None:
-                new_locs = locs
-            else:
-                new_locs = new_locs.intersection(locs)
+        for d in d_uses:
+            locs = data_use_locs[d]
+            if locs is not None:
+                if new_locs is None:
+                    new_locs = locs
+                else:
+                    new_locs = new_locs.intersection(locs)
 
-    # Update use and def location information
-    for d in d_defs:
-        data_def_locs[d] = new_locs
-    for d in d_uses:
-        data_use_locs[d] = new_locs
+        # Update use and def location information
+        for d in d_defs:
+            if data_def_locs[d] != new_locs:
+                data_def_locs[d] = new_locs
+                locs_updated = True
+        for d in d_uses:
+            if data_use_locs[d] != new_locs:
+                data_use_locs[d] = new_locs
+                locs_updated = True
 
 # Find the data that belong phi operations
 phi_data = set()
