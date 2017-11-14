@@ -231,13 +231,13 @@ for m in copy_matches - null_matches:
         continue
 
     # Skip if any of the data belongs to a phi
-    if use_d in phi_data or def_d in phi_data:
+    if def_d in phi_data:
         continue
 
     use_locs = data_def_locs[use_d]
     def_locs = data_use_locs[def_d]
-    if ( (use_locs is None and use_d not in phi_data) or
-         (def_locs is None and def_d not in phi_data) or
+    if ( use_locs is None or
+         def_locs is None or
          len(use_locs & def_locs) > 0
        ):
         redundant_matches.add(m)
