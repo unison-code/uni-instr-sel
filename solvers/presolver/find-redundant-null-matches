@@ -219,14 +219,6 @@ for m in kill_matches:
     if os <= null_copy_ops:
         redundant_matches.add(m)
 
-# For each kill match defining a datum d, if d has no alternatives then the kill
-# match is redundant
-for m in kill_matches:
-    d = match_data_used[m][0]
-    ms = [ n for n in kill_matches if n != m and d in match_data_used[n] ]
-    if len(ms) == 0:
-        redundant_matches.add(m)
-
 # For each non-null copy match, check if there is (full or partial) overlap
 # between the datum it uses and the datum it defines. If there is, then the
 # match is redundant
