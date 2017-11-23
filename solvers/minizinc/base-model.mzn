@@ -1074,10 +1074,10 @@ constraint
             ]
         , array[int] of int: I =
             [ i | i in index_set_1of2(validDataLocRangesInMatch)
-                  where validDataLocRangesInMatch[i,2] in {p | p in P}
+                  where validDataLocRangesInMatch[i, 2] in {p | p in P}
             ]
         }
-    in if length(P) = length(I)
+    in if length(P) > 0 /\ length(P) = length(I)
        then let { set of int: L =
                     { l | l in canonicalDataLocs
                         , i in I
