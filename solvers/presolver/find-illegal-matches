@@ -190,6 +190,13 @@ for m1 in (all_matches - null_matches - phi_matches):
                     use_locs_of_d |= set(range(num_locations))
                     break
 
+            # If the users have conflicting location requirements on d, then
+            # we don't know whether m1 is illegal
+            if len(use_locs_of_d) == 0:
+                no_overlap_for_any_d = False
+                break
+
+            # If the defs of d conflicts with all uses of d, then m1 is illegal
             if len(m_p_locs & use_locs_of_d) > 0:
                 no_overlap_for_any_d = False
                 break
@@ -236,6 +243,14 @@ for m1 in (all_matches - null_matches - phi_matches):
                     def_locs_of_d |= set(range(num_locations))
                     break
 
+            # If the definers have conflicting location requirements on d, then
+            # we don't know whether m1 is illegal
+            if len(def_locs_of_d) == 0:
+                no_overlap_for_any_d = False
+                break
+
+            # If the use of d conflicts with all definitions of d, then m1 is
+            # illegal
             if len(m_p_locs & def_locs_of_d) > 0:
                 no_overlap_for_any_d = False
                 break
