@@ -376,16 +376,16 @@ constraint
 % Constrain locations of data which must be assigned the same location.
 constraint
   forall (i in index_set_1of2(sameDataLocsInFunction)) (
-    let { int: o1 = sameDataLocsInFunction[i, 1]
-        , int: o2 = sameDataLocsInFunction[i, 2]
+    let { int: p1 = sameDataLocsInFunction[i, 1]
+        , int: p2 = sameDataLocsInFunction[i, 2]
         }
-    in loc[Alt(o1)] = loc[Alt(o2)]
+    in loc[Alt(p1)] = loc[Alt(p2)]
   );
 
 % Constrain alternatives of operands.
 constraint
-  forall (o in allOperands)
-  ( alt[o] in operandAlternatives[o] );
+  forall (p in allOperands)
+  ( alt[p] in operandAlternatives[p] );
 
 % All operands exterior to a match (excluding kill matches), and which are not
 % states, must not be located in the intermediate value location nor the killed
@@ -473,17 +473,17 @@ constraint
   forall (i in index_set_1of2(inputDefEdgesInMatch)) (
     let { int: m = inputDefEdgesInMatch[i, 1]
         , int: b = inputDefEdgesInMatch[i, 2]
-        , int: o = inputDefEdgesInMatch[i, 3]
+        , int: p = inputDefEdgesInMatch[i, 3]
         }
-    in sel[m] -> dplace[Alt(o)] = b
+    in sel[m] -> dplace[Alt(p)] = b
   );
 constraint
   forall (i in index_set_1of2(outputDefEdgesInMatch)) (
     let { int: m = outputDefEdgesInMatch[i, 1]
         , int: b = outputDefEdgesInMatch[i, 2]
-        , int: o = outputDefEdgesInMatch[i, 3]
+        , int: p = outputDefEdgesInMatch[i, 3]
         }
-    in sel[m] -> dplace[Alt(o)] = b
+    in sel[m] -> dplace[Alt(p)] = b
   );
 
 % A datum with a definition edge must be defined in the block
