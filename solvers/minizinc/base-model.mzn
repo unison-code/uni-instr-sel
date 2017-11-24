@@ -1034,7 +1034,7 @@ constraint
          )
   ( alt[p] != min(operandAlternatives[p])
     ->
-    (loc[alt[p]] != locValueForInt /\ loc[alt[p]] != locValueForKilled)
+    (loc[Alt(p)] != locValueForInt /\ loc[Alt(p)] != locValueForKilled)
   );
 
 % Constrain the location of d to be where its definers can put it.
