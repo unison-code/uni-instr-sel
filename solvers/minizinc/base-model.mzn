@@ -798,8 +798,11 @@ constraint
                  )
          )
   ( let { set of allMatches: M = matchsetOfOp[o]
-        , int: mo = min({ m | m in M
-                              where card(operationsCoveredByMatch[m]) = 1
+        , int: mo = min({ m1 | m1 in M
+                               where forall (m2 in M)
+                                     ( card(operationsCoveredByMatch[m1]) <=
+                                       card(operationsCoveredByMatch[m2])
+                                     )
                         })
         , set of allDataInFunction: DD =
             { d | p in operandsDefinedByMatch[mo]
