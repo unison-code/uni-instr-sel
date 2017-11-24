@@ -321,7 +321,7 @@ include "globals.mzn";
 %===========
 
 % Bypasses the alt[.] variable if the given operand only has one alternative.
-% Valid under the assumption that its operation was selected.
+% Valid under the assumption that its match was selected.
 var allDataInFunction: Alt(allOperands: p) =
   let { allDataInFunction: d = min(operandAlternatives[p]) }
   in if card(operandAlternatives[p]) = 1 then d else alt[p] endif;
