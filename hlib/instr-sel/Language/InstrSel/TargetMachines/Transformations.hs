@@ -280,93 +280,57 @@ alternativeExtend
 alternativeExtend f t limit p =
   let g = osGraph $ functionOS f
       v_ns = filter isValueNode $ getAllNodes g
-      copy_related_vs =
-        map (map getNodeID) $
-        concat $
-        map ( \n ->
-              let es = getDtFlowOutEdges g n
-                  copies = filter isCopyNode $ map (getTargetNode g) es
-                  cp_vs = map ( \n' ->
-                                let es' = getDtFlowOutEdges g n'
-                                in if length es' == 1
-                                   then getTargetNode g (head es')
-                                   else if length es' == 0
-                                        then error $
-                                             "alternativeExtend: " ++
-                                             show n' ++ " has no data-flow " ++
-                                             "edges"
-                                        else error $
-                                             "alternativeExtend: " ++
-                                             show n' ++ " has multiple " ++
-                                             "data-flow edges"
-                              ) $
-                          copies
-                  grouped_vs = filter ((> 1) . length) $
-                               groupBy ( \v1 v2 ->
-                                         getDataTypeOfValueNode v1
-                                         ==
-                                         getDataTypeOfValueNode v2
-                                       ) $
-                               cp_vs
-              in grouped_vs
-            ) $
-        v_ns
+      copy_related_vs = map (map getNodeID) $
+                        filter ((> 1) . length) $
+                        concat $
+                        map ( groupBy ( \v1 v2 -> getDataTypeOfValueNode v1 ==
+                                                  getDataTypeOfValueNode v2
+                                      )
+                            ) $
+                        map (getCopiesOfValue g) v_ns
   in foldr (insertAlternativeMappings t limit) p copy_related_vs
+
+-- | Given a graph and value node, returns all value nodes that are copies of
+-- the given value node.
+getCopiesOfValue :: Graph -> Node -> [Node]
+getCopiesOfValue g n =
+  let es = getDtFlowOutEdges g n
+      copies = filter isCopyNode $ map (getTargetNode g) es
+      cp_vs = map ( \n' ->
+                    let es' = getDtFlowOutEdges g n'
+                    in if length es' == 1
+                       then getTargetNode g (head es')
+                       else if length es' == 0
+                            then error $
+                                 "getCopiesOfValue: " ++ show n' ++
+                                 " has no data-flow edges"
+                            else error $
+                                 "getCopiesOfValue: " ++ show n' ++
+                                 " has multiple data-flow edges"
+                  ) $
+              copies
+  in cp_vs
 
 insertAlternativeMappings
   :: TargetMachine
   -> Natural
      -- ^ Maximum number of alternatives per case. 0 means no limit.
   -> [NodeID]
+     -- ^ Set of copy-related values.
   -> PatternMatchset
   -> PatternMatchset
-insertAlternativeMappings t limit vs pm =
-  let sorted_vs = sortValueNodesByReusability t pm vs
-      processPatternMatch m =
-        let i = getInstructionFromPatternMatch t m
-        in m { pmMatch = processMatch i (pmMatch m) }
-      processMatch i m =
-        toMatch $
-        concatMap (processMapping i m) $
-        fromMatch m
-      processMapping i match m =
-        let fn_id = fNode m
-            pn_id = pNode m
-            g = getGraph i
-            pn = let n = findNodesWithNodeID g pn_id
-                 in if length n > 0
-                    then head n
-                    else error $ "insertAlternativeMappings: no pattern " ++
-                                 "node with ID " ++ pShow pn_id
-        in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
-           then let isCandidate n =
-                      let pn_id' = let n' = findPNInMatch match n
-                                   in if length n' > 0
-                                      then Just $ head n'
-                                      else Nothing
-                          pn' = if isJust pn_id'
-                                then let n' = findNodesWithNodeID g $
-                                             fromJust pn_id'
-                                     in if length n' > 0
-                                        then Just $ head n'
-                                        else error $
-                                             "insertAlternativeMappings: " ++
-                                             "no pattern node with ID " ++
-                                             pShow pn_id'
-                                else Nothing
-                      in isNothing pn' ||
-                         not (hasAnyPredecessors g (fromJust pn'))
-                    candidate_vs = filter isCandidate sorted_vs
-                    num_to_take =
-                      if limit == 0 then maxBound else fromIntegral limit - 1
-                    alts = take num_to_take $
-                           filter (/= fn_id) candidate_vs
-                    alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
-                                   alts
-                in (m:alt_maps)
-           else [m]
-      new_matches = map processPatternMatch $ pmMatches pm
-  in pm { pmMatches = new_matches }
+insertAlternativeMappings t limit vs p =
+  let processPatternMatch pm =
+        pm { pmMatch = toMatch $
+                       concatMap (processMapping pm) $
+                       fromMatch $
+                       pmMatch pm
+           }
+      processMapping pm m =
+        let sorted_vs = sortValueNodesByReusability t p vs
+            alt_m = computeAlternativeMappings t limit sorted_vs pm m
+        in (m:alt_m)
+  in p { pmMatches = map processPatternMatch $ pmMatches p }
 
 -- | Arranges the nodes in decreasing order of reusability. A node has high
 -- reusability if the ratio between the number of matches that use the node and
@@ -377,15 +341,16 @@ sortValueNodesByReusability
   :: TargetMachine
   -> PatternMatchset
   -> [NodeID]
+     -- ^ Set of copy-related values.
   -> [NodeID]
-sortValueNodesByReusability t pm vs =
+sortValueNodesByReusability t p vs =
   let computeScore v =
         let num_uses = length $
                        filter (usesValue v) $
-                       pmMatches pm
+                       pmMatches p
             num_consumps = length $
                            filter (consumesValue v) $
-                           pmMatches pm
+                           pmMatches p
             ratio = fromIntegral num_uses / fromIntegral num_consumps
         in ratio :: Float
       usesValue v m =
@@ -410,3 +375,53 @@ sortValueNodesByReusability t pm vs =
       -- Sorted in decreasing score order
       sorted_vs_r = sortBy (\(_, r1) (_, r2) -> compare r2 r1) vs_r
   in map fst sorted_vs_r
+
+-- | Given a mapping, computes a set of alternative mappings from the set of
+-- copy-related values.
+computeAlternativeMappings
+  :: TargetMachine
+  -> Natural
+     -- ^ Maximum number of alternatives per case. 0 means no limit.
+  -> [NodeID]
+     -- ^ Set of copy-related values. It is assumed they are sorted in
+     -- decreasing order of usability.
+  -> PatternMatch
+  -> Mapping NodeID
+  -> [Mapping NodeID]
+computeAlternativeMappings t limit sorted_vs pm m =
+  let fn_id = fNode m
+      pn_id = pNode m
+      i = getInstructionFromPatternMatch t pm
+      g = getGraph i
+      pn = let n = findNodesWithNodeID g pn_id
+           in if length n > 0
+              then head n
+              else error $ "computeAlternativeMappings: no pattern " ++
+                           "node with ID " ++ pShow pn_id
+  in if fn_id `elem` sorted_vs && not (hasAnyPredecessors g pn)
+     then let isCandidate n =
+                let pn_id' = let n' = findPNInMatch (pmMatch pm) n
+                             in if length n' > 0
+                                then Just $ head n'
+                                else Nothing
+                    pn' = if isJust pn_id'
+                          then let n' = findNodesWithNodeID g $
+                                       fromJust pn_id'
+                               in if length n' > 0
+                                  then Just $ head n'
+                                  else error $
+                                       "computeAlternativeMappings: " ++
+                                       "no pattern node with ID " ++
+                                       pShow pn_id'
+                          else Nothing
+                in isNothing pn' ||
+                   not (hasAnyPredecessors g (fromJust pn'))
+              candidate_vs = filter isCandidate sorted_vs
+              num_to_take =
+                if limit == 0 then maxBound else fromIntegral limit - 1
+              alts = take num_to_take $
+                     filter (/= fn_id) candidate_vs
+              alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
+                             alts
+          in alt_maps
+     else []
