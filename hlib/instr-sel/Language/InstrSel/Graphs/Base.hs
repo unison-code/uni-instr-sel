@@ -146,6 +146,7 @@ module Language.InstrSel.Graphs.Base
   , isPhiNode
   , isRetControlNode
   , isStateNode
+  , mergeMatches
   , mergeNodes
   , mkEmpty
   , mkGraph
@@ -2068,3 +2069,12 @@ delPNodeInMatch pn m =
   in Match { f2pMaps = new_f2p_maps
            , p2fMaps = new_p2f_maps
            }
+
+-- | Merges a list of matches into a single match. If there is an overlap in the
+-- mappings, then the mapping lists are simply concatenated.
+mergeMatches :: (Eq n, Ord n) => [Match n] -> Match n
+mergeMatches [] = error "mergeMatches: empty list"
+mergeMatches ms =
+  let new_f2p_maps = M.unionsWith (++) $ map f2pMaps ms
+      new_p2f_maps = M.unionsWith (++) $ map p2fMaps ms
+  in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }

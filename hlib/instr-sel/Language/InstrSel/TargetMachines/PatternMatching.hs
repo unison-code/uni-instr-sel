@@ -268,10 +268,7 @@ mkSimdMatches fg sub_pg sub_matches pg_remaining_cs =
       simd_ms = map ( \(m:ms) ->
                       let fixed_ms = map reassignMatch $
                                      zip sub_pg_cs_matches ms
-                      in toMatch $ concatMap fromMatch (m:fixed_ms)
-                         -- TODO: this could be made more efficient by keeping
-                         -- the Match data type and updating it instead of doing
-                         -- a reconstruction
+                      in mergeMatches (m:fixed_ms)
                     )
                     m_combs
   in simd_ms
