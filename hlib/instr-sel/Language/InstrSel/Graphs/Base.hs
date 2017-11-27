@@ -170,10 +170,12 @@ module Language.InstrSel.Graphs.Base
   , updateEdgeTarget
   , updateEdgeInNr
   , updateEdgeOutNr
+  , updateFNodeInMatch
   , updateNameOfCallNode
   , updateNodeID
   , updateNodeLabel
   , updateNodeType
+  , updatePNodeInMatch
   )
 where
 
@@ -2084,3 +2086,49 @@ addMappingToMatch m match =
       new_f2p_maps = M.insertWith (++) fn [pn] $ f2pMaps match
       new_p2f_maps = M.insertWith (++) pn [fn] $ p2fMaps match
   in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }
+
+-- | Replaces a function node in the given match with another function node.
+updateFNodeInMatch
+  :: (Eq n, Ord n)
+  => n
+     -- ^ Old node.
+  -> n
+     -- ^ New node.
+  -> Match n
+  -> Match n
+updateFNodeInMatch old_fn new_fn match =
+  let f2p_maps0 = f2pMaps match
+      (maybe_pns, f2p_maps1) = M.updateLookupWithKey (\_ _ -> Nothing)
+                                                     old_fn
+                                                     f2p_maps0
+                         -- Do a lookup and delete in one go
+      pns = maybe [] id maybe_pns
+      f2p_maps2 = M.insert new_fn pns f2p_maps1
+      p2f_maps0 = p2fMaps match
+      p2f_maps1 = foldr (M.adjust (\pns' -> (new_fn:filter (/= old_fn) pns')))
+                        p2f_maps0
+                        pns
+  in Match { f2pMaps = f2p_maps2, p2fMaps = p2f_maps1 }
+
+-- | Replaces a pattern node in the given match with another pattern node.
+updatePNodeInMatch
+  :: (Eq n, Ord n)
+  => n
+     -- ^ Old node.
+  -> n
+     -- ^ New node.
+  -> Match n
+  -> Match n
+updatePNodeInMatch old_pn new_pn match =
+  let p2f_maps0 = p2fMaps match
+      (maybe_fns, p2f_maps1) = M.updateLookupWithKey (\_ _ -> Nothing)
+                                                     old_pn
+                                                     p2f_maps0
+                         -- Do a lookup and delete in one go
+      fns = maybe [] id maybe_fns
+      p2f_maps2 = M.insert new_pn fns p2f_maps1
+      f2p_maps0 = f2pMaps match
+      f2p_maps1 = foldr (M.adjust (\fns' -> (new_pn:filter (/= old_pn) fns')))
+                        f2p_maps0
+                        fns
+  in Match { f2pMaps = f2p_maps1, p2fMaps = p2f_maps2 }
