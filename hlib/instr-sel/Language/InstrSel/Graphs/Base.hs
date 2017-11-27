@@ -2055,9 +2055,7 @@ delFNodeInMatch fn m =
       new_p2f_maps = foldr (\pn m' -> M.update (Just . filter (/= fn)) pn m')
                            (p2fMaps m)
                            pns
-  in Match { f2pMaps = new_f2p_maps
-           , p2fMaps = new_p2f_maps
-           }
+  in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }
 
 -- | Removes a pattern node from a given 'Match'.
 delPNodeInMatch :: (Eq n, Ord n) => n -> Match n -> Match n
@@ -2067,9 +2065,7 @@ delPNodeInMatch pn m =
       new_f2p_maps = foldr (\fn m' -> M.update (Just . filter (/= pn)) fn m')
                            (f2pMaps m)
                            fns
-  in Match { f2pMaps = new_f2p_maps
-           , p2fMaps = new_p2f_maps
-           }
+  in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }
 
 -- | Merges a list of matches into a single match. If there is an overlap in the
 -- mappings, then the mapping lists are simply concatenated.
@@ -2087,6 +2083,4 @@ addMappingToMatch m match =
       pn = pNode m
       new_f2p_maps = M.insertWith (++) fn [pn] $ f2pMaps match
       new_p2f_maps = M.insertWith (++) pn [fn] $ p2fMaps match
-  in Match { f2pMaps = new_f2p_maps
-           , p2fMaps = new_p2f_maps
-           }
+  in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }
