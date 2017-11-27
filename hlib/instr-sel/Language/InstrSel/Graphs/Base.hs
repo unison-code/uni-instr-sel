@@ -194,7 +194,6 @@ import Data.List
   )
 import Data.Maybe
 import qualified Data.Map as M
-import qualified Data.Set as S
 import qualified Data.Vector as V
 
 import Control.DeepSeq
@@ -349,12 +348,20 @@ instance (PrettyShow a) => PrettyShow (Mapping a) where
 -- | Represents a match between a function graph and a pattern graph. Note that
 -- it is allowed that a node in the pattern graph may be mapped to multiple
 -- nodes in the function graph, and vice versa.
-newtype Match n
-  = Match (S.Set (Mapping n))
+--
+-- For efficiency, the mappings are stored in two forms: one as mappings from
+-- function nodes to pattern nodes, and another as mappings from pattern nodes
+-- to function nodes.
+data Match n
+  = Match { f2pMaps :: M.Map n [n]
+            -- ^ Mappings from function nodes to pattern nodes.
+          , p2fMaps :: M.Map n [n]
+            -- ^ Mappings from pattern nodes to function nodes.
+          }
   deriving (Show, Eq, Ord)
 
-instance (PrettyShow a) => PrettyShow (Match a) where
-  pShow (Match s) = pShow s
+instance (PrettyShow a, Ord a) => PrettyShow (Match a) where
+  pShow m = pShow $ fromMatch m
 
 -- | Represents a dominator set.
 data DomSet t
@@ -524,11 +531,13 @@ instance ToJSON (DomSet NodeID) where
            ]
 
 instance FromJSON (Match NodeID) where
-  parseJSON v@(Array _) = Match <$> parseJSON v
+  parseJSON v@(Array _) =
+    do list <- parseJSON v
+       return $ toMatch list
   parseJSON _ = mzero
 
 instance ToJSON (Match NodeID) where
-  toJSON (Match set) = toJSON set
+  toJSON m = toJSON $ fromMatch m
 
 instance FromJSON (Mapping NodeID) where
   parseJSON v@(Array _) =
@@ -556,7 +565,7 @@ instance NFData n => NFData (Mapping n) where
   rnf (Mapping a b) = rnf a `seq` rnf b
 
 instance NFData n => NFData (Match n) where
-  rnf (Match a) = rnf a
+  rnf (Match a b) = rnf a `seq` rnf b
 
 
 
@@ -1434,8 +1443,11 @@ convertMappingN2ID m =
 
 -- | Converts a match with nodes into a match with node IDs.
 convertMatchN2ID :: Match Node -> Match NodeID
-convertMatchN2ID (Match ms) =
-  Match (S.fromList $ map convertMappingN2ID (S.toList ms))
+convertMatchN2ID m =
+  let convert k a = M.insert (getNodeID k) (map getNodeID a)
+  in Match { f2pMaps = M.foldrWithKey convert M.empty (f2pMaps m)
+           , p2fMaps = M.foldrWithKey convert M.empty (p2fMaps m)
+           }
 
 -- | Checks if a node matches another node. Two nodes match if they are of
 -- compatible node types and, depending on the node type, they have the same
@@ -1800,47 +1812,47 @@ areOutEdgesEquivalent g e1 e2 =
 
 -- | Same as 'findPNsInMapping'.
 findPNsInMatch
-  :: (Eq n)
+  :: (Eq n, Ord n)
   => Match n
      -- ^ The match.
   -> [n]
      -- ^ List of function nodes.
   -> [[n]]
      -- ^ List of corresponding pattern nodes.
-findPNsInMatch (Match m) = findPNsInMapping (S.toList m)
+findPNsInMatch m ns = map (findPNInMatch m) ns
 
 -- | Same as 'findFNsInMapping'.
 findFNsInMatch
-  :: (Eq n)
+  :: (Eq n, Ord n)
   => Match n
      -- ^ The match.
   -> [n]
      -- ^ List of pattern nodes.
   -> [[n]]
      -- ^ List of corresponding function nodes.
-findFNsInMatch (Match m) = findFNsInMapping (S.toList m)
+findFNsInMatch m ns = map (findFNInMatch m) ns
 
 -- | Same as 'findPNInMapping'.
 findPNInMatch
-  :: (Eq n)
+  :: (Eq n, Ord n)
   => Match n
      -- ^ The current mapping state.
   -> n
      -- ^ Function node.
   -> [n]
      -- ^ Corresponding pattern nodes.
-findPNInMatch (Match m) = findPNInMapping (S.toList m)
+findPNInMatch m fn = M.findWithDefault [] fn (f2pMaps m)
 
 -- | Same as 'findFNInMapping'.
 findFNInMatch
-  :: (Eq n)
+  :: (Eq n, Ord n)
   => Match n
      -- ^ The current mapping state.
   -> n
      -- ^ Pattern node.
   -> [n]
      -- ^ Corresponding function nodes.
-findFNInMatch (Match m) = findFNInMapping (S.toList m)
+findFNInMatch m pn = M.findWithDefault [] pn (p2fMaps m)
 
 -- | From a match and a list of function nodes, get the list of corresponding
 -- pattern nodes for which there exists a mapping. The order of the list will be
@@ -1967,11 +1979,21 @@ hasAnySuccessors g n = length (getSuccessors g n) > 0
 
 -- | Converts a list of mappings to a match.
 toMatch :: Ord n => [Mapping n] -> Match n
-toMatch m = Match (S.fromList m)
+toMatch ms =
+  let insert (n1, n2) m = M.insertWith (++) n1 [n2] m
+  in Match { f2pMaps = foldr insert M.empty $
+                       map (\m -> (fNode m, pNode m)) ms
+           , p2fMaps = foldr insert M.empty $
+                       map (\m -> (pNode m, fNode m)) ms
+           }
 
 -- | Converts a match to a list of mappings.
 fromMatch :: Ord n => Match n -> [Mapping n]
-fromMatch (Match s) = S.toList s
+fromMatch m =
+  M.foldrWithKey
+    (\fn pns ms -> (ms ++ map (\pn -> Mapping { fNode = fn, pNode = pn }) pns))
+    []
+    (f2pMaps m)
 
 -- | Gives the subgraph induced by a given list of nodes
 subGraph :: Graph -> [Node] -> Graph
