@@ -1,0 +1,609 @@
+diff --git a/src/instr-sel/hlib/instr-sel/Language/InstrSel/ConstraintModels/Base.hs b/src/instr-sel/hlib/instr-sel/Language/InstrSel/ConstraintModels/Base.hs
+index 9da5d24..d0bbcf5 100644
+--- a/src/instr-sel/hlib/instr-sel/Language/InstrSel/ConstraintModels/Base.hs
++++ b/src/instr-sel/hlib/instr-sel/Language/InstrSel/ConstraintModels/Base.hs
+@@ -48,11 +48,11 @@ import Language.InstrSel.Utils.JSON
+ -- | Contains a high-level CP model.
+ data HighLevelModel
+   = HighLevelModel
+-      { hlFunctionParams :: HighLevelFunctionParams
+-      , hlMachineParams :: HighLevelMachineParams
+-      , hlMatchParams :: [HighLevelMatchParams]
+-      , hlIllegalMatchCombs :: [[MatchID]]
+-      , hlInterchangeableData :: [[NodeID]]
++      { hlFunctionParams :: !HighLevelFunctionParams
++      , hlMachineParams :: !HighLevelMachineParams
++      , hlMatchParams :: ![HighLevelMatchParams]
++      , hlIllegalMatchCombs :: ![[MatchID]]
++      , hlInterchangeableData :: ![[NodeID]]
+         -- ^ The data that are interchangeable. This is used for symmetry
+         -- breaking.
+       }
+@@ -61,59 +61,59 @@ data HighLevelModel
+ -- | Contains the high-level function graph parameters.
+ data HighLevelFunctionParams
+   = HighLevelFunctionParams
+-      { hlFunOperations :: [NodeID]
++      { hlFunOperations :: ![NodeID]
+         -- ^ The operations in the function graph.
+-      , hlFunCopies :: [NodeID]
++      , hlFunCopies :: ![NodeID]
+         -- ^ The copy nodes in the function graph.
+-      , hlFunControlOps :: [NodeID]
++      , hlFunControlOps :: ![NodeID]
+         -- ^ The control nodes in the function graph.
+-      , hlFunData :: [NodeID]
++      , hlFunData :: ![NodeID]
+         -- ^ The data in the function graph.
+-      , hlFunOpPlacements :: [(NodeID, [NodeID])]
++      , hlFunOpPlacements :: ![(NodeID, [NodeID])]
+         -- ^ The set of blocks in which a given operation could potentially be
+         -- placed. The first element in the tuple represents an operation, and
+         -- the second element represents a set of blocks. This information is
+         -- used in presolving.
+-      , hlFunOpDependencies :: [(NodeID, [NodeID])]
++      , hlFunOpDependencies :: ![(NodeID, [NodeID])]
+         -- ^ The dependency sets for the operations in the function graph. The
+         -- first element in the tuple represents an operation, and the second
+         -- element represents the set of operations that the operation depends
+         -- on. This information is used in an implied constraint.
+-      , hlFunDataDependencies :: [(NodeID, [NodeID])]
++      , hlFunDataDependencies :: ![(NodeID, [NodeID])]
+         -- ^ The dependency sets for the data in the function graph. The first
+         -- element in the tuple represents a datum, and the second element
+         -- represents the set of data that the datum depends on. This
+         -- information is used in an implied constraint.
+-      , hlFunDataUsedAtLeastOnce :: [NodeID]
++      , hlFunDataUsedAtLeastOnce :: ![NodeID]
+         -- ^ The data in the function graph which will be used at least once by
+         -- some selected match. This information is used in an implied
+         -- constraint.
+-      , hlFunStates :: [NodeID]
++      , hlFunStates :: ![NodeID]
+         -- ^ The state nodes in the function graph.
+-      , hlFunBlocks :: [NodeID]
++      , hlFunBlocks :: ![NodeID]
+         -- ^ The block nodes in the function graph.
+-      , hlFunEntryBlock :: NodeID
++      , hlFunEntryBlock :: !NodeID
+         -- ^ The entry block of the function graph.
+-      , hlFunBlockDomSets :: [DomSet NodeID]
++      , hlFunBlockDomSets :: ![DomSet NodeID]
+         -- ^ The dominator sets of the blocks in the function graph.
+-      , hlFunBlockParams :: [HighLevelBlockParams]
++      , hlFunBlockParams :: ![HighLevelBlockParams]
+         -- ^ The block information.
+-      , hlFunDefEdges :: [(NodeID, NodeID)]
++      , hlFunDefEdges :: ![(NodeID, NodeID)]
+         -- ^ The definition edges in the function graph. The first element is a
+         -- block node and the second element is a datum.
+-      , hlFunValidValueLocs :: [(NodeID, [LocationID])]
++      , hlFunValidValueLocs :: ![(NodeID, [LocationID])]
+         -- ^ The value nodes together with a list of valid locations.
+-      , hlFunSameValueLocs :: [(NodeID, NodeID)]
++      , hlFunSameValueLocs :: ![(NodeID, NodeID)]
+         -- ^ The value nodes that must be assigned the same location.
+-      , hlFunValueConstData :: [(NodeID, String)]
++      , hlFunValueConstData :: ![(NodeID, String)]
+         -- ^ The value nodes which represent integer constants together with
+         -- their values.
+-      , hlFunValueOriginData :: [(NodeID, String)]
++      , hlFunValueOriginData :: ![(NodeID, String)]
+         -- ^ The value nodes whose value has an origin, together with their
+         -- origins.
+-      , hlFunCallNameData :: [(NodeID, String)]
++      , hlFunCallNameData :: ![(NodeID, String)]
+         -- ^ The function call nodes together with their function names.
+-      , hlFunConstraints :: [Constraint]
++      , hlFunConstraints :: ![Constraint]
+         -- ^ The function constraints, if any. No constraint in this list may
+         -- use array indices.
+       }
+@@ -122,11 +122,11 @@ data HighLevelFunctionParams
+ -- | Contains the high-level block information.
+ data HighLevelBlockParams
+   = HighLevelBlockParams
+-      { hlBlockName :: BlockName
++      { hlBlockName :: !BlockName
+         -- ^ The name of this block.
+-      , hlBlockNode :: NodeID
++      , hlBlockNode :: !NodeID
+         -- ^ The ID of the node representing this block.
+-      , hlBlockExecFrequency :: ExecFreq
++      , hlBlockExecFrequency :: !ExecFreq
+         -- ^ The execution frequency of this block.
+       }
+   deriving (Show)
+@@ -134,70 +134,70 @@ data HighLevelBlockParams
+ -- | Contains the high-level match parameters.
+ data HighLevelMatchParams
+   = HighLevelMatchParams
+-      { hlMatchInstructionID :: InstructionID
++      { hlMatchInstructionID :: !InstructionID
+         -- ^ The instruction ID of this match.
+-      , hlMatchID :: MatchID
++      , hlMatchID :: !MatchID
+         -- ^ The matchset ID of this match.
+-      , hlOperandNodeMaps :: [(OperandID, [NodeID])]
++      , hlOperandNodeMaps :: ![(OperandID, [NodeID])]
+         -- ^ Maps an operand to a list of value nodes in the function graph.
+-      , hlMatchOperationsCovered :: [NodeID]
++      , hlMatchOperationsCovered :: ![NodeID]
+         -- ^ The operations in the function graph which are covered by this
+         -- match.
+-      , hlMatchOperandsDefined :: [OperandID]
++      , hlMatchOperandsDefined :: ![OperandID]
+         -- ^ The operands which are defined by this match.
+-      , hlMatchOperandsUsed :: [OperandID]
++      , hlMatchOperandsUsed :: ![OperandID]
+         -- ^ The operands which are used by this match.
+-      , hlMatchInputOperands :: [OperandID]
++      , hlMatchInputOperands :: ![OperandID]
+         -- ^ The operands which act as input to this match.
+-      , hlMatchOutputOperands :: [OperandID]
++      , hlMatchOutputOperands :: ![OperandID]
+         -- ^ The operands which act as output of this match.
+-      , hlMatchIntermediateOperands :: [OperandID]
++      , hlMatchIntermediateOperands :: ![OperandID]
+         -- ^ The operands which are exterior to this match (i.e. neither input
+         -- nor output).
+-      , hlMatchValidValueLocs :: [(OperandID, [LocationID])]
++      , hlMatchValidValueLocs :: ![(OperandID, [LocationID])]
+         -- ^ The operands together with a list of locations that are valid for
+         -- this match.
+-      , hlMatchSameValueLocs :: [(OperandID, OperandID)]
++      , hlMatchSameValueLocs :: ![(OperandID, OperandID)]
+         -- ^ The operands which must be assigned the same location.
+-      , hlMatchEntryBlock :: Maybe NodeID
++      , hlMatchEntryBlock :: !(Maybe NodeID)
+         -- ^ A block in the function graph that appears as entry block
+         -- (if there is such a block) of this match.
+-      , hlMatchSpannedBlocks :: [NodeID]
++      , hlMatchSpannedBlocks :: ![NodeID]
+         -- ^ Block in the function graph spanned by this match.
+-      , hlMatchConsumedBlocks :: [NodeID]
++      , hlMatchConsumedBlocks :: ![NodeID]
+         -- ^ Block in the function graph consumed by this match.
+-      , hlMatchCodeSize :: Integer
++      , hlMatchCodeSize :: !Integer
+         -- ^ The size of the instruction associated with this match.
+-      , hlMatchLatency :: Integer
++      , hlMatchLatency :: !Integer
+         -- ^ The latency of the instruction associated with this match.
+-      , hlMatchConstraints :: [Constraint]
++      , hlMatchConstraints :: ![Constraint]
+         -- ^ The pattern-specific constraints, if any. All node IDs used in the
+         -- patterns refer to nodes in the function graph (not the pattern
+         -- graph). No constraint in this list may use array indices.
+-      , hlMatchIsPhiInstruction :: Bool
++      , hlMatchIsPhiInstruction :: !Bool
+         -- ^ Whether the corresponding instruction is a phi instruction.
+-      , hlMatchIsCopyInstruction :: Bool
++      , hlMatchIsCopyInstruction :: !Bool
+         -- ^ Whether the corresponding instruction is a copy instruction.
+-      , hlMatchIsKillInstruction :: Bool
++      , hlMatchIsKillInstruction :: !Bool
+         -- ^ Whether the corresponding instruction is a kill instruction.
+-      , hlMatchIsNullInstruction :: Bool
++      , hlMatchIsNullInstruction :: !Bool
+         -- ^ Whether the corresponding instruction is a null instruction.
+-      , hlMatchHasControlFlow :: Bool
++      , hlMatchHasControlFlow :: !Bool
+         -- ^ Whether the corresponding pattern contains any control flow.
+-      , hlMatchOperandsUsedByPhis :: [(NodeID, OperandID)]
++      , hlMatchOperandsUsedByPhis :: ![(NodeID, OperandID)]
+         -- ^ The operands, together with the blocks that appear in the
+         -- definition edges, which are used by phi nodes appearing this
+         -- match. The first element is a block node and the second element is a
+         -- datum node. This information is required for adding the necessary
+         -- constraints as well as during instruction emission in order to break
+         -- cyclic data dependencies.
+-      , hlMatchOperandsDefinedByPhis :: [(NodeID, OperandID)]
++      , hlMatchOperandsDefinedByPhis :: ![(NodeID, OperandID)]
+         -- ^ The operands, together with the blocks that appear in the
+         -- definition edges, which are defined by phi nodes appearing this
+         -- match. The first element is a block node and the second element is a
+         -- datum node. This information is required for adding the necessary
+         -- constraints.
+-      , hlMatchEmitStrNodeMaplist :: [[Maybe (Either OperandID NodeID)]]
++      , hlMatchEmitStrNodeMaplist :: ![[Maybe (Either OperandID NodeID)]]
+         -- ^ A list of mappings of the node IDs that appears in the
+         -- instruction's emit string template (which refer to nodes in the
+         -- pattern graph) to the node or operand IDs which are covered by this
+@@ -213,9 +213,9 @@ data HighLevelMatchParams
+ -- | Contains the high-level target machine parameters.
+ data HighLevelMachineParams
+   = HighLevelMachineParams
+-      { hlMachineID :: TargetMachineID
++      { hlMachineID :: !TargetMachineID
+         -- ^ The identifier of the target machine.
+-      , hlMachineLocations :: [LocationID]
++      , hlMachineLocations :: ![LocationID]
+         -- ^ The locations in the target machine.
+       }
+   deriving (Show)
+@@ -223,148 +223,148 @@ data HighLevelMachineParams
+ -- | Contains a low-level CP model.
+ data LowLevelModel
+   = LowLevelModel
+-      { llFunNumOperations :: Integer
++      { llFunNumOperations :: !Integer
+         -- ^ The number of operations in the function graph.
+-      , llFunNumData :: Integer
++      , llFunNumData :: !Integer
+         -- ^ The number of data in the function graph.
+-      , llFunNumBlocks :: Integer
++      , llFunNumBlocks :: !Integer
+         -- ^ The number of blocks in the function graph.
+-      , llFunCopies :: [ArrayIndex]
++      , llFunCopies :: ![ArrayIndex]
+         -- ^ The copy nodes of the function graph.
+-      , llFunControlOps :: [ArrayIndex]
++      , llFunControlOps :: ![ArrayIndex]
+         -- ^ The control nodes of the function graph.
+-      , llFunConstData :: [ArrayIndex]
++      , llFunConstData :: ![ArrayIndex]
+         -- ^ The data that are constant value nodes in the function graph.
+-      , llFunStates :: [ArrayIndex]
++      , llFunStates :: ![ArrayIndex]
+         -- ^ The data that are state nodes of the function graph.
+-      , llFunOpPlacements :: [[ArrayIndex]]
++      , llFunOpPlacements :: ![[ArrayIndex]]
+         -- ^ The set of blocks in which a given operation could potentially be
+         -- placed. An index into the outer list corresponds to the array index
+         -- of a particular operation. This information is used in presolving and
+         -- computing lower cost bound.
+-      , llFunOpDependencies :: [[ArrayIndex]]
++      , llFunOpDependencies :: ![[ArrayIndex]]
+         -- ^ The dependency set for each operation in the function graph. An
+         -- index into the outer list corresponds to the array index of a
+         -- particular operation. This information is used in an implied
+         -- constraint.
+-      , llFunDataDependencies :: [[ArrayIndex]]
++      , llFunDataDependencies :: ![[ArrayIndex]]
+         -- ^ The dependency set for each datum in the function graph. An index
+         -- into the outer list corresponds to the array index of a particular
+         -- datum. This information is used in an implied constraint.
+-      , llFunDataUsedAtLeastOnce :: [ArrayIndex]
++      , llFunDataUsedAtLeastOnce :: ![ArrayIndex]
+         -- ^ The data in the function graph which will be used at least once by
+         -- some selected match. This information is used in an implied
+         -- constraint.
+-      , llFunValidValueLocs :: [(ArrayIndex, ArrayIndex)]
++      , llFunValidValueLocs :: ![(ArrayIndex, ArrayIndex)]
+         -- ^ The valid locations for each datum in the function graph (no entry
+         -- means that all locations are valid). The first element is the array
+         -- index of a particular datum, and the second element is a location.
+-      , llFunSameValueLocs :: [(ArrayIndex, ArrayIndex)]
++      , llFunSameValueLocs :: ![(ArrayIndex, ArrayIndex)]
+         -- ^ The data in the function graph which must be assigned the same
+         -- location.
+-      , llFunEntryBlock :: ArrayIndex
++      , llFunEntryBlock :: !ArrayIndex
+         -- ^ The entry block of the function graph.
+-      , llFunBlockDomSets :: [[ArrayIndex]]
++      , llFunBlockDomSets :: ![[ArrayIndex]]
+         -- ^ The dominator set for each block in the function graph. An index
+         -- into the outer list corresponds to the array index of a particular
+         -- block.
+-      , llFunBBExecFreqs :: [ExecFreq]
++      , llFunBBExecFreqs :: ![ExecFreq]
+         -- ^ The execution frequency of each block. An index into the list
+         -- corresponds to the array index of a particular block in the function
+         -- graph.
+-      , llFunDefEdges :: [(ArrayIndex, ArrayIndex)]
++      , llFunDefEdges :: ![(ArrayIndex, ArrayIndex)]
+         -- ^ The definition edges that appear in this match. The first element
+         -- is the array index of a particular block, and the second element is
+         -- the array index of a particular datum.
+-      , llFunConstraints :: [Constraint]
++      , llFunConstraints :: ![Constraint]
+         -- ^ The constraints of the function graph. No constraint in this list
+         -- may use IDs.
+-      , llNumLocations :: Integer
++      , llNumLocations :: !Integer
+         -- ^ The number of locations available in the target machine.
+-      , llNumMatches :: Integer
++      , llNumMatches :: !Integer
+         -- ^ The number of matches.
+-      , llNumOperands :: Integer
++      , llNumOperands :: !Integer
+         -- ^ The number of operands.
+-      , llOperandAlternatives :: [[ArrayIndex]]
++      , llOperandAlternatives :: ![[ArrayIndex]]
+         -- ^ The list of data in the function graph that are selectable for each
+         -- operand. An index into the outer list corresponds to the array index
+         -- of a particular operand.
+-      , llMatchOperationsCovered :: [[ArrayIndex]]
++      , llMatchOperationsCovered :: ![[ArrayIndex]]
+         -- ^ The list of operation in the function graph that are covered by
+         -- each match. An index into the outer list corresponds to the array
+         -- index of a particular match.
+-      , llMatchOperandsDefined :: [[ArrayIndex]]
++      , llMatchOperandsDefined :: ![[ArrayIndex]]
+         -- ^ The list of operands that are defined by each match. An index into
+         -- the outer list corresponds to the array index of a particular match.
+-      , llMatchOperandsUsed :: [[ArrayIndex]]
++      , llMatchOperandsUsed :: ![[ArrayIndex]]
+         -- ^ The list of operands that are used by each match. An index into the
+         -- outer list corresponds to the array index of a particular match.
+-      , llMatchExteriorOperands :: [[ArrayIndex]]
++      , llMatchExteriorOperands :: ![[ArrayIndex]]
+         -- ^ The list of operands that are exterior to each match. An index into
+         -- the outer list corresponds to the array index of a particular match.
+-      , llMatchIntermediateOperands :: [[ArrayIndex]]
++      , llMatchIntermediateOperands :: ![[ArrayIndex]]
+         -- ^ The list of operands that are intermediate to each match. An index
+         -- into the outer list corresponds to the array index of a particular
+         -- match.
+-      , llMatchValidValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
++      , llMatchValidValueLocs :: ![(ArrayIndex, ArrayIndex, ArrayIndex)]
+         -- ^ The locations that are valid for a particular operand in a certain
+         -- match. The first element is the array index of a particular match,
+         -- the second element is an operand, and the third element is a
+         -- location.
+-      , llMatchSameValueLocs :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
++      , llMatchSameValueLocs :: ![(ArrayIndex, ArrayIndex, ArrayIndex)]
+         -- ^ The operands in a certain match that must be assigned the same
+         -- location. The first element is the array index of a particular match,
+         -- and the second and third elements are the array indices of the
+         -- operands.
+-      , llMatchEntryBlocks :: [Maybe ArrayIndex]
++      , llMatchEntryBlocks :: ![Maybe ArrayIndex]
+         -- ^ The block in the function graph which is the entry block (if any)
+         -- of each match. An index into the list corresponds to the array index
+         -- of a particular match.
+-      , llMatchSpannedBlocks :: [[ArrayIndex]]
++      , llMatchSpannedBlocks :: ![[ArrayIndex]]
+         -- ^ The blocks in the function graph spanned by each match. An index
+         -- into the outer list corresponds to the array index of a particular
+         -- match.
+-      , llMatchConsumedBlocks :: [[ArrayIndex]]
++      , llMatchConsumedBlocks :: ![[ArrayIndex]]
+         -- ^ The blocks in the function graph consumed by each match. An index
+         -- into the outer list corresponds to the array index of a particular
+         -- match.
+-      , llMatchInputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
++      , llMatchInputDefinitionEdges :: ![(ArrayIndex, ArrayIndex, ArrayIndex)]
+         -- ^ The input definition edges that appear in a particular match. The
+         -- first element is the array index of a particular match, the second
+         -- element is a block, and the third element is an operand.
+-      , llMatchOutputDefinitionEdges :: [(ArrayIndex, ArrayIndex, ArrayIndex)]
++      , llMatchOutputDefinitionEdges :: ![(ArrayIndex, ArrayIndex, ArrayIndex)]
+         -- ^ The output definition edges that appear in a particular match. The
+         -- first element is the array index of a particular match, the second
+         -- element is a block, and the third element is an operand.
+-      , llMatchCodeSizes :: [Integer]
++      , llMatchCodeSizes :: ![Integer]
+         -- ^ The code size of each match. An index into the list corresponds to
+         -- the array index of a particular match.
+-      , llMatchLatencies :: [Integer]
++      , llMatchLatencies :: ![Integer]
+         -- ^ The latency of each match. An index into the list corresponds to
+         -- the array index of a particular match.
+-      , llMatchCopyInstructions :: [ArrayIndex]
++      , llMatchCopyInstructions :: ![ArrayIndex]
+         -- ^ The matches that correspond to copy instructions.
+-      , llMatchKillInstructions :: [ArrayIndex]
++      , llMatchKillInstructions :: ![ArrayIndex]
+         -- ^ The matches that correspond to kill instructions.
+-      , llMatchNullInstructions :: [ArrayIndex]
++      , llMatchNullInstructions :: ![ArrayIndex]
+         -- ^ The matches that correspond to null instructions.
+-      , llMatchPhiInstructions :: [ArrayIndex]
++      , llMatchPhiInstructions :: ![ArrayIndex]
+         -- ^ The matches that correspond to phi instructions.
+-      , llMatchConstraints :: [[Constraint]]
++      , llMatchConstraints :: ![[Constraint]]
+         -- ^ The list of constraints for each match. An index into the outer
+         -- list corresponds to the array index of a particular match.
+-      , llMatchInstructionIDs :: [InstructionID]
++      , llMatchInstructionIDs :: ![InstructionID]
+         -- ^ The instructions from which each match is derived. An index into
+         -- the list corresponds to the array index of a particular match. This
+         -- information is used for debugging purposes only.
+-      , llIllegalMatchCombs :: [[ArrayIndex]]
++      , llIllegalMatchCombs :: ![[ArrayIndex]]
+         -- ^ Combinations of matches for which it is illegal to select all of
+         -- them.
+-      , llInterchangeableData :: [[ArrayIndex]]
++      , llInterchangeableData :: ![[ArrayIndex]]
+         -- ^ The data that are interchangeable. This is used for symmetry
+         -- breaking. The outer list represents groups of data that are
+         -- interchangeable.
+-      , llTMID :: TargetMachineID
++      , llTMID :: !TargetMachineID
+         -- ^ ID of the target machine from which the low-level model is
+         -- derived. This information is used for debugging purposes only.
+       }
+@@ -373,37 +373,37 @@ data LowLevelModel
+ -- | Contains a solution to a high-level CP model instance.
+ data HighLevelSolution
+   = HighLevelSolution
+-      { hlSolOrderOfBlocks :: [NodeID]
++      { hlSolOrderOfBlocks :: ![NodeID]
+         -- ^ The order of blocks (represented by the node ID of the
+         -- corresponding block). The first block is always the entry block of
+         -- the function.
+-      , hlSolSelMatches :: [MatchID]
++      , hlSolSelMatches :: ![MatchID]
+         -- ^ The selected matchs.
+-      , hlSolNodesOfOperands :: [(OperandID, NodeID)]
++      , hlSolNodesOfOperands :: ![(OperandID, NodeID)]
+         -- ^ The value node selected for a particular operand.
+-      , hlSolBlocksOfSelMatches :: [(MatchID, NodeID)]
++      , hlSolBlocksOfSelMatches :: ![(MatchID, NodeID)]
+         -- ^ The block (represented by the node ID of the corresponding block)
+         -- to which a particular match was moved. A missing entry means that the
+         -- corresponding match ID was not selected and thus not moved to a valid
+         -- block.
+-      , hlSolLocationsOfData :: [(NodeID, LocationID)]
++      , hlSolLocationsOfData :: ![(NodeID, LocationID)]
+         -- ^ The locations assigned for certain datum. A missing entry means
+         -- that no location was assigned to the corresponding datum.
+-      , hlSolCost :: Integer
++      , hlSolCost :: !Integer
+         -- ^ The cost metric of the found solution.
+-      , hlIsOptimal :: Bool
++      , hlIsOptimal :: !Bool
+         -- ^ Whether this solution is optimal.
+-      , hlSolTime :: Double
++      , hlSolTime :: !Double
+         -- ^ Time to compute to solve the model.
+-      , hlPrepTime :: Double
++      , hlPrepTime :: !Double
+         -- ^ Time to prepare the model before solving.
+       }
+   | NoHighLevelSolution
+-      { hlIsUnsatisfiable :: Bool
++      { hlIsUnsatisfiable :: !Bool
+         -- ^ Whether the model was proven to be unsatisfiable.
+-      , hlSolTime :: Double
++      , hlSolTime :: !Double
+         -- ^ Time to solve the constraint model.
+-      , hlPrepTime :: Double
++      , hlPrepTime :: !Double
+         -- ^ Time to prepare the constraint model.
+       }
+   deriving (Show)
+@@ -411,51 +411,51 @@ data HighLevelSolution
+ -- | Contains a solution to a low-level CP model instance.
+ data LowLevelSolution
+   = LowLevelSolution
+-      { llSolOrderOfBlocks :: [ArrayIndex]
++      { llSolOrderOfBlocks :: ![ArrayIndex]
+         -- ^ The order of blocks. An index into the list corresponds to the
+         -- array index of the node in the function graph which represents a
+         -- particular block. The first element is always the array index of the
+         -- entry block of the function.
+-      , llSolIsMatchSelected :: [Bool]
++      , llSolIsMatchSelected :: ![Bool]
+         -- ^ Indicates whether a particular match was selected. An index into
+         -- the list corresponds to the array index of a particular match.
+-      , llSolHasOperandAlt :: [Bool]
++      , llSolHasOperandAlt :: ![Bool]
+         -- ^ Indicates whether an alternative has been selected for a particular
+         -- operand. An index into the list corresponds to the array index of a
+         -- particular operand.
+-      , llSolAltsOfOperands :: [ArrayIndex]
++      , llSolAltsOfOperands :: ![ArrayIndex]
+         -- ^ The array index of the alternative selected for a particular
+         -- operand. An index into the list corresponds to the array index of a
+         -- particular operand.
+-      , llSolBlocksOfMatches :: [ArrayIndex]
++      , llSolBlocksOfMatches :: ![ArrayIndex]
+         -- ^ The array index of the block wherein a particular match was
+         -- placed. An index into the list corresponds to the array index of a
+         -- particular match, but this value is only valid if the corresponding
+         -- match in 'llSolIsMatchSelected' is set to @True@.
+-      , llSolHasDatumLocation :: [Bool]
++      , llSolHasDatumLocation :: ![Bool]
+         -- ^ Indicates whether a location has been selected for a particular
+         -- datum. An index into the list corresponds to the array index of a
+         -- particular datum.
+-      , llSolLocationsOfData :: [ArrayIndex]
++      , llSolLocationsOfData :: ![ArrayIndex]
+         -- ^ Specifies the location of a particular datum. An index into the
+         -- list corresponds to the array index of a particular datum, but this
+         -- value is only valid if the corresponding datum in
+         -- 'llSolHasDatumLocation' is set to @True@.
+-      , llSolCost :: Integer
++      , llSolCost :: !Integer
+         -- ^ The cost metric of the found solution.
+-      , llIsOptimal :: Bool
++      , llIsOptimal :: !Bool
+         -- ^ Whether this solution is optimal.
+-      , llSolTime :: Double
++      , llSolTime :: !Double
+         -- ^ Time to solve the constraint model.
+-      , llPrepTime :: Double
++      , llPrepTime :: !Double
+         -- ^ Time to prepare the constraint model.
+       }
+   | NoLowLevelSolution
+-      { llIsUnsatisfiable :: Bool
++      { llIsUnsatisfiable :: !Bool
+         -- ^ Whether the model was proven to be unsatisfiable.
+-      , llSolTime :: Double
++      , llSolTime :: !Double
+         -- ^ Time to solve the constraint model.
+-      , llPrepTime :: Double
++      , llPrepTime :: !Double
+         -- ^ Time to prepare the constraint model.
+       }
+   deriving (Show)
+@@ -466,25 +466,25 @@ data LowLevelSolution
+ -- IDs, etc., which may be sparse.
+ data ArrayIndexMaplists
+   = ArrayIndexMaplists
+-      { ai2OperationNodeIDs :: [NodeID]
++      { ai2OperationNodeIDs :: ![NodeID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to the node IDs of operations.
+-      , ai2DatumNodeIDs :: [NodeID]
++      , ai2DatumNodeIDs :: ![NodeID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to the node IDs of data.
+-      , ai2OperandIDs :: [OperandID]
++      , ai2OperandIDs :: ![OperandID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to the operand IDs.
+-      , ai2BlockNodeIDs :: [NodeID]
++      , ai2BlockNodeIDs :: ![NodeID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to the node IDs of blocks.
+-      , ai2MatchIDs :: [MatchID]
++      , ai2MatchIDs :: ![MatchID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to match IDs.
+-      , ai2LocationIDs :: [LocationID]
++      , ai2LocationIDs :: ![LocationID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to location IDs.
+-      , ai2InstructionIDs :: [InstructionID]
++      , ai2InstructionIDs :: ![InstructionID]
+         -- ^ The list of mappings from array indices (represented as list
+         -- indices) to instruction IDs.
+       }
+diff --git a/src/instr-sel/hlib/instr-sel/Language/InstrSel/TargetMachines/PatternMatching.hs b/src/instr-sel/hlib/instr-sel/Language/InstrSel/TargetMachines/PatternMatching.hs
+index 1b52a85..24cc04e 100644
+--- a/src/instr-sel/hlib/instr-sel/Language/InstrSel/TargetMachines/PatternMatching.hs
++++ b/src/instr-sel/hlib/instr-sel/Language/InstrSel/TargetMachines/PatternMatching.hs
+@@ -68,9 +68,9 @@ import Control.DeepSeq
+ -- which target machine the matchset concerns, along the match data.
+ data PatternMatchset
+   = PatternMatchset
+-      { pmTarget :: TargetMachineID
+-      , pmMatches :: [PatternMatch]
+-      , pmTime :: Maybe Double
++      { pmTarget :: !TargetMachineID
++      , pmMatches :: ![PatternMatch]
++      , pmTime :: !(Maybe Double)
+         -- ^ Number of seconds it took to find this pattern matchset.
+       }
+   deriving (Show)
+@@ -81,18 +81,18 @@ data PatternMatchset
+ -- of 'PatternMatch'.
+ data PatternMatch
+   = PatternMatch
+-      { pmInstrID :: InstructionID
+-      , pmMatchID :: MatchID
+-      , pmMatch :: Match NodeID
++      { pmInstrID :: !InstructionID
++      , pmMatchID :: !MatchID
++      , pmMatch :: !(Match NodeID)
+       }
+   deriving (Show)
+ 
+ -- | Intermediate data structure for producing a 'PatternMatch'
+ data IntPatternMatch
+   = IntPatternMatch
+-      { ipmInstrID :: InstructionID
+-      , ipmMatch :: Match Node
+-      , ipmHasCheckedCyclicDataDep :: Bool
++      { ipmInstrID :: !InstructionID
++      , ipmMatch :: !(Match Node)
++      , ipmHasCheckedCyclicDataDep :: !Bool
+         -- ^ Whether a cyclic data dependency check has already been done on
+         -- this match.
+       }

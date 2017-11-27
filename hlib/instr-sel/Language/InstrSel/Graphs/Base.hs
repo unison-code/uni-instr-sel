@@ -49,7 +49,9 @@ module Language.InstrSel.Graphs.Base
   , customPatternMatchingSemanticsCheck
   , delEdge
   , delNode
+  , delFNodeInMatch
   , delNodeKeepEdges
+  , delPNodeInMatch
   , doEdgeListsMatch
   , doNodesMatch
   , extractCFG
@@ -2042,3 +2044,27 @@ findDefEdgeOfDtOutEdge g e =
       def_es = filter (\e' -> getEdgeOutNr e' == nr) $
                getDefOutEdges g v
   in def_es
+
+-- | Removes a function node from a given 'Match'.
+delFNodeInMatch :: (Eq n, Ord n) => n -> Match n -> Match n
+delFNodeInMatch fn m =
+  let pns = M.findWithDefault [] fn (f2pMaps m)
+      new_f2p_maps = M.delete fn (f2pMaps m)
+      new_p2f_maps = foldr (\pn m' -> M.update (Just . filter (/= fn)) pn m')
+                           (p2fMaps m)
+                           pns
+  in Match { f2pMaps = new_f2p_maps
+           , p2fMaps = new_p2f_maps
+           }
+
+-- | Removes a pattern node from a given 'Match'.
+delPNodeInMatch :: (Eq n, Ord n) => n -> Match n -> Match n
+delPNodeInMatch pn m =
+  let fns = M.findWithDefault [] pn (p2fMaps m)
+      new_p2f_maps = M.delete pn (p2fMaps m)
+      new_f2p_maps = foldr (\fn m' -> M.update (Just . filter (/= pn)) fn m')
+                           (f2pMaps m)
+                           fns
+  in Match { f2pMaps = new_f2p_maps
+           , p2fMaps = new_p2f_maps
+           }

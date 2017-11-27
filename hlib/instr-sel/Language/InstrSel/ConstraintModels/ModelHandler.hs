@@ -296,9 +296,7 @@ enableCopyingForMultUseInputsInPattern instr match =
                             , osSameLocations = new_same_locs
                             , osConstraints = new_cs
                             }
-            new_m = toMatch $
-                    filter (\m -> pNode m /= getNodeID cp_n) $
-                    fromMatch old_m
+            new_m = delPNodeInMatch (getNodeID cp_n) old_m
             new_emit_str = updateNodeInEmitStrTemplate old_input_id
                                                        new_input_id
                                                        (instrEmitString old_i)
