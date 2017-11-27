@@ -27,6 +27,7 @@ module Language.InstrSel.Graphs.Base
   , NodeLabel (..)
   , NodeType (..)
   , SrcNode
+  , addMappingToMatch
   , addNewEdge
   , addNewEdges
   , addNewCtrlFlowEdge
@@ -2078,3 +2079,14 @@ mergeMatches ms =
   let new_f2p_maps = M.unionsWith (++) $ map f2pMaps ms
       new_p2f_maps = M.unionsWith (++) $ map p2fMaps ms
   in Match { f2pMaps = new_f2p_maps, p2fMaps = new_p2f_maps }
+
+-- | Adds a new mapping to the given match.
+addMappingToMatch :: (Eq n, Ord n) => Mapping n -> Match n -> Match n
+addMappingToMatch m match =
+  let fn = fNode m
+      pn = pNode m
+      new_f2p_maps = M.insertWith (++) fn [pn] $ f2pMaps match
+      new_p2f_maps = M.insertWith (++) pn [fn] $ p2fMaps match
+  in Match { f2pMaps = new_f2p_maps
+           , p2fMaps = new_p2f_maps
+           }

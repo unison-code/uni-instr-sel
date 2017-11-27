@@ -320,16 +320,15 @@ insertAlternativeMappings
   -> PatternMatchset
   -> PatternMatchset
 insertAlternativeMappings t limit vs p =
-  let processPatternMatch pm =
-        pm { pmMatch = toMatch $
-                       concatMap (processMapping pm) $
-                       fromMatch $
-                       pmMatch pm
-           }
-      processMapping pm m =
-        let sorted_vs = sortValueNodesByReusability t p vs
-            alt_m = computeAlternativeMappings t limit sorted_vs pm m
-        in (m:alt_m)
+  let sorted_vs = sortValueNodesByReusability t p vs
+      processPatternMatch pm =
+        let old_match = pmMatch pm
+            ms = fromMatch old_match
+            updateMatch m match =
+              foldr addMappingToMatch match $
+              computeAlternativeMappings t limit sorted_vs pm m
+            new_match = foldr updateMatch old_match ms
+        in pm { pmMatch = new_match }
   in p { pmMatches = map processPatternMatch $ pmMatches p }
 
 -- | Arranges the nodes in decreasing order of reusability. A node has high
