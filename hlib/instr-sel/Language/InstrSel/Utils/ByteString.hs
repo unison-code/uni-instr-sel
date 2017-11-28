@@ -17,14 +17,14 @@ module Language.InstrSel.Utils.ByteString
   , BS.readFile
   , replace
   , BS.replicate
-  , tokenize
+  , splitOn
   , BS.unpack
   , BS.writeFile
   )
 where
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import qualified Data.ByteString as StrictBS
+import qualified Data.ByteString.Lazy.Search as Search
 
 
 
@@ -32,8 +32,7 @@ import qualified Data.ByteString as StrictBS
 -- Functions
 -------------
 
--- | Replaces a substring with another substring. This is an expensive operation
--- as it forces its arguments to be strict.
+-- | Replaces a substring with another substring.
 replace
   :: BS.ByteString
      -- ^ What to search for.
@@ -42,25 +41,17 @@ replace
   -> BS.ByteString
      -- ^ What to search in.
   -> BS.ByteString
-replace old new = BS.intercalate new . tokenize old
+replace old new = Search.replace (BS.toStrict old) new
 
--- | Breaks a string into substrings.
-tokenize
+-- | Splits a given list into a list of sublists at points where a given
+-- delimiter is found (the delimiters themselves are removed from the resulting
+-- list). For example:
+--
+-- > splitOn ".." "a..b....c" == ["a", "b", "", "c"]
+splitOn
   :: BS.ByteString
-     -- ^ Delimiter.
+     -- ^ The delimiter.
   -> BS.ByteString
-     -- ^ String to tokenize.
-  -> [BS.ByteString]
-tokenize x y =
-  let x' = BS.toStrict x
-      y' = BS.toStrict y
-  in map BS.fromStrict $ tokenize' x' y'
-
--- | Breaks a string into substrings.
-tokenize' :: StrictBS.ByteString -> StrictBS.ByteString -> [StrictBS.ByteString]
-tokenize' x y =
-  ( h:if StrictBS.null t
-      then []
-      else tokenize' x (StrictBS.drop (StrictBS.length x) t)
-  )
-  where (h, t) = StrictBS.breakSubstring x y
+     -- ^ String to be split.
+  -> BS.ByteString
+splitOn = Search.split
