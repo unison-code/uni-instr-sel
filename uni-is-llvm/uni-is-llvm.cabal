@@ -27,4 +27,4 @@ executable uni-is-llvm
                      mtl >= 2.2
   hs-source-dirs:    .
   default-language:  Haskell2010
-  ghc-options:       -Wall
+  ghc-options:       -Wall -O2
