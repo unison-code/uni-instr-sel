@@ -391,7 +391,8 @@ processMatch' instr match mid oid =
          , hlMatchOperandsUsed = nub $ getOpIDsForPatternDataNodes d_use_ns
          , hlMatchInputOperands = nub $ getOpIDsForPatternDataNodes d_in_ns
          , hlMatchOutputOperands = nub $ getOpIDsForPatternDataNodes d_out_ns
-         , hlMatchIntermediateOperands = nub $ getOpIDsForPatternDataNodes d_int_ns
+         , hlMatchIntermediateOperands =
+             nub $ getOpIDsForPatternDataNodes d_int_ns
          , hlMatchValidValueLocs = valid_locs
          , hlMatchSameValueLocs = same_locs
          , hlMatchEntryBlock =
