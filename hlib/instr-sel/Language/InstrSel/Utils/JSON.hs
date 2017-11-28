@@ -70,15 +70,12 @@ fromJson s =
 
 -- | Converts an entity into a JSON string.
 toJson :: ToJSON a => a -> BS.ByteString
-toJson = encode
-  where unescape = undefined
-                   -- TODO: fix
-                   -- BS.map ( \c -> case c of \0x003c -> '<'
-                   --                          \0x003e -> '>'
-                   --                          _ -> c
-                   --        )
-        -- For security reasons, Aeson will escape '<' and '>' when dumping JSON
-        -- data to string, which is something we want to undo.
+toJson = unescape . encode
+  where unescape = BS.replace (BS.pack "\\u003c") (BS.pack "<") .
+                   BS.replace (BS.pack "\\u003e") (BS.pack ">")
+                   -- For security reasons, Aeson will escape '<' and '>' when
+                   -- dumping JSON data to string, which is something we want to
+                   -- undo.
 
 -- | Checks if the given JSON object has a field of certain name.
 hasField :: Object -> T.Text -> Parser Bool
