@@ -53,5 +53,5 @@ splitOn
      -- ^ The delimiter.
   -> BS.ByteString
      -- ^ String to be split.
-  -> BS.ByteString
-splitOn = Search.split
+  -> [BS.ByteString]
+splitOn pat = Search.split (BS.toStrict pat)
