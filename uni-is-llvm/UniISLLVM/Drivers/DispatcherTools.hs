@@ -29,6 +29,7 @@ import Language.InstrSel.Utils
   , fromRight
   , isLeft
   )
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
 import Language.InstrSel.Utils.JSON
 
@@ -49,20 +50,20 @@ loadFileContent
      -- ^ Error message when the file path is 'Nothing'.
   -> Maybe FilePath
      -- ^ The file to load.
-  -> IO String
+  -> IO BS.ByteString
      -- ^ The file content.
 loadFileContent err file =
   do when (isNothing file) $
        reportErrorAndExit err
      readFileContent $ fromJust file
 
-loadFunctionFileContent :: Options -> IO String
+loadFunctionFileContent :: Options -> IO BS.ByteString
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
 
 -- | Parses a given JSON string and loads its content. Reports error if this
 -- fails.
-loadFromJson :: (FromJSON a) => String -> IO a
+loadFromJson :: (FromJSON a) => BS.ByteString -> IO a
 loadFromJson str =
   do let res = fromJson str
      when (isLeft res) $

@@ -24,11 +24,10 @@ import Language.InstrSel.ConstraintModels
   )
 import Language.InstrSel.TargetMachines.CodeEmission
 
+import qualified Language.InstrSel.Utils.ByteString as BS
+import Language.InstrSel.Utils.ByteStringBuilder
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
-
-import Data.List
-  ( intercalate )
 
 
 
@@ -41,30 +40,40 @@ run :: MakeAction -> HighLevelModel -> HighLevelSolution -> IO [Output]
 run MakeAssemblyCode model sol =
   do target <- loadTargetMachine $ hlMachineID $ hlMachineParams model
      let code = generateCode target model sol
-         code_str = concat $ map (\c -> showCode c ++ "\n") code
-     return [toOutput code_str]
+         code_str = mconcat $ map (\c -> buildCode c <> stringUtf8 "\n") code
+     return [toOutput $ toLazyByteString code_str]
 
 run _ _ _ = reportErrorAndExit "MakeArrayIndexMaplists: unsupported action"
 
 -- | Flattens the assembly code into a string.
-showCode :: AssemblyCode -> String
-showCode b@(AsmBlock {}) =
+buildCode :: AssemblyCode -> Builder
+buildCode b@(AsmBlock {}) =
   let freq_int = (fromIntegral $ asmExecFreq b) :: Integer
-  in alignString 3 (show freq_int) ++ "  " ++ asmString b ++ ":"
-showCode i@(AsmInstruction {}) =
-  alignString 3 (asmLatency i) ++ "  " ++
-  "  " ++
-  "[" ++ intercalate ", " (asmOutput i) ++ "] <- " ++
-  "\"" ++ asmString i ++ "\"" ++
-  " <- [" ++ intercalate ", " (asmInput i) ++ "]"
+  in alignString 3 (BS.pack $ show freq_int) <>
+     stringUtf8 "  " <>
+     stringUtf8 (asmString b) <>
+     stringUtf8 ":"
+buildCode i@(AsmInstruction {}) =
+  alignString 3 (BS.pack $ asmLatency i) <>
+  stringUtf8 "  " <>
+  stringUtf8 "  " <>
+  stringUtf8 "[" <>
+  lazyByteString (BS.intercalate (BS.pack ", ") (map BS.pack $ asmOutput i)) <>
+  stringUtf8 "] <- " <>
+  stringUtf8 "\"" <>
+  stringUtf8 (asmString i) <>
+  stringUtf8 "\"" <>
+  stringUtf8 " <- [" <>
+  lazyByteString (BS.intercalate (BS.pack ", ") (map BS.pack $ asmInput i)) <>
+  stringUtf8 "]"
 
 -- | Prints a string with right-justified alignment.
 alignString
   :: Int
      -- ^ Desired width of string.
-  -> String
+  -> BS.ByteString
      -- ^ String to align
-  -> String
+  -> Builder
 alignString w s =
-  let pad = take (w - length s) $ repeat ' '
-  in pad ++ s
+  let pad = BS.replicate (fromIntegral w - BS.length s) ' '
+  in lazyByteString pad <> lazyByteString s

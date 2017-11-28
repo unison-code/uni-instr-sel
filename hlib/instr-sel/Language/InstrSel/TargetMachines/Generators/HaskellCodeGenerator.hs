@@ -15,8 +15,8 @@ import Language.InstrSel.TargetMachines.Base
   ( TargetMachine (tmID)
   , fromTargetMachineID
   )
-import Language.InstrSel.Utils.String
-  ( replace )
+import qualified Language.InstrSel.Utils.ByteString as BS
+import Language.InstrSel.Utils.ByteStringBuilder
 
 import Language.Haskell.Exts
 
@@ -29,14 +29,17 @@ import Language.Haskell.Exts
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
 -- The source code is then wrapped inside a module with name equal to the
 -- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'.
-generateModule :: TargetMachine -> String
+generateModule :: TargetMachine -> BS.ByteString
 generateModule tm =
-  let renameFuncs str = replace "mkGraph" "I.mkGraph" str
+  let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       tm_id = fromTargetMachineID (tmID tm)
-      boiler_src = "-----------------------------------------------------------\
+      boiler_src =
+        stringUtf8 "-----------------------------------------------------------\
                    \---------------------\n\
                    \-- |\n\
-                   \-- Module      : UniIS.Targets." ++ tm_id ++ "\n\
+                   \-- Module      : UniIS.Targets." <>
+        stringUtf8 tm_id <>
+        stringUtf8 "\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
                    \--\n\
@@ -44,7 +47,10 @@ generateModule tm =
                    \--\n\
                    \-----------------------------------------------------------\
                    \---------------------\n\n"
-      header_src = "module UniIS.Targets." ++ tm_id ++ "\n\
+      header_src =
+        stringUtf8 "module UniIS.Targets." <>
+        stringUtf8 tm_id <>
+        stringUtf8 "\n\
                    \  ( theTM )\n\
                    \where\n\n\
                    \import Language.InstrSel.Constraints\n\
@@ -61,13 +67,17 @@ generateModule tm =
                    \  ( LT, GT )\n\
                    \import Data.Map\n\
                    \  ( fromList )\n\n"
-      tm_func_src = "theTM :: TargetMachine\n\
-                    \theTM = " ++ (renameFuncs $ show tm)
-      haskell_code = header_src ++ tm_func_src
-      res = parseFileContents haskell_code
+      tm_func_src =
+        stringUtf8 "theTM :: TargetMachine\n\
+                   \theTM = " <>
+        lazyByteString (renameFuncs $ BS.pack $ show tm)
+      haskell_code = header_src <> tm_func_src
+      res = parseFileContents $ BS.unpack $ toLazyByteString haskell_code
       prettify m = prettyPrintStyleMode (style { lineLength = 80 })
                                         defaultMode m
   in case res
-     of (ParseOk m) -> boiler_src ++ prettify m
+     of (ParseOk m) -> toLazyByteString $
+                       boiler_src <>
+                       (stringUtf8 $ prettify m)
         (ParseFailed line msg) -> error $ "generateModule: parsing failed at "
                                          ++ show line ++ ": " ++ msg

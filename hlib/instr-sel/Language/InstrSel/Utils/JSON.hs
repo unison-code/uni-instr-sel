@@ -17,32 +17,27 @@ module Language.InstrSel.Utils.JSON
   , module Control.Monad
   , Scientific
   , fromJson
-  , pack
-  , toJson
-  , unpack
   , hasField
+  , T.pack
+  , toJson
+  , T.unpack
   )
 where
 
-import Language.InstrSel.Utils.String
-  ( replace )
+import Language.InstrSel.Utils.Base
+  ( fromLeft
+  , isRight
+  )
+import qualified Language.InstrSel.Utils.ByteString as BS
 
 import Data.Aeson
 import Data.Aeson.Types
   ( Parser )
 import qualified Data.HashMap.Strict as H
   ( lookup )
-import qualified Data.ByteString.Lazy.Char8 as BS
-  ( pack
-  , unpack
-  )
 import Data.Scientific
   ( Scientific )
 import qualified Data.Text as T
-  ( Text
-  , pack
-  , unpack
-  )
 
 import Control.Applicative
   ( (<$>)
@@ -51,10 +46,6 @@ import Control.Applicative
 import Control.Monad
   ( mzero
   , when
-  )
-import Data.Maybe
-  ( fromJust
-  , isJust
   )
 
 
@@ -67,31 +58,27 @@ import Data.Maybe
 -- an error.
 fromJson
   :: FromJSON a
-  => String
+  => BS.ByteString
   -> Either String a
      -- ^ The left field contains the error message (when parsing failed), and
      -- the right field the parsed entity (when parsing was successful).
-fromJson [] = Left "failed to parse JSON: empty string"
 fromJson s =
-  let result = decode (BS.pack s)
-  in if isJust result
-     then Right (fromJust result)
-     else Left "failed to parse JSON: unknown error"
+  let result = eitherDecode s
+  in if isRight result
+     then result
+     else Left $ "failed to parse JSON: " ++ fromLeft result
 
 -- | Converts an entity into a JSON string.
-toJson :: ToJSON a => a -> String
-toJson = unescape . BS.unpack . encode
-  where unescape = replace "\\u003c" "<" . replace "\\u003e" ">"
+toJson :: ToJSON a => a -> BS.ByteString
+toJson = encode
+  where unescape = undefined
+                   -- TODO: fix
+                   -- BS.map ( \c -> case c of \0x003c -> '<'
+                   --                          \0x003e -> '>'
+                   --                          _ -> c
+                   --        )
         -- For security reasons, Aeson will escape '<' and '>' when dumping JSON
         -- data to string, which is something we want to undo.
-
--- | Converts 'Text' into a 'String'.
-unpack :: T.Text -> String
-unpack = T.unpack
-
--- | Converts a 'String' into 'Text'.
-pack :: String -> T.Text
-pack = T.pack
 
 -- | Checks if the given JSON object has a field of certain name.
 hasField :: Object -> T.Text -> Parser Bool

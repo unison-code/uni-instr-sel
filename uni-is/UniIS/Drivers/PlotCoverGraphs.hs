@@ -105,7 +105,7 @@ run PlotCoverPerMatch show_edge_nrs _ _ function matchset =
 
 run _ _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
-mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO String
+mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO ByteString
 mkCoveragePlot show_edge_nrs function matches =
   do let hasMatch n = any (\m -> length (findPNInMatch m $ getNodeID n) > 0)
                           matches

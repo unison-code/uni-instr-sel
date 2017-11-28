@@ -19,6 +19,7 @@ import UniIS.Drivers.DispatcherTools
   ( loadFromJson )
 import Language.InstrSel.ConstraintModels
 import Language.InstrSel.ConstraintModels.SolutionHandler
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.JSON
   ( toJson )
 
@@ -33,9 +34,9 @@ import Language.InstrSel.Utils.IO
 
 run
   :: TransformAction
-  -> String
+  -> BS.ByteString
      -- ^ The content of the (low-level or high-level) CP solution file.
-  -> String
+  -> BS.ByteString
      -- ^ The content of the high-level CP model file.
   -> ArrayIndexMaplists
   -> IO [Output]

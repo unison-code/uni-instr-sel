@@ -30,6 +30,7 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 import Language.InstrSel.Utils.String
@@ -46,8 +47,11 @@ import Data.Maybe
 -- Functions
 -------------
 
-run :: MakeAction -> Function -> LowLevelModel -> ArrayIndexMaplists
-       -> IO [Output]
+run :: MakeAction
+    -> Function
+    -> LowLevelModel
+    -> ArrayIndexMaplists
+    -> IO [Output]
 
 run MakeLowLevelModelDump function model ai_maps =
   let addPadding ai = (take (length $ pShow ai) $ repeat ' ') ++ "    "
@@ -267,6 +271,7 @@ run MakeLowLevelModelDump function model ai_maps =
                      (zip ms ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
   in do return [ toOutput $
+                 BS.pack $
                  "OPERATIONS" ++ "\n\n" ++
                  (dumpOperationNodes $ ai2OperationNodeIDs ai_maps) ++
                  "\n\n" ++

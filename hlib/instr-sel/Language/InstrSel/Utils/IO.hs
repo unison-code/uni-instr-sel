@@ -15,6 +15,7 @@ module Language.InstrSel.Utils.IO
   , reportErrorAndExit
   , doesFileExist
   , readFileContent
+  , writeFileContent
   , foldM
   , foldM_
   , when
@@ -25,7 +26,7 @@ module Language.InstrSel.Utils.IO
   )
 where
 
-
+import qualified Language.InstrSel.Utils.ByteString as BS
 
 import Control.Monad
   ( foldM
@@ -73,12 +74,17 @@ doesFileExist = D.doesFileExist
 
 -- | Reads the content of a given file. If the file does not exist an error is
 -- reported and then the program fails.
-readFileContent :: FilePath -> IO String
+readFileContent :: FilePath -> IO BS.ByteString
 readFileContent file =
   do exists_file <- doesFileExist file
      when (not exists_file) $
        reportErrorAndExit $ "File " ++ show file ++ " does not exist."
-     readFile file
+     BS.readFile file
+
+-- | Writes content to a file. If the file does not exist, it is automatically
+-- created. If the file already exists, the content is overwritten.
+writeFileContent :: FilePath -> BS.ByteString -> IO ()
+writeFileContent = BS.writeFile
 
 -- | Throws away 'Nothing' elements.
 catMaybeM :: Monad m => m [Maybe a] -> m [a]

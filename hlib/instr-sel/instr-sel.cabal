@@ -78,6 +78,8 @@ library
 
     Language.InstrSel.Utils
     Language.InstrSel.Utils.Base
+    Language.InstrSel.Utils.ByteString
+    Language.InstrSel.Utils.ByteStringBuilder
     Language.InstrSel.Utils.IO
     Language.InstrSel.Utils.JSON
     Language.InstrSel.Utils.Lisp

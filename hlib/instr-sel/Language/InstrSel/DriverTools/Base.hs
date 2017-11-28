@@ -10,7 +10,8 @@ Main authors:
 -}
 
 module Language.InstrSel.DriverTools.Base
-  ( Log (..)
+  ( BS.ByteString
+  , Log (..)
   , LogMessage (..)
   , Output (..)
   , appendLog
@@ -27,14 +28,13 @@ module Language.InstrSel.DriverTools.Base
   )
 where
 
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
   ( ExitCode (..)
   , errorExitCode
   , successExitCode
   )
 
-import Data.List
-  ( intercalate )
 import Data.Maybe
   ( fromJust
   , isJust
@@ -60,7 +60,7 @@ data Output
         -- ^ When the program exists after emitting the output, exit the this
         -- exit code. If multiple 'Output's are given, the exit code of the last
         -- 'Output' is used.
-      , oData :: String
+      , oData :: BS.ByteString
         -- ^ The produced output.
       }
 
@@ -83,7 +83,7 @@ data LogMessage
 -- | Creates an output that has no ID and no exit code. This is useful when
 -- there is exactly one output produced.
 toOutput
-  :: String
+  :: BS.ByteString
      -- ^ The output string.
   -> Output
 toOutput s = toOutput' Nothing successExitCode s
@@ -92,7 +92,7 @@ toOutput s = toOutput' Nothing successExitCode s
 toOutputWithID
   :: String
      -- ^ The ID.
-  -> String
+  -> BS.ByteString
      -- ^ The output string.
   -> Output
 toOutputWithID oid s = toOutput' (Just oid) successExitCode s
@@ -101,7 +101,7 @@ toOutputWithID oid s = toOutput' (Just oid) successExitCode s
 toOutputWithExitCode
   :: ExitCode
      -- ^ The exit code.
-  -> String
+  -> BS.ByteString
      -- ^ The output string.
   -> Output
 toOutputWithExitCode code s = toOutput' Nothing code s
@@ -112,12 +112,12 @@ toOutputWithIDAndExitCode
      -- ^ The ID.
   -> ExitCode
      -- ^ The exit code.
-  -> String
+  -> BS.ByteString
      -- ^ The output string.
   -> Output
 toOutputWithIDAndExitCode oid code s = toOutput' (Just oid) code s
 
-toOutput' :: Maybe String -> ExitCode -> String -> Output
+toOutput' :: Maybe String -> ExitCode -> BS.ByteString -> Output
 toOutput' oid code s = Output { oID = oid
                               , oExitCode = code
                               , oData = s
@@ -125,7 +125,7 @@ toOutput' oid code s = Output { oID = oid
 
 -- | Emits output to @STDOUT@.
 emitToStdout :: Output -> IO ()
-emitToStdout = putStrLn . oData
+emitToStdout = putStrLn . BS.unpack . oData
 
 -- | Emits output to a file of a given name and the output ID suffixed to the
 -- file name before the file extension of the path. If the path has no file
@@ -143,7 +143,7 @@ emitToFile fp o =
                    else ""
                  ) ++
                  ext
-  in writeFile filename (oData o)
+  in BS.writeFile filename (oData o)
 
 -- | Creates an empty log.
 emptyLog :: Log
@@ -171,9 +171,9 @@ isErrorMessage (ErrorMessage {}) = True
 isErrorMessage _ = False
 
 -- | Converts a 'LogMessage' to a 'String'
-msg2Str :: LogMessage -> String
-msg2Str (ErrorMessage str) = str
-msg2Str (WarningMessage str) = str
+msg2Str :: LogMessage -> BS.ByteString
+msg2Str (ErrorMessage str) = BS.pack str
+msg2Str (WarningMessage str) = BS.pack str
 
 -- | Makes an 'Output' from a given 'Log'. An empty log indicates no errors.
 mkOutputFromLog :: Log -> [Output]
@@ -182,6 +182,6 @@ mkOutputFromLog (Log msgs) =
   let code = if any isErrorMessage msgs
              then errorExitCode
              else successExitCode
-      msgs_str = intercalate "\n\n" $
+      msgs_str = BS.intercalate (BS.pack "\n\n") $
                  map msg2Str msgs
   in [toOutputWithExitCode code msgs_str]

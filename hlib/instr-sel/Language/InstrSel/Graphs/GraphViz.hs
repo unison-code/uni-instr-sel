@@ -13,10 +13,10 @@ module Language.InstrSel.Graphs.GraphViz
   ( noMoreEdgeAttr
   , noMoreNodeAttr
   , showEdgeNrsAttr
-  , toDotGraph
-  , toDotGraphWith
   , toDotString
   , toDotStringWith
+  , toDotGraph
+  , toDotGraphWith
   )
 where
 
@@ -28,6 +28,8 @@ import Language.InstrSel.DataTypes
 import Language.InstrSel.Graphs.Base
 import Language.InstrSel.Graphs.IDs
   ( NodeID )
+
+import qualified Language.InstrSel.Utils.ByteString as BS
 
 import qualified Data.Graph.Inductive as I
 import qualified Data.GraphViz as GV
@@ -63,7 +65,7 @@ toDotGraphWith nf ef g =
 
 -- | Converts a graph into GraphViz's DotGraph string format, which can then be
 -- written to file.
-toDotString :: Graph -> String
+toDotString :: Graph -> BS.ByteString
 toDotString = toDotStringWith noMoreNodeAttr noMoreEdgeAttr
 
 -- | Same as 'toDotString' but may take two additional functions for customizing
@@ -73,11 +75,9 @@ toDotStringWith
   :: (Graph -> Node -> GV.Attributes)
   -> (Graph -> Edge -> GV.Attributes)
   -> Graph
-  -> String
+  -> BS.ByteString
 toDotStringWith nf ef g =
-  let text = GVP.renderDot $ GVP.toDot $ toDotGraphWith nf ef g
-      str = T.unpack text
-  in str
+  BS.pack $ T.unpack $ GVP.renderDot $ GVP.toDot $ toDotGraphWith nf ef g
 
 -- | Constructs the dot graph parameters, including the attributes for the nodes
 -- and edges.

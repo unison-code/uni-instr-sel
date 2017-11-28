@@ -34,6 +34,7 @@ import Language.InstrSel.Utils.Base
   , fromLeft
   , fromRight
   )
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.JSON
 import Language.InstrSel.Utils.IO
   ( reportError
@@ -82,7 +83,7 @@ run opts =
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.
-loadMachDescFile :: Options -> IO String
+loadMachDescFile :: Options -> IO BS.ByteString
 loadMachDescFile opts =
   do let f = machDescFile opts
      when (isNothing f) $

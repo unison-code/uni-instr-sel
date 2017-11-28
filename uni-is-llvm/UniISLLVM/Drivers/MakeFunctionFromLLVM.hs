@@ -23,6 +23,7 @@ import Language.InstrSel.Utils
   , fromRight
   , isLeft
   )
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 
@@ -39,7 +40,7 @@ import Control.Monad.Except
 
 run
   :: MakeAction
-  -> String
+  -> BS.ByteString
      -- ^ The content of the LLVM IR file.
   -> IO [Output]
 
@@ -47,7 +48,9 @@ run MakeFunctionGraphFromLLVM str =
   do llvm_module_result <-
        withContext
          ( \context ->
-           runExceptT $ withModuleFromLLVMAssembly context str moduleAST
+           runExceptT $ withModuleFromLLVMAssembly context
+                                                   (BS.unpack str)
+                                                   moduleAST
          )
      when (isLeft llvm_module_result) $
        reportErrorAndExit $ fromLeft $ llvm_module_result

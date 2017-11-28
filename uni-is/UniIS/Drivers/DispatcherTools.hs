@@ -58,6 +58,7 @@ import Language.InstrSel.Utils
   , fromRight
   , isLeft
   )
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
 import Language.InstrSel.Utils.JSON
 
@@ -79,31 +80,31 @@ loadFileContent
      -- ^ Error message when the file path is 'Nothing'.
   -> Maybe FilePath
      -- ^ The file to load.
-  -> IO String
+  -> IO BS.ByteString
      -- ^ The file content.
 loadFileContent err file =
   do when (isNothing file) $
        reportErrorAndExit err
      readFileContent $ fromJust file
 
-loadArrayIndexMaplistsFileContent :: Options -> IO String
+loadArrayIndexMaplistsFileContent :: Options -> IO BS.ByteString
 loadArrayIndexMaplistsFileContent =
   loadFileContent "No array index maplists file provided."
   . arrayIndexMaplistsFile
 
-loadFunctionFileContent :: Options -> IO String
+loadFunctionFileContent :: Options -> IO BS.ByteString
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
 
-loadModelFileContent :: Options -> IO String
+loadModelFileContent :: Options -> IO BS.ByteString
 loadModelFileContent =
   loadFileContent "No model file provided." . modelFile
 
-loadPatternMatchsetFileContent :: Options -> IO String
+loadPatternMatchsetFileContent :: Options -> IO BS.ByteString
 loadPatternMatchsetFileContent =
   loadFileContent "No pattern matchset file provided." . patternMatchsetFile
 
-loadSolutionFileContent :: Options -> IO String
+loadSolutionFileContent :: Options -> IO BS.ByteString
 loadSolutionFileContent =
   loadFileContent "No solution file provided." . solutionFile
 
@@ -180,7 +181,7 @@ loadInstruction tm iid =
 
 -- | Parses a given JSON string and loads its content. Reports error if this
 -- fails.
-loadFromJson :: (FromJSON a) => String -> IO a
+loadFromJson :: (FromJSON a) => BS.ByteString -> IO a
 loadFromJson str =
   do let res = fromJson str
      when (isLeft res) $

@@ -31,6 +31,7 @@ import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines
 
+import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.IO
   ( reportErrorAndExit )
 import Language.InstrSel.Utils.String
@@ -304,6 +305,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                        -- Cast needed to prevent compiler warning
                      )
   in do return [ toOutput $
+                 BS.pack $
                  "OPERATIONS" ++ "\n\n" ++
                  (dumpOperationNodes $ ai2OperationNodeIDs ai_maps) ++
                  "\n\n" ++
