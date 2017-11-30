@@ -147,14 +147,17 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 %.rt.f.json: %.f.json
 	$(UNI_IS_CMD) transform --remove-conv-redundancies-in-fun -f $< -o $@
 
-%.p.json: %.f.json
-	$(UNI_IS_CMD) make --compute-pattern-matchset -t $(TARGET) -f $< -o $@
+%.p.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json
+	$(UNI_IS_CMD) make --compute-pattern-matchset\
+                  -t $(TARGET) \
+                  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                  -o $@
 
-%.ae.p.json: %.f.json %.p.json
+%.ae.p.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json %.p.json
 	$(UNI_IS_CMD) transform \
 				  --alternative-extend-pat \
 				  --alt-limit $(ALT_LIMIT) \
-				  -f $*.f.json \
+				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
 				  -p $*.p.json \
 				  -o $@
 
@@ -165,42 +168,41 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 		echo "{\"lower-bound\": 0}" > $@; \
 	fi
 
-%.de.lp.ep.ce.cc.rp.de.rt.dom.json: %.ll.model.json
+%.dom.json: %.ll.model.json
 	$(CONSTR_CONV_CMD) $< > $<.temp
 	$(DOM_MATCHES_CMD) $<.temp > $@
 	$(RM) $<.temp
 
-%.de.lp.ep.ce.cc.rp.de.rt.ill.json: %.ll.model.json
+%.ill.json: %.ll.model.json
 	$(ILL_MATCHES_CMD) $< > $@
 
-%.de.lp.ep.ce.cc.rp.de.rt.redun.json: %.ll.model.json
+%.redun.json: %.ll.model.json
 	$(REDUN_MATCHES_CMD) $< > $@
 
-%.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json: \
-        %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
-        %.de.lp.ep.ce.cc.rp.de.rt.dom.json \
-        %.de.lp.ep.ce.cc.rp.de.rt.ill.json \
-        %.de.lp.ep.ce.cc.rp.de.rt.redun.json \
-        %.aimaps.json
-	$(PRUNE_BAD_MATCHES_CMD) -d $*.de.lp.ep.ce.cc.rp.de.rt.dom.json \
-							 -i $*.de.lp.ep.ce.cc.rp.de.rt.ill.json \
-							 -r $*.de.lp.ep.ce.cc.rp.de.rt.redun.json \
-							 -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
+%.presolved.ae.p.json: %.ae.p.json \
+                       %.dom.json \
+                       %.ill.json \
+                       %.redun.json \
+                       %.aimaps.json
+	$(PRUNE_BAD_MATCHES_CMD) -d $*.dom.json \
+							 -i $*.ill.json \
+							 -r $*.redun.json \
+							 -p $*.ae.p.json \
 							 -a $*.aimaps.json \
 							 > $@
 
 %.hl.model.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                 %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json
+                 %.ae.p.json
 	$(UNI_IS_CMD) make --construct-hl-cp-model \
 				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-				  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
+				  -p $*.ae.p.json \
 				  -o $@
 
 %.presolved.hl.model.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                           %.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json
+                           %.presolved.ae.p.json
 	$(UNI_IS_CMD) make --construct-hl-cp-model \
 				  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-				  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json \
+				  -p $*.presolved.ae.p.json \
 				  -o $@
 
 %.aimaps.json: %.de.lp.ep.ce.cc.rp.de.rt.f.json %.hl.model.json
