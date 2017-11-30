@@ -37,6 +37,7 @@
 import json
 import os.path
 import sys
+import time
 
 
 
@@ -64,6 +65,8 @@ if len(sys.argv) > 2:
 json_file = sys.argv[1]
 if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")
+
+time_start = time.time()
 
 # Read JSON file
 json_data = {}
@@ -259,7 +262,10 @@ for m1 in (all_matches - null_matches - phi_matches):
             illegal_matches |= {m1}
             break
 
+time_elapsed = time.time() - time_start
+
 # Print JSON
 i_json_data = {}
 i_json_data["illegal-matches-ai"] = list(illegal_matches)
+i_json_data["processing-time"] = time_elapsed
 print json.dumps(i_json_data)

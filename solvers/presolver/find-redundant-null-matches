@@ -37,6 +37,7 @@
 import json
 import os.path
 import sys
+import time
 
 
 
@@ -64,6 +65,8 @@ if len(sys.argv) > 2:
 json_file = sys.argv[1]
 if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")
+
+time_start = time.time()
 
 # Read JSON file
 json_data = {}
@@ -249,7 +252,10 @@ for m in copy_matches - null_matches:
        ):
         redundant_matches.add(m)
 
+time_elapsed = time.time() - time_start
+
 # Print JSON
 r_json_data = {}
 r_json_data["redundant-null-matches-ai"] = list(redundant_matches)
+r_json_data["processing-time"] = time_elapsed
 print json.dumps(r_json_data)

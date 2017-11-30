@@ -38,6 +38,7 @@
 import json
 import os.path
 import sys
+import time
 
 
 
@@ -356,6 +357,8 @@ json_file = sys.argv[1]
 if not os.path.isfile(json_file):
     error("JSON file '" + json_file +"' not found")
 
+time_start = time.time()
+
 # Read JSON file
 json_data = {}
 with open(json_file, 'r') as file:
@@ -389,8 +392,10 @@ dominated_match_sublists = [ matchesDominatedBy(json_data, m, dominable_matches)
                            ]
 dominated_match_set = set([ m for ms in dominated_match_sublists for m in ms])
 
-d_json_data = {}
-d_json_data["dominated-matches-ai"] = list(dominated_match_set)
+time_elapsed = time.time() - time_start
 
 # Print JSON
+d_json_data = {}
+d_json_data["dominated-matches-ai"] = list(dominated_match_set)
+d_json_data["processing-time"] = time_elapsed
 print json.dumps(d_json_data)
