@@ -259,3 +259,7 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 		$(LLC) $(LLC_DUMP_ISEL_FLAGS) -dump-isel-w-costs -disable-combiner \
 			   $*.low.freq.ll -o /dev/null > $@; \
 	fi
+
+# Local Variables:
+# tab-width: 4
+# End:

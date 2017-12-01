@@ -720,3 +720,7 @@ $(FUN_SDUMP_TARGETS):
 $(FUN_GET_COST_TARGETS):
 $(FUN_CHECK_TARGETS):
 $(FUN_BUGPOINT_TARGETS):
+
+# Local Variables:
+# tab-width: 4
+# End:
