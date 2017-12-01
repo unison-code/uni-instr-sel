@@ -395,7 +395,7 @@ data HighLevelSolution
         -- ^ Whether this solution is optimal.
       , hlSolTime :: Double
         -- ^ Time to compute to solve the model.
-      , hlPrepTime :: Double
+      , hlModelPrepTime :: Double
         -- ^ Time to prepare the model before solving.
       }
   | NoHighLevelSolution
@@ -403,7 +403,7 @@ data HighLevelSolution
         -- ^ Whether the model was proven to be unsatisfiable.
       , hlSolTime :: Double
         -- ^ Time to solve the constraint model.
-      , hlPrepTime :: Double
+      , hlModelPrepTime :: Double
         -- ^ Time to prepare the constraint model.
       }
   deriving (Show)
@@ -447,7 +447,7 @@ data LowLevelSolution
         -- ^ Whether this solution is optimal.
       , llSolTime :: Double
         -- ^ Time to solve the constraint model.
-      , llPrepTime :: Double
+      , llModelPrepTime :: Double
         -- ^ Time to prepare the constraint model.
       }
   | NoLowLevelSolution
@@ -455,7 +455,7 @@ data LowLevelSolution
         -- ^ Whether the model was proven to be unsatisfiable.
       , llSolTime :: Double
         -- ^ Time to solve the constraint model.
-      , llPrepTime :: Double
+      , llModelPrepTime :: Double
         -- ^ Time to prepare the constraint model.
       }
   deriving (Show)
@@ -762,11 +762,11 @@ instance FromJSON HighLevelSolution where
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
               <*> v .: "solving-time"
-              <*> v .: "prep-time"
+              <*> v .: "model-prep-time"
        else NoHighLevelSolution
               <$> v .: "unsatisfiable"
               <*> v .: "solving-time"
-              <*> v .: "prep-time"
+              <*> v .: "model-prep-time"
   parseJSON _ = mzero
 
 instance ToJSON HighLevelSolution where
@@ -780,13 +780,13 @@ instance ToJSON HighLevelSolution where
            , "has-solution"          .= True
            , "is-solution-optimal"   .= (hlIsOptimal s)
            , "solving-time"          .= (hlSolTime s)
-           , "prep-time"             .= (hlPrepTime s)
+           , "model-prep-time"       .= (hlModelPrepTime s)
            ]
   toJSON s@(NoHighLevelSolution {}) =
-    object [ "has-solution"  .= False
-           , "unsatisfiable" .= (hlIsUnsatisfiable s)
-           , "solving-time"  .= (hlSolTime s)
-           , "prep-time"     .= (hlPrepTime s)
+    object [ "has-solution"    .= False
+           , "unsatisfiable"   .= (hlIsUnsatisfiable s)
+           , "solving-time"    .= (hlSolTime s)
+           , "model-prep-time" .= (hlModelPrepTime s)
            ]
 
 instance FromJSON LowLevelSolution where
@@ -804,11 +804,11 @@ instance FromJSON LowLevelSolution where
               <*> v .: "cost"
               <*> v .: "is-solution-optimal"
               <*> v .: "solving-time"
-              <*> v .: "prep-time"
+              <*> v .: "model-prep-time"
        else NoLowLevelSolution
               <$> v .: "unsatisfiable"
               <*> v .: "solving-time"
-              <*> v .: "prep-time"
+              <*> v .: "model-prep-time"
   parseJSON _ = mzero
 
 instance ToJSON ArrayIndexMaplists where

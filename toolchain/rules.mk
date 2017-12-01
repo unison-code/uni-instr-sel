@@ -165,7 +165,9 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 	if [ $(DISABLE_LOWER_BOUND) -eq 0 ]; then \
 		$(COMPUTE_LOWER_BOUND_CMD) -i "$<" -o $@; \
 	else \
-		echo "{\"lower-bound\": 0, \"prep-time\": 0, \"solving-time\": 0}" \
+		echo "{\"lower-bound\": 0, "` \
+             `"\"model-prep-time\": 0, "` \
+             `"\"solving-time\": 0}" \
 			 > $@; \
 	fi
 

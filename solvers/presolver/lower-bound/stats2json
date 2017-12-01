@@ -99,7 +99,7 @@ if found_flat_time:
     prep_time = prep_time + flat_time
 else:
     error("No flattening time time found")
-json_data["prep-time"] = prep_time
+json_data["model-prep-time"] = prep_time
 if found_solv_time:
     json_data["solving-time"] = solv_time
 else:

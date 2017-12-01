@@ -85,11 +85,11 @@ raiseLowLevelSolution
                        , hlSolCost = llSolCost sol
                        , hlIsOptimal = llIsOptimal sol
                        , hlSolTime = llSolTime sol
-                       , hlPrepTime = llPrepTime sol
+                       , hlModelPrepTime = llModelPrepTime sol
                        }
 
 raiseLowLevelSolution sol@(NoLowLevelSolution {}) _ _ =
   NoHighLevelSolution { hlIsUnsatisfiable = llIsUnsatisfiable sol
                       , hlSolTime = llSolTime sol
-                      , hlPrepTime = llPrepTime sol
+                      , hlModelPrepTime = llModelPrepTime sol
                       }
