@@ -35,7 +35,7 @@
 
 % Function data.
 int: numOperationsInFunction;
-array[allOperationsInFunction] of int: coverCostOfOperationInFunction;
+array[allOperationsInFunction] of int: minExecFreqPerOpInFunction;
 int: numBlocksInFunction;
 int: execFrequencyGCD;
 
@@ -80,10 +80,13 @@ array[allOperationsInFunction] of set of allMatches: matchsetOfOp =
 % match.
 %
 % First, we split the cost incurred by selecting a given match over the
-% operations that it covers. As the latency of a match may not be evenly
-% divisible by the number of operations covered, some operations may have a
-% higher cost than others. This information is put in a matrix called
-% 'costPerOpMatrix'.
+% operations that it covers. As the latency of a match times the exeqution
+% frequency of a given block may not be evenly divisible by the number of
+% operations covered, some operations may have a higher cost than others. Then,
+% we multiply each operation cost with the execution frequency of the block
+% wherein the operation may be placed.
+%
+% This information is put in a matrix called 'costPerOpMatrix'.
 
 % The 'costPerOpMatrix' is a 2D matrix with 3 columns:
 %    col 1: an operation o
@@ -94,17 +97,18 @@ array[int] of int: costPerOpList =
   [ if      k = 1 then o
     else if k = 2 then m
     else let
-         { int: cover_cost =
-             max( [ coverCostOfOperationInFunction[p]
-                  | p in operationsCoveredByMatch[m]
+         { int: exec_freq =
+             max( [ minExecFreqPerOpInFunction[o]
+                  | o in operationsCoveredByMatch[m]
                   ]
                 )
-         , int: prod = latencyOfMatch[m] * cover_cost
          , int: d = card(operationsCoveredByMatch[m])
-         , int: q = prod div d
-         , int: r = prod mod d
-         } in
-         if operationsCoveredByMatch[m][r+1] > o then q+1 else q endif
+         , int: q = latencyOfMatch[m] div d
+         , int: r = latencyOfMatch[m] mod d
+         } in if operationsCoveredByMatch[m][r+1] > o
+              then (q+1) * exec_freq
+              else q * exec_freq
+              endif
     endif
     endif
   | o in allOperationsInFunction

@@ -276,13 +276,13 @@ json_data["fun-num-operations"] = \
     json_data["fun-num-operations"] - len(copy_ops)
 
 # Compute cover cost for operations
-cover_costs = []
+min_exec_freq_per_op  = []
 for o in range(json_data["fun-num-operations"]):
     bs = json_data["fun-op-placements"][o]
     min_freq = sys.maxint
     for b in bs:
         min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
-    cover_costs.append(min_freq / g)
+    min_exec_freq_per_op.append(min_freq / g)
 
 # Produce 'match-fall-through-block' parameters
 params = []
@@ -343,8 +343,8 @@ dumpParams( json_data["num-matches"]
 dumpParams( g
           , "execFrequencyGCD"
           )
-dumpParams( cover_costs
-          , "coverCostOfOperationInFunction"
+dumpParams( min_exec_freq_per_op
+          , "minExecFreqPerOpInFunction"
           , VT_ARRAY1D
           , "allOperationsInFunction"
           )
