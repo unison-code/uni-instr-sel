@@ -380,7 +380,8 @@ sortValueNodesByReusability t p vs =
 computeAlternativeMappings
   :: TargetMachine
   -> Natural
-     -- ^ Maximum number of alternatives per case. 0 means no limit.
+     -- ^ Maximum number of alternatives per case. 0 means no limit, 1 means
+     -- no alternative mappings.
   -> [NodeID]
      -- ^ Set of copy-related values. It is assumed they are sorted in
      -- decreasing order of usability.
@@ -420,7 +421,6 @@ computeAlternativeMappings t limit sorted_vs pm m =
                 if limit == 0 then maxBound else fromIntegral limit - 1
               alts = take num_to_take $
                      filter (/= fn_id) candidate_vs
-              alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id })
-                             alts
+              alt_maps = map (\n -> Mapping { fNode = n, pNode = pn_id }) alts
           in alt_maps
      else []
