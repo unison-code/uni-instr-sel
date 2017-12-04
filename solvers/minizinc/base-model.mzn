@@ -204,10 +204,11 @@ array[allOperands] of int: matchOfP =
 % First, we split the cost incurred by selecting a given match over the
 % operations that it covers. As the latency of a match times the exeqution
 % frequency of a given block may not be evenly divisible by the number of
-% operations covered, some operations may have a higher cost than others. The
-% sum, however, is equal to the latency of the match times the execution
-% frequency of the block in which the match is finally placed. This information
-% is put in a matrix called 'costPerOpMatrix'.
+% operations covered, some operations may have a higher cost than others. Then,
+% we multiply each operation cost with the execution frequency of the block
+% wherein the operation may be placed.
+%
+% This information is put in a matrix called 'costPerOpMatrix'.
 
 % The 'costPerOpMatrix' is a 2D matrix with 4 columns:
 %    col 1: an operation o
