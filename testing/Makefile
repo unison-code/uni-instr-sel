@@ -456,10 +456,10 @@ update-all-regression-tests:
 	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
 
 %.cov.dot: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-           %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json
+           %.p.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
+                  -p $*.p.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -473,10 +473,10 @@ pattern.dot:
 	dot -Tpdf $< -o $@
 
 %.all-cover-plots: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                   %.de.lp.ep.ce.cc.rp.de.rt.ae.p.json
+                   %.ae.p.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                  -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
+                  -p $*.ae.p.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
@@ -532,8 +532,8 @@ pattern.dot:
 			  $*.de.lp.ep.ce.cc.rp.f.json \
 			  $*.de.lp.ep.ce.cc.rp.de.f.json \
 			  $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-			  $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-			  ; do \
+			  ; \
+	do \
 		echo -n "    $$f " ;\
 		if [ -f $$f ]; then \
 			out=`mktemp` ;\
@@ -558,7 +558,7 @@ pattern.dot:
 	done
 	@echo "$(C_INFO)* CHECKING COVERABILITY$(C_NONE)"
 	@f=$*.de.lp.ep.ce.cc.rp.de.rt.f.json ;\
-	p=$*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json ;\
+	p=$*.ae.p.json ;\
 	echo -n "    $$f " ;\
 	if [ -f $$f ]; then \
 		if [ -f $$p ]; then \
@@ -602,7 +602,7 @@ pattern.dot:
 		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
 	@f=$*.de.lp.ep.ce.cc.rp.de.rt.f.json ;\
-	p=$*.de.lp.ep.ce.cc.rp.de.rt.ae.presolved.p.json ;\
+	p=$*.presolved.ae.p.json ;\
 	echo -n "    $$f (presolved) " ;\
 	if [ -f $$f ]; then \
 		if [ -f $$p ]; then \
@@ -648,11 +648,11 @@ pattern.dot:
 	@echo "$(C_INFO)* CHECKING OVERLAP OF DATA LOCATIONS$(C_NONE)"
 	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.rt.f.json "
 	@if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
-		if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json ]; then \
+		if [ -f $*.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
 			                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-			                   -p $*.de.lp.ep.ce.cc.rp.de.rt.ae.p.json \
+			                   -p $*.ae.p.json \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\
