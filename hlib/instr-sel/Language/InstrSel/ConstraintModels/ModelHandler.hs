@@ -835,7 +835,14 @@ mkIllegalMatchCombs
   -> [PatternMatch]
   -> [[MatchID]]
 mkIllegalMatchCombs function target matches =
-  let g0 = I.mkGraph (zip [0..] matches) [] :: I.Gr PatternMatch ()
+  let matches' = filter ( not .
+                          isInstructionSimd .
+                          getInstructionFromPatternMatch target
+                        ) $
+                 matches
+      getNodeFromMatch = fromIntegral . pmMatchID
+      g0 :: I.Gr () ()
+      g0 = I.mkGraph (zip (map getNodeFromMatch matches) (repeat ())) []
       getExteriorDataNodes i pm fg =
         let pg = osGraph $ instrOS i
             input_ns = filter ( \n -> isValueNode n &&
@@ -850,20 +857,14 @@ mkIllegalMatchCombs function target matches =
              concat $
              findFNsInMatch (pmMatch pm) output_nids
            )
-      getMatchNodeFromID g m = head $
-                               map fst $
-                               filter ( \(_, m') ->
-                                        pmMatchID m' == pmMatchID m
-                                      ) $
-                               I.labNodes g
       addDependencies [m1, m2] g' =
         let fg = osGraph $ functionOS function
             i1 = getInstructionFromPatternMatch target m1
             i2 = getInstructionFromPatternMatch target m2
             (m1_in_vs, m1_out_vs)  = getExteriorDataNodes i1 m1 fg
             (m2_in_vs, m2_out_vs)  = getExteriorDataNodes i2 m2 fg
-            n1 = getMatchNodeFromID g' m1
-            n2 = getMatchNodeFromID g' m2
+            n1 = getNodeFromMatch m1
+            n2 = getNodeFromMatch m2
             g'' = if any (\n -> n `elem` m2_in_vs) m1_out_vs
                   then I.insEdge (n1, n2, ()) g'
                   else g'
@@ -873,7 +874,7 @@ mkIllegalMatchCombs function target matches =
         in g'''
       addDependencies _ _ =
         error $ "mkIllegalMatchCombs: illegal list length of first argument"
-      g1 = foldr addDependencies g0 (combinations 2 matches)
+      g1 = foldr addDependencies g0 (combinations 2 matches')
       delNodeKeepDeps n g =
         let in_es = I.inn g n
             out_es = I.out g n
@@ -893,16 +894,16 @@ mkIllegalMatchCombs function target matches =
         in g''
       excludeMatches m g =
         let i = getInstructionFromPatternMatch target m
-            n = getMatchNodeFromID g m
-        in if isInstructionPhi i || isInstructionSimd i
+            n = getNodeFromMatch m
+        in if isInstructionPhi i
            then I.delNode n g
            else if isInstructionNull i || isInstructionCopy i
                 then delNodeKeepDeps n g
                 else g
-      g2 = foldr excludeMatches g1 matches
-      forbidden_combs = map (map pmMatchID . map (fromJust . I.lab g2)) $
-                        map init $ -- Remove last element as it is the same as
-                                   -- the first element
+      g2 = foldr excludeMatches g1 matches'
+      forbidden_combs = map (map toMatchID) $
+                        map tail $ -- Remove first element as it is the same as
+                                   -- the last element
                         cyclesIn' g2
   in forbidden_combs
 
