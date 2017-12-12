@@ -208,6 +208,7 @@ processInstr fun instr =
                                        findMatches dup_fg sub_pg
                      in map (\m -> (m, True)) $
                         pruneNonselectableSimdMatches fg entry $
+                        pruneSimdMatchesWithConstInput fg $
                         map (fixMatch fg pg) $
                         mkSimdMatches dup_fg sub_pg sub_matches (tail pg_cs)
   in map ( \(m, b) -> IntPatternMatch { ipmInstrID = instrID instr
@@ -427,6 +428,23 @@ pruneNonselectableSimdMatches fg entry ms =
         in S.size place_common > 0
   in filter isSelectable ms
 
+-- | Removes SIMD matches where one if its input values represents a constant
+-- value. Such matches will most likely not be selected because that loading the
+-- constant(s) will most likely make selection of the SIMD more expensive than
+-- if scalar instructions were to be used instead.
+pruneSimdMatchesWithConstInput :: Graph -> [Match Node] -> [Match Node]
+pruneSimdMatchesWithConstInput fg ms =
+  let isConstCopy v =
+        let ps = getPredecessors fg v
+            pps = concatMap (getPredecessors fg) ps
+        in any isValueNodeWithConstValue pps
+      usesConstInput m =
+        let vs = filter isValueNode $
+                 nub $
+                 map fNode $
+                 fromMatch m
+        in any isConstCopy vs
+  in filter (not . usesConstInput) ms
 
 getInstructionFromPatternMatch :: TargetMachine -> PatternMatch -> Instruction
 getInstructionFromPatternMatch t m =
