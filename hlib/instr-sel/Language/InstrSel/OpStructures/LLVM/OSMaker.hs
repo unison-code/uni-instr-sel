@@ -228,10 +228,17 @@ instance ConstantFormable LLVMC.Constant where
                                         , globalRefName = sym
                                         }
   toConstant (LLVMC.Null (LLVM.PointerType {})) = Right NullConstant
-  toConstant (LLVMC.Undef ( LLVM.IntegerType b )) =
+  toConstant (LLVMC.Undef (LLVM.IntegerType b)) =
     Right $ IntConstant { intBitWidth = fromIntegral b
                         , signedIntValue = 0
                         }
+  toConstant ( LLVMC.Undef
+               ( LLVM.PointerType (LLVM.NamedTypeReference (LLVM.Name str)) _ )
+             ) =
+    do let sym = GlobalStringSymbol str
+       return $ GlobalReferenceConstant { globalRefType = D.PointerConstType
+                                        , globalRefName = sym
+                                        }
   toConstant l = Left $ "toConstant: not implemented for " ++ show l
 
 -- | Class for converting an LLVM operand into a corresponding operand
