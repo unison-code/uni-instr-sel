@@ -282,6 +282,8 @@ for o in range(json_data["fun-num-operations"]):
     min_freq = sys.maxint
     for b in bs:
         min_freq = min(min_freq, json_data["fun-block-exec-freqs"][b])
+    if min_freq == sys.maxint:
+        error("failed to compute cover cost for operation " + str(o))
     min_exec_freq_per_op.append(min_freq / g)
 
 # Produce 'match-fall-through-block' parameters
