@@ -211,13 +211,14 @@ mkHLMatchParamsList
   -> [PatternMatch]
   -> [HighLevelMatchParams]
 mkHLMatchParamsList target matches =
+  reverse $
   fst $
   foldr ( \p (ps, oid) ->
             let (new_p, next_oid) = mkHLMatchParams target p oid
             in (new_p:ps, next_oid)
         )
         ([], 0)
-        matches
+        (reverse matches)
 
 mkHLMatchParams
   :: TargetMachine
