@@ -409,7 +409,7 @@ removeDupMatches ms =
      groupBy (\(_, f1) (_, f2) -> f1 == f2) $
      ms_fns
 
--- | Removes SIMD matches that will never be selected becuase not all operations
+-- | Removes SIMD matches that will never be selected because not all operations
 -- can be moved to the same block.
 pruneNonselectableSimdMatches :: Graph -> Node -> [Match Node] -> [Match Node]
 pruneNonselectableSimdMatches fg entry ms =
