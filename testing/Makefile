@@ -273,7 +273,7 @@ run-medium-regression-tests:
 											 if (t < 1) print 0; t" \
 									   | bc` ;\
 					prep_time=`$(GET_JSON_FIELD) \
-							   "$$sol_file" "prep-time" 2> /dev/null` ;\
+							   "$$sol_file" "model-prep-time" 2> /dev/null` ;\
 					T_PREP_TIME_TOTAL=`echo "scale=2; \
 								 			 t = $$T_PREP_TIME_TOTAL + \
 												 $$prep_time; \
