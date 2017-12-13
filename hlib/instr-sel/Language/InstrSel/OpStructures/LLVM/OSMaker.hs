@@ -61,18 +61,14 @@ import Data.List
 -- | Represents a mapping from a symbol to a value node currently in the graph.
 type SymToValueNodeMapping = (Symbol, G.NodeID)
 
--- | Represents a mapping from a value node to a block wherein the value was
--- originally defined in the LLVM code.
-type OriginalDefBlockOfDatum = (G.NodeID, F.BlockName)
-
--- | Represents a data flow that goes from a block node, identified by the given
--- ID, to an datum node. This is needed to draw the pending flow edges after
--- both the data-flow graph and the control-flow graph have been built. If the
--- datum node is a value node then a data-flow edge is added, and if it is a
--- state node then a state-flow edge is added.
+-- | Represents a flow that goes from a block node, identified by the given ID,
+-- to an datum node. This is needed to draw the pending flow edges after both
+-- the data-flow graph and the control-flow graph have been built. If the datum
+-- node is a value node then a data-flow edge is added, and if it is a state
+-- node then a state-flow edge is added.
 type PendingBlockToDatumFlow = (F.BlockName, G.NodeID)
 
--- | Represents a definition edge that goes from a block node, identified by the
+-- | Represents a definition that goes from a block node, identified by the
 -- given ID, an datum node. This is needed to draw the pending definition edges
 -- after both the data-flow graph and the control-flow graph have been
 -- built. Since the in-edge number of an data-flow edge must match that of the
@@ -80,13 +76,13 @@ type PendingBlockToDatumFlow = (F.BlockName, G.NodeID)
 -- also included in the tuple.
 type PendingBlockToDatumDef = (F.BlockName, G.NodeID, G.EdgeNr)
 
--- | Represents a definition edge that goes from an datum node to the block node
--- wherein the datum was originally defined. This is needed to draw the pending
--- definition edges after both the data-flow graph and the control-flow graph
--- have been built. Since the out-edge number of an data-flow edge must match
--- that of the corresponding definition edge, the out-edge number of the
--- data-flow edge is also included in the tuple.
-type PendingPhiArgDef = (G.NodeID, G.EdgeNr)
+-- | Represents a definition that goes from an datum node to a block node,
+-- identified by the given ID. This is needed to draw the pending definition
+-- edges after both the data-flow graph and the control-flow graph have been
+-- built. Since the out-edge number of an data-flow edge must match that of the
+-- corresponding definition edge, the out-edge number of the data-flow edge is
+-- also included in the tuple.
+type PendingDatumToBlockDef = (G.NodeID, F.BlockName, G.EdgeNr)
 
 -- | Retains various symbol names.
 data Symbol
@@ -144,15 +140,13 @@ data BuildState
         -- ^ List of symbol-to-node mappings. If there are more than one mapping
         -- using the same symbol, then the last one occuring in the list should
         -- be picked.
-      , originalDefBlocksOfData :: [OriginalDefBlockOfDatum]
-        -- ^ List of datum-to-block mappings.
       , blockToDatumDataFlows :: [PendingBlockToDatumFlow]
         -- ^ List of block-to-datum flow dependencies that are yet to be
         -- converted into edges.
       , blockToDatumDefs :: [PendingBlockToDatumDef]
         -- ^ List of block-to-datum definitions that are yet to be converted
         -- into edges.
-      , phiArgDefs :: [PendingPhiArgDef]
+      , datumToBlockDefs :: [PendingDatumToBlockDef]
         -- ^ List of datum-to-block definitions that are yet to be converted
         -- into edges.
       , funcInputValues :: [G.NodeID]
@@ -388,7 +382,7 @@ mkFunctionOS f@(LLVM.Function {}) =
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumFlowEdges st4
      st6 <- addPendingBlockToDatumDefEdges st5
-     st7 <- addPendingPhiArgDefEdges st6
+     st7 <- addPendingDatumToBlockDefEdges st6
      return $ (opStruct st7, funcInputValues st7)
 mkFunctionOS _ = Left "mkFunctionOS: not a Function"
 
@@ -407,7 +401,7 @@ mkPatternOS f@(LLVM.Function {}) =
      st3 <- updateEntryBlockNode st2 entry_node
      st4 <- applyOSTransformations st3
      st5 <- addPendingBlockToDatumDefEdges st4
-     st6 <- addPendingPhiArgDefEdges st5
+     st6 <- addPendingDatumToBlockDefEdges st5
      st7 <- removeUnusedBlockNodes st6
      in_values <- foldM ( \ns nid ->
                           do n <- getNodeWithID st7 nid
@@ -431,10 +425,9 @@ mkInitBuildState =
                      , entryBlock = Nothing
                      , currentBlock = Nothing
                      , symMaps = []
-                     , originalDefBlocksOfData = []
                      , blockToDatumDataFlows = []
                      , blockToDatumDefs = []
-                     , phiArgDefs = []
+                     , datumToBlockDefs = []
                      , funcInputValues = []
                      , patExtValues = []
                      }
@@ -654,18 +647,6 @@ getCurrentBlock st =
      then return $ fromJust e
      else Left "getCurrentBlock: has no current block"
 
--- | Gets the block wherein a datum was originally defined.
-getOriginalDefBlockOfDatum
-  :: BuildState
-  -> G.NodeID
-  -> Either String F.BlockName
-getOriginalDefBlockOfDatum st n =
-  let b = lookup n (originalDefBlocksOfData st)
-  in if isJust b
-     then return $ fromJust b
-     else Left $ "getOriginalDefBlockOfDatum: found no datum-to-original " ++
-                 "block mapping for node with ID '" ++ pShow n ++ "'"
-
 -- | Gets the name of a given 'LLVM.Call' instruction. If it is not a
 -- 'LLVM.Call', or if it does not have a proper name, 'Nothing' is returned.
 retrieveFunctionName :: LLVM.Instruction -> Maybe String
@@ -818,16 +799,10 @@ mkFunctionDFGFromGlobal
   -> LLVM.Global
   -> Either String BuildState
 mkFunctionDFGFromGlobal b st0 f@(LLVM.Function {}) =
-  do let entry_b = head $ LLVM.basicBlocks f
-         (LLVM.BasicBlock entry_b_name _ _) = entry_b
-         entry_block_name = F.BlockName $ nameToString entry_b_name
-         st1 = st0 { currentBlock = Just entry_block_name
-                   , entryBlock = Just entry_block_name
-                   }
-         (params, _) = LLVM.parameters f
-     st2 <- build b st1 params
-     st3 <- build b st2 (LLVM.basicBlocks f)
-     return st3
+  do let (params, _) = LLVM.parameters f
+     st1 <- build b st0 params
+     st2 <- build b st1 (LLVM.basicBlocks f)
+     return st2
 mkFunctionDFGFromGlobal _ _ g =
   Left $ "mkFunctionDFGFromGlobal: not implemented for " ++ show g
 
@@ -838,18 +813,23 @@ mkFunctionDFGFromBasicBlock
   -> Either String BuildState
 mkFunctionDFGFromBasicBlock b st0 (LLVM.BasicBlock b_name insts _) =
   do let block_name = F.BlockName $ nameToString b_name
-     let st1 = st0 { currentBlock = Just block_name
+     st1 <- if isNothing $ entryBlock st0
+            then foldM (\st n -> addPendingBlockToDatumFlow st (block_name, n))
+                       (st0 { entryBlock = Just block_name })
+                       (funcInputValues st0)
+            else return st0
+     let st2 = st1 { currentBlock = Just block_name
                    , lastTouchedStateNode = Nothing
                    }
-     st2 <- foldM (build b) st1 insts
-     let st_n = lastTouchedStateNode st2
-     st3 <- if isJust st_n
-            then addPendingBlockToDatumDef st2 ( block_name
+     st3 <- foldM (build b) st2 insts
+     let st_n = lastTouchedStateNode st3
+     st4 <- if isJust st_n
+            then addPendingBlockToDatumDef st3 ( block_name
                                                , G.getNodeID $ fromJust st_n
                                                , 0
                                                )
-            else return st2
-     return st3
+            else return st3
+     return st4
 
 mkFunctionDFGFromNamed
   :: Builder
@@ -871,11 +851,7 @@ mkFunctionDFGFromNamed b st0 (name LLVM.:= expr) =
      st4 <- replaceNodeIDInBuildState (G.getNodeID res_n)
                                       (G.getNodeID sym_n)
                                       st3
-     current_b <- getCurrentBlock st4
-     st5 <- addOriginalDefBlockOfDatum st4 ( G.getNodeID sym_n
-                                           , current_b
-                                           )
-     return st5
+     return st4
 mkFunctionDFGFromNamed b st (LLVM.Do expr) = build b st expr
 
 mkFunctionDFGFromInstruction
@@ -1141,15 +1117,15 @@ mkFunctionDFGFromInstruction b st0 (LLVM.Phi t phi_operands _) =
      let st1 = last operand_node_sts
      st2 <- addNewNode st1 G.PhiNode
      phi_node <- getLastTouchedPhiNode st2
-     st3 <- foldM ( \st (n, _) ->
-                    -- We ignore the block argument as we take instead the
-                    -- block wherein the value is originally defined. In most
-                    -- cases this is the same as the block argument, but not
-                    -- always.
+     st3 <- foldM ( \st (n, name) ->
                     do let g = getOSGraph st
                            (g', new_e) = G.addNewDtFlowEdge (n, phi_node) g
                        st' <- updateOSGraph st g'
-                       addPhiArgDef st' (G.getNodeID n, G.getEdgeOutNr new_e)
+                       addPendingDatumToBlockDef st'
+                                                 ( G.getNodeID n
+                                                 , name
+                                                 , G.getEdgeOutNr new_e
+                                                 )
                   )
                   st2
                   (zip operand_ns block_names)
@@ -1307,10 +1283,7 @@ mkFunctionDFGFromParameter _ st0 (LLVM.Parameter t name _) =
      st1 <- ensureValueNodeWithSymExists st0 sym dt
      n <- getLastTouchedValueNode st1
      st2 <- addFuncInputValue st1 (G.getNodeID n)
-     entry_b <- getEntryBlock st2
-     st3 <- addPendingBlockToDatumFlow st2 (entry_b, G.getNodeID n)
-     st4 <- addOriginalDefBlockOfDatum st3 (G.getNodeID n, entry_b)
-     return st4
+     return st2
 
 -- | Merges the two nodes in the function call.
 mkPatternDFGFromSetregCall
@@ -1656,8 +1629,7 @@ addNewValueNodeWithConstant st0 c =
      new_n <- getLastTouchedValueNode st1
      entry_b <- getEntryBlock st1
      st2 <- addPendingBlockToDatumFlow st1 (entry_b, G.getNodeID new_n)
-     st3 <- addOriginalDefBlockOfDatum st2 (G.getNodeID new_n, entry_b)
-     return st3
+     return st2
 
 -- | Adds a new edge into a given state.
 addNewEdge
@@ -1711,14 +1683,6 @@ addNewEdgesManyDests st et src dsts =
 addSymMap :: BuildState -> SymToValueNodeMapping -> Either String BuildState
 addSymMap st sm = return $ st { symMaps = sm:(symMaps st) }
 
--- | Adds a new node-to-original block mapping to a given state.
-addOriginalDefBlockOfDatum
-  :: BuildState
-  -> OriginalDefBlockOfDatum
-  -> Either String BuildState
-addOriginalDefBlockOfDatum st nb =
-  return $ st { originalDefBlocksOfData = nb:(originalDefBlocksOfData st) }
-
 -- | Adds block-to-datum flow to a given state.
 addPendingBlockToDatumFlow
   :: BuildState
@@ -1734,10 +1698,12 @@ addPendingBlockToDatumDef :: BuildState
 addPendingBlockToDatumDef st def =
   return $ st { blockToDatumDefs = def:(blockToDatumDefs st) }
 
--- | Adds phi argument definition to a given state.
-addPhiArgDef :: BuildState -> PendingPhiArgDef -> Either String BuildState
-addPhiArgDef st def =
-  return $ st { phiArgDefs = def:(phiArgDefs st) }
+-- | Adds datum-to-block definition to a given state.
+addPendingDatumToBlockDef :: BuildState
+                          -> PendingDatumToBlockDef
+                          -> Either String BuildState
+addPendingDatumToBlockDef st def =
+  return $ st { datumToBlockDefs = def:(datumToBlockDefs st) }
 
 -- | Adds a value node representing a function argument to a given state.
 addFuncInputValue :: BuildState -> G.NodeID -> Either String BuildState
@@ -1937,13 +1903,12 @@ addPendingBlockToDatumDefEdges st =
 
 -- | Adds the pending datum-to-block definition edges, as described in the
 -- given build state.
-addPendingPhiArgDefEdges :: BuildState -> Either String BuildState
-addPendingPhiArgDefEdges st =
+addPendingDatumToBlockDefEdges :: BuildState -> Either String BuildState
+addPendingDatumToBlockDefEdges st =
   do let g0 = getOSGraph st
-         defs = phiArgDefs st
-     g1 <- foldM ( \g (dn_id, nr) ->
+         defs = datumToBlockDefs st
+     g1 <- foldM ( \g (dn_id, name, nr) ->
                    do dn <- getNodeWithID st dn_id
-                      name <- getOriginalDefBlockOfDatum st dn_id
                       bn <- getBlockNodeWithName st name
                       let (g', new_e) = G.addNewDefEdge (dn, bn) g
                           g'' = fst $ G.updateEdgeOutNr nr new_e g'
@@ -2023,32 +1988,25 @@ replaceNodeIDInBuildState old_nid new_nid st0 =
                         ) $
                     blockToDatumDefs st1
                 }
-
-      st3 = st2 { originalDefBlocksOfData =
-                    map ( \old@(nid, b') ->
-                          if old_nid == nid then (new_nid, b') else old
+      st3 = st2 { datumToBlockDefs =
+                    map ( \old@(n, b', nr) ->
+                          if old_nid == n then (new_nid, b', nr) else old
                         ) $
-                    originalDefBlocksOfData st2
+                    datumToBlockDefs st2
                 }
-      st4 = st3 { phiArgDefs =
-                    map ( \old@(n, nr) ->
-                          if old_nid == n then (new_nid, nr) else old
-                        ) $
-                    phiArgDefs st3
-                }
-      st5 = st4 { funcInputValues =
+      st4 = st3 { funcInputValues =
                     map (\n -> if old_nid == n then new_nid else n) $
-                    funcInputValues st4
+                    funcInputValues st3
                 }
 
-      st6 = st5 { patExtValues =
+      st5 = st4 { patExtValues =
                     map (\n -> if old_nid == n then new_nid else n) $
-                    patExtValues st5
+                    patExtValues st4
                 }
-      st7 = st6 { symMaps =
+      st6 = st5 { symMaps =
                     map ( \old@(sym, n) ->
                           if old_nid == n then (sym, new_nid) else old
                         ) $
-                    symMaps st6
+                    symMaps st5
                 }
-  in return st7
+  in return st6
