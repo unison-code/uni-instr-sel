@@ -745,7 +745,7 @@ constraint
                                    where operandAlternatives[p] = chain
                              }
         }
-    in if card(xset) > 0
+    in if card(xset) > 1
        then value_precede_chain(chain, [alt[p] | p in xset])
        else true
        endif
