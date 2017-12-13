@@ -2,8 +2,8 @@
   1    [%1.copy.1] <- "ADDiu %1.copy.1, $0, 1" <- []
   1    [] <- "B for.cond" <- []
 248  for.body:
- 17    [%mul] <- "MUL $%mul, $%res.0, $%n.addr.0" <- [%res.0, %n.addr.0]
   1    [%dec] <- "ADDI $%dec, $%n.addr.0, -1" <- [%n.addr.0]
+ 17    [%mul] <- "MUL $%mul, $%n.addr.0, $%res.0" <- [%n.addr.0, %res.0]
 248  for.inc:
 256  for.cond:
   0    [%res.0] <- "PHI (%n, entry) (%mul, for.body)" <- [%n, %mul]

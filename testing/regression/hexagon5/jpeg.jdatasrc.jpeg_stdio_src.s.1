@@ -1,11 +1,11 @@
  21  0:
   1    [%null.copy.2] <- "%null.copy.2 = ##0" <- []
   1    [%1] <- "%1 = memw(%cinfo + #20)" <- [%cinfo]
-  1    [%2] <- "%2 = cmp.eq(%1, %null.copy.2)" <- [%1, %null.copy.2]
+  1    [%2] <- "%2 = cmp.eq(%null.copy.2, %1)" <- [%null.copy.2, %1]
   1    [] <- "if (!%2) jump ._crit_edge" <- [%2]
   8  4:
-  1    [%40.copy.1] <- "%40.copy.1 = ##40" <- []
   1    [%4096.copy.1] <- "%4096.copy.1 = ##4096" <- []
+  1    [%40.copy.1] <- "%40.copy.1 = ##40" <- []
   1    [%7] <- "%7 = memw(%cinfo + #4)" <- [%cinfo]
   1    [%8] <- "%8 = memw(%7)" <- [%7]
   1    [%10] <- "call %8" <- [%40.copy.1, %null.copy.2, %cinfo, %8]

@@ -10,7 +10,7 @@
        [] <- "LUi %tmp.5, @term_source[31:16]" <- []
   2    [%@term_source.copy.1] <- "ORi %@term_source.copy.1, %tmp.5, @term_source[15:0]" <- []
   1    [%1] <- "LW $%1, 20($%cinfo)" <- [%cinfo]
-  1    [] <- "BEQ $%1, $r0, 4" <- [%1, %null.copy.2]
+  1    [] <- "BEQ $r0, $%1, 4" <- [%null.copy.2, %1]
  13  ._crit_edge:
  21  15:
   0    [%16] <- "PHI (%1, 0) (%.pre, 4)" <- [%1, %.pre]
@@ -24,8 +24,8 @@
   1    [] <- "SW r0, 0(%16)" <- [%null.copy.2, %16]
   1    [] <- "Ret" <- []
   8  4:
-  1    [%40.copy.1] <- "ADDiu %40.copy.1, $0, 40" <- []
   1    [%4096.copy.1] <- "ADDiu %4096.copy.1, $0, 4096" <- []
+  1    [%40.copy.1] <- "ADDiu %40.copy.1, $0, 40" <- []
   1    [%7] <- "LW $%7, 4($%cinfo)" <- [%cinfo]
   1    [%8] <- "LW %8, 0(%7)" <- [%7]
   1    [%10] <- "CALL %8" <- [%40.copy.1, %null.copy.1, %cinfo, %8]

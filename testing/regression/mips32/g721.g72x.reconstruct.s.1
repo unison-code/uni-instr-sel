@@ -1,30 +1,29 @@
  25  0:
   1    [%1] <- "SRL $%1, $%y, 2" <- [%y]
-  1    [%2] <- "ADDU $%2, $%dqln, $%1" <- [%dqln, %1]
+  1    [%2] <- "ADDU $%2, $%1, $%dqln" <- [%1, %dqln]
   1    [%sext.mask] <- "ANDI $%sext.mask, $%2, 32768" <- [%2]
-  1    [] <- "BEQ $%sext.mask, $r0, 7" <- [%sext.mask, %0.copy.2]
+  1    [] <- "BEQ $r0, $%sext.mask, 7" <- [%0.copy.4, %sext.mask]
  12  4:
-  1    [%0.copy.4] <- "ADDiu %0.copy.4, $0, 0" <- []
-  1    [] <- "BNE $%sign, $r0, .selecttrue" <- [%sign, %0.copy.3]
+  1    [%-32768.copy.2] <- "ADDi %-32768.copy.2, $0, -32768" <- []
+  1    [%0.copy.2.copy.1] <- "MOV %0.copy.2.copy.1, r0" <- [%0.copy.2]
+  1    [] <- "BNE $r0, $%sign, .selecttrue" <- [%0.copy.2, %sign]
+  8  .selecttrue:
  12  .selectcont:
-  0    [%6] <- "PHI (%-32768.copy.1, .selecttrue) (%0.copy.4, 4)" <- [%-32768.copy.1, %0.copy.4]
+  0    [%6] <- "PHI (%-32768.copy.2, 4) (%0.copy.2.copy.1, 4)" <- [%-32768.copy.2, %0.copy.2.copy.1]
  25  19:
   0    [%.0] <- "PHI (%6, .selectcont) (%18, .selectcont1)" <- [%6, %18]
   0    [] <- "RetRA %.0" <- [%.0]
-  8  .selecttrue:
-  1    [%-32768.copy.1] <- "ADDi %-32768.copy.1, $0, -32768" <- []
-  1    [] <- "B .selectcont" <- []
  12  7:
-  1    [%14.copy.1] <- "ADDiu %14.copy.1, $0, 14" <- []
+  1    [%14.copy.2] <- "ADDiu %14.copy.2, $0, 14" <- []
   1    [%10] <- "SLL $%10, $%2, 7" <- [%2]
-  1    [%9] <- "EXT %2, 7, 4" <- [%2]
-  1    [%13] <- "SUBU $%13, $%14.copy.1, $%9" <- [%14.copy.1, %9]
   1    [%11] <- "ANDI $%11, $%10, 16256" <- [%10]
   1    [%12] <- "ORI $%12, $%11, 16384" <- [%11]
+  1    [%9] <- "EXT %2, 7, 4" <- [%2]
+  1    [%13] <- "SUBU $%13, $%14.copy.2, $%9" <- [%14.copy.2, %9]
   1    [%14] <- "SRLV $%14, $%12, $%13" <- [%12, %13]
   0    [%16] <- "SEH %16, %14" <- [%14]
   1    [%17] <- "ADDI $%17, $%16, -32768" <- [%16]
-  1    [] <- "BNE $%sign, $r0, .selecttrue2" <- [%sign, %0.copy.2]
+  1    [] <- "BNE $r0, $%sign, .selecttrue2" <- [%0.copy.3, %sign]
   8  .selecttrue2:
  12  .selectcont1:
   0    [%18] <- "PHI (%16, 7) (%17, 7)" <- [%16, %17]

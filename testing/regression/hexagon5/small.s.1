@@ -3,8 +3,8 @@
   1    [%cmp] <- "%cmp = cmp.eq(%add, ##10)" <- [%add]
   1    [] <- "if (!%cmp) jump if.end" <- [%cmp]
   8  if.then:
-  1    [%10.copy.2] <- "%10.copy.2 = ##10" <- []
+  1    [%10.copy.1] <- "%10.copy.1 = ##10" <- []
   8  if.end:
  16  return:
-  0    [%retval.0] <- "PHI (%add, entry) (%10.copy.2, if.then)" <- [%add, %10.copy.2]
+  0    [%retval.0] <- "PHI (%add, entry) (%10.copy.1, if.then)" <- [%add, %10.copy.1]
   1    [] <- "return %retval.0" <- [%retval.0]

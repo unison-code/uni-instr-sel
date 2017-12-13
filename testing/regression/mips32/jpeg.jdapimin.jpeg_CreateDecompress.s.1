@@ -4,17 +4,17 @@
   1    [%464.copy.2] <- "ADDiu %464.copy.2, $0, 464" <- []
   1    [%61.copy.2] <- "ADDiu %61.copy.2, $0, 61" <- []
   1    [] <- "SW $r0, 4($%cinfo)" <- [%null.copy.1, %cinfo]
-  1    [] <- "BEQ $%version, $%61.copy.2, 12" <- [%version, %61.copy.2]
+  1    [] <- "BEQ $%61.copy.2, $%version, 12" <- [%61.copy.2, %version]
   8  3:
-  1    [%10.copy.1] <- "ADDiu %10.copy.1, $0, 10" <- []
+  1    [%10.copy.2] <- "ADDiu %10.copy.2, $0, 10" <- []
   1    [%5] <- "LW %5, 0(%cinfo)" <- [%cinfo]
-  1    [] <- "SW $%10.copy.1, 20($%5)" <- [%10.copy.1, %5]
+  1    [] <- "SW $%10.copy.2, 20($%5)" <- [%10.copy.2, %5]
   1    [] <- "SW $%61.copy.2, 24($%5)" <- [%61.copy.2, %5]
   1    [] <- "SW $%version, 28($%5)" <- [%version, %5]
   1    [%10] <- "LW %10, 0(%5)" <- [%5]
   1    [] <- "CALL %10" <- [%cinfo, %10]
  16  12:
-  1    [] <- "BEQ $%structsize, $%464.copy.2, ..preheader.preheader_crit_edge" <- [%structsize, %464.copy.2]
+  1    [] <- "BEQ $%464.copy.2, $%structsize, ..preheader.preheader_crit_edge" <- [%464.copy.2, %structsize]
   8  14:
   1    [%19.copy.1] <- "ADDiu %19.copy.1, $0, 19" <- []
   1    [%16] <- "LW %16, 0(%cinfo)" <- [%cinfo]

@@ -1,4 +1,9 @@
   8  entry:
+  1    [] <- "jump for.cond" <- []
+248  for.body:
+  1    [%dec] <- "%dec = add(%n.addr.0, #-1)" <- [%n.addr.0]
+  1    [%mul] <- "%mul = mpy(%n.addr.0, %res.0)" <- [%n.addr.0, %res.0]
+248  for.inc:
 256  for.cond:
   0    [%res.0] <- "PHI (%n, entry) (%mul, for.body)" <- [%n, %mul]
   0    [%n.addr.0] <- "PHI (%n, entry) (%dec, for.body)" <- [%n, %dec]
@@ -6,7 +11,3 @@
   1    [] <- "if (%cmp) jump for.body" <- [%cmp]
   8  for.end:
   1    [] <- "return %res.0" <- [%res.0]
-248  for.body:
-  1    [%mul] <- "%mul = mpy(%res.0, %n.addr.0)" <- [%res.0, %n.addr.0]
-  1    [%dec] <- "%dec = add(%n.addr.0, #-1)" <- [%n.addr.0]
-248  for.inc:

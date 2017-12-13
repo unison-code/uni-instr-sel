@@ -1,7 +1,7 @@
  16  0:
-  1    [] <- "memw(%cinfo + #4) = #0" <- [%cinfo]
-  1    [%2] <- "%2 = cmp.eq(%version, ##61)" <- [%version]
   1    [%13] <- "%13 = cmp.eq(%structsize, ##464)" <- [%structsize]
+  1    [%2] <- "%2 = cmp.eq(%version, ##61)" <- [%version]
+  1    [] <- "memw(%cinfo + #4) = #0" <- [%cinfo]
   1    [] <- "if (%2) jump 12" <- [%2]
   8  3:
   1    [%5] <- "%5 = memw(%cinfo)" <- [%cinfo]
