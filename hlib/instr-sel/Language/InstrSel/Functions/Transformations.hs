@@ -55,6 +55,11 @@ import Data.Maybe
 copyExtend :: Function -> Function
 copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
 
+-- | Copy-extens a given graph. This is done in two steps, implemented by
+-- 'firstCopyExtendGraph' and 'secondCopyExtendGraph'.
+copyExtendGraph :: Graph -> Graph
+copyExtendGraph = copyExtendOnlyPhiArgs . copyExtendAllWhereNecessary
+
 -- | Inserts a copy node along every data-flow edge that involves a use of a
 -- value node (except for edges where the target is a copy node or the source
 -- already has already been copy extended). This also updates the definition
@@ -63,8 +68,8 @@ copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
 -- then upon copy extension $e$ will be moved to the new value node. Otherwise
 -- $e$ will remain on the original value node. Note that definition edges where
 -- the target is a value node are not affected.
-copyExtendGraph :: Graph -> Graph
-copyExtendGraph g =
+copyExtendAllWhereNecessary :: Graph -> Graph
+copyExtendAllWhereNecessary g =
   let nodes = filter ( \n ->
                        let es = getDtFlowInEdges g n
                        in if length es > 0
@@ -72,25 +77,32 @@ copyExtendGraph g =
                           else True
                      ) $
               filter isValueNode (getAllNodes g)
-  in foldl insertCopies g nodes
+      edges = filter (not . isCopyNode . getTargetNode g) $
+              concatMap (getDtFlowOutEdges g) $
+              nodes
+  in foldr insertCopyAlongEdge g edges
 
--- | Inserts a new copy and value node along each outgoing data-flow edge from
--- the given value node (except for edges where the target is already a copy
--- node).
-insertCopies :: Graph -> Node -> Graph
-insertCopies g0 n =
-  let es = filter (not . isCopyNode . getTargetNode g0) $
-           getDtFlowOutEdges g0 n
-      g1 = foldl insertCopyAlongEdge g0 es
-  in g1
+-- | Inserts a copy node along every data-flow edge that involves a use of a
+-- value node and a phi node. This is to correctly handle cases where the block
+-- from which a datum is expected to come (that is, when part of a phi argument)
+-- is different from the block wherein it is actually defined. This also updates
+-- the definition edges to retain the same semantics of the original graph (see
+-- also 'copyExtendAllWhereNecessary').
+copyExtendOnlyPhiArgs :: Graph -> Graph
+copyExtendOnlyPhiArgs g =
+  let nodes = filter isValueNode (getAllNodes g)
+      edges = filter (isPhiNode . getTargetNode g) $
+              concatMap (getDtFlowOutEdges g) $
+              nodes
+  in foldr insertCopyAlongEdge g edges
 
 -- | Inserts a new copy and value node along a given data-flow edge. If the
 -- value node is used by a phi node, and there is a definition edge on that
 -- value node, then the definition edge with matching out-edge number will be
 -- moved to the new data node. Note that definition edges where the target is a
 -- value node are not affected.
-insertCopyAlongEdge :: Graph -> Edge -> Graph
-insertCopyAlongEdge g0 df_edge =
+insertCopyAlongEdge :: Edge -> Graph -> Graph
+insertCopyAlongEdge df_edge g0 =
   let mkNewDataType d@(IntTempType {}) = d
       mkNewDataType (IntConstType { intConstNumBits = Just b }) =
         IntTempType { intTempNumBits = b }
