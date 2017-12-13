@@ -567,11 +567,13 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
   let { int: entry_b = min(entryBlockOfMatch[m])
       , var int: succ_b = succ[entry_b]
       }
-  in succ_b = fall_b \/
-     ( succ[succ_b] = fall_b /\
-       forall (o in allOperationsInFunction)
-       ( oplace[o] != succ_b \/
-         omatch[o] in nullInstrMatches
+  in succ_b != entryBlockOfFunction /\
+     ( succ_b = fall_b \/
+       ( succ[succ_b] = fall_b /\
+         forall (o in allOperationsInFunction)
+         ( oplace[o] != succ_b \/
+           omatch[o] in nullInstrMatches
+         )
        )
      );
 
