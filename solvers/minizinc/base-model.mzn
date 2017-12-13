@@ -506,6 +506,15 @@ constraint
          )
   ( sel[m] -> oplace[opOfM[m]] = oplace[o] );
 
+% If a null-copy match is selected, then the used value must be placed in the
+% same block as the value defined by the match.
+%constraint
+%  forall ( m in copyInstrMatches intersect nullInstrMatches
+%         , p1 in operandsUsedByMatch[m]
+%         , p2 in operandsDefinedByMatch[m]
+%         )
+%  ( sel[m] -> dplace[Alt(p1)] = dplace[Alt(p2)] );
+
 % If a selected match m has an entry block b, then all operations covered by m
 % must be placed in b.
 %
