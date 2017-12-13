@@ -485,51 +485,75 @@ removeDeadCode os0 =
   in os2
 
 removeDeadCode' :: OpStructure -> (OpStructure, Bool)
-removeDeadCode' os =
-  let g = osGraph os
+removeDeadCode' os0 =
+  let g0 = osGraph os0
       unused = filter ( \n ->
-                        let preds = map (getSourceNode g) $
-                                    getDtFlowInEdges g n
-                            succs = map (getTargetNode g) $
-                                    getDtFlowOutEdges g n
+                        let preds = map (getSourceNode g0) $
+                                    getDtFlowInEdges g0 n
+                            succs = map (getTargetNode g0) $
+                                    getDtFlowOutEdges g0 n
                          in length succs == 0 && not (isCallNode $ head preds)
                       ) $
                filter isValueNode $
-               getAllNodes g
+               getAllNodes g0
   in if length unused > 0
      then let v_n = head unused
-              pred_n = let ns = map (getSourceNode g) $
-                                getDtFlowInEdges g v_n
-                       in if length ns == 1
-                          then head ns
-                          else error $ "removeDeadCode: value node " ++
-                                       pShow v_n ++ " has unexpected " ++
-                                       "number of inbound data-flow edges"
-              v_nid = getNodeID v_n
-              g1 = delNode v_n g
-              g2 = if isOperationNode pred_n
-                   then delNode pred_n g1
-                   else g1
-              valid_locs = osValidLocations os
-              new_valid_locs = filter (\(n, _) -> n /= v_nid) valid_locs
-              same_locs = osSameLocations os
-              new_same_locs = filter (\(n1, n2) -> n1 /= v_nid && n2 /= v_nid)
-                                     same_locs
-              cs = osConstraints os
-              new_cs = let def_f = mkDefaultFolder True (&&)
-                           foldNodeExpr _ (ANodeIDExpr n) =
-                             n /= v_nid
-                           foldNodeExpr f expr =
-                             (foldNodeExprF def_f) f expr
-                           new_f = def_f { foldNodeExprF = foldNodeExpr }
-                       in filter (apply new_f) cs
-              new_os = os { osGraph = g2
-                          , osValidLocations = new_valid_locs
-                          , osSameLocations = new_same_locs
-                          , osConstraints = new_cs
-                          }
-          in (new_os, True)
-     else (os, False)
+              g1 = removeDefOfValueNode v_n g0
+              os1 = os0 { osGraph = g1 }
+              os2 = removeValueFromLocsAndCons (getNodeID v_n) os1
+          in (os2, True)
+     else (os0, False)
+
+removeDefOfValueNode :: Node -> Graph -> Graph
+removeDefOfValueNode v_n g0 =
+  let pred_n = let ns = map (getSourceNode g0) $
+                        getDtFlowInEdges g0 v_n
+               in if length ns == 1
+                  then head ns
+                  else error $ "removeDefOfValue: value node " ++
+                               pShow v_n ++ " has unexpected " ++
+                               "number of inbound data-flow edges"
+      g1 = delNode v_n g0
+      g2 = if isOperationNode pred_n
+           then removeOpNode pred_n g1
+           else g1
+  in g2
+
+removeOpNode :: Node -> Graph -> Graph
+removeOpNode op_n g0 =
+  let op_in_es = getDtFlowInEdges g0 op_n
+      g1 = delNode op_n g0
+      g2 = foldr ( \e g ->
+                   let v_n = getSourceNode g1 e
+                       v_out_es = getDefOutEdges g1 v_n
+                   in foldr delEdge g $
+                      filter (\e' -> getEdgeOutNr e' == getEdgeOutNr e) $
+                      v_out_es
+                 )
+                 g1
+                 op_in_es
+  in g2
+
+removeValueFromLocsAndCons :: NodeID -> OpStructure -> OpStructure
+removeValueFromLocsAndCons v_nid os =
+  let valid_locs = osValidLocations os
+      new_valid_locs = filter (\(n, _) -> n /= v_nid) valid_locs
+      same_locs = osSameLocations os
+      new_same_locs = filter (\(n1, n2) -> n1 /= v_nid && n2 /= v_nid)
+                             same_locs
+      cs = osConstraints os
+      new_cs = let def_f = mkDefaultFolder True (&&)
+                   foldNodeExpr _ (ANodeIDExpr n) =
+                     n /= v_nid
+                   foldNodeExpr f expr =
+                     (foldNodeExprF def_f) f expr
+                   new_f = def_f { foldNodeExprF = foldNodeExpr }
+               in filter (apply new_f) cs
+      new_os = os { osValidLocations = new_valid_locs
+                  , osSameLocations = new_same_locs
+                  , osConstraints = new_cs
+                  }
+  in new_os
 
 -- | Removes conversion operations that are redundant. Such a conversion is
 -- redundant if its result is immediately masked to leave the same bits as
