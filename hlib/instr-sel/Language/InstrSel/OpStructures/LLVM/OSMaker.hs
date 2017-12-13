@@ -215,9 +215,9 @@ class ConstantFormable a where
 
 instance ConstantFormable LLVMC.Constant where
   toConstant i@(LLVMC.Int b _) =
-    Right $ IntConstant { intBitWidth = fromIntegral b
-                        , signedIntValue = LLVMC.signedIntegerValue i
-                        }
+    return $ IntConstant { intBitWidth = fromIntegral b
+                         , signedIntValue = LLVMC.signedIntegerValue i
+                         }
   toConstant (LLVMC.GlobalReference t (LLVM.Name str)) =
     do rt' <- toOpDataType t
        let rt = if D.isTypeAPointer rt'
@@ -227,11 +227,11 @@ instance ConstantFormable LLVMC.Constant where
        return $ GlobalReferenceConstant { globalRefType = rt
                                         , globalRefName = sym
                                         }
-  toConstant (LLVMC.Null (LLVM.PointerType {})) = Right NullConstant
+  toConstant (LLVMC.Null (LLVM.PointerType {})) = return NullConstant
   toConstant (LLVMC.Undef (LLVM.IntegerType b)) =
-    Right $ IntConstant { intBitWidth = fromIntegral b
-                        , signedIntValue = 0
-                        }
+    return $ IntConstant { intBitWidth = fromIntegral b
+                         , signedIntValue = 0
+                         }
   toConstant ( LLVMC.Undef
                ( LLVM.PointerType (LLVM.NamedTypeReference (LLVM.Name str)) _ )
              ) =
@@ -239,6 +239,8 @@ instance ConstantFormable LLVMC.Constant where
        return $ GlobalReferenceConstant { globalRefType = D.PointerConstType
                                         , globalRefName = sym
                                         }
+  toConstant (LLVMC.Undef ( LLVM.PointerType (LLVM.IntegerType _) _ )) =
+    return NullConstant
   toConstant l = Left $ "toConstant: not implemented for " ++ show l
 
 -- | Class for converting an LLVM operand into a corresponding operand
