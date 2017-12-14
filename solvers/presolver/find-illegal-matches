@@ -158,10 +158,9 @@ p_valid_locs = {}
 for t in json_data["match-valid-value-locs"]:
     p = t[1]
     if p in p_valid_locs:
-        new_locs = p_valid_locs[p] | {t[2]}
-        p_valid_locs[p] = new_locs
+        p_valid_locs[p] |= {t[2]}
     else:
-        p_valid_locs[p] = set()
+        p_valid_locs[p] = {t[2]}
 
 # If a match m (excluding null and phi matches) defines some datum d in a set of
 # locations that is not accessible by any of the matches (excluding null and phi
