@@ -153,21 +153,28 @@ kill_matches = set(json_data["match-kill-instrs"])
 null_matches = set(json_data["match-null-instrs"])
 phi_matches = set(json_data["match-phi-instrs"])
 
+# Aggregate the locations used or defined by each match
+if not disable_def_locs or not disable_use_locs:
+    p_valid_locs = {}
+    for t in json_data["match-valid-value-locs"]:
+        p = t[1]
+        if p in p_valid_locs:
+            new_locs = p_valid_locs[p] | {t[2]}
+            p_valid_locs[p] = new_locs
+        else:
+            p_valid_locs[p] = set()
+
 # If a match m (excluding null and phi matches) defines some datum d in a set of
 # locations that is not accessible by any of the matches (excluding null and phi
 # matches) using d, then m is not selectable
 for m1 in (all_matches - null_matches - phi_matches):
     for p1 in ( set(json_data["match-operands-defined"][m1]) &
                 set(json_data["match-exterior-operands"][m1])
-             ):
-        locs = json_data["match-valid-value-locs"]
-
-        # Accumulate set of locations wherein m defines the datum of p
-        m_p_locs = set()
-        for t in locs:
-            if t[1] == p1:
-                m_p_locs |= {t[2]}
-        if len(m_p_locs) == 0:
+              ):
+        # Get set of locations wherein m defines the datum of p
+        if p1 in p_valid_locs:
+            m_p_locs = p_valid_locs[p1]
+        else:
             continue
 
         no_overlap_for_any_d = True
@@ -184,12 +191,9 @@ for m1 in (all_matches - null_matches - phi_matches):
             # Accumulate the set of locations from which d can be used
             use_locs_of_d = set()
             for p2 in ops_using_d:
-                found_loc = False
-                for t in locs:
-                    if t[1] == p2:
-                        use_locs_of_d |= {t[2]}
-                        found_loc = True
-                if not found_loc:
+                if p2 in p_valid_locs:
+                    use_locs_of_d |= p_valid_locs[p2]
+                else:
                     use_locs_of_d |= set(range(num_locations))
                     break
 
@@ -214,15 +218,11 @@ for m1 in (all_matches - null_matches - phi_matches):
 for m1 in (all_matches - null_matches - phi_matches):
     for p1 in ( set(json_data["match-operands-used"][m1]) -
                 set(json_data["match-operands-defined"][m1])
-             ):
-        locs = json_data["match-valid-value-locs"]
-
-        # Accumulate set of locations wherein m uses the datum of p
-        m_p_locs = set()
-        for t in locs:
-            if t[1] == p1:
-                m_p_locs |= {t[2]}
-        if len(m_p_locs) == 0:
+              ):
+        # Get set of locations wherein m uses the datum of p
+        if p1 in p_valid_locs:
+            m_p_locs = p_valid_locs[p1]
+        else:
             continue
 
         no_overlap_for_any_d = True
@@ -237,12 +237,9 @@ for m1 in (all_matches - null_matches - phi_matches):
             # Accumulate the set of locations in which d can be defined
             def_locs_of_d = set()
             for p2 in ops_defining_d:
-                found_loc = False
-                for t in locs:
-                    if t[1] == p2:
-                        def_locs_of_d |= {t[2]}
-                        found_loc = True
-                if not found_loc:
+                if p2 in p_valid_locs:
+                    def_locs_of_d |= p_valid_locs[p2]
+                else:
                     def_locs_of_d |= set(range(num_locations))
                     break
 
