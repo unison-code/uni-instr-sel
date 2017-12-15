@@ -98,6 +98,7 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 		   -load $(LCLIB) -lift-const-exprs \
 		   -load $(LSLIB) -lowerselect \
 		   -load $(LGLIB) -lowergetelementptr \
+		   -early-cse \
 		   -S $< -o $@
 
 %.low.freq.ll: %.low.ll
