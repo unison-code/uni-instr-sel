@@ -129,9 +129,12 @@ addOperandConstraints ops all_locs os =
           do locs <- mapM getIDOfLocWithName reg_names
              let sorted_locs = sort locs
              n <- getValueNode os' op_name
-             return os' { osValidLocations = osValidLocations os' ++
-                                             [(getNodeID n, sorted_locs)]
-                        }
+             if length sorted_locs > 0
+             then return os' { osValidLocations = osValidLocations os' ++
+                                                  [(getNodeID n, sorted_locs)]
+                             }
+             else Left $ "addOperandConstraints: location list of " ++
+                          op_name ++ " is empty"
         processOp os' (LLVM.ImmInstrOperand op_name range) =
           do n <- getValueNode os' op_name
              let old_dt = getDataTypeOfValueNode n
