@@ -55,11 +55,6 @@ import Data.Maybe
 copyExtend :: Function -> Function
 copyExtend f = updateGraph (copyExtendGraph $ getGraph f) f
 
--- | Copy-extens a given graph. This is done in two steps, implemented by
--- 'firstCopyExtendGraph' and 'secondCopyExtendGraph'.
-copyExtendGraph :: Graph -> Graph
-copyExtendGraph = copyExtendOnlyPhiArgs . copyExtendAllWhereNecessary
-
 -- | Inserts a copy node along every data-flow edge that involves a use of a
 -- value node (except for edges where the target is a copy node or the source
 -- already has already been copy extended). This also updates the definition
@@ -68,8 +63,8 @@ copyExtendGraph = copyExtendOnlyPhiArgs . copyExtendAllWhereNecessary
 -- then upon copy extension $e$ will be moved to the new value node. Otherwise
 -- $e$ will remain on the original value node. Note that definition edges where
 -- the target is a value node are not affected.
-copyExtendAllWhereNecessary :: Graph -> Graph
-copyExtendAllWhereNecessary g =
+copyExtendGraph :: Graph -> Graph
+copyExtendGraph g =
   let nodes = filter ( \n ->
                        let es = getDtFlowInEdges g n
                        in if length es > 0
@@ -78,20 +73,6 @@ copyExtendAllWhereNecessary g =
                      ) $
               filter isValueNode (getAllNodes g)
       edges = filter (not . isCopyNode . getTargetNode g) $
-              concatMap (getDtFlowOutEdges g) $
-              nodes
-  in foldr insertCopyAlongEdge g edges
-
--- | Inserts a copy node along every data-flow edge that involves a use of a
--- value node and a phi node. This is to correctly handle cases where the block
--- from which a datum is expected to come (that is, when part of a phi argument)
--- is different from the block wherein it is actually defined. This also updates
--- the definition edges to retain the same semantics of the original graph (see
--- also 'copyExtendAllWhereNecessary').
-copyExtendOnlyPhiArgs :: Graph -> Graph
-copyExtendOnlyPhiArgs g =
-  let nodes = filter isValueNode (getAllNodes g)
-      edges = filter (isPhiNode . getTargetNode g) $
               concatMap (getDtFlowOutEdges g) $
               nodes
   in foldr insertCopyAlongEdge g edges
