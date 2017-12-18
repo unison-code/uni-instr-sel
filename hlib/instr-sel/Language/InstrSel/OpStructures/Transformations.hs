@@ -492,7 +492,9 @@ removeDeadCode' os0 =
                                     getDtFlowInEdges g0 n
                             succs = map (getTargetNode g0) $
                                     getDtFlowOutEdges g0 n
-                         in length succs == 0 && not (isCallNode $ head preds)
+                         in length succs == 0 &&
+                            not (isCallNode $ head preds) &&
+                            not (isIndirCallNode $ head preds)
                       ) $
                filter isValueNode $
                getAllNodes g0
