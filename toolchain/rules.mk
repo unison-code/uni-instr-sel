@@ -84,6 +84,7 @@ LCLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLiftConstExprs.so
 LSLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerSelect.so
 LGLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerGetElementPtr.so
 AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+CSELIB         := $(LLVM_INT_IS_BUILD_DIR)/lib/LibEarlyCSEWithoutGetElemPtr.so
 LLC_ISEL_FLAGS      = -O0 $(LLC_TARGET_FLAGS) $(LLC_ISEL_MORE_FLAGS) \
 					  -fast-isel=false
 LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
@@ -98,7 +99,7 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 		   -load $(LCLIB) -lift-const-exprs \
 		   -load $(LSLIB) -lowerselect \
 		   -load $(LGLIB) -lowergetelementptr \
-		   -early-cse \
+		   -load $(CSELIB) -early-cse-without-getelemptr \
 		   -S $< -o $@
 
 %.low.freq.ll: %.low.ll
