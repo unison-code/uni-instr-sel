@@ -489,7 +489,6 @@ mkPatternDFGBuilder =
              then case (extractFunctionNamePart $ fromJust f_name)
                   of "setreg"          -> mkPatternDFGFromSetregCall b st i
                      "param"           -> mkPatternDFGFromParamCall b st i
-                     "call"            -> mkPatternDFGFromFunCall b st i
                      "uncond-br"       -> -- Will be processed in the CFG
                                           return st
                      "cond-br-or-fall" -> -- Will be processed in the CFG
@@ -498,10 +497,8 @@ mkPatternDFGBuilder =
                                           return st
                      "return"          -> -- Will be processed in the CFG
                                           return st
-                     _ -> -- Let the default builder handle it
-                          mkFunctionDFGFromInstruction b st i
-             else -- Let the default builder handle it
-                  mkFunctionDFGFromInstruction b st i
+                     _ -> mkPatternDFGFromFunCall b st i
+             else mkPatternDFGFromFunCall b st i
         newInstrMk b st i = mkFunctionDFGFromInstruction b st i
         newNamedMk b st0 ((LLVM.UnName _) LLVM.:= expr@(LLVM.Call {})) =
           -- Unnamed calls to functions that returns some value must not yield a
@@ -1373,14 +1370,50 @@ mkPatternDFGFromParamCall _ st0 i@(LLVM.Call {}) =
 mkPatternDFGFromParamCall _ _ i =
   Left $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
 
--- | Adds a call node, where the data types of all input and output values is
--- 'D.AnyType'.
+-- | TODO: write
 mkPatternDFGFromFunCall
   :: Builder
   -> BuildState
   -> LLVM.Instruction
   -> Either String BuildState
+mkPatternDFGFromFunCall
+  b
+  st0
+  i@( LLVM.Call _
+                _
+                _
+                ( Right
+                    (LLVM.LocalReference {})
+                )
+                _
+                _
+                _
+    )
+  =
+  do st1 <- mkFunctionDFGFromInstruction b st0 i
+     st2 <- fixDataTypesOfFunCallInPattern b st1 i
+     return st2
 mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
+  let f_name = retrieveFunctionName i
+  in if isJust f_name
+     then case (extractFunctionNamePart $ fromJust f_name)
+          of "call" -> do st1 <- mkDirectFunCallInPattern b st0 i
+                          st2 <- fixDataTypesOfFunCallInPattern b st1 i
+                          return st2
+             _ ->  Left $ "mkPatternDFGFromFunCall: unexpected function " ++
+                          "call format: " ++ show i
+     else Left $ "mkPatternDFGFromFunCall: unexpected function call format: " ++
+                 show i
+mkPatternDFGFromFunCall _ _ i =
+  Left $ "mkPatternDFGFromFunCall: not supported for " ++ show i
+
+-- | TODO: write
+mkDirectFunCallInPattern
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> Either String BuildState
+mkDirectFunCallInPattern b st0 i@(LLVM.Call {}) =
   do st1 <- mkFunctionDFGFromInstruction b st0 i
      -- The call node will have the wrong name as the true name of the call is
      -- embedded into the function name, so we need to fix that.
@@ -1399,7 +1432,18 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
                                    "call node with name '" ++
                                    pShow old_f_name ++ "'"
      st2 <- updateOSGraph st1 (G.updateNameOfCallNode new_f_name call_n g)
-     -- If a local reference argument to the call does not have any ingoing
+     return st2
+mkDirectFunCallInPattern _ _ i =
+  Left $ "mkDirectFunCallInPattern: not supported for " ++ show i
+
+-- | TODO: write
+fixDataTypesOfFunCallInPattern
+  :: Builder
+  -> BuildState
+  -> LLVM.Instruction
+  -> Either String BuildState
+fixDataTypesOfFunCallInPattern _ st0 i@(LLVM.Call {}) =
+  do -- If a local reference argument to the call does not have any ingoing
      -- data-flow edges, then its data type is irrelevant and must be set to
      -- 'D.AnyType'.
      let isRefArg (LLVM.LocalReference {}) = True
@@ -1408,7 +1452,7 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
                           map fst $
                           LLVM.arguments i
      arg_syms <- mapM (\(LLVM.LocalReference _ n) -> toSymbol n) local_ref_args
-     st3 <- foldM
+     st1 <- foldM
               ( \st sym ->
                 do let g' = getOSGraph st
                    n <- getValueNodeMappedToSym st sym
@@ -1418,26 +1462,26 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
                         G.updateDataTypeOfValueNode D.AnyType n g'
                    else return st
               )
-              st2
+              st0
               arg_syms
      -- If the function returns any data, then the data type of its value node
      -- is irrelevant and must be set to 'D.AnyType'. This also requires the
      -- last touched node to be updated.
      ret_t <- toReturnDataType $ LLVM.function i
-     st4 <- if not $ D.isVoidType ret_t
-            then do old_ret_n <- getLastTouchedValueNode st1
-                    let old_g = getOSGraph st3
+     st2 <- if not $ D.isVoidType ret_t
+            then do old_ret_n <- getLastTouchedValueNode st0
+                    let old_g = getOSGraph st1
                         new_g = G.updateDataTypeOfValueNode D.AnyType
                                                             old_ret_n
                                                             old_g
-                    st' <- updateOSGraph st3 new_g
+                    st' <- updateOSGraph st1 new_g
                     new_ret_n <- getNodeWithID st' (G.getNodeID old_ret_n)
                     let st'' = st' { lastTouchedNode = Just new_ret_n }
                     return st''
-            else return st3
-     return st4
-mkPatternDFGFromFunCall _ _ i =
-  Left $ "mkPatternDFGFromFunCall: not implemented for " ++ show i
+            else return st1
+     return st2
+fixDataTypesOfFunCallInPattern _ _ i =
+  Left $ "fixDataTypesOfFunCallInPattern: not implemented for " ++ show i
 
 mkFunctionCFGFromGlobal :: Builder
                         -> BuildState
