@@ -279,37 +279,9 @@ alternativeExtend
   -> PatternMatchset
 alternativeExtend f t limit p =
   let g = osGraph $ functionOS f
-      v_ns = filter isValueNode $ getAllNodes g
       copy_related_vs = map (map getNodeID) $
-                        filter ((> 1) . length) $
-                        concat $
-                        map ( groupBy ( \v1 v2 -> getDataTypeOfValueNode v1 ==
-                                                  getDataTypeOfValueNode v2
-                                      )
-                            ) $
-                        map (getCopiesOfValue g) v_ns
+                        getCopyRelatedValues g
   in foldr (insertAlternativeMappings t limit) p copy_related_vs
-
--- | Given a graph and value node, returns all value nodes that are copies of
--- the given value node.
-getCopiesOfValue :: Graph -> Node -> [Node]
-getCopiesOfValue g n =
-  let es = getDtFlowOutEdges g n
-      copies = filter isCopyNode $ map (getTargetNode g) es
-      cp_vs = map ( \n' ->
-                    let es' = getDtFlowOutEdges g n'
-                    in if length es' == 1
-                       then getTargetNode g (head es')
-                       else if length es' == 0
-                            then error $
-                                 "getCopiesOfValue: " ++ show n' ++
-                                 " has no data-flow edges"
-                            else error $
-                                 "getCopiesOfValue: " ++ show n' ++
-                                 " has multiple data-flow edges"
-                  ) $
-              copies
-  in cp_vs
 
 insertAlternativeMappings
   :: TargetMachine

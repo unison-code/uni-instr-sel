@@ -76,6 +76,8 @@ module Language.InstrSel.Graphs.Base
   , findDefEdgeOfDtOutEdge
   , getCtrlFlowInEdges
   , getCtrlFlowOutEdges
+  , getCopiesOfValue
+  , getCopyRelatedValues
   , getDataTypeOfValueNode
   , getDtFlowInEdges
   , getDtFlowOutEdges
@@ -2132,3 +2134,38 @@ updatePNodeInMatch old_pn new_pn match =
                         f2p_maps0
                         fns
   in Match { f2pMaps = f2p_maps1, p2fMaps = p2f_maps2 }
+
+-- | Gets all sets of copy-related values. A value is copy-related to another
+-- value if both are copies of the same other value.
+getCopyRelatedValues :: Graph -> [[Node]]
+getCopyRelatedValues g =
+  let v_ns = filter isValueNode $ getAllNodes g
+      copy_related_vs = filter ((> 1) . length) $
+                        concat $
+                        map ( groupBy ( \v1 v2 -> getDataTypeOfValueNode v1 ==
+                                                  getDataTypeOfValueNode v2
+                                      )
+                            ) $
+                        map (getCopiesOfValue g) v_ns
+  in copy_related_vs
+
+-- | Given a graph and value node, returns all value nodes that are copies of
+-- the given value node.
+getCopiesOfValue :: Graph -> Node -> [Node]
+getCopiesOfValue g n =
+  let es = getDtFlowOutEdges g n
+      copies = filter isCopyNode $ map (getTargetNode g) es
+      cp_vs = map ( \n' ->
+                    let es' = getDtFlowOutEdges g n'
+                    in if length es' == 1
+                       then getTargetNode g (head es')
+                       else if length es' == 0
+                            then error $
+                                 "getCopiesOfValue: " ++ show n' ++
+                                 " has no data-flow edges"
+                            else error $
+                                 "getCopiesOfValue: " ++ show n' ++
+                                 " has multiple data-flow edges"
+                  ) $
+              copies
+  in cp_vs

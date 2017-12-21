@@ -78,11 +78,13 @@ mkHighLevelModel function target matches =
       machine_params = mkHLMachineParams target
       match_params = mkHLMatchParamsList target matches
       ill_m_combs = mkIllegalMatchCombs function target matches
+      copy_related_data = mkCopyRelatedData function
       interch_data = mkInterchangeableData function match_params
   in HighLevelModel { hlFunctionParams = f_params
                     , hlMachineParams = machine_params
                     , hlMatchParams = match_params
                     , hlIllegalMatchCombs = ill_m_combs
+                    , hlCopyRelatedData = copy_related_data
                     , hlInterchangeableData = interch_data
                     }
 
@@ -696,6 +698,8 @@ lowerHighLevelModel model ai_maps =
        , llMatchInstructionIDs = map hlMatchInstructionID m_params
        , llIllegalMatchCombs = map (map getAIForMatchID) $
                                hlIllegalMatchCombs model
+       , llCopyRelatedData =
+           map (map getAIForDatumNodeID) (hlCopyRelatedData model)
        , llInterchangeableData =
            map (map getAIForDatumNodeID) (hlInterchangeableData model)
        , llTMID = hlMachineID tm_params
@@ -908,6 +912,14 @@ mkIllegalMatchCombs function target matches =
                                    -- the last element
                         cyclesIn' g2
   in forbidden_combs
+
+-- | Finds the sets of data that are copy-related. This is not the same as the
+-- set of interchangeable data, which is a subset of the copy-related data.
+mkCopyRelatedData :: Function -> [[NodeID]]
+mkCopyRelatedData function =
+  let g = osGraph $ functionOS function
+  in map (map getNodeID) $
+     getCopyRelatedValues g
 
 -- | Finds the sets of data that are interchangeable. Data are interchangeable
 -- if they can be globally swapped within a solution without changing the

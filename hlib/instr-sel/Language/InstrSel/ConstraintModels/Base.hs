@@ -52,6 +52,9 @@ data HighLevelModel
       , hlMachineParams :: HighLevelMachineParams
       , hlMatchParams :: [HighLevelMatchParams]
       , hlIllegalMatchCombs :: [[MatchID]]
+      , hlCopyRelatedData :: [[NodeID]]
+        -- ^ The data that are copy-related. At the moment, this is only as
+        -- input for discussing the experiments.
       , hlInterchangeableData :: [[NodeID]]
         -- ^ The data that are interchangeable. This is used for symmetry
         -- breaking.
@@ -360,6 +363,10 @@ data LowLevelModel
       , llIllegalMatchCombs :: [[ArrayIndex]]
         -- ^ Combinations of matches for which it is illegal to select all of
         -- them.
+      , llCopyRelatedData :: [[ArrayIndex]]
+        -- ^ The data that are copy-related. At the moment, this is only as
+        -- input for discussing the experiments. The outer list represents
+        -- groups of data that are copy-related.
       , llInterchangeableData :: [[ArrayIndex]]
         -- ^ The data that are interchangeable. This is used for symmetry
         -- breaking. The outer list represents groups of data that are
@@ -502,6 +509,7 @@ instance FromJSON HighLevelModel where
        <*> v .: "machine-params"
        <*> v .: "match-params"
        <*> v .: "illegal-match-combs"
+       <*> v .: "copy-related-data"
        <*> v .: "interchangeable-data"
   parseJSON _ = mzero
 
@@ -511,6 +519,7 @@ instance ToJSON HighLevelModel where
            , "machine-params"       .= (hlMachineParams m)
            , "match-params"         .= (hlMatchParams m)
            , "illegal-match-combs"  .= (hlIllegalMatchCombs m)
+           , "copy-related-data"    .= (hlCopyRelatedData m)
            , "interchangeable-data" .= (hlInterchangeableData m)
            ]
 
@@ -696,6 +705,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-constraints"
       <*> v .: "match-instruction-ids"
       <*> v .: "illegal-match-combs"
+      <*> v .: "copy-related-data"
       <*> v .: "interchangeable-data"
       <*> v .: "target-machine"
   parseJSON _ = mzero
@@ -745,6 +755,7 @@ instance ToJSON LowLevelModel where
            , "match-constraints"           .= (llMatchConstraints m)
            , "match-instruction-ids"       .= (llMatchInstructionIDs m)
            , "illegal-match-combs"         .= (llIllegalMatchCombs m)
+           , "copy-related-data"           .= (llCopyRelatedData m)
            , "interchangeable-data"        .= (llInterchangeableData m)
            , "target-machine"              .= (llTMID m)
            ]
