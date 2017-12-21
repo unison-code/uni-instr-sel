@@ -78,13 +78,11 @@ mkHighLevelModel function target matches =
       machine_params = mkHLMachineParams target
       match_params = mkHLMatchParamsList target matches
       ill_m_combs = mkIllegalMatchCombs function target matches
-      copy_related_data = mkCopyRelatedData function
       interch_data = mkInterchangeableData function match_params
   in HighLevelModel { hlFunctionParams = f_params
                     , hlMachineParams = machine_params
                     , hlMatchParams = match_params
                     , hlIllegalMatchCombs = ill_m_combs
-                    , hlCopyRelatedData = copy_related_data
                     , hlInterchangeableData = interch_data
                     }
 
@@ -178,11 +176,13 @@ mkHLFunctionParams function target =
                               ) $
                        filter isDatumNode $
                        all_ns
+      copy_related_data = mkCopyRelatedData function
   in HighLevelFunctionParams
        { hlFunOperations = nodeIDsByType isOperationNode
        , hlFunCopies = nodeIDsByType isCopyNode
        , hlFunControlOps = nodeIDsByType isControlNode
        , hlFunData = nodeIDsByType isDatumNode
+       , hlFunCopyRelatedData = copy_related_data
        , hlFunOpPlacements = op_bs_places
        , hlFunOpDependencies = op_deps
        , hlFunDataDependencies = data_deps
@@ -698,8 +698,10 @@ lowerHighLevelModel model ai_maps =
        , llMatchInstructionIDs = map hlMatchInstructionID m_params
        , llIllegalMatchCombs = map (map getAIForMatchID) $
                                hlIllegalMatchCombs model
-       , llCopyRelatedData =
-           map (map getAIForDatumNodeID) (hlCopyRelatedData model)
+       , llFunCopyRelatedData =
+           map (map getAIForDatumNodeID) $
+           hlFunCopyRelatedData $
+           hlFunctionParams model
        , llInterchangeableData =
            map (map getAIForDatumNodeID) (hlInterchangeableData model)
        , llTMID = hlMachineID tm_params

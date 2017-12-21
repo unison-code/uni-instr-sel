@@ -52,9 +52,6 @@ data HighLevelModel
       , hlMachineParams :: HighLevelMachineParams
       , hlMatchParams :: [HighLevelMatchParams]
       , hlIllegalMatchCombs :: [[MatchID]]
-      , hlCopyRelatedData :: [[NodeID]]
-        -- ^ The data that are copy-related. At the moment, this is only as
-        -- input for discussing the experiments.
       , hlInterchangeableData :: [[NodeID]]
         -- ^ The data that are interchangeable. This is used for symmetry
         -- breaking.
@@ -72,6 +69,9 @@ data HighLevelFunctionParams
         -- ^ The control nodes in the function graph.
       , hlFunData :: [NodeID]
         -- ^ The data in the function graph.
+      , hlFunCopyRelatedData :: [[NodeID]]
+        -- ^ The data that are copy-related. At the moment, this is only as
+        -- input for discussing the experiments.
       , hlFunOpPlacements :: [(NodeID, [NodeID])]
         -- ^ The set of blocks in which a given operation could potentially be
         -- placed. The first element in the tuple represents an operation, and
@@ -238,6 +238,10 @@ data LowLevelModel
         -- ^ The control nodes of the function graph.
       , llFunConstData :: [ArrayIndex]
         -- ^ The data that are constant value nodes in the function graph.
+      , llFunCopyRelatedData :: [[ArrayIndex]]
+        -- ^ The data that are copy-related. At the moment, this is only as
+        -- input for discussing the experiments. The outer list represents
+        -- groups of data that are copy-related.
       , llFunStates :: [ArrayIndex]
         -- ^ The data that are state nodes of the function graph.
       , llFunOpPlacements :: [[ArrayIndex]]
@@ -363,10 +367,6 @@ data LowLevelModel
       , llIllegalMatchCombs :: [[ArrayIndex]]
         -- ^ Combinations of matches for which it is illegal to select all of
         -- them.
-      , llCopyRelatedData :: [[ArrayIndex]]
-        -- ^ The data that are copy-related. At the moment, this is only as
-        -- input for discussing the experiments. The outer list represents
-        -- groups of data that are copy-related.
       , llInterchangeableData :: [[ArrayIndex]]
         -- ^ The data that are interchangeable. This is used for symmetry
         -- breaking. The outer list represents groups of data that are
@@ -509,7 +509,6 @@ instance FromJSON HighLevelModel where
        <*> v .: "machine-params"
        <*> v .: "match-params"
        <*> v .: "illegal-match-combs"
-       <*> v .: "copy-related-data"
        <*> v .: "interchangeable-data"
   parseJSON _ = mzero
 
@@ -519,7 +518,6 @@ instance ToJSON HighLevelModel where
            , "machine-params"       .= (hlMachineParams m)
            , "match-params"         .= (hlMatchParams m)
            , "illegal-match-combs"  .= (hlIllegalMatchCombs m)
-           , "copy-related-data"    .= (hlCopyRelatedData m)
            , "interchangeable-data" .= (hlInterchangeableData m)
            ]
 
@@ -530,6 +528,7 @@ instance FromJSON HighLevelFunctionParams where
       <*> v .: "copies"
       <*> v .: "control-ops"
       <*> v .: "data"
+      <*> v .: "copy-related-data"
       <*> v .: "op-placements"
       <*> v .: "op-dependencies"
       <*> v .: "data-dependencies"
@@ -554,6 +553,7 @@ instance ToJSON HighLevelFunctionParams where
            , "copies"                   .= (hlFunCopies p)
            , "control-ops"              .= (hlFunControlOps p)
            , "data"                     .= (hlFunData p)
+           , "copy-related-data"        .= (hlFunCopyRelatedData p)
            , "op-placements"            .= (hlFunOpPlacements p)
            , "op-dependencies"          .= (hlFunOpDependencies p)
            , "data-dependencies"        .= (hlFunDataDependencies p)
@@ -668,6 +668,7 @@ instance FromJSON LowLevelModel where
       <*> v .: "fun-copies"
       <*> v .: "fun-control-ops"
       <*> v .: "fun-const-data"
+      <*> v .: "fun-copy-related-data"
       <*> v .: "fun-states"
       <*> v .: "fun-op-placements"
       <*> v .: "fun-op-dependencies"
@@ -705,7 +706,6 @@ instance FromJSON LowLevelModel where
       <*> v .: "match-constraints"
       <*> v .: "match-instruction-ids"
       <*> v .: "illegal-match-combs"
-      <*> v .: "copy-related-data"
       <*> v .: "interchangeable-data"
       <*> v .: "target-machine"
   parseJSON _ = mzero
@@ -718,6 +718,7 @@ instance ToJSON LowLevelModel where
            , "fun-copies"                  .= (llFunCopies m)
            , "fun-control-ops"             .= (llFunControlOps m)
            , "fun-const-data"              .= (llFunConstData m)
+           , "fun-copy-related-data"       .= (llFunCopyRelatedData m)
            , "fun-states"                  .= (llFunStates m)
            , "fun-op-placements"           .= (llFunOpPlacements m)
            , "fun-op-dependencies"         .= (llFunOpDependencies m)
@@ -755,7 +756,6 @@ instance ToJSON LowLevelModel where
            , "match-constraints"           .= (llMatchConstraints m)
            , "match-instruction-ids"       .= (llMatchInstructionIDs m)
            , "illegal-match-combs"         .= (llIllegalMatchCombs m)
-           , "copy-related-data"           .= (llCopyRelatedData m)
            , "interchangeable-data"        .= (llInterchangeableData m)
            , "target-machine"              .= (llTMID m)
            ]
