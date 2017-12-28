@@ -506,10 +506,12 @@ constraint
          )
   ( sel[m] -> oplace[opOfM[m]] = oplace[o] );
 
-% If a null-copy match is selected, then the used value must be placed in the
-% same block as the value defined by the match.
+% If a null-copy, non-kill match is selected, then the used value must be placed
+% in the same block as the value defined by the match.
 constraint
-  forall ( m in copyInstrMatches intersect nullInstrMatches
+  forall ( m in copyInstrMatches intersect
+                nullInstrMatches diff
+                killInstrMatches
          , p1 in operandsUsedByMatch[m]
          , p2 in operandsDefinedByMatch[m]
          )
