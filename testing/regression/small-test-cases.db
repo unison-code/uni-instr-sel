@@ -21,6 +21,7 @@ jpeg.jutils.jround_up
 mem
 pgp.rsaglue2.make_RSA_PUBLIC_KEY
 phi
+phi-dual-use
 pointers
 reuse
 small

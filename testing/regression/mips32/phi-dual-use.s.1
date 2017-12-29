@@ -1,0 +1,13 @@
+ 16  entry:
+  1    [%1.copy.1] <- "ADDiu %1.copy.1, $0, 1" <- []
+  1    [%x] <- "ADDI $%x, $%n, 10" <- [%n]
+  1    [] <- "BGT $%n, $%1.copy.1, bb1" <- [%n, %1.copy.1]
+ 16  bb2:
+  0    [%y] <- "PHI (%0.copy.1, bb1) (%x, entry)" <- [%0.copy.1, %x]
+  0    [%z] <- "PHI (%0.copy.1, bb1) (%x, entry)" <- [%0.copy.1, %x]
+  1    [%bla] <- "ADDU $%bla, $%z, $%y" <- [%z, %y]
+  0    [] <- "RetRA %bla" <- [%bla]
+  8  bb1:
+  1    [%0.copy.1] <- "ADDiu %0.copy.1, $0, 0" <- []
+  1    [%0.copy.2] <- "ADDiu %0.copy.2, $0, 0" <- []
+  1    [] <- "B bb2" <- []

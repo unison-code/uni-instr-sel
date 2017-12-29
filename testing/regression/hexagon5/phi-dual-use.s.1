@@ -1,0 +1,11 @@
+ 16  entry:
+  1    [%cmp] <- "%cmp = cmp.gt(%n, ##1)" <- [%n]
+  1    [%x] <- "%x = add(%n, #10)" <- [%n]
+  1    [] <- "if (!%cmp) jump bb2" <- [%cmp]
+  8  bb1:
+  1    [%0.copy.2] <- "%0.copy.2 = ##0" <- []
+ 16  bb2:
+  0    [%y] <- "PHI (%0.copy.2, bb1) (%x, entry)" <- [%0.copy.2, %x]
+  0    [%z] <- "PHI (%0.copy.2, bb1) (%x, entry)" <- [%0.copy.2, %x]
+  1    [%bla] <- "%bla = add(%z, %y)" <- [%z, %y]
+  1    [] <- "return %bla" <- [%bla]
