@@ -195,7 +195,7 @@ run-medium-regression-tests:
 .PHONY: .run-regression-tests
 .run-regression-tests: SOLVER_TIME_LIMIT := 0
 .run-regression-tests: DISABLE_UPPER_BOUND := 1
-.run-regression-tests: DISABLE_LOWER_BOUND := 0
+.run-regression-tests: DISABLE_LOWER_BOUND := 1
 .run-regression-tests:
 	@echo
 	@echo -n "$(C_INFO)"
@@ -422,22 +422,18 @@ run-medium-regression-tests:
 	echo
 
 .PHONY: update-all-regression-tests
-REG_TEST_CASES := $(shell cat regression/small-test-cases.db) \
-				  $(shell cat regression/medium-test-cases.db)
+REG_TEST_CASES := $(shell cat regression/medium-test-cases.db)
 REG_TEST_CASES_LL_PATHS := $(addprefix ./regression/, \
 									   $(addsuffix .ll, $(REG_TEST_CASES)) \
 							)
 REG_TEST_CASES_S := $(addsuffix .s, $(REG_TEST_CASES))
-update-all-regression-tests: SOLVER_TIME_LIMIT := 0
-update-all-regression-tests: DISABLE_LOWER_BOUND := 1
-update-all-regression-tests: DISABLE_UPPER_BOUND := 1
 update-all-regression-tests:
 	cp $(REG_TEST_CASES_LL_PATHS) .
 	for t in mips32 hexagon5; do \
 		$(MAKE) clean && \
-		$(MAKE) SOLVER_TIME_LIMIT=$(SOLVER_TIME_LIMIT) \
-				DISABLE_LOWER_BOUND=$(DISABLE_LOWER_BOUND) \
-				DISABLE_UPPER_BOUND=$(DISABLE_UPPER_BOUND) \
+		$(MAKE) SOLVER_TIME_LIMIT=0 \
+				DISABLE_LOWER_BOUND=1 \
+				DISABLE_UPPER_BOUND=1 \
 				TARGET=$$t -j $(NUM_THREADS) $(REG_TEST_CASES_S) && \
 		for f in $(REG_TEST_CASES); do \
 			cp $$f.s regression/$$t/$$f.s.1 && \
