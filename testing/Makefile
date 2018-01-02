@@ -71,21 +71,7 @@ NUM_THREADS           := 4
 # LLC_TARGET_FLAGS := -march=mips
 # Hexagon5
 TARGET := hexagon5
-LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5 \
-                    -disable-ifcvt-diamond \
-                    -disable-ifcvt-simple \
-                    -disable-ifcvt-simple-false \
-                    -disable-ifcvt-triangle \
-                    -disable-ifcvt-triangle-false \
-                    -disable-ifcvt-triangle-false-rev \
-                    -disable-ifcvt-triangle-rev \
-                    -hexagon-gen-pred=false \
-                    -hexagon-loop-resched=false \
-                    -hexagon-bit=false \
-                    -hexagon-insert=false \
-                    -hexagon-eif=false \
-                    -disable-hsdr \
-                    -disable-hexagon-peephole
+LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
 LLC_ISEL_MORE_FLAGS := -hexagon-commgep=false \
 					   -hexagon-extract=false \
 					   -hexagon-loop-resched=false \
