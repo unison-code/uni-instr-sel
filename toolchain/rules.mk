@@ -106,7 +106,7 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 	$(OPT) -load $(AEFMLIB) -attach-exec-freq-metadata -S $< -o $@
 
 %.llvm.json: %.low.freq.ll
-	$(LLC) $(LLC_DUMP_ISEL_FLAGS) -print-isel-cost \
+	$(LLC) $(LLC_ISEL_DUMP_FLAGS) -print-isel-cost \
 		   $< -o /dev/null > $@ 2> /dev/null
 
 %.ub.json: %.llvm.json
@@ -260,7 +260,7 @@ LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
 					  -s $*.presolved.hl.sol.json \
 					  -o $@; \
 	else \
-		$(LLC) $(LLC_DUMP_ISEL_FLAGS) -dump-isel-w-costs -disable-combiner \
+		$(LLC) $(LLC_ISEL_DUMP_FLAGS) -dump-isel-w-costs -disable-combiner \
 			   $*.low.freq.ll -o /dev/null > $@; \
 	fi
 
