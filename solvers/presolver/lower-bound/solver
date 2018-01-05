@@ -409,4 +409,8 @@ cmd="$THIS_DIR/merge-jsons $JSON_SOLUTION_FILEPATH $JSON_STATS_FILEPATH \
 exe "$cmd"
 reportNewEntity "$JSON_OUTPUT_FILEPATH"
 
+reportTask "Cleaning up"
+cmd="rm -rf $TMP_DIR"
+exe "$cmd"
+
 echo
