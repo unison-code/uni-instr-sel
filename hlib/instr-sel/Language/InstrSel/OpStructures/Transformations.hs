@@ -346,67 +346,7 @@ getDomOf g root bs =
 -- single value, and removes phi nodes that takes only one value.
 removePhiNodeRedundancies :: OpStructure -> OpStructure
 removePhiNodeRedundancies = ensureSingleBlockUseInPhis .
-                            removeSingleValuePhiNodes .
-                            replaceCopiedValuesInPhiNodes
-
-replaceCopiedValuesInPhiNodes :: OpStructure -> OpStructure
-replaceCopiedValuesInPhiNodes os =
-  let g = osGraph os
-      entry = let n = entryBlockNode g
-              in if isJust n
-                 then fromJust n
-                 else error $ "replaceCopiedValuesInPhiNodes: graph has no " ++
-                              "entry block"
-      cfg = extractCFG g
-      ns = filter isPhiNode $
-           getAllNodes g
-      findSourceOfCopiedValue g' n =
-        do let n_dt_es = getDtFlowInEdges g' n
-           cp <- if length n_dt_es > 0
-                 then let o = getSourceNode g' (head n_dt_es)
-                      in if isCopyNode o then Just o else Nothing
-                 else Nothing
-           let cp_dt_es = getDtFlowInEdges g' cp
-           v <- if length cp_dt_es > 0
-                 then Just $ getSourceNode g' (head cp_dt_es)
-                 else Nothing
-           return v
-      replace dt_es os' =
-        let g0 = osGraph os'
-            def_es = map (getDefEdgeOfDtOutEdge g0) dt_es
-            new_b = getDomOf cfg entry $
-                    map (getTargetNode g0) $
-                    def_es
-            kept_dt_e = head dt_es
-            g1 = foldr delEdge g0 (tail dt_es)
-            g2 = foldr delEdge g1 def_es
-            (g3, new_def_e) = addNewDefEdge (getSourceNode g0 kept_dt_e, new_b)
-                                            g2
-            old_def_e = head def_es
-            (g4, _) = updateEdgeOutNr (getEdgeOutNr old_def_e) new_def_e g3
-        in os' { osGraph = g4 }
-      renumberInEdgesOfPhi n g0 =
-        let dt_es = getDtFlowInEdges g0 n
-        in foldr (\(e, new_nr) g' -> fst $ updateEdgeInNr new_nr e g') g0 $
-           zip dt_es ([0..] :: [EdgeNr])
-      transform phi_n os0 =
-        let g0 = osGraph os0
-            dt_es = getDtFlowInEdges g0 phi_n
-            grouped_dt_es = filter (\l -> length l >= 2) $
-                            groupBy ( \e1 e2 ->
-                                      let v1 = getSourceNode g0 e1
-                                          v2 = getSourceNode g0 e2
-                                          o1 = findSourceOfCopiedValue g0 v1
-                                          o2 = findSourceOfCopiedValue g0 v2
-                                      in isJust o1 && isJust o2 && o1 == o2
-                                    )
-                                    dt_es
-            os1 = foldr replace os0 grouped_dt_es
-            g1 = osGraph os1
-            g2 = renumberInEdgesOfPhi phi_n g1
-            os2 = os1 { osGraph = g2 }
-        in os2
-  in foldr transform os ns
+                            removeSingleValuePhiNodes
 
 removeSingleValuePhiNodes :: OpStructure -> OpStructure
 removeSingleValuePhiNodes os =
