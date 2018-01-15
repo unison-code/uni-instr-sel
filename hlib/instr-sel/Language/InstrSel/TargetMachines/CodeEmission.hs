@@ -164,7 +164,11 @@ computeAliases
   -> [HighLevelMatchParams]
   -> [(NodeID, NodeID)]
 computeAliases op_maps const_ns null_matches =
-  let getNodeID o = fromJust $ lookup o op_maps
+  let getNodeID o = let o' = lookup o op_maps
+                    in if isJust o'
+                       then fromJust o'
+                       else error $ "computeAlias: no mapping found for " ++
+                                    "operand " ++ pShow o
       aliases = filter (\(_, n) -> n `notElem` const_ns) $
                 map ( \m -> ( getNodeID $ head $ hlMatchOperandsDefined m
                             , getNodeID $ head $ hlMatchOperandsUsed m
@@ -264,7 +268,11 @@ addUseEdgesToDAG
   -> IFlowDAG
   -> IFlowDAG
 addUseEdgesToDAG sol model mid g0 =
-  let getNodeID o = fromJust $ lookup o $ hlSolNodesOfOperands sol
+  let getNodeID o = let o' = lookup o $ hlSolNodesOfOperands sol
+                    in if isJust o'
+                       then fromJust o'
+                       else error $ "addUseEdgesToDAG: no mapping found for " ++
+                                    "operand " ++ pShow o
       match_node = fromJust $ getNodeOfMatch g0 mid
       match = getHLMatchParams model mid
       ns = I.labNodes g0
@@ -473,7 +481,12 @@ emitInstructionPart model sol tm st (ESLocationOfValueNode n) =
   in if isJust reg_id
      then let code = emittedCode st
               instr = head code
-              reg = fromJust $ findLocation tm (fromJust reg_id)
+              reg = let l = findLocation tm (fromJust reg_id)
+                    in if isJust l
+                       then fromJust l
+                       else  error $ "emitInstructionPart: no location " ++
+                                     "found with ID " ++ pShow (fromJust reg_id)
+                  ++ "function node " ++ pShow n
           in if (isJust $ locValue reg)
              then let new_instr = instr $++ pShow (locName reg)
                   in st { emittedCode = (new_instr:tail code) }
