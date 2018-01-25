@@ -143,6 +143,8 @@ set of int: allLocValues = { x | x in canonicalDataLocs ++ [ locValueForInt
 %        2: a block j that dominates i
 % In other words, domRelMatrix has a row [i, j] if and only if j belongs to
 % domSetsOfBlocksInFunction[i].
+%
+% Eq 2.1 in dissertation
 int: numDomMatrixRows =
   sum (b in allBlocksInFunction)
   ( card(domSetsOfBlocksInFunction[b]) );
@@ -216,6 +218,8 @@ array[allOperands] of int: matchOfP =
 %        3: a block b in which m can be placed
 %        4: the cost incurred by o if m is selected and placed in b
 % For simplicity, we first create a list and then the matrix using the list.
+%
+% Eq 2.6-7 in dissertation
 array[int] of int: costPerOpList =
   [ if      k = 1 then o
     else if k = 2 then m
@@ -417,6 +421,8 @@ constraint
 
 % If a match representing a phi instruction is selected, then its operands
 % must be placed in the same location.
+%
+% Eq 1.11 in dissertation
 constraint
   forall ( m in phiInstrMatches
          , p1 in operandsExteriorToMatch[m]
@@ -426,6 +432,8 @@ constraint
   );
 
 % Constrain locations of operands representing values for selected matches.
+%
+% Eq 1.15 in dissertation
 constraint
   forall ( m in allMatches
          , p in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
@@ -459,6 +467,8 @@ constraint
 
 % For selected matches that require two or more of its operands to have the same
 % location, enforce them to be the same.
+%
+% Eq 1.16 in dissertation
 constraint
   forall (i in index_set_1of2(sameDataLocsInMatch)) (
     let { int: m = sameDataLocsInMatch[i, 1]
@@ -470,6 +480,8 @@ constraint
 
 % If a match representing a phi instruction is selected, then its data must be
 % defined in the blocks indicated by the definition edges.
+%
+% Eq 1.18 in dissertation
 constraint
   forall (i in index_set_1of2(inputDefEdgesInMatch)) (
     let { int: m = inputDefEdgesInMatch[i, 1]
@@ -487,8 +499,9 @@ constraint
     in sel[m] -> dplace[Alt(p)] = b
   );
 
-% A datum with a definition edge must be defined in the block
-% of that edge.
+% A datum with a definition edge must be defined in the block of that edge.
+%
+% Eq 1.9 in dissertation
 constraint
   forall (i in index_set_1of2(defEdgesInFunction)) (
     let { int: b = defEdgesInFunction[i, 1]
@@ -499,6 +512,8 @@ constraint
 
 % If a match is selected, then all operations covered by that match must be
 % placed in the same block.
+%
+% Eq 1.4 in dissertation
 constraint
   forall ( m in allMatches
          , o in operationsCoveredByMatch[m]
@@ -512,6 +527,8 @@ constraint
 % If a match has no entry block, then this set will be empty and hence there
 % will be no such constraint. It is assumed that there will be at most one
 % entry.
+%
+% Eq 1.5 in dissertation
 constraint
   forall ( m in allMatches
          , b in entryBlockOfMatch[m]
@@ -521,6 +538,8 @@ constraint
 
 % Data defined by a selected match m must be defined either in one of the blocks
 % spanned by m, or the block wherein the operations covered by m are placed.
+%
+% Eq 1.14 in dissertation
 constraint
   forall ( m in allMatches
          , p in operandsDefinedByMatch[m]
@@ -534,6 +553,8 @@ constraint
 
 % No operations may be placed in a block which is consumed by some selected
 % match.
+%
+% Eq 1.8 in dissertation
 constraint
   forall ( m in allMatches
          , o in allOperationsInFunction diff operationsCoveredByMatch[m]
@@ -546,6 +567,8 @@ constraint
 %      block of m, or
 %    - that the fall-through block of m is one block away from the entry block
 %      of m and the block in between contains no non-null-instructions.
+%
+% Eq 1.20-22 in dissertation
 constraint
   forall (i in index_set_1of2(fallThroughBlockOfMatch))
   ( let { int: m = fallThroughBlockOfMatch[i, 1]
@@ -591,20 +614,13 @@ predicate falls_through(allMatches: m, allBlocksInFunction: fall_b) =
 %
 % This assumes that matches which use some data cover at least one operation,
 % which should always hold.
+%
+% Eq 2.2 in dissertation
 constraint
   forall (p in nonPhiUseOperands)
   ( table([uplace[p], dplace[Alt(p)]], domRelMatrix) );
 
-constraint
-  forall (p in allOperands diff nonPhiUseOperands)
-  ( uplace[p] = 1 );
-
-constraint
-  forall ( m in allMatches diff phiInstrMatches
-         , p in operandsUsedByMatch[m]
-         )
-  ( not sel[m] -> uplace[p] = dplace[Alt(p)] );
-
+% Eq 2.3 in dissertation
 constraint
   forall ( m in allMatches diff phiInstrMatches
          , p in operandsUsedByMatch[m]
@@ -612,8 +628,22 @@ constraint
          )
   ( sel[m] -> oplace[o] = uplace[p] );
 
+% Eq 2.4 in dissertation
+constraint
+  forall ( m in allMatches diff phiInstrMatches
+         , p in operandsUsedByMatch[m]
+         )
+  ( not sel[m] -> uplace[p] = dplace[Alt(p)] );
+
+% Eq 2.5 in dissertation
+constraint
+  forall (p in allOperands diff nonPhiUseOperands)
+  ( uplace[p] = 1 );
+
 % A kill match is selected if and only if the location of the defined datum is
 % in the killed location.
+%
+% Eq 1.17 in dissertation
 constraint
   forall ( m in killInstrMatches
          , p in operandsDefinedByMatch[m]
@@ -621,6 +651,8 @@ constraint
   ( sel[m] <-> loc[Alt(p)] = locValueForKilled );
 
 % Ensure that succ forms a circuit (thus resulting in an ordering of blocks).
+%
+% Eq 1.19 in dissertation
 constraint
   if card(allBlocksInFunction) > 1
   then circuit(succ) :: domain
@@ -628,20 +660,28 @@ constraint
   endif;
 
 % Forbid matches in an illegal combination from all being selected.
+%
+% Eq 1.3 in dissertation
 constraint
   forall (c in illegalMatchCombinations)
   ( sum (m in c) (bool2int(sel[m])) < card(c) );
 
 % Constrain the cost that can be incurred by each operation.
+%
+% Eq 2.10 in dissertation
 constraint
   forall (o in allOperationsInFunction)
   ( table([o, omatch[o], oplace[o], opcosts[o]], costPerOpMatrix) );
 
 % The total cost is the sum of the costs incurred by all operations.
+%
+% Eq 2.11 in dissertation
 constraint
   totalcost = sum(opcosts);
 
 % Constraint the lower bound of the cost.
+%
+% Eq 2.34 in dissertation
 constraint
   if costLowerBound > 0
   then totalcost >= costLowerBound
@@ -649,6 +689,8 @@ constraint
   endif;
 
 % Constraint the upper bound of the cost (retrieved from LLVM).
+%
+% Eq 2.34 in dissertation
 constraint
   if costUpperBound > 0
   then totalcost < costUpperBound
@@ -674,6 +716,8 @@ constraint
 %           }
 %       in sum (m in mset) (bool2int(sel[m])) = 1
 %     );
+%
+% Eq 1.1 in dissertation
 constraint
   forall (o in allOperationsInFunction)
   ( omatch[o] in matchsetOfOp[o]
@@ -701,6 +745,8 @@ constraint
 % defining the function input and constants are selected. Such patterns do not
 % cover any operations, they are not entailed in the above constraint for
 % exactly covering each operation.
+%
+% Eq 1.2 in dissertation
 constraint
   forall (d in allDataInFunction)
   ( dmatch[d] in defsetOfDatum[d]
@@ -715,11 +761,15 @@ constraint
 %=======================
 
 % Constrain the loc value for all data that are states.
+%
+% Eq 2.27 in dissertation
 constraint
   forall (d in statesInFunction)
   ( loc[d] = locValueForInt );
 
 % Fix operand value if match was not selected.
+%
+% Eq 2.28 in dissertation
 constraint
   forall ( m in allMatches
          , p in operandsDefinedByMatch[m] union operandsUsedByMatch[m]
@@ -732,6 +782,8 @@ constraint
 % This could remove potential optimal solutions in situations where data is
 % interchangeable WITHIN a group of matches, but not BETWEEN groups of matches.
 % Have yet to see such an occurrance, though.
+%
+% Eq 2.30 in dissertation
 constraint
   forall ( chain in interchangeableDataInFunction )
   ( let { set of int: xset = { p | p in nonPhiUseOperands
@@ -745,6 +797,8 @@ constraint
   );
 
 % A consequence of symmetry breaking (concerns selection of null copies).
+%
+% Eq 2.31 in dissertation
 constraint
   forall ( chain in interchangeableDataInFunction
            where forall (d in chain)
@@ -767,6 +821,8 @@ constraint
   );
 
 % A consequence of symmetry breaking (concerns selection of kill matches).
+%
+% Eq 2.32 in dissertation
 constraint
   forall ( chain in interchangeableDataInFunction
            where forall (d in chain)
@@ -793,6 +849,8 @@ constraint
 % If all matches covering an operation o are not phi instruction, do not span
 % any blocks, use datum du, and define datum dd, then the block defining du must
 % dominate the block defining dd, and o must be placed in the block defining dd.
+%
+% Eq 2.12 in dissertation
 constraint
   forall ( o in allOperationsInFunction
            where forall (m in matchsetOfOp[o])
@@ -833,6 +891,8 @@ constraint
 % If all matches in the matchset covering a particular operation have
 % identical entry blocks, and use datum d, then the block defining d must
 % dominate the entry block.
+%
+% Eq 2.16 in dissertation
 constraint
   forall ( M in matchsetOfOp
          , d in allDataInFunction
@@ -856,6 +916,8 @@ constraint
 % If all matches in the matchset that cover a particular operation have
 % identical spanned blocks, and define datum d, then d must be placed in a
 % spanned block.
+%
+% Eq 2.14 in dissertation
 constraint
   forall ( M in matchsetOfOp
          , d in allDataInFunction,
@@ -875,6 +937,8 @@ constraint
 
 % If all matches for an operation o have identical entry blocks, then o must be
 % placed in the entry block.
+%
+% Eq 2.15 in dissertation
 constraint
   forall ( o in allOperationsInFunction
            where forall (m in matchsetOfOp[o])
@@ -890,6 +954,8 @@ constraint
 
 % If all matches covering an operation o are all phi instructions and define
 % the same datum, then o must be placed in the same block as the datum.
+%
+% Eq 2.17 in dissertation
 constraint
   forall (i in index_set_1of2(defEdgesInFunction)) (
     let { int: b = defEdgesInFunction[i, 1]
@@ -905,6 +971,8 @@ constraint
 % If for any two given blocks p and q, and fallThroughBlockOfMatch contains
 % [_, p, q] but does not contain [_, p, q'] or [_, p', q], then succ[p] = q can
 % only help, never hurt.
+%
+% Eq 2.26 in dissertation
 constraint
   let { array[allBlocksInFunction] of set of allBlocksInFunction: fwd =
           array1d( allBlocksInFunction
@@ -938,6 +1006,8 @@ constraint
 
 % For non-phi matches, no spanned blocks:
 % if selected, blocks of used and defined data must be equal.
+%
+% Eq 2.18-20 in dissertation
 constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) = 0
@@ -965,6 +1035,8 @@ constraint
 
 % For non-phi matches, spanned blocks:
 % if selected, blocks of use of inputs must be all equal.
+%
+% Eq 2.21 in dissertation
 constraint
   forall ( m in allMatches diff phiInstrMatches
            where card(spannedBlocksInMatch[m]) > 0
@@ -986,6 +1058,8 @@ constraint
 % If all matches in the matchset covering a particular operation uses some
 % datum d as input, then d cannot be placed in the intermediate value nor
 % killed location.
+%
+% Eq 2.22 in dissertation
 constraint
   forall ( M in matchsetOfOp )
   ( let { int: mo = min(M)
@@ -1018,6 +1092,8 @@ constraint
 % intermediate value nor killed location.
 %
 % This constraint does not dominate [MC 2], nor vice versa.
+%
+% Eq 2.23 in dissertation
 constraint
   forall (d in allDataInFunction diff statesInFunction )
   ( if valueMustBeAvailable(d)
@@ -1029,6 +1105,8 @@ constraint
 % If an exterior operand does not take its min value, then its match must be
 % selected and hence the datum cannot be in the intermediate value nor killed
 % location.
+%
+% Eq 2.29 in dissertation
 constraint
   forall ( m in allMatches
          , p in operandsUsedByMatch[m] intersect operandsExteriorToMatch[m]
@@ -1041,6 +1119,8 @@ constraint
   );
 
 % Constrain the location of d to be where its definers can put it.
+%
+% Eq 2.24 in dissertation
 constraint
   forall (d in allDataInFunction diff statesInFunction)
   ( let { array[int] of int: P =
@@ -1072,6 +1152,8 @@ constraint
 
 % Constrain the location of d to be where its users can access it. Valid for
 % such d that are used at least once.
+%
+% Eq 2.25 in dissertation
 constraint
   forall (d in allDataInFunction)
   ( let { array[int] of int: P =
