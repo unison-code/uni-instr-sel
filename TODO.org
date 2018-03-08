@@ -13,3 +13,5 @@
 ** DONE Investigate presolving technique (see Mats' email)
 ** DONE Fix uni-targen bug when SETREG assignes an immediate to a register
 ** DONE Branch-extend patterns
+** TODO Add support for CI
+** TODO Fix and extend README
