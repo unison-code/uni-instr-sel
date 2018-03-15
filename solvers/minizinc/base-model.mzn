@@ -31,6 +31,11 @@
 %  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 %  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+% Details on the model are available in:
+%    Hjort Blindell, G. Universal Instruction Selection. PhD thesis.
+%    KTH Royal Institute of Technology, Stockholm, Sweden. 2018.
+%    URL: https://github.com/gablin/ghb-thesis
+
 
 %=====================
 % EXTERNAL PARAMETERS
