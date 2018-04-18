@@ -1,35 +1,34 @@
 Written by Gabriel Hjort Blindell <ghb@kth.se>
 
 
-
 ===========================
 = HOW TO BUILD AND INSTALL
 ===========================
 
 We denote the folder wherein this README file is located as <REPO>.
 
-First, LLVM 3.8 needs to be installed on the machine. Just follow these
-instructions.
+First, a customized version LLVM 3.8 needs to be installed on the machine. Just
+follow these instructions.
 
 1. Clone the LLVM repo and checkout the correct branch.
 
-   git clone ssh://git@luggage.sics.se/zapbar-llvm-int.git
-   cd zapbar-llvm-int
+   git clone ssh://git@github.com:unison-code/llvm.git unison-llvm
+   cd unison-llvm
    git checkout release_38-uni-is
 
 2. Clone LLVM clang (assuming that your terminal is currently standing in
-   the 'zapbar-llvm-int' folder).
+   the 'unison-llvm' folder).
 
    git clone http://llvm.org/git/clang.git --branch release_38 --single-branch \
        tools/clang
 
 3. Configure and build LLVM (assuming that your terminal is currently standing
-   in the 'zapbar-llvm-int' folder).
+   in the 'unison-llvm' folder).
 
    cd ..
-   mkdir zapbar-llvm-int-build
-   cd zapbar-llvm-int-build
-   cmake -LLVM_BUILD_LLVM_DYLIB ../zapbar-llvm-int
+   mkdir unison-llvm-build
+   cd unison-llvm-build
+   cmake -LLVM_BUILD_LLVM_DYLIB ../unison-llvm
    make -j <num cores>
 
 If this repo has recently been cloned, then we must initiate the submodule that
@@ -45,16 +44,16 @@ Before we can build the 'llvm-general' package, we must ensure that the LLVM
 binaries are available in the default search locations. This is done by
 extending the $PATH variable. The toolchain also requires that the environment
 variable LLVM_INT_IS_BUILD_DIR has been set. Assume the full path to the LLVM
-build directory is denoted as <LLVM_BUILD> (in this example, it's the folder
-with basename 'zapbar-llvm-int-build'). Then:
+build directory is denoted as <UNISON_LLVM_BUILD> (in the example above, it's
+the folder with basename 'unison-llvm-build'). Then:
 
 6. In your ~/.bashrc file, add the following lines:
 
-   export LLVM_INT_IS_BUILD_DIR=<LLVM_BUILD>
+   export LLVM_INT_IS_BUILD_DIR=<UNISON_LLVM_BUILD>
    export PATH=$LLVM_INT_IS_BUILD_DIR/bin:$PATH
 
-7. To ensure the new $PATH is loaded, either open a new terminal or run
-   following command:
+7. To ensure the new $PATH is loaded, either open a new terminal or, in the
+   current terminal, run following command:
 
    source ~/.bashrc
 
