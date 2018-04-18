@@ -12,23 +12,23 @@ follow these instructions.
 
 1. Clone the LLVM repo and checkout the correct branch.
 
-   git clone ssh://git@github.com:unison-code/llvm.git uni-instr-sel-llvm
-   cd uni-instr-sel-llvm
+   git clone ssh://git@github.com:unison-code/llvm.git uni-is-llvm
+   cd uni-is-llvm
    git checkout release_38-uni-is
 
-2. Clone LLVM clang (assuming that your terminal is currently standing in
-   the 'uni-instr-sel-llvm' folder).
+2. Clone LLVM clang (assuming that your terminal is currently standing in the
+   'uni-is-llvm' folder).
 
    git clone http://llvm.org/git/clang.git --branch release_38 --single-branch \
        tools/clang
 
 3. Configure and build LLVM (assuming that your terminal is currently standing
-   in the 'uni-instr-sel-llvm' folder).
+   in the 'uni-is-llvm' folder).
 
    cd ..
-   mkdir uni-instr-sel-llvm-build
-   cd uni-instr-sel-llvm-build
-   cmake -LLVM_BUILD_LLVM_DYLIB ../uni-instr-sel-llvm
+   mkdir uni-is-llvm-build
+   cd uni-is-llvm-build
+   cmake -LLVM_BUILD_LLVM_DYLIB ../uni-is-llvm
    make -j <num cores>
 
 If this repo has recently been cloned, then we must initiate the submodule that
@@ -43,17 +43,17 @@ contains the 'llvm-general' Haskell packages.
 Before we can build the 'llvm-general' package, we must ensure that the LLVM
 binaries are available in the default search locations. This is done by
 extending the $PATH variable. The toolchain also requires that the environment
-variable LLVM_INT_IS_BUILD_DIR has been set. Assume the full path to the LLVM
-build directory is denoted as <UNI_INSTR_SEL_LLVM_BUILD> (in the example above,
-it's the folder with basename 'uni-instr-sel-llvm-build'). Then:
+variable UNI_IS_LLVM_BUILD_DIR has been set. Assume the full path to the LLVM
+build directory is denoted as <LLVM_BUILD> (in this example, it's the folder
+with basename 'uni-is-llvm-build'). Then:
 
 6. In your ~/.bashrc file, add the following lines:
 
-   export LLVM_INT_IS_BUILD_DIR=<UNI_INSTR_SEL_LLVM_BUILD>
-   export PATH=$LLVM_INT_IS_BUILD_DIR/bin:$PATH
+   export UNI_IS_LLVM_BUILD_DIR=<LLVM_BUILD>
+   export PATH=$UNI_IS_LLVM_BUILD_DIR/bin:$PATH
 
-7. To ensure the new $PATH is loaded, either open a new terminal or, in the
-   current terminal, run following command:
+7. To ensure the new $PATH is loaded, either open a new terminal or run
+   following command:
 
    source ~/.bashrc
 

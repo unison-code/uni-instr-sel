@@ -35,8 +35,8 @@
 #==========================
 
 # Should be set and exported as an environment variable
-LLVM_INT_IS_BUILD_DIR ?= echo 'ERROR: Environment variable' \
-                               '$$LLVM_INT_IS_BUILD_DIR not set!'; \
+UNI_IS_LLVM_BUILD_DIR ?= echo 'ERROR: Environment variable' \
+                               '$$UNI_IS_LLVM_BUILD_DIR not set!'; \
                          exit 1;
 
 # Should be set from within the Makefile
@@ -78,13 +78,13 @@ GET_JSON_FIELD        ?= echo 'ERROR: Variable $$GET_JSON_FIELD' \
 # INTERNALLY SET VARIABLES
 #==========================
 
-OPT            := $(LLVM_INT_IS_BUILD_DIR)/bin/opt
-LLC            := $(LLVM_INT_IS_BUILD_DIR)/bin/llc
-LCLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLiftConstExprs.so
-LSLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerSelect.so
-LGLIB          := $(LLVM_INT_IS_BUILD_DIR)/lib/LibLowerGetElementPtr.so
-AEFMLIB        := $(LLVM_INT_IS_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
-CSELIB         := $(LLVM_INT_IS_BUILD_DIR)/lib/LibEarlyCSEWithoutGetElemPtr.so
+OPT            := $(UNI_IS_LLVM_BUILD_DIR)/bin/opt
+LLC            := $(UNI_IS_LLVM_BUILD_DIR)/bin/llc
+LCLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLiftConstExprs.so
+LSLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerSelect.so
+LGLIB          := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibLowerGetElementPtr.so
+AEFMLIB        := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibAttachExecFreqMetadata.so
+CSELIB         := $(UNI_IS_LLVM_BUILD_DIR)/lib/LibEarlyCSEWithoutGetElemPtr.so
 LLC_ISEL_FLAGS      = -O0 $(LLC_TARGET_FLAGS) $(LLC_ISEL_MORE_FLAGS) \
 					  -fast-isel=false
 LLC_ISEL_DUMP_FLAGS = $(LLC_ISEL_FLAGS) -trivial-branch-fold
