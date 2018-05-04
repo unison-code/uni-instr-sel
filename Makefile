@@ -157,7 +157,6 @@ uni-is-prof: hlib-prof
 	cd $(UNI_IS_PATH) && \
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
 
-
 .PHONY: uni-is-doc
 uni-is-doc:
 	cd $(UNI_IS_PATH) && make docs
