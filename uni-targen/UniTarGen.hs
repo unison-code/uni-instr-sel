@@ -67,6 +67,11 @@ parseArgs =
         &= explicit
         &= help ( "Directory that will contain the output." )
         &= typDir
+    , prettyPrint = def
+        &= name "pretty-print"
+        &= explicit
+        &= help ( "Pretty-print the output." )
+        &= typDir
     }
     &= helpArg [ help "Displays this message."
                , name "h"

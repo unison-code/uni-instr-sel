@@ -34,5 +34,6 @@ data Options
   = Options
       { machDescFile :: Maybe String
       , outDir :: Maybe String
+      , prettyPrint :: Maybe Bool
       }
   deriving (Data, Typeable)

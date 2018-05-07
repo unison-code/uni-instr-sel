@@ -76,13 +76,14 @@ run opts =
      let m = fromRight m_str
      (err_id, parsed_m) <- parseSemanticsInMD 1 m
      (_, tm0) <- generateTM err_id parsed_m
+     pretty_print <- getPrettyPrintPred opts
      let file = fromTargetMachineID $
                 toSafeTargetMachineID $
                 fromTargetMachineID (tmID tm0) ++ ".hs"
          tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         code = generateModule tm3
+         code = generateModule pretty_print tm3
      return [toOutputWithID file code]
 
 -- | Loads the content of the machine description file specified on the command
@@ -93,6 +94,13 @@ loadMachDescFile opts =
      when (isNothing f) $
        reportErrorAndExit "No machine description provided."
      readFileContent $ fromJust f
+
+-- | Returns the option whether to pretty-print the output as specified on the
+-- command line.
+getPrettyPrintPred :: Options -> IO Bool
+getPrettyPrintPred opts =
+  do let p = prettyPrint opts
+     return $ if isJust p then fromJust p else False
 
 -- | Parses the semantic strings in the 'MachineDescription' into LLVM IR
 -- modules.

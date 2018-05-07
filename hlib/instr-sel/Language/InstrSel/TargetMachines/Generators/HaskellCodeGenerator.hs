@@ -30,8 +30,12 @@ import Language.Haskell.Exts
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
 -- The source code is then wrapped inside a module with name equal to the
 -- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'.
-generateModule :: TargetMachine -> BS.ByteString
-generateModule tm =
+generateModule
+  :: Bool
+     -- ^ Whether to pretty-print the code of the module.
+  -> TargetMachine
+  -> BS.ByteString
+generateModule pretty_print tm =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       tm_id = fromTargetMachineID $
               toSafeTargetMachineID $
@@ -78,9 +82,12 @@ generateModule tm =
       res = parseFileContents $ BS.unpack $ toLazyByteString haskell_code
       prettify m = prettyPrintStyleMode (style { lineLength = 80 })
                                         defaultMode m
-  in case res
-     of (ParseOk m) -> toLazyByteString $
-                       boiler_src <>
-                       (stringUtf8 $ prettify m)
-        (ParseFailed line msg) -> error $ "generateModule: parsing failed at "
-                                         ++ show line ++ ": " ++ msg
+  in if pretty_print
+     then case res
+          of (ParseOk m) -> toLazyByteString $
+                            boiler_src <>
+                            (stringUtf8 $ prettify m)
+             (ParseFailed line msg) -> error $ "generateModule: " ++
+                                               "parsing failed at " ++
+                                               show line ++ ": " ++ msg
+     else toLazyByteString haskell_code
