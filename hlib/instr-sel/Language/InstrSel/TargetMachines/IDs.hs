@@ -25,6 +25,7 @@ module Language.InstrSel.TargetMachines.IDs
   , toLocationID
   , toLocationName
   , toTargetMachineID
+  , toSafeTargetMachineID
   )
 where
 
@@ -40,6 +41,8 @@ import Language.InstrSel.Utils.JSON
   ( Value (..) )
 import qualified Language.InstrSel.Utils.JSON as JSON
   ( Value (..) )
+import Language.InstrSel.Utils.String
+  ( replace )
 
 import Control.DeepSeq
   ( NFData
@@ -159,6 +162,14 @@ fromTargetMachineID (TargetMachineID i) = i
 
 toTargetMachineID :: String -> TargetMachineID
 toTargetMachineID = TargetMachineID
+
+-- | Converts a 'String' to a 'TargetMachineID' that can safely be used as
+-- Haskell module names.
+toSafeTargetMachineID :: String -> TargetMachineID
+toSafeTargetMachineID =
+  toTargetMachineID .
+  replace "-" "Minus" .
+  replace "_" "Underscore"
 
 fromInstructionID :: InstructionID -> Natural
 fromInstructionID (InstructionID i) = i

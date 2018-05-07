@@ -14,6 +14,7 @@ module Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator where
 import Language.InstrSel.TargetMachines.Base
   ( TargetMachine (tmID)
   , fromTargetMachineID
+  , toSafeTargetMachineID
   )
 import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.ByteStringBuilder
@@ -32,7 +33,9 @@ import Language.Haskell.Exts
 generateModule :: TargetMachine -> BS.ByteString
 generateModule tm =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
-      tm_id = fromTargetMachineID (tmID tm)
+      tm_id = fromTargetMachineID $
+              toSafeTargetMachineID $
+              fromTargetMachineID (tmID tm)
       boiler_src =
         stringUtf8 "-----------------------------------------------------------\
                    \---------------------\n\
