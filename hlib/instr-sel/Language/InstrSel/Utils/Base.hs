@@ -57,11 +57,7 @@ fromRight _ = error "Either is not Right"
 -- | Groups elements such that a set of elements, for which equality holds for
 -- every element pair in that set, are grouped together.
 group :: (Eq n) => [n] -> [[n]]
-group es =
-  foldr gr [] es
-  where gr e [] = [[e]]
-        gr e (p:ps) = if belongs e p then ((e:p):ps) else (p:gr e ps)
-        belongs e es' = e == (head es')
+group = groupBy (==)
 
 -- | Groups elements according to a predicate function such that a set of
 -- elements, for which the predicate holds for every element pair in that set,
@@ -73,8 +69,6 @@ groupBy f es =
   where gr e [] = [[e]]
         gr e (p:ps) = if belongs e p then ((e:p):ps) else (p:gr e ps)
         belongs e es' = e `f` (head es')
-
-
 
 -- | Applies a function that takes two arguments on each pair of elements in a
 -- list. For example:
