@@ -77,7 +77,7 @@ run opts =
      let tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         file_code_ps = generateModule pmodule pretty_print tm3
+         file_code_ps = generateTargetMachineModule pmodule pretty_print tm3
      return $ map (\(file, code) -> toOutputWithID file code) file_code_ps
 
 -- | Loads the content of the machine description file specified on the command

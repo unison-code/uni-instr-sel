@@ -12,12 +12,19 @@ Main authors:
 module Language.InstrSel.TargetMachines.Generators.HaskellCodeGenerator where
 
 import Language.InstrSel.TargetMachines.Base
-  ( TargetMachine (tmID)
+  ( Instruction
+  , TargetMachine (..)
   , fromTargetMachineID
   , toSafeTargetMachineID
   )
 import qualified Language.InstrSel.Utils.ByteString as BS
 import Language.InstrSel.Utils.ByteStringBuilder
+import Language.InstrSel.Utils
+  ( chunksOf )
+
+import Data.List
+  ( intercalate )
+import qualified Data.Map as M
 
 import Language.Haskell.Exts
 
@@ -27,24 +34,48 @@ import Language.Haskell.Exts
 -- Functions
 -------------
 
+-- | Returns maximum number of instructions allowed per submodule.
+maxInstrPerSubModule :: Int
+maxInstrPerSubModule = 1000
+
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
 -- The source code is then wrapped inside a module with name equal to its
 -- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'. The source code is
 -- also paired with a 'FilePath' with the name of the generated module. If the
 -- target machine contains many instructions, then it will be split into
 -- multiple submodules.
-generateModule
+generateTargetMachineModule
   :: String
      -- ^ Parent module to wherein the generated module(s) will reside.
   -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
   -> [(FilePath, BS.ByteString)]
-generateModule mparent pretty_print tm =
+generateTargetMachineModule mparent pretty_print tm =
   let module_name = fromTargetMachineID $
                     toSafeTargetMachineID $
                     fromTargetMachineID (tmID tm)
-  in [generateTopModule mparent module_name pretty_print tm]
+      instr_groups = chunksOf maxInstrPerSubModule $
+                     map snd $
+                     M.toList $
+                     tmInstructions tm
+      sub_module_names = zipWith (\_ i -> module_name ++ "sub" ++ (show i))
+                                 instr_groups
+                                 ([0..] :: [Int])
+      sub_modules = zipWith ( \is mname -> generateSubModule mparent
+                                                             mname
+                                                             pretty_print
+                                                             is
+                            )
+                            instr_groups
+                            sub_module_names
+      top_module = generateTopModule mparent
+                                     module_name
+                                     sub_module_names
+                                     pretty_print
+                                     tm
+  in (module_name ++ ".hs", top_module) :
+     (zip (map (++ ".hs") sub_module_names) sub_modules)
 
 -- | Generates Haskell code for top-level module.
 generateTopModule
@@ -52,15 +83,82 @@ generateTopModule
      -- ^ Parent module to wherein the generated module(s) will reside.
   -> String
      -- ^ Name of the top module.
+  -> [String]
+     -- ^ Name of all submodules to be used by the top-level module.
   -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
-  -> (FilePath, BS.ByteString)
-generateTopModule mparent module_name pretty_print tm =
+  -> BS.ByteString
+generateTopModule mparent module_name sub_module_names pretty_print tm =
+  let module_path = mparent ++ "." ++ module_name
+      haskell_code =
+        stringUtf8 "module " <> stringUtf8 module_path <>
+        stringUtf8 "\n\
+                   \  ( theTM )\n\
+                   \where\n\
+                   \\n\
+                   \import Language.InstrSel.TargetMachines\n\
+                   \import Data.Map\n\
+                   \  ( fromList )\n\
+                   \\n" <>
+        stringUtf8 ( concat $
+                     map ( \m -> "import qualified " ++ mparent ++ "." ++ m ++
+                                 " as " ++ m ++ "\n"
+                         ) $
+                     sub_module_names
+                   ) <>
+        stringUtf8 "\n\
+                   \theTM :: TargetMachine\n\
+                   \theTM =\n\
+                   \  TargetMachine\n\
+                   \  { tmID = " <> stringUtf8 (show $ tmID tm) <>
+        stringUtf8 "\n\
+                   \  , tmInstructions =\n\
+                   \      M.fromList $\n\
+                   \      map (\\i -> (instrID i, i)) $\
+                   \      concat [" <>
+        stringUtf8 ( intercalate ", " $
+                     map (++ ".theInstructions") $
+                     sub_module_names
+                   ) <> stringUtf8 "]" <>
+        stringUtf8 "\n\
+                   \  , tmLocations = " <>
+        stringUtf8 (show $ tmLocations tm) <>
+        stringUtf8 "\n\
+                   \  , tmPointerSize = " <>
+        stringUtf8 (show $ tmPointerSize tm) <>
+        stringUtf8 "\n\
+                   \  , tmNullPointerValue = " <>
+        stringUtf8 (show $ tmNullPointerValue tm) <>
+        stringUtf8 "\n\
+                   \  , tmPointerSymbolRange = " <>
+        stringUtf8 (show $ tmPointerSymbolRange tm) <>
+        stringUtf8 "\n\
+                   \  }"
+  in toLazyByteString $
+     lazyByteString (generateBoilerPlateCode module_path) <>
+     ( if pretty_print
+       then lazyByteString $
+            prettyPrintModuleCode $
+            toLazyByteString haskell_code
+       else haskell_code
+     )
+
+-- | Generates Haskell code for a submodule containing the given list of
+-- instructions.
+generateSubModule
+  :: String
+     -- ^ Parent module to wherein the generated submodule will reside.
+  -> String
+     -- ^ Name of the submodule.
+  -> Bool
+     -- ^ Whether to pretty-print the code of the module.
+  -> [Instruction]
+  -> BS.ByteString
+generateSubModule mparent module_name pretty_print instructions =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       module_path = mparent ++ "." ++ module_name
-      file = module_name ++ ".hs"
-      header_src =
+      haskell_code =
         stringUtf8 "module " <> stringUtf8 module_path <>
         stringUtf8 "\n\
                    \  ( theTM )\n\
@@ -78,20 +176,23 @@ generateTopModule mparent module_name pretty_print tm =
                    \  hiding\n\
                    \  ( LT, GT )\n\
                    \import Data.Map\n\
-                   \  ( fromList )\n\n"
-      tm_func_src =
-        stringUtf8 "theTM :: TargetMachine\n\
-                   \theTM = " <>
-        lazyByteString (renameFuncs $ BS.pack $ show tm)
-      haskell_code = toLazyByteString $ header_src <> tm_func_src
-      module_code =
-        toLazyByteString $
-        lazyByteString (generateBoilerPlateCode module_path) <>
-        lazyByteString ( if pretty_print
-                         then prettyPrintModuleCode haskell_code
-                         else haskell_code
+                   \  ( fromList )\n\n\
+                   \\n\
+                   \theInstructions :: [Instruction]\n\
+                   \theInstructions = " <>
+        lazyByteString ( renameFuncs $
+                         BS.pack $
+                         show $
+                         instructions
                        )
-  in (file, module_code)
+  in toLazyByteString $
+     lazyByteString (generateBoilerPlateCode module_path) <>
+     ( if pretty_print
+       then lazyByteString $
+            prettyPrintModuleCode $
+            toLazyByteString haskell_code
+       else haskell_code
+     )
 
 -- | Generates boiler platep code for a given module.
 generateBoilerPlateCode
