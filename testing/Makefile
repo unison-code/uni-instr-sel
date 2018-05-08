@@ -111,6 +111,10 @@ hlib:
 uni-targen:
 	cd .. && make uni-targen
 
+.PHONY: uni-is-targets
+uni-is-targets:
+	cd .. && make uni-is-targets
+
 .PHONY: uni-is-llvm
 uni-is-llvm:
 	cd .. && make uni-is-llvm
