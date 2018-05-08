@@ -28,26 +28,30 @@ import Language.Haskell.Exts
 -------------
 
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
--- The source code is then wrapped inside a module with name equal to the
--- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'.
+-- The source code is then wrapped inside a module with name equal to its
+-- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'. The source code is
+-- also paired with a 'FilePath' with the name of the generated module. If the
+-- target machine contains many instructions, then it will be split into
+-- multiple submodules.
 generateModule
   :: String
-     -- ^ Module path to wherein the module will reside.
+     -- ^ Module path to wherein the module(s) will reside.
   -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
-  -> BS.ByteString
+  -> [(FilePath, BS.ByteString)]
 generateModule mpath pretty_print tm =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
-      tm_id = fromTargetMachineID $
-              toSafeTargetMachineID $
-              fromTargetMachineID (tmID tm)
+      module_name = fromTargetMachineID $
+                    toSafeTargetMachineID $
+                    fromTargetMachineID (tmID tm)
+      module_path = module_name ++ ".hs"
       boiler_src =
         stringUtf8 "-----------------------------------------------------------\
                    \---------------------\n\
                    \-- |\n\
                    \-- Module      : " <>
-        stringUtf8 mpath <> stringUtf8 "." <> stringUtf8 tm_id <>
+        stringUtf8 mpath <> stringUtf8 "." <> stringUtf8 module_name <>
         stringUtf8 "\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
@@ -58,7 +62,7 @@ generateModule mpath pretty_print tm =
                    \---------------------\n\n"
       header_src =
         stringUtf8 "module " <> stringUtf8 mpath <> stringUtf8 "." <>
-        stringUtf8 tm_id <>
+        stringUtf8 module_name <>
         stringUtf8 "\n\
                    \  ( theTM )\n\
                    \where\n\n\
@@ -86,10 +90,13 @@ generateModule mpath pretty_print tm =
                                         defaultMode m
   in if pretty_print
      then case res
-          of (ParseOk m) -> toLazyByteString $
-                            boiler_src <>
-                            (stringUtf8 $ prettify m)
+          of (ParseOk m) -> [ ( module_path
+                              , toLazyByteString $
+                                boiler_src <>
+                                (stringUtf8 $ prettify m)
+                              )
+                            ]
              (ParseFailed line msg) -> error $ "generateModule: " ++
                                                "parsing failed at " ++
                                                show line ++ ": " ++ msg
-     else toLazyByteString haskell_code
+     else [(module_path, toLazyByteString haskell_code)]

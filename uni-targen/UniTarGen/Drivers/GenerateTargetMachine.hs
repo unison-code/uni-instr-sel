@@ -15,11 +15,7 @@ where
 
 import UniTarGen.Drivers.Base
 import Language.InstrSel.TargetMachines
-  ( TargetMachine (tmID) )
-import Language.InstrSel.TargetMachines.IDs
-  ( fromTargetMachineID
-  , toSafeTargetMachineID
-  )
+  ( TargetMachine )
 import Language.InstrSel.TargetMachines.Generators.LLVM.Base
   ( MachineDescription (..)
   , Instruction (..)
@@ -77,13 +73,10 @@ run opts =
      (err_id, parsed_m) <- parseSemanticsInMD 1 m
      (_, tm0) <- generateTM err_id parsed_m
      pretty_print <- getPrettyPrintPred opts
-     let file = fromTargetMachineID $
-                toSafeTargetMachineID $
-                fromTargetMachineID (tmID tm0) ++ ".hs"
-         tm1 = lowerPointers tm0
+     let tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         code = generateModule "UniIS.Targets" pretty_print tm3
+         [(file, code)] = generateModule "UniIS.Targets" pretty_print tm3
      return [toOutputWithID file code]
 
 -- | Loads the content of the machine description file specified on the command
