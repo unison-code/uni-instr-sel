@@ -34,10 +34,11 @@
 # SETTINGS
 #==========
 
-HLIB_PATH        := hlib/instr-sel
-UNI_TARGEN_PATH  := uni-targen
-UNI_IS_LLVM_PATH := uni-is-llvm
-UNI_IS_PATH      := uni-is
+HLIB_PATH           := hlib/instr-sel
+UNI_TARGEN_PATH     := uni-targen
+UNI_IS_TARGETS_PATH := uni-is-targets
+UNI_IS_LLVM_PATH    := uni-is-llvm
+UNI_IS_PATH         := uni-is
 LLVM_GENERAL_PURE_PATH := hlib/llvm-general/llvm-general-pure
 LLVM_GENERAL_PURE_NAME := llvm-general-pure-3.8.0.0
 LLVM_GENERAL_PATH := hlib/llvm-general/llvm-general
@@ -64,12 +65,14 @@ endef
 .PHONY: build
 build: hlib \
 	   uni-targen \
+	   uni-is-targets \
 	   uni-is-llvm \
 	   uni-is
 
 .PHONY: build-prof
 build-prof: hlib-prof \
 			uni-targen \
+			uni-is-targets \
 			uni-is-llvm \
 			uni-is-prof
 
@@ -78,6 +81,7 @@ docs: llvm-general-pure-doc \
 	  llvm-general-doc \
 	  hlib-doc \
 	  uni-targen-doc
+	  uni-is-targets-doc
 	  uni-is-llvm-doc \
 	  uni-is-doc \
 
@@ -138,6 +142,20 @@ uni-targen: llvm-general llvm-general-pure hlib
 uni-targen-doc:
 	cd $(UNI_TARGEN_PATH) && make docs
 
+.PHONY: uni-is-targets
+uni-is-targets: llvm-general-pure
+# Because we must pass a flag to CABAL here when building hlib, we cannot have
+# hlib as rule dependency and instead invokes the build of hlib manually
+	cd $(HLIB_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) --force-reinstalls" install
+# Now build uni-is-targets
+	cd $(UNI_IS_TARGETS_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
+
+.PHONY: uni-is-targets-doc
+uni-is-targets-doc:
+	cd $(UNI_IS_TARGETS_PATH) && make docs
+
 .PHONY: uni-is-llvm
 uni-is-llvm: llvm-general llvm-general-pure hlib
 	cd $(UNI_IS_LLVM_PATH) && \
@@ -148,7 +166,16 @@ uni-is-llvm-doc:
 	cd $(UNI_IS_LLVM_PATH) && make docs
 
 .PHONY: uni-is
-uni-is: hlib
+uni-is:
+# Because we must pass a flag to CABAL here when building hlib, we cannot have
+# hlib as rule dependency and instead invokes the build of hlib manually
+	cd $(HLIB_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) --force-reinstalls" install
+# Because we are rebuilding hlib, we also need to rebuild uni-is-targets (which
+# must be done after hlib)
+	cd $(UNI_IS_TARGETS_PATH) && \
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
+# Now build uni-is
 	cd $(UNI_IS_PATH) && \
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
@@ -167,6 +194,7 @@ clean:
 	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make clean
 	cd $(UNI_TARGEN_PATH) && make clean
+	cd $(UNI_IS_TARGETS_PATH) && make clean
 	cd $(UNI_IS_LLVM_PATH) && make clean
 	cd $(UNI_IS_PATH) && make clean
 
@@ -176,5 +204,6 @@ distclean:
 	cd $(LLVM_GENERAL_PURE) && $(RM) -r dist
 	cd $(HLIB_PATH) && make distclean
 	cd $(UNI_TARGEN_PATH) && make distclean
+	cd $(UNI_IS_TARGETS_PATH) && make distclean
 	cd $(UNI_IS_LLVM_PATH) && make distclean
 	cd $(UNI_IS_PATH) && make distclean
