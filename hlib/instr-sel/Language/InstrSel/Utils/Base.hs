@@ -10,7 +10,8 @@ Main authors:
 -}
 
 module Language.InstrSel.Utils.Base
-  ( fromLeft
+  ( chunksOf
+  , fromLeft
   , fromRight
   , group
   , groupBy
@@ -119,3 +120,11 @@ toPair :: [a] -> (a, a)
 toPair xs = if length xs == 2
             then (head xs, last xs)
             else error "toPairs: list has not 2 elements"
+
+-- | Splits a given list into sublists of @k@ elements (the last sublist may
+-- caontain fewer elements).
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs =
+  let (ys, zs) = splitAt n xs
+  in  ys : chunksOf n zs
