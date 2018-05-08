@@ -75,7 +75,7 @@ generateModule mparent pretty_print tm =
                    \import Language.InstrSel.OpTypes\n\
                    \import Language.InstrSel.TargetMachines\n\
                    \import Language.InstrSel.Utils\n\
-                   \import Prelude \n\
+                   \import Prelude\n\
                    \  hiding\n\
                    \  ( LT, GT )\n\
                    \import Data.Map\n\
