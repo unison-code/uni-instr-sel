@@ -35,12 +35,12 @@ import Language.Haskell.Exts
 -- multiple submodules.
 generateModule
   :: String
-     -- ^ Module path to wherein the module(s) will reside.
+     -- ^ Parent module to wherein the generated module(s) will reside.
   -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
   -> [(FilePath, BS.ByteString)]
-generateModule mpath pretty_print tm =
+generateModule mparent pretty_print tm =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       module_name = fromTargetMachineID $
                     toSafeTargetMachineID $
@@ -51,7 +51,7 @@ generateModule mpath pretty_print tm =
                    \---------------------\n\
                    \-- |\n\
                    \-- Module      : " <>
-        stringUtf8 mpath <> stringUtf8 "." <> stringUtf8 module_name <>
+        stringUtf8 mparent <> stringUtf8 "." <> stringUtf8 module_name <>
         stringUtf8 "\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
@@ -61,7 +61,7 @@ generateModule mpath pretty_print tm =
                    \-----------------------------------------------------------\
                    \---------------------\n\n"
       header_src =
-        stringUtf8 "module " <> stringUtf8 mpath <> stringUtf8 "." <>
+        stringUtf8 "module " <> stringUtf8 mparent <> stringUtf8 "." <>
         stringUtf8 module_name <>
         stringUtf8 "\n\
                    \  ( theTM )\n\
