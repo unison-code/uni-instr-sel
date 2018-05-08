@@ -31,11 +31,13 @@ import Language.Haskell.Exts
 -- The source code is then wrapped inside a module with name equal to the
 -- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'.
 generateModule
-  :: Bool
+  :: String
+     -- ^ Module path to wherein the module will reside.
+  -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
   -> BS.ByteString
-generateModule pretty_print tm =
+generateModule mpath pretty_print tm =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       tm_id = fromTargetMachineID $
               toSafeTargetMachineID $
@@ -44,8 +46,8 @@ generateModule pretty_print tm =
         stringUtf8 "-----------------------------------------------------------\
                    \---------------------\n\
                    \-- |\n\
-                   \-- Module      : UniIS.Targets." <>
-        stringUtf8 tm_id <>
+                   \-- Module      : " <>
+        stringUtf8 mpath <> stringUtf8 "." <> stringUtf8 tm_id <>
         stringUtf8 "\n\
                    \-- Stability   : experimental\n\
                    \-- Portability : portable\n\
@@ -55,7 +57,7 @@ generateModule pretty_print tm =
                    \-----------------------------------------------------------\
                    \---------------------\n\n"
       header_src =
-        stringUtf8 "module UniIS.Targets." <>
+        stringUtf8 "module " <> stringUtf8 mpath <> stringUtf8 "." <>
         stringUtf8 tm_id <>
         stringUtf8 "\n\
                    \  ( theTM )\n\

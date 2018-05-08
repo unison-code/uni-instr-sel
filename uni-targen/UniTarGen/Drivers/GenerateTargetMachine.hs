@@ -83,7 +83,7 @@ run opts =
          tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         code = generateModule pretty_print tm3
+         code = generateModule "UniIS.Targets" pretty_print tm3
      return [toOutputWithID file code]
 
 -- | Loads the content of the machine description file specified on the command
