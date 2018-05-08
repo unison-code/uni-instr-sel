@@ -122,7 +122,7 @@ llvm-general-doc: llvm-general-pure-doc
 .PHONY: hlib
 hlib: llvm-general-pure
 	cd $(HLIB_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) --force-reinstalls" install
 
 .PHONY: hlib-prof
 hlib-prof: llvm-general-pure-prof
@@ -143,12 +143,7 @@ uni-targen-doc:
 	cd $(UNI_TARGEN_PATH) && make docs
 
 .PHONY: uni-is-targets
-uni-is-targets: llvm-general-pure
-# Because we must pass a flag to CABAL here when building hlib, we cannot have
-# hlib as rule dependency and instead invokes the build of hlib manually
-	cd $(HLIB_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) --force-reinstalls" install
-# Now build uni-is-targets
+uni-is-targets: llvm-general-pure hlib
 	cd $(UNI_IS_TARGETS_PATH) && \
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
@@ -166,16 +161,7 @@ uni-is-llvm-doc:
 	cd $(UNI_IS_LLVM_PATH) && make docs
 
 .PHONY: uni-is
-uni-is:
-# Because we must pass a flag to CABAL here when building hlib, we cannot have
-# hlib as rule dependency and instead invokes the build of hlib manually
-	cd $(HLIB_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) --force-reinstalls" install
-# Because we are rebuilding hlib, we also need to rebuild uni-is-targets (which
-# must be done after hlib)
-	cd $(UNI_IS_TARGETS_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
-# Now build uni-is
+uni-is: hlib uni-is-targets
 	cd $(UNI_IS_PATH) && \
 	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS)" install
 
