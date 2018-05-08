@@ -66,18 +66,19 @@ import Data.Maybe
 run :: Options -> IO [Output]
 run opts =
   do str <- loadMachDescFile opts
+     pmodule <- getParentModule opts
+     pretty_print <- getPrettyPrintPred opts
      let m_str = fromJson str
      when (isLeft m_str) $
        reportErrorAndExit $ fromLeft m_str
      let m = fromRight m_str
      (err_id, parsed_m) <- parseSemanticsInMD 1 m
      (_, tm0) <- generateTM err_id parsed_m
-     pretty_print <- getPrettyPrintPred opts
      let tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         [(file, code)] = generateModule "UniIS.Targets" pretty_print tm3
-     return [toOutputWithID file code]
+         file_code_ps = generateModule pmodule pretty_print tm3
+     return $ map (\(file, code) -> toOutputWithID file code) file_code_ps
 
 -- | Loads the content of the machine description file specified on the command
 -- line. Reports error if no file is specified.
@@ -87,6 +88,15 @@ loadMachDescFile opts =
      when (isNothing f) $
        reportErrorAndExit "No machine description provided."
      readFileContent $ fromJust f
+
+-- | Returns the parent module specified on the command line. Returns error if
+-- no module is specified.
+getParentModule :: Options -> IO String
+getParentModule opts =
+  do let p = parentModule opts
+     when (isNothing p) $
+       reportErrorAndExit "No parent module provided."
+     return $ fromJust p
 
 -- | Returns the option whether to pretty-print the output as specified on the
 -- command line.
