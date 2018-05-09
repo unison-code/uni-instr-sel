@@ -67,6 +67,7 @@ run :: Options -> IO [Output]
 run opts =
   do str <- loadMachDescFile opts
      pmodule <- getParentModule opts
+     max_instrs <- getMaxInstructionsPerSubModule opts
      pretty_print <- getPrettyPrintPred opts
      let m_str = fromJson str
      when (isLeft m_str) $
@@ -77,7 +78,10 @@ run opts =
      let tm1 = lowerPointers tm0
          tm2 = copyExtend tm1
          tm3 = combineConstants tm2
-         file_code_ps = generateTargetMachineModule pmodule pretty_print tm3
+         file_code_ps = generateTargetMachineModule pmodule
+                                                    max_instrs
+                                                    pretty_print
+                                                    tm3
      return $ map (\(file, code) -> toOutputWithID file code) file_code_ps
 
 -- | Loads the content of the machine description file specified on the command
@@ -98,12 +102,29 @@ getParentModule opts =
        reportErrorAndExit "No parent module provided."
      return $ fromJust p
 
--- | Returns the option whether to pretty-print the output as specified on the
+-- | Returns the option whether to pretty-print the output specified on the
 -- command line.
 getPrettyPrintPred :: Options -> IO Bool
 getPrettyPrintPred opts =
   do let p = prettyPrint opts
      return $ if isJust p then fromJust p else False
+
+-- | Returns the maximum number of instructions per target-machine submodule
+-- specified on the command line. If no such value is specified, a default value
+-- is returned.
+--
+-- @see 'defaultMaxInstrPerSubModule'
+getMaxInstructionsPerSubModule :: Options -> IO Int
+getMaxInstructionsPerSubModule opts =
+  do let maybe_i = maxInstructionsPerSubModule opts
+     if isJust maybe_i
+     then do let i = fromJust maybe_i
+             when (i < 1) $
+               reportErrorAndExit "Maximum number of instructions per \
+                                  \target-machine submodule must be greater \
+                                  \than 0."
+             return i
+     else return defaultMaxInstructionsPerSubModule
 
 -- | Parses the semantic strings in the 'MachineDescription' into LLVM IR
 -- modules.

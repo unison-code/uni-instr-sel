@@ -34,10 +34,6 @@ import Language.Haskell.Exts
 -- Functions
 -------------
 
--- | Returns maximum number of instructions allowed per submodule.
-maxInstrPerSubModule :: Int
-maxInstrPerSubModule = 1000
-
 -- | Takes a 'TargetMachine' and generates corresponding Haskell source code.
 -- The source code is then wrapped inside a module with name equal to its
 -- 'Language.InstrSel.TargetMachines.IDs.TargetMachineID'. The source code is
@@ -47,18 +43,23 @@ maxInstrPerSubModule = 1000
 generateTargetMachineModule
   :: String
      -- ^ Parent module to wherein the generated module(s) will reside.
+  -> Int
+     -- ^ Maximum number of instructions per submodule. Must be greater than 0.
   -> Bool
      -- ^ Whether to pretty-print the code of the module.
   -> TargetMachine
   -> [(FilePath, BS.ByteString)]
-generateTargetMachineModule mparent pretty_print tm =
+generateTargetMachineModule mparent max_instrs pretty_print tm =
   let module_name = fromTargetMachineID $
                     toSafeTargetMachineID $
                     fromTargetMachineID (tmID tm)
-      instr_groups = chunksOf maxInstrPerSubModule $
-                     map snd $
-                     M.toList $
-                     tmInstructions tm
+      instr_groups = if max_instrs > 1
+                     then chunksOf max_instrs $
+                          map snd $
+                          M.toList $
+                          tmInstructions tm
+                     else error $ "max_instrs must be greater than 0 (was "
+                                  ++ show max_instrs ++ ")"
       sub_module_names = zipWith (\_ i -> module_name ++ "sub" ++ (show i))
                                  instr_groups
                                  ([0..] :: [Int])

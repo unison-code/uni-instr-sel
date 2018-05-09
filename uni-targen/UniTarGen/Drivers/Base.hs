@@ -12,8 +12,9 @@ Main authors:
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module UniTarGen.Drivers.Base
-  ( Options (..)
-  , module Language.InstrSel.DriverTools
+  ( module Language.InstrSel.DriverTools
+  , Options (..)
+  , defaultMaxInstructionsPerSubModule
   )
 where
 
@@ -35,6 +36,18 @@ data Options
       { machDescFile :: Maybe String
       , outDir :: Maybe String
       , parentModule :: Maybe String
+      , maxInstructionsPerSubModule :: Maybe Int
       , prettyPrint :: Maybe Bool
       }
   deriving (Data, Typeable)
+
+
+
+-------------
+-- Functions
+-------------
+
+-- | Returns maximum number of instructions allowed per target-machine
+-- submodule.
+defaultMaxInstructionsPerSubModule :: Int
+defaultMaxInstructionsPerSubModule = 1000

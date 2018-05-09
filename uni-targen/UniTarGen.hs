@@ -73,11 +73,22 @@ parseArgs =
         &= explicit
         &= help ( "Directory that will contain the output." )
         &= typDir
+    , maxInstructionsPerSubModule = def
+        &= name "max-instr-per-submodule"
+        &= explicit
+        &= help ( "Limits the maximum number of instructions per target-machine\
+                  \submodule (default is " ++
+                  show defaultMaxInstructionsPerSubModule ++ "). Lower this\
+                  \number in case the submodules are too large to compiler."
+                )
+        &= typ "INT"
     , prettyPrint = def
         &= name "pretty-print"
         &= explicit
-        &= help ( "Pretty-print the output." )
-        &= typDir
+        &= help ( "Pretty-print the output. Note that pretty printing \
+                  \significantly increases the time it takes to generate the \
+                  \output."
+                )
     }
     &= helpArg [ help "Displays this message."
                , name "h"
