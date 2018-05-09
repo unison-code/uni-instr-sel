@@ -99,6 +99,7 @@ generateTopModule mparent module_name sub_module_names pretty_print tm =
                    \where\n\
                    \\n\
                    \import Language.InstrSel.TargetMachines\n\
+                   \import Language.InstrSel.Utils\n\
                    \import Data.Map\n\
                    \  ( fromList )\n\
                    \\n" <>
@@ -115,7 +116,7 @@ generateTopModule mparent module_name sub_module_names pretty_print tm =
                    \  { tmID = " <> stringUtf8 (show $ tmID tm) <>
         stringUtf8 "\n\
                    \  , tmInstructions =\n\
-                   \      M.fromList $\n\
+                   \      fromList $\n\
                    \      map (\\i -> (instrID i, i)) $\
                    \      concat [" <>
         stringUtf8 ( intercalate ", " $
