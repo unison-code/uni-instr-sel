@@ -19,6 +19,19 @@ library
   exposed-modules:
     UniIS.Targets.Mips32
     UniIS.Targets.Hexagon5
+    UniIS.Targets.X86Minus64
+  other-modules:
+    UniIS.Targets.X86Minus64sub0
+    UniIS.Targets.X86Minus64sub1
+    UniIS.Targets.X86Minus64sub2
+    UniIS.Targets.X86Minus64sub3
+    UniIS.Targets.X86Minus64sub4
+    UniIS.Targets.X86Minus64sub5
+    UniIS.Targets.X86Minus64sub6
+    UniIS.Targets.X86Minus64sub7
+    UniIS.Targets.X86Minus64sub8
+    UniIS.Targets.X86Minus64sub9
+    UniIS.Targets.X86Minus64sub10
   build-depends:     base >=4.5,
                      containers >= 0.4,
                      fgl,
