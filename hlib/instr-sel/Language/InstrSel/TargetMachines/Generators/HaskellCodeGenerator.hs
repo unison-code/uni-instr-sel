@@ -161,7 +161,7 @@ generateSubModule mparent module_name pretty_print instructions =
       haskell_code =
         stringUtf8 "module " <> stringUtf8 module_path <>
         stringUtf8 "\n\
-                   \  ( theTM )\n\
+                   \  ( theInstructions )\n\
                    \where\n\n\
                    \import Language.InstrSel.Constraints\n\
                    \import Language.InstrSel.DataTypes\n\
