@@ -170,7 +170,6 @@ data TypeConvOp
   | IntToPtr
     -- | Pointer to integer.
   | PtrToInt
-    -- | Bitcast.
   deriving (Show, Eq)
 
 -- | Operations that cast values of one type to another type. Unlike
