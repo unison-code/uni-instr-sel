@@ -159,7 +159,9 @@ generateSubModule mparent module_name pretty_print instructions =
   let renameFuncs str = BS.replace (BS.pack "mkGraph") (BS.pack "I.mkGraph") str
       module_path = mparent ++ "." ++ module_name
       haskell_code =
-        stringUtf8 "module " <> stringUtf8 module_path <>
+        stringUtf8 "{-# OPTIONS_GHC -fno-warn-unused-imports #-}\n\
+                   \\n\
+                   \module " <> stringUtf8 module_path <>
         stringUtf8 "\n\
                    \  ( theInstructions )\n\
                    \where\n\n\
