@@ -446,6 +446,8 @@ pruneSimdMatchesWithConstInput fg ms =
         in any isConstCopy vs
   in filter (not . usesConstInput) ms
 
+-- | Gets the 'Instruction' corresponding to a given 'PatternMatch'. If no such
+-- 'Instruction' can be found, an error is produced.
 getInstructionFromPatternMatch :: TargetMachine -> PatternMatch -> Instruction
 getInstructionFromPatternMatch t m =
   let iid = pmInstrID m

@@ -47,6 +47,7 @@ import Data.Maybe
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run :: MakeAction
     -> Function
     -> LowLevelModel

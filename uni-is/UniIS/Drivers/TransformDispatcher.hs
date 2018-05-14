@@ -33,9 +33,11 @@ import Language.InstrSel.Utils.Natural
 -- Functions
 -------------
 
+-- | Function for executing this dispatcher.
 run :: Options -> IO [Output]
 run opts = dispatch (transformAction opts) opts
 
+-- | Dispatches execution to the correct driver.
 dispatch :: TransformAction -> Options -> IO [Output]
 dispatch a opts
   | a == TransformNothing =

@@ -27,6 +27,7 @@ import qualified Prelude as P
 -- Functions
 -------------
 
+-- | Returns the intersection of all 'Set's in the given list.
 intersections :: (Ord a) => [Set a] -> Set a
 intersections [] = empty
 intersections ss =

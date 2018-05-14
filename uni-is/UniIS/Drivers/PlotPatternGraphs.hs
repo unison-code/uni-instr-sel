@@ -43,6 +43,7 @@ produceDotOutputWith show_edge_nrs f i =
          dot = toDotStringWith noMoreNodeAttr ef g
      return [toOutput dot]
 
+-- | Function for executing this driver.
 run :: PlotAction
     -> Bool
        -- ^ Whether to show edge numbers.

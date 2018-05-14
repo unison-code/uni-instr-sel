@@ -34,6 +34,7 @@ import Language.InstrSel.DriverTools
 -- Data types
 --------------
 
+-- | Options that can be given on the command line.
 data Options
   = Options
       { command :: String
@@ -56,6 +57,7 @@ data Options
       }
   deriving (Data, Typeable)
 
+-- | Represents 'make' actions.
 data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM
@@ -67,6 +69,7 @@ data MakeAction
   | MakeAssemblyCode
   deriving (Eq, Typeable, Data)
 
+-- | Represents 'transform' actions.
 data TransformAction
   = TransformNothing
   | RemoveRedundantConversionsInFunctionGraph
@@ -82,6 +85,7 @@ data TransformAction
   | LowerHighLevelCPModel
   deriving (Eq, Typeable, Data)
 
+-- | Represents 'plot' actions.
 data PlotAction
   = PlotNothing
   | PlotFunctionFullGraph
@@ -94,6 +98,7 @@ data PlotAction
   | PlotCoverPerMatch
   deriving (Eq, Typeable, Data)
 
+-- | Represents 'check' actions.
 data CheckAction
   = CheckNothing
   | CheckFunctionGraphCoverage

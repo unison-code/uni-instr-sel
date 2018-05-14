@@ -215,6 +215,7 @@ import Control.DeepSeq
 -- Data types
 --------------
 
+-- | Alias for the internal graph representation.
 type IntGraph = I.Gr NodeLabel EdgeLabel
 
 -- | The outer-most data type which contains the graph itself. It also caches
@@ -599,6 +600,7 @@ toEdgeNr = EdgeNr . toNatural
 fromEdgeNr :: EdgeNr -> Natural
 fromEdgeNr (EdgeNr n) = n
 
+-- | Checks if a given node is an operation.
 isOperationNode :: Node -> Bool
 isOperationNode n =
   isComputationNode n ||
@@ -608,137 +610,176 @@ isOperationNode n =
   isPhiNode n ||
   isCopyNode n
 
+-- | Checks if a given node is a datum.
 isDatumNode :: Node -> Bool
 isDatumNode n =
   isValueNode n ||
   isStateNode n
 
+-- | Checks if a node exists inside a graph.
 isNodeInGraph :: Graph -> Node -> Bool
 isNodeInGraph g n = n `elem` getAllNodes g
 
+-- | Checks if a given node is a computation node.
 isComputationNode :: Node -> Bool
 isComputationNode n = isOfComputationNodeType $ getNodeType n
 
+-- | Checks if a given node is a control node.
 isControlNode :: Node -> Bool
 isControlNode n = isOfControlNodeType $ getNodeType n
 
+-- | Checks if a given node is a call node.
 isCallNode :: Node -> Bool
 isCallNode n = isOfCallNodeType $ getNodeType n
 
+-- | Checks if a given node is an indirect-call node.
 isIndirCallNode :: Node -> Bool
 isIndirCallNode n = isOfIndirCallNodeType $ getNodeType n
 
+-- | Checks if a given node is a return control node.
 isRetControlNode :: Node -> Bool
 isRetControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Ret
 
+-- | Checks if a given node is an unconditional-branch control node.
 isBrControlNode :: Node -> Bool
 isBrControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.Br
 
+-- | Checks if a given node is an conditional-branch control node.
 isCondBrControlNode :: Node -> Bool
 isCondBrControlNode n = isControlNode n && (ctrlOp $ getNodeType n) == O.CondBr
 
+-- | Checks if a given node is a value node.
 isValueNode :: Node -> Bool
 isValueNode n = isOfValueNodeType $ getNodeType n
 
+-- | Checks if a given node is a value node representing a constant value.
 isValueNodeWithConstValue :: Node -> Bool
 isValueNodeWithConstValue n =
   if isValueNode n
   then D.isTypeAConstValue $ getDataTypeOfValueNode n
   else False
 
+-- | Checks if a given node is a value node representing a pointer.
 isValueNodeWithPointerDataType :: Node -> Bool
 isValueNodeWithPointerDataType n =
   if isValueNode n
   then D.isTypeAPointer $ getDataTypeOfValueNode n
   else False
 
+-- | Checks if a given node is a value node whose value has an origin (name) in
+-- the source code.
 isValueNodeWithOrigin :: Node -> Bool
 isValueNodeWithOrigin n =
   if isValueNode n
   then length (originOfValue $ getNodeType n) > 0
   else False
 
+-- | Gets the origin of a given value node. Note that a value may have more
+-- than one origin.
 getOriginOfValueNode :: Node -> [String]
 getOriginOfValueNode = originOfValue . getNodeType
 
+-- | Gets the name of a given block node.
 getNameOfBlockNode :: Node -> BlockName
 getNameOfBlockNode = nameOfBlock . getNodeType
 
+-- | Gets the name of a given call node.
 getNameOfCallNode :: Node -> FunctionName
 getNameOfCallNode = nameOfCall . getNodeType
 
+-- | Checks if a given node is a block node.
 isBlockNode :: Node -> Bool
 isBlockNode n = isOfBlockNodeType $ getNodeType n
 
+-- | Checks if a given node is a phi node.
 isPhiNode :: Node -> Bool
 isPhiNode n = isOfPhiNodeType $ getNodeType n
 
+-- | Checks if a given node is a state node.
 isStateNode :: Node -> Bool
 isStateNode n = isOfStateNodeType $ getNodeType n
 
+-- | Checks if a given node is a copy node.
 isCopyNode :: Node -> Bool
 isCopyNode n = isOfCopyNodeType $ getNodeType n
 
+-- | Checks if a given node type represents a computation node.
 isOfComputationNodeType :: NodeType -> Bool
 isOfComputationNodeType (ComputationNode _) = True
 isOfComputationNodeType _ = False
 
+-- | Checks if a given node type represents a call node.
 isOfCallNodeType :: NodeType -> Bool
 isOfCallNodeType (CallNode _) = True
 isOfCallNodeType _ = False
 
+-- | Checks if a given node type represents an indirect-call node.
 isOfIndirCallNodeType :: NodeType -> Bool
 isOfIndirCallNodeType IndirCallNode = True
 isOfIndirCallNodeType _ = False
 
+-- | Checks if a given node type represents a control node.
 isOfControlNodeType :: NodeType -> Bool
 isOfControlNodeType (ControlNode _) = True
 isOfControlNodeType _ = False
 
+-- | Checks if a given node type represents a value node.
 isOfValueNodeType :: NodeType -> Bool
 isOfValueNodeType (ValueNode _ _) = True
 isOfValueNodeType _ = False
 
+-- | Checks if a given node type represents a block node.
 isOfBlockNodeType :: NodeType -> Bool
 isOfBlockNodeType (BlockNode _) = True
 isOfBlockNodeType _ = False
 
+-- | Checks if a given node type represents a phi node.
 isOfPhiNodeType :: NodeType -> Bool
 isOfPhiNodeType PhiNode = True
 isOfPhiNodeType _ = False
 
+-- | Checks if a given node type represents a state node.
 isOfStateNodeType :: NodeType -> Bool
 isOfStateNodeType StateNode = True
 isOfStateNodeType _ = False
 
+-- | Checks if a given node type represents a copy node.
 isOfCopyNodeType :: NodeType -> Bool
 isOfCopyNodeType CopyNode = True
 isOfCopyNodeType _ = False
 
+-- | Checks if a given edge is a data-flow edge.
 isDataFlowEdge :: Edge -> Bool
 isDataFlowEdge = isOfDataFlowEdgeType . getEdgeType
 
+-- | Checks if a given edge is a state-flow edge.
 isStateFlowEdge :: Edge -> Bool
 isStateFlowEdge = isOfStateFlowEdgeType . getEdgeType
 
+-- | Checks if a given edge is a control-flow edge.
 isControlFlowEdge :: Edge -> Bool
 isControlFlowEdge = isOfControlFlowEdgeType . getEdgeType
 
+-- | Checks if a given edge is a definition edge.
 isDefEdge :: Edge -> Bool
 isDefEdge = isOfDefEdgeType . getEdgeType
 
+-- | Checks if a given edge type represents a data-flow edge.
 isOfDataFlowEdgeType :: EdgeType -> Bool
 isOfDataFlowEdgeType DataFlowEdge = True
 isOfDataFlowEdgeType _ = False
 
+-- | Checks if a given edge type represents a control-flow edge.
 isOfControlFlowEdgeType :: EdgeType -> Bool
 isOfControlFlowEdgeType ControlFlowEdge = True
 isOfControlFlowEdgeType _ = False
 
+-- | Checks if a given edge type represents a state-flow edge.
 isOfStateFlowEdgeType :: EdgeType -> Bool
 isOfStateFlowEdgeType StateFlowEdge = True
 isOfStateFlowEdgeType _ = False
 
+-- | Checks if a given edge type represents a definition edge.
 isOfDefEdgeType :: EdgeType -> Bool
 isOfDefEdgeType DefEdge = True
 isOfDefEdgeType _ = False
@@ -1220,15 +1261,19 @@ getNextOutEdgeNr g int f =
      then maximum existing_numbers + 1
      else 0
 
+-- | Gets the edge label from an edge.
 getEdgeLabel :: Edge -> EdgeLabel
 getEdgeLabel (Edge (_, _, l)) = l
 
+-- | Gets the in-edge number component from an edge.
 getEdgeInNr :: Edge -> EdgeNr
 getEdgeInNr = inEdgeNr . getEdgeLabel
 
+-- | Gets the out-edge number component from an edge.
 getEdgeOutNr :: Edge -> EdgeNr
 getEdgeOutNr = outEdgeNr . getEdgeLabel
 
+-- | Gets the edge type from an edge.
 getEdgeType :: Edge -> EdgeType
 getEdgeType = edgeType . getEdgeLabel
 
@@ -1275,27 +1320,51 @@ addNewEdge et (from_n, to_n) g =
 addNewEdges :: EdgeType -> [(SrcNode, DstNode)] -> Graph -> Graph
 addNewEdges et ps g = foldl (\g' p -> fst $ addNewEdge et p g') g ps
 
+-- | Adds a new data-flow edge to the graph.
+--
+-- @see 'addNewEdge'
 addNewDtFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewDtFlowEdge = addNewEdge DataFlowEdge
 
+-- | Adds multiple new data-flow edges to the graph.
+--
+-- @see 'addNewEdges'
 addNewDtFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewDtFlowEdges = addNewEdges DataFlowEdge
 
+-- | Adds a new control-flow edge to the graph.
+--
+-- @see 'addNewEdge'
 addNewCtrlFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewCtrlFlowEdge = addNewEdge ControlFlowEdge
 
+-- | Adds multiple new control-flow edges to the graph.
+--
+-- @see 'addNewEdges'
 addNewCtrlFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewCtrlFlowEdges = addNewEdges ControlFlowEdge
 
+-- | Adds a new state-flow edge to the graph.
+--
+-- @see 'addNewEdge'
 addNewStFlowEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewStFlowEdge = addNewEdge StateFlowEdge
 
+-- | Adds multiple new state-flow edges to the graph.
+--
+-- @see 'addNewEdges'
 addNewStFlowEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewStFlowEdges = addNewEdges StateFlowEdge
 
+-- | Adds a new definition edge to the graph.
+--
+-- @see 'addNewEdge'
 addNewDefEdge :: (SrcNode, DstNode) -> Graph -> (Graph, Edge)
 addNewDefEdge = addNewEdge DefEdge
 
+-- | Adds multiple new definition edges to the graph.
+--
+-- @see 'addNewEdges'
 addNewDefEdges :: [(SrcNode, DstNode)] -> Graph -> Graph
 addNewDefEdges = addNewEdges DefEdge
 

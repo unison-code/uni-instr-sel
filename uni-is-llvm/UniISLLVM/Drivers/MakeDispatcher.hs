@@ -22,9 +22,11 @@ import qualified UniISLLVM.Drivers.MakeFunctionFromLLVM as MakeFunctionFromLLVM
 -- Functions
 -------------
 
+-- | Function for executing this dispatcher.
 run :: Options -> IO [Output]
 run opts = dispatch (makeAction opts) opts
 
+-- | Dispatches execution to the correct driver.
 dispatch :: MakeAction -> Options -> IO [Output]
 dispatch a opts
   | a == MakeNothing =

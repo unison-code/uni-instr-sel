@@ -24,9 +24,11 @@ import qualified UniIS.Drivers.PlotPatternGraphs as PlotPatternGraphs
 -- Functions
 -------------
 
+-- | Function for executing this dispatcher.
 run :: Options -> IO [Output]
 run opts = dispatch (plotAction opts) opts
 
+-- | Dispatches execution to the correct driver.
 dispatch :: PlotAction -> Options -> IO [Output]
 dispatch a opts
   | a == PlotNothing =

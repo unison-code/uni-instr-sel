@@ -56,6 +56,7 @@ import Data.Maybe
 -- Functions
 -------------
 
+-- | Generates a 'TargetMachine' from a given 'LLVM.MachineDescription'.
 generateTargetMachine
   :: LLVM.MachineDescription
   -> Either String TM.TargetMachine

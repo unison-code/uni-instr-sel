@@ -54,6 +54,7 @@ import Data.Maybe
 -- Data types
 --------------
 
+-- | Data type representations.
 data DataType
     -- | Represents an integer value stored in a temporary.
   = IntTempType

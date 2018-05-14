@@ -42,6 +42,7 @@ import Data.Maybe
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run :: TransformAction
     -> Function
     -> TargetMachine

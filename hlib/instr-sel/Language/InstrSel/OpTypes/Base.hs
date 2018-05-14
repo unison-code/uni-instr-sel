@@ -189,6 +189,7 @@ data MemoryOp
   | Store
   deriving (Show, Eq)
 
+-- | Operations that exhibit a change in control flow.
 data ControlOp
     -- | Unconditional branch (same as a jump).
   = Br
@@ -431,18 +432,22 @@ instance ToJSON ControlOp where
 -- Functions
 --------------
 
+-- | Checks if a 'CompOp' is of type 'CompArithOp'.
 isCompArithOp :: CompOp -> Bool
 isCompArithOp (CompArithOp _) = True
 isCompArithOp _ = False
 
+-- | Checks if a 'CompOp' is of type 'CompTypeConvOp'.
 isCompTypeConvOp :: CompOp -> Bool
 isCompTypeConvOp (CompTypeConvOp _) = True
 isCompTypeConvOp _ = False
 
+-- | Checks if a 'CompOp' is of type 'CompTypeCastOp'.
 isCompTypeCastOp :: CompOp -> Bool
 isCompTypeCastOp (CompTypeCastOp _) = True
 isCompTypeCastOp _ = False
 
+-- | Checks if a 'CompOp' is of type 'CompMemoryOp'.
 isCompMemoryOp :: CompOp -> Bool
 isCompMemoryOp (CompMemoryOp _) = True
 isCompMemoryOp _ = False

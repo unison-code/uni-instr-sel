@@ -31,6 +31,7 @@ import Language.InstrSel.Utils.IO
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run
   :: TransformAction
   -> BS.ByteString

@@ -39,7 +39,7 @@ import Language.InstrSel.TargetMachines
 -- Functions
 -------------
 
--- ^ Checks whether the instruction contain at least operation node in the
+-- | Checks whether the instruction contain at least operation node in the
 -- pattern graph and does not emit anything during code emission.
 isInstructionNull :: Instruction -> Bool
 isInstructionNull i =
@@ -49,7 +49,7 @@ isInstructionNull i =
       emit_str = instrEmitString i
   in length op_nodes > 0 && length (emitStrParts emit_str) == 0
 
--- ^ Checks whether the instruction's pattern graph contains exactly one copy
+-- | Checks whether the instruction's pattern graph contains exactly one copy
 -- node.
 isInstructionCopy :: Instruction -> Bool
 isInstructionCopy i =
@@ -58,7 +58,7 @@ isInstructionCopy i =
       op_nodes = filter isOperationNode $ getAllNodes g
   in length op_nodes == 1 && isCopyNode (head op_nodes)
 
--- ^ Checks whether the instruction's pattern graph contains exactly one phi
+-- | Checks whether the instruction's pattern graph contains exactly one phi
 -- node.
 isInstructionPhi :: Instruction -> Bool
 isInstructionPhi i =
@@ -67,7 +67,7 @@ isInstructionPhi i =
       op_nodes = filter isOperationNode $ getAllNodes g
   in length op_nodes == 1 && isPhiNode (head op_nodes)
 
--- ^ Checks whether the instruction's pattern graph consists of disjoint
+-- | Checks whether the instruction's pattern graph consists of disjoint
 -- subgraphs which are isomorphic to each other.
 isInstructionSimd :: Instruction -> Bool
 isInstructionSimd i =
@@ -76,7 +76,7 @@ isInstructionSimd i =
       cs = weakComponentsOf g
   in length cs > 1 && all (areGraphsIsomorphic (head cs)) (tail cs)
 
--- ^ Checks whether the instruction's pattern graph contains exactly one
+-- | Checks whether the instruction's pattern graph contains exactly one
 -- unconditional branch.
 isInstructionUncondBranch :: Instruction -> Bool
 isInstructionUncondBranch i =
@@ -85,7 +85,7 @@ isInstructionUncondBranch i =
       op_nodes = filter isOperationNode $ getAllNodes g
   in length op_nodes == 1 && isBrControlNode (head op_nodes)
 
--- ^ Checks whether the instruction's pattern graph contains any control
+-- | Checks whether the instruction's pattern graph contains any control
 -- operations, and if so, these must consist of exactly one conditional branch
 -- with at least one exit block.
 isInstructionCondBranch :: Instruction -> Bool
@@ -98,7 +98,7 @@ isInstructionCondBranch i =
       ctrl_nodes = filter isCondBrControlNode $ getAllNodes g
   in length ctrl_nodes == 1 && any pointsAtExits ctrl_nodes
 
--- ^ Checks whether the instruction's pattern graph contains exactly one
+-- | Checks whether the instruction's pattern graph contains exactly one
 -- conditional branch with fall-through constraint.
 isInstructionCondBranchWithFallthrough :: Instruction -> Bool
 isInstructionCondBranchWithFallthrough i =

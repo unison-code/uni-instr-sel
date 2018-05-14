@@ -34,6 +34,7 @@ import Language.InstrSel.Utils.JSON
 -- Data types
 --------------
 
+-- | Contains a 'G.Graph' and various information about the 'G.Graph'.
 data OpStructure
   = OpStructure
       { osGraph :: G.Graph
@@ -74,7 +75,7 @@ instance ToJSON OpStructure where
 -- Functions
 -------------
 
--- | Creates an empty operation structure.
+-- | Creates an empty 'OpStructure'.
 mkEmpty :: OpStructure
 mkEmpty = OpStructure { osGraph = G.mkEmpty
                       , osValidLocations = []
@@ -82,5 +83,6 @@ mkEmpty = OpStructure { osGraph = G.mkEmpty
                       , osConstraints = []
                       }
 
+-- | Adds a list of 'Constraint's to an 'OpStructure'.
 addConstraints :: OpStructure -> [Constraint] -> OpStructure
 addConstraints os cs = os { osConstraints = osConstraints os ++ cs }

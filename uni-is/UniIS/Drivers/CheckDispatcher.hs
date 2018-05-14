@@ -26,9 +26,11 @@ import Language.InstrSel.TargetMachines.PatternMatching
 -- Functions
 -------------
 
+-- | Function for executing this dispatcher.
 run :: Options -> IO [Output]
 run opts = dispatch (checkAction opts) opts
 
+-- | Dispatches execution to the correct driver.
 dispatch :: CheckAction -> Options -> IO [Output]
 dispatch a opts
   | a == CheckNothing =

@@ -35,6 +35,7 @@ import Control.DeepSeq
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run :: MakeAction -> Function -> TargetMachine -> IO [Output]
 
 run MakePatternMatchset function target =

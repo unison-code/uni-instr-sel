@@ -64,6 +64,7 @@ data Instruction
       }
   deriving (Show)
 
+-- | Contains the information regarding a pattern.
 data InstrPattern
   = InstrPattern
       { instrOperands :: [InstrOperand]

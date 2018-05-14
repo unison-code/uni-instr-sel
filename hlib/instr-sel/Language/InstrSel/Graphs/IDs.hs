@@ -45,6 +45,7 @@ import Control.DeepSeq
 -- Data types
 --------------
 
+-- | Identifier for a 'Match'.
 newtype MatchID
   = MatchID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
@@ -52,6 +53,7 @@ newtype MatchID
 instance PrettyShow MatchID where
   pShow (MatchID i) = pShow i
 
+-- | Identifier for a 'Node'.
 newtype NodeID
   = NodeID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)

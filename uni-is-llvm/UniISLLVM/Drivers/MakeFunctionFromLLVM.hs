@@ -38,6 +38,7 @@ import Control.Monad.Except
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run
   :: MakeAction
   -> BS.ByteString

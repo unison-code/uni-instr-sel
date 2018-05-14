@@ -55,6 +55,8 @@ import qualified Language.InstrSel.Utils.JSON as JSON
 -- Data types
 --------------
 
+-- | Represents a constraint that must be satisfied in case a 'Match' is
+-- selected.
 data Constraint
     -- | A constraint represented as a Boolean expression.
   = BoolExprConstraint { boolExpr :: BoolExpr }

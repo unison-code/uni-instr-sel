@@ -34,6 +34,8 @@ import Data.List
 -- Functions
 -------------
 
+-- | Constructs array-index-to-ID mappings for a given 'Function',
+-- 'TargetMachine', and 'HighLevelModel'.
 mkArrayIndexMaplists
   :: Function
   -> TargetMachine

@@ -29,6 +29,7 @@ import Language.InstrSel.Utils.JSON
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run :: TransformAction
     -> Function
     -> Maybe TargetMachine

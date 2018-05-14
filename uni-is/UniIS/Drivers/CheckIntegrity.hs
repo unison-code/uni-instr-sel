@@ -58,6 +58,7 @@ data CheckType
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run
   :: CheckAction
   -> Either Function Instruction

@@ -57,6 +57,7 @@ loadFileContent err file =
        reportErrorAndExit err
      readFileContent $ fromJust file
 
+-- | Loads the content of a function file.
 loadFunctionFileContent :: Options -> IO BS.ByteString
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
@@ -70,6 +71,7 @@ loadFromJson str =
        reportErrorAndExit $ fromLeft res
      return $ fromRight res
 
+-- | Loads the 'Function' from the function file specified in 'Options'.
 loadFunctionFromJson :: Options -> IO Function
 loadFunctionFromJson opts =
   do content <- loadFunctionFileContent opts

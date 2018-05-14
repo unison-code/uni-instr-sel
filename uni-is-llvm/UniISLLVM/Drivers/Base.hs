@@ -31,6 +31,7 @@ import Language.InstrSel.DriverTools
 -- Data types
 --------------
 
+-- | Options that can be given on the command line.
 data Options
   = Options
       { command :: String
@@ -40,6 +41,7 @@ data Options
       }
   deriving (Data, Typeable)
 
+-- | Represents 'make' actions.
 data MakeAction
   = MakeNothing
   | MakeFunctionGraphFromLLVM

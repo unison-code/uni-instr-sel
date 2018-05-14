@@ -54,6 +54,7 @@ import Control.DeepSeq
 -- Data types
 --------------
 
+-- | Identifier for an 'Instruction'.
 newtype InstructionID
   = InstructionID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
@@ -61,6 +62,7 @@ newtype InstructionID
 instance PrettyShow InstructionID where
   pShow (InstructionID i) = pShow i
 
+-- | Identifier for a 'Location'.
 newtype LocationID
   = LocationID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
@@ -68,6 +70,7 @@ newtype LocationID
 instance PrettyShow LocationID where
   pShow (LocationID i) = pShow i
 
+-- | Assembly-printable name of a 'Location'.
 newtype LocationName
   = LocationName String
   deriving (Show, Eq)
@@ -75,6 +78,7 @@ newtype LocationName
 instance PrettyShow LocationName where
   pShow (LocationName s) = s
 
+-- | Identifier for a 'TargetMachine'.
 newtype TargetMachineID
   = TargetMachineID String
   deriving (Show, Eq)

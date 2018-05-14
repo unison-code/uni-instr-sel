@@ -87,23 +87,28 @@ loadFileContent err file =
        reportErrorAndExit err
      readFileContent $ fromJust file
 
+-- | Loads the content of an array-index-mapping file.
 loadArrayIndexMaplistsFileContent :: Options -> IO BS.ByteString
 loadArrayIndexMaplistsFileContent =
   loadFileContent "No array index maplists file provided."
   . arrayIndexMaplistsFile
 
+-- | Loads the content of a function file.
 loadFunctionFileContent :: Options -> IO BS.ByteString
 loadFunctionFileContent =
   loadFileContent "No function file provided." . functionFile
 
+-- | Loads the content of a model file.
 loadModelFileContent :: Options -> IO BS.ByteString
 loadModelFileContent =
   loadFileContent "No model file provided." . modelFile
 
+-- | Loads the content of a pattern-matchset file.
 loadPatternMatchsetFileContent :: Options -> IO BS.ByteString
 loadPatternMatchsetFileContent =
   loadFileContent "No pattern matchset file provided." . patternMatchsetFile
 
+-- | Loads the content of a solution file.
 loadSolutionFileContent :: Options -> IO BS.ByteString
 loadSolutionFileContent =
   loadFileContent "No solution file provided." . solutionFile
@@ -188,16 +193,21 @@ loadFromJson str =
        reportErrorAndExit $ fromLeft res
      return $ fromRight res
 
+-- | Loads a 'Function' from the function file specified in the 'Options'.
 loadFunctionFromJson :: Options -> IO Function
 loadFunctionFromJson opts =
   do content <- loadFunctionFileContent opts
      loadFromJson content
 
+-- | Loads a 'PatternMatchset' from the pattern-matchset file specified in the
+-- 'Options'.
 loadPatternMatchsetFromJson :: Options -> IO PatternMatchset
 loadPatternMatchsetFromJson opts =
   do content <- loadPatternMatchsetFileContent opts
      loadFromJson content
 
+-- | Loads a 'ArrayIndexMaplists' from the array-index-mapping file specified in
+-- the 'Options'.
 loadArrayIndexMaplistsFromJson :: Options -> IO ArrayIndexMaplists
 loadArrayIndexMaplistsFromJson opts =
   do content <- loadArrayIndexMaplistsFileContent opts

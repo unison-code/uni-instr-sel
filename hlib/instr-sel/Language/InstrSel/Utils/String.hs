@@ -108,5 +108,7 @@ isNumeric :: String -> Bool
 isNumeric [] = False
 isNumeric cs = all Char.isDigit cs
 
+-- | Returns the data corresponding to a given parsed 'String'. If parsing
+-- fails, 'Nothing' is returned.
 maybeRead :: Read a => String -> Maybe a
 maybeRead = readMay

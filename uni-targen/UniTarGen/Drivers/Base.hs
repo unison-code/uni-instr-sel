@@ -31,6 +31,7 @@ import Language.InstrSel.DriverTools
 -- Data types
 --------------
 
+-- | Options that can be given on the command line.
 data Options
   = Options
       { machDescFile :: Maybe String

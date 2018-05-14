@@ -39,6 +39,7 @@ import qualified Language.InstrSel.Utils.JSON as JSON
 -- Data types
 --------------
 
+-- | Index into an array (starting from 0).
 newtype ArrayIndex
   = ArrayIndex Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)
@@ -46,6 +47,7 @@ newtype ArrayIndex
 instance PrettyShow ArrayIndex where
   pShow (ArrayIndex i) = pShow i
 
+-- | Identifier for an operand.
 newtype OperandID
   = OperandID Natural
   deriving (Show, Eq, Ord, Num, Enum, Real, Integral)

@@ -34,6 +34,7 @@ import Language.InstrSel.Utils.IO
 -- Functions
 -------------
 
+-- | Function for executing this driver.
 run :: MakeAction -> Function -> HighLevelModel -> IO [Output]
 
 run MakeArrayIndexMaplists function model =
