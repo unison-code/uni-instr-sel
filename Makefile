@@ -127,7 +127,8 @@ hlib: llvm-general-pure
 .PHONY: hlib-prof
 hlib-prof: llvm-general-pure-prof
 	cd $(HLIB_PATH) && \
-	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS)" install
+	make CABAL_INST_FLAGS="$(CABAL_INST_FLAGS) $(CABAL_PROF_FLAGS) \
+                           --force-reinstalls" install
 
 .PHONY: hlib-doc
 hlib-doc:
