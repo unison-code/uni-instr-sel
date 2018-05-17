@@ -40,6 +40,11 @@ import Data.Maybe
   ( isJust
   , fromJust
   )
+import Data.List
+  ( intercalate
+  , nub
+  , sort
+  )
 
 
 
@@ -159,6 +164,22 @@ run MakeLowLevelModelDump function model ai_maps =
         in concatMap (\(n, ai) -> pShow ai ++ " -> " ++ dumpNode n ai ++ "\n\n")
                      (zip ns ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
+      aggregateLocsPerOpForMatch ai ls =
+        let op_loc_pairs = map (\(_, o, l) -> (o, l)) $
+                           filter (\(ai', _, _) -> ai' == ai) $
+                           ls
+            ops = sort $
+                  nub $
+                  map fst op_loc_pairs
+            op_locs_pairs = map ( \o -> ( o
+                                        , sort $
+                                          map snd $
+                                          filter (\(o', _) -> o' == o) $
+                                          op_loc_pairs
+                                        )
+                                ) $
+                            ops
+        in op_locs_pairs
       dumpMatches ms =
         let mkMatchInfo m ai =
               let tm_res = retrieveTargetMachine $ llTMID model
@@ -168,7 +189,6 @@ run MakeLowLevelModelDump function model ai_maps =
                   instr = if isJust instr_res
                           then fromJust instr_res
                           else error $ "No instruction with ID " ++ (pShow iid)
-                  emit_str = instrEmitString instr
               in "Match ID: " ++ pShow m
                  ++
                  "\n"
@@ -250,7 +270,7 @@ run MakeLowLevelModelDump function model ai_maps =
                  "Emit string: "
                  ++
                  ( replace "\n" ("\n" ++ addPadding ai ++ "             ") $
-                   (pShow emit_str)
+                   pShow $ instrEmitString instr
                  )
                  ++
                  "\n"
@@ -268,6 +288,22 @@ run MakeLowLevelModelDump function model ai_maps =
                  "Is kill instruction: "
                  ++
                  (pShow $ ai `elem` (llMatchKillInstructions model))
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Locations requirements: "
+                 ++
+                 ( intercalate ( "\n" ++ addPadding ai ++
+                                 "                        "
+                               ) $
+                   map ( \(op, locs) ->
+                         "operand " ++ pShow op ++ " in " ++ pShow locs
+                       ) $
+                   aggregateLocsPerOpForMatch ai $
+                   llMatchValidValueLocs model
+                 )
         in concatMap (\(m, i) -> pShow i ++ " -> " ++ mkMatchInfo m i ++ "\n\n")
                      (zip ms ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
