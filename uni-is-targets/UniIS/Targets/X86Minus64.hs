@@ -16,24 +16,6 @@ import qualified UniIS.Targets.X86Minus64sub0
        as X86Minus64sub0
 import qualified UniIS.Targets.X86Minus64sub1
        as X86Minus64sub1
-import qualified UniIS.Targets.X86Minus64sub2
-       as X86Minus64sub2
-import qualified UniIS.Targets.X86Minus64sub3
-       as X86Minus64sub3
-import qualified UniIS.Targets.X86Minus64sub4
-       as X86Minus64sub4
-import qualified UniIS.Targets.X86Minus64sub5
-       as X86Minus64sub5
-import qualified UniIS.Targets.X86Minus64sub6
-       as X86Minus64sub6
-import qualified UniIS.Targets.X86Minus64sub7
-       as X86Minus64sub7
-import qualified UniIS.Targets.X86Minus64sub8
-       as X86Minus64sub8
-import qualified UniIS.Targets.X86Minus64sub9
-       as X86Minus64sub9
-import qualified UniIS.Targets.X86Minus64sub10
-       as X86Minus64sub10
 
 theTM :: TargetMachine
 theTM
@@ -43,16 +25,7 @@ theTM
                       map (\ i -> (instrID i, i)) $
                         concat
                           [X86Minus64sub0.theInstructions,
-                           X86Minus64sub1.theInstructions,
-                           X86Minus64sub2.theInstructions,
-                           X86Minus64sub3.theInstructions,
-                           X86Minus64sub4.theInstructions,
-                           X86Minus64sub5.theInstructions,
-                           X86Minus64sub6.theInstructions,
-                           X86Minus64sub7.theInstructions,
-                           X86Minus64sub8.theInstructions,
-                           X86Minus64sub9.theInstructions,
-                           X86Minus64sub10.theInstructions],
+                           X86Minus64sub1.theInstructions],
                   tmLocations =
                     fromList
                       [(LocationID (Natural 0),
@@ -338,7 +311,11 @@ theTM
                        (LocationID (Natural 70),
                         Location{locID = LocationID (Natural 70),
                                  locName = LocationName "flags",
-                                 locValue = Nothing})],
+                                 locValue = Nothing}),
+                       (LocationID (Natural 71),
+                        Location{locID = LocationID (Natural 71),
+                                 locName = LocationName "modrm",
+                                 locValue = Just 0})],
                   tmPointerSize = Natural 64, tmNullPointerValue = 0,
                   tmPointerSymbolRange =
                     Range{lowerBound = -2147483648,
