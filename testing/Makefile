@@ -635,13 +635,79 @@ pattern.dot:
 		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
 	fi
 	@echo "$(C_INFO)* CHECKING OVERLAP OF DATA LOCATIONS$(C_NONE)"
-	@echo -n "    $*.de.lp.ep.ce.cc.rp.de.rt.f.json "
-	@if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
+	@f=$*.de.lp.ep.ce.cc.rp.de.rt.f.json ;\
+	p=$*.ae.p.json ;\
+	echo -n "    $$f " ;\
+	if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
 		if [ -f $*.ae.p.json ]; then \
 			out=`mktemp` ;\
 			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
-			                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-			                   -p $*.ae.p.json \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
+			else \
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+				cat $$out ;\
+			fi \
+		else \
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
+	fi ;\
+	echo -n "    $$f (no null instrs) " ;\
+	if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
+		if [ -f $*.ae.p.json ]; then \
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
+                                     --hide-null-instr \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
+			else \
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+				cat $$out ;\
+			fi \
+		else \
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
+	fi
+	@f=$*.de.lp.ep.ce.cc.rp.de.rt.f.json ;\
+	p=$*.presolved.ae.p.json ;\
+	echo -n "    $$f (presolved) " ;\
+	if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
+		if [ -f $*.ae.p.json ]; then \
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
+			                   -f $$f \
+			                   -p $$p \
+							   > $$out 2>&1` ;\
+			if [ "$$?" -eq "0" ]; then \
+				echo "[$(C_OK)OK$(C_NONE)]" ;\
+			else \
+				echo "[$(C_ERROR)FAILED$(C_NONE)]" ;\
+				cat $$out ;\
+			fi \
+		else \
+			echo "[$(C_IGNORED)IGNORED$(C_NONE)] (has no pattern matchset)" ;\
+		fi \
+	else \
+		echo "[$(C_IGNORED)IGNORED$(C_NONE)] (not found)" ;\
+	fi ;\
+	echo -n "    $$f (presolved, no null instrs) " ;\
+	if [ -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json ]; then \
+		if [ -f $*.ae.p.json ]; then \
+			out=`mktemp` ;\
+			msg=`$(UNI_IS_CMD) check --check-fun-location-overlap \
+                                     --hide-null-instr \
+			                   -f $$f \
+			                   -p $$p \
 							   > $$out 2>&1` ;\
 			if [ "$$?" -eq "0" ]; then \
 				echo "[$(C_OK)OK$(C_NONE)]" ;\
