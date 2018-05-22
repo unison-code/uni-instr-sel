@@ -252,7 +252,10 @@ processMatch instr match mid oid =
 -- input values of which the pattern makes multiple uses, this function will
 -- rewrite the pattern graph and match such that one of the copied values will
 -- represent the actual input value. The reason for this is to allow the input
--- value to be appropriately copied before entering the instruction.
+-- value to be appropriately copied before entering the instruction. Note that
+-- the original input value node is still considered an exterior datum but
+-- without any location requirements; otherwise the constraint model will become
+-- overconstrained.
 enableCopyingForMultUseInputsInPattern
   :: Instruction
   -> Match NodeID
