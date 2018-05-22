@@ -14,6 +14,7 @@ Main authors:
 module Language.InstrSel.ConstraintModels.IDs
   ( ArrayIndex (..)
   , OperandID (..)
+  , fromArrayIndex
   , fromOperandID
   , toArrayIndex
   , toOperandID
