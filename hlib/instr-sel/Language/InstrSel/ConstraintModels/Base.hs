@@ -155,7 +155,7 @@ data HighLevelMatchParams
       , hlMatchOutputOperands :: [OperandID]
         -- ^ The operands which act as output of this match.
       , hlMatchIntermediateOperands :: [OperandID]
-        -- ^ The operands which are exterior to this match (i.e. neither input
+        -- ^ The operands which are internal to this match (i.e. neither input
         -- nor output).
       , hlMatchValidValueLocs :: [(OperandID, [LocationID])]
         -- ^ The operands together with a list of locations that are valid for
