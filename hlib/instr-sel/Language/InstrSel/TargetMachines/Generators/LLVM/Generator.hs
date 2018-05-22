@@ -318,7 +318,7 @@ mkInstrProps md_i os in_values out_values str =
                         , TM.instrLatency = LLVM.instrLatency md_i
                         , TM.instrIsCopy = isInstructionCopy tm_i
                         , TM.instrIsKill = False
-                        , TM.instrIsNull = isInstructionNull tm_i
+                        , TM.instrIsNull = LLVM.instrSize md_i == 0
                         , TM.instrIsPhi = isInstructionPhi tm_i
                         , TM.instrIsSimd = isInstructionSimd tm_i
                         }

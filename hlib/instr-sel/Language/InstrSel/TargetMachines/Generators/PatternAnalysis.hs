@@ -11,7 +11,6 @@ Main authors:
 
 module Language.InstrSel.TargetMachines.Generators.PatternAnalysis
   ( isInstructionCopy
-  , isInstructionNull
   , isInstructionPhi
   , isInstructionSimd
   , isInstructionUncondBranch
@@ -38,16 +37,6 @@ import Language.InstrSel.TargetMachines
 -------------
 -- Functions
 -------------
-
--- | Checks whether the instruction contain at least operation node in the
--- pattern graph and does not emit anything during code emission.
-isInstructionNull :: Instruction -> Bool
-isInstructionNull i =
-  let os = instrOS i
-      g = osGraph os
-      op_nodes = filter isOperationNode $ getAllNodes g
-      emit_str = instrEmitString i
-  in length op_nodes > 0 && length (emitStrParts emit_str) == 0
 
 -- | Checks whether the instruction's pattern graph contains exactly one copy
 -- node.
