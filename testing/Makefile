@@ -790,7 +790,8 @@ FUN_PLOTS_TARGETS    := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
                         $(addsuffix .presolved.cov.pdf, $(FUN_NAMES)) \
                         $(addsuffix .all-cover-plots, $(FUN_NAMES)) \
                         $(addsuffix .presolved.all-cover-plots, $(FUN_NAMES))
-FUN_MDUMP_TARGETS    := $(addsuffix .model.dump, $(FUN_NAMES))
+FUN_MDUMP_TARGETS    := $(addsuffix .model.dump, $(FUN_NAMES)) \
+                        $(addsuffix .presolved.model.dump, $(FUN_NAMES))
 FUN_SDUMP_TARGETS    := $(addsuffix .sol.dump, $(FUN_NAMES))
 FUN_CHECK_TARGETS    := $(addsuffix .run-checks, $(FUN_NAMES))
 FUN_GET_COST_TARGETS := $(addsuffix .get-cost, $(FUN_NAMES))
