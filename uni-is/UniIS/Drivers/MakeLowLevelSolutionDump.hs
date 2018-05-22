@@ -200,7 +200,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  "Data / operands used: "
                  ++
                  ( pShow $
-                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                   map ( \o -> (llSolAltsOfOperands sol) !! (fromIntegral o)
                        ) $
                    (llMatchOperandsUsed model) !! i
                  )
@@ -224,7 +224,7 @@ run MakeLowLevelSolutionDump function model ai_maps sol =
                  "Data / operands defined: "
                  ++
                  ( pShow $
-                   map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
+                   map ( \o -> (llSolAltsOfOperands sol) !! (fromIntegral o)
                        ) $
                    (llMatchOperandsDefined model) !! i
                  )
