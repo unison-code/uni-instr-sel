@@ -307,6 +307,20 @@ run MakeLowLevelModelDump function model ai_maps =
                    aggregateLocsPerOpForMatch ai $
                    llMatchValidValueLocs model
                  )
+                 ++
+                 "\n"
+                 ++
+                 addPadding ai
+                 ++
+                 "Operands that must be in same location: "
+                 ++
+                 ( intercalate ( "\n" ++ addPadding ai ++
+                                 "                                        "
+                               ) $
+                   map (\(_, p1, p2) -> pShow (p1, p2)) $
+                   filter (\(ai', _, _) -> ai' == ai) $
+                   llMatchSameValueLocs model
+                 )
         in concatMap (\(m, i) -> pShow i ++ " -> " ++ mkMatchInfo m i ++ "\n\n")
                      (zip ms ([0..] :: [ArrayIndex]))
                      -- Cast needed to prevent compiler warning
