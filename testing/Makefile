@@ -445,10 +445,21 @@ update-all-regression-tests:
 	$(UNI_IS_CMD) plot --plot-fun-full-graph -f $< -o $@
 
 %.cov.dot: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-           %.p.json
+           %.ll.model.json \
+           %.aimaps.json
 	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                  -p $*.p.json \
+                  -m $*.ll.model.json \
+                  -a $*.aimaps.json \
+                  -o $@
+
+%.presolved.cov.dot: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                     %.presolved.ll.model.json \
+                     %.presolved.aimaps.json
+	$(UNI_IS_CMD) plot --plot-cover-all-matches --hide-null-instrs \
+                  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                  -m $*.presolved.ll.model.json \
+                  -a $*.presolved.aimaps.json \
                   -o $@
 
 .PHONY: pattern.dot
@@ -462,10 +473,25 @@ pattern.dot:
 	dot -Tpdf $< -o $@
 
 %.all-cover-plots: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                   %.ae.p.json
+                   %.ll.model.json \
+                   %.aimaps.json
 	$(UNI_IS_CMD) plot --plot-cover-per-match \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
-                  -p $*.ae.p.json \
+                  -m $*.ll.model.json \
+                  -a $*.aimaps.json \
+                  -o $*.cov.dot
+	for f in $*.cov.*.dot; do \
+        $(MAKE) $${f%.*}.pdf; \
+        $(RM) $${f%.*}.dot; \
+    done
+
+%.presolved.all-cover-plots: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                             %.presolved.ll.model.json \
+                             %.presolved.aimaps.json
+	$(UNI_IS_CMD) plot --plot-cover-per-match \
+                  -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
+                  -m $*.presolved.ll.model.json \
+                  -a $*.presolved.aimaps.json \
                   -o $*.cov.dot
 	for f in $*.cov.*.dot; do \
         $(MAKE) $${f%.*}.pdf; \
@@ -482,8 +508,8 @@ pattern.dot:
                   -o $@
 
 %.presolved.model.dump: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-              %.presolved.aimaps.json \
-              %.presolved.ll.model.json
+                        %.presolved.ll.model.json \
+                        %.presolved.aimaps.json
 	$(UNI_IS_CMD) make --dump-low-level-model-info \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
                   -m $*.presolved.ll.model.json \
@@ -491,8 +517,8 @@ pattern.dot:
                   -o $@
 
 %.sol.dump: %.de.lp.ep.ce.cc.rp.de.rt.f.json \
-            %.presolved.aimaps.json \
             %.presolved.ll.model.json \
+            %.presolved.aimaps.json \
             %.presolved.ll.sol.json
 	$(UNI_IS_CMD) make --dump-low-level-solution-info \
                   -f $*.de.lp.ep.ce.cc.rp.de.rt.f.json \
@@ -761,7 +787,9 @@ FUN_NAMES            := $(basename $(basename $(F_JSON_TARGETS)))
 
 FUN_ASM_TARGETS      := $(addsuffix .s, $(FUN_NAMES))
 FUN_PLOTS_TARGETS    := $(addsuffix .cov.pdf, $(FUN_NAMES)) \
-                        $(addsuffix .all-cover-plots, $(FUN_NAMES))
+                        $(addsuffix .presolved.cov.pdf, $(FUN_NAMES)) \
+                        $(addsuffix .all-cover-plots, $(FUN_NAMES)) \
+                        $(addsuffix .presolved.all-cover-plots, $(FUN_NAMES))
 FUN_MDUMP_TARGETS    := $(addsuffix .model.dump, $(FUN_NAMES))
 FUN_SDUMP_TARGETS    := $(addsuffix .sol.dump, $(FUN_NAMES))
 FUN_CHECK_TARGETS    := $(addsuffix .run-checks, $(FUN_NAMES))
