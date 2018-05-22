@@ -300,7 +300,6 @@ enableCopyingForMultUseInputsInPattern instr match =
                             , osSameLocations = new_same_locs
                             , osConstraints = new_cs
                             }
-            new_m = delPNodeInMatch (getNodeID cp_n) old_m
             new_emit_str = updateNodeInEmitStrTemplate old_input_id
                                                        new_input_id
                                                        (instrEmitString old_i)
@@ -308,6 +307,7 @@ enableCopyingForMultUseInputsInPattern instr match =
                           , instrInputData = (new_input_id:instrInputData old_i)
                           , instrEmitString = new_emit_str
                           }
+            new_m = delPNodeInMatch (getNodeID cp_n) old_m
         in (new_i, new_m)
   in foldr rewrite (instr, match) mult_use_input_vs
 

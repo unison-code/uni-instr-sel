@@ -52,7 +52,9 @@ dispatch a opts
          PlotPatternGraphs.run a show_edge_nrs i
   | a `elem` [PlotCoverAllMatches, PlotCoverPerMatch] =
       do function <- loadFunctionFromJson opts
-         matchset <- loadPatternMatchsetFromJson opts
+         model_content <- loadModelFileContent opts
+         model <- loadFromJson model_content
+         ai_maps <- loadArrayIndexMaplistsFromJson opts
          show_edge_nrs <- getShowEdgeNumbersPred opts
          hide_null_instrs <- getHideNullInstrsPred opts
          hide_kill_instrs <- getHideKillInstrsPred opts
@@ -61,6 +63,7 @@ dispatch a opts
                              hide_null_instrs
                              hide_kill_instrs
                              function
-                             matchset
+                             model
+                             ai_maps
   | otherwise =
       reportErrorAndExit "PlotDispatcher: unsupported action"

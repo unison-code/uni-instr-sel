@@ -189,6 +189,9 @@ run MakeLowLevelModelDump function model ai_maps =
                   instr = if isJust instr_res
                           then fromJust instr_res
                           else error $ "No instruction with ID " ++ (pShow iid)
+                  ops_used = (llMatchOperandsUsed model) !! (fromIntegral ai)
+                  ops_defined =
+                    (llMatchOperandsDefined model) !! (fromIntegral ai)
               in "Match ID: " ++ pShow m
                  ++
                  "\n"
@@ -200,12 +203,12 @@ run MakeLowLevelModelDump function model ai_maps =
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
-                   (llMatchOperandsUsed model) !! (fromIntegral ai)
+                   ops_used
                  )
                  ++
                  " / "
                  ++
-                 (pShow $ (llMatchOperandsUsed model) !! (fromIntegral ai))
+                 (pShow ops_used)
                  ++
                  "\n"
                  ++
@@ -224,12 +227,12 @@ run MakeLowLevelModelDump function model ai_maps =
                  ( pShow $
                    map ( \o -> (llOperandAlternatives model) !! (fromIntegral o)
                        ) $
-                   (llMatchOperandsDefined model) !! (fromIntegral ai)
+                   ops_defined
                  )
                  ++
                  " / "
                  ++
-                 (pShow $ (llMatchOperandsDefined model) !! (fromIntegral ai))
+                 (pShow ops_defined)
                  ++
                  "\n"
                  ++

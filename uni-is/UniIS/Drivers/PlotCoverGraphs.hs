@@ -14,34 +14,17 @@ module UniIS.Drivers.PlotCoverGraphs
 where
 
 import UniIS.Drivers.Base
-import UniIS.Targets
+import Language.InstrSel.ConstraintModels
 import Language.InstrSel.Functions
 import Language.InstrSel.Graphs
 import Language.InstrSel.OpStructures
 import Language.InstrSel.PrettyShow
-import Language.InstrSel.TargetMachines
-import Language.InstrSel.TargetMachines.PatternMatching
 
 import Language.InstrSel.Graphs.GraphViz
 import qualified Data.GraphViz as GV
 
-import Language.InstrSel.Utils
-  ( isLeft
-  , fromLeft
-  , fromRight
-  )
-
 import Language.InstrSel.Utils.IO
-  ( reportErrorAndExit
-  , when
-  )
-
-import Data.Maybe
-  ( catMaybes
-  , fromJust
-  , isJust
-  , isNothing
-  )
+  ( reportErrorAndExit )
 
 
 
@@ -58,7 +41,8 @@ run :: PlotAction
     -> Bool
        -- ^ Whether to hide kill instructions.
     -> Function
-    -> PatternMatchset
+    -> LowLevelModel
+    -> ArrayIndexMaplists
     -> IO [Output]
 
 run PlotCoverAllMatches
@@ -66,53 +50,49 @@ run PlotCoverAllMatches
     hide_null_instrs
     hide_kill_instrs
     function
-    matchset
+    model
+    ai_maps
   =
-  do let tid = pmTarget matchset
-         tm_res = retrieveTargetMachine tid
-     when (isNothing tm_res) $
-       reportErrorAndExit $ "Unrecognized target machine: " ++ (pShow tid)
-     let tm = fromJust tm_res
-         ms0 = pmMatches matchset
-         matches_res = do ms1 <- if hide_null_instrs
-                                 then filterMatches tm
-                                                    (not . isInstructionNull)
-                                                    ms0
-                                 else return ms0
-                          ms2 <- if hide_kill_instrs
-                                 then filterMatches tm
-                                                    ( not
-                                                      . isInstructionKill
-                                                    )
-                                                    ms1
-                                 else return ms1
-                          return ms2
-     when (isLeft matches_res) $
-       reportErrorAndExit $ fromLeft matches_res
-     let matches = map pmMatch $ fromRight matches_res
-     dot <- mkCoveragePlot show_edge_nrs function matches
+  do let ai_ms0 = take (fromIntegral $ llNumMatches model) $
+                  ([0..] :: [ArrayIndex])
+         ai_ms1 = if hide_null_instrs
+                  then filter (`notElem` llMatchNullInstructions model) ai_ms0
+                  else ai_ms0
+         ai_ms2 = if hide_kill_instrs
+                  then filter (`notElem` llMatchKillInstructions model) ai_ms1
+                  else ai_ms1
+         ns_list = concatMap (getFunctionNodesCoveredByMatch model ai_maps) $
+                   ai_ms2
+     dot <- mkCoveragePlot show_edge_nrs function ns_list
      return [toOutput dot]
 
-run PlotCoverPerMatch show_edge_nrs _ _ function matchset =
-  do let matches = pmMatches matchset
+run PlotCoverPerMatch show_edge_nrs _ _ function model ai_maps =
+  do let ai_ms = take (fromIntegral $ llNumMatches model) $
+                 ([0..] :: [ArrayIndex])
      mapM
        ( \m ->
-          do dot <- mkCoveragePlot show_edge_nrs function [pmMatch m]
-             let oid = "m" ++ pShow (pmMatchID m) ++ "-" ++
-                       "i" ++ pShow (pmInstrID m)
+          do let ns_list = getFunctionNodesCoveredByMatch model ai_maps m
+             dot <- mkCoveragePlot show_edge_nrs function ns_list
+             let mid = (ai2MatchIDs ai_maps) !! (fromIntegral m)
+                 iid = (llMatchInstructionIDs model) !! (fromIntegral m)
+                 oid = "m" ++ pShow mid ++ "-" ++ "i" ++ pShow iid
              return $ toOutputWithID oid dot
        )
-       matches
+       ai_ms
 
-run _ _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
+run _ _ _ _ _ _ _ = reportErrorAndExit "PlotCoverGraph: unsupported action"
 
-mkCoveragePlot :: Bool -> Function -> [Match NodeID] -> IO ByteString
-mkCoveragePlot show_edge_nrs function matches =
-  do let hasMatch n = any (\m -> length (findPNInMatch m $ getNodeID n) > 0)
-                          matches
+mkCoveragePlot :: Bool -> Function -> [[NodeID]] -> IO ByteString
+mkCoveragePlot show_edge_nrs function ns_list =
+  do let hasMatch n = (getNodeID n) `elem` (concat ns_list)
+         onlyInAlternatives n = all (\ns -> length ns > 1) $
+                                filter ((getNodeID n) `elem`) $
+                                ns_list
          nf _ n = [ GV.style GV.filled
                   , if hasMatch n
-                    then GV.fillColor GV.Green
+                    then if onlyInAlternatives n
+                         then GV.fillColor GV.Yellow
+                         else GV.fillColor GV.Green
                     else GV.fillColor GV.Red
                   ]
          ef = if show_edge_nrs then showEdgeNrsAttr else noMoreEdgeAttr
@@ -121,20 +101,25 @@ mkCoveragePlot show_edge_nrs function matches =
                functionOS function
      return dot
 
-filterMatches
-  :: TargetMachine
-  -> (Instruction -> Bool)
-  -> [PatternMatch]
-  -> Either String [PatternMatch]
-filterMatches tm p_fun ms =
-  do ms' <- mapM ( \m -> let iid = pmInstrID m
-                             i = findInstruction tm iid
-                         in if isJust i
-                            then if p_fun $ fromJust i
-                                 then return $ Just m
-                                 else return Nothing
-                            else Left $ "No instruction with ID "
-                                        ++ pShow iid
-                 ) $
-            ms
-     return $ catMaybes ms'
+-- | Returns the function nodes that are covered by a given match. Since an
+-- operand may have several alternatives, a pattern node may map to several
+-- function nodes.
+getFunctionNodesCoveredByMatch
+  :: LowLevelModel
+  -> ArrayIndexMaplists
+  -> ArrayIndex
+     -- ^ Array index of the match.
+  -> [[NodeID]]
+getFunctionNodesCoveredByMatch model ai_maps m =
+  let ai_bs = (llMatchSpannedBlocks model) !! (fromIntegral m)
+      ai_os = (llMatchOperationsCovered model) !! (fromIntegral m)
+      ai_ps = (llMatchOperandsUsed model) !! (fromIntegral m) ++
+              (llMatchOperandsDefined model) !! (fromIntegral m)
+  in map (\ai -> [(ai2BlockNodeIDs ai_maps) !! (fromIntegral ai)]) ai_bs ++
+     map (\ai -> [(ai2OperationNodeIDs ai_maps) !! (fromIntegral ai)]) ai_os ++
+     map ( \p_ai -> map ( \n_ai ->
+                          (ai2DatumNodeIDs ai_maps) !! (fromIntegral n_ai)
+                        ) $
+                    (llOperandAlternatives model) !! (fromIntegral p_ai)
+         )
+         ai_ps
