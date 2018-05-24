@@ -1975,7 +1975,7 @@ applyOSTransformations :: BuildState -> Either String BuildState
 applyOSTransformations st =
   let os0 = opStruct st
       b2ddfs0 = blockToDatumDataFlows st
-      os1 = OS.canonicalizeCopies os0
+      (os1, _) = OS.canonicalizeCopies os0
       -- Canonicalizing copies will remove value nodes with constants, which
       -- must then be removed from the book keeping held within the build state.
       b2ddfs1 = filter ( \(_, nid) ->

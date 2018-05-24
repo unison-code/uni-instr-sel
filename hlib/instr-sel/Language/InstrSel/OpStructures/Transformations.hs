@@ -10,7 +10,8 @@ Main authors:
 -}
 
 module Language.InstrSel.OpStructures.Transformations
-  ( canonicalizeCopies
+  ( TransformationLog (..)
+  , canonicalizeCopies
   , enforcePhiNodeInvariants
   , lowerPointers
   , removeDeadCode
@@ -39,6 +40,7 @@ import Language.InstrSel.Utils
 import Data.Maybe
   ( isJust
   , fromJust
+  , mapMaybe
   )
 import Data.List
   ( intersect
@@ -48,13 +50,93 @@ import Data.List
 
 
 
+--------------
+-- Data types
+--------------
+
+-- | Captures information about what the transformation has done to the
+-- 'OpStructure' that may be needed in order to update other, related
+-- structures.
+data TransformationLog
+  = TransformationLog
+      { deletedNodes :: [NodeID]
+        -- ^ List of nodes that have been removed as part of the transformation.
+        -- Note that a removed node may also have been replaced by another node.
+      , replacedNodes :: [(NodeID, NodeID)]
+        -- ^ List of nodes that have been replaced with other nodes as part of
+        -- the transformation. The first element in the tuple represents the old
+        -- node, and the second element represents the new node.
+      }
+  deriving (Show)
+
 -------------
 -- Functions
 -------------
 
+-- | Creates an initial 'TransformationLog'.
+mkEmptyLog :: TransformationLog
+mkEmptyLog = TransformationLog { deletedNodes = []
+                               , replacedNodes = []
+                               }
+
+-- | Extends a given, former log according to changes made in a given, latter
+-- log. This means the list of deleted nodes is extended, and chains of
+-- replacements are normalized into a single replacement.
+--
+-- @see 'normalizeLog'
+extendLog
+  :: TransformationLog
+     -- ^ The latter log.
+  -> TransformationLog
+     -- ^ The former log.
+  -> TransformationLog
+extendLog l2 l1 =
+  normalizeLog $
+  TransformationLog { deletedNodes = deletedNodes l2 ++ deletedNodes l1
+                    , replacedNodes = replacedNodes l2 ++ replacedNodes l1
+                    }
+
+-- | Removes duplicates in the list of deleted nodes, and replaces chains of
+-- replacements @a -> ... -> z@ into a single entry. For example, if the former
+-- log contains a replacement @a -> b@ and the latter log contains a replacement
+-- @b -> c@, then the returned log will only contain @a -> c@.
+normalizeLog :: TransformationLog -> TransformationLog
+normalizeLog l =
+  let norm_del_ns = nub $ deletedNodes l
+      findPair n1 ps =
+        let n2 = lookup n1 ps
+        in if isJust n2 then Just (n1, fromJust n2) else Nothing
+      collapse1Chain ps =
+        let chain_pairs = mapMaybe ( \p1@(_, n2) ->
+                                     let p2 = findPair n2 ps
+                                     in if isJust p2
+                                        then Just (p1, fromJust p2)
+                                        else Nothing
+                                   ) $
+                          ps
+            candidate = if length chain_pairs > 0
+                        then Just $ head chain_pairs
+                        else Nothing
+        in if isJust candidate
+           then let (p1@(n1, _), p2@(_, n3)) = fromJust candidate
+                    pruned_ps = filter (/= p1) $
+                                filter (/= p2) $
+                                ps
+                in ((n1, n3):pruned_ps)
+           else ps
+      collapseChains ps0 =
+        let ps1 = collapse1Chain ps0
+        in if length ps1 < length ps0
+           then collapseChains ps1
+           else ps0
+      norm_repl_ns = collapseChains $ replacedNodes l
+  in TransformationLog { deletedNodes = norm_del_ns
+                       , replacedNodes = norm_repl_ns
+                       }
+
 -- | Finds computations that are synonymous with a copy operation, and replaces
 -- such computation nodes with 'CopyNode's.
-canonicalizeCopies :: OpStructure -> OpStructure
+canonicalizeCopies :: OpStructure -> (OpStructure, TransformationLog)
 canonicalizeCopies os =
   let mkTempValueNode =
         ValueNode { typeOfValue = AnyType
@@ -121,7 +203,7 @@ canonicalizeCopies os =
                  then delNode const_fn g3
                  else g3
         in os' { osGraph = g4 }
-  in foldr process os matches
+  in (foldr process os matches, mkEmptyLog)
 
 -- | Lowers pointer value nodes into corresponding integer values. Computation
 -- nodes that operate on pointers are also either removed (if they become
@@ -134,18 +216,23 @@ lowerPointers
   -> Range Integer
      -- ^ Value range for pointer symbols.
   -> OpStructure
-  -> OpStructure
-lowerPointers ptr_size null_value ptr_sym_range os =
-  transformPtrConversions $
-  removeRedundantPtrConversions $
-  transformPtrValueNodes ptr_size null_value ptr_sym_range os
+  -> (OpStructure, TransformationLog)
+lowerPointers ptr_size null_value ptr_sym_range os0 =
+  let (os1, log1) = transformPtrValueNodes ptr_size null_value ptr_sym_range os0
+      (os2, log2) = removeRedundantPtrConversions os1
+      (os3, log3) = transformPtrConversions os2
+  in ( os3, extendLog log3 $
+            extendLog log2 $
+            extendLog log1 $
+            mkEmptyLog
+     )
 
 transformPtrValueNodes
   :: Natural
   -> Integer
   -> Range Integer
   -> OpStructure
-  -> OpStructure
+  -> (OpStructure, TransformationLog)
 transformPtrValueNodes ptr_size null_value ptr_sym_range os =
   let g0 = osGraph os
       new_temp_dt = IntTempType { intTempNumBits = ptr_size }
@@ -163,9 +250,9 @@ transformPtrValueNodes ptr_size null_value ptr_sym_range os =
       g1 = foldr (updateDataTypeOfValueNode new_temp_dt) g0 temp_ptr_ns
       g2 = foldr (updateDataTypeOfValueNode new_null_dt) g1 null_ptr_ns
       g3 = foldr (updateDataTypeOfValueNode new_sym_dt) g2 sym_ptr_ns
-  in os { osGraph = g3 }
+  in (os { osGraph = g3 }, mkEmptyLog)
 
-removeRedundantPtrConversions :: OpStructure -> OpStructure
+removeRedundantPtrConversions :: OpStructure -> (OpStructure, TransformationLog)
 removeRedundantPtrConversions os0 =
   let g0 = osGraph os0
       ns = filter ( \n -> let op = getOpOfComputationNode n
@@ -185,22 +272,26 @@ removeRedundantPtrConversions os0 =
                               in d1 `hasSameBitWidth` d2
                             )
                             ps
-      g1 = foldr (\(o, _, _) g -> delNode o g) g0 redundant_ps
-      os1 = os0 { osGraph = g1 }
-      os2 = foldr ( \(_, in_v, out_v) os ->
-                    let g = osGraph os
-                        g' = mergeNodes in_v out_v g
-                        os' = os { osGraph = g' }
-                        os'' = replaceNodeIDInOS (getNodeID out_v)
-                                                 (getNodeID in_v)
-                                                 os'
-                    in os''
-                  )
-                  os1
-                  redundant_ps
-  in os2
+      os_to_delete = map (\(o, _, _) -> o) redundant_ps
+      os1 = os0 { osGraph = foldr delNode g0 os_to_delete }
+      log1 = mkEmptyLog { deletedNodes = map getNodeID os_to_delete }
+  in foldr ( \(_, in_v, out_v) (os, lg) ->
+             let g = osGraph os
+                 g' = mergeNodes in_v out_v g
+                 os' = os { osGraph = g' }
+                 out_v_id = getNodeID out_v
+                 in_v_id = getNodeID in_v
+                 os'' = replaceNodeIDInOS out_v_id in_v_id os'
+             in ( os''
+                , lg { deletedNodes = (out_v_id:deletedNodes lg)
+                     , replacedNodes = ((out_v_id, in_v_id):replacedNodes lg)
+                     }
+                )
+           )
+           (os1, log1)
+           redundant_ps
 
-transformPtrConversions :: OpStructure -> OpStructure
+transformPtrConversions :: OpStructure -> (OpStructure, TransformationLog)
 transformPtrConversions os =
   let g = osGraph os
       ns = filter ( \n -> let op = getOpOfComputationNode n
@@ -227,15 +318,11 @@ transformPtrConversions os =
                                        "width: " ++ show v1
                )
                ns
-  in foldr ( \(n, w1, w2) os' ->
-             let g0 = osGraph os'
-                 g1 = if w1 < w2
-                      then updateOpOfComputationNode (CompTypeConvOp ZExt) n g0
-                      else updateOpOfComputationNode (CompTypeConvOp Trunc) n g0
-             in os' { osGraph = g1 }
-           )
-           os
-           ps
+      transformOp (n, w1, w2) g' =
+        if w1 < w2
+        then updateOpOfComputationNode (CompTypeConvOp ZExt) n g'
+        else updateOpOfComputationNode (CompTypeConvOp Trunc) n g'
+  in (os { osGraph = foldr transformOp g ps }, mkEmptyLog)
 
 -- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph
 -- invariants:
@@ -245,11 +332,16 @@ transformPtrConversions os =
 --      last block that dominates the blocks of the replaced definition edges.
 --    - Phi nodes with multiple values that originate from the same block are
 --      transformed such that only a single value is kept.
-enforcePhiNodeInvariants :: OpStructure -> OpStructure
-enforcePhiNodeInvariants = ensureSingleBlockUseInPhis .
-                           ensureSingleValueUseInPhis
+enforcePhiNodeInvariants :: OpStructure -> (OpStructure, TransformationLog)
+enforcePhiNodeInvariants os0 =
+  let (os1, log1) = ensureSingleValueUseInPhis os0
+      (os2, log2) = ensureSingleBlockUseInPhis os1
+  in ( os2, extendLog log2 $
+            extendLog log1 $
+            mkEmptyLog
+     )
 
-ensureSingleValueUseInPhis :: OpStructure -> OpStructure
+ensureSingleValueUseInPhis :: OpStructure -> (OpStructure, TransformationLog)
 ensureSingleValueUseInPhis os =
   let g = osGraph os
       entry = let n = entryBlockNode g
@@ -295,9 +387,9 @@ ensureSingleValueUseInPhis os =
                        g2
                        new_vb_ps
         in g3
-  in os { osGraph = foldr transform g ns }
+  in (os { osGraph = foldr transform g ns }, mkEmptyLog)
 
-ensureSingleBlockUseInPhis :: OpStructure -> OpStructure
+ensureSingleBlockUseInPhis :: OpStructure -> (OpStructure, TransformationLog)
 ensureSingleBlockUseInPhis os =
   let g = osGraph os
       transformPhi phi_n g0 =
@@ -315,7 +407,7 @@ ensureSingleBlockUseInPhis os =
         in g1
       phi_ns = filter isPhiNode $
                getAllNodes g
-  in os { osGraph = foldr transformPhi g phi_ns }
+  in (os { osGraph = foldr transformPhi g phi_ns }, mkEmptyLog)
 
 -- | From a given control-flow graph and list of block nodes, gets the block
 -- that is the closest dominator of all given blocks.
@@ -344,17 +436,22 @@ getDomOf g root bs =
 
 -- | Replaces copies of the same value that act as input to a phi node with a
 -- single value, and removes phi nodes that takes only one value.
-removePhiNodeRedundancies :: OpStructure -> OpStructure
-removePhiNodeRedundancies = ensureSingleBlockUseInPhis .
-                            removeSingleValuePhiNodes
+removePhiNodeRedundancies :: OpStructure -> (OpStructure, TransformationLog)
+removePhiNodeRedundancies os0 =
+  let (os1, log1) = removeSingleValuePhiNodes os0
+      (os2, log2) = ensureSingleBlockUseInPhis os1
+  in ( os2, extendLog log2 $
+            extendLog log1 $
+            mkEmptyLog
+     )
 
-removeSingleValuePhiNodes :: OpStructure -> OpStructure
+removeSingleValuePhiNodes :: OpStructure -> (OpStructure, TransformationLog)
 removeSingleValuePhiNodes os =
   let g = osGraph os
       ns = filter (\n -> length (getDtFlowInEdges g n) == 1) $
            filter isPhiNode $
            getAllNodes g
-      remove phi_n os0 =
+      remove phi_n (os0, lg) =
         let g0 = osGraph os0
             in_e = head $ getInEdges g0 phi_n
             out_e = head $ getOutEdges g0 phi_n
@@ -371,9 +468,15 @@ removeSingleValuePhiNodes os =
             g3 = delEdge out_v_def g2
             g4 = mergeNodes in_v out_v g3
             os1 = os0 { osGraph = g4 }
-            os2 = replaceNodeIDInOS (getNodeID out_v) (getNodeID in_v) os1
-        in os2
-  in foldr remove os ns
+            out_v_id = getNodeID out_v
+            in_v_id = getNodeID in_v
+            os2 = replaceNodeIDInOS out_v_id in_v_id os1
+        in ( os2
+           , lg { deletedNodes = (out_v_id:getNodeID phi_n:deletedNodes lg)
+                , replacedNodes = ((out_v_id, in_v_id):replacedNodes lg)
+                }
+           )
+  in foldr remove (os, mkEmptyLog) ns
 
 replaceNodeIDInOS
   :: NodeID
@@ -416,16 +519,21 @@ getDefEdgeOfDtOutEdge g e =
                "multiple matching definition edges"
 
 -- | Removes operation and value nodes whose result are not observable.
-removeDeadCode :: OpStructure -> OpStructure
-removeDeadCode os0 =
-  let (os1, p) = removeDeadCode' os0
-      os2 = if p
-            then removeDeadCode os1
-            else os1
-  in os2
+removeDeadCode :: OpStructure -> (OpStructure, TransformationLog)
+removeDeadCode os =
+  loop os mkEmptyLog
+  where
+  loop os0 log0 =
+    let (os1, log1, b) = removeDeadCode' os0 log0
+    in if b
+       then loop os1 log1
+       else (os1, log1)
 
-removeDeadCode' :: OpStructure -> (OpStructure, Bool)
-removeDeadCode' os0 =
+removeDeadCode'
+  :: OpStructure
+  -> TransformationLog
+  -> (OpStructure, TransformationLog, Bool)
+removeDeadCode' os0 log0 =
   let g0 = osGraph os0
       unused = filter ( \n ->
                         let preds = map (getSourceNode g0) $
@@ -440,13 +548,13 @@ removeDeadCode' os0 =
                getAllNodes g0
   in if length unused > 0
      then let v_n = head unused
-              g1 = removeDefOfValueNode v_n g0
+              (g1, log1) = removeDefOfValueNode v_n g0
               os1 = os0 { osGraph = g1 }
               os2 = removeValueFromLocsAndCons (getNodeID v_n) os1
-          in (os2, True)
-     else (os0, False)
+          in (os2, extendLog log1 log0, True)
+     else (os0, log0, False)
 
-removeDefOfValueNode :: Node -> Graph -> Graph
+removeDefOfValueNode :: Node -> Graph -> (Graph, TransformationLog)
 removeDefOfValueNode v_n g0 =
   let pred_n = let ns = map (getSourceNode g0) $
                         getDtFlowInEdges g0 v_n
@@ -456,10 +564,15 @@ removeDefOfValueNode v_n g0 =
                                pShow v_n ++ " has unexpected " ++
                                "number of inbound data-flow edges"
       g1 = delNode v_n g0
-      g2 = if isOperationNode pred_n
-           then removeOpNode pred_n g1
-           else g1
-  in g2
+      log1 = mkEmptyLog { deletedNodes = [getNodeID v_n] }
+      (g2, log2) = if isOperationNode pred_n
+                   then ( removeOpNode pred_n g1
+                        , log1 { deletedNodes =
+                                   (getNodeID pred_n:deletedNodes log1)
+                               }
+                        )
+                   else (g1, log1)
+  in (g2, log2)
 
 removeOpNode :: Node -> Graph -> Graph
 removeOpNode op_n g0 =
@@ -500,7 +613,7 @@ removeValueFromLocsAndCons v_nid os =
 -- | Removes conversion operations that are redundant. Such a conversion is
 -- redundant if its result is immediately masked to leave the same bits as
 -- before the conversion.
-removeRedundantConversions :: OpStructure -> OpStructure
+removeRedundantConversions :: OpStructure -> (OpStructure, TransformationLog)
 removeRedundantConversions os =
   let g0 = osGraph os
       convs = filter (isCompTypeConvOp . getOpOfComputationNode) $
@@ -554,4 +667,4 @@ removeRedundantConversions os =
                     g2 = updateNodeLabel new_l n g1
                 in g2
            else g1
-  in os { osGraph = foldr transform g0 convs }
+  in (os { osGraph = foldr transform g0 convs }, mkEmptyLog)

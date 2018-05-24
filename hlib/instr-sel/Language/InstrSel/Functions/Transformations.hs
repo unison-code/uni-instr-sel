@@ -239,10 +239,10 @@ updateGraph new_g f =
 lowerPointers :: TargetMachine -> Function -> Function
 lowerPointers tm f =
   let os0 = functionOS f
-      os1 = OS.lowerPointers (tmPointerSize tm)
-                             (tmNullPointerValue tm)
-                             (tmPointerSymbolRange tm)
-                             os0
+      (os1, _) = OS.lowerPointers (tmPointerSize tm)
+                                  (tmNullPointerValue tm)
+                                  (tmPointerSymbolRange tm)
+                                  os0
   in f { functionOS = os1 }
 
 -- | Fixes phi nodes in a given 'OpStructure' that do not abide by the graph
@@ -258,7 +258,7 @@ lowerPointers tm f =
 enforcePhiNodeInvariants :: Function -> Function
 enforcePhiNodeInvariants f =
   let os0 = functionOS f
-      os1 = OS.enforcePhiNodeInvariants os0
+      (os1, _) = OS.enforcePhiNodeInvariants os0
   in f { functionOS = os1 }
 
 -- | Replaces copies of the same value that act as input to a phi node with a
@@ -268,7 +268,7 @@ enforcePhiNodeInvariants f =
 removePhiNodeRedundancies :: Function -> Function
 removePhiNodeRedundancies f =
   let os0 = functionOS f
-      os1 = OS.removePhiNodeRedundancies os0
+      (os1, _) = OS.removePhiNodeRedundancies os0
   in f { functionOS = os1 }
 
 -- | Removes operation and value nodes whose result are not observable.
@@ -277,7 +277,7 @@ removePhiNodeRedundancies f =
 removeDeadCode :: Function -> Function
 removeDeadCode f =
   let os0 = functionOS f
-      os1 = OS.removeDeadCode os0
+      (os1, _) = OS.removeDeadCode os0
       g1 = osGraph os1
       ns = map getNodeID $
            getAllNodes g1
@@ -293,5 +293,5 @@ removeDeadCode f =
 removeRedundantConversions :: Function -> Function
 removeRedundantConversions f =
   let os0 = functionOS f
-      os1 = OS.removeRedundantConversions os0
+      (os1, _) = OS.removeRedundantConversions os0
   in f { functionOS = os1 }

@@ -25,7 +25,9 @@ import Language.InstrSel.Functions
 import Language.InstrSel.OpStructures
   ( OpStructure (..) )
 import qualified Language.InstrSel.OpStructures.Transformations as OS
-  ( lowerPointers )
+  ( TransformationLog (..)
+  , lowerPointers
+  )
 import Language.InstrSel.PrettyShow
 import Language.InstrSel.TargetMachines.Base
 import Language.InstrSel.TargetMachines.PatternMatching
@@ -155,11 +157,27 @@ insertCopyAlongEdge g0 df_edge =
 -- | Lowers pointers in every instruction in the given target machine.
 lowerPointers :: TargetMachine -> TargetMachine
 lowerPointers tm =
-  let lowerInstr i = i { instrOS = OS.lowerPointers (tmPointerSize tm)
-                                                    (tmNullPointerValue tm)
-                                                    (tmPointerSymbolRange tm)
-                                                    (instrOS i)
-                       }
+  let updateNodes lg ns =
+        map ( \n ->
+              if n `elem` OS.deletedNodes lg
+              then let new_n = lookup n (OS.replacedNodes lg)
+                   in if isJust new_n
+                      then fromJust new_n
+                      else error $ "lowerPointers: node " ++ pShow n ++
+                                   " is deleted without replacement"
+              else n
+            ) $
+        ns
+      lowerInstr i =
+        let os0 = instrOS i
+            (os1, log1) = OS.lowerPointers (tmPointerSize tm)
+                                           (tmNullPointerValue tm)
+                                           (tmPointerSymbolRange tm)
+                                           os0
+        in i { instrOS = os1
+             , instrInputData = updateNodes log1 (instrInputData i)
+             , instrOutputData = updateNodes log1 (instrOutputData i)
+             }
       new_instrs = M.map lowerInstr (tmInstructions tm)
   in tm { tmInstructions = new_instrs }
 
