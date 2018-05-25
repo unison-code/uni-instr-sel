@@ -1370,7 +1370,7 @@ mkPatternDFGFromParamCall _ st0 i@(LLVM.Call {}) =
 mkPatternDFGFromParamCall _ _ i =
   Left $ "mkPatternDFGFromParamCall: not implemented for " ++ show i
 
--- | TODO: write
+-- | Adds an operation node representing a function call.
 mkPatternDFGFromFunCall
   :: Builder
   -> BuildState
@@ -1407,7 +1407,7 @@ mkPatternDFGFromFunCall b st0 i@(LLVM.Call {}) =
 mkPatternDFGFromFunCall _ _ i =
   Left $ "mkPatternDFGFromFunCall: not supported for " ++ show i
 
--- | TODO: write
+-- | Adds an operation node representing a direct function call.
 mkDirectFunCallInPattern
   :: Builder
   -> BuildState
@@ -1436,7 +1436,8 @@ mkDirectFunCallInPattern b st0 i@(LLVM.Call {}) =
 mkDirectFunCallInPattern _ _ i =
   Left $ "mkDirectFunCallInPattern: not supported for " ++ show i
 
--- | TODO: write
+-- | Sets the data types of the data used and defined by a function call to
+-- 'D.AnyType'.
 fixDataTypesOfFunCallInPattern
   :: Builder
   -> BuildState
