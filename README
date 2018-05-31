@@ -63,3 +63,11 @@ Now we can build the tool chain.
    <REPO> folder).
 
    make
+
+9. Lastly, we need to install MiniZinc. Download the latest version from
+   http://www.minizinc.org/ and unpack the TAR file. After unpacking, extend the
+   PATH environment variable:
+
+   export PATH=<MINIZINC>:$PATH
+
+   where <MINIZINC> denotes the path to where the MiniZinc binaries are.
