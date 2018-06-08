@@ -73,10 +73,10 @@ NUM_THREADS           := 4
 # TARGET := hexagon5
 # LLC_TARGET_FLAGS := -march=hexagon -mcpu=hexagonv5
 # LLC_ISEL_MORE_FLAGS := -hexagon-commgep=false \
-# 					   -hexagon-extract=false \
-# 					   -hexagon-loop-resched=false \
-# 					   -hexagon-eif=false \
-# 					   -disable-hsdr
+#                        -hexagon-extract=false \
+#                        -hexagon-loop-resched=false \
+#                        -hexagon-eif=false \
+#                        -disable-hsdr
 # X86-64
 TARGET := x86-64
 LLC_TARGET_FLAGS := -march=x86-64
